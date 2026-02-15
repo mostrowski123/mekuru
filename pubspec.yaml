@@ -1,0 +1,60 @@
+name: mekuru
+description: "Japanese EPUB Reader with vertical text and offline Yomitan dictionary."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State Management (with Riverpod code generation)
+  flutter_riverpod: ^3.1.0
+  riverpod_annotation: ^4.0.0
+
+  # Database (Drift — SQLite-backed, type-safe, isolate support)
+  drift: ^2.31.0
+  sqlite3_flutter_libs: ^0.5.41
+  drift_flutter: ^0.2.8
+
+  # Reader rendering (custom epub.js bridge via InAppWebView)
+  flutter_inappwebview: ^6.1.5
+
+  # File Handling
+  archive: ^4.0.7
+  file_picker: ^10.3.10
+  path_provider: ^2.1.5
+  path: ^1.9.1
+
+  # Japanese morphological analysis
+  mecab_for_flutter: ^1.1.0
+
+  # Utilities
+  csv: ^7.1.0
+  uuid: ^4.5.2
+  permission_handler: ^12.0.1
+  mime: ^2.0.0
+  xml: ^6.5.0
+  share_plus: ^12.0.1
+  shared_preferences: ^2.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Code generation
+  drift_dev: ^2.31.0
+  riverpod_generator: ^4.0.0
+  build_runner: ^2.4.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/epub_viewer/
+    - assets/ipadic/

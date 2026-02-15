@@ -1,0 +1,210 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+
+/// Creates an in-memory Drift database for testing.
+AppDatabase createTestDatabase() {
+  return AppDatabase(NativeDatabase.memory());
+}
+
+void main() {
+  late AppDatabase db;
+  late DictionaryRepository repo;
+
+  setUp(() {
+    db = createTestDatabase();
+    repo = DictionaryRepository(db);
+  });
+
+  tearDown(() async {
+    await db.close();
+  });
+
+  group('DictionaryRepository — DictionaryMeta', () {
+    test(
+      'insertDictionary creates a new dictionary and returns its id',
+      () async {
+        final id = await repo.insertDictionary('JMdict');
+        expect(id, greaterThan(0));
+      },
+    );
+
+    test('getAllDictionaries returns all inserted dictionaries', () async {
+      await repo.insertDictionary('JMdict');
+      await repo.insertDictionary('JMnedict');
+
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts, hasLength(2));
+      expect(dicts.map((d) => d.name), containsAll(['JMdict', 'JMnedict']));
+    });
+
+    test('new dictionaries are enabled by default', () async {
+      await repo.insertDictionary('JMdict');
+
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts.first.isEnabled, isTrue);
+    });
+
+    test('toggleDictionary disables and re-enables a dictionary', () async {
+      final id = await repo.insertDictionary('JMdict');
+
+      // Disable
+      await repo.toggleDictionary(id, isEnabled: false);
+      var dicts = await repo.getAllDictionaries();
+      expect(dicts.first.isEnabled, isFalse);
+
+      // Re-enable
+      await repo.toggleDictionary(id, isEnabled: true);
+      dicts = await repo.getAllDictionaries();
+      expect(dicts.first.isEnabled, isTrue);
+    });
+
+    test('deleteDictionary removes the dictionary and all entries', () async {
+      final id = await repo.insertDictionary('JMdict');
+
+      // Insert entries for this dictionary
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '食べる',
+          glossaries: '["to eat"]',
+          dictionaryId: id,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '飲む',
+          glossaries: '["to drink"]',
+          dictionaryId: id,
+        ),
+      ]);
+
+      expect(await repo.getEntryCount(id), 2);
+
+      // Delete the dictionary
+      await repo.deleteDictionary(id);
+
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts, isEmpty);
+      expect(await repo.getEntryCount(id), 0);
+    });
+  });
+
+  group('DictionaryRepository — DictionaryEntry', () {
+    test('batchInsertEntries inserts entries correctly', () async {
+      final dictId = await repo.insertDictionary('JMdict');
+
+      final entries = List.generate(
+        50,
+        (i) => DictionaryEntriesCompanion.insert(
+          expression: 'word_$i',
+          reading: Value('reading_$i'),
+          glossaries: jsonEncode(['meaning_$i']),
+          dictionaryId: dictId,
+        ),
+      );
+
+      final count = await repo.batchInsertEntries(entries);
+      expect(count, 50);
+      expect(await repo.getEntryCount(dictId), 50);
+    });
+
+    test('batchInsertEntries respects batchSize chunking', () async {
+      final dictId = await repo.insertDictionary('JMdict');
+
+      // Create 25 entries but insert in batches of 10
+      final entries = List.generate(
+        25,
+        (i) => DictionaryEntriesCompanion.insert(
+          expression: 'word_$i',
+          glossaries: jsonEncode(['meaning_$i']),
+          dictionaryId: dictId,
+        ),
+      );
+
+      final count = await repo.batchInsertEntries(entries, batchSize: 10);
+      expect(count, 25);
+      expect(await repo.getEntryCount(dictId), 25);
+    });
+
+    test('getEntryCount returns 0 for non-existent dictionary', () async {
+      expect(await repo.getEntryCount(999), 0);
+    });
+
+    test('getTotalEntryCount counts entries across all dictionaries', () async {
+      final id1 = await repo.insertDictionary('Dict1');
+      final id2 = await repo.insertDictionary('Dict2');
+
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '食べる',
+          glossaries: '["to eat"]',
+          dictionaryId: id1,
+        ),
+      ]);
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '飲む',
+          glossaries: '["to drink"]',
+          dictionaryId: id2,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '走る',
+          glossaries: '["to run"]',
+          dictionaryId: id2,
+        ),
+      ]);
+
+      expect(await repo.getTotalEntryCount(), 3);
+    });
+
+    test('deleting one dictionary does not affect another', () async {
+      final id1 = await repo.insertDictionary('Dict1');
+      final id2 = await repo.insertDictionary('Dict2');
+
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '食べる',
+          glossaries: '["to eat"]',
+          dictionaryId: id1,
+        ),
+      ]);
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '飲む',
+          glossaries: '["to drink"]',
+          dictionaryId: id2,
+        ),
+      ]);
+
+      await repo.deleteDictionary(id1);
+
+      expect(await repo.getEntryCount(id2), 1);
+      expect(await repo.getTotalEntryCount(), 1);
+    });
+  });
+
+  group('DictionaryRepository — watchAllDictionaries', () {
+    test('stream emits updates when dictionaries change', () async {
+      // Collect all emissions from the stream
+      final emissions = <List<DictionaryMeta>>[];
+      final subscription = repo.watchAllDictionaries().listen((data) {
+        emissions.add(data);
+      });
+
+      // Wait briefly for initial emission
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(emissions.last, hasLength(0));
+
+      // Insert a dictionary and wait for the stream to update
+      await repo.insertDictionary('JMdict');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(emissions.last, hasLength(1));
+      expect(emissions.last.first.name, 'JMdict');
+
+      await subscription.cancel();
+    });
+  });
+}

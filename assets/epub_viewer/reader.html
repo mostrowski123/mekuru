@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EPUB Reader</title>
+    <script src="jszip.min.js"></script>
+    <script src="epub.js"></script>
+    <style>
+      * { margin: 0; padding: 0; }
+      body {
+        overflow: hidden;
+        background: white;
+      }
+      #viewer {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+    </style>
+    <style id="marginStyle">
+      .epub-container {
+        width: calc(100vw - 56px) !important;
+        height: calc(100vh - 56px) !important;
+        position: absolute !important;
+        top: 28px !important;
+        left: 28px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="viewer"></div>
+    <script src="reader_bridge.js"></script>
+  </body>
+</html>

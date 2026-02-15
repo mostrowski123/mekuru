@@ -1,0 +1,18 @@
+import 'package:drift/drift.dart';
+
+/// DictionaryEntries table — individual term entries from Yomitan dictionaries.
+///
+/// Yomitan term_bank schema:
+///   [expression, reading, definition_tags, rules, score, glossary, sequence, term_tags]
+///
+/// We index `expression` and `reading` for fast lookups.
+/// `glossaries` is stored as JSON-encoded text (`List<String>`).
+@TableIndex(name: 'idx_expression', columns: {#expression})
+@TableIndex(name: 'idx_reading', columns: {#reading})
+class DictionaryEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get expression => text()();
+  TextColumn get reading => text().withDefault(const Constant(''))();
+  TextColumn get glossaries => text()(); // JSON-encoded List<String>
+  IntColumn get dictionaryId => integer()();
+}

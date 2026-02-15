@@ -1,0 +1,65 @@
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+abstract class ReaderSettingsStorage {
+  Future<ReaderSettings?> load();
+
+  Future<void> save(ReaderSettings settings);
+}
+
+class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
+  static const _fontSizeKey = 'reader.font_size';
+  static const _verticalTextKey = 'reader.vertical_text';
+  static const _readingDirectionKey = 'reader.reading_direction';
+  static const _pageTurnAnimationKey = 'reader.page_turn_animation';
+  static const _horizontalPaddingKey = 'reader.horizontal_padding';
+  static const _verticalPaddingKey = 'reader.vertical_padding';
+  static const _swipeSensitivityKey = 'reader.swipe_sensitivity';
+
+  @override
+  Future<ReaderSettings?> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSavedSettings =
+        prefs.containsKey(_fontSizeKey) ||
+        prefs.containsKey(_verticalTextKey) ||
+        prefs.containsKey(_readingDirectionKey) ||
+        prefs.containsKey(_pageTurnAnimationKey) ||
+        prefs.containsKey(_horizontalPaddingKey) ||
+        prefs.containsKey(_verticalPaddingKey) ||
+        prefs.containsKey(_swipeSensitivityKey);
+
+    if (!hasSavedSettings) {
+      return null;
+    }
+
+    return ReaderSettings(
+      fontSize: prefs.getDouble(_fontSizeKey) ?? 18,
+      verticalText: prefs.getBool(_verticalTextKey) ?? true,
+      readingDirection: readerDirectionFromString(
+        prefs.getString(_readingDirectionKey),
+      ),
+      pageTurnAnimationEnabled: prefs.getBool(_pageTurnAnimationKey) ?? true,
+      horizontalPadding: prefs.getInt(_horizontalPaddingKey) ?? 28,
+      verticalPadding: prefs.getInt(_verticalPaddingKey) ?? 28,
+      swipeSensitivity: prefs.getDouble(_swipeSensitivityKey) ?? 0.05,
+    );
+  }
+
+  @override
+  Future<void> save(ReaderSettings settings) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_fontSizeKey, settings.fontSize);
+    await prefs.setBool(_verticalTextKey, settings.verticalText);
+    await prefs.setString(
+      _readingDirectionKey,
+      settings.readingDirection.storageValue,
+    );
+    await prefs.setBool(
+      _pageTurnAnimationKey,
+      settings.pageTurnAnimationEnabled,
+    );
+    await prefs.setInt(_horizontalPaddingKey, settings.horizontalPadding);
+    await prefs.setInt(_verticalPaddingKey, settings.verticalPadding);
+    await prefs.setDouble(_swipeSensitivityKey, settings.swipeSensitivity);
+  }
+}
