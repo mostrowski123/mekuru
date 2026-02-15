@@ -29,21 +29,15 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=Mekuru $TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Generate release keystore
-        run: |
-          keytool -genkeypair -v \
-            -keystore "$RUNNER_TEMP/release.jks" \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -alias release \
-            -storepass mekuru-ci -keypass mekuru-ci \
-            -dname "CN=Mekuru CI, O=Mekuru, L=Unknown, ST=Unknown, C=US"
+      - name: Decode release keystore
+        run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
 
       - name: Set signing environment
         run: |
           echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
-          echo "RELEASE_KEYSTORE_PASSWORD=mekuru-ci" >> "$GITHUB_ENV"
-          echo "RELEASE_KEY_ALIAS=release" >> "$GITHUB_ENV"
-          echo "RELEASE_KEY_PASSWORD=mekuru-ci" >> "$GITHUB_ENV"
+          echo "RELEASE_KEYSTORE_PASSWORD=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> "$GITHUB_ENV"
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
