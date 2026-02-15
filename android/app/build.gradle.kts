@@ -20,21 +20,31 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "moe.matthew.mekuru"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (System.getenv("RELEASE_KEYSTORE_PATH") != null) {
+            create("release") {
+                storeFile = file(System.getenv("RELEASE_KEYSTORE_PATH")!!)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")!!
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")!!
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")!!
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (System.getenv("RELEASE_KEYSTORE_PATH") != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
