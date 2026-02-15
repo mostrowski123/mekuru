@@ -19,7 +19,7 @@ class DictionaryQueryService {
   DictionaryQueryService(this._db);
 
   /// Search entries by exact expression match.
-  /// Only returns results from enabled dictionaries, ordered by dictionary id.
+  /// Only returns results from enabled dictionaries, ordered by dictionary sort order.
   Future<List<DictionaryEntry>> searchByExpression(String expression) async {
     final query =
         _db.select(_db.dictionaryEntries).join([
@@ -32,14 +32,14 @@ class DictionaryQueryService {
           ])
           ..where(_db.dictionaryEntries.expression.equals(expression))
           ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.id)]);
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
 
     final rows = await query.get();
     return rows.map((row) => row.readTable(_db.dictionaryEntries)).toList();
   }
 
   /// Search entries by reading (hiragana/katakana).
-  /// Only returns results from enabled dictionaries, ordered by dictionary id.
+  /// Only returns results from enabled dictionaries, ordered by dictionary sort order.
   Future<List<DictionaryEntry>> searchByReading(String reading) async {
     final query =
         _db.select(_db.dictionaryEntries).join([
@@ -52,7 +52,7 @@ class DictionaryQueryService {
           ])
           ..where(_db.dictionaryEntries.reading.equals(reading))
           ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.id)]);
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
 
     final rows = await query.get();
     return rows.map((row) => row.readTable(_db.dictionaryEntries)).toList();
@@ -61,7 +61,7 @@ class DictionaryQueryService {
   /// Search entries by expression OR reading.
   /// Used for the lookup bottom sheet when we don't know
   /// if the selection is kanji or kana.
-  /// Results are ordered by dictionary id (same order as Dictionary Manager).
+  /// Results are ordered by dictionary sort order (same order as Dictionary Manager).
   Future<List<DictionaryEntry>> search(String term) async {
     final query =
         _db.select(_db.dictionaryEntries).join([
@@ -77,7 +77,7 @@ class DictionaryQueryService {
                 _db.dictionaryEntries.reading.equals(term),
           )
           ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.id)]);
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
 
     final rows = await query.get();
     return rows.map((row) => row.readTable(_db.dictionaryEntries)).toList();
@@ -108,7 +108,7 @@ class DictionaryQueryService {
   }
 
   /// Search entries and include the dictionary name for each result.
-  /// Results are ordered by dictionary id (same order as Dictionary Manager).
+  /// Results are ordered by dictionary sort order (same order as Dictionary Manager).
   Future<List<DictionaryEntryWithSource>> searchWithSource(String term) async {
     final query =
         _db.select(_db.dictionaryEntries).join([
@@ -124,7 +124,7 @@ class DictionaryQueryService {
                 _db.dictionaryEntries.reading.equals(term),
           )
           ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.id)]);
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
 
     final rows = await query.get();
     return rows.map((row) {

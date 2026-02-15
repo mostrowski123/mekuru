@@ -4,11 +4,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 
 /// Screen for managing imported Yomitan dictionaries.
-class DictionaryManagerScreen extends ConsumerWidget {
+class DictionaryManagerScreen extends ConsumerStatefulWidget {
   const DictionaryManagerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DictionaryManagerScreen> createState() =>
+      _DictionaryManagerScreenState();
+}
+
+class _DictionaryManagerScreenState
+    extends ConsumerState<DictionaryManagerScreen> {
+  /// Holds the reordered list while the async DB write is in flight.
+  /// When null, the reactive stream data is used directly.
+  List<dynamic>? _localOrder;
+
+  @override
+  Widget build(BuildContext context) {
     final dictionariesAsync = ref.watch(dictionariesProvider);
     final importState = ref.watch(dictionaryImportProvider);
 
@@ -16,6 +27,11 @@ class DictionaryManagerScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Dictionary Manager'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'Help',
+            onPressed: () => _showHelpDialog(context),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Import Dictionary',
@@ -38,13 +54,33 @@ class DictionaryManagerScreen extends ConsumerWidget {
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (dictionaries) {
                 if (dictionaries.isEmpty) {
+                  _localOrder = null;
                   return _buildEmptyState();
                 }
-                return ListView.builder(
+                final displayList = _localOrder ?? dictionaries;
+                return ReorderableListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: dictionaries.length,
+                  itemCount: displayList.length,
+                  onReorder: (oldIndex, newIndex) {
+                    if (oldIndex < newIndex) newIndex -= 1;
+                    final reordered = List.of(displayList);
+                    final item = reordered.removeAt(oldIndex);
+                    reordered.insert(newIndex, item);
+                    setState(() => _localOrder = reordered);
+                    ref
+                        .read(dictionaryRepositoryProvider)
+                        .reorderDictionaries(
+                          reordered.map((d) => d.id as int).toList(),
+                        )
+                        .then((_) {
+                      if (mounted) {
+                        setState(() => _localOrder = null);
+                      }
+                    });
+                  },
                   itemBuilder: (context, index) =>
-                      _buildDictionaryTile(context, ref, dictionaries[index]),
+                      _buildDictionaryTile(context, ref, displayList[index],
+                          index: index),
                 );
               },
             ),
@@ -55,6 +91,14 @@ class DictionaryManagerScreen extends ConsumerWidget {
   }
 
   Widget _buildProgressBanner(DictionaryImportState state) {
+    final hasCollectionProgress = state.dictionariesTotal > 0;
+    final label = hasCollectionProgress
+        ? 'Importing ${state.currentDictionary ?? ""}... '
+            '(${state.dictionariesProcessed + 1}/${state.dictionariesTotal} dictionaries)'
+        : state.currentDictionary != null
+            ? '${state.currentDictionary}...'
+            : 'Importing... ${state.processedEntries}/${state.totalEntries}';
+
     return Container(
       padding: const EdgeInsets.all(16),
       color: Colors.blue.withValues(alpha: 0.1),
@@ -69,14 +113,25 @@ class DictionaryManagerScreen extends ConsumerWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 12),
-              Text(
-                'Importing... ${state.processedEntries}/${state.totalEntries}',
-                style: const TextStyle(fontWeight: FontWeight.w500),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           LinearProgressIndicator(value: state.progress),
+          if (state.totalEntries > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '${state.processedEntries}/${state.totalEntries} entries',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ),
         ],
       ),
     );
@@ -136,8 +191,9 @@ class DictionaryManagerScreen extends ConsumerWidget {
           ),
           SizedBox(height: 8),
           Text(
-            'Tap + to import a Yomitan dictionary',
+            'Tap + to import a Yomitan dictionary (.zip)\nor collection (.json)',
             style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -147,12 +203,17 @@ class DictionaryManagerScreen extends ConsumerWidget {
   Widget _buildDictionaryTile(
     BuildContext context,
     WidgetRef ref,
-    dynamic dict,
-  ) {
+    dynamic dict, {
+    required int index,
+  }) {
     return Card(
+      key: ValueKey(dict.id),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
-        leading: const Icon(Icons.menu_book),
+        leading: ReorderableDragStartListener(
+          index: index,
+          child: const Icon(Icons.drag_handle),
+        ),
         title: Text(dict.name),
         subtitle: Text(
           'Imported ${_formatDate(dict.dateImported)}',
@@ -181,6 +242,69 @@ class DictionaryManagerScreen extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  void _showHelpDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dictionary Manager'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Supported Formats',
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Yomitan dictionary (.zip)\n'
+                'Any dictionary that can be imported into Yomitan is '
+                'supported. These are .zip files containing term bank '
+                'JSON files.',
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Yomitan collection (.json)\n'
+                'A Dexie database export containing multiple dictionaries '
+                'in a single file. You can export this from Yomitan\'s '
+                'settings under Backup.',
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Dictionary Order',
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Drag dictionaries using the handle on the left to '
+                'reorder them. The order here controls the order that '
+                'definitions appear when you tap a word while reading.',
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Enabling & Disabling',
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Use the toggle switch to enable or disable a dictionary. '
+                'Disabled dictionaries are not searched when looking up words.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _importDictionary(BuildContext context, WidgetRef ref) async {

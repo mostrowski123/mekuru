@@ -371,4 +371,526 @@ void main() {
       expect(dicts.first.name, 'Unknown Dictionary');
     });
   });
+
+  // ══════════════════════════════════════════════════════════════════
+  //  Collection import tests
+  // ══════════════════════════════════════════════════════════════════
+
+  group('DictionaryImporter — importCollectionFromFile', () {
+    /// Builds a minimal Dexie collection JSON string.
+    String buildCollectionJson(
+      Map<String, List<(String, String, List<String>)>> dictEntries,
+    ) {
+      final rows = <Map<String, dynamic>>[];
+      var id = 1;
+      for (final entry in dictEntries.entries) {
+        for (final term in entry.value) {
+          rows.add({
+            'expression': term.$1,
+            'reading': term.$2,
+            'glossary': term.$3,
+            'dictionary': entry.key,
+            'id': id++,
+          });
+        }
+      }
+      return jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': rows.length},
+          ],
+          'data': [
+            {'tableName': 'terms', 'inbound': true, 'rows': rows},
+          ],
+        },
+      });
+    }
+
+    Future<String> writeCollectionFile(String content) async {
+      final dir = await Directory.systemTemp.createTemp('dict_coll_test_');
+      final file = File('${dir.path}/collection.json');
+      await file.writeAsString(content);
+      tempFiles.add(file.path);
+      return file.path;
+    }
+
+    test('imports multiple dictionaries from collection', () async {
+      final json = buildCollectionJson({
+        'JMdict': [
+          ('食べる', 'たべる', ['to eat']),
+          ('飲む', 'のむ', ['to drink']),
+        ],
+        'JMnedict': [
+          ('東京', 'とうきょう', ['Tokyo']),
+        ],
+      });
+      final filePath = await writeCollectionFile(json);
+
+      final result = await importer.importCollectionFromFile(filePath);
+
+      expect(result.importedDictionaries, ['JMdict', 'JMnedict']);
+      expect(result.skippedDictionaries, isEmpty);
+      expect(result.totalEntriesImported, 3);
+
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts.map((d) => d.name).toSet(), {'JMdict', 'JMnedict'});
+    });
+
+    test('entries are assigned to correct dictionary IDs', () async {
+      final json = buildCollectionJson({
+        'DictA': [('猫', 'ねこ', ['cat'])],
+        'DictB': [('犬', 'いぬ', ['dog'])],
+      });
+      final filePath = await writeCollectionFile(json);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final dicts = await repo.getAllDictionaries();
+      final dictA = dicts.firstWhere((d) => d.name == 'DictA');
+      final dictB = dicts.firstWhere((d) => d.name == 'DictB');
+
+      expect(await repo.getEntryCount(dictA.id), 1);
+      expect(await repo.getEntryCount(dictB.id), 1);
+    });
+
+    test('skips dictionaries that already exist by name', () async {
+      await repo.insertDictionary('JMdict');
+
+      final json = buildCollectionJson({
+        'JMdict': [('食べる', 'たべる', ['to eat'])],
+        'NewDict': [('走る', 'はしる', ['to run'])],
+      });
+      final filePath = await writeCollectionFile(json);
+
+      final skippedNames = <String>[];
+      final result = await importer.importCollectionFromFile(
+        filePath,
+        onDictionarySkipped: (name) => skippedNames.add(name),
+      );
+
+      expect(result.importedDictionaries, ['NewDict']);
+      expect(result.skippedDictionaries, ['JMdict']);
+      expect(skippedNames, ['JMdict']);
+      expect(result.totalEntriesImported, 1);
+    });
+
+    test('parses expression, reading, and glossary correctly', () async {
+      final json = buildCollectionJson({
+        'TestDict': [('食べる', 'たべる', ['to eat', 'to consume'])],
+      });
+      final filePath = await writeCollectionFile(json);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final dicts = await repo.getAllDictionaries();
+      final dict = dicts.firstWhere((d) => d.name == 'TestDict');
+
+      final entries = await (db.select(db.dictionaryEntries)
+            ..where((t) => t.dictionaryId.equals(dict.id)))
+          .get();
+
+      expect(entries, hasLength(1));
+      expect(entries.first.expression, '食べる');
+      expect(entries.first.reading, 'たべる');
+      expect(jsonDecode(entries.first.glossaries), ['to eat', 'to consume']);
+    });
+
+    test('calls onDictionaryStart with correct parameters', () async {
+      final json = buildCollectionJson({
+        'DictA': [('猫', 'ねこ', ['cat']), ('犬', 'いぬ', ['dog'])],
+        'DictB': [('鳥', 'とり', ['bird'])],
+      });
+      final filePath = await writeCollectionFile(json);
+
+      final starts = <(String, int, int, int)>[];
+      await importer.importCollectionFromFile(
+        filePath,
+        onDictionaryStart: (name, count, index, total) {
+          starts.add((name, count, index, total));
+        },
+      );
+
+      expect(starts, hasLength(2));
+      expect(starts[0], ('DictA', 2, 0, 2));
+      expect(starts[1], ('DictB', 1, 1, 2));
+    });
+
+    test('calls onProgress during batch insert', () async {
+      final json = buildCollectionJson({
+        'TestDict': [
+          ('猫', 'ねこ', ['cat']),
+          ('犬', 'いぬ', ['dog']),
+          ('鳥', 'とり', ['bird']),
+        ],
+      });
+      final filePath = await writeCollectionFile(json);
+
+      final progressCalls = <(int, int)>[];
+      await importer.importCollectionFromFile(
+        filePath,
+        onProgress: (processed, total) {
+          progressCalls.add((processed, total));
+        },
+      );
+
+      expect(progressCalls, isNotEmpty);
+      expect(progressCalls.last.$1, progressCalls.last.$2);
+    });
+
+    test('handles empty collection', () async {
+      final json = buildCollectionJson({});
+      final filePath = await writeCollectionFile(json);
+
+      final result = await importer.importCollectionFromFile(filePath);
+
+      expect(result.importedDictionaries, isEmpty);
+      expect(result.skippedDictionaries, isEmpty);
+      expect(result.totalEntriesImported, 0);
+    });
+
+    test('skips all dictionaries when all already exist', () async {
+      await repo.insertDictionary('DictA');
+      await repo.insertDictionary('DictB');
+
+      final json = buildCollectionJson({
+        'DictA': [('猫', 'ねこ', ['cat'])],
+        'DictB': [('犬', 'いぬ', ['dog'])],
+      });
+      final filePath = await writeCollectionFile(json);
+
+      final result = await importer.importCollectionFromFile(filePath);
+
+      expect(result.importedDictionaries, isEmpty);
+      expect(result.skippedDictionaries, ['DictA', 'DictB']);
+      expect(result.totalEntriesImported, 0);
+    });
+
+    test('throws for file not found', () async {
+      expect(
+        () => importer.importCollectionFromFile('/nonexistent/path.json'),
+        throwsA(isA<FileSystemException>()),
+      );
+    });
+
+    test('handles glossary with structured objects', () async {
+      final rows = [
+        {
+          'expression': '食べる',
+          'reading': 'たべる',
+          'glossary': [
+            'to eat',
+            {'type': 'structured-content', 'content': 'detailed'},
+          ],
+          'dictionary': 'StructuredDict',
+          'id': 1,
+        },
+      ];
+      final jsonStr = jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+          ],
+          'data': [
+            {'tableName': 'terms', 'inbound': true, 'rows': rows},
+          ],
+        },
+      });
+      final filePath = await writeCollectionFile(jsonStr);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final dicts = await repo.getAllDictionaries();
+      final dict = dicts.firstWhere((d) => d.name == 'StructuredDict');
+      final entries = await (db.select(db.dictionaryEntries)
+            ..where((t) => t.dictionaryId.equals(dict.id)))
+          .get();
+
+      expect(entries, hasLength(1));
+      final glossary = jsonDecode(entries.first.glossaries) as List;
+      expect(glossary, hasLength(2));
+      expect(glossary[0], 'to eat');
+      expect(glossary[1], contains('structured-content'));
+    });
+
+    test('collection skips entries with empty expression', () async {
+      final rows = [
+        {
+          'expression': '',
+          'reading': 'reading',
+          'glossary': ['meaning'],
+          'dictionary': 'TestDict',
+          'id': 1,
+        },
+        {
+          'expression': '食べる',
+          'reading': 'たべる',
+          'glossary': ['to eat'],
+          'dictionary': 'TestDict',
+          'id': 2,
+        },
+      ];
+      final jsonStr = jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': 2},
+          ],
+          'data': [
+            {'tableName': 'terms', 'inbound': true, 'rows': rows},
+          ],
+        },
+      });
+      final filePath = await writeCollectionFile(jsonStr);
+
+      final result = await importer.importCollectionFromFile(filePath);
+
+      expect(result.totalEntriesImported, 1);
+    });
+
+    test('handles deeply nested structured-content glossary', () async {
+      // Simulates dictionaries like NEW斎藤和英大辞典 that use deeply
+      // nested structured-content with tags, styles, and child arrays.
+      final rows = [
+        {
+          'expression': '試験',
+          'reading': 'しけん',
+          'glossary': [
+            {
+              'type': 'structured-content',
+              'content': [
+                'plain text',
+                {
+                  'tag': 'ul',
+                  'content': [
+                    {
+                      'tag': 'li',
+                      'style': {'fontWeight': 'bold'},
+                      'content': 'definition one',
+                    },
+                    {
+                      'tag': 'li',
+                      'content': 'definition two',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          'dictionary': 'DeepDict',
+          'id': 1,
+        },
+      ];
+      final jsonStr = jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+          ],
+          'data': [
+            {'tableName': 'terms', 'inbound': true, 'rows': rows},
+          ],
+        },
+      });
+      final filePath = await writeCollectionFile(jsonStr);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final dicts = await repo.getAllDictionaries();
+      final dict = dicts.firstWhere((d) => d.name == 'DeepDict');
+      final entries = await (db.select(db.dictionaryEntries)
+            ..where((t) => t.dictionaryId.equals(dict.id)))
+          .get();
+
+      expect(entries, hasLength(1));
+      final glossary = jsonDecode(entries.first.glossaries) as List;
+      expect(glossary, hasLength(1));
+
+      // The glossary item should be valid JSON that can be re-parsed
+      final parsed = jsonDecode(glossary[0] as String) as Map<String, dynamic>;
+      expect(parsed['type'], 'structured-content');
+      expect(parsed['content'], isList);
+      final content = parsed['content'] as List;
+      expect(content[0], 'plain text');
+
+      // Verify the nested ul/li structure survived round-trip
+      final ul = content[1] as Map<String, dynamic>;
+      expect(ul['tag'], 'ul');
+      final liItems = ul['content'] as List;
+      expect(liItems, hasLength(2));
+      expect((liItems[0] as Map)['tag'], 'li');
+      expect((liItems[0] as Map)['style'], {'fontWeight': 'bold'});
+      expect((liItems[0] as Map)['content'], 'definition one');
+      expect((liItems[1] as Map)['tag'], 'li');
+      expect((liItems[1] as Map)['content'], 'definition two');
+    });
+
+    test('handles glossary with multiple properties and nested arrays',
+        () async {
+      // Multiple top-level properties + nested array of mixed types
+      final rows = [
+        {
+          'expression': '例',
+          'reading': 'れい',
+          'glossary': [
+            {
+              'type': 'structured-content',
+              'style': {'fontSize': '14px', 'color': 'red'},
+              'content': [
+                'text',
+                42,
+                true,
+                null,
+                {'tag': 'span', 'content': 'nested'},
+              ],
+            },
+          ],
+          'dictionary': 'MultiPropDict',
+          'id': 1,
+        },
+      ];
+      final jsonStr = jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+          ],
+          'data': [
+            {'tableName': 'terms', 'inbound': true, 'rows': rows},
+          ],
+        },
+      });
+      final filePath = await writeCollectionFile(jsonStr);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final dicts = await repo.getAllDictionaries();
+      final dict = dicts.firstWhere((d) => d.name == 'MultiPropDict');
+      final entries = await (db.select(db.dictionaryEntries)
+            ..where((t) => t.dictionaryId.equals(dict.id)))
+          .get();
+
+      final glossary = jsonDecode(entries.first.glossaries) as List;
+      final parsed = jsonDecode(glossary[0] as String) as Map<String, dynamic>;
+      expect(parsed['type'], 'structured-content');
+      expect(parsed['style'], {'fontSize': '14px', 'color': 'red'});
+      final content = parsed['content'] as List;
+      expect(content[0], 'text');
+      expect(content[1], 42);
+      expect(content[2], true);
+      expect(content[3], null);
+      expect((content[4] as Map)['tag'], 'span');
+      expect((content[4] as Map)['content'], 'nested');
+    });
+
+    test('handles mixed plain string and structured glossary items', () async {
+      final rows = [
+        {
+          'expression': '混合',
+          'reading': 'こんごう',
+          'glossary': [
+            'plain meaning',
+            {'type': 'structured-content', 'content': 'rich meaning'},
+            'another plain',
+          ],
+          'dictionary': 'MixedDict',
+          'id': 1,
+        },
+      ];
+      final jsonStr = jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+          ],
+          'data': [
+            {'tableName': 'terms', 'inbound': true, 'rows': rows},
+          ],
+        },
+      });
+      final filePath = await writeCollectionFile(jsonStr);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final dicts = await repo.getAllDictionaries();
+      final dict = dicts.firstWhere((d) => d.name == 'MixedDict');
+      final entries = await (db.select(db.dictionaryEntries)
+            ..where((t) => t.dictionaryId.equals(dict.id)))
+          .get();
+
+      final glossary = jsonDecode(entries.first.glossaries) as List;
+      expect(glossary, hasLength(3));
+      expect(glossary[0], 'plain meaning');
+      // Structured item should be valid JSON
+      final parsed = jsonDecode(glossary[1] as String) as Map<String, dynamic>;
+      expect(parsed['type'], 'structured-content');
+      expect(parsed['content'], 'rich meaning');
+      expect(glossary[2], 'another plain');
+    });
+
+    test('handles glossary with boolean and numeric values in objects',
+        () async {
+      final rows = [
+        {
+          'expression': '数値',
+          'reading': 'すうち',
+          'glossary': [
+            {
+              'type': 'structured-content',
+              'data': {
+                'count': 5,
+                'active': true,
+                'label': null,
+              },
+            },
+          ],
+          'dictionary': 'NumericDict',
+          'id': 1,
+        },
+      ];
+      final jsonStr = jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+          ],
+          'data': [
+            {'tableName': 'terms', 'inbound': true, 'rows': rows},
+          ],
+        },
+      });
+      final filePath = await writeCollectionFile(jsonStr);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final dicts = await repo.getAllDictionaries();
+      final dict = dicts.firstWhere((d) => d.name == 'NumericDict');
+      final entries = await (db.select(db.dictionaryEntries)
+            ..where((t) => t.dictionaryId.equals(dict.id)))
+          .get();
+
+      final glossary = jsonDecode(entries.first.glossaries) as List;
+      final parsed = jsonDecode(glossary[0] as String) as Map<String, dynamic>;
+      expect(parsed['type'], 'structured-content');
+      final data = parsed['data'] as Map<String, dynamic>;
+      expect(data['count'], 5);
+      expect(data['active'], true);
+      expect(data['label'], null);
+    });
+  });
 }

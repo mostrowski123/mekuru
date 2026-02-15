@@ -185,6 +185,91 @@ void main() {
     });
   });
 
+  group('DictionaryRepository — sort order', () {
+    test('insertDictionary assigns sequential sort order', () async {
+      await repo.insertDictionary('Dict A');
+      await repo.insertDictionary('Dict B');
+      await repo.insertDictionary('Dict C');
+
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts.map((d) => d.name).toList(), ['Dict A', 'Dict B', 'Dict C']);
+      expect(dicts[0].sortOrder, 0);
+      expect(dicts[1].sortOrder, 1);
+      expect(dicts[2].sortOrder, 2);
+    });
+
+    test('getAllDictionaries returns in sort order', () async {
+      // Insert in order, then reorder
+      await repo.insertDictionary('Dict A');
+      await repo.insertDictionary('Dict B');
+      await repo.insertDictionary('Dict C');
+
+      final original = await repo.getAllDictionaries();
+      // Reverse: C, B, A
+      await repo.reorderDictionaries([
+        original[2].id,
+        original[1].id,
+        original[0].id,
+      ]);
+
+      final reordered = await repo.getAllDictionaries();
+      expect(
+        reordered.map((d) => d.name).toList(),
+        ['Dict C', 'Dict B', 'Dict A'],
+      );
+    });
+
+    test('reorderDictionaries persists new order', () async {
+      await repo.insertDictionary('Dict A');
+      await repo.insertDictionary('Dict B');
+      await repo.insertDictionary('Dict C');
+
+      final original = await repo.getAllDictionaries();
+      // Move C to front: C, A, B
+      await repo.reorderDictionaries([
+        original[2].id,
+        original[0].id,
+        original[1].id,
+      ]);
+
+      final reordered = await repo.getAllDictionaries();
+      expect(
+        reordered.map((d) => d.name).toList(),
+        ['Dict C', 'Dict A', 'Dict B'],
+      );
+      expect(reordered[0].sortOrder, 0);
+      expect(reordered[1].sortOrder, 1);
+      expect(reordered[2].sortOrder, 2);
+    });
+
+    test('getNextSortOrder returns 0 when no dictionaries exist', () async {
+      final next = await repo.getNextSortOrder();
+      expect(next, 0);
+    });
+
+    test('getNextSortOrder returns max + 1', () async {
+      await repo.insertDictionary('Dict A');
+      await repo.insertDictionary('Dict B');
+      final next = await repo.getNextSortOrder();
+      expect(next, 2);
+    });
+
+    test('new dictionary gets appended after reorder', () async {
+      await repo.insertDictionary('Dict A');
+      await repo.insertDictionary('Dict B');
+
+      final original = await repo.getAllDictionaries();
+      // Reverse: B, A
+      await repo.reorderDictionaries([original[1].id, original[0].id]);
+
+      // Import a new one — should append at the end
+      await repo.insertDictionary('Dict C');
+
+      final all = await repo.getAllDictionaries();
+      expect(all.map((d) => d.name).toList(), ['Dict B', 'Dict A', 'Dict C']);
+    });
+  });
+
   group('DictionaryRepository — watchAllDictionaries', () {
     test('stream emits updates when dictionaries change', () async {
       // Collect all emissions from the stream

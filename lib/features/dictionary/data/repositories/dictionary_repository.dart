@@ -9,18 +9,50 @@ class DictionaryRepository {
 
   // ──────────────── DictionaryMeta ────────────────
 
-  /// Get all imported dictionaries.
+  /// Get all imported dictionaries, ordered by sort order.
   Future<List<DictionaryMeta>> getAllDictionaries() =>
-      _db.select(_db.dictionaryMetas).get();
+      (_db.select(_db.dictionaryMetas)
+            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .get();
 
-  /// Watch all imported dictionaries (reactive stream).
+  /// Watch all imported dictionaries (reactive stream), ordered by sort order.
   Stream<List<DictionaryMeta>> watchAllDictionaries() =>
-      _db.select(_db.dictionaryMetas).watch();
+      (_db.select(_db.dictionaryMetas)
+            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .watch();
 
   /// Insert a new dictionary and return its auto-generated id.
-  Future<int> insertDictionary(String name) => _db
-      .into(_db.dictionaryMetas)
-      .insert(DictionaryMetasCompanion.insert(name: name));
+  /// Automatically assigns the next sort order (appends to end).
+  Future<int> insertDictionary(String name) async {
+    final nextOrder = await getNextSortOrder();
+    return _db.into(_db.dictionaryMetas).insert(
+          DictionaryMetasCompanion.insert(
+            name: name,
+            sortOrder: Value(nextOrder),
+          ),
+        );
+  }
+
+  /// Get the next available sort order value (max + 1).
+  Future<int> getNextSortOrder() async {
+    final maxOrder = _db.dictionaryMetas.sortOrder.max();
+    final query = _db.selectOnly(_db.dictionaryMetas)..addColumns([maxOrder]);
+    final result = await query.getSingle();
+    final currentMax = result.read(maxOrder);
+    return (currentMax ?? -1) + 1;
+  }
+
+  /// Persist a new display order for dictionaries.
+  /// [orderedIds] is the list of dictionary IDs in the desired order.
+  Future<void> reorderDictionaries(List<int> orderedIds) async {
+    await _db.transaction(() async {
+      for (var i = 0; i < orderedIds.length; i++) {
+        await (_db.update(_db.dictionaryMetas)
+              ..where((t) => t.id.equals(orderedIds[i])))
+            .write(DictionaryMetasCompanion(sortOrder: Value(i)));
+      }
+    });
+  }
 
   /// Toggle dictionary enabled/disabled.
   Future<void> toggleDictionary(int id, {required bool isEnabled}) =>
@@ -39,6 +71,11 @@ class DictionaryRepository {
       )..where((t) => t.id.equals(dictionaryId))).go();
     });
   }
+
+  /// Find a dictionary by its exact name, or null if not found.
+  Future<DictionaryMeta?> getDictionaryByName(String name) =>
+      (_db.select(_db.dictionaryMetas)..where((t) => t.name.equals(name)))
+          .getSingleOrNull();
 
   // ──────────────── DictionaryEntry ────────────────
 

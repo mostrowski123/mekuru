@@ -14,7 +14,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (migrator, from, to) async {
+          if (from < 2) {
+            await migrator.addColumn(
+              dictionaryMetas,
+              dictionaryMetas.sortOrder,
+            );
+            // Preserve existing display order by using insertion id
+            await customStatement(
+              'UPDATE dictionary_metas SET sort_order = id',
+            );
+          }
+        },
+      );
 
   static QueryExecutor _openConnection() {
     return driftDatabase(

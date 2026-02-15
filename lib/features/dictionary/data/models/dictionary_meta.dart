@@ -7,4 +7,5 @@ class DictionaryMetas extends Table {
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
   DateTimeColumn get dateImported =>
       dateTime().withDefault(currentDateAndTime)();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }

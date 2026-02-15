@@ -256,14 +256,59 @@ function previous() {
     console.log('[EPUB_BRIDGE] previous() scrolling within section');
     rendition.prev();
   } else {
-    // At first page of section — directly navigate to previous spine item
+    // At first page of section — navigate to LAST page of previous spine item
     var spineItem = book.spine.get(loc.start.index);
     if (spineItem) {
       var prevItem = spineItem.prev();
       if (prevItem) {
-        console.log('[EPUB_BRIDGE] previous() jumping to section index=' +
+        console.log('[EPUB_BRIDGE] previous() jumping to end of section index=' +
           prevItem.index + ' href=' + prevItem.href);
-        rendition.display(prevItem.href);
+        // Display the previous section, then scroll the manager's container
+        // to the last page. epub.js paginates using CSS columns; the axis
+        // determines whether pagination is horizontal or vertical.
+        // For vertical Japanese text (writing-mode: vertical-rl), the axis
+        // is "vertical" and pages scroll top-to-bottom.
+        rendition.display(prevItem.href).then(function () {
+          var manager = rendition.manager;
+          if (!manager || !manager.container) return;
+
+          var container = manager.container;
+          var axis = manager.settings.axis;
+          var dir = manager.settings.direction;
+
+          if (axis === 'vertical') {
+            // Vertical pagination (e.g. Japanese vertical text):
+            // pages go top-to-bottom, so scroll to the bottom.
+            var lastPageOffset = container.scrollHeight - container.offsetHeight;
+            if (lastPageOffset < 0) lastPageOffset = 0;
+            manager.scrollTo(0, lastPageOffset, true);
+            console.log('[EPUB_BRIDGE] previous() vertical snap scrollTop=' +
+              lastPageOffset + ' scrollHeight=' + container.scrollHeight);
+          } else {
+            // Horizontal pagination
+            var delta = manager.layout ? manager.layout.delta : container.offsetWidth;
+            if (dir === 'rtl') {
+              if (manager.settings.rtlScrollType === 'default') {
+                // "default" RTL: scrollLeft starts at scrollWidth-clientWidth
+                // and decreases toward 0. First page is at max, last page at 0.
+                manager.scrollTo(0, 0, true);
+              } else {
+                // "negative" RTL: scrollLeft is negative.
+                var maxScroll = container.scrollWidth - delta;
+                manager.scrollTo(-maxScroll, 0, true);
+              }
+              console.log('[EPUB_BRIDGE] previous() RTL snap scrollLeft=' +
+                container.scrollLeft + ' scrollWidth=' + container.scrollWidth);
+            } else {
+              var lastPageOffset = container.scrollWidth - delta;
+              if (lastPageOffset < 0) lastPageOffset = 0;
+              manager.scrollTo(lastPageOffset, 0, true);
+              console.log('[EPUB_BRIDGE] previous() LTR snap scrollLeft=' +
+                lastPageOffset + ' scrollWidth=' + container.scrollWidth);
+            }
+          }
+          rendition.reportLocation();
+        });
       } else {
         console.log('[EPUB_BRIDGE] previous() already at first section');
       }

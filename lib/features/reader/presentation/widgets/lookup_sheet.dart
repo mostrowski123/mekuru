@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 
@@ -239,13 +238,7 @@ class _DictionaryEntryItemState extends ConsumerState<_DictionaryEntryItem> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    List<String> definitions = [];
-    try {
-      final List<dynamic> jsonList = jsonDecode(widget.entry.glossaries);
-      definitions = jsonList.map((e) => e.toString()).toList();
-    } catch (_) {
-      definitions = [widget.entry.glossaries];
-    }
+    final definitions = GlossaryParser.parse(widget.entry.glossaries);
 
     return Padding(
       padding: const EdgeInsets.all(16),
