@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -142,8 +141,10 @@ class MecabService {
         debugPrint('[MeCab] Copying asset: assets/ipadic/$fileName');
         final ByteData data = await rootBundle.load('assets/ipadic/$fileName');
         final buffer = data.buffer;
-        final bytes =
-            buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        final bytes = buffer.asUint8List(
+          data.offsetInBytes,
+          data.lengthInBytes,
+        );
         File(destPath).writeAsBytesSync(bytes);
       }
     }
@@ -176,7 +177,9 @@ class MecabService {
     final cleanText = sanitized.text;
     final cleanOffset = sanitized.offset;
 
-    if (cleanText.isEmpty || cleanOffset < 0 || cleanOffset >= cleanText.length) {
+    if (cleanText.isEmpty ||
+        cleanOffset < 0 ||
+        cleanOffset >= cleanText.length) {
       debugPrint('[MeCab] Text empty or offset invalid after sanitization');
       return null;
     }
@@ -206,7 +209,10 @@ class MecabService {
     }).toList();
 
     // Diagnostic: log token surfaces and total length
-    final totalSurface = tokens.fold<int>(0, (sum, t) => sum + t.surface.length);
+    final totalSurface = tokens.fold<int>(
+      0,
+      (sum, t) => sum + t.surface.length,
+    );
     debugPrint(
       '[MeCab] ${tokens.length} content tokens (${allTokens.length} raw), '
       'total surface len=$totalSurface vs text len=${cleanText.length}',
@@ -227,17 +233,17 @@ class MecabService {
     for (final entry in aligned) {
       final t = entry.token;
       final features = t.features;
-      tokenInfoList.add(TokenInfo(
-        surface: t.surface,
-        dictionaryForm: features.length > 6 && features[6] != '*'
-            ? features[6]
-            : t.surface,
-        reading: features.length > 7 && features[7] != '*'
-            ? features[7]
-            : '',
-        pos: features.isNotEmpty ? features[0] : '',
-        startInText: entry.startInText,
-      ));
+      tokenInfoList.add(
+        TokenInfo(
+          surface: t.surface,
+          dictionaryForm: features.length > 6 && features[6] != '*'
+              ? features[6]
+              : t.surface,
+          reading: features.length > 7 && features[7] != '*' ? features[7] : '',
+          pos: features.isNotEmpty ? features[0] : '',
+          startInText: entry.startInText,
+        ),
+      );
     }
 
     // Find the aligned token whose range covers the tapped offset.
@@ -271,8 +277,13 @@ class MecabService {
       'trying fallback...',
     );
 
-    final fallbackResult =
-        _fallbackIdentify(tokens, text, charOffset, cleanOffset, tappedChar);
+    final fallbackResult = _fallbackIdentify(
+      tokens,
+      text,
+      charOffset,
+      cleanOffset,
+      tappedChar,
+    );
     if (fallbackResult == null) return null;
 
     // For fallback, find the index by matching tokenStartOffset
@@ -330,10 +341,7 @@ class MecabService {
   /// This method greedily searches for each token surface in [text] starting
   /// from a forward-moving cursor so that earlier tokens map to earlier
   /// positions.
-  List<_AlignedToken> _alignTokensToText(
-    List<TokenNode> tokens,
-    String text,
-  ) {
+  List<_AlignedToken> _alignTokensToText(List<TokenNode> tokens, String text) {
     final result = <_AlignedToken>[];
     var cursor = 0;
 
@@ -394,7 +402,12 @@ class MecabService {
         '[MeCab] Fallback found token: surface="${bestToken.surface}" '
         'at offset $bestTokenStart (distance=$bestDistance)',
       );
-      return _buildResult(bestToken, originalText, originalOffset, bestTokenStart);
+      return _buildResult(
+        bestToken,
+        originalText,
+        originalOffset,
+        bestTokenStart,
+      );
     }
 
     // Strategy 2: find the token whose surface appears in the original text

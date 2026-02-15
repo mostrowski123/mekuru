@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -14,11 +12,7 @@ class EpubSelectionData {
   final String text;
   final Rect? rect;
 
-  const EpubSelectionData({
-    required this.cfi,
-    required this.text,
-    this.rect,
-  });
+  const EpubSelectionData({required this.cfi, required this.text, this.rect});
 }
 
 /// Custom EPUB viewer backed by InAppWebView + epub.js.
@@ -73,7 +67,8 @@ class CustomEpubViewer extends StatefulWidget {
     String tappedChar,
     double x,
     double y,
-  )? onWordTapped;
+  )?
+  onWordTapped;
 
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
@@ -158,15 +153,18 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           debugPrint(
             '[EPUB_DART] chapters data empty, trying evaluateJavascript fallback',
           );
-          widget.controller.getChapters().then((chapters) {
-            debugPrint(
-              '[EPUB_DART] fallback got ${chapters.length} chapters',
-            );
-            widget.onChaptersLoaded?.call(chapters);
-          }).catchError((e) {
-            debugPrint('[EPUB_DART] chapters fallback error: $e');
-            widget.onChaptersLoaded?.call([]);
-          });
+          widget.controller
+              .getChapters()
+              .then((chapters) {
+                debugPrint(
+                  '[EPUB_DART] fallback got ${chapters.length} chapters',
+                );
+                widget.onChaptersLoaded?.call(chapters);
+              })
+              .catchError((e) {
+                debugPrint('[EPUB_DART] chapters fallback error: $e');
+                widget.onChaptersLoaded?.call([]);
+              });
         }
       },
     );
@@ -206,11 +204,13 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
             );
           }
         }
-        widget.onSelection?.call(EpubSelectionData(
-          cfi: map['cfi'] as String? ?? '',
-          text: map['text'] as String? ?? '',
-          rect: rect,
-        ));
+        widget.onSelection?.call(
+          EpubSelectionData(
+            cfi: map['cfi'] as String? ?? '',
+            text: map['text'] as String? ?? '',
+            rect: rect,
+          ),
+        );
       },
     );
 
@@ -319,8 +319,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         : '""';
     final fgHex = widget.foregroundColor != null
         ? '"#${widget.foregroundColor!.red.toRadixString(16).padLeft(2, '0')}'
-            '${widget.foregroundColor!.green.toRadixString(16).padLeft(2, '0')}'
-            '${widget.foregroundColor!.blue.toRadixString(16).padLeft(2, '0')}"'
+              '${widget.foregroundColor!.green.toRadixString(16).padLeft(2, '0')}'
+              '${widget.foregroundColor!.blue.toRadixString(16).padLeft(2, '0')}"'
         : '""';
 
     String cssParam;
@@ -331,7 +331,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     }
 
     _webViewController?.evaluateJavascript(
-      source: 'loadBook('
+      source:
+          'loadBook('
           '[${widget.epubData.join(',')}], '
           '$cfiParam, '
           '"${widget.direction}", '
@@ -355,7 +356,9 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       first = false;
       buffer.write('"${entry.key}": ');
       if (entry.value is Map) {
-        buffer.write(_jsEncodeCss(Map<String, dynamic>.from(entry.value as Map)));
+        buffer.write(
+          _jsEncodeCss(Map<String, dynamic>.from(entry.value as Map)),
+        );
       } else {
         buffer.write('"${entry.value}"');
       }
