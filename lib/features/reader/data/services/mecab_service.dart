@@ -155,6 +155,31 @@ class MecabService {
   /// Whether MeCab has been initialized.
   bool get isInitialized => _initialized;
 
+  /// Tokenize [text] into a list of surface forms.
+  ///
+  /// Returns the surface text of each meaningful token (excludes BOS/EOS
+  /// markers and whitespace symbols). Used for segmenting definition text
+  /// into individual tappable words.
+  ///
+  /// Falls back to returning [text] as a single-element list if MeCab is
+  /// not initialized or the text is empty.
+  List<String> tokenize(String text) {
+    if (!_initialized || text.isEmpty) return [text];
+
+    final allTokens = _tagger.parse(text);
+    final surfaces = allTokens
+        .where((t) {
+          final s = t.surface;
+          if (s.isEmpty || s == 'EOS' || s == 'BOS') return false;
+          if (t.features.isNotEmpty && t.features[0] == 'BOS/EOS') return false;
+          return true;
+        })
+        .map((t) => t.surface)
+        .toList();
+
+    return surfaces.isEmpty ? [text] : surfaces;
+  }
+
   /// Identify the word at [charOffset] within [text] using MeCab tokenization.
   ///
   /// Returns `null` if the offset falls on punctuation, whitespace, or if

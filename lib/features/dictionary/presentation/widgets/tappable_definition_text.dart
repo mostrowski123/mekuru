@@ -1,11 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 
 /// Renders definition text with Japanese words highlighted and tappable.
 ///
-/// Japanese character sequences (kanji, hiragana, katakana) are detected
-/// and wrapped with tap recognizers. When tapped, [onWordTap] is called
-/// with the tapped word, enabling drill-down dictionary lookups.
+/// Japanese character sequences are detected and segmented into individual
+/// words via MeCab (when available). Each word gets its own tap recognizer.
+/// Falls back to treating entire Japanese runs as single tappable units
+/// when MeCab is not initialized.
 class TappableDefinitionText extends StatefulWidget {
   const TappableDefinitionText({
     super.key,
@@ -75,6 +77,8 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
     final matches = _japanesePattern.allMatches(widget.text);
     var lastEnd = 0;
 
+    final mecab = MecabService.instance;
+
     for (final match in matches) {
       // Add non-Japanese text before this match
       if (match.start > lastEnd) {
@@ -82,15 +86,44 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
       }
 
       final japaneseText = match.group(0)!;
-      final recognizer = TapGestureRecognizer()
-        ..onTap = () => widget.onWordTap(japaneseText);
-      _recognizers.add(recognizer);
 
-      spans.add(TextSpan(
-        text: japaneseText,
-        style: tapStyle,
-        recognizer: recognizer,
-      ));
+      if (mecab.isInitialized) {
+        // Segment via MeCab into individual words
+        final tokens = mecab.tokenize(japaneseText);
+        final reconstructed = tokens.join();
+        if (reconstructed == japaneseText) {
+          for (final token in tokens) {
+            final recognizer = TapGestureRecognizer()
+              ..onTap = () => widget.onWordTap(token);
+            _recognizers.add(recognizer);
+            spans.add(TextSpan(
+              text: token,
+              style: tapStyle,
+              recognizer: recognizer,
+            ));
+          }
+        } else {
+          // Fallback if MeCab output doesn't match original text
+          final recognizer = TapGestureRecognizer()
+            ..onTap = () => widget.onWordTap(japaneseText);
+          _recognizers.add(recognizer);
+          spans.add(TextSpan(
+            text: japaneseText,
+            style: tapStyle,
+            recognizer: recognizer,
+          ));
+        }
+      } else {
+        // Fallback: treat entire run as one tappable span
+        final recognizer = TapGestureRecognizer()
+          ..onTap = () => widget.onWordTap(japaneseText);
+        _recognizers.add(recognizer);
+        spans.add(TextSpan(
+          text: japaneseText,
+          style: tapStyle,
+          recognizer: recognizer,
+        ));
+      }
 
       lastEnd = match.end;
     }

@@ -6,9 +6,10 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/kanji_stroke_order.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/shared/widgets/furigana_text.dart';
 
 /// Dictionary search screen with live fuzzy search.
 ///
@@ -79,6 +80,9 @@ class _DictionarySearchScreenState
       final results = await queryService.fuzzySearchWithSource(term);
       // Only update if this is still the latest query
       if (mounted && term == _lastQuery) {
+        if (results.isNotEmpty) {
+          ref.read(searchHistoryProvider.notifier).addSearch(term);
+        }
         setState(() {
           _results = results;
           _isSearching = false;
@@ -224,13 +228,23 @@ class _DictionarySearchScreenState
     }
 
     final fontSize = ref.watch(lookupFontSizeProvider);
+    final query = _lastQuery;
+    final isSingleKanji = query.length == 1 && _isCjk(query.codeUnitAt(0));
 
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 16),
-      itemCount: results.length,
+      itemCount: results.length + (isSingleKanji ? 1 : 0),
       separatorBuilder: (_, __) => const Divider(height: 1),
       itemBuilder: (context, index) {
-        final result = results[index];
+        // Show stroke order as the first item for single-kanji searches
+        if (isSingleKanji && index == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Center(child: KanjiStrokeOrder(kanji: query)),
+          );
+        }
+        final resultIndex = isSingleKanji ? index - 1 : index;
+        final result = results[resultIndex];
         return _SearchResultItem(
           entry: result.entry,
           dictionaryName: result.dictionaryName,
@@ -242,37 +256,103 @@ class _DictionarySearchScreenState
   }
 
   Widget _buildEmptySearchState(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.translate,
-              size: 64,
-              color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Search for a word',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+    final history = ref.watch(searchHistoryProvider);
+
+    if (history.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.translate,
+                size: 64,
+                color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Type in kanji, hiragana, katakana, or romaji',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+              const SizedBox(height: 16),
+              Text(
+                'Search for a word',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                'Type in kanji, hiragana, katakana, or romaji',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
-      ),
+      );
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+          child: Row(
+            children: [
+              Text(
+                'Recent',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: () {
+                  ref.read(searchHistoryProvider.notifier).clearAll();
+                },
+                child: const Text('Clear all'),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: history.length,
+            itemBuilder: (context, index) {
+              final term = history[index];
+              return ListTile(
+                leading: Icon(
+                  Icons.history,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                title: Text(term),
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: () {
+                    ref.read(searchHistoryProvider.notifier).removeSearch(term);
+                  },
+                ),
+                onTap: () {
+                  _controller.text = term;
+                  _controller.selection = TextSelection.fromPosition(
+                    TextPosition(offset: term.length),
+                  );
+                  _performSearch(term);
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
+}
+
+bool _isCjk(int codeUnit) {
+  return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||
+      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
 }
 
 /// Displays a single dictionary entry in search results.
@@ -327,11 +407,12 @@ class _SearchResultItem extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              FuriganaText(
+              TappableExpressionText(
                 expression: entry.expression,
                 reading: entry.reading,
                 expressionStyle: expressionStyle,
                 furiganaStyle: furiganaStyle,
+                onKanjiTap: onWordTap,
               ),
               const SizedBox(width: 8),
               Flexible(

@@ -50,6 +50,9 @@ dependencies:
   wakelock_plus: ^1.2.8
   flutter_tilt: ^3.3.2
 
+  # Kanji stroke order
+  flutter_svg: ^2.0.17
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -66,3 +69,4 @@ flutter:
   assets:
     - assets/epub_viewer/
     - assets/ipadic/
+    - assets/kanjivg/kanji/
