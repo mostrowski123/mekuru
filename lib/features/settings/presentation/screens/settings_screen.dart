@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
@@ -37,6 +38,23 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── Dictionary ──
           _SectionHeader(title: 'Dictionary'),
+          ListTile(
+            leading: Icon(
+              Icons.book_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Manage Dictionaries'),
+            subtitle: const Text('Import, reorder, enable/disable'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const DictionaryManagerScreen(),
+                ),
+              );
+            },
+          ),
           ListTile(
             leading: Icon(
               Icons.text_fields,
