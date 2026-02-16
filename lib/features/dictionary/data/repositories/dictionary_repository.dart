@@ -60,11 +60,14 @@ class DictionaryRepository {
         DictionaryMetasCompanion(isEnabled: Value(isEnabled)),
       );
 
-  /// Delete a dictionary and all its entries.
+  /// Delete a dictionary and all its entries (including pitch accents).
   Future<void> deleteDictionary(int dictionaryId) async {
     await _db.transaction(() async {
       await (_db.delete(
         _db.dictionaryEntries,
+      )..where((t) => t.dictionaryId.equals(dictionaryId))).go();
+      await (_db.delete(
+        _db.pitchAccents,
       )..where((t) => t.dictionaryId.equals(dictionaryId))).go();
       await (_db.delete(
         _db.dictionaryMetas,
@@ -114,6 +117,37 @@ class DictionaryRepository {
   Future<int> getTotalEntryCount() async {
     final count = _db.dictionaryEntries.id.count();
     final query = _db.selectOnly(_db.dictionaryEntries)..addColumns([count]);
+    final result = await query.getSingle();
+    return result.read(count) ?? 0;
+  }
+
+  // ──────────────── PitchAccent ────────────────
+
+  /// Batch insert pitch accent entries in chunks for performance.
+  Future<int> batchInsertPitchAccents(
+    List<PitchAccentsCompanion> entries, {
+    int batchSize = 10000,
+  }) async {
+    int totalInserted = 0;
+    for (var i = 0; i < entries.length; i += batchSize) {
+      final end =
+          (i + batchSize < entries.length) ? i + batchSize : entries.length;
+      final batch = entries.sublist(i, end);
+
+      await _db.batch((b) {
+        b.insertAll(_db.pitchAccents, batch);
+      });
+      totalInserted += batch.length;
+    }
+    return totalInserted;
+  }
+
+  /// Get pitch accent count for a specific dictionary.
+  Future<int> getPitchAccentCount(int dictionaryId) async {
+    final count = _db.pitchAccents.id.count();
+    final query = _db.selectOnly(_db.pitchAccents)
+      ..addColumns([count])
+      ..where(_db.pitchAccents.dictionaryId.equals(dictionaryId));
     final result = await query.getSingle();
     return result.read(count) ?? 0;
   }

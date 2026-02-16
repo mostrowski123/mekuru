@@ -1,6 +1,6 @@
 import 'dart:async';
 
-typedef SaveReaderProgress = Future<void> Function(String cfi);
+typedef SaveReaderProgress = Future<void> Function(String cfi, double progress);
 
 class ReaderProgressPersistence {
   ReaderProgressPersistence({
@@ -13,14 +13,18 @@ class ReaderProgressPersistence {
 
   Timer? _saveTimer;
   String? _queuedCfi;
+  double _queuedProgress = 0.0;
   String? _lastSavedCfi;
+  double? _lastSavedProgress;
 
-  void queueSave(String cfi) {
-    if (cfi.isEmpty || cfi == _lastSavedCfi) {
+  void queueSave(String cfi, double progress) {
+    if (cfi.isEmpty ||
+        (cfi == _lastSavedCfi && progress == _lastSavedProgress)) {
       return;
     }
 
     _queuedCfi = cfi;
+    _queuedProgress = progress;
     _saveTimer?.cancel();
     _saveTimer = Timer(debounceDuration, _flushQueuedSave);
   }
@@ -32,12 +36,16 @@ class ReaderProgressPersistence {
 
   Future<void> _flushQueuedSave() async {
     final cfiToSave = _queuedCfi;
-    if (cfiToSave == null || cfiToSave == _lastSavedCfi) {
+    if (cfiToSave == null ||
+        (cfiToSave == _lastSavedCfi &&
+            _queuedProgress == _lastSavedProgress)) {
       return;
     }
 
+    final progressToSave = _queuedProgress;
     _queuedCfi = null;
-    await _saveProgress(cfiToSave);
+    await _saveProgress(cfiToSave, progressToSave);
     _lastSavedCfi = cfiToSave;
+    _lastSavedProgress = progressToSave;
   }
 }

@@ -12,8 +12,13 @@ import 'package:mekuru/features/dictionary/data/repositories/dictionary_reposito
 class YomitanParseResult {
   final String dictionaryName;
   final List<DictionaryEntriesCompanion> entries;
+  final List<PitchAccentsCompanion> pitchAccents;
 
-  YomitanParseResult({required this.dictionaryName, required this.entries});
+  YomitanParseResult({
+    required this.dictionaryName,
+    required this.entries,
+    this.pitchAccents = const [],
+  });
 }
 
 /// Summary of a collection import operation.
@@ -21,11 +26,13 @@ class CollectionImportResult {
   final List<String> importedDictionaries;
   final List<String> skippedDictionaries;
   final int totalEntriesImported;
+  final int totalPitchAccentsImported;
 
   CollectionImportResult({
     required this.importedDictionaries,
     required this.skippedDictionaries,
     required this.totalEntriesImported,
+    this.totalPitchAccentsImported = 0,
   });
 }
 
@@ -40,9 +47,10 @@ class _IsolatePayload {
 // We use simple types (String, List, Map) that can cross isolate boundaries.
 //
 // Messages from worker → main:
-//   ['batch', List<Map<String, String>>]  — a batch of parsed terms
-//   ['done']                              — parsing complete
-//   ['error', String]                     — parsing failed
+//   ['batch', List<Map<String, String>>]        — a batch of parsed terms
+//   ['pitch_batch', List<Map<String, dynamic>>]  — a batch of parsed pitch accents
+//   ['done']                                    — parsing complete
+//   ['error', String]                           — parsing failed
 
 /// Service responsible for importing Yomitan dictionary files.
 class DictionaryImporter {
@@ -94,6 +102,14 @@ class DictionaryImporter {
       onProgress?.call(totalInserted, entriesWithId.length);
     }
 
+    // Insert pitch accents if present
+    if (parseResult.pitchAccents.isNotEmpty) {
+      final pitchWithId = parseResult.pitchAccents.map((p) {
+        return p.copyWith(dictionaryId: Value(dictionaryId));
+      }).toList();
+      await _repository.batchInsertPitchAccents(pitchWithId);
+    }
+
     return totalInserted;
   }
 
@@ -127,6 +143,9 @@ class DictionaryImporter {
     // Each entry is a lightweight map with pre-encoded glossaries JSON.
     final entriesByDict = <String, List<Map<String, String>>>{};
 
+    // Collect pitch accents streamed from the isolate, grouped by dictionary name.
+    final pitchEntriesByDict = <String, List<Map<String, dynamic>>>{};
+
     // Set up isolate communication
     final receivePort = ReceivePort();
     await Isolate.spawn(
@@ -147,6 +166,13 @@ class DictionaryImporter {
           final dictName = t['dictionary']!;
           entriesByDict.putIfAbsent(dictName, () => []).add(t);
         }
+      } else if (type == 'pitch_batch') {
+        final pitches = msg[1] as List;
+        for (final pitch in pitches) {
+          final p = pitch as Map<String, dynamic>;
+          final dictName = p['dictionary'] as String;
+          pitchEntriesByDict.putIfAbsent(dictName, () => []).add(p);
+        }
       } else if (type == 'done') {
         break;
       } else if (type == 'error') {
@@ -161,14 +187,20 @@ class DictionaryImporter {
     }
 
     // Insert each dictionary into the DB
-    final dictNames = entriesByDict.keys.toList();
+    // Merge dict names from both term entries and pitch accents.
+    final allDictNames = <String>{
+      ...entriesByDict.keys,
+      ...pitchEntriesByDict.keys,
+    }.toList();
     final importedDicts = <String>[];
     final skippedDicts = <String>[];
     int totalEntriesImported = 0;
+    int totalPitchAccentsImported = 0;
 
-    for (var i = 0; i < dictNames.length; i++) {
-      final dictName = dictNames[i];
-      final rawEntries = entriesByDict[dictName]!;
+    for (var i = 0; i < allDictNames.length; i++) {
+      final dictName = allDictNames[i];
+      final rawEntries = entriesByDict[dictName] ?? [];
+      final rawPitchEntries = pitchEntriesByDict[dictName] ?? [];
 
       // Check if dictionary already exists
       final existing = await _repository.getDictionaryByName(dictName);
@@ -178,7 +210,8 @@ class DictionaryImporter {
         continue;
       }
 
-      onDictionaryStart?.call(dictName, rawEntries.length, i, dictNames.length);
+      final totalItems = rawEntries.length + rawPitchEntries.length;
+      onDictionaryStart?.call(dictName, totalItems, i, allDictNames.length);
 
       // Insert dictionary metadata
       final dictionaryId = await _repository.insertDictionary(dictName);
@@ -202,10 +235,38 @@ class DictionaryImporter {
 
         await _repository.batchInsertEntries(batch, batchSize: batch.length);
         inserted += batch.length;
-        onProgress?.call(inserted, rawEntries.length);
+        onProgress?.call(inserted, totalItems);
       }
 
       totalEntriesImported += inserted;
+
+      // Insert pitch accents
+      if (rawPitchEntries.isNotEmpty) {
+        int pitchInserted = 0;
+        for (var j = 0; j < rawPitchEntries.length; j += batchSize) {
+          final end = (j + batchSize < rawPitchEntries.length)
+              ? j + batchSize
+              : rawPitchEntries.length;
+
+          final batch = rawPitchEntries.sublist(j, end).map((raw) {
+            return PitchAccentsCompanion.insert(
+              expression: raw['expression'] as String,
+              reading: Value(raw['reading'] as String? ?? ''),
+              downstepPosition: raw['position'] as int,
+              dictionaryId: dictionaryId,
+            );
+          }).toList();
+
+          await _repository.batchInsertPitchAccents(
+            batch,
+            batchSize: batch.length,
+          );
+          pitchInserted += batch.length;
+          onProgress?.call(inserted + pitchInserted, totalItems);
+        }
+        totalPitchAccentsImported += pitchInserted;
+      }
+
       importedDicts.add(dictName);
     }
 
@@ -213,6 +274,7 @@ class DictionaryImporter {
       importedDictionaries: importedDicts,
       skippedDictionaries: skippedDicts,
       totalEntriesImported: totalEntriesImported,
+      totalPitchAccentsImported: totalPitchAccentsImported,
     );
   }
 
@@ -258,6 +320,20 @@ class DictionaryImporter {
       bool inTermsRows = false;
       int termsRowsDepth = 0;
 
+      // Track termMeta rows array
+      bool inTermMetaRows = false;
+      int termMetaRowsDepth = 0;
+
+      // Whole-row capture for termMeta rows.
+      // Instead of tracking individual fields via SAX events, we capture
+      // the entire row object as raw JSON and decode it afterwards.
+      // This handles both flat format and Dexie $ wrapper format.
+      bool inTermMetaRow = false;
+      int metaRowCapNesting = 0;
+      StringBuffer? metaRowCapBuf;
+      final metaRowCapNeedsComma = <bool>[];
+      bool metaRowCapClosedStructure = false;
+
       // Track individual term object
       bool inTermObject = false;
       int termObjectDepth = 0;
@@ -285,13 +361,34 @@ class DictionaryImporter {
 
       // Batch accumulation
       final batch = <Map<String, String>>[];
+      final pitchBatch = <Map<String, dynamic>>[];
       const batchSize = 5000;
 
       await for (final event in eventStream) {
         switch (event.type) {
           case JsonEventType.beginObject:
             depth++;
-            if (inGlossaryArray && capNesting > 0) {
+            if (inTermMetaRow && metaRowCapNesting > 0) {
+              // Inside a termMeta row capture — nested object
+              if (metaRowCapNeedsComma.isNotEmpty &&
+                  metaRowCapNeedsComma.last) {
+                metaRowCapBuf?.write(',');
+              }
+              metaRowCapBuf?.write('{');
+              metaRowCapNesting++;
+              metaRowCapNeedsComma.add(false);
+              metaRowCapClosedStructure = false;
+            } else if (inTermMetaRows &&
+                !inTermMetaRow &&
+                depth == termMetaRowsDepth + 1) {
+              // Starting a new termMeta row — begin whole-row capture
+              inTermMetaRow = true;
+              metaRowCapBuf = StringBuffer('{');
+              metaRowCapNesting = 1;
+              metaRowCapNeedsComma.clear();
+              metaRowCapNeedsComma.add(false);
+              metaRowCapClosedStructure = false;
+            } else if (inGlossaryArray && capNesting > 0) {
               // Nested object inside a captured structure
               if (capNeedsComma.isNotEmpty && capNeedsComma.last) {
                 capBuf?.write(',');
@@ -328,7 +425,36 @@ class DictionaryImporter {
             }
 
           case JsonEventType.endObject:
-            if (inGlossaryArray && capNesting > 0) {
+            if (inTermMetaRow && metaRowCapNesting > 0) {
+              metaRowCapBuf?.write('}');
+              metaRowCapNesting--;
+              if (metaRowCapNeedsComma.isNotEmpty) {
+                metaRowCapNeedsComma.removeLast();
+              }
+              if (metaRowCapNesting == 0) {
+                // Finished capturing the entire termMeta row — decode and extract pitch data
+                _processTermMetaRow(
+                  metaRowCapBuf.toString(),
+                  pitchBatch,
+                );
+                metaRowCapBuf = null;
+                metaRowCapNeedsComma.clear();
+                inTermMetaRow = false;
+
+                if (pitchBatch.length >= batchSize) {
+                  sendPort.send([
+                    'pitch_batch',
+                    List<Map<String, dynamic>>.of(pitchBatch),
+                  ]);
+                  pitchBatch.clear();
+                }
+              } else {
+                metaRowCapClosedStructure = true;
+                if (metaRowCapNeedsComma.isNotEmpty) {
+                  metaRowCapNeedsComma.last = true;
+                }
+              }
+            } else if (inGlossaryArray && capNesting > 0) {
               capBuf?.write('}');
               capNesting--;
               if (capNeedsComma.isNotEmpty) capNeedsComma.removeLast();
@@ -377,7 +503,17 @@ class DictionaryImporter {
 
           case JsonEventType.beginArray:
             depth++;
-            if (inGlossaryArray && capNesting > 0) {
+            if (inTermMetaRow && metaRowCapNesting > 0) {
+              // Inside a termMeta row capture — nested array
+              if (metaRowCapNeedsComma.isNotEmpty &&
+                  metaRowCapNeedsComma.last) {
+                metaRowCapBuf?.write(',');
+              }
+              metaRowCapBuf?.write('[');
+              metaRowCapNesting++;
+              metaRowCapNeedsComma.add(false);
+              metaRowCapClosedStructure = false;
+            } else if (inGlossaryArray && capNesting > 0) {
               // Nested array inside a captured structure
               if (capNeedsComma.isNotEmpty && capNeedsComma.last) {
                 capBuf?.write(',');
@@ -400,6 +536,12 @@ class DictionaryImporter {
               inTermsRows = true;
               termsRowsDepth = depth;
               pendingPropertyName = null;
+            } else if (inTableObject &&
+                currentTableName == 'termMeta' &&
+                pendingPropertyName == 'rows') {
+              inTermMetaRows = true;
+              termMetaRowsDepth = depth;
+              pendingPropertyName = null;
             } else if (!inDataDataArray && pendingPropertyName == 'data') {
               // Heuristic: the inner "data" array (data.data)
               inDataDataArray = true;
@@ -408,7 +550,25 @@ class DictionaryImporter {
             }
 
           case JsonEventType.endArray:
-            if (inGlossaryArray && capNesting > 0) {
+            if (inTermMetaRow && metaRowCapNesting > 0) {
+              metaRowCapBuf?.write(']');
+              metaRowCapNesting--;
+              if (metaRowCapNeedsComma.isNotEmpty) {
+                metaRowCapNeedsComma.removeLast();
+              }
+              if (metaRowCapNesting == 0) {
+                // This shouldn't happen (rows are objects, not arrays)
+                // but handle gracefully
+                inTermMetaRow = false;
+                metaRowCapBuf = null;
+                metaRowCapNeedsComma.clear();
+              } else {
+                metaRowCapClosedStructure = true;
+                if (metaRowCapNeedsComma.isNotEmpty) {
+                  metaRowCapNeedsComma.last = true;
+                }
+              }
+            } else if (inGlossaryArray && capNesting > 0) {
               capBuf?.write(']');
               capNesting--;
               if (capNeedsComma.isNotEmpty) capNeedsComma.removeLast();
@@ -428,6 +588,8 @@ class DictionaryImporter {
               capNeedsComma.clear();
               capClosedStructure = false;
               currentKey = null;
+            } else if (inTermMetaRows && depth == termMetaRowsDepth) {
+              inTermMetaRows = false;
             } else if (inTermsRows && depth == termsRowsDepth) {
               inTermsRows = false;
             } else if (inDataDataArray && depth == dataDataDepth) {
@@ -436,7 +598,17 @@ class DictionaryImporter {
             depth--;
 
           case JsonEventType.propertyName:
-            if (inGlossaryArray && capNesting > 0) {
+            if (inTermMetaRow && metaRowCapNesting > 0) {
+              if (metaRowCapNeedsComma.isNotEmpty &&
+                  metaRowCapNeedsComma.last) {
+                metaRowCapBuf?.write(',');
+              }
+              metaRowCapBuf?.write('${jsonEncode(event.value)}:');
+              if (metaRowCapNeedsComma.isNotEmpty) {
+                metaRowCapNeedsComma.last = false;
+              }
+              metaRowCapClosedStructure = false;
+            } else if (inGlossaryArray && capNesting > 0) {
               if (capNeedsComma.isNotEmpty && capNeedsComma.last) {
                 capBuf?.write(',');
               }
@@ -451,7 +623,15 @@ class DictionaryImporter {
             }
 
           case JsonEventType.propertyValue:
-            if (inGlossaryArray && capNesting > 0) {
+            if (inTermMetaRow && metaRowCapNesting > 0) {
+              if (!metaRowCapClosedStructure) {
+                metaRowCapBuf?.write(jsonEncode(event.value));
+              }
+              metaRowCapClosedStructure = false;
+              if (metaRowCapNeedsComma.isNotEmpty) {
+                metaRowCapNeedsComma.last = true;
+              }
+            } else if (inGlossaryArray && capNesting > 0) {
               // propertyValue fires after the value's structure events for
               // non-primitive values (objects/arrays). In that case
               // event.value is null and capClosedStructure is true — the
@@ -482,7 +662,19 @@ class DictionaryImporter {
             }
 
           case JsonEventType.arrayElement:
-            if (inGlossaryArray && capNesting > 0) {
+            if (inTermMetaRow && metaRowCapNesting > 0) {
+              if (!metaRowCapClosedStructure) {
+                if (metaRowCapNeedsComma.isNotEmpty &&
+                    metaRowCapNeedsComma.last) {
+                  metaRowCapBuf?.write(',');
+                }
+                metaRowCapBuf?.write(jsonEncode(event.value));
+              }
+              metaRowCapClosedStructure = false;
+              if (metaRowCapNeedsComma.isNotEmpty) {
+                metaRowCapNeedsComma.last = true;
+              }
+            } else if (inGlossaryArray && capNesting > 0) {
               // arrayElement fires after structure events for non-primitive
               // values. If capClosedStructure is true, JSON was already
               // written — just mark that next element needs a comma.
@@ -503,14 +695,84 @@ class DictionaryImporter {
         }
       }
 
-      // Send remaining batch
+      // Send remaining batches
       if (batch.isNotEmpty) {
         sendPort.send(['batch', batch]);
+      }
+      if (pitchBatch.isNotEmpty) {
+        sendPort.send(['pitch_batch', pitchBatch]);
       }
 
       sendPort.send(['done']);
     } catch (e) {
       sendPort.send(['error', e.toString()]);
+    }
+  }
+
+  /// Decode a captured termMeta row JSON and extract pitch accent data.
+  ///
+  /// Handles two formats:
+  /// - Flat: `{"expression":"...","mode":"pitch","data":{...},"dictionary":"..."}`
+  /// - Dexie $ wrapper: `{"$":[1,{"expression":"...","mode":"pitch",...}],"$types":{...}}`
+  static void _processTermMetaRow(
+    String rowJson,
+    List<Map<String, dynamic>> pitchBatch,
+  ) {
+    try {
+      final row = jsonDecode(rowJson) as Map<String, dynamic>;
+
+      // Detect format: Dexie $ wrapper or flat
+      Map<String, dynamic> inner;
+      if (row.containsKey(r'$') && row[r'$'] is List) {
+        // Dexie wrapper: actual data is at $[1]
+        final dollarArray = row[r'$'] as List;
+        if (dollarArray.length < 2 || dollarArray[1] is! Map) return;
+        inner = dollarArray[1] as Map<String, dynamic>;
+      } else if (row.containsKey('expression')) {
+        // Flat format
+        inner = row;
+      } else {
+        return;
+      }
+
+      final expression = inner['expression']?.toString();
+      final mode = inner['mode']?.toString();
+      final dictionary = inner['dictionary']?.toString() ?? 'Unknown Dictionary';
+      if (expression == null || expression.isEmpty || mode != 'pitch') return;
+
+      final data = inner['data'];
+      if (data == null) return;
+
+      // data can be a single object or an array of objects
+      final dataItems = <Map<String, dynamic>>[];
+      if (data is Map<String, dynamic>) {
+        dataItems.add(data);
+      } else if (data is List) {
+        for (final item in data) {
+          if (item is Map<String, dynamic>) {
+            dataItems.add(item);
+          }
+        }
+      }
+
+      for (final dataItem in dataItems) {
+        final reading = dataItem['reading']?.toString() ?? '';
+        final pitches = dataItem['pitches'];
+        if (pitches is! List) continue;
+
+        for (final p in pitches) {
+          if (p is Map && p['position'] is int) {
+            pitchBatch.add({
+              'expression': expression,
+              'reading': reading,
+              'position': p['position'] as int,
+              'dictionary': dictionary,
+            });
+          }
+        }
+      }
+    } catch (_) {
+      // Skip malformed rows
     }
   }
 
@@ -573,6 +835,56 @@ class DictionaryImporter {
       }
     }
 
-    return YomitanParseResult(dictionaryName: dictionaryName, entries: entries);
+    // 3. Parse all term_meta_bank_*.json files for pitch accents
+    final pitchAccents = <PitchAccentsCompanion>[];
+
+    final metaBankFiles = archive.files
+        .where(
+          (f) =>
+              f.name.startsWith('term_meta_bank_') &&
+              f.name.endsWith('.json'),
+        )
+        .toList();
+
+    for (final metaBank in metaBankFiles) {
+      final content = utf8.decode(metaBank.content as List<int>);
+      final metaArray = jsonDecode(content) as List<dynamic>;
+
+      for (final meta in metaArray) {
+        if (meta is! List || meta.length < 3) continue;
+
+        final expression = meta[0]?.toString() ?? '';
+        final mode = meta[1]?.toString() ?? '';
+        if (expression.isEmpty || mode != 'pitch') continue;
+
+        final data = meta[2];
+        if (data is! Map) continue;
+
+        final reading = data['reading']?.toString() ?? '';
+        final pitches = data['pitches'];
+        if (pitches is! List) continue;
+
+        for (final pitch in pitches) {
+          if (pitch is! Map) continue;
+          final position = pitch['position'];
+          if (position is! int) continue;
+
+          pitchAccents.add(
+            PitchAccentsCompanion.insert(
+              expression: expression,
+              reading: Value(reading),
+              downstepPosition: position,
+              dictionaryId: 0, // Placeholder — will be replaced after insert
+            ),
+          );
+        }
+      }
+    }
+
+    return YomitanParseResult(
+      dictionaryName: dictionaryName,
+      entries: entries,
+      pitchAccents: pitchAccents,
+    );
   }
 }

@@ -1,16 +1,84 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart';
+
+// ──────────────── Sort ────────────────
+
+/// Sort orders available in the library.
+enum LibrarySortOrder { dateAdded, lastRead, alphabetical }
+
+LibrarySortOrder _sortOrderFromString(String? value) => switch (value) {
+      'lastRead' => LibrarySortOrder.lastRead,
+      'alphabetical' => LibrarySortOrder.alphabetical,
+      _ => LibrarySortOrder.dateAdded,
+    };
+
+String librarySortLabel(LibrarySortOrder order) => switch (order) {
+      LibrarySortOrder.dateAdded => 'Date imported',
+      LibrarySortOrder.lastRead => 'Recently read',
+      LibrarySortOrder.alphabetical => 'Alphabetical',
+    };
+
+/// Manages the library sort order, persisted via app settings.
+class LibrarySortNotifier extends Notifier<LibrarySortOrder> {
+  bool _hasLoaded = false;
+
+  @override
+  LibrarySortOrder build() => LibrarySortOrder.dateAdded;
+
+  Future<void> loadPersistedSort() async {
+    if (_hasLoaded) return;
+    _hasLoaded = true;
+    final stored = await ref.read(appSettingsStorageProvider).loadSortOrder();
+    if (stored != null) state = _sortOrderFromString(stored);
+  }
+
+  void setSortOrder(LibrarySortOrder order) {
+    state = order;
+    unawaited(ref.read(appSettingsStorageProvider).saveSortOrder(order.name));
+  }
+}
+
+final librarySortProvider =
+    NotifierProvider<LibrarySortNotifier, LibrarySortOrder>(
+  LibrarySortNotifier.new,
+);
+
+// ──────────────── Books ────────────────
 
 /// Provider for the book repository.
 final bookRepositoryProvider = Provider<BookRepository>((ref) {
   return BookRepository(ref.watch(databaseProvider));
 });
 
-/// Reactive stream of all books in the library.
+/// Reactive stream of all books in the library, sorted by the current sort
+/// order.
 final booksProvider = StreamProvider<List<Book>>((ref) {
-  return ref.watch(bookRepositoryProvider).watchAllBooks();
+  final sortOrder = ref.watch(librarySortProvider);
+  final stream = ref.watch(bookRepositoryProvider).watchAllBooks();
+  return stream.map((books) {
+    switch (sortOrder) {
+      case LibrarySortOrder.dateAdded:
+        books.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+      case LibrarySortOrder.lastRead:
+        books.sort((a, b) {
+          // Books never opened go to the end.
+          if (a.lastReadAt == null && b.lastReadAt == null) return 0;
+          if (a.lastReadAt == null) return 1;
+          if (b.lastReadAt == null) return -1;
+          return b.lastReadAt!.compareTo(a.lastReadAt!);
+        });
+      case LibrarySortOrder.alphabetical:
+        books.sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
+    }
+    return books;
+  });
 });
 
 /// State for book import progress.

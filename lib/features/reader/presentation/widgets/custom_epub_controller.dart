@@ -76,6 +76,11 @@ class CustomEpubController {
     _eval('setMargins($horizontal, $vertical)');
   }
 
+  void setBodyBackground(Color color) {
+    final hex = _colorToHex(color);
+    _eval('setBodyBackground("$hex")');
+  }
+
   // ── Search ──────────────────────────────────────────────────────────
 
   Completer<List<Map<String, dynamic>>>? _searchCompleter;

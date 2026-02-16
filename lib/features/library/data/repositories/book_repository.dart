@@ -86,16 +86,33 @@ class BookRepository {
 
   // ──────────────── Update ────────────────
 
-  /// Update reading progress (CFI / scroll position).
-  Future<void> updateProgress(int bookId, String cfi) =>
+  /// Update reading progress (CFI / scroll position and percentage).
+  Future<void> updateProgress(int bookId, String cfi, {double? progress}) =>
       (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
-        BooksCompanion(lastReadCfi: Value(cfi)),
+        BooksCompanion(
+          lastReadCfi: Value(cfi),
+          readProgress:
+              progress != null ? Value(progress) : const Value.absent(),
+          lastReadAt: Value(DateTime.now()),
+        ),
       );
 
   /// Update total pages count.
   Future<void> updateTotalPages(int bookId, int totalPages) =>
       (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(totalPages: Value(totalPages)),
+      );
+
+  /// Update the book title (rename).
+  Future<void> updateTitle(int bookId, String title) =>
+      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+        BooksCompanion(title: Value(title)),
+      );
+
+  /// Update the cover image path (custom cover).
+  Future<void> updateCoverImagePath(int bookId, String? path) =>
+      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+        BooksCompanion(coverImagePath: Value(path)),
       );
 
   // ──────────────── Delete ────────────────

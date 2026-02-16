@@ -82,6 +82,34 @@ void main() {
       expect(book!.lastReadCfi, 'epubcfi(/6/14[ch7]!/4/2/1:0)');
     });
 
+    test('updateProgress with progress updates readProgress', () async {
+      final id = await db
+          .into(db.books)
+          .insert(BooksCompanion.insert(title: 'Test', filePath: '/test'));
+
+      await repo.updateProgress(
+        id,
+        'epubcfi(/6/14[ch7]!/4/2/1:0)',
+        progress: 0.42,
+      );
+
+      final book = await repo.getBookById(id);
+      expect(book!.lastReadCfi, 'epubcfi(/6/14[ch7]!/4/2/1:0)');
+      expect(book.readProgress, closeTo(0.42, 0.001));
+    });
+
+    test('updateProgress without progress leaves readProgress unchanged',
+        () async {
+      final id = await db
+          .into(db.books)
+          .insert(BooksCompanion.insert(title: 'Test', filePath: '/test'));
+
+      await repo.updateProgress(id, 'epubcfi(/6/2)');
+
+      final book = await repo.getBookById(id);
+      expect(book!.readProgress, 0.0);
+    });
+
     test('updateTotalPages updates totalPages', () async {
       final id = await db
           .into(db.books)

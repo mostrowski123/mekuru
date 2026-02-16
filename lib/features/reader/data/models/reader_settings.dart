@@ -12,6 +12,20 @@ extension ReaderDirectionStorage on ReaderDirection {
   String get storageValue => name;
 }
 
+enum ColorMode { normal, sepia, dark }
+
+ColorMode colorModeFromString(String? value) {
+  return switch (value) {
+    'sepia' => ColorMode.sepia,
+    'dark' => ColorMode.dark,
+    _ => ColorMode.normal,
+  };
+}
+
+extension ColorModeStorage on ColorMode {
+  String get storageValue => name;
+}
+
 /// Reader display and interaction preferences.
 class ReaderSettings {
   final double fontSize;
@@ -25,6 +39,13 @@ class ReaderSettings {
   /// Lower values require less finger movement to trigger a swipe.
   final double swipeSensitivity;
 
+  final ColorMode colorMode;
+  final bool keepScreenOn;
+
+  /// Sepia warmth level (0.0 = almost white, 1.0 = full sepia). Only used
+  /// when [colorMode] is [ColorMode.sepia].
+  final double sepiaIntensity;
+
   const ReaderSettings({
     this.fontSize = 18,
     this.verticalText = true,
@@ -33,6 +54,9 @@ class ReaderSettings {
     this.horizontalPadding = 28,
     this.verticalPadding = 28,
     this.swipeSensitivity = 0.05,
+    this.colorMode = ColorMode.normal,
+    this.keepScreenOn = false,
+    this.sepiaIntensity = 0.5,
   });
 
   ReaderSettings copyWith({
@@ -43,6 +67,9 @@ class ReaderSettings {
     int? horizontalPadding,
     int? verticalPadding,
     double? swipeSensitivity,
+    ColorMode? colorMode,
+    bool? keepScreenOn,
+    double? sepiaIntensity,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -53,6 +80,9 @@ class ReaderSettings {
       horizontalPadding: horizontalPadding ?? this.horizontalPadding,
       verticalPadding: verticalPadding ?? this.verticalPadding,
       swipeSensitivity: swipeSensitivity ?? this.swipeSensitivity,
+      colorMode: colorMode ?? this.colorMode,
+      keepScreenOn: keepScreenOn ?? this.keepScreenOn,
+      sepiaIntensity: sepiaIntensity ?? this.sepiaIntensity,
     );
   }
 }

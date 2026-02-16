@@ -4,7 +4,10 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
+import 'package:mekuru/shared/widgets/furigana_text.dart';
+import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 
 class LookupSheet extends ConsumerStatefulWidget {
   const LookupSheet({
@@ -32,11 +35,13 @@ class LookupSheet extends ConsumerStatefulWidget {
 
 class _LookupSheetState extends ConsumerState<LookupSheet> {
   late Future<List<DictionaryEntryWithSource>> _searchResultsFuture;
+  late Future<List<PitchAccentResult>> _pitchAccentsFuture;
 
   @override
   void initState() {
     super.initState();
     _searchResultsFuture = _searchWithFallback();
+    _pitchAccentsFuture = _searchPitchAccents();
   }
 
   /// Search by dictionary form first; if no results, try surface form.
@@ -49,6 +54,20 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     if (widget.surfaceForm != null &&
         widget.surfaceForm != widget.selectedText) {
       return queryService.searchWithSource(widget.surfaceForm!);
+    }
+    return results;
+  }
+
+  /// Search pitch accents by expression; fallback to surface form.
+  Future<List<PitchAccentResult>> _searchPitchAccents() async {
+    final queryService = ref.read(dictionaryQueryServiceProvider);
+    final results =
+        await queryService.searchPitchAccents(widget.selectedText);
+    if (results.isNotEmpty) return results;
+
+    if (widget.surfaceForm != null &&
+        widget.surfaceForm != widget.selectedText) {
+      return queryService.searchPitchAccents(widget.surfaceForm!);
     }
     return results;
   }
@@ -143,6 +162,8 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     BuildContext context,
     ScrollController? scrollController,
   ) {
+    final fontSize = ref.watch(lookupFontSizeProvider);
+
     return FutureBuilder<List<DictionaryEntryWithSource>>(
       future: _searchResultsFuture,
       builder: (context, snapshot) {
@@ -157,22 +178,54 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
           return const Center(child: Text('No definitions found.'));
         }
 
-        return ListView.separated(
-          controller: scrollController,
-          shrinkWrap: widget.showAtTop,
-          itemCount: results.length,
-          separatorBuilder: (context, index) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final result = results[index];
-            return _DictionaryEntryItem(
-              entry: result.entry,
-              dictionaryName: result.dictionaryName,
-              sentenceContext: widget.sentenceContext,
+        return FutureBuilder<List<PitchAccentResult>>(
+          future: _pitchAccentsFuture,
+          builder: (context, pitchSnapshot) {
+            final allPitchAccents = pitchSnapshot.data ?? [];
+
+            return ListView.separated(
+              controller: scrollController,
+              shrinkWrap: widget.showAtTop,
+              itemCount: results.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final result = results[index];
+                // Filter pitch accents matching this entry's reading
+                final entryPitchAccents = _filterPitchAccents(
+                  allPitchAccents,
+                  result.entry,
+                );
+                return _DictionaryEntryItem(
+                  entry: result.entry,
+                  dictionaryName: result.dictionaryName,
+                  sentenceContext: widget.sentenceContext,
+                  pitchAccents: entryPitchAccents,
+                  fontSize: fontSize,
+                );
+              },
             );
           },
         );
       },
     );
+  }
+
+  /// Filter pitch accents to match this entry's reading or expression.
+  List<PitchAccentResult> _filterPitchAccents(
+    List<PitchAccentResult> allPitchAccents,
+    DictionaryEntry entry,
+  ) {
+    if (allPitchAccents.isEmpty) return [];
+
+    return allPitchAccents.where((p) {
+      // Match if pitch reading matches entry reading
+      if (entry.reading.isNotEmpty && p.reading == entry.reading) return true;
+      // Match if pitch reading matches expression (for kana-only words)
+      if (p.reading == entry.expression) return true;
+      // Match if pitch has no reading (legacy data)
+      if (p.reading.isEmpty) return true;
+      return false;
+    }).toList();
   }
 }
 
@@ -181,11 +234,15 @@ class _DictionaryEntryItem extends ConsumerStatefulWidget {
     required this.entry,
     required this.dictionaryName,
     this.sentenceContext,
+    this.pitchAccents = const [],
+    this.fontSize = 16.0,
   });
 
   final DictionaryEntry entry;
   final String dictionaryName;
   final String? sentenceContext;
+  final List<PitchAccentResult> pitchAccents;
+  final double fontSize;
 
   @override
   ConsumerState<_DictionaryEntryItem> createState() =>
@@ -237,55 +294,69 @@ class _DictionaryEntryItemState extends ConsumerState<_DictionaryEntryItem> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    final fs = widget.fontSize;
     final definitions = GlossaryParser.parse(widget.entry.glossaries);
+
+    final expressionStyle = TextStyle(
+      fontSize: fs * 1.25,
+      fontWeight: FontWeight.bold,
+      color: theme.colorScheme.onSurface,
+    );
+
+    final furiganaStyle = TextStyle(
+      fontSize: fs * 0.7,
+      fontWeight: FontWeight.w400,
+      color: theme.colorScheme.onSurface,
+      height: 1.0,
+    );
+
+    final badgeStyle = TextStyle(
+      fontSize: fs * 0.75,
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+
+    final definitionStyle = TextStyle(
+      fontSize: fs,
+      color: theme.colorScheme.onSurface,
+    );
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Row 1: Furigana + expression, dictionary badge, bookmark button
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          widget.entry.expression,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            widget.dictionaryName,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
+                    FuriganaText(
+                      expression: widget.entry.expression,
+                      reading: widget.entry.reading,
+                      expressionStyle: expressionStyle,
+                      furiganaStyle: furiganaStyle,
                     ),
-                    if (widget.entry.reading.isNotEmpty &&
-                        widget.entry.reading != widget.entry.expression)
-                      Text(
-                        widget.entry.reading,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.primary,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          widget.dictionaryName,
+                          style: badgeStyle,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -298,6 +369,14 @@ class _DictionaryEntryItemState extends ConsumerState<_DictionaryEntryItem> {
               ),
             ],
           ),
+
+          // Row 2: Pitch accent diagrams (if available)
+          if (widget.pitchAccents.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _buildPitchAccents(theme, fs),
+          ],
+
+          // Row 3+: Definitions
           const SizedBox(height: 8),
           ...definitions.map(
             (def) => Padding(
@@ -307,15 +386,76 @@ class _DictionaryEntryItemState extends ConsumerState<_DictionaryEntryItem> {
                 children: [
                   Text(
                     '- ',
-                    style: TextStyle(color: theme.colorScheme.outline),
+                    style: TextStyle(
+                      color: theme.colorScheme.outline,
+                      fontSize: fs,
+                    ),
                   ),
-                  Expanded(child: Text(def)),
+                  Expanded(child: Text(def, style: definitionStyle)),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPitchAccents(ThemeData theme, double fontSize) {
+    // Group by dictionary name for display
+    final bySource = <String, List<PitchAccentResult>>{};
+    for (final p in widget.pitchAccents) {
+      bySource.putIfAbsent(p.dictionaryName, () => []).add(p);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: bySource.entries.map((entry) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Pitch diagrams
+              Expanded(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  children: entry.value.map((p) {
+                    return PitchAccentDiagram(
+                      reading: p.reading,
+                      downstepPosition: p.downstepPosition,
+                      fontSize: fontSize * 0.9,
+                      color: theme.colorScheme.onSurface,
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Source tag
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 1,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant,
+                  ),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  entry.key,
+                  style: TextStyle(
+                    fontSize: fontSize * 0.6,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }

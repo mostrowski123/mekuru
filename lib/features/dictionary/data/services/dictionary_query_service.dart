@@ -12,6 +12,19 @@ class DictionaryEntryWithSource {
   });
 }
 
+/// A pitch accent result with its source dictionary name.
+class PitchAccentResult {
+  final String reading;
+  final int downstepPosition;
+  final String dictionaryName;
+
+  const PitchAccentResult({
+    required this.reading,
+    required this.downstepPosition,
+    required this.dictionaryName,
+  });
+}
+
 /// Service for querying dictionary entries.
 class DictionaryQueryService {
   final AppDatabase _db;
@@ -132,6 +145,34 @@ class DictionaryQueryService {
       final meta = row.readTable(_db.dictionaryMetas);
       return DictionaryEntryWithSource(
         entry: entry,
+        dictionaryName: meta.name,
+      );
+    }).toList();
+  }
+
+  /// Search pitch accents by expression.
+  /// Only returns results from enabled dictionaries, ordered by dictionary sort order.
+  Future<List<PitchAccentResult>> searchPitchAccents(String expression) async {
+    final query =
+        _db.select(_db.pitchAccents).join([
+            innerJoin(
+              _db.dictionaryMetas,
+              _db.dictionaryMetas.id.equalsExp(
+                _db.pitchAccents.dictionaryId,
+              ),
+            ),
+          ])
+          ..where(_db.pitchAccents.expression.equals(expression))
+          ..where(_db.dictionaryMetas.isEnabled.equals(true))
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final pitch = row.readTable(_db.pitchAccents);
+      final meta = row.readTable(_db.dictionaryMetas);
+      return PitchAccentResult(
+        reading: pitch.reading,
+        downstepPosition: pitch.downstepPosition,
         dictionaryName: meta.name,
       );
     }).toList();

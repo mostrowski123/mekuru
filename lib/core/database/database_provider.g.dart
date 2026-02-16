@@ -75,6 +75,18 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _readProgressMeta = const VerificationMeta(
+    'readProgress',
+  );
+  @override
+  late final GeneratedColumn<double> readProgress = GeneratedColumn<double>(
+    'read_progress',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   static const VerificationMeta _dateAddedMeta = const VerificationMeta(
     'dateAdded',
   );
@@ -87,6 +99,17 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _lastReadAtMeta = const VerificationMeta(
+    'lastReadAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastReadAt = GeneratedColumn<DateTime>(
+    'last_read_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -95,7 +118,9 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     coverImagePath,
     totalPages,
     lastReadCfi,
+    readProgress,
     dateAdded,
+    lastReadAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -152,10 +177,28 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('read_progress')) {
+      context.handle(
+        _readProgressMeta,
+        readProgress.isAcceptableOrUnknown(
+          data['read_progress']!,
+          _readProgressMeta,
+        ),
+      );
+    }
     if (data.containsKey('date_added')) {
       context.handle(
         _dateAddedMeta,
         dateAdded.isAcceptableOrUnknown(data['date_added']!, _dateAddedMeta),
+      );
+    }
+    if (data.containsKey('last_read_at')) {
+      context.handle(
+        _lastReadAtMeta,
+        lastReadAt.isAcceptableOrUnknown(
+          data['last_read_at']!,
+          _lastReadAtMeta,
+        ),
       );
     }
     return context;
@@ -191,10 +234,18 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.string,
         data['${effectivePrefix}last_read_cfi'],
       ),
+      readProgress: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}read_progress'],
+      )!,
       dateAdded: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}date_added'],
       )!,
+      lastReadAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_read_at'],
+      ),
     );
   }
 
@@ -211,7 +262,9 @@ class Book extends DataClass implements Insertable<Book> {
   final String? coverImagePath;
   final int totalPages;
   final String? lastReadCfi;
+  final double readProgress;
   final DateTime dateAdded;
+  final DateTime? lastReadAt;
   const Book({
     required this.id,
     required this.title,
@@ -219,7 +272,9 @@ class Book extends DataClass implements Insertable<Book> {
     this.coverImagePath,
     required this.totalPages,
     this.lastReadCfi,
+    required this.readProgress,
     required this.dateAdded,
+    this.lastReadAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -234,7 +289,11 @@ class Book extends DataClass implements Insertable<Book> {
     if (!nullToAbsent || lastReadCfi != null) {
       map['last_read_cfi'] = Variable<String>(lastReadCfi);
     }
+    map['read_progress'] = Variable<double>(readProgress);
     map['date_added'] = Variable<DateTime>(dateAdded);
+    if (!nullToAbsent || lastReadAt != null) {
+      map['last_read_at'] = Variable<DateTime>(lastReadAt);
+    }
     return map;
   }
 
@@ -250,7 +309,11 @@ class Book extends DataClass implements Insertable<Book> {
       lastReadCfi: lastReadCfi == null && nullToAbsent
           ? const Value.absent()
           : Value(lastReadCfi),
+      readProgress: Value(readProgress),
       dateAdded: Value(dateAdded),
+      lastReadAt: lastReadAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReadAt),
     );
   }
 
@@ -266,7 +329,9 @@ class Book extends DataClass implements Insertable<Book> {
       coverImagePath: serializer.fromJson<String?>(json['coverImagePath']),
       totalPages: serializer.fromJson<int>(json['totalPages']),
       lastReadCfi: serializer.fromJson<String?>(json['lastReadCfi']),
+      readProgress: serializer.fromJson<double>(json['readProgress']),
       dateAdded: serializer.fromJson<DateTime>(json['dateAdded']),
+      lastReadAt: serializer.fromJson<DateTime?>(json['lastReadAt']),
     );
   }
   @override
@@ -279,7 +344,9 @@ class Book extends DataClass implements Insertable<Book> {
       'coverImagePath': serializer.toJson<String?>(coverImagePath),
       'totalPages': serializer.toJson<int>(totalPages),
       'lastReadCfi': serializer.toJson<String?>(lastReadCfi),
+      'readProgress': serializer.toJson<double>(readProgress),
       'dateAdded': serializer.toJson<DateTime>(dateAdded),
+      'lastReadAt': serializer.toJson<DateTime?>(lastReadAt),
     };
   }
 
@@ -290,7 +357,9 @@ class Book extends DataClass implements Insertable<Book> {
     Value<String?> coverImagePath = const Value.absent(),
     int? totalPages,
     Value<String?> lastReadCfi = const Value.absent(),
+    double? readProgress,
     DateTime? dateAdded,
+    Value<DateTime?> lastReadAt = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -300,7 +369,9 @@ class Book extends DataClass implements Insertable<Book> {
         : this.coverImagePath,
     totalPages: totalPages ?? this.totalPages,
     lastReadCfi: lastReadCfi.present ? lastReadCfi.value : this.lastReadCfi,
+    readProgress: readProgress ?? this.readProgress,
     dateAdded: dateAdded ?? this.dateAdded,
+    lastReadAt: lastReadAt.present ? lastReadAt.value : this.lastReadAt,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -316,7 +387,13 @@ class Book extends DataClass implements Insertable<Book> {
       lastReadCfi: data.lastReadCfi.present
           ? data.lastReadCfi.value
           : this.lastReadCfi,
+      readProgress: data.readProgress.present
+          ? data.readProgress.value
+          : this.readProgress,
       dateAdded: data.dateAdded.present ? data.dateAdded.value : this.dateAdded,
+      lastReadAt: data.lastReadAt.present
+          ? data.lastReadAt.value
+          : this.lastReadAt,
     );
   }
 
@@ -329,7 +406,9 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('coverImagePath: $coverImagePath, ')
           ..write('totalPages: $totalPages, ')
           ..write('lastReadCfi: $lastReadCfi, ')
-          ..write('dateAdded: $dateAdded')
+          ..write('readProgress: $readProgress, ')
+          ..write('dateAdded: $dateAdded, ')
+          ..write('lastReadAt: $lastReadAt')
           ..write(')'))
         .toString();
   }
@@ -342,7 +421,9 @@ class Book extends DataClass implements Insertable<Book> {
     coverImagePath,
     totalPages,
     lastReadCfi,
+    readProgress,
     dateAdded,
+    lastReadAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -354,7 +435,9 @@ class Book extends DataClass implements Insertable<Book> {
           other.coverImagePath == this.coverImagePath &&
           other.totalPages == this.totalPages &&
           other.lastReadCfi == this.lastReadCfi &&
-          other.dateAdded == this.dateAdded);
+          other.readProgress == this.readProgress &&
+          other.dateAdded == this.dateAdded &&
+          other.lastReadAt == this.lastReadAt);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -364,7 +447,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<String?> coverImagePath;
   final Value<int> totalPages;
   final Value<String?> lastReadCfi;
+  final Value<double> readProgress;
   final Value<DateTime> dateAdded;
+  final Value<DateTime?> lastReadAt;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -372,7 +457,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.coverImagePath = const Value.absent(),
     this.totalPages = const Value.absent(),
     this.lastReadCfi = const Value.absent(),
+    this.readProgress = const Value.absent(),
     this.dateAdded = const Value.absent(),
+    this.lastReadAt = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -381,7 +468,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.coverImagePath = const Value.absent(),
     this.totalPages = const Value.absent(),
     this.lastReadCfi = const Value.absent(),
+    this.readProgress = const Value.absent(),
     this.dateAdded = const Value.absent(),
+    this.lastReadAt = const Value.absent(),
   }) : title = Value(title),
        filePath = Value(filePath);
   static Insertable<Book> custom({
@@ -391,7 +480,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<String>? coverImagePath,
     Expression<int>? totalPages,
     Expression<String>? lastReadCfi,
+    Expression<double>? readProgress,
     Expression<DateTime>? dateAdded,
+    Expression<DateTime>? lastReadAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -400,7 +491,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (coverImagePath != null) 'cover_image_path': coverImagePath,
       if (totalPages != null) 'total_pages': totalPages,
       if (lastReadCfi != null) 'last_read_cfi': lastReadCfi,
+      if (readProgress != null) 'read_progress': readProgress,
       if (dateAdded != null) 'date_added': dateAdded,
+      if (lastReadAt != null) 'last_read_at': lastReadAt,
     });
   }
 
@@ -411,7 +504,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<String?>? coverImagePath,
     Value<int>? totalPages,
     Value<String?>? lastReadCfi,
+    Value<double>? readProgress,
     Value<DateTime>? dateAdded,
+    Value<DateTime?>? lastReadAt,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -420,7 +515,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
       coverImagePath: coverImagePath ?? this.coverImagePath,
       totalPages: totalPages ?? this.totalPages,
       lastReadCfi: lastReadCfi ?? this.lastReadCfi,
+      readProgress: readProgress ?? this.readProgress,
       dateAdded: dateAdded ?? this.dateAdded,
+      lastReadAt: lastReadAt ?? this.lastReadAt,
     );
   }
 
@@ -445,8 +542,14 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (lastReadCfi.present) {
       map['last_read_cfi'] = Variable<String>(lastReadCfi.value);
     }
+    if (readProgress.present) {
+      map['read_progress'] = Variable<double>(readProgress.value);
+    }
     if (dateAdded.present) {
       map['date_added'] = Variable<DateTime>(dateAdded.value);
+    }
+    if (lastReadAt.present) {
+      map['last_read_at'] = Variable<DateTime>(lastReadAt.value);
     }
     return map;
   }
@@ -460,7 +563,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('coverImagePath: $coverImagePath, ')
           ..write('totalPages: $totalPages, ')
           ..write('lastReadCfi: $lastReadCfi, ')
-          ..write('dateAdded: $dateAdded')
+          ..write('readProgress: $readProgress, ')
+          ..write('dateAdded: $dateAdded, ')
+          ..write('lastReadAt: $lastReadAt')
           ..write(')'))
         .toString();
   }
@@ -1587,6 +1692,369 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
   }
 }
 
+class $PitchAccentsTable extends PitchAccents
+    with TableInfo<$PitchAccentsTable, PitchAccent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PitchAccentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _expressionMeta = const VerificationMeta(
+    'expression',
+  );
+  @override
+  late final GeneratedColumn<String> expression = GeneratedColumn<String>(
+    'expression',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _readingMeta = const VerificationMeta(
+    'reading',
+  );
+  @override
+  late final GeneratedColumn<String> reading = GeneratedColumn<String>(
+    'reading',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _downstepPositionMeta = const VerificationMeta(
+    'downstepPosition',
+  );
+  @override
+  late final GeneratedColumn<int> downstepPosition = GeneratedColumn<int>(
+    'downstep_position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dictionaryIdMeta = const VerificationMeta(
+    'dictionaryId',
+  );
+  @override
+  late final GeneratedColumn<int> dictionaryId = GeneratedColumn<int>(
+    'dictionary_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    expression,
+    reading,
+    downstepPosition,
+    dictionaryId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pitch_accents';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PitchAccent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('expression')) {
+      context.handle(
+        _expressionMeta,
+        expression.isAcceptableOrUnknown(data['expression']!, _expressionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expressionMeta);
+    }
+    if (data.containsKey('reading')) {
+      context.handle(
+        _readingMeta,
+        reading.isAcceptableOrUnknown(data['reading']!, _readingMeta),
+      );
+    }
+    if (data.containsKey('downstep_position')) {
+      context.handle(
+        _downstepPositionMeta,
+        downstepPosition.isAcceptableOrUnknown(
+          data['downstep_position']!,
+          _downstepPositionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_downstepPositionMeta);
+    }
+    if (data.containsKey('dictionary_id')) {
+      context.handle(
+        _dictionaryIdMeta,
+        dictionaryId.isAcceptableOrUnknown(
+          data['dictionary_id']!,
+          _dictionaryIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dictionaryIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PitchAccent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PitchAccent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      expression: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}expression'],
+      )!,
+      reading: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reading'],
+      )!,
+      downstepPosition: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}downstep_position'],
+      )!,
+      dictionaryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dictionary_id'],
+      )!,
+    );
+  }
+
+  @override
+  $PitchAccentsTable createAlias(String alias) {
+    return $PitchAccentsTable(attachedDatabase, alias);
+  }
+}
+
+class PitchAccent extends DataClass implements Insertable<PitchAccent> {
+  final int id;
+  final String expression;
+  final String reading;
+  final int downstepPosition;
+  final int dictionaryId;
+  const PitchAccent({
+    required this.id,
+    required this.expression,
+    required this.reading,
+    required this.downstepPosition,
+    required this.dictionaryId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['expression'] = Variable<String>(expression);
+    map['reading'] = Variable<String>(reading);
+    map['downstep_position'] = Variable<int>(downstepPosition);
+    map['dictionary_id'] = Variable<int>(dictionaryId);
+    return map;
+  }
+
+  PitchAccentsCompanion toCompanion(bool nullToAbsent) {
+    return PitchAccentsCompanion(
+      id: Value(id),
+      expression: Value(expression),
+      reading: Value(reading),
+      downstepPosition: Value(downstepPosition),
+      dictionaryId: Value(dictionaryId),
+    );
+  }
+
+  factory PitchAccent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PitchAccent(
+      id: serializer.fromJson<int>(json['id']),
+      expression: serializer.fromJson<String>(json['expression']),
+      reading: serializer.fromJson<String>(json['reading']),
+      downstepPosition: serializer.fromJson<int>(json['downstepPosition']),
+      dictionaryId: serializer.fromJson<int>(json['dictionaryId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'expression': serializer.toJson<String>(expression),
+      'reading': serializer.toJson<String>(reading),
+      'downstepPosition': serializer.toJson<int>(downstepPosition),
+      'dictionaryId': serializer.toJson<int>(dictionaryId),
+    };
+  }
+
+  PitchAccent copyWith({
+    int? id,
+    String? expression,
+    String? reading,
+    int? downstepPosition,
+    int? dictionaryId,
+  }) => PitchAccent(
+    id: id ?? this.id,
+    expression: expression ?? this.expression,
+    reading: reading ?? this.reading,
+    downstepPosition: downstepPosition ?? this.downstepPosition,
+    dictionaryId: dictionaryId ?? this.dictionaryId,
+  );
+  PitchAccent copyWithCompanion(PitchAccentsCompanion data) {
+    return PitchAccent(
+      id: data.id.present ? data.id.value : this.id,
+      expression: data.expression.present
+          ? data.expression.value
+          : this.expression,
+      reading: data.reading.present ? data.reading.value : this.reading,
+      downstepPosition: data.downstepPosition.present
+          ? data.downstepPosition.value
+          : this.downstepPosition,
+      dictionaryId: data.dictionaryId.present
+          ? data.dictionaryId.value
+          : this.dictionaryId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PitchAccent(')
+          ..write('id: $id, ')
+          ..write('expression: $expression, ')
+          ..write('reading: $reading, ')
+          ..write('downstepPosition: $downstepPosition, ')
+          ..write('dictionaryId: $dictionaryId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, expression, reading, downstepPosition, dictionaryId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PitchAccent &&
+          other.id == this.id &&
+          other.expression == this.expression &&
+          other.reading == this.reading &&
+          other.downstepPosition == this.downstepPosition &&
+          other.dictionaryId == this.dictionaryId);
+}
+
+class PitchAccentsCompanion extends UpdateCompanion<PitchAccent> {
+  final Value<int> id;
+  final Value<String> expression;
+  final Value<String> reading;
+  final Value<int> downstepPosition;
+  final Value<int> dictionaryId;
+  const PitchAccentsCompanion({
+    this.id = const Value.absent(),
+    this.expression = const Value.absent(),
+    this.reading = const Value.absent(),
+    this.downstepPosition = const Value.absent(),
+    this.dictionaryId = const Value.absent(),
+  });
+  PitchAccentsCompanion.insert({
+    this.id = const Value.absent(),
+    required String expression,
+    this.reading = const Value.absent(),
+    required int downstepPosition,
+    required int dictionaryId,
+  }) : expression = Value(expression),
+       downstepPosition = Value(downstepPosition),
+       dictionaryId = Value(dictionaryId);
+  static Insertable<PitchAccent> custom({
+    Expression<int>? id,
+    Expression<String>? expression,
+    Expression<String>? reading,
+    Expression<int>? downstepPosition,
+    Expression<int>? dictionaryId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (expression != null) 'expression': expression,
+      if (reading != null) 'reading': reading,
+      if (downstepPosition != null) 'downstep_position': downstepPosition,
+      if (dictionaryId != null) 'dictionary_id': dictionaryId,
+    });
+  }
+
+  PitchAccentsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? expression,
+    Value<String>? reading,
+    Value<int>? downstepPosition,
+    Value<int>? dictionaryId,
+  }) {
+    return PitchAccentsCompanion(
+      id: id ?? this.id,
+      expression: expression ?? this.expression,
+      reading: reading ?? this.reading,
+      downstepPosition: downstepPosition ?? this.downstepPosition,
+      dictionaryId: dictionaryId ?? this.dictionaryId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (expression.present) {
+      map['expression'] = Variable<String>(expression.value);
+    }
+    if (reading.present) {
+      map['reading'] = Variable<String>(reading.value);
+    }
+    if (downstepPosition.present) {
+      map['downstep_position'] = Variable<int>(downstepPosition.value);
+    }
+    if (dictionaryId.present) {
+      map['dictionary_id'] = Variable<int>(dictionaryId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PitchAccentsCompanion(')
+          ..write('id: $id, ')
+          ..write('expression: $expression, ')
+          ..write('reading: $reading, ')
+          ..write('downstepPosition: $downstepPosition, ')
+          ..write('dictionaryId: $dictionaryId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1597,6 +2065,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $DictionaryEntriesTable dictionaryEntries =
       $DictionaryEntriesTable(this);
+  late final $PitchAccentsTable pitchAccents = $PitchAccentsTable(this);
   late final Index idxExpression = Index(
     'idx_expression',
     'CREATE INDEX idx_expression ON dictionary_entries (expression)',
@@ -1604,6 +2073,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index idxReading = Index(
     'idx_reading',
     'CREATE INDEX idx_reading ON dictionary_entries (reading)',
+  );
+  late final Index idxPitchExpression = Index(
+    'idx_pitch_expression',
+    'CREATE INDEX idx_pitch_expression ON pitch_accents (expression)',
+  );
+  late final Index idxPitchReading = Index(
+    'idx_pitch_reading',
+    'CREATE INDEX idx_pitch_reading ON pitch_accents (reading)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -1614,8 +2091,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     savedWords,
     dictionaryMetas,
     dictionaryEntries,
+    pitchAccents,
     idxExpression,
     idxReading,
+    idxPitchExpression,
+    idxPitchReading,
   ];
 }
 
@@ -1627,7 +2107,9 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<String?> coverImagePath,
       Value<int> totalPages,
       Value<String?> lastReadCfi,
+      Value<double> readProgress,
       Value<DateTime> dateAdded,
+      Value<DateTime?> lastReadAt,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -1637,7 +2119,9 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<String?> coverImagePath,
       Value<int> totalPages,
       Value<String?> lastReadCfi,
+      Value<double> readProgress,
       Value<DateTime> dateAdded,
+      Value<DateTime?> lastReadAt,
     });
 
 class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
@@ -1678,8 +2162,18 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get readProgress => $composableBuilder(
+    column: $table.readProgress,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get dateAdded => $composableBuilder(
     column: $table.dateAdded,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastReadAt => $composableBuilder(
+    column: $table.lastReadAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1723,8 +2217,18 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get readProgress => $composableBuilder(
+    column: $table.readProgress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get dateAdded => $composableBuilder(
     column: $table.dateAdded,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastReadAt => $composableBuilder(
+    column: $table.lastReadAt,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -1762,8 +2266,18 @@ class $$BooksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get readProgress => $composableBuilder(
+    column: $table.readProgress,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get dateAdded =>
       $composableBuilder(column: $table.dateAdded, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastReadAt => $composableBuilder(
+    column: $table.lastReadAt,
+    builder: (column) => column,
+  );
 }
 
 class $$BooksTableTableManager
@@ -1800,7 +2314,9 @@ class $$BooksTableTableManager
                 Value<String?> coverImagePath = const Value.absent(),
                 Value<int> totalPages = const Value.absent(),
                 Value<String?> lastReadCfi = const Value.absent(),
+                Value<double> readProgress = const Value.absent(),
                 Value<DateTime> dateAdded = const Value.absent(),
+                Value<DateTime?> lastReadAt = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 title: title,
@@ -1808,7 +2324,9 @@ class $$BooksTableTableManager
                 coverImagePath: coverImagePath,
                 totalPages: totalPages,
                 lastReadCfi: lastReadCfi,
+                readProgress: readProgress,
                 dateAdded: dateAdded,
+                lastReadAt: lastReadAt,
               ),
           createCompanionCallback:
               ({
@@ -1818,7 +2336,9 @@ class $$BooksTableTableManager
                 Value<String?> coverImagePath = const Value.absent(),
                 Value<int> totalPages = const Value.absent(),
                 Value<String?> lastReadCfi = const Value.absent(),
+                Value<double> readProgress = const Value.absent(),
                 Value<DateTime> dateAdded = const Value.absent(),
+                Value<DateTime?> lastReadAt = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 title: title,
@@ -1826,7 +2346,9 @@ class $$BooksTableTableManager
                 coverImagePath: coverImagePath,
                 totalPages: totalPages,
                 lastReadCfi: lastReadCfi,
+                readProgress: readProgress,
                 dateAdded: dateAdded,
+                lastReadAt: lastReadAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2477,6 +2999,206 @@ typedef $$DictionaryEntriesTableProcessedTableManager =
       DictionaryEntry,
       PrefetchHooks Function()
     >;
+typedef $$PitchAccentsTableCreateCompanionBuilder =
+    PitchAccentsCompanion Function({
+      Value<int> id,
+      required String expression,
+      Value<String> reading,
+      required int downstepPosition,
+      required int dictionaryId,
+    });
+typedef $$PitchAccentsTableUpdateCompanionBuilder =
+    PitchAccentsCompanion Function({
+      Value<int> id,
+      Value<String> expression,
+      Value<String> reading,
+      Value<int> downstepPosition,
+      Value<int> dictionaryId,
+    });
+
+class $$PitchAccentsTableFilterComposer
+    extends Composer<_$AppDatabase, $PitchAccentsTable> {
+  $$PitchAccentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reading => $composableBuilder(
+    column: $table.reading,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get downstepPosition => $composableBuilder(
+    column: $table.downstepPosition,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PitchAccentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PitchAccentsTable> {
+  $$PitchAccentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reading => $composableBuilder(
+    column: $table.reading,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get downstepPosition => $composableBuilder(
+    column: $table.downstepPosition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PitchAccentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PitchAccentsTable> {
+  $$PitchAccentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reading =>
+      $composableBuilder(column: $table.reading, builder: (column) => column);
+
+  GeneratedColumn<int> get downstepPosition => $composableBuilder(
+    column: $table.downstepPosition,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => column,
+  );
+}
+
+class $$PitchAccentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PitchAccentsTable,
+          PitchAccent,
+          $$PitchAccentsTableFilterComposer,
+          $$PitchAccentsTableOrderingComposer,
+          $$PitchAccentsTableAnnotationComposer,
+          $$PitchAccentsTableCreateCompanionBuilder,
+          $$PitchAccentsTableUpdateCompanionBuilder,
+          (
+            PitchAccent,
+            BaseReferences<_$AppDatabase, $PitchAccentsTable, PitchAccent>,
+          ),
+          PitchAccent,
+          PrefetchHooks Function()
+        > {
+  $$PitchAccentsTableTableManager(_$AppDatabase db, $PitchAccentsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PitchAccentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PitchAccentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PitchAccentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> expression = const Value.absent(),
+                Value<String> reading = const Value.absent(),
+                Value<int> downstepPosition = const Value.absent(),
+                Value<int> dictionaryId = const Value.absent(),
+              }) => PitchAccentsCompanion(
+                id: id,
+                expression: expression,
+                reading: reading,
+                downstepPosition: downstepPosition,
+                dictionaryId: dictionaryId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String expression,
+                Value<String> reading = const Value.absent(),
+                required int downstepPosition,
+                required int dictionaryId,
+              }) => PitchAccentsCompanion.insert(
+                id: id,
+                expression: expression,
+                reading: reading,
+                downstepPosition: downstepPosition,
+                dictionaryId: dictionaryId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PitchAccentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PitchAccentsTable,
+      PitchAccent,
+      $$PitchAccentsTableFilterComposer,
+      $$PitchAccentsTableOrderingComposer,
+      $$PitchAccentsTableAnnotationComposer,
+      $$PitchAccentsTableCreateCompanionBuilder,
+      $$PitchAccentsTableUpdateCompanionBuilder,
+      (
+        PitchAccent,
+        BaseReferences<_$AppDatabase, $PitchAccentsTable, PitchAccent>,
+      ),
+      PitchAccent,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2489,4 +3211,6 @@ class $AppDatabaseManager {
       $$DictionaryMetasTableTableManager(_db, _db.dictionaryMetas);
   $$DictionaryEntriesTableTableManager get dictionaryEntries =>
       $$DictionaryEntriesTableTableManager(_db, _db.dictionaryEntries);
+  $$PitchAccentsTableTableManager get pitchAccents =>
+      $$PitchAccentsTableTableManager(_db, _db.pitchAccents);
 }

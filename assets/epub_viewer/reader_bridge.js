@@ -402,6 +402,15 @@ function updateTheme(foregroundColor, customCss) {
   rendition.themes.select('default');
 }
 
+// ── Background color ─────────────────────────────────────────────────
+
+function setBodyBackground(color) {
+  document.body.style.background = color;
+  var viewer = document.getElementById('viewer');
+  if (viewer) viewer.style.background = color;
+  console.log('[EPUB_BRIDGE] setBodyBackground: ' + color);
+}
+
 // ── Margins ──────────────────────────────────────────────────────────
 
 function applyMargins() {

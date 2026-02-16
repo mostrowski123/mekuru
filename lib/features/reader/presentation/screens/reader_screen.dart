@@ -16,6 +16,8 @@ import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dar
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// EPUB reader backed by a custom epub.js WebView bridge.
 class ReaderScreen extends ConsumerStatefulWidget {
@@ -40,6 +42,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   bool _isEpubLoaded = false;
   bool _isRebuildingForDirection = false;
   bool _hasActiveSelection = false;
+  bool _locationsReady = false;
   double _progress = 0.0;
   String? _initialCfi;
   String? _errorMessage;
@@ -54,10 +57,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     super.initState();
 
     _progressPersistence = ReaderProgressPersistence(
-      saveProgress: (cfi) {
+      saveProgress: (cfi, progress) {
         return ref.read(readerBookRepositoryProvider).updateProgress(
           widget.book.id,
           cfi,
+          progress: progress,
         );
       },
     );
@@ -66,6 +70,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       if (!mounted) return;
       await ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
       if (!mounted) return;
+
+      final settings = ref.read(readerSettingsProvider);
+      if (settings.keepScreenOn) {
+        WakelockPlus.enable();
+      }
+      await ref.read(brightnessProvider.notifier).initialize();
+
+      if (!mounted) return;
       await _loadEpubData();
     });
   }
@@ -73,6 +85,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   @override
   void dispose() {
     unawaited(_progressPersistence.dispose());
+    ref.read(brightnessProvider.notifier).resetBrightness();
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -102,10 +116,24 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           next.verticalPadding,
         );
       }
+
+      final colorChanged = previous.colorMode != next.colorMode ||
+          (next.colorMode == ColorMode.sepia &&
+              previous.sepiaIntensity != next.sepiaIntensity);
+      if (colorChanged && _isEpubLoaded) {
+        final newTheme = buildReaderTheme(settings: next);
+        _epubController.updateTheme(
+          foregroundColor: newTheme.foregroundColor,
+          customCss: newTheme.customCss,
+        );
+        _epubController.setBodyBackground(newTheme.backgroundColor);
+      }
     });
 
+    final readerTheme = buildReaderTheme(settings: settings);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: readerTheme.backgroundColor,
       body: _errorMessage != null
           ? _buildErrorState(context)
           : Stack(
@@ -121,8 +149,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           ? 'rtl'
                           : 'ltr',
                       fontSize: settings.fontSize.round(),
-                      foregroundColor: Colors.black,
-                      customCss: buildReaderTheme(settings: settings).customCss,
+                      foregroundColor: readerTheme.foregroundColor,
+                      backgroundColor: readerTheme.backgroundColor,
+                      customCss: readerTheme.customCss,
                       horizontalMargin: settings.horizontalPadding,
                       verticalMargin: settings.verticalPadding,
                       onLoaded: () {
@@ -146,6 +175,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           'entries',
                         );
                       },
+                      onLocationsReady: () {
+                        if (!mounted) return;
+                        _locationsReady = true;
+                      },
                       onRelocated: (location) {
                         if (!mounted) return;
 
@@ -153,11 +186,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           0.0,
                           1.0,
                         );
-                        setState(() => _progress = normalizedProgress);
+
+                        // Only trust progress values after epub.js has
+                        // generated locations; before that, percentage is 0.
+                        if (_locationsReady) {
+                          setState(() => _progress = normalizedProgress);
+                        }
 
                         final cfi = location.startCfi.trim();
                         if (_isEpubCfi(cfi)) {
-                          _progressPersistence.queueSave(cfi);
+                          _progressPersistence.queueSave(
+                            cfi,
+                            _locationsReady ? normalizedProgress : _progress,
+                          );
                         }
                       },
                       onSelection: (selection) {
@@ -217,6 +258,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     setState(() {
       _isLoading = true;
       _isEpubLoaded = false;
+      _locationsReady = false;
       _errorMessage = null;
       _chapters = const [];
       _progress = 0;
@@ -241,6 +283,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       setState(() {
         _epubData = bytes;
         _initialCfi = initialCfi;
+        _progress = latestBook?.readProgress ?? widget.book.readProgress;
         _viewerEpoch += 1;
       });
     } catch (error) {
@@ -658,7 +701,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             IconButton(
               icon: const Icon(Icons.settings, color: Colors.white),
               tooltip: 'Settings',
-              onPressed: () => _showSettingsSheet(context),
+              onPressed: () {
+                AppHaptics.light();
+                _showSettingsSheet(context);
+              },
             ),
           ],
         ),
@@ -814,23 +860,30 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   void _showSettingsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => Consumer(
         builder: (context, ref, _) {
           final settings = ref.watch(readerSettingsProvider);
           final notifier = ref.read(readerSettingsProvider.notifier);
+          final brightness = ref.watch(brightnessProvider);
+          final brightnessNotifier = ref.read(brightnessProvider.notifier);
 
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.55,
+            maxChildSize: 0.85,
+            builder: (context, scrollController) => Padding(
+              padding: const EdgeInsets.all(24),
+              child: ListView(
+                controller: scrollController,
                 children: [
                   Text(
                     'Display Settings',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 24),
+
+                  // ── Font Size ──
                   Row(
                     children: [
                       const Icon(Icons.text_fields),
@@ -846,95 +899,248 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     max: 32,
                     divisions: 20,
                     label: '${settings.fontSize.round()}',
-                    onChanged: notifier.setFontSize,
+                    onChanged: (value) {
+                      AppHaptics.light();
+                      notifier.setFontSize(value);
+                    },
                   ),
                   const SizedBox(height: 16),
-                  SwitchListTile(
-                    title: const Text('Vertical Text'),
-                    subtitle: const Text(
-                      'Controlled by EPUB CSS in this viewer',
-                    ),
-                    value: settings.verticalText,
-                    onChanged: null,
-                    secondary: const Icon(Icons.text_rotation_angledown),
+
+                  // ── Brightness ──
+                  Row(
+                    children: [
+                      const Icon(Icons.brightness_low),
+                      Expanded(
+                        child: Slider(
+                          value: brightness ?? 0.5,
+                          min: 0.0,
+                          max: 1.0,
+                          onChanged: (value) {
+                            AppHaptics.light();
+                            brightnessNotifier.setBrightness(value);
+                          },
+                        ),
+                      ),
+                      const Icon(Icons.brightness_high),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+
+                  // ── Color Mode ──
                   Text(
-                    'Reading Direction',
+                    'Color Mode',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  SegmentedButton<ReaderDirection>(
+                  SegmentedButton<ColorMode>(
                     segments: const [
                       ButtonSegment(
-                        value: ReaderDirection.rtl,
-                        label: Text('Right to Left'),
+                        value: ColorMode.normal,
+                        label: Text('Normal'),
+                        icon: Icon(Icons.brightness_5),
                       ),
                       ButtonSegment(
-                        value: ReaderDirection.ltr,
-                        label: Text('Left to Right'),
+                        value: ColorMode.sepia,
+                        label: Text('Sepia'),
+                        icon: Icon(Icons.filter_vintage),
+                      ),
+                      ButtonSegment(
+                        value: ColorMode.dark,
+                        label: Text('Dark'),
+                        icon: Icon(Icons.dark_mode),
                       ),
                     ],
-                    selected: {settings.readingDirection},
+                    selected: {settings.colorMode},
                     onSelectionChanged: (selection) {
-                      notifier.setReadingDirection(selection.first);
+                      AppHaptics.medium();
+                      notifier.setColorMode(selection.first);
                     },
                   ),
-                  const SizedBox(height: 12),
+                  // ── Sepia Intensity ──
+                  if (settings.colorMode == ColorMode.sepia) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.coffee, size: 20),
+                        Expanded(
+                          child: Slider(
+                            value: settings.sepiaIntensity,
+                            min: 0.0,
+                            max: 1.0,
+                            onChanged: (value) {
+                              AppHaptics.light();
+                              notifier.setSepiaIntensity(value);
+                            },
+                          ),
+                        ),
+                        const Icon(Icons.local_fire_department, size: 20),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+
+                  // ── Keep Screen On ──
                   SwitchListTile(
-                    title: const Text('Page Turn Animation'),
-                    subtitle: const Text('Not supported with this viewer'),
-                    value: settings.pageTurnAnimationEnabled,
-                    onChanged: null,
-                    secondary: const Icon(Icons.animation_outlined),
-                  ),
-                  const SizedBox(height: 12),
-                  Text('Horizontal Margin: ${settings.horizontalPadding}px'),
-                  Slider(
-                    value: settings.horizontalPadding.toDouble(),
-                    min: 0,
-                    max: 100,
-                    divisions: 20,
+                    title: const Text('Keep Screen On'),
+                    secondary: const Icon(Icons.lightbulb_outline),
+                    value: settings.keepScreenOn,
                     onChanged: (value) {
-                      notifier.setHorizontalPadding(value.round());
+                      AppHaptics.light();
+                      notifier.setKeepScreenOn(value);
+                      if (value) {
+                        WakelockPlus.enable();
+                      } else {
+                        WakelockPlus.disable();
+                      }
                     },
-                  ),
-                  Text('Vertical Margin: ${settings.verticalPadding}px'),
-                  Slider(
-                    value: settings.verticalPadding.toDouble(),
-                    min: 0,
-                    max: 100,
-                    divisions: 20,
-                    onChanged: (value) {
-                      notifier.setVerticalPadding(value.round());
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(Icons.swipe),
-                      const SizedBox(width: 8),
-                      const Text('Swipe Sensitivity'),
-                      const Spacer(),
-                      Text(
-                        '${(settings.swipeSensitivity * 100).round()}%',
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: settings.swipeSensitivity,
-                    min: 0.01,
-                    max: 0.20,
-                    divisions: 19,
-                    label:
-                        '${(settings.swipeSensitivity * 100).round()}%',
-                    onChanged: notifier.setSwipeSensitivity,
-                  ),
-                  const Text(
-                    'Lower = less finger movement needed to swipe',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   const SizedBox(height: 8),
+
+                  // ── Advanced Section ──
+                  ExpansionTile(
+                    title: const Text('Advanced'),
+                    leading: const Icon(Icons.tune),
+                    initiallyExpanded: false,
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Vertical Text'),
+                        subtitle: const Text(
+                          'Controlled by EPUB CSS in this viewer',
+                        ),
+                        value: settings.verticalText,
+                        onChanged: null,
+                        secondary: const Icon(
+                          Icons.text_rotation_angledown,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reading Direction',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            SegmentedButton<ReaderDirection>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: ReaderDirection.rtl,
+                                  label: Text('Right to Left'),
+                                ),
+                                ButtonSegment(
+                                  value: ReaderDirection.ltr,
+                                  label: Text('Left to Right'),
+                                ),
+                              ],
+                              selected: {settings.readingDirection},
+                              onSelectionChanged: (selection) {
+                                AppHaptics.medium();
+                                notifier.setReadingDirection(
+                                  selection.first,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile(
+                        title: const Text('Page Turn Animation'),
+                        subtitle: const Text(
+                          'Not supported with this viewer',
+                        ),
+                        value: settings.pageTurnAnimationEnabled,
+                        onChanged: null,
+                        secondary: const Icon(
+                          Icons.animation_outlined,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Horizontal Margin: '
+                              '${settings.horizontalPadding}px',
+                            ),
+                            Slider(
+                              value: settings.horizontalPadding
+                                  .toDouble(),
+                              min: 0,
+                              max: 100,
+                              divisions: 20,
+                              onChanged: (value) {
+                                AppHaptics.light();
+                                notifier.setHorizontalPadding(
+                                  value.round(),
+                                );
+                              },
+                            ),
+                            Text(
+                              'Vertical Margin: '
+                              '${settings.verticalPadding}px',
+                            ),
+                            Slider(
+                              value: settings.verticalPadding
+                                  .toDouble(),
+                              min: 0,
+                              max: 100,
+                              divisions: 20,
+                              onChanged: (value) {
+                                AppHaptics.light();
+                                notifier.setVerticalPadding(
+                                  value.round(),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.swipe),
+                                const SizedBox(width: 8),
+                                const Text('Swipe Sensitivity'),
+                                const Spacer(),
+                                Text(
+                                  '${(settings.swipeSensitivity * 100).round()}%',
+                                ),
+                              ],
+                            ),
+                            Slider(
+                              value: settings.swipeSensitivity,
+                              min: 0.01,
+                              max: 0.20,
+                              divisions: 19,
+                              label:
+                                  '${(settings.swipeSensitivity * 100).round()}%',
+                              onChanged: (value) {
+                                AppHaptics.light();
+                                notifier.setSwipeSensitivity(value);
+                              },
+                            ),
+                            const Text(
+                              'Lower = less finger movement needed to swipe',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ],
               ),
             ),

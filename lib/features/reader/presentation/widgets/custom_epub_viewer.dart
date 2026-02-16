@@ -30,6 +30,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.direction = 'ltr',
     this.fontSize = 16,
     this.foregroundColor,
+    this.backgroundColor,
     this.customCss,
     this.horizontalMargin = 28,
     this.verticalMargin = 28,
@@ -38,6 +39,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onRelocated,
     this.onSelection,
     this.onSelectionCleared,
+    this.onLocationsReady,
     this.onTouchDown,
     this.onTouchUp,
     this.onWordTapped,
@@ -49,6 +51,7 @@ class CustomEpubViewer extends StatefulWidget {
   final String direction;
   final int fontSize;
   final Color? foregroundColor;
+  final Color? backgroundColor;
   final Map<String, dynamic>? customCss;
   final int horizontalMargin;
   final int verticalMargin;
@@ -58,6 +61,7 @@ class CustomEpubViewer extends StatefulWidget {
   final ValueChanged<EpubLocation>? onRelocated;
   final ValueChanged<EpubSelectionData>? onSelection;
   final VoidCallback? onSelectionCleared;
+  final VoidCallback? onLocationsReady;
   final void Function(double x, double y)? onTouchDown;
   final void Function(double x, double y)? onTouchUp;
   final void Function(
@@ -181,7 +185,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     controller.addJavaScriptHandler(
       handlerName: 'locationsReady',
       callback: (_) {
-        // Locations generated — progress values are now accurate.
+        widget.onLocationsReady?.call();
       },
     );
 
@@ -345,6 +349,18 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           '${widget.verticalMargin}'
           ')',
     );
+
+    // Set the outer HTML background to match the color mode immediately
+    // on load to avoid a white flash when using sepia mode.
+    if (widget.backgroundColor != null) {
+      final bg = widget.backgroundColor!;
+      final bgHex = '#${bg.red.toRadixString(16).padLeft(2, '0')}'
+          '${bg.green.toRadixString(16).padLeft(2, '0')}'
+          '${bg.blue.toRadixString(16).padLeft(2, '0')}';
+      _webViewController?.evaluateJavascript(
+        source: 'setBodyBackground("$bgHex")',
+      );
+    }
   }
 
   String _jsEncodeCss(Map<String, dynamic> css) {

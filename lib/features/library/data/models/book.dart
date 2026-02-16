@@ -8,5 +8,7 @@ class Books extends Table {
   TextColumn get coverImagePath => text().nullable()();
   IntColumn get totalPages => integer().withDefault(const Constant(0))();
   TextColumn get lastReadCfi => text().nullable()();
+  RealColumn get readProgress => real().withDefault(const Constant(0.0))();
   DateTimeColumn get dateAdded => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get lastReadAt => dateTime().nullable()();
 }

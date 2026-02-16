@@ -1,11 +1,16 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
+import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:path/path.dart' as p;
 
 /// Library screen displaying imported books in a grid view.
 class LibraryScreen extends ConsumerWidget {
@@ -13,8 +18,12 @@ class LibraryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Load persisted sort order on first build.
+    ref.read(librarySortProvider.notifier).loadPersistedSort();
+
     final booksAsync = ref.watch(booksProvider);
     final importState = ref.watch(bookImportProvider);
+    final sortOrder = ref.watch(librarySortProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -24,6 +33,24 @@ class LibraryScreen extends ConsumerWidget {
             icon: const Icon(Icons.add),
             tooltip: 'Import EPUB',
             onPressed: importState.isImporting ? null : () => _importEpub(ref),
+          ),
+          IconButton(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Sort: ${librarySortLabel(sortOrder)}',
+            onPressed: () {
+              AppHaptics.light();
+              _showSortPicker(context, ref, sortOrder);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () {
+              AppHaptics.light();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
           ),
         ],
       ),
@@ -142,6 +169,55 @@ class LibraryScreen extends ConsumerWidget {
     );
   }
 
+  void _showSortPicker(
+    BuildContext context,
+    WidgetRef ref,
+    LibrarySortOrder currentOrder,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Sort by',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            const Divider(height: 1),
+            for (final order in LibrarySortOrder.values)
+              ListTile(
+                leading: Icon(_sortIcon(order)),
+                title: Text(librarySortLabel(order)),
+                trailing: order == currentOrder
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(sheetContext).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () {
+                  AppHaptics.medium();
+                  ref
+                      .read(librarySortProvider.notifier)
+                      .setSortOrder(order);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static IconData _sortIcon(LibrarySortOrder order) => switch (order) {
+        LibrarySortOrder.dateAdded => Icons.calendar_today,
+        LibrarySortOrder.lastRead => Icons.schedule,
+        LibrarySortOrder.alphabetical => Icons.sort_by_alpha,
+      };
+
   Future<void> _importEpub(WidgetRef ref) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -159,10 +235,47 @@ class LibraryScreen extends ConsumerWidget {
 }
 
 /// Individual book tile for the grid.
-class _BookTile extends StatelessWidget {
+class _BookTile extends ConsumerStatefulWidget {
   const _BookTile({required this.book});
 
   final Book book;
+
+  @override
+  ConsumerState<_BookTile> createState() => _BookTileState();
+}
+
+class _BookTileState extends ConsumerState<_BookTile>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _scaleController;
+  late final Animation<double> _scaleAnimation;
+
+  Book get book => widget.book;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+      reverseDuration: const Duration(milliseconds: 300),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(
+        parent: _scaleController,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.elasticOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  void _onPressDown() => _scaleController.forward();
+  void _onPressUp() => _scaleController.reverse();
 
   @override
   Widget build(BuildContext context) {
@@ -173,25 +286,73 @@ class _BookTile extends StatelessWidget {
           context,
         ).push(MaterialPageRoute(builder: (_) => ReaderScreen(book: book)));
       },
-      onLongPress: () => _showBookOptions(context),
+      onLongPress: () {
+        AppHaptics.heavy();
+        _showBookOptions(context, ref);
+      },
+      onTapDown: (_) => _onPressDown(),
+      onTapUp: (_) => _onPressUp(),
+      onTapCancel: _onPressUp,
+      onLongPressEnd: (_) => _onPressUp(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: Tilt(
+                tiltConfig: const TiltConfig(
+                  angle: 12.0,
+                  enableGestureTouch: false,
+                  enableGestureSensors: true,
+                  sensorFactor: 5.0,
+                ),
+                lightConfig: const LightConfig(
+                  minIntensity: 0.0,
+                  maxIntensity: 0.14,
+                ),
+                shadowConfig: ShadowConfig(
+                  offsetInitial: const Offset(0, 2),
+                  offsetFactor: 0.06,
+                  minIntensity: 0.05,
+                  maxIntensity: 0.35,
+                  spreadInitial: 0,
+                  spreadFactor: 0,
+                  minBlurRadius: 6,
+                  maxBlurRadius: 14,
+                  color: Colors.black.withValues(alpha: 0.5),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: _buildCoverImage(theme),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildCoverImage(theme),
+                        if (book.readProgress > 0)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              height: 3,
+                              color: Colors.black.withValues(alpha: 0.3),
+                              child: FractionallySizedBox(
+                                alignment: Alignment.centerLeft,
+                                widthFactor: book.readProgress.clamp(0.0, 1.0),
+                                child: Container(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -214,10 +375,21 @@ class _BookTile extends StatelessWidget {
     if (book.coverImagePath != null) {
       final coverFile = File(book.coverImagePath!);
       if (coverFile.existsSync()) {
-        return Image.file(
-          coverFile,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _buildPlaceholder(theme),
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            // Blurred background fill (no darkening)
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Image.file(coverFile, fit: BoxFit.cover),
+            ),
+            // Actual cover, fit by height first
+            Image.file(
+              coverFile,
+              fit: BoxFit.fitHeight,
+              errorBuilder: (_, _, _) => _buildPlaceholder(theme),
+            ),
+          ],
         );
       }
     }
@@ -257,10 +429,10 @@ class _BookTile extends StatelessWidget {
     );
   }
 
-  void _showBookOptions(BuildContext context) {
+  void _showBookOptions(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -271,13 +443,31 @@ class _BookTile extends StatelessWidget {
             ),
             const Divider(),
             ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Rename'),
+              onTap: () {
+                AppHaptics.light();
+                Navigator.of(sheetContext).pop();
+                _showRenameDialog(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.image_outlined),
+              title: const Text('Change Cover'),
+              onTap: () {
+                AppHaptics.light();
+                Navigator.of(sheetContext).pop();
+                _changeCover(context);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.red),
               title: const Text(
                 'Delete Book',
                 style: TextStyle(color: Colors.red),
               ),
               onTap: () {
-                Navigator.of(context).pop();
+                Navigator.of(sheetContext).pop();
                 _confirmDelete(context);
               },
             ),
@@ -285,6 +475,70 @@ class _BookTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showRenameDialog(BuildContext context) {
+    final controller = TextEditingController(text: book.title);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename Book'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Title',
+            border: OutlineInputBorder(),
+          ),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newTitle = controller.text.trim();
+              if (newTitle.isNotEmpty && newTitle != book.title) {
+                ref
+                    .read(bookRepositoryProvider)
+                    .updateTitle(book.id, newTitle);
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _changeCover(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+    final pickedPath = result.files.single.path;
+    if (pickedPath == null) return;
+
+    try {
+      // Copy picked image to the book's storage directory.
+      final bookDir = Directory(book.filePath).parent;
+      final ext = p.extension(pickedPath);
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final destPath = p.join(bookDir.path, 'custom_cover_$timestamp$ext');
+      await File(pickedPath).copy(destPath);
+
+      ref.read(bookRepositoryProvider).updateCoverImagePath(book.id, destPath);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to change cover: $e')),
+      );
+    }
   }
 
   String _formatDate(DateTime date) {

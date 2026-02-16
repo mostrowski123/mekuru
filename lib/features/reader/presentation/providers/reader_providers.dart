@@ -8,6 +8,7 @@ import 'package:mekuru/features/reader/data/services/compound_word_resolver.dart
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/main.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 
 final readerSettingsStorageProvider = Provider<ReaderSettingsStorage>((ref) {
   return SharedPreferencesReaderSettingsStorage();
@@ -73,6 +74,21 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _persistSettings();
   }
 
+  void setColorMode(ColorMode mode) {
+    state = state.copyWith(colorMode: mode);
+    _persistSettings();
+  }
+
+  void setKeepScreenOn(bool enabled) {
+    state = state.copyWith(keepScreenOn: enabled);
+    _persistSettings();
+  }
+
+  void setSepiaIntensity(double intensity) {
+    state = state.copyWith(sepiaIntensity: intensity);
+    _persistSettings();
+  }
+
   void _persistSettings() {
     unawaited(ref.read(readerSettingsStorageProvider).save(state));
   }
@@ -82,6 +98,46 @@ final readerSettingsProvider =
     NotifierProvider<ReaderSettingsNotifier, ReaderSettings>(
       ReaderSettingsNotifier.new,
     );
+
+/// Ephemeral brightness level for the current reading session.
+/// Initialized from the system brightness when first read.
+class BrightnessNotifier extends Notifier<double?> {
+  @override
+  double? build() => null;
+
+  Future<void> initialize() async {
+    if (state != null) return;
+    try {
+      final brightness = await ScreenBrightness.instance.current;
+      state = brightness;
+    } catch (_) {
+      try {
+        final brightness = await ScreenBrightness.instance.system;
+        state = brightness;
+      } catch (_) {
+        state = 0.5;
+      }
+    }
+  }
+
+  Future<void> setBrightness(double value) async {
+    state = value;
+    try {
+      await ScreenBrightness.instance.setScreenBrightness(value);
+    } catch (_) {
+      // Silently fail if platform does not support brightness control
+    }
+  }
+
+  Future<void> resetBrightness() async {
+    try {
+      await ScreenBrightness.instance.resetScreenBrightness();
+    } catch (_) {}
+  }
+}
+
+final brightnessProvider =
+    NotifierProvider<BrightnessNotifier, double?>(BrightnessNotifier.new);
 
 /// Provider for the MeCab morphological analysis service.
 final mecabServiceProvider = Provider<MecabService>((ref) {
