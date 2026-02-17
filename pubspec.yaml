@@ -60,6 +60,9 @@ dependencies:
   # Kanji stroke order
   flutter_svg: ^2.0.17
 
+  # AnkiDroid integration (Android only)
+  ankidroid_for_flutter: ^1.0.3
+
 dev_dependencies:
   sentry_dart_plugin: ^3.2.1
   flutter_test:

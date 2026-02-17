@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/presentation/screens/library_screen.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
-import 'main.dart' show navigatorKey;
+import 'main.dart' show navigatorKey, scaffoldMessengerKey;
 import 'shared/theme/app_theme.dart';
 
 /// Root application widget.
@@ -19,6 +20,7 @@ class MekuruApp extends ConsumerWidget {
     ref.read(lookupFontSizeProvider.notifier).loadPersistedSettings();
     ref.read(searchHistoryProvider.notifier).loadPersistedSettings();
     ref.read(filterRomanLettersProvider.notifier).loadPersistedSettings();
+    ref.read(ankidroidConfigProvider.notifier).loadPersistedSettings();
     final themeMode = ref.watch(appThemeModeProvider);
 
     return MaterialApp(
@@ -27,6 +29,7 @@ class MekuruApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       navigatorKey: navigatorKey,
       navigatorObservers: [SentryNavigatorObserver()],
       home: const _MainShell(),

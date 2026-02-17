@@ -15,6 +15,8 @@ abstract class AppSettingsStorage {
   Future<void> saveSearchHistory(List<String> history);
   Future<bool?> loadFilterRomanLetters();
   Future<void> saveFilterRomanLetters(bool value);
+  Future<String?> loadAnkidroidConfig();
+  Future<void> saveAnkidroidConfig(String configJson);
 }
 
 /// SharedPreferences-backed implementation of [AppSettingsStorage].
@@ -24,6 +26,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _lookupFontSizeKey = 'app.lookup_font_size';
   static const _searchHistoryKey = 'app.dictionary_search_history';
   static const _filterRomanLettersKey = 'app.filter_roman_letters';
+  static const _ankidroidConfigKey = 'app.ankidroid_config';
 
   @override
   Future<ThemeMode?> loadThemeMode() async {
@@ -96,5 +99,17 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveFilterRomanLetters(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_filterRomanLettersKey, value);
+  }
+
+  @override
+  Future<String?> loadAnkidroidConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_ankidroidConfigKey);
+  }
+
+  @override
+  Future<void> saveAnkidroidConfig(String configJson) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_ankidroidConfigKey, configJson);
   }
 }

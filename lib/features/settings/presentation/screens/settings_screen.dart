@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
@@ -116,6 +118,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           const Divider(),
+
+          // ── AnkiDroid (Android only) ──
+          if (defaultTargetPlatform == TargetPlatform.android) ...[
+            _SectionHeader(title: 'AnkiDroid'),
+            ListTile(
+              leading: Icon(
+                Icons.electric_bolt_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('AnkiDroid Integration'),
+              subtitle:
+                  const Text('Configure note type, deck, and field mapping'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                AppHaptics.light();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const AnkidroidSettingsScreen(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+          ],
 
           // ── Assets ──
           _SectionHeader(title: 'Assets'),

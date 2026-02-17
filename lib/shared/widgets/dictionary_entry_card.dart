@@ -1,12 +1,18 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
+import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
+import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
+import 'package:mekuru/main.dart' show scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 
@@ -104,6 +110,43 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
     );
   }
 
+  void _sendToAnki() {
+    final config = ref.read(ankidroidConfigProvider);
+    if (!config.isConfigured) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const AnkidroidSettingsScreen(),
+        ),
+      );
+      return;
+    }
+
+    final noteData = AnkiNoteData(
+      expression: widget.entry.expression,
+      reading: widget.entry.reading,
+      glossaries: widget.entry.glossaries,
+      dictionaryName: widget.dictionaryName,
+      frequencyRank: widget.frequencyRank,
+      sentenceContext: widget.sentenceContext,
+      pitchAccents: widget.pitchAccents,
+    );
+    Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AnkiCardCreationScreen(noteData: noteData),
+      ),
+    ).then((result) {
+      if (result == true) {
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text('Added "${widget.entry.expression}" to Anki'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -185,6 +228,13 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
                 tooltip: 'Copy',
                 iconSize: 20,
               ),
+              if (defaultTargetPlatform == TargetPlatform.android)
+                IconButton(
+                  onPressed: _sendToAnki,
+                  icon: const Icon(Icons.electric_bolt_outlined),
+                  tooltip: 'Send to AnkiDroid',
+                  iconSize: 20,
+                ),
               IconButton.filledTonal(
                 onPressed: _isSaved ? null : _toggleSave,
                 icon: Icon(

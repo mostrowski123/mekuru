@@ -11,6 +11,10 @@ import 'features/reader/data/services/mecab_service.dart';
 /// and navigator observation.
 final navigatorKey = GlobalKey<NavigatorState>();
 
+/// Global scaffold messenger key so snackbars can be shown on top of
+/// modal bottom sheets and other overlays.
+final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 /// Global Riverpod provider for the Drift database instance.
 /// Created once at app startup and disposed when the app is torn down.
 final databaseProvider = Provider<AppDatabase>((ref) {
