@@ -36,6 +36,9 @@ dependencies:
   # Streaming JSON parsing (for large dictionary collection files)
   json_events: ^1.2.2
 
+  # Fuzzy search
+  fuzzy_bolt: ^2.0.2
+
   # Utilities
   csv: ^7.1.0
   uuid: ^4.5.2

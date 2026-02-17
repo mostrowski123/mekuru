@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 
@@ -188,17 +189,18 @@ class DictionaryQueryService {
     }).toList();
   }
 
-  /// Fuzzy search combining exact match, prefix match, sub-component matches,
-  /// and English definition search.
+  /// Fuzzy search combining exact match, fuzzy_bolt ranked matches,
+  /// sub-component matches, and English definition search.
   ///
   /// For romaji input, converts to hiragana and searches by reading.
   /// For katakana input, also searches the hiragana equivalent.
   /// For kanji input, also decomposes into individual kanji for sub-matches.
   /// For Latin/English input, also searches glossary definitions.
   ///
-  /// Results are ordered by relevance: exact matches first, then prefix matches,
-  /// then sub-component matches, then glossary matches. Within each group,
-  /// dictionary sort order applies.
+  /// Results are ordered by relevance: exact matches first, then fuzzy-ranked
+  /// matches (via fuzzy_bolt), then sub-component matches, then glossary
+  /// matches. Within exact/sub-component groups dictionary sort order applies;
+  /// fuzzy and glossary groups are ranked by match quality.
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
     String term,
   ) async {
@@ -232,14 +234,31 @@ class DictionaryQueryService {
       searchTerms.add(hiraganaVersion);
     }
 
-    // 1. Exact matches
+    // 1. Exact matches (highest priority — always on top)
     for (final t in searchTerms) {
       addResults(await searchWithSource(t));
     }
 
-    // 2. Prefix matches
-    for (final t in searchTerms) {
-      addResults(await prefixSearchWithSource(t, limit: 30));
+    // 2. Fuzzy matches on expression/reading via fuzzy_bolt
+    final prefixCandidates =
+        await _fetchPrefixCandidates(searchTerms, limit: 100);
+    if (prefixCandidates.isNotEmpty) {
+      for (final t in searchTerms) {
+        final fuzzyMatches =
+            await FuzzyBolt.search<DictionaryEntryWithSource>(
+              prefixCandidates,
+              t,
+              selectors: [
+                (e) => e.entry.expression,
+                (e) => e.entry.reading,
+              ],
+              strictThreshold: 0.8,
+              typeThreshold: 0.3,
+              maxResults: 30,
+              skipIsolate: true,
+            );
+        addResults(fuzzyMatches);
+      }
     }
 
     // 3. Sub-component matches (individual kanji from original term)
@@ -253,9 +272,23 @@ class DictionaryQueryService {
       }
     }
 
-    // 4. English definition search (glossary text contains the term)
+    // 4. English definition fuzzy search via fuzzy_bolt
     if (_hasLatinLetters(term)) {
-      addResults(await glossarySearchWithSource(term, limit: 30));
+      final glossaryCandidates =
+          await _fetchGlossaryCandidates(term, limit: 100);
+      if (glossaryCandidates.isNotEmpty) {
+        final fuzzyMatches =
+            await FuzzyBolt.search<DictionaryEntryWithSource>(
+              glossaryCandidates,
+              term,
+              selectors: [(e) => e.entry.glossaries],
+              strictThreshold: 0.7,
+              typeThreshold: 0.3,
+              maxResults: 30,
+              skipIsolate: true,
+            );
+        addResults(fuzzyMatches);
+      }
     }
 
     return results;
@@ -321,6 +354,84 @@ class DictionaryQueryService {
       return PitchAccentResult(
         reading: pitch.reading,
         downstepPosition: pitch.downstepPosition,
+        dictionaryName: meta.name,
+      );
+    }).toList();
+  }
+
+  /// Fetch a broad set of candidates whose expression or reading starts with
+  /// any of [searchTerms]. Used as the input dataset for fuzzy_bolt ranking.
+  Future<List<DictionaryEntryWithSource>> _fetchPrefixCandidates(
+    List<String> searchTerms, {
+    int limit = 100,
+  }) async {
+    final allResults = <DictionaryEntryWithSource>[];
+    final seenIds = <int>{};
+
+    for (final term in searchTerms) {
+      if (term.isEmpty) continue;
+
+      final pattern = '$term%';
+      final query = _db.select(_db.dictionaryEntries).join([
+        innerJoin(
+          _db.dictionaryMetas,
+          _db.dictionaryMetas.id.equalsExp(
+            _db.dictionaryEntries.dictionaryId,
+          ),
+        ),
+      ])
+        ..where(
+          _db.dictionaryEntries.expression.like(pattern) |
+              _db.dictionaryEntries.reading.like(pattern),
+        )
+        ..where(_db.dictionaryMetas.isEnabled.equals(true))
+        ..limit(limit);
+
+      final rows = await query.get();
+      for (final row in rows) {
+        final entry = row.readTable(_db.dictionaryEntries);
+        if (seenIds.add(entry.id)) {
+          final meta = row.readTable(_db.dictionaryMetas);
+          allResults.add(
+            DictionaryEntryWithSource(
+              entry: entry,
+              dictionaryName: meta.name,
+            ),
+          );
+        }
+      }
+    }
+
+    return allResults;
+  }
+
+  /// Fetch candidate entries whose glossary text contains [term].
+  /// Used as the input dataset for fuzzy_bolt ranking of English definitions.
+  Future<List<DictionaryEntryWithSource>> _fetchGlossaryCandidates(
+    String term, {
+    int limit = 100,
+  }) async {
+    if (term.isEmpty) return [];
+
+    final pattern = '%$term%';
+    final query = _db.select(_db.dictionaryEntries).join([
+      innerJoin(
+        _db.dictionaryMetas,
+        _db.dictionaryMetas.id.equalsExp(
+          _db.dictionaryEntries.dictionaryId,
+        ),
+      ),
+    ])
+      ..where(_db.dictionaryEntries.glossaries.like(pattern))
+      ..where(_db.dictionaryMetas.isEnabled.equals(true))
+      ..limit(limit);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final entry = row.readTable(_db.dictionaryEntries);
+      final meta = row.readTable(_db.dictionaryMetas);
+      return DictionaryEntryWithSource(
+        entry: entry,
         dictionaryName: meta.name,
       );
     }).toList();
