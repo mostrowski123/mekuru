@@ -188,14 +188,17 @@ class DictionaryQueryService {
     }).toList();
   }
 
-  /// Fuzzy search combining exact match, prefix match, and sub-component matches.
+  /// Fuzzy search combining exact match, prefix match, sub-component matches,
+  /// and English definition search.
   ///
   /// For romaji input, converts to hiragana and searches by reading.
   /// For katakana input, also searches the hiragana equivalent.
   /// For kanji input, also decomposes into individual kanji for sub-matches.
+  /// For Latin/English input, also searches glossary definitions.
   ///
   /// Results are ordered by relevance: exact matches first, then prefix matches,
-  /// then sub-component matches. Within each group, dictionary sort order applies.
+  /// then sub-component matches, then glossary matches. Within each group,
+  /// dictionary sort order applies.
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
     String term,
   ) async {
@@ -250,7 +253,49 @@ class DictionaryQueryService {
       }
     }
 
+    // 4. English definition search (glossary text contains the term)
+    if (_hasLatinLetters(term)) {
+      addResults(await glossarySearchWithSource(term, limit: 30));
+    }
+
     return results;
+  }
+
+  /// Search entries whose glossary text contains [term] (case-insensitive).
+  ///
+  /// This enables English-to-Japanese lookup by searching within the
+  /// JSON-encoded definition strings. Results are ordered by dictionary
+  /// sort order and limited to [limit] entries.
+  Future<List<DictionaryEntryWithSource>> glossarySearchWithSource(
+    String term, {
+    int limit = 30,
+  }) async {
+    if (term.isEmpty) return [];
+
+    final pattern = '%$term%';
+    final query =
+        _db.select(_db.dictionaryEntries).join([
+            innerJoin(
+              _db.dictionaryMetas,
+              _db.dictionaryMetas.id.equalsExp(
+                _db.dictionaryEntries.dictionaryId,
+              ),
+            ),
+          ])
+          ..where(_db.dictionaryEntries.glossaries.like(pattern))
+          ..where(_db.dictionaryMetas.isEnabled.equals(true))
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)])
+          ..limit(limit);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final entry = row.readTable(_db.dictionaryEntries);
+      final meta = row.readTable(_db.dictionaryMetas);
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: meta.name,
+      );
+    }).toList();
   }
 
   /// Search pitch accents by expression.
@@ -289,4 +334,12 @@ class DictionaryQueryService {
     return (code >= 0x4E00 && code <= 0x9FFF) ||
         (code >= 0x3400 && code <= 0x4DBF);
   }
+
+  /// Returns `true` if [text] contains at least one Latin letter (a-z/A-Z).
+  /// Used to decide whether to search glossary definitions (English input).
+  static bool _hasLatinLetters(String text) {
+    return _latinPattern.hasMatch(text);
+  }
+
+  static final _latinPattern = RegExp(r'[a-zA-Z]');
 }

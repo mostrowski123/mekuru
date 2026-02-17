@@ -212,6 +212,155 @@ void main() {
     });
   });
 
+  group('glossarySearchWithSource', () {
+    test('finds entries by English definition substring', () async {
+      final results = await queryService.glossarySearchWithSource('eat');
+      expect(results, isNotEmpty);
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, contains('食べる'));
+      // 'all-you-can-eat' also contains 'eat'
+      expect(expressions, contains('食べ放題'));
+    });
+
+    test('is case-insensitive', () async {
+      final lower = await queryService.glossarySearchWithSource('drink');
+      final upper = await queryService.glossarySearchWithSource('DRINK');
+      expect(lower, isNotEmpty);
+      expect(upper, isNotEmpty);
+      expect(lower.first.entry.expression, upper.first.entry.expression);
+    });
+
+    test('finds entries by full definition word', () async {
+      final results = await queryService.glossarySearchWithSource('national');
+      expect(results, isNotEmpty);
+      expect(results.first.entry.expression, '国立');
+    });
+
+    test('finds entries by partial word match', () async {
+      final results = await queryService.glossarySearchWithSource('coun');
+      expect(results, isNotEmpty);
+      expect(results.first.entry.expression, '国');
+    });
+
+    test('returns empty for non-matching term', () async {
+      final results =
+          await queryService.glossarySearchWithSource('nonexistentword');
+      expect(results, isEmpty);
+    });
+
+    test('returns empty for empty term', () async {
+      final results = await queryService.glossarySearchWithSource('');
+      expect(results, isEmpty);
+    });
+
+    test('respects limit parameter', () async {
+      final results =
+          await queryService.glossarySearchWithSource('to', limit: 2);
+      expect(results.length, lessThanOrEqualTo(2));
+    });
+
+    test('excludes disabled dictionaries', () async {
+      // Create a separate DB with disabled dict
+      final db2 = createTestDatabase();
+      final repo2 = DictionaryRepository(db2);
+      final qs2 = DictionaryQueryService(db2);
+
+      final enabledId = await repo2.insertDictionary('Enabled');
+      final disabledId = await repo2.insertDictionary('Disabled');
+      await repo2.toggleDictionary(disabledId, isEnabled: false);
+
+      await repo2.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '犬',
+          reading: const Value('いぬ'),
+          glossaries: jsonEncode(['dog']),
+          dictionaryId: enabledId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '猫',
+          reading: const Value('ねこ'),
+          glossaries: jsonEncode(['cat', 'dog-like']),
+          dictionaryId: disabledId,
+        ),
+      ]);
+
+      final results = await qs2.glossarySearchWithSource('dog');
+      expect(results, hasLength(1));
+      expect(results.first.entry.expression, '犬');
+      await db2.close();
+    });
+  });
+
+  group('fuzzySearchWithSource — English definition search', () {
+    test('English input finds entries via glossary definitions', () async {
+      final results = await queryService.fuzzySearchWithSource('drink');
+      expect(results, isNotEmpty);
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, contains('飲む'));
+    });
+
+    test('English input "eat" finds 食べる', () async {
+      final results = await queryService.fuzzySearchWithSource('eat');
+      expect(results, isNotEmpty);
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, contains('食べる'));
+    });
+
+    test('English input "food" finds 食べ物', () async {
+      final results = await queryService.fuzzySearchWithSource('food');
+      expect(results, isNotEmpty);
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, contains('食べ物'));
+    });
+
+    test('English input "ramen" finds ラーメン', () async {
+      final results = await queryService.fuzzySearchWithSource('ramen');
+      expect(results, isNotEmpty);
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, contains('ラーメン'));
+    });
+
+    test('English input "run" finds 走る', () async {
+      final results = await queryService.fuzzySearchWithSource('run');
+      expect(results, isNotEmpty);
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, contains('走る'));
+    });
+
+    test('English input with spaces works', () async {
+      final results = await queryService.fuzzySearchWithSource('to stand');
+      expect(results, isNotEmpty);
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, contains('立'));
+    });
+
+    test('romaji input still finds by reading AND by glossary', () async {
+      // 'nomu' converts to 'のむ' → finds 飲む via reading
+      // 'nomu' is also ASCII → glossary search (won't match anything extra)
+      final results = await queryService.fuzzySearchWithSource('nomu');
+      expect(results, isNotEmpty);
+      expect(results.first.entry.expression, '飲む');
+    });
+
+    test('deduplicates entries found via both romaji and glossary', () async {
+      // 'ramen' converts to 'らめん' (partial) → might match ラーメン via reading prefix
+      // 'ramen' also matches glossary → ラーメン
+      // Should not have duplicates
+      final results = await queryService.fuzzySearchWithSource('ramen');
+      final ids = results.map((r) => r.entry.id).toList();
+      expect(ids.toSet().length, ids.length);
+    });
+
+    test('non-ASCII input does not trigger glossary search', () async {
+      // Pure Japanese input should not search glossaries
+      // (testing indirectly: searching for 'country' in Japanese won't work)
+      final results = await queryService.fuzzySearchWithSource('くに');
+      // Should find 国 by reading, but not via glossary
+      expect(results, isNotEmpty);
+      expect(results.first.entry.expression, '国');
+    });
+  });
+
   group('fuzzySearchWithSource — disabled dictionaries', () {
     late AppDatabase db2;
     late DictionaryRepository repo2;
