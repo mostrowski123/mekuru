@@ -17,7 +17,7 @@ class KanjiVgDownloadService {
   /// GitHub release archive URL for KanjiVG SVGs.
   static const downloadUrl =
       'https://github.com/KanjiVG/kanjivg/releases/download/'
-      'kanjivg-20220427/kanjivg-20220427-all.zip';
+      'r20250816/kanjivg-20250816-all.zip';
 
   /// Local directory name where SVGs are stored.
   static const _localDirName = 'kanjivg';
