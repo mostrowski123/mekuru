@@ -17,6 +17,10 @@ abstract class AppSettingsStorage {
   Future<void> saveFilterRomanLetters(bool value);
   Future<String?> loadAnkidroidConfig();
   Future<void> saveAnkidroidConfig(String configJson);
+  Future<String?> loadStartupScreen();
+  Future<void> saveStartupScreen(String screen);
+  Future<bool?> loadAutoFocusSearch();
+  Future<void> saveAutoFocusSearch(bool value);
 }
 
 /// SharedPreferences-backed implementation of [AppSettingsStorage].
@@ -27,6 +31,8 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _searchHistoryKey = 'app.dictionary_search_history';
   static const _filterRomanLettersKey = 'app.filter_roman_letters';
   static const _ankidroidConfigKey = 'app.ankidroid_config';
+  static const _startupScreenKey = 'app.startup_screen';
+  static const _autoFocusSearchKey = 'app.auto_focus_search';
 
   @override
   Future<ThemeMode?> loadThemeMode() async {
@@ -111,5 +117,29 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveAnkidroidConfig(String configJson) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_ankidroidConfigKey, configJson);
+  }
+
+  @override
+  Future<String?> loadStartupScreen() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_startupScreenKey);
+  }
+
+  @override
+  Future<void> saveStartupScreen(String screen) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_startupScreenKey, screen);
+  }
+
+  @override
+  Future<bool?> loadAutoFocusSearch() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_autoFocusSearchKey);
+  }
+
+  @override
+  Future<void> saveAutoFocusSearch(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_autoFocusSearchKey, value);
   }
 }

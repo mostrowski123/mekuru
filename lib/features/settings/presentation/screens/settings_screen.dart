@@ -32,6 +32,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(appThemeModeProvider);
+    final startupScreen = ref.watch(startupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
     final kanjiVgState = ref.watch(kanjiVgProvider);
     final jpdbFreqState = ref.watch(jpdbFreqProvider);
@@ -54,6 +55,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               _showThemeModePicker(context, ref, themeMode);
+            },
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.home_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Startup Screen'),
+            subtitle: Text(startupScreen.label),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              _showStartupScreenPicker(context, ref, startupScreen);
             },
           ),
           const Divider(),
@@ -115,6 +129,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ref
                   .read(filterRomanLettersProvider.notifier)
                   .setFilter(value);
+            },
+          ),
+          SwitchListTile(
+            secondary: Icon(
+              Icons.keyboard_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Auto-Focus Search'),
+            subtitle:
+                const Text('Open keyboard when dictionary page is loaded'),
+            value: ref.watch(autoFocusSearchProvider),
+            onChanged: (value) {
+              AppHaptics.light();
+              ref
+                  .read(autoFocusSearchProvider.notifier)
+                  .setAutoFocus(value);
             },
           ),
           const Divider(),
@@ -391,6 +421,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
+
+  void _showStartupScreenPicker(
+    BuildContext context,
+    WidgetRef ref,
+    StartupScreen current,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Startup Screen',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            const Divider(height: 1),
+            for (final option in StartupScreen.values)
+              ListTile(
+                leading: Icon(_startupScreenIcon(option)),
+                title: Text(option.label),
+                trailing: current == option
+                    ? Icon(Icons.check,
+                        color: Theme.of(context).colorScheme.primary)
+                    : null,
+                onTap: () {
+                  AppHaptics.medium();
+                  ref
+                      .read(startupScreenProvider.notifier)
+                      .setStartupScreen(option);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static IconData _startupScreenIcon(StartupScreen screen) => switch (screen) {
+        StartupScreen.library => Icons.auto_stories_outlined,
+        StartupScreen.dictionary => Icons.book_outlined,
+        StartupScreen.lastRead => Icons.menu_book_outlined,
+      };
 }
 
 // ── Private widgets ──

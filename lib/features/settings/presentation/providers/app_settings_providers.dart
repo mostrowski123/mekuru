@@ -156,3 +156,85 @@ class FilterRomanLettersNotifier extends Notifier<bool> {
 final filterRomanLettersProvider =
     NotifierProvider<FilterRomanLettersNotifier, bool>(
         FilterRomanLettersNotifier.new);
+
+/// Which screen the app opens to on cold start.
+enum StartupScreen {
+  library('Library'),
+  dictionary('Dictionary'),
+  lastRead('Last Read Book');
+
+  final String label;
+  const StartupScreen(this.label);
+}
+
+/// Manages the startup screen preference.
+class StartupScreenNotifier extends Notifier<StartupScreen> {
+  bool _hasLoadedPersistedSettings = false;
+  bool _doneLoading = false;
+
+  /// Whether the persisted value has been loaded from storage.
+  bool get hasLoaded => _doneLoading;
+
+  @override
+  StartupScreen build() => StartupScreen.library;
+
+  /// Load persisted startup screen from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted =
+        await ref.read(appSettingsStorageProvider).loadStartupScreen();
+    if (persisted != null) {
+      state = StartupScreen.values.firstWhere(
+        (e) => e.name == persisted,
+        orElse: () => StartupScreen.library,
+      );
+    }
+    _doneLoading = true;
+  }
+
+  /// Set the startup screen and persist to storage.
+  void setStartupScreen(StartupScreen screen) {
+    state = screen;
+    unawaited(
+        ref.read(appSettingsStorageProvider).saveStartupScreen(screen.name));
+  }
+}
+
+/// Provider for the startup screen setting.
+final startupScreenProvider =
+    NotifierProvider<StartupScreenNotifier, StartupScreen>(
+        StartupScreenNotifier.new);
+
+/// Manages whether the dictionary search field auto-focuses on load.
+class AutoFocusSearchNotifier extends Notifier<bool> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  bool build() => true;
+
+  /// Load persisted setting from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted =
+        await ref.read(appSettingsStorageProvider).loadAutoFocusSearch();
+    if (persisted != null) {
+      state = persisted;
+    }
+  }
+
+  /// Set the value and persist to storage.
+  void setAutoFocus(bool value) {
+    state = value;
+    unawaited(
+        ref.read(appSettingsStorageProvider).saveAutoFocusSearch(value));
+  }
+}
+
+/// Provider for the auto-focus search setting.
+final autoFocusSearchProvider =
+    NotifierProvider<AutoFocusSearchNotifier, bool>(
+        AutoFocusSearchNotifier.new);

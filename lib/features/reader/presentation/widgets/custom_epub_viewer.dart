@@ -324,9 +324,15 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         ? '"${widget.initialCfi!.replaceAll('"', '\\"')}"'
         : '""';
     final fgHex = widget.foregroundColor != null
-        ? '"#${widget.foregroundColor!.red.toRadixString(16).padLeft(2, '0')}'
-              '${widget.foregroundColor!.green.toRadixString(16).padLeft(2, '0')}'
-              '${widget.foregroundColor!.blue.toRadixString(16).padLeft(2, '0')}"'
+        ? () {
+            final fg = widget.foregroundColor!;
+            final r = (fg.r * 255.0).round().clamp(0, 255);
+            final g = (fg.g * 255.0).round().clamp(0, 255);
+            final b = (fg.b * 255.0).round().clamp(0, 255);
+            return '"#${r.toRadixString(16).padLeft(2, '0')}'
+                '${g.toRadixString(16).padLeft(2, '0')}'
+                '${b.toRadixString(16).padLeft(2, '0')}"';
+          }()
         : '""';
 
     String cssParam;
@@ -357,9 +363,12 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     // on load to avoid a white flash when using sepia mode.
     if (widget.backgroundColor != null) {
       final bg = widget.backgroundColor!;
-      final bgHex = '#${bg.red.toRadixString(16).padLeft(2, '0')}'
-          '${bg.green.toRadixString(16).padLeft(2, '0')}'
-          '${bg.blue.toRadixString(16).padLeft(2, '0')}';
+      final r = (bg.r * 255.0).round().clamp(0, 255);
+      final g = (bg.g * 255.0).round().clamp(0, 255);
+      final b = (bg.b * 255.0).round().clamp(0, 255);
+      final bgHex = '#${r.toRadixString(16).padLeft(2, '0')}'
+          '${g.toRadixString(16).padLeft(2, '0')}'
+          '${b.toRadixString(16).padLeft(2, '0')}';
       _webViewController?.evaluateJavascript(
         source: 'setBodyBackground("$bgHex")',
       );

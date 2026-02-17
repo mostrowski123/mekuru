@@ -549,6 +549,28 @@ function getTextAtPoint(clientX, clientY, doc) {
     // Must be a text node
     if (node.nodeType !== 3) return null;
 
+    // Check visual distance between tap point and the resolved character.
+    // caretRangeFromPoint snaps to the nearest text even when tapping far
+    // from any text — reject if the character is too far from the tap.
+    var checkRange = range.cloneRange();
+    try {
+      checkRange.setStart(node, offset);
+      checkRange.setEnd(node, Math.min(offset + 1, node.textContent.length));
+      var rect = checkRange.getBoundingClientRect();
+      if (rect && rect.width > 0 && rect.height > 0) {
+        var dx = 0;
+        var dy = 0;
+        if (clientX < rect.left) dx = rect.left - clientX;
+        else if (clientX > rect.right) dx = clientX - rect.right;
+        if (clientY < rect.top) dy = rect.top - clientY;
+        else if (clientY > rect.bottom) dy = clientY - rect.bottom;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 50) return null;
+      }
+    } catch (e) {
+      // getBoundingClientRect can fail in edge cases; proceed normally
+    }
+
     // If inside <rt> (furigana annotation), use the base text from <ruby>
     var parent = node.parentElement;
     while (parent) {

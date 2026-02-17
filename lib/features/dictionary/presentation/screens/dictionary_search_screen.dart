@@ -21,24 +21,37 @@ class DictionarySearchScreen extends ConsumerStatefulWidget {
   final String? initialQuery;
 
   @override
-  ConsumerState<DictionarySearchScreen> createState() =>
-      _DictionarySearchScreenState();
+  DictionarySearchScreenState createState() =>
+      DictionarySearchScreenState();
 }
 
-class _DictionarySearchScreenState
+class DictionarySearchScreenState
     extends ConsumerState<DictionarySearchScreen> {
   static final _latinPattern = RegExp(r'[a-zA-Z]');
 
   late final TextEditingController _controller;
+  late final FocusNode _searchFocusNode;
   Timer? _debounce;
   List<DictionaryEntryWithSource>? _results;
   bool _isSearching = false;
   String _lastQuery = '';
 
+  /// Request focus on the search field (e.g. when the tab becomes visible).
+  ///
+  /// A short delay ensures the platform input connection is ready,
+  /// which is necessary for the soft keyboard to appear on cold start.
+  Future<void> requestSearchFocus() async {
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    if (mounted) {
+      _searchFocusNode.requestFocus();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialQuery ?? '');
+    _searchFocusNode = FocusNode();
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       // Trigger initial search after build
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -51,6 +64,7 @@ class _DictionarySearchScreenState
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -121,7 +135,7 @@ class _DictionarySearchScreenState
     final hasDictionaries = ref.watch(dictionariesProvider);
 
     // Re-search when Roman letter filter changes
-    ref.listen(filterRomanLettersProvider, (_, __) {
+    ref.listen(filterRomanLettersProvider, (_, _) {
       if (_lastQuery.isNotEmpty) {
         _performSearch(_lastQuery);
       }
@@ -151,6 +165,7 @@ class _DictionarySearchScreenState
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
               controller: _controller,
+              focusNode: _searchFocusNode,
               autofocus: false,
               decoration: InputDecoration(
                 hintText: 'Search in kanji, kana, or romaji...',
@@ -263,7 +278,7 @@ class _DictionarySearchScreenState
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: results.length + (isSingleKanji ? 1 : 0),
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         // Show stroke order as the first item for single-kanji searches
         if (isSingleKanji && index == 0) {

@@ -72,7 +72,7 @@ void main() {
         svgBytes,
       ));
 
-      final zipBytes = ZipEncoder().encode(archive)!;
+      final zipBytes = ZipEncoder().encode(archive);
 
       // Extract using the same logic as the service
       final outputDir = tempDir.path;
@@ -98,7 +98,7 @@ void main() {
         svgBytes,
       ));
 
-      final zipBytes = ZipEncoder().encode(archive)!;
+      final zipBytes = ZipEncoder().encode(archive);
       _extractSvgsFromArchive(zipBytes, tempDir.path);
 
       final extracted = File(p.join(tempDir.path, '04e00.svg'));
@@ -108,7 +108,7 @@ void main() {
 
     test('handles empty archive', () {
       final archive = Archive();
-      final zipBytes = ZipEncoder().encode(archive)!;
+      final zipBytes = ZipEncoder().encode(archive);
       final count = _extractSvgsFromArchive(zipBytes, tempDir.path);
       expect(count, 0);
     });

@@ -28,6 +28,14 @@ class BookRepository {
   Future<Book?> getBookById(int id) =>
       (_db.select(_db.books)..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  /// Get the most recently read book (by [lastReadAt]).
+  /// Returns `null` if no book has been opened yet.
+  Future<Book?> getMostRecentlyReadBook() => (_db.select(_db.books)
+        ..where((t) => t.lastReadAt.isNotNull())
+        ..orderBy([(t) => OrderingTerm.desc(t.lastReadAt)])
+        ..limit(1))
+      .getSingleOrNull();
+
   // ──────────────── Import ────────────────
 
   /// Import an EPUB file into the library.
