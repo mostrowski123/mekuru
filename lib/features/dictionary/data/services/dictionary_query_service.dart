@@ -293,22 +293,32 @@ class DictionaryQueryService {
   /// For kanji input, also decomposes into individual kanji for sub-matches.
   /// For Latin/English input, also searches glossary definitions.
   ///
-  /// Results are ordered by relevance: exact matches first, then fuzzy-ranked
-  /// matches (via fuzzy_bolt), then sub-component matches, then glossary
-  /// matches. Within exact/sub-component groups dictionary sort order applies;
-  /// fuzzy and glossary groups are ranked by match quality.
+  /// Results are ordered by relevance tier: exact matches first, then
+  /// fuzzy-ranked matches (via fuzzy_bolt), then sub-component matches,
+  /// then glossary matches. Within each tier, results are sorted by frequency
+  /// rank (most common first). Fuzzy and glossary tiers preserve their
+  /// match-quality ordering as a secondary signal.
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
     String term,
   ) async {
     if (term.isEmpty) return [];
 
-    final results = <DictionaryEntryWithSource>[];
     final seenIds = <int>{};
 
-    void addResults(List<DictionaryEntryWithSource> newResults) {
+    // Collect results per tier so we can sort within tiers by frequency
+    // while preserving the tier ordering.
+    final exactResults = <DictionaryEntryWithSource>[];
+    final fuzzyResults = <DictionaryEntryWithSource>[];
+    final subComponentResults = <DictionaryEntryWithSource>[];
+    final glossaryResults = <DictionaryEntryWithSource>[];
+
+    void addTo(
+      List<DictionaryEntryWithSource> bucket,
+      List<DictionaryEntryWithSource> newResults,
+    ) {
       for (final r in newResults) {
         if (seenIds.add(r.entry.id)) {
-          results.add(r);
+          bucket.add(r);
         }
       }
     }
@@ -332,7 +342,7 @@ class DictionaryQueryService {
 
     // 1. Exact matches (highest priority — always on top)
     for (final t in searchTerms) {
-      addResults(await searchWithSource(t));
+      addTo(exactResults, await searchWithSource(t));
     }
 
     // 2. Fuzzy matches on expression/reading via fuzzy_bolt
@@ -353,7 +363,7 @@ class DictionaryQueryService {
               maxResults: 30,
               skipIsolate: true,
             );
-        addResults(fuzzyMatches);
+        addTo(fuzzyResults, fuzzyMatches);
       }
     }
 
@@ -363,7 +373,7 @@ class DictionaryQueryService {
       for (final rune in term.runes) {
         final char = String.fromCharCode(rune);
         if (_isKanji(char) && seen.add(char)) {
-          addResults(await searchWithSource(char));
+          addTo(subComponentResults, await searchWithSource(char));
         }
       }
     }
@@ -383,12 +393,24 @@ class DictionaryQueryService {
               maxResults: 30,
               skipIsolate: true,
             );
-        addResults(fuzzyMatches);
+        addTo(glossaryResults, fuzzyMatches);
       }
     }
 
-    // Attach frequency ranks and sort by rank (most common first)
-    return _attachFrequencyRanks(results);
+    // Attach frequency ranks per tier, then concatenate in tier order.
+    // This ensures exact matches always appear before fuzzy, which appear
+    // before sub-component kanji matches, etc. — regardless of frequency.
+    final rankedExact = await _attachFrequencyRanks(exactResults);
+    final rankedFuzzy = await _attachFrequencyRanks(fuzzyResults);
+    final rankedSubComponent = await _attachFrequencyRanks(subComponentResults);
+    final rankedGlossary = await _attachFrequencyRanks(glossaryResults);
+
+    return [
+      ...rankedExact,
+      ...rankedFuzzy,
+      ...rankedSubComponent,
+      ...rankedGlossary,
+    ];
   }
 
   /// Search entries whose glossary text contains [term] (case-insensitive).
