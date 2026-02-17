@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'features/dictionary/presentation/screens/dictionary_manager_screen.dart';
+import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/presentation/screens/library_screen.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
@@ -15,6 +15,8 @@ class MekuruApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.read(appThemeModeProvider.notifier).loadPersistedSettings();
     ref.read(lookupFontSizeProvider.notifier).loadPersistedSettings();
+    ref.read(searchHistoryProvider.notifier).loadPersistedSettings();
+    ref.read(filterRomanLettersProvider.notifier).loadPersistedSettings();
     final themeMode = ref.watch(appThemeModeProvider);
 
     return MaterialApp(
@@ -41,7 +43,7 @@ class _MainShellState extends State<_MainShell> {
 
   static const _screens = <Widget>[
     LibraryScreen(),
-    DictionaryManagerScreen(),
+    DictionarySearchScreen(),
     VocabularyScreen(),
   ];
 

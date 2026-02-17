@@ -7,15 +7,16 @@ import '../../features/vocabulary/data/models/saved_word.dart';
 import '../../features/dictionary/data/models/dictionary_meta.dart';
 import '../../features/dictionary/data/models/dictionary_entry.dart';
 import '../../features/dictionary/data/models/pitch_accent.dart';
+import '../../features/dictionary/data/models/frequency.dart';
 
 part 'database_provider.g.dart';
 
-@DriftDatabase(tables: [Books, SavedWords, DictionaryMetas, DictionaryEntries, PitchAccents])
+@DriftDatabase(tables: [Books, SavedWords, DictionaryMetas, DictionaryEntries, PitchAccents, Frequencies])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -38,6 +39,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 5) {
             await migrator.createTable(pitchAccents);
+          }
+          if (from < 6) {
+            await migrator.createTable(frequencies);
           }
         },
       );

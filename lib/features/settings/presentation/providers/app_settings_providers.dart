@@ -72,3 +72,87 @@ class LookupFontSizeNotifier extends Notifier<double> {
 final lookupFontSizeProvider =
     NotifierProvider<LookupFontSizeNotifier, double>(
         LookupFontSizeNotifier.new);
+
+/// Manages the dictionary search history.
+class SearchHistoryNotifier extends Notifier<List<String>> {
+  static const int maxEntries = 20;
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  List<String> build() => [];
+
+  /// Load persisted search history from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted =
+        await ref.read(appSettingsStorageProvider).loadSearchHistory();
+    if (persisted.isNotEmpty) {
+      state = persisted;
+    }
+  }
+
+  /// Add a search term to history (most recent first, deduplicated).
+  void addSearch(String term) {
+    final trimmed = term.trim();
+    if (trimmed.isEmpty) return;
+
+    final updated = [trimmed, ...state.where((s) => s != trimmed)];
+    if (updated.length > maxEntries) {
+      state = updated.sublist(0, maxEntries);
+    } else {
+      state = updated;
+    }
+    unawaited(ref.read(appSettingsStorageProvider).saveSearchHistory(state));
+  }
+
+  /// Remove a single search term from history.
+  void removeSearch(String term) {
+    state = state.where((s) => s != term).toList();
+    unawaited(ref.read(appSettingsStorageProvider).saveSearchHistory(state));
+  }
+
+  /// Clear all search history.
+  void clearAll() {
+    state = [];
+    unawaited(ref.read(appSettingsStorageProvider).saveSearchHistory(state));
+  }
+}
+
+/// Provider for the dictionary search history.
+final searchHistoryProvider =
+    NotifierProvider<SearchHistoryNotifier, List<String>>(
+        SearchHistoryNotifier.new);
+
+/// Manages the filter for hiding dictionary entries with Roman letters.
+class FilterRomanLettersNotifier extends Notifier<bool> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  bool build() => false;
+
+  /// Load persisted setting from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted =
+        await ref.read(appSettingsStorageProvider).loadFilterRomanLetters();
+    if (persisted != null) {
+      state = persisted;
+    }
+  }
+
+  /// Set the filter value and persist to storage.
+  void setFilter(bool value) {
+    state = value;
+    unawaited(
+        ref.read(appSettingsStorageProvider).saveFilterRomanLetters(value));
+  }
+}
+
+/// Provider for the Roman letter filter setting.
+final filterRomanLettersProvider =
+    NotifierProvider<FilterRomanLettersNotifier, bool>(
+        FilterRomanLettersNotifier.new);

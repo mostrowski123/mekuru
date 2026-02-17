@@ -1,15 +1,37 @@
 import 'package:drift/drift.dart';
+import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 
 /// A dictionary entry paired with the name of the dictionary it came from.
 class DictionaryEntryWithSource {
   final DictionaryEntry entry;
   final String dictionaryName;
+  final int? frequencyRank;
 
   const DictionaryEntryWithSource({
     required this.entry,
     required this.dictionaryName,
+    this.frequencyRank,
   });
+
+  /// Returns a qualitative label for the frequency rank.
+  static String? frequencyLabel(int? rank) {
+    if (rank == null) return null;
+    if (rank <= 5000) return 'Very Common';
+    if (rank <= 15000) return 'Common';
+    if (rank <= 30000) return 'Uncommon';
+    return 'Rare';
+  }
+
+  /// Copy with a different frequency rank.
+  DictionaryEntryWithSource withFrequencyRank(int? rank) {
+    return DictionaryEntryWithSource(
+      entry: entry,
+      dictionaryName: dictionaryName,
+      frequencyRank: rank,
+    );
+  }
 }
 
 /// A pitch accent result with its source dictionary name.
@@ -121,7 +143,8 @@ class DictionaryQueryService {
   }
 
   /// Search entries and include the dictionary name for each result.
-  /// Results are ordered by dictionary sort order (same order as Dictionary Manager).
+  /// Results are ordered by frequency rank (most common first), then by
+  /// dictionary sort order as a tiebreaker.
   Future<List<DictionaryEntryWithSource>> searchWithSource(String term) async {
     final query =
         _db.select(_db.dictionaryEntries).join([
@@ -138,6 +161,261 @@ class DictionaryQueryService {
           )
           ..where(_db.dictionaryMetas.isEnabled.equals(true))
           ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+
+    final rows = await query.get();
+    final results = rows.map((row) {
+      final entry = row.readTable(_db.dictionaryEntries);
+      final meta = row.readTable(_db.dictionaryMetas);
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: meta.name,
+      );
+    }).toList();
+
+    return _attachFrequencyRanks(results);
+  }
+
+  /// Look up the best (lowest) frequency rank for a given expression.
+  /// Queries all frequency dictionaries regardless of isEnabled flag.
+  Future<int?> getFrequencyRank(String expression, [String reading = '']) async {
+    final query = _db.selectOnly(_db.frequencies)
+      ..addColumns([_db.frequencies.frequencyRank.min()])
+      ..where(
+        _db.frequencies.expression.equals(expression) |
+            (reading.isNotEmpty
+                ? _db.frequencies.reading.equals(reading)
+                : const Constant(false)),
+      );
+
+    final result = await query.getSingleOrNull();
+    return result?.read(_db.frequencies.frequencyRank.min());
+  }
+
+  /// Batch-query frequency ranks for a list of entries.
+  /// Returns a map from expression to the best (lowest) frequency rank.
+  Future<Map<String, int>> _getFrequencyRanksForExpressions(
+    Set<String> expressions,
+  ) async {
+    if (expressions.isEmpty) return {};
+
+    final ranks = <String, int>{};
+    // Query in batches to avoid overly large IN clauses
+    final exprList = expressions.toList();
+    const batchSize = 200;
+
+    for (var i = 0; i < exprList.length; i += batchSize) {
+      final end = (i + batchSize < exprList.length) ? i + batchSize : exprList.length;
+      final batch = exprList.sublist(i, end);
+
+      final query = _db.select(_db.frequencies)
+        ..where((t) => t.expression.isIn(batch));
+
+      final rows = await query.get();
+      for (final row in rows) {
+        final existing = ranks[row.expression];
+        if (existing == null || row.frequencyRank < existing) {
+          ranks[row.expression] = row.frequencyRank;
+        }
+      }
+    }
+
+    return ranks;
+  }
+
+  /// Attach frequency ranks to a list of results and sort by rank (lowest first).
+  /// Entries without frequency data are placed at the end.
+  Future<List<DictionaryEntryWithSource>> _attachFrequencyRanks(
+    List<DictionaryEntryWithSource> results,
+  ) async {
+    if (results.isEmpty) return results;
+
+    final expressions = results.map((r) => r.entry.expression).toSet();
+    final ranks = await _getFrequencyRanksForExpressions(expressions);
+
+    final ranked = results.map((r) {
+      final rank = ranks[r.entry.expression];
+      return r.withFrequencyRank(rank);
+    }).toList();
+
+    // Stable sort: entries with frequency come first (lower rank = more common)
+    ranked.sort((a, b) {
+      if (a.frequencyRank == null && b.frequencyRank == null) return 0;
+      if (a.frequencyRank == null) return 1;
+      if (b.frequencyRank == null) return -1;
+      return a.frequencyRank!.compareTo(b.frequencyRank!);
+    });
+
+    return ranked;
+  }
+
+  /// Prefix search: expression or reading starts with [term].
+  /// Returns up to [limit] results from enabled dictionaries.
+  Future<List<DictionaryEntryWithSource>> prefixSearchWithSource(
+    String term, {
+    int limit = 50,
+  }) async {
+    if (term.isEmpty) return [];
+
+    final pattern = '$term%';
+    final query =
+        _db.select(_db.dictionaryEntries).join([
+            innerJoin(
+              _db.dictionaryMetas,
+              _db.dictionaryMetas.id.equalsExp(
+                _db.dictionaryEntries.dictionaryId,
+              ),
+            ),
+          ])
+          ..where(
+            _db.dictionaryEntries.expression.like(pattern) |
+                _db.dictionaryEntries.reading.like(pattern),
+          )
+          ..where(_db.dictionaryMetas.isEnabled.equals(true))
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)])
+          ..limit(limit);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final entry = row.readTable(_db.dictionaryEntries);
+      final meta = row.readTable(_db.dictionaryMetas);
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: meta.name,
+      );
+    }).toList();
+  }
+
+  /// Fuzzy search combining exact match, fuzzy_bolt ranked matches,
+  /// sub-component matches, and English definition search.
+  ///
+  /// For romaji input, converts to hiragana and searches by reading.
+  /// For katakana input, also searches the hiragana equivalent.
+  /// For kanji input, also decomposes into individual kanji for sub-matches.
+  /// For Latin/English input, also searches glossary definitions.
+  ///
+  /// Results are ordered by relevance: exact matches first, then fuzzy-ranked
+  /// matches (via fuzzy_bolt), then sub-component matches, then glossary
+  /// matches. Within exact/sub-component groups dictionary sort order applies;
+  /// fuzzy and glossary groups are ranked by match quality.
+  Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
+    String term,
+  ) async {
+    if (term.isEmpty) return [];
+
+    final results = <DictionaryEntryWithSource>[];
+    final seenIds = <int>{};
+
+    void addResults(List<DictionaryEntryWithSource> newResults) {
+      for (final r in newResults) {
+        if (seenIds.add(r.entry.id)) {
+          results.add(r);
+        }
+      }
+    }
+
+    // Build search terms based on input type
+    final searchTerms = <String>[term];
+    final isRomaji = RomajiConverter.isRomaji(term);
+
+    if (isRomaji) {
+      final hiragana = RomajiConverter.convert(term);
+      if (hiragana.isNotEmpty) {
+        searchTerms.add(hiragana);
+      }
+    }
+
+    // If input contains katakana, also try the hiragana version
+    final hiraganaVersion = RomajiConverter.katakanaToHiragana(term);
+    if (hiraganaVersion != term && !searchTerms.contains(hiraganaVersion)) {
+      searchTerms.add(hiraganaVersion);
+    }
+
+    // 1. Exact matches (highest priority — always on top)
+    for (final t in searchTerms) {
+      addResults(await searchWithSource(t));
+    }
+
+    // 2. Fuzzy matches on expression/reading via fuzzy_bolt
+    final prefixCandidates =
+        await _fetchPrefixCandidates(searchTerms, limit: 100);
+    if (prefixCandidates.isNotEmpty) {
+      for (final t in searchTerms) {
+        final fuzzyMatches =
+            await FuzzyBolt.search<DictionaryEntryWithSource>(
+              prefixCandidates,
+              t,
+              selectors: [
+                (e) => e.entry.expression,
+                (e) => e.entry.reading,
+              ],
+              strictThreshold: 0.8,
+              typeThreshold: 0.3,
+              maxResults: 30,
+              skipIsolate: true,
+            );
+        addResults(fuzzyMatches);
+      }
+    }
+
+    // 3. Sub-component matches (individual kanji from original term)
+    if (!isRomaji && term.length > 1) {
+      final seen = <String>{};
+      for (final rune in term.runes) {
+        final char = String.fromCharCode(rune);
+        if (_isKanji(char) && seen.add(char)) {
+          addResults(await searchWithSource(char));
+        }
+      }
+    }
+
+    // 4. English definition fuzzy search via fuzzy_bolt
+    if (_hasLatinLetters(term)) {
+      final glossaryCandidates =
+          await _fetchGlossaryCandidates(term, limit: 100);
+      if (glossaryCandidates.isNotEmpty) {
+        final fuzzyMatches =
+            await FuzzyBolt.search<DictionaryEntryWithSource>(
+              glossaryCandidates,
+              term,
+              selectors: [(e) => e.entry.glossaries],
+              strictThreshold: 0.7,
+              typeThreshold: 0.3,
+              maxResults: 30,
+              skipIsolate: true,
+            );
+        addResults(fuzzyMatches);
+      }
+    }
+
+    // Attach frequency ranks and sort by rank (most common first)
+    return _attachFrequencyRanks(results);
+  }
+
+  /// Search entries whose glossary text contains [term] (case-insensitive).
+  ///
+  /// This enables English-to-Japanese lookup by searching within the
+  /// JSON-encoded definition strings. Results are ordered by dictionary
+  /// sort order and limited to [limit] entries.
+  Future<List<DictionaryEntryWithSource>> glossarySearchWithSource(
+    String term, {
+    int limit = 30,
+  }) async {
+    if (term.isEmpty) return [];
+
+    final pattern = '%$term%';
+    final query =
+        _db.select(_db.dictionaryEntries).join([
+            innerJoin(
+              _db.dictionaryMetas,
+              _db.dictionaryMetas.id.equalsExp(
+                _db.dictionaryEntries.dictionaryId,
+              ),
+            ),
+          ])
+          ..where(_db.dictionaryEntries.glossaries.like(pattern))
+          ..where(_db.dictionaryMetas.isEnabled.equals(true))
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)])
+          ..limit(limit);
 
     final rows = await query.get();
     return rows.map((row) {
@@ -177,4 +455,99 @@ class DictionaryQueryService {
       );
     }).toList();
   }
+
+  /// Fetch a broad set of candidates whose expression or reading starts with
+  /// any of [searchTerms]. Used as the input dataset for fuzzy_bolt ranking.
+  Future<List<DictionaryEntryWithSource>> _fetchPrefixCandidates(
+    List<String> searchTerms, {
+    int limit = 100,
+  }) async {
+    final allResults = <DictionaryEntryWithSource>[];
+    final seenIds = <int>{};
+
+    for (final term in searchTerms) {
+      if (term.isEmpty) continue;
+
+      final pattern = '$term%';
+      final query = _db.select(_db.dictionaryEntries).join([
+        innerJoin(
+          _db.dictionaryMetas,
+          _db.dictionaryMetas.id.equalsExp(
+            _db.dictionaryEntries.dictionaryId,
+          ),
+        ),
+      ])
+        ..where(
+          _db.dictionaryEntries.expression.like(pattern) |
+              _db.dictionaryEntries.reading.like(pattern),
+        )
+        ..where(_db.dictionaryMetas.isEnabled.equals(true))
+        ..limit(limit);
+
+      final rows = await query.get();
+      for (final row in rows) {
+        final entry = row.readTable(_db.dictionaryEntries);
+        if (seenIds.add(entry.id)) {
+          final meta = row.readTable(_db.dictionaryMetas);
+          allResults.add(
+            DictionaryEntryWithSource(
+              entry: entry,
+              dictionaryName: meta.name,
+            ),
+          );
+        }
+      }
+    }
+
+    return allResults;
+  }
+
+  /// Fetch candidate entries whose glossary text contains [term].
+  /// Used as the input dataset for fuzzy_bolt ranking of English definitions.
+  Future<List<DictionaryEntryWithSource>> _fetchGlossaryCandidates(
+    String term, {
+    int limit = 100,
+  }) async {
+    if (term.isEmpty) return [];
+
+    final pattern = '%$term%';
+    final query = _db.select(_db.dictionaryEntries).join([
+      innerJoin(
+        _db.dictionaryMetas,
+        _db.dictionaryMetas.id.equalsExp(
+          _db.dictionaryEntries.dictionaryId,
+        ),
+      ),
+    ])
+      ..where(_db.dictionaryEntries.glossaries.like(pattern))
+      ..where(_db.dictionaryMetas.isEnabled.equals(true))
+      ..limit(limit);
+
+    final rows = await query.get();
+    return rows.map((row) {
+      final entry = row.readTable(_db.dictionaryEntries);
+      final meta = row.readTable(_db.dictionaryMetas);
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: meta.name,
+      );
+    }).toList();
+  }
+
+  static bool _isKanji(String char) {
+    if (char.isEmpty) return false;
+    final code = char.codeUnitAt(0);
+    // CJK Unified Ideographs: U+4E00–U+9FFF
+    // CJK Unified Ideographs Extension A: U+3400–U+4DBF
+    return (code >= 0x4E00 && code <= 0x9FFF) ||
+        (code >= 0x3400 && code <= 0x4DBF);
+  }
+
+  /// Returns `true` if [text] contains at least one Latin letter (a-z/A-Z).
+  /// Used to decide whether to search glossary definitions (English input).
+  static bool _hasLatinLetters(String text) {
+    return _latinPattern.hasMatch(text);
+  }
+
+  static final _latinPattern = RegExp(r'[a-zA-Z]');
 }
