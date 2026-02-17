@@ -73,4 +73,3 @@ flutter:
   assets:
     - assets/epub_viewer/
     - assets/ipadic/
-    - assets/kanjivg/kanji/

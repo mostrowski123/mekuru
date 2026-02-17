@@ -1,11 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mekuru/features/settings/data/services/kanjivg_download_service.dart';
 
 /// Displays a kanji character's stroke order diagram from KanjiVG SVG data.
 ///
-/// The SVG asset is loaded from `assets/kanjivg/kanji/{codepoint}.svg` where
-/// the codepoint is the 5-digit zero-padded hex Unicode value.
+/// SVG files are loaded from the downloaded KanjiVG directory on the filesystem
+/// via [KanjiVgDownloadService.getSvgPath]. Files must be downloaded first
+/// through the Settings screen.
 ///
 /// Supports animated stroke-by-stroke playback and a static view showing
 /// all strokes with numbered labels.
@@ -59,16 +62,22 @@ class _KanjiStrokeOrderState extends State<KanjiStrokeOrder>
     super.dispose();
   }
 
-  String _assetPath() {
-    final codepoint = widget.kanji.codeUnitAt(0).toRadixString(16).padLeft(5, '0');
-    return 'assets/kanjivg/kanji/$codepoint.svg';
-  }
-
   Future<void> _loadSvg() async {
     setState(() => _loading = true);
 
     try {
-      final data = await rootBundle.loadString(_assetPath());
+      final svgPath = await KanjiVgDownloadService.getSvgPath(widget.kanji);
+      if (svgPath == null) {
+        if (mounted) {
+          setState(() {
+            _hasAsset = false;
+            _loading = false;
+          });
+        }
+        return;
+      }
+
+      final data = await File(svgPath).readAsString();
       // Count strokes by counting <path> elements in StrokePaths group
       final pathPattern = RegExp(r'<path\s');
       final count = pathPattern.allMatches(data).length;
