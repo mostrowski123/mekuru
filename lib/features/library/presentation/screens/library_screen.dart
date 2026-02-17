@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
@@ -248,12 +249,22 @@ class _BookTileState extends ConsumerState<_BookTile>
     with SingleTickerProviderStateMixin {
   late final AnimationController _scaleController;
   late final Animation<double> _scaleAnimation;
+  late final StreamController<TiltStreamModel> _tiltStreamController;
+
+  // Track pointer for tap vs long-press detection
+  Offset? _pointerDownPosition;
+  Timer? _longPressTimer;
+  bool _longPressFired = false;
+
+  // Key to find the Tilt widget's render box for coordinate conversion
+  final _tiltKey = GlobalKey();
 
   Book get book => widget.book;
 
   @override
   void initState() {
     super.initState();
+    _tiltStreamController = StreamController<TiltStreamModel>.broadcast();
     _scaleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
@@ -270,6 +281,8 @@ class _BookTileState extends ConsumerState<_BookTile>
 
   @override
   void dispose() {
+    _longPressTimer?.cancel();
+    _tiltStreamController.close();
     _scaleController.dispose();
     super.dispose();
   }
@@ -277,23 +290,110 @@ class _BookTileState extends ConsumerState<_BookTile>
   void _onPressDown() => _scaleController.forward();
   void _onPressUp() => _scaleController.reverse();
 
+  /// Convert a global position to local coordinates relative to the Tilt widget.
+  Offset? _toTiltLocal(Offset globalPosition) {
+    final renderBox =
+        _tiltKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return null;
+    return renderBox.globalToLocal(globalPosition);
+  }
+
+  void _handlePointerDown(PointerDownEvent e) {
+    _pointerDownPosition = e.localPosition;
+    _longPressFired = false;
+    _onPressDown();
+
+    // Send initial touch position to tilt
+    final local = _toTiltLocal(e.position);
+    if (local != null) {
+      _tiltStreamController.add(TiltStreamModel(
+        position: local,
+        gesturesType: GesturesType.controller,
+        gestureUse: true,
+      ));
+    }
+
+    _longPressTimer?.cancel();
+    _longPressTimer = Timer(const Duration(milliseconds: 500), () {
+      _longPressFired = true;
+      AppHaptics.heavy();
+      _showBookOptions(context, ref);
+      _onPressUp();
+      // Release tilt on long press
+      final local = _toTiltLocal(e.position);
+      if (local != null) {
+        _tiltStreamController.add(TiltStreamModel(
+          position: local,
+          gesturesType: GesturesType.controller,
+          gestureUse: false,
+        ));
+      }
+    });
+  }
+
+  void _handlePointerMove(PointerMoveEvent e) {
+    // Update tilt position as finger moves
+    final local = _toTiltLocal(e.position);
+    if (local != null) {
+      _tiltStreamController.add(TiltStreamModel(
+        position: local,
+        gesturesType: GesturesType.controller,
+        gestureUse: true,
+      ));
+    }
+  }
+
+  void _handlePointerUp(PointerUpEvent e) {
+    _longPressTimer?.cancel();
+    _onPressUp();
+
+    // Release tilt
+    final local = _toTiltLocal(e.position);
+    if (local != null) {
+      _tiltStreamController.add(TiltStreamModel(
+        position: local,
+        gesturesType: GesturesType.controller,
+        gestureUse: false,
+      ));
+    }
+
+    if (_longPressFired) return;
+
+    // Check it was a tap (not a drag)
+    final downPos = _pointerDownPosition;
+    if (downPos != null) {
+      final distance = (e.localPosition - downPos).distance;
+      if (distance < 20) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => ReaderScreen(book: book)),
+        );
+      }
+    }
+  }
+
+  void _handlePointerCancel(PointerCancelEvent e) {
+    _longPressTimer?.cancel();
+    _onPressUp();
+
+    // Release tilt
+    final local = _toTiltLocal(e.position);
+    if (local != null) {
+      _tiltStreamController.add(TiltStreamModel(
+        position: local,
+        gesturesType: GesturesType.controller,
+        gestureUse: false,
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => ReaderScreen(book: book)));
-      },
-      onLongPress: () {
-        AppHaptics.heavy();
-        _showBookOptions(context, ref);
-      },
-      onTapDown: (_) => _onPressDown(),
-      onTapUp: (_) => _onPressUp(),
-      onTapCancel: _onPressUp,
-      onLongPressEnd: (_) => _onPressUp(),
+    return Listener(
+      onPointerDown: _handlePointerDown,
+      onPointerMove: _handlePointerMove,
+      onPointerUp: _handlePointerUp,
+      onPointerCancel: _handlePointerCancel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -301,11 +401,17 @@ class _BookTileState extends ConsumerState<_BookTile>
             child: ScaleTransition(
               scale: _scaleAnimation,
               child: Tilt(
+                key: _tiltKey,
+                tiltStreamController: _tiltStreamController,
                 tiltConfig: const TiltConfig(
-                  angle: 12.0,
+                  angle: 15.0,
+                  enableReverse: true,
                   enableGestureTouch: false,
                   enableGestureSensors: true,
                   sensorFactor: 5.0,
+                  enableRevert: true,
+                  controllerLeaveDuration: Duration(milliseconds: 400),
+                  leaveCurve: Curves.easeOutBack,
                 ),
                 lightConfig: const LightConfig(
                   minIntensity: 0.0,
@@ -313,13 +419,13 @@ class _BookTileState extends ConsumerState<_BookTile>
                 ),
                 shadowConfig: ShadowConfig(
                   offsetInitial: const Offset(0, 2),
-                  offsetFactor: 0.06,
+                  offsetFactor: 0.08,
                   minIntensity: 0.05,
-                  maxIntensity: 0.35,
+                  maxIntensity: 0.4,
                   spreadInitial: 0,
                   spreadFactor: 0,
                   minBlurRadius: 6,
-                  maxBlurRadius: 14,
+                  maxBlurRadius: 16,
                   color: Colors.black.withValues(alpha: 0.5),
                 ),
                 child: Container(
