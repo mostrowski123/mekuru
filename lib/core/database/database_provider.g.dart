@@ -110,6 +110,52 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _languageMeta = const VerificationMeta(
+    'language',
+  );
+  @override
+  late final GeneratedColumn<String> language = GeneratedColumn<String>(
+    'language',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pageProgressionDirectionMeta =
+      const VerificationMeta('pageProgressionDirection');
+  @override
+  late final GeneratedColumn<String> pageProgressionDirection =
+      GeneratedColumn<String>(
+        'page_progression_direction',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _overrideVerticalTextMeta =
+      const VerificationMeta('overrideVerticalText');
+  @override
+  late final GeneratedColumn<bool> overrideVerticalText = GeneratedColumn<bool>(
+    'override_vertical_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("override_vertical_text" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _overrideReadingDirectionMeta =
+      const VerificationMeta('overrideReadingDirection');
+  @override
+  late final GeneratedColumn<String> overrideReadingDirection =
+      GeneratedColumn<String>(
+        'override_reading_direction',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -121,6 +167,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     readProgress,
     dateAdded,
     lastReadAt,
+    language,
+    pageProgressionDirection,
+    overrideVerticalText,
+    overrideReadingDirection,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -201,6 +251,39 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('language')) {
+      context.handle(
+        _languageMeta,
+        language.isAcceptableOrUnknown(data['language']!, _languageMeta),
+      );
+    }
+    if (data.containsKey('page_progression_direction')) {
+      context.handle(
+        _pageProgressionDirectionMeta,
+        pageProgressionDirection.isAcceptableOrUnknown(
+          data['page_progression_direction']!,
+          _pageProgressionDirectionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('override_vertical_text')) {
+      context.handle(
+        _overrideVerticalTextMeta,
+        overrideVerticalText.isAcceptableOrUnknown(
+          data['override_vertical_text']!,
+          _overrideVerticalTextMeta,
+        ),
+      );
+    }
+    if (data.containsKey('override_reading_direction')) {
+      context.handle(
+        _overrideReadingDirectionMeta,
+        overrideReadingDirection.isAcceptableOrUnknown(
+          data['override_reading_direction']!,
+          _overrideReadingDirectionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -246,6 +329,22 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_read_at'],
       ),
+      language: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}language'],
+      ),
+      pageProgressionDirection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}page_progression_direction'],
+      ),
+      overrideVerticalText: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}override_vertical_text'],
+      ),
+      overrideReadingDirection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}override_reading_direction'],
+      ),
     );
   }
 
@@ -265,6 +364,16 @@ class Book extends DataClass implements Insertable<Book> {
   final double readProgress;
   final DateTime dateAdded;
   final DateTime? lastReadAt;
+  final String? language;
+  final String? pageProgressionDirection;
+
+  /// User's per-book override for vertical text display.
+  /// `null` means "use the book's default" (based on language/ppd).
+  final bool? overrideVerticalText;
+
+  /// User's per-book override for reading direction ('ltr' or 'rtl').
+  /// `null` means "use the book's default" (based on language/ppd).
+  final String? overrideReadingDirection;
   const Book({
     required this.id,
     required this.title,
@@ -275,6 +384,10 @@ class Book extends DataClass implements Insertable<Book> {
     required this.readProgress,
     required this.dateAdded,
     this.lastReadAt,
+    this.language,
+    this.pageProgressionDirection,
+    this.overrideVerticalText,
+    this.overrideReadingDirection,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -293,6 +406,22 @@ class Book extends DataClass implements Insertable<Book> {
     map['date_added'] = Variable<DateTime>(dateAdded);
     if (!nullToAbsent || lastReadAt != null) {
       map['last_read_at'] = Variable<DateTime>(lastReadAt);
+    }
+    if (!nullToAbsent || language != null) {
+      map['language'] = Variable<String>(language);
+    }
+    if (!nullToAbsent || pageProgressionDirection != null) {
+      map['page_progression_direction'] = Variable<String>(
+        pageProgressionDirection,
+      );
+    }
+    if (!nullToAbsent || overrideVerticalText != null) {
+      map['override_vertical_text'] = Variable<bool>(overrideVerticalText);
+    }
+    if (!nullToAbsent || overrideReadingDirection != null) {
+      map['override_reading_direction'] = Variable<String>(
+        overrideReadingDirection,
+      );
     }
     return map;
   }
@@ -314,6 +443,18 @@ class Book extends DataClass implements Insertable<Book> {
       lastReadAt: lastReadAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastReadAt),
+      language: language == null && nullToAbsent
+          ? const Value.absent()
+          : Value(language),
+      pageProgressionDirection: pageProgressionDirection == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pageProgressionDirection),
+      overrideVerticalText: overrideVerticalText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(overrideVerticalText),
+      overrideReadingDirection: overrideReadingDirection == null && nullToAbsent
+          ? const Value.absent()
+          : Value(overrideReadingDirection),
     );
   }
 
@@ -332,6 +473,16 @@ class Book extends DataClass implements Insertable<Book> {
       readProgress: serializer.fromJson<double>(json['readProgress']),
       dateAdded: serializer.fromJson<DateTime>(json['dateAdded']),
       lastReadAt: serializer.fromJson<DateTime?>(json['lastReadAt']),
+      language: serializer.fromJson<String?>(json['language']),
+      pageProgressionDirection: serializer.fromJson<String?>(
+        json['pageProgressionDirection'],
+      ),
+      overrideVerticalText: serializer.fromJson<bool?>(
+        json['overrideVerticalText'],
+      ),
+      overrideReadingDirection: serializer.fromJson<String?>(
+        json['overrideReadingDirection'],
+      ),
     );
   }
   @override
@@ -347,6 +498,14 @@ class Book extends DataClass implements Insertable<Book> {
       'readProgress': serializer.toJson<double>(readProgress),
       'dateAdded': serializer.toJson<DateTime>(dateAdded),
       'lastReadAt': serializer.toJson<DateTime?>(lastReadAt),
+      'language': serializer.toJson<String?>(language),
+      'pageProgressionDirection': serializer.toJson<String?>(
+        pageProgressionDirection,
+      ),
+      'overrideVerticalText': serializer.toJson<bool?>(overrideVerticalText),
+      'overrideReadingDirection': serializer.toJson<String?>(
+        overrideReadingDirection,
+      ),
     };
   }
 
@@ -360,6 +519,10 @@ class Book extends DataClass implements Insertable<Book> {
     double? readProgress,
     DateTime? dateAdded,
     Value<DateTime?> lastReadAt = const Value.absent(),
+    Value<String?> language = const Value.absent(),
+    Value<String?> pageProgressionDirection = const Value.absent(),
+    Value<bool?> overrideVerticalText = const Value.absent(),
+    Value<String?> overrideReadingDirection = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -372,6 +535,16 @@ class Book extends DataClass implements Insertable<Book> {
     readProgress: readProgress ?? this.readProgress,
     dateAdded: dateAdded ?? this.dateAdded,
     lastReadAt: lastReadAt.present ? lastReadAt.value : this.lastReadAt,
+    language: language.present ? language.value : this.language,
+    pageProgressionDirection: pageProgressionDirection.present
+        ? pageProgressionDirection.value
+        : this.pageProgressionDirection,
+    overrideVerticalText: overrideVerticalText.present
+        ? overrideVerticalText.value
+        : this.overrideVerticalText,
+    overrideReadingDirection: overrideReadingDirection.present
+        ? overrideReadingDirection.value
+        : this.overrideReadingDirection,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -394,6 +567,16 @@ class Book extends DataClass implements Insertable<Book> {
       lastReadAt: data.lastReadAt.present
           ? data.lastReadAt.value
           : this.lastReadAt,
+      language: data.language.present ? data.language.value : this.language,
+      pageProgressionDirection: data.pageProgressionDirection.present
+          ? data.pageProgressionDirection.value
+          : this.pageProgressionDirection,
+      overrideVerticalText: data.overrideVerticalText.present
+          ? data.overrideVerticalText.value
+          : this.overrideVerticalText,
+      overrideReadingDirection: data.overrideReadingDirection.present
+          ? data.overrideReadingDirection.value
+          : this.overrideReadingDirection,
     );
   }
 
@@ -408,7 +591,11 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('lastReadCfi: $lastReadCfi, ')
           ..write('readProgress: $readProgress, ')
           ..write('dateAdded: $dateAdded, ')
-          ..write('lastReadAt: $lastReadAt')
+          ..write('lastReadAt: $lastReadAt, ')
+          ..write('language: $language, ')
+          ..write('pageProgressionDirection: $pageProgressionDirection, ')
+          ..write('overrideVerticalText: $overrideVerticalText, ')
+          ..write('overrideReadingDirection: $overrideReadingDirection')
           ..write(')'))
         .toString();
   }
@@ -424,6 +611,10 @@ class Book extends DataClass implements Insertable<Book> {
     readProgress,
     dateAdded,
     lastReadAt,
+    language,
+    pageProgressionDirection,
+    overrideVerticalText,
+    overrideReadingDirection,
   );
   @override
   bool operator ==(Object other) =>
@@ -437,7 +628,11 @@ class Book extends DataClass implements Insertable<Book> {
           other.lastReadCfi == this.lastReadCfi &&
           other.readProgress == this.readProgress &&
           other.dateAdded == this.dateAdded &&
-          other.lastReadAt == this.lastReadAt);
+          other.lastReadAt == this.lastReadAt &&
+          other.language == this.language &&
+          other.pageProgressionDirection == this.pageProgressionDirection &&
+          other.overrideVerticalText == this.overrideVerticalText &&
+          other.overrideReadingDirection == this.overrideReadingDirection);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -450,6 +645,10 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<double> readProgress;
   final Value<DateTime> dateAdded;
   final Value<DateTime?> lastReadAt;
+  final Value<String?> language;
+  final Value<String?> pageProgressionDirection;
+  final Value<bool?> overrideVerticalText;
+  final Value<String?> overrideReadingDirection;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -460,6 +659,10 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.readProgress = const Value.absent(),
     this.dateAdded = const Value.absent(),
     this.lastReadAt = const Value.absent(),
+    this.language = const Value.absent(),
+    this.pageProgressionDirection = const Value.absent(),
+    this.overrideVerticalText = const Value.absent(),
+    this.overrideReadingDirection = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -471,6 +674,10 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.readProgress = const Value.absent(),
     this.dateAdded = const Value.absent(),
     this.lastReadAt = const Value.absent(),
+    this.language = const Value.absent(),
+    this.pageProgressionDirection = const Value.absent(),
+    this.overrideVerticalText = const Value.absent(),
+    this.overrideReadingDirection = const Value.absent(),
   }) : title = Value(title),
        filePath = Value(filePath);
   static Insertable<Book> custom({
@@ -483,6 +690,10 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<double>? readProgress,
     Expression<DateTime>? dateAdded,
     Expression<DateTime>? lastReadAt,
+    Expression<String>? language,
+    Expression<String>? pageProgressionDirection,
+    Expression<bool>? overrideVerticalText,
+    Expression<String>? overrideReadingDirection,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -494,6 +705,13 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (readProgress != null) 'read_progress': readProgress,
       if (dateAdded != null) 'date_added': dateAdded,
       if (lastReadAt != null) 'last_read_at': lastReadAt,
+      if (language != null) 'language': language,
+      if (pageProgressionDirection != null)
+        'page_progression_direction': pageProgressionDirection,
+      if (overrideVerticalText != null)
+        'override_vertical_text': overrideVerticalText,
+      if (overrideReadingDirection != null)
+        'override_reading_direction': overrideReadingDirection,
     });
   }
 
@@ -507,6 +725,10 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<double>? readProgress,
     Value<DateTime>? dateAdded,
     Value<DateTime?>? lastReadAt,
+    Value<String?>? language,
+    Value<String?>? pageProgressionDirection,
+    Value<bool?>? overrideVerticalText,
+    Value<String?>? overrideReadingDirection,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -518,6 +740,12 @@ class BooksCompanion extends UpdateCompanion<Book> {
       readProgress: readProgress ?? this.readProgress,
       dateAdded: dateAdded ?? this.dateAdded,
       lastReadAt: lastReadAt ?? this.lastReadAt,
+      language: language ?? this.language,
+      pageProgressionDirection:
+          pageProgressionDirection ?? this.pageProgressionDirection,
+      overrideVerticalText: overrideVerticalText ?? this.overrideVerticalText,
+      overrideReadingDirection:
+          overrideReadingDirection ?? this.overrideReadingDirection,
     );
   }
 
@@ -551,6 +779,24 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (lastReadAt.present) {
       map['last_read_at'] = Variable<DateTime>(lastReadAt.value);
     }
+    if (language.present) {
+      map['language'] = Variable<String>(language.value);
+    }
+    if (pageProgressionDirection.present) {
+      map['page_progression_direction'] = Variable<String>(
+        pageProgressionDirection.value,
+      );
+    }
+    if (overrideVerticalText.present) {
+      map['override_vertical_text'] = Variable<bool>(
+        overrideVerticalText.value,
+      );
+    }
+    if (overrideReadingDirection.present) {
+      map['override_reading_direction'] = Variable<String>(
+        overrideReadingDirection.value,
+      );
+    }
     return map;
   }
 
@@ -565,7 +811,11 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('lastReadCfi: $lastReadCfi, ')
           ..write('readProgress: $readProgress, ')
           ..write('dateAdded: $dateAdded, ')
-          ..write('lastReadAt: $lastReadAt')
+          ..write('lastReadAt: $lastReadAt, ')
+          ..write('language: $language, ')
+          ..write('pageProgressionDirection: $pageProgressionDirection, ')
+          ..write('overrideVerticalText: $overrideVerticalText, ')
+          ..write('overrideReadingDirection: $overrideReadingDirection')
           ..write(')'))
         .toString();
   }
@@ -2534,6 +2784,10 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<double> readProgress,
       Value<DateTime> dateAdded,
       Value<DateTime?> lastReadAt,
+      Value<String?> language,
+      Value<String?> pageProgressionDirection,
+      Value<bool?> overrideVerticalText,
+      Value<String?> overrideReadingDirection,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -2546,6 +2800,10 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<double> readProgress,
       Value<DateTime> dateAdded,
       Value<DateTime?> lastReadAt,
+      Value<String?> language,
+      Value<String?> pageProgressionDirection,
+      Value<bool?> overrideVerticalText,
+      Value<String?> overrideReadingDirection,
     });
 
 class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
@@ -2598,6 +2856,26 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<DateTime> get lastReadAt => $composableBuilder(
     column: $table.lastReadAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get language => $composableBuilder(
+    column: $table.language,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pageProgressionDirection => $composableBuilder(
+    column: $table.pageProgressionDirection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get overrideVerticalText => $composableBuilder(
+    column: $table.overrideVerticalText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get overrideReadingDirection => $composableBuilder(
+    column: $table.overrideReadingDirection,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2655,6 +2933,26 @@ class $$BooksTableOrderingComposer
     column: $table.lastReadAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get language => $composableBuilder(
+    column: $table.language,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pageProgressionDirection => $composableBuilder(
+    column: $table.pageProgressionDirection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get overrideVerticalText => $composableBuilder(
+    column: $table.overrideVerticalText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get overrideReadingDirection => $composableBuilder(
+    column: $table.overrideReadingDirection,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -2702,6 +3000,24 @@ class $$BooksTableAnnotationComposer
     column: $table.lastReadAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get language =>
+      $composableBuilder(column: $table.language, builder: (column) => column);
+
+  GeneratedColumn<String> get pageProgressionDirection => $composableBuilder(
+    column: $table.pageProgressionDirection,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get overrideVerticalText => $composableBuilder(
+    column: $table.overrideVerticalText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get overrideReadingDirection => $composableBuilder(
+    column: $table.overrideReadingDirection,
+    builder: (column) => column,
+  );
 }
 
 class $$BooksTableTableManager
@@ -2741,6 +3057,10 @@ class $$BooksTableTableManager
                 Value<double> readProgress = const Value.absent(),
                 Value<DateTime> dateAdded = const Value.absent(),
                 Value<DateTime?> lastReadAt = const Value.absent(),
+                Value<String?> language = const Value.absent(),
+                Value<String?> pageProgressionDirection = const Value.absent(),
+                Value<bool?> overrideVerticalText = const Value.absent(),
+                Value<String?> overrideReadingDirection = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 title: title,
@@ -2751,6 +3071,10 @@ class $$BooksTableTableManager
                 readProgress: readProgress,
                 dateAdded: dateAdded,
                 lastReadAt: lastReadAt,
+                language: language,
+                pageProgressionDirection: pageProgressionDirection,
+                overrideVerticalText: overrideVerticalText,
+                overrideReadingDirection: overrideReadingDirection,
               ),
           createCompanionCallback:
               ({
@@ -2763,6 +3087,10 @@ class $$BooksTableTableManager
                 Value<double> readProgress = const Value.absent(),
                 Value<DateTime> dateAdded = const Value.absent(),
                 Value<DateTime?> lastReadAt = const Value.absent(),
+                Value<String?> language = const Value.absent(),
+                Value<String?> pageProgressionDirection = const Value.absent(),
+                Value<bool?> overrideVerticalText = const Value.absent(),
+                Value<String?> overrideReadingDirection = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 title: title,
@@ -2773,6 +3101,10 @@ class $$BooksTableTableManager
                 readProgress: readProgress,
                 dateAdded: dateAdded,
                 lastReadAt: lastReadAt,
+                language: language,
+                pageProgressionDirection: pageProgressionDirection,
+                overrideVerticalText: overrideVerticalText,
+                overrideReadingDirection: overrideReadingDirection,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

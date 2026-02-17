@@ -248,6 +248,84 @@ class AboutScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+
+          // epub.js attribution card
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.menu_book_outlined,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'epub.js',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'EPUB rendering is powered by epub.js, '
+                    'an open source JavaScript EPUB reader library.',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text.rich(
+                    TextSpan(
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      children: [
+                        const TextSpan(text: 'Licensed under the '),
+                        TextSpan(
+                          text: 'BSD 2-Clause License',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => _showEpubJsLicense(context),
+                        ),
+                        const TextSpan(text: '.'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text.rich(
+                    TextSpan(
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      children: [
+                        const TextSpan(text: 'Source: '),
+                        TextSpan(
+                          text: 'github.com/futurepress/epub.js',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => _launchUrl(
+                                  'https://github.com/futurepress/epub.js',
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
 
           // Licenses
@@ -286,6 +364,53 @@ class AboutScreen extends StatelessWidget {
                 fontStyle: FontStyle.italic,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void _showEpubJsLicense(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('epub.js License'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'Copyright (c) 2013, FuturePress\n\n'
+            'All rights reserved.\n\n'
+            'Redistribution and use in source and binary forms, with or without '
+            'modification, are permitted provided that the following conditions '
+            'are met:\n\n'
+            '1. Redistributions of source code must retain the above copyright '
+            'notice, this list of conditions and the following disclaimer.\n\n'
+            '2. Redistributions in binary form must reproduce the above '
+            'copyright notice, this list of conditions and the following '
+            'disclaimer in the documentation and/or other materials provided '
+            'with the distribution.\n\n'
+            'THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND '
+            'CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, '
+            'INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF '
+            'MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE '
+            'DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR '
+            'CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, '
+            'SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT '
+            'LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF '
+            'USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED '
+            'AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT '
+            'LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN '
+            'ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE '
+            'POSSIBILITY OF SUCH DAMAGE.\n\n'
+            'The views and conclusions contained in the software and '
+            'documentation are those of the authors and should not be '
+            'interpreted as representing official policies, either expressed '
+            'or implied, of the FreeBSD Project.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Close'),
           ),
         ],
       ),

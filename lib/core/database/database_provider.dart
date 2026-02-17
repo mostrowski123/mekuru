@@ -16,7 +16,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -52,6 +52,17 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               "UPDATE dictionary_metas SET is_hidden = 1 WHERE name = 'JPDBv2\u32D5'",
             );
+          }
+          if (from < 8) {
+            await migrator.addColumn(books, books.language);
+            await migrator.addColumn(
+              books,
+              books.pageProgressionDirection,
+            );
+          }
+          if (from < 9) {
+            await migrator.addColumn(books, books.overrideVerticalText);
+            await migrator.addColumn(books, books.overrideReadingDirection);
           }
         },
       );

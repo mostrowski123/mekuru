@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/compound_word_resolver.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
@@ -15,8 +16,19 @@ final readerSettingsStorageProvider = Provider<ReaderSettingsStorage>((ref) {
 });
 
 /// Manages reader display settings.
+///
+/// Settings are split into two layers:
+/// - **Global** settings (font size, color mode, margins, etc.) are stored in
+///   SharedPreferences and shared across all books.
+/// - **Per-book** overrides (`verticalText`, `readingDirection`) are stored in
+///   the Books table and remembered for each book individually.
 class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   bool _hasLoadedPersistedSettings = false;
+
+  /// The currently-open book's ID (set by [applyBookDefaults]).
+  /// Used to persist per-book overrides when the user changes
+  /// verticalText or readingDirection.
+  int? _currentBookId;
 
   @override
   ReaderSettings build() => const ReaderSettings();
@@ -43,6 +55,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   void setVerticalText(bool enabled) {
     state = state.copyWith(verticalText: enabled);
     _persistSettings();
+    _persistPerBookOverrides();
   }
 
   void toggleVerticalText() {
@@ -52,6 +65,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   void setReadingDirection(ReaderDirection direction) {
     state = state.copyWith(readingDirection: direction);
     _persistSettings();
+    _persistPerBookOverrides();
   }
 
   void setPageTurnAnimationEnabled(bool enabled) {
@@ -89,8 +103,60 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _persistSettings();
   }
 
+  /// Apply book-specific defaults when opening a book.
+  ///
+  /// Uses per-book overrides from the database if the user has previously
+  /// changed the display settings for this book. Otherwise falls back to
+  /// defaults derived from the book's language and page-progression-direction.
+  ///
+  /// Does NOT persist global settings — only sets the in-memory state and
+  /// tracks [bookId] for future per-book persistence.
+  void applyBookDefaults({
+    required int bookId,
+    String? language,
+    String? pageProgressionDirection,
+    bool? overrideVerticalText,
+    String? overrideReadingDirection,
+  }) {
+    _currentBookId = bookId;
+
+    final effectiveVerticalText = overrideVerticalText ??
+        defaultVerticalText(
+          language: language,
+          pageProgressionDirection: pageProgressionDirection,
+        );
+
+    final effectiveDirection = overrideReadingDirection != null
+        ? readerDirectionFromString(overrideReadingDirection)
+        : defaultReaderDirection(
+            language: language,
+            pageProgressionDirection: pageProgressionDirection,
+          );
+
+    state = state.copyWith(
+      verticalText: effectiveVerticalText,
+      readingDirection: effectiveDirection,
+    );
+  }
+
   void _persistSettings() {
     unawaited(ref.read(readerSettingsStorageProvider).save(state));
+  }
+
+  /// Persist the current verticalText and readingDirection as per-book
+  /// overrides in the database so they are remembered next time the book
+  /// is opened.
+  void _persistPerBookOverrides() {
+    final bookId = _currentBookId;
+    if (bookId == null) return;
+
+    unawaited(
+      ref.read(readerBookRepositoryProvider).updateDisplayOverrides(
+        bookId,
+        verticalText: state.verticalText,
+        readingDirection: state.readingDirection.storageValue,
+      ),
+    );
   }
 }
 

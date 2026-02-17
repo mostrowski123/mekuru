@@ -78,6 +78,13 @@ class BookRepository {
             coverImagePath: coverImagePath != null
                 ? Value(coverImagePath)
                 : const Value.absent(),
+            language: metadata.language != null
+                ? Value(metadata.language)
+                : const Value.absent(),
+            pageProgressionDirection:
+                metadata.pageProgressionDirection != null
+                    ? Value(metadata.pageProgressionDirection)
+                    : const Value.absent(),
           ),
         );
 
@@ -107,6 +114,34 @@ class BookRepository {
   Future<void> updateTitle(int bookId, String title) =>
       (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(title: Value(title)),
+      );
+
+  /// Backfill language metadata for a legacy book (imported before v8).
+  Future<void> backfillLanguage(
+    int bookId,
+    String? language,
+    String? pageProgressionDirection,
+  ) =>
+      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+        BooksCompanion(
+          language: Value(language),
+          pageProgressionDirection: Value(pageProgressionDirection),
+        ),
+      );
+
+  /// Save per-book display overrides (verticalText and readingDirection).
+  ///
+  /// Pass `null` to clear an override and revert to the book's default.
+  Future<void> updateDisplayOverrides(
+    int bookId, {
+    required bool? verticalText,
+    required String? readingDirection,
+  }) =>
+      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+        BooksCompanion(
+          overrideVerticalText: Value(verticalText),
+          overrideReadingDirection: Value(readingDirection),
+        ),
       );
 
   /// Update the cover image path (custom cover).

@@ -11,6 +11,10 @@ var currentMargins = { horizontal: 28, vertical: 28 };
 var _lastTappedBlock = null;       // block element from last getTextAtPoint
 var _lastTappedDoc = null;         // document from last getTextAtPoint
 var _currentWordHighlightCfi = null; // CFI of current word highlight
+// When true, epub.js patches in epub.js will override the detected
+// writing-mode to horizontal-tb, forcing horizontal pagination.
+// Set as a window global so epub.js code can read it.
+window._forceHorizontalAxis = false;
 
 function callDart(name) {
   var args = Array.prototype.slice.call(arguments, 1);
@@ -23,9 +27,14 @@ function callDart(name) {
 
 // ── Book loading ──────────────────────────────────────────────────────
 
-function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin) {
+function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis) {
   var uint8 = new Uint8Array(data);
   book.open(uint8);
+
+  // When vertical text is disabled via CSS override, epub.js patches read
+  // this flag and override the detected writing-mode to horizontal-tb,
+  // ensuring correct horizontal pagination from the start.
+  window._forceHorizontalAxis = !!forceHorizontalAxis;
 
   // Set initial margins from parameters
   if (typeof horizontalMargin === 'number') currentMargins.horizontal = horizontalMargin;
@@ -43,7 +52,8 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
     defaultDirection: direction || 'ltr'
   });
 
-  console.log('[EPUB_BRIDGE] rendition created with snap:false flow:' + (flow || 'paginated') + ' dir:' + (direction || 'ltr'));
+  console.log('[EPUB_BRIDGE] rendition created with snap:false flow:' + (flow || 'paginated') + ' dir:' + (direction || 'ltr') + ' forceHorizontalAxis=' + window._forceHorizontalAxis);
+  console.log('[EPUB_BRIDGE] customCss: ' + JSON.stringify(customCss));
 
   // Apply initial theme
   updateTheme(foregroundColor, customCss);
@@ -56,6 +66,11 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
   // Apply initial margins to .epub-container CSS before first display,
   // so Stage.size() reads the correct padding when calculating layout.
   applyMargins();
+
+  // The epub.js patches (marked [MEKURU PATCH]) read window._forceHorizontalAxis
+  // during the render chain and override the detected writing-mode to
+  // horizontal-tb, so axis detection and CSS column layout are correct
+  // from the start — no post-hoc re-layout needed.
 
   // Display at CFI or beginning
   if (cfi) {
@@ -214,8 +229,11 @@ function next() {
   var loc = rendition.location;
   var currentPage = loc.start.displayed ? loc.start.displayed.page : 1;
   var totalPages = loc.start.displayed ? loc.start.displayed.total : 1;
+  var mgrAxis = rendition.manager ? rendition.manager.settings.axis : '?';
+  var mgrDir = rendition.manager ? rendition.manager.settings.direction : '?';
   console.log('[EPUB_BRIDGE] next() page=' + currentPage + '/' + totalPages +
-    ' sectionIndex=' + loc.start.index + ' cfi=' + loc.start.cfi);
+    ' sectionIndex=' + loc.start.index + ' cfi=' + loc.start.cfi +
+    ' axis=' + mgrAxis + ' dir=' + mgrDir);
 
   if (currentPage < totalPages) {
     // More pages within this section — epub.js scroll-within-section works fine
@@ -248,8 +266,11 @@ function previous() {
   var loc = rendition.location;
   var currentPage = loc.start.displayed ? loc.start.displayed.page : 1;
   var totalPages = loc.start.displayed ? loc.start.displayed.total : 1;
+  var mgrAxis = rendition.manager ? rendition.manager.settings.axis : '?';
+  var mgrDir = rendition.manager ? rendition.manager.settings.direction : '?';
   console.log('[EPUB_BRIDGE] previous() page=' + currentPage + '/' + totalPages +
-    ' sectionIndex=' + loc.start.index + ' cfi=' + loc.start.cfi);
+    ' sectionIndex=' + loc.start.index + ' cfi=' + loc.start.cfi +
+    ' axis=' + mgrAxis + ' dir=' + mgrDir);
 
   if (currentPage > 1) {
     // More pages before this one in the section — scroll backwards within section
@@ -269,45 +290,14 @@ function previous() {
         // For vertical Japanese text (writing-mode: vertical-rl), the axis
         // is "vertical" and pages scroll top-to-bottom.
         rendition.display(prevItem.href).then(function () {
-          var manager = rendition.manager;
-          if (!manager || !manager.container) return;
-
-          var container = manager.container;
-          var axis = manager.settings.axis;
-          var dir = manager.settings.direction;
-
-          if (axis === 'vertical') {
-            // Vertical pagination (e.g. Japanese vertical text):
-            // pages go top-to-bottom, so scroll to the bottom.
-            var lastPageOffset = container.scrollHeight - container.offsetHeight;
-            if (lastPageOffset < 0) lastPageOffset = 0;
-            manager.scrollTo(0, lastPageOffset, true);
-            console.log('[EPUB_BRIDGE] previous() vertical snap scrollTop=' +
-              lastPageOffset + ' scrollHeight=' + container.scrollHeight);
-          } else {
-            // Horizontal pagination
-            var delta = manager.layout ? manager.layout.delta : container.offsetWidth;
-            if (dir === 'rtl') {
-              if (manager.settings.rtlScrollType === 'default') {
-                // "default" RTL: scrollLeft starts at scrollWidth-clientWidth
-                // and decreases toward 0. First page is at max, last page at 0.
-                manager.scrollTo(0, 0, true);
-              } else {
-                // "negative" RTL: scrollLeft is negative.
-                var maxScroll = container.scrollWidth - delta;
-                manager.scrollTo(-maxScroll, 0, true);
-              }
-              console.log('[EPUB_BRIDGE] previous() RTL snap scrollLeft=' +
-                container.scrollLeft + ' scrollWidth=' + container.scrollWidth);
-            } else {
-              var lastPageOffset = container.scrollWidth - delta;
-              if (lastPageOffset < 0) lastPageOffset = 0;
-              manager.scrollTo(lastPageOffset, 0, true);
-              console.log('[EPUB_BRIDGE] previous() LTR snap scrollLeft=' +
-                lastPageOffset + ' scrollWidth=' + container.scrollWidth);
-            }
-          }
-          rendition.reportLocation();
+          // Wait for a rAF + microtask so the browser has a chance to
+          // finish layout (especially for sections containing images
+          // whose height isn't known until the image loads).
+          requestAnimationFrame(function () {
+            setTimeout(function () {
+              snapToLastPage('previous');
+            }, 0);
+          });
         });
       } else {
         console.log('[EPUB_BRIDGE] previous() already at first section');
@@ -398,6 +388,7 @@ function updateTheme(foregroundColor, customCss) {
     if (!rules['body']) rules['body'] = {};
     rules['body']['color'] = foregroundColor + ' !important';
   }
+  console.log('[EPUB_BRIDGE] updateTheme rules: ' + JSON.stringify(rules));
   rendition.themes.register('default', rules);
   rendition.themes.select('default');
 }
@@ -780,6 +771,155 @@ function clearWordHighlight() {
       removeHighlight(_currentWordHighlightCfi);
     } catch (e) { /* ignore */ }
     _currentWordHighlightCfi = null;
+  }
+}
+
+// ── Snap to last page (for backward navigation) ──────────────────
+
+/**
+ * After navigating to a previous section via rendition.display(),
+ * scroll to the LAST page of that section.
+ *
+ * The core problem: epub.js paginates using CSS columns but
+ * scrollHeight/scrollWidth may be inaccurate when images haven't
+ * loaded yet (the browser reports a smaller scroll dimension).
+ * Instead of relying on scrollHeight, we use the page count from
+ * epub.js's location data: offset = (totalPages - 1) * delta.
+ *
+ * This function is called after a rAF + setTimeout so the browser
+ * has had at least one frame to lay out the new section.
+ */
+function snapToLastPage(caller) {
+  if (!rendition || !rendition.manager) {
+    console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage: no manager');
+    return;
+  }
+
+  var manager = rendition.manager;
+  var views = manager.views;
+  if (!views || !views._views || views._views.length === 0) {
+    console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage: no views');
+    return;
+  }
+
+  var view = views._views[views._views.length - 1];
+  var container = manager.container;
+  var layout = rendition.settings;
+  var axis = manager.settings.axis;
+  var dir = manager.settings.direction;
+
+  // Get delta (scroll distance per page) from the layout
+  var delta = manager.layout ? manager.layout.delta : 0;
+  if (!delta || delta <= 0) {
+    console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage: delta=' + delta + ', cannot snap');
+    return;
+  }
+
+  // Helper: perform the actual snap using page-count-based offset.
+  // This avoids the scrollHeight inaccuracy with unloaded images.
+  function doSnap() {
+    // Re-read scroll dimensions after images may have loaded
+    var scrollDim, offsetDim, totalPages, offset;
+
+    if (axis === 'vertical') {
+      scrollDim = container.scrollHeight;
+      offsetDim = container.offsetHeight;
+      totalPages = Math.ceil(scrollDim / delta);
+      // Use page-count-based offset: go to last page
+      offset = (totalPages - 1) * delta;
+      // Sanity: clamp to maximum possible scroll
+      var maxScroll = scrollDim - offsetDim;
+      if (maxScroll < 0) maxScroll = 0;
+      offset = Math.min(offset, maxScroll);
+      if (offset < 0) offset = 0;
+      console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage vertical: ' +
+        'scrollH=' + scrollDim + ' offsetH=' + offsetDim +
+        ' delta=' + delta + ' totalPages=' + totalPages +
+        ' offset=' + offset);
+      container.scrollTo({ top: offset, left: 0, behavior: 'instant' });
+    } else {
+      // Horizontal axis
+      scrollDim = container.scrollWidth;
+      offsetDim = container.offsetWidth;
+      totalPages = Math.ceil(scrollDim / delta);
+      offset = (totalPages - 1) * delta;
+      var maxScroll = scrollDim - offsetDim;
+      if (maxScroll < 0) maxScroll = 0;
+      offset = Math.min(offset, maxScroll);
+      if (offset < 0) offset = 0;
+
+      if (dir === 'rtl') {
+        // RTL horizontal: scroll position is negative (or use default RTL scroll)
+        console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage horizontal RTL: ' +
+          'scrollW=' + scrollDim + ' offsetW=' + offsetDim +
+          ' delta=' + delta + ' totalPages=' + totalPages +
+          ' offset=-' + offset);
+        container.scrollTo({ top: 0, left: -offset, behavior: 'instant' });
+      } else {
+        console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage horizontal LTR: ' +
+          'scrollW=' + scrollDim + ' offsetW=' + offsetDim +
+          ' delta=' + delta + ' totalPages=' + totalPages +
+          ' offset=' + offset);
+        container.scrollTo({ top: 0, left: offset, behavior: 'instant' });
+      }
+    }
+
+    // Tell epub.js to re-check current position so it reports
+    // the correct page/section after the scroll.
+    rendition.reportLocation();
+  }
+
+  // Check if there are any images in the current view that haven't loaded yet.
+  // If so, wait for them before snapping (their dimensions affect scroll size).
+  var pendingImages = [];
+  try {
+    var iframes = container.querySelectorAll('iframe');
+    for (var i = 0; i < iframes.length; i++) {
+      var iDoc = iframes[i].contentDocument;
+      if (!iDoc) continue;
+      var imgs = iDoc.querySelectorAll('img, image, svg image');
+      for (var j = 0; j < imgs.length; j++) {
+        if (!imgs[j].complete) {
+          pendingImages.push(imgs[j]);
+        }
+      }
+    }
+  } catch (e) {
+    // Cross-origin or access errors — proceed without waiting
+  }
+
+  if (pendingImages.length > 0) {
+    console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage: waiting for ' +
+      pendingImages.length + ' image(s) to load');
+    var loaded = 0;
+    var snapped = false;
+    var timeout = null;
+    function onImageReady() {
+      loaded++;
+      if (loaded >= pendingImages.length && !snapped) {
+        snapped = true;
+        if (timeout) clearTimeout(timeout);
+        // Give one more frame for layout to settle after image load
+        requestAnimationFrame(function () {
+          setTimeout(doSnap, 0);
+        });
+      }
+    }
+    for (var k = 0; k < pendingImages.length; k++) {
+      pendingImages[k].addEventListener('load', onImageReady);
+      pendingImages[k].addEventListener('error', onImageReady);
+    }
+    // Safety timeout: don't wait forever (500ms max)
+    timeout = setTimeout(function () {
+      if (!snapped) {
+        snapped = true;
+        console.log('[EPUB_BRIDGE] ' + caller + ' snapToLastPage: image timeout, snapping anyway');
+        doSnap();
+      }
+    }, 500);
+  } else {
+    // No pending images — snap immediately
+    doSnap();
   }
 }
 

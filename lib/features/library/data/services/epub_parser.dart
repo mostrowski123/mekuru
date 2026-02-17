@@ -10,11 +10,15 @@ class EpubMetadata {
   final String title;
   final String? author;
   final String? coverImageRelativePath;
+  final String? language;
+  final String? pageProgressionDirection;
 
   const EpubMetadata({
     required this.title,
     this.author,
     this.coverImageRelativePath,
+    this.language,
+    this.pageProgressionDirection,
   });
 }
 
@@ -212,10 +216,38 @@ class EpubParser {
       }
     }
 
+    // Extract language from <dc:language>
+    String? language;
+    final langElements = opfXml.findAllElements('dc:language');
+    if (langElements.isNotEmpty) {
+      language = langElements.first.innerText.trim().toLowerCase();
+    }
+    // Fallback: try without namespace prefix
+    if (language == null) {
+      final langElements2 = opfXml.findAllElements('language');
+      if (langElements2.isNotEmpty) {
+        language = langElements2.first.innerText.trim().toLowerCase();
+      }
+    }
+    // Normalize to primary subtag only (e.g., "en-US" → "en")
+    if (language != null && language.contains('-')) {
+      language = language.split('-').first;
+    }
+
+    // Extract page-progression-direction from <spine>
+    String? pageProgressionDirection;
+    final spineElements = opfXml.findAllElements('spine');
+    if (spineElements.isNotEmpty) {
+      pageProgressionDirection =
+          spineElements.first.getAttribute('page-progression-direction');
+    }
+
     return EpubMetadata(
       title: title,
       author: author,
       coverImageRelativePath: coverRelativePath,
+      language: language,
+      pageProgressionDirection: pageProgressionDirection,
     );
   }
 }

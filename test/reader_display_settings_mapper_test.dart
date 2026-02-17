@@ -40,5 +40,69 @@ void main() {
       expect(htmlCss['background'], '#FFFFFF !important');
       expect(htmlCss['color'], '#000000 !important');
     });
+
+    test(
+      'injects writing-mode horizontal-tb when verticalText is false',
+      () {
+        final theme = buildReaderTheme(
+          settings: const ReaderSettings(verticalText: false),
+        );
+        final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
+        final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+
+        expect(htmlCss['writing-mode'], 'horizontal-tb !important');
+        expect(bodyCss['writing-mode'], 'horizontal-tb !important');
+      },
+    );
+
+    test(
+      'injects direction ltr and text-align start when verticalText is false',
+      () {
+        final theme = buildReaderTheme(
+          settings: const ReaderSettings(verticalText: false),
+        );
+        final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
+        final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+
+        expect(htmlCss['direction'], 'ltr !important');
+        expect(bodyCss['direction'], 'ltr !important');
+        expect(bodyCss['text-align'], 'start !important');
+      },
+    );
+
+    test(
+      'does NOT inject writing-mode, direction, or text-align when verticalText is true',
+      () {
+        final theme = buildReaderTheme(
+          settings: const ReaderSettings(verticalText: true),
+        );
+        final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
+        final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+
+        expect(htmlCss.containsKey('writing-mode'), isFalse);
+        expect(bodyCss.containsKey('writing-mode'), isFalse);
+        expect(htmlCss.containsKey('direction'), isFalse);
+        expect(bodyCss.containsKey('direction'), isFalse);
+        expect(bodyCss.containsKey('text-align'), isFalse);
+      },
+    );
+
+    test(
+      'writing-mode override works with dark color mode',
+      () {
+        final theme = buildReaderTheme(
+          settings: const ReaderSettings(
+            verticalText: false,
+            colorMode: ColorMode.dark,
+          ),
+        );
+        final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
+
+        // Should have both color and writing-mode rules
+        expect(htmlCss['writing-mode'], 'horizontal-tb !important');
+        expect(htmlCss['background'], contains('!important'));
+        expect(htmlCss['color'], contains('!important'));
+      },
+    );
   });
 }

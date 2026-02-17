@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -167,6 +168,68 @@ void main() {
         () => repo.importEpub('/nonexistent/book.epub'),
         throwsA(anything),
       );
+    });
+  });
+
+  group('BookRepository — language and pageProgressionDirection', () {
+    test('inserting book with language stores the value', () async {
+      final id = await db.into(db.books).insert(
+        BooksCompanion.insert(
+          title: 'English Novel',
+          filePath: '/test/path',
+          language: const Value('en'),
+          pageProgressionDirection: const Value('ltr'),
+        ),
+      );
+
+      final book = await repo.getBookById(id);
+      expect(book, isNotNull);
+      expect(book!.language, 'en');
+      expect(book.pageProgressionDirection, 'ltr');
+    });
+
+    test('inserting book without language has null language', () async {
+      final id = await db.into(db.books).insert(
+        BooksCompanion.insert(title: 'Legacy Book', filePath: '/test/path'),
+      );
+
+      final book = await repo.getBookById(id);
+      expect(book, isNotNull);
+      expect(book!.language, isNull);
+      expect(book.pageProgressionDirection, isNull);
+    });
+
+    test('backfillLanguage updates language and ppd', () async {
+      final id = await db.into(db.books).insert(
+        BooksCompanion.insert(title: 'Legacy Book', filePath: '/test/path'),
+      );
+
+      // Verify initially null
+      var book = await repo.getBookById(id);
+      expect(book!.language, isNull);
+
+      // Backfill
+      await repo.backfillLanguage(id, 'ja', 'rtl');
+
+      book = await repo.getBookById(id);
+      expect(book!.language, 'ja');
+      expect(book.pageProgressionDirection, 'rtl');
+    });
+
+    test('backfillLanguage can set null values', () async {
+      final id = await db.into(db.books).insert(
+        BooksCompanion.insert(
+          title: 'Book',
+          filePath: '/test/path',
+          language: const Value('en'),
+        ),
+      );
+
+      await repo.backfillLanguage(id, null, null);
+
+      final book = await repo.getBookById(id);
+      expect(book!.language, isNull);
+      expect(book.pageProgressionDirection, isNull);
     });
   });
 }

@@ -9,6 +9,8 @@ import 'package:mekuru/features/library/data/services/epub_parser.dart';
 Future<String> createTestEpub({
   String title = 'テスト本',
   String? author,
+  String? language,
+  String? pageProgressionDirection,
   bool includeCover = true,
   bool includeContainerXml = true,
   String? customOpfContent,
@@ -41,13 +43,14 @@ Future<String> createTestEpub({
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title>$title</dc:title>
     ${author != null ? '<dc:creator>$author</dc:creator>' : ''}
+    ${language != null ? '<dc:language>$language</dc:language>' : ''}
     <meta name="cover" content="cover-img"/>
   </metadata>
   <manifest>
     ${includeCover ? '<item id="cover-img" href="images/cover.jpg" media-type="image/jpeg"/>' : ''}
     <item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
-  <spine>
+  <spine${pageProgressionDirection != null ? ' page-progression-direction="$pageProgressionDirection"' : ''}>
     <itemref idref="chapter1"/>
   </spine>
 </package>''';
@@ -251,5 +254,103 @@ void main() {
         expect(metadata.coverImageRelativePath, contains('cover.jpg'));
       },
     );
+  });
+
+  group('EpubParser — language detection', () {
+    test('extracts dc:language', () async {
+      final epubPath = await createTestEpub(language: 'ja');
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.language, 'ja');
+    });
+
+    test('normalizes language with region code to primary subtag', () async {
+      final epubPath = await createTestEpub(language: 'en-US');
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.language, 'en');
+    });
+
+    test('normalizes uppercase language to lowercase', () async {
+      final epubPath = await createTestEpub(language: 'JA');
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.language, 'ja');
+    });
+
+    test('returns null language when not present', () async {
+      final epubPath = await createTestEpub();
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.language, isNull);
+    });
+
+    test('extracts language via full extraction too', () async {
+      final epubPath = await createTestEpub(language: 'fr');
+      tempDirs.add(epubPath);
+
+      final extractDir = await Directory.systemTemp.createTemp(
+        'epub_extract_lang_',
+      );
+      tempDirs.add(extractDir.path);
+
+      final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
+      expect(metadata.language, 'fr');
+    });
+  });
+
+  group('EpubParser — page-progression-direction', () {
+    test('extracts page-progression-direction from spine', () async {
+      final epubPath = await createTestEpub(pageProgressionDirection: 'rtl');
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.pageProgressionDirection, 'rtl');
+    });
+
+    test('extracts ltr page-progression-direction', () async {
+      final epubPath = await createTestEpub(pageProgressionDirection: 'ltr');
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.pageProgressionDirection, 'ltr');
+    });
+
+    test('returns null pageProgressionDirection when not present', () async {
+      final epubPath = await createTestEpub();
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.pageProgressionDirection, isNull);
+    });
+
+    test('extracts ppd via full extraction too', () async {
+      final epubPath = await createTestEpub(pageProgressionDirection: 'rtl');
+      tempDirs.add(epubPath);
+
+      final extractDir = await Directory.systemTemp.createTemp(
+        'epub_extract_ppd_',
+      );
+      tempDirs.add(extractDir.path);
+
+      final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
+      expect(metadata.pageProgressionDirection, 'rtl');
+    });
+
+    test('extracts both language and ppd together', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        pageProgressionDirection: 'rtl',
+      );
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.language, 'ja');
+      expect(metadata.pageProgressionDirection, 'rtl');
+    });
   });
 }

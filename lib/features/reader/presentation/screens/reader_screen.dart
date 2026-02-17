@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/library/data/services/epub_parser.dart';
+import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/epub_models.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/epub_file_resolver.dart';
@@ -49,6 +51,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   String? _errorMessage;
   int _viewerEpoch = 0;
 
+  // Book language (from DB or re-parsed for legacy books).
+  String? _bookLanguage;
+
   // Touch tracking for swipe vs. tap detection.
   double? _touchDownX;
   double? _touchDownY;
@@ -76,6 +81,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       if (!mounted) return;
       await ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
       if (!mounted) return;
+
+      // Apply book-specific defaults (or per-book overrides if the user
+      // previously changed the display settings for this book).
+      _bookLanguage = widget.book.language;
+      ref.read(readerSettingsProvider.notifier).applyBookDefaults(
+        bookId: widget.book.id,
+        language: widget.book.language,
+        pageProgressionDirection: widget.book.pageProgressionDirection,
+        overrideVerticalText: widget.book.overrideVerticalText,
+        overrideReadingDirection: widget.book.overrideReadingDirection,
+      );
 
       final settings = ref.read(readerSettingsProvider);
       if (settings.keepScreenOn) {
@@ -105,7 +121,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         return;
       }
 
-      if (previous.readingDirection != next.readingDirection) {
+      if (previous.readingDirection != next.readingDirection ||
+          previous.verticalText != next.verticalText) {
+        debugPrint(
+          '[READER] direction/verticalText changed: '
+          'dir=${next.readingDirection} '
+          'vertical=${next.verticalText} '
+          '(was dir=${previous.readingDirection} '
+          'vertical=${previous.verticalText})',
+        );
         unawaited(_rebuildViewerForDirectionChange());
       }
 
@@ -151,7 +175,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       controller: _epubController,
                       epubData: _epubData!,
                       initialCfi: _initialCfi,
-                      direction: settings.readingDirection == ReaderDirection.rtl
+                      // epub.js uses direction to determine its pagination axis:
+                      // 'rtl' → vertical axis (for vertical Japanese text),
+                      // 'ltr' → horizontal axis.
+                      // When vertical text is disabled, we MUST pass 'ltr' so
+                      // epub.js paginates horizontally, regardless of the
+                      // user's reading direction (which only affects tap zones
+                      // and swipe interpretation in Dart).
+                      direction: settings.verticalText &&
+                              settings.readingDirection == ReaderDirection.rtl
                           ? 'rtl'
                           : 'ltr',
                       fontSize: settings.fontSize.round(),
@@ -160,6 +192,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       customCss: readerTheme.customCss,
                       horizontalMargin: settings.horizontalPadding,
                       verticalMargin: settings.verticalPadding,
+                      // When vertical text is disabled, epub.js still reads
+                      // the section's original writing-mode CSS and sets axis
+                      // to vertical. This flag tells the JS bridge to force
+                      // the axis back to horizontal after each section loads.
+                      forceHorizontalAxis: !settings.verticalText,
                       onLoaded: () {
                         if (!mounted) return;
                         setState(() {
@@ -283,6 +320,32 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       final savedProgress = latestBook?.lastReadCfi ?? widget.book.lastReadCfi;
       final initialCfi = _extractInitialCfi(savedProgress);
 
+      // Re-parse legacy books without language metadata to detect language.
+      if (widget.book.language == null) {
+        try {
+          final metadata = await EpubParser.parseMetadataOnly(epubPath);
+          if (!mounted) return;
+          _bookLanguage = metadata.language;
+          // Backfill the database so subsequent opens skip re-parsing.
+          unawaited(
+            ref.read(readerBookRepositoryProvider).backfillLanguage(
+              widget.book.id,
+              metadata.language,
+              metadata.pageProgressionDirection,
+            ),
+          );
+          // Re-apply book defaults with detected language.
+          // Legacy books won't have per-book overrides yet, so pass null.
+          ref.read(readerSettingsProvider.notifier).applyBookDefaults(
+            bookId: widget.book.id,
+            language: metadata.language,
+            pageProgressionDirection: metadata.pageProgressionDirection,
+          );
+        } catch (_) {
+          // Best effort — continue with null language (assumes Japanese).
+        }
+      }
+
       final bytes = await File(epubPath).readAsBytes();
       if (!mounted) return;
 
@@ -307,6 +370,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     }
 
     _isRebuildingForDirection = true;
+    final settings = ref.read(readerSettingsProvider);
+    final epubDir = settings.verticalText &&
+            settings.readingDirection == ReaderDirection.rtl
+        ? 'rtl'
+        : 'ltr';
+    debugPrint(
+      '[READER] rebuilding viewer for direction change: '
+      'epubDir=$epubDir '
+      'readerDir=${settings.readingDirection} '
+      'vertical=${settings.verticalText}',
+    );
     try {
       String? currentCfi;
       try {
@@ -328,6 +402,25 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     } finally {
       _isRebuildingForDirection = false;
     }
+  }
+
+  /// Whether the current display mode differs from the book's native format.
+  bool _isNonNativeDisplayMode(ReaderSettings settings) {
+    final nativeVertical = defaultVerticalText(
+      language: _bookLanguage,
+      pageProgressionDirection: widget.book.pageProgressionDirection,
+    );
+    return settings.verticalText != nativeVertical;
+  }
+
+  /// Returns a short warning explaining the display mode mismatch.
+  String _nonNativeDisplayWarning(ReaderSettings settings) {
+    if (settings.verticalText) {
+      return 'This book was not originally formatted for vertical text. '
+          'Some display issues may occur.';
+    }
+    return 'This book was originally formatted for vertical text. '
+        'Some display issues may occur in horizontal mode.';
   }
 
   void _handleTouchUp(
@@ -1010,15 +1103,57 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     children: [
                       SwitchListTile(
                         title: const Text('Vertical Text'),
-                        subtitle: const Text(
-                          'Controlled by EPUB CSS in this viewer',
+                        subtitle: Text(
+                          bookSupportsVerticalText(_bookLanguage)
+                              ? 'Toggle vertical/horizontal text layout'
+                              : 'Not available for this book\'s language',
                         ),
                         value: settings.verticalText,
-                        onChanged: null,
+                        onChanged: bookSupportsVerticalText(_bookLanguage)
+                            ? (value) {
+                                AppHaptics.medium();
+                                notifier.setVerticalText(value);
+                              }
+                            : null,
                         secondary: const Icon(
                           Icons.text_rotation_angledown,
                         ),
                       ),
+                      // Show a warning when the display mode differs from
+                      // what the book was originally formatted for.
+                      if (_isNonNativeDisplayMode(settings))
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _nonNativeDisplayWarning(settings),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.symmetric(

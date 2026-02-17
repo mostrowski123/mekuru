@@ -5975,9 +5975,16 @@ class Contents {
     let COLUMN_WIDTH = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-width");
     let COLUMN_FILL = Object(_utils_core__WEBPACK_IMPORTED_MODULE_1__["prefixed"])("column-fill");
     let writingMode = this.writingMode();
+    // [MEKURU PATCH] Force horizontal axis when vertical text is disabled
+    if (typeof window._forceHorizontalAxis !== 'undefined' && window._forceHorizontalAxis) {
+      writingMode = "horizontal-tb";
+    }
     let axis = writingMode.indexOf("vertical") === 0 ? "vertical" : "horizontal";
     this.layoutStyle("paginated");
-    if (dir === "rtl" && axis === "horizontal") {
+    // [MEKURU PATCH] Don't set RTL direction on the content when forcing
+    // horizontal axis — the content should flow LTR.
+    if (dir === "rtl" && axis === "horizontal" &&
+        !(typeof window._forceHorizontalAxis !== 'undefined' && window._forceHorizontalAxis)) {
       this.direction(dir);
     }
     this.width(width);
@@ -7726,7 +7733,15 @@ class rendition_Rendition {
         settings: this.settings
       });
     }
-    this.direction(this.book.package.metadata.direction || this.settings.defaultDirection);
+    // [MEKURU PATCH] When forcing horizontal axis, always use LTR direction
+    // regardless of the EPUB's page-progression-direction metadata.
+    // Without this, a Japanese EPUB with ppd="rtl" would cause the manager
+    // to scroll in the wrong direction even though the axis is horizontal.
+    if (typeof window._forceHorizontalAxis !== 'undefined' && window._forceHorizontalAxis) {
+      this.direction("ltr");
+    } else {
+      this.direction(this.book.package.metadata.direction || this.settings.defaultDirection);
+    }
 
     // Parse metadata to get layout props
     this.settings.globalLayoutProperties = this.determineLayoutProperties(this.book.package.metadata);
@@ -8710,6 +8725,13 @@ class IframeView {
     }.bind(this)).then(function () {
       // find and report the writingMode axis
       let writingMode = this.contents.writingMode();
+
+      // [MEKURU PATCH] When forcing horizontal axis (vertical text disabled),
+      // override the detected writing mode so epub.js uses horizontal
+      // pagination regardless of the section's original CSS.
+      if (typeof window._forceHorizontalAxis !== 'undefined' && window._forceHorizontalAxis) {
+        writingMode = "horizontal-tb";
+      }
 
       // Set the axis based on the flow and writing mode
       let axis;

@@ -34,6 +34,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.customCss,
     this.horizontalMargin = 28,
     this.verticalMargin = 28,
+    this.forceHorizontalAxis = false,
     this.onLoaded,
     this.onChaptersLoaded,
     this.onRelocated,
@@ -55,6 +56,7 @@ class CustomEpubViewer extends StatefulWidget {
   final Map<String, dynamic>? customCss;
   final int horizontalMargin;
   final int verticalMargin;
+  final bool forceHorizontalAxis;
 
   final VoidCallback? onLoaded;
   final ValueChanged<List<EpubChapter>>? onChaptersLoaded;
@@ -346,7 +348,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           '$fgHex, '
           '$cssParam, '
           '${widget.horizontalMargin}, '
-          '${widget.verticalMargin}'
+          '${widget.verticalMargin}, '
+          '${widget.forceHorizontalAxis}'
           ')',
     );
 

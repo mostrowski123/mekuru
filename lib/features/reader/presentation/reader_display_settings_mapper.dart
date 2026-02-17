@@ -50,18 +50,34 @@ ReaderTheme buildReaderTheme({
   final bgHex = colorToHex(bgColor);
   final fgHex = colorToHex(fgColor);
 
+  final Map<String, dynamic> htmlCss = {
+    'background': '$bgHex !important',
+    'color': '$fgHex !important',
+  };
+  final Map<String, dynamic> bodyCss = {
+    'background': '$bgHex !important',
+    'color': '$fgHex !important',
+  };
+
+  // Force horizontal writing mode when vertical text is disabled.
+  // This overrides EPUB CSS that may specify writing-mode: vertical-rl.
+  // We also need to reset direction and text-align because Japanese EPUBs
+  // typically set these for RTL vertical layout, which causes right-justified
+  // text when the writing mode is forced to horizontal.
+  if (!settings.verticalText) {
+    htmlCss['writing-mode'] = 'horizontal-tb !important';
+    bodyCss['writing-mode'] = 'horizontal-tb !important';
+    htmlCss['direction'] = 'ltr !important';
+    bodyCss['direction'] = 'ltr !important';
+    bodyCss['text-align'] = 'start !important';
+  }
+
   return ReaderTheme(
     foregroundColor: fgColor,
     backgroundColor: bgColor,
     customCss: {
-      'html': {
-        'background': '$bgHex !important',
-        'color': '$fgHex !important',
-      },
-      'body': {
-        'background': '$bgHex !important',
-        'color': '$fgHex !important',
-      },
+      'html': htmlCss,
+      'body': bodyCss,
       'p': {
         'color': '$fgHex !important',
       },
