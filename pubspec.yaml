@@ -44,6 +44,7 @@ dependencies:
   xml: ^6.5.0
   share_plus: ^12.0.1
   shared_preferences: ^2.5.3
+  url_launcher: ^6.3.1
 
   # Reader display
   screen_brightness: ^1.0.1
