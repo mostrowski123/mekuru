@@ -1,0 +1,10 @@
+environment_config:
+  path: config/environment_config.dart
+  class: EnvironmentConfig
+  fields:
+    sentryDsn:
+      type: String
+      default: ""
+    sentryEnvironment:
+      type: String
+      default: development

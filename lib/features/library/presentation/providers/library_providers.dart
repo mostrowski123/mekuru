@@ -5,6 +5,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 // ──────────────── Sort ────────────────
 
@@ -105,6 +106,10 @@ class BookImportNotifier extends Notifier<BookImportState> {
     try {
       final repo = ref.read(bookRepositoryProvider);
       final book = await repo.importEpub(filePath);
+      Sentry.addBreadcrumb(Breadcrumb(
+        message: 'EPUB imported: ${book.title}',
+        category: 'library',
+      ));
       state = BookImportState(
         successMessage: '"${book.title}" added to library!',
       );

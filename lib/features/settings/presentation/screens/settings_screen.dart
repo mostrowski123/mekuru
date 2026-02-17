@@ -5,6 +5,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// General app settings screen.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -164,6 +165,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+          ),
+          const Divider(),
+
+          // ── Feedback ──
+          _SectionHeader(title: 'Feedback'),
+          ListTile(
+            leading: Icon(
+              Icons.feedback_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Send Feedback'),
+            subtitle: const Text('Report a bug or suggest a feature'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SentryFeedbackWidget(),
+                ),
+              );
+            },
           ),
           const Divider(),
 

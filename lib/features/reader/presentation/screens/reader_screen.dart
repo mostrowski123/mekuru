@@ -17,6 +17,7 @@ import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controll
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// EPUB reader backed by a custom epub.js WebView bridge.
@@ -55,6 +56,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   @override
   void initState() {
     super.initState();
+
+    Sentry.addBreadcrumb(Breadcrumb(
+      message: 'Opened book: ${widget.book.title}',
+      category: 'reader',
+    ));
 
     _progressPersistence = ReaderProgressPersistence(
       saveProgress: (cfi, progress) {

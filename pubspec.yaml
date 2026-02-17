@@ -49,6 +49,9 @@ dependencies:
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.1
 
+  # Error tracking and user feedback
+  sentry_flutter: ^9.13.0
+
   # Reader display
   screen_brightness: ^1.0.1
   wakelock_plus: ^1.2.8
@@ -58,6 +61,7 @@ dependencies:
   flutter_svg: ^2.0.17
 
 dev_dependencies:
+  sentry_dart_plugin: ^3.2.1
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
@@ -66,6 +70,7 @@ dev_dependencies:
   drift_dev: ^2.31.0
   riverpod_generator: ^4.0.0
   build_runner: ^2.4.0
+  environment_config: ^4.0.0+1
 
 flutter:
   uses-material-design: true
@@ -74,3 +79,9 @@ flutter:
     - assets/epub_viewer/
     - assets/ipadic/
     - assets/jpdb_freq/
+
+sentry:
+  upload_debug_symbols: true
+  upload_source_maps: true
+  project: mekuru
+  org: matt-dl

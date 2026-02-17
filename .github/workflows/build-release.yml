@@ -56,6 +56,12 @@ jobs:
       - name: Run code generation
         run: dart run build_runner build --delete-conflicting-outputs
 
+      - name: Generate environment config
+        run: >
+          flutter pub run environment_config:generate
+          --sentryDsn=${{ secrets.SENTRY_DSN }}
+          --sentryEnvironment=production
+
       - name: Build release APK
         run: flutter build apk --release
 

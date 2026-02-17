@@ -5,6 +5,7 @@ import 'package:csv/csv.dart' as csv;
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Repository for managing saved vocabulary (SavedWords).
@@ -42,7 +43,7 @@ class VocabularyRepository {
   Future<int> addWord({
     required DictionaryEntry entry,
     String sentenceContext = '',
-  }) {
+  }) async {
     // DictionaryEntry glossaries are List<String>, but stored as JSON in DictionaryEntry table?
     // Wait, let's check DictionaryEntry model. It usually stores glossaries as JSON string or List<String>
     // depending on the converter. SavedWords.glossaries is TextColumn.
@@ -59,30 +60,23 @@ class VocabularyRepository {
 
     // For now, I will assume we pass the raw strings.
 
-    return _db
+    final id = await _db
         .into(_db.savedWords)
         .insert(
           SavedWordsCompanion.insert(
             expression: entry.expression,
             reading: Value(entry.reading),
-
-            // We'll simply copy the glossaries.
-            // If DictionaryEntry uses a converter, `entry.glossaries` is List<String>.
-            // If SavedWords uses a converter (which it should to be useful), we pass List<String>.
-            // If no converter, we pass JSON string.
-            // I'll assume for now we need to pass a JSON string if no converter is on SavedWords.
-            // But better: let's verify SavedWords and DictionaryEntry usage.
-            // If I look at `database_provider.dart`, I didn't see type converters attached in the Table definition
-            // I saw earlier.
-
-            // Re-reading `database_provider.dart` from earlier view...
-            // `glossaries => text()(); // JSON-encoded List<String>` comment exists.
-            // So it expects a String.
-            glossaries: entry
-                .glossaries, // Assuming entry.glossaries is already the JSON string.
+            glossaries: entry.glossaries,
             sentenceContext: Value(sentenceContext),
           ),
         );
+
+    Sentry.addBreadcrumb(Breadcrumb(
+      message: 'Word saved: ${entry.expression}',
+      category: 'vocabulary',
+    ));
+
+    return id;
   }
 
   /// Delete a saved word by ID.

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/presentation/screens/library_screen.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
+import 'main.dart' show navigatorKey;
 import 'shared/theme/app_theme.dart';
 
 /// Root application widget.
@@ -25,6 +27,8 @@ class MekuruApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      navigatorKey: navigatorKey,
+      navigatorObservers: [SentryNavigatorObserver()],
       home: const _MainShell(),
     );
   }

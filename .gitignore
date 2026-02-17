@@ -50,3 +50,7 @@ app.*.map.json
 
 # Android local developer SDK paths
 android/local.properties
+
+sentry.properties
+sentry.env
+lib/config/environment_config.dart

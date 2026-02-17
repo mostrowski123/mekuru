@@ -4,6 +4,7 @@ import 'package:mekuru/features/dictionary/data/repositories/dictionary_reposito
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/main.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 // ──────────────── Repository & Services ────────────────
 
@@ -113,6 +114,10 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
           );
         },
       );
+      Sentry.addBreadcrumb(Breadcrumb(
+        message: 'Dictionary imported ($count entries)',
+        category: 'dictionary',
+      ));
       state = DictionaryImportState(
         successMessage: 'Imported $count entries successfully!',
       );
@@ -172,6 +177,12 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         parts.add('No dictionaries found in collection');
       }
 
+      Sentry.addBreadcrumb(Breadcrumb(
+        message: 'Dictionary collection imported '
+            '(${result.importedDictionaries.length} dictionaries, '
+            '${result.totalEntriesImported} entries)',
+        category: 'dictionary',
+      ));
       state = DictionaryImportState(
         successMessage: parts.join('. '),
         skippedDictionaries: result.skippedDictionaries,
