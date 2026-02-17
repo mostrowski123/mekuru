@@ -78,7 +78,6 @@ flutter:
   assets:
     - assets/epub_viewer/
     - assets/ipadic/
-    - assets/jpdb_freq/
 
 sentry:
   upload_debug_symbols: true

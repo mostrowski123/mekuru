@@ -210,31 +210,6 @@ class AboutScreen extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       children: [
-                        const TextSpan(
-                          text: 'Licensed under the ',
-                        ),
-                        TextSpan(
-                          text: 'Creative Commons Attribution-ShareAlike 4.0',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => _launchUrl(
-                                  'https://creativecommons.org/licenses/by-sa/4.0/',
-                                ),
-                        ),
-                        const TextSpan(text: ' license.'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text.rich(
-                    TextSpan(
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      children: [
                         const TextSpan(text: 'Data source: '),
                         TextSpan(
                           text: 'jpdb.io',

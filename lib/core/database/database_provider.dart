@@ -16,7 +16,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,6 +42,16 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 6) {
             await migrator.createTable(frequencies);
+          }
+          if (from < 7) {
+            await migrator.addColumn(
+              dictionaryMetas,
+              dictionaryMetas.isHidden,
+            );
+            // Hide existing bundled JPDB frequency dictionary
+            await customStatement(
+              "UPDATE dictionary_metas SET is_hidden = 1 WHERE name = 'JPDBv2\u32D5'",
+            );
           }
         },
       );

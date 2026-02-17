@@ -21,6 +21,13 @@ class DictionaryRepository {
             ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
           .watch();
 
+  /// Watch user-visible dictionaries (excludes hidden system dictionaries).
+  Stream<List<DictionaryMeta>> watchVisibleDictionaries() =>
+      (_db.select(_db.dictionaryMetas)
+            ..where((t) => t.isHidden.equals(false))
+            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .watch();
+
   /// Insert a new dictionary and return its auto-generated id.
   /// Automatically assigns the next sort order (appends to end).
   Future<int> insertDictionary(String name) async {
@@ -58,6 +65,12 @@ class DictionaryRepository {
   Future<void> toggleDictionary(int id, {required bool isEnabled}) =>
       (_db.update(_db.dictionaryMetas)..where((t) => t.id.equals(id))).write(
         DictionaryMetasCompanion(isEnabled: Value(isEnabled)),
+      );
+
+  /// Mark a dictionary as hidden from the user-facing dictionary manager.
+  Future<void> setHidden(int id, {required bool isHidden}) =>
+      (_db.update(_db.dictionaryMetas)..where((t) => t.id.equals(id))).write(
+        DictionaryMetasCompanion(isHidden: Value(isHidden)),
       );
 
   /// Delete a dictionary and all its entries (including pitch accents and frequencies).

@@ -1,7 +1,9 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Screen for managing imported Yomitan dictionaries.
 class DictionaryManagerScreen extends ConsumerStatefulWidget {
@@ -293,6 +295,33 @@ class _DictionaryManagerScreenState
               const Text(
                 'Use the toggle switch to enable or disable a dictionary. '
                 'Disabled dictionaries are not searched when looking up words.',
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Finding Dictionaries',
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Browse compatible dictionaries at ',
+                    ),
+                    TextSpan(
+                      text: 'yomitan.wiki/dictionaries',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => launchUrl(
+                              Uri.parse('https://yomitan.wiki/dictionaries/'),
+                              mode: LaunchMode.externalApplication,
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

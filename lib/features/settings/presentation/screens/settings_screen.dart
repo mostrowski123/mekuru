@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
+import 'package:mekuru/features/settings/presentation/screens/feedback_screen.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// General app settings screen.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -19,9 +20,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // Check KanjiVG download status when screen opens
+    // Check asset download statuses when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(kanjiVgProvider.notifier).checkStatus();
+      ref.read(jpdbFreqProvider.notifier).checkStatus();
     });
   }
 
@@ -30,6 +32,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = ref.watch(appThemeModeProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
     final kanjiVgState = ref.watch(kanjiVgProvider);
+    final jpdbFreqState = ref.watch(jpdbFreqProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -114,8 +117,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(),
 
-          // ── Kanji Assets ──
-          _SectionHeader(title: 'Kanji Assets'),
+          // ── Assets ──
+          _SectionHeader(title: 'Assets'),
+
+          // KanjiVG
           _KanjiVgTile(state: kanjiVgState, theme: theme),
           if (kanjiVgState.isDownloading)
             Padding(
@@ -166,6 +171,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
+
+          // JPDB Frequency
+          _JpdbFreqTile(state: jpdbFreqState, theme: theme),
+          if (jpdbFreqState.isDownloading)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LinearProgressIndicator(value: jpdbFreqState.progress),
+                  const SizedBox(height: 4),
+                  Text(
+                    jpdbFreqState.progress < 0.7
+                        ? 'Downloading... ${(jpdbFreqState.progress / 0.7 * 100).toInt()}%'
+                        : 'Importing...',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          if (jpdbFreqState.error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text(
+                jpdbFreqState.error!,
+                style: TextStyle(
+                  color: theme.colorScheme.error,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          if (jpdbFreqState.successMessage != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text(
+                jpdbFreqState.successMessage!,
+                style: const TextStyle(color: Colors.green, fontSize: 13),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              'Word frequency data from JPDB (jpdb.io), '
+              'distributed by Kuuuube.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
           const Divider(),
 
           // ── Feedback ──
@@ -178,13 +236,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: const Text('Send Feedback'),
             subtitle: const Text('Report a bug or suggest a feature'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
+            onTap: () async {
               AppHaptics.light();
-              Navigator.of(context).push(
+              final result = await Navigator.of(context).push<bool>(
                 MaterialPageRoute(
-                  builder: (_) => SentryFeedbackWidget(),
+                  builder: (_) => const FeedbackScreen(),
                 ),
               );
+              if (!context.mounted) return;
+              if (result == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Thank you for your feedback!'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } else if (result == false) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Failed to send feedback. Please try again.'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
             },
           ),
           const Divider(),
@@ -408,6 +485,84 @@ class _KanjiVgTile extends ConsumerWidget {
             onPressed: () {
               Navigator.of(ctx).pop();
               ref.read(kanjiVgProvider.notifier).delete();
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tile showing JPDB frequency dictionary download status and actions.
+class _JpdbFreqTile extends ConsumerWidget {
+  const _JpdbFreqTile({required this.state, required this.theme});
+
+  final JpdbFreqState state;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subtitle = state.isImported
+        ? 'Frequency data downloaded'
+        : 'Download word frequency data for search ranking';
+
+    return ListTile(
+      leading: Icon(
+        Icons.bar_chart_outlined,
+        color: theme.colorScheme.primary,
+      ),
+      title: const Text('Word Frequency'),
+      subtitle: Text(subtitle),
+      trailing: _buildTrailing(context, ref),
+    );
+  }
+
+  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
+    if (state.isDownloading || state.isDeleting) {
+      return const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    if (state.isImported) {
+      return IconButton(
+        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+        tooltip: 'Delete frequency data',
+        onPressed: () => _confirmDelete(context, ref),
+      );
+    }
+
+    return FilledButton.tonal(
+      onPressed: () {
+        AppHaptics.light();
+        ref.read(jpdbFreqProvider.notifier).download();
+      },
+      child: const Text('Download'),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Frequency Data'),
+        content: const Text(
+          'Delete word frequency data? '
+          'Search results will no longer be ranked by frequency. '
+          'You can re-download it later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(jpdbFreqProvider.notifier).delete();
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),

@@ -1047,6 +1047,21 @@ class $DictionaryMetasTable extends DictionaryMetas
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _isHiddenMeta = const VerificationMeta(
+    'isHidden',
+  );
+  @override
+  late final GeneratedColumn<bool> isHidden = GeneratedColumn<bool>(
+    'is_hidden',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_hidden" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1054,6 +1069,7 @@ class $DictionaryMetasTable extends DictionaryMetas
     isEnabled,
     dateImported,
     sortOrder,
+    isHidden,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1099,6 +1115,12 @@ class $DictionaryMetasTable extends DictionaryMetas
         sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
       );
     }
+    if (data.containsKey('is_hidden')) {
+      context.handle(
+        _isHiddenMeta,
+        isHidden.isAcceptableOrUnknown(data['is_hidden']!, _isHiddenMeta),
+      );
+    }
     return context;
   }
 
@@ -1128,6 +1150,10 @@ class $DictionaryMetasTable extends DictionaryMetas
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
       )!,
+      isHidden: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_hidden'],
+      )!,
     );
   }
 
@@ -1143,12 +1169,14 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
   final bool isEnabled;
   final DateTime dateImported;
   final int sortOrder;
+  final bool isHidden;
   const DictionaryMeta({
     required this.id,
     required this.name,
     required this.isEnabled,
     required this.dateImported,
     required this.sortOrder,
+    required this.isHidden,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1158,6 +1186,7 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     map['is_enabled'] = Variable<bool>(isEnabled);
     map['date_imported'] = Variable<DateTime>(dateImported);
     map['sort_order'] = Variable<int>(sortOrder);
+    map['is_hidden'] = Variable<bool>(isHidden);
     return map;
   }
 
@@ -1168,6 +1197,7 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       isEnabled: Value(isEnabled),
       dateImported: Value(dateImported),
       sortOrder: Value(sortOrder),
+      isHidden: Value(isHidden),
     );
   }
 
@@ -1182,6 +1212,7 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
       dateImported: serializer.fromJson<DateTime>(json['dateImported']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      isHidden: serializer.fromJson<bool>(json['isHidden']),
     );
   }
   @override
@@ -1193,6 +1224,7 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       'isEnabled': serializer.toJson<bool>(isEnabled),
       'dateImported': serializer.toJson<DateTime>(dateImported),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'isHidden': serializer.toJson<bool>(isHidden),
     };
   }
 
@@ -1202,12 +1234,14 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     bool? isEnabled,
     DateTime? dateImported,
     int? sortOrder,
+    bool? isHidden,
   }) => DictionaryMeta(
     id: id ?? this.id,
     name: name ?? this.name,
     isEnabled: isEnabled ?? this.isEnabled,
     dateImported: dateImported ?? this.dateImported,
     sortOrder: sortOrder ?? this.sortOrder,
+    isHidden: isHidden ?? this.isHidden,
   );
   DictionaryMeta copyWithCompanion(DictionaryMetasCompanion data) {
     return DictionaryMeta(
@@ -1218,6 +1252,7 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
           ? data.dateImported.value
           : this.dateImported,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      isHidden: data.isHidden.present ? data.isHidden.value : this.isHidden,
     );
   }
 
@@ -1228,13 +1263,15 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
           ..write('name: $name, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('dateImported: $dateImported, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isHidden: $isHidden')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, isEnabled, dateImported, sortOrder);
+  int get hashCode =>
+      Object.hash(id, name, isEnabled, dateImported, sortOrder, isHidden);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1243,7 +1280,8 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
           other.name == this.name &&
           other.isEnabled == this.isEnabled &&
           other.dateImported == this.dateImported &&
-          other.sortOrder == this.sortOrder);
+          other.sortOrder == this.sortOrder &&
+          other.isHidden == this.isHidden);
 }
 
 class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
@@ -1252,12 +1290,14 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
   final Value<bool> isEnabled;
   final Value<DateTime> dateImported;
   final Value<int> sortOrder;
+  final Value<bool> isHidden;
   const DictionaryMetasCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.dateImported = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.isHidden = const Value.absent(),
   });
   DictionaryMetasCompanion.insert({
     this.id = const Value.absent(),
@@ -1265,6 +1305,7 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     this.isEnabled = const Value.absent(),
     this.dateImported = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.isHidden = const Value.absent(),
   }) : name = Value(name);
   static Insertable<DictionaryMeta> custom({
     Expression<int>? id,
@@ -1272,6 +1313,7 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     Expression<bool>? isEnabled,
     Expression<DateTime>? dateImported,
     Expression<int>? sortOrder,
+    Expression<bool>? isHidden,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1279,6 +1321,7 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (dateImported != null) 'date_imported': dateImported,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (isHidden != null) 'is_hidden': isHidden,
     });
   }
 
@@ -1288,6 +1331,7 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     Value<bool>? isEnabled,
     Value<DateTime>? dateImported,
     Value<int>? sortOrder,
+    Value<bool>? isHidden,
   }) {
     return DictionaryMetasCompanion(
       id: id ?? this.id,
@@ -1295,6 +1339,7 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
       isEnabled: isEnabled ?? this.isEnabled,
       dateImported: dateImported ?? this.dateImported,
       sortOrder: sortOrder ?? this.sortOrder,
+      isHidden: isHidden ?? this.isHidden,
     );
   }
 
@@ -1316,6 +1361,9 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (isHidden.present) {
+      map['is_hidden'] = Variable<bool>(isHidden.value);
+    }
     return map;
   }
 
@@ -1326,7 +1374,8 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
           ..write('name: $name, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('dateImported: $dateImported, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isHidden: $isHidden')
           ..write(')'))
         .toString();
   }
@@ -2970,6 +3019,7 @@ typedef $$DictionaryMetasTableCreateCompanionBuilder =
       Value<bool> isEnabled,
       Value<DateTime> dateImported,
       Value<int> sortOrder,
+      Value<bool> isHidden,
     });
 typedef $$DictionaryMetasTableUpdateCompanionBuilder =
     DictionaryMetasCompanion Function({
@@ -2978,6 +3028,7 @@ typedef $$DictionaryMetasTableUpdateCompanionBuilder =
       Value<bool> isEnabled,
       Value<DateTime> dateImported,
       Value<int> sortOrder,
+      Value<bool> isHidden,
     });
 
 class $$DictionaryMetasTableFilterComposer
@@ -3011,6 +3062,11 @@ class $$DictionaryMetasTableFilterComposer
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isHidden => $composableBuilder(
+    column: $table.isHidden,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3048,6 +3104,11 @@ class $$DictionaryMetasTableOrderingComposer
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isHidden => $composableBuilder(
+    column: $table.isHidden,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DictionaryMetasTableAnnotationComposer
@@ -3075,6 +3136,9 @@ class $$DictionaryMetasTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<bool> get isHidden =>
+      $composableBuilder(column: $table.isHidden, builder: (column) => column);
 }
 
 class $$DictionaryMetasTableTableManager
@@ -3119,12 +3183,14 @@ class $$DictionaryMetasTableTableManager
                 Value<bool> isEnabled = const Value.absent(),
                 Value<DateTime> dateImported = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<bool> isHidden = const Value.absent(),
               }) => DictionaryMetasCompanion(
                 id: id,
                 name: name,
                 isEnabled: isEnabled,
                 dateImported: dateImported,
                 sortOrder: sortOrder,
+                isHidden: isHidden,
               ),
           createCompanionCallback:
               ({
@@ -3133,12 +3199,14 @@ class $$DictionaryMetasTableTableManager
                 Value<bool> isEnabled = const Value.absent(),
                 Value<DateTime> dateImported = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<bool> isHidden = const Value.absent(),
               }) => DictionaryMetasCompanion.insert(
                 id: id,
                 name: name,
                 isEnabled: isEnabled,
                 dateImported: dateImported,
                 sortOrder: sortOrder,
+                isHidden: isHidden,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -3574,7 +3642,6 @@ typedef $$PitchAccentsTableProcessedTableManager =
       PitchAccent,
       PrefetchHooks Function()
     >;
-
 typedef $$FrequenciesTableCreateCompanionBuilder =
     FrequenciesCompanion Function({
       Value<int> id,
@@ -3768,10 +3835,7 @@ typedef $$FrequenciesTableProcessedTableManager =
       $$FrequenciesTableAnnotationComposer,
       $$FrequenciesTableCreateCompanionBuilder,
       $$FrequenciesTableUpdateCompanionBuilder,
-      (
-        Frequency,
-        BaseReferences<_$AppDatabase, $FrequenciesTable, Frequency>,
-      ),
+      (Frequency, BaseReferences<_$AppDatabase, $FrequenciesTable, Frequency>),
       Frequency,
       PrefetchHooks Function()
     >;

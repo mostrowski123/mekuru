@@ -8,4 +8,5 @@ class DictionaryMetas extends Table {
   DateTimeColumn get dateImported =>
       dateTime().withDefault(currentDateAndTime)();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  BoolColumn get isHidden => boolean().withDefault(const Constant(false))();
 }

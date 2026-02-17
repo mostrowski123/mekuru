@@ -25,9 +25,9 @@ final dictionaryImporterProvider = Provider<DictionaryImporter>((ref) {
 
 // ──────────────── Data Providers ────────────────
 
-/// Reactive stream of all dictionaries.
+/// Reactive stream of user-visible dictionaries (excludes hidden system ones).
 final dictionariesProvider = StreamProvider<List<DictionaryMeta>>((ref) {
-  return ref.watch(dictionaryRepositoryProvider).watchAllDictionaries();
+  return ref.watch(dictionaryRepositoryProvider).watchVisibleDictionaries();
 });
 
 // ──────────────── Import State ────────────────
