@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
-import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
-import 'package:mekuru/shared/widgets/furigana_text.dart';
-import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
+import 'package:mekuru/shared/widgets/dictionary_entry_card.dart';
 
 class LookupSheet extends ConsumerStatefulWidget {
   const LookupSheet({
@@ -42,6 +40,14 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     super.initState();
     _searchResultsFuture = _searchWithFallback();
     _pitchAccentsFuture = _searchPitchAccents();
+  }
+
+  void _navigateToWord(String word) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DictionarySearchScreen(initialQuery: word),
+      ),
+    );
   }
 
   /// Search by dictionary form first; if no results, try surface form.
@@ -195,13 +201,14 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
                   allPitchAccents,
                   result.entry,
                 );
-                return _DictionaryEntryItem(
+                return DictionaryEntryCard(
                   entry: result.entry,
                   dictionaryName: result.dictionaryName,
                   sentenceContext: widget.sentenceContext,
                   pitchAccents: entryPitchAccents,
                   fontSize: fontSize,
                   frequencyRank: result.frequencyRank,
+                  onWordTap: _navigateToWord,
                 );
               },
             );
@@ -218,7 +225,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
   ) {
     if (allPitchAccents.isEmpty) return [];
 
-    return allPitchAccents.where((p) {
+    final filtered = allPitchAccents.where((p) {
       // Match if pitch reading matches entry reading
       if (entry.reading.isNotEmpty && p.reading == entry.reading) return true;
       // Match if pitch reading matches expression (for kana-only words)
@@ -226,281 +233,10 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
       // Match if pitch has no reading (legacy data)
       if (p.reading.isEmpty) return true;
       return false;
-    }).toList();
-  }
-}
+    });
 
-class _DictionaryEntryItem extends ConsumerStatefulWidget {
-  const _DictionaryEntryItem({
-    required this.entry,
-    required this.dictionaryName,
-    this.sentenceContext,
-    this.pitchAccents = const [],
-    this.fontSize = 16.0,
-    this.frequencyRank,
-  });
-
-  final DictionaryEntry entry;
-  final String dictionaryName;
-  final String? sentenceContext;
-  final List<PitchAccentResult> pitchAccents;
-  final double fontSize;
-  final int? frequencyRank;
-
-  @override
-  ConsumerState<_DictionaryEntryItem> createState() =>
-      _DictionaryEntryItemState();
-}
-
-class _DictionaryEntryItemState extends ConsumerState<_DictionaryEntryItem> {
-  bool _isSaved = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkIfSaved();
-  }
-
-  Future<void> _checkIfSaved() async {
-    final repo = ref.read(vocabularyRepositoryProvider);
-    final saved = await repo.isWordSaved(
-      widget.entry.expression,
-      widget.entry.reading,
-    );
-    if (mounted) {
-      setState(() => _isSaved = saved);
-    }
-  }
-
-  Future<void> _toggleSave() async {
-    final repo = ref.read(vocabularyRepositoryProvider);
-    if (_isSaved) {
-      return;
-    }
-
-    await repo.addWord(
-      entry: widget.entry,
-      sentenceContext: widget.sentenceContext ?? '',
-    );
-    if (mounted) {
-      setState(() => _isSaved = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Saved "${widget.entry.expression}"'),
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final fs = widget.fontSize;
-    final definitions = GlossaryParser.parse(widget.entry.glossaries);
-
-    final expressionStyle = TextStyle(
-      fontSize: fs * 1.25,
-      fontWeight: FontWeight.bold,
-      color: theme.colorScheme.onSurface,
-    );
-
-    final furiganaStyle = TextStyle(
-      fontSize: fs * 0.7,
-      fontWeight: FontWeight.w400,
-      color: theme.colorScheme.onSurface,
-      height: 1.0,
-    );
-
-    final badgeStyle = TextStyle(
-      fontSize: fs * 0.75,
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-
-    final definitionStyle = TextStyle(
-      fontSize: fs,
-      color: theme.colorScheme.onSurface,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Furigana + expression, dictionary badge, bookmark button
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    FuriganaText(
-                      expression: widget.entry.expression,
-                      reading: widget.entry.reading,
-                      expressionStyle: expressionStyle,
-                      furiganaStyle: furiganaStyle,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              widget.dictionaryName,
-                              style: badgeStyle,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (widget.frequencyRank != null)
-                            _buildFrequencyTag(fs),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton.filledTonal(
-                onPressed: _isSaved ? null : _toggleSave,
-                icon: Icon(
-                  _isSaved ? Icons.check : Icons.bookmark_add_outlined,
-                ),
-                tooltip: _isSaved ? 'Saved' : 'Save to Vocabulary',
-              ),
-            ],
-          ),
-
-          // Row 2: Pitch accent diagrams (if available)
-          if (widget.pitchAccents.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            _buildPitchAccents(theme, fs),
-          ],
-
-          // Row 3+: Definitions
-          const SizedBox(height: 8),
-          ...definitions.map(
-            (def) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '- ',
-                    style: TextStyle(
-                      color: theme.colorScheme.outline,
-                      fontSize: fs,
-                    ),
-                  ),
-                  Expanded(child: Text(def, style: definitionStyle)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFrequencyTag(double fontSize) {
-    final rank = widget.frequencyRank!;
-    final label = DictionaryEntryWithSource.frequencyLabel(rank);
-    if (label == null) return const SizedBox.shrink();
-
-    final Color color;
-    if (rank <= 5000) {
-      color = Colors.green;
-    } else if (rank <= 15000) {
-      color = Colors.blue;
-    } else if (rank <= 30000) {
-      color = Colors.orange;
-    } else {
-      color = Colors.grey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-      decoration: BoxDecoration(
-        border: Border.all(color: color.withAlpha(150)),
-        borderRadius: BorderRadius.circular(4),
-        color: color.withAlpha(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: fontSize * 0.65,
-          color: color,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPitchAccents(ThemeData theme, double fontSize) {
-    // Group by dictionary name for display
-    final bySource = <String, List<PitchAccentResult>>{};
-    for (final p in widget.pitchAccents) {
-      bySource.putIfAbsent(p.dictionaryName, () => []).add(p);
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: bySource.entries.map((entry) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Pitch diagrams
-              Expanded(
-                child: Wrap(
-                  spacing: 12,
-                  runSpacing: 4,
-                  children: entry.value.map((p) {
-                    return PitchAccentDiagram(
-                      reading: p.reading,
-                      downstepPosition: p.downstepPosition,
-                      fontSize: fontSize * 0.9,
-                      color: theme.colorScheme.onSurface,
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Source tag
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 1,
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant,
-                  ),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Text(
-                  entry.key,
-                  style: TextStyle(
-                    fontSize: fontSize * 0.6,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
+    // Deduplicate by (reading, downstepPosition) across dictionaries
+    final seen = <(String, int)>{};
+    return filtered.where((p) => seen.add((p.reading, p.downstepPosition))).toList();
   }
 }

@@ -16,6 +16,7 @@ class MekuruApp extends ConsumerWidget {
     ref.read(appThemeModeProvider.notifier).loadPersistedSettings();
     ref.read(lookupFontSizeProvider.notifier).loadPersistedSettings();
     ref.read(searchHistoryProvider.notifier).loadPersistedSettings();
+    ref.read(filterRomanLettersProvider.notifier).loadPersistedSettings();
     final themeMode = ref.watch(appThemeModeProvider);
 
     return MaterialApp(

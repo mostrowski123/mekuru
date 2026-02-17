@@ -95,6 +95,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
           ),
+          SwitchListTile(
+            secondary: Icon(
+              Icons.abc,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Filter Roman Letter Entries'),
+            subtitle:
+                const Text('Hide entries using English letters in headword'),
+            value: ref.watch(filterRomanLettersProvider),
+            onChanged: (value) {
+              AppHaptics.light();
+              ref
+                  .read(filterRomanLettersProvider.notifier)
+                  .setFilter(value);
+            },
+          ),
           const Divider(),
 
           // ── Kanji Assets ──

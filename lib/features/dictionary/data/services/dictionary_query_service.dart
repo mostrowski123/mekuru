@@ -387,14 +387,8 @@ class DictionaryQueryService {
       }
     }
 
-    // Attach frequency ranks to all results (for display tags)
-    if (results.isEmpty) return results;
-    final expressions = results.map((r) => r.entry.expression).toSet();
-    final ranks = await _getFrequencyRanksForExpressions(expressions);
-    return results.map((r) {
-      final rank = ranks[r.entry.expression];
-      return r.withFrequencyRank(rank);
-    }).toList();
+    // Attach frequency ranks and sort by rank (most common first)
+    return _attachFrequencyRanks(results);
   }
 
   /// Search entries whose glossary text contains [term] (case-insensitive).

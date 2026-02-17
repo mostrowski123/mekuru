@@ -13,6 +13,8 @@ abstract class AppSettingsStorage {
   Future<void> saveLookupFontSize(double size);
   Future<List<String>> loadSearchHistory();
   Future<void> saveSearchHistory(List<String> history);
+  Future<bool?> loadFilterRomanLetters();
+  Future<void> saveFilterRomanLetters(bool value);
 }
 
 /// SharedPreferences-backed implementation of [AppSettingsStorage].
@@ -21,6 +23,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _sortOrderKey = 'app.library_sort_order';
   static const _lookupFontSizeKey = 'app.lookup_font_size';
   static const _searchHistoryKey = 'app.dictionary_search_history';
+  static const _filterRomanLettersKey = 'app.filter_roman_letters';
 
   @override
   Future<ThemeMode?> loadThemeMode() async {
@@ -81,5 +84,17 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveSearchHistory(List<String> history) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_searchHistoryKey, jsonEncode(history));
+  }
+
+  @override
+  Future<bool?> loadFilterRomanLetters() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_filterRomanLettersKey);
+  }
+
+  @override
+  Future<void> saveFilterRomanLetters(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_filterRomanLettersKey, value);
   }
 }

@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
-import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_stroke_order.dart';
-import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
-import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
+import 'package:mekuru/shared/widgets/dictionary_entry_card.dart';
 
 /// Dictionary search screen with live fuzzy search.
 ///
@@ -29,6 +27,8 @@ class DictionarySearchScreen extends ConsumerStatefulWidget {
 
 class _DictionarySearchScreenState
     extends ConsumerState<DictionarySearchScreen> {
+  static final _latinPattern = RegExp(r'[a-zA-Z]');
+
   late final TextEditingController _controller;
   Timer? _debounce;
   List<DictionaryEntryWithSource>? _results;
@@ -78,7 +78,15 @@ class _DictionarySearchScreenState
 
     try {
       final queryService = ref.read(dictionaryQueryServiceProvider);
-      final results = await queryService.fuzzySearchWithSource(term);
+      var results = await queryService.fuzzySearchWithSource(term);
+
+      // Apply Roman letter filter if enabled
+      if (ref.read(filterRomanLettersProvider)) {
+        results = results
+            .where((r) => !_latinPattern.hasMatch(r.entry.expression))
+            .toList();
+      }
+
       // Only update if this is still the latest query
       if (mounted && term == _lastQuery) {
         if (results.isNotEmpty) {
@@ -112,9 +120,29 @@ class _DictionarySearchScreenState
     final theme = Theme.of(context);
     final hasDictionaries = ref.watch(dictionariesProvider);
 
+    // Re-search when Roman letter filter changes
+    ref.listen(filterRomanLettersProvider, (_, __) {
+      if (_lastQuery.isNotEmpty) {
+        _performSearch(_lastQuery);
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dictionary'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.library_books_outlined),
+            tooltip: 'Manage Dictionaries',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const DictionaryManagerScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -246,7 +274,7 @@ class _DictionarySearchScreenState
         }
         final resultIndex = isSingleKanji ? index - 1 : index;
         final result = results[resultIndex];
-        return _SearchResultItem(
+        return _SearchResultWithPitchAccents(
           entry: result.entry,
           dictionaryName: result.dictionaryName,
           frequencyRank: result.frequencyRank,
@@ -357,9 +385,9 @@ bool _isCjk(int codeUnit) {
       (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
 }
 
-/// Displays a single dictionary entry in search results.
-class _SearchResultItem extends ConsumerStatefulWidget {
-  const _SearchResultItem({
+/// Thin wrapper that fetches pitch accents and delegates to [DictionaryEntryCard].
+class _SearchResultWithPitchAccents extends ConsumerStatefulWidget {
+  const _SearchResultWithPitchAccents({
     required this.entry,
     required this.dictionaryName,
     required this.fontSize,
@@ -374,10 +402,12 @@ class _SearchResultItem extends ConsumerStatefulWidget {
   final void Function(String word) onWordTap;
 
   @override
-  ConsumerState<_SearchResultItem> createState() => _SearchResultItemState();
+  ConsumerState<_SearchResultWithPitchAccents> createState() =>
+      _SearchResultWithPitchAccentsState();
 }
 
-class _SearchResultItemState extends ConsumerState<_SearchResultItem> {
+class _SearchResultWithPitchAccentsState
+    extends ConsumerState<_SearchResultWithPitchAccents> {
   late Future<List<PitchAccentResult>> _pitchAccentsFuture;
 
   @override
@@ -388,194 +418,44 @@ class _SearchResultItemState extends ConsumerState<_SearchResultItem> {
         .searchPitchAccents(widget.entry.expression);
   }
 
-  /// Filter pitch accents to match this entry's reading or expression.
+  /// Filter pitch accents to match this entry's reading or expression,
+  /// then deduplicate by (reading, downstepPosition).
   List<PitchAccentResult> _filterPitchAccents(
     List<PitchAccentResult> allPitchAccents,
   ) {
     if (allPitchAccents.isEmpty) return [];
 
-    return allPitchAccents.where((p) {
-      if (widget.entry.reading.isNotEmpty && p.reading == widget.entry.reading) {
+    final filtered = allPitchAccents.where((p) {
+      if (widget.entry.reading.isNotEmpty &&
+          p.reading == widget.entry.reading) {
         return true;
       }
       if (p.reading == widget.entry.expression) return true;
       if (p.reading.isEmpty) return true;
       return false;
-    }).toList();
+    });
+
+    final seen = <(String, int)>{};
+    return filtered
+        .where((p) => seen.add((p.reading, p.downstepPosition)))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final fs = widget.fontSize;
-    final definitions = GlossaryParser.parse(widget.entry.glossaries);
-
-    final expressionStyle = TextStyle(
-      fontSize: fs * 1.25,
-      fontWeight: FontWeight.bold,
-      color: theme.colorScheme.onSurface,
-    );
-
-    final furiganaStyle = TextStyle(
-      fontSize: fs * 0.7,
-      fontWeight: FontWeight.w400,
-      color: theme.colorScheme.onSurface,
-      height: 1.0,
-    );
-
-    final badgeStyle = TextStyle(
-      fontSize: fs * 0.75,
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-
-    final definitionStyle = TextStyle(
-      fontSize: fs,
-      color: theme.colorScheme.onSurface,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Expression + reading, badges
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              TappableExpressionText(
-                expression: widget.entry.expression,
-                reading: widget.entry.reading,
-                expressionStyle: expressionStyle,
-                furiganaStyle: furiganaStyle,
-                onKanjiTap: widget.onWordTap,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        widget.dictionaryName,
-                        style: badgeStyle,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (widget.frequencyRank != null)
-                      _FrequencyTag(
-                        rank: widget.frequencyRank!,
-                        fontSize: fs,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Row 2: Pitch accent diagrams (if available)
-          FutureBuilder<List<PitchAccentResult>>(
-            future: _pitchAccentsFuture,
-            builder: (context, snapshot) {
-              final pitchAccents = _filterPitchAccents(snapshot.data ?? []);
-              if (pitchAccents.isEmpty) return const SizedBox.shrink();
-
-              return Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Wrap(
-                  spacing: 12,
-                  runSpacing: 4,
-                  children: pitchAccents.map((p) {
-                    return PitchAccentDiagram(
-                      reading: p.reading,
-                      downstepPosition: p.downstepPosition,
-                      fontSize: fs * 0.9,
-                      color: theme.colorScheme.onSurface,
-                    );
-                  }).toList(),
-                ),
-              );
-            },
-          ),
-
-          // Row 3: Definitions (with tappable Japanese words)
-          const SizedBox(height: 8),
-          ...definitions.map(
-            (def) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '- ',
-                    style: TextStyle(
-                      color: theme.colorScheme.outline,
-                      fontSize: fs,
-                    ),
-                  ),
-                  Expanded(
-                    child: TappableDefinitionText(
-                      text: def,
-                      style: definitionStyle,
-                      onWordTap: widget.onWordTap,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A small colored tag showing word frequency level.
-class _FrequencyTag extends StatelessWidget {
-  const _FrequencyTag({required this.rank, required this.fontSize});
-
-  final int rank;
-  final double fontSize;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = DictionaryEntryWithSource.frequencyLabel(rank);
-    if (label == null) return const SizedBox.shrink();
-
-    final Color color;
-    if (rank <= 5000) {
-      color = Colors.green;
-    } else if (rank <= 15000) {
-      color = Colors.blue;
-    } else if (rank <= 30000) {
-      color = Colors.orange;
-    } else {
-      color = Colors.grey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-      decoration: BoxDecoration(
-        border: Border.all(color: color.withAlpha(150)),
-        borderRadius: BorderRadius.circular(4),
-        color: color.withAlpha(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: fontSize * 0.65,
-          color: color,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+    return FutureBuilder<List<PitchAccentResult>>(
+      future: _pitchAccentsFuture,
+      builder: (context, snapshot) {
+        final filtered = _filterPitchAccents(snapshot.data ?? []);
+        return DictionaryEntryCard(
+          entry: widget.entry,
+          dictionaryName: widget.dictionaryName,
+          pitchAccents: filtered,
+          fontSize: widget.fontSize,
+          frequencyRank: widget.frequencyRank,
+          onWordTap: widget.onWordTap,
+        );
+      },
     );
   }
 }

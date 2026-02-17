@@ -124,3 +124,35 @@ class SearchHistoryNotifier extends Notifier<List<String>> {
 final searchHistoryProvider =
     NotifierProvider<SearchHistoryNotifier, List<String>>(
         SearchHistoryNotifier.new);
+
+/// Manages the filter for hiding dictionary entries with Roman letters.
+class FilterRomanLettersNotifier extends Notifier<bool> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  bool build() => false;
+
+  /// Load persisted setting from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted =
+        await ref.read(appSettingsStorageProvider).loadFilterRomanLetters();
+    if (persisted != null) {
+      state = persisted;
+    }
+  }
+
+  /// Set the filter value and persist to storage.
+  void setFilter(bool value) {
+    state = value;
+    unawaited(
+        ref.read(appSettingsStorageProvider).saveFilterRomanLetters(value));
+  }
+}
+
+/// Provider for the Roman letter filter setting.
+final filterRomanLettersProvider =
+    NotifierProvider<FilterRomanLettersNotifier, bool>(
+        FilterRomanLettersNotifier.new);
