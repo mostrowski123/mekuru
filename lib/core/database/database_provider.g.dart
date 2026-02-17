@@ -2055,6 +2055,369 @@ class PitchAccentsCompanion extends UpdateCompanion<PitchAccent> {
   }
 }
 
+class $FrequenciesTable extends Frequencies
+    with TableInfo<$FrequenciesTable, Frequency> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FrequenciesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _expressionMeta = const VerificationMeta(
+    'expression',
+  );
+  @override
+  late final GeneratedColumn<String> expression = GeneratedColumn<String>(
+    'expression',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _readingMeta = const VerificationMeta(
+    'reading',
+  );
+  @override
+  late final GeneratedColumn<String> reading = GeneratedColumn<String>(
+    'reading',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _frequencyRankMeta = const VerificationMeta(
+    'frequencyRank',
+  );
+  @override
+  late final GeneratedColumn<int> frequencyRank = GeneratedColumn<int>(
+    'frequency_rank',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dictionaryIdMeta = const VerificationMeta(
+    'dictionaryId',
+  );
+  @override
+  late final GeneratedColumn<int> dictionaryId = GeneratedColumn<int>(
+    'dictionary_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    expression,
+    reading,
+    frequencyRank,
+    dictionaryId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'frequencies';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Frequency> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('expression')) {
+      context.handle(
+        _expressionMeta,
+        expression.isAcceptableOrUnknown(data['expression']!, _expressionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expressionMeta);
+    }
+    if (data.containsKey('reading')) {
+      context.handle(
+        _readingMeta,
+        reading.isAcceptableOrUnknown(data['reading']!, _readingMeta),
+      );
+    }
+    if (data.containsKey('frequency_rank')) {
+      context.handle(
+        _frequencyRankMeta,
+        frequencyRank.isAcceptableOrUnknown(
+          data['frequency_rank']!,
+          _frequencyRankMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_frequencyRankMeta);
+    }
+    if (data.containsKey('dictionary_id')) {
+      context.handle(
+        _dictionaryIdMeta,
+        dictionaryId.isAcceptableOrUnknown(
+          data['dictionary_id']!,
+          _dictionaryIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dictionaryIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Frequency map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Frequency(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      expression: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}expression'],
+      )!,
+      reading: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reading'],
+      )!,
+      frequencyRank: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}frequency_rank'],
+      )!,
+      dictionaryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dictionary_id'],
+      )!,
+    );
+  }
+
+  @override
+  $FrequenciesTable createAlias(String alias) {
+    return $FrequenciesTable(attachedDatabase, alias);
+  }
+}
+
+class Frequency extends DataClass implements Insertable<Frequency> {
+  final int id;
+  final String expression;
+  final String reading;
+  final int frequencyRank;
+  final int dictionaryId;
+  const Frequency({
+    required this.id,
+    required this.expression,
+    required this.reading,
+    required this.frequencyRank,
+    required this.dictionaryId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['expression'] = Variable<String>(expression);
+    map['reading'] = Variable<String>(reading);
+    map['frequency_rank'] = Variable<int>(frequencyRank);
+    map['dictionary_id'] = Variable<int>(dictionaryId);
+    return map;
+  }
+
+  FrequenciesCompanion toCompanion(bool nullToAbsent) {
+    return FrequenciesCompanion(
+      id: Value(id),
+      expression: Value(expression),
+      reading: Value(reading),
+      frequencyRank: Value(frequencyRank),
+      dictionaryId: Value(dictionaryId),
+    );
+  }
+
+  factory Frequency.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Frequency(
+      id: serializer.fromJson<int>(json['id']),
+      expression: serializer.fromJson<String>(json['expression']),
+      reading: serializer.fromJson<String>(json['reading']),
+      frequencyRank: serializer.fromJson<int>(json['frequencyRank']),
+      dictionaryId: serializer.fromJson<int>(json['dictionaryId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'expression': serializer.toJson<String>(expression),
+      'reading': serializer.toJson<String>(reading),
+      'frequencyRank': serializer.toJson<int>(frequencyRank),
+      'dictionaryId': serializer.toJson<int>(dictionaryId),
+    };
+  }
+
+  Frequency copyWith({
+    int? id,
+    String? expression,
+    String? reading,
+    int? frequencyRank,
+    int? dictionaryId,
+  }) => Frequency(
+    id: id ?? this.id,
+    expression: expression ?? this.expression,
+    reading: reading ?? this.reading,
+    frequencyRank: frequencyRank ?? this.frequencyRank,
+    dictionaryId: dictionaryId ?? this.dictionaryId,
+  );
+  Frequency copyWithCompanion(FrequenciesCompanion data) {
+    return Frequency(
+      id: data.id.present ? data.id.value : this.id,
+      expression: data.expression.present
+          ? data.expression.value
+          : this.expression,
+      reading: data.reading.present ? data.reading.value : this.reading,
+      frequencyRank: data.frequencyRank.present
+          ? data.frequencyRank.value
+          : this.frequencyRank,
+      dictionaryId: data.dictionaryId.present
+          ? data.dictionaryId.value
+          : this.dictionaryId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Frequency(')
+          ..write('id: $id, ')
+          ..write('expression: $expression, ')
+          ..write('reading: $reading, ')
+          ..write('frequencyRank: $frequencyRank, ')
+          ..write('dictionaryId: $dictionaryId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, expression, reading, frequencyRank, dictionaryId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Frequency &&
+          other.id == this.id &&
+          other.expression == this.expression &&
+          other.reading == this.reading &&
+          other.frequencyRank == this.frequencyRank &&
+          other.dictionaryId == this.dictionaryId);
+}
+
+class FrequenciesCompanion extends UpdateCompanion<Frequency> {
+  final Value<int> id;
+  final Value<String> expression;
+  final Value<String> reading;
+  final Value<int> frequencyRank;
+  final Value<int> dictionaryId;
+  const FrequenciesCompanion({
+    this.id = const Value.absent(),
+    this.expression = const Value.absent(),
+    this.reading = const Value.absent(),
+    this.frequencyRank = const Value.absent(),
+    this.dictionaryId = const Value.absent(),
+  });
+  FrequenciesCompanion.insert({
+    this.id = const Value.absent(),
+    required String expression,
+    this.reading = const Value.absent(),
+    required int frequencyRank,
+    required int dictionaryId,
+  }) : expression = Value(expression),
+       frequencyRank = Value(frequencyRank),
+       dictionaryId = Value(dictionaryId);
+  static Insertable<Frequency> custom({
+    Expression<int>? id,
+    Expression<String>? expression,
+    Expression<String>? reading,
+    Expression<int>? frequencyRank,
+    Expression<int>? dictionaryId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (expression != null) 'expression': expression,
+      if (reading != null) 'reading': reading,
+      if (frequencyRank != null) 'frequency_rank': frequencyRank,
+      if (dictionaryId != null) 'dictionary_id': dictionaryId,
+    });
+  }
+
+  FrequenciesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? expression,
+    Value<String>? reading,
+    Value<int>? frequencyRank,
+    Value<int>? dictionaryId,
+  }) {
+    return FrequenciesCompanion(
+      id: id ?? this.id,
+      expression: expression ?? this.expression,
+      reading: reading ?? this.reading,
+      frequencyRank: frequencyRank ?? this.frequencyRank,
+      dictionaryId: dictionaryId ?? this.dictionaryId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (expression.present) {
+      map['expression'] = Variable<String>(expression.value);
+    }
+    if (reading.present) {
+      map['reading'] = Variable<String>(reading.value);
+    }
+    if (frequencyRank.present) {
+      map['frequency_rank'] = Variable<int>(frequencyRank.value);
+    }
+    if (dictionaryId.present) {
+      map['dictionary_id'] = Variable<int>(dictionaryId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FrequenciesCompanion(')
+          ..write('id: $id, ')
+          ..write('expression: $expression, ')
+          ..write('reading: $reading, ')
+          ..write('frequencyRank: $frequencyRank, ')
+          ..write('dictionaryId: $dictionaryId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2066,6 +2429,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DictionaryEntriesTable dictionaryEntries =
       $DictionaryEntriesTable(this);
   late final $PitchAccentsTable pitchAccents = $PitchAccentsTable(this);
+  late final $FrequenciesTable frequencies = $FrequenciesTable(this);
   late final Index idxExpression = Index(
     'idx_expression',
     'CREATE INDEX idx_expression ON dictionary_entries (expression)',
@@ -2082,6 +2446,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_pitch_reading',
     'CREATE INDEX idx_pitch_reading ON pitch_accents (reading)',
   );
+  late final Index idxFreqExpression = Index(
+    'idx_freq_expression',
+    'CREATE INDEX idx_freq_expression ON frequencies (expression)',
+  );
+  late final Index idxFreqReading = Index(
+    'idx_freq_reading',
+    'CREATE INDEX idx_freq_reading ON frequencies (reading)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2092,10 +2464,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dictionaryMetas,
     dictionaryEntries,
     pitchAccents,
+    frequencies,
     idxExpression,
     idxReading,
     idxPitchExpression,
     idxPitchReading,
+    idxFreqExpression,
+    idxFreqReading,
   ];
 }
 
@@ -3200,6 +3575,207 @@ typedef $$PitchAccentsTableProcessedTableManager =
       PrefetchHooks Function()
     >;
 
+typedef $$FrequenciesTableCreateCompanionBuilder =
+    FrequenciesCompanion Function({
+      Value<int> id,
+      required String expression,
+      Value<String> reading,
+      required int frequencyRank,
+      required int dictionaryId,
+    });
+typedef $$FrequenciesTableUpdateCompanionBuilder =
+    FrequenciesCompanion Function({
+      Value<int> id,
+      Value<String> expression,
+      Value<String> reading,
+      Value<int> frequencyRank,
+      Value<int> dictionaryId,
+    });
+
+class $$FrequenciesTableFilterComposer
+    extends Composer<_$AppDatabase, $FrequenciesTable> {
+  $$FrequenciesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reading => $composableBuilder(
+    column: $table.reading,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get frequencyRank => $composableBuilder(
+    column: $table.frequencyRank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FrequenciesTableOrderingComposer
+    extends Composer<_$AppDatabase, $FrequenciesTable> {
+  $$FrequenciesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reading => $composableBuilder(
+    column: $table.reading,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get frequencyRank => $composableBuilder(
+    column: $table.frequencyRank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FrequenciesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FrequenciesTable> {
+  $$FrequenciesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reading =>
+      $composableBuilder(column: $table.reading, builder: (column) => column);
+
+  GeneratedColumn<int> get frequencyRank => $composableBuilder(
+    column: $table.frequencyRank,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => column,
+  );
+}
+
+class $$FrequenciesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FrequenciesTable,
+          Frequency,
+          $$FrequenciesTableFilterComposer,
+          $$FrequenciesTableOrderingComposer,
+          $$FrequenciesTableAnnotationComposer,
+          $$FrequenciesTableCreateCompanionBuilder,
+          $$FrequenciesTableUpdateCompanionBuilder,
+          (
+            Frequency,
+            BaseReferences<_$AppDatabase, $FrequenciesTable, Frequency>,
+          ),
+          Frequency,
+          PrefetchHooks Function()
+        > {
+  $$FrequenciesTableTableManager(_$AppDatabase db, $FrequenciesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FrequenciesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FrequenciesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FrequenciesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> expression = const Value.absent(),
+                Value<String> reading = const Value.absent(),
+                Value<int> frequencyRank = const Value.absent(),
+                Value<int> dictionaryId = const Value.absent(),
+              }) => FrequenciesCompanion(
+                id: id,
+                expression: expression,
+                reading: reading,
+                frequencyRank: frequencyRank,
+                dictionaryId: dictionaryId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String expression,
+                Value<String> reading = const Value.absent(),
+                required int frequencyRank,
+                required int dictionaryId,
+              }) => FrequenciesCompanion.insert(
+                id: id,
+                expression: expression,
+                reading: reading,
+                frequencyRank: frequencyRank,
+                dictionaryId: dictionaryId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FrequenciesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FrequenciesTable,
+      Frequency,
+      $$FrequenciesTableFilterComposer,
+      $$FrequenciesTableOrderingComposer,
+      $$FrequenciesTableAnnotationComposer,
+      $$FrequenciesTableCreateCompanionBuilder,
+      $$FrequenciesTableUpdateCompanionBuilder,
+      (
+        Frequency,
+        BaseReferences<_$AppDatabase, $FrequenciesTable, Frequency>,
+      ),
+      Frequency,
+      PrefetchHooks Function()
+    >;
+
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
@@ -3213,4 +3789,6 @@ class $AppDatabaseManager {
       $$DictionaryEntriesTableTableManager(_db, _db.dictionaryEntries);
   $$PitchAccentsTableTableManager get pitchAccents =>
       $$PitchAccentsTableTableManager(_db, _db.pitchAccents);
+  $$FrequenciesTableTableManager get frequencies =>
+      $$FrequenciesTableTableManager(_db, _db.frequencies);
 }

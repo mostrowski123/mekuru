@@ -60,7 +60,7 @@ class DictionaryRepository {
         DictionaryMetasCompanion(isEnabled: Value(isEnabled)),
       );
 
-  /// Delete a dictionary and all its entries (including pitch accents).
+  /// Delete a dictionary and all its entries (including pitch accents and frequencies).
   Future<void> deleteDictionary(int dictionaryId) async {
     await _db.transaction(() async {
       await (_db.delete(
@@ -68,6 +68,9 @@ class DictionaryRepository {
       )..where((t) => t.dictionaryId.equals(dictionaryId))).go();
       await (_db.delete(
         _db.pitchAccents,
+      )..where((t) => t.dictionaryId.equals(dictionaryId))).go();
+      await (_db.delete(
+        _db.frequencies,
       )..where((t) => t.dictionaryId.equals(dictionaryId))).go();
       await (_db.delete(
         _db.dictionaryMetas,
@@ -148,6 +151,37 @@ class DictionaryRepository {
     final query = _db.selectOnly(_db.pitchAccents)
       ..addColumns([count])
       ..where(_db.pitchAccents.dictionaryId.equals(dictionaryId));
+    final result = await query.getSingle();
+    return result.read(count) ?? 0;
+  }
+
+  // ──────────────── Frequency ────────────────
+
+  /// Batch insert frequency entries in chunks for performance.
+  Future<int> batchInsertFrequencies(
+    List<FrequenciesCompanion> entries, {
+    int batchSize = 10000,
+  }) async {
+    int totalInserted = 0;
+    for (var i = 0; i < entries.length; i += batchSize) {
+      final end =
+          (i + batchSize < entries.length) ? i + batchSize : entries.length;
+      final batch = entries.sublist(i, end);
+
+      await _db.batch((b) {
+        b.insertAll(_db.frequencies, batch);
+      });
+      totalInserted += batch.length;
+    }
+    return totalInserted;
+  }
+
+  /// Get frequency entry count for a specific dictionary.
+  Future<int> getFrequencyCount(int dictionaryId) async {
+    final count = _db.frequencies.id.count();
+    final query = _db.selectOnly(_db.frequencies)
+      ..addColumns([count])
+      ..where(_db.frequencies.dictionaryId.equals(dictionaryId));
     final result = await query.getSingle();
     return result.read(count) ?? 0;
   }

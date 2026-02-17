@@ -10,6 +10,7 @@ import 'package:mekuru/features/dictionary/presentation/widgets/kanji_stroke_ord
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 
 /// Dictionary search screen with live fuzzy search.
 ///
@@ -248,6 +249,7 @@ class _DictionarySearchScreenState
         return _SearchResultItem(
           entry: result.entry,
           dictionaryName: result.dictionaryName,
+          frequencyRank: result.frequencyRank,
           fontSize: fontSize,
           onWordTap: _navigateToWord,
         );
@@ -356,24 +358,57 @@ bool _isCjk(int codeUnit) {
 }
 
 /// Displays a single dictionary entry in search results.
-class _SearchResultItem extends StatelessWidget {
+class _SearchResultItem extends ConsumerStatefulWidget {
   const _SearchResultItem({
     required this.entry,
     required this.dictionaryName,
     required this.fontSize,
     required this.onWordTap,
+    this.frequencyRank,
   });
 
   final DictionaryEntry entry;
   final String dictionaryName;
+  final int? frequencyRank;
   final double fontSize;
   final void Function(String word) onWordTap;
 
   @override
+  ConsumerState<_SearchResultItem> createState() => _SearchResultItemState();
+}
+
+class _SearchResultItemState extends ConsumerState<_SearchResultItem> {
+  late Future<List<PitchAccentResult>> _pitchAccentsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _pitchAccentsFuture = ref
+        .read(dictionaryQueryServiceProvider)
+        .searchPitchAccents(widget.entry.expression);
+  }
+
+  /// Filter pitch accents to match this entry's reading or expression.
+  List<PitchAccentResult> _filterPitchAccents(
+    List<PitchAccentResult> allPitchAccents,
+  ) {
+    if (allPitchAccents.isEmpty) return [];
+
+    return allPitchAccents.where((p) {
+      if (widget.entry.reading.isNotEmpty && p.reading == widget.entry.reading) {
+        return true;
+      }
+      if (p.reading == widget.entry.expression) return true;
+      if (p.reading.isEmpty) return true;
+      return false;
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final fs = fontSize;
-    final definitions = GlossaryParser.parse(entry.glossaries);
+    final fs = widget.fontSize;
+    final definitions = GlossaryParser.parse(widget.entry.glossaries);
 
     final expressionStyle = TextStyle(
       fontSize: fs * 1.25,
@@ -403,39 +438,75 @@ class _SearchResultItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Expression + reading, dictionary badge
+          // Row 1: Expression + reading, badges
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               TappableExpressionText(
-                expression: entry.expression,
-                reading: entry.reading,
+                expression: widget.entry.expression,
+                reading: widget.entry.reading,
                 expressionStyle: expressionStyle,
                 furiganaStyle: furiganaStyle,
-                onKanjiTap: onWordTap,
+                onKanjiTap: widget.onWordTap,
               ),
               const SizedBox(width: 8),
               Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    dictionaryName,
-                    style: badgeStyle,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                child: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        widget.dictionaryName,
+                        style: badgeStyle,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (widget.frequencyRank != null)
+                      _FrequencyTag(
+                        rank: widget.frequencyRank!,
+                        fontSize: fs,
+                      ),
+                  ],
                 ),
               ),
             ],
           ),
 
-          // Row 2: Definitions (with tappable Japanese words)
+          // Row 2: Pitch accent diagrams (if available)
+          FutureBuilder<List<PitchAccentResult>>(
+            future: _pitchAccentsFuture,
+            builder: (context, snapshot) {
+              final pitchAccents = _filterPitchAccents(snapshot.data ?? []);
+              if (pitchAccents.isEmpty) return const SizedBox.shrink();
+
+              return Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  children: pitchAccents.map((p) {
+                    return PitchAccentDiagram(
+                      reading: p.reading,
+                      downstepPosition: p.downstepPosition,
+                      fontSize: fs * 0.9,
+                      color: theme.colorScheme.onSurface,
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+
+          // Row 3: Definitions (with tappable Japanese words)
           const SizedBox(height: 8),
           ...definitions.map(
             (def) => Padding(
@@ -454,7 +525,7 @@ class _SearchResultItem extends StatelessWidget {
                     child: TappableDefinitionText(
                       text: def,
                       style: definitionStyle,
-                      onWordTap: onWordTap,
+                      onWordTap: widget.onWordTap,
                     ),
                   ),
                 ],
@@ -462,6 +533,48 @@ class _SearchResultItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A small colored tag showing word frequency level.
+class _FrequencyTag extends StatelessWidget {
+  const _FrequencyTag({required this.rank, required this.fontSize});
+
+  final int rank;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = DictionaryEntryWithSource.frequencyLabel(rank);
+    if (label == null) return const SizedBox.shrink();
+
+    final Color color;
+    if (rank <= 5000) {
+      color = Colors.green;
+    } else if (rank <= 15000) {
+      color = Colors.blue;
+    } else if (rank <= 30000) {
+      color = Colors.orange;
+    } else {
+      color = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withAlpha(150)),
+        borderRadius: BorderRadius.circular(4),
+        color: color.withAlpha(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: fontSize * 0.65,
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

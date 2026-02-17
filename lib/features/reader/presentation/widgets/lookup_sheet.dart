@@ -201,6 +201,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
                   sentenceContext: widget.sentenceContext,
                   pitchAccents: entryPitchAccents,
                   fontSize: fontSize,
+                  frequencyRank: result.frequencyRank,
                 );
               },
             );
@@ -236,6 +237,7 @@ class _DictionaryEntryItem extends ConsumerStatefulWidget {
     this.sentenceContext,
     this.pitchAccents = const [],
     this.fontSize = 16.0,
+    this.frequencyRank,
   });
 
   final DictionaryEntry entry;
@@ -243,6 +245,7 @@ class _DictionaryEntryItem extends ConsumerStatefulWidget {
   final String? sentenceContext;
   final List<PitchAccentResult> pitchAccents;
   final double fontSize;
+  final int? frequencyRank;
 
   @override
   ConsumerState<_DictionaryEntryItem> createState() =>
@@ -341,20 +344,28 @@ class _DictionaryEntryItemState extends ConsumerState<_DictionaryEntryItem> {
                     ),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          widget.dictionaryName,
-                          style: badgeStyle,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      child: Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              widget.dictionaryName,
+                              style: badgeStyle,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (widget.frequencyRank != null)
+                            _buildFrequencyTag(fs),
+                        ],
                       ),
                     ),
                   ],
@@ -397,6 +408,40 @@ class _DictionaryEntryItemState extends ConsumerState<_DictionaryEntryItem> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFrequencyTag(double fontSize) {
+    final rank = widget.frequencyRank!;
+    final label = DictionaryEntryWithSource.frequencyLabel(rank);
+    if (label == null) return const SizedBox.shrink();
+
+    final Color color;
+    if (rank <= 5000) {
+      color = Colors.green;
+    } else if (rank <= 15000) {
+      color = Colors.blue;
+    } else if (rank <= 30000) {
+      color = Colors.orange;
+    } else {
+      color = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withAlpha(150)),
+        borderRadius: BorderRadius.circular(4),
+        color: color.withAlpha(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: fontSize * 0.65,
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

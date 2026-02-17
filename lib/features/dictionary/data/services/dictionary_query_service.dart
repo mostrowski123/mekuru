@@ -7,11 +7,31 @@ import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 class DictionaryEntryWithSource {
   final DictionaryEntry entry;
   final String dictionaryName;
+  final int? frequencyRank;
 
   const DictionaryEntryWithSource({
     required this.entry,
     required this.dictionaryName,
+    this.frequencyRank,
   });
+
+  /// Returns a qualitative label for the frequency rank.
+  static String? frequencyLabel(int? rank) {
+    if (rank == null) return null;
+    if (rank <= 5000) return 'Very Common';
+    if (rank <= 15000) return 'Common';
+    if (rank <= 30000) return 'Uncommon';
+    return 'Rare';
+  }
+
+  /// Copy with a different frequency rank.
+  DictionaryEntryWithSource withFrequencyRank(int? rank) {
+    return DictionaryEntryWithSource(
+      entry: entry,
+      dictionaryName: dictionaryName,
+      frequencyRank: rank,
+    );
+  }
 }
 
 /// A pitch accent result with its source dictionary name.
@@ -123,7 +143,8 @@ class DictionaryQueryService {
   }
 
   /// Search entries and include the dictionary name for each result.
-  /// Results are ordered by dictionary sort order (same order as Dictionary Manager).
+  /// Results are ordered by frequency rank (most common first), then by
+  /// dictionary sort order as a tiebreaker.
   Future<List<DictionaryEntryWithSource>> searchWithSource(String term) async {
     final query =
         _db.select(_db.dictionaryEntries).join([
@@ -142,7 +163,7 @@ class DictionaryQueryService {
           ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
 
     final rows = await query.get();
-    return rows.map((row) {
+    final results = rows.map((row) {
       final entry = row.readTable(_db.dictionaryEntries);
       final meta = row.readTable(_db.dictionaryMetas);
       return DictionaryEntryWithSource(
@@ -150,6 +171,81 @@ class DictionaryQueryService {
         dictionaryName: meta.name,
       );
     }).toList();
+
+    return _attachFrequencyRanks(results);
+  }
+
+  /// Look up the best (lowest) frequency rank for a given expression.
+  /// Queries all frequency dictionaries regardless of isEnabled flag.
+  Future<int?> getFrequencyRank(String expression, [String reading = '']) async {
+    final query = _db.selectOnly(_db.frequencies)
+      ..addColumns([_db.frequencies.frequencyRank.min()])
+      ..where(
+        _db.frequencies.expression.equals(expression) |
+            (reading.isNotEmpty
+                ? _db.frequencies.reading.equals(reading)
+                : const Constant(false)),
+      );
+
+    final result = await query.getSingleOrNull();
+    return result?.read(_db.frequencies.frequencyRank.min());
+  }
+
+  /// Batch-query frequency ranks for a list of entries.
+  /// Returns a map from expression to the best (lowest) frequency rank.
+  Future<Map<String, int>> _getFrequencyRanksForExpressions(
+    Set<String> expressions,
+  ) async {
+    if (expressions.isEmpty) return {};
+
+    final ranks = <String, int>{};
+    // Query in batches to avoid overly large IN clauses
+    final exprList = expressions.toList();
+    const batchSize = 200;
+
+    for (var i = 0; i < exprList.length; i += batchSize) {
+      final end = (i + batchSize < exprList.length) ? i + batchSize : exprList.length;
+      final batch = exprList.sublist(i, end);
+
+      final query = _db.select(_db.frequencies)
+        ..where((t) => t.expression.isIn(batch));
+
+      final rows = await query.get();
+      for (final row in rows) {
+        final existing = ranks[row.expression];
+        if (existing == null || row.frequencyRank < existing) {
+          ranks[row.expression] = row.frequencyRank;
+        }
+      }
+    }
+
+    return ranks;
+  }
+
+  /// Attach frequency ranks to a list of results and sort by rank (lowest first).
+  /// Entries without frequency data are placed at the end.
+  Future<List<DictionaryEntryWithSource>> _attachFrequencyRanks(
+    List<DictionaryEntryWithSource> results,
+  ) async {
+    if (results.isEmpty) return results;
+
+    final expressions = results.map((r) => r.entry.expression).toSet();
+    final ranks = await _getFrequencyRanksForExpressions(expressions);
+
+    final ranked = results.map((r) {
+      final rank = ranks[r.entry.expression];
+      return r.withFrequencyRank(rank);
+    }).toList();
+
+    // Stable sort: entries with frequency come first (lower rank = more common)
+    ranked.sort((a, b) {
+      if (a.frequencyRank == null && b.frequencyRank == null) return 0;
+      if (a.frequencyRank == null) return 1;
+      if (b.frequencyRank == null) return -1;
+      return a.frequencyRank!.compareTo(b.frequencyRank!);
+    });
+
+    return ranked;
   }
 
   /// Prefix search: expression or reading starts with [term].
@@ -291,7 +387,14 @@ class DictionaryQueryService {
       }
     }
 
-    return results;
+    // Attach frequency ranks to all results (for display tags)
+    if (results.isEmpty) return results;
+    final expressions = results.map((r) => r.entry.expression).toSet();
+    final ranks = await _getFrequencyRanksForExpressions(expressions);
+    return results.map((r) {
+      final rank = ranks[r.entry.expression];
+      return r.withFrequencyRank(rank);
+    }).toList();
   }
 
   /// Search entries whose glossary text contains [term] (case-insensitive).

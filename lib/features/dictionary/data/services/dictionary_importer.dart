@@ -13,11 +13,13 @@ class YomitanParseResult {
   final String dictionaryName;
   final List<DictionaryEntriesCompanion> entries;
   final List<PitchAccentsCompanion> pitchAccents;
+  final List<FrequenciesCompanion> frequencies;
 
   YomitanParseResult({
     required this.dictionaryName,
     required this.entries,
     this.pitchAccents = const [],
+    this.frequencies = const [],
   });
 }
 
@@ -27,12 +29,14 @@ class CollectionImportResult {
   final List<String> skippedDictionaries;
   final int totalEntriesImported;
   final int totalPitchAccentsImported;
+  final int totalFrequenciesImported;
 
   CollectionImportResult({
     required this.importedDictionaries,
     required this.skippedDictionaries,
     required this.totalEntriesImported,
     this.totalPitchAccentsImported = 0,
+    this.totalFrequenciesImported = 0,
   });
 }
 
@@ -49,6 +53,7 @@ class _IsolatePayload {
 // Messages from worker → main:
 //   ['batch', List<Map<String, String>>]        — a batch of parsed terms
 //   ['pitch_batch', List<Map<String, dynamic>>]  — a batch of parsed pitch accents
+//   ['freq_batch', List<Map<String, dynamic>>]   — a batch of parsed frequencies
 //   ['done']                                    — parsing complete
 //   ['error', String]                           — parsing failed
 
@@ -110,6 +115,14 @@ class DictionaryImporter {
       await _repository.batchInsertPitchAccents(pitchWithId);
     }
 
+    // Insert frequencies if present
+    if (parseResult.frequencies.isNotEmpty) {
+      final freqWithId = parseResult.frequencies.map((f) {
+        return f.copyWith(dictionaryId: Value(dictionaryId));
+      }).toList();
+      await _repository.batchInsertFrequencies(freqWithId);
+    }
+
     return totalInserted;
   }
 
@@ -146,6 +159,9 @@ class DictionaryImporter {
     // Collect pitch accents streamed from the isolate, grouped by dictionary name.
     final pitchEntriesByDict = <String, List<Map<String, dynamic>>>{};
 
+    // Collect frequencies streamed from the isolate, grouped by dictionary name.
+    final freqEntriesByDict = <String, List<Map<String, dynamic>>>{};
+
     // Set up isolate communication
     final receivePort = ReceivePort();
     await Isolate.spawn(
@@ -173,6 +189,13 @@ class DictionaryImporter {
           final dictName = p['dictionary'] as String;
           pitchEntriesByDict.putIfAbsent(dictName, () => []).add(p);
         }
+      } else if (type == 'freq_batch') {
+        final freqs = msg[1] as List;
+        for (final freq in freqs) {
+          final f = freq as Map<String, dynamic>;
+          final dictName = f['dictionary'] as String;
+          freqEntriesByDict.putIfAbsent(dictName, () => []).add(f);
+        }
       } else if (type == 'done') {
         break;
       } else if (type == 'error') {
@@ -187,20 +210,23 @@ class DictionaryImporter {
     }
 
     // Insert each dictionary into the DB
-    // Merge dict names from both term entries and pitch accents.
+    // Merge dict names from term entries, pitch accents, and frequencies.
     final allDictNames = <String>{
       ...entriesByDict.keys,
       ...pitchEntriesByDict.keys,
+      ...freqEntriesByDict.keys,
     }.toList();
     final importedDicts = <String>[];
     final skippedDicts = <String>[];
     int totalEntriesImported = 0;
     int totalPitchAccentsImported = 0;
+    int totalFrequenciesImported = 0;
 
     for (var i = 0; i < allDictNames.length; i++) {
       final dictName = allDictNames[i];
       final rawEntries = entriesByDict[dictName] ?? [];
       final rawPitchEntries = pitchEntriesByDict[dictName] ?? [];
+      final rawFreqEntries = freqEntriesByDict[dictName] ?? [];
 
       // Check if dictionary already exists
       final existing = await _repository.getDictionaryByName(dictName);
@@ -210,7 +236,7 @@ class DictionaryImporter {
         continue;
       }
 
-      final totalItems = rawEntries.length + rawPitchEntries.length;
+      final totalItems = rawEntries.length + rawPitchEntries.length + rawFreqEntries.length;
       onDictionaryStart?.call(dictName, totalItems, i, allDictNames.length);
 
       // Insert dictionary metadata
@@ -267,7 +293,39 @@ class DictionaryImporter {
         totalPitchAccentsImported += pitchInserted;
       }
 
+      // Insert frequencies
+      int totalFreqInserted = 0;
+      if (rawFreqEntries.isNotEmpty) {
+        int freqInserted = 0;
+        for (var j = 0; j < rawFreqEntries.length; j += batchSize) {
+          final end = (j + batchSize < rawFreqEntries.length)
+              ? j + batchSize
+              : rawFreqEntries.length;
+
+          final batch = rawFreqEntries.sublist(j, end).map((raw) {
+            return FrequenciesCompanion.insert(
+              expression: raw['expression'] as String,
+              reading: Value(raw['reading'] as String? ?? ''),
+              frequencyRank: raw['rank'] as int,
+              dictionaryId: dictionaryId,
+            );
+          }).toList();
+
+          await _repository.batchInsertFrequencies(
+            batch,
+            batchSize: batch.length,
+          );
+          freqInserted += batch.length;
+          onProgress?.call(
+            inserted + (rawPitchEntries.isEmpty ? 0 : rawPitchEntries.length) + freqInserted,
+            totalItems,
+          );
+        }
+        totalFreqInserted += freqInserted;
+      }
+
       importedDicts.add(dictName);
+      totalFrequenciesImported += totalFreqInserted;
     }
 
     return CollectionImportResult(
@@ -275,6 +333,7 @@ class DictionaryImporter {
       skippedDictionaries: skippedDicts,
       totalEntriesImported: totalEntriesImported,
       totalPitchAccentsImported: totalPitchAccentsImported,
+      totalFrequenciesImported: totalFrequenciesImported,
     );
   }
 
@@ -362,6 +421,7 @@ class DictionaryImporter {
       // Batch accumulation
       final batch = <Map<String, String>>[];
       final pitchBatch = <Map<String, dynamic>>[];
+      final freqBatch = <Map<String, dynamic>>[];
       const batchSize = 5000;
 
       await for (final event in eventStream) {
@@ -432,10 +492,11 @@ class DictionaryImporter {
                 metaRowCapNeedsComma.removeLast();
               }
               if (metaRowCapNesting == 0) {
-                // Finished capturing the entire termMeta row — decode and extract pitch data
+                // Finished capturing the entire termMeta row — decode and extract pitch/freq data
                 _processTermMetaRow(
                   metaRowCapBuf.toString(),
                   pitchBatch,
+                  freqBatch,
                 );
                 metaRowCapBuf = null;
                 metaRowCapNeedsComma.clear();
@@ -447,6 +508,13 @@ class DictionaryImporter {
                     List<Map<String, dynamic>>.of(pitchBatch),
                   ]);
                   pitchBatch.clear();
+                }
+                if (freqBatch.length >= batchSize) {
+                  sendPort.send([
+                    'freq_batch',
+                    List<Map<String, dynamic>>.of(freqBatch),
+                  ]);
+                  freqBatch.clear();
                 }
               } else {
                 metaRowCapClosedStructure = true;
@@ -702,6 +770,9 @@ class DictionaryImporter {
       if (pitchBatch.isNotEmpty) {
         sendPort.send(['pitch_batch', pitchBatch]);
       }
+      if (freqBatch.isNotEmpty) {
+        sendPort.send(['freq_batch', freqBatch]);
+      }
 
       sendPort.send(['done']);
     } catch (e) {
@@ -709,15 +780,16 @@ class DictionaryImporter {
     }
   }
 
-  /// Decode a captured termMeta row JSON and extract pitch accent data.
+  /// Decode a captured termMeta row JSON and extract pitch accent and frequency data.
   ///
   /// Handles two formats:
   /// - Flat: `{"expression":"...","mode":"pitch","data":{...},"dictionary":"..."}`
   /// - Dexie $ wrapper: `{"$":[1,{"expression":"...","mode":"pitch",...}],"$types":{...}}`
   static void _processTermMetaRow(
     String rowJson,
-    List<Map<String, dynamic>> pitchBatch,
-  ) {
+    List<Map<String, dynamic>> pitchBatch, [
+    List<Map<String, dynamic>>? freqBatch,
+  ]) {
     try {
       final row = jsonDecode(rowJson) as Map<String, dynamic>;
 
@@ -738,7 +810,42 @@ class DictionaryImporter {
       final expression = inner['expression']?.toString();
       final mode = inner['mode']?.toString();
       final dictionary = inner['dictionary']?.toString() ?? 'Unknown Dictionary';
-      if (expression == null || expression.isEmpty || mode != 'pitch') return;
+      if (expression == null || expression.isEmpty) return;
+
+      if (mode == 'freq' && freqBatch != null) {
+        final data = inner['data'];
+        if (data == null) return;
+
+        int? rank;
+        String reading = '';
+
+        if (data is int) {
+          rank = data;
+        } else if (data is Map<String, dynamic>) {
+          reading = data['reading']?.toString() ?? '';
+          final freq = data['frequency'];
+          if (freq is int) {
+            rank = freq;
+          } else if (freq is num) {
+            rank = freq.toInt();
+          } else if (freq is Map) {
+            final val = freq['value'];
+            if (val is num) rank = val.toInt();
+          }
+        }
+
+        if (rank != null) {
+          freqBatch.add({
+            'expression': expression,
+            'reading': reading,
+            'rank': rank,
+            'dictionary': dictionary,
+          });
+        }
+        return;
+      }
+
+      if (mode != 'pitch') return;
 
       final data = inner['data'];
       if (data == null) return;
@@ -835,8 +942,9 @@ class DictionaryImporter {
       }
     }
 
-    // 3. Parse all term_meta_bank_*.json files for pitch accents
+    // 3. Parse all term_meta_bank_*.json files for pitch accents and frequencies
     final pitchAccents = <PitchAccentsCompanion>[];
+    final frequencies = <FrequenciesCompanion>[];
 
     final metaBankFiles = archive.files
         .where(
@@ -855,28 +963,62 @@ class DictionaryImporter {
 
         final expression = meta[0]?.toString() ?? '';
         final mode = meta[1]?.toString() ?? '';
-        if (expression.isEmpty || mode != 'pitch') continue;
+        if (expression.isEmpty) continue;
 
-        final data = meta[2];
-        if (data is! Map) continue;
+        if (mode == 'pitch') {
+          final data = meta[2];
+          if (data is! Map) continue;
 
-        final reading = data['reading']?.toString() ?? '';
-        final pitches = data['pitches'];
-        if (pitches is! List) continue;
+          final reading = data['reading']?.toString() ?? '';
+          final pitches = data['pitches'];
+          if (pitches is! List) continue;
 
-        for (final pitch in pitches) {
-          if (pitch is! Map) continue;
-          final position = pitch['position'];
-          if (position is! int) continue;
+          for (final pitch in pitches) {
+            if (pitch is! Map) continue;
+            final position = pitch['position'];
+            if (position is! int) continue;
 
-          pitchAccents.add(
-            PitchAccentsCompanion.insert(
-              expression: expression,
-              reading: Value(reading),
-              downstepPosition: position,
-              dictionaryId: 0, // Placeholder — will be replaced after insert
-            ),
-          );
+            pitchAccents.add(
+              PitchAccentsCompanion.insert(
+                expression: expression,
+                reading: Value(reading),
+                downstepPosition: position,
+                dictionaryId: 0,
+              ),
+            );
+          }
+        } else if (mode == 'freq') {
+          final data = meta[2];
+          int? rank;
+          String reading = '';
+
+          if (data is int) {
+            rank = data;
+          } else if (data is num) {
+            rank = data.toInt();
+          } else if (data is Map) {
+            reading = data['reading']?.toString() ?? '';
+            final freq = data['frequency'];
+            if (freq is int) {
+              rank = freq;
+            } else if (freq is num) {
+              rank = freq.toInt();
+            } else if (freq is Map) {
+              final val = freq['value'];
+              if (val is num) rank = val.toInt();
+            }
+          }
+
+          if (rank != null) {
+            frequencies.add(
+              FrequenciesCompanion.insert(
+                expression: expression,
+                reading: Value(reading),
+                frequencyRank: rank,
+                dictionaryId: 0,
+              ),
+            );
+          }
         }
       }
     }
@@ -885,6 +1027,7 @@ class DictionaryImporter {
       dictionaryName: dictionaryName,
       entries: entries,
       pitchAccents: pitchAccents,
+      frequencies: frequencies,
     );
   }
 }
