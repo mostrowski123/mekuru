@@ -265,6 +265,53 @@ void main() {
     });
   });
 
+  // ── searchMultipleWithSource ─────────────────────────────────
+
+  group('DictionaryQueryService — searchMultipleWithSource', () {
+    test('returns entries matching any of the provided terms', () async {
+      final results =
+          await queryService.searchMultipleWithSource(['食べる', '飲む']);
+      // 食べる has 2 entries, 飲む has 1 = 3 total
+      expect(results, hasLength(3));
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, containsAll(['食べる', '飲む']));
+    });
+
+    test('excludes disabled dictionaries', () async {
+      final results =
+          await queryService.searchMultipleWithSource(['食べる']);
+      for (final r in results) {
+        expect(r.dictionaryName, isNot('DisabledDict'));
+      }
+    });
+
+    test('returns empty list for non-existent terms', () async {
+      final results =
+          await queryService.searchMultipleWithSource(['存在しない', '架空']);
+      expect(results, isEmpty);
+    });
+
+    test('returns empty list for empty input', () async {
+      final results = await queryService.searchMultipleWithSource([]);
+      expect(results, isEmpty);
+    });
+
+    test('finds entries by reading', () async {
+      final results =
+          await queryService.searchMultipleWithSource(['のむ']);
+      expect(results, hasLength(1));
+      expect(results.first.entry.expression, '飲む');
+    });
+
+    test('deduplicates when same entry matches multiple terms', () async {
+      // 食べる matches both expression '食べる' and reading 'たべる'
+      final results =
+          await queryService.searchMultipleWithSource(['食べる', 'たべる']);
+      // Should get 2 entries (the two 食べる entries), not 4
+      expect(results, hasLength(2));
+    });
+  });
+
   // ── hasMatch ───────────────────────────────────────────────────
 
   group('DictionaryQueryService — hasMatch', () {

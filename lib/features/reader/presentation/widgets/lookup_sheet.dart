@@ -4,6 +4,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
+import 'package:mekuru/features/reader/data/services/deinflection.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/shared/widgets/dictionary_entry_card.dart';
 
@@ -50,18 +51,44 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     );
   }
 
-  /// Search by dictionary form first; if no results, try surface form.
+  /// Search by dictionary form first, then try deinflected alternatives
+  /// from the surface form to handle cases where MeCab chose the wrong
+  /// base form (e.g., 行って → 行う instead of 行く).
   Future<List<DictionaryEntryWithSource>> _searchWithFallback() async {
     final queryService = ref.read(dictionaryQueryServiceProvider);
-    final results = await queryService.searchWithSource(widget.selectedText);
-    if (results.isNotEmpty) return results;
 
-    // Fallback: try surface form if different from dictionary form
+    // 1. Primary search by MeCab's dictionary form.
+    final primaryResults =
+        await queryService.searchWithSource(widget.selectedText);
+
+    // 2. Try deinflected alternatives from the surface form.
+    final seenIds = <int>{};
+    for (final r in primaryResults) {
+      seenIds.add(r.entry.id);
+    }
+
+    var alternativeResults = <DictionaryEntryWithSource>[];
     if (widget.surfaceForm != null &&
         widget.surfaceForm != widget.selectedText) {
-      return queryService.searchWithSource(widget.surfaceForm!);
+      final candidates = deinflect(widget.surfaceForm!);
+      // Remove the dictionary form MeCab already gave us.
+      candidates.remove(widget.selectedText);
+
+      if (candidates.isNotEmpty) {
+        final altResults =
+            await queryService.searchMultipleWithSource(candidates);
+        alternativeResults =
+            altResults.where((r) => seenIds.add(r.entry.id)).toList();
+      }
+
+      // 3. Last resort: search by the raw surface form itself.
+      if (primaryResults.isEmpty && alternativeResults.isEmpty) {
+        return queryService.searchWithSource(widget.surfaceForm!);
+      }
     }
-    return results;
+
+    if (alternativeResults.isEmpty) return primaryResults;
+    return [...primaryResults, ...alternativeResults];
   }
 
   /// Search pitch accents by expression; fallback to surface form.

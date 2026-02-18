@@ -252,6 +252,40 @@ class DictionaryQueryService {
     return ranked;
   }
 
+  /// Search entries matching any of [terms] (by expression or reading).
+  /// Returns results from enabled dictionaries, ordered by frequency rank.
+  /// Useful for searching multiple deinflected candidate forms at once.
+  Future<List<DictionaryEntryWithSource>> searchMultipleWithSource(
+    List<String> terms,
+  ) async {
+    if (terms.isEmpty) return [];
+
+    final query =
+        _db.select(_db.dictionaryEntries).join([
+            innerJoin(
+              _db.dictionaryMetas,
+              _db.dictionaryMetas.id.equalsExp(
+                _db.dictionaryEntries.dictionaryId,
+              ),
+            ),
+          ])
+          ..where(
+            _db.dictionaryEntries.expression.isIn(terms) |
+                _db.dictionaryEntries.reading.isIn(terms),
+          )
+          ..where(_db.dictionaryMetas.isEnabled.equals(true))
+          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+
+    final rows = await query.get();
+    final results = rows.map((row) {
+      final entry = row.readTable(_db.dictionaryEntries);
+      final meta = row.readTable(_db.dictionaryMetas);
+      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
+    }).toList();
+
+    return _attachFrequencyRanks(results);
+  }
+
   /// Prefix search: expression or reading starts with [term].
   /// Returns up to [limit] results from enabled dictionaries.
   Future<List<DictionaryEntryWithSource>> prefixSearchWithSource(
