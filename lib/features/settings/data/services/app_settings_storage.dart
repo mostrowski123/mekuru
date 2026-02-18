@@ -21,6 +21,8 @@ abstract class AppSettingsStorage {
   Future<void> saveStartupScreen(String screen);
   Future<bool?> loadAutoFocusSearch();
   Future<void> saveAutoFocusSearch(bool value);
+  Future<String?> loadColorTheme();
+  Future<void> saveColorTheme(String theme);
 }
 
 /// SharedPreferences-backed implementation of [AppSettingsStorage].
@@ -33,6 +35,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _ankidroidConfigKey = 'app.ankidroid_config';
   static const _startupScreenKey = 'app.startup_screen';
   static const _autoFocusSearchKey = 'app.auto_focus_search';
+  static const _colorThemeKey = 'app.color_theme';
 
   @override
   Future<ThemeMode?> loadThemeMode() async {
@@ -141,5 +144,17 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveAutoFocusSearch(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_autoFocusSearchKey, value);
+  }
+
+  @override
+  Future<String?> loadColorTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_colorThemeKey);
+  }
+
+  @override
+  Future<void> saveColorTheme(String theme) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_colorThemeKey, theme);
   }
 }

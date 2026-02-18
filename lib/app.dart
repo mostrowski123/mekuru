@@ -19,6 +19,7 @@ class MekuruApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.read(appThemeModeProvider.notifier).loadPersistedSettings();
+    ref.read(appColorThemeProvider.notifier).loadPersistedSettings();
     ref.read(lookupFontSizeProvider.notifier).loadPersistedSettings();
     ref.read(searchHistoryProvider.notifier).loadPersistedSettings();
     ref.read(filterRomanLettersProvider.notifier).loadPersistedSettings();
@@ -26,12 +27,13 @@ class MekuruApp extends ConsumerWidget {
     ref.read(startupScreenProvider.notifier).loadPersistedSettings();
     ref.read(autoFocusSearchProvider.notifier).loadPersistedSettings();
     final themeMode = ref.watch(appThemeModeProvider);
+    final colorTheme = ref.watch(appColorThemeProvider);
 
     return MaterialApp(
       title: 'Mekuru',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme(colorTheme.seedColor),
+      darkTheme: AppTheme.darkTheme(colorTheme.seedColor),
       themeMode: themeMode,
       scaffoldMessengerKey: scaffoldMessengerKey,
       navigatorKey: navigatorKey,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 
 /// Provider for the app settings storage service.
 final appSettingsStorageProvider = Provider<AppSettingsStorage>((ref) {
@@ -238,3 +239,37 @@ class AutoFocusSearchNotifier extends Notifier<bool> {
 final autoFocusSearchProvider =
     NotifierProvider<AutoFocusSearchNotifier, bool>(
         AutoFocusSearchNotifier.new);
+
+/// Manages the app color theme selection.
+class AppColorThemeNotifier extends Notifier<AppColorTheme> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  AppColorTheme build() => AppColorTheme.mekuruRed;
+
+  /// Load persisted color theme from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted =
+        await ref.read(appSettingsStorageProvider).loadColorTheme();
+    if (persisted != null) {
+      state = AppColorTheme.values.firstWhere(
+        (e) => e.name == persisted,
+        orElse: () => AppColorTheme.mekuruRed,
+      );
+    }
+  }
+
+  /// Set color theme and persist to storage.
+  void setColorTheme(AppColorTheme theme) {
+    state = theme;
+    unawaited(ref.read(appSettingsStorageProvider).saveColorTheme(theme.name));
+  }
+}
+
+/// Provider for the app color theme.
+final appColorThemeProvider =
+    NotifierProvider<AppColorThemeNotifier, AppColorTheme>(
+        AppColorThemeNotifier.new);

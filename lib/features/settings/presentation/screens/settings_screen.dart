@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
@@ -37,6 +38,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(appThemeModeProvider);
+    final colorTheme = ref.watch(appColorThemeProvider);
     final startupScreen = ref.watch(startupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
     final kanjiVgState = ref.watch(kanjiVgProvider);
@@ -62,6 +64,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               _showThemeModePicker(context, ref, themeMode);
+            },
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.palette_outlined,
+              color: colorTheme.seedColor,
+            ),
+            title: const Text('Color Theme'),
+            subtitle: Text(colorTheme.label),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              _showColorThemePicker(context, ref, colorTheme);
             },
           ),
           ListTile(
@@ -534,6 +549,65 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showColorThemePicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppColorTheme currentTheme,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (_, scrollController) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Color Theme',
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    for (final option in AppColorTheme.values)
+                      ListTile(
+                        leading: Icon(
+                          Icons.circle,
+                          color: option.seedColor,
+                        ),
+                        title: Text(option.label),
+                        trailing: currentTheme == option
+                            ? Icon(Icons.check,
+                                color:
+                                    Theme.of(context).colorScheme.primary)
+                            : null,
+                        onTap: () {
+                          AppHaptics.medium();
+                          ref
+                              .read(appColorThemeProvider.notifier)
+                              .setColorTheme(option);
+                          Navigator.of(sheetContext).pop();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

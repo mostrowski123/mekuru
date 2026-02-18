@@ -1,14 +1,31 @@
 import 'package:flutter/material.dart';
 
-/// App-wide theme configuration with a Japanese-inspired dark aesthetic.
+/// Available color themes for the app.
+enum AppColorTheme {
+  // Default — the app's signature Japanese-inspired red
+  mekuruRed('Mekuru Red', Color(0xFFB71C1C)),
+  indigo('Indigo', Color(0xFF3F51B5)),
+  teal('Teal', Color(0xFF009688)),
+  deepPurple('Deep Purple', Color(0xFF673AB7)),
+  blue('Blue', Color(0xFF2196F3)),
+  green('Green', Color(0xFF4CAF50)),
+  orange('Orange', Color(0xFFFF9800)),
+  pink('Pink', Color(0xFFE91E63)),
+  blueGrey('Blue Grey', Color(0xFF607D8B));
+
+  final String label;
+  final Color seedColor;
+
+  const AppColorTheme(this.label, this.seedColor);
+}
+
+/// App-wide theme configuration using Material 3 color schemes.
 class AppTheme {
   AppTheme._();
 
-  static const _seedColor = Color(0xFFB71C1C); // Deep red (torii gate)
-
-  static ThemeData get darkTheme {
+  static ThemeData darkTheme(Color seedColor) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _seedColor,
+      seedColor: seedColor,
       brightness: Brightness.dark,
     );
 
@@ -45,9 +62,9 @@ class AppTheme {
     );
   }
 
-  static ThemeData get lightTheme {
+  static ThemeData lightTheme(Color seedColor) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _seedColor,
+      seedColor: seedColor,
       brightness: Brightness.light,
     );
 
