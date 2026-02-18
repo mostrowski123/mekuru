@@ -193,15 +193,22 @@ class DictionaryQueryService {
     return result?.read(_db.frequencies.frequencyRank.min());
   }
 
-  /// Batch-query frequency ranks for a list of entries.
-  /// Returns a map from expression to the best (lowest) frequency rank.
-  Future<Map<String, int>> _getFrequencyRanksForExpressions(
-    Set<String> expressions,
+  /// Batch-query frequency ranks keyed by (expression, reading) pair.
+  ///
+  /// Lookup strategy per pair:
+  /// 1. Prefer an exact (expression, reading) match in the Frequencies table.
+  /// 2. Fall back to the best (lowest) rank for that expression across all
+  ///    readings when no reading-specific frequency exists.
+  Future<Map<(String, String), int>> _getFrequencyRanks(
+    List<DictionaryEntryWithSource> results,
   ) async {
+    if (results.isEmpty) return {};
+
+    final expressions = results.map((r) => r.entry.expression).toSet();
     if (expressions.isEmpty) return {};
 
-    final ranks = <String, int>{};
-    // Query in batches to avoid overly large IN clauses
+    // Fetch ALL frequency rows for these expressions in batches.
+    final allRows = <Frequency>[];
     final exprList = expressions.toList();
     const batchSize = 200;
 
@@ -214,11 +221,44 @@ class DictionaryQueryService {
       final query = _db.select(_db.frequencies)
         ..where((t) => t.expression.isIn(batch));
 
-      final rows = await query.get();
-      for (final row in rows) {
-        final existing = ranks[row.expression];
+      allRows.addAll(await query.get());
+    }
+
+    // Build two lookup structures:
+    // 1. (expression, reading) → min rank  (reading-specific)
+    // 2. expression → min rank             (fallback for unknown readings)
+    final pairRanks = <(String, String), int>{};
+    final exprFallback = <String, int>{};
+
+    for (final row in allRows) {
+      if (row.reading.isNotEmpty) {
+        final key = (row.expression, row.reading);
+        final existing = pairRanks[key];
         if (existing == null || row.frequencyRank < existing) {
-          ranks[row.expression] = row.frequencyRank;
+          pairRanks[key] = row.frequencyRank;
+        }
+      }
+
+      final existing = exprFallback[row.expression];
+      if (existing == null || row.frequencyRank < existing) {
+        exprFallback[row.expression] = row.frequencyRank;
+      }
+    }
+
+    // For each unique (expression, reading) in results, prefer the
+    // pair-specific rank, fall back to expression-level rank.
+    final resultPairs =
+        results.map((r) => (r.entry.expression, r.entry.reading)).toSet();
+
+    final ranks = <(String, String), int>{};
+    for (final pair in resultPairs) {
+      final pairRank = pairRanks[pair];
+      if (pairRank != null) {
+        ranks[pair] = pairRank;
+      } else {
+        final fallback = exprFallback[pair.$1];
+        if (fallback != null) {
+          ranks[pair] = fallback;
         }
       }
     }
@@ -226,30 +266,47 @@ class DictionaryQueryService {
     return ranks;
   }
 
-  /// Attach frequency ranks to a list of results and sort by rank (lowest first).
-  /// Entries without frequency data are placed at the end.
+  /// Attach frequency ranks and group results by (expression, reading).
+  ///
+  /// Within each group, entries retain their original order (which is the
+  /// dictionary sort_order from the SQL query). Groups are ordered by their
+  /// frequency rank (lowest rank first, null-rank groups last).
   Future<List<DictionaryEntryWithSource>> _attachFrequencyRanks(
     List<DictionaryEntryWithSource> results,
   ) async {
     if (results.isEmpty) return results;
 
-    final expressions = results.map((r) => r.entry.expression).toSet();
-    final ranks = await _getFrequencyRanksForExpressions(expressions);
+    final ranks = await _getFrequencyRanks(results);
 
+    // Attach frequency ranks to each entry.
     final ranked = results.map((r) {
-      final rank = ranks[r.entry.expression];
+      final rank = ranks[(r.entry.expression, r.entry.reading)];
       return r.withFrequencyRank(rank);
     }).toList();
 
-    // Stable sort: entries with frequency come first (lower rank = more common)
-    ranked.sort((a, b) {
-      if (a.frequencyRank == null && b.frequencyRank == null) return 0;
-      if (a.frequencyRank == null) return 1;
-      if (b.frequencyRank == null) return -1;
-      return a.frequencyRank!.compareTo(b.frequencyRank!);
-    });
+    // Group by (expression, reading), preserving insertion order within
+    // each group (which is the SQL sort_order).
+    final groups = <(String, String), List<DictionaryEntryWithSource>>{};
+    for (final r in ranked) {
+      final key = (r.entry.expression, r.entry.reading);
+      groups.putIfAbsent(key, () => []).add(r);
+    }
 
-    return ranked;
+    // Sort group keys by frequency rank (lowest first, null last).
+    final sortedKeys = groups.keys.toList()
+      ..sort((a, b) {
+        final rankA = ranks[a];
+        final rankB = ranks[b];
+        if (rankA == null && rankB == null) return 0;
+        if (rankA == null) return 1;
+        if (rankB == null) return -1;
+        return rankA.compareTo(rankB);
+      });
+
+    // Flatten groups back into a single list.
+    return [
+      for (final key in sortedKeys) ...groups[key]!,
+    ];
   }
 
   /// Search entries matching any of [terms] (by expression or reading).
