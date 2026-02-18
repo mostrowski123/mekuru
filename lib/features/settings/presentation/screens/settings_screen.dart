@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
@@ -395,12 +397,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              'Kanji stroke order data by KanjiVG (Ulrich Apel), '
-              'licensed under CC BY-SA 3.0.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+            child: _AttributionText(
+              prefix: 'Kanji stroke order data by ',
+              linkText: 'KanjiVG',
+              url: 'https://kanjivg.tagaini.net/',
+              suffix: ' (Ulrich Apel), licensed under CC BY-SA 3.0.',
+              theme: theme,
             ),
           ),
           const SizedBox(height: 8),
@@ -503,12 +505,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              'JMdict by the Electronic Dictionary Research and '
-              'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+            child: _AttributionText(
+              prefix: '',
+              linkText: 'JMdict',
+              url: 'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
+              suffix: ' by the Electronic Dictionary Research and '
+                  'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
+              theme: theme,
             ),
           ),
           const SizedBox(height: 8),
@@ -558,12 +561,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              'KANJIDIC by the Electronic Dictionary Research and '
-              'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+            child: _AttributionText(
+              prefix: '',
+              linkText: 'KANJIDIC',
+              url: 'https://www.edrdg.org/wiki/index.php/KANJIDIC_Project',
+              suffix: ' by the Electronic Dictionary Research and '
+                  'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
+              theme: theme,
             ),
           ),
           const Divider(),
@@ -866,6 +870,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 }
 
 // ── Private widgets ──
+
+/// Attribution text with a tappable hyperlink for license compliance.
+class _AttributionText extends StatelessWidget {
+  const _AttributionText({
+    required this.prefix,
+    required this.linkText,
+    required this.url,
+    required this.suffix,
+    required this.theme,
+  });
+
+  final String prefix;
+  final String linkText;
+  final String url;
+  final String suffix;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final linkStyle = baseStyle?.copyWith(
+      color: theme.colorScheme.primary,
+      decoration: TextDecoration.underline,
+      decorationColor: theme.colorScheme.primary,
+    );
+
+    return RichText(
+      text: TextSpan(
+        style: baseStyle,
+        children: [
+          if (prefix.isNotEmpty) TextSpan(text: prefix),
+          TextSpan(
+            text: linkText,
+            style: linkStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => launchUrl(
+                    Uri.parse(url),
+                    mode: LaunchMode.externalApplication,
+                  ),
+          ),
+          TextSpan(text: suffix),
+        ],
+      ),
+    );
+  }
+}
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title});
