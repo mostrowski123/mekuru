@@ -166,10 +166,7 @@ class DictionaryQueryService {
     final results = rows.map((row) {
       final entry = row.readTable(_db.dictionaryEntries);
       final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(
-        entry: entry,
-        dictionaryName: meta.name,
-      );
+      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
     }).toList();
 
     return _attachFrequencyRanks(results);
@@ -177,7 +174,10 @@ class DictionaryQueryService {
 
   /// Look up the best (lowest) frequency rank for a given expression.
   /// Queries all frequency dictionaries regardless of isEnabled flag.
-  Future<int?> getFrequencyRank(String expression, [String reading = '']) async {
+  Future<int?> getFrequencyRank(
+    String expression, [
+    String reading = '',
+  ]) async {
     final query = _db.selectOnly(_db.frequencies)
       ..addColumns([_db.frequencies.frequencyRank.min()])
       ..where(
@@ -204,7 +204,9 @@ class DictionaryQueryService {
     const batchSize = 200;
 
     for (var i = 0; i < exprList.length; i += batchSize) {
-      final end = (i + batchSize < exprList.length) ? i + batchSize : exprList.length;
+      final end = (i + batchSize < exprList.length)
+          ? i + batchSize
+          : exprList.length;
       final batch = exprList.sublist(i, end);
 
       final query = _db.select(_db.frequencies)
@@ -278,10 +280,7 @@ class DictionaryQueryService {
     return rows.map((row) {
       final entry = row.readTable(_db.dictionaryEntries);
       final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(
-        entry: entry,
-        dictionaryName: meta.name,
-      );
+      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
     }).toList();
   }
 
@@ -346,23 +345,21 @@ class DictionaryQueryService {
     }
 
     // 2. Fuzzy matches on expression/reading via fuzzy_bolt
-    final prefixCandidates =
-        await _fetchPrefixCandidates(searchTerms, limit: 100);
+    final prefixCandidates = await _fetchPrefixCandidates(
+      searchTerms,
+      limit: 100,
+    );
     if (prefixCandidates.isNotEmpty) {
       for (final t in searchTerms) {
-        final fuzzyMatches =
-            await FuzzyBolt.search<DictionaryEntryWithSource>(
-              prefixCandidates,
-              t,
-              selectors: [
-                (e) => e.entry.expression,
-                (e) => e.entry.reading,
-              ],
-              strictThreshold: 0.8,
-              typeThreshold: 0.3,
-              maxResults: 30,
-              skipIsolate: true,
-            );
+        final fuzzyMatches = await FuzzyBolt.search<DictionaryEntryWithSource>(
+          prefixCandidates,
+          t,
+          selectors: [(e) => e.entry.expression, (e) => e.entry.reading],
+          strictThreshold: 0.8,
+          typeThreshold: 0.3,
+          maxResults: 30,
+          skipIsolate: true,
+        );
         addTo(fuzzyResults, fuzzyMatches);
       }
     }
@@ -380,19 +377,25 @@ class DictionaryQueryService {
 
     // 4. English definition fuzzy search via fuzzy_bolt
     if (_hasLatinLetters(term)) {
-      final glossaryCandidates =
-          await _fetchGlossaryCandidates(term, limit: 100);
+      // Always include direct glossary substring matches first so exact
+      // English lookups remain reliable even when fuzzy scoring thresholds
+      // are too strict for short terms (e.g. "run").
+      addTo(glossaryResults, await glossarySearchWithSource(term, limit: 30));
+
+      final glossaryCandidates = await _fetchGlossaryCandidates(
+        term,
+        limit: 100,
+      );
       if (glossaryCandidates.isNotEmpty) {
-        final fuzzyMatches =
-            await FuzzyBolt.search<DictionaryEntryWithSource>(
-              glossaryCandidates,
-              term,
-              selectors: [(e) => e.entry.glossaries],
-              strictThreshold: 0.7,
-              typeThreshold: 0.3,
-              maxResults: 30,
-              skipIsolate: true,
-            );
+        final fuzzyMatches = await FuzzyBolt.search<DictionaryEntryWithSource>(
+          glossaryCandidates,
+          term,
+          selectors: [(e) => e.entry.glossaries],
+          strictThreshold: 0.7,
+          typeThreshold: 0.3,
+          maxResults: 30,
+          skipIsolate: true,
+        );
         addTo(glossaryResults, fuzzyMatches);
       }
     }
@@ -443,10 +446,7 @@ class DictionaryQueryService {
     return rows.map((row) {
       final entry = row.readTable(_db.dictionaryEntries);
       final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(
-        entry: entry,
-        dictionaryName: meta.name,
-      );
+      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
     }).toList();
   }
 
@@ -457,9 +457,7 @@ class DictionaryQueryService {
         _db.select(_db.pitchAccents).join([
             innerJoin(
               _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.pitchAccents.dictionaryId,
-              ),
+              _db.dictionaryMetas.id.equalsExp(_db.pitchAccents.dictionaryId),
             ),
           ])
           ..where(_db.pitchAccents.expression.equals(expression))
@@ -491,20 +489,21 @@ class DictionaryQueryService {
       if (term.isEmpty) continue;
 
       final pattern = '$term%';
-      final query = _db.select(_db.dictionaryEntries).join([
-        innerJoin(
-          _db.dictionaryMetas,
-          _db.dictionaryMetas.id.equalsExp(
-            _db.dictionaryEntries.dictionaryId,
-          ),
-        ),
-      ])
-        ..where(
-          _db.dictionaryEntries.expression.like(pattern) |
-              _db.dictionaryEntries.reading.like(pattern),
-        )
-        ..where(_db.dictionaryMetas.isEnabled.equals(true))
-        ..limit(limit);
+      final query =
+          _db.select(_db.dictionaryEntries).join([
+              innerJoin(
+                _db.dictionaryMetas,
+                _db.dictionaryMetas.id.equalsExp(
+                  _db.dictionaryEntries.dictionaryId,
+                ),
+              ),
+            ])
+            ..where(
+              _db.dictionaryEntries.expression.like(pattern) |
+                  _db.dictionaryEntries.reading.like(pattern),
+            )
+            ..where(_db.dictionaryMetas.isEnabled.equals(true))
+            ..limit(limit);
 
       final rows = await query.get();
       for (final row in rows) {
@@ -512,10 +511,7 @@ class DictionaryQueryService {
         if (seenIds.add(entry.id)) {
           final meta = row.readTable(_db.dictionaryMetas);
           allResults.add(
-            DictionaryEntryWithSource(
-              entry: entry,
-              dictionaryName: meta.name,
-            ),
+            DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name),
           );
         }
       }
@@ -533,26 +529,24 @@ class DictionaryQueryService {
     if (term.isEmpty) return [];
 
     final pattern = '%$term%';
-    final query = _db.select(_db.dictionaryEntries).join([
-      innerJoin(
-        _db.dictionaryMetas,
-        _db.dictionaryMetas.id.equalsExp(
-          _db.dictionaryEntries.dictionaryId,
-        ),
-      ),
-    ])
-      ..where(_db.dictionaryEntries.glossaries.like(pattern))
-      ..where(_db.dictionaryMetas.isEnabled.equals(true))
-      ..limit(limit);
+    final query =
+        _db.select(_db.dictionaryEntries).join([
+            innerJoin(
+              _db.dictionaryMetas,
+              _db.dictionaryMetas.id.equalsExp(
+                _db.dictionaryEntries.dictionaryId,
+              ),
+            ),
+          ])
+          ..where(_db.dictionaryEntries.glossaries.like(pattern))
+          ..where(_db.dictionaryMetas.isEnabled.equals(true))
+          ..limit(limit);
 
     final rows = await query.get();
     return rows.map((row) {
       final entry = row.readTable(_db.dictionaryEntries);
       final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(
-        entry: entry,
-        dictionaryName: meta.name,
-      );
+      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
     }).toList();
   }
 

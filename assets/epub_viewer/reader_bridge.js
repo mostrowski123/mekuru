@@ -48,7 +48,7 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
     width: '100vw',
     height: '100vh',
     snap: false,
-    allowScriptedContent: false,
+    allowScriptedContent: true,
     defaultDirection: direction || 'ltr'
   });
 
@@ -175,47 +175,91 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
       }
     });
 
-    // ── Touch events (forward to Dart for tap-zone navigation) ────
+    // ── Input events (forward to Dart for tap-zone navigation) ────
 
     var doc = contents.document;
+    var lastTouchTs = 0;
+
+    function forwardDown(clientX, clientY, source) {
+      var coords = normalizedCoords({ clientX: clientX, clientY: clientY }, contents);
+      if (!coords) return;
+      console.log(
+        '[EPUB_BRIDGE] touchDown(' + source + ') x=' +
+          coords.x.toFixed(3) + ' y=' + coords.y.toFixed(3)
+      );
+      callDart('touchDown', coords.x, coords.y);
+    }
+
+    function forwardUp(clientX, clientY, source) {
+      var coords = normalizedCoords({ clientX: clientX, clientY: clientY }, contents);
+      if (!coords) return;
+
+      // Check if tap landed on text
+      var textInfo = getTextAtPoint(clientX, clientY, doc);
+      if (textInfo) {
+        console.log(
+          '[EPUB_BRIDGE] wordTapped(' + source + ') char="' +
+            textInfo.tappedChar + '" offset=' + textInfo.charOffset +
+            ' textLen=' + textInfo.surroundingText.length
+        );
+        callDart('wordTapped', {
+          x: coords.x,
+          y: coords.y,
+          surroundingText: textInfo.surroundingText,
+          charOffset: textInfo.charOffset,
+          blockCharOffset: textInfo.blockCharOffset,
+          tappedChar: textInfo.tappedChar
+        });
+      } else {
+        // No text at tap point — send regular touchUp for page navigation
+        console.log(
+          '[EPUB_BRIDGE] touchUp(' + source + ') x=' +
+            coords.x.toFixed(3) + ' y=' + coords.y.toFixed(3)
+        );
+        callDart('touchUp', coords.x, coords.y);
+      }
+    }
 
     doc.addEventListener('touchstart', function (e) {
       if (e.touches && e.touches.length > 0) {
-        var coords = normalizedCoords(e.touches[0], contents);
-        if (coords) {
-          console.log('[EPUB_BRIDGE] touchDown x=' + coords.x.toFixed(3) + ' y=' + coords.y.toFixed(3));
-          callDart('touchDown', coords.x, coords.y);
-        }
+        lastTouchTs = Date.now();
+        var touch = e.touches[0];
+        forwardDown(touch.clientX, touch.clientY, 'touch');
       }
     }, { passive: true });
 
     doc.addEventListener('touchend', function (e) {
       if (e.changedTouches && e.changedTouches.length > 0) {
+        lastTouchTs = Date.now();
         var touch = e.changedTouches[0];
-        var coords = normalizedCoords(touch, contents);
-        if (coords) {
-          // Check if tap landed on text
-          var textInfo = getTextAtPoint(touch.clientX, touch.clientY, doc);
-          if (textInfo) {
-            console.log('[EPUB_BRIDGE] wordTapped char="' + textInfo.tappedChar +
-              '" offset=' + textInfo.charOffset +
-              ' textLen=' + textInfo.surroundingText.length);
-            callDart('wordTapped', {
-              x: coords.x,
-              y: coords.y,
-              surroundingText: textInfo.surroundingText,
-              charOffset: textInfo.charOffset,
-              blockCharOffset: textInfo.blockCharOffset,
-              tappedChar: textInfo.tappedChar
-            });
-          } else {
-            // No text at tap point — send regular touchUp for page navigation
-            console.log('[EPUB_BRIDGE] touchUp x=' + coords.x.toFixed(3) + ' y=' + coords.y.toFixed(3));
-            callDart('touchUp', coords.x, coords.y);
-          }
-        }
+        forwardUp(touch.clientX, touch.clientY, 'touch');
       }
     }, { passive: true });
+
+    // iPad pointer/trackpad input can arrive as pointer events instead of
+    // touch events. Forward those too, while skipping touch-pointer duplicates.
+    doc.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch') return;
+      forwardDown(e.clientX, e.clientY, 'pointer:' + e.pointerType);
+    }, { passive: true });
+
+    doc.addEventListener('pointerup', function (e) {
+      if (e.pointerType === 'touch') return;
+      forwardUp(e.clientX, e.clientY, 'pointer:' + e.pointerType);
+    }, { passive: true });
+
+    // Fallback for older engines without pointer events.
+    if (!('PointerEvent' in contents.window)) {
+      doc.addEventListener('mousedown', function (e) {
+        if (Date.now() - lastTouchTs < 500) return;
+        forwardDown(e.clientX, e.clientY, 'mouse');
+      }, { passive: true });
+
+      doc.addEventListener('mouseup', function (e) {
+        if (Date.now() - lastTouchTs < 500) return;
+        forwardUp(e.clientX, e.clientY, 'mouse');
+      }, { passive: true });
+    }
   });
 }
 
@@ -947,17 +991,17 @@ function snapToLastPage(caller) {
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function normalizedCoords(touch, contents) {
+function normalizedCoords(point, contents) {
   try {
     var iframe = contents.document.defaultView.frameElement;
     var iframeRect = iframe.getBoundingClientRect();
     // Normalize against the outer viewport (not the iframe), so coordinates
-    // reflect the actual screen position.  touch.clientX/Y are relative to
+    // reflect the actual screen position. point.clientX/Y are relative to
     // the iframe viewport, so add the iframe's offset first.
     var outerW = window.innerWidth || iframeRect.width;
     var outerH = window.innerHeight || iframeRect.height;
-    var x = (iframeRect.left + touch.clientX) / outerW;
-    var y = (iframeRect.top + touch.clientY) / outerH;
+    var x = (iframeRect.left + point.clientX) / outerW;
+    var y = (iframeRect.top + point.clientY) / outerH;
     x = Math.max(0, Math.min(1, x));
     y = Math.max(0, Math.min(1, y));
     return { x: x, y: y };

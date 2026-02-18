@@ -126,7 +126,6 @@ class RomajiConverter {
     'pu': 'ぷ',
     'pe': 'ぺ',
     'po': 'ぽ',
-    'nn': 'ん',
     // 1-char vowels
     'a': 'あ',
     'i': 'い',
@@ -151,6 +150,39 @@ class RomajiConverter {
     var i = 0;
 
     while (i < input.length) {
+      // Syllabic n handling.
+      // - "n" before consonant or end -> ん
+      // - "nn" before vowel/y -> first n becomes ん, second starts next syllable
+      // - "nn" before consonant/end -> ん
+      if (input[i] == 'n') {
+        if (i + 1 >= input.length) {
+          buffer.write('ん');
+          i++;
+          continue;
+        }
+
+        final next = input[i + 1];
+        if (next == 'n') {
+          if (i + 2 < input.length) {
+            final next2 = input[i + 2];
+            if (_vowels.contains(next2) || next2 == 'y') {
+              buffer.write('ん');
+              i++;
+              continue;
+            }
+          }
+          buffer.write('ん');
+          i += 2;
+          continue;
+        }
+
+        if (!_vowels.contains(next) && next != 'y') {
+          buffer.write('ん');
+          i++;
+          continue;
+        }
+      }
+
       // Double consonant → っ (not 'n', which is handled by 'nn' mapping)
       if (i + 1 < input.length &&
           input[i] == input[i + 1] &&
@@ -175,26 +207,6 @@ class RomajiConverter {
         }
       }
       if (matched) continue;
-
-      // Single char: only 'n' needs special handling
-      if (input[i] == 'n') {
-        // 'n' at end of string or before a consonant (not vowel/y) → ん
-        if (i + 1 >= input.length) {
-          buffer.write('ん');
-          i++;
-          continue;
-        }
-        final next = input[i + 1];
-        if (!_vowels.contains(next) && next != 'y') {
-          buffer.write('ん');
-          i++;
-          continue;
-        }
-        // 'n' before vowel/y: don't consume yet — could be na, ni, nya, etc.
-        // but we already tried 2-char match above and it failed,
-        // so this shouldn't normally happen. Treat as trailing.
-        break;
-      }
 
       // Single vowel
       final singleKana = _mappings[input[i]];

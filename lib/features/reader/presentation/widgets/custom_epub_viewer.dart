@@ -6,6 +6,36 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../data/models/epub_models.dart';
 import 'custom_epub_controller.dart';
 
+/// Builds the set of gesture recognizers that allow the iOS UiKitView
+/// (and Android AndroidView) to receive all touch event types.
+///
+/// On iOS, `EagerGestureRecognizer` conflicts with the platform view's
+/// `FlutterTouchInterceptingView` forwarding mechanism, causing touch events
+/// to never reach WKWebView content. Instead, we register one recognizer per
+/// gesture type so the platform view can claim taps, drags, and long-presses
+/// through the normal gesture arena.
+///
+/// The 30 ms long-press duration ensures that near-instant touches (which are
+/// common in epub reading) still get forwarded to the native web view.
+Set<Factory<OneSequenceGestureRecognizer>> buildEpubGestureRecognizers() {
+  return {
+    Factory<VerticalDragGestureRecognizer>(
+      () => VerticalDragGestureRecognizer(),
+    ),
+    Factory<HorizontalDragGestureRecognizer>(
+      () => HorizontalDragGestureRecognizer(),
+    ),
+    Factory<LongPressGestureRecognizer>(
+      () => LongPressGestureRecognizer(
+        duration: const Duration(milliseconds: 30),
+      ),
+    ),
+    Factory<TapGestureRecognizer>(
+      () => TapGestureRecognizer(),
+    ),
+  };
+}
+
 /// Selection data reported by the JS bridge.
 class EpubSelectionData {
   final String cfi;
@@ -103,16 +133,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     return InAppWebView(
       initialFile: 'assets/epub_viewer/reader.html',
       initialSettings: _settings,
-      gestureRecognizers: {
-        Factory<VerticalDragGestureRecognizer>(
-          () => VerticalDragGestureRecognizer(),
-        ),
-        Factory<LongPressGestureRecognizer>(
-          () => LongPressGestureRecognizer(
-            duration: const Duration(milliseconds: 30),
-          ),
-        ),
-      },
+      preventGestureDelay: true,
+      gestureRecognizers: buildEpubGestureRecognizers(),
       onWebViewCreated: (controller) {
         _webViewController = controller;
         widget.controller.attach(controller);
@@ -366,7 +388,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       final r = (bg.r * 255.0).round().clamp(0, 255);
       final g = (bg.g * 255.0).round().clamp(0, 255);
       final b = (bg.b * 255.0).round().clamp(0, 255);
-      final bgHex = '#${r.toRadixString(16).padLeft(2, '0')}'
+      final bgHex =
+          '#${r.toRadixString(16).padLeft(2, '0')}'
           '${g.toRadixString(16).padLeft(2, '0')}'
           '${b.toRadixString(16).padLeft(2, '0')}';
       _webViewController?.evaluateJavascript(

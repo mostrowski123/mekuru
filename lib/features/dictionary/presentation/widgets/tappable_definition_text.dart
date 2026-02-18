@@ -33,8 +33,8 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
   // - Kanji (CJK Unified Ideographs + Extension A)
   // - Hiragana
   // - Katakana
-  // - Katakana prolonged sound mark (ー)
-  // - CJK iteration marks (々)
+  // - Katakana prolonged sound mark (U+30FC)
+  // - CJK iteration mark (U+3005)
   static final _japanesePattern = RegExp(
     r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF\u30FC\u3005]+',
   );
@@ -66,7 +66,8 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
 
     final theme = Theme.of(context);
     final baseStyle = widget.style ?? DefaultTextStyle.of(context).style;
-    final tapStyle = widget.tappableStyle ??
+    final tapStyle =
+        widget.tappableStyle ??
         baseStyle.copyWith(
           color: theme.colorScheme.primary,
           decoration: TextDecoration.underline,
@@ -96,33 +97,31 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
             final recognizer = TapGestureRecognizer()
               ..onTap = () => widget.onWordTap(token);
             _recognizers.add(recognizer);
-            spans.add(TextSpan(
-              text: token,
-              style: tapStyle,
-              recognizer: recognizer,
-            ));
+            spans.add(
+              TextSpan(text: token, style: tapStyle, recognizer: recognizer),
+            );
           }
         } else {
           // Fallback if MeCab output doesn't match original text
           final recognizer = TapGestureRecognizer()
             ..onTap = () => widget.onWordTap(japaneseText);
           _recognizers.add(recognizer);
-          spans.add(TextSpan(
-            text: japaneseText,
-            style: tapStyle,
-            recognizer: recognizer,
-          ));
+          spans.add(
+            TextSpan(
+              text: japaneseText,
+              style: tapStyle,
+              recognizer: recognizer,
+            ),
+          );
         }
       } else {
         // Fallback: treat entire run as one tappable span
         final recognizer = TapGestureRecognizer()
           ..onTap = () => widget.onWordTap(japaneseText);
         _recognizers.add(recognizer);
-        spans.add(TextSpan(
-          text: japaneseText,
-          style: tapStyle,
-          recognizer: recognizer,
-        ));
+        spans.add(
+          TextSpan(text: japaneseText, style: tapStyle, recognizer: recognizer),
+        );
       }
 
       lastEnd = match.end;
@@ -137,8 +136,6 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
       return Text(widget.text, style: baseStyle);
     }
 
-    return Text.rich(
-      TextSpan(children: spans, style: baseStyle),
-    );
+    return Text.rich(TextSpan(children: spans, style: baseStyle));
   }
 }
