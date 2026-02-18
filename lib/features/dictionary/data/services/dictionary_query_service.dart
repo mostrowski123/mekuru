@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -376,6 +378,8 @@ class DictionaryQueryService {
     }
 
     // 4. English definition fuzzy search via fuzzy_bolt
+    // Candidates are pre-filtered by SQL LIKE, so we use a lower threshold
+    // to avoid dropping short-term matches (e.g. "run" in "to run").
     if (_hasLatinLetters(term)) {
       // Always include direct glossary substring matches first so exact
       // English lookups remain reliable even when fuzzy scoring thresholds
@@ -566,4 +570,16 @@ class DictionaryQueryService {
   }
 
   static final _latinPattern = RegExp(r'[a-zA-Z]');
+
+  /// Decode a JSON-encoded glossary list into a plain text string for fuzzy
+  /// matching. Returns the individual definitions joined by "; " so that
+  /// fuzzy_bolt can match against clean text rather than raw JSON brackets.
+  static String _decodeGlossaries(String jsonGlossaries) {
+    try {
+      final list = jsonDecode(jsonGlossaries) as List<dynamic>;
+      return list.whereType<String>().join('; ');
+    } catch (_) {
+      return jsonGlossaries;
+    }
+  }
 }

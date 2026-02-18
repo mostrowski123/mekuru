@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/feedback_screen.dart';
@@ -26,6 +29,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(kanjiVgProvider.notifier).checkStatus();
       ref.read(jpdbFreqProvider.notifier).checkStatus();
+      ref.read(jmdictProvider.notifier).checkStatus();
+      ref.read(kanjidicProvider.notifier).checkStatus();
     });
   }
 
@@ -36,6 +41,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
     final kanjiVgState = ref.watch(kanjiVgProvider);
     final jpdbFreqState = ref.watch(jpdbFreqProvider);
+    final jmdictState = ref.watch(jmdictProvider);
+    final kanjidicState = ref.watch(kanjidicProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -275,6 +282,116 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Text(
               'Word frequency data from JPDB (jpdb.io), '
               'distributed by Kuuuube.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // JMdict English
+          _JmdictTile(state: jmdictState, theme: theme),
+          if (jmdictState.isDownloading)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LinearProgressIndicator(value: jmdictState.progress),
+                  const SizedBox(height: 4),
+                  Text(
+                    jmdictState.progress < 0.05
+                        ? 'Fetching latest release...'
+                        : jmdictState.progress < 0.7
+                            ? 'Downloading... ${((jmdictState.progress - 0.05) / 0.65 * 100).toInt()}%'
+                            : 'Importing...',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          if (jmdictState.error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text(
+                jmdictState.error!,
+                style: TextStyle(
+                  color: theme.colorScheme.error,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          if (jmdictState.successMessage != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text(
+                jmdictState.successMessage!,
+                style: const TextStyle(color: Colors.green, fontSize: 13),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              'JMdict by the Electronic Dictionary Research and '
+              'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // KANJIDIC
+          _KanjidicTile(state: kanjidicState, theme: theme),
+          if (kanjidicState.isDownloading)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LinearProgressIndicator(value: kanjidicState.progress),
+                  const SizedBox(height: 4),
+                  Text(
+                    kanjidicState.progress < 0.05
+                        ? 'Fetching latest release...'
+                        : kanjidicState.progress < 0.7
+                            ? 'Downloading... ${((kanjidicState.progress - 0.05) / 0.65 * 100).toInt()}%'
+                            : 'Importing...',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          if (kanjidicState.error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text(
+                kanjidicState.error!,
+                style: TextStyle(
+                  color: theme.colorScheme.error,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          if (kanjidicState.successMessage != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text(
+                kanjidicState.successMessage!,
+                style: const TextStyle(color: Colors.green, fontSize: 13),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              'KANJIDIC by the Electronic Dictionary Research and '
+              'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -666,6 +783,205 @@ class _JpdbFreqTile extends ConsumerWidget {
             onPressed: () {
               Navigator.of(ctx).pop();
               ref.read(jpdbFreqProvider.notifier).delete();
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tile showing JMdict English download status and actions.
+class _JmdictTile extends ConsumerWidget {
+  const _JmdictTile({required this.state, required this.theme});
+
+  final JmdictState state;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subtitle = state.isImported
+        ? 'Japanese-English dictionary downloaded'
+        : 'Download Japanese-English dictionary';
+
+    return ListTile(
+      leading: Icon(
+        Icons.translate,
+        color: theme.colorScheme.primary,
+      ),
+      title: const Text('JMdict English'),
+      subtitle: Text(subtitle),
+      trailing: _buildTrailing(context, ref),
+    );
+  }
+
+  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
+    if (state.isDownloading || state.isDeleting) {
+      return const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    if (state.isImported) {
+      return IconButton(
+        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+        tooltip: 'Delete JMdict',
+        onPressed: () => _confirmDelete(context, ref),
+      );
+    }
+
+    return FilledButton.tonal(
+      onPressed: () {
+        AppHaptics.light();
+        _showVariantPicker(context, ref);
+      },
+      child: const Text('Download'),
+    );
+  }
+
+  void _showVariantPicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Choose JMdict variant',
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.download),
+              title: const Text('JMdict English'),
+              subtitle: const Text('Standard dictionary (~15 MB)'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                AppHaptics.light();
+                ref.read(jmdictProvider.notifier).download(
+                      YomitanDictType.jmdictEnglish,
+                    );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.download),
+              title: const Text('JMdict English with Examples'),
+              subtitle: const Text('Includes example sentences (~18 MB)'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                AppHaptics.light();
+                ref.read(jmdictProvider.notifier).download(
+                      YomitanDictType.jmdictEnglishWithExamples,
+                    );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete JMdict'),
+        content: const Text(
+          'Delete JMdict and all its entries? '
+          'You can re-download it later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(jmdictProvider.notifier).delete();
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tile showing KANJIDIC download status and actions.
+class _KanjidicTile extends ConsumerWidget {
+  const _KanjidicTile({required this.state, required this.theme});
+
+  final KanjidicState state;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subtitle = state.isImported
+        ? 'Kanji dictionary downloaded'
+        : 'Download kanji dictionary';
+
+    return ListTile(
+      leading: Icon(
+        Icons.font_download_outlined,
+        color: theme.colorScheme.primary,
+      ),
+      title: const Text('KANJIDIC'),
+      subtitle: Text(subtitle),
+      trailing: _buildTrailing(context, ref),
+    );
+  }
+
+  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
+    if (state.isDownloading || state.isDeleting) {
+      return const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    if (state.isImported) {
+      return IconButton(
+        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+        tooltip: 'Delete KANJIDIC',
+        onPressed: () => _confirmDelete(context, ref),
+      );
+    }
+
+    return FilledButton.tonal(
+      onPressed: () {
+        AppHaptics.light();
+        ref.read(kanjidicProvider.notifier).download();
+      },
+      child: const Text('Download'),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete KANJIDIC'),
+        content: const Text(
+          'Delete KANJIDIC and all its entries? '
+          'You can re-download it later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(kanjidicProvider.notifier).delete();
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),

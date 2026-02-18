@@ -126,6 +126,8 @@ class RomajiConverter {
     'pu': 'ぷ',
     'pe': 'ぺ',
     'po': 'ぽ',
+    // Note: 'nn' is NOT mapped here — single-n logic handles n-before-consonant,
+    // which correctly emits ん and lets the second n start the next syllable.
     // 1-char vowels
     'a': 'あ',
     'i': 'い',

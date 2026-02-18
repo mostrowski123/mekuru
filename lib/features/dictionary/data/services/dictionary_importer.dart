@@ -942,6 +942,55 @@ class DictionaryImporter {
       }
     }
 
+    // 2b. Parse all kanji_bank_*.json files (e.g. KANJIDIC)
+    final kanjiBankFiles = archive.files
+        .where(
+          (f) =>
+              f.name.startsWith('kanji_bank_') && f.name.endsWith('.json'),
+        )
+        .toList();
+
+    for (final kanjiBank in kanjiBankFiles) {
+      final content = utf8.decode(kanjiBank.content as List<int>);
+      final kanjiArray = jsonDecode(content) as List<dynamic>;
+
+      for (final kanji in kanjiArray) {
+        if (kanji is! List || kanji.length < 5) continue;
+
+        final character = kanji[0]?.toString() ?? '';
+        final onyomi = kanji[1]?.toString() ?? '';
+        final kunyomi = kanji[2]?.toString() ?? '';
+        // kanji[3] = tags (unused)
+        final meanings = kanji[4];
+
+        if (character.isEmpty) continue;
+
+        // Combine onyomi and kunyomi as reading
+        final readingParts = <String>[
+          if (onyomi.isNotEmpty) onyomi,
+          if (kunyomi.isNotEmpty) kunyomi,
+        ];
+        final reading = readingParts.join(' ');
+
+        // Build glossary from meanings array
+        final glossaryList = <String>[];
+        if (meanings is List) {
+          for (final m in meanings) {
+            if (m is String && m.isNotEmpty) glossaryList.add(m);
+          }
+        }
+
+        entries.add(
+          DictionaryEntriesCompanion.insert(
+            expression: character,
+            reading: Value(reading),
+            glossaries: jsonEncode(glossaryList),
+            dictionaryId: 0,
+          ),
+        );
+      }
+    }
+
     // 3. Parse all term_meta_bank_*.json files for pitch accents and frequencies
     final pitchAccents = <PitchAccentsCompanion>[];
     final frequencies = <FrequenciesCompanion>[];

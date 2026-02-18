@@ -141,6 +141,13 @@ class DictionarySearchScreenState
       }
     });
 
+    // Re-search when dictionaries are enabled/disabled/added/removed
+    ref.listen(dictionariesProvider, (_, _) {
+      if (_lastQuery.isNotEmpty) {
+        _performSearch(_lastQuery);
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dictionary'),
