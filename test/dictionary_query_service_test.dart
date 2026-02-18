@@ -510,4 +510,113 @@ void main() {
       },
     );
   });
+
+  // ── Deinflection in fuzzySearchWithSource ────────────────────────
+
+  group('DictionaryQueryService — fuzzySearchWithSource deinflection', () {
+    late AppDatabase deinflDb;
+    late DictionaryRepository deinflRepo;
+    late DictionaryQueryService deinflQueryService;
+
+    setUp(() async {
+      deinflDb = createTestDatabase();
+      deinflRepo = DictionaryRepository(deinflDb);
+      deinflQueryService = DictionaryQueryService(deinflDb);
+
+      final dictA = await deinflRepo.insertDictionary('Dict A');
+      final dictB = await deinflRepo.insertDictionary('Dict B');
+
+      // Insert 行く (iku) and 行う (okonau) — the two base forms for 行って
+      await deinflRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '行く',
+          reading: const Value('いく'),
+          glossaries: jsonEncode(['to go']),
+          dictionaryId: dictA,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '行く',
+          reading: const Value('いく'),
+          glossaries: jsonEncode(['to go (B)']),
+          dictionaryId: dictB,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '行う',
+          reading: const Value('おこなう'),
+          glossaries: jsonEncode(['to carry out']),
+          dictionaryId: dictA,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '行う',
+          reading: const Value('おこなう'),
+          glossaries: jsonEncode(['to carry out (B)']),
+          dictionaryId: dictB,
+        ),
+      ]);
+    });
+
+    tearDown(() async {
+      await deinflDb.close();
+    });
+
+    test(
+      'searching conjugated form finds all possible base forms via deinflection',
+      () async {
+        // Searching 行って should find both 行く and 行う via deinflection
+        final results =
+            await deinflQueryService.fuzzySearchWithSource('行って');
+
+        final expressions = results.map((r) => r.entry.expression).toSet();
+        expect(expressions, contains('行く'));
+        expect(expressions, contains('行う'));
+      },
+    );
+
+    test(
+      'deinflected results preserve dictionary sort order within each group',
+      () async {
+        final results =
+            await deinflQueryService.fuzzySearchWithSource('行って');
+
+        // Both base forms should appear, each with Dict A before Dict B
+        final ikuResults =
+            results.where((r) => r.entry.expression == '行く').toList();
+        final okonauResults =
+            results.where((r) => r.entry.expression == '行う').toList();
+
+        expect(ikuResults, hasLength(2));
+        expect(ikuResults[0].dictionaryName, 'Dict A');
+        expect(ikuResults[1].dictionaryName, 'Dict B');
+
+        expect(okonauResults, hasLength(2));
+        expect(okonauResults[0].dictionaryName, 'Dict A');
+        expect(okonauResults[1].dictionaryName, 'Dict B');
+      },
+    );
+
+    test(
+      'ta-form deinflection finds base forms (行った → 行く, 行う)',
+      () async {
+        final results =
+            await deinflQueryService.fuzzySearchWithSource('行った');
+
+        final expressions = results.map((r) => r.entry.expression).toSet();
+        expect(expressions, contains('行く'));
+        expect(expressions, contains('行う'));
+      },
+    );
+
+    test(
+      'non-conjugated input returns exact matches without deinflection noise',
+      () async {
+        final results =
+            await deinflQueryService.fuzzySearchWithSource('行く');
+
+        // Should find 行く entries but NOT 行う
+        final expressions = results.map((r) => r.entry.expression).toSet();
+        expect(expressions, contains('行く'));
+        expect(expressions, isNot(contains('行う')));
+      },
+    );
+  });
 }

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
+import 'package:mekuru/features/reader/data/services/deinflection.dart';
 
 /// A dictionary entry paired with the name of the dictionary it came from.
 class DictionaryEntryWithSource {
@@ -435,6 +436,20 @@ class DictionaryQueryService {
     // 1. Exact matches (highest priority — always on top)
     for (final t in searchTerms) {
       addTo(exactResults, await searchWithSource(t));
+    }
+
+    // 1b. Deinflected exact matches (same tier as exact).
+    // Reverses conjugation to find base forms (e.g., 行って → 行く, 行う).
+    final deinflectedCandidates = <String>{};
+    for (final t in searchTerms) {
+      deinflectedCandidates.addAll(deinflect(t));
+    }
+    deinflectedCandidates.removeAll(searchTerms);
+    if (deinflectedCandidates.isNotEmpty) {
+      addTo(
+        exactResults,
+        await searchMultipleWithSource(deinflectedCandidates.toList()),
+      );
     }
 
     // 2. Fuzzy matches on expression/reading via fuzzy_bolt

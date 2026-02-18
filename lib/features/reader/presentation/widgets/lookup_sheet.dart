@@ -51,79 +51,46 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     );
   }
 
-  /// Search by dictionary form first, then try deinflected alternatives
-  /// from the surface form to handle cases where MeCab chose the wrong
-  /// base form (e.g., 行って → 行う instead of 行く).
+  /// Search by dictionary form, surface form, and all deinflected candidates.
+  ///
+  /// Collects every plausible base form upfront and searches once via
+  /// [searchMultipleWithSource], which handles deduplication and
+  /// frequency-aware grouping automatically.
   Future<List<DictionaryEntryWithSource>> _searchWithFallback() async {
     final queryService = ref.read(dictionaryQueryServiceProvider);
 
-    // 1. Primary search by MeCab's dictionary form.
-    final primaryResults =
-        await queryService.searchWithSource(widget.selectedText);
+    // Collect ALL possible dictionary forms to search.
+    final allTerms = <String>{widget.selectedText};
+    allTerms.addAll(deinflect(widget.selectedText));
 
-    // 2. Try deinflected alternatives from the surface form.
-    final seenIds = <int>{};
-    for (final r in primaryResults) {
-      seenIds.add(r.entry.id);
+    if (widget.surfaceForm != null) {
+      allTerms.add(widget.surfaceForm!);
+      allTerms.addAll(deinflect(widget.surfaceForm!));
     }
 
-    var alternativeResults = <DictionaryEntryWithSource>[];
-    if (widget.surfaceForm != null &&
-        widget.surfaceForm != widget.selectedText) {
-      final candidates = deinflect(widget.surfaceForm!);
-      // Remove the dictionary form MeCab already gave us.
-      candidates.remove(widget.selectedText);
-
-      if (candidates.isNotEmpty) {
-        final altResults =
-            await queryService.searchMultipleWithSource(candidates);
-        alternativeResults =
-            altResults.where((r) => seenIds.add(r.entry.id)).toList();
-      }
-
-      // 3. Last resort: search by the raw surface form itself.
-      if (primaryResults.isEmpty && alternativeResults.isEmpty) {
-        return queryService.searchWithSource(widget.surfaceForm!);
-      }
-    }
-
-    if (alternativeResults.isEmpty) return primaryResults;
-    return [...primaryResults, ...alternativeResults];
+    return queryService.searchMultipleWithSource(allTerms.toList());
   }
 
   /// Search pitch accents for the dictionary form and all deinflected
   /// alternative base forms from the surface form.
   Future<List<PitchAccentResult>> _searchPitchAccents() async {
     final queryService = ref.read(dictionaryQueryServiceProvider);
+
+    // Collect all base-form terms to search pitch accents for.
+    final allTerms = <String>{widget.selectedText};
+    if (widget.surfaceForm != null) {
+      allTerms.addAll(deinflect(widget.surfaceForm!));
+    }
+
     final allResults = <PitchAccentResult>[];
     final seenKeys = <(String, int)>{};
-
-    void addResults(List<PitchAccentResult> results) {
-      for (final r in results) {
+    for (final term in allTerms) {
+      for (final r in await queryService.searchPitchAccents(term)) {
         if (seenKeys.add((r.reading, r.downstepPosition))) {
           allResults.add(r);
         }
       }
     }
-
-    // Primary: MeCab's dictionary form.
-    addResults(await queryService.searchPitchAccents(widget.selectedText));
-
-    // Also search for deinflected alternatives.
-    if (widget.surfaceForm != null &&
-        widget.surfaceForm != widget.selectedText) {
-      final candidates = deinflect(widget.surfaceForm!);
-      candidates.remove(widget.selectedText);
-      for (final candidate in candidates) {
-        addResults(await queryService.searchPitchAccents(candidate));
-      }
-
-      // Fallback: surface form.
-      if (allResults.isEmpty) {
-        addResults(await queryService.searchPitchAccents(widget.surfaceForm!));
-      }
-    }
-
     return allResults;
   }
 
