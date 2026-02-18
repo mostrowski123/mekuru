@@ -31,11 +31,6 @@ class LibraryScreen extends ConsumerWidget {
         title: const Text('Library'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Import EPUB',
-            onPressed: importState.isImporting ? null : () => _importEpub(ref),
-          ),
-          IconButton(
             icon: const Icon(Icons.sort),
             tooltip: 'Sort: ${librarySortLabel(sortOrder)}',
             onPressed: () {
@@ -54,6 +49,11 @@ class LibraryScreen extends ConsumerWidget {
             },
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: importState.isImporting ? null : () => _importEpub(ref),
+        tooltip: 'Import EPUB',
+        child: const Icon(Icons.add),
       ),
       body: Column(
         children: [

@@ -38,14 +38,14 @@ class _DictionaryManagerScreenState
             tooltip: 'Help',
             onPressed: () => _showHelpDialog(context),
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Import Dictionary',
-            onPressed: importState.isImporting
-                ? null
-                : () => _importDictionary(context, ref),
-          ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: importState.isImporting
+            ? null
+            : () => _importDictionary(context, ref),
+        tooltip: 'Import Dictionary',
+        child: const Icon(Icons.add),
       ),
       body: Column(
         children: [
@@ -457,7 +457,8 @@ class _DictionaryManagerScreenState
 
   Future<void> _importDictionary(BuildContext context, WidgetRef ref) async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.any,
+      type: FileType.custom,
+      allowedExtensions: ['zip', 'json'],
       allowMultiple: false,
     );
 
