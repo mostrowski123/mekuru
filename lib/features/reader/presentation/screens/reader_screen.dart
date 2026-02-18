@@ -977,7 +977,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 controller: scrollController,
                 children: [
                   Text(
-                    'Display Settings',
+                    'Quick Settings',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 24),
@@ -1026,11 +1026,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   const SizedBox(height: 16),
 
                   // ── Color Mode ──
-                  Text(
-                    'Color Mode',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
                   SegmentedButton<ColorMode>(
                     segments: const [
                       ButtonSegment(
@@ -1055,7 +1050,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       notifier.setColorMode(selection.first);
                     },
                   ),
-                  // ── Sepia Intensity ──
                   if (settings.colorMode == ColorMode.sepia) ...[
                     const SizedBox(height: 12),
                     Row(
@@ -1078,210 +1072,97 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   ],
                   const SizedBox(height: 16),
 
-                  // ── Keep Screen On ──
+                  // ── Vertical Text (per-book) ──
                   SwitchListTile(
-                    title: const Text('Keep Screen On'),
-                    secondary: const Icon(Icons.lightbulb_outline),
-                    value: settings.keepScreenOn,
-                    onChanged: (value) {
-                      AppHaptics.light();
-                      notifier.setKeepScreenOn(value);
-                      if (value) {
-                        WakelockPlus.enable();
-                      } else {
-                        WakelockPlus.disable();
-                      }
-                    },
+                    title: const Text('Vertical Text'),
+                    subtitle: Text(
+                      bookSupportsVerticalText(_bookLanguage)
+                          ? 'This book'
+                          : 'Not available for this book\'s language',
+                    ),
+                    value: settings.verticalText,
+                    onChanged: bookSupportsVerticalText(_bookLanguage)
+                        ? (value) {
+                            AppHaptics.medium();
+                            notifier.setVerticalText(value);
+                          }
+                        : null,
+                    secondary: const Icon(Icons.text_rotation_angledown),
                   ),
-                  const SizedBox(height: 8),
-
-                  // ── Advanced Section ──
-                  ExpansionTile(
-                    title: const Text('Advanced'),
-                    leading: const Icon(Icons.tune),
-                    initiallyExpanded: false,
-                    children: [
-                      SwitchListTile(
-                        title: const Text('Vertical Text'),
-                        subtitle: Text(
-                          bookSupportsVerticalText(_bookLanguage)
-                              ? 'Toggle vertical/horizontal text layout'
-                              : 'Not available for this book\'s language',
-                        ),
-                        value: settings.verticalText,
-                        onChanged: bookSupportsVerticalText(_bookLanguage)
-                            ? (value) {
-                                AppHaptics.medium();
-                                notifier.setVerticalText(value);
-                              }
-                            : null,
-                        secondary: const Icon(
-                          Icons.text_rotation_angledown,
-                        ),
+                  if (_isNonNativeDisplayMode(settings))
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
                       ),
-                      // Show a warning when the display mode differs from
-                      // what the book was originally formatted for.
-                      if (_isNonNativeDisplayMode(settings))
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _nonNativeDisplayWarning(settings),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Reading Direction',
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _nonNativeDisplayWarning(settings),
                               style: Theme.of(context)
                                   .textTheme
-                                  .titleMedium,
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                             ),
-                            const SizedBox(height: 8),
-                            SegmentedButton<ReaderDirection>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: ReaderDirection.rtl,
-                                  label: Text('Right to Left'),
-                                ),
-                                ButtonSegment(
-                                  value: ReaderDirection.ltr,
-                                  label: Text('Left to Right'),
-                                ),
-                              ],
-                              selected: {settings.readingDirection},
-                              onSelectionChanged: (selection) {
-                                AppHaptics.medium();
-                                notifier.setReadingDirection(
-                                  selection.first,
-                                );
-                              },
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+
+                  // ── Reading Direction (per-book) ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Reading Direction',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'This book',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SegmentedButton<ReaderDirection>(
+                          segments: const [
+                            ButtonSegment(
+                              value: ReaderDirection.rtl,
+                              label: Text('Right to Left'),
+                            ),
+                            ButtonSegment(
+                              value: ReaderDirection.ltr,
+                              label: Text('Left to Right'),
                             ),
                           ],
+                          selected: {settings.readingDirection},
+                          onSelectionChanged: (selection) {
+                            AppHaptics.medium();
+                            notifier.setReadingDirection(selection.first);
+                          },
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchListTile(
-                        title: const Text('Page Turn Animation'),
-                        subtitle: const Text(
-                          'Not supported with this viewer',
-                        ),
-                        value: settings.pageTurnAnimationEnabled,
-                        onChanged: null,
-                        secondary: const Icon(
-                          Icons.animation_outlined,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Horizontal Margin: '
-                              '${settings.horizontalPadding}px',
-                            ),
-                            Slider(
-                              value: settings.horizontalPadding
-                                  .toDouble(),
-                              min: 0,
-                              max: 100,
-                              divisions: 20,
-                              onChanged: (value) {
-                                AppHaptics.light();
-                                notifier.setHorizontalPadding(
-                                  value.round(),
-                                );
-                              },
-                            ),
-                            Text(
-                              'Vertical Margin: '
-                              '${settings.verticalPadding}px',
-                            ),
-                            Slider(
-                              value: settings.verticalPadding
-                                  .toDouble(),
-                              min: 0,
-                              max: 100,
-                              divisions: 20,
-                              onChanged: (value) {
-                                AppHaptics.light();
-                                notifier.setVerticalPadding(
-                                  value.round(),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Icon(Icons.swipe),
-                                const SizedBox(width: 8),
-                                const Text('Swipe Sensitivity'),
-                                const Spacer(),
-                                Text(
-                                  '${(settings.swipeSensitivity * 100).round()}%',
-                                ),
-                              ],
-                            ),
-                            Slider(
-                              value: settings.swipeSensitivity,
-                              min: 0.01,
-                              max: 0.20,
-                              divisions: 19,
-                              label:
-                                  '${(settings.swipeSensitivity * 100).round()}%',
-                              onChanged: (value) {
-                                AppHaptics.light();
-                                notifier.setSwipeSensitivity(value);
-                              },
-                            ),
-                            const Text(
-                              'Lower = less finger movement needed to swipe',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),

@@ -6,8 +6,10 @@ import 'features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/data/repositories/book_repository.dart';
 import 'features/library/presentation/screens/library_screen.dart';
+import 'features/reader/presentation/providers/reader_providers.dart';
 import 'features/reader/presentation/screens/reader_screen.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
+import 'features/settings/presentation/screens/settings_screen.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
 import 'main.dart' show navigatorKey, scaffoldMessengerKey, databaseProvider;
 import 'shared/theme/app_theme.dart';
@@ -26,6 +28,7 @@ class MekuruApp extends ConsumerWidget {
     ref.read(ankidroidConfigProvider.notifier).loadPersistedSettings();
     ref.read(startupScreenProvider.notifier).loadPersistedSettings();
     ref.read(autoFocusSearchProvider.notifier).loadPersistedSettings();
+    ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
 
@@ -60,6 +63,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
     const LibraryScreen(),
     DictionarySearchScreen(key: _dictionaryKey),
     const VocabularyScreen(),
+    const SettingsScreen(),
   ];
 
   @override
@@ -112,9 +116,14 @@ class _MainShellState extends ConsumerState<_MainShell> {
             label: 'Dictionary',
           ),
           NavigationDestination(
-            icon: Icon(Icons.list_alt_outlined),
-            selectedIcon: Icon(Icons.list_alt),
+            icon: Icon(Icons.bookmark_border),
+            selectedIcon: Icon(Icons.bookmark),
             label: 'Vocabulary',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),

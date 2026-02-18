@@ -9,7 +9,6 @@ import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
-import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:path/path.dart' as p;
 
@@ -36,16 +35,6 @@ class LibraryScreen extends ConsumerWidget {
             onPressed: () {
               AppHaptics.light();
               _showSortPicker(context, ref, sortOrder);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Settings',
-            onPressed: () {
-              AppHaptics.light();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
             },
           ),
         ],

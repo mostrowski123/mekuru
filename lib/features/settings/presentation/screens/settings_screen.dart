@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
@@ -41,6 +43,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colorTheme = ref.watch(appColorThemeProvider);
     final startupScreen = ref.watch(startupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
+    final readerSettings = ref.watch(readerSettingsProvider);
+    final readerNotifier = ref.read(readerSettingsProvider.notifier);
     final kanjiVgState = ref.watch(kanjiVgProvider);
     final jpdbFreqState = ref.watch(jpdbFreqProvider);
     final jmdictState = ref.watch(jmdictProvider);
@@ -51,6 +55,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          // ── General ──
+          _SectionHeader(title: 'General'),
+          ListTile(
+            leading: Icon(
+              Icons.home_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Startup Screen'),
+            subtitle: Text(startupScreen.label),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              _showStartupScreenPicker(context, ref, startupScreen);
+            },
+          ),
+          const Divider(),
+
           // ── Appearance ──
           _SectionHeader(title: 'Appearance'),
           ListTile(
@@ -79,18 +100,151 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _showColorThemePicker(context, ref, colorTheme);
             },
           ),
+          const Divider(),
+
+          // ── Reading Defaults ──
+          _SectionHeader(title: 'Reading Defaults'),
           ListTile(
             leading: Icon(
-              Icons.home_outlined,
+              Icons.text_fields,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Startup Screen'),
-            subtitle: Text(startupScreen.label),
+            title: const Text('Font Size'),
+            subtitle: Text('${readerSettings.fontSize.round()} pt'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Slider(
+              value: readerSettings.fontSize,
+              min: 12,
+              max: 32,
+              divisions: 20,
+              label: '${readerSettings.fontSize.round()}',
+              onChanged: (value) {
+                AppHaptics.light();
+                readerNotifier.setFontSize(value);
+              },
+            ),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.color_lens_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Color Mode'),
+            subtitle: Text(_colorModeLabel(readerSettings.colorMode)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              _showStartupScreenPicker(context, ref, startupScreen);
+              _showColorModePicker(context, ref, readerSettings.colorMode);
             },
+          ),
+          if (readerSettings.colorMode == ColorMode.sepia) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(Icons.coffee, size: 20, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  const Text('Sepia Intensity'),
+                  Expanded(
+                    child: Slider(
+                      value: readerSettings.sepiaIntensity,
+                      min: 0.0,
+                      max: 1.0,
+                      onChanged: (value) {
+                        AppHaptics.light();
+                        readerNotifier.setSepiaIntensity(value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          SwitchListTile(
+            secondary: Icon(
+              Icons.lightbulb_outline,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Keep Screen On'),
+            subtitle: const Text('Prevent screen from sleeping while reading'),
+            value: readerSettings.keepScreenOn,
+            onChanged: (value) {
+              AppHaptics.light();
+              readerNotifier.setKeepScreenOn(value);
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Horizontal Margin: ${readerSettings.horizontalPadding}px',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                Slider(
+                  value: readerSettings.horizontalPadding.toDouble(),
+                  min: 0,
+                  max: 100,
+                  divisions: 20,
+                  onChanged: (value) {
+                    AppHaptics.light();
+                    readerNotifier.setHorizontalPadding(value.round());
+                  },
+                ),
+                Text(
+                  'Vertical Margin: ${readerSettings.verticalPadding}px',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                Slider(
+                  value: readerSettings.verticalPadding.toDouble(),
+                  min: 0,
+                  max: 100,
+                  divisions: 20,
+                  onChanged: (value) {
+                    AppHaptics.light();
+                    readerNotifier.setVerticalPadding(value.round());
+                  },
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.swipe, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    const Text('Swipe Sensitivity'),
+                    const Spacer(),
+                    Text('${(readerSettings.swipeSensitivity * 100).round()}%'),
+                  ],
+                ),
+                Slider(
+                  value: readerSettings.swipeSensitivity,
+                  min: 0.01,
+                  max: 0.20,
+                  divisions: 19,
+                  label: '${(readerSettings.swipeSensitivity * 100).round()}%',
+                  onChanged: (value) {
+                    AppHaptics.light();
+                    readerNotifier.setSwipeSensitivity(value);
+                  },
+                ),
+                Text(
+                  'Lower = less finger movement needed to swipe',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
           const Divider(),
 
@@ -160,7 +314,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             title: const Text('Auto-Focus Search'),
             subtitle:
-                const Text('Open keyboard when dictionary page is loaded'),
+                const Text('Open keyboard when dictionary tab is selected'),
             value: ref.watch(autoFocusSearchProvider),
             onChanged: (value) {
               AppHaptics.light();
@@ -171,9 +325,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(),
 
-          // ── AnkiDroid (Android only) ──
+          // ── Vocabulary & Export ──
           if (defaultTargetPlatform == TargetPlatform.android) ...[
-            _SectionHeader(title: 'AnkiDroid'),
+            _SectionHeader(title: 'Vocabulary & Export'),
             ListTile(
               leading: Icon(
                 Icons.electric_bolt_outlined,
@@ -195,8 +349,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(),
           ],
 
-          // ── Assets ──
-          _SectionHeader(title: 'Assets'),
+          // ── Downloads ──
+          _SectionHeader(title: 'Downloads'),
 
           // KanjiVG
           _KanjiVgTile(state: kanjiVgState, theme: theme),
@@ -414,8 +568,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(),
 
-          // ── Feedback ──
-          _SectionHeader(title: 'Feedback'),
+          // ── Feedback & About ──
+          _SectionHeader(title: 'About & Feedback'),
           ListTile(
             leading: Icon(
               Icons.feedback_outlined,
@@ -452,10 +606,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
           ),
-          const Divider(),
-
-          // ── About ──
-          _SectionHeader(title: 'About'),
           ListTile(
             leading: Icon(
               Icons.info_outline,
@@ -471,12 +621,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               );
             },
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
   // ── Helpers ──
+
+  static String _colorModeLabel(ColorMode mode) => switch (mode) {
+        ColorMode.normal => 'Normal',
+        ColorMode.sepia => 'Sepia',
+        ColorMode.dark => 'Dark',
+      };
+
+  static IconData _colorModeIcon(ColorMode mode) => switch (mode) {
+        ColorMode.normal => Icons.brightness_5,
+        ColorMode.sepia => Icons.filter_vintage,
+        ColorMode.dark => Icons.dark_mode,
+      };
+
+  void _showColorModePicker(
+    BuildContext context,
+    WidgetRef ref,
+    ColorMode currentMode,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Color Mode',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            const Divider(height: 1),
+            for (final mode in ColorMode.values)
+              ListTile(
+                leading: Icon(_colorModeIcon(mode)),
+                title: Text(_colorModeLabel(mode)),
+                trailing: currentMode == mode
+                    ? Icon(Icons.check,
+                        color: Theme.of(context).colorScheme.primary)
+                    : null,
+                onTap: () {
+                  AppHaptics.medium();
+                  ref
+                      .read(readerSettingsProvider.notifier)
+                      .setColorMode(mode);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   static IconData _themeModeIcon(ThemeMode mode) => switch (mode) {
         ThemeMode.light => Icons.light_mode,
