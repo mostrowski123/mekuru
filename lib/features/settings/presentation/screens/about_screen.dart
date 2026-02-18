@@ -286,7 +286,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // JMdict attribution card
+          // JMdict & KANJIDIC attribution card
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -303,7 +303,7 @@ class AboutScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'JMdict',
+                          'JMdict & KANJIDIC',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -314,7 +314,8 @@ class AboutScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Japanese–multilingual dictionary data is provided by '
-                    'the JMdict/EDICT project, created by Jim Breen.',
+                    'the JMdict/EDICT project and kanji dictionary data by '
+                    'the KANJIDIC project, both created by Jim Breen.',
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 8),
@@ -347,7 +348,7 @@ class AboutScreen extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       children: [
-                        const TextSpan(text: 'Project: '),
+                        const TextSpan(text: 'JMdict: '),
                         TextSpan(
                           text: 'edrdg.org/wiki – JMdict-EDICT',
                           style: TextStyle(
@@ -362,74 +363,13 @@ class AboutScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // KANJIDIC attribution card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.language_outlined,
-                        color: theme.colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'KANJIDIC',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Kanji dictionary data is provided by the KANJIDIC '
-                    'project, created by Jim Breen.',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 8),
                   Text.rich(
                     TextSpan(
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       children: [
-                        const TextSpan(text: 'Licensed under the '),
-                        TextSpan(
-                          text: 'Creative Commons Attribution-Share Alike 4.0',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => _launchUrl(
-                                  'https://creativecommons.org/licenses/by-sa/4.0/',
-                                ),
-                        ),
-                        const TextSpan(text: ' license.'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text.rich(
-                    TextSpan(
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      children: [
-                        const TextSpan(text: 'Project: '),
+                        const TextSpan(text: 'KANJIDIC: '),
                         TextSpan(
                           text: 'edrdg.org/wiki – KANJIDIC',
                           style: TextStyle(
