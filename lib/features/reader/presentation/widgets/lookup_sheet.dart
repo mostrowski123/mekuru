@@ -6,7 +6,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/shared/widgets/dictionary_entry_card.dart';
+import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 
 class LookupSheet extends ConsumerStatefulWidget {
   const LookupSheet({
@@ -91,18 +91,40 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     return [...primaryResults, ...alternativeResults];
   }
 
-  /// Search pitch accents by expression; fallback to surface form.
+  /// Search pitch accents for the dictionary form and all deinflected
+  /// alternative base forms from the surface form.
   Future<List<PitchAccentResult>> _searchPitchAccents() async {
     final queryService = ref.read(dictionaryQueryServiceProvider);
-    final results =
-        await queryService.searchPitchAccents(widget.selectedText);
-    if (results.isNotEmpty) return results;
+    final allResults = <PitchAccentResult>[];
+    final seenKeys = <(String, int)>{};
 
+    void addResults(List<PitchAccentResult> results) {
+      for (final r in results) {
+        if (seenKeys.add((r.reading, r.downstepPosition))) {
+          allResults.add(r);
+        }
+      }
+    }
+
+    // Primary: MeCab's dictionary form.
+    addResults(await queryService.searchPitchAccents(widget.selectedText));
+
+    // Also search for deinflected alternatives.
     if (widget.surfaceForm != null &&
         widget.surfaceForm != widget.selectedText) {
-      return queryService.searchPitchAccents(widget.surfaceForm!);
+      final candidates = deinflect(widget.surfaceForm!);
+      candidates.remove(widget.selectedText);
+      for (final candidate in candidates) {
+        addResults(await queryService.searchPitchAccents(candidate));
+      }
+
+      // Fallback: surface form.
+      if (allResults.isEmpty) {
+        addResults(await queryService.searchPitchAccents(widget.surfaceForm!));
+      }
     }
-    return results;
+
+    return allResults;
   }
 
   @override
@@ -181,10 +203,13 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    // Show the surface form (what the user tapped) when available,
+    // falling back to the MeCab dictionary form.
+    final displayText = widget.surfaceForm ?? widget.selectedText;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Text(
-        widget.selectedText,
+        displayText,
         style: Theme.of(context).textTheme.headlineSmall,
         textAlign: TextAlign.center,
       ),
@@ -211,6 +236,9 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
           return const Center(child: Text('No definitions found.'));
         }
 
+        // Group results by (expression, reading).
+        final groups = _groupResults(results);
+
         return FutureBuilder<List<PitchAccentResult>>(
           future: _pitchAccentsFuture,
           builder: (context, pitchSnapshot) {
@@ -219,22 +247,19 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
             return ListView.separated(
               controller: scrollController,
               shrinkWrap: widget.showAtTop,
-              itemCount: results.length,
+              itemCount: groups.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final result = results[index];
-                // Filter pitch accents matching this entry's reading
-                final entryPitchAccents = _filterPitchAccents(
+                final group = groups[index];
+                final groupPitchAccents = _filterPitchAccents(
                   allPitchAccents,
-                  result.entry,
+                  group.first.entry,
                 );
-                return DictionaryEntryCard(
-                  entry: result.entry,
-                  dictionaryName: result.dictionaryName,
+                return GroupedDictionaryEntryCard(
+                  entries: group,
                   sentenceContext: widget.sentenceContext,
-                  pitchAccents: entryPitchAccents,
+                  pitchAccents: groupPitchAccents,
                   fontSize: fontSize,
-                  frequencyRank: result.frequencyRank,
                   onWordTap: _navigateToWord,
                 );
               },
@@ -245,6 +270,27 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     );
   }
 
+  /// Group a flat list of results by (expression, reading), preserving
+  /// the within-group order (dictionary sort order from SQL).
+  List<List<DictionaryEntryWithSource>> _groupResults(
+    List<DictionaryEntryWithSource> results,
+  ) {
+    final groups = <(String, String), List<DictionaryEntryWithSource>>{};
+    final groupOrder = <(String, String)>[];
+
+    for (final r in results) {
+      final key = (r.entry.expression, r.entry.reading);
+      if (groups.containsKey(key)) {
+        groups[key]!.add(r);
+      } else {
+        groups[key] = [r];
+        groupOrder.add(key);
+      }
+    }
+
+    return [for (final key in groupOrder) groups[key]!];
+  }
+
   /// Filter pitch accents to match this entry's reading or expression.
   List<PitchAccentResult> _filterPitchAccents(
     List<PitchAccentResult> allPitchAccents,
@@ -253,17 +299,15 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     if (allPitchAccents.isEmpty) return [];
 
     final filtered = allPitchAccents.where((p) {
-      // Match if pitch reading matches entry reading
       if (entry.reading.isNotEmpty && p.reading == entry.reading) return true;
-      // Match if pitch reading matches expression (for kana-only words)
       if (p.reading == entry.expression) return true;
-      // Match if pitch has no reading (legacy data)
       if (p.reading.isEmpty) return true;
       return false;
     });
 
-    // Deduplicate by (reading, downstepPosition) across dictionaries
     final seen = <(String, int)>{};
-    return filtered.where((p) => seen.add((p.reading, p.downstepPosition))).toList();
+    return filtered
+        .where((p) => seen.add((p.reading, p.downstepPosition)))
+        .toList();
   }
 }
