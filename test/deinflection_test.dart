@@ -168,6 +168,72 @@ void main() {
     });
   });
 
+  // ── する verbs (サ変) ──────────────────────────────────────────
+
+  group('deinflect — する verbs', () {
+    test('する produces noun stem (駆使する → 駆使)', () {
+      final results = deinflect('駆使する');
+      expect(results, contains('駆使'));
+    });
+
+    test('する produces noun stem for kana input (くしする → くし)', () {
+      final results = deinflect('くしする');
+      expect(results, contains('くし'));
+    });
+
+    test('した produces noun stem (駆使した → 駆使)', () {
+      final results = deinflect('駆使した');
+      expect(results, contains('駆使'));
+    });
+
+    test('した still produces す candidate for godan verbs (話した → 話す)', () {
+      final results = deinflect('話した');
+      expect(results, contains('話す'));
+    });
+
+    test('して produces noun stem (駆使して → 駆使)', () {
+      final results = deinflect('駆使して');
+      expect(results, contains('駆使'));
+    });
+
+    test('して still produces す candidate for godan verbs (話して → 話す)', () {
+      final results = deinflect('話して');
+      expect(results, contains('話す'));
+    });
+
+    test('します produces noun stem (駆使します → 駆使)', () {
+      final results = deinflect('駆使します');
+      expect(results, contains('駆使'));
+    });
+
+    test('します still produces す candidate for godan verbs (話します → 話す)',
+        () {
+      final results = deinflect('話します');
+      expect(results, contains('話す'));
+    });
+
+    test('しない produces noun stem and する form (駆使しない → 駆使, 駆使する)',
+        () {
+      final results = deinflect('駆使しない');
+      expect(results, contains('駆使'));
+      expect(results, contains('駆使する'));
+    });
+
+    test('される produces noun stem and する form (駆使される → 駆使, 駆使する)',
+        () {
+      final results = deinflect('駆使される');
+      expect(results, contains('駆使'));
+      expect(results, contains('駆使する'));
+    });
+
+    test('させる produces noun stem and する form (駆使させる → 駆使, 駆使する)',
+        () {
+      final results = deinflect('駆使させる');
+      expect(results, contains('駆使'));
+      expect(results, contains('駆使する'));
+    });
+  });
+
   // ── Edge cases ──────────────────────────────────────────────────
 
   group('deinflect — edge cases', () {
