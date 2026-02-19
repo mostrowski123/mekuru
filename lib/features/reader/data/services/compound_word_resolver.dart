@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+import 'package:mekuru/features/reader/data/services/deinflection.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 
 /// Result of compound word resolution — either a multi-token compound that
@@ -68,6 +69,7 @@ class CompoundWordResolver {
       final candidate = _buildCandidate(tokens, tappedIdx, end);
       if (candidate == null) continue; // non-contiguous or unaligned
 
+      // Check exact dictionary match first.
       final hasMatch = await _queryService.hasMatch(candidate.surface);
       if (hasMatch) {
         debugPrint(
@@ -82,6 +84,25 @@ class CompoundWordResolver {
           tokenStartOffset: singleResult.tokenStartOffset,
           tokenCount: end - tappedIdx,
         );
+      }
+
+      // Try deinflected forms of the compound (e.g. 行って → 行く).
+      final deinflections = deinflect(candidate.surface);
+      for (final d in deinflections) {
+        if (await _queryService.hasMatch(d)) {
+          debugPrint(
+            '[Compound] Found deinflected compound match: '
+            '"${candidate.surface}" → "$d" (${end - tappedIdx} tokens)',
+          );
+          return CompoundWordResult(
+            surfaceForm: candidate.surface,
+            dictionaryForm: d,
+            reading: candidate.reading,
+            sentenceContext: singleResult.sentenceContext,
+            tokenStartOffset: singleResult.tokenStartOffset,
+            tokenCount: end - tappedIdx,
+          );
+        }
       }
     }
 

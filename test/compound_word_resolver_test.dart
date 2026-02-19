@@ -172,6 +172,110 @@ void main() {
     });
   });
 
+  // ── Deinflected compound match ──────────────────────────────────
+
+  group('CompoundWordResolver — deinflected compound', () {
+    test('matches compound via deinflection (te-form → dictionary form)',
+        () async {
+      // 行く is in the dictionary; 行って is not.
+      // MeCab splits 行ってあげて into [行っ, て, あげ, て].
+      // The resolver should try 行って, deinflect it to 行く, and match.
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '行く',
+          reading: const Value('いく'),
+          glossaries: jsonEncode(['to go']),
+          dictionaryId: enabledDictId,
+        ),
+      ]);
+
+      final tokens = makeContiguousTokens([
+        ('行っ', 'イッ', '行う'),
+        ('て', 'テ', 'て'),
+        ('あげ', 'アゲ', 'あげる'),
+        ('て', 'テ', 'て'),
+      ]);
+      final id = buildIdentification(tokens: tokens, tappedIndex: 0);
+
+      final result = await resolver.resolve(id);
+
+      expect(result.surfaceForm, '行って');
+      expect(result.dictionaryForm, '行く');
+      expect(result.tokenCount, 2);
+    });
+
+    test('prefers exact compound match over deinflected match', () async {
+      // If the compound surface itself is in the dictionary, use it directly.
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '行って',
+          reading: const Value('いって'),
+          glossaries: jsonEncode(['te-form of to go']),
+          dictionaryId: enabledDictId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '行く',
+          reading: const Value('いく'),
+          glossaries: jsonEncode(['to go']),
+          dictionaryId: enabledDictId,
+        ),
+      ]);
+
+      final tokens = makeContiguousTokens([
+        ('行っ', 'イッ', '行う'),
+        ('て', 'テ', 'て'),
+      ]);
+      final id = buildIdentification(tokens: tokens, tappedIndex: 0);
+
+      final result = await resolver.resolve(id);
+
+      // Exact match should win — dictionaryForm equals surfaceForm.
+      expect(result.surfaceForm, '行って');
+      expect(result.dictionaryForm, '行って');
+      expect(result.tokenCount, 2);
+    });
+
+    test('deinflected compound preserves reading from tokens', () async {
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          glossaries: jsonEncode(['to eat']),
+          dictionaryId: enabledDictId,
+        ),
+      ]);
+
+      // 食べて → deinflects to 食べる
+      final tokens = makeContiguousTokens([
+        ('食べ', 'タベ', '食べる'),
+        ('て', 'テ', 'て'),
+      ]);
+      final id = buildIdentification(tokens: tokens, tappedIndex: 0);
+
+      final result = await resolver.resolve(id);
+
+      expect(result.surfaceForm, '食べて');
+      expect(result.dictionaryForm, '食べる');
+      expect(result.reading, 'タベテ'); // concatenated from tokens
+      expect(result.tokenCount, 2);
+    });
+
+    test('falls back to single token when no deinflection matches', () async {
+      // No entry for any deinflection of ゴロゴロして
+      final tokens = makeContiguousTokens([
+        ('ゴロゴロ', 'ゴロゴロ', 'ゴロゴロ'),
+        ('し', 'シ', 'する'),
+        ('て', 'テ', 'て'),
+      ]);
+      final id = buildIdentification(tokens: tokens, tappedIndex: 0);
+
+      final result = await resolver.resolve(id);
+
+      expect(result.surfaceForm, 'ゴロゴロ');
+      expect(result.tokenCount, 1);
+    });
+  });
+
   // ── Falls back to single token ─────────────────────────────────
 
   group('CompoundWordResolver — single token fallback', () {
