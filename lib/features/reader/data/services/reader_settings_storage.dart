@@ -9,8 +9,6 @@ abstract class ReaderSettingsStorage {
 
 class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _fontSizeKey = 'reader.font_size';
-  static const _verticalTextKey = 'reader.vertical_text';
-  static const _readingDirectionKey = 'reader.reading_direction';
   static const _pageTurnAnimationKey = 'reader.page_turn_animation';
   static const _horizontalPaddingKey = 'reader.horizontal_padding';
   static const _verticalPaddingKey = 'reader.vertical_padding';
@@ -24,8 +22,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     final prefs = await SharedPreferences.getInstance();
     final hasSavedSettings =
         prefs.containsKey(_fontSizeKey) ||
-        prefs.containsKey(_verticalTextKey) ||
-        prefs.containsKey(_readingDirectionKey) ||
         prefs.containsKey(_pageTurnAnimationKey) ||
         prefs.containsKey(_horizontalPaddingKey) ||
         prefs.containsKey(_verticalPaddingKey) ||
@@ -40,10 +36,8 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
 
     return ReaderSettings(
       fontSize: prefs.getDouble(_fontSizeKey) ?? 18,
-      verticalText: prefs.getBool(_verticalTextKey) ?? true,
-      readingDirection: readerDirectionFromString(
-        prefs.getString(_readingDirectionKey),
-      ),
+      // verticalText and readingDirection are per-book settings stored in the
+      // Books table — not loaded from global preferences. Use class defaults.
       pageTurnAnimationEnabled: prefs.getBool(_pageTurnAnimationKey) ?? true,
       horizontalPadding: prefs.getInt(_horizontalPaddingKey) ?? 28,
       verticalPadding: prefs.getInt(_verticalPaddingKey) ?? 28,
@@ -58,11 +52,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   Future<void> save(ReaderSettings settings) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_fontSizeKey, settings.fontSize);
-    await prefs.setBool(_verticalTextKey, settings.verticalText);
-    await prefs.setString(
-      _readingDirectionKey,
-      settings.readingDirection.storageValue,
-    );
+    // verticalText and readingDirection are per-book — not saved globally.
     await prefs.setBool(
       _pageTurnAnimationKey,
       settings.pageTurnAnimationEnabled,

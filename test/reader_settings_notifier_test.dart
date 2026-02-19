@@ -69,8 +69,6 @@ void main() {
       final fakeStorage = _FakeReaderSettingsStorage(
         initialSettings: const ReaderSettings(
           fontSize: 24,
-          verticalText: false,
-          readingDirection: ReaderDirection.ltr,
           pageTurnAnimationEnabled: false,
         ),
       );
@@ -84,29 +82,26 @@ void main() {
       final settings = container.read(readerSettingsProvider);
 
       expect(settings.fontSize, 24);
-      expect(settings.verticalText, isFalse);
-      expect(settings.readingDirection, ReaderDirection.ltr);
+      // verticalText and readingDirection are per-book, not loaded from global.
+      expect(settings.verticalText, isTrue); // class default
+      expect(settings.readingDirection, ReaderDirection.rtl); // class default
       expect(settings.pageTurnAnimationEnabled, isFalse);
     });
 
-    test('persists updates for all reader settings', () async {
+    test('persists updates for global reader settings', () async {
       final fakeStorage = _FakeReaderSettingsStorage();
       final container = _createContainer(storage: fakeStorage);
       addTearDown(container.dispose);
 
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.setFontSize(20);
-      notifier.setVerticalText(false);
-      notifier.setReadingDirection(ReaderDirection.ltr);
       notifier.setPageTurnAnimationEnabled(false);
 
       await Future<void>.delayed(Duration.zero);
 
-      expect(fakeStorage.saveCalls, greaterThanOrEqualTo(4));
+      expect(fakeStorage.saveCalls, greaterThanOrEqualTo(2));
       expect(fakeStorage.savedSettings, isNotNull);
       expect(fakeStorage.savedSettings!.fontSize, 20);
-      expect(fakeStorage.savedSettings!.verticalText, isFalse);
-      expect(fakeStorage.savedSettings!.readingDirection, ReaderDirection.ltr);
       expect(fakeStorage.savedSettings!.pageTurnAnimationEnabled, isFalse);
     });
 
