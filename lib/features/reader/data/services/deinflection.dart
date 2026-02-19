@@ -40,6 +40,19 @@ class _DeinflectionRule {
 /// Longer suffixes are listed first for documentation clarity, but since all
 /// rules are checked independently, ordering does not affect correctness.
 const _deinflectionRules = [
+  // ── する verbs (サ変) ────────────────────────────────────────────
+  // Dictionary entries often store the noun stem only (e.g., 駆使),
+  // but MeCab may return the する-verb form (e.g., 駆使する).
+  // These rules strip する and its conjugations to produce the noun stem.
+  //   駆使する → 駆使 (dictionary form)
+  _DeinflectionRule('する', ['']),
+  //   駆使しない → 駆使する, 駆使 (negative)
+  _DeinflectionRule('しない', ['する', '']),
+  //   駆使される → 駆使する, 駆使 (passive)
+  _DeinflectionRule('される', ['する', '']),
+  //   駆使させる → 駆使する, 駆使 (causative)
+  _DeinflectionRule('させる', ['する', '']),
+
   // ── Te-form (て / で) ────────────────────────────────────────────
   // Godan consonant-stem verbs:
   //   行く → 行って, 買う → 買って, 待つ → 待って, 走る → 走って (godan る)
@@ -50,8 +63,8 @@ const _deinflectionRules = [
   _DeinflectionRule('いて', ['く']),
   //   泳ぐ → 泳いで
   _DeinflectionRule('いで', ['ぐ']),
-  //   話す → 話して
-  _DeinflectionRule('して', ['す']),
+  //   話す → 話して, also する te-form: 駆使して → 駆使す, 駆使
+  _DeinflectionRule('して', ['す', '']),
   // I-adjective te-form: 大きい → 大きくて
   _DeinflectionRule('くて', ['い']),
   // Ichidan verbs: 食べる → 食べて
@@ -62,7 +75,8 @@ const _deinflectionRules = [
   _DeinflectionRule('んだ', ['む', 'ぶ', 'ぬ']),
   _DeinflectionRule('いた', ['く']),
   _DeinflectionRule('いだ', ['ぐ']),
-  _DeinflectionRule('した', ['す']),
+  //   話す → 話した, also する past: 駆使した → 駆使す, 駆使
+  _DeinflectionRule('した', ['す', '']),
   // I-adjective past: 大きい → 大きかった
   _DeinflectionRule('かった', ['い']),
   // Ichidan verbs: 食べる → 食べた
@@ -87,7 +101,8 @@ const _deinflectionRules = [
   // ── Masu-form (ます) ─────────────────────────────────────────────
   _DeinflectionRule('きます', ['く']),
   _DeinflectionRule('ぎます', ['ぐ']),
-  _DeinflectionRule('します', ['す']),
+  //   話す → 話します, also する polite: 駆使します → 駆使す, 駆使
+  _DeinflectionRule('します', ['す', '']),
   _DeinflectionRule('ちます', ['つ']),
   _DeinflectionRule('にます', ['ぬ']),
   _DeinflectionRule('びます', ['ぶ']),
