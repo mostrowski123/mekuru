@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mekuru Feature Graphics Preview</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #1f2937;
+      --accent: #f97316;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 0, #1e293b, #0f172a 50%);
+      color: var(--text);
+      font: 15px/1.45 "Segoe UI", Arial, sans-serif;
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      font-weight: 800;
+    }
+
+    p {
+      margin: 0 0 22px;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(17, 24, 39, 0.86);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      backdrop-filter: blur(6px);
+    }
+
+    .label {
+      margin: 2px 0 10px;
+      font-size: 14px;
+      color: #cbd5e1;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    img {
+      width: 100%;
+      max-width: 1024px;
+      border-radius: 10px;
+      display: block;
+      border: 1px solid #334155;
+      background: #0b132f;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mekuru Play Store Feature Graphics</h1>
+  <p>Open this file in a browser and pick the style you want to ship.</p>
+
+  <div class="grid">
+    <section class="card">
+      <div class="label"><span class="dot"></span>Option 1: Vertical Reader Hero</div>
+      <img src="option_1_vertical_reader.svg" alt="Option 1 preview" />
+    </section>
+
+    <section class="card">
+      <div class="label"><span class="dot"></span>Option 2: Study Workflow</div>
+      <img src="option_2_study_workflow.svg" alt="Option 2 preview" />
+    </section>
+
+    <section class="card">
+      <div class="label"><span class="dot"></span>Option 3: Minimal Brand</div>
+      <img src="option_3_minimal_brand.svg" alt="Option 3 preview" />
+    </section>
+
+    <section class="card">
+      <div class="label"><span class="dot"></span>Option 4: Day + Night Themes</div>
+      <img src="option_4_day_night.svg" alt="Option 4 preview" />
+    </section>
+  </div>
+</body>
+</html>

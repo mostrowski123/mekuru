@@ -1,0 +1,68 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#CF5562;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B2A35;stop-opacity:1" />
+    </linearGradient>
+    <filter id="dropShadow" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15" />
+      <feOffset dx="0" dy="10" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="500" fill="url(#bgGradient)" />
+
+  <!-- Background Circles -->
+  <circle cx="100" cy="100" r="150" fill="#FFFFFF" opacity="0.05" />
+  <circle cx="900" cy="400" r="200" fill="#FFFFFF" opacity="0.03" />
+
+  <!-- Device Frame -->
+  <g transform="translate(300, 50)" filter="url(#dropShadow)">
+    <rect x="0" y="0" width="424" height="850" rx="30" ry="30" fill="#000000" />
+    <rect x="12" y="12" width="400" height="826" rx="20" ry="20" fill="#F5F5F5" />
+    
+    <!-- Screen Content -->
+    <g transform="translate(30, 80)">
+      <!-- Vertical Text Columns -->
+      <rect x="330" y="0" width="20" height="300" rx="2" fill="#333333" opacity="0.8" />
+      <rect x="290" y="20" width="20" height="400" rx="2" fill="#333333" opacity="0.8" />
+      
+      <!-- Highlighted Section -->
+      <rect x="250" y="0" width="20" height="120" rx="2" fill="#333333" opacity="0.8" />
+      <rect x="245" y="130" width="30" height="80" rx="4" fill="#C94E5A" opacity="0.3" /> <!-- Highlight -->
+      <rect x="250" y="130" width="20" height="80" rx="2" fill="#333333" opacity="1.0" /> <!-- Text over highlight -->
+      <rect x="250" y="220" width="20" height="200" rx="2" fill="#333333" opacity="0.8" />
+
+      <rect x="210" y="40" width="20" height="350" rx="2" fill="#333333" opacity="0.8" />
+      <rect x="170" y="10" width="20" height="280" rx="2" fill="#333333" opacity="0.8" />
+    </g>
+
+    <!-- Popup Card -->
+    <g transform="translate(60, 250)">
+        <path d="M 220 20 L 235 5 L 235 35 Z" fill="#FFFFFF" /> <!-- Pointer -->
+        <rect x="0" y="0" width="300" height="140" rx="12" fill="#FFFFFF" filter="url(#dropShadow)" />
+        
+        <!-- Card Details -->
+        <rect x="20" y="20" width="80" height="30" rx="4" fill="#C94E5A" />
+        <rect x="110" y="25" width="100" height="10" rx="2" fill="#9E9E9E" />
+        <line x1="20" y1="60" x2="280" y2="60" stroke="#EEEEEE" stroke-width="2" />
+        <rect x="20" y="75" width="260" height="10" rx="2" fill="#757575" />
+        <rect x="20" y="95" width="240" height="10" rx="2" fill="#757575" />
+        
+        <!-- Add Icon -->
+        <circle cx="270" cy="35" r="12" fill="#C94E5A" />
+        <path d="M 264 35 L 276 35 M 270 29 L 270 41" stroke="#FFFFFF" stroke-width="2" />
+    </g>
+  </g>
+
+  <!-- Logo/Text -->
+  <text x="50" y="450" font-family="Arial, sans-serif" font-weight="bold" font-size="32" fill="#FFFFFF" opacity="0.9">mekuru</text>
+  <text x="50" y="480" font-family="Arial, sans-serif" font-size="16" fill="#FFFFFF" opacity="0.7">Immersive Japanese Reader</text>
+</svg>
