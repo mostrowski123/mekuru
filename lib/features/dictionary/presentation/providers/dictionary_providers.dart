@@ -89,6 +89,13 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
   @override
   DictionaryImportState build() => const DictionaryImportState();
 
+  /// Clear success and error messages.
+  void clearMessages() {
+    if (state.successMessage != null || state.error != null) {
+      state = const DictionaryImportState();
+    }
+  }
+
   /// Import a dictionary file. Detects format by extension:
   /// - `.zip` → single Yomitan dictionary
   /// - `.json` → Dexie collection export (multiple dictionaries)

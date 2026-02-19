@@ -24,6 +24,15 @@ class _DictionaryManagerScreenState
   List<dynamic>? _localOrder;
 
   @override
+  void dispose() {
+    // Clear any lingering success/error banners when leaving the screen.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(dictionaryImportProvider.notifier).clearMessages();
+    });
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final dictionariesAsync = ref.watch(dictionariesProvider);
     final importState = ref.watch(dictionaryImportProvider);

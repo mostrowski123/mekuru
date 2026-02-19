@@ -24,15 +24,14 @@ final exportVocabularyProvider = Provider.autoDispose<Future<void> Function({Set
     final repo = ref.read(vocabularyRepositoryProvider);
     final file = await repo.exportToCsv(selectedIds: selectedIds);
 
-    final savePath = await FilePicker.platform.saveFile(
+    final date = DateTime.now().toIso8601String().split('T').first;
+
+    await FilePicker.platform.saveFile(
       dialogTitle: 'Save Vocabulary CSV',
-      fileName: 'vocabulary_export.csv',
+      fileName: 'vocabulary_export_$date.csv',
       type: FileType.custom,
       allowedExtensions: ['csv'],
+      bytes: await file.readAsBytes(),
     );
-
-    if (savePath != null) {
-      await file.copy(savePath);
-    }
   };
 });

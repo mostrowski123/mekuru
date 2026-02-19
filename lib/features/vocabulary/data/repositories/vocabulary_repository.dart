@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart' as csv;
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
+import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -105,14 +105,7 @@ class VocabularyRepository {
     ];
 
     for (var word in words) {
-      String meanings = '';
-      try {
-        final List<dynamic> list = jsonDecode(word.glossaries);
-        meanings = list.join('; ');
-      } catch (e) {
-        meanings = word.glossaries;
-      }
-
+      final meanings = GlossaryParser.parse(word.glossaries).join('; ');
       final furigana = formatAnkiFurigana(word.expression, word.reading);
 
       rows.add([
