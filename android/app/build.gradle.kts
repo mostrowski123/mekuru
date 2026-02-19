@@ -5,6 +5,21 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+val releaseKeystorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+
+val releaseSigningConfigured =
+    !releaseKeystorePath.isNullOrBlank() &&
+    !releaseKeystorePassword.isNullOrBlank() &&
+    !releaseKeyAlias.isNullOrBlank() &&
+    !releaseKeyPassword.isNullOrBlank()
+
+val isReleaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true)
+}
+
 android {
     namespace = "moe.matthew.mekuru"
     compileSdk = flutter.compileSdkVersion
@@ -28,22 +43,24 @@ android {
     }
 
     signingConfigs {
-        if (System.getenv("RELEASE_KEYSTORE_PATH") != null) {
+        if (releaseSigningConfigured) {
             create("release") {
-                storeFile = file(System.getenv("RELEASE_KEYSTORE_PATH")!!)
-                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")!!
-                keyAlias = System.getenv("RELEASE_KEY_ALIAS")!!
-                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")!!
+                storeFile = file(releaseKeystorePath!!)
+                storePassword = releaseKeystorePassword!!
+                keyAlias = releaseKeyAlias!!
+                keyPassword = releaseKeyPassword!!
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = if (System.getenv("RELEASE_KEYSTORE_PATH") != null) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            } else if (isReleaseBuildRequested) {
+                throw org.gradle.api.GradleException(
+                    "Release signing is not configured. Set RELEASE_KEYSTORE_PATH, RELEASE_KEYSTORE_PASSWORD, RELEASE_KEY_ALIAS, and RELEASE_KEY_PASSWORD."
+                )
             }
         }
     }
