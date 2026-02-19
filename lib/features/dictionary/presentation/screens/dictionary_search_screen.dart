@@ -8,7 +8,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_stroke_order.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/shared/widgets/dictionary_entry_card.dart';
+import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 
 /// Dictionary search screen with live fuzzy search.
 ///
@@ -282,9 +282,23 @@ class DictionarySearchScreenState
     final query = _lastQuery;
     final isSingleKanji = query.length == 1 && _isCjk(query.codeUnitAt(0));
 
+    // Group results by (expression, reading) for unified display.
+    final groups = <(String, String), List<DictionaryEntryWithSource>>{};
+    final groupOrder = <(String, String)>[];
+    for (final r in results) {
+      final key = (r.entry.expression, r.entry.reading);
+      if (groups.containsKey(key)) {
+        groups[key]!.add(r);
+      } else {
+        groups[key] = [r];
+        groupOrder.add(key);
+      }
+    }
+    final groupedResults = [for (final key in groupOrder) groups[key]!];
+
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 16),
-      itemCount: results.length + (isSingleKanji ? 1 : 0),
+      itemCount: groupedResults.length + (isSingleKanji ? 1 : 0),
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         // Show stroke order as the first item for single-kanji searches
@@ -295,11 +309,9 @@ class DictionarySearchScreenState
           );
         }
         final resultIndex = isSingleKanji ? index - 1 : index;
-        final result = results[resultIndex];
-        return _SearchResultWithPitchAccents(
-          entry: result.entry,
-          dictionaryName: result.dictionaryName,
-          frequencyRank: result.frequencyRank,
+        final group = groupedResults[resultIndex];
+        return _GroupedSearchResultWithPitchAccents(
+          entries: group,
           fontSize: fontSize,
           onWordTap: _navigateToWord,
         );
@@ -407,40 +419,39 @@ bool _isCjk(int codeUnit) {
       (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
 }
 
-/// Thin wrapper that fetches pitch accents and delegates to [DictionaryEntryCard].
-class _SearchResultWithPitchAccents extends ConsumerStatefulWidget {
-  const _SearchResultWithPitchAccents({
-    required this.entry,
-    required this.dictionaryName,
+/// Thin wrapper that fetches pitch accents for a grouped result and
+/// delegates to [GroupedDictionaryEntryCard].
+class _GroupedSearchResultWithPitchAccents extends ConsumerStatefulWidget {
+  const _GroupedSearchResultWithPitchAccents({
+    required this.entries,
     required this.fontSize,
     required this.onWordTap,
-    this.frequencyRank,
   });
 
-  final DictionaryEntry entry;
-  final String dictionaryName;
-  final int? frequencyRank;
+  final List<DictionaryEntryWithSource> entries;
   final double fontSize;
   final void Function(String word) onWordTap;
 
   @override
-  ConsumerState<_SearchResultWithPitchAccents> createState() =>
-      _SearchResultWithPitchAccentsState();
+  ConsumerState<_GroupedSearchResultWithPitchAccents> createState() =>
+      _GroupedSearchResultWithPitchAccentsState();
 }
 
-class _SearchResultWithPitchAccentsState
-    extends ConsumerState<_SearchResultWithPitchAccents> {
+class _GroupedSearchResultWithPitchAccentsState
+    extends ConsumerState<_GroupedSearchResultWithPitchAccents> {
   late Future<List<PitchAccentResult>> _pitchAccentsFuture;
+
+  DictionaryEntry get _primaryEntry => widget.entries.first.entry;
 
   @override
   void initState() {
     super.initState();
     _pitchAccentsFuture = ref
         .read(dictionaryQueryServiceProvider)
-        .searchPitchAccents(widget.entry.expression);
+        .searchPitchAccents(_primaryEntry.expression);
   }
 
-  /// Filter pitch accents to match this entry's reading or expression,
+  /// Filter pitch accents to match this group's reading or expression,
   /// then deduplicate by (reading, downstepPosition).
   List<PitchAccentResult> _filterPitchAccents(
     List<PitchAccentResult> allPitchAccents,
@@ -448,11 +459,11 @@ class _SearchResultWithPitchAccentsState
     if (allPitchAccents.isEmpty) return [];
 
     final filtered = allPitchAccents.where((p) {
-      if (widget.entry.reading.isNotEmpty &&
-          p.reading == widget.entry.reading) {
+      if (_primaryEntry.reading.isNotEmpty &&
+          p.reading == _primaryEntry.reading) {
         return true;
       }
-      if (p.reading == widget.entry.expression) return true;
+      if (p.reading == _primaryEntry.expression) return true;
       if (p.reading.isEmpty) return true;
       return false;
     });
@@ -469,12 +480,10 @@ class _SearchResultWithPitchAccentsState
       future: _pitchAccentsFuture,
       builder: (context, snapshot) {
         final filtered = _filterPitchAccents(snapshot.data ?? []);
-        return DictionaryEntryCard(
-          entry: widget.entry,
-          dictionaryName: widget.dictionaryName,
+        return GroupedDictionaryEntryCard(
+          entries: widget.entries,
           pitchAccents: filtered,
           fontSize: widget.fontSize,
-          frequencyRank: widget.frequencyRank,
           onWordTap: widget.onWordTap,
         );
       },

@@ -1,12 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:mekuru/shared/widgets/furigana_text.dart';
 
-/// Displays a Japanese expression with furigana, where each kanji character
-/// is individually tappable.
+/// Displays a Japanese expression with furigana only above kanji, where each
+/// kanji character is individually tappable.
 ///
-/// Kanji characters (CJK Unified Ideographs) get tap recognizers and are
-/// styled to indicate tappability. Non-kanji characters (hiragana, katakana,
-/// punctuation) are rendered as plain text.
+/// Kana portions are rendered as plain text at the normal baseline. Kanji
+/// characters get tap recognizers and are styled to indicate tappability.
 ///
 /// If [reading] is empty or matches [expression], only the expression is shown.
 class TappableExpressionText extends StatefulWidget {
@@ -59,6 +59,31 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
     }
   }
 
+  /// Build per-character spans for a text segment, making kanji tappable.
+  List<InlineSpan> _buildCharSpans(
+    String text,
+    TextStyle? baseStyle,
+    TextStyle? kanjiStyle,
+  ) {
+    final spans = <InlineSpan>[];
+    for (var i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (_isKanji(char.codeUnitAt(0))) {
+        final recognizer = TapGestureRecognizer()
+          ..onTap = () => widget.onKanjiTap(char);
+        _recognizers.add(recognizer);
+        spans.add(TextSpan(
+          text: char,
+          style: kanjiStyle,
+          recognizer: recognizer,
+        ));
+      } else {
+        spans.add(TextSpan(text: char, style: baseStyle));
+      }
+    }
+    return spans;
+  }
+
   @override
   Widget build(BuildContext context) {
     _disposeRecognizers();
@@ -79,30 +104,14 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
       decorationColor: theme.colorScheme.primary.withAlpha(100),
     );
 
-    // Build per-character spans for the expression
-    final spans = <InlineSpan>[];
-    for (var i = 0; i < widget.expression.length; i++) {
-      final char = widget.expression[i];
-      if (_isKanji(char.codeUnitAt(0))) {
-        final recognizer = TapGestureRecognizer()
-          ..onTap = () => widget.onKanjiTap(char);
-        _recognizers.add(recognizer);
-        spans.add(TextSpan(
-          text: char,
-          style: kanjiStyle,
-          recognizer: recognizer,
-        ));
-      } else {
-        spans.add(TextSpan(text: char));
-      }
-    }
-
-    final expressionWidget = Text.rich(
-      TextSpan(children: spans, style: exprStyle),
-    );
-
     if (!showFurigana) {
-      return expressionWidget;
+      // No furigana: render expression as a flat Text.rich with tappable kanji.
+      return Text.rich(
+        TextSpan(
+          children: _buildCharSpans(widget.expression, exprStyle, kanjiStyle),
+          style: exprStyle,
+        ),
+      );
     }
 
     final furiStyle = widget.furiganaStyle ??
@@ -112,13 +121,41 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
           height: 1.0,
         );
 
-    return Column(
+    final segments = segmentFurigana(widget.expression, widget.reading);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(widget.reading, style: furiStyle),
-        expressionWidget,
-      ],
+      children: segments.map((seg) {
+        if (seg.furigana != null) {
+          // Kanji segment: furigana above, tappable kanji below.
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                seg.furigana!,
+                style: furiStyle,
+                textAlign: TextAlign.center,
+              ),
+              Text.rich(
+                TextSpan(
+                  children:
+                      _buildCharSpans(seg.text, exprStyle, kanjiStyle),
+                  style: exprStyle,
+                ),
+              ),
+            ],
+          );
+        }
+        // Kana segment: plain text with tappable kanji detection
+        // (rare, but handles edge cases like 々).
+        return Text.rich(
+          TextSpan(
+            children: _buildCharSpans(seg.text, exprStyle, kanjiStyle),
+            style: exprStyle,
+          ),
+        );
+      }).toList(),
     );
   }
 }
