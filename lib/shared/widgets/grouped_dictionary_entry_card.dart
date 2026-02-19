@@ -245,20 +245,31 @@ class _GroupedDictionaryEntryCardState
   }
 
   /// Build definitions for each dictionary in the group, with dictionary
-  /// name tags separating them.
+  /// name tags separating them. Entries from the same dictionary are grouped
+  /// under a single tag and numbered when there are multiple.
   List<Widget> _buildGroupedDefinitions(
     ThemeData theme,
     double fs,
     TextStyle definitionStyle,
   ) {
-    final widgets = <Widget>[];
-
+    // Group entries by dictionary name, preserving order.
+    final byDict = <String, List<DictionaryEntryWithSource>>{};
+    final dictOrder = <String>[];
     for (final result in widget.entries) {
-      // Dictionary name tag
+      if (!byDict.containsKey(result.dictionaryName)) {
+        dictOrder.add(result.dictionaryName);
+        byDict[result.dictionaryName] = [];
+      }
+      byDict[result.dictionaryName]!.add(result);
+    }
+
+    final widgets = <Widget>[];
+    for (final dictName in dictOrder) {
+      // Dictionary name tag (once per dictionary)
       widgets.add(
         Padding(
           padding: EdgeInsets.only(
-            top: widgets.isEmpty ? 0 : 8,
+            top: widgets.length <= 1 ? 0 : 8,
             bottom: 4,
           ),
           child: Container(
@@ -268,7 +279,7 @@ class _GroupedDictionaryEntryCardState
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              result.dictionaryName,
+              dictName,
               style: TextStyle(
                 fontSize: fs * 0.75,
                 color: theme.colorScheme.onSurfaceVariant,
@@ -278,25 +289,24 @@ class _GroupedDictionaryEntryCardState
         ),
       );
 
-      // Definitions from this dictionary
-      final definitions = GlossaryParser.parse(result.entry.glossaries);
-      for (final def in definitions) {
+      final entries = byDict[dictName]!;
+      final showNumbers = entries.length > 1;
+
+      for (var i = 0; i < entries.length; i++) {
+        final definitions = GlossaryParser.parse(entries[i].entry.glossaries);
+        // Flatten multi-line bulleted definitions into a single
+        // semicolon-separated line.
+        final fragments = definitions
+            .expand((d) => d.split('\n'))
+            .map((s) => s.replaceFirst(RegExp(r'^\s*\u25b8\s*'), '').trim())
+            .where((s) => s.isNotEmpty);
+        final joined = fragments.join('; ');
+        final text = showNumbers ? '${i + 1}. $joined' : joined;
+
         widgets.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '- ',
-                  style: TextStyle(
-                    color: theme.colorScheme.outline,
-                    fontSize: fs,
-                  ),
-                ),
-                Expanded(child: _buildDefinition(def, definitionStyle)),
-              ],
-            ),
+            child: _buildDefinition(text, definitionStyle),
           ),
         );
       }
