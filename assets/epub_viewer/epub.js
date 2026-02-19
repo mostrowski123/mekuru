@@ -3144,6 +3144,10 @@ class Queue {
       if (this._q.length) {
         this.dequeue().then(function () {
           this.run();
+        }.bind(this), function () {
+          // [MEKURU PATCH] Continue running the queue even if one task rejects
+          // (e.g. a broken spine item with no manifest entry).
+          this.run();
         }.bind(this));
       } else {
         this.defered.resolve();
@@ -13844,7 +13848,10 @@ class locations_Locations {
       section.unload();
       this.processingTimeout = setTimeout(() => completed.resolve(locations), this.pause);
       return completed.promise;
-    }.bind(this));
+    }.bind(this)).catch(function (err) {
+      // [MEKURU PATCH] Skip sections that fail to load (e.g. missing manifest entry)
+      console.warn('[EPUB] locations: skipping section ' + section.index + ':', err && err.message || err);
+    });
   }
   parse(contents, cfiBase, chars) {
     var locations = [];
@@ -15691,6 +15698,15 @@ class archive_Archive {
    */
   request(url, type) {
     var deferred = new core["defer"]();
+    // [MEKURU PATCH] Guard against undefined/null urls from spine items
+    // whose idref has no matching manifest entry.
+    if (!url) {
+      deferred.reject({
+        message: "File not found in the epub: " + url,
+        stack: new Error().stack
+      });
+      return deferred.promise;
+    }
     var response;
     var path = new utils_path["a" /* default */](url);
 

@@ -136,7 +136,7 @@ void main() {
   });
 
   group('defaultVerticalText', () {
-    test('Japanese book defaults to true', () {
+    test('Japanese book defaults to true (fallback heuristic)', () {
       expect(defaultVerticalText(language: 'ja'), isTrue);
     });
 
@@ -183,6 +183,61 @@ void main() {
         ),
         isFalse,
       );
+    });
+
+    group('primaryWritingMode takes priority over ppd', () {
+      test('vertical-rl writing mode enables vertical text', () {
+        expect(
+          defaultVerticalText(
+            language: 'ja',
+            pageProgressionDirection: 'ltr',
+            primaryWritingMode: 'vertical-rl',
+          ),
+          isTrue,
+        );
+      });
+
+      test('horizontal-tb writing mode disables vertical text despite rtl ppd',
+          () {
+        expect(
+          defaultVerticalText(
+            language: 'ja',
+            pageProgressionDirection: 'rtl',
+            primaryWritingMode: 'horizontal-tb',
+          ),
+          isFalse,
+        );
+      });
+
+      test('horizontal-tb for Japanese book with no ppd', () {
+        expect(
+          defaultVerticalText(
+            language: 'ja',
+            primaryWritingMode: 'horizontal-tb',
+          ),
+          isFalse,
+        );
+      });
+
+      test('vertical-rl for Chinese book with no ppd', () {
+        expect(
+          defaultVerticalText(
+            language: 'zh',
+            primaryWritingMode: 'vertical-rl',
+          ),
+          isTrue,
+        );
+      });
+
+      test('writing mode ignored for non-CJK language', () {
+        expect(
+          defaultVerticalText(
+            language: 'en',
+            primaryWritingMode: 'vertical-rl',
+          ),
+          isFalse,
+        );
+      });
     });
   });
 }

@@ -72,12 +72,34 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
   // horizontal-tb, so axis detection and CSS column layout are correct
   // from the start — no post-hoc re-layout needed.
 
-  // Display at CFI or beginning
+  // Display at CFI or beginning.
+  // epub.js silently hangs when a spine item has no manifest entry (no href),
+  // because rendition.display() never resolves or rejects. To avoid an
+  // infinite loading spinner, when displaying from the start (no CFI) we
+  // wait for the book to be ready, then check whether the default first
+  // section has a valid href and skip to the first one that does.
   if (cfi) {
     displayed = rendition.display(cfi);
   } else {
-    displayed = rendition.display();
+    displayed = book.ready.then(function () {
+      var spine = book.spine;
+      if (spine && spine.spineItems) {
+        for (var i = 0; i < spine.spineItems.length; i++) {
+          if (spine.spineItems[i].href) {
+            if (i > 0) {
+              console.log('[EPUB_BRIDGE] first spine item(s) have no href, skipping to index ' + i);
+            }
+            return rendition.display(i);
+          }
+        }
+      }
+      return rendition.display();
+    });
   }
+
+  displayed.catch(function (err) {
+    console.error('[EPUB_BRIDGE] display failed:', err);
+  });
 
   // ── Events ────────────────────────────────────────────────────────
 
@@ -123,6 +145,9 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
   book.ready.then(function () {
     book.locations.generate(1600).then(function () {
       console.log('[EPUB_BRIDGE] locations generated');
+      callDart('locationsReady');
+    }).catch(function (err) {
+      console.warn('[EPUB_BRIDGE] locations generation failed (non-fatal):', err);
       callDart('locationsReady');
     });
   });

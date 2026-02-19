@@ -196,6 +196,25 @@ void main() {
       expect(settings.verticalText, isFalse);
     });
 
+    test('uses primaryWritingMode to determine vertical text independently of ppd', () {
+      final container = _createContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(readerSettingsProvider.notifier);
+      // Japanese book with RTL ppd but horizontal writing mode
+      notifier.applyBookDefaults(
+        bookId: 1,
+        language: 'ja',
+        pageProgressionDirection: 'rtl',
+        primaryWritingMode: 'horizontal-tb',
+      );
+
+      final settings = container.read(readerSettingsProvider);
+      // Direction follows ppd (RTL), but vertical text follows writing mode
+      expect(settings.readingDirection, ReaderDirection.rtl);
+      expect(settings.verticalText, isFalse);
+    });
+
     test('preserves other settings when applying book defaults', () {
       final container = _createContainer();
       addTearDown(container.dispose);

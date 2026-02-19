@@ -93,6 +93,9 @@ class BookRepository {
                 metadata.pageProgressionDirection != null
                     ? Value(metadata.pageProgressionDirection)
                     : const Value.absent(),
+            primaryWritingMode: metadata.primaryWritingMode != null
+                ? Value(metadata.primaryWritingMode)
+                : const Value.absent(),
           ),
         );
 
@@ -129,11 +132,13 @@ class BookRepository {
     int bookId,
     String? language,
     String? pageProgressionDirection,
+    String? primaryWritingMode,
   ) =>
       (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(
           language: Value(language),
           pageProgressionDirection: Value(pageProgressionDirection),
+          primaryWritingMode: Value(primaryWritingMode),
         ),
       );
 

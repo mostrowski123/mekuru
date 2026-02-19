@@ -115,6 +115,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     required int bookId,
     String? language,
     String? pageProgressionDirection,
+    String? primaryWritingMode,
     bool? overrideVerticalText,
     String? overrideReadingDirection,
   }) {
@@ -124,6 +125,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
         defaultVerticalText(
           language: language,
           pageProgressionDirection: pageProgressionDirection,
+          primaryWritingMode: primaryWritingMode,
         );
 
     final effectiveDirection = overrideReadingDirection != null

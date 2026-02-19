@@ -42,15 +42,30 @@ ReaderDirection defaultReaderDirection({
 
 /// Returns the default vertical text setting for a book when first opened.
 ///
-/// Vertical text is only the default when the book's language supports it
-/// AND the book is naturally RTL (e.g., Japanese vertical reading).
+/// Uses the `primary-writing-mode` OPF metadata when available to determine
+/// whether the book uses vertical text. This is independent of
+/// `page-progression-direction` — an RTL page progression does not
+/// necessarily mean vertical text.
+///
+/// Fallback when `primaryWritingMode` is absent: vertical text is enabled
+/// for CJK languages when `page-progression-direction` is RTL (or defaults
+/// to RTL via language heuristic). This preserves behavior for EPUBs that
+/// lack the metadata.
 bool defaultVerticalText({
   String? language,
   String? pageProgressionDirection,
+  String? primaryWritingMode,
 }) {
-  return bookSupportsVerticalText(language) &&
-      bookIsNaturallyRtl(
-        language: language,
-        pageProgressionDirection: pageProgressionDirection,
-      );
+  if (!bookSupportsVerticalText(language)) return false;
+
+  // Explicit writing-mode metadata takes priority.
+  if (primaryWritingMode != null) {
+    return primaryWritingMode.contains('vertical');
+  }
+
+  // Fallback: use the old heuristic for EPUBs without the metadata.
+  return bookIsNaturallyRtl(
+    language: language,
+    pageProgressionDirection: pageProgressionDirection,
+  );
 }

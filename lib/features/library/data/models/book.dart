@@ -14,6 +14,10 @@ class Books extends Table {
   TextColumn get language => text().nullable()();
   TextColumn get pageProgressionDirection => text().nullable()();
 
+  /// The `primary-writing-mode` from OPF metadata (e.g. `vertical-rl`,
+  /// `horizontal-tb`). Used to determine whether content is vertical text.
+  TextColumn get primaryWritingMode => text().nullable()();
+
   /// User's per-book override for vertical text display.
   /// `null` means "use the book's default" (based on language/ppd).
   BoolColumn get overrideVerticalText => boolean().nullable()();

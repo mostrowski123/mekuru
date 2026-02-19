@@ -209,11 +209,12 @@ void main() {
       expect(book!.language, isNull);
 
       // Backfill
-      await repo.backfillLanguage(id, 'ja', 'rtl');
+      await repo.backfillLanguage(id, 'ja', 'rtl', 'vertical-rl');
 
       book = await repo.getBookById(id);
       expect(book!.language, 'ja');
       expect(book.pageProgressionDirection, 'rtl');
+      expect(book.primaryWritingMode, 'vertical-rl');
     });
 
     test('backfillLanguage can set null values', () async {
@@ -225,11 +226,12 @@ void main() {
         ),
       );
 
-      await repo.backfillLanguage(id, null, null);
+      await repo.backfillLanguage(id, null, null, null);
 
       final book = await repo.getBookById(id);
       expect(book!.language, isNull);
       expect(book.pageProgressionDirection, isNull);
+      expect(book.primaryWritingMode, isNull);
     });
   });
 }

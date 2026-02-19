@@ -132,6 +132,17 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _primaryWritingModeMeta =
+      const VerificationMeta('primaryWritingMode');
+  @override
+  late final GeneratedColumn<String> primaryWritingMode =
+      GeneratedColumn<String>(
+        'primary_writing_mode',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _overrideVerticalTextMeta =
       const VerificationMeta('overrideVerticalText');
   @override
@@ -169,6 +180,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     lastReadAt,
     language,
     pageProgressionDirection,
+    primaryWritingMode,
     overrideVerticalText,
     overrideReadingDirection,
   ];
@@ -266,6 +278,15 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('primary_writing_mode')) {
+      context.handle(
+        _primaryWritingModeMeta,
+        primaryWritingMode.isAcceptableOrUnknown(
+          data['primary_writing_mode']!,
+          _primaryWritingModeMeta,
+        ),
+      );
+    }
     if (data.containsKey('override_vertical_text')) {
       context.handle(
         _overrideVerticalTextMeta,
@@ -337,6 +358,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.string,
         data['${effectivePrefix}page_progression_direction'],
       ),
+      primaryWritingMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}primary_writing_mode'],
+      ),
       overrideVerticalText: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}override_vertical_text'],
@@ -367,6 +392,10 @@ class Book extends DataClass implements Insertable<Book> {
   final String? language;
   final String? pageProgressionDirection;
 
+  /// The `primary-writing-mode` from OPF metadata (e.g. `vertical-rl`,
+  /// `horizontal-tb`). Used to determine whether content is vertical text.
+  final String? primaryWritingMode;
+
   /// User's per-book override for vertical text display.
   /// `null` means "use the book's default" (based on language/ppd).
   final bool? overrideVerticalText;
@@ -386,6 +415,7 @@ class Book extends DataClass implements Insertable<Book> {
     this.lastReadAt,
     this.language,
     this.pageProgressionDirection,
+    this.primaryWritingMode,
     this.overrideVerticalText,
     this.overrideReadingDirection,
   });
@@ -414,6 +444,9 @@ class Book extends DataClass implements Insertable<Book> {
       map['page_progression_direction'] = Variable<String>(
         pageProgressionDirection,
       );
+    }
+    if (!nullToAbsent || primaryWritingMode != null) {
+      map['primary_writing_mode'] = Variable<String>(primaryWritingMode);
     }
     if (!nullToAbsent || overrideVerticalText != null) {
       map['override_vertical_text'] = Variable<bool>(overrideVerticalText);
@@ -449,6 +482,9 @@ class Book extends DataClass implements Insertable<Book> {
       pageProgressionDirection: pageProgressionDirection == null && nullToAbsent
           ? const Value.absent()
           : Value(pageProgressionDirection),
+      primaryWritingMode: primaryWritingMode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(primaryWritingMode),
       overrideVerticalText: overrideVerticalText == null && nullToAbsent
           ? const Value.absent()
           : Value(overrideVerticalText),
@@ -477,6 +513,9 @@ class Book extends DataClass implements Insertable<Book> {
       pageProgressionDirection: serializer.fromJson<String?>(
         json['pageProgressionDirection'],
       ),
+      primaryWritingMode: serializer.fromJson<String?>(
+        json['primaryWritingMode'],
+      ),
       overrideVerticalText: serializer.fromJson<bool?>(
         json['overrideVerticalText'],
       ),
@@ -502,6 +541,7 @@ class Book extends DataClass implements Insertable<Book> {
       'pageProgressionDirection': serializer.toJson<String?>(
         pageProgressionDirection,
       ),
+      'primaryWritingMode': serializer.toJson<String?>(primaryWritingMode),
       'overrideVerticalText': serializer.toJson<bool?>(overrideVerticalText),
       'overrideReadingDirection': serializer.toJson<String?>(
         overrideReadingDirection,
@@ -521,6 +561,7 @@ class Book extends DataClass implements Insertable<Book> {
     Value<DateTime?> lastReadAt = const Value.absent(),
     Value<String?> language = const Value.absent(),
     Value<String?> pageProgressionDirection = const Value.absent(),
+    Value<String?> primaryWritingMode = const Value.absent(),
     Value<bool?> overrideVerticalText = const Value.absent(),
     Value<String?> overrideReadingDirection = const Value.absent(),
   }) => Book(
@@ -539,6 +580,9 @@ class Book extends DataClass implements Insertable<Book> {
     pageProgressionDirection: pageProgressionDirection.present
         ? pageProgressionDirection.value
         : this.pageProgressionDirection,
+    primaryWritingMode: primaryWritingMode.present
+        ? primaryWritingMode.value
+        : this.primaryWritingMode,
     overrideVerticalText: overrideVerticalText.present
         ? overrideVerticalText.value
         : this.overrideVerticalText,
@@ -571,6 +615,9 @@ class Book extends DataClass implements Insertable<Book> {
       pageProgressionDirection: data.pageProgressionDirection.present
           ? data.pageProgressionDirection.value
           : this.pageProgressionDirection,
+      primaryWritingMode: data.primaryWritingMode.present
+          ? data.primaryWritingMode.value
+          : this.primaryWritingMode,
       overrideVerticalText: data.overrideVerticalText.present
           ? data.overrideVerticalText.value
           : this.overrideVerticalText,
@@ -594,6 +641,7 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('lastReadAt: $lastReadAt, ')
           ..write('language: $language, ')
           ..write('pageProgressionDirection: $pageProgressionDirection, ')
+          ..write('primaryWritingMode: $primaryWritingMode, ')
           ..write('overrideVerticalText: $overrideVerticalText, ')
           ..write('overrideReadingDirection: $overrideReadingDirection')
           ..write(')'))
@@ -613,6 +661,7 @@ class Book extends DataClass implements Insertable<Book> {
     lastReadAt,
     language,
     pageProgressionDirection,
+    primaryWritingMode,
     overrideVerticalText,
     overrideReadingDirection,
   );
@@ -631,6 +680,7 @@ class Book extends DataClass implements Insertable<Book> {
           other.lastReadAt == this.lastReadAt &&
           other.language == this.language &&
           other.pageProgressionDirection == this.pageProgressionDirection &&
+          other.primaryWritingMode == this.primaryWritingMode &&
           other.overrideVerticalText == this.overrideVerticalText &&
           other.overrideReadingDirection == this.overrideReadingDirection);
 }
@@ -647,6 +697,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<DateTime?> lastReadAt;
   final Value<String?> language;
   final Value<String?> pageProgressionDirection;
+  final Value<String?> primaryWritingMode;
   final Value<bool?> overrideVerticalText;
   final Value<String?> overrideReadingDirection;
   const BooksCompanion({
@@ -661,6 +712,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.lastReadAt = const Value.absent(),
     this.language = const Value.absent(),
     this.pageProgressionDirection = const Value.absent(),
+    this.primaryWritingMode = const Value.absent(),
     this.overrideVerticalText = const Value.absent(),
     this.overrideReadingDirection = const Value.absent(),
   });
@@ -676,6 +728,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.lastReadAt = const Value.absent(),
     this.language = const Value.absent(),
     this.pageProgressionDirection = const Value.absent(),
+    this.primaryWritingMode = const Value.absent(),
     this.overrideVerticalText = const Value.absent(),
     this.overrideReadingDirection = const Value.absent(),
   }) : title = Value(title),
@@ -692,6 +745,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<DateTime>? lastReadAt,
     Expression<String>? language,
     Expression<String>? pageProgressionDirection,
+    Expression<String>? primaryWritingMode,
     Expression<bool>? overrideVerticalText,
     Expression<String>? overrideReadingDirection,
   }) {
@@ -708,6 +762,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (language != null) 'language': language,
       if (pageProgressionDirection != null)
         'page_progression_direction': pageProgressionDirection,
+      if (primaryWritingMode != null)
+        'primary_writing_mode': primaryWritingMode,
       if (overrideVerticalText != null)
         'override_vertical_text': overrideVerticalText,
       if (overrideReadingDirection != null)
@@ -727,6 +783,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<DateTime?>? lastReadAt,
     Value<String?>? language,
     Value<String?>? pageProgressionDirection,
+    Value<String?>? primaryWritingMode,
     Value<bool?>? overrideVerticalText,
     Value<String?>? overrideReadingDirection,
   }) {
@@ -743,6 +800,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       language: language ?? this.language,
       pageProgressionDirection:
           pageProgressionDirection ?? this.pageProgressionDirection,
+      primaryWritingMode: primaryWritingMode ?? this.primaryWritingMode,
       overrideVerticalText: overrideVerticalText ?? this.overrideVerticalText,
       overrideReadingDirection:
           overrideReadingDirection ?? this.overrideReadingDirection,
@@ -787,6 +845,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
         pageProgressionDirection.value,
       );
     }
+    if (primaryWritingMode.present) {
+      map['primary_writing_mode'] = Variable<String>(primaryWritingMode.value);
+    }
     if (overrideVerticalText.present) {
       map['override_vertical_text'] = Variable<bool>(
         overrideVerticalText.value,
@@ -814,6 +875,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('lastReadAt: $lastReadAt, ')
           ..write('language: $language, ')
           ..write('pageProgressionDirection: $pageProgressionDirection, ')
+          ..write('primaryWritingMode: $primaryWritingMode, ')
           ..write('overrideVerticalText: $overrideVerticalText, ')
           ..write('overrideReadingDirection: $overrideReadingDirection')
           ..write(')'))
@@ -2786,6 +2848,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<DateTime?> lastReadAt,
       Value<String?> language,
       Value<String?> pageProgressionDirection,
+      Value<String?> primaryWritingMode,
       Value<bool?> overrideVerticalText,
       Value<String?> overrideReadingDirection,
     });
@@ -2802,6 +2865,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<DateTime?> lastReadAt,
       Value<String?> language,
       Value<String?> pageProgressionDirection,
+      Value<String?> primaryWritingMode,
       Value<bool?> overrideVerticalText,
       Value<String?> overrideReadingDirection,
     });
@@ -2866,6 +2930,11 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<String> get pageProgressionDirection => $composableBuilder(
     column: $table.pageProgressionDirection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get primaryWritingMode => $composableBuilder(
+    column: $table.primaryWritingMode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2944,6 +3013,11 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get primaryWritingMode => $composableBuilder(
+    column: $table.primaryWritingMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get overrideVerticalText => $composableBuilder(
     column: $table.overrideVerticalText,
     builder: (column) => ColumnOrderings(column),
@@ -3009,6 +3083,11 @@ class $$BooksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get primaryWritingMode => $composableBuilder(
+    column: $table.primaryWritingMode,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get overrideVerticalText => $composableBuilder(
     column: $table.overrideVerticalText,
     builder: (column) => column,
@@ -3059,6 +3138,7 @@ class $$BooksTableTableManager
                 Value<DateTime?> lastReadAt = const Value.absent(),
                 Value<String?> language = const Value.absent(),
                 Value<String?> pageProgressionDirection = const Value.absent(),
+                Value<String?> primaryWritingMode = const Value.absent(),
                 Value<bool?> overrideVerticalText = const Value.absent(),
                 Value<String?> overrideReadingDirection = const Value.absent(),
               }) => BooksCompanion(
@@ -3073,6 +3153,7 @@ class $$BooksTableTableManager
                 lastReadAt: lastReadAt,
                 language: language,
                 pageProgressionDirection: pageProgressionDirection,
+                primaryWritingMode: primaryWritingMode,
                 overrideVerticalText: overrideVerticalText,
                 overrideReadingDirection: overrideReadingDirection,
               ),
@@ -3089,6 +3170,7 @@ class $$BooksTableTableManager
                 Value<DateTime?> lastReadAt = const Value.absent(),
                 Value<String?> language = const Value.absent(),
                 Value<String?> pageProgressionDirection = const Value.absent(),
+                Value<String?> primaryWritingMode = const Value.absent(),
                 Value<bool?> overrideVerticalText = const Value.absent(),
                 Value<String?> overrideReadingDirection = const Value.absent(),
               }) => BooksCompanion.insert(
@@ -3103,6 +3185,7 @@ class $$BooksTableTableManager
                 lastReadAt: lastReadAt,
                 language: language,
                 pageProgressionDirection: pageProgressionDirection,
+                primaryWritingMode: primaryWritingMode,
                 overrideVerticalText: overrideVerticalText,
                 overrideReadingDirection: overrideReadingDirection,
               ),

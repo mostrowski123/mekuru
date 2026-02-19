@@ -11,6 +11,7 @@ Future<String> createTestEpub({
   String? author,
   String? language,
   String? pageProgressionDirection,
+  String? primaryWritingMode,
   bool includeCover = true,
   bool includeContainerXml = true,
   String? customOpfContent,
@@ -45,6 +46,7 @@ Future<String> createTestEpub({
     ${author != null ? '<dc:creator>$author</dc:creator>' : ''}
     ${language != null ? '<dc:language>$language</dc:language>' : ''}
     <meta name="cover" content="cover-img"/>
+    ${primaryWritingMode != null ? '<meta name="primary-writing-mode" content="$primaryWritingMode"/>' : ''}
   </metadata>
   <manifest>
     ${includeCover ? '<item id="cover-img" href="images/cover.jpg" media-type="image/jpeg"/>' : ''}
@@ -351,6 +353,65 @@ void main() {
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.language, 'ja');
       expect(metadata.pageProgressionDirection, 'rtl');
+    });
+  });
+
+  group('EpubParser — primary-writing-mode', () {
+    test('extracts vertical-rl writing mode', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        pageProgressionDirection: 'rtl',
+        primaryWritingMode: 'vertical-rl',
+      );
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.primaryWritingMode, 'vertical-rl');
+    });
+
+    test('extracts horizontal-tb writing mode', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        pageProgressionDirection: 'rtl',
+        primaryWritingMode: 'horizontal-tb',
+      );
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.primaryWritingMode, 'horizontal-tb');
+    });
+
+    test('returns null primaryWritingMode when not present', () async {
+      final epubPath = await createTestEpub(language: 'ja');
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.primaryWritingMode, isNull);
+    });
+
+    test('normalizes writing mode to lowercase', () async {
+      final epubPath = await createTestEpub(
+        primaryWritingMode: 'Vertical-RL',
+      );
+      tempDirs.add(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.primaryWritingMode, 'vertical-rl');
+    });
+
+    test('extracts writing mode via full extraction too', () async {
+      final epubPath = await createTestEpub(
+        primaryWritingMode: 'vertical-rl',
+      );
+      tempDirs.add(epubPath);
+
+      final extractDir = await Directory.systemTemp.createTemp(
+        'epub_extract_wm_',
+      );
+      tempDirs.add(extractDir.path);
+
+      final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
+      expect(metadata.primaryWritingMode, 'vertical-rl');
     });
   });
 }

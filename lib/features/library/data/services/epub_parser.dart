@@ -13,12 +13,18 @@ class EpubMetadata {
   final String? language;
   final String? pageProgressionDirection;
 
+  /// The `primary-writing-mode` from OPF metadata (e.g. `vertical-rl`,
+  /// `horizontal-tb`). Used to determine whether content is vertical text
+  /// independently of page-progression-direction.
+  final String? primaryWritingMode;
+
   const EpubMetadata({
     required this.title,
     this.author,
     this.coverImageRelativePath,
     this.language,
     this.pageProgressionDirection,
+    this.primaryWritingMode,
   });
 }
 
@@ -242,12 +248,22 @@ class EpubParser {
           spineElements.first.getAttribute('page-progression-direction');
     }
 
+    // Extract primary-writing-mode from <meta name="primary-writing-mode">
+    String? primaryWritingMode;
+    for (final meta in metaElements) {
+      if (meta.getAttribute('name') == 'primary-writing-mode') {
+        primaryWritingMode = meta.getAttribute('content')?.toLowerCase();
+        break;
+      }
+    }
+
     return EpubMetadata(
       title: title,
       author: author,
       coverImageRelativePath: coverRelativePath,
       language: language,
       pageProgressionDirection: pageProgressionDirection,
+      primaryWritingMode: primaryWritingMode,
     );
   }
 }

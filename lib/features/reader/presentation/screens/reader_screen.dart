@@ -89,6 +89,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         bookId: widget.book.id,
         language: widget.book.language,
         pageProgressionDirection: widget.book.pageProgressionDirection,
+        primaryWritingMode: widget.book.primaryWritingMode,
         overrideVerticalText: widget.book.overrideVerticalText,
         overrideReadingDirection: widget.book.overrideReadingDirection,
       );
@@ -332,6 +333,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               widget.book.id,
               metadata.language,
               metadata.pageProgressionDirection,
+              metadata.primaryWritingMode,
             ),
           );
           // Re-apply book defaults with detected language.
@@ -340,6 +342,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             bookId: widget.book.id,
             language: metadata.language,
             pageProgressionDirection: metadata.pageProgressionDirection,
+            primaryWritingMode: metadata.primaryWritingMode,
           );
         } catch (_) {
           // Best effort — continue with null language (assumes Japanese).

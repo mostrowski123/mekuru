@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:csv/csv.dart' as csv;
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -101,11 +102,10 @@ class VocabularyRepository {
     }
 
     final List<List<dynamic>> rows = [
-      ['Expression', 'Reading', 'Meaning', 'Context', 'Date Added'], // Header
+      ['Word', 'Reading', 'Meaning', 'Furigana', 'Context'],
     ];
 
     for (var word in words) {
-      // Decode glossaries JSON to a readable string (e.g. joined by ;)
       String meanings = '';
       try {
         final List<dynamic> list = jsonDecode(word.glossaries);
@@ -114,12 +114,14 @@ class VocabularyRepository {
         meanings = word.glossaries;
       }
 
+      final furigana = formatAnkiFurigana(word.expression, word.reading);
+
       rows.add([
         word.expression,
         word.reading,
         meanings,
+        furigana,
         word.sentenceContext,
-        word.dateAdded.toIso8601String(),
       ]);
     }
 
