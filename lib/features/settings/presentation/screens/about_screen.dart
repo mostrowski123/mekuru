@@ -248,42 +248,6 @@ class AboutScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
-
-          // ── EDRDG ──
-          Text(
-            'EDRDG',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text.rich(
-            TextSpan(
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              children: [
-                const TextSpan(
-                  text: 'The following dictionary data is provided by the ',
-                ),
-                TextSpan(
-                  text: 'Electronic Dictionary Research '
-                      'and Development Group',
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () => _launchUrl(
-                          'https://www.edrdg.org/',
-                        ),
-                ),
-                const TextSpan(text: '.'),
-              ],
-            ),
-          ),
           const SizedBox(height: 12),
 
           // JMdict & KANJIDIC attribution card
@@ -312,11 +276,31 @@ class AboutScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Japanese–multilingual dictionary data is provided by '
-                    'the JMdict/EDICT project and kanji dictionary data by '
-                    'the KANJIDIC project, both created by Jim Breen.',
-                    style: theme.textTheme.bodyMedium,
+                  Text.rich(
+                    TextSpan(
+                      style: theme.textTheme.bodyMedium,
+                      children: [
+                        const TextSpan(
+                          text: 'Japanese–multilingual dictionary data is '
+                              'provided by the JMdict/EDICT project and kanji '
+                              'dictionary data by the KANJIDIC project, both '
+                              'created by Jim Breen and the ',
+                        ),
+                        TextSpan(
+                          text: 'Electronic Dictionary Research '
+                              'and Development Group',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => _launchUrl(
+                                  'https://www.edrdg.org/',
+                                ),
+                        ),
+                        const TextSpan(text: '.'),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text.rich(
