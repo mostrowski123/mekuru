@@ -7,7 +7,6 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 
 /// Repository for managing saved vocabulary (SavedWords).
 class VocabularyRepository {
@@ -90,7 +89,7 @@ class VocabularyRepository {
   ///
   /// If [selectedIds] is provided and non-empty, only words with those IDs
   /// are exported. Otherwise, all words are exported.
-  Future<XFile> exportToCsv({Set<int>? selectedIds}) async {
+  Future<File> exportToCsv({Set<int>? selectedIds}) async {
     List<SavedWord> words;
     if (selectedIds != null && selectedIds.isNotEmpty) {
       words = await (_db.select(_db.savedWords)
@@ -131,6 +130,6 @@ class VocabularyRepository {
     final file = File('${directory.path}/vocabulary_export.csv');
     await file.writeAsString(csvString);
 
-    return XFile(file.path);
+    return file;
   }
 }

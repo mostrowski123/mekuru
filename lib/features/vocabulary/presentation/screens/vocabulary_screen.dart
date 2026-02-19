@@ -94,7 +94,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
       title: const Text('Vocabulary'),
       actions: [
         IconButton(
-          icon: const Icon(Icons.share),
+          icon: const Icon(Icons.save_alt),
           tooltip: 'Export CSV',
           onPressed: _enterSelectionMode,
         ),
@@ -126,7 +126,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
           },
         ),
         IconButton(
-          icon: const Icon(Icons.share),
+          icon: const Icon(Icons.save_alt),
           tooltip: 'Export selected',
           onPressed: _selectedIds.isEmpty ? null : _exportSelected,
         ),
