@@ -15,7 +15,7 @@ class AppThemeNotifier extends Notifier<ThemeMode> {
   bool _hasLoadedPersistedSettings = false;
 
   @override
-  ThemeMode build() => ThemeMode.dark;
+  ThemeMode build() => PreloadedAppSettings.initialThemeMode;
 
   /// Load persisted theme mode from storage (called once).
   Future<void> loadPersistedSettings() async {
@@ -245,7 +245,14 @@ class AppColorThemeNotifier extends Notifier<AppColorTheme> {
   bool _hasLoadedPersistedSettings = false;
 
   @override
-  AppColorTheme build() => AppColorTheme.mekuruRed;
+  AppColorTheme build() {
+    final name = PreloadedAppSettings.initialColorThemeName;
+    if (name == null) return AppColorTheme.mekuruRed;
+    return AppColorTheme.values.firstWhere(
+      (e) => e.name == name,
+      orElse: () => AppColorTheme.mekuruRed,
+    );
+  }
 
   /// Load persisted color theme from storage (called once).
   Future<void> loadPersistedSettings() async {

@@ -6,6 +6,7 @@ import 'app.dart';
 import 'config/environment_config.dart';
 import 'core/database/database_provider.dart';
 import 'features/reader/data/services/mecab_service.dart';
+import 'features/settings/data/services/app_settings_storage.dart';
 
 /// Global navigator key used by Sentry for feedback screenshots
 /// and navigator observation.
@@ -33,6 +34,7 @@ Future<void> main() async {
       options.navigatorKey = navigatorKey;
     },
     appRunner: () async {
+      await PreloadedAppSettings.load();
       await MecabService.instance.init();
 
       Sentry.addBreadcrumb(Breadcrumb(

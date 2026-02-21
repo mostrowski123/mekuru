@@ -25,6 +25,29 @@ abstract class AppSettingsStorage {
   Future<void> saveColorTheme(String theme);
 }
 
+/// Holds theme values pre-loaded in [main] so Riverpod notifiers can use
+/// them as initial state on the very first frame (no async gap).
+class PreloadedAppSettings {
+  static ThemeMode initialThemeMode = ThemeMode.dark;
+  static String? initialColorThemeName;
+
+  /// Call once in [main] before [runApp].
+  static Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final themeStr = prefs.getString('app.theme_mode');
+    if (themeStr != null) {
+      initialThemeMode = switch (themeStr) {
+        'light' => ThemeMode.light,
+        'system' => ThemeMode.system,
+        _ => ThemeMode.dark,
+      };
+    }
+
+    initialColorThemeName = prefs.getString('app.color_theme');
+  }
+}
+
 /// SharedPreferences-backed implementation of [AppSettingsStorage].
 class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _themeModeKey = 'app.theme_mode';
