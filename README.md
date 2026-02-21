@@ -23,8 +23,6 @@ A Japanese-first EPUB reader built with Flutter. Designed for language learners 
 ## Roadmap
 
 - Cloud sync for reading progress and vocabulary across devices
-- Direct Anki integration
-- Reading time and vocabulary growth statistics
 
 ## Technology Stack
 
