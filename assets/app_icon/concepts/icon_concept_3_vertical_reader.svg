@@ -1,15 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0F766E" />
-      <stop offset="100%" stop-color="#115E59" />
+      <stop offset="0%" stop-color="#D65A67" />
+      <stop offset="100%" stop-color="#9B2F3A" />
     </linearGradient>
+    <radialGradient id="sun" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#F9C2CA" />
+      <stop offset="60%" stop-color="#D96C79" />
+      <stop offset="100%" stop-color="#A53A49" />
+    </radialGradient>
   </defs>
   <rect width="1024" height="1024" fill="url(#bg)" />
-  <circle cx="512" cy="300" r="132" fill="#F97316" />
+  <circle cx="512" cy="300" r="164" fill="#FFD7DE" opacity="0.28" />
+  <circle cx="512" cy="300" r="140" fill="url(#sun)" stroke="#FFECEF" stroke-width="10" />
   <rect x="216" y="244" width="592" height="572" rx="72" fill="#F8FAFC" />
-  <rect x="320" y="342" width="54" height="376" rx="22" fill="#0F172A" />
-  <rect x="436" y="380" width="54" height="338" rx="22" fill="#334155" />
-  <rect x="552" y="342" width="54" height="376" rx="22" fill="#0F172A" />
-  <rect x="668" y="408" width="54" height="310" rx="22" fill="#334155" />
+  <rect x="320" y="342" width="54" height="376" rx="22" fill="#4A1A1F" />
+  <rect x="436" y="342" width="54" height="338" rx="22" fill="#8D3B45" />
+  <rect x="552" y="342" width="54" height="376" rx="22" fill="#4A1A1F" />
+  <rect x="668" y="342" width="54" height="310" rx="22" fill="#8D3B45" />
 </svg>
