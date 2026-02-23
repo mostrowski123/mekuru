@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../data/models/epub_models.dart';
@@ -74,6 +75,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onTouchDown,
     this.onTouchUp,
     this.onWordTapped,
+    this.onSentenceSelected,
   });
 
   final CustomEpubController controller;
@@ -105,6 +107,7 @@ class CustomEpubViewer extends StatefulWidget {
     double y,
   )?
   onWordTapped;
+  final ValueChanged<EpubSelectionData>? onSentenceSelected;
 
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
@@ -248,6 +251,11 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     );
 
     controller.addJavaScriptHandler(
+      handlerName: 'hapticFeedback',
+      callback: (_) => HapticFeedback.heavyImpact(),
+    );
+
+    controller.addJavaScriptHandler(
       handlerName: 'currentLocation',
       callback: (data) {
         if (data.isEmpty) return;
@@ -329,6 +337,38 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           tappedChar,
           x,
           y,
+        );
+      },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'sentenceSelected',
+      callback: (data) {
+        if (data.isEmpty) return;
+        final map = Map<String, dynamic>.from(data[0] as Map);
+        Rect? rect;
+        if (map['rect'] != null) {
+          final r = Map<String, dynamic>.from(map['rect'] as Map);
+          final renderBox = context.findRenderObject() as RenderBox?;
+          if (renderBox != null) {
+            final size = renderBox.size;
+            rect = Rect.fromLTWH(
+              (r['left'] as num).toDouble() * size.width,
+              (r['top'] as num).toDouble() * size.height,
+              (r['width'] as num).toDouble() * size.width,
+              (r['height'] as num).toDouble() * size.height,
+            );
+          }
+        }
+        debugPrint(
+          '[EPUB_DART] sentenceSelected text="${(map['text'] as String? ?? '').substring(0, (map['text'] as String? ?? '').length.clamp(0, 40))}"',
+        );
+        widget.onSentenceSelected?.call(
+          EpubSelectionData(
+            cfi: map['cfi'] as String? ?? '',
+            text: map['text'] as String? ?? '',
+            rect: rect,
+          ),
         );
       },
     );

@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/compound_word_resolver.dart';
+import 'package:mekuru/features/reader/data/repositories/bookmark_repository.dart';
+import 'package:mekuru/features/reader/data/repositories/highlight_repository.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/main.dart';
@@ -100,6 +103,11 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
 
   void setSepiaIntensity(double intensity) {
     state = state.copyWith(sepiaIntensity: intensity);
+    _persistSettings();
+  }
+
+  void setDisableLinks(bool disabled) {
+    state = state.copyWith(disableLinks: disabled);
     _persistSettings();
   }
 
@@ -222,4 +230,28 @@ final compoundWordResolverProvider = Provider<CompoundWordResolver>((ref) {
 final readerBookRepositoryProvider = Provider<BookRepository>((ref) {
   final db = ref.watch(databaseProvider);
   return BookRepository(db);
+});
+
+/// Provider for the BookmarkRepository.
+final bookmarkRepositoryProvider = Provider<BookmarkRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return BookmarkRepository(db);
+});
+
+/// Provider for the HighlightRepository.
+final highlightRepositoryProvider = Provider<HighlightRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return HighlightRepository(db);
+});
+
+/// Reactive stream of bookmarks for a specific book.
+final bookmarksForBookProvider =
+    StreamProvider.family<List<Bookmark>, int>((ref, bookId) {
+  return ref.watch(bookmarkRepositoryProvider).watchBookmarksForBook(bookId);
+});
+
+/// Reactive stream of highlights for a specific book.
+final highlightsForBookProvider =
+    StreamProvider.family<List<Highlight>, int>((ref, bookId) {
+  return ref.watch(highlightRepositoryProvider).watchHighlightsForBook(bookId);
 });

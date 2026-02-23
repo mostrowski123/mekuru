@@ -178,6 +178,12 @@ class BookRepository {
       }
     }
 
+    // Clean up bookmarks and highlights for this book
+    await (_db.delete(_db.bookmarks)..where((t) => t.bookId.equals(bookId)))
+        .go();
+    await (_db.delete(_db.highlights)..where((t) => t.bookId.equals(bookId)))
+        .go();
+
     await (_db.delete(_db.books)..where((t) => t.id.equals(bookId))).go();
   }
 }

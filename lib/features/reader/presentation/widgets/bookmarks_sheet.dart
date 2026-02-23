@@ -1,0 +1,192 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+
+/// Bottom sheet listing all bookmarks for a book.
+///
+/// [onNavigate] is called when the user taps a bookmark to jump to it.
+/// If null, navigation is disabled (used from the library screen).
+class BookmarksSheet extends ConsumerWidget {
+  final int bookId;
+  final void Function(String cfi)? onNavigate;
+  final VoidCallback? onBookmarkDeleted;
+
+  const BookmarksSheet({
+    super.key,
+    required this.bookId,
+    this.onNavigate,
+    this.onBookmarkDeleted,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bookmarksAsync = ref.watch(bookmarksForBookProvider(bookId));
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      maxChildSize: 0.9,
+      builder: (context, scrollController) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Bookmarks',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: bookmarksAsync.when(
+              data: (bookmarks) {
+                if (bookmarks.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Text(
+                        'No bookmarks yet.\nTap the bookmark icon while reading to add one.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  controller: scrollController,
+                  itemCount: bookmarks.length,
+                  itemBuilder: (context, index) {
+                    final bookmark = bookmarks[index];
+                    return _BookmarkTile(
+                      bookmark: bookmark,
+                      onTap: () {
+                        if (onNavigate != null) {
+                          Navigator.pop(context);
+                          onNavigate!(bookmark.cfi);
+                        }
+                      },
+                      onDelete: () => _deleteBookmark(context, ref, bookmark),
+                      onEditNote: () =>
+                          _editBookmarkNote(context, ref, bookmark),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteBookmark(
+    BuildContext context,
+    WidgetRef ref,
+    Bookmark bookmark,
+  ) {
+    ref.read(bookmarkRepositoryProvider).deleteBookmark(bookmark.id);
+    onBookmarkDeleted?.call();
+  }
+
+  void _editBookmarkNote(
+    BuildContext context,
+    WidgetRef ref,
+    Bookmark bookmark,
+  ) {
+    final controller = TextEditingController(text: bookmark.userNote);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Note'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Add a note...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              ref
+                  .read(bookmarkRepositoryProvider)
+                  .updateBookmarkNote(bookmark.id, controller.text);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookmarkTile extends StatelessWidget {
+  final Bookmark bookmark;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+  final VoidCallback onEditNote;
+
+  const _BookmarkTile({
+    required this.bookmark,
+    required this.onTap,
+    required this.onDelete,
+    required this.onEditNote,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final d = bookmark.dateAdded;
+    final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final progressStr = '${(bookmark.progress * 100).toInt()}%';
+    final hasNote = bookmark.userNote.isNotEmpty;
+
+    return Dismissible(
+      key: ValueKey(bookmark.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        color: Colors.red,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (_) => onDelete(),
+      child: ListTile(
+        leading: const Icon(Icons.bookmark, color: Colors.amber),
+        title: Text(
+          bookmark.chapterTitle.isNotEmpty
+              ? bookmark.chapterTitle
+              : 'Bookmark at $progressStr',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$progressStr  ·  $dateStr'),
+            if (hasNote)
+              Text(
+                bookmark.userNote,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
+        isThreeLine: hasNote,
+        onTap: onTap,
+        onLongPress: onEditNote,
+      ),
+    );
+  }
+}

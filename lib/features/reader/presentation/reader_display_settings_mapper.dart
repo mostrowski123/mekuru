@@ -85,7 +85,8 @@ ReaderTheme buildReaderTheme({
         'color': '$fgHex !important',
       },
       'a': {
-        'color': '$fgHex !important',
+        'color': '#2196F3 !important',
+        'text-decoration': 'underline !important',
       },
     },
   );

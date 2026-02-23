@@ -11,6 +11,7 @@ var currentMargins = { horizontal: 28, vertical: 28 };
 var _lastTappedBlock = null;       // block element from last getTextAtPoint
 var _lastTappedDoc = null;         // document from last getTextAtPoint
 var _currentWordHighlightCfi = null; // CFI of current word highlight
+var _disableLinks = false;           // When true, links trigger dictionary instead of navigating
 // When true, epub.js patches in epub.js will override the detected
 // writing-mode to horizontal-tb, forcing horizontal pagination.
 // Set as a window global so epub.js code can read it.
@@ -191,18 +192,36 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
 
   // Monitor for selection clearing
   rendition.hooks.content.register(function (contents) {
-    contents.window.document.addEventListener('selectionchange', function () {
+    var doc = contents.window.document;
+
+    doc.addEventListener('selectionchange', function () {
       var sel = contents.window.getSelection();
       var text = sel ? sel.toString() : '';
+
       if (!text && hasSelection) {
         hasSelection = false;
         callDart('selectionCleared');
       }
     });
 
+    // ── Link click interception ───────────────────────────────────
+    // When links are disabled, prevent <a> navigation so the
+    // dictionary lookup (triggered by wordTapped) takes priority.
+    doc.addEventListener('click', function (e) {
+      if (!_disableLinks) return;
+      var target = e.target;
+      while (target && target.tagName !== 'A') {
+        target = target.parentElement;
+      }
+      if (target && target.tagName === 'A') {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('[EPUB_BRIDGE] link click prevented (disableLinks=true)');
+      }
+    }, true); // capture phase to intercept before epub.js
+
     // ── Input events (forward to Dart for tap-zone navigation) ────
 
-    var doc = contents.document;
     var lastTouchTs = 0;
 
     function forwardDown(clientX, clientY, source) {
@@ -216,8 +235,25 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
     }
 
     function forwardUp(clientX, clientY, source) {
+      // If text selection is active (native word or sentence),
+      // don't trigger word lookup or page navigation.
+      var sel = contents.window.getSelection();
+      if (sel && sel.toString().length > 0) {
+        console.log('[EPUB_BRIDGE] touchUp(' + source + ') skipped — selection active');
+        return;
+      }
+
       var coords = normalizedCoords({ clientX: clientX, clientY: clientY }, contents);
       if (!coords) return;
+
+      // Check if tap landed on a hyperlink
+      var linkEl = getLinkAtPoint(clientX, clientY, doc);
+      if (linkEl && !_disableLinks) {
+        // Links are active — let epub.js handle navigation, skip dictionary
+        console.log('[EPUB_BRIDGE] link tapped (active), skipping wordTapped: ' +
+          (linkEl.getAttribute('href') || ''));
+        return;
+      }
 
       // Check if tap landed on text
       var textInfo = getTextAtPoint(clientX, clientY, doc);
@@ -471,6 +507,13 @@ function setBodyBackground(color) {
   console.log('[EPUB_BRIDGE] setBodyBackground: ' + color);
 }
 
+// ── Disable links ────────────────────────────────────────────────────
+
+function setDisableLinks(val) {
+  _disableLinks = !!val;
+  console.log('[EPUB_BRIDGE] setDisableLinks: ' + _disableLinks);
+}
+
 // ── Margins ──────────────────────────────────────────────────────────
 
 function applyMargins() {
@@ -586,6 +629,20 @@ function getSelectionState() {
   return hasSelection;
 }
 
+function expandToSentence() {
+  if (!rendition) return;
+  try {
+    var contentsArr = rendition.getContents();
+    if (contentsArr && contentsArr.length > 0) {
+      var contents = contentsArr[0];
+      var doc = contents.document;
+      expandSelectionToSentence(doc, contents);
+    }
+  } catch (e) {
+    console.error('[EPUB_BRIDGE] expandToSentence error:', e);
+  }
+}
+
 // ── Text extraction ───────────────────────────────────────────────────
 
 function getCurrentPageText() {
@@ -603,6 +660,21 @@ function getTextFromCfi(startCfi, endCfi) {
   }).catch(function () {
     callDart('pageText', { text: '', startCfi: startCfi, endCfi: endCfi });
   });
+}
+
+// ── Link-at-point detection ───────────────────────────────────────────
+
+function getLinkAtPoint(clientX, clientY, doc) {
+  try {
+    var el = doc.elementFromPoint(clientX, clientY);
+    while (el) {
+      if (el.tagName === 'A') return el;
+      el = el.parentElement;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
 }
 
 // ── Word-at-point detection ───────────────────────────────────────────
@@ -862,6 +934,172 @@ function clearWordHighlight() {
       removeHighlight(_currentWordHighlightCfi);
     } catch (e) { /* ignore */ }
     _currentWordHighlightCfi = null;
+  }
+}
+
+// ── Sentence expansion (long-press) ──────────────────────────────
+//
+// Called by the 1-second long-press timer. At this point the browser
+// has already selected a word (~500ms native long-press). This function
+// expands the selection to full sentence boundaries using the word
+// selection's anchor as the reference point.
+
+function expandSelectionToSentence(doc, contents) {
+  try {
+    var sel = contents.window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    // Use the anchor of the current selection as the expansion point
+    var node = sel.anchorNode;
+    var offset = sel.anchorOffset;
+
+    if (!node || node.nodeType !== 3) return;
+
+    // If inside <rt> (furigana), redirect to base text
+    var parent = node.parentElement;
+    while (parent) {
+      if (parent.tagName === 'RT') {
+        var ruby = parent.closest('ruby');
+        if (ruby) {
+          for (var i = 0; i < ruby.childNodes.length; i++) {
+            var child = ruby.childNodes[i];
+            if (child.nodeType === 3 && child.textContent.trim().length > 0) {
+              node = child;
+              offset = Math.min(offset, node.textContent.length - 1);
+              if (offset < 0) offset = 0;
+              break;
+            }
+          }
+        }
+        break;
+      }
+      parent = parent.parentElement;
+    }
+
+    // Find block-level ancestor
+    var blockTags = ['P', 'DIV', 'LI', 'TD', 'TH', 'BLOCKQUOTE', 'SECTION',
+                     'ARTICLE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BODY'];
+    var block = node.parentElement;
+    while (block && blockTags.indexOf(block.tagName) === -1) {
+      block = block.parentElement;
+    }
+    if (!block) block = doc.body;
+
+    // Get block text (excluding furigana) and find character offset
+    var blockText = getBlockTextWithoutRt(block);
+    var walker = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT, null, false);
+    var charOffset = 0;
+    var foundTarget = false;
+    var current;
+    while ((current = walker.nextNode())) {
+      var isRt = false;
+      var p = current.parentElement;
+      while (p && p !== block) {
+        if (p.tagName === 'RT') { isRt = true; break; }
+        p = p.parentElement;
+      }
+      if (isRt) continue;
+      if (current === node) {
+        charOffset += offset;
+        foundTarget = true;
+        break;
+      }
+      charOffset += current.textContent.length;
+    }
+    if (!foundTarget) return;
+
+    // Expand to sentence boundaries
+    var sentenceDelimiters = '\u3002\uff01\uff1f.!?\n';
+    var sentStart = charOffset;
+    var sentEnd = charOffset;
+
+    while (sentStart > 0) {
+      if (sentenceDelimiters.indexOf(blockText[sentStart - 1]) !== -1) break;
+      sentStart--;
+    }
+    while (sentEnd < blockText.length) {
+      if (sentenceDelimiters.indexOf(blockText[sentEnd]) !== -1) {
+        sentEnd++; // include the delimiter
+        break;
+      }
+      sentEnd++;
+    }
+
+    var sentenceText = blockText.substring(sentStart, sentEnd).trim();
+    if (!sentenceText) return;
+
+    // Walk text nodes to find DOM positions for sentence boundaries
+    walker = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT, null, false);
+    var runningOffset = 0;
+    var startNode = null, startOff = 0;
+    var endNode = null, endOff = 0;
+
+    while ((current = walker.nextNode())) {
+      var isRt = false;
+      var p = current.parentElement;
+      while (p && p !== block) {
+        if (p.tagName === 'RT') { isRt = true; break; }
+        p = p.parentElement;
+      }
+      if (isRt) continue;
+
+      var nodeLen = current.textContent.length;
+      var nodeEnd = runningOffset + nodeLen;
+
+      if (!startNode && sentStart >= runningOffset && sentStart < nodeEnd) {
+        startNode = current;
+        startOff = sentStart - runningOffset;
+      }
+      if (!endNode && sentEnd > runningOffset && sentEnd <= nodeEnd) {
+        endNode = current;
+        endOff = sentEnd - runningOffset;
+      }
+
+      runningOffset = nodeEnd;
+      if (startNode && endNode) break;
+    }
+
+    if (!startNode || !endNode) return;
+
+    // Replace the word selection with the full sentence selection.
+    var sentenceRange = doc.createRange();
+    sentenceRange.setStart(startNode, startOff);
+    sentenceRange.setEnd(endNode, endOff);
+    sel.removeAllRanges();
+    sel.addRange(sentenceRange);
+
+    var cfi = null;
+    var contentsArr = rendition.getContents();
+    if (contentsArr && contentsArr.length > 0) {
+      try {
+        cfi = contentsArr[0].cfiFromRange(sentenceRange);
+      } catch (e) {
+        console.warn('[EPUB_BRIDGE] cfiFromRange failed for sentence:', e);
+      }
+    }
+
+    var clientRect = sentenceRange.getBoundingClientRect();
+    var iframe = contents.document.defaultView.frameElement;
+    var iframeRect = iframe.getBoundingClientRect();
+    var ww = window.innerWidth;
+    var wh = window.innerHeight;
+    var normalizedRect = {
+      left: (iframeRect.left + clientRect.left) / ww,
+      top: (iframeRect.top + clientRect.top) / wh,
+      width: clientRect.width / ww,
+      height: clientRect.height / wh
+    };
+
+    hasSelection = true;
+    console.log('[EPUB_BRIDGE] long-press sentence expanded: "' +
+      sentenceText.substring(0, 40) + '..."');
+    callDart('sentenceSelected', {
+      cfi: cfi || '',
+      text: sentenceText,
+      rect: normalizedRect
+    });
+  } catch (e) {
+    console.error('[EPUB_BRIDGE] expandSelectionToSentence error:', e);
   }
 }
 

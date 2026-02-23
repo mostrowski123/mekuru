@@ -46,6 +46,11 @@ class ReaderSettings {
   /// when [colorMode] is [ColorMode.sepia].
   final double sepiaIntensity;
 
+  /// When true, hyperlinks in the EPUB are disabled — tapping linked text
+  /// triggers a dictionary lookup instead of navigating. Links are always
+  /// styled blue regardless of this setting.
+  final bool disableLinks;
+
   const ReaderSettings({
     this.fontSize = 18,
     this.verticalText = true,
@@ -57,6 +62,7 @@ class ReaderSettings {
     this.colorMode = ColorMode.normal,
     this.keepScreenOn = false,
     this.sepiaIntensity = 0.5,
+    this.disableLinks = false,
   });
 
   ReaderSettings copyWith({
@@ -70,6 +76,7 @@ class ReaderSettings {
     ColorMode? colorMode,
     bool? keepScreenOn,
     double? sepiaIntensity,
+    bool? disableLinks,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -83,6 +90,7 @@ class ReaderSettings {
       colorMode: colorMode ?? this.colorMode,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       sepiaIntensity: sepiaIntensity ?? this.sepiaIntensity,
+      disableLinks: disableLinks ?? this.disableLinks,
     );
   }
 }

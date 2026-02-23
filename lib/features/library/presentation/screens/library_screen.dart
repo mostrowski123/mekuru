@@ -9,6 +9,8 @@ import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
+import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
+import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:path/path.dart' as p;
 
@@ -538,6 +540,23 @@ class _BookTileState extends ConsumerState<_BookTile>
             ),
             const Divider(),
             ListTile(
+              leading: const Icon(Icons.bookmark_outline),
+              title: const Text('Bookmarks'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _showBookBookmarks(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.highlight),
+              title: const Text('Highlights'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _showBookHighlights(context);
+              },
+            ),
+            const Divider(),
+            ListTile(
               leading: const Icon(Icons.edit_outlined),
               title: const Text('Rename'),
               onTap: () {
@@ -568,6 +587,38 @@ class _BookTileState extends ConsumerState<_BookTile>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showBookBookmarks(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => BookmarksSheet(
+        bookId: book.id,
+        onNavigate: (cfi) {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ReaderScreen(book: book)),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showBookHighlights(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => HighlightsSheet(
+        bookId: book.id,
+        onNavigate: (cfiRange) {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ReaderScreen(book: book)),
+          );
+        },
       ),
     );
   }

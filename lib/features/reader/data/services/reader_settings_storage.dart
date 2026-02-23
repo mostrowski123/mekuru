@@ -16,6 +16,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _colorModeKey = 'reader.color_mode';
   static const _keepScreenOnKey = 'reader.keep_screen_on';
   static const _sepiaIntensityKey = 'reader.sepia_intensity';
+  static const _disableLinksKey = 'reader.disable_links';
 
   @override
   Future<ReaderSettings?> load() async {
@@ -28,7 +29,8 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
         prefs.containsKey(_swipeSensitivityKey) ||
         prefs.containsKey(_colorModeKey) ||
         prefs.containsKey(_keepScreenOnKey) ||
-        prefs.containsKey(_sepiaIntensityKey);
+        prefs.containsKey(_sepiaIntensityKey) ||
+        prefs.containsKey(_disableLinksKey);
 
     if (!hasSavedSettings) {
       return null;
@@ -45,6 +47,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       colorMode: colorModeFromString(prefs.getString(_colorModeKey)),
       keepScreenOn: prefs.getBool(_keepScreenOnKey) ?? false,
       sepiaIntensity: prefs.getDouble(_sepiaIntensityKey) ?? 0.5,
+      disableLinks: prefs.getBool(_disableLinksKey) ?? false,
     );
   }
 
@@ -63,5 +66,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     await prefs.setString(_colorModeKey, settings.colorMode.storageValue);
     await prefs.setBool(_keepScreenOnKey, settings.keepScreenOn);
     await prefs.setDouble(_sepiaIntensityKey, settings.sepiaIntensity);
+    await prefs.setBool(_disableLinksKey, settings.disableLinks);
   }
 }

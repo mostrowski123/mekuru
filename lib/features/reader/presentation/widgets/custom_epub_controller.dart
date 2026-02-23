@@ -81,6 +81,10 @@ class CustomEpubController {
     _eval('setBodyBackground("$hex")');
   }
 
+  void setDisableLinks(bool disabled) {
+    _eval('setDisableLinks($disabled)');
+  }
+
   // ── Search ──────────────────────────────────────────────────────────
 
   Completer<List<Map<String, dynamic>>>? _searchCompleter;
@@ -130,6 +134,9 @@ class CustomEpubController {
   // ── Selection ───────────────────────────────────────────────────────
 
   void clearSelection() => _eval('clearSelection()');
+
+  /// Expand the current word selection to the full sentence.
+  void expandToSentence() => _eval('expandToSentence()');
 
   // ── Text extraction ─────────────────────────────────────────────────
 

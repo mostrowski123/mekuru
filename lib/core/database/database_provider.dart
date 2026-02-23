@@ -8,15 +8,17 @@ import '../../features/dictionary/data/models/dictionary_meta.dart';
 import '../../features/dictionary/data/models/dictionary_entry.dart';
 import '../../features/dictionary/data/models/pitch_accent.dart';
 import '../../features/dictionary/data/models/frequency.dart';
+import '../../features/reader/data/models/bookmark.dart';
+import '../../features/reader/data/models/highlight.dart';
 
 part 'database_provider.g.dart';
 
-@DriftDatabase(tables: [Books, SavedWords, DictionaryMetas, DictionaryEntries, PitchAccents, Frequencies])
+@DriftDatabase(tables: [Books, SavedWords, DictionaryMetas, DictionaryEntries, PitchAccents, Frequencies, Bookmarks, Highlights])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +65,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 9) {
             await migrator.addColumn(books, books.overrideVerticalText);
             await migrator.addColumn(books, books.overrideReadingDirection);
+          }
+          if (from < 10) {
+            await migrator.createTable(bookmarks);
+            await migrator.createTable(highlights);
           }
         },
       );

@@ -15,8 +15,11 @@ import 'package:mekuru/features/reader/data/services/reader_progress_persistence
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/reader_display_settings_mapper.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
+import 'package:mekuru/features/reader/data/models/highlight_color.dart';
+import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
+import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -46,7 +49,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   bool _isRebuildingForDirection = false;
   bool _hasActiveSelection = false;
   bool _locationsReady = false;
+  EpubSelectionData? _selectionData;
   double _progress = 0.0;
+  String _currentCfi = '';
+  bool _isCurrentPageBookmarked = false;
   String? _initialCfi;
   String? _errorMessage;
   int _viewerEpoch = 0;
@@ -63,7 +69,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     super.initState();
 
     Sentry.addBreadcrumb(Breadcrumb(
-      message: 'Opened book: ${widget.book.title}',
+      message: 'Opened book',
       category: 'reader',
     ));
 
@@ -148,6 +154,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         );
       }
 
+      if (previous.disableLinks != next.disableLinks && _isEpubLoaded) {
+        _epubController.setDisableLinks(next.disableLinks);
+      }
+
       final colorChanged = previous.colorMode != next.colorMode ||
           (next.colorMode == ColorMode.sepia &&
               previous.sepiaIntensity != next.sepiaIntensity);
@@ -204,6 +214,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           _isLoading = false;
                           _isEpubLoaded = true;
                         });
+                        _restoreHighlights();
+                        // Sync disableLinks setting to the JS bridge
+                        final s = ref.read(readerSettingsProvider);
+                        _epubController.setDisableLinks(s.disableLinks);
                       },
                       onChaptersLoaded: (chapters) {
                         if (!mounted) return;
@@ -239,6 +253,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
                         final cfi = location.startCfi.trim();
                         if (_isEpubCfi(cfi)) {
+                          _currentCfi = cfi;
+                          _checkBookmarkState();
                           _progressPersistence.queueSave(
                             cfi,
                             _locationsReady ? normalizedProgress : _progress,
@@ -247,9 +263,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       },
                       onSelection: (selection) {
                         _hasActiveSelection = true;
+                        if (selection.text.isNotEmpty &&
+                            selection.cfi.isNotEmpty) {
+                          setState(() {
+                            _selectionData = selection;
+                          });
+                        }
                       },
                       onSelectionCleared: () {
                         _hasActiveSelection = false;
+                        setState(() {
+                          _selectionData = null;
+                        });
                       },
                       onTouchDown: (x, y) {
                         _touchDownX = x.clamp(0.0, 1.0);
@@ -267,6 +292,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           settings.readingDirection,
                           settings.swipeSensitivity,
                         );
+                      },
+                      onSentenceSelected: (selection) {
+                        if (!mounted) return;
+                        _hasActiveSelection = true;
+                        setState(() {
+                          _selectionData = selection;
+                        });
+                        AppHaptics.medium();
                       },
                       onWordTapped: (surroundingText, charOffset,
                           blockCharOffset, tappedChar, x, y) {
@@ -292,6 +325,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     left: 0,
                     right: 0,
                     child: _buildBottomBar(settings),
+                  ),
+                // Highlight speed-dial FAB — appears when text is selected
+                if (_selectionData != null)
+                  _HighlightSpeedDial(
+                    onColorSelected: (color) => _createHighlight(
+                      _selectionData!.cfi,
+                      _selectionData!.text,
+                      color,
+                    ),
+                    onExpandToSentence: () {
+                      _epubController.expandToSentence();
+                      AppHaptics.medium();
+                    },
                   ),
               ],
             ),
@@ -764,6 +810,136 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     return _isEpubCfi(value) ? value : null;
   }
 
+  // ── Bookmarks ────────────────────────────────────────────────────
+
+  Future<void> _checkBookmarkState() async {
+    if (_currentCfi.isEmpty) return;
+    final existing = await ref
+        .read(bookmarkRepositoryProvider)
+        .getBookmarkAtCfi(widget.book.id, _currentCfi);
+    if (mounted) {
+      setState(() => _isCurrentPageBookmarked = existing != null);
+    }
+  }
+
+  Future<void> _toggleBookmark() async {
+    if (!_isEpubLoaded || _currentCfi.isEmpty) return;
+
+    final repo = ref.read(bookmarkRepositoryProvider);
+    final existing = await repo.getBookmarkAtCfi(widget.book.id, _currentCfi);
+    if (existing != null) {
+      await repo.deleteBookmark(existing.id);
+      AppHaptics.light();
+      if (mounted) {
+        _checkBookmarkState();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bookmark removed'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } else {
+      var chapterTitle = '';
+      if (_chapters.isNotEmpty) {
+        chapterTitle = _chapters.first.title;
+        for (final ch in _chapters) {
+          if (ch.title.trim().isNotEmpty) {
+            chapterTitle = ch.title.trim();
+          }
+        }
+      }
+
+      await repo.addBookmark(
+        bookId: widget.book.id,
+        cfi: _currentCfi,
+        progress: _progress,
+        chapterTitle: chapterTitle,
+      );
+      AppHaptics.medium();
+      if (mounted) {
+        _checkBookmarkState();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Page bookmarked'),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showBookmarksSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => BookmarksSheet(
+        bookId: widget.book.id,
+        onNavigate: (cfi) {
+          if (_isEpubLoaded) {
+            _epubController.display(cfi: cfi);
+          }
+        },
+        onBookmarkDeleted: _checkBookmarkState,
+      ),
+    );
+  }
+
+  void _showHighlightsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => HighlightsSheet(
+        bookId: widget.book.id,
+        onNavigate: (cfiRange) {
+          if (_isEpubLoaded) {
+            _epubController.display(cfi: cfiRange);
+          }
+        },
+        onRemoveHighlight: (cfiRange) {
+          _epubController.removeHighlight(cfiRange);
+        },
+      ),
+    );
+  }
+
+  // ── Highlights ──────────────────────────────────────────────────
+
+  Future<void> _restoreHighlights() async {
+    final highlights = await ref
+        .read(highlightRepositoryProvider)
+        .getAllHighlightsForBook(widget.book.id);
+    for (final h in highlights) {
+      final color = HighlightColor.fromName(h.color);
+      _epubController.addHighlight(cfi: h.cfiRange, color: color.color);
+    }
+    if (highlights.isNotEmpty) {
+      debugPrint('[READER] restored ${highlights.length} highlights');
+    }
+  }
+
+  void _createHighlight(String cfi, String text, HighlightColor color) {
+    if (cfi.isEmpty) return;
+
+    ref.read(highlightRepositoryProvider).addHighlight(
+      bookId: widget.book.id,
+      cfiRange: cfi,
+      selectedText: text,
+      color: color.name,
+    );
+    _epubController.addHighlight(cfi: cfi, color: color.color);
+    _dismissSelectionBar();
+    AppHaptics.medium();
+  }
+
+  void _dismissSelectionBar() {
+    _epubController.clearSelection();
+    setState(() {
+      _selectionData = null;
+      _hasActiveSelection = false;
+    });
+  }
+
   Widget _buildTopBar() {
     return Container(
       decoration: BoxDecoration(
@@ -800,6 +976,30 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 tooltip: 'Table of Contents',
                 onPressed: () => _showChapterDrawer(context),
               ),
+            IconButton(
+              icon: Icon(
+                _isCurrentPageBookmarked
+                    ? Icons.bookmark
+                    : Icons.bookmark_border,
+                color: _isCurrentPageBookmarked
+                    ? Colors.amber
+                    : Colors.white,
+              ),
+              tooltip: _isCurrentPageBookmarked
+                  ? 'Remove Bookmark'
+                  : 'Bookmark Page',
+              onPressed: _toggleBookmark,
+            ),
+            IconButton(
+              icon: const Icon(Icons.bookmarks_outlined, color: Colors.white),
+              tooltip: 'View Bookmarks',
+              onPressed: _showBookmarksSheet,
+            ),
+            IconButton(
+              icon: const Icon(Icons.highlight, color: Colors.white),
+              tooltip: 'Highlights',
+              onPressed: _showHighlightsSheet,
+            ),
             IconButton(
               icon: const Icon(Icons.settings, color: Colors.white),
               tooltip: 'Settings',
@@ -1166,6 +1366,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
+                  // ── Disable Links ──
+                  SwitchListTile(
+                    title: const Text('Disable Links'),
+                    subtitle: const Text(
+                      'Tap linked text to look up words instead of navigating',
+                    ),
+                    value: settings.disableLinks,
+                    onChanged: (value) {
+                      AppHaptics.medium();
+                      notifier.setDisableLinks(value);
+                    },
+                    secondary: const Icon(Icons.link_off),
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -1181,4 +1396,147 @@ class _FlattenedChapter {
   final String href;
 
   const _FlattenedChapter({required this.title, required this.href});
+}
+
+// ── Highlight speed-dial FAB ──────────────────────────────────────────
+
+class _HighlightSpeedDial extends StatefulWidget {
+  final void Function(HighlightColor color) onColorSelected;
+  final VoidCallback onExpandToSentence;
+
+  const _HighlightSpeedDial({
+    required this.onColorSelected,
+    required this.onExpandToSentence,
+  });
+
+  @override
+  State<_HighlightSpeedDial> createState() => _HighlightSpeedDialState();
+}
+
+class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _entryController;
+  late final Animation<double> _entryAnimation;
+  bool _expanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _entryController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _entryAnimation = CurvedAnimation(
+      parent: _entryController,
+      curve: Curves.easeOutBack,
+    );
+    _entryController.forward();
+  }
+
+  @override
+  void dispose() {
+    _entryController.dispose();
+    super.dispose();
+  }
+
+  void _toggle() => setState(() => _expanded = !_expanded);
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HighlightColor.values;
+    final theme = Theme.of(context);
+
+    return Positioned(
+      bottom: 100,
+      right: 16,
+      child: FadeTransition(
+        opacity: _entryAnimation,
+        child: ScaleTransition(
+          scale: _entryAnimation,
+          alignment: Alignment.bottomRight,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Color dots — shown when expanded
+              for (var i = 0; i < colors.length; i++)
+                AnimatedScale(
+                  scale: _expanded ? 1.0 : 0.0,
+                  duration: Duration(milliseconds: _expanded ? 150 + i * 40 : 100),
+                  curve: _expanded ? Curves.easeOutBack : Curves.easeIn,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _SpeedDialDot(
+                      color: colors[i].color,
+                      onTap: () => widget.onColorSelected(colors[i]),
+                    ),
+                  ),
+                ),
+
+              // Select Sentence button — shown when expanded
+              AnimatedScale(
+                scale: _expanded ? 1.0 : 0.0,
+                duration: Duration(
+                  milliseconds:
+                      _expanded ? 150 + (colors.length + 1) * 40 : 100,
+                ),
+                curve: _expanded ? Curves.easeOutBack : Curves.easeIn,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: Material(
+                      elevation: 2,
+                      shape: const CircleBorder(),
+                      color: theme.colorScheme.primaryContainer,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: widget.onExpandToSentence,
+                        child: Icon(
+                          Icons.select_all,
+                          size: 18,
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Main FAB
+              FloatingActionButton.small(
+                heroTag: 'highlight_fab',
+                onPressed: _toggle,
+                tooltip: 'Highlight selection',
+                child: const Icon(Icons.highlight),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpeedDialDot extends StatelessWidget {
+  final Color color;
+  final VoidCallback onTap;
+
+  const _SpeedDialDot({required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Material(
+        elevation: 4,
+        shape: const CircleBorder(),
+        color: color,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+        ),
+      ),
+    );
+  }
 }

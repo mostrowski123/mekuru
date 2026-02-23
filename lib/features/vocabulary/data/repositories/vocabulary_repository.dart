@@ -72,7 +72,7 @@ class VocabularyRepository {
         );
 
     Sentry.addBreadcrumb(Breadcrumb(
-      message: 'Word saved: ${entry.expression}',
+      message: 'Word saved',
       category: 'vocabulary',
     ));
 
