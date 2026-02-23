@@ -65,10 +65,24 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
+      - name: Build release App Bundle
+        run: flutter build appbundle --release
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.name }}
           generate_release_notes: true
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+
+      - name: Deploy to Google Play Console
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: moe.matthew.mekuru
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          releaseName: ${{ steps.tag.outputs.name }}
