@@ -242,7 +242,7 @@ class DictionarySearchScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              'Import dictionaries from Settings to start searching.',
+              'Tap the manage button in the top right to import a dictionary.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
               ),
