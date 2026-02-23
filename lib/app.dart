@@ -97,6 +97,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
+          _hasAppliedStartup = true;
           setState(() => _currentIndex = index);
           if (index == 1 && ref.read(autoFocusSearchProvider)) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
