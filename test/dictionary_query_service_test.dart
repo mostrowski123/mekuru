@@ -619,4 +619,292 @@ void main() {
       },
     );
   });
+
+  // ── prefixSearchWithSource ─────────────────────────────────────
+
+  group('DictionaryQueryService — prefixSearchWithSource', () {
+    test('returns entries whose expression starts with the prefix', () async {
+      final results = await queryService.prefixSearchWithSource('食');
+      expect(results, isNotEmpty);
+      for (final r in results) {
+        expect(r.entry.expression, startsWith('食'));
+      }
+    });
+
+    test('returns entries whose reading starts with the prefix', () async {
+      final results = await queryService.prefixSearchWithSource('た');
+      expect(results, isNotEmpty);
+      for (final r in results) {
+        expect(
+          r.entry.expression.startsWith('た') ||
+              r.entry.reading.startsWith('た'),
+          isTrue,
+        );
+      }
+    });
+
+    test('excludes disabled dictionaries', () async {
+      final results = await queryService.prefixSearchWithSource('食');
+      for (final r in results) {
+        expect(r.dictionaryName, isNot('DisabledDict'));
+      }
+    });
+
+    test('returns empty list for non-matching prefix', () async {
+      final results = await queryService.prefixSearchWithSource('zzz');
+      expect(results, isEmpty);
+    });
+
+    test('returns empty list for empty string', () async {
+      final results = await queryService.prefixSearchWithSource('');
+      expect(results, isEmpty);
+    });
+
+    test('respects limit parameter', () async {
+      final results = await queryService.prefixSearchWithSource('食', limit: 1);
+      expect(results, hasLength(lessThanOrEqualTo(1)));
+    });
+
+    test('includes dictionary name in results', () async {
+      final results = await queryService.prefixSearchWithSource('飲');
+      expect(results, hasLength(1));
+      expect(results.first.dictionaryName, 'EnabledDict');
+    });
+  });
+
+  // ── glossarySearchWithSource ───────────────────────────────────
+
+  group('DictionaryQueryService — glossarySearchWithSource', () {
+    test('finds entries by English definition substring', () async {
+      final results = await queryService.glossarySearchWithSource('to eat');
+      expect(results, isNotEmpty);
+      for (final r in results) {
+        expect(r.entry.glossaries.toLowerCase(), contains('to eat'));
+      }
+    });
+
+    test('search is case-insensitive', () async {
+      final resultsLower = await queryService.glossarySearchWithSource('to eat');
+      final resultsUpper = await queryService.glossarySearchWithSource('To Eat');
+      // SQLite LIKE is case-insensitive for ASCII characters
+      expect(resultsLower.length, resultsUpper.length);
+    });
+
+    test('excludes disabled dictionaries', () async {
+      final results =
+          await queryService.glossarySearchWithSource('disabled dict');
+      // The disabled dict entry has glossary "to eat (disabled dict)"
+      // but it should be filtered out
+      for (final r in results) {
+        expect(r.dictionaryName, isNot('DisabledDict'));
+      }
+    });
+
+    test('returns empty list for non-matching term', () async {
+      final results = await queryService.glossarySearchWithSource('xyznotfound');
+      expect(results, isEmpty);
+    });
+
+    test('returns empty list for empty string', () async {
+      final results = await queryService.glossarySearchWithSource('');
+      expect(results, isEmpty);
+    });
+
+    test('respects limit parameter', () async {
+      final results =
+          await queryService.glossarySearchWithSource('to', limit: 1);
+      expect(results, hasLength(lessThanOrEqualTo(1)));
+    });
+
+    test('finds entries with partial definition match', () async {
+      final results = await queryService.glossarySearchWithSource('consume');
+      expect(results, hasLength(1));
+      expect(results.first.entry.expression, '食べる');
+    });
+  });
+
+  // ── searchPitchAccents ─────────────────────────────────────────
+
+  group('DictionaryQueryService — searchPitchAccents', () {
+    late AppDatabase pitchDb;
+    late DictionaryRepository pitchRepo;
+    late DictionaryQueryService pitchQueryService;
+
+    setUp(() async {
+      pitchDb = createTestDatabase();
+      pitchRepo = DictionaryRepository(pitchDb);
+      pitchQueryService = DictionaryQueryService(pitchDb);
+
+      final enabledId = await pitchRepo.insertDictionary('PitchDict');
+      final disabledId = await pitchRepo.insertDictionary('DisabledPitch');
+      await pitchRepo.toggleDictionary(disabledId, isEnabled: false);
+
+      await pitchRepo.batchInsertPitchAccents([
+        PitchAccentsCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          downstepPosition: 2,
+          dictionaryId: enabledId,
+        ),
+        PitchAccentsCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          downstepPosition: 0,
+          dictionaryId: disabledId,
+        ),
+        PitchAccentsCompanion.insert(
+          expression: '走る',
+          reading: const Value('はしる'),
+          downstepPosition: 2,
+          dictionaryId: enabledId,
+        ),
+      ]);
+    });
+
+    tearDown(() async {
+      await pitchDb.close();
+    });
+
+    test('returns pitch accents for matching expression', () async {
+      final results = await pitchQueryService.searchPitchAccents('食べる');
+      expect(results, hasLength(1));
+      expect(results.first.reading, 'たべる');
+      expect(results.first.downstepPosition, 2);
+      expect(results.first.dictionaryName, 'PitchDict');
+    });
+
+    test('excludes disabled dictionaries', () async {
+      final results = await pitchQueryService.searchPitchAccents('食べる');
+      for (final r in results) {
+        expect(r.dictionaryName, isNot('DisabledPitch'));
+      }
+    });
+
+    test('returns empty list for non-existent expression', () async {
+      final results = await pitchQueryService.searchPitchAccents('存在しない');
+      expect(results, isEmpty);
+    });
+
+    test('returns multiple pitch accents for different expressions', () async {
+      final taberuResults =
+          await pitchQueryService.searchPitchAccents('食べる');
+      final hashiruResults =
+          await pitchQueryService.searchPitchAccents('走る');
+      expect(taberuResults, hasLength(1));
+      expect(hashiruResults, hasLength(1));
+      expect(hashiruResults.first.reading, 'はしる');
+    });
+
+    test('results are ordered by dictionary sort order', () async {
+      // Add a second enabled dictionary with different sort order
+      final dictB = await pitchRepo.insertDictionary('PitchDict B');
+      await pitchRepo.batchInsertPitchAccents([
+        PitchAccentsCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          downstepPosition: 0,
+          dictionaryId: dictB,
+        ),
+      ]);
+
+      final results = await pitchQueryService.searchPitchAccents('食べる');
+      expect(results, hasLength(2));
+      expect(results[0].dictionaryName, 'PitchDict');
+      expect(results[1].dictionaryName, 'PitchDict B');
+    });
+  });
+
+  // ── getFrequencyRank ───────────────────────────────────────────
+
+  group('DictionaryQueryService — getFrequencyRank', () {
+    late AppDatabase freqDb;
+    late DictionaryRepository freqRepo;
+    late DictionaryQueryService freqQueryService;
+
+    setUp(() async {
+      freqDb = createTestDatabase();
+      freqRepo = DictionaryRepository(freqDb);
+      freqQueryService = DictionaryQueryService(freqDb);
+
+      final freqDictId = await freqRepo.insertDictionary('FreqDict');
+      await freqRepo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          frequencyRank: 100,
+          dictionaryId: freqDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          frequencyRank: 200,
+          dictionaryId: freqDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '走る',
+          reading: const Value('はしる'),
+          frequencyRank: 500,
+          dictionaryId: freqDictId,
+        ),
+      ]);
+    });
+
+    tearDown(() async {
+      await freqDb.close();
+    });
+
+    test('returns the best (lowest) rank for an expression', () async {
+      final rank = await freqQueryService.getFrequencyRank('食べる');
+      expect(rank, 100);
+    });
+
+    test('returns rank when querying by expression and reading', () async {
+      final rank = await freqQueryService.getFrequencyRank('食べる', 'たべる');
+      expect(rank, 100);
+    });
+
+    test('returns null for non-existent expression', () async {
+      final rank = await freqQueryService.getFrequencyRank('存在しない');
+      expect(rank, isNull);
+    });
+
+    test('returns correct rank for different expressions', () async {
+      final rank = await freqQueryService.getFrequencyRank('走る');
+      expect(rank, 500);
+    });
+
+    test('returns the minimum across multiple frequency entries', () async {
+      // 食べる has ranks 100 and 200 — should return 100
+      final rank = await freqQueryService.getFrequencyRank('食べる');
+      expect(rank, 100);
+    });
+  });
+
+  // ── DictionaryEntryWithSource.frequencyLabel ───────────────────
+
+  group('DictionaryEntryWithSource — frequencyLabel', () {
+    test('returns "Very Common" for rank <= 5000', () {
+      expect(DictionaryEntryWithSource.frequencyLabel(1), 'Very Common');
+      expect(DictionaryEntryWithSource.frequencyLabel(5000), 'Very Common');
+    });
+
+    test('returns "Common" for rank 5001–15000', () {
+      expect(DictionaryEntryWithSource.frequencyLabel(5001), 'Common');
+      expect(DictionaryEntryWithSource.frequencyLabel(15000), 'Common');
+    });
+
+    test('returns "Uncommon" for rank 15001–30000', () {
+      expect(DictionaryEntryWithSource.frequencyLabel(15001), 'Uncommon');
+      expect(DictionaryEntryWithSource.frequencyLabel(30000), 'Uncommon');
+    });
+
+    test('returns "Rare" for rank > 30000', () {
+      expect(DictionaryEntryWithSource.frequencyLabel(30001), 'Rare');
+      expect(DictionaryEntryWithSource.frequencyLabel(100000), 'Rare');
+    });
+
+    test('returns null for null rank', () {
+      expect(DictionaryEntryWithSource.frequencyLabel(null), isNull);
+    });
+  });
 }

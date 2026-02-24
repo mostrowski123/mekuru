@@ -292,4 +292,281 @@ void main() {
       await subscription.cancel();
     });
   });
+
+  group('DictionaryRepository — setHidden', () {
+    test('marks a dictionary as hidden', () async {
+      final id = await repo.insertDictionary('FreqDict');
+
+      await repo.setHidden(id, isHidden: true);
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts.first.isHidden, isTrue);
+    });
+
+    test('un-hides a dictionary', () async {
+      final id = await repo.insertDictionary('FreqDict');
+      await repo.setHidden(id, isHidden: true);
+      await repo.setHidden(id, isHidden: false);
+
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts.first.isHidden, isFalse);
+    });
+
+    test('new dictionaries are not hidden by default', () async {
+      await repo.insertDictionary('JMdict');
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts.first.isHidden, isFalse);
+    });
+  });
+
+  group('DictionaryRepository — getDictionaryByName', () {
+    test('returns dictionary when name exists', () async {
+      await repo.insertDictionary('JMdict');
+      final result = await repo.getDictionaryByName('JMdict');
+      expect(result, isNot(equals(null)));
+      expect(result!.name, 'JMdict');
+    });
+
+    test('returns null when name does not exist', () async {
+      final result = await repo.getDictionaryByName('NonExistent');
+      expect(result, equals(null));
+    });
+
+    test('matches exact name only', () async {
+      await repo.insertDictionary('JMdict');
+      final exactResult = await repo.getDictionaryByName('JMdict');
+      expect(exactResult, isNot(equals(null)));
+    });
+  });
+
+  group('DictionaryRepository — watchVisibleDictionaries', () {
+    test('excludes hidden dictionaries', () async {
+      final id1 = await repo.insertDictionary('Visible');
+      final id2 = await repo.insertDictionary('Hidden');
+      await repo.setHidden(id2, isHidden: true);
+
+      final emissions = <List<DictionaryMeta>>[];
+      final subscription = repo.watchVisibleDictionaries().listen((data) {
+        emissions.add(data);
+      });
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(emissions.last, hasLength(1));
+      expect(emissions.last.first.name, 'Visible');
+
+      await subscription.cancel();
+    });
+  });
+
+  group('DictionaryRepository — PitchAccent operations', () {
+    test('batchInsertPitchAccents inserts correctly', () async {
+      final dictId = await repo.insertDictionary('PitchDict');
+
+      final entries = [
+        PitchAccentsCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          downstepPosition: 2,
+          dictionaryId: dictId,
+        ),
+        PitchAccentsCompanion.insert(
+          expression: '走る',
+          reading: const Value('はしる'),
+          downstepPosition: 2,
+          dictionaryId: dictId,
+        ),
+      ];
+
+      final count = await repo.batchInsertPitchAccents(entries);
+      expect(count, 2);
+      expect(await repo.getPitchAccentCount(dictId), 2);
+    });
+
+    test('batchInsertPitchAccents respects batchSize', () async {
+      final dictId = await repo.insertDictionary('PitchDict');
+
+      final entries = List.generate(
+        15,
+        (i) => PitchAccentsCompanion.insert(
+          expression: 'word_$i',
+          reading: Value('reading_$i'),
+          downstepPosition: i % 4,
+          dictionaryId: dictId,
+        ),
+      );
+
+      final count = await repo.batchInsertPitchAccents(entries, batchSize: 5);
+      expect(count, 15);
+      expect(await repo.getPitchAccentCount(dictId), 15);
+    });
+
+    test('getPitchAccentCount returns 0 for non-existent dictionary', () async {
+      expect(await repo.getPitchAccentCount(999), 0);
+    });
+  });
+
+  group('DictionaryRepository — Frequency operations', () {
+    test('batchInsertFrequencies inserts correctly', () async {
+      final dictId = await repo.insertDictionary('FreqDict');
+
+      final entries = [
+        FrequenciesCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          frequencyRank: 100,
+          dictionaryId: dictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '走る',
+          reading: const Value('はしる'),
+          frequencyRank: 500,
+          dictionaryId: dictId,
+        ),
+      ];
+
+      final count = await repo.batchInsertFrequencies(entries);
+      expect(count, 2);
+      expect(await repo.getFrequencyCount(dictId), 2);
+    });
+
+    test('batchInsertFrequencies respects batchSize', () async {
+      final dictId = await repo.insertDictionary('FreqDict');
+
+      final entries = List.generate(
+        15,
+        (i) => FrequenciesCompanion.insert(
+          expression: 'word_$i',
+          reading: Value('reading_$i'),
+          frequencyRank: i * 100,
+          dictionaryId: dictId,
+        ),
+      );
+
+      final count = await repo.batchInsertFrequencies(entries, batchSize: 5);
+      expect(count, 15);
+      expect(await repo.getFrequencyCount(dictId), 15);
+    });
+
+    test('getFrequencyCount returns 0 for non-existent dictionary', () async {
+      expect(await repo.getFrequencyCount(999), 0);
+    });
+  });
+
+  group('DictionaryRepository — deleteDictionary cascades', () {
+    test('deleting a dictionary also removes its pitch accents', () async {
+      final dictId = await repo.insertDictionary('PitchDict');
+
+      await repo.batchInsertPitchAccents([
+        PitchAccentsCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          downstepPosition: 2,
+          dictionaryId: dictId,
+        ),
+      ]);
+      expect(await repo.getPitchAccentCount(dictId), 1);
+
+      await repo.deleteDictionary(dictId);
+      expect(await repo.getPitchAccentCount(dictId), 0);
+    });
+
+    test('deleting a dictionary also removes its frequencies', () async {
+      final dictId = await repo.insertDictionary('FreqDict');
+
+      await repo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          frequencyRank: 100,
+          dictionaryId: dictId,
+        ),
+      ]);
+      expect(await repo.getFrequencyCount(dictId), 1);
+
+      await repo.deleteDictionary(dictId);
+      expect(await repo.getFrequencyCount(dictId), 0);
+    });
+
+    test('deleting one dictionary does not affect another pitch/freq data',
+        () async {
+      final id1 = await repo.insertDictionary('Dict1');
+      final id2 = await repo.insertDictionary('Dict2');
+
+      await repo.batchInsertPitchAccents([
+        PitchAccentsCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          downstepPosition: 2,
+          dictionaryId: id1,
+        ),
+        PitchAccentsCompanion.insert(
+          expression: '走る',
+          reading: const Value('はしる'),
+          downstepPosition: 1,
+          dictionaryId: id2,
+        ),
+      ]);
+
+      await repo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          frequencyRank: 100,
+          dictionaryId: id1,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '走る',
+          reading: const Value('はしる'),
+          frequencyRank: 500,
+          dictionaryId: id2,
+        ),
+      ]);
+
+      await repo.deleteDictionary(id1);
+
+      expect(await repo.getPitchAccentCount(id2), 1);
+      expect(await repo.getFrequencyCount(id2), 1);
+      expect(await repo.getEntryCount(id2), 0); // no entries were inserted for id2
+    });
+
+    test('deleting a dictionary removes entries, pitch accents, and frequencies together',
+        () async {
+      final dictId = await repo.insertDictionary('FullDict');
+
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '食べる',
+          glossaries: '["to eat"]',
+          dictionaryId: dictId,
+        ),
+      ]);
+      await repo.batchInsertPitchAccents([
+        PitchAccentsCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          downstepPosition: 2,
+          dictionaryId: dictId,
+        ),
+      ]);
+      await repo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '食べる',
+          reading: const Value('たべる'),
+          frequencyRank: 100,
+          dictionaryId: dictId,
+        ),
+      ]);
+
+      expect(await repo.getEntryCount(dictId), 1);
+      expect(await repo.getPitchAccentCount(dictId), 1);
+      expect(await repo.getFrequencyCount(dictId), 1);
+
+      await repo.deleteDictionary(dictId);
+
+      expect(await repo.getEntryCount(dictId), 0);
+      expect(await repo.getPitchAccentCount(dictId), 0);
+      expect(await repo.getFrequencyCount(dictId), 0);
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts, isEmpty);
+    });
+  });
 }
