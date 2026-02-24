@@ -22,12 +22,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set release tag from timestamp
+      - name: Set release tag and version code from timestamp
         id: tag
         run: |
           TAG="v$(date -u +'%Y%m%d.%H%M%S')"
+          VERSION_CODE=$(date -u +'%Y%m%d%H')
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=Mekuru $TAG" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
       - name: Decode release keystore
         run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
@@ -82,10 +84,10 @@ jobs:
           --sentryEnvironment=production
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-number=${{ steps.tag.outputs.version_code }}
 
       - name: Build release App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --build-number=${{ steps.tag.outputs.version_code }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
