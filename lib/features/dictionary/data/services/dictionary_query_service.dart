@@ -50,50 +50,173 @@ class PitchAccentResult {
   });
 }
 
+/// Cached dictionary metadata for avoiding repeated JOIN queries.
+class _MetasCache {
+  final Set<int> enabledIds;
+  final Map<int, String> names;
+  final Map<int, int> sortOrders;
+
+  const _MetasCache({
+    required this.enabledIds,
+    required this.names,
+    required this.sortOrders,
+  });
+}
+
 /// Service for querying dictionary entries.
 class DictionaryQueryService {
   final AppDatabase _db;
+  _MetasCache? _metasCache;
 
   DictionaryQueryService(this._db);
+
+  /// Invalidate the cached dictionary metadata. Call this when dictionaries
+  /// are toggled, reordered, deleted, or imported.
+  void invalidateMetasCache() {
+    _metasCache = null;
+  }
+
+  /// Ensure the dictionary metadata cache is populated.
+  Future<_MetasCache> _ensureMetasCached() async {
+    if (_metasCache != null) return _metasCache!;
+
+    final rows = await (_db.select(
+      _db.dictionaryMetas,
+    )..where((t) => t.isEnabled.equals(true))).get();
+
+    final enabledIds = <int>{};
+    final names = <int, String>{};
+    final sortOrders = <int, int>{};
+
+    for (final row in rows) {
+      enabledIds.add(row.id);
+      names[row.id] = row.name;
+      sortOrders[row.id] = row.sortOrder;
+    }
+
+    _metasCache = _MetasCache(
+      enabledIds: enabledIds,
+      names: names,
+      sortOrders: sortOrders,
+    );
+    return _metasCache!;
+  }
+
+  /// Sort entries by their dictionary's sort order using the cached metadata.
+  void _sortBySortOrder(List<DictionaryEntry> entries, _MetasCache cache) {
+    if (entries.length < 2) return;
+    entries.sort((a, b) {
+      final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
+      final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
+      return orderA.compareTo(orderB);
+    });
+  }
+
+  /// Sort entries-with-source by their dictionary's sort order.
+  void _sortWithSourceBySortOrder(
+    List<DictionaryEntryWithSource> entries,
+    _MetasCache cache,
+  ) {
+    if (entries.length < 2) return;
+    entries.sort((a, b) {
+      final orderA = cache.sortOrders[a.entry.dictionaryId] ?? 0;
+      final orderB = cache.sortOrders[b.entry.dictionaryId] ?? 0;
+      return orderA.compareTo(orderB);
+    });
+  }
+
+  List<DictionaryEntryWithSource> _mapEntriesWithSource(
+    List<DictionaryEntry> rows,
+    _MetasCache cache,
+  ) {
+    final results = rows.map((entry) {
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: cache.names[entry.dictionaryId] ?? '',
+      );
+    }).toList();
+
+    _sortWithSourceBySortOrder(results, cache);
+    return results;
+  }
+
+  List<DictionaryEntryWithSource> _mapEntriesWithSourceUnsorted(
+    List<DictionaryEntry> rows,
+    _MetasCache cache,
+  ) {
+    return rows.map((entry) {
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: cache.names[entry.dictionaryId] ?? '',
+      );
+    }).toList();
+  }
+
+  Future<List<DictionaryEntryWithSource>> _searchWithSourceNoFrequency(
+    String term,
+    _MetasCache cache,
+  ) async {
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            (t.expression.equals(term) | t.reading.equals(term)) &
+            t.dictionaryId.isIn(cache.enabledIds),
+      );
+
+    final rows = await query.get();
+    return _mapEntriesWithSource(rows, cache);
+  }
+
+  Future<List<DictionaryEntryWithSource>> _searchMultipleWithSourceNoFrequency(
+    List<String> terms,
+    _MetasCache cache,
+  ) async {
+    if (terms.isEmpty) return [];
+
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            (t.expression.isIn(terms) | t.reading.isIn(terms)) &
+            t.dictionaryId.isIn(cache.enabledIds),
+      );
+
+    final rows = await query.get();
+    return _mapEntriesWithSource(rows, cache);
+  }
 
   /// Search entries by exact expression match.
   /// Only returns results from enabled dictionaries, ordered by dictionary sort order.
   Future<List<DictionaryEntry>> searchByExpression(String expression) async {
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(_db.dictionaryEntries.expression.equals(expression))
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
 
-    final rows = await query.get();
-    return rows.map((row) => row.readTable(_db.dictionaryEntries)).toList();
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            t.expression.equals(expression) &
+            t.dictionaryId.isIn(cache.enabledIds),
+      );
+
+    final results = await query.get();
+    _sortBySortOrder(results, cache);
+    return results;
   }
 
   /// Search entries by reading (hiragana/katakana).
   /// Only returns results from enabled dictionaries, ordered by dictionary sort order.
   Future<List<DictionaryEntry>> searchByReading(String reading) async {
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(_db.dictionaryEntries.reading.equals(reading))
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
 
-    final rows = await query.get();
-    return rows.map((row) => row.readTable(_db.dictionaryEntries)).toList();
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            t.reading.equals(reading) & t.dictionaryId.isIn(cache.enabledIds),
+      );
+
+    final results = await query.get();
+    _sortBySortOrder(results, cache);
+    return results;
   }
 
   /// Search entries by expression OR reading.
@@ -101,77 +224,49 @@ class DictionaryQueryService {
   /// if the selection is kanji or kana.
   /// Results are ordered by dictionary sort order (same order as Dictionary Manager).
   Future<List<DictionaryEntry>> search(String term) async {
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(
-            _db.dictionaryEntries.expression.equals(term) |
-                _db.dictionaryEntries.reading.equals(term),
-          )
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
 
-    final rows = await query.get();
-    return rows.map((row) => row.readTable(_db.dictionaryEntries)).toList();
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            (t.expression.equals(term) | t.reading.equals(term)) &
+            t.dictionaryId.isIn(cache.enabledIds),
+      );
+
+    final results = await query.get();
+    _sortBySortOrder(results, cache);
+    return results;
   }
 
   /// Returns `true` if [term] exists as an expression or reading in any
   /// enabled dictionary. Uses LIMIT 1 for efficiency — only checks existence,
   /// does not fetch full entry data.
   Future<bool> hasMatch(String term) async {
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(
-            _db.dictionaryEntries.expression.equals(term) |
-                _db.dictionaryEntries.reading.equals(term),
-          )
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..limit(1);
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return false;
 
-    final rows = await query.get();
-    return rows.isNotEmpty;
+    final query = _db.selectOnly(_db.dictionaryEntries)
+      ..addColumns([_db.dictionaryEntries.id])
+      ..where(
+        (_db.dictionaryEntries.expression.equals(term) |
+                _db.dictionaryEntries.reading.equals(term)) &
+            _db.dictionaryEntries.dictionaryId.isIn(cache.enabledIds),
+      )
+      ..limit(1);
+
+    final row = await query.getSingleOrNull();
+    return row != null;
   }
 
   /// Search entries and include the dictionary name for each result.
   /// Results are ordered by frequency rank (most common first), then by
   /// dictionary sort order as a tiebreaker.
   Future<List<DictionaryEntryWithSource>> searchWithSource(String term) async {
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(
-            _db.dictionaryEntries.expression.equals(term) |
-                _db.dictionaryEntries.reading.equals(term),
-          )
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
 
-    final rows = await query.get();
-    final results = rows.map((row) {
-      final entry = row.readTable(_db.dictionaryEntries);
-      final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
-    }).toList();
-
+    final results = await _searchWithSourceNoFrequency(term, cache);
     return _attachFrequencyRanks(results);
   }
 
@@ -209,7 +304,7 @@ class DictionaryQueryService {
     if (expressions.isEmpty) return {};
 
     // Fetch ALL frequency rows for these expressions in batches.
-    final allRows = <Frequency>[];
+    final allRows = <TypedResult>[];
     final exprList = expressions.toList();
     const batchSize = 200;
 
@@ -219,8 +314,13 @@ class DictionaryQueryService {
           : exprList.length;
       final batch = exprList.sublist(i, end);
 
-      final query = _db.select(_db.frequencies)
-        ..where((t) => t.expression.isIn(batch));
+      final query = _db.selectOnly(_db.frequencies)
+        ..addColumns([
+          _db.frequencies.expression,
+          _db.frequencies.reading,
+          _db.frequencies.frequencyRank,
+        ])
+        ..where(_db.frequencies.expression.isIn(batch));
 
       allRows.addAll(await query.get());
     }
@@ -232,24 +332,32 @@ class DictionaryQueryService {
     final exprFallback = <String, int>{};
 
     for (final row in allRows) {
-      if (row.reading.isNotEmpty) {
-        final key = (row.expression, row.reading);
+      final expression = row.read(_db.frequencies.expression);
+      final reading = row.read(_db.frequencies.reading);
+      final frequencyRank = row.read(_db.frequencies.frequencyRank);
+      if (expression == null || reading == null || frequencyRank == null) {
+        continue;
+      }
+
+      if (reading.isNotEmpty) {
+        final key = (expression, reading);
         final existing = pairRanks[key];
-        if (existing == null || row.frequencyRank < existing) {
-          pairRanks[key] = row.frequencyRank;
+        if (existing == null || frequencyRank < existing) {
+          pairRanks[key] = frequencyRank;
         }
       }
 
-      final existing = exprFallback[row.expression];
-      if (existing == null || row.frequencyRank < existing) {
-        exprFallback[row.expression] = row.frequencyRank;
+      final existing = exprFallback[expression];
+      if (existing == null || frequencyRank < existing) {
+        exprFallback[expression] = frequencyRank;
       }
     }
 
     // For each unique (expression, reading) in results, prefer the
     // pair-specific rank, fall back to expression-level rank.
-    final resultPairs =
-        results.map((r) => (r.entry.expression, r.entry.reading)).toSet();
+    final resultPairs = results
+        .map((r) => (r.entry.expression, r.entry.reading))
+        .toSet();
 
     final ranks = <(String, String), int>{};
     for (final pair in resultPairs) {
@@ -278,6 +386,15 @@ class DictionaryQueryService {
     if (results.isEmpty) return results;
 
     final ranks = await _getFrequencyRanks(results);
+    return _applyFrequencyRanks(results, ranks);
+  }
+
+  /// Apply pre-fetched frequency ranks and group/sort results.
+  List<DictionaryEntryWithSource> _applyFrequencyRanks(
+    List<DictionaryEntryWithSource> results,
+    Map<(String, String), int> ranks,
+  ) {
+    if (results.isEmpty) return results;
 
     // Attach frequency ranks to each entry.
     final ranked = results.map((r) {
@@ -305,9 +422,7 @@ class DictionaryQueryService {
       });
 
     // Flatten groups back into a single list.
-    return [
-      for (final key in sortedKeys) ...groups[key]!,
-    ];
+    return [for (final key in sortedKeys) ...groups[key]!];
   }
 
   /// Search entries matching any of [terms] (by expression or reading).
@@ -318,29 +433,10 @@ class DictionaryQueryService {
   ) async {
     if (terms.isEmpty) return [];
 
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(
-            _db.dictionaryEntries.expression.isIn(terms) |
-                _db.dictionaryEntries.reading.isIn(terms),
-          )
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
 
-    final rows = await query.get();
-    final results = rows.map((row) {
-      final entry = row.readTable(_db.dictionaryEntries);
-      final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
-    }).toList();
-
+    final results = await _searchMultipleWithSourceNoFrequency(terms, cache);
     return _attachFrequencyRanks(results);
   }
 
@@ -352,30 +448,28 @@ class DictionaryQueryService {
   }) async {
     if (term.isEmpty) return [];
 
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
+
     final pattern = '$term%';
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(
-            _db.dictionaryEntries.expression.like(pattern) |
-                _db.dictionaryEntries.reading.like(pattern),
-          )
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)])
-          ..limit(limit);
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            (t.expression.like(pattern) | t.reading.like(pattern)) &
+            t.dictionaryId.isIn(cache.enabledIds),
+      )
+      ..limit(limit);
 
     final rows = await query.get();
-    return rows.map((row) {
-      final entry = row.readTable(_db.dictionaryEntries);
-      final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
+    final results = rows.map((entry) {
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: cache.names[entry.dictionaryId] ?? '',
+      );
     }).toList();
+
+    _sortWithSourceBySortOrder(results, cache);
+    return results;
   }
 
   /// Fuzzy search combining exact match, fuzzy_bolt ranked matches,
@@ -395,6 +489,9 @@ class DictionaryQueryService {
     String term,
   ) async {
     if (term.isEmpty) return [];
+
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
 
     final seenIds = <int>{};
 
@@ -435,7 +532,7 @@ class DictionaryQueryService {
 
     // 1. Exact matches (highest priority — always on top)
     for (final t in searchTerms) {
-      addTo(exactResults, await searchWithSource(t));
+      addTo(exactResults, await _searchWithSourceNoFrequency(t, cache));
     }
 
     // 1b. Deinflected exact matches (same tier as exact).
@@ -448,7 +545,10 @@ class DictionaryQueryService {
     if (deinflectedCandidates.isNotEmpty) {
       addTo(
         exactResults,
-        await searchMultipleWithSource(deinflectedCandidates.toList()),
+        await _searchMultipleWithSourceNoFrequency(
+          deinflectedCandidates.toList(),
+          cache,
+        ),
       );
     }
 
@@ -478,7 +578,10 @@ class DictionaryQueryService {
       for (final rune in term.runes) {
         final char = String.fromCharCode(rune);
         if (_isKanji(char) && seen.add(char)) {
-          addTo(subComponentResults, await searchWithSource(char));
+          addTo(
+            subComponentResults,
+            await _searchWithSourceNoFrequency(char, cache),
+          );
         }
       }
     }
@@ -490,15 +593,17 @@ class DictionaryQueryService {
       // Always include direct glossary substring matches first so exact
       // English lookups remain reliable even when fuzzy scoring thresholds
       // are too strict for short terms (e.g. "run").
-      addTo(glossaryResults, await glossarySearchWithSource(term, limit: 30));
-
-      final glossaryCandidates = await _fetchGlossaryCandidates(
+      final glossaryData = await _fetchGlossaryDirectAndCandidates(
         term,
-        limit: 100,
+        cache,
+        directLimit: 30,
+        candidateLimit: 100,
       );
-      if (glossaryCandidates.isNotEmpty) {
+      addTo(glossaryResults, glossaryData.directMatches);
+
+      if (glossaryData.fuzzyCandidates.isNotEmpty) {
         final fuzzyMatches = await FuzzyBolt.search<DictionaryEntryWithSource>(
-          glossaryCandidates,
+          glossaryData.fuzzyCandidates,
           term,
           selectors: [(e) => e.entry.glossaries],
           strictThreshold: 0.7,
@@ -510,20 +615,70 @@ class DictionaryQueryService {
       }
     }
 
-    // Attach frequency ranks per tier, then concatenate in tier order.
-    // This ensures exact matches always appear before fuzzy, which appear
-    // before sub-component kanji matches, etc. — regardless of frequency.
-    final rankedExact = await _attachFrequencyRanks(exactResults);
-    final rankedFuzzy = await _attachFrequencyRanks(fuzzyResults);
-    final rankedSubComponent = await _attachFrequencyRanks(subComponentResults);
-    final rankedGlossary = await _attachFrequencyRanks(glossaryResults);
+    // Fetch frequency ranks once for all tiers combined, then apply per tier.
+    final allResults = [
+      ...exactResults,
+      ...fuzzyResults,
+      ...subComponentResults,
+      ...glossaryResults,
+    ];
+    final ranks = await _getFrequencyRanks(allResults);
 
     return [
-      ...rankedExact,
-      ...rankedFuzzy,
-      ...rankedSubComponent,
-      ...rankedGlossary,
+      ..._applyFrequencyRanks(exactResults, ranks),
+      ..._applyFrequencyRanks(fuzzyResults, ranks),
+      ..._applyFrequencyRanks(subComponentResults, ranks),
+      ..._applyFrequencyRanks(glossaryResults, ranks),
     ];
+  }
+
+  Future<
+    ({
+      List<DictionaryEntryWithSource> directMatches,
+      List<DictionaryEntryWithSource> fuzzyCandidates,
+    })
+  >
+  _fetchGlossaryDirectAndCandidates(
+    String term,
+    _MetasCache cache, {
+    int directLimit = 30,
+    int candidateLimit = 100,
+  }) async {
+    if (term.isEmpty || cache.enabledIds.isEmpty) {
+      return (
+        directMatches: <DictionaryEntryWithSource>[],
+        fuzzyCandidates: <DictionaryEntryWithSource>[],
+      );
+    }
+
+    final fetchLimit = directLimit > candidateLimit
+        ? directLimit
+        : candidateLimit;
+    if (fetchLimit <= 0) {
+      return (
+        directMatches: <DictionaryEntryWithSource>[],
+        fuzzyCandidates: <DictionaryEntryWithSource>[],
+      );
+    }
+
+    final pattern = '%$term%';
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
+      )
+      ..limit(fetchLimit);
+
+    final rows = await query.get();
+    final allMatches = _mapEntriesWithSourceUnsorted(rows, cache);
+
+    final directMatches = allMatches.take(directLimit).toList();
+    _sortWithSourceBySortOrder(directMatches, cache);
+
+    return (
+      directMatches: directMatches,
+      fuzzyCandidates: allMatches.take(candidateLimit).toList(),
+    );
   }
 
   /// Search entries whose glossary text contains [term] (case-insensitive).
@@ -537,97 +692,91 @@ class DictionaryQueryService {
   }) async {
     if (term.isEmpty) return [];
 
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
+
     final pattern = '%$term%';
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(_db.dictionaryEntries.glossaries.like(pattern))
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)])
-          ..limit(limit);
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
+      )
+      ..limit(limit);
 
     final rows = await query.get();
-    return rows.map((row) {
-      final entry = row.readTable(_db.dictionaryEntries);
-      final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
+    final results = rows.map((entry) {
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: cache.names[entry.dictionaryId] ?? '',
+      );
     }).toList();
+
+    _sortWithSourceBySortOrder(results, cache);
+    return results;
   }
 
   /// Search pitch accents by expression.
   /// Only returns results from enabled dictionaries, ordered by dictionary sort order.
   Future<List<PitchAccentResult>> searchPitchAccents(String expression) async {
-    final query =
-        _db.select(_db.pitchAccents).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(_db.pitchAccents.dictionaryId),
-            ),
-          ])
-          ..where(_db.pitchAccents.expression.equals(expression))
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..orderBy([OrderingTerm.asc(_db.dictionaryMetas.sortOrder)]);
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
+
+    final query = _db.select(_db.pitchAccents)
+      ..where(
+        (t) =>
+            t.expression.equals(expression) &
+            t.dictionaryId.isIn(cache.enabledIds),
+      );
 
     final rows = await query.get();
-    return rows.map((row) {
-      final pitch = row.readTable(_db.pitchAccents);
-      final meta = row.readTable(_db.dictionaryMetas);
+
+    // Sort by dictionary sort order using the dictionaryId from each row.
+    rows.sort((a, b) {
+      final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
+      final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
+      return orderA.compareTo(orderB);
+    });
+
+    return rows.map((pitch) {
       return PitchAccentResult(
         reading: pitch.reading,
         downstepPosition: pitch.downstepPosition,
-        dictionaryName: meta.name,
+        dictionaryName: cache.names[pitch.dictionaryId] ?? '',
       );
     }).toList();
   }
 
   /// Fetch a broad set of candidates whose expression or reading starts with
   /// any of [searchTerms]. Used as the input dataset for fuzzy_bolt ranking.
+  /// Merges all terms into a single query for efficiency.
   Future<List<DictionaryEntryWithSource>> _fetchPrefixCandidates(
     List<String> searchTerms, {
     int limit = 100,
   }) async {
-    final allResults = <DictionaryEntryWithSource>[];
-    final seenIds = <int>{};
+    final nonEmptyTerms = searchTerms.where((t) => t.isNotEmpty).toList();
+    if (nonEmptyTerms.isEmpty || limit <= 0) return [];
 
-    for (final term in searchTerms) {
-      if (term.isEmpty) continue;
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
 
-      final pattern = '$term%';
-      final query =
-          _db.select(_db.dictionaryEntries).join([
-              innerJoin(
-                _db.dictionaryMetas,
-                _db.dictionaryMetas.id.equalsExp(
-                  _db.dictionaryEntries.dictionaryId,
-                ),
-              ),
-            ])
-            ..where(
-              _db.dictionaryEntries.expression.like(pattern) |
-                  _db.dictionaryEntries.reading.like(pattern),
-            )
-            ..where(_db.dictionaryMetas.isEnabled.equals(true))
-            ..limit(limit);
+    final patterns = nonEmptyTerms.map((t) => '$t%').toList(growable: false);
 
-      final rows = await query.get();
-      for (final row in rows) {
-        final entry = row.readTable(_db.dictionaryEntries);
-        if (seenIds.add(entry.id)) {
-          final meta = row.readTable(_db.dictionaryMetas);
-          allResults.add(
-            DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name),
-          );
+    final query = _db.select(_db.dictionaryEntries)
+      ..where((t) {
+        Expression<bool>? condition;
+        for (final pattern in patterns) {
+          final termCondition =
+              t.expression.like(pattern) | t.reading.like(pattern);
+          condition = condition == null
+              ? termCondition
+              : (condition | termCondition);
         }
-      }
-    }
+        return condition! & t.dictionaryId.isIn(cache.enabledIds);
+      })
+      ..limit(limit);
 
-    return allResults;
+    final rows = await query.get();
+    return _mapEntriesWithSourceUnsorted(rows, cache);
   }
 
   /// Fetch candidate entries whose glossary text contains [term].
@@ -638,25 +787,23 @@ class DictionaryQueryService {
   }) async {
     if (term.isEmpty) return [];
 
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return [];
+
     final pattern = '%$term%';
-    final query =
-        _db.select(_db.dictionaryEntries).join([
-            innerJoin(
-              _db.dictionaryMetas,
-              _db.dictionaryMetas.id.equalsExp(
-                _db.dictionaryEntries.dictionaryId,
-              ),
-            ),
-          ])
-          ..where(_db.dictionaryEntries.glossaries.like(pattern))
-          ..where(_db.dictionaryMetas.isEnabled.equals(true))
-          ..limit(limit);
+    final query = _db.select(_db.dictionaryEntries)
+      ..where(
+        (t) =>
+            t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
+      )
+      ..limit(limit);
 
     final rows = await query.get();
-    return rows.map((row) {
-      final entry = row.readTable(_db.dictionaryEntries);
-      final meta = row.readTable(_db.dictionaryMetas);
-      return DictionaryEntryWithSource(entry: entry, dictionaryName: meta.name);
+    return rows.map((entry) {
+      return DictionaryEntryWithSource(
+        entry: entry,
+        dictionaryName: cache.names[entry.dictionaryId] ?? '',
+      );
     }).toList();
   }
 

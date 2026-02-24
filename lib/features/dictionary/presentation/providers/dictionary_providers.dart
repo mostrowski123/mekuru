@@ -14,8 +14,15 @@ final dictionaryRepositoryProvider = Provider<DictionaryRepository>((ref) {
 });
 
 /// Provider for the dictionary query service.
+/// Watches the reactive dictionary stream to invalidate the metadata cache
+/// whenever dictionaries are toggled, reordered, deleted, or imported.
 final dictionaryQueryServiceProvider = Provider<DictionaryQueryService>((ref) {
-  return DictionaryQueryService(ref.watch(databaseProvider));
+  final service = DictionaryQueryService(ref.watch(databaseProvider));
+  // Listen to dictionary changes and invalidate the metadata cache.
+  ref.listen(dictionariesProvider, (_, __) {
+    service.invalidateMetasCache();
+  });
+  return service;
 });
 
 /// Provider for the dictionary importer.

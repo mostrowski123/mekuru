@@ -18,7 +18,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -69,6 +69,17 @@ class AppDatabase extends _$AppDatabase {
           if (from < 10) {
             await migrator.createTable(bookmarks);
             await migrator.createTable(highlights);
+          }
+          if (from < 11) {
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_expr_dictid ON dictionary_entries (expression, dictionary_id)',
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_read_dictid ON dictionary_entries (reading, dictionary_id)',
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_freq_expr_read ON frequencies (expression, reading)',
+            );
           }
         },
       );

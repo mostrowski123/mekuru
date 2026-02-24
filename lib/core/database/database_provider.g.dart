@@ -3696,6 +3696,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_reading',
     'CREATE INDEX idx_reading ON dictionary_entries (reading)',
   );
+  late final Index idxExprDictid = Index(
+    'idx_expr_dictid',
+    'CREATE INDEX idx_expr_dictid ON dictionary_entries (expression, dictionary_id)',
+  );
+  late final Index idxReadDictid = Index(
+    'idx_read_dictid',
+    'CREATE INDEX idx_read_dictid ON dictionary_entries (reading, dictionary_id)',
+  );
   late final Index idxPitchExpression = Index(
     'idx_pitch_expression',
     'CREATE INDEX idx_pitch_expression ON pitch_accents (expression)',
@@ -3712,6 +3720,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_freq_reading',
     'CREATE INDEX idx_freq_reading ON frequencies (reading)',
   );
+  late final Index idxFreqExprRead = Index(
+    'idx_freq_expr_read',
+    'CREATE INDEX idx_freq_expr_read ON frequencies (expression, reading)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3727,10 +3739,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     highlights,
     idxExpression,
     idxReading,
+    idxExprDictid,
+    idxReadDictid,
     idxPitchExpression,
     idxPitchReading,
     idxFreqExpression,
     idxFreqReading,
+    idxFreqExprRead,
   ];
 }
 
