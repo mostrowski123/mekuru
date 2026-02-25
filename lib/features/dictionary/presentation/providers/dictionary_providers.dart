@@ -19,7 +19,7 @@ final dictionaryRepositoryProvider = Provider<DictionaryRepository>((ref) {
 final dictionaryQueryServiceProvider = Provider<DictionaryQueryService>((ref) {
   final service = DictionaryQueryService(ref.watch(databaseProvider));
   // Listen to dictionary changes and invalidate the metadata cache.
-  ref.listen(dictionariesProvider, (_, __) {
+  ref.listen(dictionariesProvider, (_, _) {
     service.invalidateMetasCache();
   });
   return service;
@@ -128,10 +128,12 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
           );
         },
       );
-      Sentry.addBreadcrumb(Breadcrumb(
-        message: 'Dictionary imported ($count entries)',
-        category: 'dictionary',
-      ));
+      Sentry.addBreadcrumb(
+        Breadcrumb(
+          message: 'Dictionary imported ($count entries)',
+          category: 'dictionary',
+        ),
+      );
       state = DictionaryImportState(
         successMessage: 'Imported $count entries successfully!',
       );
@@ -149,9 +151,7 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
       final result = await importer.importCollectionFromFile(
         filePath,
         onParsing: () {
-          state = state.copyWith(
-            currentDictionary: 'Parsing collection...',
-          );
+          state = state.copyWith(currentDictionary: 'Parsing collection...');
         },
         onDictionaryStart: (name, entryCount, dictIndex, dictTotal) {
           state = state.copyWith(
@@ -191,12 +191,15 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         parts.add('No dictionaries found in collection');
       }
 
-      Sentry.addBreadcrumb(Breadcrumb(
-        message: 'Dictionary collection imported '
-            '(${result.importedDictionaries.length} dictionaries, '
-            '${result.totalEntriesImported} entries)',
-        category: 'dictionary',
-      ));
+      Sentry.addBreadcrumb(
+        Breadcrumb(
+          message:
+              'Dictionary collection imported '
+              '(${result.importedDictionaries.length} dictionaries, '
+              '${result.totalEntriesImported} entries)',
+          category: 'dictionary',
+        ),
+      );
       state = DictionaryImportState(
         successMessage: parts.join('. '),
         skippedDictionaries: result.skippedDictionaries,
