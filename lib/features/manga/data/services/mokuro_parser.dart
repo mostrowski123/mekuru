@@ -201,6 +201,83 @@ class MokuroParser {
     return manifests;
   }
 
+  /// Parse a single legacy mokuro HTML file.
+  ///
+  /// Derives the image directory and OCR directory from the HTML file's
+  /// location and stem name:
+  /// - Image dir: `<parent>/<stem>/`
+  /// - OCR dir: `<parent>/_ocr/<stem>/`
+  ///
+  /// Returns a [MokuroBookManifest] and the pre-parsed [MokuroPage] list.
+  static Future<(MokuroBookManifest, List<MokuroPage>)> parseSingleHtmlFile(
+    String htmlPath,
+  ) async {
+    final htmlFile = File(htmlPath);
+    if (!await htmlFile.exists()) {
+      throw Exception('HTML file not found: $htmlPath');
+    }
+
+    final stem = p.basenameWithoutExtension(htmlPath);
+    final parentDir = p.dirname(htmlPath);
+
+    // Resolve image directory
+    final imageDirPath = p.join(parentDir, stem);
+    if (!await Directory(imageDirPath).exists()) {
+      throw Exception(
+        'Image folder not found: $imageDirPath\n'
+        'Expected a folder named "$stem" next to the HTML file.',
+      );
+    }
+
+    // Resolve OCR directory
+    final ocrDirPath = p.join(parentDir, '_ocr', stem);
+    if (!await Directory(ocrDirPath).exists()) {
+      throw Exception(
+        'OCR folder not found: $ocrDirPath\n'
+        'Expected: _ocr/$stem/ in the same directory as the HTML file.',
+      );
+    }
+
+    // Extract title from HTML
+    final title = await _extractTitle(htmlPath, stem);
+
+    // Extract image filenames from HTML
+    var imageFiles = await _extractImageFileNamesFromHtml(htmlPath);
+
+    // Fallback: list image directory
+    if (imageFiles.isEmpty) {
+      debugPrint('[MokuroParser] HTML image extraction failed, '
+          'trying dir listing for: $imageDirPath');
+      imageFiles = await _listSortedImageFiles(imageDirPath);
+    }
+
+    if (imageFiles.isEmpty) {
+      throw Exception(
+        'No images found for "$stem".\n'
+        'Could not extract image names from HTML or list the image folder.',
+      );
+    }
+
+    debugPrint('[MokuroParser] Parsed "$title" — ${imageFiles.length} pages');
+
+    final manifest = MokuroBookManifest(
+      title: title,
+      htmlPath: htmlPath,
+      imageDirPath: imageDirPath,
+      ocrDirPath: ocrDirPath,
+      imageFileNames: imageFiles,
+    );
+
+    // Parse OCR pages
+    final pages = await parseAllPages(
+      ocrDirPath,
+      imageDirPath,
+      imageFiles,
+    );
+
+    return (manifest, pages);
+  }
+
   /// Parse a `.mokuro` JSON file (v0.2+ format).
   ///
   /// The `.mokuro` format embeds all OCR data in a single JSON file with

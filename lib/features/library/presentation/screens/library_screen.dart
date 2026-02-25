@@ -201,9 +201,9 @@ class LibraryScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Manga is imported as a folder containing page images '
-                'and a .mokuro JSON file with OCR data. A typical '
-                'folder looks like:',
+                'Import manga by selecting a .mokuro or .html file. '
+                'The page images are loaded from a sibling folder '
+                'with the same name.',
               ),
               const SizedBox(height: 8),
               Container(
@@ -216,14 +216,23 @@ class LibraryScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
-                  'manga_title/\n'
-                  '  ├── 001.jpg\n'
-                  '  ├── 002.jpg\n'
-                  '  ├── ...\n'
-                  '  └── manga_title.mokuro',
+                  '.mokuro format:\n'
+                  '  manga_title.mokuro  <-- select this\n'
+                  '  manga_title/\n'
+                  '    ├── 001.jpg\n'
+                  '    └── ...\n'
+                  '\n'
+                  'Legacy format:\n'
+                  '  manga_title.html    <-- or this\n'
+                  '  manga_title/\n'
+                  '    ├── 001.jpg\n'
+                  '    └── ...\n'
+                  '  _ocr/manga_title/\n'
+                  '    ├── 001.json\n'
+                  '    └── ...',
                   style: TextStyle(
                     fontFamily: 'monospace',
-                    fontSize: 13,
+                    fontSize: 12,
                   ),
                 ),
               ),
@@ -342,7 +351,7 @@ class LibraryScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.photo_library),
               title: const Text('Manga'),
-              subtitle: const Text('Import a mokuro manga folder'),
+              subtitle: const Text('Import a .mokuro or .html file'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 _importManga(context, ref);
@@ -371,17 +380,39 @@ class LibraryScreen extends ConsumerWidget {
 
   Future<void> _importManga(BuildContext context, WidgetRef ref) async {
     // On Android, request storage permission before accessing manga files.
-    // MANAGE_EXTERNAL_STORAGE is needed because manga folders contain
-    // HTML, JSON, and image files accessed via filesystem paths.
+    // MANAGE_EXTERNAL_STORAGE is needed because the image directory
+    // referenced by the mokuro/HTML file is accessed via filesystem paths.
     if (Platform.isAndroid) {
       final granted = await _ensureStoragePermission(context);
       if (!granted) return;
     }
 
-    final dirPath = await FilePicker.platform.getDirectoryPath();
-    if (dirPath == null) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: false,
+    );
 
-    ref.read(bookImportProvider.notifier).importManga(dirPath);
+    if (result == null || result.files.isEmpty) return;
+
+    final filePath = result.files.single.path;
+    if (filePath == null) return;
+
+    // Validate extension
+    final ext = p.extension(filePath).toLowerCase();
+    if (ext != '.mokuro' && ext != '.html') {
+      ref.read(bookImportProvider.notifier).clearState();
+      // ignore: use_build_context_synchronously
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a .mokuro or .html file.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    ref.read(bookImportProvider.notifier).importManga(filePath);
   }
 
   /// Request storage permission on Android.

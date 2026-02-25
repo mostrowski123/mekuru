@@ -11,14 +11,6 @@ import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// Result of importing mokuro manga, with an optional warning message.
-class MangaImportResult {
-  final List<Book> books;
-  final String? warning;
-
-  const MangaImportResult(this.books, {this.warning});
-}
-
 /// Repository for book CRUD operations and EPUB import.
 class BookRepository {
   final AppDatabase _db;
@@ -115,89 +107,29 @@ class BookRepository {
     return (await getBookById(bookId))!;
   }
 
-  /// Import mokuro manga books from a directory.
+  /// Import a manga book from a `.mokuro` or `.html` file.
   ///
-  /// Prefers `.mokuro` JSON files (v0.2+) when present. Falls back to the
-  /// legacy format (HTML + `_ocr/` directory) otherwise. If both formats
-  /// are found, the `.mokuro` file is used and a warning is returned.
+  /// Detects the format by file extension and delegates to the appropriate
+  /// parser. The image directory is derived from the file's location.
   ///
-  /// Returns a [MangaImportResult] with the imported books and an optional
-  /// warning message.
-  Future<MangaImportResult> importMokuroDirectory(String dirPath) async {
-    // Scan for .mokuro files
-    final mokuroFiles = <File>[];
-    bool hasLegacyOcr = false;
-    try {
-      await for (final entity in Directory(dirPath).list()) {
-        if (entity is File && entity.path.endsWith('.mokuro')) {
-          mokuroFiles.add(entity);
-        }
-        if (entity is Directory && p.basename(entity.path) == '_ocr') {
-          hasLegacyOcr = true;
-        }
-      }
-    } catch (e) {
-      throw Exception('Cannot read directory: $dirPath\n$e');
+  /// Returns the created [Book].
+  Future<Book> importMangaFromFile(String filePath) async {
+    final ext = p.extension(filePath).toLowerCase();
+
+    final (MokuroBookManifest, List<MokuroPage>) parsed;
+
+    if (ext == '.mokuro') {
+      parsed = await MokuroParser.parseMokuroFile(filePath);
+    } else if (ext == '.html') {
+      parsed = await MokuroParser.parseSingleHtmlFile(filePath);
+    } else {
+      throw Exception(
+        'Unsupported file type: $ext\n'
+        'Expected a .mokuro or .html file.',
+      );
     }
 
-    if (mokuroFiles.isNotEmpty) {
-      // ── Use .mokuro JSON format ──
-      String? warning;
-      if (hasLegacyOcr) {
-        warning = 'Note: legacy _ocr/ folder was found but ignored '
-            'in favor of .mokuro file.';
-        debugPrint('[MangaImport] $warning');
-      }
-
-      final importedBooks = <Book>[];
-      for (int i = 0; i < mokuroFiles.length; i++) {
-        final book = await _importSingleMokuroFile(mokuroFiles[i].path, i);
-        importedBooks.add(book);
-      }
-
-      if (importedBooks.isEmpty) {
-        throw Exception('No manga could be imported from .mokuro files.');
-      }
-
-      return MangaImportResult(importedBooks, warning: warning);
-    }
-
-    // ── Fall back to legacy format (HTML + _ocr/) ──
-    final manifests = await MokuroParser.parseMokuroDirectory(dirPath);
-    if (manifests.isEmpty) {
-      throw Exception('No mokuro books found in this directory.');
-    }
-
-    final importedBooks = <Book>[];
-    for (int i = 0; i < manifests.length; i++) {
-      final book = await _importFromLegacyManifest(manifests[i], i);
-      importedBooks.add(book);
-    }
-
-    return MangaImportResult(importedBooks);
-  }
-
-  /// Import a single `.mokuro` JSON file into the library.
-  Future<Book> _importSingleMokuroFile(
-    String mokuroFilePath,
-    int index,
-  ) async {
-    final (manifest, parsedPages) =
-        await MokuroParser.parseMokuroFile(mokuroFilePath);
-    return _importManifestWithPages(manifest, parsedPages, index);
-  }
-
-  /// Import from a legacy manifest (HTML + _ocr/).
-  Future<Book> _importFromLegacyManifest(
-    MokuroBookManifest manifest,
-    int index,
-  ) async {
-    final pages = await MokuroParser.parseAllPages(
-      manifest.ocrDirPath,
-      manifest.imageDirPath,
-      manifest.imageFileNames,
-    );
-    return _importManifestWithPages(manifest, pages, index);
+    return _importManifestWithPages(parsed.$1, parsed.$2, 0);
   }
 
   /// Shared import logic: segment words, save cache, insert into DB.
@@ -229,13 +161,13 @@ class BookRepository {
       '[MangaImport] Cached ${pages.length} pages for "${manifest.title}"',
     );
 
-    // Cover = first page image
+    // Cover = alphabetically first image file (ASCII sort).
+    // The mokuro page order doesn't always start with the cover —
+    // filenames like _01.jpg or 000.jpg may precede numbered pages.
     String? coverImagePath;
     if (manifest.imageFileNames.isNotEmpty) {
-      final coverPath = p.join(
-        manifest.imageDirPath,
-        manifest.imageFileNames.first,
-      );
+      final sorted = [...manifest.imageFileNames]..sort();
+      final coverPath = p.join(manifest.imageDirPath, sorted.first);
       if (await File(coverPath).exists()) {
         coverImagePath = coverPath;
       }
