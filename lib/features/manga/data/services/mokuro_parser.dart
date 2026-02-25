@@ -201,6 +201,109 @@ class MokuroParser {
     return manifests;
   }
 
+  /// Parse a `.mokuro` JSON file (v0.2+ format).
+  ///
+  /// The `.mokuro` format embeds all OCR data in a single JSON file with
+  /// structure:
+  /// ```json
+  /// {
+  ///   "version": "0.2.4",
+  ///   "title": "...",
+  ///   "volume": "...",
+  ///   "pages": [
+  ///     {
+  ///       "img_width": 2882,
+  ///       "img_height": 4096,
+  ///       "blocks": [...],
+  ///       "img_path": "0001.jpg"
+  ///     }
+  ///   ]
+  /// }
+  /// ```
+  ///
+  /// The image directory is expected to be a sibling directory with the same
+  /// name as the volume (or the mokuro file stem).
+  ///
+  /// Returns a [MokuroBookManifest] and the pre-parsed [MokuroPage] list.
+  static Future<(MokuroBookManifest, List<MokuroPage>)> parseMokuroFile(
+    String mokuroFilePath,
+  ) async {
+    final file = File(mokuroFilePath);
+    if (!await file.exists()) {
+      throw Exception('Mokuro file not found: $mokuroFilePath');
+    }
+
+    final content = await file.readAsString();
+    final json = jsonDecode(content) as Map<String, dynamic>;
+
+    final title = (json['title'] as String?) ??
+        (json['volume'] as String?) ??
+        p.basenameWithoutExtension(mokuroFilePath);
+    final volume = (json['volume'] as String?) ??
+        p.basenameWithoutExtension(mokuroFilePath);
+
+    final parentDir = p.dirname(mokuroFilePath);
+
+    // Resolve the image directory. Try:
+    // 1. Sibling directory matching the volume name
+    // 2. Sibling directory matching the mokuro file stem
+    // 3. The parent directory itself (images alongside .mokuro file)
+    String? imageDirPath;
+    final volumeDir = Directory(p.join(parentDir, volume));
+    final stemDir = Directory(
+      p.join(parentDir, p.basenameWithoutExtension(mokuroFilePath)),
+    );
+
+    if (await volumeDir.exists()) {
+      imageDirPath = volumeDir.path;
+    } else if (volume != p.basenameWithoutExtension(mokuroFilePath) &&
+        await stemDir.exists()) {
+      imageDirPath = stemDir.path;
+    } else {
+      // Images might be in the same directory as the .mokuro file
+      imageDirPath = parentDir;
+    }
+
+    debugPrint('[MokuroParser] .mokuro file: $mokuroFilePath');
+    debugPrint('[MokuroParser] Image dir resolved to: $imageDirPath');
+
+    final pagesJson = json['pages'] as List;
+    final pages = <MokuroPage>[];
+    final imageFileNames = <String>[];
+
+    for (int i = 0; i < pagesJson.length; i++) {
+      final pageJson = pagesJson[i] as Map<String, dynamic>;
+      final imgPath = pageJson['img_path'] as String;
+      // img_path may contain a relative path like "VolumeName/0001.jpg"
+      final imageFileName = p.basename(imgPath);
+      imageFileNames.add(imageFileName);
+
+      final blocks = (pageJson['blocks'] as List)
+          .map((b) => MokuroTextBlock.fromOcrJson(b as Map<String, dynamic>))
+          .toList();
+
+      pages.add(MokuroPage(
+        pageIndex: i,
+        imageFileName: imageFileName,
+        imgWidth: pageJson['img_width'] as int,
+        imgHeight: pageJson['img_height'] as int,
+        blocks: blocks,
+      ));
+    }
+
+    debugPrint('[MokuroParser] Parsed ${pages.length} pages from .mokuro file');
+
+    final manifest = MokuroBookManifest(
+      title: title,
+      htmlPath: mokuroFilePath, // reuse field for the source file path
+      imageDirPath: imageDirPath,
+      ocrDirPath: '', // not applicable for .mokuro format
+      imageFileNames: imageFileNames,
+    );
+
+    return (manifest, pages);
+  }
+
   /// Extract image filenames from a mokuro HTML file.
   ///
   /// Mokuro embeds page images as CSS `background-image` properties:

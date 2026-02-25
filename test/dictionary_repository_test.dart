@@ -340,7 +340,7 @@ void main() {
 
   group('DictionaryRepository — watchVisibleDictionaries', () {
     test('excludes hidden dictionaries', () async {
-      final id1 = await repo.insertDictionary('Visible');
+      await repo.insertDictionary('Visible');
       final id2 = await repo.insertDictionary('Hidden');
       await repo.setHidden(id2, isHidden: true);
 

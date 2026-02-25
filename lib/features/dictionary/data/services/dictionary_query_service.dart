@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -779,34 +777,6 @@ class DictionaryQueryService {
     return _mapEntriesWithSourceUnsorted(rows, cache);
   }
 
-  /// Fetch candidate entries whose glossary text contains [term].
-  /// Used as the input dataset for fuzzy_bolt ranking of English definitions.
-  Future<List<DictionaryEntryWithSource>> _fetchGlossaryCandidates(
-    String term, {
-    int limit = 100,
-  }) async {
-    if (term.isEmpty) return [];
-
-    final cache = await _ensureMetasCached();
-    if (cache.enabledIds.isEmpty) return [];
-
-    final pattern = '%$term%';
-    final query = _db.select(_db.dictionaryEntries)
-      ..where(
-        (t) =>
-            t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
-      )
-      ..limit(limit);
-
-    final rows = await query.get();
-    return rows.map((entry) {
-      return DictionaryEntryWithSource(
-        entry: entry,
-        dictionaryName: cache.names[entry.dictionaryId] ?? '',
-      );
-    }).toList();
-  }
-
   static bool _isKanji(String char) {
     if (char.isEmpty) return false;
     final code = char.codeUnitAt(0);
@@ -823,16 +793,4 @@ class DictionaryQueryService {
   }
 
   static final _latinPattern = RegExp(r'[a-zA-Z]');
-
-  /// Decode a JSON-encoded glossary list into a plain text string for fuzzy
-  /// matching. Returns the individual definitions joined by "; " so that
-  /// fuzzy_bolt can match against clean text rather than raw JSON brackets.
-  static String _decodeGlossaries(String jsonGlossaries) {
-    try {
-      final list = jsonDecode(jsonGlossaries) as List<dynamic>;
-      return list.whereType<String>().join('; ');
-    } catch (_) {
-      return jsonGlossaries;
-    }
-  }
 }

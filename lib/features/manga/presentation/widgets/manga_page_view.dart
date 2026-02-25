@@ -16,6 +16,7 @@ class MangaPageView extends StatefulWidget {
   final MokuroPage page;
   final String imageDirPath;
   final bool debugOverlay;
+  final bool autoCrop;
   final MokuroWord? highlightedWord;
   final void Function(
     MokuroWord word,
@@ -29,6 +30,7 @@ class MangaPageView extends StatefulWidget {
     required this.page,
     required this.imageDirPath,
     this.debugOverlay = false,
+    this.autoCrop = false,
     this.highlightedWord,
     this.onWordTapped,
     this.onZoomChanged,
@@ -83,49 +85,70 @@ class _MangaPageViewState extends State<MangaPageView> {
           final containerH = constraints.maxHeight;
           final imgW = widget.page.imgWidth.toDouble();
           final imgH = widget.page.imgHeight.toDouble();
+          if (imgW == 0 || imgH == 0) {
+            return const Center(child: Icon(Icons.broken_image, size: 48));
+          }
 
-          // BoxFit.contain scale and centering offset
-          final scale = (imgW == 0 || imgH == 0)
-              ? 1.0
-              : (containerW / imgW).clamp(0.0, containerH / imgH) < containerH / imgH
-                  ? containerW / imgW
-                  : containerH / imgH;
-          final renderedW = imgW * scale;
-          final renderedH = imgH * scale;
-          final offsetX = (containerW - renderedW) / 2;
-          final offsetY = (containerH - renderedH) / 2;
+          // Determine effective region to display.
+          // With auto-crop, we fit the contentBounds region to the container
+          // instead of the full image, then translate the image so that
+          // region is centered.
+          final contentBounds = widget.page.contentBounds;
+          final useCrop = widget.autoCrop && contentBounds != null;
+
+          final double regionW = useCrop ? contentBounds.width : imgW;
+          final double regionH = useCrop ? contentBounds.height : imgH;
+
+          // Scale to fit the visible region into the container
+          final scale = (containerW / regionW) < (containerH / regionH)
+              ? containerW / regionW
+              : containerH / regionH;
+
+          final renderedRegionW = regionW * scale;
+          final renderedRegionH = regionH * scale;
+          final displayOffsetX = (containerW - renderedRegionW) / 2;
+          final displayOffsetY = (containerH - renderedRegionH) / 2;
+
+          // Overlay coordinates: map image-pixel coords → screen coords.
+          // overlayX = (imgPixelX * scale) + overlayOffsetX
+          // For full image: overlayOffsetX = displayOffsetX
+          // For crop: overlayOffsetX = displayOffsetX - contentBounds.left * scale
+          final overlayOffsetX = useCrop
+              ? displayOffsetX - contentBounds.left * scale
+              : displayOffsetX;
+          final overlayOffsetY = useCrop
+              ? displayOffsetY - contentBounds.top * scale
+              : displayOffsetY;
 
           return Stack(
+            clipBehavior: Clip.hardEdge,
             children: [
-              // Base image layer
-              Positioned.fill(
-                child: Image.file(
-                  File(imagePath),
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.medium,
-                  errorBuilder: (_, error, _) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.broken_image, size: 48),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Could not load image',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
+              // Base image layer — positioned/scaled to show the target region
+              if (useCrop)
+                Positioned(
+                  left: overlayOffsetX,
+                  top: overlayOffsetY,
+                  width: imgW * scale,
+                  height: imgH * scale,
+                  child: _buildImage(imagePath),
+                )
+              else
+                Positioned.fill(
+                  child: Image.file(
+                    File(imagePath),
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
+                    errorBuilder: (_, error, _) => _buildImageError(context),
                   ),
                 ),
-              ),
 
               // Word tap targets
               if (widget.page.blocks.isNotEmpty)
                 MangaWordOverlay(
                   blocks: widget.page.blocks,
                   scale: scale,
-                  offsetX: offsetX,
-                  offsetY: offsetY,
+                  offsetX: overlayOffsetX,
+                  offsetY: overlayOffsetY,
                   debugMode: widget.debugOverlay,
                   onWordTapped: widget.onWordTapped,
                 ),
@@ -135,12 +158,37 @@ class _MangaPageViewState extends State<MangaPageView> {
                 _buildWordHighlight(
                   widget.highlightedWord!,
                   scale,
-                  offsetX,
-                  offsetY,
+                  overlayOffsetX,
+                  overlayOffsetY,
                 ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildImage(String imagePath) {
+    return Image.file(
+      File(imagePath),
+      fit: BoxFit.fill,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (_, error, _) => _buildImageError(context),
+    );
+  }
+
+  Widget _buildImageError(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.broken_image, size: 48),
+          const SizedBox(height: 8),
+          Text(
+            'Could not load image',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
       ),
     );
   }

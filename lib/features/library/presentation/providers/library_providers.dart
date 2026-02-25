@@ -125,17 +125,19 @@ class BookImportNotifier extends Notifier<BookImportState> {
 
     try {
       final repo = ref.read(bookRepositoryProvider);
-      final books = await repo.importMokuroDirectory(dirPath);
+      final result = await repo.importMokuroDirectory(dirPath);
       Sentry.addBreadcrumb(Breadcrumb(
-        message: 'Manga imported: ${books.length} book(s)',
+        message: 'Manga imported: ${result.books.length} book(s)',
         category: 'library',
       ));
-      state = BookImportState(
-        successMessage: books.length == 1
-            ? '"${books.first.title}" added to library!'
-            : '${books.length} manga added to library!',
-      );
-      return books;
+      var message = result.books.length == 1
+          ? '"${result.books.first.title}" added to library!'
+          : '${result.books.length} manga added to library!';
+      if (result.warning != null) {
+        message = '$message\n${result.warning}';
+      }
+      state = BookImportState(successMessage: message);
+      return result.books;
     } catch (e) {
       state = BookImportState(error: e.toString());
       return null;

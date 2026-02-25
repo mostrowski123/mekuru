@@ -11,6 +11,14 @@ import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+/// Result of importing mokuro manga, with an optional warning message.
+class MangaImportResult {
+  final List<Book> books;
+  final String? warning;
+
+  const MangaImportResult(this.books, {this.warning});
+}
+
 /// Repository for book CRUD operations and EPUB import.
 class BookRepository {
   final AppDatabase _db;
@@ -107,83 +115,146 @@ class BookRepository {
     return (await getBookById(bookId))!;
   }
 
-  /// Import all mokuro manga books from a directory.
+  /// Import mokuro manga books from a directory.
   ///
-  /// Discovers all `.html` files in [dirPath], parses OCR data,
-  /// segments words via MeCab, and saves processed cache files.
+  /// Prefers `.mokuro` JSON files (v0.2+) when present. Falls back to the
+  /// legacy format (HTML + `_ocr/` directory) otherwise. If both formats
+  /// are found, the `.mokuro` file is used and a warning is returned.
   ///
-  /// Returns the list of created [Book] entries.
-  Future<List<Book>> importMokuroDirectory(String dirPath) async {
+  /// Returns a [MangaImportResult] with the imported books and an optional
+  /// warning message.
+  Future<MangaImportResult> importMokuroDirectory(String dirPath) async {
+    // Scan for .mokuro files
+    final mokuroFiles = <File>[];
+    bool hasLegacyOcr = false;
+    try {
+      await for (final entity in Directory(dirPath).list()) {
+        if (entity is File && entity.path.endsWith('.mokuro')) {
+          mokuroFiles.add(entity);
+        }
+        if (entity is Directory && p.basename(entity.path) == '_ocr') {
+          hasLegacyOcr = true;
+        }
+      }
+    } catch (e) {
+      throw Exception('Cannot read directory: $dirPath\n$e');
+    }
+
+    if (mokuroFiles.isNotEmpty) {
+      // ── Use .mokuro JSON format ──
+      String? warning;
+      if (hasLegacyOcr) {
+        warning = 'Note: legacy _ocr/ folder was found but ignored '
+            'in favor of .mokuro file.';
+        debugPrint('[MangaImport] $warning');
+      }
+
+      final importedBooks = <Book>[];
+      for (int i = 0; i < mokuroFiles.length; i++) {
+        final book = await _importSingleMokuroFile(mokuroFiles[i].path, i);
+        importedBooks.add(book);
+      }
+
+      if (importedBooks.isEmpty) {
+        throw Exception('No manga could be imported from .mokuro files.');
+      }
+
+      return MangaImportResult(importedBooks, warning: warning);
+    }
+
+    // ── Fall back to legacy format (HTML + _ocr/) ──
     final manifests = await MokuroParser.parseMokuroDirectory(dirPath);
     if (manifests.isEmpty) {
       throw Exception('No mokuro books found in this directory.');
     }
 
+    final importedBooks = <Book>[];
+    for (int i = 0; i < manifests.length; i++) {
+      final book = await _importFromLegacyManifest(manifests[i], i);
+      importedBooks.add(book);
+    }
+
+    return MangaImportResult(importedBooks);
+  }
+
+  /// Import a single `.mokuro` JSON file into the library.
+  Future<Book> _importSingleMokuroFile(
+    String mokuroFilePath,
+    int index,
+  ) async {
+    final (manifest, parsedPages) =
+        await MokuroParser.parseMokuroFile(mokuroFilePath);
+    return _importManifestWithPages(manifest, parsedPages, index);
+  }
+
+  /// Import from a legacy manifest (HTML + _ocr/).
+  Future<Book> _importFromLegacyManifest(
+    MokuroBookManifest manifest,
+    int index,
+  ) async {
+    final pages = await MokuroParser.parseAllPages(
+      manifest.ocrDirPath,
+      manifest.imageDirPath,
+      manifest.imageFileNames,
+    );
+    return _importManifestWithPages(manifest, pages, index);
+  }
+
+  /// Shared import logic: segment words, save cache, insert into DB.
+  Future<Book> _importManifestWithPages(
+    MokuroBookManifest manifest,
+    List<MokuroPage> rawPages,
+    int index,
+  ) async {
     final appDir = await getApplicationSupportDirectory();
     final booksDir = Directory(p.join(appDir.path, 'books'));
 
-    final importedBooks = <Book>[];
+    final timestamp = DateTime.now().millisecondsSinceEpoch + index;
+    final cacheDir = Directory(p.join(booksDir.path, 'manga_$timestamp'));
+    await cacheDir.create(recursive: true);
 
-    for (int i = 0; i < manifests.length; i++) {
-      final manifest = manifests[i];
+    // Segment words using MeCab
+    final pages = await MokuroWordSegmenter.segmentAllPages(rawPages);
 
-      // Create cache directory
-      final timestamp = DateTime.now().millisecondsSinceEpoch + i;
-      final cacheDir = Directory(p.join(booksDir.path, 'manga_$timestamp'));
-      await cacheDir.create(recursive: true);
+    // Build and save pages_cache.json
+    final mokuroBook = MokuroBook(
+      title: manifest.title,
+      imageDirPath: manifest.imageDirPath,
+      pages: pages,
+    );
+    final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+    await cacheFile.writeAsString(jsonEncode(mokuroBook.toJson()));
 
-      // Parse OCR data for all pages
-      var pages = await MokuroParser.parseAllPages(
-        manifest.ocrDirPath,
+    debugPrint(
+      '[MangaImport] Cached ${pages.length} pages for "${manifest.title}"',
+    );
+
+    // Cover = first page image
+    String? coverImagePath;
+    if (manifest.imageFileNames.isNotEmpty) {
+      final coverPath = p.join(
         manifest.imageDirPath,
-        manifest.imageFileNames,
+        manifest.imageFileNames.first,
       );
-
-      // Segment words using MeCab
-      pages = await MokuroWordSegmenter.segmentAllPages(pages);
-
-      // Build and save pages_cache.json
-      final mokuroBook = MokuroBook(
-        title: manifest.title,
-        imageDirPath: manifest.imageDirPath,
-        pages: pages,
-      );
-      final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
-      await cacheFile.writeAsString(jsonEncode(mokuroBook.toJson()));
-
-      debugPrint(
-        '[MangaImport] Cached ${pages.length} pages for "${manifest.title}"',
-      );
-
-      // Cover = first page image
-      String? coverImagePath;
-      if (manifest.imageFileNames.isNotEmpty) {
-        final coverPath = p.join(
-          manifest.imageDirPath,
-          manifest.imageFileNames.first,
-        );
-        if (await File(coverPath).exists()) {
-          coverImagePath = coverPath;
-        }
+      if (await File(coverPath).exists()) {
+        coverImagePath = coverPath;
       }
-
-      // Insert into database
-      final bookId = await _db.into(_db.books).insert(
-            BooksCompanion.insert(
-              title: manifest.title,
-              filePath: cacheDir.path,
-              bookType: const Value('manga'),
-              coverImagePath: coverImagePath != null
-                  ? Value(coverImagePath)
-                  : const Value.absent(),
-              totalPages: Value(pages.length),
-            ),
-          );
-
-      importedBooks.add((await getBookById(bookId))!);
     }
 
-    return importedBooks;
+    // Insert into database
+    final bookId = await _db.into(_db.books).insert(
+          BooksCompanion.insert(
+            title: manifest.title,
+            filePath: cacheDir.path,
+            bookType: const Value('manga'),
+            coverImagePath: coverImagePath != null
+                ? Value(coverImagePath)
+                : const Value.absent(),
+            totalPages: Value(pages.length),
+          ),
+        );
+
+    return (await getBookById(bookId))!;
   }
 
   // ──────────────── Update ────────────────
@@ -246,6 +317,51 @@ class BookRepository {
       (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(coverImagePath: Value(path)),
       );
+
+  // ──────────────── Manga OCR ────────────────
+
+  /// Re-run MeCab word segmentation on an existing manga book.
+  ///
+  /// Reads the cached page data, strips existing words from all blocks,
+  /// runs [MokuroWordSegmenter.segmentAllPages] to re-segment, and
+  /// writes back the updated cache.
+  Future<void> reprocessMangaOcr(Book book) async {
+    if (book.bookType != 'manga') return;
+
+    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    if (!await cacheFile.exists()) {
+      throw Exception('Pages cache not found. Try re-importing this manga.');
+    }
+
+    final content = await cacheFile.readAsString();
+    final json = jsonDecode(content) as Map<String, dynamic>;
+    final mokuroBook = MokuroBook.fromJson(json);
+
+    // Strip existing words from all blocks
+    final strippedPages = mokuroBook.pages.map((page) {
+      return page.copyWith(
+        blocks: page.blocks.map((block) {
+          return block.copyWith(words: []);
+        }).toList(),
+      );
+    }).toList();
+
+    // Re-run segmentation
+    final resegmented =
+        await MokuroWordSegmenter.segmentAllPages(strippedPages);
+
+    // Write back
+    final updated = MokuroBook(
+      title: mokuroBook.title,
+      imageDirPath: mokuroBook.imageDirPath,
+      pages: resegmented,
+    );
+    await cacheFile.writeAsString(jsonEncode(updated.toJson()));
+
+    debugPrint(
+      '[MangaOCR] Reprocessed ${resegmented.length} pages for "${book.title}"',
+    );
+  }
 
   // ──────────────── Delete ────────────────
 

@@ -5,7 +5,12 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
+import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_scroll_view.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_spread_view.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 
 /// Manga reader screen — renders manga pages with word overlays.
@@ -33,6 +38,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   bool _isZoomed = false;
   bool _debugOverlay = false;
 
+  // View mode keys for cross-widget navigation
+  final _scrollViewKey = GlobalKey<MangaScrollViewState>();
+  final _spreadViewKey = GlobalKey<MangaSpreadViewState>();
+
   // Word highlight state — shown while a lookup sheet is active
   MokuroWord? _highlightedWord;
   int? _highlightedPageIndex;
@@ -40,8 +49,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   @override
   void initState() {
     super.initState();
-    // Restore last read page from book's lastReadCfi
-    _currentPage = int.tryParse(widget.book.lastReadCfi ?? '') ?? 0;
+    // Restore last read page from book's lastReadCfi.
+    // Scroll mode stores offset as 'scroll:<offset>' — default to page 0.
+    final cfi = widget.book.lastReadCfi ?? '';
+    _currentPage = cfi.startsWith('scroll:')
+        ? 0
+        : (int.tryParse(cfi) ?? 0);
     _pageController = PageController(initialPage: _currentPage);
 
     // Enter immersive mode
@@ -84,6 +97,25 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       curve: Curves.easeInOut,
     );
   }
+
+  /// Navigate forward or backward by [delta] pages/spreads depending on mode.
+  void _navigate(int delta, int totalPages, List<PageSpread> spreads) {
+    final viewMode = ref.read(mangaViewModeProvider);
+    switch (viewMode) {
+      case MangaViewMode.singlePage:
+        _goToPage(_currentPage + delta, totalPages);
+      case MangaViewMode.twoPageSpread:
+        if (spreads.isNotEmpty) {
+          final si = spreadIndexForPage(spreads, _currentPage);
+          _spreadViewKey.currentState?.goToSpread(si + delta);
+        }
+      case MangaViewMode.scroll:
+        _scrollViewKey.currentState?.scrollToPage(_currentPage + delta);
+    }
+  }
+
+  double _parseScrollOffset(String? cfi) =>
+      double.tryParse(cfi?.replaceFirst('scroll:', '') ?? '') ?? 0.0;
 
   void _clearHighlight() {
     if (_highlightedWord != null) {
@@ -214,34 +246,37 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     );
   }
 
-  void _handleTap(TapUpDetails details, int totalPages) {
+  void _handleTap(
+    TapUpDetails details,
+    int totalPages, [
+    List<PageSpread> spreads = const [],
+  ]) {
     if (_isZoomed) return; // Don't navigate when zoomed
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final tapX = details.localPosition.dx;
-    final normalizedX = tapX / screenWidth;
+    final screenSize = MediaQuery.of(context).size;
+    final normalizedX = details.localPosition.dx / screenSize.width;
+    final normalizedY = details.localPosition.dy / screenSize.height;
 
     final direction = ref.read(mangaReadingDirectionProvider);
-    final isRtl = direction == MangaReadingDirection.rtl;
+    final readerDir = direction == MangaReadingDirection.rtl
+        ? ReaderDirection.rtl
+        : ReaderDirection.ltr;
 
-    // 25% left | 50% center | 25% right
-    if (normalizedX < 0.25) {
-      // Left zone
-      if (isRtl) {
-        _goToPage(_currentPage + 1, totalPages);
-      } else {
-        _goToPage(_currentPage - 1, totalPages);
-      }
-    } else if (normalizedX > 0.75) {
-      // Right zone
-      if (isRtl) {
-        _goToPage(_currentPage - 1, totalPages);
-      } else {
-        _goToPage(_currentPage + 1, totalPages);
-      }
-    } else {
-      // Center zone — toggle controls
-      _toggleControls();
+    final intent = resolveTapIntent(
+      normalizedX: normalizedX,
+      normalizedY: normalizedY,
+      readingDirection: readerDir,
+    );
+
+    switch (intent) {
+      case ReaderNavigationIntent.toggleControls:
+        _toggleControls();
+      case ReaderNavigationIntent.goForward:
+        _navigate(1, totalPages, spreads);
+      case ReaderNavigationIntent.goBackward:
+        _navigate(-1, totalPages, spreads);
+      case ReaderNavigationIntent.none:
+        break;
     }
   }
 
@@ -250,8 +285,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       context: context,
       builder: (context) => Consumer(
         builder: (context, ref, _) {
+          final viewMode = ref.watch(mangaViewModeProvider);
           final direction = ref.watch(mangaReadingDirectionProvider);
           final transparent = ref.watch(mangaLookupTransparencyProvider);
+          final autoCrop = ref.watch(mangaAutoCropProvider);
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -264,6 +301,33 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 16),
+                  // View mode selector
+                  SegmentedButton<MangaViewMode>(
+                    segments: const [
+                      ButtonSegment(
+                        value: MangaViewMode.singlePage,
+                        icon: Icon(Icons.looks_one),
+                        label: Text('Single'),
+                      ),
+                      ButtonSegment(
+                        value: MangaViewMode.twoPageSpread,
+                        icon: Icon(Icons.looks_two),
+                        label: Text('Spread'),
+                      ),
+                      ButtonSegment(
+                        value: MangaViewMode.scroll,
+                        icon: Icon(Icons.view_day),
+                        label: Text('Scroll'),
+                      ),
+                    ],
+                    selected: {viewMode},
+                    onSelectionChanged: (value) {
+                      ref
+                          .read(mangaViewModeProvider.notifier)
+                          .setMode(value.first);
+                    },
+                  ),
+                  const SizedBox(height: 8),
                   // Reading direction
                   ListTile(
                     leading: const Icon(Icons.swap_horiz),
@@ -277,6 +341,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                       ref
                           .read(mangaReadingDirectionProvider.notifier)
                           .toggle();
+                    },
+                  ),
+                  // Auto-crop toggle
+                  SwitchListTile(
+                    secondary: const Icon(Icons.crop),
+                    title: const Text('Auto-Crop'),
+                    subtitle: const Text('Remove empty margins'),
+                    value: autoCrop,
+                    onChanged: (_) {
+                      ref.read(mangaAutoCropProvider.notifier).toggle();
                     },
                   ),
                   // Transparent lookup toggle
@@ -315,6 +389,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
     final direction = ref.watch(mangaReadingDirectionProvider);
+    final autoCrop = ref.watch(mangaAutoCropProvider);
+    final viewMode = ref.watch(mangaViewModeProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -361,38 +437,24 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
             _currentPage = totalPages - 1;
           }
 
+          final isRtl = direction == MangaReadingDirection.rtl;
+          final spreads = viewMode == MangaViewMode.twoPageSpread
+              ? computeSpreads(totalPages, isRtl: isRtl)
+              : <PageSpread>[];
+
           return Stack(
             children: [
               // Page content with tap zones
               GestureDetector(
-                onTapUp: (details) => _handleTap(details, totalPages),
-                child: PageView.builder(
-                  controller: _pageController,
-                  reverse: direction == MangaReadingDirection.rtl,
-                  physics: _isZoomed
-                      ? const NeverScrollableScrollPhysics()
-                      : const ClampingScrollPhysics(),
-                  itemCount: totalPages,
-                  onPageChanged: (page) =>
-                      _onPageChanged(page, totalPages),
-                  itemBuilder: (context, index) {
-                    final page = mokuroBook.pages[index];
-                    return MangaPageView(
-                      page: page,
-                      imageDirPath: mokuroBook.imageDirPath,
-                      debugOverlay: _debugOverlay,
-                      highlightedWord:
-                          index == _highlightedPageIndex
-                              ? _highlightedWord
-                              : null,
-                      onWordTapped: _onWordTapped,
-                      onZoomChanged: (zoomed) {
-                        if (zoomed != _isZoomed) {
-                          setState(() => _isZoomed = zoomed);
-                        }
-                      },
-                    );
-                  },
+                onTapUp: (details) =>
+                    _handleTap(details, totalPages, spreads),
+                child: _buildViewContent(
+                  mokuroBook,
+                  viewMode,
+                  spreads,
+                  totalPages,
+                  isRtl,
+                  autoCrop,
                 ),
               ),
 
@@ -470,10 +532,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                             ),
                             Expanded(
                               child: Directionality(
-                                textDirection:
-                                    direction == MangaReadingDirection.rtl
-                                        ? TextDirection.rtl
-                                        : TextDirection.ltr,
+                                textDirection: isRtl
+                                    ? TextDirection.rtl
+                                    : TextDirection.ltr,
                                 child: Slider(
                                   value: _currentPage.toDouble(),
                                   min: 0,
@@ -482,7 +543,19 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                                       ? totalPages - 1
                                       : null,
                                   onChanged: (value) {
-                                    _goToPage(value.round(), totalPages);
+                                    final page = value.round();
+                                    switch (viewMode) {
+                                      case MangaViewMode.singlePage:
+                                        _goToPage(page, totalPages);
+                                      case MangaViewMode.twoPageSpread:
+                                        final si = spreadIndexForPage(
+                                            spreads, page);
+                                        _spreadViewKey.currentState
+                                            ?.goToSpread(si);
+                                      case MangaViewMode.scroll:
+                                        _scrollViewKey.currentState
+                                            ?.scrollToPage(page);
+                                    }
                                   },
                                 ),
                               ),
@@ -505,5 +578,96 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
         },
       ),
     );
+  }
+
+  /// Builds the main content area, switching between single-page,
+  /// two-page spread, and continuous scroll based on [viewMode].
+  Widget _buildViewContent(
+    MokuroBook mokuroBook,
+    MangaViewMode viewMode,
+    List<PageSpread> spreads,
+    int totalPages,
+    bool isRtl,
+    bool autoCrop,
+  ) {
+    switch (viewMode) {
+      case MangaViewMode.singlePage:
+        // Sync page controller after a mode switch
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_pageController.hasClients &&
+              (_pageController.page?.round() ?? 0) != _currentPage) {
+            _pageController.jumpToPage(_currentPage);
+          }
+        });
+        return PageView.builder(
+          controller: _pageController,
+          reverse: isRtl,
+          physics: _isZoomed
+              ? const NeverScrollableScrollPhysics()
+              : const ClampingScrollPhysics(),
+          itemCount: totalPages,
+          onPageChanged: (page) => _onPageChanged(page, totalPages),
+          itemBuilder: (context, index) {
+            final page = mokuroBook.pages[index];
+            return MangaPageView(
+              page: page,
+              imageDirPath: mokuroBook.imageDirPath,
+              debugOverlay: _debugOverlay,
+              autoCrop: autoCrop,
+              highlightedWord: index == _highlightedPageIndex
+                  ? _highlightedWord
+                  : null,
+              onWordTapped: _onWordTapped,
+              onZoomChanged: (zoomed) {
+                if (zoomed != _isZoomed) {
+                  setState(() => _isZoomed = zoomed);
+                }
+              },
+            );
+          },
+        );
+
+      case MangaViewMode.twoPageSpread:
+        return MangaSpreadView(
+          key: _spreadViewKey,
+          mokuroBook: mokuroBook,
+          spreads: spreads,
+          initialSpreadIndex: spreadIndexForPage(spreads, _currentPage),
+          isRtl: isRtl,
+          debugOverlay: _debugOverlay,
+          autoCrop: autoCrop,
+          highlightedWord: _highlightedWord,
+          highlightedPageIndex: _highlightedPageIndex,
+          onWordTapped: _onWordTapped,
+          onZoomChanged: (zoomed) {
+            if (zoomed != _isZoomed) {
+              setState(() => _isZoomed = zoomed);
+            }
+          },
+          onSpreadChanged: (spreadIdx) {
+            if (spreadIdx >= 0 && spreadIdx < spreads.length) {
+              final page = spreads[spreadIdx].primaryPageIndex;
+              _onPageChanged(page, totalPages);
+            }
+          },
+        );
+
+      case MangaViewMode.scroll:
+        return MangaScrollView(
+          key: _scrollViewKey,
+          mokuroBook: mokuroBook,
+          bookId: widget.book.id,
+          initialScrollOffset: _parseScrollOffset(widget.book.lastReadCfi),
+          debugOverlay: _debugOverlay,
+          autoCrop: autoCrop,
+          highlightedWord: _highlightedWord,
+          highlightedPageIndex: _highlightedPageIndex,
+          onWordTapped: _onWordTapped,
+          onPageEstimateChanged: (page) {
+            setState(() => _currentPage = page);
+            // Progress is saved by MangaScrollView's debounced callback
+          },
+        );
+    }
   }
 }
