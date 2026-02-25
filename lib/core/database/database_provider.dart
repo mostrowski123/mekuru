@@ -18,7 +18,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +80,9 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_freq_expr_read ON frequencies (expression, reading)',
             );
+          }
+          if (from < 12) {
+            await migrator.addColumn(books, books.bookType);
           }
         },
       );

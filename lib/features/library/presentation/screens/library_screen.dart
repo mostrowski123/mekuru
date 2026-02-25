@@ -5,9 +5,11 @@ import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
+import 'package:mekuru/features/manga/presentation/screens/manga_reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
@@ -42,8 +44,10 @@ class LibraryScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: importState.isImporting ? null : () => _importEpub(ref),
-        tooltip: 'Import EPUB',
+        onPressed: importState.isImporting
+            ? null
+            : () => _showImportChoice(context, ref),
+        tooltip: 'Import',
         child: const Icon(Icons.add),
       ),
       body: Column(
@@ -137,7 +141,7 @@ class LibraryScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap + to import an EPUB',
+            'Tap + to import a book',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
@@ -210,6 +214,45 @@ class LibraryScreen extends ConsumerWidget {
         LibrarySortOrder.alphabetical => Icons.sort_by_alpha,
       };
 
+  void _showImportChoice(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Import',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.book),
+              title: const Text('EPUB'),
+              subtitle: const Text('Import an EPUB file'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _importEpub(ref);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Manga'),
+              subtitle: const Text('Import a mokuro manga folder'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _importManga(context, ref);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _importEpub(WidgetRef ref) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -223,6 +266,55 @@ class LibraryScreen extends ConsumerWidget {
     if (filePath == null) return;
 
     ref.read(bookImportProvider.notifier).importEpub(filePath);
+  }
+
+  Future<void> _importManga(BuildContext context, WidgetRef ref) async {
+    // On Android, request storage permission before accessing manga files.
+    // MANAGE_EXTERNAL_STORAGE is needed because manga folders contain
+    // HTML, JSON, and image files accessed via filesystem paths.
+    if (Platform.isAndroid) {
+      final granted = await _ensureStoragePermission(context);
+      if (!granted) return;
+    }
+
+    final dirPath = await FilePicker.platform.getDirectoryPath();
+    if (dirPath == null) return;
+
+    ref.read(bookImportProvider.notifier).importManga(dirPath);
+  }
+
+  /// Request storage permission on Android.
+  ///
+  /// Uses [Permission.manageExternalStorage] which gives full filesystem
+  /// access. This opens the system settings page where the user toggles
+  /// the "Allow access to manage all files" switch.
+  ///
+  /// Returns `true` if permission is granted, `false` otherwise.
+  Future<bool> _ensureStoragePermission(BuildContext context) async {
+    // Check if already granted
+    if (await Permission.manageExternalStorage.isGranted) return true;
+
+    // Request the permission (opens system settings on Android 11+)
+    final status = await Permission.manageExternalStorage.request();
+    if (status.isGranted) return true;
+
+    // Permission denied — show explanation
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Storage permission is required to read manga files. '
+            'Please grant "All files access" in Settings.',
+          ),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: () => openAppSettings(),
+          ),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    }
+    return false;
   }
 }
 
@@ -356,7 +448,11 @@ class _BookTileState extends ConsumerState<_BookTile>
       final distance = (e.localPosition - downPos).distance;
       if (distance < 20) {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ReaderScreen(book: book)),
+          MaterialPageRoute(
+            builder: (_) => book.bookType == 'manga'
+                ? MangaReaderScreen(book: book)
+                : ReaderScreen(book: book),
+          ),
         );
       }
     }
@@ -429,6 +525,23 @@ class _BookTileState extends ConsumerState<_BookTile>
                       fit: StackFit.expand,
                       children: [
                         _buildCoverImage(theme),
+                        if (book.bookType == 'manga')
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Icon(
+                                Icons.photo_library,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                            ),
+                          ),
                         if (book.readProgress > 0)
                           Positioned(
                             left: 0,
@@ -539,22 +652,25 @@ class _BookTileState extends ConsumerState<_BookTile>
               subtitle: Text('Added ${_formatDate(book.dateAdded)}'),
             ),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.bookmark_outline),
-              title: const Text('Bookmarks'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _showBookBookmarks(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.highlight),
-              title: const Text('Highlights'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _showBookHighlights(context);
-              },
-            ),
+            // Bookmarks/highlights are EPUB-only features
+            if (book.bookType != 'manga') ...[
+              ListTile(
+                leading: const Icon(Icons.bookmark_outline),
+                title: const Text('Bookmarks'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _showBookBookmarks(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.highlight),
+                title: const Text('Highlights'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _showBookHighlights(context);
+                },
+              ),
+            ],
             const Divider(),
             ListTile(
               leading: const Icon(Icons.edit_outlined),

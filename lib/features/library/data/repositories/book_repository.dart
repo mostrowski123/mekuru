@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
+import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/mokuro_parser.dart';
+import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -102,6 +107,85 @@ class BookRepository {
     return (await getBookById(bookId))!;
   }
 
+  /// Import all mokuro manga books from a directory.
+  ///
+  /// Discovers all `.html` files in [dirPath], parses OCR data,
+  /// segments words via MeCab, and saves processed cache files.
+  ///
+  /// Returns the list of created [Book] entries.
+  Future<List<Book>> importMokuroDirectory(String dirPath) async {
+    final manifests = await MokuroParser.parseMokuroDirectory(dirPath);
+    if (manifests.isEmpty) {
+      throw Exception('No mokuro books found in this directory.');
+    }
+
+    final appDir = await getApplicationSupportDirectory();
+    final booksDir = Directory(p.join(appDir.path, 'books'));
+
+    final importedBooks = <Book>[];
+
+    for (int i = 0; i < manifests.length; i++) {
+      final manifest = manifests[i];
+
+      // Create cache directory
+      final timestamp = DateTime.now().millisecondsSinceEpoch + i;
+      final cacheDir = Directory(p.join(booksDir.path, 'manga_$timestamp'));
+      await cacheDir.create(recursive: true);
+
+      // Parse OCR data for all pages
+      var pages = await MokuroParser.parseAllPages(
+        manifest.ocrDirPath,
+        manifest.imageDirPath,
+        manifest.imageFileNames,
+      );
+
+      // Segment words using MeCab
+      pages = await MokuroWordSegmenter.segmentAllPages(pages);
+
+      // Build and save pages_cache.json
+      final mokuroBook = MokuroBook(
+        title: manifest.title,
+        imageDirPath: manifest.imageDirPath,
+        pages: pages,
+      );
+      final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+      await cacheFile.writeAsString(jsonEncode(mokuroBook.toJson()));
+
+      debugPrint(
+        '[MangaImport] Cached ${pages.length} pages for "${manifest.title}"',
+      );
+
+      // Cover = first page image
+      String? coverImagePath;
+      if (manifest.imageFileNames.isNotEmpty) {
+        final coverPath = p.join(
+          manifest.imageDirPath,
+          manifest.imageFileNames.first,
+        );
+        if (await File(coverPath).exists()) {
+          coverImagePath = coverPath;
+        }
+      }
+
+      // Insert into database
+      final bookId = await _db.into(_db.books).insert(
+            BooksCompanion.insert(
+              title: manifest.title,
+              filePath: cacheDir.path,
+              bookType: const Value('manga'),
+              coverImagePath: coverImagePath != null
+                  ? Value(coverImagePath)
+                  : const Value.absent(),
+              totalPages: Value(pages.length),
+            ),
+          );
+
+      importedBooks.add((await getBookById(bookId))!);
+    }
+
+    return importedBooks;
+  }
+
   // ──────────────── Update ────────────────
 
   /// Update reading progress (CFI / scroll position and percentage).
@@ -165,16 +249,27 @@ class BookRepository {
 
   // ──────────────── Delete ────────────────
 
-  /// Delete a book and its extracted files.
+  /// Delete a book and its cached/extracted files.
+  ///
+  /// For EPUB: deletes the entire book directory (copied files).
+  /// For manga: deletes only the cache directory. Original images are
+  /// kept since they belong to the user.
   Future<void> deleteBook(int bookId) async {
     final book = await getBookById(bookId);
     if (book != null) {
-      // Delete extracted files
-      final contentDir = Directory(book.filePath);
-      if (await contentDir.exists()) {
-        // Go up one level to delete the entire book directory
-        final bookDir = contentDir.parent;
-        await bookDir.delete(recursive: true);
+      if (book.bookType == 'manga') {
+        // filePath IS the cache directory — delete it directly.
+        final cacheDir = Directory(book.filePath);
+        if (await cacheDir.exists()) {
+          await cacheDir.delete(recursive: true);
+        }
+      } else {
+        // EPUB: filePath is the content dir, parent is the book dir.
+        final contentDir = Directory(book.filePath);
+        if (await contentDir.exists()) {
+          final bookDir = contentDir.parent;
+          await bookDir.delete(recursive: true);
+        }
       }
     }
 

@@ -211,12 +211,6 @@ class MecabService {
 
     final tappedChar = cleanText[cleanOffset];
 
-    debugPrint(
-      '[MeCab] identifyWord: offset=$cleanOffset char="$tappedChar" '
-      'textLen=${cleanText.length} '
-      'text="${cleanText.length <= 80 ? cleanText : '${cleanText.substring(0, 80)}...'}"',
-    );
-
     final allTokens = _tagger.parse(cleanText);
     if (allTokens.isEmpty) {
       debugPrint('[MeCab] parse() returned empty token list');
@@ -233,25 +227,8 @@ class MecabService {
       return true;
     }).toList();
 
-    // Diagnostic: log token surfaces and total length
-    final totalSurface = tokens.fold<int>(
-      0,
-      (sum, t) => sum + t.surface.length,
-    );
-    debugPrint(
-      '[MeCab] ${tokens.length} content tokens (${allTokens.length} raw), '
-      'total surface len=$totalSurface vs text len=${cleanText.length}',
-    );
-
     // Align tokens to their actual positions in the original text.
     final aligned = _alignTokensToText(tokens, cleanText);
-
-    if (aligned.length <= 20) {
-      final surfaceList = aligned
-          .map((a) => '"${a.token.surface}"@${a.startInText}')
-          .join(', ');
-      debugPrint('[MeCab] Aligned tokens: [$surfaceList]');
-    }
 
     // Build the public TokenInfo list from aligned tokens.
     final tokenInfoList = <TokenInfo>[];
@@ -280,14 +257,7 @@ class MecabService {
 
       if (cleanOffset >= start && cleanOffset < end) {
         final result = _buildResult(entry.token, text, charOffset, start);
-        if (result == null) {
-          debugPrint(
-            '[MeCab] Token at offset $cleanOffset is filtered '
-            '(surface="${entry.token.surface}", '
-            'POS=${entry.token.features.isNotEmpty ? entry.token.features[0] : "?"})',
-          );
-          return null;
-        }
+        if (result == null) return null;
         return WordIdentification(
           result: result,
           alignedTokens: tokenInfoList,
@@ -295,12 +265,6 @@ class MecabService {
         );
       }
     }
-
-    // Fallback: alignment didn't cover the tapped offset.
-    debugPrint(
-      '[MeCab] Alignment missed offset $cleanOffset (char="$tappedChar"), '
-      'trying fallback...',
-    );
 
     final fallbackResult = _fallbackIdentify(
       tokens,
@@ -348,13 +312,6 @@ class MecabService {
 
     newOffset = charOffset - removedBefore;
     final cleanText = buf.toString();
-
-    if (removedBefore > 0) {
-      debugPrint(
-        '[MeCab] Sanitized: removed $removedBefore invisible chars '
-        '(offset $charOffset → $newOffset)',
-      );
-    }
 
     return _SanitizedText(cleanText, newOffset);
   }
@@ -423,10 +380,6 @@ class MecabService {
     }
 
     if (bestToken != null) {
-      debugPrint(
-        '[MeCab] Fallback found token: surface="${bestToken.surface}" '
-        'at offset $bestTokenStart (distance=$bestDistance)',
-      );
       return _buildResult(
         bestToken,
         originalText,
@@ -445,21 +398,12 @@ class MecabService {
         final idx = originalText.indexOf(surface, searchFrom);
         if (idx == -1) break;
         if (originalOffset >= idx && originalOffset < idx + surface.length) {
-          debugPrint(
-            '[MeCab] Fallback2 found: surface="$surface" at text pos $idx',
-          );
           return _buildResult(token, originalText, originalOffset, idx);
         }
         searchFrom = idx + 1;
       }
     }
 
-    // Dump all token surfaces for debugging
-    final allSurfaces = tokens.map((t) => '"${t.surface}"').join(', ');
-    debugPrint(
-      '[MeCab] All fallbacks failed for char="$tappedChar" offset=$cleanOffset. '
-      'Tokens: [$allSurfaces]',
-    );
     return null;
   }
 

@@ -1,10 +1,14 @@
 import 'package:drift/drift.dart';
 
-/// Books table — stores imported EPUB metadata and reading progress.
+/// Books table — stores imported book metadata and reading progress.
+/// Supports both EPUB and mokuro manga formats via [bookType].
 class Books extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get title => text()();
   TextColumn get filePath => text()();
+
+  /// Book format: 'epub' or 'manga'. Defaults to 'epub' for backward compat.
+  TextColumn get bookType => text().withDefault(const Constant('epub'))();
   TextColumn get coverImagePath => text().nullable()();
   IntColumn get totalPages => integer().withDefault(const Constant(0))();
   TextColumn get lastReadCfi => text().nullable()();

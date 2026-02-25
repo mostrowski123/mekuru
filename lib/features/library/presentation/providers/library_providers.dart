@@ -120,6 +120,28 @@ class BookImportNotifier extends Notifier<BookImportState> {
     }
   }
 
+  Future<List<Book>?> importManga(String dirPath) async {
+    state = const BookImportState(isImporting: true);
+
+    try {
+      final repo = ref.read(bookRepositoryProvider);
+      final books = await repo.importMokuroDirectory(dirPath);
+      Sentry.addBreadcrumb(Breadcrumb(
+        message: 'Manga imported: ${books.length} book(s)',
+        category: 'library',
+      ));
+      state = BookImportState(
+        successMessage: books.length == 1
+            ? '"${books.first.title}" added to library!'
+            : '${books.length} manga added to library!',
+      );
+      return books;
+    } catch (e) {
+      state = BookImportState(error: e.toString());
+      return null;
+    }
+  }
+
   void clearState() {
     state = const BookImportState();
   }

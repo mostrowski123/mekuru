@@ -41,6 +41,18 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _bookTypeMeta = const VerificationMeta(
+    'bookType',
+  );
+  @override
+  late final GeneratedColumn<String> bookType = GeneratedColumn<String>(
+    'book_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('epub'),
+  );
   static const VerificationMeta _coverImagePathMeta = const VerificationMeta(
     'coverImagePath',
   );
@@ -172,6 +184,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     id,
     title,
     filePath,
+    bookType,
     coverImagePath,
     totalPages,
     lastReadCfi,
@@ -214,6 +227,12 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
       );
     } else if (isInserting) {
       context.missing(_filePathMeta);
+    }
+    if (data.containsKey('book_type')) {
+      context.handle(
+        _bookTypeMeta,
+        bookType.isAcceptableOrUnknown(data['book_type']!, _bookTypeMeta),
+      );
     }
     if (data.containsKey('cover_image_path')) {
       context.handle(
@@ -326,6 +345,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.string,
         data['${effectivePrefix}file_path'],
       )!,
+      bookType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_type'],
+      )!,
       coverImagePath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}cover_image_path'],
@@ -383,6 +406,9 @@ class Book extends DataClass implements Insertable<Book> {
   final int id;
   final String title;
   final String filePath;
+
+  /// Book format: 'epub' or 'manga'. Defaults to 'epub' for backward compat.
+  final String bookType;
   final String? coverImagePath;
   final int totalPages;
   final String? lastReadCfi;
@@ -407,6 +433,7 @@ class Book extends DataClass implements Insertable<Book> {
     required this.id,
     required this.title,
     required this.filePath,
+    required this.bookType,
     this.coverImagePath,
     required this.totalPages,
     this.lastReadCfi,
@@ -425,6 +452,7 @@ class Book extends DataClass implements Insertable<Book> {
     map['id'] = Variable<int>(id);
     map['title'] = Variable<String>(title);
     map['file_path'] = Variable<String>(filePath);
+    map['book_type'] = Variable<String>(bookType);
     if (!nullToAbsent || coverImagePath != null) {
       map['cover_image_path'] = Variable<String>(coverImagePath);
     }
@@ -464,6 +492,7 @@ class Book extends DataClass implements Insertable<Book> {
       id: Value(id),
       title: Value(title),
       filePath: Value(filePath),
+      bookType: Value(bookType),
       coverImagePath: coverImagePath == null && nullToAbsent
           ? const Value.absent()
           : Value(coverImagePath),
@@ -503,6 +532,7 @@ class Book extends DataClass implements Insertable<Book> {
       id: serializer.fromJson<int>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       filePath: serializer.fromJson<String>(json['filePath']),
+      bookType: serializer.fromJson<String>(json['bookType']),
       coverImagePath: serializer.fromJson<String?>(json['coverImagePath']),
       totalPages: serializer.fromJson<int>(json['totalPages']),
       lastReadCfi: serializer.fromJson<String?>(json['lastReadCfi']),
@@ -531,6 +561,7 @@ class Book extends DataClass implements Insertable<Book> {
       'id': serializer.toJson<int>(id),
       'title': serializer.toJson<String>(title),
       'filePath': serializer.toJson<String>(filePath),
+      'bookType': serializer.toJson<String>(bookType),
       'coverImagePath': serializer.toJson<String?>(coverImagePath),
       'totalPages': serializer.toJson<int>(totalPages),
       'lastReadCfi': serializer.toJson<String?>(lastReadCfi),
@@ -553,6 +584,7 @@ class Book extends DataClass implements Insertable<Book> {
     int? id,
     String? title,
     String? filePath,
+    String? bookType,
     Value<String?> coverImagePath = const Value.absent(),
     int? totalPages,
     Value<String?> lastReadCfi = const Value.absent(),
@@ -568,6 +600,7 @@ class Book extends DataClass implements Insertable<Book> {
     id: id ?? this.id,
     title: title ?? this.title,
     filePath: filePath ?? this.filePath,
+    bookType: bookType ?? this.bookType,
     coverImagePath: coverImagePath.present
         ? coverImagePath.value
         : this.coverImagePath,
@@ -595,6 +628,7 @@ class Book extends DataClass implements Insertable<Book> {
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
       filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      bookType: data.bookType.present ? data.bookType.value : this.bookType,
       coverImagePath: data.coverImagePath.present
           ? data.coverImagePath.value
           : this.coverImagePath,
@@ -633,6 +667,7 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('filePath: $filePath, ')
+          ..write('bookType: $bookType, ')
           ..write('coverImagePath: $coverImagePath, ')
           ..write('totalPages: $totalPages, ')
           ..write('lastReadCfi: $lastReadCfi, ')
@@ -653,6 +688,7 @@ class Book extends DataClass implements Insertable<Book> {
     id,
     title,
     filePath,
+    bookType,
     coverImagePath,
     totalPages,
     lastReadCfi,
@@ -672,6 +708,7 @@ class Book extends DataClass implements Insertable<Book> {
           other.id == this.id &&
           other.title == this.title &&
           other.filePath == this.filePath &&
+          other.bookType == this.bookType &&
           other.coverImagePath == this.coverImagePath &&
           other.totalPages == this.totalPages &&
           other.lastReadCfi == this.lastReadCfi &&
@@ -689,6 +726,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<int> id;
   final Value<String> title;
   final Value<String> filePath;
+  final Value<String> bookType;
   final Value<String?> coverImagePath;
   final Value<int> totalPages;
   final Value<String?> lastReadCfi;
@@ -704,6 +742,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.filePath = const Value.absent(),
+    this.bookType = const Value.absent(),
     this.coverImagePath = const Value.absent(),
     this.totalPages = const Value.absent(),
     this.lastReadCfi = const Value.absent(),
@@ -720,6 +759,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.id = const Value.absent(),
     required String title,
     required String filePath,
+    this.bookType = const Value.absent(),
     this.coverImagePath = const Value.absent(),
     this.totalPages = const Value.absent(),
     this.lastReadCfi = const Value.absent(),
@@ -737,6 +777,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<int>? id,
     Expression<String>? title,
     Expression<String>? filePath,
+    Expression<String>? bookType,
     Expression<String>? coverImagePath,
     Expression<int>? totalPages,
     Expression<String>? lastReadCfi,
@@ -753,6 +794,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (id != null) 'id': id,
       if (title != null) 'title': title,
       if (filePath != null) 'file_path': filePath,
+      if (bookType != null) 'book_type': bookType,
       if (coverImagePath != null) 'cover_image_path': coverImagePath,
       if (totalPages != null) 'total_pages': totalPages,
       if (lastReadCfi != null) 'last_read_cfi': lastReadCfi,
@@ -775,6 +817,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<int>? id,
     Value<String>? title,
     Value<String>? filePath,
+    Value<String>? bookType,
     Value<String?>? coverImagePath,
     Value<int>? totalPages,
     Value<String?>? lastReadCfi,
@@ -791,6 +834,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       id: id ?? this.id,
       title: title ?? this.title,
       filePath: filePath ?? this.filePath,
+      bookType: bookType ?? this.bookType,
       coverImagePath: coverImagePath ?? this.coverImagePath,
       totalPages: totalPages ?? this.totalPages,
       lastReadCfi: lastReadCfi ?? this.lastReadCfi,
@@ -818,6 +862,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     }
     if (filePath.present) {
       map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (bookType.present) {
+      map['book_type'] = Variable<String>(bookType.value);
     }
     if (coverImagePath.present) {
       map['cover_image_path'] = Variable<String>(coverImagePath.value);
@@ -867,6 +914,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('filePath: $filePath, ')
+          ..write('bookType: $bookType, ')
           ..write('coverImagePath: $coverImagePath, ')
           ..write('totalPages: $totalPages, ')
           ..write('lastReadCfi: $lastReadCfi, ')
@@ -3754,6 +3802,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<int> id,
       required String title,
       required String filePath,
+      Value<String> bookType,
       Value<String?> coverImagePath,
       Value<int> totalPages,
       Value<String?> lastReadCfi,
@@ -3771,6 +3820,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> title,
       Value<String> filePath,
+      Value<String> bookType,
       Value<String?> coverImagePath,
       Value<int> totalPages,
       Value<String?> lastReadCfi,
@@ -3845,6 +3895,11 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<String> get filePath => $composableBuilder(
     column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookType => $composableBuilder(
+    column: $table.bookType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3978,6 +4033,11 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bookType => $composableBuilder(
+    column: $table.bookType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get coverImagePath => $composableBuilder(
     column: $table.coverImagePath,
     builder: (column) => ColumnOrderings(column),
@@ -4051,6 +4111,9 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<String> get filePath =>
       $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<String> get bookType =>
+      $composableBuilder(column: $table.bookType, builder: (column) => column);
 
   GeneratedColumn<String> get coverImagePath => $composableBuilder(
     column: $table.coverImagePath,
@@ -4185,6 +4248,7 @@ class $$BooksTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String> filePath = const Value.absent(),
+                Value<String> bookType = const Value.absent(),
                 Value<String?> coverImagePath = const Value.absent(),
                 Value<int> totalPages = const Value.absent(),
                 Value<String?> lastReadCfi = const Value.absent(),
@@ -4200,6 +4264,7 @@ class $$BooksTableTableManager
                 id: id,
                 title: title,
                 filePath: filePath,
+                bookType: bookType,
                 coverImagePath: coverImagePath,
                 totalPages: totalPages,
                 lastReadCfi: lastReadCfi,
@@ -4217,6 +4282,7 @@ class $$BooksTableTableManager
                 Value<int> id = const Value.absent(),
                 required String title,
                 required String filePath,
+                Value<String> bookType = const Value.absent(),
                 Value<String?> coverImagePath = const Value.absent(),
                 Value<int> totalPages = const Value.absent(),
                 Value<String?> lastReadCfi = const Value.absent(),
@@ -4232,6 +4298,7 @@ class $$BooksTableTableManager
                 id: id,
                 title: title,
                 filePath: filePath,
+                bookType: bookType,
                 coverImagePath: coverImagePath,
                 totalPages: totalPages,
                 lastReadCfi: lastReadCfi,
