@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -15,6 +16,13 @@ import '../models/mokuro_models.dart';
 /// by extracting image filenames from the mokuro HTML file rather than listing
 /// the image directory.
 class MokuroParser {
+  static const Set<String> _imageExtensions = {
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif',
+  };
+
+  static bool _isImageFile(String fileName) =>
+      _imageExtensions.contains(p.extension(fileName).toLowerCase());
+
   /// Discover all mokuro books in a directory.
   ///
   /// Uses a three-pass discovery strategy:
@@ -217,11 +225,32 @@ class MokuroParser {
       throw Exception('HTML file not found: $htmlPath');
     }
 
-    final stem = p.basenameWithoutExtension(htmlPath);
+    var stem = p.basenameWithoutExtension(htmlPath);
+    // Strip .mobile suffix — e.g. "BookName.mobile.html" → "BookName"
+    if (stem.toLowerCase().endsWith('.mobile')) {
+      stem = stem.substring(0, stem.length - '.mobile'.length);
+    }
     final parentDir = p.dirname(htmlPath);
+
+    debugPrint('[MokuroParser] HTML file: $htmlPath');
+    debugPrint('[MokuroParser] Stem: $stem, Parent dir: $parentDir');
+
+    // Log parent directory contents for diagnosis
+    try {
+      final entities = await Directory(parentDir).list().toList();
+      debugPrint('[MokuroParser] Parent dir contents (${entities.length}):');
+      for (final entity in entities) {
+        final type = entity is Directory ? 'DIR' : 'FILE';
+        debugPrint('[MokuroParser]   [$type] ${p.basename(entity.path)}');
+      }
+    } catch (e) {
+      debugPrint('[MokuroParser] Cannot list parent dir: $e');
+    }
 
     // Resolve image directory
     final imageDirPath = p.join(parentDir, stem);
+    debugPrint('[MokuroParser] Checking image dir: $imageDirPath');
+    debugPrint('[MokuroParser]   exists: ${await Directory(imageDirPath).exists()}');
     if (!await Directory(imageDirPath).exists()) {
       throw Exception(
         'Image folder not found: $imageDirPath\n'
@@ -231,6 +260,8 @@ class MokuroParser {
 
     // Resolve OCR directory
     final ocrDirPath = p.join(parentDir, '_ocr', stem);
+    debugPrint('[MokuroParser] Checking OCR dir: $ocrDirPath');
+    debugPrint('[MokuroParser]   exists: ${await Directory(ocrDirPath).exists()}');
     if (!await Directory(ocrDirPath).exists()) {
       throw Exception(
         'OCR folder not found: $ocrDirPath\n'
@@ -321,6 +352,22 @@ class MokuroParser {
 
     final parentDir = p.dirname(mokuroFilePath);
 
+    debugPrint('[MokuroParser] .mokuro file: $mokuroFilePath');
+    debugPrint('[MokuroParser] Parent dir: $parentDir');
+    debugPrint('[MokuroParser] Title: $title, Volume: $volume');
+
+    // Log parent directory contents for diagnosis
+    try {
+      final entities = await Directory(parentDir).list().toList();
+      debugPrint('[MokuroParser] Parent dir contents (${entities.length}):');
+      for (final entity in entities) {
+        final type = entity is Directory ? 'DIR' : 'FILE';
+        debugPrint('[MokuroParser]   [$type] ${p.basename(entity.path)}');
+      }
+    } catch (e) {
+      debugPrint('[MokuroParser] Cannot list parent dir: $e');
+    }
+
     // Resolve the image directory. Try:
     // 1. Sibling directory matching the volume name
     // 2. Sibling directory matching the mokuro file stem
@@ -331,18 +378,37 @@ class MokuroParser {
       p.join(parentDir, p.basenameWithoutExtension(mokuroFilePath)),
     );
 
+    debugPrint('[MokuroParser] Checking volume dir: ${volumeDir.path}');
+    debugPrint('[MokuroParser]   exists: ${await volumeDir.exists()}');
+
     if (await volumeDir.exists()) {
       imageDirPath = volumeDir.path;
     } else if (volume != p.basenameWithoutExtension(mokuroFilePath) &&
         await stemDir.exists()) {
+      debugPrint('[MokuroParser] Checking stem dir: ${stemDir.path}');
+      debugPrint('[MokuroParser]   exists: ${await stemDir.exists()}');
       imageDirPath = stemDir.path;
     } else {
+      debugPrint('[MokuroParser] Falling back to parent dir for images');
       // Images might be in the same directory as the .mokuro file
       imageDirPath = parentDir;
     }
 
-    debugPrint('[MokuroParser] .mokuro file: $mokuroFilePath');
     debugPrint('[MokuroParser] Image dir resolved to: $imageDirPath');
+
+    // Check we can actually list files in the image directory
+    try {
+      final imgEntities = await Directory(imageDirPath).list().toList();
+      debugPrint('[MokuroParser] Image dir contents (${imgEntities.length}):');
+      for (final entity in imgEntities.take(5)) {
+        debugPrint('[MokuroParser]   ${p.basename(entity.path)}');
+      }
+      if (imgEntities.length > 5) {
+        debugPrint('[MokuroParser]   ... and ${imgEntities.length - 5} more');
+      }
+    } catch (e) {
+      debugPrint('[MokuroParser] Cannot list image dir: $e');
+    }
 
     final pagesJson = json['pages'] as List;
     final pages = <MokuroPage>[];
@@ -353,6 +419,10 @@ class MokuroParser {
       final imgPath = pageJson['img_path'] as String;
       // img_path may contain a relative path like "VolumeName/0001.jpg"
       final imageFileName = p.basename(imgPath);
+
+      // Skip non-image entries (e.g. .nomedia, .json metadata)
+      if (!_isImageFile(imageFileName)) continue;
+
       imageFileNames.add(imageFileName);
 
       final blocks = (pageJson['blocks'] as List)
@@ -360,7 +430,7 @@ class MokuroParser {
           .toList();
 
       pages.add(MokuroPage(
-        pageIndex: i,
+        pageIndex: pages.length,
         imageFileName: imageFileName,
         imgWidth: pageJson['img_width'] as int,
         imgHeight: pageJson['img_height'] as int,
@@ -417,11 +487,11 @@ class MokuroParser {
         imageFiles.add(fileName);
       }
 
-      // Deduplicate while preserving order
+      // Deduplicate while preserving order, skip non-image files
       final seen = <String>{};
       final unique = <String>[];
       for (final f in imageFiles) {
-        if (seen.add(f)) unique.add(f);
+        if (_isImageFile(f) && seen.add(f)) unique.add(f);
       }
 
       debugPrint(
@@ -654,16 +724,11 @@ class MokuroParser {
   /// prefer [_extractImageFileNamesFromHtml] when an HTML file is available.
   static Future<List<String>> _listSortedImageFiles(String dirPath) async {
     final dir = Directory(dirPath);
-    final imageExtensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp'};
-
     final files = <String>[];
     try {
       await for (final entity in dir.list()) {
-        if (entity is File) {
-          final ext = p.extension(entity.path).toLowerCase();
-          if (imageExtensions.contains(ext)) {
-            files.add(p.basename(entity.path));
-          }
+        if (entity is File && _isImageFile(entity.path)) {
+          files.add(p.basename(entity.path));
         }
       }
     } catch (e) {
@@ -698,5 +763,132 @@ class MokuroParser {
 
   static List<String> _splitNumeric(String s) {
     return RegExp(r'(\d+|\D+)').allMatches(s).map((m) => m.group(0)!).toList();
+  }
+
+  // ──────────────── Auto-Crop ────────────────
+
+  /// Scans an image to find the bounding rect of non-white content.
+  ///
+  /// Walks inward from each edge, stopping at the first row/column that
+  /// contains a non-white pixel (any RGB channel below [whiteThreshold]).
+  /// Returns `null` if the image can't be read or is entirely white.
+  static Future<ui.Rect?> computeImageContentBounds(
+    String imagePath, {
+    double padding = 2.0,
+    int whiteThreshold = 240,
+  }) async {
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final width = image.width;
+      final height = image.height;
+
+      final byteData = await image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
+      image.dispose();
+      codec.dispose();
+      if (byteData == null) return null;
+
+      final pixels = byteData.buffer.asUint8List();
+      final thresh = whiteThreshold;
+
+      bool isWhitePixel(int offset) =>
+          pixels[offset] >= thresh &&
+          pixels[offset + 1] >= thresh &&
+          pixels[offset + 2] >= thresh;
+
+      // Scan from top
+      int top = 0;
+      bool found = false;
+      for (int y = 0; y < height && !found; y++) {
+        final rowBase = y * width * 4;
+        for (int x = 0; x < width; x++) {
+          if (!isWhitePixel(rowBase + x * 4)) {
+            top = y;
+            found = true;
+            break;
+          }
+        }
+      }
+      if (!found) return null; // entirely white
+
+      // Scan from bottom
+      int bottom = height - 1;
+      found = false;
+      for (int y = height - 1; y >= top && !found; y--) {
+        final rowBase = y * width * 4;
+        for (int x = 0; x < width; x++) {
+          if (!isWhitePixel(rowBase + x * 4)) {
+            bottom = y;
+            found = true;
+            break;
+          }
+        }
+      }
+
+      // Scan from left (only between top..bottom)
+      int left = 0;
+      found = false;
+      for (int x = 0; x < width && !found; x++) {
+        for (int y = top; y <= bottom; y++) {
+          if (!isWhitePixel((y * width + x) * 4)) {
+            left = x;
+            found = true;
+            break;
+          }
+        }
+      }
+
+      // Scan from right (only between top..bottom)
+      int right = width - 1;
+      found = false;
+      for (int x = width - 1; x >= left && !found; x--) {
+        for (int y = top; y <= bottom; y++) {
+          if (!isWhitePixel((y * width + x) * 4)) {
+            right = x;
+            found = true;
+            break;
+          }
+        }
+      }
+
+      return ui.Rect.fromLTRB(
+        (left.toDouble() - padding).clamp(0.0, width.toDouble()),
+        (top.toDouble() - padding).clamp(0.0, height.toDouble()),
+        // +1 because right/bottom are inclusive pixel indices
+        (right.toDouble() + 1 + padding).clamp(0.0, width.toDouble()),
+        (bottom.toDouble() + 1 + padding).clamp(0.0, height.toDouble()),
+      );
+    } catch (e) {
+      debugPrint(
+        '[MokuroParser] Failed to compute content bounds for $imagePath: $e',
+      );
+      return null;
+    }
+  }
+
+  /// Computes [contentBounds] for all pages by scanning their images.
+  static Future<List<MokuroPage>> computeAllContentBounds(
+    List<MokuroPage> pages,
+    String imageDirPath,
+  ) async {
+    final result = <MokuroPage>[];
+    for (int i = 0; i < pages.length; i++) {
+      final page = pages[i];
+      final imagePath = p.join(imageDirPath, page.imageFileName);
+      final bounds = await computeImageContentBounds(imagePath);
+      result.add(page.copyWith(contentBounds: bounds));
+      // Yield to the event loop every 10 pages to keep UI responsive
+      if (i % 10 == 9) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+    debugPrint(
+      '[MokuroParser] Computed content bounds for ${result.length} pages',
+    );
+    return result;
   }
 }

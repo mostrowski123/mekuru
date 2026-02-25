@@ -387,32 +387,139 @@ class LibraryScreen extends ConsumerWidget {
       if (!granted) return;
     }
 
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.any,
-      allowMultiple: false,
-    );
+    // Use directory picker instead of file picker. On Android, pickFiles()
+    // copies the file to a cache directory, losing access to sibling image
+    // folders. The directory picker returns the real filesystem path.
+    final dirPath = await FilePicker.platform.getDirectoryPath();
+    if (dirPath == null) return;
 
-    if (result == null || result.files.isEmpty) return;
+    debugPrint('[MangaImport] Selected directory: $dirPath');
 
-    final filePath = result.files.single.path;
-    if (filePath == null) return;
+    // Scan for .mokuro, .html, and .mobile.html files in the selected directory
+    final mangaFiles = <File>[];
+    try {
+      final allFiles = <File>[];
+      await for (final entity in Directory(dirPath).list()) {
+        if (entity is File) {
+          final lower = entity.path.toLowerCase();
+          if (lower.endsWith('.mokuro') || lower.endsWith('.html')) {
+            allFiles.add(entity);
+          }
+        }
+      }
+      // If both Book.html and Book.mobile.html exist, keep only Book.html
+      final nonMobilePaths = allFiles
+          .where((f) => !f.path.toLowerCase().endsWith('.mobile.html'))
+          .map((f) => f.path.toLowerCase())
+          .toSet();
+      for (final file in allFiles) {
+        final lower = file.path.toLowerCase();
+        if (lower.endsWith('.mobile.html')) {
+          // Include .mobile.html only if no matching non-mobile .html exists
+          final nonMobile =
+              '${lower.substring(0, lower.length - '.mobile.html'.length)}.html';
+          if (!nonMobilePaths.contains(nonMobile)) {
+            mangaFiles.add(file);
+          }
+        } else {
+          mangaFiles.add(file);
+        }
+      }
+    } catch (e) {
+      debugPrint('[MangaImport] Cannot list directory: $e');
+      // ignore: use_build_context_synchronously
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Cannot read directory: $e')),
+        );
+      }
+      return;
+    }
 
-    // Validate extension
-    final ext = p.extension(filePath).toLowerCase();
-    if (ext != '.mokuro' && ext != '.html') {
-      ref.read(bookImportProvider.notifier).clearState();
+    if (mangaFiles.isEmpty) {
       // ignore: use_build_context_synchronously
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please select a .mokuro or .html file.'),
+            content: Text('No .mokuro or .html files found in this folder.'),
           ),
         );
       }
       return;
     }
 
-    ref.read(bookImportProvider.notifier).importManga(filePath);
+    // Sort by name for consistent ordering
+    mangaFiles.sort((a, b) => a.path.compareTo(b.path));
+
+    String selectedFile;
+    if (mangaFiles.length == 1) {
+      selectedFile = mangaFiles.first.path;
+    } else {
+      // Let the user pick which file to import
+      // ignore: use_build_context_synchronously
+      if (!context.mounted) return;
+      final picked = await _showMangaFilePicker(context, mangaFiles);
+      if (picked == null) return;
+      selectedFile = picked;
+    }
+
+    debugPrint('[MangaImport] Importing: $selectedFile');
+    ref.read(bookImportProvider.notifier).importManga(selectedFile);
+  }
+
+  /// Show a bottom sheet to pick which manga file to import.
+  Future<String?> _showMangaFilePicker(
+    BuildContext context,
+    List<File> files,
+  ) async {
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.4,
+        minChildSize: 0.25,
+        maxChildSize: 0.7,
+        builder: (_, scrollController) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Select manga to import',
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: files.length,
+                  itemBuilder: (_, index) {
+                    final file = files[index];
+                    final ext = p.extension(file.path).toLowerCase();
+                    final icon = ext == '.mokuro'
+                        ? Icons.data_object
+                        : Icons.code;
+                    return ListTile(
+                      leading: Icon(icon),
+                      title: Text(
+                        p.basenameWithoutExtension(file.path),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(ext),
+                      onTap: () => Navigator.of(sheetContext).pop(file.path),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// Request storage permission on Android.

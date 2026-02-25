@@ -114,7 +114,33 @@ class BookRepository {
   ///
   /// Returns the created [Book].
   Future<Book> importMangaFromFile(String filePath) async {
+    debugPrint('[MangaImport] importMangaFromFile called with: $filePath');
+
     final ext = p.extension(filePath).toLowerCase();
+    final parentDir = p.dirname(filePath);
+
+    // Diagnostic: check if the file is in a cache directory (Android file
+    // picker often copies files to cache, losing access to sibling folders).
+    if (parentDir.contains('cache/file_picker') ||
+        parentDir.contains('cache\\file_picker')) {
+      debugPrint('[MangaImport] WARNING: File appears to be in a file picker '
+          'cache directory. Sibling folders will not be accessible.');
+    }
+
+    // Log parent directory accessibility
+    final parentDirObj = Directory(parentDir);
+    debugPrint('[MangaImport] Parent dir: $parentDir');
+    debugPrint('[MangaImport] Parent dir exists: ${await parentDirObj.exists()}');
+    try {
+      final entities = await parentDirObj.list().toList();
+      debugPrint('[MangaImport] Parent dir contents (${entities.length} items):');
+      for (final entity in entities) {
+        final type = entity is Directory ? 'DIR' : 'FILE';
+        debugPrint('[MangaImport]   [$type] ${p.basename(entity.path)}');
+      }
+    } catch (e) {
+      debugPrint('[MangaImport] Cannot list parent dir: $e');
+    }
 
     final (MokuroBookManifest, List<MokuroPage>) parsed;
 
@@ -146,7 +172,13 @@ class BookRepository {
     await cacheDir.create(recursive: true);
 
     // Segment words using MeCab
-    final pages = await MokuroWordSegmenter.segmentAllPages(rawPages);
+    final segmented = await MokuroWordSegmenter.segmentAllPages(rawPages);
+
+    // Compute content bounds for auto-crop (scan images for whitespace)
+    final pages = await MokuroParser.computeAllContentBounds(
+      segmented,
+      manifest.imageDirPath,
+    );
 
     // Build and save pages_cache.json
     final mokuroBook = MokuroBook(
@@ -166,10 +198,18 @@ class BookRepository {
     // filenames like _01.jpg or 000.jpg may precede numbered pages.
     String? coverImagePath;
     if (manifest.imageFileNames.isNotEmpty) {
+      const imageExtensions = {
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif',
+      };
       final sorted = [...manifest.imageFileNames]..sort();
-      final coverPath = p.join(manifest.imageDirPath, sorted.first);
-      if (await File(coverPath).exists()) {
-        coverImagePath = coverPath;
+      for (final fileName in sorted) {
+        final ext = p.extension(fileName).toLowerCase();
+        if (!imageExtensions.contains(ext)) continue;
+        final candidatePath = p.join(manifest.imageDirPath, fileName);
+        if (await File(candidatePath).exists()) {
+          coverImagePath = candidatePath;
+          break;
+        }
       }
     }
 
@@ -278,15 +318,19 @@ class BookRepository {
       );
     }).toList();
 
-    // Re-run segmentation
+    // Re-run segmentation and recompute content bounds
     final resegmented =
         await MokuroWordSegmenter.segmentAllPages(strippedPages);
+    final withBounds = await MokuroParser.computeAllContentBounds(
+      resegmented,
+      mokuroBook.imageDirPath,
+    );
 
     // Write back
     final updated = MokuroBook(
       title: mokuroBook.title,
       imageDirPath: mokuroBook.imageDirPath,
-      pages: resegmented,
+      pages: withBounds,
     );
     await cacheFile.writeAsString(jsonEncode(updated.toJson()));
 
