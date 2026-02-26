@@ -1,16 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Storage permissions for reading manga images during import (Android 12 and below) -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Manga import uses SAF (user-selected folder access) instead of broad media permissions. -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="true"/>
     <application
         android:label="Mekuru"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:usesCleartextTraffic="true"
         tools:replace="android:label">
         <activity
