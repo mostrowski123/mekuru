@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/mokuro_models.dart';
@@ -17,11 +18,33 @@ import '../models/mokuro_models.dart';
 /// the image directory.
 class MokuroParser {
   static const Set<String> _imageExtensions = {
-    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif',
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.gif',
+    '.webp',
+    '.bmp',
+    '.tiff',
+    '.tif',
   };
 
   static bool _isImageFile(String fileName) =>
       _imageExtensions.contains(p.extension(fileName).toLowerCase());
+
+  static String _normalizeSafRelativeDir(String relativePath) {
+    final normalized = relativePath.replaceAll('\\', '/');
+    if (normalized.isEmpty || normalized == '.') return '';
+    return normalized;
+  }
+
+  static String _joinSafRelative(List<String> parts) {
+    final filtered = parts
+        .map((s) => s.replaceAll('\\', '/'))
+        .where((s) => s.isNotEmpty && s != '.')
+        .toList();
+    if (filtered.isEmpty) return '';
+    return p.posix.joinAll(filtered);
+  }
 
   /// Discover all mokuro books in a directory.
   ///
@@ -67,8 +90,10 @@ class MokuroParser {
       dirsByName[p.basename(d.path)] = d.path;
     }
 
-    debugPrint('[MokuroParser] Listed files: ${listedFiles.length}, '
-        'dirs: ${listedDirs.length}');
+    debugPrint(
+      '[MokuroParser] Listed files: ${listedFiles.length}, '
+      'dirs: ${listedDirs.length}',
+    );
     debugPrint('[MokuroParser] Dir names: ${dirsByName.keys.toList()}');
 
     // Check for _ocr directory
@@ -96,11 +121,14 @@ class MokuroParser {
     debugPrint('[MokuroParser] _ocr subdirs: ${ocrSubDirs.keys.toList()}');
 
     // ── Pass 1: Find HTML files from directory listing ──
-    var htmlFiles = listedFiles
-        .where((f) =>
-            f.path.endsWith('.html') && !f.path.endsWith('.mobile.html'))
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
+    var htmlFiles =
+        listedFiles
+            .where(
+              (f) =>
+                  f.path.endsWith('.html') && !f.path.endsWith('.mobile.html'),
+            )
+            .toList()
+          ..sort((a, b) => a.path.compareTo(b.path));
 
     debugPrint('[MokuroParser] HTML files from listing: ${htmlFiles.length}');
 
@@ -127,11 +155,11 @@ class MokuroParser {
     // ── Pass 3: If HTML files still not accessible, discover books
     //    purely from directory structure (no HTML needed) ──
     if (htmlFiles.isEmpty) {
-      debugPrint('[MokuroParser] HTML files not accessible — '
-          'discovering from directory structure only');
-      return _discoverFromDirectories(
-        dirPath, dirsByName, ocrSubDirs,
+      debugPrint(
+        '[MokuroParser] HTML files not accessible — '
+        'discovering from directory structure only',
       );
+      return _discoverFromDirectories(dirPath, dirsByName, ocrSubDirs);
     }
 
     // ── Process discovered HTML files ──
@@ -170,14 +198,17 @@ class MokuroParser {
 
       // Fallback: try directory listing (works on desktop/iOS)
       if (imageFiles.isEmpty) {
-        debugPrint('[MokuroParser] HTML image extraction failed, '
-            'trying dir listing for: $imageDirPath');
+        debugPrint(
+          '[MokuroParser] HTML image extraction failed, '
+          'trying dir listing for: $imageDirPath',
+        );
         imageFiles = await _listSortedImageFiles(imageDirPath);
         debugPrint('[MokuroParser] Dir listing found: ${imageFiles.length}');
       }
 
       if (imageFiles.isEmpty) {
-        final reason = '  "$stem": no images found '
+        final reason =
+            '  "$stem": no images found '
             '(HTML extraction and dir listing both failed)';
         debugPrint('[MokuroParser] SKIP $reason');
         skipReasons.add(reason);
@@ -186,13 +217,15 @@ class MokuroParser {
 
       debugPrint('[MokuroParser] OK "$title" — ${imageFiles.length} pages');
 
-      manifests.add(MokuroBookManifest(
-        title: title,
-        htmlPath: htmlFile.path,
-        imageDirPath: imageDirPath,
-        ocrDirPath: ocrDirPath,
-        imageFileNames: imageFiles,
-      ));
+      manifests.add(
+        MokuroBookManifest(
+          title: title,
+          htmlPath: htmlFile.path,
+          imageDirPath: imageDirPath,
+          ocrDirPath: ocrDirPath,
+          imageFileNames: imageFiles,
+        ),
+      );
     }
 
     if (manifests.isEmpty) {
@@ -216,10 +249,18 @@ class MokuroParser {
   /// - Image dir: `<parent>/<stem>/`
   /// - OCR dir: `<parent>/_ocr/<stem>/`
   ///
+  /// If [originalDirPath] is provided, it is used as the parent directory
+  /// for resolving image and OCR paths instead of the HTML file's location.
+  /// This supports Android where the file may be read from a cache copy
+  /// but image paths must reference the original external storage location.
+  ///
   /// Returns a [MokuroBookManifest] and the pre-parsed [MokuroPage] list.
   static Future<(MokuroBookManifest, List<MokuroPage>)> parseSingleHtmlFile(
-    String htmlPath,
-  ) async {
+    String htmlPath, {
+    String? originalDirPath,
+    String? safTreeUri,
+    String? safSelectedFileRelativePath,
+  }) async {
     final htmlFile = File(htmlPath);
     if (!await htmlFile.exists()) {
       throw Exception('HTML file not found: $htmlPath');
@@ -230,7 +271,14 @@ class MokuroParser {
     if (stem.toLowerCase().endsWith('.mobile')) {
       stem = stem.substring(0, stem.length - '.mobile'.length);
     }
-    final parentDir = p.dirname(htmlPath);
+    final parentDir = originalDirPath ?? p.dirname(htmlPath);
+    final safParentDirRel = safTreeUri != null
+        ? _normalizeSafRelativeDir(
+            p.posix.dirname(
+              safSelectedFileRelativePath ?? p.basename(htmlPath),
+            ),
+          )
+        : null;
 
     debugPrint('[MokuroParser] HTML file: $htmlPath');
     debugPrint('[MokuroParser] Stem: $stem, Parent dir: $parentDir');
@@ -249,9 +297,15 @@ class MokuroParser {
 
     // Resolve image directory
     final imageDirPath = p.join(parentDir, stem);
-    debugPrint('[MokuroParser] Checking image dir: $imageDirPath');
-    debugPrint('[MokuroParser]   exists: ${await Directory(imageDirPath).exists()}');
-    if (!await Directory(imageDirPath).exists()) {
+    final safImageDirRel = safTreeUri != null
+        ? _joinSafRelative([safParentDirRel ?? '', stem])
+        : null;
+    debugPrint('[MokuroParser] Image dir: $imageDirPath');
+    // When originalDirPath is provided (Android file picker), skip the
+    // Directory.exists() check — on Android 13+ without MANAGE_EXTERNAL_STORAGE,
+    // directory metadata isn't accessible even though the image files inside
+    // ARE readable via READ_MEDIA_IMAGES.
+    if (originalDirPath == null && !await Directory(imageDirPath).exists()) {
       throw Exception(
         'Image folder not found: $imageDirPath\n'
         'Expected a folder named "$stem" next to the HTML file.',
@@ -260,9 +314,11 @@ class MokuroParser {
 
     // Resolve OCR directory
     final ocrDirPath = p.join(parentDir, '_ocr', stem);
-    debugPrint('[MokuroParser] Checking OCR dir: $ocrDirPath');
-    debugPrint('[MokuroParser]   exists: ${await Directory(ocrDirPath).exists()}');
-    if (!await Directory(ocrDirPath).exists()) {
+    final safOcrDirRel = safTreeUri != null
+        ? _joinSafRelative([safParentDirRel ?? '', '_ocr', stem])
+        : null;
+    debugPrint('[MokuroParser] OCR dir: $ocrDirPath');
+    if (originalDirPath == null && !await Directory(ocrDirPath).exists()) {
       throw Exception(
         'OCR folder not found: $ocrDirPath\n'
         'Expected: _ocr/$stem/ in the same directory as the HTML file.',
@@ -277,9 +333,19 @@ class MokuroParser {
 
     // Fallback: list image directory
     if (imageFiles.isEmpty) {
-      debugPrint('[MokuroParser] HTML image extraction failed, '
-          'trying dir listing for: $imageDirPath');
-      imageFiles = await _listSortedImageFiles(imageDirPath);
+      debugPrint(
+        '[MokuroParser] HTML image extraction failed, '
+        'trying dir listing for: $imageDirPath',
+      );
+      if (safTreeUri != null && safImageDirRel != null) {
+        final names = await AndroidSafService.listNamesInTreeDir(
+          safTreeUri,
+          relativePath: safImageDirRel,
+        );
+        imageFiles = names.where(_isImageFile).toList()..sort(_naturalCompare);
+      } else {
+        imageFiles = await _listSortedImageFiles(imageDirPath);
+      }
     }
 
     if (imageFiles.isEmpty) {
@@ -297,14 +363,14 @@ class MokuroParser {
       imageDirPath: imageDirPath,
       ocrDirPath: ocrDirPath,
       imageFileNames: imageFiles,
+      safTreeUri: safTreeUri,
+      safImageDirRelativePath: safImageDirRel,
     );
 
     // Parse OCR pages
-    final pages = await parseAllPages(
-      ocrDirPath,
-      imageDirPath,
-      imageFiles,
-    );
+    final pages = safTreeUri != null && safOcrDirRel != null
+        ? await parseAllPagesSaf(safTreeUri, safOcrDirRel, imageFiles)
+        : await parseAllPages(ocrDirPath, imageDirPath, imageFiles);
 
     return (manifest, pages);
   }
@@ -332,10 +398,16 @@ class MokuroParser {
   /// The image directory is expected to be a sibling directory with the same
   /// name as the volume (or the mokuro file stem).
   ///
+  /// If [originalDirPath] is provided, it is used as the parent directory
+  /// for resolving image paths instead of the mokuro file's location.
+  ///
   /// Returns a [MokuroBookManifest] and the pre-parsed [MokuroPage] list.
   static Future<(MokuroBookManifest, List<MokuroPage>)> parseMokuroFile(
-    String mokuroFilePath,
-  ) async {
+    String mokuroFilePath, {
+    String? originalDirPath,
+    String? safTreeUri,
+    String? safSelectedFileRelativePath,
+  }) async {
     final file = File(mokuroFilePath);
     if (!await file.exists()) {
       throw Exception('Mokuro file not found: $mokuroFilePath');
@@ -344,13 +416,23 @@ class MokuroParser {
     final content = await file.readAsString();
     final json = jsonDecode(content) as Map<String, dynamic>;
 
-    final title = (json['title'] as String?) ??
+    final title =
+        (json['title'] as String?) ??
         (json['volume'] as String?) ??
         p.basenameWithoutExtension(mokuroFilePath);
-    final volume = (json['volume'] as String?) ??
+    final volume =
+        (json['volume'] as String?) ??
         p.basenameWithoutExtension(mokuroFilePath);
 
-    final parentDir = p.dirname(mokuroFilePath);
+    final parentDir = originalDirPath ?? p.dirname(mokuroFilePath);
+    final fileStem = p.basenameWithoutExtension(mokuroFilePath);
+    final safParentDirRel = safTreeUri != null
+        ? _normalizeSafRelativeDir(
+            p.posix.dirname(
+              safSelectedFileRelativePath ?? p.basename(mokuroFilePath),
+            ),
+          )
+        : null;
 
     debugPrint('[MokuroParser] .mokuro file: $mokuroFilePath');
     debugPrint('[MokuroParser] Parent dir: $parentDir');
@@ -372,31 +454,50 @@ class MokuroParser {
     // 1. Sibling directory matching the volume name
     // 2. Sibling directory matching the mokuro file stem
     // 3. The parent directory itself (images alongside .mokuro file)
-    String? imageDirPath;
-    final volumeDir = Directory(p.join(parentDir, volume));
-    final stemDir = Directory(
-      p.join(parentDir, p.basenameWithoutExtension(mokuroFilePath)),
-    );
+    //
+    // When originalDirPath is provided (Android file picker), skip
+    // Directory.exists() checks — on Android 13+ without
+    // MANAGE_EXTERNAL_STORAGE, directory metadata isn't accessible even
+    // though the image files inside ARE readable via READ_MEDIA_IMAGES.
+    // In that case, trust the volume/stem name and construct the path.
+    late String imageDirPath;
+    String? safImageDirRel;
+    final volumeDirPath = p.join(parentDir, volume);
+    final stemDirPath = p.join(parentDir, fileStem);
 
-    debugPrint('[MokuroParser] Checking volume dir: ${volumeDir.path}');
-    debugPrint('[MokuroParser]   exists: ${await volumeDir.exists()}');
-
-    if (await volumeDir.exists()) {
-      imageDirPath = volumeDir.path;
-    } else if (volume != p.basenameWithoutExtension(mokuroFilePath) &&
-        await stemDir.exists()) {
-      debugPrint('[MokuroParser] Checking stem dir: ${stemDir.path}');
-      debugPrint('[MokuroParser]   exists: ${await stemDir.exists()}');
-      imageDirPath = stemDir.path;
+    if (safTreeUri != null) {
+      // SAF-backed import — start with the volume-named folder and refine
+      // below after we know which image filenames actually exist.
+      imageDirPath = volumeDirPath;
+      safImageDirRel = _joinSafRelative([safParentDirRel ?? '', volume]);
+      debugPrint('[MokuroParser] Image dir (trusted): $imageDirPath');
+    } else if (originalDirPath != null) {
+      // Android legacy file picker path — skip exists() checks, use volume dir
+      imageDirPath = volumeDirPath;
+      debugPrint('[MokuroParser] Image dir (trusted): $imageDirPath');
     } else {
-      debugPrint('[MokuroParser] Falling back to parent dir for images');
-      // Images might be in the same directory as the .mokuro file
-      imageDirPath = parentDir;
+      final volumeDir = Directory(volumeDirPath);
+      final stemDir = Directory(stemDirPath);
+
+      debugPrint('[MokuroParser] Checking volume dir: ${volumeDir.path}');
+      debugPrint('[MokuroParser]   exists: ${await volumeDir.exists()}');
+
+      if (await volumeDir.exists()) {
+        imageDirPath = volumeDir.path;
+      } else if (volume != p.basenameWithoutExtension(mokuroFilePath) &&
+          await stemDir.exists()) {
+        debugPrint('[MokuroParser] Checking stem dir: ${stemDir.path}');
+        debugPrint('[MokuroParser]   exists: ${await stemDir.exists()}');
+        imageDirPath = stemDir.path;
+      } else {
+        debugPrint('[MokuroParser] Falling back to parent dir for images');
+        imageDirPath = parentDir;
+      }
     }
 
     debugPrint('[MokuroParser] Image dir resolved to: $imageDirPath');
 
-    // Check we can actually list files in the image directory
+    // Check we can actually list files in the image directory (diagnostic)
     try {
       final imgEntities = await Directory(imageDirPath).list().toList();
       debugPrint('[MokuroParser] Image dir contents (${imgEntities.length}):');
@@ -429,16 +530,49 @@ class MokuroParser {
           .map((b) => MokuroTextBlock.fromOcrJson(b as Map<String, dynamic>))
           .toList();
 
-      pages.add(MokuroPage(
-        pageIndex: pages.length,
-        imageFileName: imageFileName,
-        imgWidth: pageJson['img_width'] as int,
-        imgHeight: pageJson['img_height'] as int,
-        blocks: blocks,
-      ));
+      pages.add(
+        MokuroPage(
+          pageIndex: pages.length,
+          imageFileName: imageFileName,
+          imgWidth: pageJson['img_width'] as int,
+          imgHeight: pageJson['img_height'] as int,
+          blocks: blocks,
+        ),
+      );
     }
 
     debugPrint('[MokuroParser] Parsed ${pages.length} pages from .mokuro file');
+
+    if (safTreeUri != null) {
+      final firstImage = imageFileNames.isNotEmpty
+          ? imageFileNames.first
+          : null;
+      final volumeRel = _joinSafRelative([safParentDirRel ?? '', volume]);
+      final stemRel = _joinSafRelative([safParentDirRel ?? '', fileStem]);
+      final parentRel = safParentDirRel ?? '';
+      final candidates = <(String rel, String abs)>[
+        (volumeRel, volumeDirPath),
+        (stemRel, stemDirPath),
+        (parentRel, parentDir),
+      ];
+
+      if (firstImage != null) {
+        for (final candidate in candidates) {
+          final exists = await AndroidSafService.existsInTreePath(
+            safTreeUri,
+            _joinSafRelative([candidate.$1, firstImage]),
+          );
+          if (exists) {
+            safImageDirRel = candidate.$1;
+            imageDirPath = candidate.$2;
+            break;
+          }
+        }
+      } else {
+        safImageDirRel = volumeRel;
+        imageDirPath = volumeDirPath;
+      }
+    }
 
     final manifest = MokuroBookManifest(
       title: title,
@@ -446,6 +580,8 @@ class MokuroParser {
       imageDirPath: imageDirPath,
       ocrDirPath: '', // not applicable for .mokuro format
       imageFileNames: imageFileNames,
+      safTreeUri: safTreeUri,
+      safImageDirRelativePath: safImageDirRel,
     );
 
     return (manifest, pages);
@@ -466,8 +602,10 @@ class MokuroParser {
   ) async {
     debugPrint('[MokuroParser] Attempting to read HTML: $htmlPath');
     final htmlFile = File(htmlPath);
-    debugPrint('[MokuroParser]   exists=${await htmlFile.exists()}, '
-        'path=${htmlFile.path}');
+    debugPrint(
+      '[MokuroParser]   exists=${await htmlFile.exists()}, '
+      'path=${htmlFile.path}',
+    );
     try {
       final content = await htmlFile.readAsString();
       debugPrint('[MokuroParser]   HTML read OK, length=${content.length}');
@@ -538,14 +676,18 @@ class MokuroParser {
       // Fallback: probe for sequential OCR JSON files to discover
       // image filenames (needed on Android where dir.list() fails)
       if (imageFiles.isEmpty) {
-        debugPrint('[MokuroParser] Dir listing failed for $stem, '
-            'probing OCR files');
+        debugPrint(
+          '[MokuroParser] Dir listing failed for $stem, '
+          'probing OCR files',
+        );
         imageFiles = await _probeImageFilesFromOcr(ocrDirPath);
       }
 
       if (imageFiles.isEmpty) {
-        skipReasons.add('  "$stem": no images found '
-            '(dir listing and OCR probing both failed)');
+        skipReasons.add(
+          '  "$stem": no images found '
+          '(dir listing and OCR probing both failed)',
+        );
         continue;
       }
 
@@ -554,13 +696,15 @@ class MokuroParser {
 
       debugPrint('[MokuroParser] OK "$title" — ${imageFiles.length} pages');
 
-      manifests.add(MokuroBookManifest(
-        title: title,
-        htmlPath: '', // not available
-        imageDirPath: imageDirPath,
-        ocrDirPath: ocrDirPath,
-        imageFileNames: imageFiles,
-      ));
+      manifests.add(
+        MokuroBookManifest(
+          title: title,
+          htmlPath: '', // not available
+          imageDirPath: imageDirPath,
+          ocrDirPath: ocrDirPath,
+          imageFileNames: imageFiles,
+        ),
+      );
     }
 
     if (manifests.isEmpty) {
@@ -583,9 +727,7 @@ class MokuroParser {
   ///
   /// Used as a last resort when both HTML parsing and [Directory.list]
   /// fail (Pass 3 on Android).
-  static Future<List<String>> _probeImageFilesFromOcr(
-    String ocrDirPath,
-  ) async {
+  static Future<List<String>> _probeImageFilesFromOcr(String ocrDirPath) async {
     // Try common mokuro naming patterns
     final patterns = <String Function(int)>[
       // No padding, starting from 0: 0.json, 1.json, ...
@@ -639,6 +781,14 @@ class MokuroParser {
     String imageFileName,
   ) async {
     final content = await File(jsonPath).readAsString();
+    return _parseOcrJsonContent(content, pageIndex, imageFileName);
+  }
+
+  static MokuroPage _parseOcrJsonContent(
+    String content,
+    int pageIndex,
+    String imageFileName,
+  ) {
     final json = jsonDecode(content) as Map<String, dynamic>;
 
     final blocks = (json['blocks'] as List)
@@ -652,6 +802,27 @@ class MokuroParser {
       imgHeight: json['img_height'] as int,
       blocks: blocks,
     );
+  }
+
+  static Future<MokuroPage?> parseOcrJsonSaf(
+    String treeUri,
+    String jsonRelativePath,
+    int pageIndex,
+    String imageFileName,
+  ) async {
+    final content = await AndroidSafService.readTextFromTreePath(
+      treeUri,
+      jsonRelativePath,
+    );
+    if (content == null) return null;
+    try {
+      return _parseOcrJsonContent(content, pageIndex, imageFileName);
+    } catch (e) {
+      debugPrint(
+        '[MokuroParser] Failed to parse SAF OCR JSON $jsonRelativePath: $e',
+      );
+      return null;
+    }
   }
 
   /// Parse all OCR JSON files for a book.
@@ -674,13 +845,56 @@ class MokuroParser {
         pages.add(await parseOcrJson(ocrJsonPath, i, imageFileName));
       } else {
         // No OCR data for this page — include as blank overlay.
-        pages.add(MokuroPage(
-          pageIndex: i,
-          imageFileName: imageFileName,
-          imgWidth: 0,
-          imgHeight: 0,
-          blocks: const [],
-        ));
+        pages.add(
+          MokuroPage(
+            pageIndex: i,
+            imageFileName: imageFileName,
+            imgWidth: 0,
+            imgHeight: 0,
+            blocks: const [],
+          ),
+        );
+      }
+    }
+
+    return pages;
+  }
+
+  /// Parse all OCR JSON files for a book using an Android SAF tree grant.
+  static Future<List<MokuroPage>> parseAllPagesSaf(
+    String treeUri,
+    String ocrDirRelativePath,
+    List<String> imageFileNames,
+  ) async {
+    final pages = <MokuroPage>[];
+
+    for (int i = 0; i < imageFileNames.length; i++) {
+      final imageFileName = imageFileNames[i];
+      final imageStem = p.basenameWithoutExtension(imageFileName);
+      final ocrJsonRelPath = p.posix.join(
+        ocrDirRelativePath,
+        '$imageStem.json',
+      );
+
+      final parsed = await parseOcrJsonSaf(
+        treeUri,
+        ocrJsonRelPath,
+        i,
+        imageFileName,
+      );
+      if (parsed != null) {
+        pages.add(parsed);
+      } else {
+        // No OCR data for this page — include as blank overlay.
+        pages.add(
+          MokuroPage(
+            pageIndex: i,
+            imageFileName: imageFileName,
+            imgWidth: 0,
+            imgHeight: 0,
+            blocks: const [],
+          ),
+        );
       }
     }
 
@@ -745,8 +959,9 @@ class MokuroParser {
   static int _naturalCompare(String a, String b) {
     final aSegments = _splitNumeric(a);
     final bSegments = _splitNumeric(b);
-    final len =
-        aSegments.length < bSegments.length ? aSegments.length : bSegments.length;
+    final len = aSegments.length < bSegments.length
+        ? aSegments.length
+        : bSegments.length;
 
     for (var i = 0; i < len; i++) {
       final aNum = int.tryParse(aSegments[i]);
@@ -779,88 +994,10 @@ class MokuroParser {
   }) async {
     try {
       final bytes = await File(imagePath).readAsBytes();
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final image = frame.image;
-      final width = image.width;
-      final height = image.height;
-
-      final byteData = await image.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      );
-      image.dispose();
-      codec.dispose();
-      if (byteData == null) return null;
-
-      final pixels = byteData.buffer.asUint8List();
-      final thresh = whiteThreshold;
-
-      bool isWhitePixel(int offset) =>
-          pixels[offset] >= thresh &&
-          pixels[offset + 1] >= thresh &&
-          pixels[offset + 2] >= thresh;
-
-      // Scan from top
-      int top = 0;
-      bool found = false;
-      for (int y = 0; y < height && !found; y++) {
-        final rowBase = y * width * 4;
-        for (int x = 0; x < width; x++) {
-          if (!isWhitePixel(rowBase + x * 4)) {
-            top = y;
-            found = true;
-            break;
-          }
-        }
-      }
-      if (!found) return null; // entirely white
-
-      // Scan from bottom
-      int bottom = height - 1;
-      found = false;
-      for (int y = height - 1; y >= top && !found; y--) {
-        final rowBase = y * width * 4;
-        for (int x = 0; x < width; x++) {
-          if (!isWhitePixel(rowBase + x * 4)) {
-            bottom = y;
-            found = true;
-            break;
-          }
-        }
-      }
-
-      // Scan from left (only between top..bottom)
-      int left = 0;
-      found = false;
-      for (int x = 0; x < width && !found; x++) {
-        for (int y = top; y <= bottom; y++) {
-          if (!isWhitePixel((y * width + x) * 4)) {
-            left = x;
-            found = true;
-            break;
-          }
-        }
-      }
-
-      // Scan from right (only between top..bottom)
-      int right = width - 1;
-      found = false;
-      for (int x = width - 1; x >= left && !found; x--) {
-        for (int y = top; y <= bottom; y++) {
-          if (!isWhitePixel((y * width + x) * 4)) {
-            right = x;
-            found = true;
-            break;
-          }
-        }
-      }
-
-      return ui.Rect.fromLTRB(
-        (left.toDouble() - padding).clamp(0.0, width.toDouble()),
-        (top.toDouble() - padding).clamp(0.0, height.toDouble()),
-        // +1 because right/bottom are inclusive pixel indices
-        (right.toDouble() + 1 + padding).clamp(0.0, width.toDouble()),
-        (bottom.toDouble() + 1 + padding).clamp(0.0, height.toDouble()),
+      return computeImageContentBoundsFromBytes(
+        bytes,
+        padding: padding,
+        whiteThreshold: whiteThreshold,
       );
     } catch (e) {
       debugPrint(
@@ -868,6 +1005,61 @@ class MokuroParser {
       );
       return null;
     }
+  }
+
+  static Future<ui.Rect?> computeImageContentBoundsFromBytes(
+    Uint8List bytes, {
+    double padding = 2.0,
+    int whiteThreshold = 240,
+  }) async {
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    final image = frame.image;
+    final width = image.width;
+    final height = image.height;
+
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    image.dispose();
+    codec.dispose();
+    if (byteData == null) return null;
+
+    final pixels = byteData.buffer.asUint8List();
+    final thresh = whiteThreshold;
+
+    bool isWhitePixel(int offset) =>
+        pixels[offset] >= thresh &&
+        pixels[offset + 1] >= thresh &&
+        pixels[offset + 2] >= thresh;
+
+    // Track the closest non-white pixel on each side independently.
+    int minX = width;
+    int minY = height;
+    int maxX = -1;
+    int maxY = -1;
+
+    for (int y = 0; y < height; y++) {
+      final rowBase = y * width * 4;
+      for (int x = 0; x < width; x++) {
+        final offset = rowBase + x * 4;
+        if (isWhitePixel(offset)) continue;
+
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+
+    // Entirely white page
+    if (maxX < 0 || maxY < 0) return null;
+
+    return ui.Rect.fromLTRB(
+      (minX.toDouble() - padding).clamp(0.0, width.toDouble()),
+      (minY.toDouble() - padding).clamp(0.0, height.toDouble()),
+      // +1 because maxX/maxY are inclusive pixel indices
+      (maxX.toDouble() + 1 + padding).clamp(0.0, width.toDouble()),
+      (maxY.toDouble() + 1 + padding).clamp(0.0, height.toDouble()),
+    );
   }
 
   /// Computes [contentBounds] for all pages by scanning their images.
@@ -888,6 +1080,46 @@ class MokuroParser {
     }
     debugPrint(
       '[MokuroParser] Computed content bounds for ${result.length} pages',
+    );
+    return result;
+  }
+
+  /// Computes [contentBounds] for all pages using an Android SAF tree grant.
+  static Future<List<MokuroPage>> computeAllContentBoundsSaf(
+    List<MokuroPage> pages,
+    String safTreeUri,
+    String imageDirRelativePath,
+  ) async {
+    final result = <MokuroPage>[];
+    for (int i = 0; i < pages.length; i++) {
+      final page = pages[i];
+      final imageRelPath = _joinSafRelative([
+        imageDirRelativePath,
+        page.imageFileName,
+      ]);
+
+      ui.Rect? bounds;
+      try {
+        final bytes = await AndroidSafService.readBytesFromTreePath(
+          safTreeUri,
+          imageRelPath,
+        );
+        if (bytes != null) {
+          bounds = await computeImageContentBoundsFromBytes(bytes);
+        }
+      } catch (e) {
+        debugPrint(
+          '[MokuroParser] Failed SAF content bounds for $imageRelPath: $e',
+        );
+      }
+
+      result.add(page.copyWith(contentBounds: bounds));
+      if (i % 10 == 9) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+    debugPrint(
+      '[MokuroParser] Computed SAF content bounds for ${result.length} pages',
     );
     return result;
   }

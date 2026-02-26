@@ -37,6 +37,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   bool _showControls = false;
   bool _isZoomed = false;
   bool _debugOverlay = false;
+  bool _isComputingAutoCrop = false;
+  bool _autoCropComputedThisSession = false;
 
   // View mode keys for cross-widget navigation
   final _scrollViewKey = GlobalKey<MangaScrollViewState>();
@@ -52,9 +54,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     // Restore last read page from book's lastReadCfi.
     // Scroll mode stores offset as 'scroll:<offset>' — default to page 0.
     final cfi = widget.book.lastReadCfi ?? '';
-    _currentPage = cfi.startsWith('scroll:')
-        ? 0
-        : (int.tryParse(cfi) ?? 0);
+    _currentPage = cfi.startsWith('scroll:') ? 0 : (int.tryParse(cfi) ?? 0);
     _pageController = PageController(initialPage: _currentPage);
 
     // Enter immersive mode
@@ -73,11 +73,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     setState(() => _currentPage = page);
     // Save progress
     final progress = totalPages > 1 ? page / (totalPages - 1) : 0.0;
-    ref.read(bookRepositoryProvider).updateProgress(
-          widget.book.id,
-          page.toString(),
-          progress: progress,
-        );
+    ref
+        .read(bookRepositoryProvider)
+        .updateProgress(widget.book.id, page.toString(), progress: progress);
   }
 
   void _toggleControls() {
@@ -156,8 +154,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     if (showAtTop) {
       _showTopSheet(word, sentence, transparent).then((_) => _clearHighlight());
     } else {
-      _showBottomSheet(word, sentence, transparent)
-          .then((_) => _clearHighlight());
+      _showBottomSheet(
+        word,
+        sentence,
+        transparent,
+      ).then((_) => _clearHighlight());
     }
   }
 
@@ -169,11 +170,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor:
-          transparent ? Colors.transparent : null,
-      barrierColor: transparent
-          ? Colors.black.withAlpha(30)
-          : null,
+      backgroundColor: transparent ? Colors.transparent : null,
+      barrierColor: transparent ? Colors.black.withAlpha(30) : null,
       builder: (_) => LookupSheet(
         selectedText: word.dictionaryForm ?? word.surface,
         surfaceForm: word.surface,
@@ -202,9 +200,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Dismiss',
-      barrierColor: transparent
-          ? Colors.black.withAlpha(30)
-          : Colors.black54,
+      barrierColor: transparent ? Colors.black.withAlpha(30) : Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
         return Align(
@@ -233,13 +229,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, -1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
+          position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
+              .animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
           child: child,
         );
       },
@@ -338,20 +331,19 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                           : 'Left to Right',
                     ),
                     onTap: () {
-                      ref
-                          .read(mangaReadingDirectionProvider.notifier)
-                          .toggle();
+                      ref.read(mangaReadingDirectionProvider.notifier).toggle();
                     },
                   ),
                   // Auto-crop toggle
                   SwitchListTile(
                     secondary: const Icon(Icons.crop),
                     title: const Text('Auto-Crop'),
-                    subtitle: const Text('Remove empty margins'),
+                    subtitle: const Text(
+                      'Remove empty margins (one-time setup per book)',
+                    ),
                     value: autoCrop,
-                    onChanged: (_) {
-                      ref.read(mangaAutoCropProvider.notifier).toggle();
-                    },
+                    onChanged: (value) =>
+                        _handleAutoCropToggle(ref, mokuroBook, value),
                   ),
                   // Transparent lookup toggle
                   SwitchListTile(
@@ -385,6 +377,104 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     );
   }
 
+  Future<void> _handleAutoCropToggle(
+    WidgetRef ref,
+    MokuroBook mokuroBook,
+    bool enable,
+  ) async {
+    if (!enable) {
+      ref.read(mangaAutoCropProvider.notifier).setEnabled(false);
+      return;
+    }
+
+    if (_isComputingAutoCrop) return;
+
+    final latestAsyncBook = ref.read(mangaPagesProvider(widget.book.id));
+    final latestLoadedBook = switch (latestAsyncBook) {
+      AsyncData<MokuroBook>(:final value) => value,
+      _ => null,
+    };
+    final pagesForAutoCropCheck = latestLoadedBook?.pages ?? mokuroBook.pages;
+    final alreadyAutoCropped =
+        _autoCropComputedThisSession ||
+        pagesForAutoCropCheck.any((page) => page.contentBounds != null);
+    if (alreadyAutoCropped) {
+      _autoCropComputedThisSession = true;
+      ref.read(mangaAutoCropProvider.notifier).setEnabled(true);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Compute Auto-Crop?'),
+        content: const Text(
+          'Auto-crop needs a one-time scan of every page image for this '
+          'book. This may take a minute, but it will not need to run again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    _isComputingAutoCrop = true;
+    BuildContext? progressDialogContext;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (dialogContext) {
+        progressDialogContext = dialogContext;
+        return const AlertDialog(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Computing one-time auto-crop bounds. This may take a minute.',
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      await ref
+          .read(bookRepositoryProvider)
+          .ensureMangaAutoCropComputed(widget.book);
+      _autoCropComputedThisSession = true;
+      ref.invalidate(mangaPagesProvider(widget.book.id));
+      ref.read(mangaAutoCropProvider.notifier).setEnabled(true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Auto-crop setup failed: $e')));
+      }
+    } finally {
+      _isComputingAutoCrop = false;
+      if (progressDialogContext != null && progressDialogContext!.mounted) {
+        Navigator.of(progressDialogContext!).pop();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
@@ -406,10 +496,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load manga',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(color: Colors.white),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: Colors.white),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -446,8 +535,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
             children: [
               // Page content with tap zones
               GestureDetector(
-                onTapUp: (details) =>
-                    _handleTap(details, totalPages, spreads),
+                onTapUp: (details) => _handleTap(details, totalPages, spreads),
                 child: _buildViewContent(
                   mokuroBook,
                   viewMode,
@@ -477,8 +565,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                       child: Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back,
-                                color: Colors.white),
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                            ),
                             onPressed: () => Navigator.pop(context),
                           ),
                           Expanded(
@@ -492,10 +582,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.settings,
-                                color: Colors.white),
-                            onPressed: () =>
-                                _showSettingsSheet(mokuroBook),
+                            icon: const Icon(
+                              Icons.settings,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => _showSettingsSheet(mokuroBook),
                           ),
                         ],
                       ),
@@ -549,9 +640,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                                         _goToPage(page, totalPages);
                                       case MangaViewMode.twoPageSpread:
                                         final si = spreadIndexForPage(
-                                            spreads, page);
-                                        _spreadViewKey.currentState
-                                            ?.goToSpread(si);
+                                          spreads,
+                                          page,
+                                        );
+                                        _spreadViewKey.currentState?.goToSpread(
+                                          si,
+                                        );
                                       case MangaViewMode.scroll:
                                         _scrollViewKey.currentState
                                             ?.scrollToPage(page);
@@ -612,6 +706,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
             return MangaPageView(
               page: page,
               imageDirPath: mokuroBook.imageDirPath,
+              safTreeUri: mokuroBook.safTreeUri,
+              safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
               debugOverlay: _debugOverlay,
               autoCrop: autoCrop,
               highlightedWord: index == _highlightedPageIndex

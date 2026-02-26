@@ -16,8 +16,10 @@ enum MangaReadingDirection { rtl, ltr }
 ///
 /// The [bookId] is used to look up the book's `filePath` (cache directory),
 /// then reads `pages_cache.json` to get all page/block/word data.
-final mangaPagesProvider =
-    FutureProvider.family<MokuroBook, int>((ref, bookId) async {
+final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
+  ref,
+  bookId,
+) async {
   final bookRepo = ref.read(bookRepositoryProvider);
   final book = await bookRepo.getBookById(bookId);
   if (book == null) throw Exception('Book not found');
@@ -41,8 +43,8 @@ class MangaViewModeNotifier extends Notifier<MangaViewMode> {
 
 final mangaViewModeProvider =
     NotifierProvider<MangaViewModeNotifier, MangaViewMode>(
-  MangaViewModeNotifier.new,
-);
+      MangaViewModeNotifier.new,
+    );
 
 /// Whether auto-crop is enabled.
 class MangaAutoCropNotifier extends Notifier<bool> {
@@ -50,10 +52,11 @@ class MangaAutoCropNotifier extends Notifier<bool> {
   bool build() => false;
 
   void toggle() => state = !state;
+
+  void setEnabled(bool value) => state = value;
 }
 
-final mangaAutoCropProvider =
-    NotifierProvider<MangaAutoCropNotifier, bool>(
+final mangaAutoCropProvider = NotifierProvider<MangaAutoCropNotifier, bool>(
   MangaAutoCropNotifier.new,
 );
 
@@ -69,8 +72,8 @@ class MangaReadingDirectionNotifier extends Notifier<MangaReadingDirection> {
 
 final mangaReadingDirectionProvider =
     NotifierProvider<MangaReadingDirectionNotifier, MangaReadingDirection>(
-  MangaReadingDirectionNotifier.new,
-);
+      MangaReadingDirectionNotifier.new,
+    );
 
 /// Whether the manga lookup sheet uses a transparent background.
 class MangaLookupTransparencyNotifier extends Notifier<bool> {
@@ -82,5 +85,5 @@ class MangaLookupTransparencyNotifier extends Notifier<bool> {
 
 final mangaLookupTransparencyProvider =
     NotifierProvider<MangaLookupTransparencyNotifier, bool>(
-  MangaLookupTransparencyNotifier.new,
-);
+      MangaLookupTransparencyNotifier.new,
+    );

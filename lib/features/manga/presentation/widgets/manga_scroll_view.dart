@@ -24,7 +24,8 @@ class MangaScrollView extends ConsumerStatefulWidget {
     MokuroWord word,
     MokuroTextBlock block,
     Offset globalPosition,
-  )? onWordTapped;
+  )?
+  onWordTapped;
   final ValueChanged<int>? onPageEstimateChanged;
 
   const MangaScrollView({
@@ -93,7 +94,9 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
       if (!mounted) return;
       final totalPages = widget.mokuroBook.pages.length;
       final progress = totalPages > 1 ? page / (totalPages - 1) : 0.0;
-      ref.read(bookRepositoryProvider).updateProgress(
+      ref
+          .read(bookRepositoryProvider)
+          .updateProgress(
             widget.bookId,
             'scroll:${_scrollController.offset}',
             progress: progress,
@@ -107,9 +110,10 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
     final viewportHeight = _scrollController.position.viewportDimension;
     // Use the center of the viewport to determine "current" page
     final centerOffset = offset + viewportHeight / 2;
-    return (centerOffset / viewportHeight)
-        .floor()
-        .clamp(0, widget.mokuroBook.pages.length - 1);
+    return (centerOffset / viewportHeight).floor().clamp(
+      0,
+      widget.mokuroBook.pages.length - 1,
+    );
   }
 
   @override
@@ -130,12 +134,13 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
           child: MangaPageView(
             page: page,
             imageDirPath: widget.mokuroBook.imageDirPath,
+            safTreeUri: widget.mokuroBook.safTreeUri,
+            safImageDirRelativePath: widget.mokuroBook.safImageDirRelativePath,
             debugOverlay: widget.debugOverlay,
             autoCrop: widget.autoCrop,
-            highlightedWord:
-                index == widget.highlightedPageIndex
-                    ? widget.highlightedWord
-                    : null,
+            highlightedWord: index == widget.highlightedPageIndex
+                ? widget.highlightedWord
+                : null,
             onWordTapped: widget.onWordTapped,
             // No onZoomChanged — scroll view doesn't block scrolling on zoom
           ),

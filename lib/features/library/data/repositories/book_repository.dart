@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -35,11 +36,12 @@ class BookRepository {
 
   /// Get the most recently read book (by [lastReadAt]).
   /// Returns `null` if no book has been opened yet.
-  Future<Book?> getMostRecentlyReadBook() => (_db.select(_db.books)
-        ..where((t) => t.lastReadAt.isNotNull())
-        ..orderBy([(t) => OrderingTerm.desc(t.lastReadAt)])
-        ..limit(1))
-      .getSingleOrNull();
+  Future<Book?> getMostRecentlyReadBook() =>
+      (_db.select(_db.books)
+            ..where((t) => t.lastReadAt.isNotNull())
+            ..orderBy([(t) => OrderingTerm.desc(t.lastReadAt)])
+            ..limit(1))
+          .getSingleOrNull();
 
   // ──────────────── Import ────────────────
 
@@ -94,10 +96,9 @@ class BookRepository {
             language: metadata.language != null
                 ? Value(metadata.language)
                 : const Value.absent(),
-            pageProgressionDirection:
-                metadata.pageProgressionDirection != null
-                    ? Value(metadata.pageProgressionDirection)
-                    : const Value.absent(),
+            pageProgressionDirection: metadata.pageProgressionDirection != null
+                ? Value(metadata.pageProgressionDirection)
+                : const Value.absent(),
             primaryWritingMode: metadata.primaryWritingMode != null
                 ? Value(metadata.primaryWritingMode)
                 : const Value.absent(),
@@ -109,53 +110,95 @@ class BookRepository {
 
   /// Import a manga book from a `.mokuro` or `.html` file.
   ///
-  /// Detects the format by file extension and delegates to the appropriate
-  /// parser. The image directory is derived from the file's location.
+  /// [filePath] is the original file location (used to derive the image
+  /// directory path). [cachedFilePath] is an optional alternative path
+  /// where the file content can be read from (e.g. a cache copy on Android
+  /// where pickFiles() copies the selected file to cache).
   ///
   /// Returns the created [Book].
-  Future<Book> importMangaFromFile(String filePath) async {
+  Future<Book> importMangaFromFile(
+    String filePath, {
+    String? cachedFilePath,
+    String? safTreeUri,
+    String? safSelectedFileRelativePath,
+  }) async {
     debugPrint('[MangaImport] importMangaFromFile called with: $filePath');
-
-    final ext = p.extension(filePath).toLowerCase();
-    final parentDir = p.dirname(filePath);
-
-    // Diagnostic: check if the file is in a cache directory (Android file
-    // picker often copies files to cache, losing access to sibling folders).
-    if (parentDir.contains('cache/file_picker') ||
-        parentDir.contains('cache\\file_picker')) {
-      debugPrint('[MangaImport] WARNING: File appears to be in a file picker '
-          'cache directory. Sibling folders will not be accessible.');
+    if (cachedFilePath != null && cachedFilePath != filePath) {
+      debugPrint('[MangaImport] Reading content from cached: $cachedFilePath');
     }
-
-    // Log parent directory accessibility
-    final parentDirObj = Directory(parentDir);
-    debugPrint('[MangaImport] Parent dir: $parentDir');
-    debugPrint('[MangaImport] Parent dir exists: ${await parentDirObj.exists()}');
-    try {
-      final entities = await parentDirObj.list().toList();
-      debugPrint('[MangaImport] Parent dir contents (${entities.length} items):');
-      for (final entity in entities) {
-        final type = entity is Directory ? 'DIR' : 'FILE';
-        debugPrint('[MangaImport]   [$type] ${p.basename(entity.path)}');
-      }
-    } catch (e) {
-      debugPrint('[MangaImport] Cannot list parent dir: $e');
-    }
-
-    final (MokuroBookManifest, List<MokuroPage>) parsed;
-
-    if (ext == '.mokuro') {
-      parsed = await MokuroParser.parseMokuroFile(filePath);
-    } else if (ext == '.html') {
-      parsed = await MokuroParser.parseSingleHtmlFile(filePath);
-    } else {
-      throw Exception(
-        'Unsupported file type: $ext\n'
-        'Expected a .mokuro or .html file.',
+    if (safTreeUri != null) {
+      debugPrint(
+        '[MangaImport] SAF enabled tree=$safTreeUri '
+        'fileRel=$safSelectedFileRelativePath',
       );
     }
 
-    return _importManifestWithPages(parsed.$1, parsed.$2, 0);
+    final ext = p.extension(filePath).toLowerCase();
+    // Read file content from the cached path if available (Android file
+    // picker), otherwise from the original path (desktop/iOS). For folder-
+    // first SAF imports, copy only the selected .mokuro/.html file to a temp
+    // file so the parser can read it locally while images/OCR stay in place.
+    var readPath = cachedFilePath ?? filePath;
+    String? tempReadPath;
+
+    if (safTreeUri != null &&
+        safSelectedFileRelativePath != null &&
+        cachedFilePath == null) {
+      final bytes = await AndroidSafService.readBytesFromTreePath(
+        safTreeUri,
+        safSelectedFileRelativePath,
+      );
+      if (bytes == null) {
+        throw Exception(
+          'Could not read selected file from folder access grant:\n'
+          '$safSelectedFileRelativePath',
+        );
+      }
+
+      final tmpDir = await getTemporaryDirectory();
+      final tmpName =
+          'manga_import_${DateTime.now().microsecondsSinceEpoch}$ext';
+      tempReadPath = p.join(tmpDir.path, tmpName);
+      await File(tempReadPath).writeAsBytes(bytes, flush: true);
+      readPath = tempReadPath;
+    }
+
+    final (MokuroBookManifest, List<MokuroPage>) parsed;
+    try {
+      if (ext == '.mokuro') {
+        parsed = await MokuroParser.parseMokuroFile(
+          readPath,
+          originalDirPath: cachedFilePath != null ? p.dirname(filePath) : null,
+          safTreeUri: safTreeUri,
+          safSelectedFileRelativePath: safSelectedFileRelativePath,
+        );
+      } else if (ext == '.html') {
+        parsed = await MokuroParser.parseSingleHtmlFile(
+          readPath,
+          originalDirPath: cachedFilePath != null ? p.dirname(filePath) : null,
+          safTreeUri: safTreeUri,
+          safSelectedFileRelativePath: safSelectedFileRelativePath,
+        );
+      } else {
+        throw Exception(
+          'Unsupported file type: $ext\n'
+          'Expected a .mokuro or .html file.',
+        );
+      }
+
+      return _importManifestWithPages(parsed.$1, parsed.$2, 0);
+    } finally {
+      if (tempReadPath != null) {
+        try {
+          final tmp = File(tempReadPath);
+          if (await tmp.exists()) {
+            await tmp.delete();
+          }
+        } catch (_) {
+          // Best-effort temp cleanup only.
+        }
+      }
+    }
   }
 
   /// Shared import logic: segment words, save cache, insert into DB.
@@ -174,16 +217,16 @@ class BookRepository {
     // Segment words using MeCab
     final segmented = await MokuroWordSegmenter.segmentAllPages(rawPages);
 
-    // Compute content bounds for auto-crop (scan images for whitespace)
-    final pages = await MokuroParser.computeAllContentBounds(
-      segmented,
-      manifest.imageDirPath,
-    );
+    // Auto-crop bounds are now computed lazily the first time the user enables
+    // auto-crop for this manga. Import stores segmented OCR only.
+    final pages = segmented;
 
     // Build and save pages_cache.json
     final mokuroBook = MokuroBook(
       title: manifest.title,
       imageDirPath: manifest.imageDirPath,
+      safTreeUri: manifest.safTreeUri,
+      safImageDirRelativePath: manifest.safImageDirRelativePath,
       pages: pages,
     );
     final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
@@ -199,22 +242,53 @@ class BookRepository {
     String? coverImagePath;
     if (manifest.imageFileNames.isNotEmpty) {
       const imageExtensions = {
-        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.tif',
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.gif',
+        '.webp',
+        '.bmp',
+        '.tiff',
+        '.tif',
       };
       final sorted = [...manifest.imageFileNames]..sort();
       for (final fileName in sorted) {
         final ext = p.extension(fileName).toLowerCase();
         if (!imageExtensions.contains(ext)) continue;
-        final candidatePath = p.join(manifest.imageDirPath, fileName);
-        if (await File(candidatePath).exists()) {
-          coverImagePath = candidatePath;
-          break;
+        if (manifest.safTreeUri != null &&
+            manifest.safImageDirRelativePath != null) {
+          final relPath = p.posix.join(
+            manifest.safImageDirRelativePath!,
+            fileName,
+          );
+          final exists = await AndroidSafService.existsInTreePath(
+            manifest.safTreeUri!,
+            relPath,
+          );
+          if (!exists) continue;
+
+          final uri = await AndroidSafService.getDocumentUriInTree(
+            manifest.safTreeUri!,
+            relPath,
+          );
+          if (uri != null) {
+            coverImagePath = uri;
+            break;
+          }
+        } else {
+          final candidatePath = p.join(manifest.imageDirPath, fileName);
+          if (await File(candidatePath).exists()) {
+            coverImagePath = candidatePath;
+            break;
+          }
         }
       }
     }
 
     // Insert into database
-    final bookId = await _db.into(_db.books).insert(
+    final bookId = await _db
+        .into(_db.books)
+        .insert(
           BooksCompanion.insert(
             title: manifest.title,
             filePath: cacheDir.path,
@@ -236,8 +310,9 @@ class BookRepository {
       (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
         BooksCompanion(
           lastReadCfi: Value(cfi),
-          readProgress:
-              progress != null ? Value(progress) : const Value.absent(),
+          readProgress: progress != null
+              ? Value(progress)
+              : const Value.absent(),
           lastReadAt: Value(DateTime.now()),
         ),
       );
@@ -260,14 +335,13 @@ class BookRepository {
     String? language,
     String? pageProgressionDirection,
     String? primaryWritingMode,
-  ) =>
-      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
-        BooksCompanion(
-          language: Value(language),
-          pageProgressionDirection: Value(pageProgressionDirection),
-          primaryWritingMode: Value(primaryWritingMode),
-        ),
-      );
+  ) => (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+    BooksCompanion(
+      language: Value(language),
+      pageProgressionDirection: Value(pageProgressionDirection),
+      primaryWritingMode: Value(primaryWritingMode),
+    ),
+  );
 
   /// Save per-book display overrides (verticalText and readingDirection).
   ///
@@ -276,13 +350,12 @@ class BookRepository {
     int bookId, {
     required bool? verticalText,
     required String? readingDirection,
-  }) =>
-      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
-        BooksCompanion(
-          overrideVerticalText: Value(verticalText),
-          overrideReadingDirection: Value(readingDirection),
-        ),
-      );
+  }) => (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+    BooksCompanion(
+      overrideVerticalText: Value(verticalText),
+      overrideReadingDirection: Value(readingDirection),
+    ),
+  );
 
   /// Update the cover image path (custom cover).
   Future<void> updateCoverImagePath(int bookId, String? path) =>
@@ -318,25 +391,74 @@ class BookRepository {
       );
     }).toList();
 
-    // Re-run segmentation and recompute content bounds
-    final resegmented =
-        await MokuroWordSegmenter.segmentAllPages(strippedPages);
-    final withBounds = await MokuroParser.computeAllContentBounds(
-      resegmented,
-      mokuroBook.imageDirPath,
+    // Re-run segmentation. Existing contentBounds (if any) are preserved by
+    // MokuroPage.copyWith through the segmentation pipeline.
+    final resegmented = await MokuroWordSegmenter.segmentAllPages(
+      strippedPages,
     );
 
     // Write back
     final updated = MokuroBook(
       title: mokuroBook.title,
       imageDirPath: mokuroBook.imageDirPath,
-      pages: withBounds,
+      safTreeUri: mokuroBook.safTreeUri,
+      safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+      pages: resegmented,
     );
     await cacheFile.writeAsString(jsonEncode(updated.toJson()));
 
     debugPrint(
       '[MangaOCR] Reprocessed ${resegmented.length} pages for "${book.title}"',
     );
+  }
+
+  /// Compute and cache auto-crop bounds on demand for a manga book.
+  ///
+  /// Returns `true` if bounds were computed and cache was updated.
+  /// Returns `false` if bounds already existed (no work performed).
+  Future<bool> ensureMangaAutoCropComputed(Book book) async {
+    if (book.bookType != 'manga') return false;
+
+    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    if (!await cacheFile.exists()) {
+      throw Exception('Pages cache not found. Try re-importing this manga.');
+    }
+
+    final content = await cacheFile.readAsString();
+    final json = jsonDecode(content) as Map<String, dynamic>;
+    final mokuroBook = MokuroBook.fromJson(json);
+
+    if (mokuroBook.pages.any((p) => p.contentBounds != null)) {
+      return false;
+    }
+
+    final withBounds =
+        mokuroBook.safTreeUri != null &&
+            mokuroBook.safImageDirRelativePath != null
+        ? await MokuroParser.computeAllContentBoundsSaf(
+            mokuroBook.pages,
+            mokuroBook.safTreeUri!,
+            mokuroBook.safImageDirRelativePath!,
+          )
+        : await MokuroParser.computeAllContentBounds(
+            mokuroBook.pages,
+            mokuroBook.imageDirPath,
+          );
+
+    final updated = MokuroBook(
+      title: mokuroBook.title,
+      imageDirPath: mokuroBook.imageDirPath,
+      safTreeUri: mokuroBook.safTreeUri,
+      safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+      pages: withBounds,
+    );
+
+    await cacheFile.writeAsString(jsonEncode(updated.toJson()));
+    debugPrint(
+      '[MangaAutoCrop] Computed bounds for ${withBounds.length} pages '
+      'for "${book.title}"',
+    );
+    return true;
   }
 
   // ──────────────── Delete ────────────────
@@ -366,10 +488,12 @@ class BookRepository {
     }
 
     // Clean up bookmarks and highlights for this book
-    await (_db.delete(_db.bookmarks)..where((t) => t.bookId.equals(bookId)))
-        .go();
-    await (_db.delete(_db.highlights)..where((t) => t.bookId.equals(bookId)))
-        .go();
+    await (_db.delete(
+      _db.bookmarks,
+    )..where((t) => t.bookId.equals(bookId))).go();
+    await (_db.delete(
+      _db.highlights,
+    )..where((t) => t.bookId.equals(bookId))).go();
 
     await (_db.delete(_db.books)..where((t) => t.id.equals(bookId))).go();
   }

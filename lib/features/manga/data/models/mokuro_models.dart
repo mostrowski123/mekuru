@@ -8,6 +8,8 @@ class MokuroBookManifest {
   final String imageDirPath;
   final String ocrDirPath;
   final List<String> imageFileNames;
+  final String? safTreeUri;
+  final String? safImageDirRelativePath;
 
   const MokuroBookManifest({
     required this.title,
@@ -15,6 +17,8 @@ class MokuroBookManifest {
     required this.imageDirPath,
     required this.ocrDirPath,
     required this.imageFileNames,
+    this.safTreeUri,
+    this.safImageDirRelativePath,
   });
 }
 
@@ -22,26 +26,36 @@ class MokuroBookManifest {
 class MokuroBook {
   final String title;
   final String imageDirPath;
+  final String? safTreeUri;
+  final String? safImageDirRelativePath;
   final List<MokuroPage> pages;
 
   const MokuroBook({
     required this.title,
     required this.imageDirPath,
+    this.safTreeUri,
+    this.safImageDirRelativePath,
     required this.pages,
   });
 
   Map<String, dynamic> toJson() => {
-        'imageDirPath': imageDirPath,
-        'pages': pages.map((p) => p.toJson()).toList(),
-      };
+    'title': title,
+    'imageDirPath': imageDirPath,
+    if (safTreeUri != null) 'safTreeUri': safTreeUri,
+    if (safImageDirRelativePath != null)
+      'safImageDirRelativePath': safImageDirRelativePath,
+    'pages': pages.map((p) => p.toJson()).toList(),
+  };
 
   factory MokuroBook.fromJson(Map<String, dynamic> json) => MokuroBook(
-        title: '',
-        imageDirPath: json['imageDirPath'] as String,
-        pages: (json['pages'] as List)
-            .map((p) => MokuroPage.fromJson(p as Map<String, dynamic>))
-            .toList(),
-      );
+    title: (json['title'] as String?) ?? '',
+    imageDirPath: json['imageDirPath'] as String,
+    safTreeUri: json['safTreeUri'] as String?,
+    safImageDirRelativePath: json['safImageDirRelativePath'] as String?,
+    pages: (json['pages'] as List)
+        .map((p) => MokuroPage.fromJson(p as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 /// A single manga page with its OCR data and computed word positions.
@@ -62,10 +76,7 @@ class MokuroPage {
     this.contentBounds,
   });
 
-  MokuroPage copyWith({
-    List<MokuroTextBlock>? blocks,
-    Rect? contentBounds,
-  }) =>
+  MokuroPage copyWith({List<MokuroTextBlock>? blocks, Rect? contentBounds}) =>
       MokuroPage(
         pageIndex: pageIndex,
         imageFileName: imageFileName,
@@ -76,19 +87,19 @@ class MokuroPage {
       );
 
   Map<String, dynamic> toJson() => {
-        'pageIndex': pageIndex,
-        'imageFileName': imageFileName,
-        'imgWidth': imgWidth,
-        'imgHeight': imgHeight,
-        'blocks': blocks.map((b) => b.toJson()).toList(),
-        if (contentBounds != null)
-          'contentBounds': [
-            contentBounds!.left,
-            contentBounds!.top,
-            contentBounds!.right,
-            contentBounds!.bottom,
-          ],
-      };
+    'pageIndex': pageIndex,
+    'imageFileName': imageFileName,
+    'imgWidth': imgWidth,
+    'imgHeight': imgHeight,
+    'blocks': blocks.map((b) => b.toJson()).toList(),
+    if (contentBounds != null)
+      'contentBounds': [
+        contentBounds!.left,
+        contentBounds!.top,
+        contentBounds!.right,
+        contentBounds!.bottom,
+      ],
+  };
 
   factory MokuroPage.fromJson(Map<String, dynamic> json) {
     final cb = json['contentBounds'] as List?;
@@ -146,57 +157,66 @@ class MokuroTextBlock {
   String get fullText => lines.join();
 
   MokuroTextBlock copyWith({List<MokuroWord>? words}) => MokuroTextBlock(
-        box: box,
-        vertical: vertical,
-        fontSize: fontSize,
-        linesCoords: linesCoords,
-        lines: lines,
-        words: words ?? this.words,
-      );
+    box: box,
+    vertical: vertical,
+    fontSize: fontSize,
+    linesCoords: linesCoords,
+    lines: lines,
+    words: words ?? this.words,
+  );
 
   Map<String, dynamic> toJson() => {
-        'box': box,
-        'vertical': vertical,
-        'fontSize': fontSize,
-        'linesCoords': linesCoords,
-        'lines': lines,
-        'words': words.map((w) => w.toJson()).toList(),
-      };
+    'box': box,
+    'vertical': vertical,
+    'fontSize': fontSize,
+    'linesCoords': linesCoords,
+    'lines': lines,
+    'words': words.map((w) => w.toJson()).toList(),
+  };
 
-  factory MokuroTextBlock.fromJson(Map<String, dynamic> json) =>
-      MokuroTextBlock(
-        box: (json['box'] as List).map((e) => (e as num).toDouble()).toList(),
-        vertical: json['vertical'] as bool,
-        fontSize: (json['fontSize'] as num).toDouble(),
-        linesCoords: (json['linesCoords'] as List)
-            .map((line) => (line as List)
-                .map((point) => (point as List)
-                    .map((v) => (v as num).toDouble())
-                    .toList())
-                .toList())
-            .toList(),
-        lines: (json['lines'] as List).cast<String>(),
-        words: (json['words'] as List?)
-                ?.map((w) => MokuroWord.fromJson(w as Map<String, dynamic>))
-                .toList() ??
-            [],
-      );
+  factory MokuroTextBlock.fromJson(
+    Map<String, dynamic> json,
+  ) => MokuroTextBlock(
+    box: (json['box'] as List).map((e) => (e as num).toDouble()).toList(),
+    vertical: json['vertical'] as bool,
+    fontSize: (json['fontSize'] as num).toDouble(),
+    linesCoords: (json['linesCoords'] as List)
+        .map(
+          (line) => (line as List)
+              .map(
+                (point) =>
+                    (point as List).map((v) => (v as num).toDouble()).toList(),
+              )
+              .toList(),
+        )
+        .toList(),
+    lines: (json['lines'] as List).cast<String>(),
+    words:
+        (json['words'] as List?)
+            ?.map((w) => MokuroWord.fromJson(w as Map<String, dynamic>))
+            .toList() ??
+        [],
+  );
 
   /// Parse a mokuro OCR JSON block into a [MokuroTextBlock].
-  factory MokuroTextBlock.fromOcrJson(Map<String, dynamic> json) =>
-      MokuroTextBlock(
-        box: (json['box'] as List).map((e) => (e as num).toDouble()).toList(),
-        vertical: json['vertical'] as bool,
-        fontSize: (json['font_size'] as num).toDouble(),
-        linesCoords: (json['lines_coords'] as List)
-            .map((line) => (line as List)
-                .map((point) => (point as List)
-                    .map((v) => (v as num).toDouble())
-                    .toList())
-                .toList())
-            .toList(),
-        lines: (json['lines'] as List).cast<String>(),
-      );
+  factory MokuroTextBlock.fromOcrJson(
+    Map<String, dynamic> json,
+  ) => MokuroTextBlock(
+    box: (json['box'] as List).map((e) => (e as num).toDouble()).toList(),
+    vertical: json['vertical'] as bool,
+    fontSize: (json['font_size'] as num).toDouble(),
+    linesCoords: (json['lines_coords'] as List)
+        .map(
+          (line) => (line as List)
+              .map(
+                (point) =>
+                    (point as List).map((v) => (v as num).toDouble()).toList(),
+              )
+              .toList(),
+        )
+        .toList(),
+    lines: (json['lines'] as List).cast<String>(),
+  );
 }
 
 /// A single word within a text block, with its bounding box in image coords.
@@ -225,20 +245,20 @@ class MokuroWord {
   });
 
   Map<String, dynamic> toJson() => {
-        'surface': surface,
-        if (dictionaryForm != null) 'dictForm': dictionaryForm,
-        if (reading != null) 'reading': reading,
-        'box': [
-          boundingBox.left,
-          boundingBox.top,
-          boundingBox.right,
-          boundingBox.bottom,
-        ],
-        'blockIdx': blockIndex,
-        'lineIdx': lineIndex,
-        'charStart': charStartInLine,
-        'charEnd': charEndInLine,
-      };
+    'surface': surface,
+    if (dictionaryForm != null) 'dictForm': dictionaryForm,
+    if (reading != null) 'reading': reading,
+    'box': [
+      boundingBox.left,
+      boundingBox.top,
+      boundingBox.right,
+      boundingBox.bottom,
+    ],
+    'blockIdx': blockIndex,
+    'lineIdx': lineIndex,
+    'charStart': charStartInLine,
+    'charEnd': charEndInLine,
+  };
 
   factory MokuroWord.fromJson(Map<String, dynamic> json) {
     final box = json['box'] as List;

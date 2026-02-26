@@ -5,15 +5,16 @@ import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/screens/manga_reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
+import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
@@ -183,10 +184,7 @@ class LibraryScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // EPUB section
-              Text(
-                'EPUB Books',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
+              Text('EPUB Books', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 4),
               const Text(
                 'Standard .epub files are supported. Tap the + button '
@@ -201,7 +199,8 @@ class LibraryScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Import manga by selecting a .mokuro or .html file. '
+                'Import manga by selecting a folder, then choosing a '
+                '.mokuro or .html file. '
                 'The page images are loaded from a sibling folder '
                 'with the same name.',
               ),
@@ -210,30 +209,25 @@ class LibraryScreen extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
                   '.mokuro format:\n'
-                  '  manga_title.mokuro  <-- select this\n'
+                  '  manga_title.mokuro  <-- choose this from the folder sheet\n'
                   '  manga_title/\n'
                   '    ├── 001.jpg\n'
                   '    └── ...\n'
                   '\n'
                   'Legacy format:\n'
-                  '  manga_title.html    <-- or this\n'
+                  '  manga_title.html    <-- or choose this\n'
                   '  manga_title/\n'
                   '    ├── 001.jpg\n'
                   '    └── ...\n'
                   '  _ocr/manga_title/\n'
                   '    ├── 001.json\n'
                   '    └── ...',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 12),
                 ),
               ),
               const SizedBox(height: 8),
@@ -244,14 +238,9 @@ class LibraryScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: () async {
-                  final uri = Uri.parse(
-                    'https://github.com/kha-white/mokuro',
-                  );
+                  final uri = Uri.parse('https://github.com/kha-white/mokuro');
                   if (await canLaunchUrl(uri)) {
-                    await launchUrl(
-                      uri,
-                      mode: LaunchMode.externalApplication,
-                    );
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                   }
                 },
                 child: Text(
@@ -306,9 +295,7 @@ class LibraryScreen extends ConsumerWidget {
                     : null,
                 onTap: () {
                   AppHaptics.medium();
-                  ref
-                      .read(librarySortProvider.notifier)
-                      .setSortOrder(order);
+                  ref.read(librarySortProvider.notifier).setSortOrder(order);
                   Navigator.of(sheetContext).pop();
                 },
               ),
@@ -319,10 +306,10 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   static IconData _sortIcon(LibrarySortOrder order) => switch (order) {
-        LibrarySortOrder.dateAdded => Icons.calendar_today,
-        LibrarySortOrder.lastRead => Icons.schedule,
-        LibrarySortOrder.alphabetical => Icons.sort_by_alpha,
-      };
+    LibrarySortOrder.dateAdded => Icons.calendar_today,
+    LibrarySortOrder.lastRead => Icons.schedule,
+    LibrarySortOrder.alphabetical => Icons.sort_by_alpha,
+  };
 
   void _showImportChoice(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
@@ -351,7 +338,7 @@ class LibraryScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.photo_library),
               title: const Text('Manga'),
-              subtitle: const Text('Import a .mokuro or .html file'),
+              subtitle: const Text('Select a folder, then choose a manga file'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 _importManga(context, ref);
@@ -379,181 +366,169 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   Future<void> _importManga(BuildContext context, WidgetRef ref) async {
-    // On Android, request storage permission before accessing manga files.
-    // MANAGE_EXTERNAL_STORAGE is needed because the image directory
-    // referenced by the mokuro/HTML file is accessed via filesystem paths.
     if (Platform.isAndroid) {
-      final granted = await _ensureStoragePermission(context);
-      if (!granted) return;
-    }
-
-    // Use directory picker instead of file picker. On Android, pickFiles()
-    // copies the file to a cache directory, losing access to sibling image
-    // folders. The directory picker returns the real filesystem path.
-    final dirPath = await FilePicker.platform.getDirectoryPath();
-    if (dirPath == null) return;
-
-    debugPrint('[MangaImport] Selected directory: $dirPath');
-
-    // Scan for .mokuro, .html, and .mobile.html files in the selected directory
-    final mangaFiles = <File>[];
-    try {
-      final allFiles = <File>[];
-      await for (final entity in Directory(dirPath).list()) {
-        if (entity is File) {
-          final lower = entity.path.toLowerCase();
-          if (lower.endsWith('.mokuro') || lower.endsWith('.html')) {
-            allFiles.add(entity);
-          }
-        }
-      }
-      // If both Book.html and Book.mobile.html exist, keep only Book.html
-      final nonMobilePaths = allFiles
-          .where((f) => !f.path.toLowerCase().endsWith('.mobile.html'))
-          .map((f) => f.path.toLowerCase())
-          .toSet();
-      for (final file in allFiles) {
-        final lower = file.path.toLowerCase();
-        if (lower.endsWith('.mobile.html')) {
-          // Include .mobile.html only if no matching non-mobile .html exists
-          final nonMobile =
-              '${lower.substring(0, lower.length - '.mobile.html'.length)}.html';
-          if (!nonMobilePaths.contains(nonMobile)) {
-            mangaFiles.add(file);
-          }
-        } else {
-          mangaFiles.add(file);
-        }
-      }
-    } catch (e) {
-      debugPrint('[MangaImport] Cannot list directory: $e');
-      // ignore: use_build_context_synchronously
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cannot read directory: $e')),
-        );
-      }
+      await _importMangaFromAndroidSafFolder(context, ref);
       return;
     }
 
-    if (mangaFiles.isEmpty) {
-      // ignore: use_build_context_synchronously
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No .mokuro or .html files found in this folder.'),
-          ),
-        );
-      }
-      return;
-    }
-
-    // Sort by name for consistent ordering
-    mangaFiles.sort((a, b) => a.path.compareTo(b.path));
-
-    String selectedFile;
-    if (mangaFiles.length == 1) {
-      selectedFile = mangaFiles.first.path;
-    } else {
-      // Let the user pick which file to import
-      // ignore: use_build_context_synchronously
-      if (!context.mounted) return;
-      final picked = await _showMangaFilePicker(context, mangaFiles);
-      if (picked == null) return;
-      selectedFile = picked;
-    }
-
-    debugPrint('[MangaImport] Importing: $selectedFile');
-    ref.read(bookImportProvider.notifier).importManga(selectedFile);
+    await _importMangaFromLocalFolder(context, ref);
   }
 
-  /// Show a bottom sheet to pick which manga file to import.
-  Future<String?> _showMangaFilePicker(
+  Future<void> _importMangaFromAndroidSafFolder(
     BuildContext context,
-    List<File> files,
+    WidgetRef ref,
   ) async {
+    final folder = await AndroidSafService.pickDirectory();
+    if (folder == null) return;
+
+    final names = await AndroidSafService.listNamesInTreeDir(folder.treeUri);
+    final candidates = names.where(_isSupportedMangaManifestName).toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    if (candidates.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No .mokuro or .html files found in the selected folder.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    final selectedName = await _showMangaManifestPickerSheet(
+      context,
+      files: candidates,
+      folderLabel: _folderLabelFromTreeDocumentId(folder.treeDocumentId),
+    );
+    if (!context.mounted) return;
+    if (selectedName == null) return;
+
+    final syntheticImportPath = p.posix.join('/saf', selectedName);
+    debugPrint(
+      '[MangaImport] Folder import (SAF): ${folder.treeUri} -> $selectedName',
+    );
+
+    ref
+        .read(bookImportProvider.notifier)
+        .importMangaWithSaf(
+          syntheticImportPath,
+          safTreeUri: folder.treeUri,
+          safSelectedFileRelativePath: selectedName,
+        );
+  }
+
+  Future<void> _importMangaFromLocalFolder(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final dirPath = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Select manga folder',
+    );
+    if (dirPath == null || dirPath.isEmpty) return;
+
+    final dir = Directory(dirPath);
+    List<FileSystemEntity> entities;
+    try {
+      entities = await dir.list().toList();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not read folder:\n$e')));
+      return;
+    }
+
+    final candidates =
+        entities
+            .whereType<File>()
+            .map((f) => p.basename(f.path))
+            .where(_isSupportedMangaManifestName)
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    if (candidates.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No .mokuro or .html files found in the selected folder.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    final selectedName = await _showMangaManifestPickerSheet(
+      context,
+      files: candidates,
+      folderLabel: p.basename(dirPath),
+    );
+    if (!context.mounted) return;
+    if (selectedName == null) return;
+
+    final importPath = p.join(dirPath, selectedName);
+    debugPrint('[MangaImport] Folder import: $importPath');
+    ref.read(bookImportProvider.notifier).importManga(importPath);
+  }
+
+  bool _isSupportedMangaManifestName(String name) {
+    final lower = name.toLowerCase();
+    return lower.endsWith('.mokuro') || lower.endsWith('.html');
+  }
+
+  String _folderLabelFromTreeDocumentId(String? documentId) {
+    if (documentId == null || documentId.isEmpty) return 'Selected folder';
+    final afterColon = documentId.contains(':')
+        ? documentId.split(':').last
+        : documentId;
+    final normalized = afterColon.replaceAll('\\', '/');
+    final base = normalized.isEmpty ? documentId : p.posix.basename(normalized);
+    return base.isEmpty ? 'Selected folder' : base;
+  }
+
+  Future<String?> _showMangaManifestPickerSheet(
+    BuildContext context, {
+    required List<String> files,
+    required String folderLabel,
+  }) {
     return showModalBottomSheet<String>(
       context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.4,
-        minChildSize: 0.25,
-        maxChildSize: 0.7,
-        builder: (_, scrollController) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Select manga to import',
-                  style: Theme.of(sheetContext).textTheme.titleMedium,
-                ),
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.folder_open),
+              title: Text(folderLabel),
+              subtitle: Text(
+                '${files.length} manga file${files.length == 1 ? '' : 's'} found',
               ),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  itemCount: files.length,
-                  itemBuilder: (_, index) {
-                    final file = files[index];
-                    final ext = p.extension(file.path).toLowerCase();
-                    final icon = ext == '.mokuro'
-                        ? Icons.data_object
-                        : Icons.code;
-                    return ListTile(
-                      leading: Icon(icon),
-                      title: Text(
-                        p.basenameWithoutExtension(file.path),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(ext),
-                      onTap: () => Navigator.of(sheetContext).pop(file.path),
-                    );
-                  },
-                ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: files.length,
+                itemBuilder: (context, index) {
+                  final file = files[index];
+                  final isMokuro = file.toLowerCase().endsWith('.mokuro');
+                  return ListTile(
+                    leading: Icon(isMokuro ? Icons.data_object : Icons.html),
+                    title: Text(file),
+                    onTap: () => Navigator.of(sheetContext).pop(file),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
-  }
-
-  /// Request storage permission on Android.
-  ///
-  /// Uses [Permission.manageExternalStorage] which gives full filesystem
-  /// access. This opens the system settings page where the user toggles
-  /// the "Allow access to manage all files" switch.
-  ///
-  /// Returns `true` if permission is granted, `false` otherwise.
-  Future<bool> _ensureStoragePermission(BuildContext context) async {
-    // Check if already granted
-    if (await Permission.manageExternalStorage.isGranted) return true;
-
-    // Request the permission (opens system settings on Android 11+)
-    final status = await Permission.manageExternalStorage.request();
-    if (status.isGranted) return true;
-
-    // Permission denied — show explanation
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Storage permission is required to read manga files. '
-            'Please grant "All files access" in Settings.',
-          ),
-          action: SnackBarAction(
-            label: 'Settings',
-            onPressed: () => openAppSettings(),
-          ),
-          duration: const Duration(seconds: 6),
-        ),
-      );
-    }
-    return false;
   }
 }
 
@@ -614,8 +589,7 @@ class _BookTileState extends ConsumerState<_BookTile>
 
   /// Convert a global position to local coordinates relative to the Tilt widget.
   Offset? _toTiltLocal(Offset globalPosition) {
-    final renderBox =
-        _tiltKey.currentContext?.findRenderObject() as RenderBox?;
+    final renderBox = _tiltKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return null;
     return renderBox.globalToLocal(globalPosition);
   }
@@ -628,11 +602,13 @@ class _BookTileState extends ConsumerState<_BookTile>
     // Send initial touch position to tilt
     final local = _toTiltLocal(e.position);
     if (local != null) {
-      _tiltStreamController.add(TiltStreamModel(
-        position: local,
-        gesturesType: GesturesType.controller,
-        gestureUse: true,
-      ));
+      _tiltStreamController.add(
+        TiltStreamModel(
+          position: local,
+          gesturesType: GesturesType.controller,
+          gestureUse: true,
+        ),
+      );
     }
 
     _longPressTimer?.cancel();
@@ -644,11 +620,13 @@ class _BookTileState extends ConsumerState<_BookTile>
       // Release tilt on long press
       final local = _toTiltLocal(e.position);
       if (local != null) {
-        _tiltStreamController.add(TiltStreamModel(
-          position: local,
-          gesturesType: GesturesType.controller,
-          gestureUse: false,
-        ));
+        _tiltStreamController.add(
+          TiltStreamModel(
+            position: local,
+            gesturesType: GesturesType.controller,
+            gestureUse: false,
+          ),
+        );
       }
     });
   }
@@ -657,11 +635,13 @@ class _BookTileState extends ConsumerState<_BookTile>
     // Update tilt position as finger moves
     final local = _toTiltLocal(e.position);
     if (local != null) {
-      _tiltStreamController.add(TiltStreamModel(
-        position: local,
-        gesturesType: GesturesType.controller,
-        gestureUse: true,
-      ));
+      _tiltStreamController.add(
+        TiltStreamModel(
+          position: local,
+          gesturesType: GesturesType.controller,
+          gestureUse: true,
+        ),
+      );
     }
   }
 
@@ -672,11 +652,13 @@ class _BookTileState extends ConsumerState<_BookTile>
     // Release tilt
     final local = _toTiltLocal(e.position);
     if (local != null) {
-      _tiltStreamController.add(TiltStreamModel(
-        position: local,
-        gesturesType: GesturesType.controller,
-        gestureUse: false,
-      ));
+      _tiltStreamController.add(
+        TiltStreamModel(
+          position: local,
+          gesturesType: GesturesType.controller,
+          gestureUse: false,
+        ),
+      );
     }
 
     if (_longPressFired) return;
@@ -704,11 +686,13 @@ class _BookTileState extends ConsumerState<_BookTile>
     // Release tilt
     final local = _toTiltLocal(e.position);
     if (local != null) {
-      _tiltStreamController.add(TiltStreamModel(
-        position: local,
-        gesturesType: GesturesType.controller,
-        gestureUse: false,
-      ));
+      _tiltStreamController.add(
+        TiltStreamModel(
+          position: local,
+          gesturesType: GesturesType.controller,
+          gestureUse: false,
+        ),
+      );
     }
   }
 
@@ -821,8 +805,30 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   Widget _buildCoverImage(ThemeData theme) {
-    if (book.coverImagePath != null) {
-      final coverFile = File(book.coverImagePath!);
+    final coverPath = book.coverImagePath;
+    if (coverPath != null) {
+      if (AndroidSafService.isContentUri(coverPath)) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: AndroidSafImage(
+                uri: coverPath,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _buildPlaceholder(theme),
+              ),
+            ),
+            AndroidSafImage(
+              uri: coverPath,
+              fit: BoxFit.fitHeight,
+              errorBuilder: (_, _, _) => _buildPlaceholder(theme),
+            ),
+          ],
+        );
+      }
+
+      final coverFile = File(coverPath);
       if (coverFile.existsSync()) {
         return Stack(
           fit: StackFit.expand,
@@ -966,9 +972,9 @@ class _BookTileState extends ConsumerState<_BookTile>
         bookId: book.id,
         onNavigate: (cfi) {
           Navigator.of(context).pop();
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ReaderScreen(book: book)),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => ReaderScreen(book: book)));
         },
       ),
     );
@@ -982,9 +988,9 @@ class _BookTileState extends ConsumerState<_BookTile>
         bookId: book.id,
         onNavigate: (cfiRange) {
           Navigator.of(context).pop();
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ReaderScreen(book: book)),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => ReaderScreen(book: book)));
         },
       ),
     );
@@ -1014,9 +1020,7 @@ class _BookTileState extends ConsumerState<_BookTile>
             onPressed: () {
               final newTitle = controller.text.trim();
               if (newTitle.isNotEmpty && newTitle != book.title) {
-                ref
-                    .read(bookRepositoryProvider)
-                    .updateTitle(book.id, newTitle);
+                ref.read(bookRepositoryProvider).updateTitle(book.id, newTitle);
               }
               Navigator.of(ctx).pop();
             },
@@ -1048,9 +1052,9 @@ class _BookTileState extends ConsumerState<_BookTile>
       ref.read(bookRepositoryProvider).updateCoverImagePath(book.id, destPath);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to change cover: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to change cover: $e')));
     }
   }
 
@@ -1090,9 +1094,9 @@ class _BookTileState extends ConsumerState<_BookTile>
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context).pop(); // dismiss dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Reprocessing failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Reprocessing failed: $e')));
       }
     }
   }

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
+import 'package:mekuru/shared/widgets/android_saf_image.dart';
+import 'package:path/path.dart' as p;
 
 /// Two-page spread view for manga reading.
 ///
@@ -24,7 +26,8 @@ class MangaSpreadView extends StatefulWidget {
     MokuroWord word,
     MokuroTextBlock block,
     Offset globalPosition,
-  )? onWordTapped;
+  )?
+  onWordTapped;
   final ValueChanged<bool>? onZoomChanged;
   final ValueChanged<int>? onSpreadChanged;
 
@@ -119,9 +122,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     if (spread.isSinglePage) {
       // Single page centered — cover or trailing odd page
       final pageIdx = spread.primaryPageIndex;
-      return Center(
-        child: _buildPageContent(context, pageIdx),
-      );
+      return Center(child: _buildPageContent(context, pageIdx));
     }
 
     // Two pages side by side
@@ -129,18 +130,8 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       builder: (context, constraints) {
         return Row(
           children: [
-            Expanded(
-              child: _buildPageContent(
-                context,
-                spread.leftPageIndex!,
-              ),
-            ),
-            Expanded(
-              child: _buildPageContent(
-                context,
-                spread.rightPageIndex!,
-              ),
-            ),
+            Expanded(child: _buildPageContent(context, spread.leftPageIndex!)),
+            Expanded(child: _buildPageContent(context, spread.rightPageIndex!)),
           ],
         );
       },
@@ -156,8 +147,15 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     }
 
     final page = pages[pageIndex];
-    final imagePath =
-        '${widget.mokuroBook.imageDirPath}/${page.imageFileName}';
+    final imagePath = '${widget.mokuroBook.imageDirPath}/${page.imageFileName}';
+    final safImageRelPath =
+        widget.mokuroBook.safTreeUri != null &&
+            widget.mokuroBook.safImageDirRelativePath != null
+        ? p.posix.join(
+            widget.mokuroBook.safImageDirRelativePath!,
+            page.imageFileName,
+          )
+        : null;
     final imgW = page.imgWidth.toDouble();
     final imgH = page.imgHeight.toDouble();
 
@@ -202,18 +200,18 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
                 top: overlayOffsetY,
                 width: imgW * scale,
                 height: imgH * scale,
-                child: Image.file(
-                  File(imagePath),
+                child: _buildPageImage(
+                  imagePath,
+                  safImageRelPath: safImageRelPath,
                   fit: BoxFit.fill,
-                  filterQuality: FilterQuality.medium,
                 ),
               )
             else
               Positioned.fill(
-                child: Image.file(
-                  File(imagePath),
+                child: _buildPageImage(
+                  imagePath,
+                  safImageRelPath: safImageRelPath,
                   fit: BoxFit.contain,
-                  filterQuality: FilterQuality.medium,
                 ),
               ),
 
@@ -270,6 +268,27 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPageImage(
+    String imagePath, {
+    required String? safImageRelPath,
+    required BoxFit fit,
+  }) {
+    if (widget.mokuroBook.safTreeUri != null && safImageRelPath != null) {
+      return AndroidSafImage(
+        treeUri: widget.mokuroBook.safTreeUri,
+        relativePath: safImageRelPath,
+        fit: fit,
+        filterQuality: FilterQuality.medium,
+      );
+    }
+
+    return Image.file(
+      File(imagePath),
+      fit: fit,
+      filterQuality: FilterQuality.medium,
     );
   }
 }

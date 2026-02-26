@@ -13,16 +13,16 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 enum LibrarySortOrder { dateAdded, lastRead, alphabetical }
 
 LibrarySortOrder _sortOrderFromString(String? value) => switch (value) {
-      'lastRead' => LibrarySortOrder.lastRead,
-      'alphabetical' => LibrarySortOrder.alphabetical,
-      _ => LibrarySortOrder.dateAdded,
-    };
+  'lastRead' => LibrarySortOrder.lastRead,
+  'alphabetical' => LibrarySortOrder.alphabetical,
+  _ => LibrarySortOrder.dateAdded,
+};
 
 String librarySortLabel(LibrarySortOrder order) => switch (order) {
-      LibrarySortOrder.dateAdded => 'Date imported',
-      LibrarySortOrder.lastRead => 'Recently read',
-      LibrarySortOrder.alphabetical => 'Alphabetical',
-    };
+  LibrarySortOrder.dateAdded => 'Date imported',
+  LibrarySortOrder.lastRead => 'Recently read',
+  LibrarySortOrder.alphabetical => 'Alphabetical',
+};
 
 /// Manages the library sort order, persisted via app settings.
 class LibrarySortNotifier extends Notifier<LibrarySortOrder> {
@@ -46,8 +46,8 @@ class LibrarySortNotifier extends Notifier<LibrarySortOrder> {
 
 final librarySortProvider =
     NotifierProvider<LibrarySortNotifier, LibrarySortOrder>(
-  LibrarySortNotifier.new,
-);
+      LibrarySortNotifier.new,
+    );
 
 // ──────────────── Books ────────────────
 
@@ -106,10 +106,9 @@ class BookImportNotifier extends Notifier<BookImportState> {
     try {
       final repo = ref.read(bookRepositoryProvider);
       final book = await repo.importEpub(filePath);
-      Sentry.addBreadcrumb(Breadcrumb(
-        message: 'EPUB imported',
-        category: 'library',
-      ));
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'EPUB imported', category: 'library'),
+      );
       state = BookImportState(
         successMessage: '"${book.title}" added to library!',
       );
@@ -120,16 +119,49 @@ class BookImportNotifier extends Notifier<BookImportState> {
     }
   }
 
-  Future<Book?> importManga(String filePath) async {
+  Future<Book?> importManga(String filePath, {String? cachedFilePath}) async {
     state = const BookImportState(isImporting: true);
 
     try {
       final repo = ref.read(bookRepositoryProvider);
-      final book = await repo.importMangaFromFile(filePath);
-      Sentry.addBreadcrumb(Breadcrumb(
-        message: 'Manga imported',
-        category: 'library',
-      ));
+      final book = await repo.importMangaFromFile(
+        filePath,
+        cachedFilePath: cachedFilePath,
+        safTreeUri: null,
+        safSelectedFileRelativePath: null,
+      );
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'Manga imported', category: 'library'),
+      );
+      state = BookImportState(
+        successMessage: '"${book.title}" added to library!',
+      );
+      return book;
+    } catch (e) {
+      state = BookImportState(error: e.toString());
+      return null;
+    }
+  }
+
+  Future<Book?> importMangaWithSaf(
+    String filePath, {
+    String? cachedFilePath,
+    required String safTreeUri,
+    required String? safSelectedFileRelativePath,
+  }) async {
+    state = const BookImportState(isImporting: true);
+
+    try {
+      final repo = ref.read(bookRepositoryProvider);
+      final book = await repo.importMangaFromFile(
+        filePath,
+        cachedFilePath: cachedFilePath,
+        safTreeUri: safTreeUri,
+        safSelectedFileRelativePath: safSelectedFileRelativePath,
+      );
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'Manga imported (SAF)', category: 'library'),
+      );
       state = BookImportState(
         successMessage: '"${book.title}" added to library!',
       );

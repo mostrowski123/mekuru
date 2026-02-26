@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
+import 'package:mekuru/shared/widgets/android_saf_image.dart';
+import 'package:path/path.dart' as p;
 
 /// Renders a single manga page image with pinch-to-zoom and word tap targets.
 ///
@@ -15,6 +17,8 @@ import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.da
 class MangaPageView extends StatefulWidget {
   final MokuroPage page;
   final String imageDirPath;
+  final String? safTreeUri;
+  final String? safImageDirRelativePath;
   final bool debugOverlay;
   final bool autoCrop;
   final MokuroWord? highlightedWord;
@@ -22,13 +26,16 @@ class MangaPageView extends StatefulWidget {
     MokuroWord word,
     MokuroTextBlock block,
     Offset globalPosition,
-  )? onWordTapped;
+  )?
+  onWordTapped;
   final ValueChanged<bool>? onZoomChanged;
 
   const MangaPageView({
     super.key,
     required this.page,
     required this.imageDirPath,
+    this.safTreeUri,
+    this.safImageDirRelativePath,
     this.debugOverlay = false,
     this.autoCrop = false,
     this.highlightedWord,
@@ -69,8 +76,14 @@ class _MangaPageViewState extends State<MangaPageView> {
 
   @override
   Widget build(BuildContext context) {
-    final imagePath =
-        '${widget.imageDirPath}/${widget.page.imageFileName}';
+    final imagePath = '${widget.imageDirPath}/${widget.page.imageFileName}';
+    final safImageRelPath =
+        widget.safTreeUri != null && widget.safImageDirRelativePath != null
+        ? p.posix.join(
+            widget.safImageDirRelativePath!,
+            widget.page.imageFileName,
+          )
+        : null;
 
     return InteractiveViewer(
       transformationController: _transformController,
@@ -130,15 +143,17 @@ class _MangaPageViewState extends State<MangaPageView> {
                   top: overlayOffsetY,
                   width: imgW * scale,
                   height: imgH * scale,
-                  child: _buildImage(imagePath),
+                  child: _buildImage(
+                    imagePath,
+                    safImageRelPath: safImageRelPath,
+                  ),
                 )
               else
                 Positioned.fill(
-                  child: Image.file(
-                    File(imagePath),
+                  child: _buildImage(
+                    imagePath,
+                    safImageRelPath: safImageRelPath,
                     fit: BoxFit.contain,
-                    filterQuality: FilterQuality.medium,
-                    errorBuilder: (_, error, _) => _buildImageError(context),
                   ),
                 ),
 
@@ -168,10 +183,24 @@ class _MangaPageViewState extends State<MangaPageView> {
     );
   }
 
-  Widget _buildImage(String imagePath) {
+  Widget _buildImage(
+    String imagePath, {
+    String? safImageRelPath,
+    BoxFit fit = BoxFit.fill,
+  }) {
+    if (widget.safTreeUri != null && safImageRelPath != null) {
+      return AndroidSafImage(
+        treeUri: widget.safTreeUri,
+        relativePath: safImageRelPath,
+        fit: fit,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (_, error, _) => _buildImageError(context),
+      );
+    }
+
     return Image.file(
       File(imagePath),
-      fit: BoxFit.fill,
+      fit: fit,
       filterQuality: FilterQuality.medium,
       errorBuilder: (_, error, _) => _buildImageError(context),
     );
@@ -217,10 +246,7 @@ class _MangaPageViewState extends State<MangaPageView> {
       child: IgnorePointer(
         child: Container(
           decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.cyan,
-              width: 2,
-            ),
+            border: Border.all(color: Colors.cyan, width: 2),
             color: Colors.cyan.withAlpha(30),
           ),
         ),
