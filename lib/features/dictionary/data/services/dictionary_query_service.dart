@@ -323,11 +323,13 @@ class DictionaryQueryService {
       allRows.addAll(await query.get());
     }
 
-    // Build two lookup structures:
+    // Build three lookup structures:
     // 1. (expression, reading) → min rank  (reading-specific)
-    // 2. expression → min rank             (fallback for unknown readings)
+    // 2. expression → min rank from empty-reading rows (expression-level only)
+    // 3. Set of expressions that have at least one reading-specific entry
     final pairRanks = <(String, String), int>{};
-    final exprFallback = <String, int>{};
+    final exprOnlyFallback = <String, int>{};
+    final hasReadingSpecificData = <String>{};
 
     for (final row in allRows) {
       final expression = row.read(_db.frequencies.expression);
@@ -338,21 +340,27 @@ class DictionaryQueryService {
       }
 
       if (reading.isNotEmpty) {
+        hasReadingSpecificData.add(expression);
         final key = (expression, reading);
         final existing = pairRanks[key];
         if (existing == null || frequencyRank < existing) {
           pairRanks[key] = frequencyRank;
         }
-      }
-
-      final existing = exprFallback[expression];
-      if (existing == null || frequencyRank < existing) {
-        exprFallback[expression] = frequencyRank;
+      } else {
+        // Expression-level frequency (no reading) — safe as fallback
+        final existing = exprOnlyFallback[expression];
+        if (existing == null || frequencyRank < existing) {
+          exprOnlyFallback[expression] = frequencyRank;
+        }
       }
     }
 
     // For each unique (expression, reading) in results, prefer the
-    // pair-specific rank, fall back to expression-level rank.
+    // pair-specific rank. Only fall back to expression-level rank when
+    // the frequency dict has NO reading-specific data for this expression
+    // (i.e. it only stores expression-level frequencies). When reading-
+    // specific data exists but this particular reading isn't listed,
+    // leave the rank as null so it sorts to the end.
     final resultPairs = results
         .map((r) => (r.entry.expression, r.entry.reading))
         .toSet();
@@ -362,8 +370,8 @@ class DictionaryQueryService {
       final pairRank = pairRanks[pair];
       if (pairRank != null) {
         ranks[pair] = pairRank;
-      } else {
-        final fallback = exprFallback[pair.$1];
+      } else if (!hasReadingSpecificData.contains(pair.$1)) {
+        final fallback = exprOnlyFallback[pair.$1];
         if (fallback != null) {
           ranks[pair] = fallback;
         }
