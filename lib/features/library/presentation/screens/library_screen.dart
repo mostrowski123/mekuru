@@ -390,7 +390,9 @@ class LibraryScreen extends ConsumerWidget {
     final filePath = result.files.single.path;
     if (filePath == null) return;
 
-    final book = await ref.read(bookImportProvider.notifier).importCbz(filePath);
+    final book = await ref
+        .read(bookImportProvider.notifier)
+        .importCbz(filePath);
     if (book != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -567,6 +569,31 @@ class LibraryScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _MangaOcrCacheSummary {
+  final int totalPages;
+  final int pagesWithOcr;
+  final int pagesWithoutOcr;
+  final int pagesNeedingWordSegmentation;
+
+  const _MangaOcrCacheSummary({
+    required this.totalPages,
+    required this.pagesWithOcr,
+    required this.pagesWithoutOcr,
+    required this.pagesNeedingWordSegmentation,
+  });
+
+  static const empty = _MangaOcrCacheSummary(
+    totalPages: 0,
+    pagesWithOcr: 0,
+    pagesWithoutOcr: 0,
+    pagesNeedingWordSegmentation: 0,
+  );
+
+  bool get hasPartialOcr => pagesWithOcr > 0 && pagesWithoutOcr > 0;
+  bool get hasCompleteOcr => totalPages > 0 && pagesWithoutOcr == 0;
+  bool get needsWordSegmentation => pagesNeedingWordSegmentation > 0;
 }
 
 /// Individual book tile for the grid.
@@ -925,6 +952,9 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   void _showBookOptions(BuildContext context, WidgetRef ref) {
+    final ocrSummaryFuture = book.bookType == 'manga'
+        ? _loadMangaOcrSummary()
+        : null;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -958,50 +988,60 @@ class _BookTileState extends ConsumerState<_BookTile>
             ],
             // Manga-only features
             if (book.bookType == 'manga') ...[
-              Builder(
-                builder: (ctx) {
+              FutureBuilder<_MangaOcrCacheSummary>(
+                future: ocrSummaryFuture,
+                builder: (ctx, snapshot) {
+                  final summary = snapshot.data ?? _MangaOcrCacheSummary.empty;
                   final isRunning = ref.watch(isOcrRunningProvider(book.id));
-                  final hasPartial = ref.watch(hasPartialOcrProvider(book.id));
                   final progress = ref.watch(ocrProgressProvider(book.id));
                   final completedPages = progress.whenOrNull(
                     data: (p) => p?.completed,
                   );
-                  final totalPages = progress.whenOrNull(
-                    data: (p) => p?.total,
-                  );
+                  final totalPages = progress.whenOrNull(data: (p) => p?.total);
+
+                  final hasCompleteOcr =
+                      summary.hasCompleteOcr && !summary.needsWordSegmentation;
+                  final canResume = summary.hasPartialOcr;
+
+                  final title = isRunning
+                      ? 'Cancel OCR'
+                      : hasCompleteOcr
+                      ? 'Remove OCR'
+                      : 'Run OCR';
+                  final subtitle = isRunning
+                      ? 'Stop processing and save progress'
+                      : hasCompleteOcr
+                      ? 'Remove OCR text from all pages'
+                      : summary.needsWordSegmentation &&
+                            summary.pagesWithoutOcr == 0
+                      ? 'Build word tap targets from saved OCR'
+                      : canResume
+                      ? 'Resume OCR (${completedPages ?? summary.pagesWithOcr}/${totalPages ?? summary.totalPages} done)'
+                      : 'Recognize text on all pages';
 
                   return ListTile(
                     leading: Icon(
                       isRunning
                           ? Icons.cancel_outlined
+                          : hasCompleteOcr
+                          ? Icons.delete_sweep_outlined
                           : Icons.document_scanner,
                     ),
-                    title: Text(isRunning ? 'Cancel OCR' : 'Run OCR'),
-                    subtitle: Text(
-                      isRunning
-                          ? 'Stop processing and save progress'
-                          : hasPartial
-                              ? 'Resume OCR (${completedPages ?? 0}/${totalPages ?? 0} done)'
-                              : 'Recognize text on all pages',
-                    ),
+                    title: Text(title),
+                    subtitle: Text(subtitle),
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       if (isRunning) {
                         _cancelOcr(context, ref);
-                      } else {
-                        _startOcr(context, ref);
+                        return;
                       }
+                      if (hasCompleteOcr) {
+                        _removeOcr(context, ref);
+                        return;
+                      }
+                      _startOcr(context, ref);
                     },
                   );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.spellcheck),
-                title: const Text('Reprocess Words'),
-                subtitle: const Text('Re-run word segmentation only'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _reprocessOcr(context, ref);
                 },
               ),
             ],
@@ -1152,22 +1192,32 @@ class _BookTileState extends ConsumerState<_BookTile>
       return;
     }
 
-    // Read mokuro book to get the image directory and page count
+    // Read cache to determine what OCR work remains.
     final cacheJson =
         json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
     final imageDirPath = cacheJson['imageDirPath'] as String? ?? '';
-
-    // Count pages that need OCR
     final pages = cacheJson['pages'] as List<dynamic>? ?? [];
-    final emptyCount = pages.where((p) {
-      final blocks = p['blocks'] as List<dynamic>? ?? [];
-      return blocks.isEmpty;
-    }).length;
+    final summary = _summarizeOcrPages(pages);
+    final emptyCount = summary.pagesWithoutOcr;
+    final isWordOnlyPass = emptyCount == 0 && summary.needsWordSegmentation;
 
-    if (emptyCount == 0) {
+    if (emptyCount == 0 && !summary.needsWordSegmentation) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All pages already have OCR data')),
+          const SnackBar(
+            content: Text(
+              'OCR is already complete. Use "Remove OCR" to reset.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!isWordOnlyPass && imageDirPath.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Manga image directory not found')),
         );
       }
       return;
@@ -1178,10 +1228,13 @@ class _BookTileState extends ConsumerState<_BookTile>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Run OCR'),
+        title: Text(isWordOnlyPass ? 'Build Word Overlays' : 'Run OCR'),
         content: Text(
-          'This will process $emptyCount pages. '
-          'OCR will run in the background and continue even if you close the app.',
+          isWordOnlyPass
+              ? 'OCR text already exists. This will rebuild word tap targets '
+                    'so lookup overlays appear correctly.'
+              : 'This will process $emptyCount pages. OCR will run in the '
+                    'background and continue even if you close the app.',
         ),
         actions: [
           TextButton(
@@ -1190,7 +1243,7 @@ class _BookTileState extends ConsumerState<_BookTile>
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Start'),
+            child: Text(isWordOnlyPass ? 'Process' : 'Start'),
           ),
         ],
       ),
@@ -1209,7 +1262,13 @@ class _BookTileState extends ConsumerState<_BookTile>
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OCR started in background')),
+        SnackBar(
+          content: Text(
+            isWordOnlyPass
+                ? 'Word overlay processing started in background'
+                : 'OCR started in background',
+          ),
+        ),
       );
     }
   }
@@ -1219,6 +1278,7 @@ class _BookTileState extends ConsumerState<_BookTile>
 
     // Invalidate to pick up the cancelled status
     ref.invalidate(ocrProgressProvider(book.id));
+    ref.invalidate(mangaPagesProvider(book.id));
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1227,43 +1287,98 @@ class _BookTileState extends ConsumerState<_BookTile>
     }
   }
 
-  void _reprocessOcr(BuildContext context, WidgetRef ref) async {
-    // Show progress dialog
-    showDialog(
+  void _removeOcr(BuildContext context, WidgetRef ref) async {
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 24),
-            Expanded(child: Text('Re-running word segmentation…')),
-          ],
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove OCR'),
+        content: const Text(
+          'Remove OCR text and word overlays from this manga? '
+          'You can run OCR again later.',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
       ),
     );
+    if (confirmed != true) return;
 
     try {
-      final bookRepo = ref.read(bookRepositoryProvider);
-      await bookRepo.reprocessMangaOcr(book);
-
-      // Invalidate cached page data so re-entering the reader picks it up
+      await clearOcrTaskState(book.id);
+      await ref.read(bookRepositoryProvider).clearMangaOcr(book);
       ref.invalidate(mangaPagesProvider(book.id));
+      ref.invalidate(ocrProgressProvider(book.id));
 
       if (context.mounted) {
-        Navigator.of(context).pop(); // dismiss dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Word reprocessing complete')),
+          const SnackBar(content: Text('OCR removed from this book')),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop(); // dismiss dialog
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Reprocessing failed: $e')));
+        ).showSnackBar(SnackBar(content: Text('Failed to remove OCR: $e')));
       }
     }
+  }
+
+  Future<_MangaOcrCacheSummary> _loadMangaOcrSummary() async {
+    final cacheFilePath = p.join(book.filePath, 'pages_cache.json');
+    final cacheFile = File(cacheFilePath);
+    if (!await cacheFile.exists()) {
+      return _MangaOcrCacheSummary.empty;
+    }
+
+    try {
+      final cacheJson =
+          json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
+      final pages = cacheJson['pages'] as List<dynamic>? ?? [];
+      return _summarizeOcrPages(pages);
+    } catch (_) {
+      return _MangaOcrCacheSummary.empty;
+    }
+  }
+
+  _MangaOcrCacheSummary _summarizeOcrPages(List<dynamic> pages) {
+    var pagesWithOcr = 0;
+    var pagesWithoutOcr = 0;
+    var pagesNeedingWordSegmentation = 0;
+
+    for (final pageData in pages) {
+      if (pageData is! Map) continue;
+      final blocks = pageData['blocks'] as List<dynamic>? ?? const [];
+      if (blocks.isEmpty) {
+        pagesWithoutOcr++;
+        continue;
+      }
+
+      pagesWithOcr++;
+      final pageNeedsWordSegmentation = blocks.any((blockData) {
+        if (blockData is! Map) return false;
+        final lines = blockData['lines'] as List<dynamic>? ?? const [];
+        final words = blockData['words'] as List<dynamic>? ?? const [];
+        return lines.isNotEmpty && words.isEmpty;
+      });
+      if (pageNeedsWordSegmentation) {
+        pagesNeedingWordSegmentation++;
+      }
+    }
+
+    return _MangaOcrCacheSummary(
+      totalPages: pages.length,
+      pagesWithOcr: pagesWithOcr,
+      pagesWithoutOcr: pagesWithoutOcr,
+      pagesNeedingWordSegmentation: pagesNeedingWordSegmentation,
+    );
   }
 
   void _confirmDelete(BuildContext context) {

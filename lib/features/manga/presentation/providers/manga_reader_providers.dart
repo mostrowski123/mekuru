@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:path/path.dart' as p;
 
 /// Manga view modes.
@@ -30,8 +31,49 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
   }
   final content = await cacheFile.readAsString();
   final json = jsonDecode(content) as Map<String, dynamic>;
-  return MokuroBook.fromJson(json);
+  final mokuroBook = MokuroBook.fromJson(json);
+
+  // Self-heal legacy/partial OCR caches that have text blocks but missing
+  // word boxes, so overlays remain available after restarts.
+  if (_needsWordSegmentation(mokuroBook.pages)) {
+    final segmentedPages = await _segmentPagesForLookup(mokuroBook.pages);
+    final updated = MokuroBook(
+      title: mokuroBook.title,
+      imageDirPath: mokuroBook.imageDirPath,
+      safTreeUri: mokuroBook.safTreeUri,
+      safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+      pages: segmentedPages,
+    );
+    await cacheFile.writeAsString(jsonEncode(updated.toJson()));
+    return updated;
+  }
+
+  return mokuroBook;
 });
+
+bool _needsWordSegmentation(List<MokuroPage> pages) {
+  for (final page in pages) {
+    for (final block in page.blocks) {
+      if (block.lines.isNotEmpty && block.words.isEmpty) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
+  final strippedPages = pages
+      .map(
+        (page) => page.copyWith(
+          blocks: page.blocks
+              .map((block) => block.copyWith(words: const []))
+              .toList(),
+        ),
+      )
+      .toList();
+  return MokuroWordSegmenter.segmentAllPages(strippedPages);
+}
 
 /// Current manga view mode.
 class MangaViewModeNotifier extends Notifier<MangaViewMode> {
