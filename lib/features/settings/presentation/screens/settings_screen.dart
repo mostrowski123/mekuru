@@ -351,6 +351,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(),
           ],
 
+          // ── Manga OCR ──
+          _SectionHeader(title: 'Manga OCR'),
+          ListTile(
+            leading: Icon(
+              Icons.document_scanner_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('OCR Server URL'),
+            subtitle: Text(
+              ref.watch(ocrServerUrlProvider),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              _showOcrServerUrlDialog(context, ref);
+            },
+          ),
+          const Divider(),
+
           // ── Downloads ──
           _SectionHeader(title: 'Downloads'),
 
@@ -867,6 +888,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         StartupScreen.dictionary => Icons.book_outlined,
         StartupScreen.lastRead => Icons.menu_book_outlined,
       };
+
+  void _showOcrServerUrlDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController(
+      text: ref.read(ocrServerUrlProvider),
+    );
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('OCR Server URL'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Server URL',
+            hintText: 'https://mekuru-ocr.modal.run',
+            border: OutlineInputBorder(),
+          ),
+          keyboardType: TextInputType.url,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              controller.text = OcrServerUrlNotifier.defaultUrl;
+            },
+            child: const Text('Reset'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final url = controller.text.trim();
+              if (url.isNotEmpty) {
+                ref.read(ocrServerUrlProvider.notifier).setUrl(url);
+              }
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Private widgets ──

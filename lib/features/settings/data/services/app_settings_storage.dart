@@ -23,6 +23,8 @@ abstract class AppSettingsStorage {
   Future<void> saveAutoFocusSearch(bool value);
   Future<String?> loadColorTheme();
   Future<void> saveColorTheme(String theme);
+  Future<String?> loadOcrServerUrl();
+  Future<void> saveOcrServerUrl(String url);
 }
 
 /// Holds theme values pre-loaded in [main] so Riverpod notifiers can use
@@ -59,6 +61,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _startupScreenKey = 'app.startup_screen';
   static const _autoFocusSearchKey = 'app.auto_focus_search';
   static const _colorThemeKey = 'app.color_theme';
+  static const _ocrServerUrlKey = 'app.ocr_server_url';
 
   @override
   Future<ThemeMode?> loadThemeMode() async {
@@ -179,5 +182,17 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveColorTheme(String theme) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_colorThemeKey, theme);
+  }
+
+  @override
+  Future<String?> loadOcrServerUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_ocrServerUrlKey);
+  }
+
+  @override
+  Future<void> saveOcrServerUrl(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_ocrServerUrlKey, url);
   }
 }

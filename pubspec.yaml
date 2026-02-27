@@ -65,6 +65,17 @@ dependencies:
   # AnkiDroid integration (Android only)
   ankidroid_for_flutter: ^1.0.3
 
+  # Firebase (OCR server authentication)
+  firebase_core: ^3.12.1
+  firebase_auth: ^5.5.1
+
+  # Background task scheduling (OCR processing)
+  workmanager: ^0.9.0
+
+  # HTTP client for OCR server
+  http: ^1.3.0
+  http_parser: ^4.1.2
+
 dev_dependencies:
   sentry_dart_plugin: ^3.2.1
   flutter_test:

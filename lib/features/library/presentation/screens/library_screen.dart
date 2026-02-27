@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
@@ -15,6 +16,9 @@ import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
+import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
@@ -816,6 +820,8 @@ class _BookTileState extends ConsumerState<_BookTile>
                               ),
                             ),
                           ),
+                        if (book.bookType == 'manga')
+                          OcrProgressOverlay(bookId: book.id),
                       ],
                     ),
                   ),
@@ -952,6 +958,43 @@ class _BookTileState extends ConsumerState<_BookTile>
             ],
             // Manga-only features
             if (book.bookType == 'manga') ...[
+              Builder(
+                builder: (ctx) {
+                  final isRunning = ref.watch(isOcrRunningProvider(book.id));
+                  final hasPartial = ref.watch(hasPartialOcrProvider(book.id));
+                  final progress = ref.watch(ocrProgressProvider(book.id));
+                  final completedPages = progress.whenOrNull(
+                    data: (p) => p?.completed,
+                  );
+                  final totalPages = progress.whenOrNull(
+                    data: (p) => p?.total,
+                  );
+
+                  return ListTile(
+                    leading: Icon(
+                      isRunning
+                          ? Icons.cancel_outlined
+                          : Icons.document_scanner,
+                    ),
+                    title: Text(isRunning ? 'Cancel OCR' : 'Run OCR'),
+                    subtitle: Text(
+                      isRunning
+                          ? 'Stop processing and save progress'
+                          : hasPartial
+                              ? 'Resume OCR (${completedPages ?? 0}/${totalPages ?? 0} done)'
+                              : 'Recognize text on all pages',
+                    ),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      if (isRunning) {
+                        _cancelOcr(context, ref);
+                      } else {
+                        _startOcr(context, ref);
+                      }
+                    },
+                  );
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.spellcheck),
                 title: const Text('Reprocess Words'),
@@ -1094,6 +1137,94 @@ class _BookTileState extends ConsumerState<_BookTile>
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  void _startOcr(BuildContext context, WidgetRef ref) async {
+    final cacheFilePath = p.join(book.filePath, 'pages_cache.json');
+    final cacheFile = File(cacheFilePath);
+
+    if (!cacheFile.existsSync()) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No pages cache found for this book')),
+        );
+      }
+      return;
+    }
+
+    // Read mokuro book to get the image directory and page count
+    final cacheJson =
+        json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
+    final imageDirPath = cacheJson['imageDirPath'] as String? ?? '';
+
+    // Count pages that need OCR
+    final pages = cacheJson['pages'] as List<dynamic>? ?? [];
+    final emptyCount = pages.where((p) {
+      final blocks = p['blocks'] as List<dynamic>? ?? [];
+      return blocks.isEmpty;
+    }).length;
+
+    if (emptyCount == 0) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('All pages already have OCR data')),
+        );
+      }
+      return;
+    }
+
+    // Confirm with user
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Run OCR'),
+        content: Text(
+          'This will process $emptyCount pages. '
+          'OCR will run in the background and continue even if you close the app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Start'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    await scheduleOcrTask(
+      bookId: book.id,
+      cacheFilePath: cacheFilePath,
+      imageDir: imageDirPath,
+    );
+
+    // Invalidate the progress provider so it starts polling
+    ref.invalidate(ocrProgressProvider(book.id));
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OCR started in background')),
+      );
+    }
+  }
+
+  void _cancelOcr(BuildContext context, WidgetRef ref) async {
+    await cancelOcrTask(book.id);
+
+    // Invalidate to pick up the cancelled status
+    ref.invalidate(ocrProgressProvider(book.id));
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OCR cancelled. Progress saved.')),
+      );
+    }
   }
 
   void _reprocessOcr(BuildContext context, WidgetRef ref) async {

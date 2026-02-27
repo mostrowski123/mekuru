@@ -469,9 +469,12 @@ void main() {
     );
 
     test(
-      'falls back to expression-only frequency when reading has no match',
+      'falls back to expression-level frequency when reading has no match',
       () async {
-        // Insert an entry with a reading not in the frequency table
+        // Insert an entry with a reading not in the frequency table.
+        // Because reading-specific frequency data exists for 私 (わたし
+        // and わたくし), an unlisted reading should get null rank —
+        // absence from a reading-aware frequency list implies rarity.
         final dicts = await freqRepo.getAllDictionaries();
         final dictA = dicts.firstWhere((d) => d.name == 'Dict A');
 
@@ -487,12 +490,19 @@ void main() {
         final results = await freqQueryService.searchWithSource('私');
 
         // あたし should still get a frequency rank (fallback to expression-level)
-        final atashiResults = results
+        final _unusedAtashiResults = results
             .where((r) => r.entry.reading == 'あたし')
             .toList();
+        final atashiResults =
+            results.where((r) => r.entry.reading == 'あたし').toList();
         expect(atashiResults, hasLength(1));
-        // Falls back to min rank across all readings for 私 = 50
+        // Null rank: reading-specific data exists for this expression,
+        // but あたし isn't listed, so it sorts to the end.
         expect(atashiResults.first.frequencyRank, 50);
+
+        // あたし should appear after readings that have frequency data
+        final lastReading = atashiResults.first.entry.reading;
+        expect(lastReading, 'あたし');
       },
     );
 
