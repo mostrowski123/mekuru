@@ -20,6 +20,7 @@ class MangaSpreadView extends StatefulWidget {
   final bool isRtl;
   final bool debugOverlay;
   final bool autoCrop;
+  final bool enableWordOverlays;
   final MokuroWord? highlightedWord;
   final int? highlightedPageIndex;
   final void Function(
@@ -39,6 +40,7 @@ class MangaSpreadView extends StatefulWidget {
     this.isRtl = true,
     this.debugOverlay = false,
     this.autoCrop = false,
+    this.enableWordOverlays = true,
     this.highlightedWord,
     this.highlightedPageIndex,
     this.onWordTapped,
@@ -215,8 +217,8 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
                 ),
               ),
 
-            // Word overlay
-            if (page.blocks.isNotEmpty)
+            // Word overlay (hidden during active OCR)
+            if (widget.enableWordOverlays && page.blocks.isNotEmpty)
               MangaWordOverlay(
                 blocks: page.blocks,
                 scale: scale,
@@ -227,7 +229,8 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
               ),
 
             // Highlighted word
-            if (widget.highlightedWord != null &&
+            if (widget.enableWordOverlays &&
+                widget.highlightedWord != null &&
                 widget.highlightedPageIndex == pageIndex)
               _buildWordHighlight(
                 widget.highlightedWord!,

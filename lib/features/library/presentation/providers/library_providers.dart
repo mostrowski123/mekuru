@@ -119,6 +119,25 @@ class BookImportNotifier extends Notifier<BookImportState> {
     }
   }
 
+  Future<Book?> importCbz(String filePath) async {
+    state = const BookImportState(isImporting: true);
+
+    try {
+      final repo = ref.read(bookRepositoryProvider);
+      final book = await repo.importCbz(filePath);
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'CBZ imported', category: 'library'),
+      );
+      state = BookImportState(
+        successMessage: '"${book.title}" added to library!',
+      );
+      return book;
+    } catch (e) {
+      state = BookImportState(error: e.toString());
+      return null;
+    }
+  }
+
   Future<Book?> importManga(String filePath, {String? cachedFilePath}) async {
     state = const BookImportState(isImporting: true);
 

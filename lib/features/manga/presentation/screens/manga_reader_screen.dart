@@ -481,6 +481,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     final direction = ref.watch(mangaReadingDirectionProvider);
     final autoCrop = ref.watch(mangaAutoCropProvider);
     final viewMode = ref.watch(mangaViewModeProvider);
+    const enableWordOverlays = true;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -543,6 +544,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                   totalPages,
                   isRtl,
                   autoCrop,
+                  enableWordOverlays,
                 ),
               ),
 
@@ -683,6 +685,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     int totalPages,
     bool isRtl,
     bool autoCrop,
+    bool enableWordOverlays,
   ) {
     switch (viewMode) {
       case MangaViewMode.singlePage:
@@ -710,6 +713,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
               safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
               debugOverlay: _debugOverlay,
               autoCrop: autoCrop,
+              enableWordOverlays: enableWordOverlays,
               highlightedWord: index == _highlightedPageIndex
                   ? _highlightedWord
                   : null,
@@ -732,6 +736,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           isRtl: isRtl,
           debugOverlay: _debugOverlay,
           autoCrop: autoCrop,
+          enableWordOverlays: enableWordOverlays,
           highlightedWord: _highlightedWord,
           highlightedPageIndex: _highlightedPageIndex,
           onWordTapped: _onWordTapped,
@@ -756,6 +761,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           initialScrollOffset: _parseScrollOffset(widget.book.lastReadCfi),
           debugOverlay: _debugOverlay,
           autoCrop: autoCrop,
+          enableWordOverlays: enableWordOverlays,
           highlightedWord: _highlightedWord,
           highlightedPageIndex: _highlightedPageIndex,
           onWordTapped: _onWordTapped,

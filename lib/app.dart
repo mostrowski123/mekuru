@@ -135,9 +135,9 @@ class _MainShellState extends ConsumerState<_MainShell> {
     final repo = BookRepository(ref.read(databaseProvider));
     final book = await repo.getMostRecentlyReadBook();
     if (book != null && mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => ReaderScreen(book: book)),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => ReaderScreen(book: book)));
     }
   }
 }

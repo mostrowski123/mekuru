@@ -337,11 +337,20 @@ class LibraryScreen extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Manga'),
-              subtitle: const Text('Select a folder, then choose a manga file'),
+              title: const Text('Manga (Mokuro)'),
+              subtitle: const Text('Select a folder with .mokuro OCR data'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 _importManga(context, ref);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.collections),
+              title: const Text('Manga (CBZ)'),
+              subtitle: const Text('Import a .cbz comic book archive'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _importCbz(context, ref);
               },
             ),
           ],
@@ -363,6 +372,30 @@ class LibraryScreen extends ConsumerWidget {
     if (filePath == null) return;
 
     ref.read(bookImportProvider.notifier).importEpub(filePath);
+  }
+
+  Future<void> _importCbz(BuildContext context, WidgetRef ref) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['cbz'],
+      allowMultiple: false,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final filePath = result.files.single.path;
+    if (filePath == null) return;
+
+    final book = await ref.read(bookImportProvider.notifier).importCbz(filePath);
+    if (book != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Imported without OCR. To get text overlays, import external OCR output (e.g. .mokuro).',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _importManga(BuildContext context, WidgetRef ref) async {
@@ -699,6 +732,7 @@ class _BookTileState extends ConsumerState<_BookTile>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final enableSensorTilt = Platform.isAndroid || Platform.isIOS;
     return Listener(
       onPointerDown: _handlePointerDown,
       onPointerMove: _handlePointerMove,
@@ -713,11 +747,11 @@ class _BookTileState extends ConsumerState<_BookTile>
               child: Tilt(
                 key: _tiltKey,
                 tiltStreamController: _tiltStreamController,
-                tiltConfig: const TiltConfig(
+                tiltConfig: TiltConfig(
                   angle: 15.0,
                   enableReverse: true,
                   enableGestureTouch: false,
-                  enableGestureSensors: true,
+                  enableGestureSensors: enableSensorTilt,
                   sensorFactor: 5.0,
                   enableRevert: true,
                   controllerLeaveDuration: Duration(milliseconds: 400),
@@ -919,9 +953,9 @@ class _BookTileState extends ConsumerState<_BookTile>
             // Manga-only features
             if (book.bookType == 'manga') ...[
               ListTile(
-                leading: const Icon(Icons.refresh),
-                title: const Text('Reprocess OCR'),
-                subtitle: const Text('Re-run word segmentation'),
+                leading: const Icon(Icons.spellcheck),
+                title: const Text('Reprocess Words'),
+                subtitle: const Text('Re-run word segmentation only'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   _reprocessOcr(context, ref);
@@ -1088,7 +1122,7 @@ class _BookTileState extends ConsumerState<_BookTile>
       if (context.mounted) {
         Navigator.of(context).pop(); // dismiss dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OCR reprocessing complete')),
+          const SnackBar(content: Text('Word reprocessing complete')),
         );
       }
     } catch (e) {

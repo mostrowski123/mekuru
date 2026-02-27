@@ -18,6 +18,7 @@ class MangaScrollView extends ConsumerStatefulWidget {
   final double initialScrollOffset;
   final bool debugOverlay;
   final bool autoCrop;
+  final bool enableWordOverlays;
   final MokuroWord? highlightedWord;
   final int? highlightedPageIndex;
   final void Function(
@@ -35,6 +36,7 @@ class MangaScrollView extends ConsumerStatefulWidget {
     this.initialScrollOffset = 0.0,
     this.debugOverlay = false,
     this.autoCrop = false,
+    this.enableWordOverlays = true,
     this.highlightedWord,
     this.highlightedPageIndex,
     this.onWordTapped,
@@ -138,6 +140,7 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
             safImageDirRelativePath: widget.mokuroBook.safImageDirRelativePath,
             debugOverlay: widget.debugOverlay,
             autoCrop: widget.autoCrop,
+            enableWordOverlays: widget.enableWordOverlays,
             highlightedWord: index == widget.highlightedPageIndex
                 ? widget.highlightedWord
                 : null,

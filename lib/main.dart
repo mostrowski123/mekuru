@@ -37,16 +37,11 @@ Future<void> main() async {
       await PreloadedAppSettings.load();
       await MecabService.instance.init();
 
-      Sentry.addBreadcrumb(Breadcrumb(
-        message: 'MeCab initialized',
-        category: 'app.init',
-      ));
-
-      runApp(
-        SentryWidget(
-          child: const ProviderScope(child: MekuruApp()),
-        ),
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'MeCab initialized', category: 'app.init'),
       );
+
+      runApp(SentryWidget(child: const ProviderScope(child: MekuruApp())));
     },
   );
 }

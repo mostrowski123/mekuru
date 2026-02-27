@@ -7,6 +7,7 @@ import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_parser.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:path/path.dart' as p;
@@ -199,6 +200,71 @@ class BookRepository {
         }
       }
     }
+  }
+
+  /// Import a CBZ (Comic Book ZIP) archive into the library.
+  ///
+  /// Extracts images from the archive, reads dimensions for each page,
+  /// and creates a manga book with empty text blocks (no OCR data yet).
+  /// OCR can be run later as a separate step.
+  ///
+  /// Returns the created [Book].
+  Future<Book> importCbz(String sourcePath) async {
+    final appDir = await getApplicationSupportDirectory();
+    final booksDir = Directory(p.join(appDir.path, 'books'));
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final cacheDir = Directory(p.join(booksDir.path, 'manga_$timestamp'));
+    await cacheDir.create(recursive: true);
+
+    // Extract CBZ archive to cache directory
+    final cbzMeta = await CbzParser.extract(sourcePath, cacheDir.path);
+
+    // Build MokuroPages with empty blocks (no OCR yet).
+    // Read image dimensions from each extracted file.
+    final pages = <MokuroPage>[];
+    for (var i = 0; i < cbzMeta.imageFileNames.length; i++) {
+      final fileName = cbzMeta.imageFileNames[i];
+      final imagePath = p.join(cbzMeta.imageDirPath, fileName);
+      final dims = await CbzParser.readImageDimensions(imagePath);
+
+      pages.add(MokuroPage(
+        pageIndex: i,
+        imageFileName: fileName,
+        imgWidth: dims?.width ?? 0,
+        imgHeight: dims?.height ?? 0,
+        blocks: const [],
+      ));
+    }
+
+    // Build and save pages_cache.json
+    final mokuroBook = MokuroBook(
+      title: cbzMeta.title,
+      imageDirPath: cbzMeta.imageDirPath,
+      pages: pages,
+    );
+    final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+    await cacheFile.writeAsString(jsonEncode(mokuroBook.toJson()));
+
+    debugPrint(
+      '[CbzImport] Cached ${pages.length} pages for "${cbzMeta.title}"',
+    );
+
+    // Insert into database
+    final bookId = await _db
+        .into(_db.books)
+        .insert(
+          BooksCompanion.insert(
+            title: cbzMeta.title,
+            filePath: cacheDir.path,
+            bookType: const Value('manga'),
+            coverImagePath: cbzMeta.coverImagePath != null
+                ? Value(cbzMeta.coverImagePath)
+                : const Value.absent(),
+            totalPages: Value(pages.length),
+          ),
+        );
+
+    return (await getBookById(bookId))!;
   }
 
   /// Shared import logic: segment words, save cache, insert into DB.

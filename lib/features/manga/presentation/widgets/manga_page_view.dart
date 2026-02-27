@@ -21,6 +21,7 @@ class MangaPageView extends StatefulWidget {
   final String? safImageDirRelativePath;
   final bool debugOverlay;
   final bool autoCrop;
+  final bool enableWordOverlays;
   final MokuroWord? highlightedWord;
   final void Function(
     MokuroWord word,
@@ -38,6 +39,7 @@ class MangaPageView extends StatefulWidget {
     this.safImageDirRelativePath,
     this.debugOverlay = false,
     this.autoCrop = false,
+    this.enableWordOverlays = true,
     this.highlightedWord,
     this.onWordTapped,
     this.onZoomChanged,
@@ -157,8 +159,8 @@ class _MangaPageViewState extends State<MangaPageView> {
                   ),
                 ),
 
-              // Word tap targets
-              if (widget.page.blocks.isNotEmpty)
+              // Word tap targets (hidden during active OCR)
+              if (widget.enableWordOverlays && widget.page.blocks.isNotEmpty)
                 MangaWordOverlay(
                   blocks: widget.page.blocks,
                   scale: scale,
@@ -169,7 +171,7 @@ class _MangaPageViewState extends State<MangaPageView> {
                 ),
 
               // Highlighted word bounding box (single word selection indicator)
-              if (widget.highlightedWord != null)
+              if (widget.enableWordOverlays && widget.highlightedWord != null)
                 _buildWordHighlight(
                   widget.highlightedWord!,
                   scale,
