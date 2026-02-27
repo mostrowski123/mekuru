@@ -280,3 +280,32 @@ class AppColorThemeNotifier extends Notifier<AppColorTheme> {
 final appColorThemeProvider =
     NotifierProvider<AppColorThemeNotifier, AppColorTheme>(
         AppColorThemeNotifier.new);
+
+/// Manages the OCR server URL.
+class OcrServerUrlNotifier extends Notifier<String> {
+  static const defaultUrl = 'https://mekuru-ocr.modal.run';
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  String build() => defaultUrl;
+
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted =
+        await ref.read(appSettingsStorageProvider).loadOcrServerUrl();
+    if (persisted != null && persisted.isNotEmpty) {
+      state = persisted;
+    }
+  }
+
+  void setUrl(String url) {
+    state = url;
+    unawaited(ref.read(appSettingsStorageProvider).saveOcrServerUrl(url));
+  }
+}
+
+/// Provider for the OCR server URL.
+final ocrServerUrlProvider =
+    NotifierProvider<OcrServerUrlNotifier, String>(OcrServerUrlNotifier.new);
