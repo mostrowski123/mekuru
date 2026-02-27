@@ -227,13 +227,15 @@ class BookRepository {
       final imagePath = p.join(cbzMeta.imageDirPath, fileName);
       final dims = await CbzParser.readImageDimensions(imagePath);
 
-      pages.add(MokuroPage(
-        pageIndex: i,
-        imageFileName: fileName,
-        imgWidth: dims?.width ?? 0,
-        imgHeight: dims?.height ?? 0,
-        blocks: const [],
-      ));
+      pages.add(
+        MokuroPage(
+          pageIndex: i,
+          imageFileName: fileName,
+          imgWidth: dims?.width ?? 0,
+          imgHeight: dims?.height ?? 0,
+          blocks: const [],
+        ),
+      );
     }
 
     // Build and save pages_cache.json
@@ -476,6 +478,38 @@ class BookRepository {
     debugPrint(
       '[MangaOCR] Reprocessed ${resegmented.length} pages for "${book.title}"',
     );
+  }
+
+  /// Remove OCR data from all pages in a manga cache file.
+  ///
+  /// Keeps page metadata (image dimensions, content bounds) and clears only
+  /// OCR text blocks/word overlays so OCR can be run again from scratch.
+  Future<void> clearMangaOcr(Book book) async {
+    if (book.bookType != 'manga') return;
+
+    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    if (!await cacheFile.exists()) {
+      throw Exception('Pages cache not found. Try re-importing this manga.');
+    }
+
+    final content = await cacheFile.readAsString();
+    final json = jsonDecode(content) as Map<String, dynamic>;
+    final mokuroBook = MokuroBook.fromJson(json);
+
+    final clearedPages = mokuroBook.pages
+        .map((page) => page.copyWith(blocks: const []))
+        .toList();
+
+    final updated = MokuroBook(
+      title: mokuroBook.title,
+      imageDirPath: mokuroBook.imageDirPath,
+      safTreeUri: mokuroBook.safTreeUri,
+      safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+      pages: clearedPages,
+    );
+
+    await cacheFile.writeAsString(jsonEncode(updated.toJson()));
+    debugPrint('[MangaOCR] Cleared OCR for "${book.title}"');
   }
 
   /// Compute and cache auto-crop bounds on demand for a manga book.

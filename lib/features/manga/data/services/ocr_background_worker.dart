@@ -54,11 +54,11 @@ class OcrProgress {
   });
 
   String toJson() => json.encode({
-        'completed': completed,
-        'total': total,
-        'status': status,
-        if (avgSecondsPerPage != null) 'avgSecondsPerPage': avgSecondsPerPage,
-      });
+    'completed': completed,
+    'total': total,
+    'status': status,
+    if (avgSecondsPerPage != null) 'avgSecondsPerPage': avgSecondsPerPage,
+  });
 
   factory OcrProgress.fromJson(String jsonStr) {
     final data = json.decode(jsonStr) as Map<String, dynamic>;
@@ -110,11 +110,7 @@ void ocrWorkerCallbackDispatcher() {
         await OcrProgress.save(
           prefs,
           bookId,
-          OcrProgress(
-            completed: 0,
-            total: 0,
-            status: OcrStatus.failed,
-          ),
+          OcrProgress(completed: 0, total: 0, status: OcrStatus.failed),
         );
       } catch (_) {}
       return false; // WorkManager will retry with backoff
@@ -129,9 +125,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   final imageDir = inputData['imageDir'] as String;
 
   // Initialize Firebase in the background isolate
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Get auth token
   final user = FirebaseAuth.instance.currentUser;
@@ -149,8 +143,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   } catch (_) {}
 
   // Load OCR server URL from settings
-  final serverUrl =
-      prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl;
+  final serverUrl = prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl;
 
   // Create OCR client
   final client = MangaOcrClient(
@@ -212,8 +205,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     );
 
     // Get a fresh Firebase ID token for the auth header
-    final idToken =
-        await FirebaseAuth.instance.currentUser?.getIdToken() ?? '';
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken() ?? '';
 
     // Override client to use the actual token
     final authedClient = MangaOcrClient(
@@ -246,8 +238,10 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           page.imageFileName,
         );
 
-        // Update the page with OCR blocks
-        updatedPages[pageIndex] = page.copyWith(blocks: result.blocks);
+        // Update the page and build word boxes immediately so partial saves
+        // stay usable after app restarts/cancellation.
+        final ocrPage = page.copyWith(blocks: result.blocks);
+        updatedPages[pageIndex] = await _segmentSinglePageForLookup(ocrPage);
         completed++;
 
         // Calculate average time per page
@@ -290,21 +284,19 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
       }
     }
 
-    // Final step before completion: compute word-level boxes for tap targets.
-    final segmentedPages = await _segmentPagesForLookup(updatedPages);
+    // Final step before completion: ensure all OCR blocks include words.
+    final pagesToSave = _needsWordSegmentation(updatedPages)
+        ? await _segmentPagesForLookup(updatedPages)
+        : updatedPages;
 
-    // Save final results (with words)
-    await _saveCache(cacheFile, mokuroBook, segmentedPages);
+    // Save final results (with words).
+    await _saveCache(cacheFile, mokuroBook, pagesToSave);
 
     // Mark as completed
     await OcrProgress.save(
       prefs,
       bookId,
-      OcrProgress(
-        completed: total,
-        total: total,
-        status: OcrStatus.completed,
-      ),
+      OcrProgress(completed: total, total: total, status: OcrStatus.completed),
     );
 
     authedClient.dispose();
@@ -339,6 +331,16 @@ Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
   return MokuroWordSegmenter.segmentAllPages(strippedPages);
 }
 
+Future<MokuroPage> _segmentSinglePageForLookup(MokuroPage page) async {
+  final strippedPage = page.copyWith(
+    blocks: page.blocks
+        .map((block) => block.copyWith(words: const []))
+        .toList(),
+  );
+  final segmented = await MokuroWordSegmenter.segmentAllPages([strippedPage]);
+  return segmented.first;
+}
+
 /// Write updated pages back to the cache file.
 Future<void> _saveCache(
   File cacheFile,
@@ -370,11 +372,9 @@ Future<void> scheduleOcrTask({
       'imageDir': imageDir,
     },
     tag: '$ocrTaskTagPrefix$bookId',
-    constraints: Constraints(
-      networkType: NetworkType.connected,
-    ),
+    constraints: Constraints(networkType: NetworkType.connected),
     backoffPolicy: BackoffPolicy.exponential,
-    existingWorkPolicy: ExistingWorkPolicy.keep,
+    existingWorkPolicy: ExistingWorkPolicy.replace,
   );
 }
 
@@ -390,5 +390,12 @@ Future<void> cancelOcrTask(int bookId) async {
       status: OcrStatus.cancelled,
     ),
   );
+  await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
+}
+
+/// Remove queued/running OCR work and clear persisted OCR progress state.
+Future<void> clearOcrTaskState(int bookId) async {
+  final prefs = await SharedPreferences.getInstance();
+  await OcrProgress.clear(prefs, bookId);
   await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
 }
