@@ -1,17 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_scroll_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_spread_view.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Manga reader screen — renders manga pages with word overlays.
 ///
@@ -59,6 +64,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
 
     // Enter immersive mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    // Dismiss the library's "OCR Complete" overlay after the user opens
+    // this manga once.
+    unawaited(_acknowledgeCompletedOcrOverlay());
   }
 
   @override
@@ -76,6 +85,17 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     ref
         .read(bookRepositoryProvider)
         .updateProgress(widget.book.id, page.toString(), progress: progress);
+  }
+
+  Future<void> _acknowledgeCompletedOcrOverlay() async {
+    final prefs = await SharedPreferences.getInstance();
+    final progress = OcrProgress.load(prefs, widget.book.id);
+    if (progress?.status == OcrStatus.completed) {
+      await OcrProgress.clear(prefs, widget.book.id);
+      if (mounted) {
+        ref.invalidate(ocrProgressProvider(widget.book.id));
+      }
+    }
   }
 
   void _toggleControls() {
@@ -481,7 +501,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     final direction = ref.watch(mangaReadingDirectionProvider);
     final autoCrop = ref.watch(mangaAutoCropProvider);
     final viewMode = ref.watch(mangaViewModeProvider);
-    const enableWordOverlays = true;
+    final isOcrRunning = ref.watch(isOcrRunningProvider(widget.book.id));
+    final enableWordOverlays = !isOcrRunning;
 
     return Scaffold(
       backgroundColor: Colors.black,

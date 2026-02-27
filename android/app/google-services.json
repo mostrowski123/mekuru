@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "65720946618",
+    "project_id": "mekuru-12c8f",
+    "storage_bucket": "mekuru-12c8f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65720946618:android:2a07cb2a537318bf215783",
+        "android_client_info": {
+          "package_name": "moe.matthew.mekuru"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpLj7Yrh7PqmtjrtiO4muQt3R23PJOMuM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
