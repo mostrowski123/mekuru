@@ -77,14 +77,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     try {
       if (needsLink) {
-        final user = await _ocrAccountLinkService.ensureLinkedAccount();
+        final result = await _ocrAccountLinkService.ensureLinkedAccount();
+        await OcrStoreService.instance.restorePurchases();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              user.email == null
-                  ? 'Google account linked for OCR purchases.'
-                  : 'Signed in as ${user.email}.',
+              result.user.email == null
+                  ? 'Google account linked. OCR purchases refreshed.'
+                  : 'Signed in as ${result.user.email}. Purchases refreshed.',
             ),
           ),
         );
@@ -499,7 +500,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 subtitle: Text(
                   canEditOcrServerUrl
                       ? '$currentOcrServerUrl\n'
-                            '${usesBuiltInServer ? 'Built-in server, page credits apply' : 'Custom server, page credits disabled'}'
+                            '${usesBuiltInServer ? 'Built-in server, page credits apply' : 'Custom server, shared key required, page credits disabled'}'
                       : 'Unlock OCR first to edit the server endpoint',
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
@@ -1096,8 +1097,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         controller: customKeyController,
                         obscureText: obscureCustomKey,
                         decoration: InputDecoration(
-                          labelText: 'Custom bearer key (optional)',
-                          hintText: 'AUTH_API_KEY',
+                          labelText: 'Custom shared key',
+                          hintText: 'Required AUTH_API_KEY',
                           border: const OutlineInputBorder(),
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -1129,13 +1130,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'If your self-hosted mekuru-ocr server is running with '
-                        'AUTH_API_KEY, enter the same shared secret here. It '
-                        'will be sent as Authorization: Bearer <key>. If left '
-                        'blank, the app sends your Firebase ID token instead. '
-                        'In AUTH_API_KEY mode, your self-hosted server acts as '
-                        'a plain OCR endpoint and the app uploads images '
-                        'directly with no page-credit jobs.',
+                        'Custom OCR servers must be configured with a shared '
+                        'AUTH_API_KEY. Enter the same shared secret here. The '
+                        'app sends it as Authorization: Bearer <key>. Custom '
+                        'servers always run as plain OCR endpoints with direct '
+                        'image uploads and no page-credit jobs.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -1159,18 +1158,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onPressed: () async {
                   final url = controller.text.trim();
                   if (url.isNotEmpty) {
-                    ref.read(ocrServerUrlProvider.notifier).setUrl(url);
                     if (!isBuiltInOcrServerUrl(url)) {
                       final customKey = customKeyController.text.trim();
                       if (customKey.isEmpty) {
-                        await _ocrAuthSecretStorage
-                            .clearCustomServerBearerKey();
-                      } else {
-                        await _ocrAuthSecretStorage.saveCustomServerBearerKey(
-                          customKey,
-                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Custom OCR servers require a shared key.',
+                              ),
+                            ),
+                          );
+                        }
+                        return;
                       }
+                      await _ocrAuthSecretStorage.saveCustomServerBearerKey(
+                        customKey,
+                      );
                     }
+                    ref.read(ocrServerUrlProvider.notifier).setUrl(url);
                   }
                   if (!dialogContext.mounted) return;
                   Navigator.of(dialogContext).pop();

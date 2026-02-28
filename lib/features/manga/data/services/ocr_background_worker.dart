@@ -175,28 +175,33 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   final customBearerKey = usesBuiltInServer
       ? null
       : await authSecretStorage.loadCustomServerBearerKey();
-  final shouldUseFirebaseToken = usesBuiltInServer || customBearerKey == null;
   final effectiveJobId = usesBuiltInServer ? jobId : null;
 
-  final existingUser = FirebaseAuth.instance.currentUser;
-  if (existingUser == null && shouldUseFirebaseToken) {
-    if (!usesBuiltInServer) {
-      await FirebaseAuth.instance.signInAnonymously();
-    } else {
-      return false;
-    }
+  await flushPendingOcrFinalizations();
+
+  if (!usesBuiltInServer && customBearerKey == null) {
+    await OcrProgress.save(
+      prefs,
+      bookId,
+      const OcrProgress(completed: 0, total: 0, status: OcrStatus.failed),
+    );
+    await _clearActiveOcrJob(bookId);
+    return false;
   }
 
-  await flushPendingOcrFinalizations();
+  final existingUser = FirebaseAuth.instance.currentUser;
+  if (existingUser == null && usesBuiltInServer) {
+    return false;
+  }
 
   try {
     await MecabService.instance.init();
   } catch (_) {}
 
-  final idToken = shouldUseFirebaseToken
+  final idToken = usesBuiltInServer
       ? await FirebaseAuth.instance.currentUser?.getIdToken() ?? ''
       : '';
-  final bearerToken = customBearerKey ?? idToken;
+  final bearerToken = usesBuiltInServer ? idToken : customBearerKey!;
   final ocrClient = MangaOcrClient(
     serverUrl: serverUrl,
     getBearerToken: () => bearerToken,

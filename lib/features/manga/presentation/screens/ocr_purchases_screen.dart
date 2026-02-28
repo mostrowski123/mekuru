@@ -108,7 +108,30 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
 
   Future<void> _purchaseUnlock() async {
     await _runBusyAction(() async {
-      await _accountLinkService.ensureLinkedAccount();
+      final linkResult = await _accountLinkService.ensureLinkedAccount();
+      if (linkResult.linkedThisCall) {
+        final restoredStatus = await _storeService.restorePurchases();
+
+        if (!mounted) return;
+
+        setState(() {
+          _status = restoredStatus;
+        });
+
+        if (restoredStatus.ocrUnlocked) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                linkResult.user.email == null
+                    ? 'Google account linked. OCR purchases refreshed.'
+                    : 'Signed in as ${linkResult.user.email}. Purchases refreshed.',
+              ),
+            ),
+          );
+          return;
+        }
+      }
+
       final result = await _storeService.purchaseProduct(ocrUnlockProductId);
 
       if (!mounted) return;
@@ -130,7 +153,7 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
 
   Future<void> _restorePurchases() async {
     await _runBusyAction(() async {
-      await _accountLinkService.ensureLinkedAccount();
+      final linkResult = await _accountLinkService.ensureLinkedAccount();
       final status = await _storeService.restorePurchases();
 
       if (!mounted) return;
@@ -141,7 +164,15 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Purchases refreshed.')));
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            linkResult.linkedThisCall
+                ? 'Google account linked. Purchases refreshed.'
+                : 'Purchases refreshed.',
+          ),
+        ),
+      );
     });
   }
 
@@ -310,7 +341,7 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
                     leading: const Icon(Icons.terminal_outlined),
                     title: const Text('Run your own OCR server'),
                     subtitle: const Text(
-                      'Use AUTH_API_KEY for plain OCR mode. See setup instructions on GitHub.',
+                      'Set AUTH_API_KEY and use the same shared key in the app. See setup instructions on GitHub.',
                     ),
                     trailing: const Icon(Icons.open_in_new),
                     onTap: _openSelfHostRepo,

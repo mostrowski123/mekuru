@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
@@ -21,6 +22,7 @@ class OcrPurchaseFlow {
   static final OcrPurchaseFlow instance = OcrPurchaseFlow._();
 
   final OcrAccountLinkService _accountLinkService = OcrAccountLinkService();
+  final OcrAuthSecretStorage _ocrAuthSecretStorage = OcrAuthSecretStorage();
   final OcrBillingClient _billingClient = OcrBillingClient();
   final OcrStoreService _storeService = OcrStoreService.instance;
 
@@ -31,7 +33,10 @@ class OcrPurchaseFlow {
     required String Function() getServerUrl,
   }) async {
     await _storeService.initialize();
-    await _accountLinkService.ensureLinkedAccount();
+    final linkResult = await _accountLinkService.ensureLinkedAccount();
+    if (linkResult.linkedThisCall) {
+      await _storeService.restorePurchases();
+    }
     Map<String, ProductDetails>? unlockProducts;
 
     while (context.mounted) {
@@ -61,6 +66,23 @@ class OcrPurchaseFlow {
         serverUrl,
       );
       if (!usesBuiltInServer) {
+        final customBearerKey =
+            await _ocrAuthSecretStorage.loadCustomServerBearerKey();
+        if (customBearerKey == null) {
+          if (!context.mounted) return null;
+          final action = await _showCustomServerKeyRequiredDialog(context);
+          if (action == null || action == _CustomServerDialogAction.cancel) {
+            return null;
+          }
+          if (!context.mounted) {
+            return null;
+          }
+          final navigator = Navigator.of(context);
+          await navigator.push(
+            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+          );
+          continue;
+        }
         return const OcrPreparationResult();
       }
 
@@ -201,8 +223,39 @@ class OcrPurchaseFlow {
       ),
     );
   }
+
+  Future<_CustomServerDialogAction?> _showCustomServerKeyRequiredDialog(
+    BuildContext context,
+  ) {
+    return showDialog<_CustomServerDialogAction>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Custom Server Setup Required'),
+        content: const Text(
+          'Custom OCR servers require a shared key. Open OCR Server Settings '
+          'and enter the same AUTH_API_KEY value configured on your server.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(
+              dialogContext,
+            ).pop(_CustomServerDialogAction.cancel),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(
+              dialogContext,
+            ).pop(_CustomServerDialogAction.openSettings),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 enum _UnlockDialogAction { cancel, restore, buyUnlock }
 
 enum _LowCreditDialogAction { cancel, refresh, openSettings, selfHost }
+
+enum _CustomServerDialogAction { cancel, openSettings }
