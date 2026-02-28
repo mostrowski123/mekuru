@@ -8,26 +8,36 @@ import 'package:workmanager/workmanager.dart';
 
 import '../../../../firebase_options.dart';
 import '../../data/models/mokuro_models.dart';
+import '../../../settings/data/services/ocr_server_config.dart'
+    as ocr_server_config;
 import '../../../reader/data/services/mecab_service.dart';
 import 'manga_ocr_client.dart';
 import 'mokuro_word_segmenter.dart';
+import 'ocr_auth_secret_storage.dart';
+import 'ocr_billing_client.dart';
 
 /// WorkManager task name for OCR processing.
 const ocrTaskName = 'mekuru_ocr_processing';
 
-/// Unique task tag prefix — combined with bookId for cancellation.
+/// Unique task tag prefix combined with bookId for cancellation.
 const ocrTaskTagPrefix = 'ocr_';
 
 /// SharedPreferences key prefix for OCR progress per book.
 const ocrProgressKeyPrefix = 'ocr.progress.';
 
+/// SharedPreferences key prefix for the active OCR billing job per book.
+const ocrActiveJobKeyPrefix = 'ocr.job.';
+
+/// SharedPreferences queue of billing finalizations that need to be retried.
+const ocrPendingFinalizationsKey = 'ocr.pending_finalizations';
+
 /// SharedPreferences key for the OCR server URL.
 const ocrServerUrlKey = 'app.ocr_server_url';
 
 /// Default OCR server URL (Modal deployment).
-const defaultOcrServerUrl = 'https://mekuru-ocr.modal.run';
+const defaultOcrServerUrl = ocr_server_config.defaultOcrServerUrl;
 
-/// Save interval — write partial results every N pages.
+/// Save interval write partial results every N pages.
 const _saveIntervalPages = 10;
 
 /// OCR processing status values.
@@ -103,7 +113,6 @@ void ocrWorkerCallbackDispatcher() {
     try {
       return await _processOcrTask(inputData);
     } catch (e) {
-      // Mark as failed so the UI can show an error
       try {
         final prefs = await SharedPreferences.getInstance();
         final bookId = inputData['bookId'] as int;
@@ -113,9 +122,41 @@ void ocrWorkerCallbackDispatcher() {
           OcrProgress(completed: 0, total: 0, status: OcrStatus.failed),
         );
       } catch (_) {}
-      return false; // WorkManager will retry with backoff
+      return false;
     }
   });
+}
+
+/// Flush any queued OCR job finalizations that could not be sent earlier.
+Future<void> flushPendingOcrFinalizations() async {
+  final prefs = await SharedPreferences.getInstance();
+  final pending = prefs.getStringList(ocrPendingFinalizationsKey) ?? const [];
+  if (pending.isEmpty) return;
+
+  final billingClient = OcrBillingClient();
+  final remaining = <String>[];
+
+  try {
+    for (final entry in pending) {
+      try {
+        final payload = json.decode(entry) as Map<String, dynamic>;
+        final jobId = payload['jobId'] as String?;
+        final status = payload['status'] as String?;
+        if (jobId == null || status == null) continue;
+        await billingClient.finalizeOcrJob(jobId: jobId, status: status);
+      } catch (_) {
+        remaining.add(entry);
+      }
+    }
+  } finally {
+    billingClient.dispose();
+  }
+
+  if (remaining.isEmpty) {
+    await prefs.remove(ocrPendingFinalizationsKey);
+  } else {
+    await prefs.setStringList(ocrPendingFinalizationsKey, remaining);
+  }
 }
 
 /// The actual OCR processing logic run by WorkManager.
@@ -123,49 +164,76 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   final bookId = inputData['bookId'] as int;
   final cacheFilePath = inputData['cacheFilePath'] as String;
   final imageDir = inputData['imageDir'] as String;
+  final jobId = inputData['jobId'] as String?;
 
-  // Initialize Firebase in the background isolate
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Get auth token
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) {
-    await FirebaseAuth.instance.signInAnonymously();
+  final prefs = await SharedPreferences.getInstance();
+  final serverUrl = prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl;
+  final usesBuiltInServer = ocr_server_config.isBuiltInOcrServerUrl(serverUrl);
+  final authSecretStorage = OcrAuthSecretStorage();
+  final customBearerKey = usesBuiltInServer
+      ? null
+      : await authSecretStorage.loadCustomServerBearerKey();
+  final shouldUseFirebaseToken = usesBuiltInServer || customBearerKey == null;
+  final effectiveJobId = usesBuiltInServer ? jobId : null;
+
+  final existingUser = FirebaseAuth.instance.currentUser;
+  if (existingUser == null && shouldUseFirebaseToken) {
+    if (!usesBuiltInServer) {
+      await FirebaseAuth.instance.signInAnonymously();
+    } else {
+      return false;
+    }
   }
 
-  final prefs = await SharedPreferences.getInstance();
+  await flushPendingOcrFinalizations();
 
-  // Best effort: initialize MeCab so final word segmentation matches
-  // manual "Reprocess words". If it fails, segmentation falls back
-  // to line-level tokens.
   try {
     await MecabService.instance.init();
   } catch (_) {}
 
-  // Load OCR server URL from settings
-  final serverUrl = prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl;
-
-  // Create OCR client
-  final client = MangaOcrClient(
+  final idToken = shouldUseFirebaseToken
+      ? await FirebaseAuth.instance.currentUser?.getIdToken() ?? ''
+      : '';
+  final bearerToken = customBearerKey ?? idToken;
+  final ocrClient = MangaOcrClient(
     serverUrl: serverUrl,
-    getAuthToken: () {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      // getIdToken is async but we need sync here — use cached token.
-      // WorkManager tasks should refresh token at the start.
-      return currentUser?.uid ?? '';
-    },
+    getBearerToken: () => bearerToken,
   );
+  final billingClient = effectiveJobId == null ? null : OcrBillingClient();
+  var finalizationSent = false;
+
+  Future<void> finalizeIfNeeded(String status) async {
+    if (effectiveJobId == null || finalizationSent) {
+      await _clearActiveOcrJob(bookId);
+      return;
+    }
+
+    finalizationSent = true;
+    try {
+      await billingClient!.finalizeOcrJob(
+        jobId: effectiveJobId,
+        status: status,
+      );
+    } catch (_) {
+      await _queuePendingOcrFinalization(effectiveJobId, status);
+    } finally {
+      await _clearActiveOcrJob(bookId);
+    }
+  }
 
   try {
-    // Read the pages cache file
     final cacheFile = File(cacheFilePath);
-    if (!cacheFile.existsSync()) return false;
+    if (!cacheFile.existsSync()) {
+      await finalizeIfNeeded(OcrStatus.failed);
+      return false;
+    }
 
     final cacheJson =
         json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
     final mokuroBook = MokuroBook.fromJson(cacheJson);
 
-    // Find pages that need OCR (empty blocks)
     final pagesToProcess = <int>[];
     for (var i = 0; i < mokuroBook.pages.length; i++) {
       if (mokuroBook.pages[i].blocks.isEmpty) {
@@ -174,8 +242,6 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     }
 
     if (pagesToProcess.isEmpty) {
-      // Some legacy/partial imports can have OCR blocks but no word
-      // segmentation yet. Ensure tap targets are available.
       if (_needsWordSegmentation(mokuroBook.pages)) {
         final segmentedPages = await _segmentPagesForLookup(mokuroBook.pages);
         await _saveCache(cacheFile, mokuroBook, segmentedPages);
@@ -189,6 +255,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           status: OcrStatus.completed,
         ),
       );
+      await finalizeIfNeeded(OcrStatus.completed);
       return true;
     }
 
@@ -197,28 +264,17 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     final stopwatch = Stopwatch()..start();
     final updatedPages = List<MokuroPage>.from(mokuroBook.pages);
 
-    // Save initial progress
     await OcrProgress.save(
       prefs,
       bookId,
       OcrProgress(completed: 0, total: total, status: OcrStatus.running),
     );
 
-    // Get a fresh Firebase ID token for the auth header
-    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken() ?? '';
-
-    // Override client to use the actual token
-    final authedClient = MangaOcrClient(
-      serverUrl: serverUrl,
-      getAuthToken: () => idToken,
-    );
-
     for (final pageIndex in pagesToProcess) {
-      // Check if cancelled
       final currentProgress = OcrProgress.load(prefs, bookId);
       if (currentProgress?.status == OcrStatus.cancelled) {
-        // Save partial results and exit
         await _saveCache(cacheFile, mokuroBook, updatedPages);
+        await finalizeIfNeeded(OcrStatus.cancelled);
         return true;
       }
 
@@ -233,22 +289,20 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
 
       try {
         final imageBytes = await imageFile.readAsBytes();
-        final result = await authedClient.processPage(
+        final result = await ocrClient.processPage(
           imageBytes,
           page.imageFileName,
+          jobId: effectiveJobId,
+          pageIndex: effectiveJobId == null ? null : pageIndex,
         );
 
-        // Update the page and build word boxes immediately so partial saves
-        // stay usable after app restarts/cancellation.
         final ocrPage = page.copyWith(blocks: result.blocks);
         updatedPages[pageIndex] = await _segmentSinglePageForLookup(ocrPage);
         completed++;
 
-        // Calculate average time per page
         final elapsed = stopwatch.elapsedMilliseconds / 1000.0;
         final avgSeconds = elapsed / completed;
 
-        // Update progress
         await OcrProgress.save(
           prefs,
           bookId,
@@ -260,13 +314,11 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           ),
         );
 
-        // Periodically save partial results
         if (completed % _saveIntervalPages == 0) {
           await _saveCache(cacheFile, mokuroBook, updatedPages);
         }
       } on OcrServerException catch (e) {
         if (e.statusCode == 401) {
-          // Auth failure — can't continue
           await OcrProgress.save(
             prefs,
             bookId,
@@ -277,32 +329,31 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
             ),
           );
           await _saveCache(cacheFile, mokuroBook, updatedPages);
+          await finalizeIfNeeded(OcrStatus.failed);
           return false;
         }
-        // Skip this page for other errors, continue processing
         completed++;
       }
     }
 
-    // Final step before completion: ensure all OCR blocks include words.
     final pagesToSave = _needsWordSegmentation(updatedPages)
         ? await _segmentPagesForLookup(updatedPages)
         : updatedPages;
 
-    // Save final results (with words).
     await _saveCache(cacheFile, mokuroBook, pagesToSave);
-
-    // Mark as completed
     await OcrProgress.save(
       prefs,
       bookId,
       OcrProgress(completed: total, total: total, status: OcrStatus.completed),
     );
-
-    authedClient.dispose();
+    await finalizeIfNeeded(OcrStatus.completed);
     return true;
+  } catch (_) {
+    await finalizeIfNeeded(OcrStatus.failed);
+    rethrow;
   } finally {
-    client.dispose();
+    ocrClient.dispose();
+    billingClient?.dispose();
   }
 }
 
@@ -318,7 +369,6 @@ bool _needsWordSegmentation(List<MokuroPage> pages) {
 }
 
 Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
-  // Rebuild words from OCR lines to keep lookup data consistent.
   final strippedPages = pages
       .map(
         (page) => page.copyWith(
@@ -357,12 +407,37 @@ Future<void> _saveCache(
   await cacheFile.writeAsString(json.encode(updated.toJson()));
 }
 
+Future<void> _queuePendingOcrFinalization(String jobId, String status) async {
+  final prefs = await SharedPreferences.getInstance();
+  final queue = List<String>.from(
+    prefs.getStringList(ocrPendingFinalizationsKey) ?? const <String>[],
+  );
+  queue.add(json.encode({'jobId': jobId, 'status': status}));
+  await prefs.setStringList(ocrPendingFinalizationsKey, queue);
+}
+
+Future<void> _storeActiveOcrJob(int bookId, String jobId) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('$ocrActiveJobKeyPrefix$bookId', jobId);
+}
+
+Future<void> _clearActiveOcrJob(int bookId) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove('$ocrActiveJobKeyPrefix$bookId');
+}
+
 /// Schedule an OCR task for a book.
 Future<void> scheduleOcrTask({
   required int bookId,
   required String cacheFilePath,
   required String imageDir,
+  String? jobId,
+  int? reservedPages,
 }) async {
+  if ((jobId == null) != (reservedPages == null)) {
+    throw ArgumentError('jobId and reservedPages must be provided together.');
+  }
+
   await Workmanager().registerOneOffTask(
     '$ocrTaskTagPrefix$bookId',
     ocrTaskName,
@@ -370,12 +445,20 @@ Future<void> scheduleOcrTask({
       'bookId': bookId,
       'cacheFilePath': cacheFilePath,
       'imageDir': imageDir,
+      ...?jobId == null ? null : {'jobId': jobId},
+      ...?reservedPages == null ? null : {'reservedPages': reservedPages},
     },
     tag: '$ocrTaskTagPrefix$bookId',
     constraints: Constraints(networkType: NetworkType.connected),
     backoffPolicy: BackoffPolicy.exponential,
     existingWorkPolicy: ExistingWorkPolicy.replace,
   );
+
+  if (jobId != null) {
+    await _storeActiveOcrJob(bookId, jobId);
+  } else {
+    await _clearActiveOcrJob(bookId);
+  }
 }
 
 /// Cancel an OCR task for a book.
@@ -390,6 +473,23 @@ Future<void> cancelOcrTask(int bookId) async {
       status: OcrStatus.cancelled,
     ),
   );
+
+  final activeJobId = prefs.getString('$ocrActiveJobKeyPrefix$bookId');
+  if (activeJobId != null) {
+    final billingClient = OcrBillingClient();
+    try {
+      await billingClient.finalizeOcrJob(
+        jobId: activeJobId,
+        status: OcrStatus.cancelled,
+      );
+    } catch (_) {
+      await _queuePendingOcrFinalization(activeJobId, OcrStatus.cancelled);
+    } finally {
+      billingClient.dispose();
+      await _clearActiveOcrJob(bookId);
+    }
+  }
+
   await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
 }
 
@@ -397,5 +497,6 @@ Future<void> cancelOcrTask(int bookId) async {
 Future<void> clearOcrTaskState(int bookId) async {
   final prefs = await SharedPreferences.getInstance();
   await OcrProgress.clear(prefs, bookId);
+  await _clearActiveOcrJob(bookId);
   await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
 }

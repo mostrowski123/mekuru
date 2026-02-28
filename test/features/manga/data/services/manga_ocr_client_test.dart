@@ -25,10 +25,10 @@ void main() {
             [500, 200],
             [500, 800],
             [100, 800],
-          ]
+          ],
         ],
         'lines': ['テスト'],
-      }
+      },
     ],
   });
 
@@ -44,7 +44,7 @@ void main() {
   MangaOcrClient createClient(http.Client httpClient) {
     return MangaOcrClient(
       serverUrl: serverUrl,
-      getAuthToken: () => testToken,
+      getBearerToken: () => testToken,
       httpClient: httpClient,
       baseRetryDelay: Duration.zero,
     );
@@ -112,8 +112,13 @@ void main() {
 
       await expectLater(
         () => client.processPage(imageBytes, 'page_001.jpg'),
-        throwsA(isA<OcrServerException>()
-            .having((e) => e.statusCode, 'statusCode', 401)),
+        throwsA(
+          isA<OcrServerException>().having(
+            (e) => e.statusCode,
+            'statusCode',
+            401,
+          ),
+        ),
       );
 
       // 401 should not retry — exactly 1 call
@@ -137,9 +142,11 @@ void main() {
 
       await expectLater(
         () => client.processPage(imageBytes, 'page_001.jpg'),
-        throwsA(isA<OcrServerException>()
-            .having((e) => e.statusCode, 'statusCode', 422)
-            .having((e) => e.message, 'message', 'Invalid image format')),
+        throwsA(
+          isA<OcrServerException>()
+              .having((e) => e.statusCode, 'statusCode', 422)
+              .having((e) => e.message, 'message', 'Invalid image format'),
+        ),
       );
 
       expect(callCount, 1);
@@ -190,8 +197,13 @@ void main() {
 
       await expectLater(
         () => client.processPage(imageBytes, 'page_001.jpg'),
-        throwsA(isA<OcrServerException>()
-            .having((e) => e.statusCode, 'statusCode', 500)),
+        throwsA(
+          isA<OcrServerException>().having(
+            (e) => e.statusCode,
+            'statusCode',
+            500,
+          ),
+        ),
       );
 
       // Should have tried 3 times (initial + 2 retries)
@@ -220,6 +232,62 @@ void main() {
       expect(multipart.files, hasLength(1));
       expect(multipart.files[0].field, 'image');
       expect(multipart.files[0].filename, 'test_page.png');
+      expect(multipart.fields, isEmpty);
+
+      client.dispose();
+    });
+
+    test('job metadata is attached when provided', () async {
+      http.BaseRequest? capturedRequest;
+      final mockClient = MockClient.streaming((request, _) async {
+        capturedRequest = request;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(emptyBlocksResponse)),
+          200,
+          headers: jsonHeaders,
+        );
+      });
+
+      final client = createClient(mockClient);
+
+      await client.processPage(
+        imageBytes,
+        'test_page.png',
+        jobId: 'job-123',
+        pageIndex: 9,
+      );
+
+      final multipart = capturedRequest as http.MultipartRequest;
+      expect(multipart.fields['job_id'], 'job-123');
+      expect(multipart.fields['page_index'], '9');
+
+      client.dispose();
+    });
+
+    test('mismatched job metadata throws before the request is sent', () async {
+      var callCount = 0;
+      final mockClient = MockClient.streaming((request, _) async {
+        callCount++;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(emptyBlocksResponse)),
+          200,
+          headers: jsonHeaders,
+        );
+      });
+
+      final client = createClient(mockClient);
+
+      await expectLater(
+        () => client.processPage(imageBytes, 'page_001.jpg', jobId: 'job-123'),
+        throwsA(
+          isA<OcrServerException>().having(
+            (e) => e.message,
+            'message',
+            contains('jobId and pageIndex'),
+          ),
+        ),
+      );
+      expect(callCount, 0);
 
       client.dispose();
     });
@@ -230,11 +298,7 @@ void main() {
     });
 
     test('OcrPageResult stores values correctly', () {
-      const result = OcrPageResult(
-        imgWidth: 100,
-        imgHeight: 200,
-        blocks: [],
-      );
+      const result = OcrPageResult(imgWidth: 100, imgHeight: 200, blocks: []);
       expect(result.imgWidth, 100);
       expect(result.imgHeight, 200);
       expect(result.blocks, isEmpty);

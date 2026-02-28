@@ -9,6 +9,7 @@ import 'app.dart';
 import 'config/environment_config.dart';
 import 'core/database/database_provider.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
+import 'features/manga/data/services/ocr_store_service.dart';
 import 'features/reader/data/services/mecab_service.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
 import 'firebase_options.dart';
@@ -33,9 +34,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase for OCR server authentication
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Sign in anonymously — each user gets a stable UID for rate limiting.
   // No sign-in UI needed. Future: add Google Sign-In for account persistence.
@@ -43,8 +42,15 @@ Future<void> main() async {
     await FirebaseAuth.instance.signInAnonymously();
   }
 
+  try {
+    await flushPendingOcrFinalizations();
+  } catch (_) {}
+  try {
+    await OcrStoreService.instance.initialize();
+  } catch (_) {}
+
   // Initialize WorkManager for background OCR processing
-  await Workmanager().initialize(ocrWorkerCallbackDispatcher, isInDebugMode: false);
+  await Workmanager().initialize(ocrWorkerCallbackDispatcher);
 
   await SentryFlutter.init(
     (options) {
