@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
+    as ocr_server_config;
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 
@@ -22,7 +24,9 @@ class AppThemeNotifier extends Notifier<ThemeMode> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final persisted = await ref.read(appSettingsStorageProvider).loadThemeMode();
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadThemeMode();
     if (persisted != null) {
       state = persisted;
     }
@@ -36,8 +40,9 @@ class AppThemeNotifier extends Notifier<ThemeMode> {
 }
 
 /// Provider for the app theme mode.
-final appThemeModeProvider =
-    NotifierProvider<AppThemeNotifier, ThemeMode>(AppThemeNotifier.new);
+final appThemeModeProvider = NotifierProvider<AppThemeNotifier, ThemeMode>(
+  AppThemeNotifier.new,
+);
 
 /// Manages the lookup bottom sheet font size.
 class LookupFontSizeNotifier extends Notifier<double> {
@@ -55,8 +60,9 @@ class LookupFontSizeNotifier extends Notifier<double> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final persisted =
-        await ref.read(appSettingsStorageProvider).loadLookupFontSize();
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadLookupFontSize();
     if (persisted != null) {
       state = persisted.clamp(minSize, maxSize);
     }
@@ -70,9 +76,9 @@ class LookupFontSizeNotifier extends Notifier<double> {
 }
 
 /// Provider for the lookup font size.
-final lookupFontSizeProvider =
-    NotifierProvider<LookupFontSizeNotifier, double>(
-        LookupFontSizeNotifier.new);
+final lookupFontSizeProvider = NotifierProvider<LookupFontSizeNotifier, double>(
+  LookupFontSizeNotifier.new,
+);
 
 /// Manages the dictionary search history.
 class SearchHistoryNotifier extends Notifier<List<String>> {
@@ -87,8 +93,9 @@ class SearchHistoryNotifier extends Notifier<List<String>> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final persisted =
-        await ref.read(appSettingsStorageProvider).loadSearchHistory();
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadSearchHistory();
     if (persisted.isNotEmpty) {
       state = persisted;
     }
@@ -124,7 +131,8 @@ class SearchHistoryNotifier extends Notifier<List<String>> {
 /// Provider for the dictionary search history.
 final searchHistoryProvider =
     NotifierProvider<SearchHistoryNotifier, List<String>>(
-        SearchHistoryNotifier.new);
+      SearchHistoryNotifier.new,
+    );
 
 /// Manages the filter for hiding dictionary entries with Roman letters.
 class FilterRomanLettersNotifier extends Notifier<bool> {
@@ -138,8 +146,9 @@ class FilterRomanLettersNotifier extends Notifier<bool> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final persisted =
-        await ref.read(appSettingsStorageProvider).loadFilterRomanLetters();
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadFilterRomanLetters();
     if (persisted != null) {
       state = persisted;
     }
@@ -149,14 +158,16 @@ class FilterRomanLettersNotifier extends Notifier<bool> {
   void setFilter(bool value) {
     state = value;
     unawaited(
-        ref.read(appSettingsStorageProvider).saveFilterRomanLetters(value));
+      ref.read(appSettingsStorageProvider).saveFilterRomanLetters(value),
+    );
   }
 }
 
 /// Provider for the Roman letter filter setting.
 final filterRomanLettersProvider =
     NotifierProvider<FilterRomanLettersNotifier, bool>(
-        FilterRomanLettersNotifier.new);
+      FilterRomanLettersNotifier.new,
+    );
 
 /// Which screen the app opens to on cold start.
 enum StartupScreen {
@@ -184,8 +195,9 @@ class StartupScreenNotifier extends Notifier<StartupScreen> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final persisted =
-        await ref.read(appSettingsStorageProvider).loadStartupScreen();
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadStartupScreen();
     if (persisted != null) {
       state = StartupScreen.values.firstWhere(
         (e) => e.name == persisted,
@@ -199,14 +211,16 @@ class StartupScreenNotifier extends Notifier<StartupScreen> {
   void setStartupScreen(StartupScreen screen) {
     state = screen;
     unawaited(
-        ref.read(appSettingsStorageProvider).saveStartupScreen(screen.name));
+      ref.read(appSettingsStorageProvider).saveStartupScreen(screen.name),
+    );
   }
 }
 
 /// Provider for the startup screen setting.
 final startupScreenProvider =
     NotifierProvider<StartupScreenNotifier, StartupScreen>(
-        StartupScreenNotifier.new);
+      StartupScreenNotifier.new,
+    );
 
 /// Manages whether the dictionary search field auto-focuses on load.
 class AutoFocusSearchNotifier extends Notifier<bool> {
@@ -220,8 +234,9 @@ class AutoFocusSearchNotifier extends Notifier<bool> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final persisted =
-        await ref.read(appSettingsStorageProvider).loadAutoFocusSearch();
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadAutoFocusSearch();
     if (persisted != null) {
       state = persisted;
     }
@@ -230,15 +245,14 @@ class AutoFocusSearchNotifier extends Notifier<bool> {
   /// Set the value and persist to storage.
   void setAutoFocus(bool value) {
     state = value;
-    unawaited(
-        ref.read(appSettingsStorageProvider).saveAutoFocusSearch(value));
+    unawaited(ref.read(appSettingsStorageProvider).saveAutoFocusSearch(value));
   }
 }
 
 /// Provider for the auto-focus search setting.
-final autoFocusSearchProvider =
-    NotifierProvider<AutoFocusSearchNotifier, bool>(
-        AutoFocusSearchNotifier.new);
+final autoFocusSearchProvider = NotifierProvider<AutoFocusSearchNotifier, bool>(
+  AutoFocusSearchNotifier.new,
+);
 
 /// Manages the app color theme selection.
 class AppColorThemeNotifier extends Notifier<AppColorTheme> {
@@ -259,8 +273,9 @@ class AppColorThemeNotifier extends Notifier<AppColorTheme> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final persisted =
-        await ref.read(appSettingsStorageProvider).loadColorTheme();
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadColorTheme();
     if (persisted != null) {
       state = AppColorTheme.values.firstWhere(
         (e) => e.name == persisted,
@@ -279,11 +294,12 @@ class AppColorThemeNotifier extends Notifier<AppColorTheme> {
 /// Provider for the app color theme.
 final appColorThemeProvider =
     NotifierProvider<AppColorThemeNotifier, AppColorTheme>(
-        AppColorThemeNotifier.new);
+      AppColorThemeNotifier.new,
+    );
 
 /// Manages the OCR server URL.
 class OcrServerUrlNotifier extends Notifier<String> {
-  static const defaultUrl = 'https://mekuru-ocr.modal.run';
+  static const defaultUrl = ocr_server_config.defaultOcrServerUrl;
   bool _hasLoadedPersistedSettings = false;
 
   @override
@@ -293,8 +309,9 @@ class OcrServerUrlNotifier extends Notifier<String> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final persisted =
-        await ref.read(appSettingsStorageProvider).loadOcrServerUrl();
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadOcrServerUrl();
     if (persisted != null && persisted.isNotEmpty) {
       state = persisted;
     }
@@ -306,6 +323,15 @@ class OcrServerUrlNotifier extends Notifier<String> {
   }
 }
 
+String normalizeOcrServerUrl(String url) {
+  return ocr_server_config.normalizeOcrServerUrl(url);
+}
+
+bool isBuiltInOcrServerUrl(String url) {
+  return ocr_server_config.isBuiltInOcrServerUrl(url);
+}
+
 /// Provider for the OCR server URL.
-final ocrServerUrlProvider =
-    NotifierProvider<OcrServerUrlNotifier, String>(OcrServerUrlNotifier.new);
+final ocrServerUrlProvider = NotifierProvider<OcrServerUrlNotifier, String>(
+  OcrServerUrlNotifier.new,
+);

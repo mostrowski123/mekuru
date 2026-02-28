@@ -12,7 +12,36 @@
           "package_name": "moe.matthew.mekuru"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "65720946618-16f7488abqvd7pe2tu2u35fu458hfaea.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "moe.matthew.mekuru",
+            "certificate_hash": "445bbac9187bbed112860a73636ed570a244d6fa"
+          }
+        },
+        {
+          "client_id": "65720946618-c5fs1vndojrporqnarsu462hj7ld9fbl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "moe.matthew.mekuru",
+            "certificate_hash": "594439af1204a2ac386c0c74a806c6f08d3684b5"
+          }
+        },
+        {
+          "client_id": "65720946618-t2kb2auqfrerp631aok9rrk4bnqoqpke.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "moe.matthew.mekuru",
+            "certificate_hash": "4280a49a10aeebe6df8eabaaec7f3379d2903d46"
+          }
+        },
+        {
+          "client_id": "65720946618-aatblfb0c5uo0bn47of1r8qcd9ik42ra.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDpLj7Yrh7PqmtjrtiO4muQt3R23PJOMuM"
@@ -20,7 +49,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "65720946618-aatblfb0c5uo0bn47of1r8qcd9ik42ra.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "65720946618-5mnhfd83niaanvcr0j0g3sh92tdq6eor.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "moe.matthew.mekuru"
+              }
+            }
+          ]
         }
       }
     }

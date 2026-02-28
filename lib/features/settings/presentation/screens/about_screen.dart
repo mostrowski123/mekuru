@@ -7,7 +7,7 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   static const _appName = 'Mekuru';
-  static const _appVersion = '1.0.0';
+  static const _appVersion = '1.2.0';
 
   @override
   Widget build(BuildContext context) {
@@ -105,9 +105,7 @@ class AboutScreen extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                       children: [
-                        const TextSpan(
-                          text: 'Licensed under the ',
-                        ),
+                        const TextSpan(text: 'Licensed under the '),
                         TextSpan(
                           text: 'Creative Commons Attribution-Share Alike 3.0',
                           style: TextStyle(
@@ -116,8 +114,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () => _launchUrl(
-                                  'https://creativecommons.org/licenses/by-sa/3.0/',
-                                ),
+                              'https://creativecommons.org/licenses/by-sa/3.0/',
+                            ),
                         ),
                         const TextSpan(text: ' license.'),
                       ],
@@ -138,9 +136,8 @@ class AboutScreen extends StatelessWidget {
                             decoration: TextDecoration.underline,
                           ),
                           recognizer: TapGestureRecognizer()
-                            ..onTap = () => _launchUrl(
-                                  'https://kanjivg.tagaini.net/',
-                                ),
+                            ..onTap = () =>
+                                _launchUrl('https://kanjivg.tagaini.net/'),
                         ),
                       ],
                     ),
@@ -160,8 +157,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () => _launchUrl(
-                                  'https://github.com/KanjiVG/kanjivg',
-                                ),
+                              'https://github.com/KanjiVG/kanjivg',
+                            ),
                         ),
                       ],
                     ),
@@ -238,8 +235,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () => _launchUrl(
-                                  'https://github.com/Kuuuube/yomitan-dictionaries',
-                                ),
+                              'https://github.com/Kuuuube/yomitan-dictionaries',
+                            ),
                         ),
                       ],
                     ),
@@ -281,22 +278,23 @@ class AboutScreen extends StatelessWidget {
                       style: theme.textTheme.bodyMedium,
                       children: [
                         const TextSpan(
-                          text: 'Japanese–multilingual dictionary data is '
+                          text:
+                              'Japanese–multilingual dictionary data is '
                               'provided by the JMdict/EDICT project and kanji '
                               'dictionary data by the KANJIDIC project, both '
                               'created by Jim Breen and the ',
                         ),
                         TextSpan(
-                          text: 'Electronic Dictionary Research '
+                          text:
+                              'Electronic Dictionary Research '
                               'and Development Group',
                           style: TextStyle(
                             color: theme.colorScheme.primary,
                             decoration: TextDecoration.underline,
                           ),
                           recognizer: TapGestureRecognizer()
-                            ..onTap = () => _launchUrl(
-                                  'https://www.edrdg.org/',
-                                ),
+                            ..onTap = () =>
+                                _launchUrl('https://www.edrdg.org/'),
                         ),
                         const TextSpan(text: '.'),
                       ],
@@ -318,8 +316,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () => _launchUrl(
-                                  'https://creativecommons.org/licenses/by-sa/4.0/',
-                                ),
+                              'https://creativecommons.org/licenses/by-sa/4.0/',
+                            ),
                         ),
                         const TextSpan(text: ' license.'),
                       ],
@@ -341,8 +339,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () => _launchUrl(
-                                  'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
-                                ),
+                              'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
+                            ),
                         ),
                       ],
                     ),
@@ -362,8 +360,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () => _launchUrl(
-                                  'https://www.edrdg.org/wiki/index.php/KANJIDIC_Project',
-                                ),
+                              'https://www.edrdg.org/wiki/index.php/KANJIDIC_Project',
+                            ),
                         ),
                       ],
                     ),
@@ -440,8 +438,8 @@ class AboutScreen extends StatelessWidget {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () => _launchUrl(
-                                  'https://github.com/futurepress/epub.js',
-                                ),
+                              'https://github.com/futurepress/epub.js',
+                            ),
                         ),
                       ],
                     ),

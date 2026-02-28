@@ -84,10 +84,7 @@ class _RunningOverlay extends StatelessWidget {
 
     return Positioned.fill(
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        color: Colors.black.withValues(alpha: 0.7),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -148,10 +145,7 @@ class _PausedOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        color: Colors.black.withValues(alpha: 0.6),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -189,10 +183,7 @@ class _CompletedOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        color: Colors.green.withValues(alpha: 0.7),
         child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -223,10 +214,7 @@ class _StatusOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: Container(
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        color: color.withValues(alpha: 0.7),
         child: Center(
           child: Text(
             label,

@@ -39,7 +39,7 @@ class OcrServerException implements Exception {
 /// backoff for transient failures.
 class MangaOcrClient {
   final String serverUrl;
-  final String Function() getAuthToken;
+  final String Function() getBearerToken;
   final http.Client _httpClient;
   final Duration _baseRetryDelay;
 
@@ -48,11 +48,11 @@ class MangaOcrClient {
 
   MangaOcrClient({
     required this.serverUrl,
-    required this.getAuthToken,
+    required this.getBearerToken,
     http.Client? httpClient,
     Duration baseRetryDelay = const Duration(seconds: 2),
-  })  : _httpClient = httpClient ?? http.Client(),
-        _baseRetryDelay = baseRetryDelay;
+  }) : _httpClient = httpClient ?? http.Client(),
+       _baseRetryDelay = baseRetryDelay;
 
   /// Process a single manga page image through the OCR server.
   ///
@@ -61,13 +61,20 @@ class MangaOcrClient {
   /// Returns [OcrPageResult] with parsed text blocks on success.
   Future<OcrPageResult> processPage(
     Uint8List imageBytes,
-    String filename,
-  ) async {
+    String filename, {
+    String? jobId,
+    int? pageIndex,
+  }) async {
     OcrServerException? lastError;
 
     for (var attempt = 0; attempt < _maxRetries; attempt++) {
       try {
-        return await _sendRequest(imageBytes, filename);
+        return await _sendRequest(
+          imageBytes,
+          filename,
+          jobId: jobId,
+          pageIndex: pageIndex,
+        );
       } on OcrServerException catch (e) {
         // Don't retry auth errors or validation errors
         if (e.statusCode == 401 || e.statusCode == 422) {
@@ -113,22 +120,41 @@ class MangaOcrClient {
 
   Future<OcrPageResult> _sendRequest(
     Uint8List imageBytes,
-    String filename,
-  ) async {
+    String filename, {
+    String? jobId,
+    int? pageIndex,
+  }) async {
+    if ((jobId == null) != (pageIndex == null)) {
+      throw const OcrServerException(
+        0,
+        'jobId and pageIndex must be provided together.',
+      );
+    }
+
     final contentType = _detectImageContentType(filename, imageBytes);
     final uri = Uri.parse('$serverUrl/ocr');
     final request = http.MultipartRequest('POST', uri)
-      ..headers['Authorization'] = 'Bearer ${getAuthToken()}'
-      ..files.add(http.MultipartFile.fromBytes(
-        'image',
-        imageBytes,
-        filename: filename,
-        contentType: contentType,
-      ));
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'image',
+          imageBytes,
+          filename: filename,
+          contentType: contentType,
+        ),
+      );
+    final bearerToken = getBearerToken().trim();
+    if (bearerToken.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $bearerToken';
+    }
 
-    final streamedResponse = await _httpClient.send(request).timeout(
-          _timeoutDuration,
-        );
+    if (jobId != null && pageIndex != null) {
+      request.fields['job_id'] = jobId;
+      request.fields['page_index'] = pageIndex.toString();
+    }
+
+    final streamedResponse = await _httpClient
+        .send(request)
+        .timeout(_timeoutDuration);
     final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 200) {
