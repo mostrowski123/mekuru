@@ -50,7 +50,7 @@ class OcrProgressOverlay extends ConsumerWidget {
         return const SizedBox.shrink();
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -62,8 +62,9 @@ class _RunningOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fraction =
-        progress.total > 0 ? progress.completed / progress.total : 0.0;
+    final fraction = progress.total > 0
+        ? progress.completed / progress.total
+        : 0.0;
 
     // Calculate ETA
     String etaText = '';
@@ -154,7 +155,11 @@ class _PausedOverlay extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.pause_circle_outline, color: Colors.white, size: 28),
+            const Icon(
+              Icons.pause_circle_outline,
+              color: Colors.white,
+              size: 28,
+            ),
             const SizedBox(height: 4),
             Text(
               '$completed/$total pages',
