@@ -1,7 +1,7 @@
 name: mekuru
 description: "Japanese EPUB Reader with vertical text and offline Yomitan dictionary."
 publish_to: 'none'
-version: 1.1.0+1
+version: 1.2.0+1
 
 environment:
   sdk: ^3.10.8
@@ -49,6 +49,7 @@ dependencies:
   xml: ^6.5.0
   share_plus: ^12.0.1
   shared_preferences: ^2.5.3
+  flutter_secure_storage: ^9.2.4
   url_launcher: ^6.3.1
 
   # Error tracking and user feedback
@@ -68,6 +69,11 @@ dependencies:
   # Firebase (OCR server authentication)
   firebase_core: ^3.12.1
   firebase_auth: ^5.5.1
+  google_sign_in: ^6.3.0
+
+  # In-app purchases (OCR monetization)
+  in_app_purchase: ^3.2.3
+  in_app_purchase_android: ^0.4.0+8
 
   # Background task scheduling (OCR processing)
   workmanager: ^0.9.0

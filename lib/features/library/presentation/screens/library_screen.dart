@@ -17,8 +17,12 @@ import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
+import 'package:mekuru/features/manga/presentation/screens/ocr_purchases_screen.dart';
+import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
@@ -955,6 +959,9 @@ class _BookTileState extends ConsumerState<_BookTile>
     final ocrSummaryFuture = book.bookType == 'manga'
         ? _loadMangaOcrSummary()
         : null;
+    final ocrBillingStatusFuture = book.bookType == 'manga'
+        ? _loadOcrBillingStatus()
+        : null;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -991,55 +998,90 @@ class _BookTileState extends ConsumerState<_BookTile>
               FutureBuilder<_MangaOcrCacheSummary>(
                 future: ocrSummaryFuture,
                 builder: (ctx, snapshot) {
-                  final summary = snapshot.data ?? _MangaOcrCacheSummary.empty;
-                  final isRunning = ref.watch(isOcrRunningProvider(book.id));
-                  final progress = ref.watch(ocrProgressProvider(book.id));
-                  final completedPages = progress.whenOrNull(
-                    data: (p) => p?.completed,
-                  );
-                  final totalPages = progress.whenOrNull(data: (p) => p?.total);
+                  return FutureBuilder<OcrBillingStatus?>(
+                    future: ocrBillingStatusFuture,
+                    builder: (_, billingSnapshot) {
+                      final summary =
+                          snapshot.data ?? _MangaOcrCacheSummary.empty;
+                      final isRunning = ref.watch(
+                        isOcrRunningProvider(book.id),
+                      );
+                      final progress = ref.watch(ocrProgressProvider(book.id));
+                      final completedPages = progress.whenOrNull(
+                        data: (p) => p?.completed,
+                      );
+                      final totalPages = progress.whenOrNull(
+                        data: (p) => p?.total,
+                      );
 
-                  final hasCompleteOcr =
-                      summary.hasCompleteOcr && !summary.needsWordSegmentation;
-                  final canResume = summary.hasPartialOcr;
+                      final hasCompleteOcr =
+                          summary.hasCompleteOcr &&
+                          !summary.needsWordSegmentation;
+                      final canResume = summary.hasPartialOcr;
+                      final isWordOnlyPass =
+                          summary.needsWordSegmentation &&
+                          summary.pagesWithoutOcr == 0;
+                      final needsPaidUnlock =
+                          !isRunning && !hasCompleteOcr && !isWordOnlyPass;
+                      final isBillingLocked =
+                          needsPaidUnlock &&
+                          !billingSnapshot.hasError &&
+                          (billingSnapshot.connectionState !=
+                                  ConnectionState.done ||
+                              !(billingSnapshot.data?.ocrUnlocked ?? false));
 
-                  final title = isRunning
-                      ? 'Cancel OCR'
-                      : hasCompleteOcr
-                      ? 'Remove OCR'
-                      : 'Run OCR';
-                  final subtitle = isRunning
-                      ? 'Stop processing and save progress'
-                      : hasCompleteOcr
-                      ? 'Remove OCR text from all pages'
-                      : summary.needsWordSegmentation &&
-                            summary.pagesWithoutOcr == 0
-                      ? 'Build word tap targets from saved OCR'
-                      : canResume
-                      ? 'Resume OCR (${completedPages ?? summary.pagesWithOcr}/${totalPages ?? summary.totalPages} done)'
-                      : 'Recognize text on all pages';
-
-                  return ListTile(
-                    leading: Icon(
-                      isRunning
-                          ? Icons.cancel_outlined
+                      final title = isRunning
+                          ? 'Cancel OCR'
                           : hasCompleteOcr
-                          ? Icons.delete_sweep_outlined
-                          : Icons.document_scanner,
-                    ),
-                    title: Text(title),
-                    subtitle: Text(subtitle),
-                    onTap: () {
-                      Navigator.of(sheetContext).pop();
-                      if (isRunning) {
-                        _cancelOcr(context, ref);
-                        return;
-                      }
-                      if (hasCompleteOcr) {
-                        _removeOcr(context, ref);
-                        return;
-                      }
-                      _startOcr(context, ref);
+                          ? 'Remove OCR'
+                          : 'Run OCR';
+                      final subtitle = isBillingLocked
+                          ? 'Unlock OCR first to recognize text on manga pages'
+                          : isRunning
+                          ? 'Stop processing and save progress'
+                          : hasCompleteOcr
+                          ? 'Remove OCR text from all pages'
+                          : isWordOnlyPass
+                          ? 'Build word tap targets from saved OCR'
+                          : canResume
+                          ? 'Resume OCR (${completedPages ?? summary.pagesWithOcr}/${totalPages ?? summary.totalPages} done)'
+                          : 'Recognize text on all pages';
+
+                      return ListTile(
+                        enabled: !isBillingLocked,
+                        leading: Icon(
+                          isRunning
+                              ? Icons.cancel_outlined
+                              : hasCompleteOcr
+                              ? Icons.delete_sweep_outlined
+                              : Icons.document_scanner,
+                        ),
+                        title: Text(title),
+                        subtitle: Text(subtitle),
+                        trailing: isBillingLocked
+                            ? TextButton(
+                                onPressed: () {
+                                  Navigator.of(sheetContext).pop();
+                                  _openOcrPurchases(context);
+                                },
+                                child: const Text('Unlock'),
+                              )
+                            : null,
+                        onTap: isBillingLocked
+                            ? null
+                            : () {
+                                Navigator.of(sheetContext).pop();
+                                if (isRunning) {
+                                  _cancelOcr(context, ref);
+                                  return;
+                                }
+                                if (hasCompleteOcr) {
+                                  _removeOcr(context, ref);
+                                  return;
+                                }
+                                _startOcr(context, ref);
+                              },
+                      );
                     },
                   );
                 },
@@ -1179,6 +1221,23 @@ class _BookTileState extends ConsumerState<_BookTile>
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
+  Future<OcrBillingStatus?> _loadOcrBillingStatus() async {
+    final billingClient = OcrBillingClient();
+    try {
+      return await billingClient.readCachedStatus();
+    } catch (_) {
+      return null;
+    } finally {
+      billingClient.dispose();
+    }
+  }
+
+  void _openOcrPurchases(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const OcrPurchasesScreen()));
+  }
+
   void _startOcr(BuildContext context, WidgetRef ref) async {
     final cacheFilePath = p.join(book.filePath, 'pages_cache.json');
     final cacheFile = File(cacheFilePath);
@@ -1250,12 +1309,61 @@ class _BookTileState extends ConsumerState<_BookTile>
     );
 
     if (confirmed != true) return;
+    if (!context.mounted) return;
 
-    await scheduleOcrTask(
-      bookId: book.id,
-      cacheFilePath: cacheFilePath,
-      imageDir: imageDirPath,
-    );
+    OcrPreparationResult? preparation;
+    if (!isWordOnlyPass) {
+      try {
+        preparation = await OcrPurchaseFlow.instance.prepareOcrReservation(
+          context,
+          pageCount: emptyCount,
+          bookId: book.id,
+          getServerUrl: () => ref.read(ocrServerUrlProvider),
+        );
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Unable to prepare OCR purchase: $e')),
+          );
+        }
+        return;
+      }
+
+      if (preparation == null) return;
+    }
+
+    final reservation = preparation?.reservation;
+
+    try {
+      await scheduleOcrTask(
+        bookId: book.id,
+        cacheFilePath: cacheFilePath,
+        imageDir: imageDirPath,
+        jobId: reservation?.jobId,
+        reservedPages: reservation?.reservedPages,
+      );
+    } catch (e) {
+      if (reservation != null) {
+        final billingClient = OcrBillingClient();
+        try {
+          await billingClient.finalizeOcrJob(
+            jobId: reservation.jobId,
+            status: OcrStatus.failed,
+          );
+        } catch (_) {
+          // Best effort so a failed enqueue does not block the rest of the UI.
+        } finally {
+          billingClient.dispose();
+        }
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to start OCR: $e')));
+      }
+      return;
+    }
 
     // Invalidate the progress provider so it starts polling
     ref.invalidate(ocrProgressProvider(book.id));

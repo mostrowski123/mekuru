@@ -1,22 +1,31 @@
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
+import 'package:mekuru/features/manga/data/services/ocr_account_link_service.dart';
+import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart';
+import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
+import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
+import 'package:mekuru/features/manga/presentation/screens/ocr_purchases_screen.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/shared/theme/app_theme.dart';
+import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
+    as ocr_server_config;
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/feedback_screen.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// General app settings screen.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -27,9 +36,15 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  final OcrAccountLinkService _ocrAccountLinkService = OcrAccountLinkService();
+  final OcrAuthSecretStorage _ocrAuthSecretStorage = OcrAuthSecretStorage();
+  late Future<OcrBillingStatus?> _ocrBillingStatusFuture;
+
   @override
   void initState() {
     super.initState();
+    _ocrBillingStatusFuture = _loadOcrBillingStatus();
+
     // Check asset download statuses when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(kanjiVgProvider.notifier).checkStatus();
@@ -37,6 +52,69 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ref.read(jmdictProvider.notifier).checkStatus();
       ref.read(kanjidicProvider.notifier).checkStatus();
     });
+  }
+
+  Future<OcrBillingStatus?> _loadOcrBillingStatus() async {
+    final billingClient = OcrBillingClient();
+    try {
+      return await billingClient.readCachedStatus();
+    } catch (_) {
+      return null;
+    } finally {
+      billingClient.dispose();
+    }
+  }
+
+  void _refreshOcrBillingStatus() {
+    setState(() {
+      _ocrBillingStatusFuture = _loadOcrBillingStatus();
+    });
+  }
+
+  Future<void> _handleOcrAccountAction() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final needsLink = currentUser == null || currentUser.isAnonymous;
+
+    try {
+      if (needsLink) {
+        final user = await _ocrAccountLinkService.ensureLinkedAccount();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              user.email == null
+                  ? 'Google account linked for OCR purchases.'
+                  : 'Signed in as ${user.email}.',
+            ),
+          ),
+        );
+      } else {
+        await OcrStoreService.instance.restorePurchases();
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Purchases refreshed.')));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) {
+        _refreshOcrBillingStatus();
+      }
+    }
+  }
+
+  Future<void> _openOcrPurchases() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const OcrPurchasesScreen()));
+
+    if (mounted) {
+      _refreshOcrBillingStatus();
+    }
   }
 
   @override
@@ -90,10 +168,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: Icon(
-              Icons.palette_outlined,
-              color: colorTheme.seedColor,
-            ),
+            leading: Icon(Icons.palette_outlined, color: colorTheme.seedColor),
             title: const Text('Color Theme'),
             subtitle: Text(colorTheme.label),
             trailing: const Icon(Icons.chevron_right),
@@ -107,10 +182,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // ── Reading Defaults ──
           _SectionHeader(title: 'Reading Defaults'),
           ListTile(
-            leading: Icon(
-              Icons.text_fields,
-              color: theme.colorScheme.primary,
-            ),
+            leading: Icon(Icons.text_fields, color: theme.colorScheme.primary),
             title: const Text('Font Size'),
             subtitle: Text('${readerSettings.fontSize.round()} pt'),
           ),
@@ -146,7 +218,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Icon(Icons.coffee, size: 20, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.coffee,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 8),
                   const Text('Sepia Intensity'),
                   Expanded(
@@ -270,10 +346,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: Icon(
-              Icons.text_fields,
-              color: theme.colorScheme.primary,
-            ),
+            leading: Icon(Icons.text_fields, color: theme.colorScheme.primary),
             title: const Text('Lookup Font Size'),
             subtitle: Text('${lookupFontSize.round()} pt'),
           ),
@@ -287,26 +360,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               label: '${lookupFontSize.round()}',
               onChanged: (value) {
                 AppHaptics.light();
-                ref
-                    .read(lookupFontSizeProvider.notifier)
-                    .setFontSize(value);
+                ref.read(lookupFontSizeProvider.notifier).setFontSize(value);
               },
             ),
           ),
           SwitchListTile(
-            secondary: Icon(
-              Icons.abc,
-              color: theme.colorScheme.primary,
-            ),
+            secondary: Icon(Icons.abc, color: theme.colorScheme.primary),
             title: const Text('Filter Roman Letter Entries'),
-            subtitle:
-                const Text('Hide entries using English letters in headword'),
+            subtitle: const Text(
+              'Hide entries using English letters in headword',
+            ),
             value: ref.watch(filterRomanLettersProvider),
             onChanged: (value) {
               AppHaptics.light();
-              ref
-                  .read(filterRomanLettersProvider.notifier)
-                  .setFilter(value);
+              ref.read(filterRomanLettersProvider.notifier).setFilter(value);
             },
           ),
           SwitchListTile(
@@ -315,14 +382,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: theme.colorScheme.primary,
             ),
             title: const Text('Auto-Focus Search'),
-            subtitle:
-                const Text('Open keyboard when dictionary tab is selected'),
+            subtitle: const Text(
+              'Open keyboard when dictionary tab is selected',
+            ),
             value: ref.watch(autoFocusSearchProvider),
             onChanged: (value) {
               AppHaptics.light();
-              ref
-                  .read(autoFocusSearchProvider.notifier)
-                  .setAutoFocus(value);
+              ref.read(autoFocusSearchProvider.notifier).setAutoFocus(value);
             },
           ),
           const Divider(),
@@ -336,8 +402,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: theme.colorScheme.primary,
               ),
               title: const Text('AnkiDroid Integration'),
-              subtitle:
-                  const Text('Configure note type, deck, and field mapping'),
+              subtitle: const Text(
+                'Configure note type, deck, and field mapping',
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 AppHaptics.light();
@@ -352,22 +419,104 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           // ── Manga OCR ──
+          _SectionHeader(title: 'OCR Purchases'),
+          StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.idTokenChanges(),
+            initialData: FirebaseAuth.instance.currentUser,
+            builder: (context, authSnapshot) {
+              final currentUser =
+                  authSnapshot.data ?? FirebaseAuth.instance.currentUser;
+              final isLinked = currentUser != null && !currentUser.isAnonymous;
+
+              return Column(
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      isLinked
+                          ? Icons.verified_user_outlined
+                          : Icons.login_outlined,
+                      color: theme.colorScheme.primary,
+                    ),
+                    title: Text(
+                      isLinked
+                          ? 'Restore OCR Purchases'
+                          : 'Sign In to Restore Purchases',
+                    ),
+                    subtitle: Text(
+                      isLinked
+                          ? (currentUser.email ??
+                                'Refresh your purchases on this device')
+                          : 'Link a Google account before restoring or buying OCR access',
+                    ),
+                    onTap: () {
+                      AppHaptics.light();
+                      _handleOcrAccountAction();
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      Icons.shopping_bag_outlined,
+                      color: theme.colorScheme.primary,
+                    ),
+                    title: const Text('OCR Purchases'),
+                    subtitle: const Text(
+                      'Unlock OCR and manage your OCR credits',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      AppHaptics.light();
+                      _openOcrPurchases();
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+          const Divider(),
           _SectionHeader(title: 'Manga OCR'),
-          ListTile(
-            leading: Icon(
-              Icons.document_scanner_outlined,
-              color: theme.colorScheme.primary,
-            ),
-            title: const Text('OCR Server URL'),
-            subtitle: Text(
-              ref.watch(ocrServerUrlProvider),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              AppHaptics.light();
-              _showOcrServerUrlDialog(context, ref);
+          FutureBuilder<OcrBillingStatus?>(
+            future: _ocrBillingStatusFuture,
+            builder: (context, snapshot) {
+              final billingCheckFailed = snapshot.hasError;
+              final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
+              final usesBuiltInServer = isBuiltInOcrServerUrl(
+                currentOcrServerUrl,
+              );
+              final canEditOcrServerUrl =
+                  billingCheckFailed ||
+                  (snapshot.connectionState == ConnectionState.done &&
+                      (snapshot.data?.ocrUnlocked ?? false));
+
+              return ListTile(
+                enabled: canEditOcrServerUrl,
+                leading: Icon(
+                  Icons.document_scanner_outlined,
+                  color: canEditOcrServerUrl
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                title: const Text('OCR Server URL'),
+                subtitle: Text(
+                  canEditOcrServerUrl
+                      ? '$currentOcrServerUrl\n'
+                            '${usesBuiltInServer ? 'Built-in server, page credits apply' : 'Custom server, page credits disabled'}'
+                      : 'Unlock OCR first to edit the server endpoint',
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: canEditOcrServerUrl
+                    ? const Icon(Icons.chevron_right)
+                    : TextButton(
+                        onPressed: _openOcrPurchases,
+                        child: const Text('Unlock'),
+                      ),
+                onTap: canEditOcrServerUrl
+                    ? () {
+                        AppHaptics.light();
+                        _showOcrServerUrlDialog(context, ref);
+                      }
+                    : null,
+              );
             },
           ),
           const Divider(),
@@ -402,10 +551,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text(
                 kanjiVgState.error!,
-                style: TextStyle(
-                  color: theme.colorScheme.error,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
               ),
             ),
           if (kanjiVgState.successMessage != null)
@@ -455,10 +601,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text(
                 jpdbFreqState.error!,
-                style: TextStyle(
-                  color: theme.colorScheme.error,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
               ),
             ),
           if (jpdbFreqState.successMessage != null)
@@ -495,8 +638,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     jmdictState.progress < 0.05
                         ? 'Fetching latest release...'
                         : jmdictState.progress < 0.7
-                            ? 'Downloading... ${((jmdictState.progress - 0.05) / 0.65 * 100).toInt()}%'
-                            : 'Importing...',
+                        ? 'Downloading... ${((jmdictState.progress - 0.05) / 0.65 * 100).toInt()}%'
+                        : 'Importing...',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -510,10 +653,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text(
                 jmdictState.error!,
-                style: TextStyle(
-                  color: theme.colorScheme.error,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
               ),
             ),
           if (jmdictState.successMessage != null)
@@ -529,8 +669,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: _AttributionText(
               prefix: '',
               linkText: 'JMdict',
-              url: 'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
-              suffix: ' by the Electronic Dictionary Research and '
+              url:
+                  'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
+              suffix:
+                  ' by the Electronic Dictionary Research and '
                   'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
               theme: theme,
             ),
@@ -551,8 +693,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     kanjidicState.progress < 0.05
                         ? 'Fetching latest release...'
                         : kanjidicState.progress < 0.7
-                            ? 'Downloading... ${((kanjidicState.progress - 0.05) / 0.65 * 100).toInt()}%'
-                            : 'Importing...',
+                        ? 'Downloading... ${((kanjidicState.progress - 0.05) / 0.65 * 100).toInt()}%'
+                        : 'Importing...',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -566,10 +708,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text(
                 kanjidicState.error!,
-                style: TextStyle(
-                  color: theme.colorScheme.error,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
               ),
             ),
           if (kanjidicState.successMessage != null)
@@ -586,7 +725,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               prefix: '',
               linkText: 'KANJIDIC',
               url: 'https://www.edrdg.org/wiki/index.php/KANJIDIC_Project',
-              suffix: ' by the Electronic Dictionary Research and '
+              suffix:
+                  ' by the Electronic Dictionary Research and '
                   'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
               theme: theme,
             ),
@@ -606,9 +746,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () async {
               AppHaptics.light();
               final result = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(
-                  builder: (_) => const FeedbackScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const FeedbackScreen()),
               );
               if (!context.mounted) return;
               if (result == true) {
@@ -622,8 +760,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               } else if (result == false) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                        'Failed to send feedback. Please try again.'),
+                    content: Text('Failed to send feedback. Please try again.'),
                     behavior: SnackBarBehavior.floating,
                     duration: Duration(seconds: 3),
                   ),
@@ -632,18 +769,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: Icon(
-              Icons.info_outline,
-              color: theme.colorScheme.primary,
-            ),
+            leading: Icon(Icons.info_outline, color: theme.colorScheme.primary),
             title: const Text('About Mekuru'),
             subtitle: const Text('Version, licenses, and more'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AboutScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AboutScreen()));
             },
           ),
           const SizedBox(height: 16),
@@ -655,16 +789,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // ── Helpers ──
 
   static String _colorModeLabel(ColorMode mode) => switch (mode) {
-        ColorMode.normal => 'Normal',
-        ColorMode.sepia => 'Sepia',
-        ColorMode.dark => 'Dark',
-      };
+    ColorMode.normal => 'Normal',
+    ColorMode.sepia => 'Sepia',
+    ColorMode.dark => 'Dark',
+  };
 
   static IconData _colorModeIcon(ColorMode mode) => switch (mode) {
-        ColorMode.normal => Icons.brightness_5,
-        ColorMode.sepia => Icons.filter_vintage,
-        ColorMode.dark => Icons.dark_mode,
-      };
+    ColorMode.normal => Icons.brightness_5,
+    ColorMode.sepia => Icons.filter_vintage,
+    ColorMode.dark => Icons.dark_mode,
+  };
 
   void _showColorModePicker(
     BuildContext context,
@@ -690,14 +824,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: Icon(_colorModeIcon(mode)),
                 title: Text(_colorModeLabel(mode)),
                 trailing: currentMode == mode
-                    ? Icon(Icons.check,
-                        color: Theme.of(context).colorScheme.primary)
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
                     : null,
                 onTap: () {
                   AppHaptics.medium();
-                  ref
-                      .read(readerSettingsProvider.notifier)
-                      .setColorMode(mode);
+                  ref.read(readerSettingsProvider.notifier).setColorMode(mode);
                   Navigator.of(sheetContext).pop();
                 },
               ),
@@ -708,16 +842,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   static IconData _themeModeIcon(ThemeMode mode) => switch (mode) {
-        ThemeMode.light => Icons.light_mode,
-        ThemeMode.dark => Icons.dark_mode,
-        ThemeMode.system => Icons.brightness_auto,
-      };
+    ThemeMode.light => Icons.light_mode,
+    ThemeMode.dark => Icons.dark_mode,
+    ThemeMode.system => Icons.brightness_auto,
+  };
 
   static String _themeModeLabel(ThemeMode mode) => switch (mode) {
-        ThemeMode.light => 'Light',
-        ThemeMode.dark => 'Dark',
-        ThemeMode.system => 'System default',
-      };
+    ThemeMode.light => 'Light',
+    ThemeMode.dark => 'Dark',
+    ThemeMode.system => 'System default',
+  };
 
   void _showThemeModePicker(
     BuildContext context,
@@ -814,15 +948,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   children: [
                     for (final option in AppColorTheme.values)
                       ListTile(
-                        leading: Icon(
-                          Icons.circle,
-                          color: option.seedColor,
-                        ),
+                        leading: Icon(Icons.circle, color: option.seedColor),
                         title: Text(option.label),
                         trailing: currentTheme == option
-                            ? Icon(Icons.check,
-                                color:
-                                    Theme.of(context).colorScheme.primary)
+                            ? Icon(
+                                Icons.check,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
                             : null,
                         onTap: () {
                           AppHaptics.medium();
@@ -866,8 +998,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 leading: Icon(_startupScreenIcon(option)),
                 title: Text(option.label),
                 trailing: current == option
-                    ? Icon(Icons.check,
-                        color: Theme.of(context).colorScheme.primary)
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
                     : null,
                 onTap: () {
                   AppHaptics.medium();
@@ -884,53 +1018,173 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   static IconData _startupScreenIcon(StartupScreen screen) => switch (screen) {
-        StartupScreen.library => Icons.auto_stories_outlined,
-        StartupScreen.dictionary => Icons.book_outlined,
-        StartupScreen.lastRead => Icons.menu_book_outlined,
-      };
+    StartupScreen.library => Icons.auto_stories_outlined,
+    StartupScreen.dictionary => Icons.book_outlined,
+    StartupScreen.lastRead => Icons.menu_book_outlined,
+  };
 
-  void _showOcrServerUrlDialog(BuildContext context, WidgetRef ref) {
+  Future<void> _showOcrServerUrlDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final savedCustomBearerKey =
+        await _ocrAuthSecretStorage.loadCustomServerBearerKey() ?? '';
     final controller = TextEditingController(
       text: ref.read(ocrServerUrlProvider),
     );
-    showDialog(
+    final customKeyController = TextEditingController(
+      text: savedCustomBearerKey,
+    );
+    var obscureCustomKey = true;
+
+    if (!context.mounted) {
+      controller.dispose();
+      customKeyController.dispose();
+      return;
+    }
+
+    await showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('OCR Server URL'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Server URL',
-            hintText: 'https://mekuru-ocr.modal.run',
-            border: OutlineInputBorder(),
-          ),
-          keyboardType: TextInputType.url,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              controller.text = OcrServerUrlNotifier.defaultUrl;
-            },
-            child: const Text('Reset'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final url = controller.text.trim();
-              if (url.isNotEmpty) {
-                ref.read(ocrServerUrlProvider.notifier).setUrl(url);
-              }
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final usesBuiltInServer = isBuiltInOcrServerUrl(controller.text);
+
+          return AlertDialog(
+            title: const Text('OCR Server URL'),
+            content: SizedBox(
+              width: 420,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Server URL',
+                        hintText:
+                            'https://mostrowski123--mekuru-ocr-fastapi-app.modal.run',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.url,
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Page credits are only used on the built-in Mekuru OCR '
+                      'server. Custom OCR servers do not consume page credits.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () => launchUrl(
+                        Uri.parse(ocr_server_config.mekuruOcrRepoUrl),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Learn how to run your own server'),
+                    ),
+                    const SizedBox(height: 8),
+                    if (usesBuiltInServer)
+                      Text(
+                        'The built-in server always uses app authentication.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      )
+                    else ...[
+                      TextField(
+                        controller: customKeyController,
+                        obscureText: obscureCustomKey,
+                        decoration: InputDecoration(
+                          labelText: 'Custom bearer key (optional)',
+                          hintText: 'AUTH_API_KEY',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  setDialogState(() {
+                                    obscureCustomKey = !obscureCustomKey;
+                                  });
+                                },
+                                icon: Icon(
+                                  obscureCustomKey
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                ),
+                              ),
+                              if (customKeyController.text.trim().isNotEmpty)
+                                IconButton(
+                                  onPressed: () {
+                                    customKeyController.clear();
+                                    setDialogState(() {});
+                                  },
+                                  icon: const Icon(Icons.clear),
+                                ),
+                            ],
+                          ),
+                        ),
+                        onChanged: (_) => setDialogState(() {}),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'If your self-hosted mekuru-ocr server is running with '
+                        'AUTH_API_KEY, enter the same shared secret here. It '
+                        'will be sent as Authorization: Bearer <key>. If left '
+                        'blank, the app sends your Firebase ID token instead. '
+                        'In AUTH_API_KEY mode, your self-hosted server acts as '
+                        'a plain OCR endpoint and the app uploads images '
+                        'directly with no page-credit jobs.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  controller.text = OcrServerUrlNotifier.defaultUrl;
+                  setDialogState(() {});
+                },
+                child: const Text('Reset'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final url = controller.text.trim();
+                  if (url.isNotEmpty) {
+                    ref.read(ocrServerUrlProvider.notifier).setUrl(url);
+                    if (!isBuiltInOcrServerUrl(url)) {
+                      final customKey = customKeyController.text.trim();
+                      if (customKey.isEmpty) {
+                        await _ocrAuthSecretStorage
+                            .clearCustomServerBearerKey();
+                      } else {
+                        await _ocrAuthSecretStorage.saveCustomServerBearerKey(
+                          customKey,
+                        );
+                      }
+                    }
+                  }
+                  if (!dialogContext.mounted) return;
+                  Navigator.of(dialogContext).pop();
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
       ),
     );
+
+    controller.dispose();
+    customKeyController.dispose();
   }
 }
 
@@ -973,9 +1227,9 @@ class _AttributionText extends StatelessWidget {
             style: linkStyle,
             recognizer: TapGestureRecognizer()
               ..onTap = () => launchUrl(
-                    Uri.parse(url),
-                    mode: LaunchMode.externalApplication,
-                  ),
+                Uri.parse(url),
+                mode: LaunchMode.externalApplication,
+              ),
           ),
           TextSpan(text: suffix),
         ],
@@ -1046,10 +1300,7 @@ class _KanjiVgTile extends ConsumerWidget {
         : 'Download kanji stroke order data from KanjiVG';
 
     return ListTile(
-      leading: Icon(
-        Icons.brush_outlined,
-        color: theme.colorScheme.primary,
-      ),
+      leading: Icon(Icons.brush_outlined, color: theme.colorScheme.primary),
       title: const Text('Kanji Stroke Order'),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
@@ -1067,7 +1318,10 @@ class _KanjiVgTile extends ConsumerWidget {
 
     if (state.isDownloaded) {
       return IconButton(
-        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+        icon: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.error,
+        ),
         tooltip: 'Delete kanji data',
         onPressed: () => _confirmDelete(context, ref),
       );
@@ -1123,10 +1377,7 @@ class _JpdbFreqTile extends ConsumerWidget {
         : 'Download word frequency data for search ranking';
 
     return ListTile(
-      leading: Icon(
-        Icons.bar_chart_outlined,
-        color: theme.colorScheme.primary,
-      ),
+      leading: Icon(Icons.bar_chart_outlined, color: theme.colorScheme.primary),
       title: const Text('Word Frequency'),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
@@ -1144,7 +1395,10 @@ class _JpdbFreqTile extends ConsumerWidget {
 
     if (state.isImported) {
       return IconButton(
-        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+        icon: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.error,
+        ),
         tooltip: 'Delete frequency data',
         onPressed: () => _confirmDelete(context, ref),
       );
@@ -1201,10 +1455,7 @@ class _JmdictTile extends ConsumerWidget {
         : 'Download Japanese-English dictionary';
 
     return ListTile(
-      leading: Icon(
-        Icons.translate,
-        color: theme.colorScheme.primary,
-      ),
+      leading: Icon(Icons.translate, color: theme.colorScheme.primary),
       title: const Text('JMdict English'),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
@@ -1222,7 +1473,10 @@ class _JmdictTile extends ConsumerWidget {
 
     if (state.isImported) {
       return IconButton(
-        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+        icon: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.error,
+        ),
         tooltip: 'Delete JMdict',
         onPressed: () => _confirmDelete(context, ref),
       );
@@ -1259,9 +1513,9 @@ class _JmdictTile extends ConsumerWidget {
               onTap: () {
                 Navigator.of(ctx).pop();
                 AppHaptics.light();
-                ref.read(jmdictProvider.notifier).download(
-                      YomitanDictType.jmdictEnglish,
-                    );
+                ref
+                    .read(jmdictProvider.notifier)
+                    .download(YomitanDictType.jmdictEnglish);
               },
             ),
             ListTile(
@@ -1271,9 +1525,9 @@ class _JmdictTile extends ConsumerWidget {
               onTap: () {
                 Navigator.of(ctx).pop();
                 AppHaptics.light();
-                ref.read(jmdictProvider.notifier).download(
-                      YomitanDictType.jmdictEnglishWithExamples,
-                    );
+                ref
+                    .read(jmdictProvider.notifier)
+                    .download(YomitanDictType.jmdictEnglishWithExamples);
               },
             ),
           ],
@@ -1344,7 +1598,10 @@ class _KanjidicTile extends ConsumerWidget {
 
     if (state.isImported) {
       return IconButton(
-        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+        icon: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.error,
+        ),
         tooltip: 'Delete KANJIDIC',
         onPressed: () => _confirmDelete(context, ref),
       );
