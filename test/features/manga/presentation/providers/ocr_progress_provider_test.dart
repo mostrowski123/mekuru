@@ -13,7 +13,7 @@ void main() {
       addTearDown(container.dispose);
 
       // Listen to the stream provider
-      final sub = container.listen(ocrProgressProvider(999), (_, __) {});
+      final sub = container.listen(ocrProgressProvider(999), (_, _) {});
 
       // Wait for first emission
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -38,7 +38,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      final sub = container.listen(ocrProgressProvider(42), (_, __) {});
+      final sub = container.listen(ocrProgressProvider(42), (_, _) {});
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
@@ -64,7 +64,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      final sub = container.listen(ocrProgressProvider(42), (_, __) {});
+      final sub = container.listen(ocrProgressProvider(42), (_, _) {});
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
@@ -82,7 +82,7 @@ void main() {
       addTearDown(container.dispose);
 
       // Need to wait for the stream provider to emit
-      container.listen(ocrProgressProvider(999), (_, __) {});
+      container.listen(ocrProgressProvider(999), (_, _) {});
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       final isRunning = container.read(isOcrRunningProvider(999));
@@ -103,7 +103,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.listen(ocrProgressProvider(42), (_, __) {});
+      container.listen(ocrProgressProvider(42), (_, _) {});
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       final isRunning = container.read(isOcrRunningProvider(42));
@@ -124,7 +124,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.listen(ocrProgressProvider(42), (_, __) {});
+      container.listen(ocrProgressProvider(42), (_, _) {});
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       final isRunning = container.read(isOcrRunningProvider(42));
@@ -139,7 +139,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.listen(ocrProgressProvider(999), (_, __) {});
+      container.listen(ocrProgressProvider(999), (_, _) {});
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       final hasPartial = container.read(hasPartialOcrProvider(999));
@@ -160,7 +160,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.listen(ocrProgressProvider(42), (_, __) {});
+      container.listen(ocrProgressProvider(42), (_, _) {});
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       final hasPartial = container.read(hasPartialOcrProvider(42));
@@ -181,7 +181,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.listen(ocrProgressProvider(42), (_, __) {});
+      container.listen(ocrProgressProvider(42), (_, _) {});
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       final hasPartial = container.read(hasPartialOcrProvider(42));
@@ -202,7 +202,7 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.listen(ocrProgressProvider(42), (_, __) {});
+      container.listen(ocrProgressProvider(42), (_, _) {});
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       final hasPartial = container.read(hasPartialOcrProvider(42));
