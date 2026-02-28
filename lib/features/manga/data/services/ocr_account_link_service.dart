@@ -1,20 +1,30 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+class OcrLinkedAccountResult {
+  final User user;
+  final bool linkedThisCall;
+
+  const OcrLinkedAccountResult({
+    required this.user,
+    required this.linkedThisCall,
+  });
+}
+
 class OcrAccountLinkService {
   OcrAccountLinkService({GoogleSignIn? googleSignIn})
     : _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: const ['email']);
 
   final GoogleSignIn _googleSignIn;
 
-  Future<User> ensureLinkedAccount() async {
+  Future<OcrLinkedAccountResult> ensureLinkedAccount() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       throw StateError('No Firebase user is available.');
     }
 
     if (!currentUser.isAnonymous) {
-      return currentUser;
+      return OcrLinkedAccountResult(user: currentUser, linkedThisCall: false);
     }
 
     final account = await _googleSignIn.signIn();
@@ -30,13 +40,19 @@ class OcrAccountLinkService {
 
     try {
       final result = await currentUser.linkWithCredential(credential);
-      return result.user ?? FirebaseAuth.instance.currentUser!;
+      return OcrLinkedAccountResult(
+        user: result.user ?? FirebaseAuth.instance.currentUser!,
+        linkedThisCall: true,
+      );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'credential-already-in-use') {
         final signInResult = await FirebaseAuth.instance.signInWithCredential(
           credential,
         );
-        return signInResult.user ?? FirebaseAuth.instance.currentUser!;
+        return OcrLinkedAccountResult(
+          user: signInResult.user ?? FirebaseAuth.instance.currentUser!,
+          linkedThisCall: true,
+        );
       }
       rethrow;
     }
