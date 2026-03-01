@@ -209,20 +209,28 @@ class BookRepository {
   /// OCR can be run later as a separate step.
   ///
   /// Returns the created [Book].
-  Future<Book> importCbz(String sourcePath) async {
+  Future<Book> importCbz(
+    String sourcePath, {
+    void Function(double progress)? onProgress,
+  }) async {
     final appDir = await getApplicationSupportDirectory();
     final booksDir = Directory(p.join(appDir.path, 'books'));
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final cacheDir = Directory(p.join(booksDir.path, 'manga_$timestamp'));
     await cacheDir.create(recursive: true);
 
-    // Extract CBZ archive to cache directory
-    final cbzMeta = await CbzParser.extract(sourcePath, cacheDir.path);
+    // Extract CBZ archive to cache directory (0–70% of progress)
+    final cbzMeta = await CbzParser.extract(
+      sourcePath,
+      cacheDir.path,
+      onProgress: onProgress != null ? (p) => onProgress(p * 0.7) : null,
+    );
 
     // Build MokuroPages with empty blocks (no OCR yet).
-    // Read image dimensions from each extracted file.
+    // Read image dimensions from each extracted file (70–100% of progress).
     final pages = <MokuroPage>[];
-    for (var i = 0; i < cbzMeta.imageFileNames.length; i++) {
+    final total = cbzMeta.imageFileNames.length;
+    for (var i = 0; i < total; i++) {
       final fileName = cbzMeta.imageFileNames[i];
       final imagePath = p.join(cbzMeta.imageDirPath, fileName);
       final dims = await CbzParser.readImageDimensions(imagePath);
@@ -236,6 +244,8 @@ class BookRepository {
           blocks: const [],
         ),
       );
+
+      onProgress?.call(0.7 + (i + 1) / total * 0.3);
     }
 
     // Build and save pages_cache.json

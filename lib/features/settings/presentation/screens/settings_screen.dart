@@ -1037,6 +1037,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       text: savedCustomBearerKey,
     );
     var obscureCustomKey = true;
+    String? customKeyError;
 
     if (!context.mounted) {
       controller.dispose();
@@ -1075,7 +1076,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Text(
                       'Page credits are only used on the built-in Mekuru OCR '
                       'server. Custom OCR servers do not consume page credits.',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(dialogContext).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 8),
                     TextButton.icon(
@@ -1090,7 +1091,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     if (usesBuiltInServer)
                       Text(
                         'The built-in server always uses app authentication.',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(dialogContext).textTheme.bodySmall,
                       )
                     else ...[
                       TextField(
@@ -1100,6 +1101,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           labelText: 'Custom shared key',
                           hintText: 'Required AUTH_API_KEY',
                           border: const OutlineInputBorder(),
+                          errorText: customKeyError,
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -1126,7 +1128,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ],
                           ),
                         ),
-                        onChanged: (_) => setDialogState(() {}),
+                        onChanged: (_) => setDialogState(() {
+                          customKeyError = null;
+                        }),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -1135,7 +1139,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         'app sends it as Authorization: Bearer <key>. Custom '
                         'servers always run as plain OCR endpoints with direct '
                         'image uploads and no page-credit jobs.',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(dialogContext).textTheme.bodySmall,
                       ),
                     ],
                   ],
@@ -1161,15 +1165,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     if (!isBuiltInOcrServerUrl(url)) {
                       final customKey = customKeyController.text.trim();
                       if (customKey.isEmpty) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Custom OCR servers require a shared key.',
-                              ),
-                            ),
-                          );
-                        }
+                        setDialogState(() {
+                          customKeyError =
+                              'A shared key is required for custom servers.';
+                        });
                         return;
                       }
                       await _ocrAuthSecretStorage.saveCustomServerBearerKey(
