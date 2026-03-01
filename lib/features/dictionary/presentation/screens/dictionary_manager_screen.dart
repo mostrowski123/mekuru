@@ -3,8 +3,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
-import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -36,7 +38,6 @@ class _DictionaryManagerScreenState
   Widget build(BuildContext context) {
     final dictionariesAsync = ref.watch(dictionariesProvider);
     final importState = ref.watch(dictionaryImportProvider);
-    final jmdictState = ref.watch(jmdictProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -59,7 +60,6 @@ class _DictionaryManagerScreenState
       body: Column(
         children: [
           if (importState.isImporting) _buildProgressBanner(importState),
-          if (jmdictState.isDownloading) _buildJmdictProgressBanner(jmdictState),
           if (importState.error != null)
             _buildErrorBanner(context, importState),
           if (importState.successMessage != null)
@@ -194,46 +194,7 @@ class _DictionaryManagerScreenState
     );
   }
 
-  Widget _buildJmdictProgressBanner(JmdictState state) {
-    final label = state.progress < 0.05
-        ? 'Fetching latest release...'
-        : state.progress < 0.7
-            ? 'Downloading JMdict... ${((state.progress - 0.05) / 0.65 * 100).toInt()}%'
-            : 'Importing JMdict...';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.blue.withValues(alpha: 0.1),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(value: state.progress),
-        ],
-      ),
-    );
-  }
-
   Widget _buildEmptyState() {
-    final jmdictState = ref.watch(jmdictProvider);
-
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -250,82 +211,23 @@ class _DictionaryManagerScreenState
             style: TextStyle(color: Colors.grey),
             textAlign: TextAlign.center,
           ),
-          if (!jmdictState.isDownloading && !jmdictState.isImported) ...[
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              icon: const Icon(Icons.download),
-              label: const Text('Download JMdict English'),
-              onPressed: () {
-                AppHaptics.light();
-                _showJmdictDownloadSheet(context);
-              },
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Free Japanese-English dictionary',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-          ],
-          if (jmdictState.error != null) ...[
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                jmdictState.error!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            icon: const Icon(Icons.download),
+            label: const Text('Browse Downloads'),
+            onPressed: () {
+              AppHaptics.light();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DownloadsScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Download dictionaries and other assets',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
         ],
-      ),
-    );
-  }
-
-  void _showJmdictDownloadSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Choose JMdict variant',
-                style: Theme.of(ctx).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: const Text('JMdict English'),
-              subtitle: const Text('Standard dictionary (~15 MB)'),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                AppHaptics.light();
-                ref.read(jmdictProvider.notifier).download(
-                      YomitanDictType.jmdictEnglish,
-                    );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: const Text('JMdict English with Examples'),
-              subtitle: const Text('Includes example sentences (~18 MB)'),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                AppHaptics.light();
-                ref.read(jmdictProvider.notifier).download(
-                      YomitanDictType.jmdictEnglishWithExamples,
-                    );
-              },
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -510,6 +412,10 @@ class _DictionaryManagerScreenState
 
     if (confirmed == true) {
       await ref.read(dictionaryRepositoryProvider).deleteDictionary(id);
+      // Refresh download status so the downloads page reflects the deletion.
+      ref.read(jmdictProvider.notifier).checkStatus();
+      ref.read(kanjidicProvider.notifier).checkStatus();
+      ref.read(jpdbFreqProvider.notifier).checkStatus();
     }
   }
 }

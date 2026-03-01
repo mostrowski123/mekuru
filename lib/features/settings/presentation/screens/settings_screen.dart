@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
@@ -15,13 +14,9 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
-import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/feedback_screen.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
@@ -45,13 +40,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     _ocrBillingStatusFuture = _loadOcrBillingStatus();
 
-    // Check asset download statuses when screen opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(kanjiVgProvider.notifier).checkStatus();
-      ref.read(jpdbFreqProvider.notifier).checkStatus();
-      ref.read(jmdictProvider.notifier).checkStatus();
-      ref.read(kanjidicProvider.notifier).checkStatus();
-    });
+    // no-op: download status checks moved to DownloadsScreen
   }
 
   Future<OcrBillingStatus?> _loadOcrBillingStatus() async {
@@ -126,10 +115,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
     final readerSettings = ref.watch(readerSettingsProvider);
     final readerNotifier = ref.read(readerSettingsProvider.notifier);
-    final kanjiVgState = ref.watch(kanjiVgProvider);
-    final jpdbFreqState = ref.watch(jpdbFreqProvider);
-    final jmdictState = ref.watch(jmdictProvider);
-    final kanjidicState = ref.watch(kanjidicProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -461,7 +446,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     title: const Text('OCR Purchases'),
                     subtitle: const Text(
-                      'Unlock OCR and manage your OCR credits',
+                      'Unlock OCR and view your page credits',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
@@ -500,7 +485,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 subtitle: Text(
                   canEditOcrServerUrl
                       ? '$currentOcrServerUrl\n'
-                            '${usesBuiltInServer ? 'Built-in server, page credits apply' : 'Custom server, shared key required, page credits disabled'}'
+                            '${usesBuiltInServer ? 'Mekuru server, page credits apply' : 'Custom server, shared key required, page credits disabled'}'
                       : 'Unlock OCR first to edit the server endpoint',
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
@@ -524,213 +509,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ── Downloads ──
           _SectionHeader(title: 'Downloads'),
-
-          // KanjiVG
-          _KanjiVgTile(state: kanjiVgState, theme: theme),
-          if (kanjiVgState.isDownloading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LinearProgressIndicator(value: kanjiVgState.progress),
-                  const SizedBox(height: 4),
-                  Text(
-                    kanjiVgState.progress < 0.9
-                        ? 'Downloading... ${(kanjiVgState.progress * 100).toInt()}%'
-                        : 'Extracting files...',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
+          ListTile(
+            leading: Icon(
+              Icons.download_outlined,
+              color: theme.colorScheme.primary,
             ),
-          if (kanjiVgState.error != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                kanjiVgState.error!,
-                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-              ),
+            title: const Text('Downloads'),
+            subtitle: const Text(
+              'Dictionaries, kanji data, and more',
             ),
-          if (kanjiVgState.successMessage != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                kanjiVgState.successMessage!,
-                style: const TextStyle(color: Colors.green, fontSize: 13),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: _AttributionText(
-              prefix: 'Kanji stroke order data by ',
-              linkText: 'KanjiVG',
-              url: 'https://kanjivg.tagaini.net/',
-              suffix: ' (Ulrich Apel), licensed under CC BY-SA 3.0.',
-              theme: theme,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // JPDB Frequency
-          _JpdbFreqTile(state: jpdbFreqState, theme: theme),
-          if (jpdbFreqState.isDownloading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LinearProgressIndicator(value: jpdbFreqState.progress),
-                  const SizedBox(height: 4),
-                  Text(
-                    jpdbFreqState.progress < 0.7
-                        ? 'Downloading... ${(jpdbFreqState.progress / 0.7 * 100).toInt()}%'
-                        : 'Importing...',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
-          if (jpdbFreqState.error != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                jpdbFreqState.error!,
-                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-              ),
-            ),
-          if (jpdbFreqState.successMessage != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                jpdbFreqState.successMessage!,
-                style: const TextStyle(color: Colors.green, fontSize: 13),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              'Word frequency data from JPDB (jpdb.io), '
-              'distributed by Kuuuube.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // JMdict English
-          _JmdictTile(state: jmdictState, theme: theme),
-          if (jmdictState.isDownloading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LinearProgressIndicator(value: jmdictState.progress),
-                  const SizedBox(height: 4),
-                  Text(
-                    jmdictState.progress < 0.05
-                        ? 'Fetching latest release...'
-                        : jmdictState.progress < 0.7
-                        ? 'Downloading... ${((jmdictState.progress - 0.05) / 0.65 * 100).toInt()}%'
-                        : 'Importing...',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
-          if (jmdictState.error != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                jmdictState.error!,
-                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-              ),
-            ),
-          if (jmdictState.successMessage != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                jmdictState.successMessage!,
-                style: const TextStyle(color: Colors.green, fontSize: 13),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: _AttributionText(
-              prefix: '',
-              linkText: 'JMdict',
-              url:
-                  'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
-              suffix:
-                  ' by the Electronic Dictionary Research and '
-                  'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
-              theme: theme,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // KANJIDIC
-          _KanjidicTile(state: kanjidicState, theme: theme),
-          if (kanjidicState.isDownloading)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LinearProgressIndicator(value: kanjidicState.progress),
-                  const SizedBox(height: 4),
-                  Text(
-                    kanjidicState.progress < 0.05
-                        ? 'Fetching latest release...'
-                        : kanjidicState.progress < 0.7
-                        ? 'Downloading... ${((kanjidicState.progress - 0.05) / 0.65 * 100).toInt()}%'
-                        : 'Importing...',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
-          if (kanjidicState.error != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                kanjidicState.error!,
-                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-              ),
-            ),
-          if (kanjidicState.successMessage != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(
-                kanjidicState.successMessage!,
-                style: const TextStyle(color: Colors.green, fontSize: 13),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: _AttributionText(
-              prefix: '',
-              linkText: 'KANJIDIC',
-              url: 'https://www.edrdg.org/wiki/index.php/KANJIDIC_Project',
-              suffix:
-                  ' by the Electronic Dictionary Research and '
-                  'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
-              theme: theme,
-            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const DownloadsScreen(),
+                ),
+              );
+            },
           ),
           const Divider(),
 
@@ -1134,7 +930,7 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Page credits are only used on the built-in Mekuru OCR '
+                'Page credits are only used on the Mekuru OCR '
                 'server. Custom OCR servers do not consume page credits.',
                 style: theme.textTheme.bodySmall,
               ),
@@ -1150,7 +946,7 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
               const SizedBox(height: 8),
               if (usesBuiltInServer)
                 Text(
-                  'The built-in server always uses app authentication.',
+                  'The Mekuru server always uses app authentication.',
                   style: theme.textTheme.bodySmall,
                 )
               else ...[
@@ -1229,54 +1025,6 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
 
 // ── Private widgets ──
 
-/// Attribution text with a tappable hyperlink for license compliance.
-class _AttributionText extends StatelessWidget {
-  const _AttributionText({
-    required this.prefix,
-    required this.linkText,
-    required this.url,
-    required this.suffix,
-    required this.theme,
-  });
-
-  final String prefix;
-  final String linkText;
-  final String url;
-  final String suffix;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final baseStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-    final linkStyle = baseStyle?.copyWith(
-      color: theme.colorScheme.primary,
-      decoration: TextDecoration.underline,
-      decorationColor: theme.colorScheme.primary,
-    );
-
-    return RichText(
-      text: TextSpan(
-        style: baseStyle,
-        children: [
-          if (prefix.isNotEmpty) TextSpan(text: prefix),
-          TextSpan(
-            text: linkText,
-            style: linkStyle,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => launchUrl(
-                Uri.parse(url),
-                mode: LaunchMode.externalApplication,
-              ),
-          ),
-          TextSpan(text: suffix),
-        ],
-      ),
-    );
-  }
-}
-
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title});
   final String title;
@@ -1325,359 +1073,3 @@ class _ThemeModeOption extends StatelessWidget {
   }
 }
 
-/// Tile showing KanjiVG download status and actions.
-class _KanjiVgTile extends ConsumerWidget {
-  const _KanjiVgTile({required this.state, required this.theme});
-
-  final KanjiVgState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subtitle = state.isDownloaded
-        ? '${state.fileCount} stroke order files downloaded'
-        : 'Download kanji stroke order data from KanjiVG';
-
-    return ListTile(
-      leading: Icon(Icons.brush_outlined, color: theme.colorScheme.primary),
-      title: const Text('Kanji Stroke Order'),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isDownloaded) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: 'Delete kanji data',
-        onPressed: () => _confirmDelete(context, ref),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        ref.read(kanjiVgProvider.notifier).download();
-      },
-      child: const Text('Download'),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Kanji Data'),
-        content: const Text(
-          'Delete all downloaded kanji stroke order files? '
-          'You can re-download them later.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(kanjiVgProvider.notifier).delete();
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Tile showing JPDB frequency dictionary download status and actions.
-class _JpdbFreqTile extends ConsumerWidget {
-  const _JpdbFreqTile({required this.state, required this.theme});
-
-  final JpdbFreqState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subtitle = state.isImported
-        ? 'Frequency data downloaded'
-        : 'Download word frequency data for search ranking';
-
-    return ListTile(
-      leading: Icon(Icons.bar_chart_outlined, color: theme.colorScheme.primary),
-      title: const Text('Word Frequency'),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isImported) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: 'Delete frequency data',
-        onPressed: () => _confirmDelete(context, ref),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        ref.read(jpdbFreqProvider.notifier).download();
-      },
-      child: const Text('Download'),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Frequency Data'),
-        content: const Text(
-          'Delete word frequency data? '
-          'Search results will no longer be ranked by frequency. '
-          'You can re-download it later.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(jpdbFreqProvider.notifier).delete();
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Tile showing JMdict English download status and actions.
-class _JmdictTile extends ConsumerWidget {
-  const _JmdictTile({required this.state, required this.theme});
-
-  final JmdictState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subtitle = state.isImported
-        ? 'Japanese-English dictionary downloaded'
-        : 'Download Japanese-English dictionary';
-
-    return ListTile(
-      leading: Icon(Icons.translate, color: theme.colorScheme.primary),
-      title: const Text('JMdict English'),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isImported) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: 'Delete JMdict',
-        onPressed: () => _confirmDelete(context, ref),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        _showVariantPicker(context, ref);
-      },
-      child: const Text('Download'),
-    );
-  }
-
-  void _showVariantPicker(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Choose JMdict variant',
-                style: Theme.of(ctx).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: const Text('JMdict English'),
-              subtitle: const Text('Standard dictionary (~15 MB)'),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                AppHaptics.light();
-                ref
-                    .read(jmdictProvider.notifier)
-                    .download(YomitanDictType.jmdictEnglish);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: const Text('JMdict English with Examples'),
-              subtitle: const Text('Includes example sentences (~18 MB)'),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                AppHaptics.light();
-                ref
-                    .read(jmdictProvider.notifier)
-                    .download(YomitanDictType.jmdictEnglishWithExamples);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete JMdict'),
-        content: const Text(
-          'Delete JMdict and all its entries? '
-          'You can re-download it later.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(jmdictProvider.notifier).delete();
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Tile showing KANJIDIC download status and actions.
-class _KanjidicTile extends ConsumerWidget {
-  const _KanjidicTile({required this.state, required this.theme});
-
-  final KanjidicState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subtitle = state.isImported
-        ? 'Kanji dictionary downloaded'
-        : 'Download kanji dictionary';
-
-    return ListTile(
-      leading: Icon(
-        Icons.font_download_outlined,
-        color: theme.colorScheme.primary,
-      ),
-      title: const Text('KANJIDIC'),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isImported) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: 'Delete KANJIDIC',
-        onPressed: () => _confirmDelete(context, ref),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        ref.read(kanjidicProvider.notifier).download();
-      },
-      child: const Text('Download'),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete KANJIDIC'),
-        content: const Text(
-          'Delete KANJIDIC and all its entries? '
-          'You can re-download it later.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(kanjidicProvider.notifier).delete();
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-}
