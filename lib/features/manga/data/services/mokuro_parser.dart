@@ -266,7 +266,10 @@ class MokuroParser {
       throw Exception('HTML file not found: $htmlPath');
     }
 
-    var stem = p.basenameWithoutExtension(htmlPath);
+    final selectedFileName = safSelectedFileRelativePath != null
+        ? p.posix.basename(safSelectedFileRelativePath)
+        : null;
+    var stem = p.basenameWithoutExtension(selectedFileName ?? htmlPath);
     // Strip .mobile suffix — e.g. "BookName.mobile.html" → "BookName"
     if (stem.toLowerCase().endsWith('.mobile')) {
       stem = stem.substring(0, stem.length - '.mobile'.length);
@@ -281,6 +284,9 @@ class MokuroParser {
         : null;
 
     debugPrint('[MokuroParser] HTML file: $htmlPath');
+    if (selectedFileName != null) {
+      debugPrint('[MokuroParser] SAF selected file: $selectedFileName');
+    }
     debugPrint('[MokuroParser] Stem: $stem, Parent dir: $parentDir');
 
     // Log parent directory contents for diagnosis
@@ -305,7 +311,9 @@ class MokuroParser {
     // Directory.exists() check — on Android 13+ without MANAGE_EXTERNAL_STORAGE,
     // directory metadata isn't accessible even though the image files inside
     // ARE readable via READ_MEDIA_IMAGES.
-    if (originalDirPath == null && !await Directory(imageDirPath).exists()) {
+    if (originalDirPath == null &&
+        safTreeUri == null &&
+        !await Directory(imageDirPath).exists()) {
       throw Exception(
         'Image folder not found: $imageDirPath\n'
         'Expected a folder named "$stem" next to the HTML file.',
@@ -318,7 +326,9 @@ class MokuroParser {
         ? _joinSafRelative([safParentDirRel ?? '', '_ocr', stem])
         : null;
     debugPrint('[MokuroParser] OCR dir: $ocrDirPath');
-    if (originalDirPath == null && !await Directory(ocrDirPath).exists()) {
+    if (originalDirPath == null &&
+        safTreeUri == null &&
+        !await Directory(ocrDirPath).exists()) {
       throw Exception(
         'OCR folder not found: $ocrDirPath\n'
         'Expected: _ocr/$stem/ in the same directory as the HTML file.',
