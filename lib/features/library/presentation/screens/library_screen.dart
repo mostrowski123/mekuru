@@ -68,7 +68,8 @@ class LibraryScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          if (importState.isImporting) const LinearProgressIndicator(),
+          if (importState.isImporting)
+            LinearProgressIndicator(value: importState.progress),
           if (importState.error != null)
             _buildBanner(
               context,

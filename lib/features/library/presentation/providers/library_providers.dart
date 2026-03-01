@@ -85,11 +85,13 @@ final booksProvider = StreamProvider<List<Book>>((ref) {
 /// State for book import progress.
 class BookImportState {
   final bool isImporting;
+  final double? progress; // null = indeterminate, 0.0–1.0 = determinate
   final String? error;
   final String? successMessage;
 
   const BookImportState({
     this.isImporting = false,
+    this.progress,
     this.error,
     this.successMessage,
   });
@@ -97,8 +99,16 @@ class BookImportState {
 
 /// Notifier for managing book import state.
 class BookImportNotifier extends Notifier<BookImportState> {
+  Timer? _autoDismissTimer;
+
   @override
   BookImportState build() => const BookImportState();
+
+  void _showSuccess(String message) {
+    _autoDismissTimer?.cancel();
+    state = BookImportState(successMessage: message);
+    _autoDismissTimer = Timer(const Duration(seconds: 3), clearState);
+  }
 
   Future<Book?> importEpub(String filePath) async {
     state = const BookImportState(isImporting: true);
@@ -109,9 +119,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'EPUB imported', category: 'library'),
       );
-      state = BookImportState(
-        successMessage: '"${book.title}" added to library!',
-      );
+      _showSuccess('"${book.title}" added to library!');
       return book;
     } catch (e) {
       state = BookImportState(error: e.toString());
@@ -120,17 +128,20 @@ class BookImportNotifier extends Notifier<BookImportState> {
   }
 
   Future<Book?> importCbz(String filePath) async {
-    state = const BookImportState(isImporting: true);
+    state = const BookImportState(isImporting: true, progress: 0.0);
 
     try {
       final repo = ref.read(bookRepositoryProvider);
-      final book = await repo.importCbz(filePath);
+      final book = await repo.importCbz(
+        filePath,
+        onProgress: (p) {
+          state = BookImportState(isImporting: true, progress: p);
+        },
+      );
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'CBZ imported', category: 'library'),
       );
-      state = BookImportState(
-        successMessage: '"${book.title}" added to library!',
-      );
+      _showSuccess('"${book.title}" added to library!');
       return book;
     } catch (e) {
       state = BookImportState(error: e.toString());
@@ -152,9 +163,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Manga imported', category: 'library'),
       );
-      state = BookImportState(
-        successMessage: '"${book.title}" added to library!',
-      );
+      _showSuccess('"${book.title}" added to library!');
       return book;
     } catch (e) {
       state = BookImportState(error: e.toString());
@@ -181,9 +190,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Manga imported (SAF)', category: 'library'),
       );
-      state = BookImportState(
-        successMessage: '"${book.title}" added to library!',
-      );
+      _showSuccess('"${book.title}" added to library!');
       return book;
     } catch (e) {
       state = BookImportState(error: e.toString());
@@ -192,6 +199,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
   }
 
   void clearState() {
+    _autoDismissTimer?.cancel();
     state = const BookImportState();
   }
 
