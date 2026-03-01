@@ -419,7 +419,9 @@ class OcrBillingClient {
       if (detail is String) {
         return OcrBillingException(response.statusCode, detail);
       }
-    } catch (_) {}
+    } catch (_) {
+      // Response body was not valid JSON — fall through to generic error.
+    }
 
     return OcrBillingException(
       response.statusCode,

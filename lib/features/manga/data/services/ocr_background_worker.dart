@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -119,7 +120,10 @@ void ocrWorkerCallbackDispatcher() {
           bookId,
           OcrProgress(completed: 0, total: 0, status: OcrStatus.failed),
         );
-      } catch (_) {}
+      } catch (progressError) {
+        // Last-resort handler — can't even save failure state.
+        debugPrint('[OCR_WORKER] failed to save error progress: $progressError');
+      }
       return false;
     }
   });
@@ -202,7 +206,9 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
 
   try {
     await MecabService.instance.init();
-  } catch (_) {}
+  } catch (e) {
+    debugPrint('[OCR_WORKER] MeCab init failed (word segmentation may be skipped): $e');
+  }
 
   final bearerToken = usesBuiltInServer
       ? builtInBearerToken!

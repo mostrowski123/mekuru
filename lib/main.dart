@@ -42,10 +42,16 @@ Future<void> main() async {
 
   try {
     await flushPendingOcrFinalizations();
-  } catch (_) {}
+  } catch (e, st) {
+    debugPrint('[APP] OCR finalization flush failed: $e');
+    Sentry.captureException(e, stackTrace: st);
+  }
   try {
     await OcrStoreService.instance.initialize();
-  } catch (_) {}
+  } catch (e, st) {
+    debugPrint('[APP] OcrStoreService init failed: $e');
+    Sentry.captureException(e, stackTrace: st);
+  }
 
   // Initialize WorkManager for background OCR processing
   await Workmanager().initialize(ocrWorkerCallbackDispatcher);
@@ -58,11 +64,16 @@ Future<void> main() async {
     },
     appRunner: () async {
       await PreloadedAppSettings.load();
-      await MecabService.instance.init();
 
-      Sentry.addBreadcrumb(
-        Breadcrumb(message: 'MeCab initialized', category: 'app.init'),
-      );
+      try {
+        await MecabService.instance.init();
+        Sentry.addBreadcrumb(
+          Breadcrumb(message: 'MeCab initialized', category: 'app.init'),
+        );
+      } catch (e, st) {
+        debugPrint('[APP] MeCab init failed (app will continue): $e');
+        Sentry.captureException(e, stackTrace: st);
+      }
 
       runApp(SentryWidget(child: const ProviderScope(child: MekuruApp())));
     },

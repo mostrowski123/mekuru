@@ -121,7 +121,8 @@ class BookImportNotifier extends Notifier<BookImportState> {
       );
       _showSuccess('"${book.title}" added to library!');
       return book;
-    } catch (e) {
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
       state = BookImportState(error: e.toString());
       return null;
     }
@@ -143,7 +144,8 @@ class BookImportNotifier extends Notifier<BookImportState> {
       );
       _showSuccess('"${book.title}" added to library!');
       return book;
-    } catch (e) {
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
       state = BookImportState(error: e.toString());
       return null;
     }
@@ -165,7 +167,8 @@ class BookImportNotifier extends Notifier<BookImportState> {
       );
       _showSuccess('"${book.title}" added to library!');
       return book;
-    } catch (e) {
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
       state = BookImportState(error: e.toString());
       return null;
     }
@@ -192,7 +195,8 @@ class BookImportNotifier extends Notifier<BookImportState> {
       );
       _showSuccess('"${book.title}" added to library!');
       return book;
-    } catch (e) {
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
       state = BookImportState(error: e.toString());
       return null;
     }
@@ -207,7 +211,8 @@ class BookImportNotifier extends Notifier<BookImportState> {
     try {
       final repo = ref.read(bookRepositoryProvider);
       await repo.deleteBook(bookId);
-    } catch (e) {
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
       state = BookImportState(error: 'Delete failed: $e');
     }
   }

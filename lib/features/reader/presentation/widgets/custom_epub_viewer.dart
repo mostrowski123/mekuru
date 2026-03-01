@@ -76,6 +76,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onTouchUp,
     this.onWordTapped,
     this.onSentenceSelected,
+    this.onLoadError,
   });
 
   final CustomEpubController controller;
@@ -108,6 +109,7 @@ class CustomEpubViewer extends StatefulWidget {
   )?
   onWordTapped;
   final ValueChanged<EpubSelectionData>? onSentenceSelected;
+  final void Function(String description)? onLoadError;
 
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
@@ -151,6 +153,24 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           resources: request.resources,
           action: PermissionResponseAction.GRANT,
         );
+      },
+      onReceivedError: (controller, request, error) {
+        debugPrint(
+          'EPUB_WEBVIEW error: ${error.type} ${error.description} '
+          'url=${request.url}',
+        );
+        widget.onLoadError?.call(error.description);
+      },
+      onReceivedHttpError: (controller, request, response) {
+        if (response.statusCode != null && response.statusCode! >= 400) {
+          debugPrint(
+            'EPUB_WEBVIEW HTTP error: ${response.statusCode} '
+            'url=${request.url}',
+          );
+          widget.onLoadError?.call(
+            'HTTP ${response.statusCode}',
+          );
+        }
       },
       shouldOverrideUrlLoading: (controller, action) async {
         return NavigationActionPolicy.ALLOW;
