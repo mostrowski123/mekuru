@@ -56,7 +56,11 @@ class CbzParser {
   /// Images are extracted to `[outputDir]/images/`. Files nested in
   /// subdirectories within the archive are flattened into the images folder.
   /// Non-image files (e.g., metadata XML, thumbs.db) are skipped.
-  static Future<CbzMetadata> extract(String cbzPath, String outputDir) async {
+  static Future<CbzMetadata> extract(
+    String cbzPath,
+    String outputDir, {
+    void Function(double progress)? onProgress,
+  }) async {
     final title = p.basenameWithoutExtension(cbzPath);
     final imageDir = Directory(p.join(outputDir, 'images'));
     await imageDir.create(recursive: true);
@@ -65,42 +69,49 @@ class CbzParser {
     final bytes = await File(cbzPath).readAsBytes();
     final archive = await compute(_decodeArchive, bytes);
 
+    // Pre-filter to image files so we can report accurate progress.
+    final imageFiles = archive
+        .where((f) =>
+            f.isFile &&
+            !p.basename(f.name).startsWith('.') &&
+            _isImageFile(p.basename(f.name)))
+        .toList();
+    final total = imageFiles.length;
+
     final imageFileNames = <String>[];
     final usedOutputNames = <String>{};
+    var written = 0;
 
-    for (final file in archive) {
-      if (file.isFile) {
-        final fileName = p.basename(file.name);
+    for (final file in imageFiles) {
+      final fileName = p.basename(file.name);
 
-        // Skip hidden files and non-image files
-        if (fileName.startsWith('.')) continue;
-        if (!_isImageFile(fileName)) continue;
+      // Handle duplicate filenames from nested dirs by prefixing
+      var outputName = fileName;
+      if (usedOutputNames.contains(outputName)) {
+        final parentDir = p.basename(p.dirname(file.name));
+        final stem = p.basenameWithoutExtension(fileName);
+        final ext = p.extension(fileName);
+        final prefix = (parentDir.isNotEmpty && parentDir != '.')
+            ? '${parentDir}_'
+            : '';
+        final baseName = '$prefix$stem';
+        outputName = '$baseName$ext';
 
-        // Handle duplicate filenames from nested dirs by prefixing
-        var outputName = fileName;
-        if (usedOutputNames.contains(outputName)) {
-          final parentDir = p.basename(p.dirname(file.name));
-          final stem = p.basenameWithoutExtension(fileName);
-          final ext = p.extension(fileName);
-          final prefix = (parentDir.isNotEmpty && parentDir != '.')
-              ? '${parentDir}_'
-              : '';
-          final baseName = '$prefix$stem';
-          outputName = '$baseName$ext';
-
-          var suffix = 2;
-          while (usedOutputNames.contains(outputName)) {
-            outputName = '${baseName}_$suffix$ext';
-            suffix++;
-          }
+        var suffix = 2;
+        while (usedOutputNames.contains(outputName)) {
+          outputName = '${baseName}_$suffix$ext';
+          suffix++;
         }
-
-        final outputPath = p.join(imageDir.path, outputName);
-        final data = file.content as List<int>;
-        await File(outputPath).writeAsBytes(data);
-        imageFileNames.add(outputName);
-        usedOutputNames.add(outputName);
       }
+
+      final outputPath = p.join(imageDir.path, outputName);
+      final data = file.content as List<int>;
+      await File(outputPath).writeAsBytes(data);
+      imageFileNames.add(outputName);
+      usedOutputNames.add(outputName);
+
+      written++;
+      onProgress?.call(total > 0 ? written / total : 1.0);
     }
 
     // Natural sort (same algorithm as MokuroParser)

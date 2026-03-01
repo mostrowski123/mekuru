@@ -341,7 +341,7 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
                     leading: const Icon(Icons.terminal_outlined),
                     title: const Text('Run your own OCR server'),
                     subtitle: const Text(
-                      'Set AUTH_API_KEY and use the same shared key in the app. See setup instructions on GitHub.',
+                      'See setup instructions on GitHub.',
                     ),
                     trailing: const Icon(Icons.open_in_new),
                     onTap: _openSelfHostRepo,
