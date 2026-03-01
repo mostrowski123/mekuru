@@ -189,9 +189,9 @@ class OcrPurchaseFlow {
             ),
             const SizedBox(height: 12),
             Text(
-              'This test build includes 250 starter credits with OCR unlock. '
-              'Buying more credits is currently disabled. You can switch to a '
-              'custom OCR server to continue without using page credits.',
+              'OCR unlock includes 250 starter page credits. '
+              'You can switch to a custom OCR server to continue without '
+              'using page credits.',
               style: theme.textTheme.bodyMedium,
             ),
           ],

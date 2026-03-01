@@ -326,8 +326,8 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Page credits are only used on the built-in Mekuru '
-                          'OCR server. Custom OCR servers do not consume page '
+                          'Page credits are only used on the Mekuru OCR '
+                          'server. Custom OCR servers do not consume page '
                           'credits.',
                           style: theme.textTheme.bodyMedium,
                         ),
