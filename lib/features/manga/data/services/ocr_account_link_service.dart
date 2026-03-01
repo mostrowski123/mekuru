@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../../../core/services/firebase_runtime.dart';
+
 class OcrLinkedAccountResult {
   final User user;
   final bool linkedThisCall;
@@ -18,10 +20,7 @@ class OcrAccountLinkService {
   final GoogleSignIn _googleSignIn;
 
   Future<OcrLinkedAccountResult> ensureLinkedAccount() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      throw StateError('No Firebase user is available.');
-    }
+    final currentUser = await FirebaseRuntime.instance.ensureOcrUser();
 
     if (!currentUser.isAnonymous) {
       return OcrLinkedAccountResult(user: currentUser, linkedThisCall: false);
@@ -50,7 +49,10 @@ class OcrAccountLinkService {
           credential,
         );
         return OcrLinkedAccountResult(
-          user: signInResult.user ?? FirebaseAuth.instance.currentUser!,
+          user:
+              signInResult.user ??
+              FirebaseAuth.instance.currentUser ??
+              currentUser,
           linkedThisCall: true,
         );
       }

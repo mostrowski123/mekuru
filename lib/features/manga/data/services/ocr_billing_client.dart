@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../core/services/firebase_runtime.dart';
 import '../../../../firebase_options.dart';
 
 const _androidPackageName = 'moe.matthew.mekuru';
@@ -84,16 +87,43 @@ class OcrBillingException implements Exception {
   String toString() => 'OcrBillingException($statusCode, $code): $message';
 }
 
+String describeOcrError(Object error) {
+  if (error is OcrBillingException) {
+    return error.message;
+  }
+
+  if (error is FirebaseAuthException) {
+    return error.message ?? 'Authentication failed.';
+  }
+
+  if (error is StateError) {
+    return error.message.toString();
+  }
+
+  return error.toString();
+}
+
 class OcrBillingClient {
   static const _cachedStatusKey = 'ocr.billing.status';
+  static const OcrBillingException _networkUnavailableError =
+      OcrBillingException(
+        0,
+        'No internet connection. Check your connection and try again.',
+        code: 'network_unavailable',
+      );
   static final FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: const AndroidOptions(encryptedSharedPreferences: true),
   );
 
   final http.Client _httpClient;
+  final Duration requestTimeout;
+  final Duration baseRetryDelay;
 
-  OcrBillingClient({http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+  OcrBillingClient({
+    http.Client? httpClient,
+    this.requestTimeout = const Duration(seconds: 15),
+    this.baseRetryDelay = const Duration(seconds: 1),
+  }) : _httpClient = httpClient ?? http.Client();
 
   void _log(String message, [Map<String, Object?> details = const {}]) {
     final suffix = details.isEmpty ? '' : ' $details';
@@ -101,6 +131,10 @@ class OcrBillingClient {
   }
 
   Future<OcrBillingStatus?> readCachedStatus() async {
+    if (!FirebaseRuntime.instance.hasFirebaseApp) {
+      return null;
+    }
+
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return null;
@@ -143,9 +177,8 @@ class OcrBillingClient {
     }
 
     try {
-      final response = await _sendJsonRequest(
-        method: 'GET',
-        path: '/billing/status',
+      final response = await _withRetry(
+        () => _sendJsonRequest(method: 'GET', path: '/billing/status'),
       );
       final status = OcrBillingStatus(
         ocrUnlocked: response['ocrUnlocked'] as bool? ?? false,
@@ -166,16 +199,18 @@ class OcrBillingClient {
     bool isRestore = false,
   }) async {
     try {
-      final response = await _sendJsonRequest(
-        method: 'POST',
-        path: '/billing/purchases/android/verify',
-        body: {
-          'productId': productId,
-          'purchaseToken': purchaseToken,
-          'orderId': orderId,
-          'packageName': _androidPackageName,
-          'isRestore': isRestore,
-        },
+      final response = await _withRetry(
+        () => _sendJsonRequest(
+          method: 'POST',
+          path: '/billing/purchases/android/verify',
+          body: {
+            'productId': productId,
+            'purchaseToken': purchaseToken,
+            'orderId': orderId,
+            'packageName': _androidPackageName,
+            'isRestore': isRestore,
+          },
+        ),
       );
       final result = PurchaseGrantResult(
         ocrUnlocked: response['ocrUnlocked'] as bool? ?? false,
@@ -200,10 +235,12 @@ class OcrBillingClient {
     required int bookId,
   }) async {
     try {
-      final response = await _sendJsonRequest(
-        method: 'POST',
-        path: '/ocr/jobs',
-        body: {'requestedPages': requestedPages, 'bookId': bookId},
+      final response = await _withRetry(
+        () => _sendJsonRequest(
+          method: 'POST',
+          path: '/ocr/jobs',
+          body: {'requestedPages': requestedPages, 'bookId': bookId},
+        ),
       );
       final reservation = OcrJobReservation(
         jobId: response['jobId'] as String? ?? '',
@@ -229,10 +266,12 @@ class OcrBillingClient {
     required String status,
   }) async {
     try {
-      final response = await _sendJsonRequest(
-        method: 'POST',
-        path: '/ocr/jobs/$jobId/finalize',
-        body: {'status': status},
+      final response = await _withRetry(
+        () => _sendJsonRequest(
+          method: 'POST',
+          path: '/ocr/jobs/$jobId/finalize',
+          body: {'status': status},
+        ),
       );
       final finalization = OcrJobFinalization(
         completedPages: response['completedPages'] as int? ?? 0,
@@ -273,22 +312,62 @@ class OcrBillingClient {
       'body': body == null ? null : _redactRequestBody(body),
     });
 
-    final streamed = await _httpClient.send(request);
-    final response = await http.Response.fromStream(streamed);
+    try {
+      final streamed = await _httpClient.send(request).timeout(requestTimeout);
+      final response = await http.Response.fromStream(
+        streamed,
+      ).timeout(requestTimeout);
 
-    _log('response', {
-      'method': method,
-      'url': uri.toString(),
-      'statusCode': response.statusCode,
-      'body': response.body,
-    });
+      _log('response', {
+        'method': method,
+        'url': uri.toString(),
+        'statusCode': response.statusCode,
+        'body': response.body,
+      });
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw _parseError(response);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw _parseError(response);
+      }
+
+      if (response.body.isEmpty) return <String, dynamic>{};
+      return json.decode(response.body) as Map<String, dynamic>;
+    } on SocketException {
+      throw _networkUnavailableError;
+    } on TimeoutException {
+      throw _networkUnavailableError;
+    }
+  }
+
+  Future<T> _withRetry<T>(Future<T> Function() action) async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await action();
+      } on OcrBillingException catch (error) {
+        if (!_shouldRetry(error) || attempt == 2) {
+          rethrow;
+        }
+      } on SocketException {
+        if (attempt == 2) {
+          throw _networkUnavailableError;
+        }
+      } on TimeoutException {
+        if (attempt == 2) {
+          throw _networkUnavailableError;
+        }
+      }
+
+      await Future<void>.delayed(baseRetryDelay * (1 << attempt));
     }
 
-    if (response.body.isEmpty) return <String, dynamic>{};
-    return json.decode(response.body) as Map<String, dynamic>;
+    throw StateError('Billing retry loop exited unexpectedly.');
+  }
+
+  bool _shouldRetry(OcrBillingException error) {
+    if (error.code == 'network_unavailable') {
+      return true;
+    }
+
+    return error.statusCode >= 500 && error.statusCode < 600;
   }
 
   Map<String, dynamic> _redactRequestBody(Map<String, dynamic> body) {
@@ -312,14 +391,7 @@ class OcrBillingClient {
   }
 
   Future<String> _getIdToken() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      throw const OcrBillingException(
-        401,
-        'You must be signed in before using OCR billing.',
-        code: 'auth_required',
-      );
-    }
+    final user = await FirebaseRuntime.instance.ensureOcrUser();
     final token = await user.getIdToken(true);
     if (token == null || token.isEmpty) {
       throw const OcrBillingException(

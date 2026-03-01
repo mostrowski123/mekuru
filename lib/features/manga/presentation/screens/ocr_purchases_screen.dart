@@ -55,19 +55,22 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
     try {
       await _storeService.initialize();
     } catch (e) {
-      nextError ??= 'Failed to initialize Google Play billing: $e';
+      nextError ??=
+          'Failed to initialize Google Play billing: ${describeOcrError(e)}';
     }
 
     try {
       nextStatus = await _billingClient.readCachedStatus();
     } catch (e) {
-      nextError ??= 'Failed to load your cached OCR billing status: $e';
+      nextError ??=
+          'Failed to load your cached OCR billing status: ${describeOcrError(e)}';
     }
 
     try {
       nextProducts = await _storeService.queryProducts(ocrVisibleProductIds);
     } catch (e) {
-      nextError ??= 'Failed to load Google Play products: $e';
+      nextError ??=
+          'Failed to load Google Play products: ${describeOcrError(e)}';
     }
 
     if (!mounted) return;
@@ -95,7 +98,7 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        ).showSnackBar(SnackBar(content: Text(describeOcrError(e))));
       }
     } finally {
       if (mounted) {
@@ -145,7 +148,7 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('OCR unlocked. 250 starter credits added.'),
+          content: Text('OCR unlocked. 150 starter credits added.'),
         ),
       );
     });
@@ -162,9 +165,7 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
         _status = status;
       });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             linkResult.linkedThisCall
@@ -278,7 +279,7 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
                 _PurchaseCard(
                   title: 'OCR Unlock',
                   description:
-                      'One-time unlock for OCR. Includes 250 starter credits.',
+                      'One-time unlock for OCR. Includes 150 starter credits.',
                   price: _products[ocrUnlockProductId]?.price,
                   buttonLabel: status.ocrUnlocked
                       ? 'Already Unlocked'
@@ -340,9 +341,7 @@ class _OcrPurchasesScreenState extends State<OcrPurchasesScreen> {
                   child: ListTile(
                     leading: const Icon(Icons.terminal_outlined),
                     title: const Text('Run your own OCR server'),
-                    subtitle: const Text(
-                      'See setup instructions on GitHub.',
-                    ),
+                    subtitle: const Text('See setup instructions on GitHub.'),
                     trailing: const Icon(Icons.open_in_new),
                     onTap: _openSelfHostRepo,
                   ),

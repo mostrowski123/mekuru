@@ -1,5 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -8,11 +6,11 @@ import 'package:workmanager/workmanager.dart';
 import 'app.dart';
 import 'config/environment_config.dart';
 import 'core/database/database_provider.dart';
+import 'core/services/firebase_runtime.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
 import 'features/reader/data/services/mecab_service.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
-import 'firebase_options.dart';
 
 /// Global navigator key used by Sentry for feedback screenshots
 /// and navigator observation.
@@ -33,13 +31,13 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase for OCR server authentication
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Sign in anonymously — each user gets a stable UID for rate limiting.
-  // No sign-in UI needed. Future: add Google Sign-In for account persistence.
-  if (FirebaseAuth.instance.currentUser == null) {
-    await FirebaseAuth.instance.signInAnonymously();
+  // Best-effort startup initialization. OCR flows can lazily initialize Firebase
+  // later if startup auth is unavailable.
+  try {
+    await FirebaseRuntime.instance.ensureFirebaseApp();
+  } catch (error, stackTrace) {
+    debugPrint('[APP] Firebase unavailable during startup: $error');
+    debugPrintStack(stackTrace: stackTrace);
   }
 
   try {

@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
-import '../../../../firebase_options.dart';
+import '../../../../core/services/firebase_runtime.dart';
 import '../../data/models/mokuro_models.dart';
 import '../../../settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
@@ -166,8 +164,6 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   final imageDir = inputData['imageDir'] as String;
   final jobId = inputData['jobId'] as String?;
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   final prefs = await SharedPreferences.getInstance();
   final serverUrl = prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl;
   final usesBuiltInServer = ocr_server_config.isBuiltInOcrServerUrl(serverUrl);
@@ -189,19 +185,28 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     return false;
   }
 
-  final existingUser = FirebaseAuth.instance.currentUser;
-  if (existingUser == null && usesBuiltInServer) {
-    return false;
+  String? builtInBearerToken;
+  if (usesBuiltInServer) {
+    final ocrUser = await FirebaseRuntime.instance.ensureOcrUser();
+    builtInBearerToken = await ocrUser.getIdToken();
+    if (builtInBearerToken == null || builtInBearerToken.isEmpty) {
+      await OcrProgress.save(
+        prefs,
+        bookId,
+        const OcrProgress(completed: 0, total: 0, status: OcrStatus.failed),
+      );
+      await _clearActiveOcrJob(bookId);
+      return false;
+    }
   }
 
   try {
     await MecabService.instance.init();
   } catch (_) {}
 
-  final idToken = usesBuiltInServer
-      ? await FirebaseAuth.instance.currentUser?.getIdToken() ?? ''
-      : '';
-  final bearerToken = usesBuiltInServer ? idToken : customBearerKey!;
+  final bearerToken = usesBuiltInServer
+      ? builtInBearerToken!
+      : customBearerKey!;
   final ocrClient = MangaOcrClient(
     serverUrl: serverUrl,
     getBearerToken: () => bearerToken,
@@ -269,6 +274,23 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     final stopwatch = Stopwatch()..start();
     final updatedPages = List<MokuroPage>.from(mokuroBook.pages);
 
+    Future<void> saveRunningProgress() async {
+      final avgSeconds = completed > 0
+          ? stopwatch.elapsedMilliseconds / 1000.0 / completed
+          : null;
+
+      await OcrProgress.save(
+        prefs,
+        bookId,
+        OcrProgress(
+          completed: completed,
+          total: total,
+          status: OcrStatus.running,
+          avgSecondsPerPage: avgSeconds,
+        ),
+      );
+    }
+
     await OcrProgress.save(
       prefs,
       bookId,
@@ -289,6 +311,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
 
       if (!imageFile.existsSync()) {
         completed++;
+        await saveRunningProgress();
         continue;
       }
 
@@ -304,20 +327,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         final ocrPage = page.copyWith(blocks: result.blocks);
         updatedPages[pageIndex] = await _segmentSinglePageForLookup(ocrPage);
         completed++;
-
-        final elapsed = stopwatch.elapsedMilliseconds / 1000.0;
-        final avgSeconds = elapsed / completed;
-
-        await OcrProgress.save(
-          prefs,
-          bookId,
-          OcrProgress(
-            completed: completed,
-            total: total,
-            status: OcrStatus.running,
-            avgSecondsPerPage: avgSeconds,
-          ),
-        );
+        await saveRunningProgress();
 
         if (completed % _saveIntervalPages == 0) {
           await _saveCache(cacheFile, mokuroBook, updatedPages);
@@ -338,6 +348,10 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           return false;
         }
         completed++;
+        await saveRunningProgress();
+      } catch (_) {
+        completed++;
+        await saveRunningProgress();
       }
     }
 
@@ -374,16 +388,22 @@ bool _needsWordSegmentation(List<MokuroPage> pages) {
 }
 
 Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
-  final strippedPages = pages
-      .map(
-        (page) => page.copyWith(
-          blocks: page.blocks
-              .map((block) => block.copyWith(words: const []))
-              .toList(),
-        ),
-      )
-      .toList();
-  return MokuroWordSegmenter.segmentAllPages(strippedPages);
+  final segmentedPages = <MokuroPage>[];
+
+  for (final page in pages) {
+    if (!_pageNeedsWordSegmentation(page)) {
+      segmentedPages.add(page);
+      continue;
+    }
+
+    try {
+      segmentedPages.add(await _segmentSinglePageForLookup(page));
+    } catch (_) {
+      segmentedPages.add(page);
+    }
+  }
+
+  return segmentedPages;
 }
 
 Future<MokuroPage> _segmentSinglePageForLookup(MokuroPage page) async {
@@ -394,6 +414,16 @@ Future<MokuroPage> _segmentSinglePageForLookup(MokuroPage page) async {
   );
   final segmented = await MokuroWordSegmenter.segmentAllPages([strippedPage]);
   return segmented.first;
+}
+
+bool _pageNeedsWordSegmentation(MokuroPage page) {
+  for (final block in page.blocks) {
+    if (block.lines.isNotEmpty && block.words.isEmpty) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /// Write updated pages back to the cache file.

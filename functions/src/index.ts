@@ -25,7 +25,7 @@ const ANDROID_PACKAGE_NAME =
 const OCR_JOB_TTL_HOURS = asInt(process.env.OCR_JOB_TTL_HOURS ?? "24");
 
 const OCR_UNLOCK_PRODUCT_ID = "ocr_unlock_v1";
-const OCR_UNLOCK_STARTER_CREDITS = 250;
+const OCR_UNLOCK_STARTER_CREDITS = 150;
 const OCR_CREDIT_PRODUCTS: Record<string, number> = {
   ocr_pages_500: 500,
   ocr_pages_1500: 1500,
