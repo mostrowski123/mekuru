@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
@@ -186,11 +187,13 @@ class BrightnessNotifier extends Notifier<double?> {
     try {
       final brightness = await ScreenBrightness.instance.current;
       state = brightness;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Brightness] failed to read current brightness: $e');
       try {
         final brightness = await ScreenBrightness.instance.system;
         state = brightness;
-      } catch (_) {
+      } catch (e) {
+        debugPrint('[Brightness] failed to read system brightness: $e');
         state = 0.5;
       }
     }
@@ -200,15 +203,17 @@ class BrightnessNotifier extends Notifier<double?> {
     state = value;
     try {
       await ScreenBrightness.instance.setScreenBrightness(value);
-    } catch (_) {
-      // Silently fail if platform does not support brightness control
+    } catch (e) {
+      debugPrint('[Brightness] failed to set brightness: $e');
     }
   }
 
   Future<void> resetBrightness() async {
     try {
       await ScreenBrightness.instance.resetScreenBrightness();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[Brightness] failed to reset brightness: $e');
+    }
   }
 }
 
