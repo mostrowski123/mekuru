@@ -35,7 +35,8 @@ class ReaderScreen extends ConsumerStatefulWidget {
   ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends ConsumerState<ReaderScreen> {
+class _ReaderScreenState extends ConsumerState<ReaderScreen>
+    with WidgetsBindingObserver {
   final _epubController = CustomEpubController();
   final _epubFileResolver = EpubFileResolver();
 
@@ -67,19 +68,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
-    Sentry.addBreadcrumb(Breadcrumb(
-      message: 'Opened book',
-      category: 'reader',
-    ));
+    Sentry.addBreadcrumb(
+      Breadcrumb(message: 'Opened book', category: 'reader'),
+    );
 
     _progressPersistence = ReaderProgressPersistence(
       saveProgress: (cfi, progress) {
-        return ref.read(readerBookRepositoryProvider).updateProgress(
-          widget.book.id,
-          cfi,
-          progress: progress,
-        );
+        return ref
+            .read(readerBookRepositoryProvider)
+            .updateProgress(widget.book.id, cfi, progress: progress);
       },
     );
 
@@ -91,14 +90,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       // Apply book-specific defaults (or per-book overrides if the user
       // previously changed the display settings for this book).
       _bookLanguage = widget.book.language;
-      ref.read(readerSettingsProvider.notifier).applyBookDefaults(
-        bookId: widget.book.id,
-        language: widget.book.language,
-        pageProgressionDirection: widget.book.pageProgressionDirection,
-        primaryWritingMode: widget.book.primaryWritingMode,
-        overrideVerticalText: widget.book.overrideVerticalText,
-        overrideReadingDirection: widget.book.overrideReadingDirection,
-      );
+      ref
+          .read(readerSettingsProvider.notifier)
+          .applyBookDefaults(
+            bookId: widget.book.id,
+            language: widget.book.language,
+            pageProgressionDirection: widget.book.pageProgressionDirection,
+            primaryWritingMode: widget.book.primaryWritingMode,
+            overrideVerticalText: widget.book.overrideVerticalText,
+            overrideReadingDirection: widget.book.overrideReadingDirection,
+          );
 
       final settings = ref.read(readerSettingsProvider);
       if (settings.keepScreenOn) {
@@ -113,10 +114,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_progressPersistence.dispose());
     ref.read(brightnessProvider.notifier).resetBrightness();
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_progressPersistence.flush());
+    }
   }
 
   @override
@@ -158,7 +169,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         _epubController.setDisableLinks(next.disableLinks);
       }
 
-      final colorChanged = previous.colorMode != next.colorMode ||
+      final colorChanged =
+          previous.colorMode != next.colorMode ||
           (next.colorMode == ColorMode.sepia &&
               previous.sepiaIntensity != next.sepiaIntensity);
       if (colorChanged && _isEpubLoaded) {
@@ -193,7 +205,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       // epub.js paginates horizontally, regardless of the
                       // user's reading direction (which only affects tap zones
                       // and swipe interpretation in Dart).
-                      direction: settings.verticalText &&
+                      direction:
+                          settings.verticalText &&
                               settings.readingDirection == ReaderDirection.rtl
                           ? 'rtl'
                           : 'ltr',
@@ -301,19 +314,26 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                         });
                         AppHaptics.medium();
                       },
-                      onWordTapped: (surroundingText, charOffset,
-                          blockCharOffset, tappedChar, x, y) {
-                        _handleWordTapped(
-                          surroundingText,
-                          charOffset,
-                          blockCharOffset,
-                          tappedChar,
-                          x,
-                          y,
-                          settings.readingDirection,
-                          settings.swipeSensitivity,
-                        );
-                      },
+                      onWordTapped:
+                          (
+                            surroundingText,
+                            charOffset,
+                            blockCharOffset,
+                            tappedChar,
+                            x,
+                            y,
+                          ) {
+                            _handleWordTapped(
+                              surroundingText,
+                              charOffset,
+                              blockCharOffset,
+                              tappedChar,
+                              x,
+                              y,
+                              settings.readingDirection,
+                              settings.swipeSensitivity,
+                            );
+                          },
                     ),
                   ),
                 if (_isLoading) _buildLoadingOverlay(context),
@@ -375,21 +395,25 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           _bookLanguage = metadata.language;
           // Backfill the database so subsequent opens skip re-parsing.
           unawaited(
-            ref.read(readerBookRepositoryProvider).backfillLanguage(
-              widget.book.id,
-              metadata.language,
-              metadata.pageProgressionDirection,
-              metadata.primaryWritingMode,
-            ),
+            ref
+                .read(readerBookRepositoryProvider)
+                .backfillLanguage(
+                  widget.book.id,
+                  metadata.language,
+                  metadata.pageProgressionDirection,
+                  metadata.primaryWritingMode,
+                ),
           );
           // Re-apply book defaults with detected language.
           // Legacy books won't have per-book overrides yet, so pass null.
-          ref.read(readerSettingsProvider.notifier).applyBookDefaults(
-            bookId: widget.book.id,
-            language: metadata.language,
-            pageProgressionDirection: metadata.pageProgressionDirection,
-            primaryWritingMode: metadata.primaryWritingMode,
-          );
+          ref
+              .read(readerSettingsProvider.notifier)
+              .applyBookDefaults(
+                bookId: widget.book.id,
+                language: metadata.language,
+                pageProgressionDirection: metadata.pageProgressionDirection,
+                primaryWritingMode: metadata.primaryWritingMode,
+              );
         } catch (_) {
           // Best effort — continue with null language (assumes Japanese).
         }
@@ -420,7 +444,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
     _isRebuildingForDirection = true;
     final settings = ref.read(readerSettingsProvider);
-    final epubDir = settings.verticalText &&
+    final epubDir =
+        settings.verticalText &&
             settings.readingDirection == ReaderDirection.rtl
         ? 'rtl'
         : 'ltr';
@@ -611,8 +636,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
     // It's a tap on text — identify the word via MeCab and show lookup
     final mecab = ref.read(mecabServiceProvider);
-    final identification =
-        mecab.identifyWordWithContext(surroundingText, charOffset);
+    final identification = mecab.identifyWordWithContext(
+      surroundingText,
+      charOffset,
+    );
     if (identification == null) {
       debugPrint(
         '[READER] wordTapped but MeCab could not identify word '
@@ -641,10 +668,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     // tokenStartOffset is where the token starts in the surrounding text.
     final blockWordStart =
         blockCharOffset - charOffset + compound.tokenStartOffset;
-    _epubController.highlightWord(
-      blockWordStart,
-      compound.surfaceForm.length,
-    );
+    _epubController.highlightWord(blockWordStart, compound.surfaceForm.length);
 
     _showLookupSheet(
       WordLookupResult(
@@ -707,13 +731,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, -1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
+          position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero)
+              .animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
           child: child,
         );
       },
@@ -778,10 +799,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     for (final chapter in chapters) {
       final indent = List.filled(depth, '  ').join();
       flattened.add(
-        _FlattenedChapter(
-          title: '$indent${chapter.title}',
-          href: chapter.href,
-        ),
+        _FlattenedChapter(title: '$indent${chapter.title}', href: chapter.href),
       );
       if (chapter.subitems.isNotEmpty) {
         flattened.addAll(_flattenChapters(chapter.subitems, depth: depth + 1));
@@ -921,12 +939,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   void _createHighlight(String cfi, String text, HighlightColor color) {
     if (cfi.isEmpty) return;
 
-    ref.read(highlightRepositoryProvider).addHighlight(
-      bookId: widget.book.id,
-      cfiRange: cfi,
-      selectedText: text,
-      color: color.name,
-    );
+    ref
+        .read(highlightRepositoryProvider)
+        .addHighlight(
+          bookId: widget.book.id,
+          cfiRange: cfi,
+          selectedText: text,
+          color: color.name,
+        );
     _epubController.addHighlight(cfi: cfi, color: color.color);
     _dismissSelectionBar();
     AppHaptics.medium();
@@ -981,9 +1001,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 _isCurrentPageBookmarked
                     ? Icons.bookmark
                     : Icons.bookmark_border,
-                color: _isCurrentPageBookmarked
-                    ? Colors.amber
-                    : Colors.white,
+                color: _isCurrentPageBookmarked ? Colors.amber : Colors.white,
               ),
               tooltip: _isCurrentPageBookmarked
                   ? 'Remove Bookmark'
@@ -1052,7 +1070,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.navigate_before, color: Colors.white),
+                    icon: const Icon(
+                      Icons.navigate_before,
+                      color: Colors.white,
+                    ),
                     tooltip: isRtl ? 'Next Page' : 'Previous Page',
                     onPressed: _isEpubLoaded
                         ? (isRtl ? _goForward : _goBackward)
@@ -1304,21 +1325,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           Icon(
                             Icons.info_outline,
                             size: 16,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _nonNativeDisplayWarning(settings),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                             ),
                           ),
@@ -1340,9 +1359,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'This book',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                         ),
                         const SizedBox(height: 8),
                         SegmentedButton<ReaderDirection>(
@@ -1461,7 +1483,9 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
               for (var i = 0; i < colors.length; i++)
                 AnimatedScale(
                   scale: _expanded ? 1.0 : 0.0,
-                  duration: Duration(milliseconds: _expanded ? 150 + i * 40 : 100),
+                  duration: Duration(
+                    milliseconds: _expanded ? 150 + i * 40 : 100,
+                  ),
                   curve: _expanded ? Curves.easeOutBack : Curves.easeIn,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -1476,8 +1500,9 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
               AnimatedScale(
                 scale: _expanded ? 1.0 : 0.0,
                 duration: Duration(
-                  milliseconds:
-                      _expanded ? 150 + (colors.length + 1) * 40 : 100,
+                  milliseconds: _expanded
+                      ? 150 + (colors.length + 1) * 40
+                      : 100,
                 ),
                 curve: _expanded ? Curves.easeOutBack : Curves.easeIn,
                 child: Padding(
@@ -1532,10 +1557,7 @@ class _SpeedDialDot extends StatelessWidget {
         elevation: 4,
         shape: const CircleBorder(),
         color: color,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-        ),
+        child: InkWell(customBorder: const CircleBorder(), onTap: onTap),
       ),
     );
   }

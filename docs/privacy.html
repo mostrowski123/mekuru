@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy — Mekuru</title>
+  <title>Privacy Policy - Mekuru</title>
   <meta name="description" content="Privacy policy for the Mekuru Japanese EPUB reader app.">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="icon.png" type="image/png">
@@ -11,41 +11,52 @@
 <body>
   <div class="container policy">
     <h1>Privacy Policy</h1>
-    <p class="effective">Effective: February 19, 2026</p>
+    <p class="effective">Effective: March 1, 2026</p>
 
     <h2>Data Stored on Device</h2>
     <p>
-      All your data — books, dictionaries, saved words, and reading progress — is stored locally on your device.
-      Mekuru does not upload, sync, or transmit your reading data to any server.
+      All core reading data - books, dictionaries, saved words, and reading progress - is stored locally on your device.
+      Mekuru does not upload, sync, or transmit that core reading data to any server.
     </p>
 
-    <h2>No Accounts</h2>
+    <h2>OCR Accounts and Authentication</h2>
     <p>
-      Mekuru does not require registration or sign-in. There are no user accounts, and no personal information is collected to use the app.
+      Mekuru does not require registration to use its core reader, dictionary, and vocabulary features.
+      When you use OCR features, the app uses Firebase Authentication to create an app-specific authenticated identity.
+      This may be an anonymous account created automatically for OCR usage, or a Google-linked account if you choose to link one to restore OCR purchases.
     </p>
 
-    <h2>Crash Reporting &amp; Feedback</h2>
+    <h2>Crash Reporting and Feedback</h2>
     <p>
       Mekuru uses <a href="https://sentry.io">Sentry</a> for crash reporting and user-submitted feedback.
       When a crash occurs or you submit feedback, diagnostic information may be sent to Sentry, including stack traces, device model, and operating system version.
-      This data is used solely for debugging and improving the app. It is not shared with any other third parties and is not used for advertising or tracking purposes.
+      This data is used only for debugging and improving the app and is not used for advertising or behavioral tracking.
     </p>
 
-    <h2>No Analytics</h2>
+    <h2>OCR Data and Billing Requests</h2>
     <p>
-      Mekuru does not include any behavioral analytics, advertising SDKs, or usage tracking.
-      Your reading habits and app usage are not monitored or recorded.
+      When you use OCR, page images and billing-related requests are sent to the currently configured OCR server.
+      If you use the built-in Mekuru OCR server, requests are sent to Mekuru-operated services hosted on the Modal platform to verify OCR access and page credits.
+      Images uploaded to the built-in OCR service are processed in-memory for OCR and are not saved after processing.
+      OCR request data on the built-in service is handled as ephemeral processing data rather than long-term stored content.
+      If you configure a custom OCR server, OCR images and related requests are sent to that server instead.
     </p>
 
-    <h2>No Other Third-Party Services</h2>
+    <h2>Third-Party Services</h2>
     <p>
-      Beyond Sentry for crash reporting, Mekuru does not connect to any third-party services.
-      The app is designed to function entirely offline.
+      In addition to Sentry, Mekuru uses Firebase Authentication for OCR features and may contact Google Play billing services for OCR purchases on Android.
+      These services are used only to support OCR access, purchase restoration, and billing state.
+    </p>
+
+    <h2>No Behavioral Analytics</h2>
+    <p>
+      Mekuru does not include advertising SDKs or behavioral analytics.
+      Your reading habits and app usage are not tracked for advertising purposes.
     </p>
 
     <h2>Changes to This Policy</h2>
     <p>
-      If this policy is updated, the changes will be reflected on this page with an updated effective date.
+      If this policy is updated, the changes will be reflected on this page.
     </p>
 
     <a href="index.html" class="back">&larr; Back to Mekuru</a>

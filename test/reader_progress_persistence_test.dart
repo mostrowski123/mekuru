@@ -44,5 +44,21 @@ void main() {
       expect(savedEntries, [('same-cfi', 0.5)]);
       await persistence.dispose();
     });
+
+    test('flush saves queued progress immediately', () async {
+      final savedEntries = <(String, double)>[];
+      final persistence = ReaderProgressPersistence(
+        debounceDuration: const Duration(seconds: 5),
+        saveProgress: (cfi, progress) async {
+          savedEntries.add((cfi, progress));
+        },
+      );
+
+      persistence.queueSave('queued-cfi', 0.7);
+      await persistence.flush();
+
+      expect(savedEntries, [('queued-cfi', 0.7)]);
+      await persistence.dispose();
+    });
   });
 }
