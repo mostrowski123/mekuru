@@ -1030,166 +1030,200 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   ) async {
     final savedCustomBearerKey =
         await _ocrAuthSecretStorage.loadCustomServerBearerKey() ?? '';
-    final controller = TextEditingController(
-      text: ref.read(ocrServerUrlProvider),
-    );
-    final customKeyController = TextEditingController(
-      text: savedCustomBearerKey,
-    );
-    var obscureCustomKey = true;
-    String? customKeyError;
+    final currentUrl = ref.read(ocrServerUrlProvider);
 
-    if (!context.mounted) {
-      controller.dispose();
-      customKeyController.dispose();
-      return;
-    }
+    if (!context.mounted) return;
 
-    await showDialog(
+    final result = await showDialog<({String url, String? bearerKey})>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          final usesBuiltInServer = isBuiltInOcrServerUrl(controller.text);
-
-          return AlertDialog(
-            title: const Text('OCR Server URL'),
-            content: SizedBox(
-              width: 420,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: controller,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Server URL',
-                        hintText:
-                            'https://mostrowski123--mekuru-ocr-fastapi-app.modal.run',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.url,
-                      onChanged: (_) => setDialogState(() {}),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Page credits are only used on the built-in Mekuru OCR '
-                      'server. Custom OCR servers do not consume page credits.',
-                      style: Theme.of(dialogContext).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton.icon(
-                      onPressed: () => launchUrl(
-                        Uri.parse(ocr_server_config.mekuruOcrRepoUrl),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('Learn how to run your own server'),
-                    ),
-                    const SizedBox(height: 8),
-                    if (usesBuiltInServer)
-                      Text(
-                        'The built-in server always uses app authentication.',
-                        style: Theme.of(dialogContext).textTheme.bodySmall,
-                      )
-                    else ...[
-                      TextField(
-                        controller: customKeyController,
-                        obscureText: obscureCustomKey,
-                        decoration: InputDecoration(
-                          labelText: 'Custom shared key',
-                          hintText: 'Required AUTH_API_KEY',
-                          border: const OutlineInputBorder(),
-                          errorText: customKeyError,
-                          suffixIcon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () {
-                                  setDialogState(() {
-                                    obscureCustomKey = !obscureCustomKey;
-                                  });
-                                },
-                                icon: Icon(
-                                  obscureCustomKey
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                ),
-                              ),
-                              if (customKeyController.text.trim().isNotEmpty)
-                                IconButton(
-                                  onPressed: () {
-                                    customKeyController.clear();
-                                    setDialogState(() {});
-                                  },
-                                  icon: const Icon(Icons.clear),
-                                ),
-                            ],
-                          ),
-                        ),
-                        onChanged: (_) => setDialogState(() {
-                          customKeyError = null;
-                        }),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Custom OCR servers must be configured with a shared '
-                        'AUTH_API_KEY. Enter the same shared secret here. The '
-                        'app sends it as Authorization: Bearer <key>. Custom '
-                        'servers always run as plain OCR endpoints with direct '
-                        'image uploads and no page-credit jobs.',
-                        style: Theme.of(dialogContext).textTheme.bodySmall,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  controller.text = OcrServerUrlNotifier.defaultUrl;
-                  setDialogState(() {});
-                },
-                child: const Text('Reset'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final url = controller.text.trim();
-                  if (url.isNotEmpty) {
-                    if (!isBuiltInOcrServerUrl(url)) {
-                      final customKey = customKeyController.text.trim();
-                      if (customKey.isEmpty) {
-                        setDialogState(() {
-                          customKeyError =
-                              'A shared key is required for custom servers.';
-                        });
-                        return;
-                      }
-                      await _ocrAuthSecretStorage.saveCustomServerBearerKey(
-                        customKey,
-                      );
-                    }
-                    ref.read(ocrServerUrlProvider.notifier).setUrl(url);
-                  }
-                  if (!dialogContext.mounted) return;
-                  Navigator.of(dialogContext).pop();
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          );
-        },
+      builder: (_) => _OcrServerUrlDialog(
+        initialUrl: currentUrl,
+        initialBearerKey: savedCustomBearerKey,
       ),
     );
 
-    controller.dispose();
-    customKeyController.dispose();
+    if (result != null) {
+      if (result.bearerKey != null) {
+        await _ocrAuthSecretStorage.saveCustomServerBearerKey(
+          result.bearerKey!,
+        );
+      }
+      ref.read(ocrServerUrlProvider.notifier).setUrl(result.url);
+    }
+  }
+}
+
+// ── OCR Server URL Dialog ──
+
+class _OcrServerUrlDialog extends StatefulWidget {
+  const _OcrServerUrlDialog({
+    required this.initialUrl,
+    required this.initialBearerKey,
+  });
+
+  final String initialUrl;
+  final String initialBearerKey;
+
+  @override
+  State<_OcrServerUrlDialog> createState() => _OcrServerUrlDialogState();
+}
+
+class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
+  late final TextEditingController _urlController;
+  late final TextEditingController _keyController;
+  bool _obscureKey = true;
+  String? _keyError;
+
+  @override
+  void initState() {
+    super.initState();
+    _urlController = TextEditingController(text: widget.initialUrl);
+    _keyController = TextEditingController(text: widget.initialBearerKey);
+  }
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _keyController.dispose();
+    super.dispose();
+  }
+
+  void _onSave() {
+    final url = _urlController.text.trim();
+    if (url.isEmpty) return;
+
+    if (!isBuiltInOcrServerUrl(url)) {
+      final customKey = _keyController.text.trim();
+      if (customKey.isEmpty) {
+        setState(() {
+          _keyError = 'A shared key is required for custom servers.';
+        });
+        return;
+      }
+      Navigator.of(context).pop((url: url, bearerKey: customKey));
+    } else {
+      Navigator.of(context).pop((url: url, bearerKey: null));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final usesBuiltInServer = isBuiltInOcrServerUrl(_urlController.text);
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('OCR Server URL'),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _urlController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Server URL',
+                  hintText:
+                      'https://mostrowski123--mekuru-ocr-fastapi-app.modal.run',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.url,
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Page credits are only used on the built-in Mekuru OCR '
+                'server. Custom OCR servers do not consume page credits.',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse(ocr_server_config.mekuruOcrRepoUrl),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Learn how to run your own server'),
+              ),
+              const SizedBox(height: 8),
+              if (usesBuiltInServer)
+                Text(
+                  'The built-in server always uses app authentication.',
+                  style: theme.textTheme.bodySmall,
+                )
+              else ...[
+                TextField(
+                  controller: _keyController,
+                  obscureText: _obscureKey,
+                  decoration: InputDecoration(
+                    labelText: 'Custom shared key',
+                    hintText: 'Required AUTH_API_KEY',
+                    border: const OutlineInputBorder(),
+                    errorText: _keyError,
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _obscureKey = !_obscureKey;
+                            });
+                          },
+                          icon: Icon(
+                            _obscureKey
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
+                        if (_keyController.text.trim().isNotEmpty)
+                          IconButton(
+                            onPressed: () {
+                              _keyController.clear();
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
+                      ],
+                    ),
+                  ),
+                  onChanged: (_) => setState(() {
+                    _keyError = null;
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Custom OCR servers must be configured with a shared '
+                  'AUTH_API_KEY. Enter the same shared secret here. The '
+                  'app sends it as Authorization: Bearer <key>. Custom '
+                  'servers always run as plain OCR endpoints with direct '
+                  'image uploads and no page-credit jobs.',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            _urlController.text = OcrServerUrlNotifier.defaultUrl;
+            setState(() {});
+          },
+          child: const Text('Reset'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _onSave,
+          child: const Text('Save'),
+        ),
+      ],
+    );
   }
 }
 
