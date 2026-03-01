@@ -28,6 +28,9 @@ class EpubMetadata {
   });
 }
 
+/// Maximum EPUB file size allowed for import (200 MB).
+const _maxEpubBytes = 200 * 1024 * 1024;
+
 /// Parses EPUB files to extract metadata and cover images.
 class EpubParser {
   /// Parse an EPUB file and extract its metadata + cover image.
@@ -42,6 +45,14 @@ class EpubParser {
     final file = File(epubPath);
     if (!await file.exists()) {
       throw FileSystemException('EPUB file not found', epubPath);
+    }
+    final fileSize = await file.length();
+    if (fileSize > _maxEpubBytes) {
+      throw FileSystemException(
+        'EPUB file is too large (${(fileSize / 1024 / 1024).toStringAsFixed(0)} MB). '
+        'Maximum supported size is ${_maxEpubBytes ~/ 1024 ~/ 1024} MB.',
+        epubPath,
+      );
     }
 
     // Unzip the EPUB
@@ -73,6 +84,14 @@ class EpubParser {
     final file = File(epubPath);
     if (!await file.exists()) {
       throw FileSystemException('EPUB file not found', epubPath);
+    }
+    final fileSize = await file.length();
+    if (fileSize > _maxEpubBytes) {
+      throw FileSystemException(
+        'EPUB file is too large (${(fileSize / 1024 / 1024).toStringAsFixed(0)} MB). '
+        'Maximum supported size is ${_maxEpubBytes ~/ 1024 ~/ 1024} MB.',
+        epubPath,
+      );
     }
 
     final bytes = await file.readAsBytes();

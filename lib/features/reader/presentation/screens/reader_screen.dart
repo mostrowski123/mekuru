@@ -334,6 +334,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                               settings.swipeSensitivity,
                             );
                           },
+                      onLoadError: (description) {
+                        if (!mounted) return;
+                        setState(() {
+                          _errorMessage =
+                              'Failed to load EPUB content.\n$description';
+                        });
+                      },
                     ),
                   ),
                 if (_isLoading) _buildLoadingOverlay(context),
