@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/manga/data/services/ocr_account_link_service.dart';
@@ -44,6 +45,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<OcrBillingStatus?> _loadOcrBillingStatus() async {
+    if (!FirebaseRuntime.instance.hasFirebaseApp) {
+      return null;
+    }
+
     final billingClient = OcrBillingClient();
     try {
       return await billingClient.readCachedStatus();
@@ -61,6 +66,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _handleOcrAccountAction() async {
+    if (!FirebaseRuntime.instance.hasFirebaseApp) {
+      _showOcrUnavailableMessage();
+      return;
+    }
+
     final currentUser = FirebaseAuth.instance.currentUser;
     final needsLink = currentUser == null || currentUser.isAnonymous;
 
@@ -89,7 +99,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      ).showSnackBar(SnackBar(content: Text(describeOcrError(e))));
     } finally {
       if (mounted) {
         _refreshOcrBillingStatus();
@@ -98,6 +108,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _openOcrPurchases() async {
+    if (!FirebaseRuntime.instance.hasFirebaseApp) {
+      _showOcrUnavailableMessage();
+      return;
+    }
+
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const OcrPurchasesScreen()));
@@ -105,6 +120,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (mounted) {
       _refreshOcrBillingStatus();
     }
+  }
+
+  void _showOcrUnavailableMessage() {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('OCR services are temporarily unavailable.'),
+      ),
+    );
   }
 
   @override
@@ -115,6 +140,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
     final readerSettings = ref.watch(readerSettingsProvider);
     final readerNotifier = ref.read(readerSettingsProvider.notifier);
+    final hasFirebaseApp = FirebaseRuntime.instance.hasFirebaseApp;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -406,105 +432,146 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ── Manga OCR ──
           _SectionHeader(title: 'OCR Purchases'),
-          StreamBuilder<User?>(
-            stream: FirebaseAuth.instance.idTokenChanges(),
-            initialData: FirebaseAuth.instance.currentUser,
-            builder: (context, authSnapshot) {
-              final currentUser =
-                  authSnapshot.data ?? FirebaseAuth.instance.currentUser;
-              final isLinked = currentUser != null && !currentUser.isAnonymous;
+          if (!hasFirebaseApp)
+            Column(
+              children: [
+                ListTile(
+                  enabled: false,
+                  leading: Icon(
+                    Icons.login_outlined,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  title: const Text('Restore OCR Purchases'),
+                  subtitle: const Text(
+                    'OCR services are temporarily unavailable.',
+                  ),
+                ),
+                ListTile(
+                  enabled: false,
+                  leading: Icon(
+                    Icons.shopping_bag_outlined,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  title: const Text('OCR Purchases'),
+                  subtitle: const Text(
+                    'OCR services are temporarily unavailable.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                ),
+              ],
+            )
+          else
+            StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.idTokenChanges(),
+              initialData: FirebaseAuth.instance.currentUser,
+              builder: (context, authSnapshot) {
+                final currentUser =
+                    authSnapshot.data ?? FirebaseAuth.instance.currentUser;
+                final isLinked =
+                    currentUser != null && !currentUser.isAnonymous;
 
-              return Column(
-                children: [
-                  ListTile(
-                    leading: Icon(
-                      isLinked
-                          ? Icons.verified_user_outlined
-                          : Icons.login_outlined,
-                      color: theme.colorScheme.primary,
+                return Column(
+                  children: [
+                    ListTile(
+                      leading: Icon(
+                        isLinked
+                            ? Icons.verified_user_outlined
+                            : Icons.login_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                      title: Text(
+                        isLinked
+                            ? 'Restore OCR Purchases'
+                            : 'Sign In to Restore Purchases',
+                      ),
+                      subtitle: Text(
+                        isLinked
+                            ? (currentUser.email ??
+                                  'Refresh your purchases on this device')
+                            : 'Link a Google account before restoring or buying OCR access',
+                      ),
+                      onTap: () {
+                        AppHaptics.light();
+                        _handleOcrAccountAction();
+                      },
                     ),
-                    title: Text(
-                      isLinked
-                          ? 'Restore OCR Purchases'
-                          : 'Sign In to Restore Purchases',
+                    ListTile(
+                      leading: Icon(
+                        Icons.shopping_bag_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                      title: const Text('OCR Purchases'),
+                      subtitle: const Text(
+                        'Unlock OCR and view your page credits',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        AppHaptics.light();
+                        _openOcrPurchases();
+                      },
                     ),
-                    subtitle: Text(
-                      isLinked
-                          ? (currentUser.email ??
-                                'Refresh your purchases on this device')
-                          : 'Link a Google account before restoring or buying OCR access',
-                    ),
-                    onTap: () {
-                      AppHaptics.light();
-                      _handleOcrAccountAction();
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(
-                      Icons.shopping_bag_outlined,
-                      color: theme.colorScheme.primary,
-                    ),
-                    title: const Text('OCR Purchases'),
-                    subtitle: const Text(
-                      'Unlock OCR and view your page credits',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      AppHaptics.light();
-                      _openOcrPurchases();
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
+                  ],
+                );
+              },
+            ),
           const Divider(),
           _SectionHeader(title: 'Manga OCR'),
-          FutureBuilder<OcrBillingStatus?>(
-            future: _ocrBillingStatusFuture,
-            builder: (context, snapshot) {
-              final billingCheckFailed = snapshot.hasError;
-              final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
-              final usesBuiltInServer = isBuiltInOcrServerUrl(
-                currentOcrServerUrl,
-              );
-              final canEditOcrServerUrl =
-                  billingCheckFailed ||
-                  (snapshot.connectionState == ConnectionState.done &&
-                      (snapshot.data?.ocrUnlocked ?? false));
+          if (!hasFirebaseApp)
+            ListTile(
+              enabled: false,
+              leading: Icon(
+                Icons.document_scanner_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              title: const Text('OCR Server URL'),
+              subtitle: const Text('OCR services are temporarily unavailable.'),
+            )
+          else
+            FutureBuilder<OcrBillingStatus?>(
+              future: _ocrBillingStatusFuture,
+              builder: (context, snapshot) {
+                final billingCheckFailed = snapshot.hasError;
+                final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
+                final usesBuiltInServer = isBuiltInOcrServerUrl(
+                  currentOcrServerUrl,
+                );
+                final canEditOcrServerUrl =
+                    billingCheckFailed ||
+                    (snapshot.connectionState == ConnectionState.done &&
+                        (snapshot.data?.ocrUnlocked ?? false));
 
-              return ListTile(
-                enabled: canEditOcrServerUrl,
-                leading: Icon(
-                  Icons.document_scanner_outlined,
-                  color: canEditOcrServerUrl
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
-                title: const Text('OCR Server URL'),
-                subtitle: Text(
-                  canEditOcrServerUrl
-                      ? '$currentOcrServerUrl\n'
-                            '${usesBuiltInServer ? 'Mekuru server, page credits apply' : 'Custom server, shared key required, page credits disabled'}'
-                      : 'Unlock OCR first to edit the server endpoint',
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: canEditOcrServerUrl
-                    ? const Icon(Icons.chevron_right)
-                    : TextButton(
-                        onPressed: _openOcrPurchases,
-                        child: const Text('Unlock'),
-                      ),
-                onTap: canEditOcrServerUrl
-                    ? () {
-                        AppHaptics.light();
-                        _showOcrServerUrlDialog(context, ref);
-                      }
-                    : null,
-              );
-            },
-          ),
+                return ListTile(
+                  enabled: canEditOcrServerUrl,
+                  leading: Icon(
+                    Icons.document_scanner_outlined,
+                    color: canEditOcrServerUrl
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  title: const Text('OCR Server URL'),
+                  subtitle: Text(
+                    canEditOcrServerUrl
+                        ? '$currentOcrServerUrl\n'
+                              '${usesBuiltInServer ? 'Mekuru server, page credits apply' : 'Custom server, shared key required, page credits disabled'}'
+                        : 'Unlock OCR first to edit the server endpoint',
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: canEditOcrServerUrl
+                      ? const Icon(Icons.chevron_right)
+                      : TextButton(
+                          onPressed: _openOcrPurchases,
+                          child: const Text('Unlock'),
+                        ),
+                  onTap: canEditOcrServerUrl
+                      ? () {
+                          AppHaptics.light();
+                          _showOcrServerUrlDialog(context, ref);
+                        }
+                      : null,
+                );
+              },
+            ),
           const Divider(),
 
           // ── Downloads ──
@@ -515,16 +582,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: theme.colorScheme.primary,
             ),
             title: const Text('Downloads'),
-            subtitle: const Text(
-              'Dictionaries, kanji data, and more',
-            ),
+            subtitle: const Text('Dictionaries, kanji data, and more'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const DownloadsScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const DownloadsScreen()),
               );
             },
           ),
@@ -1014,10 +1077,7 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        TextButton(
-          onPressed: _onSave,
-          child: const Text('Save'),
-        ),
+        TextButton(onPressed: _onSave, child: const Text('Save')),
       ],
     );
   }
@@ -1072,4 +1132,3 @@ class _ThemeModeOption extends StatelessWidget {
     );
   }
 }
-

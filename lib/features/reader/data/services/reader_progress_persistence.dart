@@ -29,16 +29,18 @@ class ReaderProgressPersistence {
     _saveTimer = Timer(debounceDuration, _flushQueuedSave);
   }
 
-  Future<void> dispose() async {
+  Future<void> flush() async {
     _saveTimer?.cancel();
+    _saveTimer = null;
     await _flushQueuedSave();
   }
+
+  Future<void> dispose() async => flush();
 
   Future<void> _flushQueuedSave() async {
     final cfiToSave = _queuedCfi;
     if (cfiToSave == null ||
-        (cfiToSave == _lastSavedCfi &&
-            _queuedProgress == _lastSavedProgress)) {
+        (cfiToSave == _lastSavedCfi && _queuedProgress == _lastSavedProgress)) {
       return;
     }
 
