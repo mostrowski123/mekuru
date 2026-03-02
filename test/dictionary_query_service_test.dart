@@ -490,11 +490,9 @@ void main() {
         final results = await freqQueryService.searchWithSource('私');
 
         // あたし should still get a frequency rank (fallback to expression-level)
-        final _unusedAtashiResults = results
+        final atashiResults = results
             .where((r) => r.entry.reading == 'あたし')
             .toList();
-        final atashiResults =
-            results.where((r) => r.entry.reading == 'あたし').toList();
         expect(atashiResults, hasLength(1));
         // Null rank: reading-specific data exists for this expression,
         // but あたし isn't listed, so it sorts to the end.
