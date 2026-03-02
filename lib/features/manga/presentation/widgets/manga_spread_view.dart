@@ -176,12 +176,25 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       return (null, null);
     }
 
-    final sharedInsets = _PageCropInsets.fromPage(
-      leftPage,
-    ).mergeWith(_PageCropInsets.fromPage(rightPage));
+    final leftInsets = _PageCropInsets.fromPage(leftPage);
+    final rightInsets = _PageCropInsets.fromPage(rightPage);
+    final sharedTop = math.min(leftInsets.top, rightInsets.top);
+    final sharedBottom = math.min(leftInsets.bottom, rightInsets.bottom);
+    final sharedInner = math.min(leftInsets.right, rightInsets.left);
+
     return (
-      sharedInsets.applyToPage(leftPage),
-      sharedInsets.applyToPage(rightPage),
+      _PageCropInsets(
+        left: leftInsets.left,
+        top: sharedTop,
+        right: sharedInner,
+        bottom: sharedBottom,
+      ).applyToPage(leftPage),
+      _PageCropInsets(
+        left: sharedInner,
+        top: sharedTop,
+        right: rightInsets.right,
+        bottom: sharedBottom,
+      ).applyToPage(rightPage),
     );
   }
 
@@ -373,14 +386,6 @@ class _PageCropInsets {
       bottom: (imgH - bounds.bottom).clamp(0.0, imgH),
     );
   }
-
-  _PageCropInsets mergeWith(_PageCropInsets other) => _PageCropInsets(
-    // Match both pages to the same visible margins without clipping content.
-    left: math.min(left, other.left),
-    top: math.min(top, other.top),
-    right: math.min(right, other.right),
-    bottom: math.min(bottom, other.bottom),
-  );
 
   Rect applyToPage(MokuroPage page) {
     final imgW = page.imgWidth.toDouble();
