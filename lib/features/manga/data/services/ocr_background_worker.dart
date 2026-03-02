@@ -122,7 +122,9 @@ void ocrWorkerCallbackDispatcher() {
         );
       } catch (progressError) {
         // Last-resort handler — can't even save failure state.
-        debugPrint('[OCR_WORKER] failed to save error progress: $progressError');
+        debugPrint(
+          '[OCR_WORKER] failed to save error progress: $progressError',
+        );
       }
       return false;
     }
@@ -207,7 +209,9 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   try {
     await MecabService.instance.init();
   } catch (e) {
-    debugPrint('[OCR_WORKER] MeCab init failed (word segmentation may be skipped): $e');
+    debugPrint(
+      '[OCR_WORKER] MeCab init failed (word segmentation may be skipped): $e',
+    );
   }
 
   final bearerToken = usesBuiltInServer
@@ -443,6 +447,7 @@ Future<void> _saveCache(
     imageDirPath: originalBook.imageDirPath,
     safTreeUri: originalBook.safTreeUri,
     safImageDirRelativePath: originalBook.safImageDirRelativePath,
+    autoCropVersion: originalBook.autoCropVersion,
     pages: updatedPages,
   );
   await cacheFile.writeAsString(json.encode(updated.toJson()));

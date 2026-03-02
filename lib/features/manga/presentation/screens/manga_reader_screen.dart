@@ -18,6 +18,7 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -309,6 +310,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           final direction = ref.watch(mangaReadingDirectionProvider);
           final transparent = ref.watch(mangaLookupTransparencyProvider);
           final autoCrop = ref.watch(mangaAutoCropProvider);
+          final hasComputedAutoCrop =
+              mokuroBook.autoCropVersion > 0 ||
+              mokuroBook.pages.any((page) => page.contentBounds != null);
           final isProUnlocked = proUnlockedValue(
             ref.watch(proUnlockedProvider),
           );
@@ -369,9 +373,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                     SwitchListTile(
                       secondary: const Icon(Icons.crop),
                       title: const Text('Auto-Crop'),
-                      subtitle: const Text(
-                        'Remove empty margins (one-time setup per book)',
-                      ),
+                      subtitle: const Text('Remove empty margins'),
                       value: autoCrop,
                       onChanged: (value) =>
                           _handleAutoCropToggle(ref, mokuroBook, value),
@@ -384,9 +386,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       title: const Text('Auto-Crop'),
-                      subtitle: const Text(
-                        'Remove empty margins (one-time setup per book)',
-                      ),
+                      subtitle: const Text('Remove empty margins'),
                       trailing: TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
@@ -394,6 +394,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                         },
                         child: const Text('Unlock'),
                       ),
+                    ),
+                  if (isProUnlocked && autoCrop && hasComputedAutoCrop)
+                    ListTile(
+                      leading: const Icon(Icons.refresh),
+                      title: const Text('Re-run Auto-Crop'),
+                      subtitle: const Text(
+                        'Re-scan every page image for this book',
+                      ),
+                      onTap: () => _handleAutoCropRerun(ref),
                     ),
                   // Transparent lookup toggle
                   SwitchListTile(
@@ -449,24 +458,51 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       AsyncData<MokuroBook>(:final value) => value,
       _ => null,
     };
-    final pagesForAutoCropCheck = latestLoadedBook?.pages ?? mokuroBook.pages;
+    final bookForAutoCropCheck = latestLoadedBook ?? mokuroBook;
     final alreadyAutoCropped =
         _autoCropComputedThisSession ||
-        pagesForAutoCropCheck.any((page) => page.contentBounds != null);
+        bookForAutoCropCheck.autoCropVersion >=
+            MokuroBook.currentAutoCropVersion;
     if (alreadyAutoCropped) {
       _autoCropComputedThisSession = true;
       ref.read(mangaAutoCropProvider.notifier).setEnabled(true);
       return;
     }
 
+    await _runAutoCropComputation(ref, force: false, enableAfterCompute: true);
+  }
+
+  Future<void> _handleAutoCropRerun(WidgetRef ref) {
+    return _runAutoCropComputation(
+      ref,
+      force: true,
+      enableAfterCompute: ref.read(mangaAutoCropProvider),
+    );
+  }
+
+  Future<void> _runAutoCropComputation(
+    WidgetRef ref, {
+    required bool force,
+    required bool enableAfterCompute,
+  }) async {
+    if (_isComputingAutoCrop) return;
+    final whiteThreshold = ref.read(autoCropWhiteThresholdProvider);
+
+    final dialogTitle = force ? 'Re-run Auto-Crop?' : 'Compute Auto-Crop?';
+    final dialogBody = force
+        ? 'Auto-crop will re-scan every page image for this book and '
+              'replace the saved crop bounds. This may take a minute.'
+        : 'Auto-crop needs to scan every page image for this book before it '
+              'can be enabled. This may take a minute.';
+    final progressBody = force
+        ? 'Recomputing auto-crop bounds. This may take a minute.'
+        : 'Computing auto-crop bounds. This may take a minute.';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Compute Auto-Crop?'),
-        content: const Text(
-          'Auto-crop needs a one-time scan of every page image for this '
-          'book. This may take a minute, but it will not need to run again.',
-        ),
+        title: Text(dialogTitle),
+        content: Text(dialogBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -489,20 +525,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       useRootNavigator: true,
       builder: (dialogContext) {
         progressDialogContext = dialogContext;
-        return const AlertDialog(
+        return AlertDialog(
           content: Row(
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2.5),
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Computing one-time auto-crop bounds. This may take a minute.',
-                ),
-              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(progressBody)),
             ],
           ),
         );
@@ -512,10 +544,19 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     try {
       await ref
           .read(bookRepositoryProvider)
-          .ensureMangaAutoCropComputed(widget.book);
+          .ensureMangaAutoCropComputed(
+            widget.book,
+            force: force,
+            whiteThreshold: whiteThreshold,
+          );
       _autoCropComputedThisSession = true;
       ref.invalidate(mangaPagesProvider(widget.book.id));
-      ref.read(mangaAutoCropProvider.notifier).setEnabled(true);
+      ref.read(mangaAutoCropProvider.notifier).setEnabled(enableAfterCompute);
+      if (force && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Auto-crop bounds refreshed.')),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

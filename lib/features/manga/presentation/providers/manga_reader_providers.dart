@@ -42,6 +42,7 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
       imageDirPath: mokuroBook.imageDirPath,
       safTreeUri: mokuroBook.safTreeUri,
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+      autoCropVersion: mokuroBook.autoCropVersion,
       pages: segmentedPages,
     );
     await cacheFile.writeAsString(jsonEncode(updated.toJson()));

@@ -254,6 +254,43 @@ final autoFocusSearchProvider = NotifierProvider<AutoFocusSearchNotifier, bool>(
   AutoFocusSearchNotifier.new,
 );
 
+/// Manages the white threshold used for future manga auto-crop scans.
+class AutoCropWhiteThresholdNotifier extends Notifier<int> {
+  static const int defaultThreshold = 240;
+  static const int minThreshold = 200;
+  static const int maxThreshold = 255;
+
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  int build() => defaultThreshold;
+
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadAutoCropWhiteThreshold();
+    if (persisted != null) {
+      state = persisted.clamp(minThreshold, maxThreshold);
+    }
+  }
+
+  void setThreshold(double value) {
+    final next = value.round().clamp(minThreshold, maxThreshold);
+    state = next;
+    unawaited(
+      ref.read(appSettingsStorageProvider).saveAutoCropWhiteThreshold(next),
+    );
+  }
+}
+
+final autoCropWhiteThresholdProvider =
+    NotifierProvider<AutoCropWhiteThresholdNotifier, int>(
+      AutoCropWhiteThresholdNotifier.new,
+    );
+
 /// Manages the app color theme selection.
 class AppColorThemeNotifier extends Notifier<AppColorTheme> {
   bool _hasLoadedPersistedSettings = false;
