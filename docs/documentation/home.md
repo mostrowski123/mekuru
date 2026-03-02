@@ -47,7 +47,7 @@ Export selected vocabulary entries to CSV, or send cards directly to AnkiDroid o
 | Kanji Stroke Order | KanjiVG diagrams for single-kanji searches and compatible lookups |
 | Frequency Data | JPDB rank data shown in dictionary results when installed |
 | Pitch Accents | Pitch accent patterns from compatible dictionaries |
-| Bookmarks & Highlights | Save positions, add notes, and manage text highlights in EPUB books |
+| Bookmarks | Save positions and notes in EPUB books |
 | Vocabulary Management | Save words with sentence context and review them later |
 | CSV Export | Export selected vocabulary entries to an Anki-friendly CSV file |
 | AnkiDroid Integration | Send cards to AnkiDroid directly from dictionary lookup cards on Android |
@@ -57,6 +57,6 @@ Export selected vocabulary entries to CSV, or send cards directly to AnkiDroid o
 
 | Feature | Description |
 |-|-|
-| Cloud OCR Unlock | One-time in-app purchase for Mekuru's built-in OCR service. Includes 150 starter page credits. |
+| Pro | One-time upgrade that unlocks auto-crop, book highlights, and custom OCR server support for remote manga OCR. |
 
-> There are no extra credit packs documented in the current app flow. Self-hosted OCR servers do not consume page credits once configured. See [Cloud OCR](manga/cloud-ocr.md) and [Custom OCR Server](manga/custom-server.md).
+> See [Remote OCR](manga/cloud-ocr.md) and [Custom OCR Server](manga/custom-server.md) for setup details.

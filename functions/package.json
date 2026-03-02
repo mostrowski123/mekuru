@@ -6,11 +6,11 @@
     "node": "22"
   },
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
+    "build": "node ./node_modules/typescript/bin/tsc",
+    "build:watch": "node ./node_modules/typescript/bin/tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "npm run build && firebase deploy --only functions,firestore:rules",
-    "lint": "tsc --noEmit"
+    "lint": "node ./node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "express": "^4.21.2",

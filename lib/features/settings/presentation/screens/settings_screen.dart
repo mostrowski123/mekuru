@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -6,11 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
-import 'package:mekuru/features/manga/data/services/ocr_account_link_service.dart';
 import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart';
-import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
-import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
-import 'package:mekuru/features/manga/presentation/screens/ocr_purchases_screen.dart';
+import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
+import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
@@ -32,104 +29,10 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  final OcrAccountLinkService _ocrAccountLinkService = OcrAccountLinkService();
   final OcrAuthSecretStorage _ocrAuthSecretStorage = OcrAuthSecretStorage();
-  late Future<OcrBillingStatus?> _ocrBillingStatusFuture;
 
-  @override
-  void initState() {
-    super.initState();
-    _ocrBillingStatusFuture = _loadOcrBillingStatus();
-
-    // no-op: download status checks moved to DownloadsScreen
-  }
-
-  Future<OcrBillingStatus?> _loadOcrBillingStatus() async {
-    if (!FirebaseRuntime.instance.hasFirebaseApp) {
-      return null;
-    }
-
-    final billingClient = OcrBillingClient();
-    try {
-      return await billingClient.readCachedStatus();
-    } catch (_) {
-      return null;
-    } finally {
-      billingClient.dispose();
-    }
-  }
-
-  void _refreshOcrBillingStatus() {
-    setState(() {
-      _ocrBillingStatusFuture = _loadOcrBillingStatus();
-    });
-  }
-
-  Future<void> _handleOcrAccountAction() async {
-    if (!FirebaseRuntime.instance.hasFirebaseApp) {
-      _showOcrUnavailableMessage();
-      return;
-    }
-
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final needsLink = currentUser == null || currentUser.isAnonymous;
-
-    try {
-      if (needsLink) {
-        final result = await _ocrAccountLinkService.ensureLinkedAccount();
-        await OcrStoreService.instance.restorePurchases();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.user.email == null
-                  ? 'Google account linked. OCR purchases refreshed.'
-                  : 'Signed in as ${result.user.email}. Purchases refreshed.',
-            ),
-          ),
-        );
-      } else {
-        await OcrStoreService.instance.restorePurchases();
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Purchases refreshed.')));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(describeOcrError(e))));
-    } finally {
-      if (mounted) {
-        _refreshOcrBillingStatus();
-      }
-    }
-  }
-
-  Future<void> _openOcrPurchases() async {
-    if (!FirebaseRuntime.instance.hasFirebaseApp) {
-      _showOcrUnavailableMessage();
-      return;
-    }
-
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const OcrPurchasesScreen()));
-
-    if (mounted) {
-      _refreshOcrBillingStatus();
-    }
-  }
-
-  void _showOcrUnavailableMessage() {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('OCR services are temporarily unavailable.'),
-      ),
-    );
+  Future<void> _openProUpgrade() async {
+    await openProUpgrade(context, ref);
   }
 
   @override
@@ -141,6 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final readerSettings = ref.watch(readerSettingsProvider);
     final readerNotifier = ref.read(readerSettingsProvider.notifier);
     final hasFirebaseApp = FirebaseRuntime.instance.hasFirebaseApp;
+    final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -431,87 +335,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           // ── Manga OCR ──
-          _SectionHeader(title: 'OCR Purchases'),
+          _SectionHeader(title: 'Pro'),
           if (!hasFirebaseApp)
-            Column(
-              children: [
-                ListTile(
-                  enabled: false,
-                  leading: Icon(
-                    Icons.login_outlined,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  title: const Text('Restore OCR Purchases'),
-                  subtitle: const Text(
-                    'OCR services are temporarily unavailable.',
-                  ),
-                ),
-                ListTile(
-                  enabled: false,
-                  leading: Icon(
-                    Icons.shopping_bag_outlined,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  title: const Text('OCR Purchases'),
-                  subtitle: const Text(
-                    'OCR services are temporarily unavailable.',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                ),
-              ],
+            ListTile(
+              enabled: false,
+              leading: Icon(
+                Icons.shopping_bag_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              title: const Text('Pro'),
+              subtitle: const Text('Pro services are temporarily unavailable.'),
+              trailing: const Icon(Icons.chevron_right),
             )
           else
-            StreamBuilder<User?>(
-              stream: FirebaseAuth.instance.idTokenChanges(),
-              initialData: FirebaseAuth.instance.currentUser,
-              builder: (context, authSnapshot) {
-                final currentUser =
-                    authSnapshot.data ?? FirebaseAuth.instance.currentUser;
-                final isLinked =
-                    currentUser != null && !currentUser.isAnonymous;
-
-                return Column(
-                  children: [
-                    ListTile(
-                      leading: Icon(
-                        isLinked
-                            ? Icons.verified_user_outlined
-                            : Icons.login_outlined,
-                        color: theme.colorScheme.primary,
-                      ),
-                      title: Text(
-                        isLinked
-                            ? 'Restore OCR Purchases'
-                            : 'Sign In to Restore Purchases',
-                      ),
-                      subtitle: Text(
-                        isLinked
-                            ? (currentUser.email ??
-                                  'Refresh your purchases on this device')
-                            : 'Link a Google account before restoring or buying OCR access',
-                      ),
-                      onTap: () {
-                        AppHaptics.light();
-                        _handleOcrAccountAction();
-                      },
-                    ),
-                    ListTile(
-                      leading: Icon(
-                        Icons.shopping_bag_outlined,
-                        color: theme.colorScheme.primary,
-                      ),
-                      title: const Text('OCR Purchases'),
-                      subtitle: const Text(
-                        'Unlock OCR and view your page credits',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        AppHaptics.light();
-                        _openOcrPurchases();
-                      },
-                    ),
-                  ],
-                );
+            ListTile(
+              leading: Icon(
+                Icons.shopping_bag_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: const Text('Pro'),
+              subtitle: const Text(
+                'Unlock auto-crop, book highlights, and custom OCR',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                AppHaptics.light();
+                _openProUpgrade();
               },
             ),
           const Divider(),
@@ -523,47 +372,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Icons.document_scanner_outlined,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
-              title: const Text('OCR Server URL'),
+              title: const Text('Custom OCR Server'),
               subtitle: const Text('OCR services are temporarily unavailable.'),
             )
           else
-            FutureBuilder<OcrBillingStatus?>(
-              future: _ocrBillingStatusFuture,
-              builder: (context, snapshot) {
-                final billingCheckFailed = snapshot.hasError;
+            Builder(
+              builder: (context) {
                 final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
                 final usesBuiltInServer = isBuiltInOcrServerUrl(
                   currentOcrServerUrl,
                 );
-                final canEditOcrServerUrl =
-                    billingCheckFailed ||
-                    (snapshot.connectionState == ConnectionState.done &&
-                        (snapshot.data?.ocrUnlocked ?? false));
+                final subtitle = !isProUnlocked
+                    ? 'Unlock Pro to configure your OCR server'
+                    : usesBuiltInServer
+                    ? 'Not configured. Add your own server URL and shared key.'
+                    : '$currentOcrServerUrl\nUse the same shared key configured on your server.';
 
                 return ListTile(
-                  enabled: canEditOcrServerUrl,
+                  enabled: isProUnlocked,
                   leading: Icon(
                     Icons.document_scanner_outlined,
-                    color: canEditOcrServerUrl
+                    color: isProUnlocked
                         ? theme.colorScheme.primary
                         : theme.colorScheme.onSurfaceVariant,
                   ),
-                  title: const Text('OCR Server URL'),
+                  title: const Text('Custom OCR Server'),
                   subtitle: Text(
-                    canEditOcrServerUrl
-                        ? '$currentOcrServerUrl\n'
-                              '${usesBuiltInServer ? 'Mekuru server, page credits apply' : 'Custom server, shared key required, page credits disabled'}'
-                        : 'Unlock OCR first to edit the server endpoint',
+                    subtitle,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: canEditOcrServerUrl
+                  trailing: isProUnlocked
                       ? const Icon(Icons.chevron_right)
                       : TextButton(
-                          onPressed: _openOcrPurchases,
+                          onPressed: _openProUpgrade,
                           child: const Text('Unlock'),
                         ),
-                  onTap: canEditOcrServerUrl
+                  onTap: isProUnlocked
                       ? () {
                           AppHaptics.light();
                           _showOcrServerUrlDialog(context, ref);
@@ -890,29 +735,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final savedCustomBearerKey =
         await _ocrAuthSecretStorage.loadCustomServerBearerKey() ?? '';
     final currentUrl = ref.read(ocrServerUrlProvider);
+    final initialUrl = isBuiltInOcrServerUrl(currentUrl) ? '' : currentUrl;
 
     if (!context.mounted) return;
 
     final result = await showDialog<({String url, String? bearerKey})>(
       context: context,
       builder: (_) => _OcrServerUrlDialog(
-        initialUrl: currentUrl,
+        initialUrl: initialUrl,
         initialBearerKey: savedCustomBearerKey,
       ),
     );
 
     if (result != null) {
-      if (result.bearerKey != null) {
-        await _ocrAuthSecretStorage.saveCustomServerBearerKey(
-          result.bearerKey!,
-        );
-      }
+      await _ocrAuthSecretStorage.saveCustomServerBearerKey(result.bearerKey!);
       ref.read(ocrServerUrlProvider.notifier).setUrl(result.url);
     }
   }
 }
 
-// ── OCR Server URL Dialog ──
+// ── Custom OCR Server Dialog ──
 
 class _OcrServerUrlDialog extends StatefulWidget {
   const _OcrServerUrlDialog({
@@ -931,6 +773,7 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
   late final TextEditingController _urlController;
   late final TextEditingController _keyController;
   bool _obscureKey = true;
+  String? _urlError;
   String? _keyError;
 
   @override
@@ -949,29 +792,26 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
 
   void _onSave() {
     final url = _urlController.text.trim();
-    if (url.isEmpty) return;
-
-    if (!isBuiltInOcrServerUrl(url)) {
-      final customKey = _keyController.text.trim();
-      if (customKey.isEmpty) {
-        setState(() {
-          _keyError = 'A shared key is required for custom servers.';
-        });
-        return;
-      }
-      Navigator.of(context).pop((url: url, bearerKey: customKey));
-    } else {
-      Navigator.of(context).pop((url: url, bearerKey: null));
+    final customKey = _keyController.text.trim();
+    if (url.isEmpty || customKey.isEmpty) {
+      setState(() {
+        _urlError = url.isEmpty ? 'Enter your server URL.' : null;
+        _keyError = customKey.isEmpty
+            ? 'A shared key is required for custom servers.'
+            : null;
+      });
+      return;
     }
+
+    Navigator.of(context).pop((url: url, bearerKey: customKey));
   }
 
   @override
   Widget build(BuildContext context) {
-    final usesBuiltInServer = isBuiltInOcrServerUrl(_urlController.text);
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: const Text('OCR Server URL'),
+      title: const Text('Custom OCR Server'),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -982,20 +822,17 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
               TextField(
                 controller: _urlController,
                 autofocus: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Server URL',
                   hintText:
                       'https://mostrowski123--mekuru-ocr-fastapi-app.modal.run',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  errorText: _urlError,
                 ),
                 keyboardType: TextInputType.url,
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Page credits are only used on the Mekuru OCR '
-                'server. Custom OCR servers do not consume page credits.',
-                style: theme.textTheme.bodySmall,
+                onChanged: (_) => setState(() {
+                  _urlError = null;
+                }),
               ),
               const SizedBox(height: 8),
               TextButton.icon(
@@ -1007,60 +844,53 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
                 label: const Text('Learn how to run your own server'),
               ),
               const SizedBox(height: 8),
-              if (usesBuiltInServer)
-                Text(
-                  'The Mekuru server always uses app authentication.',
-                  style: theme.textTheme.bodySmall,
-                )
-              else ...[
-                TextField(
-                  controller: _keyController,
-                  obscureText: _obscureKey,
-                  decoration: InputDecoration(
-                    labelText: 'Custom shared key',
-                    hintText: 'Required AUTH_API_KEY',
-                    border: const OutlineInputBorder(),
-                    errorText: _keyError,
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
+              TextField(
+                controller: _keyController,
+                obscureText: _obscureKey,
+                decoration: InputDecoration(
+                  labelText: 'Custom shared key',
+                  hintText: 'Required AUTH_API_KEY',
+                  border: const OutlineInputBorder(),
+                  errorText: _keyError,
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscureKey = !_obscureKey;
+                          });
+                        },
+                        icon: Icon(
+                          _obscureKey
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                      ),
+                      if (_keyController.text.trim().isNotEmpty)
                         IconButton(
                           onPressed: () {
+                            _keyController.clear();
                             setState(() {
-                              _obscureKey = !_obscureKey;
+                              _keyError = null;
                             });
                           },
-                          icon: Icon(
-                            _obscureKey
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
+                          icon: const Icon(Icons.clear),
                         ),
-                        if (_keyController.text.trim().isNotEmpty)
-                          IconButton(
-                            onPressed: () {
-                              _keyController.clear();
-                              setState(() {});
-                            },
-                            icon: const Icon(Icons.clear),
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
-                  onChanged: (_) => setState(() {
-                    _keyError = null;
-                  }),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Custom OCR servers must be configured with a shared '
-                  'AUTH_API_KEY. Enter the same shared secret here. The '
-                  'app sends it as Authorization: Bearer <key>. Custom '
-                  'servers always run as plain OCR endpoints with direct '
-                  'image uploads and no page-credit jobs.',
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
+                onChanged: (_) => setState(() {
+                  _keyError = null;
+                }),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Enter the same shared AUTH_API_KEY used by your OCR '
+                'server. Mekuru sends it as Authorization: Bearer <key> '
+                'for remote manga OCR requests.',
+                style: theme.textTheme.bodySmall,
+              ),
             ],
           ),
         ),
@@ -1068,10 +898,14 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
       actions: [
         TextButton(
           onPressed: () {
-            _urlController.text = OcrServerUrlNotifier.defaultUrl;
-            setState(() {});
+            _urlController.clear();
+            _keyController.clear();
+            setState(() {
+              _urlError = null;
+              _keyError = null;
+            });
           },
-          child: const Text('Reset'),
+          child: const Text('Clear'),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),

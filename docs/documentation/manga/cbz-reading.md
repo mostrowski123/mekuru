@@ -21,7 +21,7 @@ The manga reader supports three view modes:
 The manga reader settings sheet includes:
 
 - **Reading Direction** - toggle between right-to-left and left-to-right
-- **Auto-Crop** - one-time page scan that removes empty borders for the current book
+- **Auto-Crop** - Pro feature for a one-time page scan that removes empty borders for the current book
 - **Transparent Lookup** - makes the dictionary sheet more see-through over the page
 - **Debug Word Overlay** - shows word boxes for troubleshooting OCR or Mokuro alignment
 
@@ -38,4 +38,4 @@ Once text overlays exist, tapping a word opens the same dictionary lookup used i
 
 ## OCR Notes for CBZ
 
-CBZ OCR is managed from the library item's long-press actions, not from inside the reader. See [Cloud OCR](manga/cloud-ocr.md) and [Custom OCR Server](manga/custom-server.md).
+CBZ OCR is managed from the library item's long-press actions, not from inside the reader. See [Remote OCR](manga/cloud-ocr.md) and [Custom OCR Server](manga/custom-server.md).

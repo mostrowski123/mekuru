@@ -16,7 +16,7 @@
   - [Exporting to Anki](vocabulary/anki-export.md)
 - **Manga & OCR**
   - [Reading Manga](manga/cbz-reading.md)
-  - [Cloud OCR](manga/cloud-ocr.md)
+  - [Pro (Remote OCR)](manga/cloud-ocr.md)
   - [Custom OCR Server](manga/custom-server.md)
 - **Settings**
   - [App Settings](settings/app-settings.md)

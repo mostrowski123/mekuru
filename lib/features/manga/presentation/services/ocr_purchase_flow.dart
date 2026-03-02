@@ -1,241 +1,143 @@
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart';
+import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../data/services/ocr_account_link_service.dart';
 import '../../data/services/ocr_billing_client.dart';
-import '../../data/services/ocr_store_service.dart';
-
-class OcrPreparationResult {
-  final OcrJobReservation? reservation;
-
-  const OcrPreparationResult({this.reservation});
-}
 
 class OcrPurchaseFlow {
-  OcrPurchaseFlow._();
+  OcrPurchaseFlow({
+    OcrAuthSecretStorage? ocrAuthSecretStorage,
+    OcrBillingClient? billingClient,
+    Future<bool> Function()? readProUnlocked,
+    Future<String?> Function()? loadCustomServerBearerKey,
+    Future<void> Function(BuildContext context)? openProUpgradeScreen,
+    Future<void> Function(BuildContext context)? openSettingsScreen,
+  }) : _ocrAuthSecretStorage = ocrAuthSecretStorage ?? OcrAuthSecretStorage(),
+       _billingClient = billingClient ?? OcrBillingClient(),
+       _readProUnlockedOverride = readProUnlocked,
+       _loadCustomServerBearerKeyOverride = loadCustomServerBearerKey,
+       _openProUpgradeScreenOverride = openProUpgradeScreen,
+       _openSettingsScreenOverride = openSettingsScreen;
 
-  static final OcrPurchaseFlow instance = OcrPurchaseFlow._();
+  static final OcrPurchaseFlow instance = OcrPurchaseFlow();
 
-  final OcrAccountLinkService _accountLinkService = OcrAccountLinkService();
-  final OcrAuthSecretStorage _ocrAuthSecretStorage = OcrAuthSecretStorage();
-  final OcrBillingClient _billingClient = OcrBillingClient();
-  final OcrStoreService _storeService = OcrStoreService.instance;
+  final OcrAuthSecretStorage _ocrAuthSecretStorage;
+  final OcrBillingClient _billingClient;
+  final Future<bool> Function()? _readProUnlockedOverride;
+  final Future<String?> Function()? _loadCustomServerBearerKeyOverride;
+  final Future<void> Function(BuildContext context)?
+  _openProUpgradeScreenOverride;
+  final Future<void> Function(BuildContext context)?
+  _openSettingsScreenOverride;
 
-  Future<OcrPreparationResult?> prepareOcrReservation(
+  Future<bool> ensureProAndCustomOcrReady(
     BuildContext context, {
-    required int pageCount,
-    required int bookId,
     required String Function() getServerUrl,
   }) async {
-    await _storeService.initialize();
-    Map<String, ProductDetails>? unlockProducts;
-    var didPrepareAccount = false;
-
-    try {
-      while (context.mounted) {
-        final serverUrl = getServerUrl();
-        final usesBuiltInServer = ocr_server_config.isBuiltInOcrServerUrl(
-          serverUrl,
-        );
-        if (!usesBuiltInServer) {
-          final customBearerKey = await _ocrAuthSecretStorage
-              .loadCustomServerBearerKey();
-          if (customBearerKey == null) {
-            if (!context.mounted) return null;
-            final action = await _showCustomServerKeyRequiredDialog(context);
-            if (action == null || action == _CustomServerDialogAction.cancel) {
-              return null;
-            }
-            if (!context.mounted) {
-              return null;
-            }
-            final navigator = Navigator.of(context);
-            await navigator.push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            );
-            continue;
-          }
-          return const OcrPreparationResult();
+    while (context.mounted) {
+      if (!await _readProUnlocked()) {
+        if (!context.mounted) return false;
+        await _openProUpgradeScreen(context);
+        if (!context.mounted) return false;
+        if (!await _readProUnlocked()) {
+          return false;
         }
-
-        if (!didPrepareAccount) {
-          final linkResult = await _accountLinkService.ensureLinkedAccount();
-          if (linkResult.linkedThisCall) {
-            await _storeService.restorePurchases();
-          }
-          didPrepareAccount = true;
-        }
-
-        final status = await _billingClient.fetchStatus();
-        if (!status.ocrUnlocked) {
-          unlockProducts ??= await _storeService.queryProducts(
-            ocrVisibleProductIds,
-          );
-          if (!context.mounted) return null;
-          final action = await _showUnlockDialog(
-            context,
-            product: unlockProducts[ocrUnlockProductId]!,
-          );
-          if (action == null || action == _UnlockDialogAction.cancel) {
-            return null;
-          }
-          if (action == _UnlockDialogAction.restore) {
-            await _storeService.restorePurchases();
-            continue;
-          }
-          await _storeService.purchaseProduct(ocrUnlockProductId);
-          continue;
-        }
-
-        if (status.creditBalance < pageCount) {
-          if (!context.mounted) return null;
-          final action = await _showInsufficientCreditsDialog(
-            context,
-            currentBalance: status.creditBalance,
-            requiredPages: pageCount,
-          );
-          if (action == null || action == _LowCreditDialogAction.cancel) {
-            return null;
-          }
-          if (action == _LowCreditDialogAction.refresh) {
-            await _billingClient.fetchStatus(forceRefresh: true);
-            continue;
-          }
-          if (action == _LowCreditDialogAction.openSettings) {
-            if (!context.mounted) {
-              return null;
-            }
-            final navigator = Navigator.of(context);
-            await navigator.push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            );
-            continue;
-          }
-
-          await launchUrl(
-            Uri.parse(ocr_server_config.mekuruOcrRepoUrl),
-            mode: LaunchMode.externalApplication,
-          );
-          return null;
-        }
-
-        try {
-          final reservation = await _billingClient.reserveOcrJob(
-            requestedPages: pageCount,
-            bookId: bookId,
-          );
-          return OcrPreparationResult(reservation: reservation);
-        } on OcrBillingException catch (e) {
-          if (e.isUnlockRequired || e.isInsufficientCredits) {
-            continue;
-          }
-          rethrow;
-        }
+        continue;
       }
-    } on OcrBillingException catch (e) {
-      if (e.code == 'network_unavailable') {
-        if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(describeOcrError(e))));
+      if (!context.mounted) return false;
+
+      final serverUrl = getServerUrl().trim();
+      if (ocr_server_config.isBuiltInOcrServerUrl(serverUrl)) {
+        final action = await _showCustomServerRequiredDialog(context);
+        if (action != _ServerSetupDialogAction.openSettings) {
+          return false;
         }
-        return null;
+        if (!context.mounted) return false;
+        await _openSettingsScreen(context);
+        continue;
       }
 
-      rethrow;
+      final customBearerKey = await _loadCustomServerBearerKey();
+      if (customBearerKey == null || customBearerKey.trim().isEmpty) {
+        if (!context.mounted) return false;
+        final action = await _showCustomServerKeyRequiredDialog(context);
+        if (action != _CustomServerDialogAction.openSettings) {
+          return false;
+        }
+        if (!context.mounted) return false;
+        await _openSettingsScreen(context);
+        continue;
+      }
+
+      return true;
     }
 
-    return null;
+    return false;
   }
 
-  Future<_UnlockDialogAction?> _showUnlockDialog(
-    BuildContext context, {
-    required ProductDetails product,
-  }) {
-    return showDialog<_UnlockDialogAction>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Unlock OCR'),
-        content: Text(
-          'OCR requires a one-time unlock. ${product.title} costs '
-          '${product.price} and includes 150 starter credits.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(_UnlockDialogAction.cancel),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(_UnlockDialogAction.restore),
-            child: const Text('Restore'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(_UnlockDialogAction.buyUnlock),
-            child: Text('Buy ${product.price}'),
-          ),
-        ],
-      ),
-    );
+  Future<bool> _readProUnlocked() async {
+    if (_readProUnlockedOverride != null) {
+      return _readProUnlockedOverride();
+    }
+
+    final status = await _billingClient.readCachedStatus();
+    return status?.ocrUnlocked ?? false;
   }
 
-  Future<_LowCreditDialogAction?> _showInsufficientCreditsDialog(
-    BuildContext context, {
-    required int currentBalance,
-    required int requiredPages,
-  }) {
-    final needed = requiredPages - currentBalance;
-    final theme = Theme.of(context);
-    return showDialog<_LowCreditDialogAction>(
+  Future<String?> _loadCustomServerBearerKey() {
+    if (_loadCustomServerBearerKeyOverride != null) {
+      return _loadCustomServerBearerKeyOverride();
+    }
+
+    return _ocrAuthSecretStorage.loadCustomServerBearerKey();
+  }
+
+  Future<void> _openProUpgradeScreen(BuildContext context) {
+    if (_openProUpgradeScreenOverride != null) {
+      return _openProUpgradeScreenOverride(context);
+    }
+
+    return Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ProUpgradeScreen()));
+  }
+
+  Future<void> _openSettingsScreen(BuildContext context) {
+    if (_openSettingsScreenOverride != null) {
+      return _openSettingsScreenOverride(context);
+    }
+
+    return Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+  }
+
+  Future<_ServerSetupDialogAction?> _showCustomServerRequiredDialog(
+    BuildContext context,
+  ) {
+    return showDialog<_ServerSetupDialogAction>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('More OCR Credits Needed'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'This OCR pass needs $requiredPages credits. '
-              'You currently have $currentBalance, so you need $needed more.',
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'OCR unlock includes 150 starter page credits. '
-              'You can switch to a custom OCR server to continue without '
-              'using page credits.',
-              style: theme.textTheme.bodyMedium,
-            ),
-          ],
+        title: const Text('Custom OCR Server Required'),
+        content: const Text(
+          'Remote manga OCR now uses your own server. Open Settings and add '
+          'a custom OCR server URL plus the matching shared key.',
         ),
         actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(_LowCreditDialogAction.cancel),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(_LowCreditDialogAction.refresh),
-            child: const Text('Refresh'),
-          ),
           TextButton(
             onPressed: () => Navigator.of(
               dialogContext,
-            ).pop(_LowCreditDialogAction.openSettings),
-            child: const Text('OCR Server Settings'),
+            ).pop(_ServerSetupDialogAction.cancel),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(
               dialogContext,
-            ).pop(_LowCreditDialogAction.selfHost),
-            child: const Text('Run Your Own Server'),
+            ).pop(_ServerSetupDialogAction.openSettings),
+            child: const Text('Open Settings'),
           ),
         ],
       ),
@@ -250,8 +152,9 @@ class OcrPurchaseFlow {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Custom Server Setup Required'),
         content: const Text(
-          'Custom OCR servers require a shared key. Open OCR Server Settings '
-          'and enter the same AUTH_API_KEY value configured on your server.',
+          'Custom OCR servers require a shared key. Open Custom OCR Server '
+          'settings and enter the same AUTH_API_KEY value configured on your '
+          'server.',
         ),
         actions: [
           TextButton(
@@ -272,8 +175,6 @@ class OcrPurchaseFlow {
   }
 }
 
-enum _UnlockDialogAction { cancel, restore, buyUnlock }
-
-enum _LowCreditDialogAction { cancel, refresh, openSettings, selfHost }
+enum _ServerSetupDialogAction { cancel, openSettings }
 
 enum _CustomServerDialogAction { cancel, openSettings }

@@ -7,24 +7,24 @@ import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
 import 'ocr_billing_client.dart';
 
-const ocrUnlockProductId = 'ocr_unlock_v1';
+const proUnlockProductId = 'pro_unlock_v1';
 const ocrCredit500ProductId = 'ocr_pages_500';
 const ocrCredit1500ProductId = 'ocr_pages_1500';
 const ocrCredit4000ProductId = 'ocr_pages_4000';
 
-const Set<String> ocrUnlockProductIds = {ocrUnlockProductId};
+const Set<String> proUnlockProductIds = {proUnlockProductId};
 const Set<String> ocrCreditProductIds = {
   ocrCredit500ProductId,
   ocrCredit1500ProductId,
   ocrCredit4000ProductId,
 };
 const Set<String> ocrAllProductIds = {
-  ocrUnlockProductId,
+  proUnlockProductId,
   ocrCredit500ProductId,
   ocrCredit1500ProductId,
   ocrCredit4000ProductId,
 };
-const Set<String> ocrVisibleProductIds = ocrUnlockProductIds;
+const Set<String> ocrVisibleProductIds = proUnlockProductIds;
 
 class OcrStoreService {
   OcrStoreService._();
@@ -131,7 +131,7 @@ class OcrStoreService {
     final statusAfterSync = await _billingClient.fetchStatus(
       forceRefresh: true,
     );
-    if (productId == ocrUnlockProductId && statusAfterSync.ocrUnlocked) {
+    if (productId == proUnlockProductId && statusAfterSync.ocrUnlocked) {
       _log('purchase short-circuited by existing unlock', {
         'productId': productId,
         'creditBalance': statusAfterSync.creditBalance,

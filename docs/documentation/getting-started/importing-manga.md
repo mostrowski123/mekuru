@@ -67,6 +67,8 @@ After import, long-press the manga entry in the library to open its actions. Fro
 
 OCR is started from the library item actions, not from a button inside the manga reader.
 
+Remote OCR for CBZ files now requires **Pro** plus a configured custom OCR server.
+
 ## Differences from EPUB
 
 Because manga pages are images rather than flowing text, some features work differently:
@@ -75,12 +77,12 @@ Because manga pages are images rather than flowing text, some features work diff
 |-|-|-|
 | Dictionary lookups | Tap text directly | Use Mokuro data or OCR-generated overlays |
 | Bookmarks | Yes | Yes |
-| Highlights and notes | Yes | No |
+| Highlights and notes | Pro (EPUB only) | No |
 | Text layout settings | Yes | No |
 | Image view modes | No | Yes |
 
 ## Next Steps
 
 - [Reading Manga](manga/cbz-reading.md) - view modes, reader settings, and overlays
-- [Cloud OCR](manga/cloud-ocr.md) - Mekuru's built-in OCR flow
+- [Remote OCR](manga/cloud-ocr.md) - Pro-powered OCR with your own server
 - [Custom OCR Server](manga/custom-server.md) - using your own OCR endpoint

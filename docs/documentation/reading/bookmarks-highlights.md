@@ -16,6 +16,8 @@ Bookmarks are saved per book and stay available between sessions.
 
 ## Highlights
 
+> **Pro feature** - Book highlights require the one-time **Pro** upgrade.
+
 Select text in the reader, then use the highlight controls to save a marked passage.
 
 > TODO: Add screenshot - EPUB reader with multiple highlight colors

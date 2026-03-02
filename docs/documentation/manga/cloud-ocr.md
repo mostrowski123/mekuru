@@ -1,16 +1,18 @@
-# Cloud OCR
+# Remote OCR
 
-> **Paid feature** - Mekuru's built-in OCR requires a one-time in-app purchase to unlock.
+> **Pro feature** - Remote OCR requires the one-time **Pro** upgrade.
 
-Cloud OCR extracts text from CBZ manga pages so you can tap words and look them up.
+Remote OCR extracts text from CBZ manga pages so you can tap words and look them up.
 
-## How the Current Workflow Works
+## How the Workflow Works
 
 1. Import a `.cbz` file from the **Library** tab.
-2. Long-press the manga item in the library.
-3. Choose **Run OCR**.
-4. Mekuru reserves the required page credits, starts the job, and processes pages in the background.
-5. Once text overlays are available, open the manga and tap the detected words.
+2. Unlock **Pro**.
+3. Open **Settings > Custom OCR Server** and enter your own server URL plus shared key.
+4. Long-press the manga item in the library.
+5. Choose **Run OCR**.
+6. Mekuru uploads page images to your configured server and processes pages in the background.
+7. Once text overlays are available, open the manga and tap the detected words.
 
 > TODO: Add screenshot - Library action sheet showing the Run OCR action
 
@@ -25,22 +27,16 @@ Depending on the current state, the long-press actions can change to:
 - **Remove OCR** - clear OCR text and overlays
 - **Build Word Overlays** - rebuild tap targets when OCR text exists but word segmentation is still missing
 
-## Unlock and Credits
+## Pro Access
 
-- The built-in OCR unlock is a one-time purchase.
-- It includes **150 starter page credits**.
-- The current UI does not document extra credit packs beyond those starter credits.
-- Credits are reserved before an OCR run starts.
-- You can refresh the credit balance from the **OCR Purchases** screen.
-
-## Account Linking and Restore
-
-Restoring or buying OCR access can require linking a Google account. In Settings, the restore action may appear as **Sign In to Restore Purchases** until that account link is complete.
+- Pro is a one-time purchase.
+- Restoring or buying Pro can require linking a Google account first.
+- The Settings screen can show **Sign In to Restore Pro** until that link is complete.
 
 ## Lookup Integration
 
 Once OCR text is available, the detected words behave like Mokuro overlays and open the same dictionary lookup sheet used elsewhere in the app.
 
-## Avoiding Page Credits
+## Custom Server Requirement
 
-If you want to avoid the built-in page-credit flow, configure a custom OCR server instead. Custom servers do not consume page credits. See [Custom OCR Server](manga/custom-server.md).
+Mekuru now expects a custom OCR server for remote OCR. If your OCR server setting still points to Mekuru's legacy built-in endpoint, the app treats it as not configured and sends you to custom server setup first.
