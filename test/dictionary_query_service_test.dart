@@ -13,6 +13,14 @@ AppDatabase createTestDatabase() {
 }
 
 void main() {
+  setUpAll(() {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  });
+
+  tearDownAll(() {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = false;
+  });
+
   late AppDatabase db;
   late DictionaryRepository repo;
   late DictionaryQueryService queryService;
@@ -269,8 +277,10 @@ void main() {
 
   group('DictionaryQueryService — searchMultipleWithSource', () {
     test('returns entries matching any of the provided terms', () async {
-      final results =
-          await queryService.searchMultipleWithSource(['食べる', '飲む']);
+      final results = await queryService.searchMultipleWithSource([
+        '食べる',
+        '飲む',
+      ]);
       // 食べる has 2 entries, 飲む has 1 = 3 total
       expect(results, hasLength(3));
       final expressions = results.map((r) => r.entry.expression).toSet();
@@ -278,16 +288,17 @@ void main() {
     });
 
     test('excludes disabled dictionaries', () async {
-      final results =
-          await queryService.searchMultipleWithSource(['食べる']);
+      final results = await queryService.searchMultipleWithSource(['食べる']);
       for (final r in results) {
         expect(r.dictionaryName, isNot('DisabledDict'));
       }
     });
 
     test('returns empty list for non-existent terms', () async {
-      final results =
-          await queryService.searchMultipleWithSource(['存在しない', '架空']);
+      final results = await queryService.searchMultipleWithSource([
+        '存在しない',
+        '架空',
+      ]);
       expect(results, isEmpty);
     });
 
@@ -297,16 +308,17 @@ void main() {
     });
 
     test('finds entries by reading', () async {
-      final results =
-          await queryService.searchMultipleWithSource(['のむ']);
+      final results = await queryService.searchMultipleWithSource(['のむ']);
       expect(results, hasLength(1));
       expect(results.first.entry.expression, '飲む');
     });
 
     test('deduplicates when same entry matches multiple terms', () async {
       // 食べる matches both expression '食べる' and reading 'たべる'
-      final results =
-          await queryService.searchMultipleWithSource(['食べる', 'たべる']);
+      final results = await queryService.searchMultipleWithSource([
+        '食べる',
+        'たべる',
+      ]);
       // Should get 2 entries (the two 食べる entries), not 4
       expect(results, hasLength(2));
     });
@@ -475,40 +487,39 @@ void main() {
         final results = await freqQueryService.searchWithSource('私');
 
         // あたし should still get a frequency rank (fallback to expression-level)
-        final atashiResults =
-            results.where((r) => r.entry.reading == 'あたし').toList();
+        final atashiResults = results
+            .where((r) => r.entry.reading == 'あたし')
+            .toList();
         expect(atashiResults, hasLength(1));
         // Falls back to min rank across all readings for 私 = 50
         expect(atashiResults.first.frequencyRank, 50);
       },
     );
 
-    test(
-      'entries without any frequency data appear last',
-      () async {
-        // Insert an entry with a completely different expression
-        final dicts = await freqRepo.getAllDictionaries();
-        final dictA = dicts.firstWhere((d) => d.name == 'Dict A');
+    test('entries without any frequency data appear last', () async {
+      // Insert an entry with a completely different expression
+      final dicts = await freqRepo.getAllDictionaries();
+      final dictA = dicts.firstWhere((d) => d.name == 'Dict A');
 
-        await freqRepo.batchInsertEntries([
-          DictionaryEntriesCompanion.insert(
-            expression: '珍語',
-            reading: const Value('ちんご'),
-            glossaries: jsonEncode(['rare word']),
-            dictionaryId: dictA.id,
-          ),
-        ]);
+      await freqRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '珍語',
+          reading: const Value('ちんご'),
+          glossaries: jsonEncode(['rare word']),
+          dictionaryId: dictA.id,
+        ),
+      ]);
 
-        final results = await freqQueryService.searchMultipleWithSource(
-          ['私', '珍語'],
-        );
+      final results = await freqQueryService.searchMultipleWithSource([
+        '私',
+        '珍語',
+      ]);
 
-        // 珍語 has no frequency data so should appear after all 私 entries
-        final lastEntry = results.last;
-        expect(lastEntry.entry.expression, '珍語');
-        expect(lastEntry.frequencyRank, isNull);
-      },
-    );
+      // 珍語 has no frequency data so should appear after all 私 entries
+      final lastEntry = results.last;
+      expect(lastEntry.entry.expression, '珍語');
+      expect(lastEntry.frequencyRank, isNull);
+    });
   });
 
   // ── Deinflection in fuzzySearchWithSource ────────────────────────
@@ -563,8 +574,7 @@ void main() {
       'searching conjugated form finds all possible base forms via deinflection',
       () async {
         // Searching 行って should find both 行く and 行う via deinflection
-        final results =
-            await deinflQueryService.fuzzySearchWithSource('行って');
+        final results = await deinflQueryService.fuzzySearchWithSource('行って');
 
         final expressions = results.map((r) => r.entry.expression).toSet();
         expect(expressions, contains('行く'));
@@ -575,14 +585,15 @@ void main() {
     test(
       'deinflected results preserve dictionary sort order within each group',
       () async {
-        final results =
-            await deinflQueryService.fuzzySearchWithSource('行って');
+        final results = await deinflQueryService.fuzzySearchWithSource('行って');
 
         // Both base forms should appear, each with Dict A before Dict B
-        final ikuResults =
-            results.where((r) => r.entry.expression == '行く').toList();
-        final okonauResults =
-            results.where((r) => r.entry.expression == '行う').toList();
+        final ikuResults = results
+            .where((r) => r.entry.expression == '行く')
+            .toList();
+        final okonauResults = results
+            .where((r) => r.entry.expression == '行う')
+            .toList();
 
         expect(ikuResults, hasLength(2));
         expect(ikuResults[0].dictionaryName, 'Dict A');
@@ -594,23 +605,18 @@ void main() {
       },
     );
 
-    test(
-      'ta-form deinflection finds base forms (行った → 行く, 行う)',
-      () async {
-        final results =
-            await deinflQueryService.fuzzySearchWithSource('行った');
+    test('ta-form deinflection finds base forms (行った → 行く, 行う)', () async {
+      final results = await deinflQueryService.fuzzySearchWithSource('行った');
 
-        final expressions = results.map((r) => r.entry.expression).toSet();
-        expect(expressions, contains('行く'));
-        expect(expressions, contains('行う'));
-      },
-    );
+      final expressions = results.map((r) => r.entry.expression).toSet();
+      expect(expressions, contains('行く'));
+      expect(expressions, contains('行う'));
+    });
 
     test(
       'non-conjugated input returns exact matches without deinflection noise',
       () async {
-        final results =
-            await deinflQueryService.fuzzySearchWithSource('行く');
+        final results = await deinflQueryService.fuzzySearchWithSource('行く');
 
         // Should find 行く entries but NOT 行う
         final expressions = results.map((r) => r.entry.expression).toSet();
@@ -636,8 +642,7 @@ void main() {
       expect(results, isNotEmpty);
       for (final r in results) {
         expect(
-          r.entry.expression.startsWith('た') ||
-              r.entry.reading.startsWith('た'),
+          r.entry.expression.startsWith('た') || r.entry.reading.startsWith('た'),
           isTrue,
         );
       }
@@ -684,15 +689,20 @@ void main() {
     });
 
     test('search is case-insensitive', () async {
-      final resultsLower = await queryService.glossarySearchWithSource('to eat');
-      final resultsUpper = await queryService.glossarySearchWithSource('To Eat');
+      final resultsLower = await queryService.glossarySearchWithSource(
+        'to eat',
+      );
+      final resultsUpper = await queryService.glossarySearchWithSource(
+        'To Eat',
+      );
       // SQLite LIKE is case-insensitive for ASCII characters
       expect(resultsLower.length, resultsUpper.length);
     });
 
     test('excludes disabled dictionaries', () async {
-      final results =
-          await queryService.glossarySearchWithSource('disabled dict');
+      final results = await queryService.glossarySearchWithSource(
+        'disabled dict',
+      );
       // The disabled dict entry has glossary "to eat (disabled dict)"
       // but it should be filtered out
       for (final r in results) {
@@ -701,7 +711,9 @@ void main() {
     });
 
     test('returns empty list for non-matching term', () async {
-      final results = await queryService.glossarySearchWithSource('xyznotfound');
+      final results = await queryService.glossarySearchWithSource(
+        'xyznotfound',
+      );
       expect(results, isEmpty);
     });
 
@@ -711,8 +723,10 @@ void main() {
     });
 
     test('respects limit parameter', () async {
-      final results =
-          await queryService.glossarySearchWithSource('to', limit: 1);
+      final results = await queryService.glossarySearchWithSource(
+        'to',
+        limit: 1,
+      );
       expect(results, hasLength(lessThanOrEqualTo(1)));
     });
 
@@ -786,10 +800,8 @@ void main() {
     });
 
     test('returns multiple pitch accents for different expressions', () async {
-      final taberuResults =
-          await pitchQueryService.searchPitchAccents('食べる');
-      final hashiruResults =
-          await pitchQueryService.searchPitchAccents('走る');
+      final taberuResults = await pitchQueryService.searchPitchAccents('食べる');
+      final hashiruResults = await pitchQueryService.searchPitchAccents('走る');
       expect(taberuResults, hasLength(1));
       expect(hashiruResults, hasLength(1));
       expect(hashiruResults.first.reading, 'はしる');
@@ -903,8 +915,111 @@ void main() {
       expect(DictionaryEntryWithSource.frequencyLabel(100000), 'Rare');
     });
 
-    test('returns null for null rank', () {
-      expect(DictionaryEntryWithSource.frequencyLabel(null), isNull);
+    test('treats null rank as "Rare"', () {
+      expect(DictionaryEntryWithSource.frequencyLabel(null), 'Rare');
     });
+  });
+
+  group('DictionaryQueryService - exact match prioritization', () {
+    late AppDatabase priorityDb;
+    late DictionaryRepository priorityRepo;
+    late DictionaryQueryService priorityQueryService;
+
+    const kana = '\u306f\u3044';
+    const kanjiAsh = '\u7070';
+    const kanjiCup = '\u676f';
+
+    setUp(() async {
+      priorityDb = createTestDatabase();
+      priorityRepo = DictionaryRepository(priorityDb);
+      priorityQueryService = DictionaryQueryService(priorityDb);
+
+      final dictId = await priorityRepo.insertDictionary('PriorityDict');
+      await priorityRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: kanjiAsh,
+          reading: const Value(kana),
+          glossaries: jsonEncode(['ash']),
+          dictionaryId: dictId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: kana,
+          reading: const Value(kana),
+          glossaries: jsonEncode(['yes']),
+          dictionaryId: dictId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: kanjiCup,
+          reading: const Value(kana),
+          glossaries: jsonEncode(['cup']),
+          dictionaryId: dictId,
+        ),
+      ]);
+
+      final frequencyDictId = await priorityRepo.insertDictionary('FreqDict');
+      await priorityRepo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: kanjiAsh,
+          reading: const Value(kana),
+          frequencyRank: 10,
+          dictionaryId: frequencyDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: kanjiCup,
+          reading: const Value(kana),
+          frequencyRank: 20,
+          dictionaryId: frequencyDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: kana,
+          reading: const Value(kana),
+          frequencyRank: 5000,
+          dictionaryId: frequencyDictId,
+        ),
+      ]);
+    });
+
+    tearDown(() async {
+      await priorityDb.close();
+    });
+
+    test(
+      'search prefers exact expression matches over reading-only matches',
+      () async {
+        final results = await priorityQueryService.search(kana);
+
+        expect(results, hasLength(3));
+        expect(results.first.expression, kana);
+        expect(results.skip(1).map((r) => r.expression), [kanjiAsh, kanjiCup]);
+      },
+    );
+
+    test(
+      'searchWithSource prefers exact expression matches over reading-only matches',
+      () async {
+        final results = await priorityQueryService.searchWithSource(kana);
+
+        expect(results, hasLength(3));
+        expect(results.first.entry.expression, kana);
+        expect(results.skip(1).map((r) => r.entry.expression), [
+          kanjiAsh,
+          kanjiCup,
+        ]);
+      },
+    );
+
+    test(
+      'fuzzySearchWithSource keeps exact expression matches ahead of more common reading-only matches',
+      () async {
+        final results = await priorityQueryService.fuzzySearchWithSource(kana);
+
+        expect(results, hasLength(3));
+        expect(results.first.entry.expression, kana);
+        expect(results.skip(1).map((r) => r.entry.expression), [
+          kanjiAsh,
+          kanjiCup,
+        ]);
+      },
+    );
   });
 }

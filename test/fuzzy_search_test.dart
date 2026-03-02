@@ -12,6 +12,14 @@ AppDatabase createTestDatabase() {
 }
 
 void main() {
+  setUpAll(() {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  });
+
+  tearDownAll(() {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = false;
+  });
+
   late AppDatabase db;
   late DictionaryRepository repo;
   late DictionaryQueryService queryService;
@@ -117,10 +125,7 @@ void main() {
     });
 
     test('respects limit parameter', () async {
-      final results = await queryService.prefixSearchWithSource(
-        '食べ',
-        limit: 1,
-      );
+      final results = await queryService.prefixSearchWithSource('食べ', limit: 1);
       expect(results, hasLength(1));
     });
   });
@@ -243,8 +248,9 @@ void main() {
     });
 
     test('returns empty for non-matching term', () async {
-      final results =
-          await queryService.glossarySearchWithSource('nonexistentword');
+      final results = await queryService.glossarySearchWithSource(
+        'nonexistentword',
+      );
       expect(results, isEmpty);
     });
 
@@ -254,8 +260,10 @@ void main() {
     });
 
     test('respects limit parameter', () async {
-      final results =
-          await queryService.glossarySearchWithSource('to', limit: 2);
+      final results = await queryService.glossarySearchWithSource(
+        'to',
+        limit: 2,
+      );
       expect(results.length, lessThanOrEqualTo(2));
     });
 

@@ -112,9 +112,7 @@ class _GroupedDictionaryEntryCardState
     final config = ref.read(ankidroidConfigProvider);
     if (!config.isConfigured) {
       Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const AnkidroidSettingsScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const AnkidroidSettingsScreen()),
       );
       return;
     }
@@ -128,21 +126,23 @@ class _GroupedDictionaryEntryCardState
       sentenceContext: widget.sentenceContext,
       pitchAccents: widget.pitchAccents,
     );
-    Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => AnkiCardCreationScreen(noteData: noteData),
-      ),
-    ).then((result) {
-      if (result == true) {
-        scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text('Added "${_primaryEntry.expression}" to Anki'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
+    Navigator.of(context)
+        .push<bool>(
+          MaterialPageRoute(
+            builder: (_) => AnkiCardCreationScreen(noteData: noteData),
           ),
-        );
-      }
-    });
+        )
+        .then((result) {
+          if (result == true) {
+            scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(
+                content: Text('Added "${_primaryEntry.expression}" to Anki'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        });
   }
 
   @override
@@ -183,8 +183,7 @@ class _GroupedDictionaryEntryCardState
                   children: [
                     _buildExpression(expressionStyle, furiganaStyle),
                     const SizedBox(width: 8),
-                    if (_frequencyRank != null)
-                      _FrequencyTag(rank: _frequencyRank!, fontSize: fs),
+                    _FrequencyTag(rank: _frequencyRank, fontSize: fs),
                   ],
                 ),
               ),
@@ -268,10 +267,7 @@ class _GroupedDictionaryEntryCardState
       // Dictionary name tag (once per dictionary)
       widgets.add(
         Padding(
-          padding: EdgeInsets.only(
-            top: widgets.length <= 1 ? 0 : 8,
-            bottom: 4,
-          ),
+          padding: EdgeInsets.only(top: widgets.length <= 1 ? 0 : 8, bottom: 4),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
@@ -358,14 +354,9 @@ class _GroupedDictionaryEntryCardState
               ),
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 1,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant,
-                  ),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
                   borderRadius: BorderRadius.circular(3),
                 ),
                 child: Text(
@@ -388,20 +379,20 @@ class _GroupedDictionaryEntryCardState
 class _FrequencyTag extends StatelessWidget {
   const _FrequencyTag({required this.rank, required this.fontSize});
 
-  final int rank;
+  final int? rank;
   final double fontSize;
 
   @override
   Widget build(BuildContext context) {
     final label = DictionaryEntryWithSource.frequencyLabel(rank);
-    if (label == null) return const SizedBox.shrink();
+    final resolvedRank = DictionaryEntryWithSource.sortFrequencyRank(rank);
 
     final Color color;
-    if (rank <= 5000) {
+    if (resolvedRank <= 5000) {
       color = Colors.green;
-    } else if (rank <= 15000) {
+    } else if (resolvedRank <= 15000) {
       color = Colors.blue;
-    } else if (rank <= 30000) {
+    } else if (resolvedRank <= 30000) {
       color = Colors.orange;
     } else {
       color = Colors.grey;

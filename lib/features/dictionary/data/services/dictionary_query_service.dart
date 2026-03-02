@@ -6,6 +6,8 @@ import 'package:mekuru/features/reader/data/services/deinflection.dart';
 
 /// A dictionary entry paired with the name of the dictionary it came from.
 class DictionaryEntryWithSource {
+  static const int missingFrequencySortRank = 1 << 62;
+
   final DictionaryEntry entry;
   final String dictionaryName;
   final int? frequencyRank;
@@ -16,12 +18,18 @@ class DictionaryEntryWithSource {
     this.frequencyRank,
   });
 
+  /// Convert a nullable frequency into a sortable rank where missing
+  /// frequencies are treated as the least frequent.
+  static int sortFrequencyRank(int? rank) {
+    return rank ?? missingFrequencySortRank;
+  }
+
   /// Returns a qualitative label for the frequency rank.
   static String? frequencyLabel(int? rank) {
-    if (rank == null) return null;
-    if (rank <= 5000) return 'Very Common';
-    if (rank <= 15000) return 'Common';
-    if (rank <= 30000) return 'Uncommon';
+    final resolvedRank = sortFrequencyRank(rank);
+    if (resolvedRank <= 5000) return 'Very Common';
+    if (resolvedRank <= 15000) return 'Common';
+    if (resolvedRank <= 30000) return 'Uncommon';
     return 'Rare';
   }
 
@@ -110,6 +118,35 @@ class DictionaryQueryService {
     });
   }
 
+  int _exactMatchPriority(DictionaryEntry entry, Set<String> exactTerms) {
+    if (exactTerms.contains(entry.expression)) return 0;
+    if (exactTerms.contains(entry.reading)) return 1;
+    return 2;
+  }
+
+  void _sortExactMatches(
+    List<DictionaryEntry> entries,
+    _MetasCache cache,
+    Set<String> exactTerms,
+  ) {
+    if (entries.length < 2 || exactTerms.isEmpty) {
+      _sortBySortOrder(entries, cache);
+      return;
+    }
+
+    entries.sort((a, b) {
+      final priorityA = _exactMatchPriority(a, exactTerms);
+      final priorityB = _exactMatchPriority(b, exactTerms);
+      if (priorityA != priorityB) {
+        return priorityA.compareTo(priorityB);
+      }
+
+      final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
+      final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
+      return orderA.compareTo(orderB);
+    });
+  }
+
   /// Sort entries-with-source by their dictionary's sort order.
   void _sortWithSourceBySortOrder(
     List<DictionaryEntryWithSource> entries,
@@ -148,6 +185,25 @@ class DictionaryQueryService {
         dictionaryName: cache.names[entry.dictionaryId] ?? '',
       );
     }).toList();
+  }
+
+  Map<(String, String), int> _buildExactMatchPriorities(
+    List<DictionaryEntryWithSource> results,
+    Set<String> exactTerms,
+  ) {
+    if (results.isEmpty || exactTerms.isEmpty) return {};
+
+    final priorities = <(String, String), int>{};
+    for (final result in results) {
+      final key = (result.entry.expression, result.entry.reading);
+      final priority = _exactMatchPriority(result.entry, exactTerms);
+      final existing = priorities[key];
+      if (existing == null || priority < existing) {
+        priorities[key] = priority;
+      }
+    }
+
+    return priorities;
   }
 
   Future<List<DictionaryEntryWithSource>> _searchWithSourceNoFrequency(
@@ -220,7 +276,8 @@ class DictionaryQueryService {
   /// Search entries by expression OR reading.
   /// Used for the lookup bottom sheet when we don't know
   /// if the selection is kanji or kana.
-  /// Results are ordered by dictionary sort order (same order as Dictionary Manager).
+  /// Exact expression matches are prioritized before reading-only matches.
+  /// Within each match type, results follow dictionary sort order.
   Future<List<DictionaryEntry>> search(String term) async {
     final cache = await _ensureMetasCached();
     if (cache.enabledIds.isEmpty) return [];
@@ -233,7 +290,7 @@ class DictionaryQueryService {
       );
 
     final results = await query.get();
-    _sortBySortOrder(results, cache);
+    _sortExactMatches(results, cache, {term});
     return results;
   }
 
@@ -258,14 +315,15 @@ class DictionaryQueryService {
   }
 
   /// Search entries and include the dictionary name for each result.
-  /// Results are ordered by frequency rank (most common first), then by
-  /// dictionary sort order as a tiebreaker.
+  /// Exact expression matches are prioritized before reading-only matches.
+  /// Within each match type, results are ordered by frequency rank (most
+  /// common first), then by dictionary sort order as a tiebreaker.
   Future<List<DictionaryEntryWithSource>> searchWithSource(String term) async {
     final cache = await _ensureMetasCached();
     if (cache.enabledIds.isEmpty) return [];
 
     final results = await _searchWithSourceNoFrequency(term, cache);
-    return _attachFrequencyRanks(results);
+    return _attachFrequencyRanks(results, exactTerms: {term});
   }
 
   /// Look up the best (lowest) frequency rank for a given expression.
@@ -292,7 +350,7 @@ class DictionaryQueryService {
   /// Lookup strategy per pair:
   /// 1. Prefer an exact (expression, reading) match in the Frequencies table.
   /// 2. Fall back to the best (lowest) rank for that expression across all
-  ///    readings when no reading-specific frequency exists.
+  ///    readings when no exact reading match exists.
   Future<Map<(String, String), int>> _getFrequencyRanks(
     List<DictionaryEntryWithSource> results,
   ) async {
@@ -323,13 +381,11 @@ class DictionaryQueryService {
       allRows.addAll(await query.get());
     }
 
-    // Build three lookup structures:
-    // 1. (expression, reading) → min rank  (reading-specific)
-    // 2. expression → min rank from empty-reading rows (expression-level only)
-    // 3. Set of expressions that have at least one reading-specific entry
+    // Build two lookup structures:
+    // 1. (expression, reading) -> min rank
+    // 2. expression -> min rank across all readings
     final pairRanks = <(String, String), int>{};
-    final exprOnlyFallback = <String, int>{};
-    final hasReadingSpecificData = <String>{};
+    final exprFallback = <String, int>{};
 
     for (final row in allRows) {
       final expression = row.read(_db.frequencies.expression);
@@ -339,28 +395,21 @@ class DictionaryQueryService {
         continue;
       }
 
-      if (reading.isNotEmpty) {
-        hasReadingSpecificData.add(expression);
-        final key = (expression, reading);
-        final existing = pairRanks[key];
-        if (existing == null || frequencyRank < existing) {
-          pairRanks[key] = frequencyRank;
-        }
-      } else {
-        // Expression-level frequency (no reading) — safe as fallback
-        final existing = exprOnlyFallback[expression];
-        if (existing == null || frequencyRank < existing) {
-          exprOnlyFallback[expression] = frequencyRank;
-        }
+      final key = (expression, reading);
+      final existingPairRank = pairRanks[key];
+      if (existingPairRank == null || frequencyRank < existingPairRank) {
+        pairRanks[key] = frequencyRank;
+      }
+
+      final existingExprRank = exprFallback[expression];
+      if (existingExprRank == null || frequencyRank < existingExprRank) {
+        exprFallback[expression] = frequencyRank;
       }
     }
 
     // For each unique (expression, reading) in results, prefer the
-    // pair-specific rank. Only fall back to expression-level rank when
-    // the frequency dict has NO reading-specific data for this expression
-    // (i.e. it only stores expression-level frequencies). When reading-
-    // specific data exists but this particular reading isn't listed,
-    // leave the rank as null so it sorts to the end.
+    // pair-specific rank. When that pair is missing, fall back to the
+    // best rank seen for the expression regardless of reading.
     final resultPairs = results
         .map((r) => (r.entry.expression, r.entry.reading))
         .toSet();
@@ -370,8 +419,8 @@ class DictionaryQueryService {
       final pairRank = pairRanks[pair];
       if (pairRank != null) {
         ranks[pair] = pairRank;
-      } else if (!hasReadingSpecificData.contains(pair.$1)) {
-        final fallback = exprOnlyFallback[pair.$1];
+      } else {
+        final fallback = exprFallback[pair.$1];
         if (fallback != null) {
           ranks[pair] = fallback;
         }
@@ -384,22 +433,32 @@ class DictionaryQueryService {
   /// Attach frequency ranks and group results by (expression, reading).
   ///
   /// Within each group, entries retain their original order (which is the
-  /// dictionary sort_order from the SQL query). Groups are ordered by their
-  /// frequency rank (lowest rank first, null-rank groups last).
+  /// dictionary sort_order from the SQL query). Groups are ordered by
+  /// exact-match priority when provided, then by frequency rank (lowest
+  /// rank first, with missing frequencies treated as least frequent).
   Future<List<DictionaryEntryWithSource>> _attachFrequencyRanks(
-    List<DictionaryEntryWithSource> results,
-  ) async {
+    List<DictionaryEntryWithSource> results, {
+    Set<String>? exactTerms,
+  }) async {
     if (results.isEmpty) return results;
 
     final ranks = await _getFrequencyRanks(results);
-    return _applyFrequencyRanks(results, ranks);
+    final matchPriorities = exactTerms == null || exactTerms.isEmpty
+        ? null
+        : _buildExactMatchPriorities(results, exactTerms);
+    return _applyFrequencyRanks(
+      results,
+      ranks,
+      matchPriorities: matchPriorities,
+    );
   }
 
   /// Apply pre-fetched frequency ranks and group/sort results.
   List<DictionaryEntryWithSource> _applyFrequencyRanks(
     List<DictionaryEntryWithSource> results,
-    Map<(String, String), int> ranks,
-  ) {
+    Map<(String, String), int> ranks, {
+    Map<(String, String), int>? matchPriorities,
+  }) {
     if (results.isEmpty) return results;
 
     // Attach frequency ranks to each entry.
@@ -411,20 +470,31 @@ class DictionaryQueryService {
     // Group by (expression, reading), preserving insertion order within
     // each group (which is the SQL sort_order).
     final groups = <(String, String), List<DictionaryEntryWithSource>>{};
+    final groupOrder = <(String, String), int>{};
     for (final r in ranked) {
       final key = (r.entry.expression, r.entry.reading);
+      groupOrder.putIfAbsent(key, () => groupOrder.length);
       groups.putIfAbsent(key, () => []).add(r);
     }
 
-    // Sort group keys by frequency rank (lowest first, null last).
+    // Sort group keys by exact-match priority first, then by frequency rank
+    // (lowest first, with missing frequencies sorted last), preserving
+    // original order for ties.
     final sortedKeys = groups.keys.toList()
       ..sort((a, b) {
+        final priorityA = matchPriorities?[a] ?? 0;
+        final priorityB = matchPriorities?[b] ?? 0;
+        if (priorityA != priorityB) {
+          return priorityA.compareTo(priorityB);
+        }
+
         final rankA = ranks[a];
         final rankB = ranks[b];
-        if (rankA == null && rankB == null) return 0;
-        if (rankA == null) return 1;
-        if (rankB == null) return -1;
-        return rankA.compareTo(rankB);
+        final rankCompare = DictionaryEntryWithSource.sortFrequencyRank(
+          rankA,
+        ).compareTo(DictionaryEntryWithSource.sortFrequencyRank(rankB));
+        if (rankCompare != 0) return rankCompare;
+        return groupOrder[a]!.compareTo(groupOrder[b]!);
       });
 
     // Flatten groups back into a single list.
@@ -432,7 +502,8 @@ class DictionaryQueryService {
   }
 
   /// Search entries matching any of [terms] (by expression or reading).
-  /// Returns results from enabled dictionaries, ordered by frequency rank.
+  /// Exact expression matches are prioritized before reading-only matches.
+  /// Within each match type, results are ordered by frequency rank.
   /// Useful for searching multiple deinflected candidate forms at once.
   Future<List<DictionaryEntryWithSource>> searchMultipleWithSource(
     List<String> terms,
@@ -443,7 +514,7 @@ class DictionaryQueryService {
     if (cache.enabledIds.isEmpty) return [];
 
     final results = await _searchMultipleWithSourceNoFrequency(terms, cache);
-    return _attachFrequencyRanks(results);
+    return _attachFrequencyRanks(results, exactTerms: terms.toSet());
   }
 
   /// Prefix search: expression or reading starts with [term].
@@ -507,6 +578,7 @@ class DictionaryQueryService {
     final fuzzyResults = <DictionaryEntryWithSource>[];
     final subComponentResults = <DictionaryEntryWithSource>[];
     final glossaryResults = <DictionaryEntryWithSource>[];
+    final exactMatchTerms = <String>{};
 
     void addTo(
       List<DictionaryEntryWithSource> bucket,
@@ -537,6 +609,7 @@ class DictionaryQueryService {
     }
 
     // 1. Exact matches (highest priority — always on top)
+    exactMatchTerms.addAll(searchTerms);
     for (final t in searchTerms) {
       addTo(exactResults, await _searchWithSourceNoFrequency(t, cache));
     }
@@ -549,6 +622,7 @@ class DictionaryQueryService {
     }
     deinflectedCandidates.removeAll(searchTerms);
     if (deinflectedCandidates.isNotEmpty) {
+      exactMatchTerms.addAll(deinflectedCandidates);
       addTo(
         exactResults,
         await _searchMultipleWithSourceNoFrequency(
@@ -631,7 +705,14 @@ class DictionaryQueryService {
     final ranks = await _getFrequencyRanks(allResults);
 
     return [
-      ..._applyFrequencyRanks(exactResults, ranks),
+      ..._applyFrequencyRanks(
+        exactResults,
+        ranks,
+        matchPriorities: _buildExactMatchPriorities(
+          exactResults,
+          exactMatchTerms,
+        ),
+      ),
       ..._applyFrequencyRanks(fuzzyResults, ranks),
       ..._applyFrequencyRanks(subComponentResults, ranks),
       ..._applyFrequencyRanks(glossaryResults, ranks),

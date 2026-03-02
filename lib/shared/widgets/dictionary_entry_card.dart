@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,9 +115,7 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
     final config = ref.read(ankidroidConfigProvider);
     if (!config.isConfigured) {
       Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const AnkidroidSettingsScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const AnkidroidSettingsScreen()),
       );
       return;
     }
@@ -130,21 +129,23 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
       sentenceContext: widget.sentenceContext,
       pitchAccents: widget.pitchAccents,
     );
-    Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => AnkiCardCreationScreen(noteData: noteData),
-      ),
-    ).then((result) {
-      if (result == true) {
-        scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text('Added "${widget.entry.expression}" to Anki'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
+    Navigator.of(context)
+        .push<bool>(
+          MaterialPageRoute(
+            builder: (_) => AnkiCardCreationScreen(noteData: noteData),
           ),
-        );
-      }
-    });
+        )
+        .then((result) {
+          if (result == true) {
+            scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(
+                content: Text('Added "${widget.entry.expression}" to Anki'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        });
   }
 
   @override
@@ -211,11 +212,10 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (widget.frequencyRank != null)
-                            _FrequencyTag(
-                              rank: widget.frequencyRank!,
-                              fontSize: fs,
-                            ),
+                          _FrequencyTag(
+                            rank: widget.frequencyRank,
+                            fontSize: fs,
+                          ),
                         ],
                       ),
                     ),
@@ -266,9 +266,7 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
                       fontSize: fs,
                     ),
                   ),
-                  Expanded(
-                    child: _buildDefinition(def, definitionStyle),
-                  ),
+                  Expanded(child: _buildDefinition(def, definitionStyle)),
                 ],
               ),
             ),
@@ -340,14 +338,9 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
               ),
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 1,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant,
-                  ),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
                   borderRadius: BorderRadius.circular(3),
                 ),
                 child: Text(
@@ -370,20 +363,20 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
 class _FrequencyTag extends StatelessWidget {
   const _FrequencyTag({required this.rank, required this.fontSize});
 
-  final int rank;
+  final int? rank;
   final double fontSize;
 
   @override
   Widget build(BuildContext context) {
     final label = DictionaryEntryWithSource.frequencyLabel(rank);
-    if (label == null) return const SizedBox.shrink();
+    final resolvedRank = DictionaryEntryWithSource.sortFrequencyRank(rank);
 
     final Color color;
-    if (rank <= 5000) {
+    if (resolvedRank <= 5000) {
       color = Colors.green;
-    } else if (rank <= 15000) {
+    } else if (resolvedRank <= 15000) {
       color = Colors.blue;
-    } else if (rank <= 30000) {
+    } else if (resolvedRank <= 30000) {
       color = Colors.orange;
     } else {
       color = Colors.grey;
