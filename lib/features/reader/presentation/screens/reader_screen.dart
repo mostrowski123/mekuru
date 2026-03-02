@@ -22,6 +22,7 @@ import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.d
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -1041,6 +1042,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   Widget _buildBottomBar(ReaderSettings settings) {
     final isRtl = settings.readingDirection == ReaderDirection.rtl;
+    final bottomPadding = bottomControlPadding(MediaQuery.of(context));
 
     return Container(
       decoration: BoxDecoration(
@@ -1053,7 +1055,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

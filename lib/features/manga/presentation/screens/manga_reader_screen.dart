@@ -16,6 +16,7 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Manga reader screen — renders manga pages with word overlays.
@@ -503,6 +504,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     final viewMode = ref.watch(mangaViewModeProvider);
     final isOcrRunning = ref.watch(isOcrRunningProvider(widget.book.id));
     final enableWordOverlays = !isOcrRunning;
+    final bottomSliderPadding = bottomControlPadding(MediaQuery.of(context));
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -634,7 +636,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                     child: SafeArea(
                       top: false,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          bottomSliderPadding,
+                        ),
                         child: Row(
                           children: [
                             Text(
