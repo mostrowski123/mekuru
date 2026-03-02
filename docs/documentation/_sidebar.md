@@ -1,0 +1,22 @@
+- [Home](home.md)
+- **Getting Started**
+  - [Importing Books (EPUB)](getting-started/importing-books.md)
+  - [Importing Manga](getting-started/importing-manga.md)
+  - [Setting Up Dictionaries](getting-started/dictionaries.md)
+  - [Downloads](getting-started/downloadable-data.md)
+- **Reading**
+  - [Navigation & Gestures](reading/navigation.md)
+  - [Display Settings](reading/display-settings.md)
+  - [Bookmarks & Highlights](reading/bookmarks-highlights.md)
+- **Dictionary & Lookups**
+  - [Looking Up Words](dictionary/lookups.md)
+  - [Managing Dictionaries](dictionary/management.md)
+- **Vocabulary & Anki**
+  - [Saving & Managing Words](vocabulary/saving-words.md)
+  - [Exporting to Anki](vocabulary/anki-export.md)
+- **Manga & OCR**
+  - [Reading Manga](manga/cbz-reading.md)
+  - [Cloud OCR](manga/cloud-ocr.md)
+  - [Custom OCR Server](manga/custom-server.md)
+- **Settings**
+  - [App Settings](settings/app-settings.md)
