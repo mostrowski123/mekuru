@@ -1,8 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' show Rect;
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:path/path.dart' as p;
 
 /// In-memory database for testing.
 AppDatabase createTestDatabase() {
@@ -12,13 +19,18 @@ AppDatabase createTestDatabase() {
 void main() {
   late AppDatabase db;
   late BookRepository repo;
+  late Directory tempDir;
 
   setUp(() {
     db = createTestDatabase();
     repo = BookRepository(db);
+    tempDir = Directory.systemTemp.createTempSync('book_repository_test_');
   });
 
   tearDown(() async {
+    if (tempDir.existsSync()) {
+      tempDir.deleteSync(recursive: true);
+    }
     await db.close();
   });
 
@@ -99,17 +111,19 @@ void main() {
       expect(book.readProgress, closeTo(0.42, 0.001));
     });
 
-    test('updateProgress without progress leaves readProgress unchanged',
-        () async {
-      final id = await db
-          .into(db.books)
-          .insert(BooksCompanion.insert(title: 'Test', filePath: '/test'));
+    test(
+      'updateProgress without progress leaves readProgress unchanged',
+      () async {
+        final id = await db
+            .into(db.books)
+            .insert(BooksCompanion.insert(title: 'Test', filePath: '/test'));
 
-      await repo.updateProgress(id, 'epubcfi(/6/2)');
+        await repo.updateProgress(id, 'epubcfi(/6/2)');
 
-      final book = await repo.getBookById(id);
-      expect(book!.readProgress, 0.0);
-    });
+        final book = await repo.getBookById(id);
+        expect(book!.readProgress, 0.0);
+      },
+    );
 
     test('updateTotalPages updates totalPages', () async {
       final id = await db
@@ -173,14 +187,16 @@ void main() {
 
   group('BookRepository — language and pageProgressionDirection', () {
     test('inserting book with language stores the value', () async {
-      final id = await db.into(db.books).insert(
-        BooksCompanion.insert(
-          title: 'English Novel',
-          filePath: '/test/path',
-          language: const Value('en'),
-          pageProgressionDirection: const Value('ltr'),
-        ),
-      );
+      final id = await db
+          .into(db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'English Novel',
+              filePath: '/test/path',
+              language: const Value('en'),
+              pageProgressionDirection: const Value('ltr'),
+            ),
+          );
 
       final book = await repo.getBookById(id);
       expect(book, isNotNull);
@@ -189,9 +205,11 @@ void main() {
     });
 
     test('inserting book without language has null language', () async {
-      final id = await db.into(db.books).insert(
-        BooksCompanion.insert(title: 'Legacy Book', filePath: '/test/path'),
-      );
+      final id = await db
+          .into(db.books)
+          .insert(
+            BooksCompanion.insert(title: 'Legacy Book', filePath: '/test/path'),
+          );
 
       final book = await repo.getBookById(id);
       expect(book, isNotNull);
@@ -200,9 +218,11 @@ void main() {
     });
 
     test('backfillLanguage updates language and ppd', () async {
-      final id = await db.into(db.books).insert(
-        BooksCompanion.insert(title: 'Legacy Book', filePath: '/test/path'),
-      );
+      final id = await db
+          .into(db.books)
+          .insert(
+            BooksCompanion.insert(title: 'Legacy Book', filePath: '/test/path'),
+          );
 
       // Verify initially null
       var book = await repo.getBookById(id);
@@ -218,13 +238,15 @@ void main() {
     });
 
     test('backfillLanguage can set null values', () async {
-      final id = await db.into(db.books).insert(
-        BooksCompanion.insert(
-          title: 'Book',
-          filePath: '/test/path',
-          language: const Value('en'),
-        ),
-      );
+      final id = await db
+          .into(db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'Book',
+              filePath: '/test/path',
+              language: const Value('en'),
+            ),
+          );
 
       await repo.backfillLanguage(id, null, null, null);
 
@@ -233,5 +255,75 @@ void main() {
       expect(book.pageProgressionDirection, isNull);
       expect(book.primaryWritingMode, isNull);
     });
+  });
+
+  group('BookRepository auto-crop cache', () {
+    test(
+      'ensureMangaAutoCropComputed can be forced to recompute bounds',
+      () async {
+        final imageDir = Directory(p.join(tempDir.path, 'images'))
+          ..createSync(recursive: true);
+        final cacheDir = Directory(p.join(tempDir.path, 'cache'))
+          ..createSync(recursive: true);
+        final imagePath = p.join(imageDir.path, 'page.png');
+
+        final image = img.Image(width: 20, height: 20);
+        img.fill(image, color: img.ColorRgb8(255, 255, 255));
+        for (int y = 6; y <= 13; y++) {
+          for (int x = 7; x <= 11; x++) {
+            image.setPixelRgb(x, y, 0, 0, 0);
+          }
+        }
+        File(imagePath).writeAsBytesSync(img.encodePng(image));
+
+        final cacheBook = MokuroBook(
+          title: 'Test Manga',
+          imageDirPath: imageDir.path,
+          autoCropVersion: MokuroBook.currentAutoCropVersion,
+          pages: const [
+            MokuroPage(
+              pageIndex: 0,
+              imageFileName: 'page.png',
+              imgWidth: 20,
+              imgHeight: 20,
+              blocks: [],
+              contentBounds: Rect.fromLTRB(1, 1, 19, 19),
+            ),
+          ],
+        );
+        final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+        await cacheFile.writeAsString(jsonEncode(cacheBook.toJson()));
+
+        final id = await db
+            .into(db.books)
+            .insert(
+              BooksCompanion.insert(
+                title: 'Test Manga',
+                filePath: cacheDir.path,
+                bookType: const Value('manga'),
+              ),
+            );
+        final book = (await repo.getBookById(id))!;
+
+        final recomputed = await repo.ensureMangaAutoCropComputed(
+          book,
+          force: true,
+        );
+
+        expect(recomputed, isTrue);
+
+        final updated = MokuroBook.fromJson(
+          jsonDecode(await cacheFile.readAsString()) as Map<String, dynamic>,
+        );
+        final bounds = updated.pages.single.contentBounds;
+
+        expect(updated.autoCropVersion, MokuroBook.currentAutoCropVersion);
+        expect(bounds, isNotNull);
+        expect(bounds!.left, 5);
+        expect(bounds.top, 4);
+        expect(bounds.right, 14);
+        expect(bounds.bottom, 16);
+      },
+    );
   });
 }

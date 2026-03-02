@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -127,22 +128,70 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       return Center(child: _buildPageContent(context, pageIdx));
     }
 
+    final sharedCropBounds = _resolveSharedCropBounds(spread);
+
     // Two pages side by side
     return LayoutBuilder(
       builder: (context, constraints) {
         return Row(
           children: [
-            Expanded(child: _buildPageContent(context, spread.leftPageIndex!)),
-            Expanded(child: _buildPageContent(context, spread.rightPageIndex!)),
+            Expanded(
+              child: _buildPageContent(
+                context,
+                spread.leftPageIndex!,
+                cropBoundsOverride: sharedCropBounds.$1,
+              ),
+            ),
+            Expanded(
+              child: _buildPageContent(
+                context,
+                spread.rightPageIndex!,
+                cropBoundsOverride: sharedCropBounds.$2,
+              ),
+            ),
           ],
         );
       },
     );
   }
 
+  (Rect?, Rect?) _resolveSharedCropBounds(PageSpread spread) {
+    if (!widget.autoCrop) return (null, null);
+
+    final pages = widget.mokuroBook.pages;
+    final leftIndex = spread.leftPageIndex;
+    final rightIndex = spread.rightPageIndex;
+    if (leftIndex == null ||
+        rightIndex == null ||
+        leftIndex < 0 ||
+        rightIndex < 0 ||
+        leftIndex >= pages.length ||
+        rightIndex >= pages.length) {
+      return (null, null);
+    }
+
+    final leftPage = pages[leftIndex];
+    final rightPage = pages[rightIndex];
+    if (leftPage.contentBounds == null || rightPage.contentBounds == null) {
+      return (null, null);
+    }
+
+    final sharedInsets = _PageCropInsets.fromPage(
+      leftPage,
+    ).mergeWith(_PageCropInsets.fromPage(rightPage));
+    return (
+      sharedInsets.applyToPage(leftPage),
+      sharedInsets.applyToPage(rightPage),
+    );
+  }
+
   /// Renders a single page's image and word overlay, scaled to fit its
   /// allocation (either full width for solo pages, or half-width in a spread).
-  Widget _buildPageContent(BuildContext context, int pageIndex) {
+  Widget _buildPageContent(
+    BuildContext context,
+    int pageIndex, {
+    Rect? cropBoundsOverride,
+  }) {
     final pages = widget.mokuroBook.pages;
     if (pageIndex < 0 || pageIndex >= pages.length) {
       return const SizedBox.shrink();
@@ -171,7 +220,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
         final containerH = constraints.maxHeight;
 
         // Auto-crop region
-        final contentBounds = page.contentBounds;
+        final contentBounds = cropBoundsOverride ?? page.contentBounds;
         final useCrop = widget.autoCrop && contentBounds != null;
         final regionW = useCrop ? contentBounds.width : imgW;
         final regionH = useCrop ? contentBounds.height : imgH;
@@ -293,5 +342,53 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       fit: fit,
       filterQuality: FilterQuality.medium,
     );
+  }
+}
+
+class _PageCropInsets {
+  final double left;
+  final double top;
+  final double right;
+  final double bottom;
+
+  const _PageCropInsets({
+    required this.left,
+    required this.top,
+    required this.right,
+    required this.bottom,
+  });
+
+  factory _PageCropInsets.fromPage(MokuroPage page) {
+    final bounds = page.contentBounds;
+    final imgW = page.imgWidth.toDouble();
+    final imgH = page.imgHeight.toDouble();
+    if (bounds == null) {
+      return const _PageCropInsets(left: 0, top: 0, right: 0, bottom: 0);
+    }
+
+    return _PageCropInsets(
+      left: bounds.left.clamp(0.0, imgW),
+      top: bounds.top.clamp(0.0, imgH),
+      right: (imgW - bounds.right).clamp(0.0, imgW),
+      bottom: (imgH - bounds.bottom).clamp(0.0, imgH),
+    );
+  }
+
+  _PageCropInsets mergeWith(_PageCropInsets other) => _PageCropInsets(
+    // Match both pages to the same visible margins without clipping content.
+    left: math.min(left, other.left),
+    top: math.min(top, other.top),
+    right: math.min(right, other.right),
+    bottom: math.min(bottom, other.bottom),
+  );
+
+  Rect applyToPage(MokuroPage page) {
+    final imgW = page.imgWidth.toDouble();
+    final imgH = page.imgHeight.toDouble();
+    final cropLeft = left.clamp(0.0, imgW);
+    final cropTop = top.clamp(0.0, imgH);
+    final cropRight = math.max(cropLeft, imgW - right.clamp(0.0, imgW));
+    final cropBottom = math.max(cropTop, imgH - bottom.clamp(0.0, imgH));
+    return Rect.fromLTRB(cropLeft, cropTop, cropRight, cropBottom);
   }
 }

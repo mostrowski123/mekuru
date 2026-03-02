@@ -41,6 +41,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colorTheme = ref.watch(appColorThemeProvider);
     final startupScreen = ref.watch(startupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
+    final autoCropWhiteThreshold = ref.watch(autoCropWhiteThresholdProvider);
     final readerSettings = ref.watch(readerSettingsProvider);
     final readerNotifier = ref.read(readerSettingsProvider.notifier);
     final hasFirebaseApp = FirebaseRuntime.instance.hasFirebaseApp;
@@ -364,60 +365,78 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
           const Divider(),
-          _SectionHeader(title: 'Manga OCR'),
-          if (!hasFirebaseApp)
+          if (isProUnlocked) ...[
+            _SectionHeader(title: 'Manga Auto-Crop'),
             ListTile(
-              enabled: false,
-              leading: Icon(
-                Icons.document_scanner_outlined,
-                color: theme.colorScheme.onSurfaceVariant,
+              leading: Icon(Icons.tune, color: theme.colorScheme.primary),
+              title: const Text('White Threshold'),
+              subtitle: Text(
+                '$autoCropWhiteThreshold (lower values ignore more near-white artifacts)',
               ),
-              title: const Text('Custom OCR Server'),
-              subtitle: const Text('OCR services are temporarily unavailable.'),
-            )
-          else
-            Builder(
-              builder: (context) {
-                final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
-                final usesBuiltInServer = isBuiltInOcrServerUrl(
-                  currentOcrServerUrl,
-                );
-                final subtitle = !isProUnlocked
-                    ? 'Unlock Pro to configure your OCR server'
-                    : usesBuiltInServer
-                    ? 'Not configured. Add your own server URL and shared key.'
-                    : '$currentOcrServerUrl\nUse the same shared key configured on your server.';
-
-                return ListTile(
-                  enabled: isProUnlocked,
-                  leading: Icon(
-                    Icons.document_scanner_outlined,
-                    color: isProUnlocked
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  title: const Text('Custom OCR Server'),
-                  subtitle: Text(
-                    subtitle,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: isProUnlocked
-                      ? const Icon(Icons.chevron_right)
-                      : TextButton(
-                          onPressed: _openProUpgrade,
-                          child: const Text('Unlock'),
-                        ),
-                  onTap: isProUnlocked
-                      ? () {
-                          AppHaptics.light();
-                          _showOcrServerUrlDialog(context, ref);
-                        }
-                      : null,
-                );
-              },
             ),
-          const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Slider(
+                value: autoCropWhiteThreshold.toDouble(),
+                min: AutoCropWhiteThresholdNotifier.minThreshold.toDouble(),
+                max: AutoCropWhiteThresholdNotifier.maxThreshold.toDouble(),
+                divisions:
+                    AutoCropWhiteThresholdNotifier.maxThreshold -
+                    AutoCropWhiteThresholdNotifier.minThreshold,
+                label: '$autoCropWhiteThreshold',
+                onChanged: (value) {
+                  ref
+                      .read(autoCropWhiteThresholdProvider.notifier)
+                      .setThreshold(value);
+                },
+              ),
+            ),
+            const Divider(),
+            _SectionHeader(title: 'Manga OCR'),
+            if (!hasFirebaseApp)
+              ListTile(
+                enabled: false,
+                leading: Icon(
+                  Icons.document_scanner_outlined,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                title: const Text('Custom OCR Server'),
+                subtitle: const Text(
+                  'OCR services are temporarily unavailable.',
+                ),
+              )
+            else
+              Builder(
+                builder: (context) {
+                  final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
+                  final usesBuiltInServer = isBuiltInOcrServerUrl(
+                    currentOcrServerUrl,
+                  );
+                  final subtitle = usesBuiltInServer
+                      ? 'Not configured. Add your own server URL and shared key.'
+                      : '$currentOcrServerUrl\nUse the same shared key configured on your server.';
+
+                  return ListTile(
+                    leading: Icon(
+                      Icons.document_scanner_outlined,
+                      color: theme.colorScheme.primary,
+                    ),
+                    title: const Text('Custom OCR Server'),
+                    subtitle: Text(
+                      subtitle,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      AppHaptics.light();
+                      _showOcrServerUrlDialog(context, ref);
+                    },
+                  );
+                },
+              ),
+            const Divider(),
+          ],
 
           // ── Downloads ──
           _SectionHeader(title: 'Downloads'),

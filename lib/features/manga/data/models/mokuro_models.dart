@@ -24,10 +24,13 @@ class MokuroBookManifest {
 
 /// A fully parsed mokuro book with all page data.
 class MokuroBook {
+  static const int currentAutoCropVersion = 2;
+
   final String title;
   final String imageDirPath;
   final String? safTreeUri;
   final String? safImageDirRelativePath;
+  final int autoCropVersion;
   final List<MokuroPage> pages;
 
   const MokuroBook({
@@ -35,6 +38,7 @@ class MokuroBook {
     required this.imageDirPath,
     this.safTreeUri,
     this.safImageDirRelativePath,
+    this.autoCropVersion = 0,
     required this.pages,
   });
 
@@ -44,6 +48,7 @@ class MokuroBook {
     if (safTreeUri != null) 'safTreeUri': safTreeUri,
     if (safImageDirRelativePath != null)
       'safImageDirRelativePath': safImageDirRelativePath,
+    'autoCropVersion': autoCropVersion,
     'pages': pages.map((p) => p.toJson()).toList(),
   };
 
@@ -52,6 +57,7 @@ class MokuroBook {
     imageDirPath: json['imageDirPath'] as String,
     safTreeUri: json['safTreeUri'] as String?,
     safImageDirRelativePath: json['safImageDirRelativePath'] as String?,
+    autoCropVersion: (json['autoCropVersion'] as num?)?.toInt() ?? 0,
     pages: (json['pages'] as List)
         .map((p) => MokuroPage.fromJson(p as Map<String, dynamic>))
         .toList(),

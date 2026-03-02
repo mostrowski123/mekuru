@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -1035,53 +1036,204 @@ class MokuroParser {
 
     final pixels = byteData.buffer.asUint8List();
     final thresh = whiteThreshold;
+    final top = _findFirstContentRow(
+      pixels,
+      width: width,
+      height: height,
+      whiteThreshold: thresh,
+    );
+    if (top < 0) return null;
 
-    bool isWhitePixel(int offset) =>
-        pixels[offset] >= thresh &&
-        pixels[offset + 1] >= thresh &&
-        pixels[offset + 2] >= thresh;
-
-    // Track the closest non-white pixel on each side independently.
-    int minX = width;
-    int minY = height;
-    int maxX = -1;
-    int maxY = -1;
-
-    for (int y = 0; y < height; y++) {
-      final rowBase = y * width * 4;
-      for (int x = 0; x < width; x++) {
-        final offset = rowBase + x * 4;
-        if (isWhitePixel(offset)) continue;
-
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-
-    // Entirely white page
-    if (maxX < 0 || maxY < 0) return null;
+    final bottom = _findLastContentRow(
+      pixels,
+      width: width,
+      height: height,
+      whiteThreshold: thresh,
+      minRow: top,
+    );
+    final minColumnRun = _minimumColumnRunLength(bottom - top + 1);
+    final left = _findFirstContentColumn(
+      pixels,
+      width: width,
+      top: top,
+      bottom: bottom,
+      whiteThreshold: thresh,
+      minRunLength: minColumnRun,
+    );
+    final right = _findLastContentColumn(
+      pixels,
+      width: width,
+      top: top,
+      bottom: bottom,
+      whiteThreshold: thresh,
+      minColumn: left,
+      minRunLength: minColumnRun,
+    );
 
     return ui.Rect.fromLTRB(
-      (minX.toDouble() - padding).clamp(0.0, width.toDouble()),
-      (minY.toDouble() - padding).clamp(0.0, height.toDouble()),
-      // +1 because maxX/maxY are inclusive pixel indices
-      (maxX.toDouble() + 1 + padding).clamp(0.0, width.toDouble()),
-      (maxY.toDouble() + 1 + padding).clamp(0.0, height.toDouble()),
+      (left.toDouble() - padding).clamp(0.0, width.toDouble()),
+      (top.toDouble() - padding).clamp(0.0, height.toDouble()),
+      // +1 because right/bottom are inclusive pixel indices.
+      (right.toDouble() + 1 + padding).clamp(0.0, width.toDouble()),
+      (bottom.toDouble() + 1 + padding).clamp(0.0, height.toDouble()),
     );
   }
+
+  static int _findFirstContentRow(
+    Uint8List pixels, {
+    required int width,
+    required int height,
+    required int whiteThreshold,
+  }) {
+    for (int y = 0; y < height; y++) {
+      if (_rowHasContent(
+        pixels,
+        width: width,
+        y: y,
+        whiteThreshold: whiteThreshold,
+      )) {
+        return y;
+      }
+    }
+    return -1;
+  }
+
+  static int _findLastContentRow(
+    Uint8List pixels, {
+    required int width,
+    required int height,
+    required int whiteThreshold,
+    required int minRow,
+  }) {
+    for (int y = height - 1; y >= minRow; y--) {
+      if (_rowHasContent(
+        pixels,
+        width: width,
+        y: y,
+        whiteThreshold: whiteThreshold,
+      )) {
+        return y;
+      }
+    }
+    return minRow;
+  }
+
+  static int _findFirstContentColumn(
+    Uint8List pixels, {
+    required int width,
+    required int top,
+    required int bottom,
+    required int whiteThreshold,
+    required int minRunLength,
+  }) {
+    for (int x = 0; x < width; x++) {
+      if (_columnHasContent(
+        pixels,
+        width: width,
+        x: x,
+        top: top,
+        bottom: bottom,
+        whiteThreshold: whiteThreshold,
+        minRunLength: minRunLength,
+      )) {
+        return x;
+      }
+    }
+    return 0;
+  }
+
+  static int _findLastContentColumn(
+    Uint8List pixels, {
+    required int width,
+    required int top,
+    required int bottom,
+    required int whiteThreshold,
+    required int minColumn,
+    required int minRunLength,
+  }) {
+    for (int x = width - 1; x >= minColumn; x--) {
+      if (_columnHasContent(
+        pixels,
+        width: width,
+        x: x,
+        top: top,
+        bottom: bottom,
+        whiteThreshold: whiteThreshold,
+        minRunLength: minRunLength,
+      )) {
+        return x;
+      }
+    }
+    return minColumn;
+  }
+
+  static int _minimumColumnRunLength(int contentHeight) =>
+      math.max(3, (contentHeight * 0.003).ceil());
+
+  static bool _rowHasContent(
+    Uint8List pixels, {
+    required int width,
+    required int y,
+    required int whiteThreshold,
+  }) {
+    final rowBase = y * width * 4;
+    for (int x = 0; x < width; x++) {
+      if (!_isWhitePixel(
+        pixels,
+        rowBase + x * 4,
+        whiteThreshold: whiteThreshold,
+      )) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static bool _columnHasContent(
+    Uint8List pixels, {
+    required int width,
+    required int x,
+    required int top,
+    required int bottom,
+    required int whiteThreshold,
+    required int minRunLength,
+  }) {
+    int runLength = 0;
+    for (int y = top; y <= bottom; y++) {
+      final offset = (y * width + x) * 4;
+      if (!_isWhitePixel(pixels, offset, whiteThreshold: whiteThreshold)) {
+        runLength++;
+        if (runLength >= minRunLength) return true;
+      } else {
+        runLength = 0;
+      }
+    }
+    return false;
+  }
+
+  static bool _isWhitePixel(
+    Uint8List pixels,
+    int offset, {
+    required int whiteThreshold,
+  }) =>
+      pixels[offset] >= whiteThreshold &&
+      pixels[offset + 1] >= whiteThreshold &&
+      pixels[offset + 2] >= whiteThreshold;
 
   /// Computes [contentBounds] for all pages by scanning their images.
   static Future<List<MokuroPage>> computeAllContentBounds(
     List<MokuroPage> pages,
-    String imageDirPath,
-  ) async {
+    String imageDirPath, {
+    int whiteThreshold = 240,
+  }) async {
     final result = <MokuroPage>[];
     for (int i = 0; i < pages.length; i++) {
       final page = pages[i];
       final imagePath = p.join(imageDirPath, page.imageFileName);
-      final bounds = await computeImageContentBounds(imagePath);
+      final bounds = await computeImageContentBounds(
+        imagePath,
+        whiteThreshold: whiteThreshold,
+      );
       result.add(page.copyWith(contentBounds: bounds));
       // Yield to the event loop every 10 pages to keep UI responsive
       if (i % 10 == 9) {
@@ -1098,8 +1250,9 @@ class MokuroParser {
   static Future<List<MokuroPage>> computeAllContentBoundsSaf(
     List<MokuroPage> pages,
     String safTreeUri,
-    String imageDirRelativePath,
-  ) async {
+    String imageDirRelativePath, {
+    int whiteThreshold = 240,
+  }) async {
     final result = <MokuroPage>[];
     for (int i = 0; i < pages.length; i++) {
       final page = pages[i];
@@ -1115,7 +1268,10 @@ class MokuroParser {
           imageRelPath,
         );
         if (bytes != null) {
-          bounds = await computeImageContentBoundsFromBytes(bytes);
+          bounds = await computeImageContentBoundsFromBytes(
+            bytes,
+            whiteThreshold: whiteThreshold,
+          );
         }
       } catch (e) {
         debugPrint(

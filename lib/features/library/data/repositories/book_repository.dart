@@ -481,6 +481,7 @@ class BookRepository {
       imageDirPath: mokuroBook.imageDirPath,
       safTreeUri: mokuroBook.safTreeUri,
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+      autoCropVersion: mokuroBook.autoCropVersion,
       pages: resegmented,
     );
     await cacheFile.writeAsString(jsonEncode(updated.toJson()));
@@ -515,6 +516,7 @@ class BookRepository {
       imageDirPath: mokuroBook.imageDirPath,
       safTreeUri: mokuroBook.safTreeUri,
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+      autoCropVersion: mokuroBook.autoCropVersion,
       pages: clearedPages,
     );
 
@@ -526,7 +528,11 @@ class BookRepository {
   ///
   /// Returns `true` if bounds were computed and cache was updated.
   /// Returns `false` if bounds already existed (no work performed).
-  Future<bool> ensureMangaAutoCropComputed(Book book) async {
+  Future<bool> ensureMangaAutoCropComputed(
+    Book book, {
+    bool force = false,
+    int whiteThreshold = 240,
+  }) async {
     if (book.bookType != 'manga') return false;
 
     final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
@@ -538,7 +544,8 @@ class BookRepository {
     final json = jsonDecode(content) as Map<String, dynamic>;
     final mokuroBook = MokuroBook.fromJson(json);
 
-    if (mokuroBook.pages.any((p) => p.contentBounds != null)) {
+    if (!force &&
+        mokuroBook.autoCropVersion >= MokuroBook.currentAutoCropVersion) {
       return false;
     }
 
@@ -549,10 +556,12 @@ class BookRepository {
             mokuroBook.pages,
             mokuroBook.safTreeUri!,
             mokuroBook.safImageDirRelativePath!,
+            whiteThreshold: whiteThreshold,
           )
         : await MokuroParser.computeAllContentBounds(
             mokuroBook.pages,
             mokuroBook.imageDirPath,
+            whiteThreshold: whiteThreshold,
           );
 
     final updated = MokuroBook(
@@ -560,6 +569,7 @@ class BookRepository {
       imageDirPath: mokuroBook.imageDirPath,
       safTreeUri: mokuroBook.safTreeUri,
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+      autoCropVersion: MokuroBook.currentAutoCropVersion,
       pages: withBounds,
     );
 

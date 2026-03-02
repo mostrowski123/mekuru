@@ -23,6 +23,8 @@ abstract class AppSettingsStorage {
   Future<void> saveAutoFocusSearch(bool value);
   Future<String?> loadColorTheme();
   Future<void> saveColorTheme(String theme);
+  Future<int?> loadAutoCropWhiteThreshold();
+  Future<void> saveAutoCropWhiteThreshold(int value);
   Future<String?> loadOcrServerUrl();
   Future<void> saveOcrServerUrl(String url);
 }
@@ -61,6 +63,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _startupScreenKey = 'app.startup_screen';
   static const _autoFocusSearchKey = 'app.auto_focus_search';
   static const _colorThemeKey = 'app.color_theme';
+  static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
   static const _ocrServerUrlKey = 'app.ocr_server_url';
 
   @override
@@ -182,6 +185,18 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveColorTheme(String theme) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_colorThemeKey, theme);
+  }
+
+  @override
+  Future<int?> loadAutoCropWhiteThreshold() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_autoCropWhiteThresholdKey);
+  }
+
+  @override
+  Future<void> saveAutoCropWhiteThreshold(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_autoCropWhiteThresholdKey, value);
   }
 
   @override
