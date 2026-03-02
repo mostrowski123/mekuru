@@ -1,6 +1,10 @@
 # Custom OCR Server
 
-Mekuru can send manga OCR requests to a compatible self-hosted server instead of the built-in Mekuru endpoint.
+Mekuru can send manga OCR requests to a compatible self-hosted server for remote manga OCR.
+
+## Pro Requirement
+
+The **Custom OCR Server** feature is unlocked by the one-time **Pro** upgrade.
 
 ## Server Repository
 
@@ -16,19 +20,13 @@ Custom OCR servers use a shared `AUTH_API_KEY`.
 - Mekuru sends the key as `Authorization: Bearer <key>`.
 - The custom key is stored locally on-device.
 
-## Credits and Billing
-
-Custom OCR servers do **not** consume Mekuru page credits.
-
 ## Configuring the App
 
 1. Open **Settings**.
-2. Open **OCR Server URL**.
+2. Open **Custom OCR Server**.
 3. Enter the server URL.
 4. Enter the matching shared key.
 5. Save the settings.
-
-In the current app UI, the OCR Server URL setting is usually editable after OCR is unlocked. If the billing status check fails, the app may still allow manual editing so you can switch away from the built-in endpoint.
 
 ## Compatibility
 

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
+import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
+import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/epub_models.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
@@ -55,6 +57,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   double _progress = 0.0;
   String _currentCfi = '';
   bool _isCurrentPageBookmarked = false;
+  bool _hasRestoredHighlights = false;
   String? _initialCfi;
   String? _errorMessage;
   int _viewerEpoch = 0;
@@ -134,6 +137,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(readerSettingsProvider);
+    final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
 
     ref.listen<ReaderSettings>(readerSettingsProvider, (previous, next) {
       if (previous == null) {
@@ -346,7 +350,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   ),
                 if (_isLoading) _buildLoadingOverlay(context),
                 if (_showControls && !_isLoading)
-                  Positioned(top: 0, left: 0, right: 0, child: _buildTopBar()),
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: _buildTopBar(isProUnlocked),
+                  ),
                 if (_showControls && !_isLoading)
                   Positioned(
                     bottom: 0,
@@ -357,11 +366,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 // Highlight speed-dial FAB — appears when text is selected
                 if (_selectionData != null)
                   _HighlightSpeedDial(
+                    isLocked: !isProUnlocked,
                     onColorSelected: (color) => _createHighlight(
                       _selectionData!.cfi,
                       _selectionData!.text,
                       color,
                     ),
+                    onLockedTap: _openProUpgradeFromReader,
                     onExpandToSentence: () {
                       _epubController.expandToSentence();
                       AppHaptics.medium();
@@ -376,6 +387,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     setState(() {
       _isLoading = true;
       _isEpubLoaded = false;
+      _hasRestoredHighlights = false;
       _locationsReady = false;
       _errorMessage = null;
       _chapters = const [];
@@ -479,6 +491,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         _initialCfi = currentCfi ?? _initialCfi;
         _isLoading = true;
         _isEpubLoaded = false;
+        _hasRestoredHighlights = false;
         _viewerEpoch += 1;
       });
     } finally {
@@ -911,7 +924,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  Future<void> _openProUpgradeFromReader() async {
+    await openProUpgrade(context, ref);
+    if (!mounted || !_isEpubLoaded) return;
+
+    final isProUnlocked = await ref.read(proUnlockedProvider.future);
+    if (isProUnlocked) {
+      await _restoreHighlights();
+    }
+  }
+
   void _showHighlightsSheet() {
+    if (!proUnlockedValue(ref.read(proUnlockedProvider))) {
+      unawaited(_openProUpgradeFromReader());
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -932,6 +960,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // ── Highlights ──────────────────────────────────────────────────
 
   Future<void> _restoreHighlights() async {
+    if (_hasRestoredHighlights) return;
+
+    final isProUnlocked = await ref.read(proUnlockedProvider.future);
+    if (!isProUnlocked) {
+      return;
+    }
+
     final highlights = await ref
         .read(highlightRepositoryProvider)
         .getAllHighlightsForBook(widget.book.id);
@@ -942,10 +977,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (highlights.isNotEmpty) {
       debugPrint('[READER] restored ${highlights.length} highlights');
     }
+    _hasRestoredHighlights = true;
   }
 
   void _createHighlight(String cfi, String text, HighlightColor color) {
     if (cfi.isEmpty) return;
+    if (!proUnlockedValue(ref.read(proUnlockedProvider))) {
+      unawaited(_openProUpgradeFromReader());
+      return;
+    }
 
     ref
         .read(highlightRepositoryProvider)
@@ -968,7 +1008,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     });
   }
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar(bool isProUnlocked) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1022,9 +1062,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               onPressed: _showBookmarksSheet,
             ),
             IconButton(
-              icon: const Icon(Icons.highlight, color: Colors.white),
+              icon: Icon(
+                Icons.highlight,
+                color: isProUnlocked ? Colors.white : Colors.white38,
+              ),
               tooltip: 'Highlights',
-              onPressed: _showHighlightsSheet,
+              onPressed: isProUnlocked
+                  ? _showHighlightsSheet
+                  : _openProUpgradeFromReader,
             ),
             IconButton(
               icon: const Icon(Icons.settings, color: Colors.white),
@@ -1432,11 +1477,15 @@ class _FlattenedChapter {
 // ── Highlight speed-dial FAB ──────────────────────────────────────────
 
 class _HighlightSpeedDial extends StatefulWidget {
+  final bool isLocked;
   final void Function(HighlightColor color) onColorSelected;
+  final VoidCallback onLockedTap;
   final VoidCallback onExpandToSentence;
 
   const _HighlightSpeedDial({
+    required this.isLocked,
     required this.onColorSelected,
+    required this.onLockedTap,
     required this.onExpandToSentence,
   });
 
@@ -1470,12 +1519,23 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant _HighlightSpeedDial oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isLocked && _expanded) {
+      setState(() {
+        _expanded = false;
+      });
+    }
+  }
+
   void _toggle() => setState(() => _expanded = !_expanded);
 
   @override
   Widget build(BuildContext context) {
     final colors = HighlightColor.values;
     final theme = Theme.of(context);
+    final isLocked = widget.isLocked;
 
     return Positioned(
       bottom: 100,
@@ -1491,11 +1551,13 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
               // Color dots — shown when expanded
               for (var i = 0; i < colors.length; i++)
                 AnimatedScale(
-                  scale: _expanded ? 1.0 : 0.0,
+                  scale: _expanded && !isLocked ? 1.0 : 0.0,
                   duration: Duration(
-                    milliseconds: _expanded ? 150 + i * 40 : 100,
+                    milliseconds: _expanded && !isLocked ? 150 + i * 40 : 100,
                   ),
-                  curve: _expanded ? Curves.easeOutBack : Curves.easeIn,
+                  curve: _expanded && !isLocked
+                      ? Curves.easeOutBack
+                      : Curves.easeIn,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: _SpeedDialDot(
@@ -1507,13 +1569,15 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
 
               // Select Sentence button — shown when expanded
               AnimatedScale(
-                scale: _expanded ? 1.0 : 0.0,
+                scale: _expanded && !isLocked ? 1.0 : 0.0,
                 duration: Duration(
-                  milliseconds: _expanded
+                  milliseconds: _expanded && !isLocked
                       ? 150 + (colors.length + 1) * 40
                       : 100,
                 ),
-                curve: _expanded ? Curves.easeOutBack : Curves.easeIn,
+                curve: _expanded && !isLocked
+                    ? Curves.easeOutBack
+                    : Curves.easeIn,
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: SizedBox(
@@ -1539,8 +1603,14 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
               // Main FAB
               FloatingActionButton.small(
                 heroTag: 'highlight_fab',
-                onPressed: _toggle,
-                tooltip: 'Highlight selection',
+                onPressed: isLocked ? widget.onLockedTap : _toggle,
+                tooltip: isLocked ? 'Unlock Pro' : 'Highlight selection',
+                backgroundColor: isLocked
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : null,
+                foregroundColor: isLocked
+                    ? theme.colorScheme.onSurfaceVariant
+                    : null,
                 child: const Icon(Icons.highlight),
               ),
             ],

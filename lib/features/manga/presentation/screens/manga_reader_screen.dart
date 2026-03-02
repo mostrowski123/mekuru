@@ -8,7 +8,9 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
+import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
+import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_scroll_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_spread_view.dart';
@@ -294,6 +296,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     }
   }
 
+  Future<void> _openProUpgradeFromReader() async {
+    await openProUpgrade(context, ref);
+  }
+
   void _showSettingsSheet(MokuroBook mokuroBook) {
     showModalBottomSheet<void>(
       context: context,
@@ -303,6 +309,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           final direction = ref.watch(mangaReadingDirectionProvider);
           final transparent = ref.watch(mangaLookupTransparencyProvider);
           final autoCrop = ref.watch(mangaAutoCropProvider);
+          final isProUnlocked = proUnlockedValue(
+            ref.watch(proUnlockedProvider),
+          );
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -356,16 +365,36 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                     },
                   ),
                   // Auto-crop toggle
-                  SwitchListTile(
-                    secondary: const Icon(Icons.crop),
-                    title: const Text('Auto-Crop'),
-                    subtitle: const Text(
-                      'Remove empty margins (one-time setup per book)',
+                  if (isProUnlocked)
+                    SwitchListTile(
+                      secondary: const Icon(Icons.crop),
+                      title: const Text('Auto-Crop'),
+                      subtitle: const Text(
+                        'Remove empty margins (one-time setup per book)',
+                      ),
+                      value: autoCrop,
+                      onChanged: (value) =>
+                          _handleAutoCropToggle(ref, mokuroBook, value),
+                    )
+                  else
+                    ListTile(
+                      enabled: false,
+                      leading: Icon(
+                        Icons.crop,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      title: const Text('Auto-Crop'),
+                      subtitle: const Text(
+                        'Remove empty margins (one-time setup per book)',
+                      ),
+                      trailing: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _openProUpgradeFromReader();
+                        },
+                        child: const Text('Unlock'),
+                      ),
                     ),
-                    value: autoCrop,
-                    onChanged: (value) =>
-                        _handleAutoCropToggle(ref, mokuroBook, value),
-                  ),
                   // Transparent lookup toggle
                   SwitchListTile(
                     secondary: const Icon(Icons.opacity),
@@ -403,6 +432,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     MokuroBook mokuroBook,
     bool enable,
   ) async {
+    if (!proUnlockedValue(ref.read(proUnlockedProvider))) {
+      await _openProUpgradeFromReader();
+      return;
+    }
+
     if (!enable) {
       ref.read(mangaAutoCropProvider.notifier).setEnabled(false);
       return;
@@ -500,7 +534,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
     final direction = ref.watch(mangaReadingDirectionProvider);
-    final autoCrop = ref.watch(mangaAutoCropProvider);
+    final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
+    final autoCrop = isProUnlocked && ref.watch(mangaAutoCropProvider);
     final viewMode = ref.watch(mangaViewModeProvider);
     final isOcrRunning = ref.watch(isOcrRunningProvider(widget.book.id));
     final enableWordOverlays = !isOcrRunning;

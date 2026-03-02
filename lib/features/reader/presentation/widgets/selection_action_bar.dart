@@ -14,7 +14,9 @@ class SelectionActionBar extends StatelessWidget {
   final Rect anchorRect;
   final String selectedText;
   final SelectionBarMode mode;
+  final bool isLocked;
   final void Function(HighlightColor color)? onHighlight;
+  final VoidCallback? onLockedTap;
   final VoidCallback? onDismiss;
 
   const SelectionActionBar({
@@ -22,7 +24,9 @@ class SelectionActionBar extends StatelessWidget {
     required this.anchorRect,
     required this.selectedText,
     required this.mode,
+    this.isLocked = false,
     this.onHighlight,
+    this.onLockedTap,
     this.onDismiss,
   });
 
@@ -65,8 +69,14 @@ class SelectionActionBar extends StatelessWidget {
       children: [
         for (final color in HighlightColor.values)
           _ColorDot(
-            color: color.color,
-            onTap: () => onHighlight?.call(color),
+            color: isLocked ? Colors.grey : color.color,
+            onTap: () {
+              if (isLocked) {
+                onLockedTap?.call();
+                return;
+              }
+              onHighlight?.call(color);
+            },
           ),
         const SizedBox(width: 4),
         IconButton(
@@ -100,7 +110,13 @@ class SelectionActionBar extends StatelessWidget {
         _ActionButton(
           icon: Icons.highlight,
           label: 'Highlight',
-          onTap: () => onHighlight?.call(HighlightColor.yellow),
+          onTap: () {
+            if (isLocked) {
+              onLockedTap?.call();
+              return;
+            }
+            onHighlight?.call(HighlightColor.yellow);
+          },
         ),
         _ActionButton(
           icon: Icons.share,

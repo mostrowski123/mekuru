@@ -50,25 +50,24 @@ The Dictionary section includes:
 
 On Android, **AnkiDroid Integration** opens the field-mapping setup used for direct card creation. See [Exporting to Anki](vocabulary/anki-export.md).
 
-## OCR Purchases
+## Pro
 
-The **OCR Purchases** section handles Mekuru's built-in OCR entitlement.
+The **Pro** section handles Mekuru's one-time paid upgrade.
 
-- The app may show **Sign In to Restore Purchases** when the OCR account is still anonymous.
-- Restoring or buying OCR access can require linking a Google account first.
-- The OCR purchase screen shows whether OCR is unlocked and how many page credits are currently available.
-- The OCR purchase screen can refresh the credit balance from the server.
-- The built-in OCR unlock is a one-time purchase that includes 150 starter page credits.
+- The app may show **Sign In to Restore Pro** when the linked account is still anonymous.
+- Restoring or buying Pro can require linking a Google account first.
+- The Pro screen shows whether Pro is locked or unlocked.
+- Pro unlocks **Auto-Crop**, **Book Highlights**, and **Custom OCR Server**.
 
-## Manga OCR (OCR Server URL)
+## Manga OCR (Custom OCR Server)
 
-The **OCR Server URL** setting controls whether Mekuru sends OCR requests to the built-in Mekuru server or to a custom endpoint.
+The **Custom OCR Server** setting controls the remote OCR endpoint used for CBZ manga processing.
 
-- **Built-in server** - uses page credits and app authentication
-- **Custom server** - does not consume page credits
-- **Custom server key** - Mekuru sends a shared bearer token to custom servers
+- Add your own server URL
+- Add the matching shared `AUTH_API_KEY`
+- Mekuru sends the key as a bearer token to your server
 
-In the current UI, the OCR Server URL setting is usually editable after OCR is unlocked. If the billing status check fails, the app may still allow manual editing so you can switch endpoints.
+If the stored OCR server still points to Mekuru's legacy built-in endpoint, the app now treats that as not configured and asks you to set up your own server before OCR can run.
 
 See [Custom OCR Server](manga/custom-server.md) for the custom-server contract.
 

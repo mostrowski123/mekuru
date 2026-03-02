@@ -11,19 +11,19 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
+import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/screens/manga_reader_screen.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
+import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
+import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
-import 'package:mekuru/shared/widgets/android_saf_image.dart';
-import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
-import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
-import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
-import 'package:mekuru/features/manga/presentation/screens/ocr_purchases_screen.dart';
-import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -960,9 +960,6 @@ class _BookTileState extends ConsumerState<_BookTile>
     final ocrSummaryFuture = book.bookType == 'manga'
         ? _loadMangaOcrSummary()
         : null;
-    final ocrBillingStatusFuture = book.bookType == 'manga'
-        ? _loadOcrBillingStatus()
-        : null;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -985,12 +982,36 @@ class _BookTileState extends ConsumerState<_BookTile>
                   _showBookBookmarks(context);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.highlight),
-                title: const Text('Highlights'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _showBookHighlights(context);
+              Consumer(
+                builder: (context, ref, _) {
+                  final isProUnlocked = proUnlockedValue(
+                    ref.watch(proUnlockedProvider),
+                  );
+                  return ListTile(
+                    enabled: isProUnlocked,
+                    leading: Icon(
+                      Icons.highlight,
+                      color: isProUnlocked
+                          ? null
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    title: const Text('Highlights'),
+                    trailing: isProUnlocked
+                        ? null
+                        : TextButton(
+                            onPressed: () {
+                              Navigator.of(sheetContext).pop();
+                              _openProUpgrade(context);
+                            },
+                            child: const Text('Unlock'),
+                          ),
+                    onTap: isProUnlocked
+                        ? () {
+                            Navigator.of(sheetContext).pop();
+                            _showBookHighlights(context);
+                          }
+                        : null,
+                  );
                 },
               ),
             ],
@@ -999,91 +1020,78 @@ class _BookTileState extends ConsumerState<_BookTile>
               FutureBuilder<_MangaOcrCacheSummary>(
                 future: ocrSummaryFuture,
                 builder: (ctx, snapshot) {
-                  return FutureBuilder<OcrBillingStatus?>(
-                    future: ocrBillingStatusFuture,
-                    builder: (_, billingSnapshot) {
-                      final summary =
-                          snapshot.data ?? _MangaOcrCacheSummary.empty;
-                      final isRunning = ref.watch(
-                        isOcrRunningProvider(book.id),
-                      );
-                      final progress = ref.watch(ocrProgressProvider(book.id));
-                      final completedPages = progress.whenOrNull(
-                        data: (p) => p?.completed,
-                      );
-                      final totalPages = progress.whenOrNull(
-                        data: (p) => p?.total,
-                      );
+                  final summary = snapshot.data ?? _MangaOcrCacheSummary.empty;
+                  final isRunning = ref.watch(isOcrRunningProvider(book.id));
+                  final progress = ref.watch(ocrProgressProvider(book.id));
+                  final completedPages = progress.whenOrNull(
+                    data: (p) => p?.completed,
+                  );
+                  final totalPages = progress.whenOrNull(data: (p) => p?.total);
+                  final isProUnlocked = proUnlockedValue(
+                    ref.watch(proUnlockedProvider),
+                  );
 
-                      final hasCompleteOcr =
-                          summary.hasCompleteOcr &&
-                          !summary.needsWordSegmentation;
-                      final canResume = summary.hasPartialOcr;
-                      final isWordOnlyPass =
-                          summary.needsWordSegmentation &&
-                          summary.pagesWithoutOcr == 0;
-                      final needsPaidUnlock =
-                          !isRunning && !hasCompleteOcr && !isWordOnlyPass;
-                      final isBillingLocked =
-                          needsPaidUnlock &&
-                          !billingSnapshot.hasError &&
-                          (billingSnapshot.connectionState !=
-                                  ConnectionState.done ||
-                              !(billingSnapshot.data?.ocrUnlocked ?? false));
+                  final hasCompleteOcr =
+                      summary.hasCompleteOcr && !summary.needsWordSegmentation;
+                  final canResume = summary.hasPartialOcr;
+                  final isWordOnlyPass =
+                      summary.needsWordSegmentation &&
+                      summary.pagesWithoutOcr == 0;
+                  final needsProUnlock =
+                      !isRunning && !hasCompleteOcr && !isWordOnlyPass;
+                  final isProLocked = needsProUnlock && !isProUnlocked;
 
-                      final title = isRunning
-                          ? 'Cancel OCR'
+                  final title = isRunning
+                      ? 'Cancel OCR'
+                      : hasCompleteOcr
+                      ? 'Remove OCR'
+                      : 'Run OCR';
+                  final subtitle = isProLocked
+                      ? 'Unlock Pro to use your custom OCR server'
+                      : isRunning
+                      ? 'Stop processing and save progress'
+                      : hasCompleteOcr
+                      ? 'Remove OCR text from all pages'
+                      : isWordOnlyPass
+                      ? 'Build word tap targets from saved OCR'
+                      : canResume
+                      ? 'Resume OCR (${completedPages ?? summary.pagesWithOcr}/${totalPages ?? summary.totalPages} done)'
+                      : 'Recognize text on all pages';
+
+                  return ListTile(
+                    enabled: !isProLocked,
+                    leading: Icon(
+                      isRunning
+                          ? Icons.cancel_outlined
                           : hasCompleteOcr
-                          ? 'Remove OCR'
-                          : 'Run OCR';
-                      final subtitle = isBillingLocked
-                          ? 'Unlock OCR first to recognize text on manga pages'
-                          : isRunning
-                          ? 'Stop processing and save progress'
-                          : hasCompleteOcr
-                          ? 'Remove OCR text from all pages'
-                          : isWordOnlyPass
-                          ? 'Build word tap targets from saved OCR'
-                          : canResume
-                          ? 'Resume OCR (${completedPages ?? summary.pagesWithOcr}/${totalPages ?? summary.totalPages} done)'
-                          : 'Recognize text on all pages';
-
-                      return ListTile(
-                        enabled: !isBillingLocked,
-                        leading: Icon(
-                          isRunning
-                              ? Icons.cancel_outlined
-                              : hasCompleteOcr
-                              ? Icons.delete_sweep_outlined
-                              : Icons.document_scanner,
-                        ),
-                        title: Text(title),
-                        subtitle: Text(subtitle),
-                        trailing: isBillingLocked
-                            ? TextButton(
-                                onPressed: () {
-                                  Navigator.of(sheetContext).pop();
-                                  _openOcrPurchases(context);
-                                },
-                                child: const Text('Unlock'),
-                              )
-                            : null,
-                        onTap: isBillingLocked
-                            ? null
-                            : () {
-                                Navigator.of(sheetContext).pop();
-                                if (isRunning) {
-                                  _cancelOcr(context, ref);
-                                  return;
-                                }
-                                if (hasCompleteOcr) {
-                                  _removeOcr(context, ref);
-                                  return;
-                                }
-                                _startOcr(context, ref);
-                              },
-                      );
-                    },
+                          ? Icons.delete_sweep_outlined
+                          : Icons.document_scanner,
+                    ),
+                    title: Text(title),
+                    subtitle: Text(subtitle),
+                    trailing: isProLocked
+                        ? TextButton(
+                            onPressed: () {
+                              Navigator.of(sheetContext).pop();
+                              _openProUpgrade(context);
+                            },
+                            child: const Text('Unlock'),
+                          )
+                        : null,
+                    onTap: isProLocked
+                        ? null
+                        : () {
+                            Navigator.of(sheetContext).pop();
+                            if (isRunning) {
+                              _cancelOcr(context, ref);
+                              return;
+                            }
+                            if (hasCompleteOcr) {
+                              _removeOcr(context, ref);
+                              return;
+                            }
+                            _startOcr(context, ref);
+                          },
                   );
                 },
               ),
@@ -1222,21 +1230,8 @@ class _BookTileState extends ConsumerState<_BookTile>
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
-  Future<OcrBillingStatus?> _loadOcrBillingStatus() async {
-    final billingClient = OcrBillingClient();
-    try {
-      return await billingClient.readCachedStatus();
-    } catch (_) {
-      return null;
-    } finally {
-      billingClient.dispose();
-    }
-  }
-
-  void _openOcrPurchases(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const OcrPurchasesScreen()));
+  Future<void> _openProUpgrade(BuildContext context) async {
+    await openProUpgrade(context, ref);
   }
 
   void _startOcr(BuildContext context, WidgetRef ref) async {
@@ -1312,52 +1307,30 @@ class _BookTileState extends ConsumerState<_BookTile>
     if (confirmed != true) return;
     if (!context.mounted) return;
 
-    OcrPreparationResult? preparation;
     if (!isWordOnlyPass) {
       try {
-        preparation = await OcrPurchaseFlow.instance.prepareOcrReservation(
+        final ready = await OcrPurchaseFlow.instance.ensureProAndCustomOcrReady(
           context,
-          pageCount: emptyCount,
-          bookId: book.id,
           getServerUrl: () => ref.read(ocrServerUrlProvider),
         );
+        if (!ready) return;
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Unable to prepare OCR purchase: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Unable to prepare OCR: $e')));
         }
         return;
       }
-
-      if (preparation == null) return;
     }
-
-    final reservation = preparation?.reservation;
 
     try {
       await scheduleOcrTask(
         bookId: book.id,
         cacheFilePath: cacheFilePath,
         imageDir: imageDirPath,
-        jobId: reservation?.jobId,
-        reservedPages: reservation?.reservedPages,
       );
     } catch (e) {
-      if (reservation != null) {
-        final billingClient = OcrBillingClient();
-        try {
-          await billingClient.finalizeOcrJob(
-            jobId: reservation.jobId,
-            status: OcrStatus.failed,
-          );
-        } catch (_) {
-          // Best effort so a failed enqueue does not block the rest of the UI.
-        } finally {
-          billingClient.dispose();
-        }
-      }
-
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,

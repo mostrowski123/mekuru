@@ -24,7 +24,7 @@ const ANDROID_PACKAGE_NAME =
   process.env.ANDROID_PACKAGE_NAME ?? "moe.matthew.mekuru";
 const OCR_JOB_TTL_HOURS = asInt(process.env.OCR_JOB_TTL_HOURS ?? "24");
 
-const OCR_UNLOCK_PRODUCT_ID = "ocr_unlock_v1";
+const PRO_UNLOCK_PRODUCT_ID = "pro_unlock_v1";
 const OCR_UNLOCK_STARTER_CREDITS = 150;
 const OCR_CREDIT_PRODUCTS: Record<string, number> = {
   ocr_pages_500: 500,
@@ -330,7 +330,7 @@ async function applyLegacyUnlockTopUpIfNeeded(input: {
 }
 
 function grantForProduct(productId: string): PurchaseGrant {
-  if (productId === OCR_UNLOCK_PRODUCT_ID) {
+  if (productId === PRO_UNLOCK_PRODUCT_ID) {
     return {
       grantType: "unlock",
       grantedCredits: OCR_UNLOCK_STARTER_CREDITS,
@@ -553,7 +553,7 @@ async function applyPurchaseGrant(input: {
     }
 
     if (
-      productId === OCR_UNLOCK_PRODUCT_ID &&
+      productId === PRO_UNLOCK_PRODUCT_ID &&
       existingGrantedCredits < OCR_UNLOCK_STARTER_CREDITS
     ) {
       const toppedUp = await applyLegacyUnlockTopUpIfNeeded({
