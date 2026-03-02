@@ -25,7 +25,7 @@ class DictionaryEntryWithSource {
   }
 
   /// Returns a qualitative label for the frequency rank.
-  static String? frequencyLabel(int? rank) {
+  static String frequencyLabel(int? rank) {
     final resolvedRank = sortFrequencyRank(rank);
     if (resolvedRank <= 5000) return 'Very Common';
     if (resolvedRank <= 15000) return 'Common';
