@@ -413,7 +413,8 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         ? await _segmentPagesForLookup(updatedPages)
         : updatedPages;
 
-    await _saveCache(cacheFile, mokuroBook, pagesToSave);
+    await _saveCache(cacheFile, mokuroBook, pagesToSave,
+        ocrSourceOverride: 'custom_ocr');
     await OcrProgress.save(
       prefs,
       bookId,
@@ -528,14 +529,16 @@ bool _pageNeedsWordSegmentation(MokuroPage page) {
 Future<void> _saveCache(
   File cacheFile,
   MokuroBook originalBook,
-  List<MokuroPage> updatedPages,
-) async {
+  List<MokuroPage> updatedPages, {
+  String? ocrSourceOverride,
+}) async {
   final updated = MokuroBook(
     title: originalBook.title,
     imageDirPath: originalBook.imageDirPath,
     safTreeUri: originalBook.safTreeUri,
     safImageDirRelativePath: originalBook.safImageDirRelativePath,
     autoCropVersion: originalBook.autoCropVersion,
+    ocrSource: ocrSourceOverride ?? originalBook.ocrSource,
     pages: updatedPages,
   );
   await cacheFile.writeAsString(json.encode(updated.toJson()));

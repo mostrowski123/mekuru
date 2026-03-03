@@ -305,6 +305,7 @@ class BookRepository {
       imageDirPath: manifest.imageDirPath,
       safTreeUri: manifest.safTreeUri,
       safImageDirRelativePath: manifest.safImageDirRelativePath,
+      ocrSource: 'mokuro',
       pages: pages,
     );
     final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
@@ -482,6 +483,7 @@ class BookRepository {
       safTreeUri: mokuroBook.safTreeUri,
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
       autoCropVersion: mokuroBook.autoCropVersion,
+      ocrSource: mokuroBook.ocrSource,
       pages: resegmented,
     );
     await cacheFile.writeAsString(jsonEncode(updated.toJson()));
@@ -517,6 +519,7 @@ class BookRepository {
       safTreeUri: mokuroBook.safTreeUri,
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
       autoCropVersion: mokuroBook.autoCropVersion,
+      ocrSource: null,
       pages: clearedPages,
     );
 
@@ -570,6 +573,7 @@ class BookRepository {
       safTreeUri: mokuroBook.safTreeUri,
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
       autoCropVersion: MokuroBook.currentAutoCropVersion,
+      ocrSource: mokuroBook.ocrSource,
       pages: withBounds,
     );
 

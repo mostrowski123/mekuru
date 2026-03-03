@@ -10,6 +10,7 @@ import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
+import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/screens/manga_reader_screen.dart';
@@ -581,12 +582,14 @@ class _MangaOcrCacheSummary {
   final int pagesWithOcr;
   final int pagesWithoutOcr;
   final int pagesNeedingWordSegmentation;
+  final String? ocrSource;
 
   const _MangaOcrCacheSummary({
     required this.totalPages,
     required this.pagesWithOcr,
     required this.pagesWithoutOcr,
     required this.pagesNeedingWordSegmentation,
+    this.ocrSource,
   });
 
   static const empty = _MangaOcrCacheSummary(
@@ -596,8 +599,11 @@ class _MangaOcrCacheSummary {
     pagesNeedingWordSegmentation: 0,
   );
 
-  bool get hasPartialOcr => pagesWithOcr > 0 && pagesWithoutOcr > 0;
-  bool get hasCompleteOcr => totalPages > 0 && pagesWithoutOcr == 0;
+  bool get isMokuroSource => ocrSource == 'mokuro';
+  bool get hasPartialOcr =>
+      !isMokuroSource && pagesWithOcr > 0 && pagesWithoutOcr > 0;
+  bool get hasCompleteOcr =>
+      totalPages > 0 && (isMokuroSource || pagesWithoutOcr == 0);
   bool get needsWordSegmentation => pagesNeedingWordSegmentation > 0;
 }
 
@@ -1037,12 +1043,17 @@ class _BookTileState extends ConsumerState<_BookTile>
                   final isWordOnlyPass =
                       summary.needsWordSegmentation &&
                       summary.pagesWithoutOcr == 0;
+                  final isMokuroComplete =
+                      summary.isMokuroSource && !isRunning;
                   final needsProUnlock =
-                      !isRunning && !hasCompleteOcr && !isWordOnlyPass;
+                      !isRunning && !hasCompleteOcr && !isWordOnlyPass &&
+                      !isMokuroComplete;
                   final isProLocked = needsProUnlock && !isProUnlocked;
 
                   final title = isRunning
                       ? 'Cancel OCR'
+                      : isMokuroComplete
+                      ? 'Replace OCR'
                       : hasCompleteOcr
                       ? 'Remove OCR'
                       : 'Run OCR';
@@ -1050,6 +1061,8 @@ class _BookTileState extends ConsumerState<_BookTile>
                       ? 'Unlock Pro to use your custom OCR server'
                       : isRunning
                       ? 'Stop processing and save progress'
+                      : isMokuroComplete
+                      ? 'Replace Mokuro OCR with your custom OCR server'
                       : hasCompleteOcr
                       ? 'Remove OCR text from all pages'
                       : isWordOnlyPass
@@ -1058,40 +1071,63 @@ class _BookTileState extends ConsumerState<_BookTile>
                       ? 'Resume OCR (${completedPages ?? summary.pagesWithOcr}/${totalPages ?? summary.totalPages} done)'
                       : 'Recognize text on all pages';
 
-                  return ListTile(
-                    enabled: !isProLocked,
-                    leading: Icon(
-                      isRunning
-                          ? Icons.cancel_outlined
-                          : hasCompleteOcr
-                          ? Icons.delete_sweep_outlined
-                          : Icons.document_scanner,
-                    ),
-                    title: Text(title),
-                    subtitle: Text(subtitle),
-                    trailing: isProLocked
-                        ? TextButton(
-                            onPressed: () {
-                              Navigator.of(sheetContext).pop();
-                              _openProUpgrade(context);
-                            },
-                            child: const Text('Unlock'),
-                          )
-                        : null,
-                    onTap: isProLocked
-                        ? null
-                        : () {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        enabled: !isProLocked,
+                        leading: Icon(
+                          isRunning
+                              ? Icons.cancel_outlined
+                              : isMokuroComplete
+                              ? Icons.find_replace
+                              : hasCompleteOcr
+                              ? Icons.delete_sweep_outlined
+                              : Icons.document_scanner,
+                        ),
+                        title: Text(title),
+                        subtitle: Text(subtitle),
+                        trailing: isProLocked
+                            ? TextButton(
+                                onPressed: () {
+                                  Navigator.of(sheetContext).pop();
+                                  _openProUpgrade(context);
+                                },
+                                child: const Text('Unlock'),
+                              )
+                            : null,
+                        onTap: isProLocked
+                            ? null
+                            : () {
+                                Navigator.of(sheetContext).pop();
+                                if (isRunning) {
+                                  _cancelOcr(context, ref);
+                                  return;
+                                }
+                                if (isMokuroComplete) {
+                                  _replaceOcrForMokuro(context, ref);
+                                  return;
+                                }
+                                if (hasCompleteOcr) {
+                                  _removeOcr(context, ref);
+                                  return;
+                                }
+                                _startOcr(context, ref);
+                              },
+                      ),
+                      if (isMokuroComplete)
+                        ListTile(
+                          leading: const Icon(Icons.delete_sweep_outlined),
+                          title: const Text('Remove OCR'),
+                          subtitle: const Text(
+                            'Remove OCR text from all pages',
+                          ),
+                          onTap: () {
                             Navigator.of(sheetContext).pop();
-                            if (isRunning) {
-                              _cancelOcr(context, ref);
-                              return;
-                            }
-                            if (hasCompleteOcr) {
-                              _removeOcr(context, ref);
-                              return;
-                            }
-                            _startOcr(context, ref);
+                            _removeOcr(context, ref);
                           },
+                        ),
+                    ],
                   );
                 },
               ),
@@ -1252,7 +1288,8 @@ class _BookTileState extends ConsumerState<_BookTile>
         json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
     final imageDirPath = cacheJson['imageDirPath'] as String? ?? '';
     final pages = cacheJson['pages'] as List<dynamic>? ?? [];
-    final summary = _summarizeOcrPages(pages);
+    final ocrSource = cacheJson['ocrSource'] as String?;
+    final summary = _summarizeOcrPages(pages, ocrSource: ocrSource);
     final emptyCount = summary.pagesWithoutOcr;
     final isWordOnlyPass = emptyCount == 0 && summary.needsWordSegmentation;
 
@@ -1355,6 +1392,105 @@ class _BookTileState extends ConsumerState<_BookTile>
     }
   }
 
+  void _replaceOcrForMokuro(BuildContext context, WidgetRef ref) async {
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Replace OCR'),
+        content: const Text(
+          'This will overwrite the OCR data imported from the Mokuro/HTML file '
+          'and re-run OCR on ALL pages using your custom server.\n\n'
+          'To restore the original OCR, re-import the book.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Replace'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+
+    try {
+      final ready = await OcrPurchaseFlow.instance.ensureProAndCustomOcrReady(
+        context,
+        getServerUrl: () => ref.read(ocrServerUrlProvider),
+      );
+      if (!ready) return;
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Unable to prepare OCR: $e')));
+      }
+      return;
+    }
+
+    // Clear all OCR blocks and reset ocrSource so the worker processes every page
+    final cacheFilePath = p.join(book.filePath, 'pages_cache.json');
+    final cacheFile = File(cacheFilePath);
+    if (!cacheFile.existsSync()) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No pages cache found for this book')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final cacheJson =
+          json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
+      final mokuroBook = MokuroBook.fromJson(cacheJson);
+      final imageDirPath = mokuroBook.imageDirPath;
+
+      final clearedPages = mokuroBook.pages
+          .map((page) => page.copyWith(blocks: const []))
+          .toList();
+      final cleared = MokuroBook(
+        title: mokuroBook.title,
+        imageDirPath: mokuroBook.imageDirPath,
+        safTreeUri: mokuroBook.safTreeUri,
+        safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+        autoCropVersion: mokuroBook.autoCropVersion,
+        ocrSource: null,
+        pages: clearedPages,
+      );
+      await cacheFile.writeAsString(json.encode(cleared.toJson()));
+
+      await scheduleOcrTask(
+        bookId: book.id,
+        cacheFilePath: cacheFilePath,
+        imageDir: imageDirPath,
+      );
+
+      ref.invalidate(ocrProgressProvider(book.id));
+      ref.invalidate(mangaPagesProvider(book.id));
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('OCR replacement started in background'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to start OCR: $e')));
+      }
+    }
+  }
+
   void _cancelOcr(BuildContext context, WidgetRef ref) async {
     await cancelOcrTask(book.id);
 
@@ -1424,13 +1560,15 @@ class _BookTileState extends ConsumerState<_BookTile>
       final cacheJson =
           json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
       final pages = cacheJson['pages'] as List<dynamic>? ?? [];
-      return _summarizeOcrPages(pages);
+      final ocrSource = cacheJson['ocrSource'] as String?;
+      return _summarizeOcrPages(pages, ocrSource: ocrSource);
     } catch (_) {
       return _MangaOcrCacheSummary.empty;
     }
   }
 
-  _MangaOcrCacheSummary _summarizeOcrPages(List<dynamic> pages) {
+  _MangaOcrCacheSummary _summarizeOcrPages(List<dynamic> pages,
+      {String? ocrSource}) {
     var pagesWithOcr = 0;
     var pagesWithoutOcr = 0;
     var pagesNeedingWordSegmentation = 0;
@@ -1460,6 +1598,7 @@ class _BookTileState extends ConsumerState<_BookTile>
       pagesWithOcr: pagesWithOcr,
       pagesWithoutOcr: pagesWithoutOcr,
       pagesNeedingWordSegmentation: pagesNeedingWordSegmentation,
+      ocrSource: ocrSource,
     );
   }
 

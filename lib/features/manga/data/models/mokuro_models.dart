@@ -31,6 +31,7 @@ class MokuroBook {
   final String? safTreeUri;
   final String? safImageDirRelativePath;
   final int autoCropVersion;
+  final String? ocrSource;
   final List<MokuroPage> pages;
 
   const MokuroBook({
@@ -39,6 +40,7 @@ class MokuroBook {
     this.safTreeUri,
     this.safImageDirRelativePath,
     this.autoCropVersion = 0,
+    this.ocrSource,
     required this.pages,
   });
 
@@ -49,6 +51,7 @@ class MokuroBook {
     if (safImageDirRelativePath != null)
       'safImageDirRelativePath': safImageDirRelativePath,
     'autoCropVersion': autoCropVersion,
+    if (ocrSource != null) 'ocrSource': ocrSource,
     'pages': pages.map((p) => p.toJson()).toList(),
   };
 
@@ -58,6 +61,7 @@ class MokuroBook {
     safTreeUri: json['safTreeUri'] as String?,
     safImageDirRelativePath: json['safImageDirRelativePath'] as String?,
     autoCropVersion: (json['autoCropVersion'] as num?)?.toInt() ?? 0,
+    ocrSource: json['ocrSource'] as String?,
     pages: (json['pages'] as List)
         .map((p) => MokuroPage.fromJson(p as Map<String, dynamic>))
         .toList(),
