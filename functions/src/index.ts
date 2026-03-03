@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import express, { NextFunction, Request, Response } from "express";
 import * as logger from "firebase-functions/logger";
 import { onRequest } from "firebase-functions/v2/https";
+import { onMessagePublished } from "firebase-functions/v2/pubsub";
 import { GoogleAuth } from "google-auth-library";
 
 if (!admin.apps.length) {
@@ -1008,4 +1009,151 @@ export const billingApiV2 = onRequest(
     serviceAccount: BILLING_SERVICE_ACCOUNT,
   },
   app,
+);
+
+// ---------------------------------------------------------------------------
+// RTDN – Google Play Real-Time Developer Notifications
+// ---------------------------------------------------------------------------
+
+const PLAY_RTDN_TOPIC =
+  process.env.PLAY_RTDN_TOPIC ?? "play-rtdn";
+
+// OneTimeProductNotification.notificationType values we care about:
+//   2 = ONE_TIME_PRODUCT_CANCELED  (refund)
+//   5 = ONE_TIME_PRODUCT_REVOKED   (voided / chargedback)
+const REVOKE_NOTIFICATION_TYPES = new Set([2, 5]);
+
+/**
+ * Revoke a single purchase identified by its token.
+ *
+ * - Marks the purchase_ledger entry as `revoked: true`.
+ * - If the grant was an unlock: re-checks whether the user still has any
+ *   non-revoked unlock purchase.  If not, sets `ocrUnlocked = false`.
+ * - If the grant was credits: deducts `grantedCredits` from the user's
+ *   balance (floor at 0).
+ */
+async function revokePurchase(purchaseToken: string): Promise<void> {
+  const ledger = purchaseLedgerRef(purchaseToken);
+  const ledgerSnap = await ledger.get();
+
+  if (!ledgerSnap.exists) {
+    logger.warn("revokePurchase: ledger entry not found", { purchaseToken: purchaseToken.slice(-8) });
+    return;
+  }
+
+  const data = ledgerSnap.data() ?? {};
+  if (data.revoked === true) {
+    logger.info("revokePurchase: already revoked", { purchaseToken: purchaseToken.slice(-8) });
+    return;
+  }
+
+  const uid = String(data.uid ?? "");
+  const grantType = String(data.grantType ?? "");
+  const grantedCredits = asInt(data.grantedCredits ?? 0);
+  const current = now();
+
+  // Mark ledger entry revoked.
+  await ledger.set({ revoked: true, updatedAt: current }, { merge: true });
+
+  const ref = userRef(uid);
+
+  if (grantType === "unlock") {
+    // Check whether the user still has ANY non-revoked unlock purchase.
+    const otherUnlocks = await db
+      .collection("purchase_ledger")
+      .where("uid", "==", uid)
+      .where("grantType", "==", "unlock")
+      .where("revoked", "==", false)
+      .limit(1)
+      .get();
+
+    if (otherUnlocks.empty) {
+      await ref.set({ ocrUnlocked: false, updatedAt: current }, { merge: true });
+      logger.info("revokePurchase: unlock revoked, user no longer Pro", { uid });
+    } else {
+      logger.info("revokePurchase: unlock revoked, user still has another unlock", { uid });
+    }
+  }
+
+  if (grantType === "credits") {
+    await db.runTransaction(async (transaction) => {
+      const userSnap = await transaction.get(ref);
+      const userData = userSnap.exists ? userSnap.data() ?? {} : defaultUserDoc(current);
+      const newBalance = Math.max(0, asInt(userData.creditBalance ?? 0) - grantedCredits);
+
+      transaction.set(ref, { creditBalance: newBalance, updatedAt: current }, { merge: true });
+    });
+    logger.info("revokePurchase: credits deducted", { uid, grantedCredits });
+  }
+}
+
+/**
+ * Cloud Function triggered by Google Play RTDN via Pub/Sub.
+ *
+ * Message data (base64-decoded) is a JSON object:
+ * {
+ *   "version": "1.0",
+ *   "packageName": "moe.matthew.mekuru",
+ *   "eventTimeMillis": "...",
+ *   "oneTimeProductNotification": {
+ *     "version": "1.0",
+ *     "notificationType": 2,   // or 5
+ *     "purchaseToken": "...",
+ *     "sku": "pro_unlock_v1"
+ *   }
+ * }
+ */
+export const handlePlayNotification = onMessagePublished(
+  {
+    topic: PLAY_RTDN_TOPIC,
+    region: REGION,
+    serviceAccount: BILLING_SERVICE_ACCOUNT,
+  },
+  async (event) => {
+    const message = event.data?.message;
+    const raw =
+      typeof message?.json === "object" && message.json != null
+        ? message.json
+        : (() => {
+            try {
+              return JSON.parse(
+                Buffer.from(message?.data ?? "", "base64").toString("utf-8"),
+              );
+            } catch {
+              return null;
+            }
+          })();
+
+    if (raw == null) {
+      logger.warn("handlePlayNotification: unreadable message", { data: message?.data });
+      return;
+    }
+
+    const notification = raw.oneTimeProductNotification;
+    if (notification == null) {
+      // Subscription or test notification — ignore.
+      logger.info("handlePlayNotification: not a one-time product notification, ignoring");
+      return;
+    }
+
+    const notificationType = asInt(notification.notificationType ?? 0);
+    if (!REVOKE_NOTIFICATION_TYPES.has(notificationType)) {
+      logger.info("handlePlayNotification: ignoring notification type", { notificationType });
+      return;
+    }
+
+    const purchaseToken = String(notification.purchaseToken ?? "");
+    if (!purchaseToken) {
+      logger.warn("handlePlayNotification: missing purchaseToken");
+      return;
+    }
+
+    logger.info("handlePlayNotification: revoking purchase", {
+      notificationType,
+      sku: notification.sku,
+      purchaseTokenSuffix: purchaseToken.slice(-8),
+    });
+
+    await revokePurchase(purchaseToken);
+  },
 );

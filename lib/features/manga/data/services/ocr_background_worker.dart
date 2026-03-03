@@ -39,6 +39,11 @@ const defaultOcrServerUrl = ocr_server_config.defaultOcrServerUrl;
 /// Save interval write partial results every N pages.
 const _saveIntervalPages = 10;
 
+/// Stop processing after this many consecutive page failures.
+/// The OCR client already retries each page 3 times internally, so
+/// consecutive failures at this level indicate a persistent problem.
+const _maxConsecutiveFailures = 3;
+
 /// OCR processing status values.
 abstract class OcrStatus {
   static const running = 'running';
@@ -54,12 +59,14 @@ class OcrProgress {
   final int total;
   final String status;
   final double? avgSecondsPerPage;
+  final String? errorMessage;
 
   const OcrProgress({
     required this.completed,
     required this.total,
     required this.status,
     this.avgSecondsPerPage,
+    this.errorMessage,
   });
 
   String toJson() => json.encode({
@@ -67,6 +74,7 @@ class OcrProgress {
     'total': total,
     'status': status,
     if (avgSecondsPerPage != null) 'avgSecondsPerPage': avgSecondsPerPage,
+    if (errorMessage != null) 'errorMessage': errorMessage,
   });
 
   factory OcrProgress.fromJson(String jsonStr) {
@@ -76,6 +84,7 @@ class OcrProgress {
       total: data['total'] as int,
       status: data['status'] as String,
       avgSecondsPerPage: (data['avgSecondsPerPage'] as num?)?.toDouble(),
+      errorMessage: data['errorMessage'] as String?,
     );
   }
 
@@ -118,7 +127,12 @@ void ocrWorkerCallbackDispatcher() {
         await OcrProgress.save(
           prefs,
           bookId,
-          OcrProgress(completed: 0, total: 0, status: OcrStatus.failed),
+          OcrProgress(
+            completed: 0,
+            total: 0,
+            status: OcrStatus.failed,
+            errorMessage: _describeOcrError(e),
+          ),
         );
       } catch (progressError) {
         // Last-resort handler — can't even save failure state.
@@ -185,7 +199,12 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     await OcrProgress.save(
       prefs,
       bookId,
-      const OcrProgress(completed: 0, total: 0, status: OcrStatus.failed),
+      const OcrProgress(
+        completed: 0,
+        total: 0,
+        status: OcrStatus.failed,
+        errorMessage: 'No bearer key configured for custom OCR server.',
+      ),
     );
     await _clearActiveOcrJob(bookId);
     return false;
@@ -199,7 +218,12 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
       await OcrProgress.save(
         prefs,
         bookId,
-        const OcrProgress(completed: 0, total: 0, status: OcrStatus.failed),
+        const OcrProgress(
+          completed: 0,
+          total: 0,
+          status: OcrStatus.failed,
+          errorMessage: 'Could not authenticate with OCR service.',
+        ),
       );
       await _clearActiveOcrJob(bookId);
       return false;
@@ -283,6 +307,8 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     var completed = 0;
     final stopwatch = Stopwatch()..start();
     final updatedPages = List<MokuroPage>.from(mokuroBook.pages);
+    var consecutiveFailures = 0;
+    var anyPageSucceeded = false;
 
     Future<void> saveRunningProgress() async {
       final avgSeconds = completed > 0
@@ -299,6 +325,22 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           avgSecondsPerPage: avgSeconds,
         ),
       );
+    }
+
+    Future<bool> failWithError(String errorMessage) async {
+      await OcrProgress.save(
+        prefs,
+        bookId,
+        OcrProgress(
+          completed: completed,
+          total: total,
+          status: OcrStatus.failed,
+          errorMessage: errorMessage,
+        ),
+      );
+      await _saveCache(cacheFile, mokuroBook, updatedPages);
+      await finalizeIfNeeded(OcrStatus.failed);
+      return false;
     }
 
     await OcrProgress.save(
@@ -337,6 +379,8 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         final ocrPage = page.copyWith(blocks: result.blocks);
         updatedPages[pageIndex] = await _segmentSinglePageForLookup(ocrPage);
         completed++;
+        consecutiveFailures = 0;
+        anyPageSucceeded = true;
         await saveRunningProgress();
 
         if (completed % _saveIntervalPages == 0) {
@@ -344,22 +388,22 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         }
       } on OcrServerException catch (e) {
         if (e.statusCode == 401) {
-          await OcrProgress.save(
-            prefs,
-            bookId,
-            OcrProgress(
-              completed: completed,
-              total: total,
-              status: OcrStatus.failed,
-            ),
-          );
-          await _saveCache(cacheFile, mokuroBook, updatedPages);
-          await finalizeIfNeeded(OcrStatus.failed);
-          return false;
+          return failWithError('Authentication failed. '
+              'Check your server bearer key.');
+        }
+        consecutiveFailures++;
+        if (!anyPageSucceeded ||
+            consecutiveFailures >= _maxConsecutiveFailures) {
+          return failWithError(_describeOcrError(e));
         }
         completed++;
         await saveRunningProgress();
-      } catch (_) {
+      } catch (e) {
+        consecutiveFailures++;
+        if (!anyPageSucceeded ||
+            consecutiveFailures >= _maxConsecutiveFailures) {
+          return failWithError(_describeOcrError(e));
+        }
         completed++;
         await saveRunningProgress();
       }
@@ -384,6 +428,50 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     ocrClient.dispose();
     billingClient?.dispose();
   }
+}
+
+/// Build a user-friendly error description from an OCR processing error.
+String _describeOcrError(Object error) {
+  if (error is OcrServerException) {
+    final msg = error.message.toLowerCase();
+    if (error.statusCode == 401 || error.statusCode == 403) {
+      return 'Authentication failed. Check your server bearer key.';
+    }
+    if (error.statusCode == 422) {
+      return 'Server rejected the request: ${error.message}';
+    }
+    if (error.statusCode >= 500) {
+      return 'OCR server error (${error.statusCode}). '
+          'The server may be down or misconfigured.';
+    }
+    if (error.statusCode == 0) {
+      // Network-level errors from the client
+      if (msg.contains('connection refused') ||
+          msg.contains('connection reset') ||
+          msg.contains('no route to host')) {
+        return 'Could not connect to OCR server. '
+            'Check the server URL and that the server is running.';
+      }
+      if (msg.contains('timed out')) {
+        return 'OCR server is not responding (timed out).';
+      }
+      if (msg.contains('no address associated') ||
+          msg.contains('name or service not known') ||
+          msg.contains('getaddrinfo') ||
+          msg.contains('failed host lookup')) {
+        return 'Could not resolve OCR server address. '
+            'Check the server URL.';
+      }
+      return 'Network error: ${error.message}';
+    }
+    return 'OCR server returned error ${error.statusCode}: ${error.message}';
+  }
+  final desc = error.toString().toLowerCase();
+  if (desc.contains('formatexception') || desc.contains('type \'')) {
+    return 'OCR server returned a malformed response. '
+        'Make sure the server URL points to a compatible OCR server.';
+  }
+  return 'Unexpected error: $error';
 }
 
 bool _needsWordSegmentation(List<MokuroPage> pages) {

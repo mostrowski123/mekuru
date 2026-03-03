@@ -29,6 +29,7 @@ class MekuruApp extends ConsumerWidget {
     ref.read(startupScreenProvider.notifier).loadPersistedSettings();
     ref.read(autoFocusSearchProvider.notifier).loadPersistedSettings();
     ref.read(autoCropWhiteThresholdProvider.notifier).loadPersistedSettings();
+    ref.read(ocrServerUrlProvider.notifier).loadPersistedSettings();
     ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);

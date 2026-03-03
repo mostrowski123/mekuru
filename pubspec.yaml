@@ -56,6 +56,9 @@ dependencies:
   # Error tracking and user feedback
   sentry_flutter: ^9.13.0
 
+  # Confetti animation (Pro unlock celebration)
+  confetti: ^0.8.0
+
   # Reader display
   screen_brightness: ^1.0.1
   wakelock_plus: ^1.2.8

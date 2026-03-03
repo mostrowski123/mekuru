@@ -1,15 +1,16 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/services/ocr_billing_client.dart';
 
 final proUnlockedProvider = FutureProvider<bool>((ref) async {
-  if (kDebugMode) return true;
-
   final billingClient = OcrBillingClient();
   try {
-    final status = await billingClient.readCachedStatus();
-    return status?.ocrUnlocked ?? false;
+    // fetchStatus() reads from secure-storage cache first.  If the cache is
+    // stale (>24 h) or missing it transparently fetches from the server and
+    // refreshes the cache, so the provider always returns up-to-date data
+    // without extra boilerplate here.
+    final status = await billingClient.fetchStatus();
+    return status.ocrUnlocked;
   } catch (_) {
     return false;
   } finally {

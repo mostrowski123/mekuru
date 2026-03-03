@@ -153,6 +153,16 @@ class OcrBillingClient {
         return null;
       }
 
+      // Treat cache as stale after 24 hours.
+      final cachedAt = decoded['cachedAt'] as String?;
+      if (cachedAt != null) {
+        final age = DateTime.now().toUtc().difference(DateTime.parse(cachedAt));
+        if (age > const Duration(hours: 24)) {
+          _log('cached status expired', {'age': age.toString()});
+          return null;
+        }
+      }
+
       final status = OcrBillingStatus(
         ocrUnlocked: decoded['ocrUnlocked'] as bool? ?? false,
         creditBalance: decoded['creditBalance'] as int? ?? 0,
@@ -442,6 +452,7 @@ class OcrBillingClient {
           'uid': user.uid,
           'ocrUnlocked': status.ocrUnlocked,
           'creditBalance': status.creditBalance,
+          'cachedAt': DateTime.now().toUtc().toIso8601String(),
         }),
       );
       _log('cached status updated', {

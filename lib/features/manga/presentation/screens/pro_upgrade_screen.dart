@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/services/ocr_account_link_service.dart';
@@ -47,9 +49,12 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
 }
 
 class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
+  static const _confettiShownKey = 'pro_confetti_shown';
+
   final OcrAccountLinkService _accountLinkService = OcrAccountLinkService();
   final OcrBillingClient _billingClient = OcrBillingClient();
   final OcrStoreService _storeService = OcrStoreService.instance;
+  late final ConfettiController _confettiController;
 
   bool _isLoading = true;
   bool _isBusy = false;
@@ -61,13 +66,39 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
+    _storeService.onLateDelivery = _handleLateDelivery;
     unawaited(_loadSnapshot());
   }
 
   @override
   void dispose() {
+    _storeService.onLateDelivery = null;
+    _confettiController.dispose();
     _billingClient.dispose();
     super.dispose();
+  }
+
+  void _handleLateDelivery(PurchaseGrantResult result) {
+    if (!mounted) return;
+    final wasUnlocked = _snapshot.isUnlocked;
+    setState(() {
+      _snapshot = ProUpgradeSnapshot(
+        isUnlocked: result.ocrUnlocked,
+        priceLabel: _snapshot.priceLabel,
+        servicesAvailable: _snapshot.servicesAvailable,
+      );
+    });
+    ref.invalidate(proUnlockedProvider);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Your purchase has been confirmed!')),
+    );
+    if (!wasUnlocked && result.ocrUnlocked) {
+      unawaited(_maybeShowConfetti());
+    }
   }
 
   Future<void> _loadSnapshot() async {
@@ -142,17 +173,29 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     });
 
     try {
+      final wasUnlocked = _snapshot.isUnlocked;
       final snapshot = await action();
       if (!mounted) return;
       setState(() {
         _snapshot = snapshot;
       });
       ref.invalidate(proUnlockedProvider);
+
+      if (!wasUnlocked && snapshot.isUnlocked) {
+        unawaited(_maybeShowConfetti());
+      }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(describeOcrError(e))));
+      final isPending =
+          e is OcrBillingException && e.code == 'purchase_pending';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(describeOcrError(e)),
+          duration: isPending
+              ? const Duration(seconds: 5)
+              : const Duration(seconds: 4),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -160,6 +203,14 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         });
       }
     }
+  }
+
+  Future<void> _maybeShowConfetti() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_confettiShownKey) ?? false) return;
+    await prefs.setBool(_confettiShownKey, true);
+    if (!mounted) return;
+    _confettiController.play();
   }
 
   Future<ProUpgradeSnapshot> _purchaseDefault() async {
@@ -205,7 +256,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Pro')),
-      body: _isLoading
+      body: Stack(
+        children: [
+          _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
@@ -306,11 +359,40 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                         : () => _runBusyAction(
                             widget.purchaseUpgrade ?? _purchaseDefault,
                           ),
-                    child: Text(buttonLabel),
+                    child: _isBusy
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(buttonLabel),
                   ),
                 ),
               ],
             ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              emissionFrequency: 0.05,
+              numberOfParticles: 20,
+              maxBlastForce: 30,
+              minBlastForce: 10,
+              gravity: 0.15,
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.secondary,
+                theme.colorScheme.tertiary,
+                Colors.amber,
+                Colors.pinkAccent,
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

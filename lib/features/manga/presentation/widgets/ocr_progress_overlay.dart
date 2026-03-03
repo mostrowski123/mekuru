@@ -31,7 +31,7 @@ class OcrProgressOverlay extends ConsumerWidget {
         }
 
         if (progress.status == OcrStatus.failed) {
-          return _StatusOverlay(label: 'OCR Failed', color: Colors.red);
+          return _FailedOverlay(errorMessage: progress.errorMessage);
         }
 
         if (progress.status == OcrStatus.cancelled &&
@@ -204,27 +204,63 @@ class _CompletedOverlay extends StatelessWidget {
   }
 }
 
-class _StatusOverlay extends StatelessWidget {
-  final String label;
-  final Color color;
+class _FailedOverlay extends StatelessWidget {
+  final String? errorMessage;
 
-  const _StatusOverlay({required this.label, required this.color});
+  const _FailedOverlay({this.errorMessage});
 
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
-      child: Container(
-        color: color.withValues(alpha: 0.7),
-        child: Center(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+      child: GestureDetector(
+        onTap: errorMessage != null
+            ? () => _showErrorDialog(context, errorMessage!)
+            : null,
+        child: Container(
+          color: Colors.red.withValues(alpha: 0.7),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 28),
+              const SizedBox(height: 4),
+              const Text(
+                'OCR Failed',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (errorMessage != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Tap for details',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  static void _showErrorDialog(BuildContext context, String message) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('OCR Failed'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
