@@ -247,9 +247,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
         final double overlayOffsetX;
         final double overlayOffsetY;
 
-        if (spreadUseCrop &&
-            spreadLeftPageIndex != null &&
-            spreadRightPageIndex != null) {
+        if (spreadUseCrop) {
           final leftSpreadPageIndex = spreadLeftPageIndex;
           final rightSpreadPageIndex = spreadRightPageIndex;
           final leftPage = pages[leftSpreadPageIndex];
