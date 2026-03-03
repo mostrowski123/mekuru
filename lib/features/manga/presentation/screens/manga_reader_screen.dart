@@ -137,8 +137,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     }
   }
 
-  double _parseScrollOffset(String? cfi) =>
-      double.tryParse(cfi?.replaceFirst('scroll:', '') ?? '') ?? 0.0;
 
   void _clearHighlight() {
     if (_highlightedWord != null) {
@@ -863,7 +861,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           key: _scrollViewKey,
           mokuroBook: mokuroBook,
           bookId: widget.book.id,
-          initialScrollOffset: _parseScrollOffset(widget.book.lastReadCfi),
+          initialScrollOffset: _currentPage * MediaQuery.of(context).size.height,
           debugOverlay: _debugOverlay,
           autoCrop: autoCrop,
           enableWordOverlays: enableWordOverlays,
