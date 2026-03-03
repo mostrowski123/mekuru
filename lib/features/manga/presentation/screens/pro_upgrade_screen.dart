@@ -163,6 +163,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   }
 
   Future<ProUpgradeSnapshot> _purchaseDefault() async {
+    await _accountLinkService.ensureLinkedAccount();
     final result = await _storeService.purchaseProduct(proUnlockProductId);
     return ProUpgradeSnapshot(
       isUnlocked: result.ocrUnlocked,

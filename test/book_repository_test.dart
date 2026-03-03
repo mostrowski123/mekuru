@@ -267,11 +267,16 @@ void main() {
           ..createSync(recursive: true);
         final imagePath = p.join(imageDir.path, 'page.png');
 
-        final image = img.Image(width: 20, height: 20);
+        // 200×200 image with staggered content at x=[40,150], y=[30,170].
+        // The staggered pattern ((x+y)%9!=0) avoids triggering the
+        // multi-phase algorithm's border-line detection (Phase 2.75/3.75).
+        final image = img.Image(width: 200, height: 200);
         img.fill(image, color: img.ColorRgb8(255, 255, 255));
-        for (int y = 6; y <= 13; y++) {
-          for (int x = 7; x <= 11; x++) {
-            image.setPixelRgb(x, y, 0, 0, 0);
+        for (int y = 30; y <= 170; y++) {
+          for (int x = 40; x <= 150; x++) {
+            if ((x + y) % 9 != 0) {
+              image.setPixelRgb(x, y, 0, 0, 0);
+            }
           }
         }
         File(imagePath).writeAsBytesSync(img.encodePng(image));
@@ -284,10 +289,10 @@ void main() {
             MokuroPage(
               pageIndex: 0,
               imageFileName: 'page.png',
-              imgWidth: 20,
-              imgHeight: 20,
+              imgWidth: 200,
+              imgHeight: 200,
               blocks: [],
-              contentBounds: Rect.fromLTRB(1, 1, 19, 19),
+              contentBounds: Rect.fromLTRB(1, 1, 199, 199),
             ),
           ],
         );
@@ -319,10 +324,14 @@ void main() {
 
         expect(updated.autoCropVersion, MokuroBook.currentAutoCropVersion);
         expect(bounds, isNotNull);
-        expect(bounds!.left, 5);
-        expect(bounds.top, 4);
-        expect(bounds.right, 14);
-        expect(bounds.bottom, 16);
+        // Content left=40, padding=2 → 38
+        expect(bounds!.left, 38);
+        // Content top=30, padding=2 → 28
+        expect(bounds.top, 28);
+        // Content right=150 (inclusive) + 1 + padding=2 → 153
+        expect(bounds.right, 153);
+        // Content bottom=170 (inclusive) + 1 + padding=2 → 173
+        expect(bounds.bottom, 173);
       },
     );
   });

@@ -24,7 +24,7 @@ class MokuroBookManifest {
 
 /// A fully parsed mokuro book with all page data.
 class MokuroBook {
-  static const int currentAutoCropVersion = 2;
+  static const int currentAutoCropVersion = 8;
 
   final String title;
   final String imageDirPath;

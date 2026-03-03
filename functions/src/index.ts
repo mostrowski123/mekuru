@@ -522,12 +522,14 @@ async function applyPurchaseGrant(input: {
   productId: string;
   purchaseToken: string;
   packageName: string;
+  isRestore?: boolean;
 }): Promise<PurchaseGrantResult> {
-  const { uid, productId, purchaseToken, packageName } = input;
+  const { uid, productId, purchaseToken, packageName, isRestore } = input;
   logger.info("Applying purchase grant", {
     uid,
     productId,
     packageName,
+    isRestore: Boolean(isRestore),
     purchaseTokenSuffix:
       purchaseToken.length <= 8
         ? purchaseToken
@@ -545,11 +547,58 @@ async function applyPurchaseGrant(input: {
     const existingGrantedCredits = asInt(existing.grantedCredits ?? 0);
 
     if (existingUid !== uid) {
-      throw new BillingHttpError(409, {
-        code: "purchase_uid_mismatch",
-        message:
-          "This purchase is already linked to a different account. Sign in with the original Google-linked account and restore purchases there.",
+      if (!isRestore) {
+        throw new BillingHttpError(409, {
+          code: "purchase_uid_mismatch",
+          message:
+            "This purchase is already linked to a different account. Sign in with the original Google-linked account and restore purchases there.",
+        });
+      }
+
+      // On restore, migrate the purchase to the current UID.  The purchase
+      // token was already verified with Google Play during the original
+      // purchase, and the restore flow only provides tokens owned by the
+      // signed-in Google Play account, so this is safe.
+      logger.info("Migrating purchase to new UID on restore", {
+        previousUid: existingUid,
+        newUid: uid,
+        productId,
       });
+
+      await db.runTransaction(async (transaction) => {
+        const userSnapshot = await transaction.get(ref);
+        const userData = userSnapshot.exists
+          ? userSnapshot.data() ?? {}
+          : defaultUserDoc(current);
+
+        const creditBalance =
+          asInt(userData.creditBalance ?? 0) +
+          (existingGrantedCredits > 0 ? 0 : grant.grantedCredits);
+        const ocrUnlocked =
+          grant.grantType === "unlock" ? true : Boolean(userData.ocrUnlocked);
+
+        if (!userSnapshot.exists) {
+          transaction.set(ref, defaultUserDoc(current));
+        }
+
+        transaction.set(
+          ref,
+          { ocrUnlocked, creditBalance, updatedAt: current },
+          { merge: true },
+        );
+        transaction.set(
+          ledger,
+          { uid, updatedAt: current },
+          { merge: true },
+        );
+      });
+
+      const status = await readUserState(uid);
+      return {
+        ocrUnlocked: status.ocrUnlocked,
+        creditBalance: status.creditBalance,
+        grantedCredits: existingGrantedCredits,
+      };
     }
 
     if (
@@ -911,6 +960,7 @@ app.post("/billing/purchases/android/verify", async (req: Request, res: Response
       productId,
       purchaseToken,
       packageName,
+      isRestore,
     });
     res.json(result);
   } catch (error) {
