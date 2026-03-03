@@ -36,6 +36,11 @@ class OcrStoreService {
   final Map<String, ProductDetails> _productCache = {};
   final Map<String, List<Completer<PurchaseGrantResult>>> _pendingWaiters = {};
 
+  /// Called when a purchase is verified successfully but no waiter was active
+  /// (e.g. a pending payment that completed after the UI dismissed the
+  /// spinner).  The UI can listen to this to refresh Pro status.
+  void Function(PurchaseGrantResult result)? onLateDelivery;
+
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
   bool _isInitialized = false;
 
@@ -218,6 +223,18 @@ class OcrStoreService {
       });
 
       if (details.status == PurchaseStatus.pending) {
+        _log('purchase pending – payment is being processed', {
+          'productId': details.productID,
+        });
+        _completeWaiterWithError(
+          details.productID,
+          const OcrBillingException(
+            202,
+            'Your payment is being processed. '
+                'You will be unlocked automatically once it is confirmed.',
+            code: 'purchase_pending',
+          ),
+        );
         continue;
       }
 
@@ -226,8 +243,10 @@ class OcrStoreService {
           details.productID,
           OcrBillingException(
             502,
-            details.error?.message ?? 'Google Play reported a purchase error.',
-            code: 'purchase_error',
+            details.error?.message ??
+                'Your payment could not be processed. '
+                    'Please try a different payment method.',
+            code: 'payment_declined',
           ),
         );
         if (details.pendingCompletePurchase) {
@@ -380,6 +399,10 @@ class OcrStoreService {
   void _completeWaiter(String productId, PurchaseGrantResult result) {
     final queue = _pendingWaiters[productId];
     if (queue == null || queue.isEmpty) {
+      _log('no waiter for verified purchase – invoking onLateDelivery', {
+        'productId': productId,
+      });
+      onLateDelivery?.call(result);
       return;
     }
     final waiter = queue.removeAt(0);

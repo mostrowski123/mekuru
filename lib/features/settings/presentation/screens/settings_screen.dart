@@ -844,7 +844,7 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
                 decoration: InputDecoration(
                   labelText: 'Server URL',
                   hintText:
-                      'https://mostrowski123--mekuru-ocr-fastapi-app.modal.run',
+                      'http://192.168.1.100:8000',
                   border: const OutlineInputBorder(),
                   errorText: _urlError,
                 ),

@@ -13,17 +13,17 @@ void main() {
           home: ProUpgradeScreen(
             loadSnapshot: () async => const ProUpgradeSnapshot(
               isUnlocked: false,
-              priceLabel: '\$4.99',
+              priceLabel: '\$0.99',
               servicesAvailable: true,
             ),
             purchaseUpgrade: () async => const ProUpgradeSnapshot(
               isUnlocked: true,
-              priceLabel: '\$4.99',
+              priceLabel: '\$0.99',
               servicesAvailable: true,
             ),
             restoreUpgrade: () async => const ProUpgradeSnapshot(
               isUnlocked: false,
-              priceLabel: '\$4.99',
+              priceLabel: '\$0.99',
               servicesAvailable: true,
             ),
             openSelfHostRepo: () async {},
@@ -36,7 +36,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Pro'), findsOneWidget);
-    expect(find.text('Unlock Pro \$4.99'), findsOneWidget);
+    expect(find.text('Unlock Pro \$0.99'), findsOneWidget);
     expect(find.text('Auto-Crop'), findsOneWidget);
     expect(find.text('Book Highlights'), findsOneWidget);
     expect(find.text('Custom OCR Server'), findsOneWidget);
@@ -64,7 +64,7 @@ void main() {
           home: ProUpgradeScreen(
             loadSnapshot: () async => const ProUpgradeSnapshot(
               isUnlocked: true,
-              priceLabel: '\$4.99',
+              priceLabel: '\$0.99',
               servicesAvailable: true,
             ),
             openSelfHostRepo: () async {},
