@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/services/ocr_billing_client.dart';
 
 final proUnlockedProvider = FutureProvider<bool>((ref) async {
+  if (kDebugMode) return true;
+
   final billingClient = OcrBillingClient();
   try {
     final status = await billingClient.readCachedStatus();

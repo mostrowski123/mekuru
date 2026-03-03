@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
@@ -105,49 +107,71 @@ class _MangaPageViewState extends State<MangaPageView> {
           }
 
           // Determine effective region to display.
-          // With auto-crop, we fit the contentBounds region to the container
-          // instead of the full image, then translate the image so that
-          // region is centered.
           final contentBounds = widget.page.contentBounds;
           final useCrop = widget.autoCrop && contentBounds != null;
 
-          final double regionW = useCrop ? contentBounds.width : imgW;
-          final double regionH = useCrop ? contentBounds.height : imgH;
+          final double scale;
+          final double displayOffsetX, displayOffsetY;
+          final double renderedRegionW, renderedRegionH;
+          final double overlayOffsetX, overlayOffsetY;
+          final double clipTranslateX, clipTranslateY;
 
-          // Scale to fit the visible region into the container
-          final scale = (containerW / regionW) < (containerH / regionH)
-              ? containerW / regionW
-              : containerH / regionH;
-
-          final renderedRegionW = regionW * scale;
-          final renderedRegionH = regionH * scale;
-          final displayOffsetX = (containerW - renderedRegionW) / 2;
-          final displayOffsetY = (containerH - renderedRegionH) / 2;
-
-          // Overlay coordinates: map image-pixel coords → screen coords.
-          // overlayX = (imgPixelX * scale) + overlayOffsetX
-          // For full image: overlayOffsetX = displayOffsetX
-          // For crop: overlayOffsetX = displayOffsetX - contentBounds.left * scale
-          final overlayOffsetX = useCrop
-              ? displayOffsetX - contentBounds.left * scale
-              : displayOffsetX;
-          final overlayOffsetY = useCrop
-              ? displayOffsetY - contentBounds.top * scale
-              : displayOffsetY;
+          if (useCrop) {
+            final geo = computeCropDisplayGeometry(
+              containerW: containerW,
+              containerH: containerH,
+              imgW: imgW,
+              imgH: imgH,
+              contentBounds: contentBounds,
+            );
+            scale = geo.scale;
+            displayOffsetX = geo.displayOffsetX;
+            displayOffsetY = geo.displayOffsetY;
+            renderedRegionW = geo.renderedRegionW;
+            renderedRegionH = geo.renderedRegionH;
+            overlayOffsetX = geo.overlayOffsetX;
+            overlayOffsetY = geo.overlayOffsetY;
+            clipTranslateX = geo.clipTranslateX;
+            clipTranslateY = geo.clipTranslateY;
+          } else {
+            scale = math.min(containerW / imgW, containerH / imgH);
+            renderedRegionW = imgW * scale;
+            renderedRegionH = imgH * scale;
+            displayOffsetX = (containerW - renderedRegionW) / 2;
+            displayOffsetY = (containerH - renderedRegionH) / 2;
+            overlayOffsetX = displayOffsetX;
+            overlayOffsetY = displayOffsetY;
+            clipTranslateX = 0;
+            clipTranslateY = 0;
+          }
 
           return Stack(
             clipBehavior: Clip.hardEdge,
             children: [
-              // Base image layer — positioned/scaled to show the target region
+              // Base image layer — clipped to show only the content region
               if (useCrop)
                 Positioned(
-                  left: overlayOffsetX,
-                  top: overlayOffsetY,
-                  width: imgW * scale,
-                  height: imgH * scale,
-                  child: _buildImage(
-                    imagePath,
-                    safImageRelPath: safImageRelPath,
+                  left: displayOffsetX,
+                  top: displayOffsetY,
+                  width: renderedRegionW,
+                  height: renderedRegionH,
+                  child: ClipRect(
+                    child: OverflowBox(
+                      maxWidth: imgW * scale,
+                      maxHeight: imgH * scale,
+                      alignment: Alignment.topLeft,
+                      child: Transform.translate(
+                        offset: Offset(clipTranslateX, clipTranslateY),
+                        child: SizedBox(
+                          width: imgW * scale,
+                          height: imgH * scale,
+                          child: _buildImage(
+                            imagePath,
+                            safImageRelPath: safImageRelPath,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 )
               else

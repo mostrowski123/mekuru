@@ -84,6 +84,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
 
   void _onPageChanged(int page, int totalPages) {
     setState(() => _currentPage = page);
+
     // Save progress
     final progress = totalPages > 1 ? page / (totalPages - 1) : 0.0;
     ref

@@ -198,7 +198,7 @@ class OcrStoreService {
       _log('restorePurchases start');
       await _inAppPurchase.restorePurchases();
       await Future<void>.delayed(const Duration(seconds: 2));
-      await _syncOwnedPurchases(reason: 'restore');
+      await _syncOwnedPurchases(reason: 'restore', isRestore: true);
     }
     final status = await _billingClient.fetchStatus(forceRefresh: true);
     _log('restorePurchases complete', {
@@ -264,7 +264,10 @@ class OcrStoreService {
     }
   }
 
-  Future<void> _syncOwnedPurchases({required String reason}) async {
+  Future<void> _syncOwnedPurchases({
+    required String reason,
+    bool isRestore = false,
+  }) async {
     if (!Platform.isAndroid) return;
 
     final addition = _inAppPurchase
@@ -292,6 +295,7 @@ class OcrStoreService {
         details,
         source: 'query_past:$reason',
         completeWaiterOnSuccess: false,
+        isRestoreOverride: isRestore ? true : null,
       );
     }
   }
@@ -300,6 +304,7 @@ class OcrStoreService {
     PurchaseDetails details, {
     required String source,
     required bool completeWaiterOnSuccess,
+    bool? isRestoreOverride,
   }) async {
     var verified = false;
     try {
@@ -316,7 +321,8 @@ class OcrStoreService {
         productId: details.productID,
         purchaseToken: purchaseToken,
         orderId: details.purchaseID,
-        isRestore: details.status == PurchaseStatus.restored,
+        isRestore:
+            isRestoreOverride ?? details.status == PurchaseStatus.restored,
       );
       verified = true;
       _log('verify success', {

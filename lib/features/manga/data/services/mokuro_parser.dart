@@ -1069,14 +1069,315 @@ class MokuroParser {
       minColumn: left,
       minRunLength: minColumnRun,
     );
-
-    return ui.Rect.fromLTRB(
-      (left.toDouble() - padding).clamp(0.0, width.toDouble()),
-      (top.toDouble() - padding).clamp(0.0, height.toDouble()),
-      // +1 because right/bottom are inclusive pixel indices.
-      (right.toDouble() + 1 + padding).clamp(0.0, width.toDouble()),
-      (bottom.toDouble() + 1 + padding).clamp(0.0, height.toDouble()),
+    // Phase 2.5: Content confirmation with stricter threshold.
+    // The Phase 2 boundary may sit on light-gray scanning artifacts
+    // (pixel values ~190-220) which count as "content" at threshold 240
+    // but aren't actual manga ink. Scan inward from the boundary until
+    // we find a column with significant "dark" content at a stricter
+    // threshold, confirming real ink rather than gray edge artifacts.
+    const int darkThreshold = 200; // Pixels must be < 200 in all channels
+    final adjLeft = _confirmContentFromLeft(
+      pixels,
+      width: width,
+      top: top,
+      bottom: bottom,
+      startCol: left,
+      rightLimit: right,
+      whiteThreshold: thresh,
+      darkThreshold: darkThreshold,
     );
+    final adjRight = _confirmContentFromRight(
+      pixels,
+      width: width,
+      top: top,
+      bottom: bottom,
+      startCol: right,
+      leftLimit: adjLeft,
+      whiteThreshold: thresh,
+      darkThreshold: darkThreshold,
+    );
+    // Phase 2.75: Skip thin panel border lines.
+    // Manga panels are framed by thin (2-8px) solid lines that show up as
+    // columns with ≥90% dark density at the content boundary. Skip past
+    // them to reach the actual artwork inside the panels.
+    const double borderLineDensity = 0.90;
+    const int maxBorderLinePx = 8;
+
+    int contentLeft = adjLeft;
+    for (int dx = 0; dx < maxBorderLinePx; dx++) {
+      final x = adjLeft + dx;
+      if (x >= adjRight) break;
+      final d = _columnDensity(pixels,
+          width: width, x: x, top: top, bottom: bottom,
+          whiteThreshold: darkThreshold);
+      if (d < borderLineDensity) break;
+      contentLeft = x + 1; // skip past this solid-line column
+    }
+
+    int contentRight = adjRight;
+    for (int dx = 0; dx < maxBorderLinePx; dx++) {
+      final x = adjRight - dx;
+      if (x <= contentLeft) break;
+      final d = _columnDensity(pixels,
+          width: width, x: x, top: top, bottom: bottom,
+          whiteThreshold: darkThreshold);
+      if (d < borderLineDensity) break;
+      contentRight = x - 1;
+    }
+
+    // Phase 3: Refine top/bottom by re-scanning only within
+    // [contentLeft, contentRight] with run-length filtering.
+    // This removes page numbers and other isolated horizontal noise that
+    // inflated the rough vertical bounds.
+    final minRowRun = _minimumRowRunLength(contentRight - contentLeft + 1);
+    final refinedTop = _findFirstContentRowFiltered(
+      pixels,
+      width: width,
+      height: height,
+      left: contentLeft,
+      right: contentRight,
+      whiteThreshold: thresh,
+      minRunLength: minRowRun,
+    );
+    int finalTop, finalBottom;
+    if (refinedTop >= 0) {
+      finalTop = refinedTop;
+      finalBottom = _findLastContentRowFiltered(
+        pixels,
+        width: width,
+        height: height,
+        left: contentLeft,
+        right: contentRight,
+        whiteThreshold: thresh,
+        minRunLength: minRowRun,
+        minRow: refinedTop,
+      );
+    } else {
+      // Filtered scan found nothing (e.g. content narrower than minRowRun);
+      // fall back to the original unfiltered bounds.
+      finalTop = top;
+      finalBottom = bottom;
+    }
+
+    // Phase 3.5: Content confirmation for top and bottom rows.
+    final adjTop = _confirmContentFromTop(
+      pixels,
+      width: width,
+      left: contentLeft,
+      right: contentRight,
+      startRow: finalTop,
+      bottomLimit: finalBottom,
+      whiteThreshold: thresh,
+      darkThreshold: darkThreshold,
+    );
+    final adjBottom = _confirmContentFromBottom(
+      pixels,
+      width: width,
+      left: contentLeft,
+      right: contentRight,
+      startRow: finalBottom,
+      topLimit: adjTop,
+      whiteThreshold: thresh,
+      darkThreshold: darkThreshold,
+    );
+    // Phase 3.75: Skip thin horizontal border lines from top and bottom.
+    int contentTop = adjTop;
+    for (int dy = 0; dy < maxBorderLinePx; dy++) {
+      final y = adjTop + dy;
+      if (y >= adjBottom) break;
+      final d = _rowDensityRange(pixels,
+          width: width, y: y, left: contentLeft, right: contentRight,
+          whiteThreshold: darkThreshold);
+      if (d < borderLineDensity) break;
+      contentTop = y + 1;
+    }
+
+    int contentBottom = adjBottom;
+    for (int dy = 0; dy < maxBorderLinePx; dy++) {
+      final y = adjBottom - dy;
+      if (y <= contentTop) break;
+      final d = _rowDensityRange(pixels,
+          width: width, y: y, left: contentLeft, right: contentRight,
+          whiteThreshold: darkThreshold);
+      if (d < borderLineDensity) break;
+      contentBottom = y - 1;
+    }
+
+    final result = ui.Rect.fromLTRB(
+      (contentLeft.toDouble() - padding).clamp(0.0, width.toDouble()),
+      (contentTop.toDouble() - padding).clamp(0.0, height.toDouble()),
+      // +1 because right/bottom are inclusive pixel indices.
+      (contentRight.toDouble() + 1 + padding).clamp(0.0, width.toDouble()),
+      (contentBottom.toDouble() + 1 + padding).clamp(0.0, height.toDouble()),
+    );
+    return result;
+  }
+
+  /// Fraction of non-white pixels in column [x] between rows [top]–[bottom].
+  static double _columnDensity(
+    Uint8List pixels, {
+    required int width,
+    required int x,
+    required int top,
+    required int bottom,
+    required int whiteThreshold,
+  }) {
+    final totalRows = bottom - top + 1;
+    if (totalRows <= 0) return 0.0;
+    int count = 0;
+    for (int y = top; y <= bottom; y++) {
+      final offset = (y * width + x) * 4;
+      if (!_isWhitePixel(pixels, offset, whiteThreshold: whiteThreshold)) {
+        count++;
+      }
+    }
+    return count / totalRows;
+  }
+
+  /// Fraction of non-white pixels in row [y] between columns [left]–[right].
+  static double _rowDensityRange(
+    Uint8List pixels, {
+    required int width,
+    required int y,
+    required int left,
+    required int right,
+    required int whiteThreshold,
+  }) {
+    final totalCols = right - left + 1;
+    if (totalCols <= 0) return 0.0;
+    int count = 0;
+    for (int x = left; x <= right; x++) {
+      final offset = (y * width + x) * 4;
+      if (!_isWhitePixel(pixels, offset, whiteThreshold: whiteThreshold)) {
+        count++;
+      }
+    }
+    return count / totalCols;
+  }
+
+  /// Scan rightward from [startCol] until we find a column with significant
+  /// density at [darkThreshold] (confirming actual ink, not gray artifacts).
+  ///
+  /// If the starting column already has >= [minDarkDensity] at [darkThreshold],
+  /// it's real content and we return it immediately.
+  /// Scans up to [maxScan] columns inward, returning the first column that
+  /// meets the dark-density criterion, or [startCol] if none is found.
+  static int _confirmContentFromLeft(
+    Uint8List pixels, {
+    required int width,
+    required int top,
+    required int bottom,
+    required int startCol,
+    required int rightLimit,
+    required int whiteThreshold,
+    required int darkThreshold,
+    double minDarkDensity = 0.05,
+    int maxScan = 80,
+  }) {
+    // Check if starting column already has dark content.
+    final darkDensity = _columnDensity(pixels,
+        width: width, x: startCol, top: top, bottom: bottom,
+        whiteThreshold: darkThreshold);
+    if (darkDensity >= minDarkDensity) return startCol;
+
+    // Starting column is "light gray only" — scan rightward.
+    for (int dx = 1; dx <= maxScan; dx++) {
+      final x = startCol + dx;
+      if (x >= rightLimit) return startCol;
+      final d = _columnDensity(pixels,
+          width: width, x: x, top: top, bottom: bottom,
+          whiteThreshold: darkThreshold);
+      if (d >= minDarkDensity) return x;
+    }
+    return startCol;
+  }
+
+  /// Mirror of [_confirmContentFromLeft], scanning leftward from the right.
+  static int _confirmContentFromRight(
+    Uint8List pixels, {
+    required int width,
+    required int top,
+    required int bottom,
+    required int startCol,
+    required int leftLimit,
+    required int whiteThreshold,
+    required int darkThreshold,
+    double minDarkDensity = 0.05,
+    int maxScan = 80,
+  }) {
+    final darkDensity = _columnDensity(pixels,
+        width: width, x: startCol, top: top, bottom: bottom,
+        whiteThreshold: darkThreshold);
+    if (darkDensity >= minDarkDensity) return startCol;
+
+    for (int dx = 1; dx <= maxScan; dx++) {
+      final x = startCol - dx;
+      if (x <= leftLimit) return startCol;
+      final d = _columnDensity(pixels,
+          width: width, x: x, top: top, bottom: bottom,
+          whiteThreshold: darkThreshold);
+      if (d >= minDarkDensity) return x;
+    }
+    return startCol;
+  }
+
+  /// Scan downward from [startRow] until we find a row with significant
+  /// density at [darkThreshold].
+  static int _confirmContentFromTop(
+    Uint8List pixels, {
+    required int width,
+    required int left,
+    required int right,
+    required int startRow,
+    required int bottomLimit,
+    required int whiteThreshold,
+    required int darkThreshold,
+    double minDarkDensity = 0.05,
+    int maxScan = 80,
+  }) {
+    final darkDensity = _rowDensityRange(pixels,
+        width: width, y: startRow, left: left, right: right,
+        whiteThreshold: darkThreshold);
+    if (darkDensity >= minDarkDensity) return startRow;
+
+    for (int dy = 1; dy <= maxScan; dy++) {
+      final y = startRow + dy;
+      if (y >= bottomLimit) return startRow;
+      final d = _rowDensityRange(pixels,
+          width: width, y: y, left: left, right: right,
+          whiteThreshold: darkThreshold);
+      if (d >= minDarkDensity) return y;
+    }
+    return startRow;
+  }
+
+  /// Mirror of [_confirmContentFromTop], scanning upward from the bottom.
+  static int _confirmContentFromBottom(
+    Uint8List pixels, {
+    required int width,
+    required int left,
+    required int right,
+    required int startRow,
+    required int topLimit,
+    required int whiteThreshold,
+    required int darkThreshold,
+    double minDarkDensity = 0.05,
+    int maxScan = 80,
+  }) {
+    final darkDensity = _rowDensityRange(pixels,
+        width: width, y: startRow, left: left, right: right,
+        whiteThreshold: darkThreshold);
+    if (darkDensity >= minDarkDensity) return startRow;
+
+    for (int dy = 1; dy <= maxScan; dy++) {
+      final y = startRow - dy;
+      if (y <= topLimit) return startRow;
+      final d = _rowDensityRange(pixels,
+          width: width, y: y, left: left, right: right,
+          whiteThreshold: darkThreshold);
+      if (d >= minDarkDensity) return y;
+    }
+    return startRow;
   }
 
   static int _findFirstContentRow(
@@ -1168,7 +1469,87 @@ class MokuroParser {
   }
 
   static int _minimumColumnRunLength(int contentHeight) =>
-      math.max(3, (contentHeight * 0.003).ceil());
+      math.max(8, (contentHeight * 0.01).ceil());
+
+  static int _minimumRowRunLength(int contentWidth) =>
+      math.max(8, (contentWidth * 0.01).ceil());
+
+  static int _findFirstContentRowFiltered(
+    Uint8List pixels, {
+    required int width,
+    required int height,
+    required int left,
+    required int right,
+    required int whiteThreshold,
+    required int minRunLength,
+  }) {
+    for (int y = 0; y < height; y++) {
+      if (_rowHasContentFiltered(
+        pixels,
+        width: width,
+        y: y,
+        left: left,
+        right: right,
+        whiteThreshold: whiteThreshold,
+        minRunLength: minRunLength,
+      )) {
+        return y;
+      }
+    }
+    return -1;
+  }
+
+  static int _findLastContentRowFiltered(
+    Uint8List pixels, {
+    required int width,
+    required int height,
+    required int left,
+    required int right,
+    required int whiteThreshold,
+    required int minRunLength,
+    required int minRow,
+  }) {
+    for (int y = height - 1; y >= minRow; y--) {
+      if (_rowHasContentFiltered(
+        pixels,
+        width: width,
+        y: y,
+        left: left,
+        right: right,
+        whiteThreshold: whiteThreshold,
+        minRunLength: minRunLength,
+      )) {
+        return y;
+      }
+    }
+    return minRow;
+  }
+
+  static bool _rowHasContentFiltered(
+    Uint8List pixels, {
+    required int width,
+    required int y,
+    required int left,
+    required int right,
+    required int whiteThreshold,
+    required int minRunLength,
+  }) {
+    int runLength = 0;
+    final rowBase = y * width * 4;
+    for (int x = left; x <= right; x++) {
+      if (!_isWhitePixel(
+        pixels,
+        rowBase + x * 4,
+        whiteThreshold: whiteThreshold,
+      )) {
+        runLength++;
+        if (runLength >= minRunLength) return true;
+      } else {
+        runLength = 0;
+      }
+    }
+    return false;
+  }
 
   static bool _rowHasContent(
     Uint8List pixels, {
