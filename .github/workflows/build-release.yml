@@ -81,7 +81,7 @@ jobs:
         id: tag
         run: |
           TAG="v$(date -u +'%Y%m%d.%H%M%S')"
-          VERSION_CODE="${{ github.run_number }}"
+          VERSION_CODE="$(date -u +'%Y%m%d%H')"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=Mekuru $TAG" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
