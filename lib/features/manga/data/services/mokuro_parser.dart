@@ -1051,14 +1051,14 @@ class MokuroParser {
       whiteThreshold: thresh,
       minRow: top,
     );
-    final minColumnRun = _minimumColumnRunLength(bottom - top + 1);
+    final minColumnPixels = _minimumColumnPixelCount(bottom - top + 1);
     final left = _findFirstContentColumn(
       pixels,
       width: width,
       top: top,
       bottom: bottom,
       whiteThreshold: thresh,
-      minRunLength: minColumnRun,
+      minPixelCount: minColumnPixels,
     );
     final right = _findLastContentColumn(
       pixels,
@@ -1067,7 +1067,7 @@ class MokuroParser {
       bottom: bottom,
       whiteThreshold: thresh,
       minColumn: left,
-      minRunLength: minColumnRun,
+      minPixelCount: minColumnPixels,
     );
 
     return ui.Rect.fromLTRB(
@@ -1124,7 +1124,7 @@ class MokuroParser {
     required int top,
     required int bottom,
     required int whiteThreshold,
-    required int minRunLength,
+    required int minPixelCount,
   }) {
     for (int x = 0; x < width; x++) {
       if (_columnHasContent(
@@ -1134,7 +1134,7 @@ class MokuroParser {
         top: top,
         bottom: bottom,
         whiteThreshold: whiteThreshold,
-        minRunLength: minRunLength,
+        minPixelCount: minPixelCount,
       )) {
         return x;
       }
@@ -1149,7 +1149,7 @@ class MokuroParser {
     required int bottom,
     required int whiteThreshold,
     required int minColumn,
-    required int minRunLength,
+    required int minPixelCount,
   }) {
     for (int x = width - 1; x >= minColumn; x--) {
       if (_columnHasContent(
@@ -1159,7 +1159,7 @@ class MokuroParser {
         top: top,
         bottom: bottom,
         whiteThreshold: whiteThreshold,
-        minRunLength: minRunLength,
+        minPixelCount: minPixelCount,
       )) {
         return x;
       }
@@ -1167,7 +1167,7 @@ class MokuroParser {
     return minColumn;
   }
 
-  static int _minimumColumnRunLength(int contentHeight) =>
+  static int _minimumColumnPixelCount(int contentHeight) =>
       math.max(3, (contentHeight * 0.003).ceil());
 
   static bool _rowHasContent(
@@ -1196,16 +1196,14 @@ class MokuroParser {
     required int top,
     required int bottom,
     required int whiteThreshold,
-    required int minRunLength,
+    required int minPixelCount,
   }) {
-    int runLength = 0;
+    int count = 0;
     for (int y = top; y <= bottom; y++) {
       final offset = (y * width + x) * 4;
       if (!_isWhitePixel(pixels, offset, whiteThreshold: whiteThreshold)) {
-        runLength++;
-        if (runLength >= minRunLength) return true;
-      } else {
-        runLength = 0;
+        count++;
+        if (count >= minPixelCount) return true;
       }
     }
     return false;

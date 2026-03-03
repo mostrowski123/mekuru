@@ -8,6 +8,44 @@ import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.da
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
 
+double? resolveSpreadAutoCropTargetHeight(
+  MokuroPage leftPage,
+  MokuroPage rightPage, {
+  required double containerWidth,
+  required double containerHeight,
+}) {
+  final leftBounds = leftPage.contentBounds;
+  final rightBounds = rightPage.contentBounds;
+  if (leftBounds == null || rightBounds == null) return null;
+  if (containerWidth <= 0 || containerHeight <= 0) return null;
+
+  final leftHeight = _resolveFittedCropHeight(
+    leftBounds,
+    containerWidth: containerWidth,
+    containerHeight: containerHeight,
+  );
+  final rightHeight = _resolveFittedCropHeight(
+    rightBounds,
+    containerWidth: containerWidth,
+    containerHeight: containerHeight,
+  );
+  if (leftHeight <= 0 || rightHeight <= 0) return null;
+  return math.max(leftHeight, rightHeight);
+}
+
+double _resolveFittedCropHeight(
+  Rect bounds, {
+  required double containerWidth,
+  required double containerHeight,
+}) {
+  if (bounds.width <= 0 || bounds.height <= 0) return 0;
+  final scale = math.min(
+    containerWidth / bounds.width,
+    containerHeight / bounds.height,
+  );
+  return bounds.height * scale;
+}
+
 /// Two-page spread view for manga reading.
 ///
 /// Renders pages in pairs using [PageSpread] data from [computeSpreads].
@@ -127,26 +165,38 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       final pageIdx = spread.primaryPageIndex;
       return Center(child: _buildPageContent(context, pageIdx));
     }
-
-    final sharedCropBounds = _resolveSharedCropBounds(spread);
+    final leftPageIndex = spread.leftPageIndex;
+    final rightPageIndex = spread.rightPageIndex;
+    if (leftPageIndex == null || rightPageIndex == null) {
+      return const SizedBox.shrink();
+    }
 
     // Two pages side by side
     return LayoutBuilder(
       builder: (context, constraints) {
+        final targetRenderedHeight = widget.autoCrop
+            ? resolveSpreadAutoCropTargetHeight(
+                widget.mokuroBook.pages[leftPageIndex],
+                widget.mokuroBook.pages[rightPageIndex],
+                containerWidth: constraints.maxWidth / 2,
+                containerHeight: constraints.maxHeight,
+              )
+            : null;
+
         return Row(
           children: [
             Expanded(
               child: _buildPageContent(
                 context,
-                spread.leftPageIndex!,
-                cropBoundsOverride: sharedCropBounds.$1,
+                leftPageIndex,
+                targetRenderedHeight: targetRenderedHeight,
               ),
             ),
             Expanded(
               child: _buildPageContent(
                 context,
-                spread.rightPageIndex!,
-                cropBoundsOverride: sharedCropBounds.$2,
+                rightPageIndex,
+                targetRenderedHeight: targetRenderedHeight,
               ),
             ),
           ],
@@ -155,55 +205,12 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     );
   }
 
-  (Rect?, Rect?) _resolveSharedCropBounds(PageSpread spread) {
-    if (!widget.autoCrop) return (null, null);
-
-    final pages = widget.mokuroBook.pages;
-    final leftIndex = spread.leftPageIndex;
-    final rightIndex = spread.rightPageIndex;
-    if (leftIndex == null ||
-        rightIndex == null ||
-        leftIndex < 0 ||
-        rightIndex < 0 ||
-        leftIndex >= pages.length ||
-        rightIndex >= pages.length) {
-      return (null, null);
-    }
-
-    final leftPage = pages[leftIndex];
-    final rightPage = pages[rightIndex];
-    if (leftPage.contentBounds == null || rightPage.contentBounds == null) {
-      return (null, null);
-    }
-
-    final leftInsets = _PageCropInsets.fromPage(leftPage);
-    final rightInsets = _PageCropInsets.fromPage(rightPage);
-    final sharedTop = math.min(leftInsets.top, rightInsets.top);
-    final sharedBottom = math.min(leftInsets.bottom, rightInsets.bottom);
-    final sharedInner = math.min(leftInsets.right, rightInsets.left);
-
-    return (
-      _PageCropInsets(
-        left: leftInsets.left,
-        top: sharedTop,
-        right: sharedInner,
-        bottom: sharedBottom,
-      ).applyToPage(leftPage),
-      _PageCropInsets(
-        left: sharedInner,
-        top: sharedTop,
-        right: rightInsets.right,
-        bottom: sharedBottom,
-      ).applyToPage(rightPage),
-    );
-  }
-
   /// Renders a single page's image and word overlay, scaled to fit its
   /// allocation (either full width for solo pages, or half-width in a spread).
   Widget _buildPageContent(
     BuildContext context,
     int pageIndex, {
-    Rect? cropBoundsOverride,
+    double? targetRenderedHeight,
   }) {
     final pages = widget.mokuroBook.pages;
     if (pageIndex < 0 || pageIndex >= pages.length) {
@@ -233,14 +240,17 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
         final containerH = constraints.maxHeight;
 
         // Auto-crop region
-        final contentBounds = cropBoundsOverride ?? page.contentBounds;
+        final contentBounds = page.contentBounds;
         final useCrop = widget.autoCrop && contentBounds != null;
         final regionW = useCrop ? contentBounds.width : imgW;
         final regionH = useCrop ? contentBounds.height : imgH;
-
-        final scale = (containerW / regionW) < (containerH / regionH)
+        final fittedScale = (containerW / regionW) < (containerH / regionH)
             ? containerW / regionW
             : containerH / regionH;
+        final scale =
+            useCrop && targetRenderedHeight != null && targetRenderedHeight > 0
+            ? targetRenderedHeight / regionH
+            : fittedScale;
 
         final renderedRegionW = regionW * scale;
         final renderedRegionH = regionH * scale;
@@ -355,45 +365,5 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       fit: fit,
       filterQuality: FilterQuality.medium,
     );
-  }
-}
-
-class _PageCropInsets {
-  final double left;
-  final double top;
-  final double right;
-  final double bottom;
-
-  const _PageCropInsets({
-    required this.left,
-    required this.top,
-    required this.right,
-    required this.bottom,
-  });
-
-  factory _PageCropInsets.fromPage(MokuroPage page) {
-    final bounds = page.contentBounds;
-    final imgW = page.imgWidth.toDouble();
-    final imgH = page.imgHeight.toDouble();
-    if (bounds == null) {
-      return const _PageCropInsets(left: 0, top: 0, right: 0, bottom: 0);
-    }
-
-    return _PageCropInsets(
-      left: bounds.left.clamp(0.0, imgW),
-      top: bounds.top.clamp(0.0, imgH),
-      right: (imgW - bounds.right).clamp(0.0, imgW),
-      bottom: (imgH - bounds.bottom).clamp(0.0, imgH),
-    );
-  }
-
-  Rect applyToPage(MokuroPage page) {
-    final imgW = page.imgWidth.toDouble();
-    final imgH = page.imgHeight.toDouble();
-    final cropLeft = left.clamp(0.0, imgW);
-    final cropTop = top.clamp(0.0, imgH);
-    final cropRight = math.max(cropLeft, imgW - right.clamp(0.0, imgW));
-    final cropBottom = math.max(cropTop, imgH - bottom.clamp(0.0, imgH));
-    return Rect.fromLTRB(cropLeft, cropTop, cropRight, cropBottom);
   }
 }

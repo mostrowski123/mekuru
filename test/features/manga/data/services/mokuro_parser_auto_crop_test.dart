@@ -66,6 +66,35 @@ void main() {
     );
 
     test(
+      'keeps sparse edge content when cropping left and right sides',
+      () async {
+        final image = img.Image(width: 20, height: 20);
+        img.fill(image, color: img.ColorRgb8(255, 255, 255));
+
+        for (int y = 4; y <= 14; y++) {
+          for (int x = 6; x <= 11; x++) {
+            image.setPixelRgb(x, y, 0, 0, 0);
+          }
+        }
+
+        for (final y in [4, 6, 8, 10, 12]) {
+          image.setPixelRgb(5, y, 0, 0, 0);
+        }
+        for (final y in [5, 7, 9, 11, 13]) {
+          image.setPixelRgb(12, y, 0, 0, 0);
+        }
+
+        final bounds = await MokuroParser.computeImageContentBoundsFromBytes(
+          img.encodePng(image),
+        );
+
+        expect(bounds, isNotNull);
+        expect(bounds!.left, 3);
+        expect(bounds.right, 15);
+      },
+    );
+
+    test(
       'custom white threshold can ignore near-white compression artifacts',
       () async {
         final image = img.Image(width: 20, height: 20);

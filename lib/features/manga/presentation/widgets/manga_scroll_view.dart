@@ -6,6 +6,16 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
 
+double resolveScrollPageAspectRatio(MokuroPage page, {required bool autoCrop}) {
+  final contentBounds = autoCrop ? page.contentBounds : null;
+  final width = contentBounds?.width ?? page.imgWidth.toDouble();
+  final height = contentBounds?.height ?? page.imgHeight.toDouble();
+  if (width <= 0 || height <= 0) {
+    return 0.7; // fallback for corrupt dimensions
+  }
+  return width / height;
+}
+
 /// Continuous vertical scroll view for manga pages.
 ///
 /// Each page is rendered at full width with its natural aspect ratio.
@@ -127,9 +137,10 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
       itemCount: pages.length,
       itemBuilder: (context, index) {
         final page = pages[index];
-        final aspectRatio = page.imgWidth > 0 && page.imgHeight > 0
-            ? page.imgWidth / page.imgHeight
-            : 0.7; // fallback for corrupt dimensions
+        final aspectRatio = resolveScrollPageAspectRatio(
+          page,
+          autoCrop: widget.autoCrop,
+        );
 
         return AspectRatio(
           aspectRatio: aspectRatio,
