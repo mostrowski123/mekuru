@@ -1168,7 +1168,7 @@ class MokuroParser {
   }
 
   static int _minimumColumnPixelCount(int contentHeight) =>
-      math.max(3, (contentHeight * 0.003).ceil());
+      math.max(2, (contentHeight * 0.0015).ceil());
 
   static bool _rowHasContent(
     Uint8List pixels, {

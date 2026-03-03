@@ -171,32 +171,26 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       return const SizedBox.shrink();
     }
 
-    // Two pages side by side
+    // Treat a two-page spread as one combined canvas for auto-crop so
+    // top/bottom and outer/inner margins are solved together.
     return LayoutBuilder(
       builder: (context, constraints) {
-        final targetRenderedHeight = widget.autoCrop
-            ? resolveSpreadAutoCropTargetHeight(
-                widget.mokuroBook.pages[leftPageIndex],
-                widget.mokuroBook.pages[rightPageIndex],
-                containerWidth: constraints.maxWidth / 2,
-                containerHeight: constraints.maxHeight,
-              )
-            : null;
-
         return Row(
           children: [
             Expanded(
               child: _buildPageContent(
                 context,
                 leftPageIndex,
-                targetRenderedHeight: targetRenderedHeight,
+                spreadLeftPageIndex: leftPageIndex,
+                spreadRightPageIndex: rightPageIndex,
               ),
             ),
             Expanded(
               child: _buildPageContent(
                 context,
                 rightPageIndex,
-                targetRenderedHeight: targetRenderedHeight,
+                spreadLeftPageIndex: leftPageIndex,
+                spreadRightPageIndex: rightPageIndex,
               ),
             ),
           ],
@@ -210,7 +204,8 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
   Widget _buildPageContent(
     BuildContext context,
     int pageIndex, {
-    double? targetRenderedHeight,
+    int? spreadLeftPageIndex,
+    int? spreadRightPageIndex,
   }) {
     final pages = widget.mokuroBook.pages;
     if (pageIndex < 0 || pageIndex >= pages.length) {
@@ -242,27 +237,78 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
         // Auto-crop region
         final contentBounds = page.contentBounds;
         final useCrop = widget.autoCrop && contentBounds != null;
-        final regionW = useCrop ? contentBounds.width : imgW;
-        final regionH = useCrop ? contentBounds.height : imgH;
-        final fittedScale = (containerW / regionW) < (containerH / regionH)
-            ? containerW / regionW
-            : containerH / regionH;
-        final scale =
-            useCrop && targetRenderedHeight != null && targetRenderedHeight > 0
-            ? targetRenderedHeight / regionH
-            : fittedScale;
+        final spreadUseCrop =
+            useCrop &&
+            spreadLeftPageIndex != null &&
+            spreadRightPageIndex != null &&
+            spreadLeftPageIndex != spreadRightPageIndex;
 
-        final renderedRegionW = regionW * scale;
-        final renderedRegionH = regionH * scale;
-        final displayOffsetX = (containerW - renderedRegionW) / 2;
-        final displayOffsetY = (containerH - renderedRegionH) / 2;
+        final double scale;
+        final double overlayOffsetX;
+        final double overlayOffsetY;
 
-        final overlayOffsetX = useCrop
-            ? displayOffsetX - contentBounds.left * scale
-            : displayOffsetX;
-        final overlayOffsetY = useCrop
-            ? displayOffsetY - contentBounds.top * scale
-            : displayOffsetY;
+        if (spreadUseCrop) {
+          final leftPage = pages[spreadLeftPageIndex!];
+          final rightPage = pages[spreadRightPageIndex!];
+          final leftBounds = leftPage.contentBounds;
+          final rightBounds = rightPage.contentBounds;
+
+          if (leftBounds != null && rightBounds != null) {
+            final combinedLeft = leftBounds.left;
+            final combinedTop = math.min(leftBounds.top, rightBounds.top);
+            final combinedRight =
+                leftPage.imgWidth.toDouble() + rightBounds.right;
+            final combinedBottom =
+                math.max(leftBounds.bottom, rightBounds.bottom);
+            final combinedWidth = combinedRight - combinedLeft;
+            final combinedHeight = combinedBottom - combinedTop;
+            final combinedScale = math.min(
+              (containerW * 2) / combinedWidth,
+              containerH / combinedHeight,
+            );
+            scale = combinedScale;
+            final renderedCombinedWidth = combinedWidth * scale;
+            final renderedCombinedHeight = combinedHeight * scale;
+            final combinedOffsetX =
+                (containerW * 2 - renderedCombinedWidth) / 2;
+            final combinedOffsetY =
+                (containerH - renderedCombinedHeight) / 2;
+            final pageImageStartX = pageIndex == spreadLeftPageIndex
+                ? 0.0
+                : leftPage.imgWidth.toDouble();
+            overlayOffsetX =
+                combinedOffsetX - combinedLeft * scale + pageImageStartX * scale;
+            overlayOffsetY = combinedOffsetY - combinedTop * scale;
+          } else {
+            final regionW = useCrop ? contentBounds.width : imgW;
+            final regionH = useCrop ? contentBounds.height : imgH;
+            scale = math.min(containerW / regionW, containerH / regionH);
+            final renderedRegionW = regionW * scale;
+            final renderedRegionH = regionH * scale;
+            final displayOffsetX = (containerW - renderedRegionW) / 2;
+            final displayOffsetY = (containerH - renderedRegionH) / 2;
+            overlayOffsetX = useCrop
+                ? displayOffsetX - contentBounds.left * scale
+                : displayOffsetX;
+            overlayOffsetY = useCrop
+                ? displayOffsetY - contentBounds.top * scale
+                : displayOffsetY;
+          }
+        } else {
+          final regionW = useCrop ? contentBounds.width : imgW;
+          final regionH = useCrop ? contentBounds.height : imgH;
+          scale = math.min(containerW / regionW, containerH / regionH);
+          final renderedRegionW = regionW * scale;
+          final renderedRegionH = regionH * scale;
+          final displayOffsetX = (containerW - renderedRegionW) / 2;
+          final displayOffsetY = (containerH - renderedRegionH) / 2;
+          overlayOffsetX = useCrop
+              ? displayOffsetX - contentBounds.left * scale
+              : displayOffsetX;
+          overlayOffsetY = useCrop
+              ? displayOffsetY - contentBounds.top * scale
+              : displayOffsetY;
+        }
 
         return Stack(
           clipBehavior: Clip.hardEdge,

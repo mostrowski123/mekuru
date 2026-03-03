@@ -26,6 +26,7 @@ class MangaScrollView extends ConsumerStatefulWidget {
   final MokuroBook mokuroBook;
   final int bookId;
   final double initialScrollOffset;
+  final int initialPage;
   final bool debugOverlay;
   final bool autoCrop;
   final bool enableWordOverlays;
@@ -44,6 +45,7 @@ class MangaScrollView extends ConsumerStatefulWidget {
     required this.mokuroBook,
     required this.bookId,
     this.initialScrollOffset = 0.0,
+    this.initialPage = 0,
     this.debugOverlay = false,
     this.autoCrop = false,
     this.enableWordOverlays = true,
@@ -60,6 +62,7 @@ class MangaScrollView extends ConsumerStatefulWidget {
 class MangaScrollViewState extends ConsumerState<MangaScrollView> {
   late final ScrollController _scrollController;
   Timer? _saveDebounce;
+  bool _restoredInitialPage = false;
 
   @override
   void initState() {
@@ -68,6 +71,16 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
       initialScrollOffset: widget.initialScrollOffset,
     );
     _scrollController.addListener(_onScroll);
+
+    if (widget.initialScrollOffset <= 0 && widget.initialPage > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients || _restoredInitialPage) {
+          return;
+        }
+        _restoredInitialPage = true;
+        jumpToPage(widget.initialPage);
+      });
+    }
   }
 
   @override
@@ -94,6 +107,18 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
       targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
+    );
+  }
+
+  /// Jump to page without animation (used for initial mode switches).
+  void jumpToPage(int page) {
+    if (!_scrollController.hasClients) return;
+    final totalPages = widget.mokuroBook.pages.length;
+    final clamped = page.clamp(0, totalPages - 1);
+    final viewportHeight = _scrollController.position.viewportDimension;
+    final targetOffset = clamped * viewportHeight;
+    _scrollController.jumpTo(
+      targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
     );
   }
 

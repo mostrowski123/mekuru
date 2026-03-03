@@ -863,6 +863,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           mokuroBook: mokuroBook,
           bookId: widget.book.id,
           initialScrollOffset: _parseScrollOffset(widget.book.lastReadCfi),
+          initialPage: _currentPage,
           debugOverlay: _debugOverlay,
           autoCrop: autoCrop,
           enableWordOverlays: enableWordOverlays,
