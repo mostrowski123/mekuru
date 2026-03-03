@@ -63,6 +63,7 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
   late final ScrollController _scrollController;
   Timer? _saveDebounce;
   bool _restoredInitialPage = false;
+  int _restoreAttempts = 0;
 
   @override
   void initState() {
@@ -74,13 +75,28 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
 
     if (widget.initialScrollOffset <= 0 && widget.initialPage > 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_scrollController.hasClients || _restoredInitialPage) {
-          return;
-        }
-        _restoredInitialPage = true;
-        jumpToPage(widget.initialPage);
+        _restoreInitialPageIfReady();
       });
     }
+  }
+
+  void _restoreInitialPageIfReady() {
+    if (!mounted || _restoredInitialPage) return;
+
+    final hasViewport =
+        _scrollController.hasClients &&
+        _scrollController.position.hasViewportDimension;
+    if (hasViewport) {
+      _restoredInitialPage = true;
+      jumpToPage(widget.initialPage);
+      return;
+    }
+
+    if (_restoreAttempts >= 8) return;
+    _restoreAttempts++;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restoreInitialPageIfReady();
+    });
   }
 
   @override
@@ -96,13 +112,7 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
     if (!_scrollController.hasClients) return;
     final totalPages = widget.mokuroBook.pages.length;
     final clamped = page.clamp(0, totalPages - 1);
-
-    // Estimate offset: each page occupies roughly one viewport height,
-    // adjusted by aspect ratio. For simplicity use viewport height as
-    // the baseline per-item height (since each page is full-width with
-    // an AspectRatio wrapper, actual heights vary).
-    final viewportHeight = _scrollController.position.viewportDimension;
-    final targetOffset = clamped * viewportHeight;
+    final targetOffset = _targetOffsetForPage(clamped);
     _scrollController.animateTo(
       targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
       duration: const Duration(milliseconds: 300),
@@ -115,11 +125,25 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
     if (!_scrollController.hasClients) return;
     final totalPages = widget.mokuroBook.pages.length;
     final clamped = page.clamp(0, totalPages - 1);
-    final viewportHeight = _scrollController.position.viewportDimension;
-    final targetOffset = clamped * viewportHeight;
+    final targetOffset = _targetOffsetForPage(clamped);
     _scrollController.jumpTo(
       targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
     );
+  }
+
+  double _targetOffsetForPage(int page) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    if (viewportWidth <= 0 || page <= 0) return 0;
+    double offset = 0;
+    for (int i = 0; i < page && i < widget.mokuroBook.pages.length; i++) {
+      final ratio = resolveScrollPageAspectRatio(
+        widget.mokuroBook.pages[i],
+        autoCrop: widget.autoCrop,
+      );
+      final safeRatio = ratio <= 0 ? 0.7 : ratio;
+      offset += viewportWidth / safeRatio;
+    }
+    return offset;
   }
 
   void _onScroll() {
@@ -143,14 +167,26 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
 
   int _estimateCurrentPage() {
     if (!_scrollController.hasClients) return 0;
-    final offset = _scrollController.offset;
-    final viewportHeight = _scrollController.position.viewportDimension;
-    // Use the center of the viewport to determine "current" page
-    final centerOffset = offset + viewportHeight / 2;
-    return (centerOffset / viewportHeight).floor().clamp(
-      0,
-      widget.mokuroBook.pages.length - 1,
-    );
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    if (viewportWidth <= 0) return 0;
+
+    final centerOffset =
+        _scrollController.offset +
+        _scrollController.position.viewportDimension / 2;
+
+    double running = 0;
+    for (int i = 0; i < widget.mokuroBook.pages.length; i++) {
+      final ratio = resolveScrollPageAspectRatio(
+        widget.mokuroBook.pages[i],
+        autoCrop: widget.autoCrop,
+      );
+      final safeRatio = ratio <= 0 ? 0.7 : ratio;
+      running += viewportWidth / safeRatio;
+      if (centerOffset < running) {
+        return i;
+      }
+    }
+    return widget.mokuroBook.pages.length - 1;
   }
 
   @override

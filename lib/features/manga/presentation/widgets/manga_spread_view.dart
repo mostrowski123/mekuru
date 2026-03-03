@@ -275,11 +275,15 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
                 (containerW * 2 - renderedCombinedWidth) / 2;
             final combinedOffsetY =
                 (containerH - renderedCombinedHeight) / 2;
+            final pageContainerStartX =
+                pageIndex == leftSpreadPageIndex ? 0.0 : containerW;
             final pageImageStartX = pageIndex == leftSpreadPageIndex
                 ? 0.0
                 : leftPage.imgWidth.toDouble();
             overlayOffsetX =
-                combinedOffsetX - combinedLeft * scale + pageImageStartX * scale;
+                combinedOffsetX -
+                pageContainerStartX +
+                (pageImageStartX - combinedLeft) * scale;
             overlayOffsetY = combinedOffsetY - combinedTop * scale;
           } else {
             final regionW = useCrop ? contentBounds.width : imgW;
