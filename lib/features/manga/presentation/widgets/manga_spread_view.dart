@@ -247,9 +247,13 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
         final double overlayOffsetX;
         final double overlayOffsetY;
 
-        if (spreadUseCrop) {
-          final leftPage = pages[spreadLeftPageIndex!];
-          final rightPage = pages[spreadRightPageIndex!];
+        if (spreadUseCrop &&
+            spreadLeftPageIndex != null &&
+            spreadRightPageIndex != null) {
+          final leftSpreadPageIndex = spreadLeftPageIndex;
+          final rightSpreadPageIndex = spreadRightPageIndex;
+          final leftPage = pages[leftSpreadPageIndex];
+          final rightPage = pages[rightSpreadPageIndex];
           final leftBounds = leftPage.contentBounds;
           final rightBounds = rightPage.contentBounds;
 
@@ -273,7 +277,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
                 (containerW * 2 - renderedCombinedWidth) / 2;
             final combinedOffsetY =
                 (containerH - renderedCombinedHeight) / 2;
-            final pageImageStartX = pageIndex == spreadLeftPageIndex
+            final pageImageStartX = pageIndex == leftSpreadPageIndex
                 ? 0.0
                 : leftPage.imgWidth.toDouble();
             overlayOffsetX =
