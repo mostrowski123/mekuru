@@ -31,7 +31,7 @@ dependencies:
   path: ^1.9.1
 
   # Japanese morphological analysis
-  mecab_for_flutter: ^1.1.0
+  mecab_for_flutter: ^2.0.0
 
   # Streaming JSON parsing (for large dictionary collection files)
   json_events: ^1.2.2
@@ -49,9 +49,9 @@ dependencies:
   xml: ^6.5.0
   share_plus: ^12.0.1
   shared_preferences: ^2.5.3
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.0.0
   url_launcher: ^6.3.1
-  package_info_plus: ^8.3.0
+  package_info_plus: ^9.0.0
 
   # Error tracking and user feedback
   sentry_flutter: ^9.14.0
@@ -60,8 +60,8 @@ dependencies:
   confetti: ^0.8.0
 
   # Reader display
-  screen_brightness: ^1.0.1
-  wakelock_plus: ^1.2.8
+  screen_brightness: ^2.1.7
+  wakelock_plus: ^1.4.0
   flutter_tilt: ^3.3.2
 
   # Kanji stroke order
@@ -71,9 +71,9 @@ dependencies:
   ankidroid_for_flutter: ^1.0.3
 
   # Firebase (OCR server authentication)
-  firebase_core: ^3.12.1
-  firebase_auth: ^5.5.1
-  google_sign_in: ^6.3.0
+  firebase_core: ^4.5.0
+  firebase_auth: ^6.2.0
+  google_sign_in: ^7.2.0
 
   # In-app purchases (OCR monetization)
   in_app_purchase: ^3.2.3

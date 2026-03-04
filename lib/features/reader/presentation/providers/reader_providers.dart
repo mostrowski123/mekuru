@@ -185,7 +185,7 @@ class BrightnessNotifier extends Notifier<double?> {
   Future<void> initialize() async {
     if (state != null) return;
     try {
-      final brightness = await ScreenBrightness.instance.current;
+      final brightness = await ScreenBrightness.instance.application;
       state = brightness;
     } catch (e) {
       debugPrint('[Brightness] failed to read current brightness: $e');
@@ -202,7 +202,7 @@ class BrightnessNotifier extends Notifier<double?> {
   Future<void> setBrightness(double value) async {
     state = value;
     try {
-      await ScreenBrightness.instance.setScreenBrightness(value);
+      await ScreenBrightness.instance.setApplicationScreenBrightness(value);
     } catch (e) {
       debugPrint('[Brightness] failed to set brightness: $e');
     }
@@ -210,7 +210,7 @@ class BrightnessNotifier extends Notifier<double?> {
 
   Future<void> resetBrightness() async {
     try {
-      await ScreenBrightness.instance.resetScreenBrightness();
+      await ScreenBrightness.instance.resetApplicationScreenBrightness();
     } catch (e) {
       debugPrint('[Brightness] failed to reset brightness: $e');
     }

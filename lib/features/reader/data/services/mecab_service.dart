@@ -89,7 +89,7 @@ class MecabService {
   MecabService._();
   static final MecabService instance = MecabService._();
 
-  final Mecab _tagger = Mecab();
+  Mecab? _tagger;
   bool _initialized = false;
 
   /// Initialize MeCab with IPAdic. Safe to call multiple times.
@@ -102,7 +102,7 @@ class MecabService {
     if (_initialized) return;
     final dictPath = await _getDictDir();
     debugPrint('[MeCab] Initializing with dict path: $dictPath');
-    await _tagger.init(null, dictPath, true);
+    _tagger = await Mecab.create(dictDir: dictPath);
     _initialized = true;
     debugPrint('[MeCab] Initialized successfully');
   }
@@ -166,7 +166,7 @@ class MecabService {
   List<String> tokenize(String text) {
     if (!_initialized || text.isEmpty) return [text];
 
-    final allTokens = _tagger.parse(text);
+    final allTokens = _tagger!.parse(text);
     final surfaces = allTokens
         .where((t) {
           final s = t.surface;
@@ -211,7 +211,7 @@ class MecabService {
 
     final tappedChar = cleanText[cleanOffset];
 
-    final allTokens = _tagger.parse(cleanText);
+    final allTokens = _tagger!.parse(cleanText);
     if (allTokens.isEmpty) {
       debugPrint('[MeCab] parse() returned empty token list');
       return null;

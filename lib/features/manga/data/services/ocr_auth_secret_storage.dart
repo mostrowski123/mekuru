@@ -2,9 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class OcrAuthSecretStorage {
   static const _customServerBearerKeyKey = 'ocr.custom_server_bearer_key';
-  static final FlutterSecureStorage _secureStorage = FlutterSecureStorage(
-    aOptions: const AndroidOptions(encryptedSharedPreferences: true),
-  );
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   Future<String?> loadCustomServerBearerKey() async {
     final value = await _secureStorage.read(key: _customServerBearerKeyKey);

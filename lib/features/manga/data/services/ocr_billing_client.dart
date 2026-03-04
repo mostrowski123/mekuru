@@ -111,9 +111,7 @@ class OcrBillingClient {
         'No internet connection. Check your connection and try again.',
         code: 'network_unavailable',
       );
-  static final FlutterSecureStorage _secureStorage = FlutterSecureStorage(
-    aOptions: const AndroidOptions(encryptedSharedPreferences: true),
-  );
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   final http.Client _httpClient;
   final Duration requestTimeout;

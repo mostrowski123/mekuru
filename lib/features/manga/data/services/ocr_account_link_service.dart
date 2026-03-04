@@ -14,10 +14,7 @@ class OcrLinkedAccountResult {
 }
 
 class OcrAccountLinkService {
-  OcrAccountLinkService({GoogleSignIn? googleSignIn})
-    : _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: const ['email']);
-
-  final GoogleSignIn _googleSignIn;
+  static bool _googleSignInInitialized = false;
 
   Future<OcrLinkedAccountResult> ensureLinkedAccount() async {
     final currentUser = await FirebaseRuntime.instance.ensureOcrUser();
@@ -26,15 +23,23 @@ class OcrAccountLinkService {
       return OcrLinkedAccountResult(user: currentUser, linkedThisCall: false);
     }
 
-    final account = await _googleSignIn.signIn();
-    if (account == null) {
-      throw StateError('Google sign-in was cancelled.');
+    if (!_googleSignInInitialized) {
+      await GoogleSignIn.instance.initialize();
+      _googleSignInInitialized = true;
     }
 
-    final auth = await account.authentication;
+    final GoogleSignInAccount account;
+    try {
+      account = await GoogleSignIn.instance.authenticate();
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        throw StateError('Google sign-in was cancelled.');
+      }
+      rethrow;
+    }
+
     final credential = GoogleAuthProvider.credential(
-      idToken: auth.idToken,
-      accessToken: auth.accessToken,
+      idToken: account.authentication.idToken,
     );
 
     try {
