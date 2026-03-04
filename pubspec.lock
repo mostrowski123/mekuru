@@ -125,10 +125,10 @@ packages:
     dependency: transitive
     description:
       name: built_value
-      sha256: "7931c90b84bc573fef103548e354258ae4c9d28d140e41961df6843c5d60d4d8"
+      sha256: "6ae8a6435a8c6520c7077b107e77f1fb4ba7009633259a4d49a8afd8e7efc5e9"
       url: "https://pub.dev"
     source: hosted
-    version: "8.12.3"
+    version: "8.12.4"
   characters:
     dependency: transitive
     description:
@@ -245,10 +245,10 @@ packages:
     dependency: "direct main"
     description:
       name: csv
-      sha256: bef2950f7a753eb82f894a2eabc3072e73cf21c17096296a5a992797e50b1d0d
+      sha256: e122a402b966b93a4e98925da241ecb3d58d2e62c0aa6486b0c8de4bd405dad5
       url: "https://pub.dev"
     source: hosted
-    version: "7.1.0"
+    version: "7.2.0"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -764,10 +764,10 @@ packages:
     dependency: transitive
     description:
       name: json_annotation
-      sha256: "805fa86df56383000f640384b282ce0cb8431f1a7a2396de92fb66186d8c57df"
+      sha256: cb09e7dac6210041fad964ed7fbee004f14258b4eca4040f72d1234062ace4c8
       url: "https://pub.dev"
     source: hosted
-    version: "4.10.0"
+    version: "4.11.0"
   json_events:
     dependency: "direct main"
     description:
@@ -1020,10 +1020,10 @@ packages:
     dependency: transitive
     description:
       name: posix
-      sha256: "6323a5b0fa688b6a010df4905a56b00181479e6d10534cecfecede2aa55add61"
+      sha256: "185ef7606574f789b40f289c233efa52e96dead518aed988e040a10737febb07"
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.3"
+    version: "6.5.0"
   process:
     dependency: transitive
     description:
@@ -1164,10 +1164,10 @@ packages:
     dependency: transitive
     description:
       name: sentry
-      sha256: e57e57123968b673c8ca19892eecf93113b4811b8e5cd5d165749ca7f7319fdb
+      sha256: "605ad1f6f1ae5b72018cbe8fc20f490fa3bd53e58882e5579566776030d8c8c1"
       url: "https://pub.dev"
     source: hosted
-    version: "9.13.0"
+    version: "9.14.0"
   sentry_dart_plugin:
     dependency: "direct dev"
     description:
@@ -1180,10 +1180,10 @@ packages:
     dependency: "direct main"
     description:
       name: sentry_flutter
-      sha256: c8f5b805c0346cd0c93b09e584675af7ed8c3ef36c3589181ad19b4adce35954
+      sha256: "7fd0fb80050c1f6a77ae185bda997a76d384326d6777cf5137a6c38952c4ac7d"
       url: "https://pub.dev"
     source: hosted
-    version: "9.13.0"
+    version: "9.14.0"
   share_plus:
     dependency: "direct main"
     description:
@@ -1212,10 +1212,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_android
-      sha256: cbc40be9be1c5af4dab4d6e0de4d5d3729e6f3d65b89d21e1815d57705644a6f
+      sha256: "8374d6200ab33ac99031a852eba4c8eb2170c4bf20778b3e2c9eccb45384fb41"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.20"
+    version: "2.4.21"
   shared_preferences_foundation:
     dependency: transitive
     description:
@@ -1441,10 +1441,10 @@ packages:
     dependency: transitive
     description:
       name: universal_ffi
-      sha256: "7f6ebdeb1e64b92d9d0ea182b74f95d5cf0f6c92c54e0e9280fa7ac3c6abeb83"
+      sha256: a4071511e11b96fc741a91f89dd6891ffce196c45e85f89983beb31cde695dee
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.0"
+    version: "1.5.0"
   universal_io:
     dependency: transitive
     description:
@@ -1521,10 +1521,10 @@ packages:
     dependency: "direct main"
     description:
       name: uuid
-      sha256: a11b666489b1954e01d992f3d601b1804a33937b5a8fe677bd26b8a9f96f96e8
+      sha256: "1fef9e8e11e2991bb773070d4656b7bd5d850967a2456cfc83cf47925ba79489"
       url: "https://pub.dev"
     source: hosted
-    version: "4.5.2"
+    version: "4.5.3"
   vector_graphics:
     dependency: transitive
     description:
@@ -1545,10 +1545,10 @@ packages:
     dependency: transitive
     description:
       name: vector_graphics_compiler
-      sha256: "201e876b5d52753626af64b6359cd13ac6011b80728731428fd34bc840f71c9b"
+      sha256: "5a88dd14c0954a5398af544651c7fb51b457a2a556949bfb25369b210ef73a74"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.20"
+    version: "1.2.0"
   vector_math:
     dependency: transitive
     description:
@@ -1585,10 +1585,10 @@ packages:
     dependency: transitive
     description:
       name: wasm_ffi
-      sha256: "3d66b8da3d69be07dc44b0027ac49c7ce9b9dde16e2d13eb2031e24288c136e1"
+      sha256: "950238f09e2d18b85c5c4356833a06319b049c1d19f936db32c3f0d8194e30b5"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "2.3.0"
   watcher:
     dependency: transitive
     description:

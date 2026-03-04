@@ -43,8 +43,8 @@ dependencies:
   image: ^4.0.0
 
   # Utilities
-  csv: ^7.1.0
-  uuid: ^4.5.2
+  csv: ^7.2.0
+  uuid: ^4.5.3
   mime: ^2.0.0
   xml: ^6.5.0
   share_plus: ^12.0.1
@@ -54,7 +54,7 @@ dependencies:
   package_info_plus: ^8.3.0
 
   # Error tracking and user feedback
-  sentry_flutter: ^9.13.0
+  sentry_flutter: ^9.14.0
 
   # Confetti animation (Pro unlock celebration)
   confetti: ^0.8.0
