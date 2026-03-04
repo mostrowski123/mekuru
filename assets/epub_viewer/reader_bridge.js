@@ -480,8 +480,19 @@ function getChapters() {
 // ── Display settings ──────────────────────────────────────────────────
 
 function setFontSize(size) {
-  if (rendition) {
-    rendition.themes.fontSize(size + 'px');
+  if (!rendition) return;
+  rendition.themes.fontSize(size + 'px');
+
+  // Force epub.js to re-layout and re-display at the current position so
+  // annotation highlights (word highlight, persistent highlights) update
+  // their visual position after the text reflows.  Same pattern as
+  // setMargins() — without this, SVG overlays stay at stale coordinates.
+  if (rendition.manager) {
+    rendition.manager._stageSize = undefined;
+    var cfi = rendition.location && rendition.location.start
+        ? rendition.location.start.cfi : null;
+    rendition.resize();
+    if (cfi) rendition.display(cfi);
   }
 }
 
