@@ -112,12 +112,6 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
   rendition.on('relocated', function (location) {
     if (!location || !location.start) return;
     var percent = location.start.percentage;
-    var page = location.start.displayed ? location.start.displayed.page : '?';
-    var total = location.start.displayed ? location.start.displayed.total : '?';
-    console.log('[EPUB_BRIDGE] relocated cfi=' + location.start.cfi +
-      ' sectionIndex=' + location.start.index +
-      ' page=' + page + '/' + total +
-      ' progress=' + percent);
     callDart('relocated', {
       startCfi: location.start.cfi,
       endCfi: location.end ? location.end.cfi : location.start.cfi,
@@ -414,15 +408,32 @@ function previous() {
 }
 
 function toCfi(cfi) {
-  console.log('[EPUB_BRIDGE] toCfi: ' + cfi);
-  if (rendition) rendition.display(cfi);
+  if (!rendition) return;
+  rendition.display(cfi).then(function () {
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        snapToNearestPage();
+      }, 0);
+    });
+  }).catch(function (err) {
+    console.error('[EPUB_BRIDGE] toCfi display failed: ' + err);
+  });
 }
 
 function toProgress(progress) {
-  console.log('[EPUB_BRIDGE] toProgress: ' + progress);
   if (book && book.locations) {
     var cfi = book.locations.cfiFromPercentage(progress);
-    if (rendition) rendition.display(cfi);
+    if (rendition) {
+      rendition.display(cfi).then(function () {
+        requestAnimationFrame(function () {
+          setTimeout(function () {
+            snapToNearestPage();
+          }, 0);
+        });
+      }).catch(function (err) {
+        console.error('[EPUB_BRIDGE] toProgress display failed: ' + err);
+      });
+    }
   }
 }
 
@@ -1250,6 +1261,61 @@ function snapToLastPage(caller) {
     // No pending images — snap immediately
     doSnap();
   }
+}
+
+/**
+ * Snap to the nearest page boundary after navigating to a CFI or progress.
+ * Without this, rendition.display(cfi) can leave the view between two pages,
+ * causing a "cut in half" rendering artefact.
+ */
+function snapToNearestPage() {
+  if (!rendition || !rendition.manager) return;
+
+  var manager = rendition.manager;
+  var container = manager.container;
+  var axis = manager.settings.axis;
+  var dir = manager.settings.direction;
+
+  // rendition.display(cfi) positions using layout.delta, but prev()/next()
+  // scroll by offsetHeight (vertical) or offsetWidth (horizontal).
+  // We convert from delta-space to offset-space so pages align with the
+  // boundaries used by normal page navigation.
+  var delta = manager.layout ? manager.layout.delta : 0;
+  var step = (axis === 'vertical') ? container.offsetHeight : container.offsetWidth;
+
+  if (!delta || delta <= 0 || !step || step <= 0) return;
+
+  var currentScroll, pageIndex, snappedOffset, maxScroll;
+
+  if (axis === 'vertical') {
+    currentScroll = container.scrollTop;
+    pageIndex = Math.round(currentScroll / delta);
+    snappedOffset = pageIndex * step;
+    maxScroll = container.scrollHeight - step;
+    if (maxScroll < 0) maxScroll = 0;
+    snappedOffset = Math.min(snappedOffset, maxScroll);
+    if (snappedOffset < 0) snappedOffset = 0;
+    container.scrollTo({ top: snappedOffset, left: 0, behavior: 'instant' });
+  } else if (dir === 'rtl') {
+    currentScroll = container.scrollLeft;
+    pageIndex = Math.round(Math.abs(currentScroll) / delta);
+    snappedOffset = -(pageIndex * step);
+    maxScroll = container.scrollWidth - step;
+    if (maxScroll < 0) maxScroll = 0;
+    if (Math.abs(snappedOffset) > maxScroll) snappedOffset = -maxScroll;
+    container.scrollTo({ top: 0, left: snappedOffset, behavior: 'instant' });
+  } else {
+    currentScroll = container.scrollLeft;
+    pageIndex = Math.round(currentScroll / delta);
+    snappedOffset = pageIndex * step;
+    maxScroll = container.scrollWidth - step;
+    if (maxScroll < 0) maxScroll = 0;
+    snappedOffset = Math.min(snappedOffset, maxScroll);
+    if (snappedOffset < 0) snappedOffset = 0;
+    container.scrollTo({ top: 0, left: snappedOffset, behavior: 'instant' });
+  }
+
+  rendition.reportLocation();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────

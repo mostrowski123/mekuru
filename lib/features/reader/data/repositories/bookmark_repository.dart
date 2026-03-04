@@ -60,11 +60,6 @@ class BookmarkRepository {
     return id;
   }
 
-  /// Update the user note on a bookmark.
-  Future<void> updateBookmarkNote(int id, String note) =>
-      (_db.update(_db.bookmarks)..where((t) => t.id.equals(id)))
-          .write(BookmarksCompanion(userNote: Value(note)));
-
   /// Delete a bookmark by ID.
   Future<void> deleteBookmark(int id) =>
       (_db.delete(_db.bookmarks)..where((t) => t.id.equals(id))).go();

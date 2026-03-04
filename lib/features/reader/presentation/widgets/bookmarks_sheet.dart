@@ -65,8 +65,6 @@ class BookmarksSheet extends ConsumerWidget {
                         }
                       },
                       onDelete: () => _deleteBookmark(context, ref, bookmark),
-                      onEditNote: () =>
-                          _editBookmarkNote(context, ref, bookmark),
                     );
                   },
                 );
@@ -89,64 +87,25 @@ class BookmarksSheet extends ConsumerWidget {
     onBookmarkDeleted?.call();
   }
 
-  void _editBookmarkNote(
-    BuildContext context,
-    WidgetRef ref,
-    Bookmark bookmark,
-  ) {
-    final controller = TextEditingController(text: bookmark.userNote);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Note'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Add a note...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              ref
-                  .read(bookmarkRepositoryProvider)
-                  .updateBookmarkNote(bookmark.id, controller.text);
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _BookmarkTile extends StatelessWidget {
   final Bookmark bookmark;
   final VoidCallback onTap;
   final VoidCallback onDelete;
-  final VoidCallback onEditNote;
 
   const _BookmarkTile({
     required this.bookmark,
     required this.onTap,
     required this.onDelete,
-    required this.onEditNote,
   });
 
   @override
   Widget build(BuildContext context) {
     final d = bookmark.dateAdded;
-    final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
     final progressStr = '${(bookmark.progress * 100).toInt()}%';
-    final hasNote = bookmark.userNote.isNotEmpty;
 
     return Dismissible(
       key: ValueKey(bookmark.id),
@@ -160,32 +119,15 @@ class _BookmarkTile extends StatelessWidget {
       onDismissed: (_) => onDelete(),
       child: ListTile(
         leading: const Icon(Icons.bookmark, color: Colors.amber),
-        title: Text(
-          bookmark.chapterTitle.isNotEmpty
-              ? bookmark.chapterTitle
-              : 'Bookmark at $progressStr',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('$progressStr  ·  $dateStr'),
-            if (hasNote)
-              Text(
-                bookmark.userNote,
+        title: Text('$progressStr  ·  $dateStr'),
+        subtitle: bookmark.chapterTitle.isNotEmpty
+            ? Text(
+                bookmark.chapterTitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontStyle: FontStyle.italic,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-          ],
-        ),
-        isThreeLine: hasNote,
+              )
+            : null,
         onTap: onTap,
-        onLongPress: onEditNote,
       ),
     );
   }

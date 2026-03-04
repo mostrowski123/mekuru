@@ -57,6 +57,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   double _progress = 0.0;
   String _currentCfi = '';
   bool _isCurrentPageBookmarked = false;
+  int _bookmarkCheckGeneration = 0;
   bool _hasRestoredHighlights = false;
   String? _initialCfi;
   String? _errorMessage;
@@ -853,10 +854,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   Future<void> _checkBookmarkState() async {
     if (_currentCfi.isEmpty) return;
+    final generation = ++_bookmarkCheckGeneration;
+    final cfiToCheck = _currentCfi;
     final existing = await ref
         .read(bookmarkRepositoryProvider)
-        .getBookmarkAtCfi(widget.book.id, _currentCfi);
-    if (mounted) {
+        .getBookmarkAtCfi(widget.book.id, cfiToCheck);
+    if (mounted && generation == _bookmarkCheckGeneration) {
       setState(() => _isCurrentPageBookmarked = existing != null);
     }
   }
