@@ -1,8 +1,14 @@
-# Mekuru — Japanese EPUB Reader
+<p align="center">
+  <img src="docs/icon.png" alt="Mekuru" width="96" height="96">
+</p>
+
+# Mekuru — Japanese EPUB and Manga Reader
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-A Japanese-first EPUB reader built with Flutter. Designed for language learners studying Japanese, featuring vertical text rendering, offline Yomitan dictionary lookups, smart word detection, and vocabulary management with Anki-compatible CSV export.
+A Japanese-first EPUB and manga reader built with Flutter. Designed for language learners studying Japanese, featuring vertical text rendering, offline Yomitan dictionary lookups, smart word detection, and vocabulary management with Anki-compatible CSV export.
+
+**[Documentation](https://mostrowski123.github.io/japanese-e-reader/documentation/)** · **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)**
 
 ## Features
 
