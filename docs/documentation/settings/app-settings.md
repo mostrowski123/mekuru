@@ -67,9 +67,7 @@ The **Custom OCR Server** setting controls the remote OCR endpoint used for CBZ 
 - Add the matching shared `AUTH_API_KEY`
 - Mekuru sends the key as a bearer token to your server
 
-If the stored OCR server still points to Mekuru's legacy built-in endpoint, the app now treats that as not configured and asks you to set up your own server before OCR can run.
-
-See [Custom OCR Server](manga/custom-server.md) for the custom-server contract.
+See [Custom OCR Server](manga/custom-server.md) for server setup and the API contract.
 
 ## Downloads
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Mekuru (めくる — "to turn pages") is a Japanese-first EPUB reader built with Flutter/Dart. It features vertical text rendering, offline Yomitan-compatible dictionary lookups, MeCab morphological analysis for word boundary detection, compound word resolution, and vocabulary management with Anki-compatible CSV export.
+Mekuru (めくる — "to turn pages") is a Japanese-first EPUB and manga reader built with Flutter/Dart. It features vertical text rendering, a dedicated manga viewer with OCR support, offline Yomitan-compatible dictionary lookups, MeCab morphological analysis for word boundary detection, compound word resolution, and vocabulary management with Anki-compatible CSV export.
 
 ## Architecture
 
@@ -18,8 +18,10 @@ lib/
 ├── features/
 │   ├── library/                   # Book import, EPUB parsing, library UI
 │   ├── reader/                    # EPUB viewer, MeCab, compound word resolution
+│   ├── manga/                     # Manga viewer, OCR, Pro billing
 │   ├── dictionary/                # Yomitan import, query engine, management UI
-│   └── vocabulary/                # Saved words, CSV export
+│   ├── vocabulary/                # Saved words, CSV export
+│   └── settings/                  # App preferences, OCR server config
 └── shared/
     ├── theme/                     # Light/dark Material 3 themes
     └── widgets/                   # Shared UI components
@@ -76,3 +78,6 @@ flutter run                                                 # Run on connected d
 | `lib/features/reader/data/services/compound_word_resolver.dart` | Multi-token compound word matching |
 | `lib/features/reader/presentation/reader_interaction_logic.dart` | Tap/swipe gesture resolution |
 | `lib/features/vocabulary/data/repositories/vocabulary_repository.dart` | Saved words and CSV export |
+| `lib/features/manga/presentation/providers/pro_access_provider.dart` | Pro unlock state (server-validated) |
+| `lib/features/manga/data/services/ocr_billing_client.dart` | Firebase billing API client |
+| `lib/features/settings/data/services/ocr_server_config.dart` | OCR server URL configuration |

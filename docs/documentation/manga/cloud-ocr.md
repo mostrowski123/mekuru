@@ -37,6 +37,6 @@ Depending on the current state, the long-press actions can change to:
 
 Once OCR text is available, the detected words behave like Mokuro overlays and open the same dictionary lookup sheet used elsewhere in the app.
 
-## Custom Server Requirement
+## Server Setup
 
-Mekuru now expects a custom OCR server for remote OCR. If your OCR server setting still points to Mekuru's legacy built-in endpoint, the app treats it as not configured and sends you to custom server setup first.
+Remote OCR requires a self-hosted OCR server. See the [Custom OCR Server](custom-server.md) guide for setup instructions.

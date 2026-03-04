@@ -12,6 +12,8 @@ A Japanese-first EPUB reader built with Flutter. Designed for language learners 
 - **Reading Progress**: Automatically saves your position (CFI-based) and resumes where you left off
 - **Chapter Navigation**: Table of contents drawer for jumping between chapters
 - **Customizable Display**: Adjustable font size, toggle between vertical and horizontal text modes
+- **Manga Reader**: Dedicated manga viewer with spread detection, auto-crop, and scroll/page view modes
+- **Manga OCR** *(Pro)*: Cloud-based OCR for extracting text from manga pages for dictionary lookup
 - **Offline Dictionary**: Import Yomitan/Yomichan dictionary ZIP files for offline lookups
 - **MeCab Word Detection**: Accurate Japanese word boundary detection using morphological analysis
 - **Compound Word Resolution**: Multi-token greedy matching against the dictionary for compound words
@@ -19,6 +21,12 @@ A Japanese-first EPUB reader built with Flutter. Designed for language learners 
 - **Vocabulary List**: Browse saved words with readings and meanings
 - **CSV Export**: Export vocabulary to CSV (compatible with Anki import) via system share sheet
 - **Dark Mode**: Full dark theme support with Material 3 design
+
+## Pro Features
+
+Mekuru is free and open source. Some features — like cloud-based manga OCR — require a one-time Pro unlock. Pro features are validated server-side and purchases go through Google Play Billing. OCR requires a self-hosted server — see the [custom server docs](docs/documentation/manga/custom-server.md) for setup instructions.
+
+If you find Mekuru useful, purchasing Pro is the best way to support continued development.
 
 ## Roadmap
 
@@ -44,7 +52,7 @@ A Japanese-first EPUB reader built with Flutter. Designed for language learners 
 
 ```bash
 # Clone the repository
-git clone git@github.com:mostrowski123/japanese-e-reader.git
+git clone https://github.com/mostrowski123/japanese-e-reader.git
 cd japanese-e-reader
 
 # Install dependencies
@@ -71,8 +79,10 @@ lib/
 ├── features/
 │   ├── library/           # Book import, EPUB parsing, library grid UI
 │   ├── reader/            # EPUB viewer, MeCab, compound word resolution, settings
+│   ├── manga/             # Manga viewer, OCR, Pro billing
 │   ├── dictionary/        # Yomitan import, query engine, dictionary management
-│   └── vocabulary/        # Saved words, CSV export, vocabulary list UI
+│   ├── vocabulary/        # Saved words, CSV export, vocabulary list UI
+│   └── settings/          # App preferences, OCR server config
 └── shared/                # Theme definitions, shared widgets
 ```
 
