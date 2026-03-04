@@ -504,6 +504,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ).push(MaterialPageRoute(builder: (_) => const AboutScreen()));
             },
           ),
+          ListTile(
+            leading: Icon(
+              Icons.menu_book_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Documentation'),
+            subtitle: const Text('Guides and how-to articles'),
+            trailing: const Icon(Icons.open_in_new, size: 20),
+            onTap: () {
+              AppHaptics.light();
+              launchUrl(
+                Uri.parse('https://mekuru.matthew.moe/documentation/'),
+                mode: LaunchMode.externalApplication,
+              );
+            },
+          ),
           const SizedBox(height: 16),
         ],
       ),
