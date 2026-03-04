@@ -42,7 +42,7 @@ Export selected vocabulary entries to CSV, or send cards directly to AnkiDroid o
 | Manga Reader | Mokuro and CBZ support with single-page, spread, and scroll modes |
 | Offline Dictionaries | Import Yomitan `.zip` files, collection `.json` backups, or built-in download packs |
 | Built-in Downloads | JMdict, JMdict with examples, KANJIDIC, KanjiVG, and JPDB frequency data |
-| MeCab Analysis | Accurate Japanese word boundary detection for tap-to-lookup |
+| Smart Word Detection | Accurate Japanese word boundary detection for tap-to-lookup |
 | Compound Words | Greedy multi-token matching for longer dictionary hits |
 | Kanji Stroke Order | KanjiVG diagrams for single-kanji searches and compatible lookups |
 | Frequency Data | JPDB rank data shown in dictionary results when installed |

@@ -19,7 +19,7 @@ To import:
 4. Select the folder that contains the manga data.
 5. Choose the `.mokuro` or `.html` manifest from the picker shown for that folder.
 
-Mekuru then loads the manifest, finds the matching page-image folder, segments words with MeCab, and builds tap targets for lookups.
+Mekuru then loads the manifest, finds the matching page-image folder, detects individual words, and builds tap targets for lookups.
 
 ### Expected Folder Layout
 

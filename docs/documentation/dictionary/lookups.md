@@ -1,6 +1,6 @@
 # Looking Up Words
 
-Mekuru provides instant offline dictionary lookups while you read, backed by MeCab morphological analysis and compound-word matching.
+Mekuru provides instant offline dictionary lookups while you read, with smart word detection and compound-word matching.
 
 ## Tap to Look Up
 
@@ -33,7 +33,7 @@ If your dictionaries contain English-letter headwords that clutter results, enab
 
 ## How Word Detection Works
 
-Japanese text has no spaces between words, so Mekuru uses **MeCab** to identify word boundaries when you tap. If you tap inside an inflected form, Mekuru tries to resolve the base word instead of matching a random substring.
+Japanese text has no spaces between words, so Mekuru automatically identifies word boundaries when you tap. If you tap inside an inflected form, Mekuru resolves it to the base word instead of matching a random substring.
 
 ## Compound Word Resolution
 

@@ -41,4 +41,4 @@ These are separate from the global defaults in [Display Settings](reading/displa
 
 ## Word Lookup
 
-Tap a word while reading to open the lookup sheet. Mekuru uses MeCab to identify word boundaries, then searches your enabled dictionaries. See [Looking Up Words](dictionary/lookups.md) for the full lookup behavior.
+Tap a word while reading to open the lookup sheet. Mekuru automatically detects word boundaries, then searches your enabled dictionaries. See [Looking Up Words](dictionary/lookups.md) for the full lookup behavior.

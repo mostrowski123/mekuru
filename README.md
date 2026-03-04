@@ -2,7 +2,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-A Japanese-first EPUB reader built with Flutter. Designed for language learners studying Japanese, featuring vertical text rendering, offline Yomitan dictionary lookups, MeCab word boundary detection, and vocabulary management with Anki-compatible CSV export.
+A Japanese-first EPUB reader built with Flutter. Designed for language learners studying Japanese, featuring vertical text rendering, offline Yomitan dictionary lookups, smart word detection, and vocabulary management with Anki-compatible CSV export.
 
 ## Features
 
@@ -15,8 +15,8 @@ A Japanese-first EPUB reader built with Flutter. Designed for language learners 
 - **Manga Reader**: Dedicated manga viewer with spread detection, auto-crop, and scroll/page view modes
 - **Manga OCR** *(Pro)*: Cloud-based OCR for extracting text from manga pages for dictionary lookup
 - **Offline Dictionary**: Import Yomitan/Yomichan dictionary ZIP files for offline lookups
-- **MeCab Word Detection**: Accurate Japanese word boundary detection using morphological analysis
-- **Compound Word Resolution**: Multi-token greedy matching against the dictionary for compound words
+- **Smart Word Detection**: Accurate Japanese word boundary detection for precise dictionary lookups
+- **Compound Word Resolution**: Automatically detects compound words for more accurate definitions
 - **One-Tap Word Save**: Save words directly from dictionary lookups with automatic sentence context capture
 - **Vocabulary List**: Browse saved words with readings and meanings
 - **CSV Export**: Export vocabulary to CSV (compatible with Anki import) via system share sheet
@@ -38,7 +38,7 @@ If you find Mekuru useful, purchasing Pro is the best way to support continued d
 - **State Management**: [Riverpod](https://riverpod.dev/) with code generation
 - **Database**: [Drift](https://drift.simonbinder.eu/) (SQLite, type-safe)
 - **EPUB Rendering**: [epub.js](https://github.com/futurepress/epub.js) with custom reader bridge via [InAppWebView](https://pub.dev/packages/flutter_inappwebview)
-- **Japanese Analysis**: [MeCab](https://pub.dev/packages/mecab_for_flutter) (IPAdic morphological dictionary)
+- **Japanese Analysis**: Smart word boundary detection for accurate dictionary lookups
 
 ## Getting Started
 
@@ -78,7 +78,7 @@ lib/
 ├── core/                  # Database, utilities, shared infrastructure
 ├── features/
 │   ├── library/           # Book import, EPUB parsing, library grid UI
-│   ├── reader/            # EPUB viewer, MeCab, compound word resolution, settings
+│   ├── reader/            # EPUB viewer, word detection, compound word resolution, settings
 │   ├── manga/             # Manga viewer, OCR, Pro billing
 │   ├── dictionary/        # Yomitan import, query engine, dictionary management
 │   ├── vocabulary/        # Saved words, CSV export, vocabulary list UI
