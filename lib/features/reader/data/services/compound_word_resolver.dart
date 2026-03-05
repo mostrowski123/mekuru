@@ -61,8 +61,7 @@ class CompoundWordResolver {
     final singleResult = identification.result;
 
     // Determine the maximum span we can try.
-    final maxEnd =
-        (tappedIdx + maxTokenSpan).clamp(0, tokens.length);
+    final maxEnd = (tappedIdx + maxTokenSpan).clamp(0, tokens.length);
 
     // Try longest candidates first (greedy longest-match).
     for (var end = maxEnd; end > tappedIdx + 1; end--) {

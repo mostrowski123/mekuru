@@ -32,19 +32,18 @@ class YomitanDictDownloadService {
 
   /// Asset filename in the GitHub release for each type.
   static String _assetFilename(YomitanDictType type) => switch (type) {
-        YomitanDictType.jmdictEnglish => 'JMdict_english.zip',
-        YomitanDictType.jmdictEnglishWithExamples =>
-          'JMdict_english_with_examples.zip',
-        YomitanDictType.kanjidicEnglish => 'KANJIDIC_english.zip',
-      };
+    YomitanDictType.jmdictEnglish => 'JMdict_english.zip',
+    YomitanDictType.jmdictEnglishWithExamples =>
+      'JMdict_english_with_examples.zip',
+    YomitanDictType.kanjidicEnglish => 'KANJIDIC_english.zip',
+  };
 
   /// The name prefix used to detect whether this type is already imported.
   static String _namePrefix(YomitanDictType type) => switch (type) {
-        YomitanDictType.jmdictEnglish ||
-        YomitanDictType.jmdictEnglishWithExamples =>
-          _jmdictPrefix,
-        YomitanDictType.kanjidicEnglish => _kanjidicPrefix,
-      };
+    YomitanDictType.jmdictEnglish ||
+    YomitanDictType.jmdictEnglishWithExamples => _jmdictPrefix,
+    YomitanDictType.kanjidicEnglish => _kanjidicPrefix,
+  };
 
   /// Check whether a dictionary of this type is already imported.
   ///
@@ -102,8 +101,7 @@ class YomitanDictDownloadService {
 
     // Phase 3: Write to temp file and import
     final tempDir = await getTemporaryDirectory();
-    final tempFile =
-        File(p.join(tempDir.path, '${type.name}_download.zip'));
+    final tempFile = File(p.join(tempDir.path, '${type.name}_download.zip'));
     await tempFile.writeAsBytes(zipBytes);
 
     try {
@@ -173,8 +171,7 @@ class YomitanDictDownloadService {
         final redirectUrl = response.headers.value('location');
         if (redirectUrl != null) {
           await response.drain<void>();
-          final redirectRequest =
-              await client.getUrl(Uri.parse(redirectUrl));
+          final redirectRequest = await client.getUrl(Uri.parse(redirectUrl));
           final redirectResponse = await redirectRequest.close();
           return _readResponse(redirectResponse, onProgress: onProgress);
         }

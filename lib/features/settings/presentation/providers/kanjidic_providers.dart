@@ -103,14 +103,9 @@ class KanjidicNotifier extends Notifier<KanjidicState> {
         YomitanDictType.kanjidicEnglish,
         repository,
       );
-      state = const KanjidicState(
-        successMessage: 'KANJIDIC deleted.',
-      );
+      state = const KanjidicState(successMessage: 'KANJIDIC deleted.');
     } catch (e) {
-      state = state.copyWith(
-        isDeleting: false,
-        error: 'Delete failed: $e',
-      );
+      state = state.copyWith(isDeleting: false, error: 'Delete failed: $e');
     }
   }
 }

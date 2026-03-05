@@ -12,26 +12,29 @@ void main() {
       expect(theme.customCss, isNotNull);
     });
 
-    test('body CSS includes color but not padding (margins handled separately)', () {
-      final theme = buildReaderTheme(
-        settings: const ReaderSettings(
-          horizontalPadding: 16,
-          verticalPadding: 32,
-        ),
-      );
-      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+    test(
+      'body CSS includes color but not padding (margins handled separately)',
+      () {
+        final theme = buildReaderTheme(
+          settings: const ReaderSettings(
+            horizontalPadding: 16,
+            verticalPadding: 32,
+          ),
+        );
+        final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
 
-      // Margins are now applied via setMargins() / hooks.render in JS,
-      // not via the theme CSS, so padding should NOT be in body CSS.
-      expect(bodyCss.containsKey('padding-left'), isFalse);
-      expect(bodyCss.containsKey('padding-right'), isFalse);
-      expect(bodyCss.containsKey('padding-top'), isFalse);
-      expect(bodyCss.containsKey('padding-bottom'), isFalse);
+        // Margins are now applied via setMargins() / hooks.render in JS,
+        // not via the theme CSS, so padding should NOT be in body CSS.
+        expect(bodyCss.containsKey('padding-left'), isFalse);
+        expect(bodyCss.containsKey('padding-right'), isFalse);
+        expect(bodyCss.containsKey('padding-top'), isFalse);
+        expect(bodyCss.containsKey('padding-bottom'), isFalse);
 
-      // But color rules should still be present.
-      expect(bodyCss['background'], '#FFFFFF !important');
-      expect(bodyCss['color'], '#000000 !important');
-    });
+        // But color rules should still be present.
+        expect(bodyCss['background'], '#FFFFFF !important');
+        expect(bodyCss['color'], '#000000 !important');
+      },
+    );
 
     test('html CSS includes background and color', () {
       final theme = buildReaderTheme(settings: const ReaderSettings());
@@ -41,19 +44,16 @@ void main() {
       expect(htmlCss['color'], '#000000 !important');
     });
 
-    test(
-      'injects writing-mode horizontal-tb when verticalText is false',
-      () {
-        final theme = buildReaderTheme(
-          settings: const ReaderSettings(verticalText: false),
-        );
-        final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
-        final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+    test('injects writing-mode horizontal-tb when verticalText is false', () {
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(verticalText: false),
+      );
+      final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
+      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
 
-        expect(htmlCss['writing-mode'], 'horizontal-tb !important');
-        expect(bodyCss['writing-mode'], 'horizontal-tb !important');
-      },
-    );
+      expect(htmlCss['writing-mode'], 'horizontal-tb !important');
+      expect(bodyCss['writing-mode'], 'horizontal-tb !important');
+    });
 
     test(
       'injects direction ltr and text-align start when verticalText is false',
@@ -87,22 +87,19 @@ void main() {
       },
     );
 
-    test(
-      'writing-mode override works with dark color mode',
-      () {
-        final theme = buildReaderTheme(
-          settings: const ReaderSettings(
-            verticalText: false,
-            colorMode: ColorMode.dark,
-          ),
-        );
-        final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
+    test('writing-mode override works with dark color mode', () {
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(
+          verticalText: false,
+          colorMode: ColorMode.dark,
+        ),
+      );
+      final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
 
-        // Should have both color and writing-mode rules
-        expect(htmlCss['writing-mode'], 'horizontal-tb !important');
-        expect(htmlCss['background'], contains('!important'));
-        expect(htmlCss['color'], contains('!important'));
-      },
-    );
+      // Should have both color and writing-mode rules
+      expect(htmlCss['writing-mode'], 'horizontal-tb !important');
+      expect(htmlCss['background'], contains('!important'));
+      expect(htmlCss['color'], contains('!important'));
+    });
   });
 }

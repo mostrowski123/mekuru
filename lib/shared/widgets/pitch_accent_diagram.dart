@@ -7,8 +7,22 @@ import 'package:flutter/material.dart';
 /// individual morae.
 List<String> splitIntoMorae(String reading) {
   const smallKana = {
-    'ゃ', 'ゅ', 'ょ', 'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ',
-    'ャ', 'ュ', 'ョ', 'ァ', 'ィ', 'ゥ', 'ェ', 'ォ',
+    'ゃ',
+    'ゅ',
+    'ょ',
+    'ぁ',
+    'ぃ',
+    'ぅ',
+    'ぇ',
+    'ぉ',
+    'ャ',
+    'ュ',
+    'ョ',
+    'ァ',
+    'ィ',
+    'ゥ',
+    'ェ',
+    'ォ',
   };
 
   final morae = <String>[];
@@ -91,8 +105,7 @@ class PitchAccentDiagram extends StatelessWidget {
     final morae = splitIntoMorae(reading);
     if (morae.isEmpty) return const SizedBox.shrink();
 
-    final effectiveColor =
-        color ?? Theme.of(context).colorScheme.onSurface;
+    final effectiveColor = color ?? Theme.of(context).colorScheme.onSurface;
     final downstepColor = Theme.of(context).colorScheme.error;
 
     return CustomPaint(

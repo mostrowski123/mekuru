@@ -52,13 +52,8 @@ class KanjiVgNotifier extends Notifier<KanjiVgState> {
   Future<void> checkStatus() async {
     try {
       final downloaded = await KanjiVgDownloadService.isDownloaded();
-      final count = downloaded
-          ? await KanjiVgDownloadService.fileCount()
-          : 0;
-      state = state.copyWith(
-        isDownloaded: downloaded,
-        fileCount: count,
-      );
+      final count = downloaded ? await KanjiVgDownloadService.fileCount() : 0;
+      state = state.copyWith(isDownloaded: downloaded, fileCount: count);
     } catch (e) {
       debugPrint('[KanjiVG] Error checking status: $e');
     }
@@ -101,14 +96,9 @@ class KanjiVgNotifier extends Notifier<KanjiVgState> {
 
     try {
       await KanjiVgDownloadService.delete();
-      state = const KanjiVgState(
-        successMessage: 'Kanji stroke data deleted.',
-      );
+      state = const KanjiVgState(successMessage: 'Kanji stroke data deleted.');
     } catch (e) {
-      state = state.copyWith(
-        isDeleting: false,
-        error: 'Delete failed: $e',
-      );
+      state = state.copyWith(isDeleting: false, error: 'Delete failed: $e');
     }
   }
 

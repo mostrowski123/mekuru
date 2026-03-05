@@ -231,7 +231,7 @@ class OcrStoreService {
           const OcrBillingException(
             202,
             'Your payment is being processed. '
-                'You will be unlocked automatically once it is confirmed.',
+            'You will be unlocked automatically once it is confirmed.',
             code: 'purchase_pending',
           ),
         );

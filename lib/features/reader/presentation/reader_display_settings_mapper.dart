@@ -14,9 +14,7 @@ class ReaderTheme {
   });
 }
 
-ReaderTheme buildReaderTheme({
-  required ReaderSettings settings,
-}) {
+ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
   // Note: margins are handled separately via setMargins() in reader_bridge.js
   // by applying padding to the .epub-container div. epub.js Stage.size()
   // automatically subtracts container padding from layout dimensions.
@@ -78,12 +76,8 @@ ReaderTheme buildReaderTheme({
     customCss: {
       'html': htmlCss,
       'body': bodyCss,
-      'p': {
-        'color': '$fgHex !important',
-      },
-      'span': {
-        'color': '$fgHex !important',
-      },
+      'p': {'color': '$fgHex !important'},
+      'span': {'color': '$fgHex !important'},
       'a': {
         'color': '#2196F3 !important',
         'text-decoration': 'underline !important',

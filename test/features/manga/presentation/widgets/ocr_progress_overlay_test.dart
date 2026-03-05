@@ -8,14 +8,12 @@ import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.
 void main() {
   /// Builds a test widget with the ocrProgressProvider overridden to emit
   /// a single value (no polling), so the test framework isn't stuck waiting.
-  Widget buildTestWidget({
-    required int bookId,
-    OcrProgress? progress,
-  }) {
+  Widget buildTestWidget({required int bookId, OcrProgress? progress}) {
     return ProviderScope(
       overrides: [
-        ocrProgressProvider(bookId)
-            .overrideWith((ref) => Stream.value(progress)),
+        ocrProgressProvider(
+          bookId,
+        ).overrideWith((ref) => Stream.value(progress)),
       ],
       child: MaterialApp(
         home: Scaffold(
@@ -62,8 +60,9 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('shows ETA text when avgSecondsPerPage available',
-        (tester) async {
+    testWidgets('shows ETA text when avgSecondsPerPage available', (
+      tester,
+    ) async {
       const progress = OcrProgress(
         completed: 100,
         total: 200,

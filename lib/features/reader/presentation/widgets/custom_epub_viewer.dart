@@ -31,9 +31,7 @@ Set<Factory<OneSequenceGestureRecognizer>> buildEpubGestureRecognizers() {
         duration: const Duration(milliseconds: 30),
       ),
     ),
-    Factory<TapGestureRecognizer>(
-      () => TapGestureRecognizer(),
-    ),
+    Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
   };
 }
 
@@ -167,9 +165,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
             'EPUB_WEBVIEW HTTP error: ${response.statusCode} '
             'url=${request.url}',
           );
-          widget.onLoadError?.call(
-            'HTTP ${response.statusCode}',
-          );
+          widget.onLoadError?.call('HTTP ${response.statusCode}');
         }
       },
       shouldOverrideUrlLoading: (controller, action) async {

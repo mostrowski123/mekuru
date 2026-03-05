@@ -58,8 +58,10 @@ class MokuroWordSegmenter {
         // Get dictionary form and reading via identifyWordWithContext
         String? dictForm;
         String? reading;
-        final identification =
-            mecab.identifyWordWithContext(lineText, charStart);
+        final identification = mecab.identifyWordWithContext(
+          lineText,
+          charStart,
+        );
         if (identification != null) {
           dictForm = identification.result.dictionaryForm;
           reading = identification.result.reading;
@@ -75,16 +77,18 @@ class MokuroWordSegmenter {
         );
 
         if (bbox != null && surface.trim().isNotEmpty) {
-          words.add(MokuroWord(
-            surface: surface,
-            dictionaryForm: dictForm,
-            reading: reading,
-            boundingBox: bbox,
-            blockIndex: blockIdx,
-            lineIndex: lineIdx,
-            charStartInLine: charStart,
-            charEndInLine: charEnd,
-          ));
+          words.add(
+            MokuroWord(
+              surface: surface,
+              dictionaryForm: dictForm,
+              reading: reading,
+              boundingBox: bbox,
+              blockIndex: blockIdx,
+              lineIndex: lineIdx,
+              charStartInLine: charStart,
+              charEndInLine: charEnd,
+            ),
+          );
         }
 
         charPos = charEnd;
@@ -132,8 +136,9 @@ class MokuroWordSegmenter {
       final left = leftTop[0] < rightTop[0] ? leftTop[0] : rightTop[0];
       final right = leftTop[0] > rightTop[0] ? leftTop[0] : rightTop[0];
       final top = leftTop[1] < rightTop[1] ? leftTop[1] : rightTop[1];
-      final bottom =
-          leftBottom[1] > rightBottom[1] ? leftBottom[1] : rightBottom[1];
+      final bottom = leftBottom[1] > rightBottom[1]
+          ? leftBottom[1]
+          : rightBottom[1];
 
       return Rect.fromLTRB(left, top, right, bottom);
     } else {
@@ -147,8 +152,9 @@ class MokuroWordSegmenter {
       final left = topStart[0] < bottomStart[0] ? topStart[0] : bottomStart[0];
       final right = topEnd[0] > bottomEnd[0] ? topEnd[0] : bottomEnd[0];
       final top = topStart[1] < topEnd[1] ? topStart[1] : topEnd[1];
-      final bottom =
-          bottomStart[1] > bottomEnd[1] ? bottomStart[1] : bottomEnd[1];
+      final bottom = bottomStart[1] > bottomEnd[1]
+          ? bottomStart[1]
+          : bottomEnd[1];
 
       return Rect.fromLTRB(left, top, right, bottom);
     }
@@ -156,9 +162,6 @@ class MokuroWordSegmenter {
 
   /// Linear interpolation between two 2D points.
   static List<double> _lerp2(List<double> a, List<double> b, double t) {
-    return [
-      a[0] + (b[0] - a[0]) * t,
-      a[1] + (b[1] - a[1]) * t,
-    ];
+    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
   }
 }

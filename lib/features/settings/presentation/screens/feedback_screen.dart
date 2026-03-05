@@ -141,8 +141,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             SizedBox(
               width: double.infinity,
               child: TextButton(
-                onPressed:
-                    _isSubmitting ? null : () => Navigator.pop(context, null),
+                onPressed: _isSubmitting
+                    ? null
+                    : () => Navigator.pop(context, null),
                 child: const Text('Cancel'),
               ),
             ),

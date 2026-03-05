@@ -51,9 +51,7 @@ class CustomEpubController {
   // ── Chapters ────────────────────────────────────────────────────────
 
   Future<List<EpubChapter>> getChapters() async {
-    final result = await _webView?.evaluateJavascript(
-      source: 'getChapters()',
-    );
+    final result = await _webView?.evaluateJavascript(source: 'getChapters()');
     return parseChapterList(result);
   }
 
@@ -63,10 +61,7 @@ class CustomEpubController {
     _eval('setFontSize("${fontSize.round()}")');
   }
 
-  void updateTheme({
-    Color? foregroundColor,
-    Map<String, dynamic>? customCss,
-  }) {
+  void updateTheme({Color? foregroundColor, Map<String, dynamic>? customCss}) {
     final fgHex = foregroundColor != null ? _colorToHex(foregroundColor) : '';
     final cssJson = customCss != null ? jsonEncode(customCss) : 'null';
     _eval('updateTheme("$fgHex", $cssJson)');

@@ -23,7 +23,10 @@ void main() {
 
       // HTML is intentionally copied to a temporary path with a mismatched name
       // to simulate Android folder-first SAF import behavior.
-      final tempHtmlPath = p.join(root.path, 'manga_import_17772378004275888.html');
+      final tempHtmlPath = p.join(
+        root.path,
+        'manga_import_17772378004275888.html',
+      );
       await File(tempHtmlPath).writeAsString('''
 <html>
   <head><title>Book Name | mokuro</title></head>

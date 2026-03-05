@@ -81,8 +81,7 @@ List<FuriganaSegment> _alignSegments(String expression, String hiraReading) {
     if (!_isKanji(code)) {
       // Kana run: collect consecutive non-kanji characters.
       final start = i;
-      while (
-          i < expression.length && !_isKanji(expression.codeUnitAt(i))) {
+      while (i < expression.length && !_isKanji(expression.codeUnitAt(i))) {
         i++;
       }
       final kanaRun = expression.substring(start, i);
@@ -92,8 +91,7 @@ List<FuriganaSegment> _alignSegments(String expression, String hiraReading) {
     } else {
       // Kanji run: collect consecutive kanji.
       final kanjiStart = i;
-      while (
-          i < expression.length && _isKanji(expression.codeUnitAt(i))) {
+      while (i < expression.length && _isKanji(expression.codeUnitAt(i))) {
         i++;
       }
       final kanjiRun = expression.substring(kanjiStart, i);
@@ -168,16 +166,18 @@ class FuriganaText extends StatelessWidget {
   Widget build(BuildContext context) {
     final showFurigana = reading.isNotEmpty && reading != expression;
 
-    final exprStyle = expressionStyle ??
-        Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            );
+    final exprStyle =
+        expressionStyle ??
+        Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold);
 
     if (!showFurigana) {
       return Text(expression, style: exprStyle);
     }
 
-    final furiStyle = furiganaStyle ??
+    final furiStyle =
+        furiganaStyle ??
         exprStyle?.copyWith(
           fontSize: (exprStyle.fontSize ?? 16) * 0.55,
           fontWeight: FontWeight.w400,

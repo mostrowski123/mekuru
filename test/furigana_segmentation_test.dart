@@ -82,13 +82,15 @@ void main() {
       expect(segments[0].furigana, isNull);
     });
 
-    test('reading equals expression returns single segment without furigana',
-        () {
-      final segments = segmentFurigana('たべる', 'たべる');
-      expect(segments, hasLength(1));
-      expect(segments[0].text, 'たべる');
-      expect(segments[0].furigana, isNull);
-    });
+    test(
+      'reading equals expression returns single segment without furigana',
+      () {
+        final segments = segmentFurigana('たべる', 'たべる');
+        expect(segments, hasLength(1));
+        expect(segments[0].text, 'たべる');
+        expect(segments[0].furigana, isNull);
+      },
+    );
 
     test('all-kana expression returns single segment without furigana', () {
       final segments = segmentFurigana('おはよう', 'おはよう');

@@ -21,8 +21,7 @@ class DictionarySearchScreen extends ConsumerStatefulWidget {
   final String? initialQuery;
 
   @override
-  DictionarySearchScreenState createState() =>
-      DictionarySearchScreenState();
+  DictionarySearchScreenState createState() => DictionarySearchScreenState();
 }
 
 class DictionarySearchScreenState
@@ -190,8 +189,9 @@ class DictionarySearchScreenState
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest
-                    .withAlpha(120),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withAlpha(
+                  120,
+                ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
@@ -205,8 +205,7 @@ class DictionarySearchScreenState
           // Results area
           Expanded(
             child: hasDictionaries.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (dictionaries) {
                 if (dictionaries.isEmpty) {

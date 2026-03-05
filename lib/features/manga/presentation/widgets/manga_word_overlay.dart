@@ -18,7 +18,8 @@ class MangaWordOverlay extends StatelessWidget {
     MokuroWord word,
     MokuroTextBlock block,
     Offset globalPosition,
-  )? onWordTapped;
+  )?
+  onWordTapped;
 
   const MangaWordOverlay({
     super.key,
@@ -45,36 +46,40 @@ class MangaWordOverlay extends StatelessWidget {
         // Skip words with degenerate bounding boxes
         if (width <= 0 || height <= 0) continue;
 
-        children.add(Positioned(
-          left: left,
-          top: top,
-          width: width,
-          height: height,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: (details) {
-              onWordTapped?.call(word, block, details.globalPosition);
-            },
-            child: debugMode
-                ? Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.red.withValues(alpha: 0.5),
+        children.add(
+          Positioned(
+            left: left,
+            top: top,
+            width: width,
+            height: height,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (details) {
+                onWordTapped?.call(word, block, details.globalPosition);
+              },
+              child: debugMode
+                  ? Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.red.withValues(alpha: 0.5),
+                        ),
+                        color: Colors.red.withValues(alpha: 0.1),
                       ),
-                      color: Colors.red.withValues(alpha: 0.1),
-                    ),
-                    alignment: Alignment.center,
-                    child: FittedBox(
-                      child: Text(
-                        word.surface,
-                        style:
-                            const TextStyle(color: Colors.red, fontSize: 8),
+                      alignment: Alignment.center,
+                      child: FittedBox(
+                        child: Text(
+                          word.surface,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 8,
+                          ),
+                        ),
                       ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ),
-        ));
+        );
       }
     }
 

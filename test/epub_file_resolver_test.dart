@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/reader/data/services/epub_file_resolver.dart';
@@ -29,18 +29,21 @@ void main() {
       expect(resolved, epubFile.path);
     });
 
-    test('resolves EPUB from parent directory when stored path is content dir', () async {
-      final bookDir = Directory(p.join(tempDir.path, 'book_123'));
-      final contentDir = Directory(p.join(bookDir.path, 'content'));
-      await contentDir.create(recursive: true);
+    test(
+      'resolves EPUB from parent directory when stored path is content dir',
+      () async {
+        final bookDir = Directory(p.join(tempDir.path, 'book_123'));
+        final contentDir = Directory(p.join(bookDir.path, 'content'));
+        await contentDir.create(recursive: true);
 
-      final epubFile = File(p.join(bookDir.path, 'my-book.epub'));
-      await epubFile.writeAsString('stub');
+        final epubFile = File(p.join(bookDir.path, 'my-book.epub'));
+        await epubFile.writeAsString('stub');
 
-      final resolved = await resolver.resolveLocalEpubPath(contentDir.path);
+        final resolved = await resolver.resolveLocalEpubPath(contentDir.path);
 
-      expect(resolved, epubFile.path);
-    });
+        expect(resolved, epubFile.path);
+      },
+    );
 
     test('throws when no EPUB can be resolved', () async {
       final contentDir = Directory(p.join(tempDir.path, 'content'));

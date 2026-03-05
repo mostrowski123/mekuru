@@ -40,8 +40,8 @@ class EpubChapter {
       id: json['id'] as String? ?? '',
       subitems: json['subitems'] is List
           ? (json['subitems'] as List)
-              .map((e) => EpubChapter.fromJson(_toStringKeyMap(e)))
-              .toList()
+                .map((e) => EpubChapter.fromJson(_toStringKeyMap(e)))
+                .toList()
           : const [],
     );
   }

@@ -274,8 +274,10 @@ void main() {
       // Rendered width should be less than container
       expect(geo.renderedRegionW, lessThan(500.0));
       // Content should be horizontally centered
-      expect(geo.displayOffsetX,
-          closeTo((500.0 - geo.renderedRegionW) / 2, 0.1));
+      expect(
+        geo.displayOffsetX,
+        closeTo((500.0 - geo.renderedRegionW) / 2, 0.1),
+      );
     });
   });
 
@@ -365,22 +367,24 @@ void main() {
       expect(rightCrop!.left, closeTo(50.0, 0.001));
     });
 
-    test('preserves outer-edge insets (left of left page, right of right page)',
-        () {
-      final (leftCrop, rightCrop) = computeSharedCropBounds(
-        leftContentBounds: Rect.fromLTRB(100, 80, 900, 1420),
-        rightContentBounds: Rect.fromLTRB(50, 120, 950, 1380),
-        leftImgW: 1000,
-        leftImgH: 1500,
-        rightImgW: 1000,
-        rightImgH: 1500,
-      );
+    test(
+      'preserves outer-edge insets (left of left page, right of right page)',
+      () {
+        final (leftCrop, rightCrop) = computeSharedCropBounds(
+          leftContentBounds: Rect.fromLTRB(100, 80, 900, 1420),
+          rightContentBounds: Rect.fromLTRB(50, 120, 950, 1380),
+          leftImgW: 1000,
+          leftImgH: 1500,
+          rightImgW: 1000,
+          rightImgH: 1500,
+        );
 
-      // Left page keeps its own left inset: 100
-      expect(leftCrop!.left, closeTo(100.0, 0.001));
-      // Right page keeps its own right inset: 1000 - 950 = 50 → right = 950
-      expect(rightCrop!.right, closeTo(950.0, 0.001));
-    });
+        // Left page keeps its own left inset: 100
+        expect(leftCrop!.left, closeTo(100.0, 0.001));
+        // Right page keeps its own right inset: 1000 - 950 = 50 → right = 950
+        expect(rightCrop!.right, closeTo(950.0, 0.001));
+      },
+    );
 
     test('handles identical content bounds', () {
       final bounds = Rect.fromLTRB(150, 100, 850, 1400);
@@ -572,12 +576,10 @@ void main() {
       expect(leftGeo.scale, equals(rightGeo.scale));
 
       // Both rendered regions have the same height (aligned tops/bottoms)
-      expect(leftGeo.renderedRegionH,
-          closeTo(rightGeo.renderedRegionH, 0.001));
+      expect(leftGeo.renderedRegionH, closeTo(rightGeo.renderedRegionH, 0.001));
 
       // Both vertical offsets match (aligned vertically)
-      expect(leftGeo.displayOffsetY,
-          closeTo(rightGeo.displayOffsetY, 0.001));
+      expect(leftGeo.displayOffsetY, closeTo(rightGeo.displayOffsetY, 0.001));
 
       // Both fit within their half-width container
       expect(leftGeo.renderedRegionW, lessThanOrEqualTo(halfWidth + 0.01));
@@ -629,11 +631,9 @@ void main() {
       );
 
       // Heights still match despite asymmetric crops
-      expect(leftGeo.renderedRegionH,
-          closeTo(rightGeo.renderedRegionH, 0.001));
+      expect(leftGeo.renderedRegionH, closeTo(rightGeo.renderedRegionH, 0.001));
       // Vertical alignment
-      expect(leftGeo.displayOffsetY,
-          closeTo(rightGeo.displayOffsetY, 0.001));
+      expect(leftGeo.displayOffsetY, closeTo(rightGeo.displayOffsetY, 0.001));
     });
 
     test('word overlay at content origin maps to display offset', () {
@@ -660,10 +660,14 @@ void main() {
       final wordAtEndX = contentBounds.right * geo.scale + geo.overlayOffsetX;
       final wordAtEndY = contentBounds.bottom * geo.scale + geo.overlayOffsetY;
 
-      expect(wordAtEndX,
-          closeTo(geo.displayOffsetX + geo.renderedRegionW, 0.1));
-      expect(wordAtEndY,
-          closeTo(geo.displayOffsetY + geo.renderedRegionH, 0.1));
+      expect(
+        wordAtEndX,
+        closeTo(geo.displayOffsetX + geo.renderedRegionW, 0.1),
+      );
+      expect(
+        wordAtEndY,
+        closeTo(geo.displayOffsetY + geo.renderedRegionH, 0.1),
+      );
     });
   });
 

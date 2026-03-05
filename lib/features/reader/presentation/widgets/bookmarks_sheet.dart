@@ -78,15 +78,10 @@ class BookmarksSheet extends ConsumerWidget {
     );
   }
 
-  void _deleteBookmark(
-    BuildContext context,
-    WidgetRef ref,
-    Bookmark bookmark,
-  ) {
+  void _deleteBookmark(BuildContext context, WidgetRef ref, Bookmark bookmark) {
     ref.read(bookmarkRepositoryProvider).deleteBookmark(bookmark.id);
     onBookmarkDeleted?.call();
   }
-
 }
 
 class _BookmarkTile extends StatelessWidget {

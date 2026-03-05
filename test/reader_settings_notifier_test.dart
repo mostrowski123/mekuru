@@ -191,24 +191,27 @@ void main() {
       expect(settings.verticalText, isFalse);
     });
 
-    test('uses primaryWritingMode to determine vertical text independently of ppd', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+    test(
+      'uses primaryWritingMode to determine vertical text independently of ppd',
+      () {
+        final container = _createContainer();
+        addTearDown(container.dispose);
 
-      final notifier = container.read(readerSettingsProvider.notifier);
-      // Japanese book with RTL ppd but horizontal writing mode
-      notifier.applyBookDefaults(
-        bookId: 1,
-        language: 'ja',
-        pageProgressionDirection: 'rtl',
-        primaryWritingMode: 'horizontal-tb',
-      );
+        final notifier = container.read(readerSettingsProvider.notifier);
+        // Japanese book with RTL ppd but horizontal writing mode
+        notifier.applyBookDefaults(
+          bookId: 1,
+          language: 'ja',
+          pageProgressionDirection: 'rtl',
+          primaryWritingMode: 'horizontal-tb',
+        );
 
-      final settings = container.read(readerSettingsProvider);
-      // Direction follows ppd (RTL), but vertical text follows writing mode
-      expect(settings.readingDirection, ReaderDirection.rtl);
-      expect(settings.verticalText, isFalse);
-    });
+        final settings = container.read(readerSettingsProvider);
+        // Direction follows ppd (RTL), but vertical text follows writing mode
+        expect(settings.readingDirection, ReaderDirection.rtl);
+        expect(settings.verticalText, isFalse);
+      },
+    );
 
     test('preserves other settings when applying book defaults', () {
       final container = _createContainer();
@@ -279,26 +282,28 @@ void main() {
       expect(spyRepo.lastVerticalText, isFalse);
     });
 
-    test('persists per-book override when readingDirection is changed',
-        () async {
-      final db = AppDatabase(NativeDatabase.memory());
-      final spyRepo = _SpyBookRepository(db);
-      final container = _createContainer(bookRepo: spyRepo);
-      addTearDown(() {
-        container.dispose();
-        db.close();
-      });
+    test(
+      'persists per-book override when readingDirection is changed',
+      () async {
+        final db = AppDatabase(NativeDatabase.memory());
+        final spyRepo = _SpyBookRepository(db);
+        final container = _createContainer(bookRepo: spyRepo);
+        addTearDown(() {
+          container.dispose();
+          db.close();
+        });
 
-      final notifier = container.read(readerSettingsProvider.notifier);
-      notifier.applyBookDefaults(bookId: 42, language: 'ja');
-      notifier.setReadingDirection(ReaderDirection.ltr);
+        final notifier = container.read(readerSettingsProvider.notifier);
+        notifier.applyBookDefaults(bookId: 42, language: 'ja');
+        notifier.setReadingDirection(ReaderDirection.ltr);
 
-      await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
 
-      expect(spyRepo.updateDisplayOverridesCalls, 1);
-      expect(spyRepo.lastBookId, 42);
-      expect(spyRepo.lastReadingDirection, 'ltr');
-    });
+        expect(spyRepo.updateDisplayOverridesCalls, 1);
+        expect(spyRepo.lastBookId, 42);
+        expect(spyRepo.lastReadingDirection, 'ltr');
+      },
+    );
 
     test('does NOT persist per-book override when no book is open', () async {
       final db = AppDatabase(NativeDatabase.memory());

@@ -158,10 +158,7 @@ class _VocabularyItem extends ConsumerWidget {
 
     final tile = ExpansionTile(
       leading: isSelectionMode
-          ? Checkbox(
-              value: isSelected,
-              onChanged: (_) => onToggleSelection(),
-            )
+          ? Checkbox(value: isSelected, onChanged: (_) => onToggleSelection())
           : null,
       title: Text(word.expression),
       subtitle: Text(
@@ -220,10 +217,7 @@ class _VocabularyItem extends ConsumerWidget {
     );
 
     if (isSelectionMode) {
-      return InkWell(
-        onTap: onToggleSelection,
-        child: tile,
-      );
+      return InkWell(onTap: onToggleSelection, child: tile);
     }
 
     return Dismissible(

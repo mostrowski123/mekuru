@@ -16,10 +16,7 @@ bool bookSupportsVerticalText(String? language) {
 /// Uses the explicit `page-progression-direction` from the EPUB spine first,
 /// then falls back to language-based defaults (Japanese → RTL, others → LTR).
 /// Returns `true` for `null` language (legacy books assumed Japanese).
-bool bookIsNaturallyRtl({
-  String? language,
-  String? pageProgressionDirection,
-}) {
+bool bookIsNaturallyRtl({String? language, String? pageProgressionDirection}) {
   if (pageProgressionDirection == 'rtl') return true;
   if (pageProgressionDirection == 'ltr') return false;
 
@@ -33,9 +30,9 @@ ReaderDirection defaultReaderDirection({
   String? pageProgressionDirection,
 }) {
   return bookIsNaturallyRtl(
-    language: language,
-    pageProgressionDirection: pageProgressionDirection,
-  )
+        language: language,
+        pageProgressionDirection: pageProgressionDirection,
+      )
       ? ReaderDirection.rtl
       : ReaderDirection.ltr;
 }

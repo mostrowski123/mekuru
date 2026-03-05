@@ -49,28 +49,32 @@ void main() {
       final svgContent = '<svg>test</svg>';
       final svgBytes = svgContent.codeUnits;
 
-      archive.addFile(ArchiveFile(
-        'kanjivg-kanjivg-20220427/kanji/04e00.svg',
-        svgBytes.length,
-        svgBytes,
-      ));
-      archive.addFile(ArchiveFile(
-        'kanjivg-kanjivg-20220427/kanji/056fd.svg',
-        svgBytes.length,
-        svgBytes,
-      ));
+      archive.addFile(
+        ArchiveFile(
+          'kanjivg-kanjivg-20220427/kanji/04e00.svg',
+          svgBytes.length,
+          svgBytes,
+        ),
+      );
+      archive.addFile(
+        ArchiveFile(
+          'kanjivg-kanjivg-20220427/kanji/056fd.svg',
+          svgBytes.length,
+          svgBytes,
+        ),
+      );
       // Non-SVG file should be ignored
-      archive.addFile(ArchiveFile(
-        'kanjivg-kanjivg-20220427/README.md',
-        5,
-        'hello'.codeUnits,
-      ));
+      archive.addFile(
+        ArchiveFile('kanjivg-kanjivg-20220427/README.md', 5, 'hello'.codeUnits),
+      );
       // SVG not in kanji dir should still be extracted (by basename)
-      archive.addFile(ArchiveFile(
-        'kanjivg-kanjivg-20220427/other/09f8d.svg',
-        svgBytes.length,
-        svgBytes,
-      ));
+      archive.addFile(
+        ArchiveFile(
+          'kanjivg-kanjivg-20220427/other/09f8d.svg',
+          svgBytes.length,
+          svgBytes,
+        ),
+      );
 
       final zipBytes = ZipEncoder().encode(archive);
 
@@ -89,14 +93,13 @@ void main() {
 
     test('extracts correct SVG content', () {
       final archive = Archive();
-      final svgContent = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M1,1"/></svg>';
+      final svgContent =
+          '<svg xmlns="http://www.w3.org/2000/svg"><path d="M1,1"/></svg>';
       final svgBytes = svgContent.codeUnits;
 
-      archive.addFile(ArchiveFile(
-        'kanji/04e00.svg',
-        svgBytes.length,
-        svgBytes,
-      ));
+      archive.addFile(
+        ArchiveFile('kanji/04e00.svg', svgBytes.length, svgBytes),
+      );
 
       final zipBytes = ZipEncoder().encode(archive);
       _extractSvgsFromArchive(zipBytes, tempDir.path);
@@ -196,8 +199,5 @@ bool _isDownloaded(String dir) {
 int _countSvgFiles(String dir) {
   final directory = Directory(dir);
   if (!directory.existsSync()) return 0;
-  return directory
-      .listSync()
-      .where((e) => e.path.endsWith('.svg'))
-      .length;
+  return directory.listSync().where((e) => e.path.endsWith('.svg')).length;
 }

@@ -26,9 +26,9 @@ class BookmarkRepository {
 
   /// Find a bookmark at a specific CFI for a book (for toggle detection).
   Future<Bookmark?> getBookmarkAtCfi(int bookId, String cfi) async {
-    final results = await (_db.select(_db.bookmarks)
-          ..where((t) => t.bookId.equals(bookId) & t.cfi.equals(cfi)))
-        .get();
+    final results = await (_db.select(
+      _db.bookmarks,
+    )..where((t) => t.bookId.equals(bookId) & t.cfi.equals(cfi))).get();
     return results.isEmpty ? null : results.first;
   }
 
@@ -42,7 +42,9 @@ class BookmarkRepository {
     String chapterTitle = '',
     String userNote = '',
   }) async {
-    final id = await _db.into(_db.bookmarks).insert(
+    final id = await _db
+        .into(_db.bookmarks)
+        .insert(
           BookmarksCompanion.insert(
             bookId: bookId,
             cfi: cfi,
@@ -52,10 +54,9 @@ class BookmarkRepository {
           ),
         );
 
-    Sentry.addBreadcrumb(Breadcrumb(
-      message: 'Bookmark added',
-      category: 'bookmarks',
-    ));
+    Sentry.addBreadcrumb(
+      Breadcrumb(message: 'Bookmark added', category: 'bookmarks'),
+    );
 
     return id;
   }

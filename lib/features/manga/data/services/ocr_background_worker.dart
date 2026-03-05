@@ -388,8 +388,10 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         }
       } on OcrServerException catch (e) {
         if (e.statusCode == 401) {
-          return failWithError('Authentication failed. '
-              'Check your server bearer key.');
+          return failWithError(
+            'Authentication failed. '
+            'Check your server bearer key.',
+          );
         }
         consecutiveFailures++;
         if (!anyPageSucceeded ||
@@ -413,8 +415,12 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         ? await _segmentPagesForLookup(updatedPages)
         : updatedPages;
 
-    await _saveCache(cacheFile, mokuroBook, pagesToSave,
-        ocrSourceOverride: 'custom_ocr');
+    await _saveCache(
+      cacheFile,
+      mokuroBook,
+      pagesToSave,
+      ocrSourceOverride: 'custom_ocr',
+    );
     await OcrProgress.save(
       prefs,
       bookId,

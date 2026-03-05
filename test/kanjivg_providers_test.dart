@@ -15,10 +15,7 @@ void main() {
     });
 
     test('copyWith preserves unmodified fields', () {
-      const state = KanjiVgState(
-        isDownloaded: true,
-        fileCount: 100,
-      );
+      const state = KanjiVgState(isDownloaded: true, fileCount: 100);
       final updated = state.copyWith(progress: 0.5);
       expect(updated.isDownloaded, isTrue);
       expect(updated.fileCount, 100);
@@ -27,10 +24,7 @@ void main() {
 
     test('copyWith can set fields to new values', () {
       const state = KanjiVgState();
-      final updated = state.copyWith(
-        isDownloading: true,
-        progress: 0.75,
-      );
+      final updated = state.copyWith(isDownloading: true, progress: 0.75);
       expect(updated.isDownloading, isTrue);
       expect(updated.progress, 0.75);
       expect(updated.isDownloaded, isFalse);
@@ -62,10 +56,7 @@ void main() {
     });
 
     test('represents downloading state correctly', () {
-      const downloading = KanjiVgState(
-        isDownloading: true,
-        progress: 0.45,
-      );
+      const downloading = KanjiVgState(isDownloading: true, progress: 0.45);
       expect(downloading.isDownloading, isTrue);
       expect(downloading.isDownloaded, isFalse);
       expect(downloading.progress, 0.45);
@@ -84,9 +75,7 @@ void main() {
     });
 
     test('represents error state correctly', () {
-      const error = KanjiVgState(
-        error: 'Download failed: network timeout',
-      );
+      const error = KanjiVgState(error: 'Download failed: network timeout');
       expect(error.isDownloaded, isFalse);
       expect(error.isDownloading, isFalse);
       expect(error.error, contains('network timeout'));

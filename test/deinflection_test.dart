@@ -206,28 +206,24 @@ void main() {
       expect(results, contains('駆使'));
     });
 
-    test('します still produces す candidate for godan verbs (話します → 話す)',
-        () {
+    test('します still produces す candidate for godan verbs (話します → 話す)', () {
       final results = deinflect('話します');
       expect(results, contains('話す'));
     });
 
-    test('しない produces noun stem and する form (駆使しない → 駆使, 駆使する)',
-        () {
+    test('しない produces noun stem and する form (駆使しない → 駆使, 駆使する)', () {
       final results = deinflect('駆使しない');
       expect(results, contains('駆使'));
       expect(results, contains('駆使する'));
     });
 
-    test('される produces noun stem and する form (駆使される → 駆使, 駆使する)',
-        () {
+    test('される produces noun stem and する form (駆使される → 駆使, 駆使する)', () {
       final results = deinflect('駆使される');
       expect(results, contains('駆使'));
       expect(results, contains('駆使する'));
     });
 
-    test('させる produces noun stem and する form (駆使させる → 駆使, 駆使する)',
-        () {
+    test('させる produces noun stem and する form (駆使させる → 駆使, 駆使する)', () {
       final results = deinflect('駆使させる');
       expect(results, contains('駆使'));
       expect(results, contains('駆使する'));

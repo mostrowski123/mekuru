@@ -259,119 +259,121 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       body: Stack(
         children: [
           _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Unlock Pro once',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.center,
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Chip(
-                              avatar: Icon(
-                                _snapshot.isUnlocked
-                                    ? Icons.lock_open_outlined
-                                    : Icons.lock_outline,
-                                size: 18,
-                              ),
-                              label: Text(
-                                _snapshot.isUnlocked ? 'Unlocked' : 'Locked',
+                            Text(
+                              'Unlock Pro once',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            Text(
-                              'One-time purchase for reader power features.',
-                              style: theme.textTheme.bodyMedium,
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Chip(
+                                  avatar: Icon(
+                                    _snapshot.isUnlocked
+                                        ? Icons.lock_open_outlined
+                                        : Icons.lock_outline,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    _snapshot.isUnlocked
+                                        ? 'Unlocked'
+                                        : 'Locked',
+                                  ),
+                                ),
+                                Text(
+                                  'One-time purchase for reader power features.',
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: !_snapshot.servicesAvailable || _isBusy
+                                  ? null
+                                  : () => _runBusyAction(
+                                      widget.restoreUpgrade ?? _restoreDefault,
+                                    ),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Restore Purchase'),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: !_snapshot.servicesAvailable || _isBusy
-                              ? null
-                              : () => _runBusyAction(
-                                  widget.restoreUpgrade ?? _restoreDefault,
-                                ),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Restore Purchase'),
+                      ),
+                    ),
+                    if (_snapshot.errorMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _snapshot.errorMessage!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
                         ),
-                      ],
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    _ProFeatureCard(
+                      icon: Icons.crop,
+                      title: 'Auto-Crop',
+                      description:
+                          'Trim empty manga page margins after a one-time setup per book.',
                     ),
-                  ),
-                ),
-                if (_snapshot.errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _snapshot.errorMessage!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.error,
+                    const SizedBox(height: 12),
+                    _ProFeatureCard(
+                      icon: Icons.highlight,
+                      title: 'Book Highlights',
+                      description:
+                          'Save and review highlighted passages while reading EPUB books.',
                     ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                _ProFeatureCard(
-                  icon: Icons.crop,
-                  title: 'Auto-Crop',
-                  description:
-                      'Trim empty manga page margins after a one-time setup per book.',
+                    const SizedBox(height: 12),
+                    _ProFeatureCard(
+                      icon: Icons.document_scanner_outlined,
+                      title: 'Custom OCR Server',
+                      description:
+                          'Run remote manga OCR with your own server and shared key.',
+                      trailing: TextButton.icon(
+                        onPressed: _openSelfHostRepo,
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('Server Repo'),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed:
+                            !_snapshot.servicesAvailable ||
+                                _isBusy ||
+                                _snapshot.isUnlocked
+                            ? null
+                            : () => _runBusyAction(
+                                widget.purchaseUpgrade ?? _purchaseDefault,
+                              ),
+                        child: _isBusy
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(buttonLabel),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _ProFeatureCard(
-                  icon: Icons.highlight,
-                  title: 'Book Highlights',
-                  description:
-                      'Save and review highlighted passages while reading EPUB books.',
-                ),
-                const SizedBox(height: 12),
-                _ProFeatureCard(
-                  icon: Icons.document_scanner_outlined,
-                  title: 'Custom OCR Server',
-                  description:
-                      'Run remote manga OCR with your own server and shared key.',
-                  trailing: TextButton.icon(
-                    onPressed: _openSelfHostRepo,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Server Repo'),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed:
-                        !_snapshot.servicesAvailable ||
-                            _isBusy ||
-                            _snapshot.isUnlocked
-                        ? null
-                        : () => _runBusyAction(
-                            widget.purchaseUpgrade ?? _purchaseDefault,
-                          ),
-                    child: _isBusy
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Text(buttonLabel),
-                  ),
-                ),
-              ],
-            ),
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(

@@ -62,37 +62,25 @@ void main() {
 
     test('explicit rtl ppd overrides English language', () {
       expect(
-        bookIsNaturallyRtl(
-          language: 'en',
-          pageProgressionDirection: 'rtl',
-        ),
+        bookIsNaturallyRtl(language: 'en', pageProgressionDirection: 'rtl'),
         isTrue,
       );
     });
 
     test('explicit ltr ppd overrides Japanese language', () {
       expect(
-        bookIsNaturallyRtl(
-          language: 'ja',
-          pageProgressionDirection: 'ltr',
-        ),
+        bookIsNaturallyRtl(language: 'ja', pageProgressionDirection: 'ltr'),
         isFalse,
       );
     });
 
     test('ignores unknown ppd values and falls back to language', () {
       expect(
-        bookIsNaturallyRtl(
-          language: 'ja',
-          pageProgressionDirection: 'default',
-        ),
+        bookIsNaturallyRtl(language: 'ja', pageProgressionDirection: 'default'),
         isTrue,
       );
       expect(
-        bookIsNaturallyRtl(
-          language: 'en',
-          pageProgressionDirection: 'default',
-        ),
+        bookIsNaturallyRtl(language: 'en', pageProgressionDirection: 'default'),
         isFalse,
       );
     });
@@ -100,17 +88,11 @@ void main() {
 
   group('defaultReaderDirection', () {
     test('Japanese book defaults to RTL', () {
-      expect(
-        defaultReaderDirection(language: 'ja'),
-        ReaderDirection.rtl,
-      );
+      expect(defaultReaderDirection(language: 'ja'), ReaderDirection.rtl);
     });
 
     test('English book defaults to LTR', () {
-      expect(
-        defaultReaderDirection(language: 'en'),
-        ReaderDirection.ltr,
-      );
+      expect(defaultReaderDirection(language: 'en'), ReaderDirection.ltr);
     });
 
     test('null language defaults to RTL (legacy assumed Japanese)', () {
@@ -119,17 +101,11 @@ void main() {
 
     test('ppd overrides language default', () {
       expect(
-        defaultReaderDirection(
-          language: 'en',
-          pageProgressionDirection: 'rtl',
-        ),
+        defaultReaderDirection(language: 'en', pageProgressionDirection: 'rtl'),
         ReaderDirection.rtl,
       );
       expect(
-        defaultReaderDirection(
-          language: 'ja',
-          pageProgressionDirection: 'ltr',
-        ),
+        defaultReaderDirection(language: 'ja', pageProgressionDirection: 'ltr'),
         ReaderDirection.ltr,
       );
     });
@@ -150,10 +126,7 @@ void main() {
 
     test('Japanese book with explicit ltr ppd defaults to false', () {
       expect(
-        defaultVerticalText(
-          language: 'ja',
-          pageProgressionDirection: 'ltr',
-        ),
+        defaultVerticalText(language: 'ja', pageProgressionDirection: 'ltr'),
         isFalse,
       );
     });
@@ -165,25 +138,21 @@ void main() {
 
     test('Chinese book with rtl ppd defaults to true', () {
       expect(
-        defaultVerticalText(
-          language: 'zh',
-          pageProgressionDirection: 'rtl',
-        ),
+        defaultVerticalText(language: 'zh', pageProgressionDirection: 'rtl'),
         isTrue,
       );
     });
 
-    test('English book with rtl ppd still returns false (no vertical support)',
-        () {
-      // English doesn't support vertical text even if ppd is rtl
-      expect(
-        defaultVerticalText(
-          language: 'en',
-          pageProgressionDirection: 'rtl',
-        ),
-        isFalse,
-      );
-    });
+    test(
+      'English book with rtl ppd still returns false (no vertical support)',
+      () {
+        // English doesn't support vertical text even if ppd is rtl
+        expect(
+          defaultVerticalText(language: 'en', pageProgressionDirection: 'rtl'),
+          isFalse,
+        );
+      },
+    );
 
     group('primaryWritingMode takes priority over ppd', () {
       test('vertical-rl writing mode enables vertical text', () {
@@ -197,17 +166,19 @@ void main() {
         );
       });
 
-      test('horizontal-tb writing mode disables vertical text despite rtl ppd',
-          () {
-        expect(
-          defaultVerticalText(
-            language: 'ja',
-            pageProgressionDirection: 'rtl',
-            primaryWritingMode: 'horizontal-tb',
-          ),
-          isFalse,
-        );
-      });
+      test(
+        'horizontal-tb writing mode disables vertical text despite rtl ppd',
+        () {
+          expect(
+            defaultVerticalText(
+              language: 'ja',
+              pageProgressionDirection: 'rtl',
+              primaryWritingMode: 'horizontal-tb',
+            ),
+            isFalse,
+          );
+        },
+      );
 
       test('horizontal-tb for Japanese book with no ppd', () {
         expect(

@@ -50,7 +50,8 @@ class _AnkidroidSettingsScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'AnkiDroid permission not granted. '
+          _error =
+              'AnkiDroid permission not granted. '
               'Make sure AnkiDroid is installed and try again.';
         });
       }
@@ -62,7 +63,8 @@ class _AnkidroidSettingsScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Could not connect to AnkiDroid. '
+          _error =
+              'Could not connect to AnkiDroid. '
               'Make sure AnkiDroid is installed and running.';
         });
       }
@@ -105,8 +107,8 @@ class _AnkidroidSettingsScreenState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildError(theme)
-              : _buildSettings(theme, config),
+          ? _buildError(theme)
+          : _buildSettings(theme, config),
     );
   }
 
@@ -143,8 +145,7 @@ class _AnkidroidSettingsScreenState
         // ── Note Type ──
         _SectionHeader(title: 'Note Type'),
         ListTile(
-          leading:
-              Icon(Icons.note_outlined, color: theme.colorScheme.primary),
+          leading: Icon(Icons.note_outlined, color: theme.colorScheme.primary),
           title: const Text('Anki Note Type'),
           subtitle: Text(config.modelName ?? 'Not selected'),
           trailing: const Icon(Icons.chevron_right),
@@ -155,8 +156,10 @@ class _AnkidroidSettingsScreenState
         // ── Default Deck ──
         _SectionHeader(title: 'Default Deck'),
         ListTile(
-          leading:
-              Icon(Icons.layers_outlined, color: theme.colorScheme.primary),
+          leading: Icon(
+            Icons.layers_outlined,
+            color: theme.colorScheme.primary,
+          ),
           title: const Text('Target Deck'),
           subtitle: Text(config.deckName ?? 'Not selected'),
           trailing: const Icon(Icons.chevron_right),
@@ -183,11 +186,8 @@ class _AnkidroidSettingsScreenState
               title: Text(fieldName),
               subtitle: Text(currentSource.displayName),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showFieldMappingPicker(
-                context,
-                fieldName,
-                currentMapping,
-              ),
+              onTap: () =>
+                  _showFieldMappingPicker(context, fieldName, currentMapping),
             );
           }),
           const Divider(),
@@ -244,8 +244,10 @@ class _AnkidroidSettingsScreenState
                   return ListTile(
                     title: Text(entry.value),
                     trailing: isSelected
-                        ? Icon(Icons.check,
-                            color: Theme.of(context).colorScheme.primary)
+                        ? Icon(
+                            Icons.check,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
                         : null,
                     onTap: () async {
                       AppHaptics.medium();
@@ -294,8 +296,10 @@ class _AnkidroidSettingsScreenState
                   return ListTile(
                     title: Text(entry.value),
                     trailing: isSelected
-                        ? Icon(Icons.check,
-                            color: Theme.of(context).colorScheme.primary)
+                        ? Icon(
+                            Icons.check,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
                         : null,
                     onTap: () {
                       AppHaptics.medium();
@@ -340,8 +344,10 @@ class _AnkidroidSettingsScreenState
                   return ListTile(
                     title: Text(source.displayName),
                     trailing: currentKey == source.key
-                        ? Icon(Icons.check,
-                            color: Theme.of(context).colorScheme.primary)
+                        ? Icon(
+                            Icons.check,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
                         : null,
                     onTap: () {
                       AppHaptics.medium();

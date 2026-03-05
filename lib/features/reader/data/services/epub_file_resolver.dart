@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
@@ -27,7 +27,10 @@ class EpubFileResolver {
       throw FileSystemException('No EPUB file found for directory', storedPath);
     }
 
-    throw FileSystemException('Reader path is not a readable EPUB file', storedPath);
+    throw FileSystemException(
+      'Reader path is not a readable EPUB file',
+      storedPath,
+    );
   }
 
   Future<String?> _findFirstEpubFile(Directory directory) async {

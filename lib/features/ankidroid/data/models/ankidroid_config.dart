@@ -49,13 +49,13 @@ class AnkidroidConfig {
   }
 
   Map<String, dynamic> toJson() => {
-        'modelId': modelId,
-        'modelName': modelName,
-        'deckId': deckId,
-        'deckName': deckName,
-        'fieldMapping': fieldMapping,
-        'tags': tags,
-      };
+    'modelId': modelId,
+    'modelName': modelName,
+    'deckId': deckId,
+    'deckName': deckName,
+    'fieldMapping': fieldMapping,
+    'tags': tags,
+  };
 
   factory AnkidroidConfig.fromJson(Map<String, dynamic> json) {
     return AnkidroidConfig(
@@ -63,11 +63,13 @@ class AnkidroidConfig {
       modelName: json['modelName'] as String?,
       deckId: json['deckId'] as int?,
       deckName: json['deckName'] as String?,
-      fieldMapping: (json['fieldMapping'] as Map<String, dynamic>?)
-              ?.map((k, v) => MapEntry(k, v as String)) ??
+      fieldMapping:
+          (json['fieldMapping'] as Map<String, dynamic>?)?.map(
+            (k, v) => MapEntry(k, v as String),
+          ) ??
           {},
-      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ??
-          const ['mekuru'],
+      tags:
+          (json['tags'] as List<dynamic>?)?.cast<String>() ?? const ['mekuru'],
     );
   }
 
@@ -76,9 +78,7 @@ class AnkidroidConfig {
   static AnkidroidConfig? decode(String? json) {
     if (json == null) return null;
     try {
-      return AnkidroidConfig.fromJson(
-        jsonDecode(json) as Map<String, dynamic>,
-      );
+      return AnkidroidConfig.fromJson(jsonDecode(json) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }

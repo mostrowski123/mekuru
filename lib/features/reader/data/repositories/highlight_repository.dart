@@ -34,7 +34,9 @@ class HighlightRepository {
     String color = 'yellow',
     String userNote = '',
   }) async {
-    final id = await _db.into(_db.highlights).insert(
+    final id = await _db
+        .into(_db.highlights)
+        .insert(
           HighlightsCompanion.insert(
             bookId: bookId,
             cfiRange: cfiRange,
@@ -44,23 +46,24 @@ class HighlightRepository {
           ),
         );
 
-    Sentry.addBreadcrumb(Breadcrumb(
-      message: 'Highlight added',
-      category: 'highlights',
-    ));
+    Sentry.addBreadcrumb(
+      Breadcrumb(message: 'Highlight added', category: 'highlights'),
+    );
 
     return id;
   }
 
   /// Update the user note on a highlight.
   Future<void> updateHighlightNote(int id, String note) =>
-      (_db.update(_db.highlights)..where((t) => t.id.equals(id)))
-          .write(HighlightsCompanion(userNote: Value(note)));
+      (_db.update(_db.highlights)..where((t) => t.id.equals(id))).write(
+        HighlightsCompanion(userNote: Value(note)),
+      );
 
   /// Update the color of a highlight.
   Future<void> updateHighlightColor(int id, String color) =>
-      (_db.update(_db.highlights)..where((t) => t.id.equals(id)))
-          .write(HighlightsCompanion(color: Value(color)));
+      (_db.update(_db.highlights)..where((t) => t.id.equals(id))).write(
+        HighlightsCompanion(color: Value(color)),
+      );
 
   /// Delete a highlight by ID.
   Future<void> deleteHighlight(int id) =>

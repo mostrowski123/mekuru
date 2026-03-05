@@ -21,17 +21,17 @@ class PageSpread {
   bool get isSinglePage => leftPageIndex == null || rightPageIndex == null;
 
   /// The "primary" page index — the single page, or the lower-numbered page.
-  int get primaryPageIndex =>
-      (leftPageIndex != null && rightPageIndex != null)
-          ? (leftPageIndex! < rightPageIndex! ? leftPageIndex! : rightPageIndex!)
-          : (leftPageIndex ?? rightPageIndex ?? 0);
+  int get primaryPageIndex => (leftPageIndex != null && rightPageIndex != null)
+      ? (leftPageIndex! < rightPageIndex! ? leftPageIndex! : rightPageIndex!)
+      : (leftPageIndex ?? rightPageIndex ?? 0);
 
   /// Returns true if this spread contains [pageIndex].
   bool containsPage(int pageIndex) =>
       leftPageIndex == pageIndex || rightPageIndex == pageIndex;
 
   @override
-  String toString() => 'PageSpread(left: $leftPageIndex, right: $rightPageIndex)';
+  String toString() =>
+      'PageSpread(left: $leftPageIndex, right: $rightPageIndex)';
 
   @override
   bool operator ==(Object other) =>

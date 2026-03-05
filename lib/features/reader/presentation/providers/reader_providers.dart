@@ -130,7 +130,8 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   }) {
     _currentBookId = bookId;
 
-    final effectiveVerticalText = overrideVerticalText ??
+    final effectiveVerticalText =
+        overrideVerticalText ??
         defaultVerticalText(
           language: language,
           pageProgressionDirection: pageProgressionDirection,
@@ -162,11 +163,13 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     if (bookId == null) return;
 
     unawaited(
-      ref.read(readerBookRepositoryProvider).updateDisplayOverrides(
-        bookId,
-        verticalText: state.verticalText,
-        readingDirection: state.readingDirection.storageValue,
-      ),
+      ref
+          .read(readerBookRepositoryProvider)
+          .updateDisplayOverrides(
+            bookId,
+            verticalText: state.verticalText,
+            readingDirection: state.readingDirection.storageValue,
+          ),
     );
   }
 }
@@ -217,8 +220,9 @@ class BrightnessNotifier extends Notifier<double?> {
   }
 }
 
-final brightnessProvider =
-    NotifierProvider<BrightnessNotifier, double?>(BrightnessNotifier.new);
+final brightnessProvider = NotifierProvider<BrightnessNotifier, double?>(
+  BrightnessNotifier.new,
+);
 
 /// Provider for the MeCab morphological analysis service.
 final mecabServiceProvider = Provider<MecabService>((ref) {
@@ -250,13 +254,17 @@ final highlightRepositoryProvider = Provider<HighlightRepository>((ref) {
 });
 
 /// Reactive stream of bookmarks for a specific book.
-final bookmarksForBookProvider =
-    StreamProvider.family<List<Bookmark>, int>((ref, bookId) {
+final bookmarksForBookProvider = StreamProvider.family<List<Bookmark>, int>((
+  ref,
+  bookId,
+) {
   return ref.watch(bookmarkRepositoryProvider).watchBookmarksForBook(bookId);
 });
 
 /// Reactive stream of highlights for a specific book.
-final highlightsForBookProvider =
-    StreamProvider.family<List<Highlight>, int>((ref, bookId) {
+final highlightsForBookProvider = StreamProvider.family<List<Highlight>, int>((
+  ref,
+  bookId,
+) {
   return ref.watch(highlightRepositoryProvider).watchHighlightsForBook(bookId);
 });

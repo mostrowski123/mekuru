@@ -100,10 +100,7 @@ class JpdbFreqNotifier extends Notifier<JpdbFreqState> {
         successMessage: 'Frequency dictionary deleted.',
       );
     } catch (e) {
-      state = state.copyWith(
-        isDeleting: false,
-        error: 'Delete failed: $e',
-      );
+      state = state.copyWith(isDeleting: false, error: 'Delete failed: $e');
     }
   }
 }

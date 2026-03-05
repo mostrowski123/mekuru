@@ -89,14 +89,17 @@ class _DictionaryManagerScreenState
                           reordered.map((d) => d.id as int).toList(),
                         )
                         .then((_) {
-                      if (mounted) {
-                        setState(() => _localOrder = null);
-                      }
-                    });
+                          if (mounted) {
+                            setState(() => _localOrder = null);
+                          }
+                        });
                   },
-                  itemBuilder: (context, index) =>
-                      _buildDictionaryTile(context, ref, displayList[index],
-                          index: index),
+                  itemBuilder: (context, index) => _buildDictionaryTile(
+                    context,
+                    ref,
+                    displayList[index],
+                    index: index,
+                  ),
                 );
               },
             ),
@@ -110,10 +113,10 @@ class _DictionaryManagerScreenState
     final hasCollectionProgress = state.dictionariesTotal > 0;
     final label = hasCollectionProgress
         ? 'Importing ${state.currentDictionary ?? ""}... '
-            '(${state.dictionariesProcessed + 1}/${state.dictionariesTotal} dictionaries)'
+              '(${state.dictionariesProcessed + 1}/${state.dictionariesTotal} dictionaries)'
         : state.currentDictionary != null
-            ? '${state.currentDictionary}...'
-            : 'Importing... ${state.processedEntries}/${state.totalEntries}';
+        ? '${state.currentDictionary}...'
+        : 'Importing... ${state.processedEntries}/${state.totalEntries}';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -287,10 +290,7 @@ class _DictionaryManagerScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Supported Formats',
-                style: theme.textTheme.titleSmall,
-              ),
+              Text('Supported Formats', style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),
               const Text(
                 'Yomitan dictionary (.zip)\n'
@@ -306,10 +306,7 @@ class _DictionaryManagerScreenState
                 'settings under Backup.',
               ),
               const SizedBox(height: 16),
-              Text(
-                'Dictionary Order',
-                style: theme.textTheme.titleSmall,
-              ),
+              Text('Dictionary Order', style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),
               const Text(
                 'Drag dictionaries using the handle on the left to '
@@ -317,27 +314,19 @@ class _DictionaryManagerScreenState
                 'definitions appear when you tap a word while reading.',
               ),
               const SizedBox(height: 16),
-              Text(
-                'Enabling & Disabling',
-                style: theme.textTheme.titleSmall,
-              ),
+              Text('Enabling & Disabling', style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),
               const Text(
                 'Use the toggle switch to enable or disable a dictionary. '
                 'Disabled dictionaries are not searched when looking up words.',
               ),
               const SizedBox(height: 16),
-              Text(
-                'Finding Dictionaries',
-                style: theme.textTheme.titleSmall,
-              ),
+              Text('Finding Dictionaries', style: theme.textTheme.titleSmall),
               const SizedBox(height: 8),
               Text.rich(
                 TextSpan(
                   children: [
-                    const TextSpan(
-                      text: 'Browse compatible dictionaries at ',
-                    ),
+                    const TextSpan(text: 'Browse compatible dictionaries at '),
                     TextSpan(
                       text: 'yomitan.wiki/dictionaries',
                       style: TextStyle(
@@ -346,9 +335,9 @@ class _DictionaryManagerScreenState
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () => launchUrl(
-                              Uri.parse('https://yomitan.wiki/dictionaries/'),
-                              mode: LaunchMode.externalApplication,
-                            ),
+                          Uri.parse('https://yomitan.wiki/dictionaries/'),
+                          mode: LaunchMode.externalApplication,
+                        ),
                     ),
                   ],
                 ),

@@ -71,10 +71,9 @@ class VocabularyRepository {
           ),
         );
 
-    Sentry.addBreadcrumb(Breadcrumb(
-      message: 'Word saved',
-      category: 'vocabulary',
-    ));
+    Sentry.addBreadcrumb(
+      Breadcrumb(message: 'Word saved', category: 'vocabulary'),
+    );
 
     return id;
   }
@@ -92,10 +91,11 @@ class VocabularyRepository {
   Future<File> exportToCsv({Set<int>? selectedIds}) async {
     List<SavedWord> words;
     if (selectedIds != null && selectedIds.isNotEmpty) {
-      words = await (_db.select(_db.savedWords)
-            ..where((t) => t.id.isIn(selectedIds))
-            ..orderBy([(t) => OrderingTerm.desc(t.dateAdded)]))
-          .get();
+      words =
+          await (_db.select(_db.savedWords)
+                ..where((t) => t.id.isIn(selectedIds))
+                ..orderBy([(t) => OrderingTerm.desc(t.dateAdded)]))
+              .get();
     } else {
       words = await getAllWords();
     }

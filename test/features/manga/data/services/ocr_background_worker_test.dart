@@ -115,14 +115,16 @@ void main() {
       await OcrProgress.save(
         prefs,
         1,
-        const OcrProgress(
-            completed: 10, total: 100, status: OcrStatus.running),
+        const OcrProgress(completed: 10, total: 100, status: OcrStatus.running),
       );
       await OcrProgress.save(
         prefs,
         2,
         const OcrProgress(
-            completed: 50, total: 50, status: OcrStatus.completed),
+          completed: 50,
+          total: 50,
+          status: OcrStatus.completed,
+        ),
       );
 
       final p1 = OcrProgress.load(prefs, 1);

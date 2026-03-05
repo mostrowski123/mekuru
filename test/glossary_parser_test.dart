@@ -31,14 +31,8 @@ void main() {
           {
             'tag': 'ul',
             'content': [
-              {
-                'tag': 'li',
-                'content': 'こういう仕儀ですから',
-              },
-              {
-                'tag': 'li',
-                'content': 'Such being the case',
-              },
+              {'tag': 'li', 'content': 'こういう仕儀ですから'},
+              {'tag': 'li', 'content': 'Such being the case'},
             ],
           },
         ],
@@ -54,10 +48,7 @@ void main() {
     test('handles mixed plain and structured-content items', () {
       final glossaries = jsonEncode([
         'plain meaning',
-        jsonEncode({
-          'type': 'structured-content',
-          'content': 'rich meaning',
-        }),
+        jsonEncode({'type': 'structured-content', 'content': 'rich meaning'}),
         'another plain',
       ]);
       final result = GlossaryParser.parse(glossaries);

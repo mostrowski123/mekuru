@@ -102,8 +102,8 @@ CropDisplayGeometry computeCropDisplayGeometry({
   final regionW = contentBounds.width;
   final regionH = contentBounds.height;
 
-  final scale = scaleOverride ??
-      math.min(containerW / regionW, containerH / regionH);
+  final scale =
+      scaleOverride ?? math.min(containerW / regionW, containerH / regionH);
 
   final renderedRegionW = regionW * scale;
   final renderedRegionH = regionH * scale;
@@ -152,10 +152,14 @@ CropDisplayGeometry computeCropDisplayGeometry({
   }
 
   final leftInsets = PageCropInsets.fromBounds(
-    leftContentBounds, leftImgW, leftImgH,
+    leftContentBounds,
+    leftImgW,
+    leftImgH,
   );
   final rightInsets = PageCropInsets.fromBounds(
-    rightContentBounds, rightImgW, rightImgH,
+    rightContentBounds,
+    rightImgW,
+    rightImgH,
   );
 
   final sharedTop = math.min(leftInsets.top, rightInsets.top);

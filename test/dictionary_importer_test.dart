@@ -441,8 +441,12 @@ void main() {
 
     test('entries are assigned to correct dictionary IDs', () async {
       final json = buildCollectionJson({
-        'DictA': [('猫', 'ねこ', ['cat'])],
-        'DictB': [('犬', 'いぬ', ['dog'])],
+        'DictA': [
+          ('猫', 'ねこ', ['cat']),
+        ],
+        'DictB': [
+          ('犬', 'いぬ', ['dog']),
+        ],
       });
       final filePath = await writeCollectionFile(json);
 
@@ -460,8 +464,12 @@ void main() {
       await repo.insertDictionary('JMdict');
 
       final json = buildCollectionJson({
-        'JMdict': [('食べる', 'たべる', ['to eat'])],
-        'NewDict': [('走る', 'はしる', ['to run'])],
+        'JMdict': [
+          ('食べる', 'たべる', ['to eat']),
+        ],
+        'NewDict': [
+          ('走る', 'はしる', ['to run']),
+        ],
       });
       final filePath = await writeCollectionFile(json);
 
@@ -479,7 +487,9 @@ void main() {
 
     test('parses expression, reading, and glossary correctly', () async {
       final json = buildCollectionJson({
-        'TestDict': [('食べる', 'たべる', ['to eat', 'to consume'])],
+        'TestDict': [
+          ('食べる', 'たべる', ['to eat', 'to consume']),
+        ],
       });
       final filePath = await writeCollectionFile(json);
 
@@ -488,9 +498,9 @@ void main() {
       final dicts = await repo.getAllDictionaries();
       final dict = dicts.firstWhere((d) => d.name == 'TestDict');
 
-      final entries = await (db.select(db.dictionaryEntries)
-            ..where((t) => t.dictionaryId.equals(dict.id)))
-          .get();
+      final entries = await (db.select(
+        db.dictionaryEntries,
+      )..where((t) => t.dictionaryId.equals(dict.id))).get();
 
       expect(entries, hasLength(1));
       expect(entries.first.expression, '食べる');
@@ -500,8 +510,13 @@ void main() {
 
     test('calls onDictionaryStart with correct parameters', () async {
       final json = buildCollectionJson({
-        'DictA': [('猫', 'ねこ', ['cat']), ('犬', 'いぬ', ['dog'])],
-        'DictB': [('鳥', 'とり', ['bird'])],
+        'DictA': [
+          ('猫', 'ねこ', ['cat']),
+          ('犬', 'いぬ', ['dog']),
+        ],
+        'DictB': [
+          ('鳥', 'とり', ['bird']),
+        ],
       });
       final filePath = await writeCollectionFile(json);
 
@@ -556,8 +571,12 @@ void main() {
       await repo.insertDictionary('DictB');
 
       final json = buildCollectionJson({
-        'DictA': [('猫', 'ねこ', ['cat'])],
-        'DictB': [('犬', 'いぬ', ['dog'])],
+        'DictA': [
+          ('猫', 'ねこ', ['cat']),
+        ],
+        'DictB': [
+          ('犬', 'いぬ', ['dog']),
+        ],
       });
       final filePath = await writeCollectionFile(json);
 
@@ -607,9 +626,9 @@ void main() {
 
       final dicts = await repo.getAllDictionaries();
       final dict = dicts.firstWhere((d) => d.name == 'StructuredDict');
-      final entries = await (db.select(db.dictionaryEntries)
-            ..where((t) => t.dictionaryId.equals(dict.id)))
-          .get();
+      final entries = await (db.select(
+        db.dictionaryEntries,
+      )..where((t) => t.dictionaryId.equals(dict.id))).get();
 
       expect(entries, hasLength(1));
       final glossary = jsonDecode(entries.first.glossaries) as List;
@@ -675,10 +694,7 @@ void main() {
                       'style': {'fontWeight': 'bold'},
                       'content': 'definition one',
                     },
-                    {
-                      'tag': 'li',
-                      'content': 'definition two',
-                    },
+                    {'tag': 'li', 'content': 'definition two'},
                   ],
                 },
               ],
@@ -707,9 +723,9 @@ void main() {
 
       final dicts = await repo.getAllDictionaries();
       final dict = dicts.firstWhere((d) => d.name == 'DeepDict');
-      final entries = await (db.select(db.dictionaryEntries)
-            ..where((t) => t.dictionaryId.equals(dict.id)))
-          .get();
+      final entries = await (db.select(
+        db.dictionaryEntries,
+      )..where((t) => t.dictionaryId.equals(dict.id))).get();
 
       expect(entries, hasLength(1));
       final glossary = jsonDecode(entries.first.glossaries) as List;
@@ -734,65 +750,68 @@ void main() {
       expect((liItems[1] as Map)['content'], 'definition two');
     });
 
-    test('handles glossary with multiple properties and nested arrays',
-        () async {
-      // Multiple top-level properties + nested array of mixed types
-      final rows = [
-        {
-          'expression': '例',
-          'reading': 'れい',
-          'glossary': [
-            {
-              'type': 'structured-content',
-              'style': {'fontSize': '14px', 'color': 'red'},
-              'content': [
-                'text',
-                42,
-                true,
-                null,
-                {'tag': 'span', 'content': 'nested'},
-              ],
-            },
-          ],
-          'dictionary': 'MultiPropDict',
-          'id': 1,
-        },
-      ];
-      final jsonStr = jsonEncode({
-        'formatName': 'dexie',
-        'formatVersion': 1,
-        'data': {
-          'databaseName': 'dict',
-          'tables': [
-            {'name': 'terms', 'schema': '++id', 'rowCount': 1},
-          ],
-          'data': [
-            {'tableName': 'terms', 'inbound': true, 'rows': rows},
-          ],
-        },
-      });
-      final filePath = await writeCollectionFile(jsonStr);
+    test(
+      'handles glossary with multiple properties and nested arrays',
+      () async {
+        // Multiple top-level properties + nested array of mixed types
+        final rows = [
+          {
+            'expression': '例',
+            'reading': 'れい',
+            'glossary': [
+              {
+                'type': 'structured-content',
+                'style': {'fontSize': '14px', 'color': 'red'},
+                'content': [
+                  'text',
+                  42,
+                  true,
+                  null,
+                  {'tag': 'span', 'content': 'nested'},
+                ],
+              },
+            ],
+            'dictionary': 'MultiPropDict',
+            'id': 1,
+          },
+        ];
+        final jsonStr = jsonEncode({
+          'formatName': 'dexie',
+          'formatVersion': 1,
+          'data': {
+            'databaseName': 'dict',
+            'tables': [
+              {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+            ],
+            'data': [
+              {'tableName': 'terms', 'inbound': true, 'rows': rows},
+            ],
+          },
+        });
+        final filePath = await writeCollectionFile(jsonStr);
 
-      await importer.importCollectionFromFile(filePath);
+        await importer.importCollectionFromFile(filePath);
 
-      final dicts = await repo.getAllDictionaries();
-      final dict = dicts.firstWhere((d) => d.name == 'MultiPropDict');
-      final entries = await (db.select(db.dictionaryEntries)
-            ..where((t) => t.dictionaryId.equals(dict.id)))
-          .get();
+        final dicts = await repo.getAllDictionaries();
+        final dict = dicts.firstWhere((d) => d.name == 'MultiPropDict');
+        final entries = await (db.select(
+          db.dictionaryEntries,
+        )..where((t) => t.dictionaryId.equals(dict.id))).get();
 
-      final glossary = jsonDecode(entries.first.glossaries) as List;
-      final parsed = jsonDecode(glossary[0] as String) as Map<String, dynamic>;
-      expect(parsed['type'], 'structured-content');
-      expect(parsed['style'], {'fontSize': '14px', 'color': 'red'});
-      final content = parsed['content'] as List;
-      expect(content[0], 'text');
-      expect(content[1], 42);
-      expect(content[2], true);
-      expect(content[3], null);
-      expect((content[4] as Map)['tag'], 'span');
-      expect((content[4] as Map)['content'], 'nested');
-    });
+        final glossary = jsonDecode(entries.first.glossaries) as List;
+        final parsed =
+            jsonDecode(glossary[0] as String) as Map<String, dynamic>;
+        expect(parsed['type'], 'structured-content');
+        expect(parsed['style'], {'fontSize': '14px', 'color': 'red'});
+        final content = parsed['content'] as List;
+        expect(content[0], 'text');
+        expect(content[1], 42);
+        expect(content[2], true);
+        expect(content[3], null);
+        expect((content[4] as Map)['tag'], 'span');
+        expect((content[4] as Map)['content'], 'nested');
+      },
+    );
 
     test('handles mixed plain string and structured glossary items', () async {
       final rows = [
@@ -827,9 +846,9 @@ void main() {
 
       final dicts = await repo.getAllDictionaries();
       final dict = dicts.firstWhere((d) => d.name == 'MixedDict');
-      final entries = await (db.select(db.dictionaryEntries)
-            ..where((t) => t.dictionaryId.equals(dict.id)))
-          .get();
+      final entries = await (db.select(
+        db.dictionaryEntries,
+      )..where((t) => t.dictionaryId.equals(dict.id))).get();
 
       final glossary = jsonDecode(entries.first.glossaries) as List;
       expect(glossary, hasLength(3));
@@ -841,56 +860,55 @@ void main() {
       expect(glossary[2], 'another plain');
     });
 
-    test('handles glossary with boolean and numeric values in objects',
-        () async {
-      final rows = [
-        {
-          'expression': '数値',
-          'reading': 'すうち',
-          'glossary': [
-            {
-              'type': 'structured-content',
-              'data': {
-                'count': 5,
-                'active': true,
-                'label': null,
+    test(
+      'handles glossary with boolean and numeric values in objects',
+      () async {
+        final rows = [
+          {
+            'expression': '数値',
+            'reading': 'すうち',
+            'glossary': [
+              {
+                'type': 'structured-content',
+                'data': {'count': 5, 'active': true, 'label': null},
               },
-            },
-          ],
-          'dictionary': 'NumericDict',
-          'id': 1,
-        },
-      ];
-      final jsonStr = jsonEncode({
-        'formatName': 'dexie',
-        'formatVersion': 1,
-        'data': {
-          'databaseName': 'dict',
-          'tables': [
-            {'name': 'terms', 'schema': '++id', 'rowCount': 1},
-          ],
-          'data': [
-            {'tableName': 'terms', 'inbound': true, 'rows': rows},
-          ],
-        },
-      });
-      final filePath = await writeCollectionFile(jsonStr);
+            ],
+            'dictionary': 'NumericDict',
+            'id': 1,
+          },
+        ];
+        final jsonStr = jsonEncode({
+          'formatName': 'dexie',
+          'formatVersion': 1,
+          'data': {
+            'databaseName': 'dict',
+            'tables': [
+              {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+            ],
+            'data': [
+              {'tableName': 'terms', 'inbound': true, 'rows': rows},
+            ],
+          },
+        });
+        final filePath = await writeCollectionFile(jsonStr);
 
-      await importer.importCollectionFromFile(filePath);
+        await importer.importCollectionFromFile(filePath);
 
-      final dicts = await repo.getAllDictionaries();
-      final dict = dicts.firstWhere((d) => d.name == 'NumericDict');
-      final entries = await (db.select(db.dictionaryEntries)
-            ..where((t) => t.dictionaryId.equals(dict.id)))
-          .get();
+        final dicts = await repo.getAllDictionaries();
+        final dict = dicts.firstWhere((d) => d.name == 'NumericDict');
+        final entries = await (db.select(
+          db.dictionaryEntries,
+        )..where((t) => t.dictionaryId.equals(dict.id))).get();
 
-      final glossary = jsonDecode(entries.first.glossaries) as List;
-      final parsed = jsonDecode(glossary[0] as String) as Map<String, dynamic>;
-      expect(parsed['type'], 'structured-content');
-      final data = parsed['data'] as Map<String, dynamic>;
-      expect(data['count'], 5);
-      expect(data['active'], true);
-      expect(data['label'], null);
-    });
+        final glossary = jsonDecode(entries.first.glossaries) as List;
+        final parsed =
+            jsonDecode(glossary[0] as String) as Map<String, dynamic>;
+        expect(parsed['type'], 'structured-content');
+        final data = parsed['data'] as Map<String, dynamic>;
+        expect(data['count'], 5);
+        expect(data['active'], true);
+        expect(data['label'], null);
+      },
+    );
   });
 }

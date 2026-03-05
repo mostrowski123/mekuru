@@ -1043,10 +1043,11 @@ class _BookTileState extends ConsumerState<_BookTile>
                   final isWordOnlyPass =
                       summary.needsWordSegmentation &&
                       summary.pagesWithoutOcr == 0;
-                  final isMokuroComplete =
-                      summary.isMokuroSource && !isRunning;
+                  final isMokuroComplete = summary.isMokuroSource && !isRunning;
                   final needsProUnlock =
-                      !isRunning && !hasCompleteOcr && !isWordOnlyPass &&
+                      !isRunning &&
+                      !hasCompleteOcr &&
+                      !isWordOnlyPass &&
                       !isMokuroComplete;
                   final isProLocked = needsProUnlock && !isProUnlocked;
 
@@ -1567,8 +1568,10 @@ class _BookTileState extends ConsumerState<_BookTile>
     }
   }
 
-  _MangaOcrCacheSummary _summarizeOcrPages(List<dynamic> pages,
-      {String? ocrSource}) {
+  _MangaOcrCacheSummary _summarizeOcrPages(
+    List<dynamic> pages, {
+    String? ocrSource,
+  }) {
     var pagesWithOcr = 0;
     var pagesWithoutOcr = 0;
     var pagesNeedingWordSegmentation = 0;

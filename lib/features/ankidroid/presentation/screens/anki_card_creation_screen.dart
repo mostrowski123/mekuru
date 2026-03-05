@@ -212,8 +212,8 @@ class _AnkiCardCreationScreenState
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _controllers.isEmpty
-              ? _buildErrorState(theme)
-              : _buildForm(theme),
+          ? _buildErrorState(theme)
+          : _buildForm(theme),
     );
   }
 
@@ -261,8 +261,10 @@ class _AnkiCardCreationScreenState
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
                     _error!,
-                    style:
-                        TextStyle(color: theme.colorScheme.error, fontSize: 13),
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
 
@@ -308,9 +310,7 @@ class _AnkiCardCreationScreenState
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text('Add to Anki'),
             ),
@@ -342,8 +342,10 @@ class _AnkiCardCreationScreenState
                   return ListTile(
                     title: Text(entry.value),
                     trailing: _selectedDeckId == entry.key
-                        ? Icon(Icons.check,
-                            color: Theme.of(context).colorScheme.primary)
+                        ? Icon(
+                            Icons.check,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
                         : null,
                     onTap: () {
                       setState(() {

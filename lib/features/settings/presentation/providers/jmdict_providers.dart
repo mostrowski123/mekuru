@@ -103,14 +103,9 @@ class JmdictNotifier extends Notifier<JmdictState> {
         YomitanDictType.jmdictEnglish,
         repository,
       );
-      state = const JmdictState(
-        successMessage: 'JMdict deleted.',
-      );
+      state = const JmdictState(successMessage: 'JMdict deleted.');
     } catch (e) {
-      state = state.copyWith(
-        isDeleting: false,
-        error: 'Delete failed: $e',
-      );
+      state = state.copyWith(isDeleting: false, error: 'Delete failed: $e');
     }
   }
 }

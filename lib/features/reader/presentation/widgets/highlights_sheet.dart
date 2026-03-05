@@ -160,10 +160,7 @@ class _HighlightTile extends StatelessWidget {
         leading: Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color.color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color.color, shape: BoxShape.circle),
         ),
         title: Text(
           highlight.selectedText,

@@ -38,13 +38,15 @@ List<TokenInfo> makeContiguousTokens(
   final tokens = <TokenInfo>[];
   var offset = startOffset;
   for (final (surface, reading, dictForm) in defs) {
-    tokens.add(TokenInfo(
-      surface: surface,
-      dictionaryForm: dictForm,
-      reading: reading,
-      pos: '名詞',
-      startInText: offset,
-    ));
+    tokens.add(
+      TokenInfo(
+        surface: surface,
+        dictionaryForm: dictForm,
+        reading: reading,
+        pos: '名詞',
+        startInText: offset,
+      ),
+    );
     offset += surface.length;
   }
   return tokens;
@@ -175,34 +177,36 @@ void main() {
   // ── Deinflected compound match ──────────────────────────────────
 
   group('CompoundWordResolver — deinflected compound', () {
-    test('matches compound via deinflection (te-form → dictionary form)',
-        () async {
-      // 行く is in the dictionary; 行って is not.
-      // MeCab splits 行ってあげて into [行っ, て, あげ, て].
-      // The resolver should try 行って, deinflect it to 行く, and match.
-      await repo.batchInsertEntries([
-        DictionaryEntriesCompanion.insert(
-          expression: '行く',
-          reading: const Value('いく'),
-          glossaries: jsonEncode(['to go']),
-          dictionaryId: enabledDictId,
-        ),
-      ]);
+    test(
+      'matches compound via deinflection (te-form → dictionary form)',
+      () async {
+        // 行く is in the dictionary; 行って is not.
+        // MeCab splits 行ってあげて into [行っ, て, あげ, て].
+        // The resolver should try 行って, deinflect it to 行く, and match.
+        await repo.batchInsertEntries([
+          DictionaryEntriesCompanion.insert(
+            expression: '行く',
+            reading: const Value('いく'),
+            glossaries: jsonEncode(['to go']),
+            dictionaryId: enabledDictId,
+          ),
+        ]);
 
-      final tokens = makeContiguousTokens([
-        ('行っ', 'イッ', '行う'),
-        ('て', 'テ', 'て'),
-        ('あげ', 'アゲ', 'あげる'),
-        ('て', 'テ', 'て'),
-      ]);
-      final id = buildIdentification(tokens: tokens, tappedIndex: 0);
+        final tokens = makeContiguousTokens([
+          ('行っ', 'イッ', '行う'),
+          ('て', 'テ', 'て'),
+          ('あげ', 'アゲ', 'あげる'),
+          ('て', 'テ', 'て'),
+        ]);
+        final id = buildIdentification(tokens: tokens, tappedIndex: 0);
 
-      final result = await resolver.resolve(id);
+        final result = await resolver.resolve(id);
 
-      expect(result.surfaceForm, '行って');
-      expect(result.dictionaryForm, '行く');
-      expect(result.tokenCount, 2);
-    });
+        expect(result.surfaceForm, '行って');
+        expect(result.dictionaryForm, '行く');
+        expect(result.tokenCount, 2);
+      },
+    );
 
     test('prefers exact compound match over deinflected match', () async {
       // If the compound surface itself is in the dictionary, use it directly.
@@ -280,9 +284,7 @@ void main() {
 
   group('CompoundWordResolver — single token fallback', () {
     test('returns single token when no compound match exists', () async {
-      final tokens = makeContiguousTokens([
-        ('食べる', 'たべる', '食べる'),
-      ]);
+      final tokens = makeContiguousTokens([('食べる', 'たべる', '食べる')]);
       final id = buildIdentification(tokens: tokens, tappedIndex: 0);
 
       final result = await resolver.resolve(id);
@@ -309,9 +311,7 @@ void main() {
 
     test('preserves sentenceContext from original result', () async {
       const context = '猫が大好きです。';
-      final tokens = makeContiguousTokens([
-        ('猫', 'ネコ', '猫'),
-      ]);
+      final tokens = makeContiguousTokens([('猫', 'ネコ', '猫')]);
       final id = buildIdentification(
         tokens: tokens,
         tappedIndex: 0,
@@ -393,17 +393,18 @@ void main() {
   // ── Edge cases ─────────────────────────────────────────────────
 
   group('CompoundWordResolver — edge cases', () {
-    test('handles tapped token at end of list (no subsequent tokens)', () async {
-      final tokens = makeContiguousTokens([
-        ('食べる', 'たべる', '食べる'),
-      ]);
-      final id = buildIdentification(tokens: tokens, tappedIndex: 0);
+    test(
+      'handles tapped token at end of list (no subsequent tokens)',
+      () async {
+        final tokens = makeContiguousTokens([('食べる', 'たべる', '食べる')]);
+        final id = buildIdentification(tokens: tokens, tappedIndex: 0);
 
-      final result = await resolver.resolve(id);
+        final result = await resolver.resolve(id);
 
-      expect(result.tokenCount, 1);
-      expect(result.surfaceForm, '食べる');
-    });
+        expect(result.tokenCount, 1);
+        expect(result.surfaceForm, '食べる');
+      },
+    );
 
     test('maxTokenSpan limits compound length to 5 tokens', () async {
       // Create 6 contiguous tokens that form a "word" in the dictionary

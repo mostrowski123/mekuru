@@ -81,8 +81,11 @@ void main() {
           if (s.leftPageIndex != null) allPages.add(s.leftPageIndex!);
           if (s.rightPageIndex != null) allPages.add(s.rightPageIndex!);
         }
-        expect(allPages, equals(Set.from(List.generate(count, (i) => i))),
-            reason: 'All pages should be present for count=$count');
+        expect(
+          allPages,
+          equals(Set.from(List.generate(count, (i) => i))),
+          reason: 'All pages should be present for count=$count',
+        );
       }
     });
   });
@@ -104,10 +107,13 @@ void main() {
   });
 
   group('PageSpread', () {
-    test('primaryPageIndex returns lower-numbered page for two-page spread', () {
-      const spread = PageSpread(leftPageIndex: 4, rightPageIndex: 3);
-      expect(spread.primaryPageIndex, 3);
-    });
+    test(
+      'primaryPageIndex returns lower-numbered page for two-page spread',
+      () {
+        const spread = PageSpread(leftPageIndex: 4, rightPageIndex: 3);
+        expect(spread.primaryPageIndex, 3);
+      },
+    );
 
     test('primaryPageIndex returns the solo page index', () {
       const spread = PageSpread(rightPageIndex: 5);

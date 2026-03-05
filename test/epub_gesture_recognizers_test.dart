@@ -16,9 +16,7 @@ void main() {
     });
 
     test('includes TapGestureRecognizer for single taps', () {
-      final hasTap = recognizers.any(
-        (f) => f.type == TapGestureRecognizer,
-      );
+      final hasTap = recognizers.any((f) => f.type == TapGestureRecognizer);
       expect(hasTap, isTrue, reason: 'Tap recognizer needed for word lookups');
     });
 
@@ -69,9 +67,7 @@ void main() {
     });
 
     test('does not include EagerGestureRecognizer (breaks iOS UiKitView)', () {
-      final hasEager = recognizers.any(
-        (f) => f.type == EagerGestureRecognizer,
-      );
+      final hasEager = recognizers.any((f) => f.type == EagerGestureRecognizer);
       expect(
         hasEager,
         isFalse,

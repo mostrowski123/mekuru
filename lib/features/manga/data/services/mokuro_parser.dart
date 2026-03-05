@@ -1107,9 +1107,14 @@ class MokuroParser {
     for (int dx = 0; dx < maxBorderLinePx; dx++) {
       final x = adjLeft + dx;
       if (x >= adjRight) break;
-      final d = _columnDensity(pixels,
-          width: width, x: x, top: top, bottom: bottom,
-          whiteThreshold: darkThreshold);
+      final d = _columnDensity(
+        pixels,
+        width: width,
+        x: x,
+        top: top,
+        bottom: bottom,
+        whiteThreshold: darkThreshold,
+      );
       if (d < borderLineDensity) break;
       contentLeft = x + 1; // skip past this solid-line column
     }
@@ -1118,9 +1123,14 @@ class MokuroParser {
     for (int dx = 0; dx < maxBorderLinePx; dx++) {
       final x = adjRight - dx;
       if (x <= contentLeft) break;
-      final d = _columnDensity(pixels,
-          width: width, x: x, top: top, bottom: bottom,
-          whiteThreshold: darkThreshold);
+      final d = _columnDensity(
+        pixels,
+        width: width,
+        x: x,
+        top: top,
+        bottom: bottom,
+        whiteThreshold: darkThreshold,
+      );
       if (d < borderLineDensity) break;
       contentRight = x - 1;
     }
@@ -1185,9 +1195,14 @@ class MokuroParser {
     for (int dy = 0; dy < maxBorderLinePx; dy++) {
       final y = adjTop + dy;
       if (y >= adjBottom) break;
-      final d = _rowDensityRange(pixels,
-          width: width, y: y, left: contentLeft, right: contentRight,
-          whiteThreshold: darkThreshold);
+      final d = _rowDensityRange(
+        pixels,
+        width: width,
+        y: y,
+        left: contentLeft,
+        right: contentRight,
+        whiteThreshold: darkThreshold,
+      );
       if (d < borderLineDensity) break;
       contentTop = y + 1;
     }
@@ -1196,9 +1211,14 @@ class MokuroParser {
     for (int dy = 0; dy < maxBorderLinePx; dy++) {
       final y = adjBottom - dy;
       if (y <= contentTop) break;
-      final d = _rowDensityRange(pixels,
-          width: width, y: y, left: contentLeft, right: contentRight,
-          whiteThreshold: darkThreshold);
+      final d = _rowDensityRange(
+        pixels,
+        width: width,
+        y: y,
+        left: contentLeft,
+        right: contentRight,
+        whiteThreshold: darkThreshold,
+      );
       if (d < borderLineDensity) break;
       contentBottom = y - 1;
     }
@@ -1275,18 +1295,28 @@ class MokuroParser {
     int maxScan = 80,
   }) {
     // Check if starting column already has dark content.
-    final darkDensity = _columnDensity(pixels,
-        width: width, x: startCol, top: top, bottom: bottom,
-        whiteThreshold: darkThreshold);
+    final darkDensity = _columnDensity(
+      pixels,
+      width: width,
+      x: startCol,
+      top: top,
+      bottom: bottom,
+      whiteThreshold: darkThreshold,
+    );
     if (darkDensity >= minDarkDensity) return startCol;
 
     // Starting column is "light gray only" — scan rightward.
     for (int dx = 1; dx <= maxScan; dx++) {
       final x = startCol + dx;
       if (x >= rightLimit) return startCol;
-      final d = _columnDensity(pixels,
-          width: width, x: x, top: top, bottom: bottom,
-          whiteThreshold: darkThreshold);
+      final d = _columnDensity(
+        pixels,
+        width: width,
+        x: x,
+        top: top,
+        bottom: bottom,
+        whiteThreshold: darkThreshold,
+      );
       if (d >= minDarkDensity) return x;
     }
     return startCol;
@@ -1305,17 +1335,27 @@ class MokuroParser {
     double minDarkDensity = 0.05,
     int maxScan = 80,
   }) {
-    final darkDensity = _columnDensity(pixels,
-        width: width, x: startCol, top: top, bottom: bottom,
-        whiteThreshold: darkThreshold);
+    final darkDensity = _columnDensity(
+      pixels,
+      width: width,
+      x: startCol,
+      top: top,
+      bottom: bottom,
+      whiteThreshold: darkThreshold,
+    );
     if (darkDensity >= minDarkDensity) return startCol;
 
     for (int dx = 1; dx <= maxScan; dx++) {
       final x = startCol - dx;
       if (x <= leftLimit) return startCol;
-      final d = _columnDensity(pixels,
-          width: width, x: x, top: top, bottom: bottom,
-          whiteThreshold: darkThreshold);
+      final d = _columnDensity(
+        pixels,
+        width: width,
+        x: x,
+        top: top,
+        bottom: bottom,
+        whiteThreshold: darkThreshold,
+      );
       if (d >= minDarkDensity) return x;
     }
     return startCol;
@@ -1335,17 +1375,27 @@ class MokuroParser {
     double minDarkDensity = 0.05,
     int maxScan = 80,
   }) {
-    final darkDensity = _rowDensityRange(pixels,
-        width: width, y: startRow, left: left, right: right,
-        whiteThreshold: darkThreshold);
+    final darkDensity = _rowDensityRange(
+      pixels,
+      width: width,
+      y: startRow,
+      left: left,
+      right: right,
+      whiteThreshold: darkThreshold,
+    );
     if (darkDensity >= minDarkDensity) return startRow;
 
     for (int dy = 1; dy <= maxScan; dy++) {
       final y = startRow + dy;
       if (y >= bottomLimit) return startRow;
-      final d = _rowDensityRange(pixels,
-          width: width, y: y, left: left, right: right,
-          whiteThreshold: darkThreshold);
+      final d = _rowDensityRange(
+        pixels,
+        width: width,
+        y: y,
+        left: left,
+        right: right,
+        whiteThreshold: darkThreshold,
+      );
       if (d >= minDarkDensity) return y;
     }
     return startRow;
@@ -1364,17 +1414,27 @@ class MokuroParser {
     double minDarkDensity = 0.05,
     int maxScan = 80,
   }) {
-    final darkDensity = _rowDensityRange(pixels,
-        width: width, y: startRow, left: left, right: right,
-        whiteThreshold: darkThreshold);
+    final darkDensity = _rowDensityRange(
+      pixels,
+      width: width,
+      y: startRow,
+      left: left,
+      right: right,
+      whiteThreshold: darkThreshold,
+    );
     if (darkDensity >= minDarkDensity) return startRow;
 
     for (int dy = 1; dy <= maxScan; dy++) {
       final y = startRow - dy;
       if (y <= topLimit) return startRow;
-      final d = _rowDensityRange(pixels,
-          width: width, y: y, left: left, right: right,
-          whiteThreshold: darkThreshold);
+      final d = _rowDensityRange(
+        pixels,
+        width: width,
+        y: y,
+        left: left,
+        right: right,
+        whiteThreshold: darkThreshold,
+      );
       if (d >= minDarkDensity) return y;
     }
     return startRow;

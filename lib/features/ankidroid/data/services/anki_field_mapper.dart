@@ -107,8 +107,8 @@ String formatAnkiFurigana(String expression, String reading) {
     } else {
       // Kanji run: find the end of consecutive kanji
       final kanjiStart = i;
-      while (
-          i < expression.length && _isKanjiFuri(expression[i].codeUnitAt(0))) {
+      while (i < expression.length &&
+          _isKanjiFuri(expression[i].codeUnitAt(0))) {
         i++;
       }
       final kanjiRun = expression.substring(kanjiStart, i);

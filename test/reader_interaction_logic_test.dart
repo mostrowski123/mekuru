@@ -308,10 +308,7 @@ void main() {
 
   group('classifyGesture', () {
     test('small displacement returns tap', () {
-      expect(
-        classifyGesture(downX: 0.5, upX: 0.55),
-        GestureType.tap,
-      );
+      expect(classifyGesture(downX: 0.5, upX: 0.55), GestureType.tap);
     });
 
     test('large horizontal displacement returns horizontalSwipe', () {
@@ -323,10 +320,7 @@ void main() {
 
     test('exactly at threshold returns tap (not strictly greater)', () {
       // 0.6 - 0.5 = 0.1, which is NOT > 0.1, so it's a tap
-      expect(
-        classifyGesture(downX: 0.5, upX: 0.6),
-        GestureType.tap,
-      );
+      expect(classifyGesture(downX: 0.5, upX: 0.6), GestureType.tap);
     });
 
     test('just above threshold returns horizontalSwipe', () {
@@ -344,10 +338,7 @@ void main() {
     });
 
     test('zero displacement returns tap', () {
-      expect(
-        classifyGesture(downX: 0.5, upX: 0.5),
-        GestureType.tap,
-      );
+      expect(classifyGesture(downX: 0.5, upX: 0.5), GestureType.tap);
     });
 
     test('maximum displacement (0 to 1) returns horizontalSwipe', () {
@@ -417,10 +408,7 @@ void main() {
         classifyGesture(downX: 0.3, upX: 0.5),
         GestureType.horizontalSwipe,
       );
-      expect(
-        classifyGesture(downX: 0.5, upX: 0.55),
-        GestureType.tap,
-      );
+      expect(classifyGesture(downX: 0.5, upX: 0.55), GestureType.tap);
     });
 
     test('small vertical and horizontal displacement is a tap', () {
@@ -436,98 +424,64 @@ void main() {
   group('resolveNextAction', () {
     test('mid-section: page 1/5 scrolls within section', () {
       expect(
-        resolveNextAction(
-          currentPage: 1,
-          totalPages: 5,
-          hasNextSection: true,
-        ),
+        resolveNextAction(currentPage: 1, totalPages: 5, hasNextSection: true),
         SectionNavigationAction.scrollWithinSection,
       );
     });
 
     test('mid-section: page 3/5 scrolls within section', () {
       expect(
-        resolveNextAction(
-          currentPage: 3,
-          totalPages: 5,
-          hasNextSection: true,
-        ),
+        resolveNextAction(currentPage: 3, totalPages: 5, hasNextSection: true),
         SectionNavigationAction.scrollWithinSection,
       );
     });
 
     test('last page with next section: page 5/5 jumps to next section', () {
       expect(
-        resolveNextAction(
-          currentPage: 5,
-          totalPages: 5,
-          hasNextSection: true,
-        ),
+        resolveNextAction(currentPage: 5, totalPages: 5, hasNextSection: true),
         SectionNavigationAction.jumpToNextSection,
       );
     });
 
     test('last page without next section: page 5/5 at end of book', () {
       expect(
-        resolveNextAction(
-          currentPage: 5,
-          totalPages: 5,
-          hasNextSection: false,
-        ),
+        resolveNextAction(currentPage: 5, totalPages: 5, hasNextSection: false),
         SectionNavigationAction.alreadyAtEnd,
       );
     });
 
-    test(
-      'single-page section with next: page 1/1 jumps to next section '
-      '(THE BUG CASE — epub.js would skip this)',
-      () {
-        expect(
-          resolveNextAction(
-            currentPage: 1,
-            totalPages: 1,
-            hasNextSection: true,
-          ),
-          SectionNavigationAction.jumpToNextSection,
-        );
-      },
-    );
+    test('single-page section with next: page 1/1 jumps to next section '
+        '(THE BUG CASE — epub.js would skip this)', () {
+      expect(
+        resolveNextAction(currentPage: 1, totalPages: 1, hasNextSection: true),
+        SectionNavigationAction.jumpToNextSection,
+      );
+    });
 
     test('single-page section without next: page 1/1 at end of book', () {
       expect(
-        resolveNextAction(
-          currentPage: 1,
-          totalPages: 1,
-          hasNextSection: false,
-        ),
+        resolveNextAction(currentPage: 1, totalPages: 1, hasNextSection: false),
         SectionNavigationAction.alreadyAtEnd,
       );
     });
 
     test('second-to-last page scrolls within section', () {
       expect(
-        resolveNextAction(
-          currentPage: 4,
-          totalPages: 5,
-          hasNextSection: true,
-        ),
+        resolveNextAction(currentPage: 4, totalPages: 5, hasNextSection: true),
         SectionNavigationAction.scrollWithinSection,
       );
     });
 
-    test(
-      'last page of last section with no next is alreadyAtEnd',
-      () {
-        expect(
-          resolveNextAction(
-            currentPage: 10,
-            totalPages: 10,
-            hasNextSection: false,
-          ),
-          SectionNavigationAction.alreadyAtEnd,
-        );
-      },
-    );
+    test('last page of last section with no next is alreadyAtEnd', () {
+      expect(
+        resolveNextAction(
+          currentPage: 10,
+          totalPages: 10,
+          hasNextSection: false,
+        ),
+        SectionNavigationAction.alreadyAtEnd,
+      );
+    });
   });
 
   // ── resolvePreviousAction ─────────────────────────────────────────────
@@ -580,20 +534,17 @@ void main() {
       );
     });
 
-    test(
-      'single-page section with prev: page 1/1 jumps to previous section '
-      '(THE BUG CASE — epub.js would skip this)',
-      () {
-        expect(
-          resolvePreviousAction(
-            currentPage: 1,
-            totalPages: 1,
-            hasPreviousSection: true,
-          ),
-          SectionNavigationAction.jumpToPreviousSection,
-        );
-      },
-    );
+    test('single-page section with prev: page 1/1 jumps to previous section '
+        '(THE BUG CASE — epub.js would skip this)', () {
+      expect(
+        resolvePreviousAction(
+          currentPage: 1,
+          totalPages: 1,
+          hasPreviousSection: true,
+        ),
+        SectionNavigationAction.jumpToPreviousSection,
+      );
+    });
 
     test('single-page section without prev: page 1/1 at start of book', () {
       expect(
@@ -617,18 +568,15 @@ void main() {
       );
     });
 
-    test(
-      'first page of first section with no prev is alreadyAtStart',
-      () {
-        expect(
-          resolvePreviousAction(
-            currentPage: 1,
-            totalPages: 10,
-            hasPreviousSection: false,
-          ),
-          SectionNavigationAction.alreadyAtStart,
-        );
-      },
-    );
+    test('first page of first section with no prev is alreadyAtStart', () {
+      expect(
+        resolvePreviousAction(
+          currentPage: 1,
+          totalPages: 10,
+          hasPreviousSection: false,
+        ),
+        SectionNavigationAction.alreadyAtStart,
+      );
+    });
   });
 }

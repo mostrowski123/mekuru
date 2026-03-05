@@ -390,9 +390,7 @@ void main() {
     });
 
     test('normalizes writing mode to lowercase', () async {
-      final epubPath = await createTestEpub(
-        primaryWritingMode: 'Vertical-RL',
-      );
+      final epubPath = await createTestEpub(primaryWritingMode: 'Vertical-RL');
       tempDirs.add(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
@@ -400,9 +398,7 @@ void main() {
     });
 
     test('extracts writing mode via full extraction too', () async {
-      final epubPath = await createTestEpub(
-        primaryWritingMode: 'vertical-rl',
-      );
+      final epubPath = await createTestEpub(primaryWritingMode: 'vertical-rl');
       tempDirs.add(epubPath);
 
       final extractDir = await Directory.systemTemp.createTemp(

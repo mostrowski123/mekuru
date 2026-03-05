@@ -10,16 +10,14 @@ class DictionaryRepository {
   // ──────────────── DictionaryMeta ────────────────
 
   /// Get all imported dictionaries, ordered by sort order.
-  Future<List<DictionaryMeta>> getAllDictionaries() =>
-      (_db.select(_db.dictionaryMetas)
-            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-          .get();
+  Future<List<DictionaryMeta>> getAllDictionaries() => (_db.select(
+    _db.dictionaryMetas,
+  )..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).get();
 
   /// Watch all imported dictionaries (reactive stream), ordered by sort order.
-  Stream<List<DictionaryMeta>> watchAllDictionaries() =>
-      (_db.select(_db.dictionaryMetas)
-            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
-          .watch();
+  Stream<List<DictionaryMeta>> watchAllDictionaries() => (_db.select(
+    _db.dictionaryMetas,
+  )..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).watch();
 
   /// Watch user-visible dictionaries (excludes hidden system dictionaries).
   Stream<List<DictionaryMeta>> watchVisibleDictionaries() =>
@@ -32,7 +30,9 @@ class DictionaryRepository {
   /// Automatically assigns the next sort order (appends to end).
   Future<int> insertDictionary(String name) async {
     final nextOrder = await getNextSortOrder();
-    return _db.into(_db.dictionaryMetas).insert(
+    return _db
+        .into(_db.dictionaryMetas)
+        .insert(
           DictionaryMetasCompanion.insert(
             name: name,
             sortOrder: Value(nextOrder),
@@ -92,9 +92,9 @@ class DictionaryRepository {
   }
 
   /// Find a dictionary by its exact name, or null if not found.
-  Future<DictionaryMeta?> getDictionaryByName(String name) =>
-      (_db.select(_db.dictionaryMetas)..where((t) => t.name.equals(name)))
-          .getSingleOrNull();
+  Future<DictionaryMeta?> getDictionaryByName(String name) => (_db.select(
+    _db.dictionaryMetas,
+  )..where((t) => t.name.equals(name))).getSingleOrNull();
 
   // ──────────────── DictionaryEntry ────────────────
 
@@ -146,8 +146,9 @@ class DictionaryRepository {
   }) async {
     int totalInserted = 0;
     for (var i = 0; i < entries.length; i += batchSize) {
-      final end =
-          (i + batchSize < entries.length) ? i + batchSize : entries.length;
+      final end = (i + batchSize < entries.length)
+          ? i + batchSize
+          : entries.length;
       final batch = entries.sublist(i, end);
 
       await _db.batch((b) {
@@ -177,8 +178,9 @@ class DictionaryRepository {
   }) async {
     int totalInserted = 0;
     for (var i = 0; i < entries.length; i += batchSize) {
-      final end =
-          (i + batchSize < entries.length) ? i + batchSize : entries.length;
+      final end = (i + batchSize < entries.length)
+          ? i + batchSize
+          : entries.length;
       final batch = entries.sublist(i, end);
 
       await _db.batch((b) {

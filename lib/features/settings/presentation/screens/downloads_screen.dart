@@ -52,8 +52,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               label: jmdictState.progress < 0.05
                   ? 'Fetching latest release...'
                   : jmdictState.progress < 0.7
-                      ? 'Downloading... ${((jmdictState.progress - 0.05) / 0.65 * 100).toInt()}%'
-                      : 'Importing...',
+                  ? 'Downloading... ${((jmdictState.progress - 0.05) / 0.65 * 100).toInt()}%'
+                  : 'Importing...',
               theme: theme,
             ),
           if (jmdictState.error != null)
@@ -83,8 +83,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               label: kanjidicState.progress < 0.05
                   ? 'Fetching latest release...'
                   : kanjidicState.progress < 0.7
-                      ? 'Downloading... ${((kanjidicState.progress - 0.05) / 0.65 * 100).toInt()}%'
-                      : 'Importing...',
+                  ? 'Downloading... ${((kanjidicState.progress - 0.05) / 0.65 * 100).toInt()}%'
+                  : 'Importing...',
               theme: theme,
             ),
           if (kanjidicState.error != null)
@@ -291,9 +291,9 @@ class _AttributionText extends StatelessWidget {
             style: linkStyle,
             recognizer: TapGestureRecognizer()
               ..onTap = () => launchUrl(
-                    Uri.parse(url),
-                    mode: LaunchMode.externalApplication,
-                  ),
+                Uri.parse(url),
+                mode: LaunchMode.externalApplication,
+              ),
           ),
           TextSpan(text: suffix),
         ],

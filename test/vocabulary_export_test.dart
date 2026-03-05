@@ -22,7 +22,9 @@ void main() {
     String glossaries = '[]',
     String sentenceContext = '',
   }) {
-    return db.into(db.savedWords).insert(
+    return db
+        .into(db.savedWords)
+        .insert(
           SavedWordsCompanion.insert(
             expression: expression,
             reading: Value(reading),
@@ -45,30 +47,49 @@ void main() {
 
   group('Selective export — query filtering', () {
     test('getAllWords returns all inserted words', () async {
-      await insertSavedWord(db,
-          expression: '食べる', glossaries: jsonEncode(['to eat']));
-      await insertSavedWord(db,
-          expression: '飲む', glossaries: jsonEncode(['to drink']));
-      await insertSavedWord(db,
-          expression: '走る', glossaries: jsonEncode(['to run']));
+      await insertSavedWord(
+        db,
+        expression: '食べる',
+        glossaries: jsonEncode(['to eat']),
+      );
+      await insertSavedWord(
+        db,
+        expression: '飲む',
+        glossaries: jsonEncode(['to drink']),
+      );
+      await insertSavedWord(
+        db,
+        expression: '走る',
+        glossaries: jsonEncode(['to run']),
+      );
 
       final words = await repo.getAllWords();
       expect(words, hasLength(3));
     });
 
     test('filtering by selectedIds returns only matching words', () async {
-      final id1 = await insertSavedWord(db,
-          expression: '食べる', glossaries: jsonEncode(['to eat']));
-      await insertSavedWord(db,
-          expression: '飲む', glossaries: jsonEncode(['to drink']));
-      final id3 = await insertSavedWord(db,
-          expression: '走る', glossaries: jsonEncode(['to run']));
+      final id1 = await insertSavedWord(
+        db,
+        expression: '食べる',
+        glossaries: jsonEncode(['to eat']),
+      );
+      await insertSavedWord(
+        db,
+        expression: '飲む',
+        glossaries: jsonEncode(['to drink']),
+      );
+      final id3 = await insertSavedWord(
+        db,
+        expression: '走る',
+        glossaries: jsonEncode(['to run']),
+      );
 
       // Simulate the filtering query used by exportToCsv
-      final filtered = await (db.select(db.savedWords)
-            ..where((t) => t.id.isIn({id1, id3}))
-            ..orderBy([(t) => OrderingTerm.desc(t.dateAdded)]))
-          .get();
+      final filtered =
+          await (db.select(db.savedWords)
+                ..where((t) => t.id.isIn({id1, id3}))
+                ..orderBy([(t) => OrderingTerm.desc(t.dateAdded)]))
+              .get();
 
       expect(filtered, hasLength(2));
       final expressions = filtered.map((w) => w.expression).toSet();
@@ -78,30 +99,45 @@ void main() {
     });
 
     test('filtering by single id returns one word', () async {
-      final id1 = await insertSavedWord(db,
-          expression: '食べる', glossaries: jsonEncode(['to eat']));
-      await insertSavedWord(db,
-          expression: '飲む', glossaries: jsonEncode(['to drink']));
-      await insertSavedWord(db,
-          expression: '走る', glossaries: jsonEncode(['to run']));
-      await insertSavedWord(db,
-          expression: '見る', glossaries: jsonEncode(['to see']));
+      final id1 = await insertSavedWord(
+        db,
+        expression: '食べる',
+        glossaries: jsonEncode(['to eat']),
+      );
+      await insertSavedWord(
+        db,
+        expression: '飲む',
+        glossaries: jsonEncode(['to drink']),
+      );
+      await insertSavedWord(
+        db,
+        expression: '走る',
+        glossaries: jsonEncode(['to run']),
+      );
+      await insertSavedWord(
+        db,
+        expression: '見る',
+        glossaries: jsonEncode(['to see']),
+      );
 
-      final filtered = await (db.select(db.savedWords)
-            ..where((t) => t.id.isIn({id1})))
-          .get();
+      final filtered = await (db.select(
+        db.savedWords,
+      )..where((t) => t.id.isIn({id1}))).get();
 
       expect(filtered, hasLength(1));
       expect(filtered.first.expression, '食べる');
     });
 
     test('filtering by non-existent ids returns empty', () async {
-      await insertSavedWord(db,
-          expression: '食べる', glossaries: jsonEncode(['to eat']));
+      await insertSavedWord(
+        db,
+        expression: '食べる',
+        glossaries: jsonEncode(['to eat']),
+      );
 
-      final filtered = await (db.select(db.savedWords)
-            ..where((t) => t.id.isIn({999, 1000})))
-          .get();
+      final filtered = await (db.select(
+        db.savedWords,
+      )..where((t) => t.id.isIn({999, 1000}))).get();
 
       expect(filtered, isEmpty);
     });
@@ -111,10 +147,16 @@ void main() {
 
   group('VocabularyRepository — CRUD', () {
     test('getAllWords returns inserted words', () async {
-      await insertSavedWord(db,
-          expression: '一', glossaries: jsonEncode(['one']));
-      await insertSavedWord(db,
-          expression: '二', glossaries: jsonEncode(['two']));
+      await insertSavedWord(
+        db,
+        expression: '一',
+        glossaries: jsonEncode(['one']),
+      );
+      await insertSavedWord(
+        db,
+        expression: '二',
+        glossaries: jsonEncode(['two']),
+      );
 
       final words = await repo.getAllWords();
       expect(words.length, 2);
@@ -123,8 +165,11 @@ void main() {
     });
 
     test('deleteWord removes the word', () async {
-      final id = await insertSavedWord(db,
-          expression: '食べる', glossaries: jsonEncode(['to eat']));
+      final id = await insertSavedWord(
+        db,
+        expression: '食べる',
+        glossaries: jsonEncode(['to eat']),
+      );
 
       await repo.deleteWord(id);
       final words = await repo.getAllWords();
@@ -132,10 +177,16 @@ void main() {
     });
 
     test('deleteWord only removes the specified word', () async {
-      final id1 = await insertSavedWord(db,
-          expression: '食べる', glossaries: jsonEncode(['to eat']));
-      await insertSavedWord(db,
-          expression: '飲む', glossaries: jsonEncode(['to drink']));
+      final id1 = await insertSavedWord(
+        db,
+        expression: '食べる',
+        glossaries: jsonEncode(['to eat']),
+      );
+      await insertSavedWord(
+        db,
+        expression: '飲む',
+        glossaries: jsonEncode(['to drink']),
+      );
 
       await repo.deleteWord(id1);
       final words = await repo.getAllWords();
@@ -144,10 +195,12 @@ void main() {
     });
 
     test('isWordSaved returns true for existing word', () async {
-      await insertSavedWord(db,
-          expression: '食べる',
-          reading: 'たべる',
-          glossaries: jsonEncode(['to eat']));
+      await insertSavedWord(
+        db,
+        expression: '食べる',
+        reading: 'たべる',
+        glossaries: jsonEncode(['to eat']),
+      );
 
       final exists = await repo.isWordSaved('食べる', 'たべる');
       expect(exists, isTrue);
@@ -159,10 +212,12 @@ void main() {
     });
 
     test('isWordSaved checks both expression and reading', () async {
-      await insertSavedWord(db,
-          expression: '食べる',
-          reading: 'たべる',
-          glossaries: jsonEncode(['to eat']));
+      await insertSavedWord(
+        db,
+        expression: '食べる',
+        reading: 'たべる',
+        glossaries: jsonEncode(['to eat']),
+      );
 
       // Same expression, different reading — should not match
       final exists = await repo.isWordSaved('食べる', 'くべる');
@@ -173,18 +228,17 @@ void main() {
       final stream = repo.watchAllWords();
 
       // First emission should be empty
-      await expectLater(
-        stream,
-        emits(isEmpty),
-      );
+      await expectLater(stream, emits(isEmpty));
     });
 
     test('saved word stores sentence context', () async {
-      await insertSavedWord(db,
-          expression: '食べる',
-          reading: 'たべる',
-          glossaries: jsonEncode(['to eat']),
-          sentenceContext: '昨日ケーキを食べた。');
+      await insertSavedWord(
+        db,
+        expression: '食べる',
+        reading: 'たべる',
+        glossaries: jsonEncode(['to eat']),
+        sentenceContext: '昨日ケーキを食べた。',
+      );
 
       final words = await repo.getAllWords();
       expect(words.first.sentenceContext, '昨日ケーキを食べた。');
@@ -192,9 +246,7 @@ void main() {
 
     test('saved word stores glossaries as JSON string', () async {
       final glossaries = jsonEncode(['to eat', 'to consume']);
-      await insertSavedWord(db,
-          expression: '食べる',
-          glossaries: glossaries);
+      await insertSavedWord(db, expression: '食べる', glossaries: glossaries);
 
       final words = await repo.getAllWords();
       expect(words.first.glossaries, glossaries);

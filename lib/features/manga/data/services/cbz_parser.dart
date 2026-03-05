@@ -71,10 +71,12 @@ class CbzParser {
 
     // Pre-filter to image files so we can report accurate progress.
     final imageFiles = archive
-        .where((f) =>
-            f.isFile &&
-            !p.basename(f.name).startsWith('.') &&
-            _isImageFile(p.basename(f.name)))
+        .where(
+          (f) =>
+              f.isFile &&
+              !p.basename(f.name).startsWith('.') &&
+              _isImageFile(p.basename(f.name)),
+        )
         .toList();
     final total = imageFiles.length;
 

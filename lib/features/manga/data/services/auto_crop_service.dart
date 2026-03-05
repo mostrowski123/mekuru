@@ -97,8 +97,15 @@ class AutoCropService {
 
     // Left edge: scan columns rightward
     for (int x = 0; x < w; x++) {
-      if (_colHasContent(image, x, top, bottom, bgLum, threshold,
-          minContentPixelsV)) {
+      if (_colHasContent(
+        image,
+        x,
+        top,
+        bottom,
+        bgLum,
+        threshold,
+        minContentPixelsV,
+      )) {
         left = x;
         break;
       }
@@ -106,8 +113,15 @@ class AutoCropService {
 
     // Right edge: scan columns leftward
     for (int x = w - 1; x >= left; x--) {
-      if (_colHasContent(image, x, top, bottom, bgLum, threshold,
-          minContentPixelsV)) {
+      if (_colHasContent(
+        image,
+        x,
+        top,
+        bottom,
+        bgLum,
+        threshold,
+        minContentPixelsV,
+      )) {
         right = x;
         break;
       }

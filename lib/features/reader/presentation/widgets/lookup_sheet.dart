@@ -60,10 +60,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
   void initState() {
     super.initState();
     _editController = TextEditingController();
-    _searchResultsFuture = _search(
-      widget.selectedText,
-      widget.surfaceForm,
-    );
+    _searchResultsFuture = _search(widget.selectedText, widget.surfaceForm);
     _pitchAccentsFuture = _searchPitchAccents(
       widget.selectedText,
       widget.surfaceForm,
@@ -167,18 +164,14 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
         if (widget.transparent) {
           content = Container(
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surface
-                  .withAlpha(210),
+              color: Theme.of(context).colorScheme.surface.withAlpha(210),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
               border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outlineVariant
-                    .withAlpha(180),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outlineVariant.withAlpha(180),
               ),
             ),
             clipBehavior: Clip.antiAlias,
@@ -210,10 +203,9 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
           ),
           border: widget.transparent
               ? Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outlineVariant
-                      .withAlpha(180),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outlineVariant.withAlpha(180),
                 )
               : null,
           boxShadow: [

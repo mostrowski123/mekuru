@@ -137,7 +137,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     }
   }
 
-
   void _clearHighlight() {
     if (_highlightedWord != null) {
       setState(() {
@@ -861,7 +860,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           key: _scrollViewKey,
           mokuroBook: mokuroBook,
           bookId: widget.book.id,
-          initialScrollOffset: _currentPage * MediaQuery.of(context).size.height,
+          initialScrollOffset:
+              _currentPage * MediaQuery.of(context).size.height,
           debugOverlay: _debugOverlay,
           autoCrop: autoCrop,
           enableWordOverlays: enableWordOverlays,

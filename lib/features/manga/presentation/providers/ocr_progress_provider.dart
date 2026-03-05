@@ -10,8 +10,10 @@ import '../../data/services/ocr_background_worker.dart';
 /// The WorkManager background task writes progress to SharedPreferences,
 /// and this provider polls every 2 seconds to pick up changes.
 /// Returns null if no OCR task has been started for this book.
-final ocrProgressProvider =
-    StreamProvider.family<OcrProgress?, int>((ref, bookId) {
+final ocrProgressProvider = StreamProvider.family<OcrProgress?, int>((
+  ref,
+  bookId,
+) {
   return _pollOcrProgress(bookId);
 });
 

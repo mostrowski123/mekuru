@@ -26,8 +26,7 @@ class TappableExpressionText extends StatefulWidget {
   final TextStyle? furiganaStyle;
 
   @override
-  State<TappableExpressionText> createState() =>
-      _TappableExpressionTextState();
+  State<TappableExpressionText> createState() => _TappableExpressionTextState();
 }
 
 class _TappableExpressionTextState extends State<TappableExpressionText> {
@@ -72,11 +71,9 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
         final recognizer = TapGestureRecognizer()
           ..onTap = () => widget.onKanjiTap(char);
         _recognizers.add(recognizer);
-        spans.add(TextSpan(
-          text: char,
-          style: kanjiStyle,
-          recognizer: recognizer,
-        ));
+        spans.add(
+          TextSpan(text: char, style: kanjiStyle, recognizer: recognizer),
+        );
       } else {
         spans.add(TextSpan(text: char, style: baseStyle));
       }
@@ -92,10 +89,11 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
     final showFurigana =
         widget.reading.isNotEmpty && widget.reading != widget.expression;
 
-    final exprStyle = widget.expressionStyle ??
-        Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            );
+    final exprStyle =
+        widget.expressionStyle ??
+        Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold);
 
     final kanjiStyle = exprStyle?.copyWith(
       color: theme.colorScheme.primary,
@@ -114,7 +112,8 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
       );
     }
 
-    final furiStyle = widget.furiganaStyle ??
+    final furiStyle =
+        widget.furiganaStyle ??
         exprStyle?.copyWith(
           fontSize: (exprStyle.fontSize ?? 16) * 0.55,
           fontWeight: FontWeight.w400,
@@ -139,8 +138,7 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
               ),
               Text.rich(
                 TextSpan(
-                  children:
-                      _buildCharSpans(seg.text, exprStyle, kanjiStyle),
+                  children: _buildCharSpans(seg.text, exprStyle, kanjiStyle),
                   style: exprStyle,
                 ),
               ),

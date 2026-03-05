@@ -141,7 +141,7 @@ class DictionaryImporter {
     String filePath, {
     void Function()? onParsing,
     void Function(String name, int entryCount, int dictIndex, int dictTotal)?
-        onDictionaryStart,
+    onDictionaryStart,
     void Function(int processed, int total)? onProgress,
     void Function(String name)? onDictionarySkipped,
   }) async {
@@ -164,10 +164,10 @@ class DictionaryImporter {
 
     // Set up isolate communication
     final receivePort = ReceivePort();
-    await Isolate.spawn(
-      _streamParseCollection,
-      [receivePort.sendPort, filePath],
-    );
+    await Isolate.spawn(_streamParseCollection, [
+      receivePort.sendPort,
+      filePath,
+    ]);
 
     // Listen for batches from the isolate
     String? errorMessage;
@@ -236,7 +236,8 @@ class DictionaryImporter {
         continue;
       }
 
-      final totalItems = rawEntries.length + rawPitchEntries.length + rawFreqEntries.length;
+      final totalItems =
+          rawEntries.length + rawPitchEntries.length + rawFreqEntries.length;
       onDictionaryStart?.call(dictName, totalItems, i, allDictNames.length);
 
       // Insert dictionary metadata
@@ -317,7 +318,9 @@ class DictionaryImporter {
           );
           freqInserted += batch.length;
           onProgress?.call(
-            inserted + (rawPitchEntries.isEmpty ? 0 : rawPitchEntries.length) + freqInserted,
+            inserted +
+                (rawPitchEntries.isEmpty ? 0 : rawPitchEntries.length) +
+                freqInserted,
             totalItems,
           );
         }
@@ -809,7 +812,8 @@ class DictionaryImporter {
 
       final expression = inner['expression']?.toString();
       final mode = inner['mode']?.toString();
-      final dictionary = inner['dictionary']?.toString() ?? 'Unknown Dictionary';
+      final dictionary =
+          inner['dictionary']?.toString() ?? 'Unknown Dictionary';
       if (expression == null || expression.isEmpty) return;
 
       if (mode == 'freq' && freqBatch != null) {
@@ -945,8 +949,7 @@ class DictionaryImporter {
     // 2b. Parse all kanji_bank_*.json files (e.g. KANJIDIC)
     final kanjiBankFiles = archive.files
         .where(
-          (f) =>
-              f.name.startsWith('kanji_bank_') && f.name.endsWith('.json'),
+          (f) => f.name.startsWith('kanji_bank_') && f.name.endsWith('.json'),
         )
         .toList();
 
@@ -998,8 +1001,7 @@ class DictionaryImporter {
     final metaBankFiles = archive.files
         .where(
           (f) =>
-              f.name.startsWith('term_meta_bank_') &&
-              f.name.endsWith('.json'),
+              f.name.startsWith('term_meta_bank_') && f.name.endsWith('.json'),
         )
         .toList();
 

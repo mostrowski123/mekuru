@@ -30,8 +30,9 @@ class AnkidroidConfigNotifier extends Notifier<AnkidroidConfig> {
     if (_hasLoadedPersistedSettings) return;
     _hasLoadedPersistedSettings = true;
 
-    final json =
-        await ref.read(appSettingsStorageProvider).loadAnkidroidConfig();
+    final json = await ref
+        .read(appSettingsStorageProvider)
+        .loadAnkidroidConfig();
     final config = AnkidroidConfig.decode(json);
     if (config != null) {
       state = config;
@@ -42,20 +43,20 @@ class AnkidroidConfigNotifier extends Notifier<AnkidroidConfig> {
   void setConfig(AnkidroidConfig config) {
     state = config;
     unawaited(
-      ref
-          .read(appSettingsStorageProvider)
-          .saveAnkidroidConfig(config.encode()),
+      ref.read(appSettingsStorageProvider).saveAnkidroidConfig(config.encode()),
     );
   }
 
   /// Update the selected model and reset field mapping.
   void setModel(int modelId, String modelName, List<String> fields) {
     final mapping = {for (final f in fields) f: 'empty'};
-    setConfig(state.copyWith(
-      modelId: modelId,
-      modelName: modelName,
-      fieldMapping: mapping,
-    ));
+    setConfig(
+      state.copyWith(
+        modelId: modelId,
+        modelName: modelName,
+        fieldMapping: mapping,
+      ),
+    );
   }
 
   /// Update the default deck.
@@ -79,5 +80,5 @@ class AnkidroidConfigNotifier extends Notifier<AnkidroidConfig> {
 /// Provider for AnkiDroid configuration.
 final ankidroidConfigProvider =
     NotifierProvider<AnkidroidConfigNotifier, AnkidroidConfig>(
-  AnkidroidConfigNotifier.new,
-);
+      AnkidroidConfigNotifier.new,
+    );

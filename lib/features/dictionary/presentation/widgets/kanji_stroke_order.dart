@@ -13,11 +13,7 @@ import 'package:mekuru/features/settings/data/services/kanjivg_download_service.
 /// Supports animated stroke-by-stroke playback and a static view showing
 /// all strokes with numbered labels.
 class KanjiStrokeOrder extends StatefulWidget {
-  const KanjiStrokeOrder({
-    super.key,
-    required this.kanji,
-    this.size = 140,
-  });
+  const KanjiStrokeOrder({super.key, required this.kanji, this.size = 140});
 
   /// The single kanji character to display stroke order for.
   final String kanji;
@@ -191,9 +187,7 @@ class _KanjiStrokeOrderState extends State<KanjiStrokeOrder>
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant,
-            ),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
             borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.all(8),

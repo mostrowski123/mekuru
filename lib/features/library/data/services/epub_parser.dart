@@ -263,8 +263,9 @@ class EpubParser {
     String? pageProgressionDirection;
     final spineElements = opfXml.findAllElements('spine');
     if (spineElements.isNotEmpty) {
-      pageProgressionDirection =
-          spineElements.first.getAttribute('page-progression-direction');
+      pageProgressionDirection = spineElements.first.getAttribute(
+        'page-progression-direction',
+      );
     }
 
     // Extract primary-writing-mode from <meta name="primary-writing-mode">
