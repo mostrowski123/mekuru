@@ -513,18 +513,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: Icon(Icons.info_outline, color: theme.colorScheme.primary),
-            title: const Text('About Mekuru'),
-            subtitle: const Text('Version, licenses, and more'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              AppHaptics.light();
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const AboutScreen()));
-            },
-          ),
-          ListTile(
             leading: Icon(
               Icons.menu_book_outlined,
               color: theme.colorScheme.primary,
@@ -538,6 +526,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Uri.parse('https://mekuru.matthew.moe/documentation/'),
                 mode: LaunchMode.externalApplication,
               );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.info_outline, color: theme.colorScheme.primary),
+            title: const Text('About Mekuru'),
+            subtitle: const Text('Version, licenses, and more'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AboutScreen()));
             },
           ),
           const SizedBox(height: 16),
