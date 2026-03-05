@@ -29,12 +29,14 @@ class AppThemeNotifier extends Notifier<ThemeMode> {
         .loadThemeMode();
     if (persisted != null) {
       state = persisted;
+      PreloadedAppSettings.setThemeModeFromName(persisted.name);
     }
   }
 
   /// Set theme mode and persist to storage.
   void setThemeMode(ThemeMode mode) {
     state = mode;
+    PreloadedAppSettings.setThemeModeFromName(mode.name);
     unawaited(ref.read(appSettingsStorageProvider).saveThemeMode(mode));
   }
 }
@@ -314,16 +316,19 @@ class AppColorThemeNotifier extends Notifier<AppColorTheme> {
         .read(appSettingsStorageProvider)
         .loadColorTheme();
     if (persisted != null) {
-      state = AppColorTheme.values.firstWhere(
+      final restoredTheme = AppColorTheme.values.firstWhere(
         (e) => e.name == persisted,
         orElse: () => AppColorTheme.mekuruRed,
       );
+      state = restoredTheme;
+      PreloadedAppSettings.setColorThemeName(restoredTheme.name);
     }
   }
 
   /// Set color theme and persist to storage.
   void setColorTheme(AppColorTheme theme) {
     state = theme;
+    PreloadedAppSettings.setColorThemeName(theme.name);
     unawaited(ref.read(appSettingsStorageProvider).saveColorTheme(theme.name));
   }
 }

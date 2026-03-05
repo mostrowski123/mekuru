@@ -10,82 +10,87 @@ import '../../features/dictionary/data/models/pitch_accent.dart';
 import '../../features/dictionary/data/models/frequency.dart';
 import '../../features/reader/data/models/bookmark.dart';
 import '../../features/reader/data/models/highlight.dart';
+import '../../features/backup/data/models/pending_book_data.dart';
 
 part 'database_provider.g.dart';
 
-@DriftDatabase(tables: [Books, SavedWords, DictionaryMetas, DictionaryEntries, PitchAccents, Frequencies, Bookmarks, Highlights])
+@DriftDatabase(
+  tables: [
+    Books,
+    SavedWords,
+    DictionaryMetas,
+    DictionaryEntries,
+    PitchAccents,
+    Frequencies,
+    Bookmarks,
+    Highlights,
+    PendingBookDatas,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onUpgrade: (migrator, from, to) async {
-          if (from < 2) {
-            await migrator.addColumn(
-              dictionaryMetas,
-              dictionaryMetas.sortOrder,
-            );
-            // Preserve existing display order by using insertion id
-            await customStatement(
-              'UPDATE dictionary_metas SET sort_order = id',
-            );
-          }
-          if (from < 3) {
-            await migrator.addColumn(books, books.readProgress);
-          }
-          if (from < 4) {
-            await migrator.addColumn(books, books.lastReadAt);
-          }
-          if (from < 5) {
-            await migrator.createTable(pitchAccents);
-          }
-          if (from < 6) {
-            await migrator.createTable(frequencies);
-          }
-          if (from < 7) {
-            await migrator.addColumn(
-              dictionaryMetas,
-              dictionaryMetas.isHidden,
-            );
-            // Hide existing bundled JPDB frequency dictionary
-            await customStatement(
-              "UPDATE dictionary_metas SET is_hidden = 1 WHERE name = 'JPDBv2\u32D5'",
-            );
-          }
-          if (from < 8) {
-            await migrator.addColumn(books, books.language);
-            await migrator.addColumn(
-              books,
-              books.pageProgressionDirection,
-            );
-          }
-          if (from < 9) {
-            await migrator.addColumn(books, books.overrideVerticalText);
-            await migrator.addColumn(books, books.overrideReadingDirection);
-          }
-          if (from < 10) {
-            await migrator.createTable(bookmarks);
-            await migrator.createTable(highlights);
-          }
-          if (from < 11) {
-            await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_expr_dictid ON dictionary_entries (expression, dictionary_id)',
-            );
-            await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_read_dictid ON dictionary_entries (reading, dictionary_id)',
-            );
-            await customStatement(
-              'CREATE INDEX IF NOT EXISTS idx_freq_expr_read ON frequencies (expression, reading)',
-            );
-          }
-          if (from < 12) {
-            await migrator.addColumn(books, books.bookType);
-          }
-        },
-      );
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.addColumn(dictionaryMetas, dictionaryMetas.sortOrder);
+        // Preserve existing display order by using insertion id
+        await customStatement('UPDATE dictionary_metas SET sort_order = id');
+      }
+      if (from < 3) {
+        await migrator.addColumn(books, books.readProgress);
+      }
+      if (from < 4) {
+        await migrator.addColumn(books, books.lastReadAt);
+      }
+      if (from < 5) {
+        await migrator.createTable(pitchAccents);
+      }
+      if (from < 6) {
+        await migrator.createTable(frequencies);
+      }
+      if (from < 7) {
+        await migrator.addColumn(dictionaryMetas, dictionaryMetas.isHidden);
+        // Hide existing bundled JPDB frequency dictionary
+        await customStatement(
+          "UPDATE dictionary_metas SET is_hidden = 1 WHERE name = 'JPDBv2\u32D5'",
+        );
+      }
+      if (from < 8) {
+        await migrator.addColumn(books, books.language);
+        await migrator.addColumn(books, books.pageProgressionDirection);
+      }
+      if (from < 9) {
+        await migrator.addColumn(books, books.overrideVerticalText);
+        await migrator.addColumn(books, books.overrideReadingDirection);
+      }
+      if (from < 10) {
+        await migrator.createTable(bookmarks);
+        await migrator.createTable(highlights);
+      }
+      if (from < 11) {
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_expr_dictid ON dictionary_entries (expression, dictionary_id)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_read_dictid ON dictionary_entries (reading, dictionary_id)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_freq_expr_read ON frequencies (expression, reading)',
+        );
+      }
+      if (from < 12) {
+        await migrator.addColumn(books, books.bookType);
+      }
+      if (from < 13) {
+        await migrator.createTable(pendingBookDatas);
+      }
+    },
+  );
 
   static QueryExecutor _openConnection() {
     return driftDatabase(

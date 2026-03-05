@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
+import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart';
@@ -116,6 +119,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
     try {
       final repo = ref.read(bookRepositoryProvider);
       final book = await repo.importEpub(filePath);
+      await _applyPendingDataIfExists(book);
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'EPUB imported', category: 'library'),
       );
@@ -139,6 +143,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
           state = BookImportState(isImporting: true, progress: p);
         },
       );
+      await _applyPendingDataIfExists(book);
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'CBZ imported', category: 'library'),
       );
@@ -162,6 +167,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
         safTreeUri: null,
         safSelectedFileRelativePath: null,
       );
+      await _applyPendingDataIfExists(book);
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Manga imported', category: 'library'),
       );
@@ -190,6 +196,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
         safTreeUri: safTreeUri,
         safSelectedFileRelativePath: safSelectedFileRelativePath,
       );
+      await _applyPendingDataIfExists(book);
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Manga imported (SAF)', category: 'library'),
       );
@@ -199,6 +206,40 @@ class BookImportNotifier extends Notifier<BookImportState> {
       Sentry.captureException(e, stackTrace: st);
       state = BookImportState(error: e.toString());
       return null;
+    }
+  }
+
+  /// Check for pending backup data matching this book and apply it.
+  Future<void> _applyPendingDataIfExists(Book book) async {
+    try {
+      final pendingRepo = ref.read(pendingBookDataRepositoryProvider);
+      final matchService = ref.read(bookMatchServiceProvider);
+      final hashKey = await matchService.generateHashKeyForPath(
+        book.filePath,
+        book.bookType,
+      );
+
+      PendingBookData? pending;
+      if (hashKey != null) {
+        pending = await pendingRepo.findByBookKey(hashKey);
+      }
+
+      // Backward compatibility with old title-based backup keys.
+      pending ??= await pendingRepo.findByBookKey(
+        matchService.generateKey(book.title, book.bookType),
+      );
+
+      if (pending != null) {
+        final restoreService = ref.read(restoreServiceProvider);
+        final entry = BackupSerializer.decodeBookEntry(pending.dataJson);
+        await restoreService.applyBookData(book.id, entry);
+        await pendingRepo.deleteById(pending.id);
+        debugPrint('[Backup] Applied pending data for "${book.title}"');
+      }
+    } catch (e, st) {
+      // Don't let pending data errors block import
+      debugPrint('[Backup] Failed to apply pending data: $e');
+      Sentry.captureException(e, stackTrace: st);
     }
   }
 

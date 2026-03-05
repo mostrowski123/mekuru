@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'features/backup/presentation/providers/backup_providers.dart';
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/data/repositories/book_repository.dart';
 import 'features/library/presentation/screens/library_screen.dart';
@@ -31,6 +32,8 @@ class MekuruApp extends ConsumerWidget {
     ref.read(autoCropWhiteThresholdProvider.notifier).loadPersistedSettings();
     ref.read(ocrServerUrlProvider.notifier).loadPersistedSettings();
     ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
+    // Trigger auto-backup check (runs once, fire-and-forget)
+    ref.read(autoBackupCheckerProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
 

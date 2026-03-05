@@ -3722,6 +3722,308 @@ class HighlightsCompanion extends UpdateCompanion<Highlight> {
   }
 }
 
+class $PendingBookDatasTable extends PendingBookDatas
+    with TableInfo<$PendingBookDatasTable, PendingBookData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingBookDatasTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _bookKeyMeta = const VerificationMeta(
+    'bookKey',
+  );
+  @override
+  late final GeneratedColumn<String> bookKey = GeneratedColumn<String>(
+    'book_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataJsonMeta = const VerificationMeta(
+    'dataJson',
+  );
+  @override
+  late final GeneratedColumn<String> dataJson = GeneratedColumn<String>(
+    'data_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateAddedMeta = const VerificationMeta(
+    'dateAdded',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateAdded = GeneratedColumn<DateTime>(
+    'date_added',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, bookKey, dataJson, dateAdded];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_book_datas';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingBookData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('book_key')) {
+      context.handle(
+        _bookKeyMeta,
+        bookKey.isAcceptableOrUnknown(data['book_key']!, _bookKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookKeyMeta);
+    }
+    if (data.containsKey('data_json')) {
+      context.handle(
+        _dataJsonMeta,
+        dataJson.isAcceptableOrUnknown(data['data_json']!, _dataJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataJsonMeta);
+    }
+    if (data.containsKey('date_added')) {
+      context.handle(
+        _dateAddedMeta,
+        dateAdded.isAcceptableOrUnknown(data['date_added']!, _dateAddedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PendingBookData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingBookData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      bookKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_key'],
+      )!,
+      dataJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data_json'],
+      )!,
+      dateAdded: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_added'],
+      )!,
+    );
+  }
+
+  @override
+  $PendingBookDatasTable createAlias(String alias) {
+    return $PendingBookDatasTable(attachedDatabase, alias);
+  }
+}
+
+class PendingBookData extends DataClass implements Insertable<PendingBookData> {
+  final int id;
+
+  /// Book identity key: "{bookType}::{normalizedTitle}".
+  final String bookKey;
+
+  /// Full book entry JSON blob (bookmarks, highlights, progress, overrides).
+  final String dataJson;
+  final DateTime dateAdded;
+  const PendingBookData({
+    required this.id,
+    required this.bookKey,
+    required this.dataJson,
+    required this.dateAdded,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['book_key'] = Variable<String>(bookKey);
+    map['data_json'] = Variable<String>(dataJson);
+    map['date_added'] = Variable<DateTime>(dateAdded);
+    return map;
+  }
+
+  PendingBookDatasCompanion toCompanion(bool nullToAbsent) {
+    return PendingBookDatasCompanion(
+      id: Value(id),
+      bookKey: Value(bookKey),
+      dataJson: Value(dataJson),
+      dateAdded: Value(dateAdded),
+    );
+  }
+
+  factory PendingBookData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingBookData(
+      id: serializer.fromJson<int>(json['id']),
+      bookKey: serializer.fromJson<String>(json['bookKey']),
+      dataJson: serializer.fromJson<String>(json['dataJson']),
+      dateAdded: serializer.fromJson<DateTime>(json['dateAdded']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'bookKey': serializer.toJson<String>(bookKey),
+      'dataJson': serializer.toJson<String>(dataJson),
+      'dateAdded': serializer.toJson<DateTime>(dateAdded),
+    };
+  }
+
+  PendingBookData copyWith({
+    int? id,
+    String? bookKey,
+    String? dataJson,
+    DateTime? dateAdded,
+  }) => PendingBookData(
+    id: id ?? this.id,
+    bookKey: bookKey ?? this.bookKey,
+    dataJson: dataJson ?? this.dataJson,
+    dateAdded: dateAdded ?? this.dateAdded,
+  );
+  PendingBookData copyWithCompanion(PendingBookDatasCompanion data) {
+    return PendingBookData(
+      id: data.id.present ? data.id.value : this.id,
+      bookKey: data.bookKey.present ? data.bookKey.value : this.bookKey,
+      dataJson: data.dataJson.present ? data.dataJson.value : this.dataJson,
+      dateAdded: data.dateAdded.present ? data.dateAdded.value : this.dateAdded,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingBookData(')
+          ..write('id: $id, ')
+          ..write('bookKey: $bookKey, ')
+          ..write('dataJson: $dataJson, ')
+          ..write('dateAdded: $dateAdded')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, bookKey, dataJson, dateAdded);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingBookData &&
+          other.id == this.id &&
+          other.bookKey == this.bookKey &&
+          other.dataJson == this.dataJson &&
+          other.dateAdded == this.dateAdded);
+}
+
+class PendingBookDatasCompanion extends UpdateCompanion<PendingBookData> {
+  final Value<int> id;
+  final Value<String> bookKey;
+  final Value<String> dataJson;
+  final Value<DateTime> dateAdded;
+  const PendingBookDatasCompanion({
+    this.id = const Value.absent(),
+    this.bookKey = const Value.absent(),
+    this.dataJson = const Value.absent(),
+    this.dateAdded = const Value.absent(),
+  });
+  PendingBookDatasCompanion.insert({
+    this.id = const Value.absent(),
+    required String bookKey,
+    required String dataJson,
+    this.dateAdded = const Value.absent(),
+  }) : bookKey = Value(bookKey),
+       dataJson = Value(dataJson);
+  static Insertable<PendingBookData> custom({
+    Expression<int>? id,
+    Expression<String>? bookKey,
+    Expression<String>? dataJson,
+    Expression<DateTime>? dateAdded,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookKey != null) 'book_key': bookKey,
+      if (dataJson != null) 'data_json': dataJson,
+      if (dateAdded != null) 'date_added': dateAdded,
+    });
+  }
+
+  PendingBookDatasCompanion copyWith({
+    Value<int>? id,
+    Value<String>? bookKey,
+    Value<String>? dataJson,
+    Value<DateTime>? dateAdded,
+  }) {
+    return PendingBookDatasCompanion(
+      id: id ?? this.id,
+      bookKey: bookKey ?? this.bookKey,
+      dataJson: dataJson ?? this.dataJson,
+      dateAdded: dateAdded ?? this.dateAdded,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (bookKey.present) {
+      map['book_key'] = Variable<String>(bookKey.value);
+    }
+    if (dataJson.present) {
+      map['data_json'] = Variable<String>(dataJson.value);
+    }
+    if (dateAdded.present) {
+      map['date_added'] = Variable<DateTime>(dateAdded.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingBookDatasCompanion(')
+          ..write('id: $id, ')
+          ..write('bookKey: $bookKey, ')
+          ..write('dataJson: $dataJson, ')
+          ..write('dateAdded: $dateAdded')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3736,6 +4038,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FrequenciesTable frequencies = $FrequenciesTable(this);
   late final $BookmarksTable bookmarks = $BookmarksTable(this);
   late final $HighlightsTable highlights = $HighlightsTable(this);
+  late final $PendingBookDatasTable pendingBookDatas = $PendingBookDatasTable(
+    this,
+  );
   late final Index idxExpression = Index(
     'idx_expression',
     'CREATE INDEX idx_expression ON dictionary_entries (expression)',
@@ -3785,6 +4090,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     frequencies,
     bookmarks,
     highlights,
+    pendingBookDatas,
     idxExpression,
     idxReading,
     idxExprDictid,
@@ -6131,6 +6437,187 @@ typedef $$HighlightsTableProcessedTableManager =
       Highlight,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$PendingBookDatasTableCreateCompanionBuilder =
+    PendingBookDatasCompanion Function({
+      Value<int> id,
+      required String bookKey,
+      required String dataJson,
+      Value<DateTime> dateAdded,
+    });
+typedef $$PendingBookDatasTableUpdateCompanionBuilder =
+    PendingBookDatasCompanion Function({
+      Value<int> id,
+      Value<String> bookKey,
+      Value<String> dataJson,
+      Value<DateTime> dateAdded,
+    });
+
+class $$PendingBookDatasTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingBookDatasTable> {
+  $$PendingBookDatasTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookKey => $composableBuilder(
+    column: $table.bookKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dataJson => $composableBuilder(
+    column: $table.dataJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateAdded => $composableBuilder(
+    column: $table.dateAdded,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingBookDatasTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingBookDatasTable> {
+  $$PendingBookDatasTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookKey => $composableBuilder(
+    column: $table.bookKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dataJson => $composableBuilder(
+    column: $table.dataJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateAdded => $composableBuilder(
+    column: $table.dateAdded,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingBookDatasTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingBookDatasTable> {
+  $$PendingBookDatasTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get bookKey =>
+      $composableBuilder(column: $table.bookKey, builder: (column) => column);
+
+  GeneratedColumn<String> get dataJson =>
+      $composableBuilder(column: $table.dataJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateAdded =>
+      $composableBuilder(column: $table.dateAdded, builder: (column) => column);
+}
+
+class $$PendingBookDatasTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingBookDatasTable,
+          PendingBookData,
+          $$PendingBookDatasTableFilterComposer,
+          $$PendingBookDatasTableOrderingComposer,
+          $$PendingBookDatasTableAnnotationComposer,
+          $$PendingBookDatasTableCreateCompanionBuilder,
+          $$PendingBookDatasTableUpdateCompanionBuilder,
+          (
+            PendingBookData,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingBookDatasTable,
+              PendingBookData
+            >,
+          ),
+          PendingBookData,
+          PrefetchHooks Function()
+        > {
+  $$PendingBookDatasTableTableManager(
+    _$AppDatabase db,
+    $PendingBookDatasTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingBookDatasTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PendingBookDatasTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PendingBookDatasTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> bookKey = const Value.absent(),
+                Value<String> dataJson = const Value.absent(),
+                Value<DateTime> dateAdded = const Value.absent(),
+              }) => PendingBookDatasCompanion(
+                id: id,
+                bookKey: bookKey,
+                dataJson: dataJson,
+                dateAdded: dateAdded,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String bookKey,
+                required String dataJson,
+                Value<DateTime> dateAdded = const Value.absent(),
+              }) => PendingBookDatasCompanion.insert(
+                id: id,
+                bookKey: bookKey,
+                dataJson: dataJson,
+                dateAdded: dateAdded,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingBookDatasTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingBookDatasTable,
+      PendingBookData,
+      $$PendingBookDatasTableFilterComposer,
+      $$PendingBookDatasTableOrderingComposer,
+      $$PendingBookDatasTableAnnotationComposer,
+      $$PendingBookDatasTableCreateCompanionBuilder,
+      $$PendingBookDatasTableUpdateCompanionBuilder,
+      (
+        PendingBookData,
+        BaseReferences<_$AppDatabase, $PendingBookDatasTable, PendingBookData>,
+      ),
+      PendingBookData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6151,4 +6638,6 @@ class $AppDatabaseManager {
       $$BookmarksTableTableManager(_db, _db.bookmarks);
   $$HighlightsTableTableManager get highlights =>
       $$HighlightsTableTableManager(_db, _db.highlights);
+  $$PendingBookDatasTableTableManager get pendingBookDatas =>
+      $$PendingBookDatasTableTableManager(_db, _db.pendingBookDatas);
 }

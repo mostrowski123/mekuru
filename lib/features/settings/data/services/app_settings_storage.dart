@@ -35,20 +35,24 @@ class PreloadedAppSettings {
   static ThemeMode initialThemeMode = ThemeMode.dark;
   static String? initialColorThemeName;
 
+  static void setThemeModeFromName(String? themeStr) {
+    initialThemeMode = switch (themeStr) {
+      'light' => ThemeMode.light,
+      'system' => ThemeMode.system,
+      _ => ThemeMode.dark,
+    };
+  }
+
+  static void setColorThemeName(String? name) {
+    initialColorThemeName = name;
+  }
+
   /// Call once in [main] before [runApp].
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final themeStr = prefs.getString('app.theme_mode');
-    if (themeStr != null) {
-      initialThemeMode = switch (themeStr) {
-        'light' => ThemeMode.light,
-        'system' => ThemeMode.system,
-        _ => ThemeMode.dark,
-      };
-    }
-
-    initialColorThemeName = prefs.getString('app.color_theme');
+    setThemeModeFromName(prefs.getString('app.theme_mode'));
+    setColorThemeName(prefs.getString('app.color_theme'));
   }
 }
 

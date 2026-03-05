@@ -1,0 +1,371 @@
+import 'dart:async';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/features/backup/data/repositories/pending_book_data_repository.dart';
+import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
+import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
+import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
+import 'package:mekuru/features/backup/data/services/backup_service.dart';
+import 'package:mekuru/features/backup/data/services/book_match_service.dart';
+import 'package:mekuru/features/backup/data/services/restore_service.dart';
+import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
+import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
+import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
+import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/main.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+// ──────────────── Service Providers ────────────────
+
+final bookMatchServiceProvider = Provider<BookMatchService>((ref) {
+  return BookMatchService();
+});
+
+final pendingBookDataRepositoryProvider = Provider<PendingBookDataRepository>((
+  ref,
+) {
+  return PendingBookDataRepository(ref.watch(databaseProvider));
+});
+
+final backupServiceProvider = Provider<BackupService>((ref) {
+  return BackupService(
+    ref.watch(databaseProvider),
+    ref.watch(bookMatchServiceProvider),
+  );
+});
+
+final restoreServiceProvider = Provider<RestoreService>((ref) {
+  return RestoreService(
+    ref.watch(databaseProvider),
+    ref.watch(bookMatchServiceProvider),
+    ref.watch(pendingBookDataRepositoryProvider),
+  );
+});
+
+final backupFileManagerProvider = Provider<BackupFileManager>((ref) {
+  return BackupFileManager();
+});
+
+final backupSchedulerProvider = Provider<BackupScheduler>((ref) {
+  return BackupScheduler();
+});
+
+// ──────────────── Backup State ────────────────
+
+class BackupState {
+  final bool isWorking;
+  final String? error;
+  final String? successMessage;
+
+  const BackupState({this.isWorking = false, this.error, this.successMessage});
+}
+
+class BackupNotifier extends Notifier<BackupState> {
+  Timer? _autoDismissTimer;
+
+  @override
+  BackupState build() => const BackupState();
+
+  /// Create a manual backup.
+  Future<void> createBackup() async {
+    state = const BackupState(isWorking: true);
+    try {
+      final service = ref.read(backupServiceProvider);
+      final fileManager = ref.read(backupFileManagerProvider);
+      final manifest = await service.createBackup();
+      await fileManager.createBackupFile(manifest);
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'Manual backup created', category: 'backup'),
+      );
+      _showSuccess('Backup created successfully');
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      state = BackupState(error: 'Backup failed: $e');
+    }
+  }
+
+  /// Export the most recent backup file via the system file browser.
+  Future<void> exportLatestBackup() async {
+    state = const BackupState(isWorking: true);
+    try {
+      final fileManager = ref.read(backupFileManagerProvider);
+      final backups = await fileManager.listBackups();
+      if (backups.isEmpty) {
+        state = const BackupState(
+          error: 'No backups to export. Create one first.',
+        );
+        return;
+      }
+      final saved = await fileManager.exportBackupFile(backups.first.filePath);
+      if (saved) {
+        _showSuccess('Backup exported successfully');
+      } else {
+        state = const BackupState();
+      }
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      state = BackupState(error: 'Export failed: $e');
+    }
+  }
+
+  void clearState() {
+    _autoDismissTimer?.cancel();
+    state = const BackupState();
+  }
+
+  void _showSuccess(String message) {
+    _autoDismissTimer?.cancel();
+    state = BackupState(successMessage: message);
+    _autoDismissTimer = Timer(const Duration(seconds: 3), clearState);
+  }
+}
+
+final backupNotifierProvider = NotifierProvider<BackupNotifier, BackupState>(
+  BackupNotifier.new,
+);
+
+// ──────────────── Restore State ────────────────
+
+class RestoreState {
+  final bool isWorking;
+  final String? error;
+  final String? successMessage;
+  final RestoreResult? result;
+  final List<BookRestoreConflict>? pendingConflicts;
+
+  const RestoreState({
+    this.isWorking = false,
+    this.error,
+    this.successMessage,
+    this.result,
+    this.pendingConflicts,
+  });
+}
+
+class RestoreNotifier extends Notifier<RestoreState> {
+  Timer? _autoDismissTimer;
+
+  @override
+  RestoreState build() => const RestoreState();
+
+  /// Restore from an external file (via file picker).
+  Future<void> restoreFromFilePicker() async {
+    try {
+      // Try FileType.custom first — on stock Android this greys out
+      // non-.mekuru files. If it fails (some OEMs don't support custom
+      // extension filtering), fall back to FileType.any.
+      PlatformFile? picked;
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['mekuru'],
+        );
+        if (result == null || result.files.isEmpty) return;
+        picked = result.files.single;
+      } catch (_) {
+        final result = await FilePicker.platform.pickFiles(type: FileType.any);
+        if (result == null || result.files.isEmpty) return;
+        picked = result.files.single;
+      }
+
+      final filePath = picked.path;
+      if (filePath == null) return;
+
+      if (!filePath.endsWith('.mekuru')) {
+        state = const RestoreState(
+          error: 'Please select a .mekuru backup file.',
+        );
+        return;
+      }
+
+      await _restoreFromPath(filePath);
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      state = RestoreState(error: 'Could not open file: $e');
+    }
+  }
+
+  /// Restore from a backup file path (internal backups list).
+  Future<void> restoreFromPath(String filePath) async {
+    await _restoreFromPath(filePath);
+  }
+
+  Future<void> _restoreFromPath(String filePath) async {
+    state = const RestoreState(isWorking: true);
+    try {
+      final fileManager = ref.read(backupFileManagerProvider);
+      final restoreService = ref.read(restoreServiceProvider);
+
+      final manifest = await fileManager.importBackupFile(filePath);
+      final errors = <String>[];
+
+      // Restore settings
+      final settingsOk = await restoreService.restoreSettings(manifest);
+      if (!settingsOk) errors.add('Some settings could not be restored');
+
+      // Reload all in-memory settings providers from SharedPreferences
+      if (settingsOk) await _reloadSettingsProviders();
+
+      // Restore saved words
+      final wordsResult = await restoreService.restoreSavedWords(manifest);
+
+      // Restore books
+      final booksResult = await restoreService.restoreBooks(manifest);
+
+      final result = RestoreResult(
+        settingsRestored: settingsOk,
+        wordsResult: wordsResult,
+        booksResult: booksResult,
+        errors: errors,
+      );
+
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'Backup restored', category: 'backup'),
+      );
+
+      // If backup contains highlights, user was likely Pro — try restoring purchases
+      final hasHighlights = manifest.books.any((b) => b.highlights.isNotEmpty);
+      if (hasHighlights) {
+        _tryRestorePurchases();
+      }
+
+      if (booksResult.conflicts.isNotEmpty) {
+        state = RestoreState(
+          result: result,
+          pendingConflicts: booksResult.conflicts,
+        );
+      } else {
+        _showSuccess(_buildSummary(result));
+      }
+    } on BackupVersionException catch (e) {
+      state = RestoreState(error: e.toString());
+    } on BackupFormatException catch (e) {
+      state = RestoreState(error: e.toString());
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      state = RestoreState(error: 'Restore failed: $e');
+    }
+  }
+
+  /// Apply selected conflicts (user chose to overwrite).
+  Future<void> applyConflicts(List<BookRestoreConflict> toApply) async {
+    state = const RestoreState(isWorking: true);
+    try {
+      final restoreService = ref.read(restoreServiceProvider);
+      for (final conflict in toApply) {
+        await restoreService.applyBookData(
+          conflict.existingBook.id,
+          conflict.backupEntry,
+        );
+      }
+      _showSuccess('${toApply.length} book(s) updated from backup');
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      state = RestoreState(error: 'Failed to apply book data: $e');
+    }
+  }
+
+  void clearState() {
+    _autoDismissTimer?.cancel();
+    state = const RestoreState();
+  }
+
+  void _showSuccess(String message) {
+    _autoDismissTimer?.cancel();
+    state = RestoreState(successMessage: message);
+    _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
+  }
+
+  /// Force-refresh settings providers so restored values are applied
+  /// immediately in memory and reflected by the UI.
+  Future<void> _reloadSettingsProviders() async {
+    await ref.refresh(appThemeModeProvider.notifier).loadPersistedSettings();
+    await ref.refresh(appColorThemeProvider.notifier).loadPersistedSettings();
+    await ref.refresh(lookupFontSizeProvider.notifier).loadPersistedSettings();
+    await ref.refresh(searchHistoryProvider.notifier).loadPersistedSettings();
+    await ref
+        .refresh(filterRomanLettersProvider.notifier)
+        .loadPersistedSettings();
+    await ref.refresh(ankidroidConfigProvider.notifier).loadPersistedSettings();
+    await ref.refresh(startupScreenProvider.notifier).loadPersistedSettings();
+    await ref.refresh(autoFocusSearchProvider.notifier).loadPersistedSettings();
+    await ref
+        .refresh(autoCropWhiteThresholdProvider.notifier)
+        .loadPersistedSettings();
+    await ref.refresh(ocrServerUrlProvider.notifier).loadPersistedSettings();
+    await ref.refresh(readerSettingsProvider.notifier).loadPersistedSettings();
+    await ref.refresh(librarySortProvider.notifier).loadPersistedSort();
+
+    // FutureProvider state is derived directly from SharedPreferences.
+    ref.invalidate(autoBackupIntervalProvider);
+  }
+
+  /// Best-effort purchase restoration - fire and forget.
+
+  void _tryRestorePurchases() {
+    unawaited(
+      Future(() async {
+        try {
+          await OcrStoreService.instance.restorePurchases();
+          ref.invalidate(proUnlockedProvider);
+          debugPrint('[Backup] Purchase restoration triggered');
+        } catch (e) {
+          debugPrint('[Backup] Purchase restoration failed (non-fatal): $e');
+        }
+      }),
+    );
+  }
+
+  String _buildSummary(RestoreResult result) {
+    final parts = <String>[];
+    if (result.settingsRestored) parts.add('Settings restored');
+    final w = result.wordsResult;
+    if (w.added > 0 || w.skipped > 0) {
+      parts.add('${w.added} words added, ${w.skipped} skipped');
+    }
+    final b = result.booksResult;
+    if (b.applied > 0) parts.add('${b.applied} book(s) restored');
+    if (b.pending > 0) {
+      parts.add('${b.pending} book(s) saved for later import');
+    }
+    return parts.isEmpty ? 'Restore complete' : parts.join('. ');
+  }
+}
+
+final restoreNotifierProvider = NotifierProvider<RestoreNotifier, RestoreState>(
+  RestoreNotifier.new,
+);
+
+// ──────────────── Backup History ────────────────
+
+final backupHistoryProvider = FutureProvider<List<BackupFileInfo>>((ref) {
+  return ref.watch(backupFileManagerProvider).listBackups();
+});
+
+// ──────────────── Auto-Backup ────────────────
+
+final autoBackupIntervalProvider = FutureProvider<BackupInterval>((ref) async {
+  return ref.watch(backupSchedulerProvider).getInterval();
+});
+
+/// Runs once at startup: checks if auto-backup is due and performs it.
+final autoBackupCheckerProvider = FutureProvider<void>((ref) async {
+  final scheduler = ref.read(backupSchedulerProvider);
+  if (await scheduler.isBackupDue()) {
+    try {
+      final service = ref.read(backupServiceProvider);
+      final fileManager = ref.read(backupFileManagerProvider);
+      final manifest = await service.createBackup();
+      await fileManager.createBackupFile(manifest, isAuto: true);
+      await scheduler.recordAutoBackup();
+      debugPrint('[Backup] Auto-backup completed');
+    } catch (e, st) {
+      debugPrint('[Backup] Auto-backup failed: $e');
+      Sentry.captureException(e, stackTrace: st);
+    }
+  }
+});

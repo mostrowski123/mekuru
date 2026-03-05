@@ -14,6 +14,7 @@ import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
+import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/feedback_screen.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
@@ -457,6 +458,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(),
 
+          // ── Backup & Restore ──
+          _SectionHeader(title: 'Backup & Restore'),
+          ListTile(
+            leading: Icon(
+              Icons.backup_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: const Text('Backup & Restore'),
+            subtitle: const Text('Back up and restore your data'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BackupSettingsScreen()),
+              );
+            },
+          ),
+          const Divider(),
+
           // ── Feedback & About ──
           _SectionHeader(title: 'About & Feedback'),
           ListTile(
@@ -859,8 +879,7 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
                 autofocus: true,
                 decoration: InputDecoration(
                   labelText: 'Server URL',
-                  hintText:
-                      'http://192.168.1.100:8000',
+                  hintText: 'http://192.168.1.100:8000',
                   border: const OutlineInputBorder(),
                   errorText: _urlError,
                 ),
