@@ -2,37 +2,33 @@
   <img src="docs/icon.png" alt="Mekuru" width="96" height="96">
 </p>
 
-# Mekuru — Japanese EPUB and Manga Reader
+# Mekuru - Japanese EPUB and Manga Reader
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-A Japanese-first EPUB and manga reader built with Flutter. Designed for language learners studying Japanese, featuring vertical text rendering, offline Yomitan dictionary lookups, smart word detection, and vocabulary management with Anki-compatible CSV export.
+Mekuru is a Japanese-first EPUB and manga reader built with Flutter for language learners and native readers. It combines vertical EPUB reading, Mokuro and CBZ manga support, offline dictionaries, and vocabulary tools in one app.
 
-**[Documentation](https://mostrowski123.github.io/japanese-e-reader/documentation/)** · **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)**
+**[Documentation](https://mostrowski123.github.io/japanese-e-reader/documentation/)** | **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)**
 
 ## Features
 
-- **Library Management**: Import EPUB files, automatically extract metadata and cover images, manage your book collection
-- **Vertical Text Rendering**: Native `writing-mode: vertical-rl` via epub.js for authentic Japanese reading
-- **RTL Page Navigation**: Right-to-left page turning with tap and swipe gesture support
-- **Reading Progress**: Automatically saves your position (CFI-based) and resumes where you left off
-- **Chapter Navigation**: Table of contents drawer for jumping between chapters
-- **Customizable Display**: Adjustable font size, toggle between vertical and horizontal text modes
-- **Manga Reader**: Dedicated manga viewer with spread detection, auto-crop, and scroll/page view modes
-- **Manga OCR** *(Pro)*: Cloud-based OCR for extracting text from manga pages for dictionary lookup
-- **Offline Dictionary**: Import Yomitan/Yomichan dictionary ZIP files for offline lookups
-- **Smart Word Detection**: Accurate Japanese word boundary detection for precise dictionary lookups
-- **Compound Word Resolution**: Automatically detects compound words for more accurate definitions
-- **One-Tap Word Save**: Save words directly from dictionary lookups with automatic sentence context capture
-- **Vocabulary List**: Browse saved words with readings and meanings
-- **CSV Export**: Export vocabulary to CSV (compatible with Anki import) via system share sheet
-- **Dark Mode**: Full dark theme support with Material 3 design
+- **EPUB Reader**: Vertical or horizontal reading, RTL or LTR page flow, automatic progress restore, bookmarks, and per-book reader settings
+- **Manga Reader**: Mokuro and CBZ support with single-page, spread, and scroll modes
+- **Offline Dictionaries**: Import Yomitan ZIPs, Yomitan collection JSON backups, or download built-in packs such as JMdict, KANJIDIC, KanjiVG, and JPDB frequency data
+- **Smart Japanese Lookups**: MeCab-powered tokenization, compound-word matching, pitch accents, stroke-order diagrams, and frequency data
+- **Vocabulary Workflow**: Save words with sentence context, browse saved terms, export CSV for Anki, or send cards directly to AnkiDroid on Android
+- **Reader Customization**: Themes, color modes, margins, swipe sensitivity, and other reader controls
+- **Optional Pro Upgrade**: Unlocks book highlights, manga auto-crop, and custom-server OCR support for remote manga OCR
 
 ## Pro Features
 
-Mekuru is free and open source. Some features — like cloud-based manga OCR — require a one-time Pro unlock. Pro features are validated server-side and purchases go through Google Play Billing. OCR requires a self-hosted server — see the [custom server docs](docs/documentation/manga/custom-server.md) for setup instructions.
+Mekuru is free and open source. The optional one-time Pro upgrade unlocks:
 
-If you find Mekuru useful, purchasing Pro is the best way to support continued development.
+- Book highlights
+- Manga auto-crop
+- Custom-server OCR support for remote manga OCR
+
+Remote OCR requires your own OCR endpoint. See the [custom server guide](docs/documentation/manga/custom-server.md) for setup details.
 
 ## Roadmap
 
@@ -40,73 +36,95 @@ If you find Mekuru useful, purchasing Pro is the best way to support continued d
 
 ## Technology Stack
 
-- **Framework**: [Flutter](https://flutter.dev/) (Dart)
+- **Framework**: [Flutter](https://flutter.dev/) with Dart
 - **State Management**: [Riverpod](https://riverpod.dev/) with code generation
-- **Database**: [Drift](https://drift.simonbinder.eu/) (SQLite, type-safe)
-- **EPUB Rendering**: [epub.js](https://github.com/futurepress/epub.js) with custom reader bridge via [InAppWebView](https://pub.dev/packages/flutter_inappwebview)
-- **Japanese Analysis**: Smart word boundary detection for accurate dictionary lookups
+- **Database**: [Drift](https://drift.simonbinder.eu/) over SQLite
+- **Reader Rendering**: [epub.js](https://github.com/futurepress/epub.js) bridged through [InAppWebView](https://pub.dev/packages/flutter_inappwebview)
+- **Japanese Analysis**: [mecab_for_flutter](https://pub.dev/packages/mecab_for_flutter) for tokenization and word boundary detection
+- **Backend Services**: Firebase Auth plus optional TypeScript Firebase Functions for OCR-related services
 
 ## Getting Started
 
 ### Prerequisites
 
-- Flutter SDK 3.10.8 or later
-- Android SDK (for Android builds)
-- A connected Android device or emulator
+- Flutter stable with Dart SDK 3.10.8 or newer
+- Android SDK plus a connected Android device or emulator
+- Node.js 22 if you plan to work on the optional `functions/` backend
+
+Android is the primary supported platform today. Some integrations, including Google Play billing and AnkiDroid support, are Android-only.
 
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/mostrowski123/japanese-e-reader.git
 cd japanese-e-reader
 
-# Install dependencies
 flutter pub get
 
-# Run code generation (Drift database + Riverpod providers)
+# Generates Drift, Riverpod, and environment config code
 dart run build_runner build --delete-conflicting-outputs
 
-# Run the app
 flutter run
 ```
 
-### Running Tests
+### Common Development Commands
 
 ```bash
+flutter analyze
 flutter test
+dart run build_runner watch --delete-conflicting-outputs
+```
+
+### Optional Firebase Functions Workflow
+
+```bash
+cd functions
+npm ci
+npm run build
+```
+
+To deploy the backend and Firestore rules:
+
+```bash
+firebase deploy --only functions,firestore:rules
 ```
 
 ## Project Structure
 
-```
+```text
 lib/
-├── core/                  # Database, utilities, shared infrastructure
-├── features/
-│   ├── library/           # Book import, EPUB parsing, library grid UI
-│   ├── reader/            # EPUB viewer, word detection, compound word resolution, settings
-│   ├── manga/             # Manga viewer, OCR, Pro billing
-│   ├── dictionary/        # Yomitan import, query engine, dictionary management
-│   ├── vocabulary/        # Saved words, CSV export, vocabulary list UI
-│   └── settings/          # App preferences, OCR server config
-└── shared/                # Theme definitions, shared widgets
+|-- app.dart
+|-- main.dart
+|-- config/
+|-- core/
+|-- features/
+|   |-- ankidroid/
+|   |-- backup/
+|   |-- dictionary/
+|   |-- library/
+|   |-- manga/
+|   |-- reader/
+|   |-- settings/
+|   `-- vocabulary/
+`-- shared/
+
+functions/   # Optional TypeScript Firebase Functions
+docs/        # Documentation site content
 ```
 
-Each feature follows `data/` (models, repositories, services) and `presentation/` (screens, widgets, providers).
+Feature modules follow a `data/` and `presentation/` split for models, repositories, services, providers, screens, and widgets.
 
 ## Contributing
 
-Contributions are welcome! Please:
+Contributions are welcome. Before opening a pull request:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Make your changes
-4. Run tests (`flutter test`) and analysis (`flutter analyze`)
-5. Commit and push
-6. Open a Pull Request
+1. Fork the repository.
+2. Create a branch for your change.
+3. Run `flutter analyze` and `flutter test`.
+4. Include any required code generation updates.
 
-See [CLAUDE.md](CLAUDE.md) for codebase conventions and architecture details.
+See [CLAUDE.md](CLAUDE.md) for additional codebase conventions and architecture notes.
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE) for details.
