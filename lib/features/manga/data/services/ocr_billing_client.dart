@@ -306,9 +306,11 @@ class OcrBillingClient {
   }) async {
     final serverUrl = _billingBaseUrl();
     final token = await _getIdToken();
+    final appCheckToken = await _getAppCheckToken();
     final uri = Uri.parse('$serverUrl$path');
     final request = http.Request(method, uri);
     request.headers['Authorization'] = 'Bearer $token';
+    request.headers['X-Firebase-AppCheck'] = appCheckToken;
     request.headers['Content-Type'] = 'application/json';
     if (body != null) {
       request.body = json.encode(body);
@@ -406,6 +408,18 @@ class OcrBillingClient {
         401,
         'Failed to refresh the Firebase ID token for OCR billing.',
         code: 'auth_required',
+      );
+    }
+    return token;
+  }
+
+  Future<String> _getAppCheckToken() async {
+    final token = await FirebaseRuntime.instance.getAppCheckToken();
+    if (token == null || token.isEmpty) {
+      throw const OcrBillingException(
+        401,
+        'Failed to refresh the Firebase App Check token for OCR billing.',
+        code: 'app_check_required',
       );
     }
     return token;

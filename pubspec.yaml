@@ -75,6 +75,7 @@ dependencies:
   # Firebase (OCR server authentication)
   firebase_core: ^4.5.0
   firebase_auth: ^6.2.0
+  firebase_app_check: ^0.4.1+4
   google_sign_in: ^7.2.0
 
   # In-app purchases (OCR monetization)
@@ -118,3 +119,4 @@ sentry:
   upload_source_maps: true
   project: mekuru
   org: matt-dl
+

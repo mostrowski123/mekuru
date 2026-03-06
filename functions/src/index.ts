@@ -13,6 +13,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 const firebaseAuth = admin.auth();
+const firebaseAppCheck = admin.appCheck();
 const playAuth = new GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/androidpublisher"],
 });
@@ -24,6 +25,14 @@ const BILLING_SERVICE_ACCOUNT =
 const ANDROID_PACKAGE_NAME =
   process.env.ANDROID_PACKAGE_NAME ?? "moe.matthew.mekuru";
 const OCR_JOB_TTL_HOURS = asInt(process.env.OCR_JOB_TTL_HOURS ?? "24");
+const BILLING_API_MAX_INSTANCES = positiveIntOrDefault(
+  process.env.BILLING_API_MAX_INSTANCES ?? "5",
+  5,
+);
+const ENABLE_OCR_JOB_API =
+  (process.env.ENABLE_OCR_JOB_API ?? "false").toLowerCase() === "true";
+const REQUIRE_APP_CHECK =
+  (process.env.REQUIRE_APP_CHECK ?? "true").toLowerCase() !== "false";
 
 const PRO_UNLOCK_PRODUCT_ID = "pro_unlock_v1";
 const OCR_UNLOCK_STARTER_CREDITS = 150;
@@ -78,6 +87,7 @@ type GooglePlayProductPurchase = {
 
 type AuthedRequest = Request & {
   requestId?: string;
+  appId?: string;
   user: admin.auth.DecodedIdToken;
 };
 
@@ -104,6 +114,11 @@ function asInt(value: unknown): number {
   }
 
   return Number.NaN;
+}
+
+function positiveIntOrDefault(value: unknown, fallback: number): number {
+  const parsed = asInt(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function now(): Date {
@@ -185,6 +200,51 @@ function parseBearerToken(req: Request): string {
   return authHeader.slice("Bearer ".length).trim();
 }
 
+async function verifyAppCheck(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const token = (req.get("X-Firebase-AppCheck") ?? "").trim();
+
+  if (!token) {
+    if (!REQUIRE_APP_CHECK) {
+      next();
+      return;
+    }
+
+    sendBillingError(
+      req,
+      res,
+      new BillingHttpError(401, {
+        code: "app_check_required",
+        message: "A Firebase App Check token is required.",
+      }),
+    );
+    return;
+  }
+
+  try {
+    const verifiedToken = await firebaseAppCheck.verifyToken(token);
+    (req as AuthedRequest).appId = verifiedToken.appId;
+    next();
+  } catch (error) {
+    logger.warn("Billing request failed App Check verification", {
+      requestId: requestIdOf(req),
+      path: req.path,
+      error,
+    });
+    sendBillingError(
+      req,
+      res,
+      new BillingHttpError(401, {
+        code: "app_check_invalid",
+        message: "The Firebase App Check token is invalid.",
+      }),
+    );
+  }
+}
+
 async function authenticate(
   req: Request,
   res: Response,
@@ -233,7 +293,6 @@ async function readUserState(uid: string): Promise<UserState> {
   const ref = userRef(uid);
   const snapshot = await ref.get();
   if (!snapshot.exists) {
-    await ref.set(defaultUserDoc(now()));
     return {
       ocrUnlocked: false,
       creditBalance: 0,
@@ -913,12 +972,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   });
   next();
 });
+app.use(verifyAppCheck);
 app.use(authenticate);
 
 app.get("/billing/status", async (req: Request, res: Response) => {
   try {
     const { uid } = (req as AuthedRequest).user;
-    await expireStaleJobs(uid);
+    if (ENABLE_OCR_JOB_API) {
+      await expireStaleJobs(uid);
+    }
     const status = await readUserState(uid);
     res.json(status);
   } catch (error) {
@@ -971,6 +1033,12 @@ app.post("/billing/purchases/android/verify", async (req: Request, res: Response
 
 app.post("/ocr/jobs", async (req: Request, res: Response) => {
   try {
+    if (!ENABLE_OCR_JOB_API) {
+      throw new BillingHttpError(410, {
+        code: "ocr_job_api_disabled",
+        message: "Hosted OCR jobs are currently disabled.",
+      });
+    }
     const { uid } = (req as AuthedRequest).user;
     const body = (req.body ?? {}) as Record<string, unknown>;
     const requestedPages = asInt(body.requestedPages);
@@ -988,6 +1056,12 @@ app.post("/ocr/jobs", async (req: Request, res: Response) => {
 
 app.post("/ocr/jobs/:jobId/finalize", async (req: Request, res: Response) => {
   try {
+    if (!ENABLE_OCR_JOB_API) {
+      throw new BillingHttpError(410, {
+        code: "ocr_job_api_disabled",
+        message: "Hosted OCR jobs are currently disabled.",
+      });
+    }
     const { uid } = (req as AuthedRequest).user;
     const body = (req.body ?? {}) as Record<string, unknown>;
     const result = await finalizeOcrJob({
@@ -1007,6 +1081,7 @@ export const billingApiV2 = onRequest(
     timeoutSeconds: 60,
     memory: "256MiB",
     serviceAccount: BILLING_SERVICE_ACCOUNT,
+    maxInstances: BILLING_API_MAX_INSTANCES,
   },
   app,
 );
@@ -1108,6 +1183,7 @@ export const handlePlayNotification = onMessagePublished(
     topic: PLAY_RTDN_TOPIC,
     region: REGION,
     serviceAccount: BILLING_SERVICE_ACCOUNT,
+    maxInstances: BILLING_API_MAX_INSTANCES,
   },
   async (event) => {
     const message = event.data?.message;
@@ -1157,3 +1233,4 @@ export const handlePlayNotification = onMessagePublished(
     await revokePurchase(purchaseToken);
   },
 );
+

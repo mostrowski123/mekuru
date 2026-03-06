@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../firebase_options.dart';
 
@@ -9,16 +11,18 @@ class FirebaseRuntime {
 
   static final FirebaseRuntime instance = FirebaseRuntime._();
 
+  bool _appCheckActivated = false;
+
   bool get hasFirebaseApp => Firebase.apps.isNotEmpty;
 
   Future<void> ensureFirebaseApp() async {
-    if (hasFirebaseApp) {
-      return;
+    if (!hasFirebaseApp) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
     }
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await _ensureAppCheck();
   }
 
   Future<User> ensureOcrUser() async {
@@ -34,5 +38,23 @@ class FirebaseRuntime {
     return credential.user ??
         auth.currentUser ??
         (throw StateError('Failed to create an OCR user.'));
+  }
+
+  Future<String?> getAppCheckToken({bool forceRefresh = false}) async {
+    await ensureFirebaseApp();
+    return FirebaseAppCheck.instance.getToken(forceRefresh);
+  }
+
+  Future<void> _ensureAppCheck() async {
+    if (_appCheckActivated) {
+      return;
+    }
+
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode
+          ? const AndroidDebugProvider()
+          : const AndroidPlayIntegrityProvider(),
+    );
+    _appCheckActivated = true;
   }
 }

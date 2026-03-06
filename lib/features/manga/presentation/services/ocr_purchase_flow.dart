@@ -50,7 +50,7 @@ class OcrPurchaseFlow {
       if (!context.mounted) return false;
 
       final serverUrl = getServerUrl().trim();
-      if (ocr_server_config.isBuiltInOcrServerUrl(serverUrl)) {
+      if (ocr_server_config.isUnsetOrBuiltInOcrServerUrl(serverUrl)) {
         final action = await _showCustomServerRequiredDialog(context);
         if (action != _ServerSetupDialogAction.openSettings) {
           return false;

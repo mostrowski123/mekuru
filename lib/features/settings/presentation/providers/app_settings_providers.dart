@@ -370,7 +370,7 @@ String normalizeOcrServerUrl(String url) {
 }
 
 bool isBuiltInOcrServerUrl(String url) {
-  return ocr_server_config.isBuiltInOcrServerUrl(url);
+  return ocr_server_config.isUnsetOrBuiltInOcrServerUrl(url);
 }
 
 /// Provider for the OCR server URL.

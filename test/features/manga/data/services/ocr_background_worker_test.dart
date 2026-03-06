@@ -164,9 +164,11 @@ void main() {
       expect(ocrServerUrlKey, isNotEmpty);
     });
 
-    test('defaultOcrServerUrl is a valid URL', () {
-      expect(Uri.tryParse(defaultOcrServerUrl), isNotNull);
-      expect(defaultOcrServerUrl, startsWith('https://'));
-    });
+    test(
+      'defaultOcrServerUrl is empty until a custom server is configured',
+      () {
+        expect(defaultOcrServerUrl, isEmpty);
+      },
+    );
   });
 }

@@ -1,4 +1,5 @@
-const defaultOcrServerUrl =
+const defaultOcrServerUrl = '';
+const legacyBuiltInOcrServerUrl =
     'https://mostrowski123--mekuru-ocr-fastapi-app.modal.run';
 
 const mekuruOcrRepoUrl = 'https://github.com/mostrowski123/mekuru-ocr';
@@ -12,6 +13,11 @@ String normalizeOcrServerUrl(String url) {
 }
 
 bool isBuiltInOcrServerUrl(String url) {
-  return normalizeOcrServerUrl(url) ==
-      normalizeOcrServerUrl(defaultOcrServerUrl);
+  final normalized = normalizeOcrServerUrl(url);
+  return normalized == normalizeOcrServerUrl(legacyBuiltInOcrServerUrl);
+}
+
+bool isUnsetOrBuiltInOcrServerUrl(String url) {
+  final normalized = normalizeOcrServerUrl(url);
+  return normalized.isEmpty || isBuiltInOcrServerUrl(normalized);
 }
