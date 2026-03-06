@@ -87,15 +87,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     String? secondary,
   ]) async {
     final queryService = ref.read(dictionaryQueryServiceProvider);
-    final allTerms = <String>{primary};
-    allTerms.addAll(deinflect(primary));
-
-    if (secondary != null) {
-      allTerms.add(secondary);
-      allTerms.addAll(deinflect(secondary));
-    }
-
-    return queryService.searchMultipleWithSource(allTerms.toList());
+    return queryService.searchLookupWithSource(primary, secondary);
   }
 
   /// Search pitch accents for the given terms.

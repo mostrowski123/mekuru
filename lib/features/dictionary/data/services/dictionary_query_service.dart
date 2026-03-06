@@ -544,6 +544,48 @@ class DictionaryQueryService {
     return _attachFrequencyRanks(results, exactTerms: terms.toSet());
   }
 
+  /// Search lookup terms in two tiers:
+  /// 1. Direct matches for the supplied lookup text(s).
+  /// 2. Deinflected fallback matches for those texts.
+  ///
+  /// This keeps high-confidence direct hits at the top of the lookup sheet
+  /// while still surfacing alternate deinflections underneath.
+  Future<List<DictionaryEntryWithSource>> searchLookupWithSource(
+    String primary, [
+    String? secondary,
+  ]) async {
+    final directTerms = <String>{};
+    if (primary.isNotEmpty) {
+      directTerms.add(primary);
+    }
+    if (secondary != null && secondary.isNotEmpty) {
+      directTerms.add(secondary);
+    }
+    if (directTerms.isEmpty) return [];
+
+    final directResults = await searchMultipleWithSource(directTerms.toList());
+
+    final deinflectedTerms = <String>{};
+    for (final term in directTerms) {
+      deinflectedTerms.addAll(deinflect(term));
+    }
+    deinflectedTerms.removeAll(directTerms);
+    if (deinflectedTerms.isEmpty) {
+      return directResults;
+    }
+
+    final deinflectedResults = await searchMultipleWithSource(
+      deinflectedTerms.toList(),
+    );
+    final seenIds = directResults.map((r) => r.entry.id).toSet();
+
+    return [
+      ...directResults,
+      for (final result in deinflectedResults)
+        if (seenIds.add(result.entry.id)) result,
+    ];
+  }
+
   /// Prefix search: expression or reading starts with [term].
   /// Returns up to [limit] results from enabled dictionaries.
   Future<List<DictionaryEntryWithSource>> prefixSearchWithSource(

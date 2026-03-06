@@ -324,6 +324,80 @@ void main() {
     });
   });
 
+  group('DictionaryQueryService — searchLookupWithSource', () {
+    late AppDatabase lookupDb;
+    late DictionaryRepository lookupRepo;
+    late DictionaryQueryService lookupQueryService;
+
+    setUp(() async {
+      lookupDb = createTestDatabase();
+      lookupRepo = DictionaryRepository(lookupDb);
+      lookupQueryService = DictionaryQueryService(lookupDb);
+
+      final dictId = await lookupRepo.insertDictionary('LookupDict');
+      await lookupRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '分かる',
+          reading: const Value('わかる'),
+          glossaries: jsonEncode(['to understand']),
+          dictionaryId: dictId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: 'わい',
+          reading: const Value('わい'),
+          glossaries: jsonEncode(['I; me']),
+          dictionaryId: dictId,
+        ),
+      ]);
+
+      final frequencyDictId = await lookupRepo.insertDictionary('FreqDict');
+      await lookupRepo.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: 'わい',
+          reading: const Value('わい'),
+          frequencyRank: 10,
+          dictionaryId: frequencyDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '分かる',
+          reading: const Value('わかる'),
+          frequencyRank: 200,
+          dictionaryId: frequencyDictId,
+        ),
+      ]);
+    });
+
+    tearDown(() async {
+      await lookupDb.close();
+    });
+
+    test(
+      'keeps direct lookup matches ahead of deinflected fallback matches',
+      () async {
+        final results = await lookupQueryService.searchLookupWithSource(
+          'わかる',
+          'わかった',
+        );
+
+        expect(results, hasLength(2));
+        expect(results.first.entry.expression, '分かる');
+        expect(results.first.entry.reading, 'わかる');
+        expect(results.last.entry.expression, 'わい');
+      },
+    );
+
+    test(
+      'still returns deinflected matches when no direct hit exists',
+      () async {
+        final results = await lookupQueryService.searchLookupWithSource('わかった');
+
+        final expressions = results.map((r) => r.entry.expression).toSet();
+        expect(expressions, contains('分かる'));
+        expect(expressions, contains('わい'));
+      },
+    );
+  });
+
   // ── hasMatch ───────────────────────────────────────────────────
 
   group('DictionaryQueryService — hasMatch', () {

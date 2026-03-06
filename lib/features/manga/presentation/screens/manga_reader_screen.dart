@@ -15,6 +15,7 @@ import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart'
 import 'package:mekuru/features/manga/presentation/widgets/manga_scroll_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_spread_view.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
@@ -56,6 +57,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   // Word highlight state — shown while a lookup sheet is active
   MokuroWord? _highlightedWord;
   int? _highlightedPageIndex;
+  int _lookupRequestId = 0;
 
   @override
   void initState() {
@@ -151,9 +153,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     MokuroTextBlock block,
     Offset globalPosition,
   ) {
-    // Build context sentence from all lines in the block
-    final sentence = block.lines.join();
-
     // Determine top vs bottom positioning — if the word is in the bottom
     // half of the screen, show the sheet at the top to avoid covering it.
     final screenHeight = MediaQuery.of(context).size.height;
@@ -173,20 +172,41 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       setState(() => _showControls = false);
     }
 
-    if (showAtTop) {
-      _showTopSheet(word, sentence, transparent).then((_) => _clearHighlight());
-    } else {
-      _showBottomSheet(
-        word,
-        sentence,
-        transparent,
-      ).then((_) => _clearHighlight());
-    }
+    final requestId = ++_lookupRequestId;
+    unawaited(
+      _openLookupSheet(
+        word: word,
+        block: block,
+        showAtTop: showAtTop,
+        transparent: transparent,
+        requestId: requestId,
+      ),
+    );
+  }
+
+  Future<void> _openLookupSheet({
+    required MokuroWord word,
+    required MokuroTextBlock block,
+    required bool showAtTop,
+    required bool transparent,
+    required int requestId,
+  }) async {
+    final lookup = await ref
+        .read(mangaWordLookupResolverProvider)
+        .resolve(word, block);
+    if (!mounted || requestId != _lookupRequestId) return;
+
+    final sheet = showAtTop
+        ? _showTopSheet(word, lookup, transparent)
+        : _showBottomSheet(word, lookup, transparent);
+    await sheet;
+    if (!mounted || requestId != _lookupRequestId) return;
+    _clearHighlight();
   }
 
   Future<void> _showBottomSheet(
     MokuroWord word,
-    String sentence,
+    WordLookupResult lookup,
     bool transparent,
   ) {
     return showModalBottomSheet<void>(
@@ -195,9 +215,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       backgroundColor: transparent ? Colors.transparent : null,
       barrierColor: transparent ? Colors.black.withAlpha(30) : null,
       builder: (_) => LookupSheet(
-        selectedText: word.dictionaryForm ?? word.surface,
-        surfaceForm: word.surface,
-        sentenceContext: sentence,
+        selectedText: lookup.dictionaryForm,
+        surfaceForm: lookup.surfaceForm,
+        sentenceContext: lookup.sentenceContext,
         editable: true,
         transparent: transparent,
         onEditingStarted: () {
@@ -215,7 +235,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
 
   Future<void> _showTopSheet(
     MokuroWord word,
-    String sentence,
+    WordLookupResult lookup,
     bool transparent,
   ) {
     return showGeneralDialog(
@@ -230,9 +250,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           child: Material(
             color: Colors.transparent,
             child: LookupSheet(
-              selectedText: word.dictionaryForm ?? word.surface,
-              surfaceForm: word.surface,
-              sentenceContext: sentence,
+              selectedText: lookup.dictionaryForm,
+              surfaceForm: lookup.surfaceForm,
+              sentenceContext: lookup.sentenceContext,
               showAtTop: true,
               editable: true,
               transparent: transparent,
