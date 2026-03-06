@@ -130,7 +130,43 @@ jobs:
           --sentryEnvironment=development
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64
+
+      - name: Verify MeCab native libs in release APK
+        run: |
+          python - <<'PY'
+          import sys
+          import zipfile
+
+          archive = "build/app/outputs/flutter-apk/app-release.apk"
+          abis = ["armeabi-v7a", "arm64-v8a", "x86_64"]
+          libs = ["libc++_shared.so", "libmecab_dart.so"]
+
+          with zipfile.ZipFile(archive) as zf:
+              names = zf.namelist()
+
+          missing = [
+              f"lib/{abi}/{lib}"
+              for abi in abis
+              for lib in libs
+              if not any(entry.endswith(f"lib/{abi}/{lib}") for entry in names)
+          ]
+          if missing:
+              print(f"Missing required native libraries in {archive}:", file=sys.stderr)
+              for name in missing:
+                  print(f"  - {name}", file=sys.stderr)
+              print("Found MeCab-related ABI entries:", file=sys.stderr)
+              for entry in sorted(
+                  name
+                  for name in names
+                  if any(f"lib/{abi}/" in name for abi in abis)
+                  and ("libmecab_dart.so" in name or "libc++_shared.so" in name)
+              ):
+                  print(f"  - {entry}", file=sys.stderr)
+              sys.exit(1)
+
+          print(f"Verified required MeCab native libraries in {archive}")
+          PY
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
