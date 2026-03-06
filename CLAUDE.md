@@ -12,10 +12,14 @@ Feature-first modular structure:
 lib/
 ├── core/                          # Shared infrastructure
 │   ├── database/                  # Drift (SQLite) database definition
-│   │   └── database_provider.dart # AppDatabase with 4 tables
+│   │   └── database_provider.dart # AppDatabase with 9 tables
+│   ├── platform/                  # Platform-specific services (Android SAF)
 │   ├── server/                    # Local HTTP server (stub)
+│   ├── services/                  # Firebase runtime services
 │   └── utils/                     # Isolate helpers (stub)
 ├── features/
+│   ├── ankidroid/                 # AnkiDroid integration, card creation
+│   ├── backup/                    # Backup/restore with scheduled backups
 │   ├── library/                   # Book import, EPUB parsing, library UI
 │   ├── reader/                    # EPUB viewer, MeCab, compound word resolution
 │   ├── manga/                     # Manga viewer, OCR, Pro billing
@@ -24,6 +28,7 @@ lib/
 │   └── settings/                  # App preferences, OCR server config
 └── shared/
     ├── theme/                     # Light/dark Material 3 themes
+    ├── utils/                     # Adaptive routing, haptics, gesture padding
     └── widgets/                   # Shared UI components
 ```
 
@@ -35,7 +40,7 @@ Riverpod with code generation (`riverpod_annotation` + `riverpod_generator`). Th
 
 ## Database
 
-Drift (SQLite) with 4 tables: `Books`, `DictionaryMetas`, `DictionaryEntries`, `SavedWords`. Schema defined in `lib/core/database/database_provider.dart`. Glossaries are stored as raw JSON strings (no Drift type converters).
+Drift (SQLite) with 9 tables: `Books`, `DictionaryMetas`, `DictionaryEntries`, `SavedWords`, `PitchAccents`, `Frequencies`, `Bookmarks`, `Highlights`, `PendingBookDatas`. Schema defined in `lib/core/database/database_provider.dart`. Glossaries are stored as raw JSON strings (no Drift type converters).
 
 ## Build & Test Commands
 
@@ -63,6 +68,9 @@ flutter run                                                 # Run on connected d
 - **Dictionary queries**: Always join with `DictionaryMetas` to filter by `isEnabled`
 - **EPUB rendering**: Custom bridge (`assets/epub_viewer/reader_bridge.js`) communicating with Dart via `flutter_inappwebview`
 - **Reader interaction logic**: Pure functions (no Flutter deps) in `reader_interaction_logic.dart` — fully unit-testable
+- **AnkiDroid**: Direct integration via Android intent; field mapping configurable per note type
+- **Backup/Restore**: Serializes DB + book files into a single archive; scheduled backups via `BackupScheduler`
+- **Bookmarks/Highlights**: Stored per-book in DB with chapter/position references
 
 ## Key Files
 
@@ -81,3 +89,9 @@ flutter run                                                 # Run on connected d
 | `lib/features/manga/presentation/providers/pro_access_provider.dart` | Pro unlock state (server-validated) |
 | `lib/features/manga/data/services/ocr_billing_client.dart` | Firebase billing API client |
 | `lib/features/settings/data/services/ocr_server_config.dart` | OCR server URL configuration |
+| `lib/features/ankidroid/data/services/ankidroid_service.dart` | AnkiDroid card creation integration |
+| `lib/features/ankidroid/data/services/anki_field_mapper.dart` | Maps vocabulary data to Anki note fields |
+| `lib/features/backup/data/services/backup_service.dart` | Backup orchestration |
+| `lib/features/backup/data/services/restore_service.dart` | Restore from backup file |
+| `lib/features/backup/data/services/backup_scheduler.dart` | Scheduled automatic backups |
+| `lib/core/platform/android_saf_service.dart` | Android Storage Access Framework integration |
