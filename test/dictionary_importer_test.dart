@@ -17,6 +17,7 @@ AppDatabase createTestDatabase() {
 Future<String> createTestYomitanZip({
   String dictionaryName = 'Test Dictionary',
   List<List<dynamic>>? entries,
+  List<List<dynamic>>? termMetaEntries,
 }) async {
   entries ??= [
     [
@@ -64,6 +65,17 @@ Future<String> createTestYomitanZip({
   archive.addFile(
     ArchiveFile('term_bank_1.json', termBankContent.length, termBankContent),
   );
+
+  if (termMetaEntries != null) {
+    final termMetaContent = utf8.encode(jsonEncode(termMetaEntries));
+    archive.addFile(
+      ArchiveFile(
+        'term_meta_bank_1.json',
+        termMetaContent.length,
+        termMetaContent,
+      ),
+    );
+  }
 
   // Write to temp file
   final tempDir = await Directory.systemTemp.createTemp('yomitan_test_');
@@ -336,6 +348,49 @@ void main() {
 
       // Should import entries from both banks
       expect(count, 2);
+    });
+
+    test('imports kana-only and reading-specific frequency rows', () async {
+      final zipPath = await createTestYomitanZip(
+        termMetaEntries: [
+          [
+            '私',
+            'freq',
+            {
+              'reading': 'わたし',
+              'frequency': {'value': 32, 'displayValue': '32'},
+            },
+          ],
+          [
+            'わっし',
+            'freq',
+            {'value': 40276, 'displayValue': '40276㋕'},
+          ],
+        ],
+      );
+      tempFiles.add(zipPath);
+
+      await importer.importFromFile(zipPath);
+
+      final frequencies = await db.select(db.frequencies).get();
+      expect(
+        frequencies.any(
+          (f) =>
+              f.expression == '私' &&
+              f.reading == 'わたし' &&
+              f.frequencyRank == 32,
+        ),
+        isTrue,
+      );
+      expect(
+        frequencies.any(
+          (f) =>
+              f.expression == 'わっし' &&
+              f.reading.isEmpty &&
+              f.frequencyRank == 40276,
+        ),
+        isTrue,
+      );
     });
   });
 

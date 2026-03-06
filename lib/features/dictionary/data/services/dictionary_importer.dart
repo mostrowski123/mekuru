@@ -63,6 +63,38 @@ class DictionaryImporter {
 
   DictionaryImporter(this._repository);
 
+  static ({int? rank, String reading}) _parseFrequencyData(dynamic data) {
+    int? rank;
+    var reading = '';
+
+    if (data is int) {
+      rank = data;
+    } else if (data is num) {
+      rank = data.toInt();
+    } else if (data is Map) {
+      reading = data['reading']?.toString() ?? '';
+
+      final directValue = data['value'];
+      if (directValue is int) {
+        rank = directValue;
+      } else if (directValue is num) {
+        rank = directValue.toInt();
+      } else {
+        final freq = data['frequency'];
+        if (freq is int) {
+          rank = freq;
+        } else if (freq is num) {
+          rank = freq.toInt();
+        } else if (freq is Map) {
+          final val = freq['value'];
+          if (val is num) rank = val.toInt();
+        }
+      }
+    }
+
+    return (rank: rank, reading: reading);
+  }
+
   /// Import a Yomitan dictionary from a zip file path.
   ///
   /// Returns the total number of entries imported.
@@ -820,23 +852,9 @@ class DictionaryImporter {
         final data = inner['data'];
         if (data == null) return;
 
-        int? rank;
-        String reading = '';
-
-        if (data is int) {
-          rank = data;
-        } else if (data is Map<String, dynamic>) {
-          reading = data['reading']?.toString() ?? '';
-          final freq = data['frequency'];
-          if (freq is int) {
-            rank = freq;
-          } else if (freq is num) {
-            rank = freq.toInt();
-          } else if (freq is Map) {
-            final val = freq['value'];
-            if (val is num) rank = val.toInt();
-          }
-        }
+        final parsed = _parseFrequencyData(data);
+        final rank = parsed.rank;
+        final reading = parsed.reading;
 
         if (rank != null) {
           freqBatch.add({
@@ -1040,25 +1058,9 @@ class DictionaryImporter {
           }
         } else if (mode == 'freq') {
           final data = meta[2];
-          int? rank;
-          String reading = '';
-
-          if (data is int) {
-            rank = data;
-          } else if (data is num) {
-            rank = data.toInt();
-          } else if (data is Map) {
-            reading = data['reading']?.toString() ?? '';
-            final freq = data['frequency'];
-            if (freq is int) {
-              rank = freq;
-            } else if (freq is num) {
-              rank = freq.toInt();
-            } else if (freq is Map) {
-              final val = freq['value'];
-              if (val is num) rank = val.toInt();
-            }
-          }
+          final parsed = _parseFrequencyData(data);
+          final rank = parsed.rank;
+          final reading = parsed.reading;
 
           if (rank != null) {
             frequencies.add(

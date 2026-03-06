@@ -469,12 +469,12 @@ void main() {
     );
 
     test(
-      'falls back to expression-level frequency when reading has no match',
+      'does not inherit another reading rank when frequency is missing',
       () async {
         // Insert an entry with a reading not in the frequency table.
         // Because reading-specific frequency data exists for 私 (わたし
-        // and わたくし), an unlisted reading should get null rank —
-        // absence from a reading-aware frequency list implies rarity.
+        // and わたくし), an unlisted reading should stay unranked rather
+        // than borrowing the best rank from another reading.
         final dicts = await freqRepo.getAllDictionaries();
         final dictA = dicts.firstWhere((d) => d.name == 'Dict A');
 
@@ -489,18 +489,56 @@ void main() {
 
         final results = await freqQueryService.searchWithSource('私');
 
-        // あたし should still get a frequency rank (fallback to expression-level)
+        // あたし should remain unranked.
         final atashiResults = results
             .where((r) => r.entry.reading == 'あたし')
             .toList();
         expect(atashiResults, hasLength(1));
-        // Null rank: reading-specific data exists for this expression,
-        // but あたし isn't listed, so it sorts to the end.
-        expect(atashiResults.first.frequencyRank, 50);
+        expect(atashiResults.first.frequencyRank, isNull);
 
         // あたし should appear after readings that have frequency data
         final lastReading = atashiResults.first.entry.reading;
         expect(lastReading, 'あたし');
+      },
+    );
+
+    test(
+      'uses kana-only ranks only for exact kana lookups, not kanji lookups',
+      () async {
+        final dicts = await freqRepo.getAllDictionaries();
+        final dictA = dicts.firstWhere((d) => d.name == 'Dict A');
+        final freqDict = dicts.firstWhere((d) => d.name == 'JPDB Freq');
+
+        await freqRepo.batchInsertEntries([
+          DictionaryEntriesCompanion.insert(
+            expression: '私',
+            reading: const Value('わっし'),
+            glossaries: jsonEncode(['I (wasshi)']),
+            dictionaryId: dictA.id,
+          ),
+        ]);
+        await freqRepo.batchInsertFrequencies([
+          FrequenciesCompanion.insert(
+            expression: 'わっし',
+            frequencyRank: 40276,
+            dictionaryId: freqDict.id,
+          ),
+        ]);
+
+        final kanjiResults = await freqQueryService.fuzzySearchWithSource('私');
+        final wasshiKanji = kanjiResults
+            .where((r) => r.entry.expression == '私' && r.entry.reading == 'わっし')
+            .toList();
+        expect(wasshiKanji, hasLength(1));
+        expect(wasshiKanji.first.frequencyRank, isNull);
+        expect(kanjiResults.last.entry.reading, 'わっし');
+
+        final kanaResults = await freqQueryService.fuzzySearchWithSource('わっし');
+        final wasshiKana = kanaResults
+            .where((r) => r.entry.expression == '私' && r.entry.reading == 'わっし')
+            .toList();
+        expect(wasshiKana, hasLength(1));
+        expect(wasshiKana.first.frequencyRank, 40276);
       },
     );
 
@@ -528,6 +566,101 @@ void main() {
       expect(lastEntry.entry.expression, '珍語');
       expect(lastEntry.frequencyRank, isNull);
     });
+  });
+
+  group('DictionaryQueryService — frequency install order', () {
+    Future<DictionaryQueryService> seedScenario({
+      required AppDatabase installDb,
+      required DictionaryRepository installRepo,
+      required bool installFrequencyFirst,
+    }) async {
+      Future<void> installFrequencyDictionary() async {
+        final freqDictId = await installRepo.insertDictionary('JPDBv2㋕');
+        await installRepo.batchInsertFrequencies([
+          FrequenciesCompanion.insert(
+            expression: '私',
+            reading: const Value('わたし'),
+            frequencyRank: 32,
+            dictionaryId: freqDictId,
+          ),
+          FrequenciesCompanion.insert(
+            expression: 'わっし',
+            frequencyRank: 40276,
+            dictionaryId: freqDictId,
+          ),
+        ]);
+        await installRepo.toggleDictionary(freqDictId, isEnabled: false);
+        await installRepo.setHidden(freqDictId, isHidden: true);
+      }
+
+      Future<void> installJmdictDictionary() async {
+        final jmdictId = await installRepo.insertDictionary('JMdict English');
+        await installRepo.batchInsertEntries([
+          DictionaryEntriesCompanion.insert(
+            expression: '私',
+            reading: const Value('わたし'),
+            glossaries: jsonEncode(['I (watashi)']),
+            dictionaryId: jmdictId,
+          ),
+          DictionaryEntriesCompanion.insert(
+            expression: '私',
+            reading: const Value('わっし'),
+            glossaries: jsonEncode(['I (wasshi)']),
+            dictionaryId: jmdictId,
+          ),
+        ]);
+      }
+
+      if (installFrequencyFirst) {
+        await installFrequencyDictionary();
+        await installJmdictDictionary();
+      } else {
+        await installJmdictDictionary();
+        await installFrequencyDictionary();
+      }
+
+      return DictionaryQueryService(installDb);
+    }
+
+    test(
+      'applies frequency ranks when the frequency dictionary is installed first',
+      () async {
+        final installDb = createTestDatabase();
+        addTearDown(() => installDb.close());
+        final installRepo = DictionaryRepository(installDb);
+
+        final installQueryService = await seedScenario(
+          installDb: installDb,
+          installRepo: installRepo,
+          installFrequencyFirst: true,
+        );
+
+        final results = await installQueryService.fuzzySearchWithSource('私');
+        expect(results.map((r) => r.entry.reading).toList(), ['わたし', 'わっし']);
+        expect(results[0].frequencyRank, 32);
+        expect(results[1].frequencyRank, isNull);
+      },
+    );
+
+    test(
+      'applies frequency ranks when the frequency dictionary is installed after JMdict',
+      () async {
+        final installDb = createTestDatabase();
+        addTearDown(() => installDb.close());
+        final installRepo = DictionaryRepository(installDb);
+
+        final installQueryService = await seedScenario(
+          installDb: installDb,
+          installRepo: installRepo,
+          installFrequencyFirst: false,
+        );
+
+        final results = await installQueryService.fuzzySearchWithSource('私');
+        expect(results.map((r) => r.entry.reading).toList(), ['わたし', 'わっし']);
+        expect(results[0].frequencyRank, 32);
+        expect(results[1].frequencyRank, isNull);
+      },
+    );
   });
 
   // ── Deinflection in fuzzySearchWithSource ────────────────────────

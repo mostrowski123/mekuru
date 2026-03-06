@@ -349,19 +349,29 @@ class DictionaryQueryService {
   ///
   /// Lookup strategy per pair:
   /// 1. Prefer an exact (expression, reading) match in the Frequencies table.
-  /// 2. Fall back to the best (lowest) rank for that expression across all
-  ///    readings when no exact reading match exists.
+  /// 2. Fall back to an exact surface-form rank for the result's expression
+  ///    when the frequency source does not specify a reading.
+  /// 3. If the searched term exactly matches the result's reading, allow an
+  ///    exact surface-form rank for that searched kana term.
+  ///
+  /// Importantly, this does not borrow the best rank from a different reading
+  /// of the same expression. For example, `私/わっし` must not inherit the
+  /// frequency rank of `私/わたし`.
   Future<Map<(String, String), int>> _getFrequencyRanks(
     List<DictionaryEntryWithSource> results,
+    Set<String> searchTerms,
   ) async {
     if (results.isEmpty) return {};
 
-    final expressions = results.map((r) => r.entry.expression).toSet();
-    if (expressions.isEmpty) return {};
+    final lookupExpressions = <String>{
+      ...results.map((r) => r.entry.expression),
+      ...searchTerms.where((term) => term.isNotEmpty),
+    };
+    if (lookupExpressions.isEmpty) return {};
 
     // Fetch ALL frequency rows for these expressions in batches.
     final allRows = <TypedResult>[];
-    final exprList = expressions.toList();
+    final exprList = lookupExpressions.toList();
     const batchSize = 200;
 
     for (var i = 0; i < exprList.length; i += batchSize) {
@@ -382,10 +392,10 @@ class DictionaryQueryService {
     }
 
     // Build two lookup structures:
-    // 1. (expression, reading) -> min rank
-    // 2. expression -> min rank across all readings
+    // 1. (expression, reading) -> min rank for reading-specific entries
+    // 2. expression -> min rank for surface-form-only entries
     final pairRanks = <(String, String), int>{};
-    final exprFallback = <String, int>{};
+    final surfaceRanks = <String, int>{};
 
     for (final row in allRows) {
       final expression = row.read(_db.frequencies.expression);
@@ -395,21 +405,26 @@ class DictionaryQueryService {
         continue;
       }
 
+      if (reading.isEmpty) {
+        final existingSurfaceRank = surfaceRanks[expression];
+        if (existingSurfaceRank == null ||
+            frequencyRank < existingSurfaceRank) {
+          surfaceRanks[expression] = frequencyRank;
+        }
+        continue;
+      }
+
       final key = (expression, reading);
       final existingPairRank = pairRanks[key];
       if (existingPairRank == null || frequencyRank < existingPairRank) {
         pairRanks[key] = frequencyRank;
       }
-
-      final existingExprRank = exprFallback[expression];
-      if (existingExprRank == null || frequencyRank < existingExprRank) {
-        exprFallback[expression] = frequencyRank;
-      }
     }
 
     // For each unique (expression, reading) in results, prefer the
-    // pair-specific rank. When that pair is missing, fall back to the
-    // best rank seen for the expression regardless of reading.
+    // pair-specific rank. When that pair is missing, only fall back to an
+    // exact surface-form rank for the same expression, or for the searched
+    // reading itself when the user searched by kana.
     final resultPairs = results
         .map((r) => (r.entry.expression, r.entry.reading))
         .toSet();
@@ -419,10 +434,19 @@ class DictionaryQueryService {
       final pairRank = pairRanks[pair];
       if (pairRank != null) {
         ranks[pair] = pairRank;
-      } else {
-        final fallback = exprFallback[pair.$1];
-        if (fallback != null) {
-          ranks[pair] = fallback;
+        continue;
+      }
+
+      final expressionSurfaceRank = surfaceRanks[pair.$1];
+      if (expressionSurfaceRank != null) {
+        ranks[pair] = expressionSurfaceRank;
+        continue;
+      }
+
+      if (pair.$2.isNotEmpty && searchTerms.contains(pair.$2)) {
+        final readingSurfaceRank = surfaceRanks[pair.$2];
+        if (readingSurfaceRank != null) {
+          ranks[pair] = readingSurfaceRank;
         }
       }
     }
@@ -442,7 +466,10 @@ class DictionaryQueryService {
   }) async {
     if (results.isEmpty) return results;
 
-    final ranks = await _getFrequencyRanks(results);
+    final ranks = await _getFrequencyRanks(
+      results,
+      exactTerms ?? const <String>{},
+    );
     final matchPriorities = exactTerms == null || exactTerms.isEmpty
         ? null
         : _buildExactMatchPriorities(results, exactTerms);
@@ -702,7 +729,7 @@ class DictionaryQueryService {
       ...subComponentResults,
       ...glossaryResults,
     ];
-    final ranks = await _getFrequencyRanks(allResults);
+    final ranks = await _getFrequencyRanks(allResults, exactMatchTerms);
 
     return [
       ..._applyFrequencyRanks(
