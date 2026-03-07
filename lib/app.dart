@@ -57,8 +57,12 @@ class _MekuruAppState extends ConsumerState<MekuruApp> {
       ref.read(readerSettingsProvider.notifier).loadPersistedSettings(),
     );
 
-    // Trigger auto-backup check (runs once, fire-and-forget)
-    ref.read(autoBackupCheckerProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      // Backups can do meaningful file I/O, so let the first frame land first.
+      ref.read(autoBackupCheckerProvider);
+    });
   }
 
   @override
@@ -89,16 +93,34 @@ class _MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<_MainShell> {
+  static const _screenCount = 4;
+
   int _currentIndex = 0;
   bool _hasAppliedStartup = false;
   final _dictionaryKey = GlobalKey<DictionarySearchScreenState>();
+  final Map<int, Widget> _loadedScreens = <int, Widget>{};
 
-  late final List<Widget> _screens = <Widget>[
-    const LibraryScreen(),
-    DictionarySearchScreen(key: _dictionaryKey),
-    const VocabularyScreen(),
-    const SettingsScreen(),
-  ];
+  Widget _buildScreen(int index) {
+    return switch (index) {
+      0 => const LibraryScreen(),
+      1 => DictionarySearchScreen(key: _dictionaryKey),
+      2 => const VocabularyScreen(),
+      3 => const SettingsScreen(),
+      _ => throw ArgumentError.value(index, 'index', 'Unknown main screen'),
+    };
+  }
+
+  void _ensureScreenLoaded(int index) {
+    _loadedScreens.putIfAbsent(index, () => _buildScreen(index));
+  }
+
+  List<Widget> _indexedScreens() {
+    return List<Widget>.generate(
+      _screenCount,
+      (index) => _loadedScreens[index] ?? const SizedBox.shrink(),
+      growable: false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,8 +148,10 @@ class _MainShellState extends ConsumerState<_MainShell> {
       }
     }
 
+    _ensureScreenLoaded(_currentIndex);
+
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: IndexedStack(index: _currentIndex, children: _indexedScreens()),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {

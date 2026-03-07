@@ -5,6 +5,10 @@ import 'package:flutter/foundation.dart';
 
 import '../../firebase_options.dart';
 
+const _forceDebugAppCheckProvider = bool.fromEnvironment(
+  'FORCE_DEBUG_APP_CHECK_PROVIDER',
+);
+
 /// Lazily initializes Firebase and creates the OCR auth user only when needed.
 class FirebaseRuntime {
   FirebaseRuntime._();
@@ -12,8 +16,12 @@ class FirebaseRuntime {
   static final FirebaseRuntime instance = FirebaseRuntime._();
 
   bool _appCheckActivated = false;
+  DateTime? _appCheckRetryAfter;
 
   bool get hasFirebaseApp => Firebase.apps.isNotEmpty;
+
+  bool get usesDebugAppCheckProvider =>
+      kDebugMode || _forceDebugAppCheckProvider;
 
   Future<void> ensureFirebaseApp() async {
     if (!hasFirebaseApp) {
@@ -42,7 +50,31 @@ class FirebaseRuntime {
 
   Future<String?> getAppCheckToken({bool forceRefresh = false}) async {
     await ensureFirebaseApp();
-    return FirebaseAppCheck.instance.getToken(forceRefresh);
+
+    final retryAfter = _appCheckRetryAfter;
+    if (retryAfter != null && DateTime.now().isBefore(retryAfter)) {
+      throw FirebaseException(
+        plugin: 'firebase_app_check',
+        code: 'too-many-requests',
+        message:
+            'Firebase App Check is temporarily rate limited. '
+            'Wait a few minutes and try again.',
+      );
+    }
+
+    try {
+      final token = await FirebaseAppCheck.instance.getToken(forceRefresh);
+      _appCheckRetryAfter = null;
+      return token;
+    } on FirebaseException catch (error) {
+      final message = error.message?.toLowerCase() ?? '';
+      if (error.code == 'too-many-requests' ||
+          message.contains('too many attempts')) {
+        // Play Integrity can briefly throttle repeated local test attempts.
+        _appCheckRetryAfter = DateTime.now().add(const Duration(minutes: 5));
+      }
+      rethrow;
+    }
   }
 
   Future<void> _ensureAppCheck() async {
@@ -51,7 +83,7 @@ class FirebaseRuntime {
     }
 
     await FirebaseAppCheck.instance.activate(
-      providerAndroid: kDebugMode
+      providerAndroid: usesDebugAppCheckProvider
           ? const AndroidDebugProvider()
           : const AndroidPlayIntegrityProvider(),
     );

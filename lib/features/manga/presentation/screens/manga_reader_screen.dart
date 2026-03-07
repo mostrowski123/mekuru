@@ -32,6 +32,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Supports RTL (default) and LTR reading directions. Center tap toggles
 /// controls; edge taps navigate pages. Pinch-to-zoom is handled by each
 /// [MangaPageView] via [InteractiveViewer].
+const double _mangaCenterTapZoneWidthFraction = 0.60;
+
 class MangaReaderScreen extends ConsumerStatefulWidget {
   final Book book;
 
@@ -301,6 +303,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       normalizedX: normalizedX,
       normalizedY: normalizedY,
       readingDirection: readerDir,
+      centerZoneWidthFraction: _mangaCenterTapZoneWidthFraction,
     );
 
     switch (intent) {

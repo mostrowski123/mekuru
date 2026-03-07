@@ -32,8 +32,9 @@ ReaderNavigationIntent resolveTapIntent({
   required double normalizedX,
   required double normalizedY,
   required ReaderDirection readingDirection,
+  double centerZoneWidthFraction = kToggleZoneWidthFraction,
 }) {
-  if (isCenterTapZone(x: normalizedX)) {
+  if (isCenterTapZone(x: normalizedX, widthFraction: centerZoneWidthFraction)) {
     return ReaderNavigationIntent.toggleControls;
   }
 

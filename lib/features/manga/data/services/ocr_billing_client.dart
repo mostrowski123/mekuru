@@ -93,7 +93,24 @@ String describeOcrError(Object error) {
   }
 
   if (error is FirebaseAuthException) {
+    if (error.code == 'too-many-requests') {
+      return 'Too many recent sign-in attempts. Wait a few minutes, then try again.';
+    }
     return error.message ?? 'Authentication failed.';
+  }
+
+  if (error is FirebaseException) {
+    final message = error.message?.toLowerCase() ?? '';
+    if (error.code == 'too-many-requests' ||
+        message.contains('too many attempts')) {
+      return 'Firebase App Check is temporarily rate limited. '
+          'Wait a few minutes before trying again.';
+    }
+    if (message.contains('app attestation failed')) {
+      return 'Firebase App Check failed for this build. '
+          'If this is a local test build, enable the debug App Check provider.';
+    }
+    return error.message ?? 'Firebase request failed.';
   }
 
   if (error is StateError) {
@@ -414,15 +431,41 @@ class OcrBillingClient {
   }
 
   Future<String> _getAppCheckToken() async {
-    final token = await FirebaseRuntime.instance.getAppCheckToken();
-    if (token == null || token.isEmpty) {
+    try {
+      final token = await FirebaseRuntime.instance.getAppCheckToken();
+      if (token == null || token.isEmpty) {
+        throw const OcrBillingException(
+          401,
+          'Failed to refresh the Firebase App Check token for OCR billing.',
+          code: 'app_check_required',
+        );
+      }
+      return token;
+    } on FirebaseException catch (error) {
+      final message = error.message?.toLowerCase() ?? '';
+      if (error.code == 'too-many-requests' ||
+          message.contains('too many attempts')) {
+        throw const OcrBillingException(
+          429,
+          'Firebase App Check is temporarily rate limited. '
+          'Wait a few minutes before trying again.',
+          code: 'app_check_rate_limited',
+        );
+      }
+      if (message.contains('app attestation failed')) {
+        throw const OcrBillingException(
+          401,
+          'Firebase App Check failed for this build. '
+          'If you are testing a local build, enable the debug App Check provider.',
+          code: 'app_check_attestation_failed',
+        );
+      }
       throw const OcrBillingException(
         401,
         'Failed to refresh the Firebase App Check token for OCR billing.',
         code: 'app_check_required',
       );
     }
-    return token;
   }
 
   OcrBillingException _parseError(http.Response response) {

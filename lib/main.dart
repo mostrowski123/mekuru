@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -39,49 +41,59 @@ Future<void> main() async {
     },
     appRunner: () async {
       await PreloadedAppSettings.load();
+      runApp(SentryWidget(child: const ProviderScope(child: MekuruApp())));
+      _scheduleDeferredStartupWarmups();
+    },
+  );
+}
 
-      // Best-effort startup initialization. OCR flows can lazily initialize
-      // Firebase later if startup auth is unavailable, but keeping these
-      // operations under Sentry ensures early failures are captured.
-      try {
-        await FirebaseRuntime.instance.ensureFirebaseApp();
-      } catch (error, stackTrace) {
-        debugPrint('[APP] Firebase unavailable during startup: $error');
-        Sentry.captureException(error, stackTrace: stackTrace);
-      }
+void _scheduleDeferredStartupWarmups() {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(_runDeferredStartupWarmups());
+  });
+}
 
-      try {
-        await flushPendingOcrFinalizations();
-      } catch (e, st) {
-        debugPrint('[APP] OCR finalization flush failed: $e');
-        Sentry.captureException(e, stackTrace: st);
-      }
+Future<void> _runDeferredStartupWarmups() async {
+  // Keep the first frame light. These services all lazily initialize on
+  // demand, so we can warm them after the UI is visible.
+  await _runStartupWarmup(
+    logMessage: 'Firebase unavailable during startup warmup',
+    action: FirebaseRuntime.instance.ensureFirebaseApp,
+  );
 
-      try {
-        await OcrStoreService.instance.initialize();
-      } catch (e, st) {
-        debugPrint('[APP] OcrStoreService init failed: $e');
-        Sentry.captureException(e, stackTrace: st);
-      }
-
-      try {
-        await Workmanager().initialize(ocrWorkerCallbackDispatcher);
-      } catch (e, st) {
-        debugPrint('[APP] WorkManager init failed: $e');
-        Sentry.captureException(e, stackTrace: st);
-      }
-
-      try {
+  await Future.wait([
+    _runStartupWarmup(
+      logMessage: 'OCR finalization flush failed',
+      action: flushPendingOcrFinalizations,
+    ),
+    _runStartupWarmup(
+      logMessage: 'OcrStoreService init failed',
+      action: OcrStoreService.instance.initialize,
+    ),
+    _runStartupWarmup(
+      logMessage: 'WorkManager init failed',
+      action: () => Workmanager().initialize(ocrWorkerCallbackDispatcher),
+    ),
+    _runStartupWarmup(
+      logMessage: 'MeCab init failed (app will continue)',
+      action: () async {
         await MecabService.instance.init();
         Sentry.addBreadcrumb(
           Breadcrumb(message: 'MeCab initialized', category: 'app.init'),
         );
-      } catch (e, st) {
-        debugPrint('[APP] MeCab init failed (app will continue): $e');
-        Sentry.captureException(e, stackTrace: st);
-      }
+      },
+    ),
+  ]);
+}
 
-      runApp(SentryWidget(child: const ProviderScope(child: MekuruApp())));
-    },
-  );
+Future<void> _runStartupWarmup({
+  required String logMessage,
+  required Future<void> Function() action,
+}) async {
+  try {
+    await action();
+  } catch (error, stackTrace) {
+    debugPrint('[APP] $logMessage: $error');
+    await Sentry.captureException(error, stackTrace: stackTrace);
+  }
 }

@@ -229,6 +229,24 @@ void main() {
       );
       expect(intent, ReaderNavigationIntent.goBackward);
     });
+
+    test('supports wider center zone for manga page turns near the edge', () {
+      final nearEdgeIntent = resolveTapIntent(
+        normalizedX: 0.18,
+        normalizedY: 0.5,
+        readingDirection: ReaderDirection.rtl,
+        centerZoneWidthFraction: 0.60,
+      );
+      final innerIntent = resolveTapIntent(
+        normalizedX: 0.22,
+        normalizedY: 0.5,
+        readingDirection: ReaderDirection.rtl,
+        centerZoneWidthFraction: 0.60,
+      );
+
+      expect(nearEdgeIntent, ReaderNavigationIntent.goForward);
+      expect(innerIntent, ReaderNavigationIntent.toggleControls);
+    });
   });
 
   // ── resolveSwipeIntent ────────────────────────────────────────────────
