@@ -405,6 +405,12 @@ void main() {
           glossaries: jsonEncode(['I; me']),
           dictionaryId: dictId,
         ),
+        DictionaryEntriesCompanion.insert(
+          expression: '分つ',
+          reading: const Value('わかつ'),
+          glossaries: jsonEncode(['to divide']),
+          dictionaryId: dictId,
+        ),
       ]);
 
       final frequencyDictId = await lookupRepo.insertDictionary('FreqDict');
@@ -419,6 +425,12 @@ void main() {
           expression: '分かる',
           reading: const Value('わかる'),
           frequencyRank: 200,
+          dictionaryId: frequencyDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '分つ',
+          reading: const Value('わかつ'),
+          frequencyRank: 400,
           dictionaryId: frequencyDictId,
         ),
       ]);
@@ -436,9 +448,28 @@ void main() {
           'わかった',
         );
 
-        expect(results, hasLength(2));
+        expect(results, hasLength(3));
         expect(results.first.entry.expression, '分かる');
         expect(results.first.entry.reading, 'わかる');
+        expect(results.last.entry.expression, 'わい');
+      },
+    );
+
+    test(
+      'prefers surface-derived candidates over a conflicting parser guess',
+      () async {
+        final results = await lookupQueryService.searchLookupWithSource(
+          '分つ',
+          'わかった',
+        );
+
+        expect(results, hasLength(3));
+        expect(results.first.entry.expression, '分かる');
+        expect(results.first.entry.reading, 'わかる');
+        expect(
+          results.indexWhere((r) => r.entry.expression == '分つ'),
+          greaterThan(results.indexWhere((r) => r.entry.expression == '分かる')),
+        );
         expect(results.last.entry.expression, 'わい');
       },
     );

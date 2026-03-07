@@ -544,46 +544,115 @@ class DictionaryQueryService {
     return _attachFrequencyRanks(results, exactTerms: terms.toSet());
   }
 
-  /// Search lookup terms in two tiers:
-  /// 1. Direct matches for the supplied lookup text(s).
-  /// 2. Deinflected fallback matches for those texts.
+  /// Search lookup terms with lookup-specific tiering.
   ///
-  /// This keeps high-confidence direct hits at the top of the lookup sheet
-  /// while still surfacing alternate deinflections underneath.
+  /// When a surface form is available, prioritize candidates derived from the
+  /// tapped surface text before falling back to the parser's chosen base form.
+  /// This keeps parser mistakes from dominating the lookup sheet while still
+  /// preserving the parser guess as a fallback.
   Future<List<DictionaryEntryWithSource>> searchLookupWithSource(
     String primary, [
     String? secondary,
   ]) async {
-    final directTerms = <String>{};
+    final surfaceTerm = secondary != null && secondary.isNotEmpty
+        ? secondary
+        : primary;
+    if (surfaceTerm.isEmpty && primary.isEmpty) {
+      return [];
+    }
+
+    final preferredFamily = _inferLookupFamily(primary);
+    final primaryKanaTerms = <String>{};
+    final exactSurfaceTerms = <String>{};
+    final preferredSurfaceTerms = <String>{};
+    final otherSurfaceTerms = <String>{};
+    final parserTerms = <String>{};
+
+    if (secondary != null &&
+        secondary.isNotEmpty &&
+        primary.isNotEmpty &&
+        _isKanaOnly(primary)) {
+      primaryKanaTerms.add(primary);
+    }
+
+    if (surfaceTerm.isNotEmpty) {
+      exactSurfaceTerms.add(surfaceTerm);
+      for (final candidate in deinflectDetailed(surfaceTerm)) {
+        if (candidate.term == surfaceTerm) continue;
+        if (preferredFamily != null && candidate.family == preferredFamily) {
+          preferredSurfaceTerms.add(candidate.term);
+        } else {
+          otherSurfaceTerms.add(candidate.term);
+        }
+      }
+    }
+
     if (primary.isNotEmpty) {
-      directTerms.add(primary);
-    }
-    if (secondary != null && secondary.isNotEmpty) {
-      directTerms.add(secondary);
-    }
-    if (directTerms.isEmpty) return [];
-
-    final directResults = await searchMultipleWithSource(directTerms.toList());
-
-    final deinflectedTerms = <String>{};
-    for (final term in directTerms) {
-      deinflectedTerms.addAll(deinflect(term));
-    }
-    deinflectedTerms.removeAll(directTerms);
-    if (deinflectedTerms.isEmpty) {
-      return directResults;
+      final alreadyCovered =
+          primaryKanaTerms.contains(primary) ||
+          exactSurfaceTerms.contains(primary) ||
+          preferredSurfaceTerms.contains(primary) ||
+          otherSurfaceTerms.contains(primary);
+      if (!alreadyCovered) {
+        parserTerms.add(primary);
+      }
     }
 
-    final deinflectedResults = await searchMultipleWithSource(
-      deinflectedTerms.toList(),
-    );
-    final seenIds = directResults.map((r) => r.entry.id).toSet();
+    return _mergeLookupTiers([
+      if (primaryKanaTerms.isNotEmpty)
+        await searchMultipleWithSource(primaryKanaTerms.toList()),
+      if (exactSurfaceTerms.isNotEmpty)
+        await searchMultipleWithSource(exactSurfaceTerms.toList()),
+      if (preferredSurfaceTerms.isNotEmpty)
+        await searchMultipleWithSource(preferredSurfaceTerms.toList()),
+      if (otherSurfaceTerms.isNotEmpty)
+        await searchMultipleWithSource(otherSurfaceTerms.toList()),
+      if (parserTerms.isNotEmpty)
+        await searchMultipleWithSource(parserTerms.toList()),
+    ]);
+  }
 
-    return [
-      ...directResults,
-      for (final result in deinflectedResults)
-        if (seenIds.add(result.entry.id)) result,
-    ];
+  DeinflectionFamily? _inferLookupFamily(String primary) {
+    if (primary.isEmpty) return null;
+    final lastChar = primary[primary.length - 1];
+    if (_adjectiveEndingChars.contains(lastChar)) {
+      return DeinflectionFamily.adjective;
+    }
+    if (_verbalEndingChars.contains(lastChar)) {
+      return DeinflectionFamily.verbal;
+    }
+    return null;
+  }
+
+  bool _isKanaOnly(String text) {
+    if (text.isEmpty) return false;
+    for (final rune in text.runes) {
+      if (!_isKanaRune(rune)) return false;
+    }
+    return true;
+  }
+
+  bool _isKanaRune(int rune) {
+    return (rune >= 0x3040 && rune <= 0x309F) ||
+        (rune >= 0x30A0 && rune <= 0x30FF) ||
+        rune == 0x30FC;
+  }
+
+  List<DictionaryEntryWithSource> _mergeLookupTiers(
+    List<List<DictionaryEntryWithSource>> tiers,
+  ) {
+    final merged = <DictionaryEntryWithSource>[];
+    final seenIds = <int>{};
+
+    for (final tier in tiers) {
+      for (final result in tier) {
+        if (seenIds.add(result.entry.id)) {
+          merged.add(result);
+        }
+      }
+    }
+
+    return merged;
   }
 
   /// Prefix search: expression or reading starts with [term].
@@ -951,4 +1020,16 @@ class DictionaryQueryService {
   }
 
   static final _latinPattern = RegExp(r'[a-zA-Z]');
+  static const _verbalEndingChars = {
+    'う',
+    'く',
+    'ぐ',
+    'す',
+    'つ',
+    'ぬ',
+    'ぶ',
+    'む',
+    'る',
+  };
+  static const _adjectiveEndingChars = {'い'};
 }
