@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
+import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
+    as ocr_server_config;
 
 import '../../data/models/mokuro_models.dart';
 
@@ -131,8 +133,29 @@ class MangaOcrClient {
       );
     }
 
+    final normalizedServerUrl = serverUrl.trim();
+    final urlError = ocr_server_config.validateOcrServerUrl(
+      normalizedServerUrl,
+    );
+    if (urlError != null) {
+      final message = normalizedServerUrl.isEmpty
+          ? 'OCR server URL is not configured.'
+          : 'OCR server URL is invalid. Use a full http:// or https:// URL.';
+      throw OcrServerException(0, message);
+    }
+
+    final baseUri = ocr_server_config.tryParseOcrServerUrl(normalizedServerUrl);
+    if (baseUri == null) {
+      throw const OcrServerException(
+        0,
+        'OCR server URL is invalid. Use a full http:// or https:// URL.',
+      );
+    }
+    final uri = baseUri.replace(
+      path: '${baseUri.path}/ocr'.replaceAll('//', '/'),
+    );
+
     final contentType = _detectImageContentType(filename, imageBytes);
-    final uri = Uri.parse('$serverUrl/ocr');
     final request = http.MultipartRequest('POST', uri)
       ..files.add(
         http.MultipartFile.fromBytes(

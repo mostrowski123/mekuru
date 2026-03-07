@@ -410,7 +410,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Builder(
                 builder: (context) {
                   final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
-                  final usesBuiltInServer = isBuiltInOcrServerUrl(
+                  final usesBuiltInServer = isUnsetOrBuiltInOcrServerUrl(
                     currentOcrServerUrl,
                   );
                   final subtitle = usesBuiltInServer
@@ -790,7 +790,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final savedCustomBearerKey =
         await _ocrAuthSecretStorage.loadCustomServerBearerKey() ?? '';
     final currentUrl = ref.read(ocrServerUrlProvider);
-    final initialUrl = isBuiltInOcrServerUrl(currentUrl) ? '' : currentUrl;
+    final initialUrl = isUnsetOrBuiltInOcrServerUrl(currentUrl)
+        ? ''
+        : currentUrl;
 
     if (!context.mounted) return;
 
@@ -846,14 +848,24 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
   }
 
   void _onSave() {
-    final url = _urlController.text.trim();
+    final url = ocr_server_config.normalizeOcrServerUrl(_urlController.text);
     final customKey = _keyController.text.trim();
+    final urlError = ocr_server_config.validateOcrServerUrl(url);
+
     if (url.isEmpty || customKey.isEmpty) {
       setState(() {
         _urlError = url.isEmpty ? 'Enter your server URL.' : null;
         _keyError = customKey.isEmpty
             ? 'A shared key is required for custom servers.'
             : null;
+      });
+      return;
+    }
+
+    if (urlError != null) {
+      setState(() {
+        _urlError = urlError;
+        _keyError = null;
       });
       return;
     }

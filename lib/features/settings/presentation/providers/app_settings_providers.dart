@@ -354,14 +354,23 @@ class OcrServerUrlNotifier extends Notifier<String> {
     final persisted = await ref
         .read(appSettingsStorageProvider)
         .loadOcrServerUrl();
-    if (persisted != null && persisted.isNotEmpty) {
-      state = persisted;
+    final normalized = ocr_server_config.normalizeOcrServerUrl(persisted ?? '');
+    if (normalized.isNotEmpty) {
+      state = normalized;
+    }
+    if (persisted != null && normalized != persisted) {
+      unawaited(
+        ref.read(appSettingsStorageProvider).saveOcrServerUrl(normalized),
+      );
     }
   }
 
   void setUrl(String url) {
-    state = url;
-    unawaited(ref.read(appSettingsStorageProvider).saveOcrServerUrl(url));
+    final normalized = ocr_server_config.normalizeOcrServerUrl(url);
+    state = normalized;
+    unawaited(
+      ref.read(appSettingsStorageProvider).saveOcrServerUrl(normalized),
+    );
   }
 }
 
@@ -370,6 +379,10 @@ String normalizeOcrServerUrl(String url) {
 }
 
 bool isBuiltInOcrServerUrl(String url) {
+  return ocr_server_config.isBuiltInOcrServerUrl(url);
+}
+
+bool isUnsetOrBuiltInOcrServerUrl(String url) {
   return ocr_server_config.isUnsetOrBuiltInOcrServerUrl(url);
 }
 

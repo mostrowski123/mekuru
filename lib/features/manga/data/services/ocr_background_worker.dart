@@ -185,7 +185,9 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   final jobId = inputData['jobId'] as String?;
 
   final prefs = await SharedPreferences.getInstance();
-  final serverUrl = prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl;
+  final serverUrl = ocr_server_config.normalizeOcrServerUrl(
+    prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl,
+  );
   final usesBuiltInServer = ocr_server_config.isBuiltInOcrServerUrl(serverUrl);
   final authSecretStorage = OcrAuthSecretStorage();
   final customBearerKey = usesBuiltInServer
@@ -194,6 +196,38 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   final effectiveJobId = usesBuiltInServer ? jobId : null;
 
   await flushPendingOcrFinalizations();
+
+  if (serverUrl.isEmpty) {
+    await OcrProgress.save(
+      prefs,
+      bookId,
+      const OcrProgress(
+        completed: 0,
+        total: 0,
+        status: OcrStatus.failed,
+        errorMessage: 'OCR server URL is not configured.',
+      ),
+    );
+    await _clearActiveOcrJob(bookId);
+    return false;
+  }
+
+  if (!usesBuiltInServer &&
+      ocr_server_config.validateOcrServerUrl(serverUrl) != null) {
+    await OcrProgress.save(
+      prefs,
+      bookId,
+      const OcrProgress(
+        completed: 0,
+        total: 0,
+        status: OcrStatus.failed,
+        errorMessage:
+            'OCR server URL is invalid. Use a full http:// or https:// URL.',
+      ),
+    );
+    await _clearActiveOcrJob(bookId);
+    return false;
+  }
 
   if (!usesBuiltInServer && customBearerKey == null) {
     await OcrProgress.save(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -16,24 +18,51 @@ import 'main.dart' show navigatorKey, scaffoldMessengerKey, databaseProvider;
 import 'shared/theme/app_theme.dart';
 
 /// Root application widget.
-class MekuruApp extends ConsumerWidget {
+class MekuruApp extends ConsumerStatefulWidget {
   const MekuruApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(appThemeModeProvider.notifier).loadPersistedSettings();
-    ref.read(appColorThemeProvider.notifier).loadPersistedSettings();
-    ref.read(lookupFontSizeProvider.notifier).loadPersistedSettings();
-    ref.read(searchHistoryProvider.notifier).loadPersistedSettings();
-    ref.read(filterRomanLettersProvider.notifier).loadPersistedSettings();
-    ref.read(ankidroidConfigProvider.notifier).loadPersistedSettings();
-    ref.read(startupScreenProvider.notifier).loadPersistedSettings();
-    ref.read(autoFocusSearchProvider.notifier).loadPersistedSettings();
-    ref.read(autoCropWhiteThresholdProvider.notifier).loadPersistedSettings();
-    ref.read(ocrServerUrlProvider.notifier).loadPersistedSettings();
-    ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
+  ConsumerState<MekuruApp> createState() => _MekuruAppState();
+}
+
+class _MekuruAppState extends ConsumerState<MekuruApp> {
+  @override
+  void initState() {
+    super.initState();
+    _bootstrapAppState();
+  }
+
+  void _bootstrapAppState() {
+    unawaited(ref.read(appThemeModeProvider.notifier).loadPersistedSettings());
+    unawaited(ref.read(appColorThemeProvider.notifier).loadPersistedSettings());
+    unawaited(
+      ref.read(lookupFontSizeProvider.notifier).loadPersistedSettings(),
+    );
+    unawaited(ref.read(searchHistoryProvider.notifier).loadPersistedSettings());
+    unawaited(
+      ref.read(filterRomanLettersProvider.notifier).loadPersistedSettings(),
+    );
+    unawaited(
+      ref.read(ankidroidConfigProvider.notifier).loadPersistedSettings(),
+    );
+    unawaited(ref.read(startupScreenProvider.notifier).loadPersistedSettings());
+    unawaited(
+      ref.read(autoFocusSearchProvider.notifier).loadPersistedSettings(),
+    );
+    unawaited(
+      ref.read(autoCropWhiteThresholdProvider.notifier).loadPersistedSettings(),
+    );
+    unawaited(ref.read(ocrServerUrlProvider.notifier).loadPersistedSettings());
+    unawaited(
+      ref.read(readerSettingsProvider.notifier).loadPersistedSettings(),
+    );
+
     // Trigger auto-backup check (runs once, fire-and-forget)
     ref.read(autoBackupCheckerProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
 

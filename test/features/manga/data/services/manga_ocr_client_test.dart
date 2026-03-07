@@ -292,6 +292,70 @@ void main() {
       client.dispose();
     });
 
+    test('missing server URL throws before the request is sent', () async {
+      var callCount = 0;
+      final mockClient = MockClient.streaming((request, _) async {
+        callCount++;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(emptyBlocksResponse)),
+          200,
+          headers: jsonHeaders,
+        );
+      });
+
+      final client = MangaOcrClient(
+        serverUrl: '   ',
+        getBearerToken: () => testToken,
+        httpClient: mockClient,
+      );
+
+      await expectLater(
+        () => client.processPage(imageBytes, 'page_001.jpg'),
+        throwsA(
+          isA<OcrServerException>().having(
+            (e) => e.message,
+            'message',
+            'OCR server URL is not configured.',
+          ),
+        ),
+      );
+
+      expect(callCount, 0);
+      client.dispose();
+    });
+
+    test('invalid server URL throws before the request is sent', () async {
+      var callCount = 0;
+      final mockClient = MockClient.streaming((request, _) async {
+        callCount++;
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(emptyBlocksResponse)),
+          200,
+          headers: jsonHeaders,
+        );
+      });
+
+      final client = MangaOcrClient(
+        serverUrl: 'not-a-valid-url',
+        getBearerToken: () => testToken,
+        httpClient: mockClient,
+      );
+
+      await expectLater(
+        () => client.processPage(imageBytes, 'page_001.jpg'),
+        throwsA(
+          isA<OcrServerException>().having(
+            (e) => e.message,
+            'message',
+            'OCR server URL is invalid. Use a full http:// or https:// URL.',
+          ),
+        ),
+      );
+
+      expect(callCount, 0);
+      client.dispose();
+    });
+
     test('OcrServerException has correct toString', () {
       const error = OcrServerException(429, 'Rate limited');
       expect(error.toString(), 'OcrServerException(429): Rate limited');

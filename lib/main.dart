@@ -31,31 +31,6 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Best-effort startup initialization. OCR flows can lazily initialize Firebase
-  // later if startup auth is unavailable.
-  try {
-    await FirebaseRuntime.instance.ensureFirebaseApp();
-  } catch (error, stackTrace) {
-    debugPrint('[APP] Firebase unavailable during startup: $error');
-    debugPrintStack(stackTrace: stackTrace);
-  }
-
-  try {
-    await flushPendingOcrFinalizations();
-  } catch (e, st) {
-    debugPrint('[APP] OCR finalization flush failed: $e');
-    Sentry.captureException(e, stackTrace: st);
-  }
-  try {
-    await OcrStoreService.instance.initialize();
-  } catch (e, st) {
-    debugPrint('[APP] OcrStoreService init failed: $e');
-    Sentry.captureException(e, stackTrace: st);
-  }
-
-  // Initialize WorkManager for background OCR processing
-  await Workmanager().initialize(ocrWorkerCallbackDispatcher);
-
   await SentryFlutter.init(
     (options) {
       options.dsn = EnvironmentConfig.sentryDsn;
@@ -64,6 +39,37 @@ Future<void> main() async {
     },
     appRunner: () async {
       await PreloadedAppSettings.load();
+
+      // Best-effort startup initialization. OCR flows can lazily initialize
+      // Firebase later if startup auth is unavailable, but keeping these
+      // operations under Sentry ensures early failures are captured.
+      try {
+        await FirebaseRuntime.instance.ensureFirebaseApp();
+      } catch (error, stackTrace) {
+        debugPrint('[APP] Firebase unavailable during startup: $error');
+        Sentry.captureException(error, stackTrace: stackTrace);
+      }
+
+      try {
+        await flushPendingOcrFinalizations();
+      } catch (e, st) {
+        debugPrint('[APP] OCR finalization flush failed: $e');
+        Sentry.captureException(e, stackTrace: st);
+      }
+
+      try {
+        await OcrStoreService.instance.initialize();
+      } catch (e, st) {
+        debugPrint('[APP] OcrStoreService init failed: $e');
+        Sentry.captureException(e, stackTrace: st);
+      }
+
+      try {
+        await Workmanager().initialize(ocrWorkerCallbackDispatcher);
+      } catch (e, st) {
+        debugPrint('[APP] WorkManager init failed: $e');
+        Sentry.captureException(e, stackTrace: st);
+      }
 
       try {
         await MecabService.instance.init();

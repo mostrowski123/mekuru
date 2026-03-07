@@ -10,7 +10,8 @@
     "build:watch": "node ./node_modules/typescript/bin/tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "npm run build && firebase deploy --only functions,firestore:rules",
-    "lint": "node ./node_modules/typescript/bin/tsc --noEmit"
+    "lint": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "test": "npm run build && node --test lib/billing_api.test.js"
   },
   "dependencies": {
     "express": "^4.21.2",

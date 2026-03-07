@@ -91,7 +91,45 @@ type AuthedRequest = Request & {
   user: admin.auth.DecodedIdToken;
 };
 
-class BillingHttpError extends Error {
+type BillingAppDependencies = {
+  enableOcrJobApi: boolean;
+  verifyAppCheck: (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => void | Promise<void>;
+  authenticate: (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => void | Promise<void>;
+  expireStaleJobs: (uid: string) => Promise<void>;
+  readUserState: (uid: string) => Promise<UserState>;
+  applyPurchaseGrant: (input: {
+    uid: string;
+    productId: string;
+    purchaseToken: string;
+    packageName: string;
+    isRestore?: boolean;
+  }) => Promise<PurchaseGrantResult>;
+  reserveOcrJob: (input: {
+    uid: string;
+    requestedPages: number;
+    bookId: number;
+  }) => Promise<OcrJobReservation>;
+  finalizeOcrJob: (input: {
+    uid: string;
+    jobId: string;
+    status: string;
+  }) => Promise<OcrJobFinalization>;
+  onError?: (
+    req: Request | undefined,
+    res: Response,
+    error: unknown,
+  ) => void;
+};
+
+export class BillingHttpError extends Error {
   readonly statusCode: number;
   readonly detail: BillingErrorDetail;
 
@@ -169,10 +207,7 @@ function sendBillingError(req: Request | undefined, res: Response, error: unknow
 
   const detail: BillingErrorBody = {
     code: "internal_error",
-    message:
-      error instanceof Error && error.message
-        ? error.message
-        : "Billing request failed.",
+    message: "An unexpected server error occurred.",
   };
   logger.error("Billing request failed with unexpected error", {
     requestId,
@@ -186,6 +221,32 @@ function asSingleString(value: unknown): string {
     return typeof value[0] === "string" ? value[0] : "";
   }
   return typeof value === "string" ? value : "";
+}
+
+function requirePositiveInteger(
+  value: unknown,
+  detail: BillingErrorBody,
+): number {
+  const parsed = asInt(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new BillingHttpError(422, detail);
+  }
+
+  return parsed;
+}
+
+function parseRequestedPages(body: Record<string, unknown>): number {
+  return requirePositiveInteger(body.requestedPages, {
+    code: "invalid_requested_pages",
+    message: "requestedPages must be greater than zero.",
+  });
+}
+
+function parseBookId(body: Record<string, unknown>): number {
+  return requirePositiveInteger(body.bookId, {
+    code: "invalid_book_id",
+    message: "bookId must be a positive integer.",
+  });
 }
 
 function parseBearerToken(req: Request): string {
@@ -800,13 +861,14 @@ async function reserveOcrJob(input: {
 }): Promise<OcrJobReservation> {
   const { uid, requestedPages, bookId } = input;
   await expireStaleJobs(uid);
-
-  if (!Number.isInteger(requestedPages) || requestedPages <= 0) {
-    throw new BillingHttpError(422, {
-      code: "invalid_requested_pages",
-      message: "requestedPages must be greater than zero.",
-    });
-  }
+  const safeRequestedPages = requirePositiveInteger(requestedPages, {
+    code: "invalid_requested_pages",
+    message: "requestedPages must be greater than zero.",
+  });
+  const safeBookId = requirePositiveInteger(bookId, {
+    code: "invalid_book_id",
+    message: "bookId must be a positive integer.",
+  });
 
   const current = now();
   const expiresAt = jobExpiry(current);
@@ -832,16 +894,16 @@ async function reserveOcrJob(input: {
     }
 
     const creditBalance = asInt(userData.creditBalance ?? 0);
-    if (creditBalance < requestedPages) {
+    if (creditBalance < safeRequestedPages) {
       throw new BillingHttpError(402, {
         code: "insufficient_credits",
         message: "Not enough OCR credits for this job.",
-        requiredCredits: requestedPages,
+        requiredCredits: safeRequestedPages,
         availableCredits: creditBalance,
       });
     }
 
-    const nextBalance = creditBalance - requestedPages;
+    const nextBalance = creditBalance - safeRequestedPages;
     transaction.set(
       ref,
       {
@@ -852,8 +914,8 @@ async function reserveOcrJob(input: {
     );
     transaction.set(targetJob, {
       uid,
-      bookId,
-      reservedPages: requestedPages,
+      bookId: safeBookId,
+      reservedPages: safeRequestedPages,
       completedPages: 0,
       refundedPages: 0,
       status: "active",
@@ -864,7 +926,7 @@ async function reserveOcrJob(input: {
 
     return {
       jobId: id,
-      reservedPages: requestedPages,
+      reservedPages: safeRequestedPages,
       expiresAt,
       creditBalance: nextBalance,
     };
@@ -958,121 +1020,137 @@ async function finalizeOcrJob(input: {
   });
 }
 
-const app = express();
-app.disable("x-powered-by");
-app.use(express.json({ limit: "1mb" }));
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const requestId = randomUUID();
-  (req as AuthedRequest).requestId = requestId;
-  res.setHeader("x-request-id", requestId);
-  logger.info("Billing request start", {
-    requestId,
-    method: req.method,
-    path: req.path,
+export function createBillingApp(deps: BillingAppDependencies) {
+  const app = express();
+  const onError = deps.onError ?? sendBillingError;
+
+  app.disable("x-powered-by");
+  app.use(express.json({ limit: "1mb" }));
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const requestId = randomUUID();
+    (req as AuthedRequest).requestId = requestId;
+    res.setHeader("x-request-id", requestId);
+    logger.info("Billing request start", {
+      requestId,
+      method: req.method,
+      path: req.path,
+    });
+    next();
   });
-  next();
-});
-app.use(verifyAppCheck);
-app.use(authenticate);
+  app.use(deps.verifyAppCheck);
+  app.use(deps.authenticate);
 
-app.get("/billing/status", async (req: Request, res: Response) => {
-  try {
-    const { uid } = (req as AuthedRequest).user;
-    if (ENABLE_OCR_JOB_API) {
-      await expireStaleJobs(uid);
+  app.get("/billing/status", async (req: Request, res: Response) => {
+    try {
+      const { uid } = (req as AuthedRequest).user;
+      if (deps.enableOcrJobApi) {
+        await deps.expireStaleJobs(uid);
+      }
+      const status = await deps.readUserState(uid);
+      res.json(status);
+    } catch (error) {
+      onError(req, res, error);
     }
-    const status = await readUserState(uid);
-    res.json(status);
-  } catch (error) {
-    sendBillingError(req, res, error);
-  }
-});
+  });
 
-app.post("/billing/purchases/android/verify", async (req: Request, res: Response) => {
-  try {
-    const { uid } = (req as AuthedRequest).user;
-    const body = (req.body ?? {}) as Record<string, unknown>;
-    const productId = String(body.productId ?? "");
-    const purchaseToken = String(body.purchaseToken ?? "");
-    const packageName = String(body.packageName ?? ANDROID_PACKAGE_NAME);
-    const isRestore = Boolean(body.isRestore);
-    const orderId = typeof body.orderId === "string" ? body.orderId : undefined;
+  app.post("/billing/purchases/android/verify", async (req: Request, res: Response) => {
+    try {
+      const { uid } = (req as AuthedRequest).user;
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const productId = String(body.productId ?? "");
+      const purchaseToken = String(body.purchaseToken ?? "");
+      const packageName = String(body.packageName ?? ANDROID_PACKAGE_NAME);
+      const isRestore = Boolean(body.isRestore);
+      const orderId = typeof body.orderId === "string" ? body.orderId : undefined;
 
-    if (!productId || !purchaseToken) {
-      throw new BillingHttpError(422, {
-        code: "invalid_request",
-        message: "productId and purchaseToken are required.",
+      if (!productId || !purchaseToken) {
+        throw new BillingHttpError(422, {
+          code: "invalid_request",
+          message: "productId and purchaseToken are required.",
+        });
+      }
+
+      logger.info("Verify purchase request", {
+        requestId: requestIdOf(req),
+        uid,
+        productId,
+        isRestore,
+        orderId,
+        packageName,
+        purchaseTokenSuffix:
+          purchaseToken.length <= 8
+            ? purchaseToken
+            : purchaseToken.slice(purchaseToken.length - 8),
       });
-    }
 
-    logger.info("Verify purchase request", {
-      requestId: requestIdOf(req),
-      uid,
-      productId,
-      isRestore,
-      orderId,
-      packageName,
-      purchaseTokenSuffix:
-        purchaseToken.length <= 8
-          ? purchaseToken
-          : purchaseToken.slice(purchaseToken.length - 8),
-    });
-
-    const result = await applyPurchaseGrant({
-      uid,
-      productId,
-      purchaseToken,
-      packageName,
-      isRestore,
-    });
-    res.json(result);
-  } catch (error) {
-    sendBillingError(req, res, error);
-  }
-});
-
-app.post("/ocr/jobs", async (req: Request, res: Response) => {
-  try {
-    if (!ENABLE_OCR_JOB_API) {
-      throw new BillingHttpError(410, {
-        code: "ocr_job_api_disabled",
-        message: "Hosted OCR jobs are currently disabled.",
+      const result = await deps.applyPurchaseGrant({
+        uid,
+        productId,
+        purchaseToken,
+        packageName,
+        isRestore,
       });
+      res.json(result);
+    } catch (error) {
+      onError(req, res, error);
     }
-    const { uid } = (req as AuthedRequest).user;
-    const body = (req.body ?? {}) as Record<string, unknown>;
-    const requestedPages = asInt(body.requestedPages);
-    const bookId = asInt(body.bookId);
-    const result = await reserveOcrJob({
-      uid,
-      requestedPages,
-      bookId,
-    });
-    res.json(result);
-  } catch (error) {
-    sendBillingError(req, res, error);
-  }
-});
+  });
 
-app.post("/ocr/jobs/:jobId/finalize", async (req: Request, res: Response) => {
-  try {
-    if (!ENABLE_OCR_JOB_API) {
-      throw new BillingHttpError(410, {
-        code: "ocr_job_api_disabled",
-        message: "Hosted OCR jobs are currently disabled.",
+  app.post("/ocr/jobs", async (req: Request, res: Response) => {
+    try {
+      if (!deps.enableOcrJobApi) {
+        throw new BillingHttpError(410, {
+          code: "ocr_job_api_disabled",
+          message: "Hosted OCR jobs are currently disabled.",
+        });
+      }
+      const { uid } = (req as AuthedRequest).user;
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const result = await deps.reserveOcrJob({
+        uid,
+        requestedPages: parseRequestedPages(body),
+        bookId: parseBookId(body),
       });
+      res.json(result);
+    } catch (error) {
+      onError(req, res, error);
     }
-    const { uid } = (req as AuthedRequest).user;
-    const body = (req.body ?? {}) as Record<string, unknown>;
-    const result = await finalizeOcrJob({
-      uid,
-      jobId: asSingleString(req.params.jobId),
-      status: String(body.status ?? ""),
-    });
-    res.json(result);
-  } catch (error) {
-    sendBillingError(req, res, error);
-  }
+  });
+
+  app.post("/ocr/jobs/:jobId/finalize", async (req: Request, res: Response) => {
+    try {
+      if (!deps.enableOcrJobApi) {
+        throw new BillingHttpError(410, {
+          code: "ocr_job_api_disabled",
+          message: "Hosted OCR jobs are currently disabled.",
+        });
+      }
+      const { uid } = (req as AuthedRequest).user;
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const result = await deps.finalizeOcrJob({
+        uid,
+        jobId: asSingleString(req.params.jobId),
+        status: String(body.status ?? ""),
+      });
+      res.json(result);
+    } catch (error) {
+      onError(req, res, error);
+    }
+  });
+
+  return app;
+}
+
+const app = createBillingApp({
+  enableOcrJobApi: ENABLE_OCR_JOB_API,
+  verifyAppCheck,
+  authenticate,
+  expireStaleJobs,
+  readUserState,
+  applyPurchaseGrant,
+  reserveOcrJob,
+  finalizeOcrJob,
+  onError: sendBillingError,
 });
 
 export const billingApiV2 = onRequest(

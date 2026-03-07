@@ -43,24 +43,38 @@ class _SpyBookRepository extends BookRepository {
     lastBookId = bookId;
     lastVerticalText = verticalText;
     lastReadingDirection = readingDirection;
-    // Don't call super — we don't need real DB writes in these tests.
+    // Do not call super because these tests only need the write intent.
   }
 }
 
-ProviderContainer _createContainer({
+class _ReaderSettingsTestHarness {
+  _ReaderSettingsTestHarness({required this.container, this.db});
+
+  final ProviderContainer container;
+  final AppDatabase? db;
+
+  Future<void> dispose() async {
+    container.dispose();
+    await db?.close();
+  }
+}
+
+_ReaderSettingsTestHarness _createHarness({
   _FakeReaderSettingsStorage? storage,
   _SpyBookRepository? bookRepo,
 }) {
   final fakeStorage = storage ?? _FakeReaderSettingsStorage();
-  final db = AppDatabase(NativeDatabase.memory());
-  final repo = bookRepo ?? _SpyBookRepository(db);
+  final db = bookRepo == null ? AppDatabase(NativeDatabase.memory()) : null;
+  final repo = bookRepo ?? _SpyBookRepository(db!);
+
   final container = ProviderContainer(
     overrides: [
       readerSettingsStorageProvider.overrideWithValue(fakeStorage),
       readerBookRepositoryProvider.overrideWithValue(repo),
     ],
   );
-  return container;
+
+  return _ReaderSettingsTestHarness(container: container, db: db);
 }
 
 void main() {
@@ -73,8 +87,9 @@ void main() {
         ),
       );
 
-      final container = _createContainer(storage: fakeStorage);
-      addTearDown(container.dispose);
+      final harness = _createHarness(storage: fakeStorage);
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       await container
           .read(readerSettingsProvider.notifier)
@@ -82,16 +97,16 @@ void main() {
       final settings = container.read(readerSettingsProvider);
 
       expect(settings.fontSize, 24);
-      // verticalText and readingDirection are per-book, not loaded from global.
-      expect(settings.verticalText, isTrue); // class default
-      expect(settings.readingDirection, ReaderDirection.rtl); // class default
+      expect(settings.verticalText, isTrue);
+      expect(settings.readingDirection, ReaderDirection.rtl);
       expect(settings.pageTurnAnimationEnabled, isFalse);
     });
 
     test('persists updates for global reader settings', () async {
       final fakeStorage = _FakeReaderSettingsStorage();
-      final container = _createContainer(storage: fakeStorage);
-      addTearDown(container.dispose);
+      final harness = _createHarness(storage: fakeStorage);
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.setFontSize(20);
@@ -109,8 +124,9 @@ void main() {
       'keeps reading direction independent from vertical text setting',
       () async {
         final fakeStorage = _FakeReaderSettingsStorage();
-        final container = _createContainer(storage: fakeStorage);
-        addTearDown(container.dispose);
+        final harness = _createHarness(storage: fakeStorage);
+        addTearDown(harness.dispose);
+        final container = harness.container;
 
         final notifier = container.read(readerSettingsProvider.notifier);
         notifier.setReadingDirection(ReaderDirection.ltr);
@@ -125,10 +141,11 @@ void main() {
     );
   });
 
-  group('ReaderSettingsNotifier — applyBookDefaults', () {
+  group('ReaderSettingsNotifier - applyBookDefaults', () {
     test('sets RTL and vertical for Japanese book', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.applyBookDefaults(bookId: 1, language: 'ja');
@@ -139,8 +156,9 @@ void main() {
     });
 
     test('sets LTR and horizontal for English book', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.applyBookDefaults(bookId: 1, language: 'en');
@@ -151,8 +169,9 @@ void main() {
     });
 
     test('sets RTL and vertical for null language (legacy books)', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.applyBookDefaults(bookId: 1);
@@ -162,10 +181,11 @@ void main() {
       expect(settings.verticalText, isTrue);
     });
 
-    test('does NOT persist global settings (no save calls)', () async {
+    test('does not persist global settings (no save calls)', () async {
       final fakeStorage = _FakeReaderSettingsStorage();
-      final container = _createContainer(storage: fakeStorage);
-      addTearDown(container.dispose);
+      final harness = _createHarness(storage: fakeStorage);
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.applyBookDefaults(bookId: 1, language: 'en');
@@ -175,11 +195,11 @@ void main() {
     });
 
     test('respects page-progression-direction override', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
-      // Japanese book with explicit LTR ppd
       notifier.applyBookDefaults(
         bookId: 1,
         language: 'ja',
@@ -194,11 +214,11 @@ void main() {
     test(
       'uses primaryWritingMode to determine vertical text independently of ppd',
       () {
-        final container = _createContainer();
-        addTearDown(container.dispose);
+        final harness = _createHarness();
+        addTearDown(harness.dispose);
+        final container = harness.container;
 
         final notifier = container.read(readerSettingsProvider.notifier);
-        // Japanese book with RTL ppd but horizontal writing mode
         notifier.applyBookDefaults(
           bookId: 1,
           language: 'ja',
@@ -207,15 +227,15 @@ void main() {
         );
 
         final settings = container.read(readerSettingsProvider);
-        // Direction follows ppd (RTL), but vertical text follows writing mode
         expect(settings.readingDirection, ReaderDirection.rtl);
         expect(settings.verticalText, isFalse);
       },
     );
 
     test('preserves other settings when applying book defaults', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.setFontSize(24);
@@ -230,13 +250,13 @@ void main() {
     });
   });
 
-  group('ReaderSettingsNotifier — per-book overrides', () {
+  group('ReaderSettingsNotifier - per-book overrides', () {
     test('uses per-book vertical text override when provided', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
-      // Japanese book, but user previously toggled to horizontal
       notifier.applyBookDefaults(
         bookId: 42,
         language: 'ja',
@@ -250,11 +270,11 @@ void main() {
     });
 
     test('falls back to book defaults when no override is stored', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
-      // Japanese book with no overrides (null)
       notifier.applyBookDefaults(bookId: 42, language: 'ja');
 
       final settings = container.read(readerSettingsProvider);
@@ -265,13 +285,13 @@ void main() {
     test('persists per-book override when verticalText is changed', () async {
       final db = AppDatabase(NativeDatabase.memory());
       final spyRepo = _SpyBookRepository(db);
-      final container = _createContainer(bookRepo: spyRepo);
-      addTearDown(() {
-        container.dispose();
-        db.close();
+      final harness = _createHarness(bookRepo: spyRepo);
+      addTearDown(() async {
+        await harness.dispose();
+        await db.close();
       });
 
-      final notifier = container.read(readerSettingsProvider.notifier);
+      final notifier = harness.container.read(readerSettingsProvider.notifier);
       notifier.applyBookDefaults(bookId: 42, language: 'ja');
       notifier.setVerticalText(false);
 
@@ -287,13 +307,15 @@ void main() {
       () async {
         final db = AppDatabase(NativeDatabase.memory());
         final spyRepo = _SpyBookRepository(db);
-        final container = _createContainer(bookRepo: spyRepo);
-        addTearDown(() {
-          container.dispose();
-          db.close();
+        final harness = _createHarness(bookRepo: spyRepo);
+        addTearDown(() async {
+          await harness.dispose();
+          await db.close();
         });
 
-        final notifier = container.read(readerSettingsProvider.notifier);
+        final notifier = harness.container.read(
+          readerSettingsProvider.notifier,
+        );
         notifier.applyBookDefaults(bookId: 42, language: 'ja');
         notifier.setReadingDirection(ReaderDirection.ltr);
 
@@ -305,17 +327,16 @@ void main() {
       },
     );
 
-    test('does NOT persist per-book override when no book is open', () async {
+    test('does not persist per-book override when no book is open', () async {
       final db = AppDatabase(NativeDatabase.memory());
       final spyRepo = _SpyBookRepository(db);
-      final container = _createContainer(bookRepo: spyRepo);
-      addTearDown(() {
-        container.dispose();
-        db.close();
+      final harness = _createHarness(bookRepo: spyRepo);
+      addTearDown(() async {
+        await harness.dispose();
+        await db.close();
       });
 
-      final notifier = container.read(readerSettingsProvider.notifier);
-      // No applyBookDefaults call — no book is open
+      final notifier = harness.container.read(readerSettingsProvider.notifier);
       notifier.setVerticalText(false);
 
       await Future<void>.delayed(Duration.zero);
@@ -324,17 +345,15 @@ void main() {
     });
 
     test('per-book override is remembered on simulated reopen', () {
-      final container = _createContainer();
-      addTearDown(container.dispose);
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
 
       final notifier = container.read(readerSettingsProvider.notifier);
-
-      // First open: user changes Japanese book to horizontal
       notifier.applyBookDefaults(bookId: 42, language: 'ja');
       notifier.setVerticalText(false);
       expect(container.read(readerSettingsProvider).verticalText, isFalse);
 
-      // Simulate reopening the same book with the saved override
       notifier.applyBookDefaults(
         bookId: 42,
         language: 'ja',
