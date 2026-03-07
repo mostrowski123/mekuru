@@ -103,7 +103,11 @@ void main() {
   late AppDatabase db;
   late DictionaryRepository repo;
   late DictionaryImporter importer;
-  final tempFiles = <String>[];
+  final tempDirs = <String>{};
+
+  void trackTempFile(String path) {
+    tempDirs.add(File(path).parent.path);
+  }
 
   setUp(() {
     db = createTestDatabase();
@@ -114,13 +118,13 @@ void main() {
   tearDown(() async {
     await db.close();
     // Clean up temp files
-    for (final path in tempFiles) {
-      final dir = Directory(path).parent;
+    for (final path in tempDirs) {
+      final dir = Directory(path);
       if (await dir.exists()) {
         await dir.delete(recursive: true);
       }
     }
-    tempFiles.clear();
+    tempDirs.clear();
   });
 
   group('DictionaryImporter — importFromFile', () {
@@ -128,7 +132,7 @@ void main() {
       'imports a valid Yomitan zip and creates dictionary + entries',
       () async {
         final zipPath = await createTestYomitanZip();
-        tempFiles.add(zipPath);
+        trackTempFile(zipPath);
 
         final count = await importer.importFromFile(zipPath);
 
@@ -160,7 +164,7 @@ void main() {
           ],
         ],
       );
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       await importer.importFromFile(zipPath);
 
@@ -192,7 +196,7 @@ void main() {
             ],
           ],
         );
-        tempFiles.add(zipPath);
+        trackTempFile(zipPath);
 
         final count = await importer.importFromFile(zipPath);
 
@@ -228,7 +232,7 @@ void main() {
           ],
         ],
       );
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       await importer.importFromFile(zipPath);
 
@@ -244,7 +248,7 @@ void main() {
       final zipPath = await createTestYomitanZip(
         dictionaryName: 'JMdict English',
       );
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       await importer.importFromFile(zipPath);
 
@@ -268,7 +272,7 @@ void main() {
       );
 
       final zipPath = await createTestYomitanZip(entries: entries);
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       final progressUpdates = <(int, int)>[];
       await importer.importFromFile(
@@ -317,7 +321,7 @@ void main() {
           ],
         ],
       );
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       final count = await importer.importFromFile(zipPath);
       // Only the non-empty expression should be imported
@@ -340,7 +344,7 @@ void main() {
           ],
         ],
       );
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       final count = await importer.importFromFile(zipPath);
       expect(count, 1);
@@ -392,7 +396,7 @@ void main() {
       final tempDir = await Directory.systemTemp.createTemp('yomitan_multi_');
       final zipPath = '${tempDir.path}/multi_dict.zip';
       await File(zipPath).writeAsBytes(ZipEncoder().encode(archive));
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       final count = await importer.importFromFile(zipPath);
 
@@ -418,7 +422,7 @@ void main() {
           ],
         ],
       );
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       await importer.importFromFile(zipPath);
 
@@ -468,7 +472,7 @@ void main() {
       final tempDir = await Directory.systemTemp.createTemp('yomitan_noindex_');
       final zipPath = '${tempDir.path}/no_index.zip';
       await File(zipPath).writeAsBytes(ZipEncoder().encode(archive));
-      tempFiles.add(zipPath);
+      trackTempFile(zipPath);
 
       await importer.importFromFile(zipPath);
 
@@ -518,7 +522,7 @@ void main() {
       final dir = await Directory.systemTemp.createTemp('dict_coll_test_');
       final file = File('${dir.path}/collection.json');
       await file.writeAsString(content);
-      tempFiles.add(file.path);
+      trackTempFile(file.path);
       return file.path;
     }
 

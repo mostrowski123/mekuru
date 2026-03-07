@@ -90,12 +90,20 @@ Future<String> createTestEpub({
 }
 
 void main() {
-  final tempDirs = <String>[];
+  final tempDirs = <String>{};
+
+  void trackTempDir(String path) {
+    tempDirs.add(path);
+  }
+
+  void trackTempFile(String path) {
+    trackTempDir(File(path).parent.path);
+  }
 
   tearDown(() async {
     for (final path in tempDirs) {
       try {
-        final dir = Directory(path).parent;
+        final dir = Directory(path);
         if (await dir.exists()) {
           await dir.delete(recursive: true);
         }
@@ -109,7 +117,7 @@ void main() {
   group('EpubParser — parseMetadataOnly', () {
     test('extracts title from dc:title', () async {
       final epubPath = await createTestEpub(title: '吾輩は猫である');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.title, '吾輩は猫である');
@@ -117,7 +125,7 @@ void main() {
 
     test('extracts author from dc:creator', () async {
       final epubPath = await createTestEpub(title: '坊っちゃん', author: '夏目漱石');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.author, '夏目漱石');
@@ -125,7 +133,7 @@ void main() {
 
     test('returns null author when not present', () async {
       final epubPath = await createTestEpub();
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.author, isNull);
@@ -133,7 +141,7 @@ void main() {
 
     test('finds cover image path via meta name="cover"', () async {
       final epubPath = await createTestEpub(includeCover: true);
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.coverImageRelativePath, isNotNull);
@@ -142,7 +150,7 @@ void main() {
 
     test('returns null coverImageRelativePath when no cover', () async {
       final epubPath = await createTestEpub(includeCover: false);
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.coverImageRelativePath, isNull);
@@ -150,7 +158,7 @@ void main() {
 
     test('returns Unknown Title when container.xml is missing', () async {
       final epubPath = await createTestEpub(includeContainerXml: false);
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.title, 'Unknown Title');
@@ -167,10 +175,10 @@ void main() {
   group('EpubParser — parseEpub (full extraction)', () {
     test('extracts all files and returns metadata', () async {
       final epubPath = await createTestEpub(title: '走れメロス', author: '太宰治');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final extractDir = await Directory.systemTemp.createTemp('epub_extract_');
-      tempDirs.add(extractDir.path);
+      trackTempDir(extractDir.path);
 
       final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
 
@@ -190,12 +198,12 @@ void main() {
 
     test('extracts cover image file', () async {
       final epubPath = await createTestEpub(includeCover: true);
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final extractDir = await Directory.systemTemp.createTemp(
         'epub_extract_cover_',
       );
-      tempDirs.add(extractDir.path);
+      trackTempDir(extractDir.path);
 
       final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
 
@@ -224,7 +232,7 @@ void main() {
         customOpfContent: opfContent,
         includeCover: false,
       );
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.coverImageRelativePath, contains('cover.png'));
@@ -250,7 +258,7 @@ void main() {
           customOpfContent: opfContent,
           includeCover: false,
         );
-        tempDirs.add(epubPath);
+        trackTempFile(epubPath);
 
         final metadata = await EpubParser.parseMetadataOnly(epubPath);
         expect(metadata.coverImageRelativePath, contains('cover.jpg'));
@@ -261,7 +269,7 @@ void main() {
   group('EpubParser — language detection', () {
     test('extracts dc:language', () async {
       final epubPath = await createTestEpub(language: 'ja');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.language, 'ja');
@@ -269,7 +277,7 @@ void main() {
 
     test('normalizes language with region code to primary subtag', () async {
       final epubPath = await createTestEpub(language: 'en-US');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.language, 'en');
@@ -277,7 +285,7 @@ void main() {
 
     test('normalizes uppercase language to lowercase', () async {
       final epubPath = await createTestEpub(language: 'JA');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.language, 'ja');
@@ -285,7 +293,7 @@ void main() {
 
     test('returns null language when not present', () async {
       final epubPath = await createTestEpub();
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.language, isNull);
@@ -293,12 +301,12 @@ void main() {
 
     test('extracts language via full extraction too', () async {
       final epubPath = await createTestEpub(language: 'fr');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final extractDir = await Directory.systemTemp.createTemp(
         'epub_extract_lang_',
       );
-      tempDirs.add(extractDir.path);
+      trackTempDir(extractDir.path);
 
       final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
       expect(metadata.language, 'fr');
@@ -308,7 +316,7 @@ void main() {
   group('EpubParser — page-progression-direction', () {
     test('extracts page-progression-direction from spine', () async {
       final epubPath = await createTestEpub(pageProgressionDirection: 'rtl');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.pageProgressionDirection, 'rtl');
@@ -316,7 +324,7 @@ void main() {
 
     test('extracts ltr page-progression-direction', () async {
       final epubPath = await createTestEpub(pageProgressionDirection: 'ltr');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.pageProgressionDirection, 'ltr');
@@ -324,7 +332,7 @@ void main() {
 
     test('returns null pageProgressionDirection when not present', () async {
       final epubPath = await createTestEpub();
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.pageProgressionDirection, isNull);
@@ -332,12 +340,12 @@ void main() {
 
     test('extracts ppd via full extraction too', () async {
       final epubPath = await createTestEpub(pageProgressionDirection: 'rtl');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final extractDir = await Directory.systemTemp.createTemp(
         'epub_extract_ppd_',
       );
-      tempDirs.add(extractDir.path);
+      trackTempDir(extractDir.path);
 
       final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
       expect(metadata.pageProgressionDirection, 'rtl');
@@ -348,7 +356,7 @@ void main() {
         language: 'ja',
         pageProgressionDirection: 'rtl',
       );
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.language, 'ja');
@@ -363,7 +371,7 @@ void main() {
         pageProgressionDirection: 'rtl',
         primaryWritingMode: 'vertical-rl',
       );
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.primaryWritingMode, 'vertical-rl');
@@ -375,7 +383,7 @@ void main() {
         pageProgressionDirection: 'rtl',
         primaryWritingMode: 'horizontal-tb',
       );
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.primaryWritingMode, 'horizontal-tb');
@@ -383,7 +391,7 @@ void main() {
 
     test('returns null primaryWritingMode when not present', () async {
       final epubPath = await createTestEpub(language: 'ja');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.primaryWritingMode, isNull);
@@ -391,7 +399,7 @@ void main() {
 
     test('normalizes writing mode to lowercase', () async {
       final epubPath = await createTestEpub(primaryWritingMode: 'Vertical-RL');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
       expect(metadata.primaryWritingMode, 'vertical-rl');
@@ -399,12 +407,12 @@ void main() {
 
     test('extracts writing mode via full extraction too', () async {
       final epubPath = await createTestEpub(primaryWritingMode: 'vertical-rl');
-      tempDirs.add(epubPath);
+      trackTempFile(epubPath);
 
       final extractDir = await Directory.systemTemp.createTemp(
         'epub_extract_wm_',
       );
-      tempDirs.add(extractDir.path);
+      trackTempDir(extractDir.path);
 
       final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
       expect(metadata.primaryWritingMode, 'vertical-rl');
