@@ -31,8 +31,27 @@ const BILLING_API_MAX_INSTANCES = positiveIntOrDefault(
 );
 const ENABLE_OCR_JOB_API =
   (process.env.ENABLE_OCR_JOB_API ?? "false").toLowerCase() === "true";
-const REQUIRE_APP_CHECK =
-  (process.env.REQUIRE_APP_CHECK ?? "true").toLowerCase() !== "false";
+// Keep hosted OCR behind App Check even if billing endpoints are relaxed for
+// off-Play installs. Revisit the mixed-distribution Play Integrity settings
+// before re-enabling hosted OCR for GitHub APK users.
+const REQUIRE_OCR_JOB_APP_CHECK =
+  (
+    process.env.REQUIRE_OCR_JOB_APP_CHECK ??
+    process.env.REQUIRE_APP_CHECK ??
+    "true"
+  ).toLowerCase() !== "false";
+const BILLING_RATE_LIMIT_WINDOW_MS = positiveIntOrDefault(
+  process.env.BILLING_RATE_LIMIT_WINDOW_MS ?? "60000",
+  60_000,
+);
+const BILLING_STATUS_RATE_LIMIT_MAX_REQUESTS = positiveIntOrDefault(
+  process.env.BILLING_STATUS_RATE_LIMIT_MAX_REQUESTS ?? "60",
+  60,
+);
+const BILLING_PURCHASE_VERIFY_RATE_LIMIT_MAX_REQUESTS = positiveIntOrDefault(
+  process.env.BILLING_PURCHASE_VERIFY_RATE_LIMIT_MAX_REQUESTS ?? "12",
+  12,
+);
 
 const PRO_UNLOCK_PRODUCT_ID = "pro_unlock_v1";
 const OCR_UNLOCK_STARTER_CREDITS = 150;
@@ -50,6 +69,11 @@ type BillingErrorBody = {
 };
 
 type BillingErrorDetail = string | BillingErrorBody;
+
+type RateLimitState = {
+  count: number;
+  resetAtMs: number;
+};
 
 type UserState = {
   ocrUnlocked: boolean;
@@ -216,6 +240,72 @@ function sendBillingError(req: Request | undefined, res: Response, error: unknow
   res.status(500).json({ detail });
 }
 
+function createRateLimitMiddleware(input: {
+  keyPrefix: string;
+  maxRequests: number;
+  windowMs: number;
+  message: string;
+}) {
+  const buckets = new Map<string, RateLimitState>();
+
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const nowMs = Date.now();
+    if (buckets.size > 2048) {
+      for (const [key, bucket] of buckets.entries()) {
+        if (bucket.resetAtMs <= nowMs) {
+          buckets.delete(key);
+        }
+      }
+    }
+
+    const uid = (req as Partial<AuthedRequest>).user?.uid;
+    const subject = uid ?? req.ip ?? "unknown";
+    const bucketKey = `${input.keyPrefix}:${subject}`;
+    const existing = buckets.get(bucketKey);
+    const bucket =
+      existing != null && existing.resetAtMs > nowMs
+        ? existing
+        : {
+            count: 0,
+            resetAtMs: nowMs + input.windowMs,
+          };
+
+    bucket.count += 1;
+    buckets.set(bucketKey, bucket);
+
+    res.setHeader("x-rate-limit-limit", String(input.maxRequests));
+    res.setHeader(
+      "x-rate-limit-remaining",
+      String(Math.max(0, input.maxRequests - bucket.count)),
+    );
+    res.setHeader("x-rate-limit-reset", String(Math.ceil(bucket.resetAtMs / 1000)));
+
+    if (bucket.count <= input.maxRequests) {
+      next();
+      return;
+    }
+
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((bucket.resetAtMs - nowMs) / 1000),
+    );
+    res.setHeader("Retry-After", String(retryAfterSeconds));
+    logger.warn("Billing request rate limited", {
+      requestId: requestIdOf(req),
+      path: req.path,
+      uid,
+      keyPrefix: input.keyPrefix,
+      retryAfterSeconds,
+    });
+    res.status(429).json({
+      detail: {
+        code: "rate_limited",
+        message: input.message,
+      },
+    });
+  };
+}
+
 function asSingleString(value: unknown): string {
   if (Array.isArray(value)) {
     return typeof value[0] === "string" ? value[0] : "";
@@ -269,7 +359,7 @@ async function verifyAppCheck(
   const token = (req.get("X-Firebase-AppCheck") ?? "").trim();
 
   if (!token) {
-    if (!REQUIRE_APP_CHECK) {
+    if (!REQUIRE_OCR_JOB_APP_CHECK) {
       next();
       return;
     }
@@ -323,6 +413,14 @@ async function authenticate(
   } catch (error) {
     sendBillingError(req, res, error);
   }
+}
+
+if (ENABLE_OCR_JOB_API) {
+  logger.warn("Hosted OCR API enabled", {
+    requireOcrJobAppCheck: REQUIRE_OCR_JOB_APP_CHECK,
+    reminder:
+      "Review Play Integrity/App Check settings before allowing hosted OCR for off-Play installs such as GitHub APK users.",
+  });
 }
 
 function coerceDate(value: unknown): Date {
@@ -1023,6 +1121,31 @@ async function finalizeOcrJob(input: {
 export function createBillingApp(deps: BillingAppDependencies) {
   const app = express();
   const onError = deps.onError ?? sendBillingError;
+  const billingStatusRateLimiter = createRateLimitMiddleware({
+    keyPrefix: "billing_status",
+    maxRequests: BILLING_STATUS_RATE_LIMIT_MAX_REQUESTS,
+    windowMs: BILLING_RATE_LIMIT_WINDOW_MS,
+    message: "Too many billing status requests. Please wait a moment and try again.",
+  });
+  const billingPurchaseVerifyRateLimiter = createRateLimitMiddleware({
+    keyPrefix: "billing_purchase_verify",
+    maxRequests: BILLING_PURCHASE_VERIFY_RATE_LIMIT_MAX_REQUESTS,
+    windowMs: BILLING_RATE_LIMIT_WINDOW_MS,
+    message:
+      "Too many purchase verification attempts. Please wait a moment and try again.",
+  });
+  const requireOcrJobAppCheck = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): void => {
+    if (!deps.enableOcrJobApi || !REQUIRE_OCR_JOB_APP_CHECK) {
+      next();
+      return;
+    }
+
+    void deps.verifyAppCheck(req, res, next);
+  };
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
@@ -1037,106 +1160,121 @@ export function createBillingApp(deps: BillingAppDependencies) {
     });
     next();
   });
-  app.use(deps.verifyAppCheck);
   app.use(deps.authenticate);
 
-  app.get("/billing/status", async (req: Request, res: Response) => {
-    try {
-      const { uid } = (req as AuthedRequest).user;
-      if (deps.enableOcrJobApi) {
-        await deps.expireStaleJobs(uid);
+  app.get(
+    "/billing/status",
+    billingStatusRateLimiter,
+    async (req: Request, res: Response) => {
+      try {
+        const { uid } = (req as AuthedRequest).user;
+        if (deps.enableOcrJobApi) {
+          await deps.expireStaleJobs(uid);
+        }
+        const status = await deps.readUserState(uid);
+        res.json(status);
+      } catch (error) {
+        onError(req, res, error);
       }
-      const status = await deps.readUserState(uid);
-      res.json(status);
-    } catch (error) {
-      onError(req, res, error);
-    }
-  });
+    },
+  );
 
-  app.post("/billing/purchases/android/verify", async (req: Request, res: Response) => {
-    try {
-      const { uid } = (req as AuthedRequest).user;
-      const body = (req.body ?? {}) as Record<string, unknown>;
-      const productId = String(body.productId ?? "");
-      const purchaseToken = String(body.purchaseToken ?? "");
-      const packageName = String(body.packageName ?? ANDROID_PACKAGE_NAME);
-      const isRestore = Boolean(body.isRestore);
-      const orderId = typeof body.orderId === "string" ? body.orderId : undefined;
+  app.post(
+    "/billing/purchases/android/verify",
+    billingPurchaseVerifyRateLimiter,
+    async (req: Request, res: Response) => {
+      try {
+        const { uid } = (req as AuthedRequest).user;
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        const productId = String(body.productId ?? "");
+        const purchaseToken = String(body.purchaseToken ?? "");
+        const packageName = String(body.packageName ?? ANDROID_PACKAGE_NAME);
+        const isRestore = Boolean(body.isRestore);
+        const orderId = typeof body.orderId === "string" ? body.orderId : undefined;
 
-      if (!productId || !purchaseToken) {
-        throw new BillingHttpError(422, {
-          code: "invalid_request",
-          message: "productId and purchaseToken are required.",
+        if (!productId || !purchaseToken) {
+          throw new BillingHttpError(422, {
+            code: "invalid_request",
+            message: "productId and purchaseToken are required.",
+          });
+        }
+
+        logger.info("Verify purchase request", {
+          requestId: requestIdOf(req),
+          uid,
+          productId,
+          isRestore,
+          orderId,
+          packageName,
+          purchaseTokenSuffix:
+            purchaseToken.length <= 8
+              ? purchaseToken
+              : purchaseToken.slice(purchaseToken.length - 8),
         });
-      }
 
-      logger.info("Verify purchase request", {
-        requestId: requestIdOf(req),
-        uid,
-        productId,
-        isRestore,
-        orderId,
-        packageName,
-        purchaseTokenSuffix:
-          purchaseToken.length <= 8
-            ? purchaseToken
-            : purchaseToken.slice(purchaseToken.length - 8),
-      });
-
-      const result = await deps.applyPurchaseGrant({
-        uid,
-        productId,
-        purchaseToken,
-        packageName,
-        isRestore,
-      });
-      res.json(result);
-    } catch (error) {
-      onError(req, res, error);
-    }
-  });
-
-  app.post("/ocr/jobs", async (req: Request, res: Response) => {
-    try {
-      if (!deps.enableOcrJobApi) {
-        throw new BillingHttpError(410, {
-          code: "ocr_job_api_disabled",
-          message: "Hosted OCR jobs are currently disabled.",
+        const result = await deps.applyPurchaseGrant({
+          uid,
+          productId,
+          purchaseToken,
+          packageName,
+          isRestore,
         });
+        res.json(result);
+      } catch (error) {
+        onError(req, res, error);
       }
-      const { uid } = (req as AuthedRequest).user;
-      const body = (req.body ?? {}) as Record<string, unknown>;
-      const result = await deps.reserveOcrJob({
-        uid,
-        requestedPages: parseRequestedPages(body),
-        bookId: parseBookId(body),
-      });
-      res.json(result);
-    } catch (error) {
-      onError(req, res, error);
-    }
-  });
+    },
+  );
 
-  app.post("/ocr/jobs/:jobId/finalize", async (req: Request, res: Response) => {
-    try {
-      if (!deps.enableOcrJobApi) {
-        throw new BillingHttpError(410, {
-          code: "ocr_job_api_disabled",
-          message: "Hosted OCR jobs are currently disabled.",
+  app.post(
+    "/ocr/jobs",
+    requireOcrJobAppCheck,
+    async (req: Request, res: Response) => {
+      try {
+        if (!deps.enableOcrJobApi) {
+          throw new BillingHttpError(410, {
+            code: "ocr_job_api_disabled",
+            message: "Hosted OCR jobs are currently disabled.",
+          });
+        }
+        const { uid } = (req as AuthedRequest).user;
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        const result = await deps.reserveOcrJob({
+          uid,
+          requestedPages: parseRequestedPages(body),
+          bookId: parseBookId(body),
         });
+        res.json(result);
+      } catch (error) {
+        onError(req, res, error);
       }
-      const { uid } = (req as AuthedRequest).user;
-      const body = (req.body ?? {}) as Record<string, unknown>;
-      const result = await deps.finalizeOcrJob({
-        uid,
-        jobId: asSingleString(req.params.jobId),
-        status: String(body.status ?? ""),
-      });
-      res.json(result);
-    } catch (error) {
-      onError(req, res, error);
-    }
-  });
+    },
+  );
+
+  app.post(
+    "/ocr/jobs/:jobId/finalize",
+    requireOcrJobAppCheck,
+    async (req: Request, res: Response) => {
+      try {
+        if (!deps.enableOcrJobApi) {
+          throw new BillingHttpError(410, {
+            code: "ocr_job_api_disabled",
+            message: "Hosted OCR jobs are currently disabled.",
+          });
+        }
+        const { uid } = (req as AuthedRequest).user;
+        const body = (req.body ?? {}) as Record<string, unknown>;
+        const result = await deps.finalizeOcrJob({
+          uid,
+          jobId: asSingleString(req.params.jobId),
+          status: String(body.status ?? ""),
+        });
+        res.json(result);
+      } catch (error) {
+        onError(req, res, error);
+      }
+    },
+  );
 
   return app;
 }

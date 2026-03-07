@@ -203,7 +203,11 @@ class OcrBillingClient {
 
     try {
       final response = await _withRetry(
-        () => _sendJsonRequest(method: 'GET', path: '/billing/status'),
+        () => _sendJsonRequest(
+          method: 'GET',
+          path: '/billing/status',
+          requireAppCheck: false,
+        ),
       );
       final status = OcrBillingStatus(
         ocrUnlocked: response['ocrUnlocked'] as bool? ?? false,
@@ -253,6 +257,7 @@ class OcrBillingClient {
         () => _sendJsonRequest(
           method: 'POST',
           path: '/billing/purchases/android/verify',
+          requireAppCheck: false,
           body: {
             'productId': productId,
             'purchaseToken': purchaseToken,
@@ -289,6 +294,7 @@ class OcrBillingClient {
         () => _sendJsonRequest(
           method: 'POST',
           path: '/ocr/jobs',
+          requireAppCheck: true,
           body: {'requestedPages': requestedPages, 'bookId': bookId},
         ),
       );
@@ -320,6 +326,7 @@ class OcrBillingClient {
         () => _sendJsonRequest(
           method: 'POST',
           path: '/ocr/jobs/$jobId/finalize',
+          requireAppCheck: true,
           body: {'status': status},
         ),
       );
@@ -344,15 +351,17 @@ class OcrBillingClient {
   Future<Map<String, dynamic>> _sendJsonRequest({
     required String method,
     required String path,
+    required bool requireAppCheck,
     Map<String, dynamic>? body,
   }) async {
     final serverUrl = _billingBaseUrl();
     final token = await _getIdToken();
-    final appCheckToken = await _getAppCheckToken();
     final uri = Uri.parse('$serverUrl$path');
     final request = http.Request(method, uri);
     request.headers['Authorization'] = 'Bearer $token';
-    request.headers['X-Firebase-AppCheck'] = appCheckToken;
+    if (requireAppCheck) {
+      request.headers['X-Firebase-AppCheck'] = await _getAppCheckToken();
+    }
     request.headers['Content-Type'] = 'application/json';
     if (body != null) {
       request.body = json.encode(body);
