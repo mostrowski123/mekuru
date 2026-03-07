@@ -568,13 +568,6 @@ class DictionaryQueryService {
     final otherSurfaceTerms = <String>{};
     final parserTerms = <String>{};
 
-    if (secondary != null &&
-        secondary.isNotEmpty &&
-        primary.isNotEmpty &&
-        _isKanaOnly(primary)) {
-      primaryKanaTerms.add(primary);
-    }
-
     if (surfaceTerm.isNotEmpty) {
       exactSurfaceTerms.add(surfaceTerm);
       for (final candidate in deinflectDetailed(surfaceTerm)) {
@@ -588,6 +581,20 @@ class DictionaryQueryService {
     }
 
     if (primary.isNotEmpty) {
+      final kanaPrimaryCoveredBySurface =
+          secondary != null &&
+          secondary.isNotEmpty &&
+          _isKanaOnly(primary) &&
+          (exactSurfaceTerms.contains(primary) ||
+              preferredSurfaceTerms.contains(primary) ||
+              otherSurfaceTerms.contains(primary));
+      if (!kanaPrimaryCoveredBySurface &&
+          secondary != null &&
+          secondary.isNotEmpty &&
+          _isKanaOnly(primary)) {
+        primaryKanaTerms.add(primary);
+      }
+
       final alreadyCovered =
           primaryKanaTerms.contains(primary) ||
           exactSurfaceTerms.contains(primary) ||

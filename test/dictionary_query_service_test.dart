@@ -475,6 +475,25 @@ void main() {
     );
 
     test(
+      'does not promote a kana parser guess that is already a surface deinflection',
+      () async {
+        final results = await lookupQueryService.searchLookupWithSource(
+          'わかつ',
+          'わかった',
+        );
+
+        expect(results, hasLength(3));
+        expect(results.first.entry.expression, '分かる');
+        expect(results.first.entry.reading, 'わかる');
+        expect(
+          results.indexWhere((r) => r.entry.expression == '分つ'),
+          greaterThan(results.indexWhere((r) => r.entry.expression == '分かる')),
+        );
+        expect(results.last.entry.expression, 'わい');
+      },
+    );
+
+    test(
       'still returns deinflected matches when no direct hit exists',
       () async {
         final results = await lookupQueryService.searchLookupWithSource('わかった');
