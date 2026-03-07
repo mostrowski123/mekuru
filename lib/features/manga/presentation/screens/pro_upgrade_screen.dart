@@ -142,7 +142,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     }
 
     try {
-      final status = await _billingClient.readCachedStatus();
+      final status = await _billingClient.fetchStatusIfAuthenticated();
       unlocked = status?.ocrUnlocked ?? false;
     } catch (e) {
       errorMessage ??= 'Failed to load your Pro access: $e';

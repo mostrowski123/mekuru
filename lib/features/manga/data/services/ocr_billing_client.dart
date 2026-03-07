@@ -217,6 +217,31 @@ class OcrBillingClient {
     }
   }
 
+  Future<OcrBillingStatus?> fetchStatusIfAuthenticated({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh) {
+      final cached = await readCachedStatus();
+      if (cached != null) {
+        return cached;
+      }
+    }
+
+    try {
+      await FirebaseRuntime.instance.ensureFirebaseApp();
+    } catch (e) {
+      _log('skipping passive status refresh', {'error': e.toString()});
+      return null;
+    }
+
+    if (FirebaseAuth.instance.currentUser == null) {
+      _log('skipping passive status refresh: no signed-in Firebase user');
+      return null;
+    }
+
+    return fetchStatus(forceRefresh: forceRefresh);
+  }
+
   Future<PurchaseGrantResult> verifyAndroidPurchase({
     required String productId,
     required String purchaseToken,
@@ -418,12 +443,20 @@ class OcrBillingClient {
   }
 
   Future<String> _getIdToken() async {
-    final user = await FirebaseRuntime.instance.ensureOcrUser();
+    await FirebaseRuntime.instance.ensureFirebaseApp();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw const OcrBillingException(
+        401,
+        'Sign in with Google before using OCR billing features.',
+        code: 'auth_required',
+      );
+    }
     final token = await user.getIdToken(true);
     if (token == null || token.isEmpty) {
       throw const OcrBillingException(
         401,
-        'Failed to refresh the Firebase ID token for OCR billing.',
+        'Sign in with Google before using OCR billing features.',
         code: 'auth_required',
       );
     }

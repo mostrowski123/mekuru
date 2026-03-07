@@ -83,7 +83,7 @@ class OcrPurchaseFlow {
       return _readProUnlockedOverride();
     }
 
-    final status = await _billingClient.readCachedStatus();
+    final status = await _billingClient.fetchStatusIfAuthenticated();
     return status?.ocrUnlocked ?? false;
   }
 

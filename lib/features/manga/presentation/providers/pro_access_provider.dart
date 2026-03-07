@@ -2,19 +2,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/services/ocr_billing_client.dart';
 
+final ocrBillingClientProvider = Provider<OcrBillingClient>((ref) {
+  final client = OcrBillingClient();
+  ref.onDispose(client.dispose);
+  return client;
+});
+
 final proUnlockedProvider = FutureProvider<bool>((ref) async {
-  final billingClient = OcrBillingClient();
+  final billingClient = ref.watch(ocrBillingClientProvider);
   try {
-    // fetchStatus() reads from secure-storage cache first.  If the cache is
-    // stale (>24 h) or missing it transparently fetches from the server and
-    // refreshes the cache, so the provider always returns up-to-date data
-    // without extra boilerplate here.
-    final status = await billingClient.fetchStatus();
-    return status.ocrUnlocked;
+    // Passive UI checks should not create anonymous Firebase users. Use the
+    // cached entitlement first and only refresh from the server when a real
+    // Firebase session already exists.
+    final status = await billingClient.fetchStatusIfAuthenticated();
+    return status?.ocrUnlocked ?? false;
   } catch (_) {
     return false;
-  } finally {
-    billingClient.dispose();
   }
 });
 
