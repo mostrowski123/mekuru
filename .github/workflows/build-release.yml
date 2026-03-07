@@ -80,7 +80,11 @@ jobs:
         id: tag
         run: |
           TAG="v$(date -u +'%Y%m%d.%H%M%S')"
-          VERSION_CODE="$(date -u +'%Y%m%d%H')"
+          # Keep Play Store version codes above the last published value.
+          # Bump PLAY_VERSION_CODE_FLOOR if a manual Play upload ever skips
+          # ahead of this sequence.
+          PLAY_VERSION_CODE_FLOOR=2026030713
+          VERSION_CODE="$((PLAY_VERSION_CODE_FLOOR + ${{ github.run_number }}))"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=Mekuru $TAG" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
@@ -96,6 +100,7 @@ jobs:
           echo "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> "$GITHUB_ENV"
 
       - name: Build release APK
+        timeout-minutes: 15
         run: flutter build apk --release --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
       - name: Verify MeCab native libs in release APK
@@ -135,6 +140,7 @@ jobs:
           PY
 
       - name: Build release App Bundle
+        timeout-minutes: 15
         run: flutter build appbundle --release --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
       - name: Verify MeCab native libs in release App Bundle
@@ -184,6 +190,7 @@ jobs:
             build/app/outputs/bundle/release/app-release.aab
 
       - name: Deploy to Google Play Console
+        timeout-minutes: 10
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
