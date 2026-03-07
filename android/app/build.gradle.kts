@@ -34,6 +34,10 @@ val libcxxAbiToNdkTriple = mapOf(
     "x86_64" to "x86_64-linux-android",
 )
 
+val mecabHookLibcxxAliases = mapOf(
+    "armv7a-linux-androideabi" to "arm-linux-androideabi",
+)
+
 val flutterNativeAssetsJniLibsDir =
     rootProject.projectDir.parentFile.resolve("build/native_assets/android/jniLibs/lib")
 
@@ -61,22 +65,77 @@ fun Project.resolveAndroidSdkDir(): File {
     )
 }
 
+fun Project.resolveAndroidNdkSysrootLibDir(): File {
+    val sdkDir = resolveAndroidSdkDir()
+    val ndkDir = sdkDir.resolve("ndk").resolve(androidNdkVersion)
+    val prebuiltDir = ndkDir.resolve("toolchains/llvm/prebuilt")
+    return prebuiltDir.listFiles()
+        ?.asSequence()
+        ?.map { it.resolve("sysroot/usr/lib") }
+        ?.firstOrNull(File::exists)
+        ?: throw org.gradle.api.GradleException(
+            "Could not locate the Android NDK sysroot in $prebuiltDir",
+        )
+}
+
+fun Project.resolveInstalledAndroidNdkSysrootLibDirs(): List<File> {
+    val ndkRootDir = resolveAndroidSdkDir().resolve("ndk")
+    return ndkRootDir.listFiles()
+        ?.asSequence()
+        ?.filter(File::isDirectory)
+        ?.flatMap { ndkDir ->
+            val prebuiltDir = ndkDir.resolve("toolchains/llvm/prebuilt")
+            prebuiltDir.listFiles()
+                ?.asSequence()
+                ?.map { it.resolve("sysroot/usr/lib") }
+                ?: emptySequence()
+        }
+        ?.filter(File::exists)
+        ?.toList()
+        ?: emptyList()
+}
+
+val ensureMecabHookLibCppAliases by tasks.registering {
+    inputs.property("mecabHookLibcxxAliases", mecabHookLibcxxAliases)
+
+    doLast {
+        val sysrootLibDirs = project.resolveInstalledAndroidNdkSysrootLibDirs()
+        if (sysrootLibDirs.isEmpty()) {
+            throw org.gradle.api.GradleException(
+                "Could not locate any installed Android NDK sysroot directories under the Android SDK.",
+            )
+        }
+
+        // Upstream mecab_for_dart expects the ARMv7 runtime under the clang target triple,
+        // but some NDK installs only ship the actual file under arm-linux-androideabi.
+        sysrootLibDirs.forEach { sysrootLibDir ->
+            mecabHookLibcxxAliases.forEach { (expectedTriple, actualTriple) ->
+                val expectedLib = sysrootLibDir.resolve(expectedTriple).resolve("libc++_shared.so")
+                if (expectedLib.exists()) {
+                    return@forEach
+                }
+
+                val actualLib = sysrootLibDir.resolve(actualTriple).resolve("libc++_shared.so")
+                if (!actualLib.exists()) {
+                    throw org.gradle.api.GradleException(
+                        "Could not locate libc++_shared.so for $actualTriple at $actualLib",
+                    )
+                }
+
+                expectedLib.parentFile.mkdirs()
+                actualLib.copyTo(expectedLib, overwrite = true)
+            }
+        }
+    }
+}
+
 val ensureBundledLibCppShared by tasks.registering {
     inputs.property("androidNdkVersion", androidNdkVersion)
     inputs.property("libcxxAbiToNdkTriple", libcxxAbiToNdkTriple)
     outputs.dir(flutterNativeAssetsJniLibsDir)
 
     doLast {
-        val sdkDir = project.resolveAndroidSdkDir()
-        val ndkDir = sdkDir.resolve("ndk").resolve(androidNdkVersion)
-        val prebuiltDir = ndkDir.resolve("toolchains/llvm/prebuilt")
-        val sysrootLibDir = prebuiltDir.listFiles()
-            ?.asSequence()
-            ?.map { it.resolve("sysroot/usr/lib") }
-            ?.firstOrNull(File::exists)
-            ?: throw org.gradle.api.GradleException(
-                "Could not locate the Android NDK sysroot in $prebuiltDir",
-            )
+        val sysrootLibDir = project.resolveAndroidNdkSysrootLibDir()
 
         val outputRoot = flutterNativeAssetsJniLibsDir
         libcxxAbiToNdkTriple.forEach { (abi, ndkTriple) ->
@@ -91,6 +150,10 @@ val ensureBundledLibCppShared by tasks.registering {
             sourceLib.copyTo(destinationDir.resolve("libc++_shared.so"), overwrite = true)
         }
     }
+}
+
+tasks.matching { it.name.startsWith("compileFlutterBuild") }.configureEach {
+    dependsOn(ensureMecabHookLibCppAliases)
 }
 
 tasks.matching { it.name.startsWith("packJniLibsflutterBuild") }.configureEach {
