@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 
@@ -231,6 +232,62 @@ void main() {
           .toList();
       expect(glossariesList, ['to eat (A)', 'to eat (B)', 'to eat (C)']);
     });
+
+    test(
+      'searchWithSource respects reordered dictionary manager order for kanji entries',
+      () async {
+        final kanjiDictA = await orderRepo.insertDictionary('Kanji Dict A');
+        final kanjiDictB = await orderRepo.insertDictionary('Kanji Dict B');
+        final kanjiDictC = await orderRepo.insertDictionary('Kanji Dict C');
+
+        await orderRepo.batchInsertEntries([
+          DictionaryEntriesCompanion.insert(
+            expression: '日',
+            reading: const Value('ニチ ジツ ひ か'),
+            entryKind: const Value(DictionaryEntryKinds.kanji),
+            kanjiOnyomi: const Value('["ニチ","ジツ"]'),
+            kanjiKunyomi: const Value('["ひ","か"]'),
+            glossaries: jsonEncode(['sun (A)']),
+            dictionaryId: kanjiDictA,
+          ),
+          DictionaryEntriesCompanion.insert(
+            expression: '日',
+            reading: const Value('ニチ ジツ ひ か'),
+            entryKind: const Value(DictionaryEntryKinds.kanji),
+            kanjiOnyomi: const Value('["ニチ","ジツ"]'),
+            kanjiKunyomi: const Value('["ひ","か"]'),
+            glossaries: jsonEncode(['sun (B)']),
+            dictionaryId: kanjiDictB,
+          ),
+          DictionaryEntriesCompanion.insert(
+            expression: '日',
+            reading: const Value('ニチ ジツ ひ か'),
+            entryKind: const Value(DictionaryEntryKinds.kanji),
+            kanjiOnyomi: const Value('["ニチ","ジツ"]'),
+            kanjiKunyomi: const Value('["ひ","か"]'),
+            glossaries: jsonEncode(['sun (C)']),
+            dictionaryId: kanjiDictC,
+          ),
+        ]);
+
+        await orderRepo.reorderDictionaries([
+          kanjiDictC,
+          kanjiDictA,
+          kanjiDictB,
+        ]);
+
+        final results = await orderQueryService.searchWithSource('日');
+        final kanjiResults = results
+            .where((r) => r.entry.entryKind == DictionaryEntryKinds.kanji)
+            .toList();
+
+        expect(kanjiResults.map((r) => r.dictionaryName).toList(), [
+          'Kanji Dict C',
+          'Kanji Dict A',
+          'Kanji Dict B',
+        ]);
+      },
+    );
   });
 
   // ── searchWithSource ──────────────────────────────────────────────

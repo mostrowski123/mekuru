@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 
@@ -17,6 +18,7 @@ AppDatabase createTestDatabase() {
 Future<String> createTestYomitanZip({
   String dictionaryName = 'Test Dictionary',
   List<List<dynamic>>? entries,
+  List<List<dynamic>>? kanjiEntries,
   List<List<dynamic>>? termMetaEntries,
 }) async {
   entries ??= [
@@ -65,6 +67,17 @@ Future<String> createTestYomitanZip({
   archive.addFile(
     ArchiveFile('term_bank_1.json', termBankContent.length, termBankContent),
   );
+
+  if (kanjiEntries != null) {
+    final kanjiBankContent = utf8.encode(jsonEncode(kanjiEntries));
+    archive.addFile(
+      ArchiveFile(
+        'kanji_bank_1.json',
+        kanjiBankContent.length,
+        kanjiBankContent,
+      ),
+    );
+  }
 
   if (termMetaEntries != null) {
     final termMetaContent = utf8.encode(jsonEncode(termMetaEntries));
@@ -155,10 +168,47 @@ void main() {
       expect(allEntries, hasLength(1));
       expect(allEntries.first.expression, '漢字');
       expect(allEntries.first.reading, 'かんじ');
+      expect(allEntries.first.entryKind, DictionaryEntryKinds.regular);
+      expect(allEntries.first.kanjiOnyomi, isEmpty);
+      expect(allEntries.first.kanjiKunyomi, isEmpty);
 
       final glossaries = jsonDecode(allEntries.first.glossaries) as List;
       expect(glossaries, ['Chinese character']);
     });
+
+    test(
+      'stores kanji metadata for kanji_bank entries used by KANJIDIC downloads',
+      () async {
+        final zipPath = await createTestYomitanZip(
+          dictionaryName: 'KANJIDIC English',
+          entries: [],
+          kanjiEntries: [
+            [
+              '日',
+              'ニチ ジツ',
+              'ひ か',
+              '',
+              ['sun', 'day'],
+            ],
+          ],
+        );
+        tempFiles.add(zipPath);
+
+        final count = await importer.importFromFile(zipPath);
+
+        expect(count, 1);
+
+        final allEntries = await db.select(db.dictionaryEntries).get();
+        expect(allEntries, hasLength(1));
+
+        final entry = allEntries.single;
+        expect(entry.expression, '日');
+        expect(entry.reading, 'ニチ ジツ ひ か');
+        expect(entry.entryKind, DictionaryEntryKinds.kanji);
+        expect(jsonDecode(entry.kanjiOnyomi), ['ニチ', 'ジツ']);
+        expect(jsonDecode(entry.kanjiKunyomi), ['ひ', 'か']);
+      },
+    );
 
     test('handles complex glossary objects', () async {
       final zipPath = await createTestYomitanZip(

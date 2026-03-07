@@ -1,5 +1,10 @@
 import 'package:drift/drift.dart';
 
+abstract final class DictionaryEntryKinds {
+  static const regular = 'regular';
+  static const kanji = 'kanji';
+}
+
 /// DictionaryEntries table — individual term entries from Yomitan dictionaries.
 ///
 /// Yomitan term_bank schema:
@@ -15,6 +20,10 @@ class DictionaryEntries extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get expression => text()();
   TextColumn get reading => text().withDefault(const Constant(''))();
+  TextColumn get entryKind =>
+      text().withDefault(const Constant(DictionaryEntryKinds.regular))();
+  TextColumn get kanjiOnyomi => text().withDefault(const Constant(''))();
+  TextColumn get kanjiKunyomi => text().withDefault(const Constant(''))();
   TextColumn get glossaries => text()(); // JSON-encoded List<String>
   IntColumn get dictionaryId => integer()();
 }

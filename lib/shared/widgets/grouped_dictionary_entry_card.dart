@@ -8,8 +8,11 @@ import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
+import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/kanji_readings_block.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
@@ -21,7 +24,7 @@ import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 /// (expression, reading) group.
 ///
 /// Multiple dictionaries' definitions are shown inside one card, each
-/// tagged with the dictionary name. This replaces rendering one
+/// grouped under a subtle source label. This replaces rendering one
 /// [DictionaryEntryCard] per dictionary entry.
 class GroupedDictionaryEntryCard extends ConsumerStatefulWidget {
   const GroupedDictionaryEntryCard({
@@ -58,7 +61,8 @@ class _GroupedDictionaryEntryCardState
     extends ConsumerState<GroupedDictionaryEntryCard> {
   bool _isSaved = false;
 
-  DictionaryEntry get _primaryEntry => widget.entries.first.entry;
+  DictionaryEntryWithSource get _primaryResult => widget.entries.first;
+  DictionaryEntry get _primaryEntry => _primaryResult.entry;
   int? get _frequencyRank => widget.entries.first.frequencyRank;
 
   @override
@@ -121,7 +125,7 @@ class _GroupedDictionaryEntryCardState
       expression: _primaryEntry.expression,
       reading: _primaryEntry.reading,
       glossaries: _primaryEntry.glossaries,
-      dictionaryName: widget.entries.first.dictionaryName,
+      dictionaryName: _primaryResult.dictionaryName,
       frequencyRank: _frequencyRank,
       sentenceContext: widget.sentenceContext,
       pitchAccents: widget.pitchAccents,
@@ -149,6 +153,10 @@ class _GroupedDictionaryEntryCardState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fs = widget.fontSize;
+    final kanjiDisplayData = parseKanjiEntryDisplayData(
+      entry: _primaryEntry,
+      dictionaryName: _primaryResult.dictionaryName,
+    );
 
     final expressionStyle = TextStyle(
       fontSize: fs * 1.25,
@@ -168,59 +176,143 @@ class _GroupedDictionaryEntryCardState
       color: theme.colorScheme.onSurface,
     );
 
+    final actionButtons = _buildActionButtons();
+
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Expression + reading, frequency, action buttons
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 260;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+              if (isCompact) ...[
+                _buildHeaderContent(
+                  theme,
+                  expressionStyle,
+                  furiganaStyle,
+                  kanjiDisplayData,
+                ),
+                const SizedBox(height: 8),
+                Wrap(spacing: 4, runSpacing: 4, children: actionButtons),
+              ] else
+                Row(
+                  crossAxisAlignment: kanjiDisplayData == null
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
-                    _buildExpression(expressionStyle, furiganaStyle),
-                    const SizedBox(width: 8),
-                    _FrequencyTag(rank: _frequencyRank, fontSize: fs),
+                    Expanded(
+                      child: _buildHeaderContent(
+                        theme,
+                        expressionStyle,
+                        furiganaStyle,
+                        kanjiDisplayData,
+                      ),
+                    ),
+                    ...actionButtons,
                   ],
                 ),
-              ),
-              IconButton(
-                onPressed: _copyExpression,
-                icon: const Icon(Icons.copy_outlined),
-                tooltip: 'Copy',
-                iconSize: 20,
-              ),
-              if (defaultTargetPlatform == TargetPlatform.android)
-                IconButton(
-                  onPressed: _sendToAnki,
-                  icon: const Icon(Icons.electric_bolt_outlined),
-                  tooltip: 'Send to AnkiDroid',
-                  iconSize: 20,
-                ),
-              IconButton.filledTonal(
-                onPressed: _isSaved ? null : _toggleSave,
-                icon: Icon(
-                  _isSaved ? Icons.check : Icons.bookmark_add_outlined,
-                ),
-                tooltip: _isSaved ? 'Saved' : 'Save to Vocabulary',
-              ),
+
+              // Row 2: Pitch accent diagrams (if available)
+              if (widget.pitchAccents.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                _buildPitchAccents(theme, fs),
+              ],
+
+              // Row 3+: Definitions grouped by dictionary
+              const SizedBox(height: 8),
+              ..._buildGroupedDefinitions(theme, fs, definitionStyle),
             ],
-          ),
-
-          // Row 2: Pitch accent diagrams (if available)
-          if (widget.pitchAccents.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            _buildPitchAccents(theme, fs),
-          ],
-
-          // Row 3+: Definitions grouped by dictionary
-          const SizedBox(height: 8),
-          ..._buildGroupedDefinitions(theme, fs, definitionStyle),
-        ],
+          );
+        },
       ),
+    );
+  }
+
+  List<Widget> _buildActionButtons() {
+    return [
+      IconButton(
+        onPressed: _copyExpression,
+        icon: const Icon(Icons.copy_outlined),
+        tooltip: 'Copy',
+        iconSize: 20,
+      ),
+      if (defaultTargetPlatform == TargetPlatform.android)
+        IconButton(
+          onPressed: _sendToAnki,
+          icon: const Icon(Icons.electric_bolt_outlined),
+          tooltip: 'Send to AnkiDroid',
+          iconSize: 20,
+        ),
+      IconButton.filledTonal(
+        onPressed: _isSaved ? null : _toggleSave,
+        icon: Icon(_isSaved ? Icons.check : Icons.bookmark_add_outlined),
+        tooltip: _isSaved ? 'Saved' : 'Save to Vocabulary',
+      ),
+    ];
+  }
+
+  Widget _buildHeaderContent(
+    ThemeData theme,
+    TextStyle expressionStyle,
+    TextStyle furiganaStyle,
+    KanjiEntryDisplayData? kanjiDisplayData,
+  ) {
+    if (kanjiDisplayData == null) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Flexible(child: _buildExpression(expressionStyle, furiganaStyle)),
+          const SizedBox(width: 8),
+          _FrequencyTag(rank: _frequencyRank, fontSize: widget.fontSize),
+        ],
+      );
+    }
+
+    final readingLabelStyle = TextStyle(
+      fontSize: widget.fontSize * 0.72,
+      fontWeight: FontWeight.w700,
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final readingStyle = TextStyle(
+      fontSize: widget.fontSize * 0.9,
+      color: theme.colorScheme.onSurface,
+      height: 1.2,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildKanjiExpression(theme, expressionStyle),
+        if (kanjiDisplayData.hasReadings) ...[
+          const SizedBox(height: 4),
+          KanjiReadingsBlock(
+            data: kanjiDisplayData,
+            labelStyle: readingLabelStyle,
+            readingStyle: readingStyle,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildKanjiExpression(ThemeData theme, TextStyle expressionStyle) {
+    if (widget.onWordTap == null) {
+      return Text(_primaryEntry.expression, style: expressionStyle);
+    }
+
+    final tappableStyle = expressionStyle.copyWith(
+      color: theme.colorScheme.primary,
+      decoration: TextDecoration.underline,
+      decorationStyle: TextDecorationStyle.dotted,
+      decorationColor: theme.colorScheme.primary.withAlpha(100),
+    );
+
+    return GestureDetector(
+      onTap: () => widget.onWordTap!(_primaryEntry.expression),
+      child: Text(_primaryEntry.expression, style: tappableStyle),
     );
   }
 
@@ -243,9 +335,9 @@ class _GroupedDictionaryEntryCardState
     );
   }
 
-  /// Build definitions for each dictionary in the group, with dictionary
-  /// name tags separating them. Entries from the same dictionary are grouped
-  /// under a single tag and numbered when there are multiple.
+  /// Build definitions for each dictionary in the group, with a subdued source
+  /// footer shown after each section. Entries from the same dictionary are
+  /// grouped under a single footer label and numbered when there are multiple.
   List<Widget> _buildGroupedDefinitions(
     ThemeData theme,
     double fs,
@@ -263,28 +355,8 @@ class _GroupedDictionaryEntryCardState
     }
 
     final widgets = <Widget>[];
-    for (final dictName in dictOrder) {
-      // Dictionary name tag (once per dictionary)
-      widgets.add(
-        Padding(
-          padding: EdgeInsets.only(top: widgets.length <= 1 ? 0 : 8, bottom: 4),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              dictName,
-              style: TextStyle(
-                fontSize: fs * 0.75,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ),
-      );
-
+    for (var dictIndex = 0; dictIndex < dictOrder.length; dictIndex++) {
+      final dictName = dictOrder[dictIndex];
       final entries = byDict[dictName]!;
       final showNumbers = entries.length > 1;
 
@@ -306,6 +378,15 @@ class _GroupedDictionaryEntryCardState
           ),
         );
       }
+
+      widgets.add(
+        SourceSectionLabel(
+          label: dictName,
+          topPadding: 2,
+          bottomPadding: dictIndex < dictOrder.length - 1 ? 10 : 0,
+          fontSize: fs * 0.64,
+        ),
+      );
     }
 
     return widgets;
@@ -330,47 +411,54 @@ class _GroupedDictionaryEntryCardState
       bySource.putIfAbsent(p.dictionaryName, () => []).add(p);
     }
 
+    final sourceEntries = bySource.entries.toList(growable: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: bySource.entries.map((entry) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 12,
-                  runSpacing: 4,
-                  children: entry.value.map((p) {
-                    return PitchAccentDiagram(
-                      reading: p.reading,
-                      downstepPosition: p.downstepPosition,
-                      fontSize: fontSize * 0.9,
-                      color: theme.colorScheme.onSurface,
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Text(
-                  entry.key,
-                  style: TextStyle(
-                    fontSize: fontSize * 0.6,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
+      children: [
+        for (var i = 0; i < sourceEntries.length; i++)
+          _buildPitchAccentSourceGroup(
+            sourceEntries[i].key,
+            sourceEntries[i].value,
+            theme,
+            fontSize,
+            showDivider: i > 0,
           ),
-        );
-      }).toList(),
+      ],
+    );
+  }
+
+  Widget _buildPitchAccentSourceGroup(
+    String sourceName,
+    List<PitchAccentResult> accents,
+    ThemeData theme,
+    double fontSize, {
+    required bool showDivider,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: showDivider ? 8 : 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            children: accents.map((p) {
+              return PitchAccentDiagram(
+                reading: p.reading,
+                downstepPosition: p.downstepPosition,
+                fontSize: fontSize * 0.9,
+                color: theme.colorScheme.onSurface,
+              );
+            }).toList(),
+          ),
+          SourceSectionLabel(
+            label: sourceName,
+            topPadding: 4,
+            bottomPadding: 0,
+            fontSize: fontSize * 0.6,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -31,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +88,20 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 13) {
         await migrator.createTable(pendingBookDatas);
+      }
+      if (from < 14) {
+        await migrator.addColumn(
+          dictionaryEntries,
+          dictionaryEntries.entryKind,
+        );
+        await migrator.addColumn(
+          dictionaryEntries,
+          dictionaryEntries.kanjiOnyomi,
+        );
+        await migrator.addColumn(
+          dictionaryEntries,
+          dictionaryEntries.kanjiKunyomi,
+        );
       }
     },
   );

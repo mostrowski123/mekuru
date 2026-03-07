@@ -1783,6 +1783,42 @@ class $DictionaryEntriesTable extends DictionaryEntries
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _entryKindMeta = const VerificationMeta(
+    'entryKind',
+  );
+  @override
+  late final GeneratedColumn<String> entryKind = GeneratedColumn<String>(
+    'entry_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(DictionaryEntryKinds.regular),
+  );
+  static const VerificationMeta _kanjiOnyomiMeta = const VerificationMeta(
+    'kanjiOnyomi',
+  );
+  @override
+  late final GeneratedColumn<String> kanjiOnyomi = GeneratedColumn<String>(
+    'kanji_onyomi',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _kanjiKunyomiMeta = const VerificationMeta(
+    'kanjiKunyomi',
+  );
+  @override
+  late final GeneratedColumn<String> kanjiKunyomi = GeneratedColumn<String>(
+    'kanji_kunyomi',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _glossariesMeta = const VerificationMeta(
     'glossaries',
   );
@@ -1810,6 +1846,9 @@ class $DictionaryEntriesTable extends DictionaryEntries
     id,
     expression,
     reading,
+    entryKind,
+    kanjiOnyomi,
+    kanjiKunyomi,
     glossaries,
     dictionaryId,
   ];
@@ -1840,6 +1879,30 @@ class $DictionaryEntriesTable extends DictionaryEntries
       context.handle(
         _readingMeta,
         reading.isAcceptableOrUnknown(data['reading']!, _readingMeta),
+      );
+    }
+    if (data.containsKey('entry_kind')) {
+      context.handle(
+        _entryKindMeta,
+        entryKind.isAcceptableOrUnknown(data['entry_kind']!, _entryKindMeta),
+      );
+    }
+    if (data.containsKey('kanji_onyomi')) {
+      context.handle(
+        _kanjiOnyomiMeta,
+        kanjiOnyomi.isAcceptableOrUnknown(
+          data['kanji_onyomi']!,
+          _kanjiOnyomiMeta,
+        ),
+      );
+    }
+    if (data.containsKey('kanji_kunyomi')) {
+      context.handle(
+        _kanjiKunyomiMeta,
+        kanjiKunyomi.isAcceptableOrUnknown(
+          data['kanji_kunyomi']!,
+          _kanjiKunyomiMeta,
+        ),
       );
     }
     if (data.containsKey('glossaries')) {
@@ -1882,6 +1945,18 @@ class $DictionaryEntriesTable extends DictionaryEntries
         DriftSqlType.string,
         data['${effectivePrefix}reading'],
       )!,
+      entryKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entry_kind'],
+      )!,
+      kanjiOnyomi: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kanji_onyomi'],
+      )!,
+      kanjiKunyomi: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kanji_kunyomi'],
+      )!,
       glossaries: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}glossaries'],
@@ -1903,12 +1978,18 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
   final int id;
   final String expression;
   final String reading;
+  final String entryKind;
+  final String kanjiOnyomi;
+  final String kanjiKunyomi;
   final String glossaries;
   final int dictionaryId;
   const DictionaryEntry({
     required this.id,
     required this.expression,
     required this.reading,
+    required this.entryKind,
+    required this.kanjiOnyomi,
+    required this.kanjiKunyomi,
     required this.glossaries,
     required this.dictionaryId,
   });
@@ -1918,6 +1999,9 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
     map['id'] = Variable<int>(id);
     map['expression'] = Variable<String>(expression);
     map['reading'] = Variable<String>(reading);
+    map['entry_kind'] = Variable<String>(entryKind);
+    map['kanji_onyomi'] = Variable<String>(kanjiOnyomi);
+    map['kanji_kunyomi'] = Variable<String>(kanjiKunyomi);
     map['glossaries'] = Variable<String>(glossaries);
     map['dictionary_id'] = Variable<int>(dictionaryId);
     return map;
@@ -1928,6 +2012,9 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
       id: Value(id),
       expression: Value(expression),
       reading: Value(reading),
+      entryKind: Value(entryKind),
+      kanjiOnyomi: Value(kanjiOnyomi),
+      kanjiKunyomi: Value(kanjiKunyomi),
       glossaries: Value(glossaries),
       dictionaryId: Value(dictionaryId),
     );
@@ -1942,6 +2029,9 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
       id: serializer.fromJson<int>(json['id']),
       expression: serializer.fromJson<String>(json['expression']),
       reading: serializer.fromJson<String>(json['reading']),
+      entryKind: serializer.fromJson<String>(json['entryKind']),
+      kanjiOnyomi: serializer.fromJson<String>(json['kanjiOnyomi']),
+      kanjiKunyomi: serializer.fromJson<String>(json['kanjiKunyomi']),
       glossaries: serializer.fromJson<String>(json['glossaries']),
       dictionaryId: serializer.fromJson<int>(json['dictionaryId']),
     );
@@ -1953,6 +2043,9 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
       'id': serializer.toJson<int>(id),
       'expression': serializer.toJson<String>(expression),
       'reading': serializer.toJson<String>(reading),
+      'entryKind': serializer.toJson<String>(entryKind),
+      'kanjiOnyomi': serializer.toJson<String>(kanjiOnyomi),
+      'kanjiKunyomi': serializer.toJson<String>(kanjiKunyomi),
       'glossaries': serializer.toJson<String>(glossaries),
       'dictionaryId': serializer.toJson<int>(dictionaryId),
     };
@@ -1962,12 +2055,18 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
     int? id,
     String? expression,
     String? reading,
+    String? entryKind,
+    String? kanjiOnyomi,
+    String? kanjiKunyomi,
     String? glossaries,
     int? dictionaryId,
   }) => DictionaryEntry(
     id: id ?? this.id,
     expression: expression ?? this.expression,
     reading: reading ?? this.reading,
+    entryKind: entryKind ?? this.entryKind,
+    kanjiOnyomi: kanjiOnyomi ?? this.kanjiOnyomi,
+    kanjiKunyomi: kanjiKunyomi ?? this.kanjiKunyomi,
     glossaries: glossaries ?? this.glossaries,
     dictionaryId: dictionaryId ?? this.dictionaryId,
   );
@@ -1978,6 +2077,13 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
           ? data.expression.value
           : this.expression,
       reading: data.reading.present ? data.reading.value : this.reading,
+      entryKind: data.entryKind.present ? data.entryKind.value : this.entryKind,
+      kanjiOnyomi: data.kanjiOnyomi.present
+          ? data.kanjiOnyomi.value
+          : this.kanjiOnyomi,
+      kanjiKunyomi: data.kanjiKunyomi.present
+          ? data.kanjiKunyomi.value
+          : this.kanjiKunyomi,
       glossaries: data.glossaries.present
           ? data.glossaries.value
           : this.glossaries,
@@ -1993,6 +2099,9 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
           ..write('id: $id, ')
           ..write('expression: $expression, ')
           ..write('reading: $reading, ')
+          ..write('entryKind: $entryKind, ')
+          ..write('kanjiOnyomi: $kanjiOnyomi, ')
+          ..write('kanjiKunyomi: $kanjiKunyomi, ')
           ..write('glossaries: $glossaries, ')
           ..write('dictionaryId: $dictionaryId')
           ..write(')'))
@@ -2000,8 +2109,16 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, expression, reading, glossaries, dictionaryId);
+  int get hashCode => Object.hash(
+    id,
+    expression,
+    reading,
+    entryKind,
+    kanjiOnyomi,
+    kanjiKunyomi,
+    glossaries,
+    dictionaryId,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2009,6 +2126,9 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
           other.id == this.id &&
           other.expression == this.expression &&
           other.reading == this.reading &&
+          other.entryKind == this.entryKind &&
+          other.kanjiOnyomi == this.kanjiOnyomi &&
+          other.kanjiKunyomi == this.kanjiKunyomi &&
           other.glossaries == this.glossaries &&
           other.dictionaryId == this.dictionaryId);
 }
@@ -2017,12 +2137,18 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
   final Value<int> id;
   final Value<String> expression;
   final Value<String> reading;
+  final Value<String> entryKind;
+  final Value<String> kanjiOnyomi;
+  final Value<String> kanjiKunyomi;
   final Value<String> glossaries;
   final Value<int> dictionaryId;
   const DictionaryEntriesCompanion({
     this.id = const Value.absent(),
     this.expression = const Value.absent(),
     this.reading = const Value.absent(),
+    this.entryKind = const Value.absent(),
+    this.kanjiOnyomi = const Value.absent(),
+    this.kanjiKunyomi = const Value.absent(),
     this.glossaries = const Value.absent(),
     this.dictionaryId = const Value.absent(),
   });
@@ -2030,6 +2156,9 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     this.id = const Value.absent(),
     required String expression,
     this.reading = const Value.absent(),
+    this.entryKind = const Value.absent(),
+    this.kanjiOnyomi = const Value.absent(),
+    this.kanjiKunyomi = const Value.absent(),
     required String glossaries,
     required int dictionaryId,
   }) : expression = Value(expression),
@@ -2039,6 +2168,9 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     Expression<int>? id,
     Expression<String>? expression,
     Expression<String>? reading,
+    Expression<String>? entryKind,
+    Expression<String>? kanjiOnyomi,
+    Expression<String>? kanjiKunyomi,
     Expression<String>? glossaries,
     Expression<int>? dictionaryId,
   }) {
@@ -2046,6 +2178,9 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
       if (id != null) 'id': id,
       if (expression != null) 'expression': expression,
       if (reading != null) 'reading': reading,
+      if (entryKind != null) 'entry_kind': entryKind,
+      if (kanjiOnyomi != null) 'kanji_onyomi': kanjiOnyomi,
+      if (kanjiKunyomi != null) 'kanji_kunyomi': kanjiKunyomi,
       if (glossaries != null) 'glossaries': glossaries,
       if (dictionaryId != null) 'dictionary_id': dictionaryId,
     });
@@ -2055,6 +2190,9 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     Value<int>? id,
     Value<String>? expression,
     Value<String>? reading,
+    Value<String>? entryKind,
+    Value<String>? kanjiOnyomi,
+    Value<String>? kanjiKunyomi,
     Value<String>? glossaries,
     Value<int>? dictionaryId,
   }) {
@@ -2062,6 +2200,9 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
       id: id ?? this.id,
       expression: expression ?? this.expression,
       reading: reading ?? this.reading,
+      entryKind: entryKind ?? this.entryKind,
+      kanjiOnyomi: kanjiOnyomi ?? this.kanjiOnyomi,
+      kanjiKunyomi: kanjiKunyomi ?? this.kanjiKunyomi,
       glossaries: glossaries ?? this.glossaries,
       dictionaryId: dictionaryId ?? this.dictionaryId,
     );
@@ -2079,6 +2220,15 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     if (reading.present) {
       map['reading'] = Variable<String>(reading.value);
     }
+    if (entryKind.present) {
+      map['entry_kind'] = Variable<String>(entryKind.value);
+    }
+    if (kanjiOnyomi.present) {
+      map['kanji_onyomi'] = Variable<String>(kanjiOnyomi.value);
+    }
+    if (kanjiKunyomi.present) {
+      map['kanji_kunyomi'] = Variable<String>(kanjiKunyomi.value);
+    }
     if (glossaries.present) {
       map['glossaries'] = Variable<String>(glossaries.value);
     }
@@ -2094,6 +2244,9 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
           ..write('id: $id, ')
           ..write('expression: $expression, ')
           ..write('reading: $reading, ')
+          ..write('entryKind: $entryKind, ')
+          ..write('kanjiOnyomi: $kanjiOnyomi, ')
+          ..write('kanjiKunyomi: $kanjiKunyomi, ')
           ..write('glossaries: $glossaries, ')
           ..write('dictionaryId: $dictionaryId')
           ..write(')'))
@@ -5132,6 +5285,9 @@ typedef $$DictionaryEntriesTableCreateCompanionBuilder =
       Value<int> id,
       required String expression,
       Value<String> reading,
+      Value<String> entryKind,
+      Value<String> kanjiOnyomi,
+      Value<String> kanjiKunyomi,
       required String glossaries,
       required int dictionaryId,
     });
@@ -5140,6 +5296,9 @@ typedef $$DictionaryEntriesTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> expression,
       Value<String> reading,
+      Value<String> entryKind,
+      Value<String> kanjiOnyomi,
+      Value<String> kanjiKunyomi,
       Value<String> glossaries,
       Value<int> dictionaryId,
     });
@@ -5165,6 +5324,21 @@ class $$DictionaryEntriesTableFilterComposer
 
   ColumnFilters<String> get reading => $composableBuilder(
     column: $table.reading,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entryKind => $composableBuilder(
+    column: $table.entryKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kanjiOnyomi => $composableBuilder(
+    column: $table.kanjiOnyomi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kanjiKunyomi => $composableBuilder(
+    column: $table.kanjiKunyomi,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5203,6 +5377,21 @@ class $$DictionaryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get entryKind => $composableBuilder(
+    column: $table.entryKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kanjiOnyomi => $composableBuilder(
+    column: $table.kanjiOnyomi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kanjiKunyomi => $composableBuilder(
+    column: $table.kanjiKunyomi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get glossaries => $composableBuilder(
     column: $table.glossaries,
     builder: (column) => ColumnOrderings(column),
@@ -5233,6 +5422,19 @@ class $$DictionaryEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get reading =>
       $composableBuilder(column: $table.reading, builder: (column) => column);
+
+  GeneratedColumn<String> get entryKind =>
+      $composableBuilder(column: $table.entryKind, builder: (column) => column);
+
+  GeneratedColumn<String> get kanjiOnyomi => $composableBuilder(
+    column: $table.kanjiOnyomi,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get kanjiKunyomi => $composableBuilder(
+    column: $table.kanjiKunyomi,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get glossaries => $composableBuilder(
     column: $table.glossaries,
@@ -5288,12 +5490,18 @@ class $$DictionaryEntriesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> expression = const Value.absent(),
                 Value<String> reading = const Value.absent(),
+                Value<String> entryKind = const Value.absent(),
+                Value<String> kanjiOnyomi = const Value.absent(),
+                Value<String> kanjiKunyomi = const Value.absent(),
                 Value<String> glossaries = const Value.absent(),
                 Value<int> dictionaryId = const Value.absent(),
               }) => DictionaryEntriesCompanion(
                 id: id,
                 expression: expression,
                 reading: reading,
+                entryKind: entryKind,
+                kanjiOnyomi: kanjiOnyomi,
+                kanjiKunyomi: kanjiKunyomi,
                 glossaries: glossaries,
                 dictionaryId: dictionaryId,
               ),
@@ -5302,12 +5510,18 @@ class $$DictionaryEntriesTableTableManager
                 Value<int> id = const Value.absent(),
                 required String expression,
                 Value<String> reading = const Value.absent(),
+                Value<String> entryKind = const Value.absent(),
+                Value<String> kanjiOnyomi = const Value.absent(),
+                Value<String> kanjiKunyomi = const Value.absent(),
                 required String glossaries,
                 required int dictionaryId,
               }) => DictionaryEntriesCompanion.insert(
                 id: id,
                 expression: expression,
                 reading: reading,
+                entryKind: entryKind,
+                kanjiOnyomi: kanjiOnyomi,
+                kanjiKunyomi: kanjiKunyomi,
                 glossaries: glossaries,
                 dictionaryId: dictionaryId,
               ),

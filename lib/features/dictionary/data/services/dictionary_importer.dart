@@ -6,7 +6,9 @@ import 'package:archive/archive.dart';
 import 'package:drift/drift.dart';
 import 'package:json_events/json_events.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
 
 /// Result of parsing Yomitan term bank files inside an isolate.
 class YomitanParseResult {
@@ -62,6 +64,27 @@ class DictionaryImporter {
   final DictionaryRepository _repository;
 
   DictionaryImporter(this._repository);
+
+  static String _stringifyKanjiReadingSource(dynamic raw) {
+    if (raw == null) return '';
+    if (raw is List) {
+      return raw
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .join(' ');
+    }
+    return raw.toString().trim();
+  }
+
+  static List<String> _normalizeKanjiReadings(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is List) {
+      return raw
+          .expand((item) => splitKanjiReadingTokens(item.toString()))
+          .toList(growable: false);
+    }
+    return splitKanjiReadingTokens(raw.toString());
+  }
 
   static ({int? rank, String reading}) _parseFrequencyData(dynamic data) {
     int? rank;
@@ -979,12 +1002,15 @@ class DictionaryImporter {
         if (kanji is! List || kanji.length < 5) continue;
 
         final character = kanji[0]?.toString() ?? '';
-        final onyomi = kanji[1]?.toString() ?? '';
-        final kunyomi = kanji[2]?.toString() ?? '';
+        final onyomi = _stringifyKanjiReadingSource(kanji[1]);
+        final kunyomi = _stringifyKanjiReadingSource(kanji[2]);
         // kanji[3] = tags (unused)
         final meanings = kanji[4];
 
         if (character.isEmpty) continue;
+
+        final onyomiReadings = _normalizeKanjiReadings(kanji[1]);
+        final kunyomiReadings = _normalizeKanjiReadings(kanji[2]);
 
         // Combine onyomi and kunyomi as reading
         final readingParts = <String>[
@@ -1005,6 +1031,9 @@ class DictionaryImporter {
           DictionaryEntriesCompanion.insert(
             expression: character,
             reading: Value(reading),
+            entryKind: const Value(DictionaryEntryKinds.kanji),
+            kanjiOnyomi: Value(encodeKanjiReadings(onyomiReadings)),
+            kanjiKunyomi: Value(encodeKanjiReadings(kunyomiReadings)),
             glossaries: jsonEncode(glossaryList),
             dictionaryId: 0,
           ),
