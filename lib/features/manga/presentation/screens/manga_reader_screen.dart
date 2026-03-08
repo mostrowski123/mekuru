@@ -221,18 +221,55 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
         .resolve(word, block);
     if (!mounted || requestId != _lookupRequestId) return;
 
+    final restoredLookupTerm = await ref
+        .read(mangaLookupOverrideStorageProvider)
+        .loadOverride(
+          bookId: widget.book.id,
+          surfaceForm: lookup.surfaceForm,
+          dictionaryForm: lookup.dictionaryForm,
+        );
+    if (!mounted || requestId != _lookupRequestId) return;
+
     final sheet = showAtTop
-        ? _showTopSheet(word, lookup, transparent)
-        : _showBottomSheet(word, lookup, transparent);
+        ? _showTopSheet(word, lookup, transparent, restoredLookupTerm)
+        : _showBottomSheet(word, lookup, transparent, restoredLookupTerm);
     await sheet;
     if (!mounted || requestId != _lookupRequestId) return;
     _clearHighlight();
+  }
+
+  Future<void> _saveLookupOverride(
+    WordLookupResult lookup,
+    String editedLookupTerm,
+  ) async {
+    final storage = ref.read(mangaLookupOverrideStorageProvider);
+    final trimmedLookupTerm = editedLookupTerm.trim();
+    if (trimmedLookupTerm.isEmpty) {
+      return;
+    }
+
+    if (trimmedLookupTerm == lookup.dictionaryForm) {
+      await storage.removeOverride(
+        bookId: widget.book.id,
+        surfaceForm: lookup.surfaceForm,
+        dictionaryForm: lookup.dictionaryForm,
+      );
+      return;
+    }
+
+    await storage.saveOverride(
+      bookId: widget.book.id,
+      surfaceForm: lookup.surfaceForm,
+      dictionaryForm: lookup.dictionaryForm,
+      lookupTerm: trimmedLookupTerm,
+    );
   }
 
   Future<void> _showBottomSheet(
     MokuroWord word,
     WordLookupResult lookup,
     bool transparent,
+    String? restoredLookupTerm,
   ) {
     return showModalBottomSheet<void>(
       context: context,
@@ -243,8 +280,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
         selectedText: lookup.dictionaryForm,
         surfaceForm: lookup.surfaceForm,
         sentenceContext: lookup.sentenceContext,
+        initialEditedText: restoredLookupTerm,
         editable: true,
         transparent: transparent,
+        onTermSubmitted: (value) {
+          unawaited(_saveLookupOverride(lookup, value));
+        },
         onEditingStarted: () {
           setState(() {
             _highlightedWord = word;
@@ -262,6 +303,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     MokuroWord word,
     WordLookupResult lookup,
     bool transparent,
+    String? restoredLookupTerm,
   ) {
     return showGeneralDialog(
       context: context,
@@ -278,9 +320,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
               selectedText: lookup.dictionaryForm,
               surfaceForm: lookup.surfaceForm,
               sentenceContext: lookup.sentenceContext,
+              initialEditedText: restoredLookupTerm,
               showAtTop: true,
               editable: true,
               transparent: transparent,
+              onTermSubmitted: (value) {
+                unawaited(_saveLookupOverride(lookup, value));
+              },
               onEditingStarted: () {
                 setState(() {
                   _highlightedWord = word;

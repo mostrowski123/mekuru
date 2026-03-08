@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/manga_lookup_override_storage.dart';
 import 'package:mekuru/features/manga/data/services/manga_word_lookup_resolver.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
@@ -132,6 +133,12 @@ final mangaLookupTransparencyProvider =
     NotifierProvider<MangaLookupTransparencyNotifier, bool>(
       MangaLookupTransparencyNotifier.new,
     );
+
+final mangaLookupOverrideStorageProvider = Provider<MangaLookupOverrideStorage>(
+  (ref) {
+    return MangaLookupOverrideStorage();
+  },
+);
 
 final mangaWordLookupResolverProvider = Provider<MangaWordLookupResolver>((
   ref,

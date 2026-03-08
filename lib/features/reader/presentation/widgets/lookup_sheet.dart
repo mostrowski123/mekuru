@@ -15,9 +15,11 @@ class LookupSheet extends ConsumerStatefulWidget {
     required this.selectedText,
     this.surfaceForm,
     this.sentenceContext,
+    this.initialEditedText,
     this.showAtTop = false,
     this.editable = false,
     this.transparent = false,
+    this.onTermSubmitted,
     this.onEditingStarted,
     this.onEditingEnded,
   });
@@ -30,6 +32,9 @@ class LookupSheet extends ConsumerStatefulWidget {
 
   final String? sentenceContext;
 
+  /// Optional persisted manual lookup text to restore when reopening the sheet.
+  final String? initialEditedText;
+
   /// When true, render as a top-aligned card instead of a draggable bottom sheet.
   final bool showAtTop;
 
@@ -38,6 +43,9 @@ class LookupSheet extends ConsumerStatefulWidget {
 
   /// When true, use semi-transparent background with a visible border.
   final bool transparent;
+
+  /// Called after the user submits a new lookup term.
+  final ValueChanged<String>? onTermSubmitted;
 
   /// Called when the user starts editing the word header.
   final VoidCallback? onEditingStarted;
@@ -61,9 +69,14 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
   void initState() {
     super.initState();
     _editController = TextEditingController();
-    _searchResultsFuture = _search(widget.selectedText, widget.surfaceForm);
+    final restoredText = widget.initialEditedText?.trim();
+    _editedText = restoredText != null && restoredText.isNotEmpty
+        ? restoredText
+        : null;
+    final primarySearchTerm = _editedText ?? widget.selectedText;
+    _searchResultsFuture = _search(primarySearchTerm, widget.surfaceForm);
     _pitchAccentsFuture = _searchPitchAccents(
-      widget.selectedText,
+      primarySearchTerm,
       widget.surfaceForm,
     );
   }
@@ -115,17 +128,22 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
   }
 
   void _onEditSubmitted(String value) {
-    if (value.trim().isEmpty) {
+    final trimmedValue = value.trim();
+    if (trimmedValue.isEmpty) {
       setState(() => _isEditing = false);
       widget.onEditingEnded?.call();
       return;
     }
     setState(() {
       _isEditing = false;
-      _editedText = value.trim();
-      _searchResultsFuture = _search(_editedText!);
-      _pitchAccentsFuture = _searchPitchAccents(_editedText!);
+      _editedText = trimmedValue;
+      _searchResultsFuture = _search(trimmedValue, widget.surfaceForm);
+      _pitchAccentsFuture = _searchPitchAccents(
+        trimmedValue,
+        widget.surfaceForm,
+      );
     });
+    widget.onTermSubmitted?.call(trimmedValue);
     widget.onEditingEnded?.call();
   }
 

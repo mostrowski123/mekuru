@@ -49,6 +49,7 @@ void main() {
       SharedPreferences.setMockInitialValues({
         'app.theme_mode': 'dark',
         'app.color_theme': 'mekuruRed',
+        'app.manga_lookup_overrides': '{"42":{"[\\"食べた\\",\\"食べる\\"]":"食う"}}',
         'reader.font_size': 22.0,
         'reader.keep_screen_on': true,
       });
@@ -57,6 +58,10 @@ void main() {
 
       expect(manifest.settings.app['app.theme_mode'], 'dark');
       expect(manifest.settings.app['app.color_theme'], 'mekuruRed');
+      expect(
+        manifest.settings.app['app.manga_lookup_overrides'],
+        '{"42":{"[\\"食べた\\",\\"食べる\\"]":"食う"}}',
+      );
       expect(manifest.settings.reader['reader.font_size'], 22.0);
       expect(manifest.settings.reader['reader.keep_screen_on'], true);
     });

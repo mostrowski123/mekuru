@@ -24,6 +24,7 @@ class BackupService {
     'app.color_theme',
     'app.auto_crop_white_threshold',
     'app.ocr_server_url',
+    'app.manga_lookup_overrides',
     'backup.auto_interval',
   ];
 
