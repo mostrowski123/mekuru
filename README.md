@@ -80,13 +80,14 @@ dart run build_runner watch --delete-conflicting-outputs
 Runtime localization uses Flutter's native `gen_l10n` pipeline with ARB files in `lib/l10n/`.
 
 - Source strings live in `lib/l10n/app_en.arb`
+- Translated strings live directly in `lib/l10n/app_es.arb`, `lib/l10n/app_id.arb`, and `lib/l10n/app_zh_Hans.arb`
 - Generated localizations are produced with `flutter gen-l10n`
-- Lingo.dev configuration lives in `i18n.json`
 - Target locales are currently `es`, `id`, and Simplified Chinese (`zh_Hans`)
 - Flutter also keeps a matching `app_zh.arb` base fallback because script-code locales require a base `zh` ARB
-- Generate or update translations with `npx lingo.dev@latest run --no-interactive`
-- Refresh the lockfile with `npx lingo.dev@latest lockfile --no-interactive` and commit `i18n.lock`
+- Update translations directly in the ARB files, either manually or with the coding agent
 - Regenerate Flutter localization output with `flutter gen-l10n`
+- Check for untranslated messages in `build/untranslated_messages.json`
+- Run `flutter analyze` and `flutter test`
 - If a translation is wrong or awkward, contributors should open an issue or send a pull request against the ARB files
 
 See [docs/translation-workflow.md](docs/translation-workflow.md) for the repo-specific translation workflow.
