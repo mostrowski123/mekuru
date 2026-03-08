@@ -86,6 +86,16 @@ class DictionarySearchScreenState
     });
   }
 
+  void _clearSearch() {
+    _controller.clear();
+    _onSearchChanged('');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
   Future<void> _performSearch(String term) async {
     if (!mounted) return;
     _lastQuery = term;
@@ -181,10 +191,7 @@ class DictionarySearchScreenState
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _controller.clear();
-                          _onSearchChanged('');
-                        },
+                        onPressed: _clearSearch,
                       )
                     : null,
                 border: OutlineInputBorder(
