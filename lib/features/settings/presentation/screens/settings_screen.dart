@@ -17,6 +17,8 @@ import 'package:mekuru/features/settings/presentation/screens/about_screen.dart'
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/feedback_screen.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -48,20 +50,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final hasFirebaseApp = FirebaseRuntime.instance.hasFirebaseApp;
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         children: [
           // ── General ──
-          _SectionHeader(title: 'General'),
+          _SectionHeader(title: l10n.settingsSectionGeneral),
           ListTile(
             leading: Icon(
               Icons.home_outlined,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Startup Screen'),
-            subtitle: Text(startupScreen.label),
+            title: Text(l10n.settingsStartupScreenTitle),
+            subtitle: Text(_startupScreenLabel(l10n, startupScreen)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
@@ -71,14 +74,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Appearance ──
-          _SectionHeader(title: 'Appearance'),
+          _SectionHeader(title: l10n.settingsSectionAppearance),
           ListTile(
             leading: Icon(
               _themeModeIcon(themeMode),
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Theme'),
-            subtitle: Text(_themeModeLabel(themeMode)),
+            title: Text(l10n.settingsThemeTitle),
+            subtitle: Text(_themeModeLabel(l10n, themeMode)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
@@ -87,8 +90,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ListTile(
             leading: Icon(Icons.palette_outlined, color: colorTheme.seedColor),
-            title: const Text('Color Theme'),
-            subtitle: Text(colorTheme.label),
+            title: Text(l10n.settingsColorThemeTitle),
+            subtitle: Text(_colorThemeLabel(l10n, colorTheme)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
@@ -98,11 +101,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Reading Defaults ──
-          _SectionHeader(title: 'Reading Defaults'),
+          _SectionHeader(title: l10n.settingsSectionReadingDefaults),
           ListTile(
             leading: Icon(Icons.text_fields, color: theme.colorScheme.primary),
-            title: const Text('Font Size'),
-            subtitle: Text('${readerSettings.fontSize.round()} pt'),
+            title: Text(l10n.settingsFontSizeTitle),
+            subtitle: Text(
+              l10n.settingsPointsValue(points: readerSettings.fontSize.round()),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -111,7 +116,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               min: 12,
               max: 32,
               divisions: 20,
-              label: '${readerSettings.fontSize.round()}',
+              label: readerSettings.fontSize.round().toString(),
               onChanged: (value) {
                 AppHaptics.light();
                 readerNotifier.setFontSize(value);
@@ -123,8 +128,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Icons.color_lens_outlined,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Color Mode'),
-            subtitle: Text(_colorModeLabel(readerSettings.colorMode)),
+            title: Text(l10n.settingsColorModeTitle),
+            subtitle: Text(_colorModeLabel(l10n, readerSettings.colorMode)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
@@ -142,7 +147,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(width: 8),
-                  const Text('Sepia Intensity'),
+                  Text(l10n.settingsSepiaIntensityTitle),
                   Expanded(
                     child: Slider(
                       value: readerSettings.sepiaIntensity,
@@ -163,8 +168,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Icons.lightbulb_outline,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Keep Screen On'),
-            subtitle: const Text('Prevent screen from sleeping while reading'),
+            title: Text(l10n.settingsKeepScreenOnTitle),
+            subtitle: Text(l10n.settingsKeepScreenOnSubtitle),
             value: readerSettings.keepScreenOn,
             onChanged: (value) {
               AppHaptics.light();
@@ -177,7 +182,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Horizontal Margin: ${readerSettings.horizontalPadding}px',
+                  l10n.settingsHorizontalMarginValue(
+                    pixels: readerSettings.horizontalPadding,
+                  ),
                   style: theme.textTheme.bodyMedium,
                 ),
                 Slider(
@@ -191,7 +198,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   },
                 ),
                 Text(
-                  'Vertical Margin: ${readerSettings.verticalPadding}px',
+                  l10n.settingsVerticalMarginValue(
+                    pixels: readerSettings.verticalPadding,
+                  ),
                   style: theme.textTheme.bodyMedium,
                 ),
                 Slider(
@@ -216,9 +225,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   children: [
                     Icon(Icons.swipe, color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
-                    const Text('Swipe Sensitivity'),
+                    Text(l10n.settingsSwipeSensitivityTitle),
                     const Spacer(),
-                    Text('${(readerSettings.swipeSensitivity * 100).round()}%'),
+                    Text(
+                      l10n.settingsPercentValue(
+                        percent: (readerSettings.swipeSensitivity * 100)
+                            .round(),
+                      ),
+                    ),
                   ],
                 ),
                 Slider(
@@ -226,14 +240,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   min: 0.01,
                   max: 0.20,
                   divisions: 19,
-                  label: '${(readerSettings.swipeSensitivity * 100).round()}%',
+                  label: l10n.settingsPercentValue(
+                    percent: (readerSettings.swipeSensitivity * 100).round(),
+                  ),
                   onChanged: (value) {
                     AppHaptics.light();
                     readerNotifier.setSwipeSensitivity(value);
                   },
                 ),
                 Text(
-                  'Lower = less finger movement needed to swipe',
+                  l10n.settingsSwipeSensitivityHint,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -245,14 +261,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Dictionary ──
-          _SectionHeader(title: 'Dictionary'),
+          _SectionHeader(title: l10n.settingsSectionDictionary),
           ListTile(
             leading: Icon(
               Icons.book_outlined,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Manage Dictionaries'),
-            subtitle: const Text('Import, reorder, enable/disable'),
+            title: Text(l10n.commonManageDictionaries),
+            subtitle: Text(l10n.settingsManageDictionariesSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
@@ -265,8 +281,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ListTile(
             leading: Icon(Icons.text_fields, color: theme.colorScheme.primary),
-            title: const Text('Lookup Font Size'),
-            subtitle: Text('${lookupFontSize.round()} pt'),
+            title: Text(l10n.settingsLookupFontSizeTitle),
+            subtitle: Text(
+              l10n.settingsPointsValue(points: lookupFontSize.round()),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -275,7 +293,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               min: LookupFontSizeNotifier.minSize,
               max: LookupFontSizeNotifier.maxSize,
               divisions: 12,
-              label: '${lookupFontSize.round()}',
+              label: lookupFontSize.round().toString(),
               onChanged: (value) {
                 AppHaptics.light();
                 ref.read(lookupFontSizeProvider.notifier).setFontSize(value);
@@ -284,10 +302,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           SwitchListTile(
             secondary: Icon(Icons.abc, color: theme.colorScheme.primary),
-            title: const Text('Filter Roman Letter Entries'),
-            subtitle: const Text(
-              'Hide entries using English letters in headword',
-            ),
+            title: Text(l10n.settingsFilterRomanLetterEntriesTitle),
+            subtitle: Text(l10n.settingsFilterRomanLetterEntriesSubtitle),
             value: ref.watch(filterRomanLettersProvider),
             onChanged: (value) {
               AppHaptics.light();
@@ -299,10 +315,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Icons.keyboard_outlined,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Auto-Focus Search'),
-            subtitle: const Text(
-              'Open keyboard when dictionary tab is selected',
-            ),
+            title: Text(l10n.settingsAutoFocusSearchTitle),
+            subtitle: Text(l10n.settingsAutoFocusSearchSubtitle),
             value: ref.watch(autoFocusSearchProvider),
             onChanged: (value) {
               AppHaptics.light();
@@ -313,16 +327,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ── Vocabulary & Export ──
           if (defaultTargetPlatform == TargetPlatform.android) ...[
-            _SectionHeader(title: 'Vocabulary & Export'),
+            _SectionHeader(title: l10n.settingsSectionVocabularyExport),
             ListTile(
               leading: Icon(
                 Icons.electric_bolt_outlined,
                 color: theme.colorScheme.primary,
               ),
-              title: const Text('AnkiDroid Integration'),
-              subtitle: const Text(
-                'Configure note type, deck, and field mapping',
-              ),
+              title: Text(l10n.settingsAnkiDroidIntegrationTitle),
+              subtitle: Text(l10n.settingsAnkiDroidIntegrationSubtitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 AppHaptics.light();
@@ -337,7 +349,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           // ── Manga OCR ──
-          _SectionHeader(title: 'Pro'),
+          _SectionHeader(title: l10n.settingsSectionPro),
           if (!hasFirebaseApp)
             ListTile(
               enabled: false,
@@ -345,8 +357,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Icons.shopping_bag_outlined,
                 color: theme.colorScheme.onSurfaceVariant,
               ),
-              title: const Text('Pro'),
-              subtitle: const Text('Pro services are temporarily unavailable.'),
+              title: Text(l10n.proTitle),
+              subtitle: Text(l10n.settingsProUnavailableSubtitle),
               trailing: const Icon(Icons.chevron_right),
             )
           else
@@ -355,10 +367,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Icons.shopping_bag_outlined,
                 color: theme.colorScheme.primary,
               ),
-              title: const Text('Pro'),
-              subtitle: const Text(
-                'Unlock auto-crop, book highlights, and custom OCR',
-              ),
+              title: Text(l10n.proTitle),
+              subtitle: Text(l10n.settingsProSubtitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 AppHaptics.light();
@@ -367,12 +377,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           const Divider(),
           if (isProUnlocked) ...[
-            _SectionHeader(title: 'Manga Auto-Crop'),
+            _SectionHeader(title: l10n.settingsSectionMangaAutoCrop),
             ListTile(
               leading: Icon(Icons.tune, color: theme.colorScheme.primary),
-              title: const Text('White Threshold'),
+              title: Text(l10n.settingsWhiteThresholdTitle),
               subtitle: Text(
-                '$autoCropWhiteThreshold (lower values ignore more near-white artifacts)',
+                l10n.settingsWhiteThresholdSubtitle(
+                  threshold: autoCropWhiteThreshold,
+                ),
               ),
             ),
             Padding(
@@ -393,7 +405,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const Divider(),
-            _SectionHeader(title: 'Manga OCR'),
+            _SectionHeader(title: l10n.settingsSectionMangaOcr),
             if (!hasFirebaseApp)
               ListTile(
                 enabled: false,
@@ -401,10 +413,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Icons.document_scanner_outlined,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
-                title: const Text('Custom OCR Server'),
-                subtitle: const Text(
-                  'OCR services are temporarily unavailable.',
-                ),
+                title: Text(l10n.settingsCustomOcrServerTitle),
+                subtitle: Text(l10n.settingsCustomOcrServerUnavailableSubtitle),
               )
             else
               Builder(
@@ -414,15 +424,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     currentOcrServerUrl,
                   );
                   final subtitle = usesBuiltInServer
-                      ? 'Not configured. Add your own server URL and shared key.'
-                      : '$currentOcrServerUrl\nUse the same shared key configured on your server.';
+                      ? l10n.settingsCustomOcrServerNotConfigured
+                      : l10n.settingsCustomOcrServerConfigured(
+                          url: currentOcrServerUrl,
+                        );
 
                   return ListTile(
                     leading: Icon(
                       Icons.document_scanner_outlined,
                       color: theme.colorScheme.primary,
                     ),
-                    title: const Text('Custom OCR Server'),
+                    title: Text(l10n.settingsCustomOcrServerTitle),
                     subtitle: Text(
                       subtitle,
                       maxLines: 3,
@@ -440,14 +452,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           // ── Downloads ──
-          _SectionHeader(title: 'Downloads'),
+          _SectionHeader(title: l10n.settingsSectionDownloads),
           ListTile(
             leading: Icon(
               Icons.download_outlined,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Downloads'),
-            subtitle: const Text('Dictionaries, kanji data, and more'),
+            title: Text(l10n.downloadsTitle),
+            subtitle: Text(l10n.settingsDownloadsSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
@@ -459,14 +471,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Backup & Restore ──
-          _SectionHeader(title: 'Backup & Restore'),
+          _SectionHeader(title: l10n.settingsSectionBackupRestore),
           ListTile(
             leading: Icon(
               Icons.backup_outlined,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Backup & Restore'),
-            subtitle: const Text('Back up and restore your data'),
+            title: Text(l10n.settingsBackupRestoreTitle),
+            subtitle: Text(l10n.settingsBackupRestoreSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
@@ -478,14 +490,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Feedback & About ──
-          _SectionHeader(title: 'About & Feedback'),
+          _SectionHeader(title: l10n.settingsSectionAboutFeedback),
           ListTile(
             leading: Icon(
               Icons.feedback_outlined,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Send Feedback'),
-            subtitle: const Text('Report a bug or suggest a feature'),
+            title: Text(l10n.feedbackTitle),
+            subtitle: Text(l10n.settingsSendFeedbackSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () async {
               AppHaptics.light();
@@ -495,18 +507,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (!context.mounted) return;
               if (result == true) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Thank you for your feedback!'),
+                  SnackBar(
+                    content: Text(l10n.settingsFeedbackThanks),
                     behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               } else if (result == false) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Failed to send feedback. Please try again.'),
+                  SnackBar(
+                    content: Text(l10n.settingsFeedbackFailed),
                     behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 3),
+                    duration: const Duration(seconds: 3),
                   ),
                 );
               }
@@ -517,8 +529,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Icons.menu_book_outlined,
               color: theme.colorScheme.primary,
             ),
-            title: const Text('Documentation'),
-            subtitle: const Text('Guides and how-to articles'),
+            title: Text(l10n.settingsDocumentationTitle),
+            subtitle: Text(l10n.settingsDocumentationSubtitle),
             trailing: const Icon(Icons.open_in_new, size: 20),
             onTap: () {
               AppHaptics.light();
@@ -530,8 +542,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ListTile(
             leading: Icon(Icons.info_outline, color: theme.colorScheme.primary),
-            title: const Text('About Mekuru'),
-            subtitle: const Text('Version, licenses, and more'),
+            title: Text(l10n.settingsAboutMekuruTitle),
+            subtitle: Text(l10n.settingsAboutMekuruSubtitle),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
@@ -548,11 +560,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   // ── Helpers ──
 
-  static String _colorModeLabel(ColorMode mode) => switch (mode) {
-    ColorMode.normal => 'Normal',
-    ColorMode.sepia => 'Sepia',
-    ColorMode.dark => 'Dark',
-  };
+  static String _colorModeLabel(AppLocalizations l10n, ColorMode mode) =>
+      switch (mode) {
+        ColorMode.normal => l10n.settingsColorModeNormal,
+        ColorMode.sepia => l10n.settingsColorModeSepia,
+        ColorMode.dark => l10n.settingsColorModeDark,
+      };
 
   static IconData _colorModeIcon(ColorMode mode) => switch (mode) {
     ColorMode.normal => Icons.brightness_5,
@@ -565,6 +578,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     WidgetRef ref,
     ColorMode currentMode,
   ) {
+    final l10n = context.l10n;
+
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -574,7 +589,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Color Mode',
+                l10n.settingsColorModeTitle,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),
@@ -582,7 +597,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             for (final mode in ColorMode.values)
               ListTile(
                 leading: Icon(_colorModeIcon(mode)),
-                title: Text(_colorModeLabel(mode)),
+                title: Text(_colorModeLabel(l10n, mode)),
                 trailing: currentMode == mode
                     ? Icon(
                         Icons.check,
@@ -607,17 +622,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ThemeMode.system => Icons.brightness_auto,
   };
 
-  static String _themeModeLabel(ThemeMode mode) => switch (mode) {
-    ThemeMode.light => 'Light',
-    ThemeMode.dark => 'Dark',
-    ThemeMode.system => 'System default',
+  static String _themeModeLabel(AppLocalizations l10n, ThemeMode mode) =>
+      switch (mode) {
+        ThemeMode.light => l10n.settingsThemeLight,
+        ThemeMode.dark => l10n.settingsThemeDark,
+        ThemeMode.system => l10n.settingsThemeSystemDefault,
+      };
+
+  static String _startupScreenLabel(
+    AppLocalizations l10n,
+    StartupScreen screen,
+  ) => switch (screen) {
+    StartupScreen.library => l10n.settingsStartupScreenLibrary,
+    StartupScreen.dictionary => l10n.settingsStartupScreenDictionary,
+    StartupScreen.lastRead => l10n.settingsStartupScreenLastRead,
   };
+
+  static String _colorThemeLabel(AppLocalizations l10n, AppColorTheme theme) =>
+      switch (theme) {
+        AppColorTheme.mekuruRed => l10n.settingsColorThemeMekuruRed,
+        AppColorTheme.indigo => l10n.settingsColorThemeIndigo,
+        AppColorTheme.teal => l10n.settingsColorThemeTeal,
+        AppColorTheme.deepPurple => l10n.settingsColorThemeDeepPurple,
+        AppColorTheme.blue => l10n.settingsColorThemeBlue,
+        AppColorTheme.green => l10n.settingsColorThemeGreen,
+        AppColorTheme.orange => l10n.settingsColorThemeOrange,
+        AppColorTheme.pink => l10n.settingsColorThemePink,
+        AppColorTheme.blueGrey => l10n.settingsColorThemeBlueGrey,
+      };
 
   void _showThemeModePicker(
     BuildContext context,
     WidgetRef ref,
     ThemeMode currentMode,
   ) {
+    final l10n = context.l10n;
+
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -627,7 +667,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Theme',
+                l10n.settingsThemeTitle,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),
@@ -635,7 +675,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _ThemeModeOption(
               mode: ThemeMode.light,
               icon: Icons.light_mode,
-              label: 'Light',
+              label: l10n.settingsThemeLight,
               isSelected: currentMode == ThemeMode.light,
               onTap: () {
                 AppHaptics.medium();
@@ -648,7 +688,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _ThemeModeOption(
               mode: ThemeMode.dark,
               icon: Icons.dark_mode,
-              label: 'Dark',
+              label: l10n.settingsThemeDark,
               isSelected: currentMode == ThemeMode.dark,
               onTap: () {
                 AppHaptics.medium();
@@ -661,7 +701,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _ThemeModeOption(
               mode: ThemeMode.system,
               icon: Icons.brightness_auto,
-              label: 'System default',
+              label: l10n.settingsThemeSystemDefault,
               isSelected: currentMode == ThemeMode.system,
               onTap: () {
                 AppHaptics.medium();
@@ -682,6 +722,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     WidgetRef ref,
     AppColorTheme currentTheme,
   ) {
+    final l10n = context.l10n;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -697,7 +739,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Color Theme',
+                  l10n.settingsColorThemeTitle,
                   style: Theme.of(sheetContext).textTheme.titleMedium,
                 ),
               ),
@@ -709,7 +751,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     for (final option in AppColorTheme.values)
                       ListTile(
                         leading: Icon(Icons.circle, color: option.seedColor),
-                        title: Text(option.label),
+                        title: Text(_colorThemeLabel(l10n, option)),
                         trailing: currentTheme == option
                             ? Icon(
                                 Icons.check,
@@ -739,6 +781,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     WidgetRef ref,
     StartupScreen current,
   ) {
+    final l10n = context.l10n;
+
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -748,7 +792,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Startup Screen',
+                l10n.settingsStartupScreenTitle,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),
@@ -756,7 +800,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             for (final option in StartupScreen.values)
               ListTile(
                 leading: Icon(_startupScreenIcon(option)),
-                title: Text(option.label),
+                title: Text(_startupScreenLabel(l10n, option)),
                 trailing: current == option
                     ? Icon(
                         Icons.check,
@@ -848,23 +892,25 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
   }
 
   void _onSave() {
+    final l10n = context.l10n;
     final url = ocr_server_config.normalizeOcrServerUrl(_urlController.text);
     final customKey = _keyController.text.trim();
-    final urlError = ocr_server_config.validateOcrServerUrl(url);
 
     if (url.isEmpty || customKey.isEmpty) {
       setState(() {
-        _urlError = url.isEmpty ? 'Enter your server URL.' : null;
+        _urlError = url.isEmpty
+            ? l10n.settingsCustomOcrServerUrlRequired
+            : null;
         _keyError = customKey.isEmpty
-            ? 'A shared key is required for custom servers.'
+            ? l10n.settingsCustomOcrServerKeyRequired
             : null;
       });
       return;
     }
 
-    if (urlError != null) {
+    if (ocr_server_config.tryParseOcrServerUrl(url) == null) {
       setState(() {
-        _urlError = urlError;
+        _urlError = l10n.settingsCustomOcrServerUrlInvalid;
         _keyError = null;
       });
       return;
@@ -876,9 +922,10 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return AlertDialog(
-      title: const Text('Custom OCR Server'),
+      title: Text(l10n.settingsCustomOcrServerTitle),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -890,8 +937,8 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
                 controller: _urlController,
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'Server URL',
-                  hintText: 'http://192.168.1.100:8000',
+                  labelText: l10n.settingsCustomOcrServerUrlLabel,
+                  hintText: l10n.settingsCustomOcrServerUrlHint,
                   border: const OutlineInputBorder(),
                   errorText: _urlError,
                 ),
@@ -907,15 +954,15 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
                   mode: LaunchMode.externalApplication,
                 ),
                 icon: const Icon(Icons.open_in_new),
-                label: const Text('Learn how to run your own server'),
+                label: Text(l10n.settingsCustomOcrServerLearnHow),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: _keyController,
                 obscureText: _obscureKey,
                 decoration: InputDecoration(
-                  labelText: 'Custom shared key',
-                  hintText: 'Required AUTH_API_KEY',
+                  labelText: l10n.settingsCustomOcrServerKeyLabel,
+                  hintText: l10n.settingsCustomOcrServerKeyHint,
                   border: const OutlineInputBorder(),
                   errorText: _keyError,
                   suffixIcon: Row(
@@ -952,9 +999,7 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter the same shared AUTH_API_KEY used by your OCR '
-                'server. Mekuru sends it as Authorization: Bearer <key> '
-                'for remote manga OCR requests.',
+                l10n.settingsCustomOcrServerDescription,
                 style: theme.textTheme.bodySmall,
               ),
             ],
@@ -971,13 +1016,13 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
               _keyError = null;
             });
           },
-          child: const Text('Clear'),
+          child: Text(l10n.commonClear),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n.commonCancel),
         ),
-        TextButton(onPressed: _onSave, child: const Text('Save')),
+        TextButton(onPressed: _onSave, child: Text(l10n.commonSave)),
       ],
     );
   }

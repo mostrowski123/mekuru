@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -14,6 +15,8 @@ import 'features/reader/presentation/screens/reader_screen.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
+import 'l10n/generated/app_localizations.dart';
+import 'l10n/l10n.dart';
 import 'main.dart' show navigatorKey, scaffoldMessengerKey, databaseProvider;
 import 'shared/theme/app_theme.dart';
 
@@ -71,11 +74,18 @@ class _MekuruAppState extends ConsumerState<MekuruApp> {
     final colorTheme = ref.watch(appColorThemeProvider);
 
     return MaterialApp(
-      title: 'Mekuru',
+      onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme(colorTheme.seedColor),
       darkTheme: AppTheme.darkTheme(colorTheme.seedColor),
       themeMode: themeMode,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       scaffoldMessengerKey: scaffoldMessengerKey,
       navigatorKey: navigatorKey,
       navigatorObservers: [SentryNavigatorObserver()],
@@ -139,6 +149,8 @@ class _MainShellState extends ConsumerState<_MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     // Apply startup screen once after the provider has finished loading
     // the persisted value from SharedPreferences.
     final startupScreen = ref.watch(startupScreenProvider);
@@ -168,26 +180,26 @@ class _MainShellState extends ConsumerState<_MainShell> {
         onDestinationSelected: (index) {
           _setCurrentIndex(index);
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.auto_stories_outlined),
-            selectedIcon: Icon(Icons.auto_stories),
-            label: 'Library',
+            icon: const Icon(Icons.auto_stories_outlined),
+            selectedIcon: const Icon(Icons.auto_stories),
+            label: l10n.navLibrary,
           ),
           NavigationDestination(
-            icon: Icon(Icons.book_outlined),
-            selectedIcon: Icon(Icons.book),
-            label: 'Dictionary',
+            icon: const Icon(Icons.book_outlined),
+            selectedIcon: const Icon(Icons.book),
+            label: l10n.navDictionary,
           ),
           NavigationDestination(
-            icon: Icon(Icons.bookmark_border),
-            selectedIcon: Icon(Icons.bookmark),
-            label: 'Vocabulary',
+            icon: const Icon(Icons.bookmark_border),
+            selectedIcon: const Icon(Icons.bookmark),
+            label: l10n.navVocabulary,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l10n.navSettings,
           ),
         ],
       ),

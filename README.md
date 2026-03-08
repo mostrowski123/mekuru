@@ -75,6 +75,19 @@ flutter test
 dart run build_runner watch --delete-conflicting-outputs
 ```
 
+### Localization Workflow
+
+Runtime localization uses Flutter's native `gen_l10n` pipeline with ARB files in `lib/l10n/`.
+
+- Source strings live in `lib/l10n/app_en.arb`
+- Generated localizations are produced with `flutter gen-l10n`
+- Lingo.dev configuration lives in `i18n.json`
+- New locales are added by creating `lib/l10n/app_<locale>.arb` and updating `i18n.json`
+- AI translations are expected to be generated with your Lingo.dev workflow, including MCP-assisted translation work
+- If a translation is wrong or awkward, contributors should open an issue or send a pull request against the ARB files
+
+See [docs/translation-workflow.md](docs/translation-workflow.md) for the repo-specific translation workflow.
+
 ### Optional Firebase Functions Workflow
 
 ```bash
@@ -121,7 +134,7 @@ Contributions are welcome. Before opening a pull request:
 1. Fork the repository.
 2. Create a branch for your change.
 3. Run `flutter analyze` and `flutter test`.
-4. Include any required code generation updates.
+4. Include any required code generation updates, including `flutter gen-l10n` when localization files change.
 
 See [CLAUDE.md](CLAUDE.md) for additional codebase conventions and architecture notes.
 

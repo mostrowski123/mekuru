@@ -6,6 +6,7 @@ import 'package:mekuru/features/dictionary/presentation/screens/dictionary_searc
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/utils/vocabulary_search.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 class VocabularyScreen extends ConsumerStatefulWidget {
   const VocabularyScreen({super.key});
@@ -81,6 +82,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final wordsAsync = ref.watch(vocabularyListProvider);
     final visibleWords = wordsAsync.maybeWhen(
       data: (words) => filterVocabularyWords(words, _searchQuery),
@@ -93,7 +95,9 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
           : _buildNormalAppBar(),
       body: wordsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(
+          child: Text(l10n.commonErrorWithDetails(details: err.toString())),
+        ),
         data: (words) {
           if (words.isEmpty) {
             return _buildEmptyState(context);
@@ -106,7 +110,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search saved words',
+                    hintText: l10n.vocabularySearchSavedWordsHint,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchQuery.isEmpty
                         ? null
@@ -152,11 +156,11 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
 
   AppBar _buildNormalAppBar() {
     return AppBar(
-      title: const Text('Vocabulary'),
+      title: Text(context.l10n.navVocabulary),
       actions: [
         IconButton(
           icon: const Icon(Icons.save_alt),
-          tooltip: 'Export CSV',
+          tooltip: context.l10n.vocabularyExportCsvTooltip,
           onPressed: _enterSelectionMode,
         ),
       ],
@@ -164,6 +168,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     return Center(
       child: Padding(
@@ -177,10 +182,10 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
               color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
             ),
             const SizedBox(height: 16),
-            Text('No saved words yet', style: theme.textTheme.titleMedium),
+            Text(l10n.vocabularyEmptyTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Save words from dictionary searches or while reading, and they will show up here with context.',
+              l10n.vocabularyEmptySubtitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -201,7 +206,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                     );
                   },
                   icon: const Icon(Icons.search),
-                  label: const Text('Open Dictionary'),
+                  label: Text(l10n.commonOpenDictionary),
                 ),
                 OutlinedButton.icon(
                   onPressed: () {
@@ -212,7 +217,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                     );
                   },
                   icon: const Icon(Icons.download_outlined),
-                  label: const Text('Get Dictionaries'),
+                  label: Text(l10n.libraryGetDictionaries),
                 ),
               ],
             ),
@@ -223,6 +228,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
   }
 
   Widget _buildNoMatchesState(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     return Center(
       child: Padding(
@@ -237,13 +243,13 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'No matches for "$_searchQuery"',
+              l10n.vocabularyNoMatches(query: _searchQuery),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Try the expression, reading, or part of a definition.',
+              l10n.vocabularyNoMatchesSubtitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -255,7 +261,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                 _searchController.clear();
                 _setSearchQuery('');
               },
-              child: const Text('Clear search'),
+              child: Text(l10n.commonClearSearch),
             ),
           ],
         ),
@@ -264,6 +270,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
   }
 
   AppBar _buildSelectionAppBar(List<SavedWord> visibleWords) {
+    final l10n = context.l10n;
     final allSelected =
         visibleWords.isNotEmpty &&
         visibleWords.every((word) => _selectedIds.contains(word.id));
@@ -273,11 +280,13 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
         icon: const Icon(Icons.close),
         onPressed: _exitSelectionMode,
       ),
-      title: Text('${_selectedIds.length} selected'),
+      title: Text(l10n.vocabularySelectedCount(count: _selectedIds.length)),
       actions: [
         IconButton(
           icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
-          tooltip: allSelected ? 'Deselect all' : 'Select all',
+          tooltip: allSelected
+              ? l10n.vocabularyDeselectAllTooltip
+              : l10n.vocabularySelectAllTooltip,
           onPressed: () {
             if (allSelected) {
               _deselectAll();
@@ -288,7 +297,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.save_alt),
-          tooltip: 'Export selected',
+          tooltip: l10n.vocabularyExportSelectedTooltip,
           onPressed: _selectedIds.isEmpty ? null : _exportSelected,
         ),
       ],
@@ -311,11 +320,12 @@ class _VocabularyItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final definitions = GlossaryParser.parse(word.glossaries);
 
     final firstDefinition = definitions.isNotEmpty
         ? definitions.first
-        : 'No definition';
+        : l10n.vocabularyNoDefinition;
 
     final tile = ExpansionTile(
       leading: isSelectionMode
@@ -351,7 +361,7 @@ class _VocabularyItem extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Context:',
+                        l10n.vocabularyContextLabel,
                         style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).colorScheme.outline,
@@ -364,7 +374,7 @@ class _VocabularyItem extends ConsumerWidget {
                 ),
               const SizedBox(height: 4),
               Text(
-                'Added: ${_formatDate(word.dateAdded)}',
+                l10n.vocabularyAddedOn(date: _formatDate(word.dateAdded)),
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.outline,
@@ -398,9 +408,11 @@ class _VocabularyItem extends ConsumerWidget {
           ..clearSnackBars()
           ..showSnackBar(
             SnackBar(
-              content: Text('Deleted "${word.expression}"'),
+              content: Text(
+                l10n.vocabularyDeletedWord(expression: word.expression),
+              ),
               action: SnackBarAction(
-                label: 'Undo',
+                label: l10n.commonUndo,
                 onPressed: () async {
                   await repository.restoreWord(word);
                 },

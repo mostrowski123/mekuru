@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -93,9 +94,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     });
     ref.invalidate(proUnlockedProvider);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Your purchase has been confirmed!')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.proPurchaseConfirmed)));
     if (!wasUnlocked && result.ocrUnlocked) {
       unawaited(_maybeShowConfetti());
     }
@@ -247,15 +248,16 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final buttonLabel = _snapshot.isUnlocked
-        ? 'Already Unlocked'
+        ? l10n.proAlreadyUnlocked
         : _snapshot.priceLabel == null
-        ? 'Unlock Pro'
-        : 'Unlock Pro ${_snapshot.priceLabel}';
+        ? l10n.proUnlock
+        : l10n.proUnlockWithPrice(price: _snapshot.priceLabel!);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pro')),
+      appBar: AppBar(title: Text(l10n.proTitle)),
       body: Stack(
         children: [
           _isLoading
@@ -270,7 +272,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Unlock Pro once',
+                              l10n.proUnlockOnceTitle,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -290,12 +292,12 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                                   ),
                                   label: Text(
                                     _snapshot.isUnlocked
-                                        ? 'Unlocked'
-                                        : 'Locked',
+                                        ? l10n.proStatusUnlocked
+                                        : l10n.proStatusLocked,
                                   ),
                                 ),
                                 Text(
-                                  'One-time purchase for reader power features.',
+                                  l10n.proUnlockDescription,
                                   style: theme.textTheme.bodyMedium,
                                 ),
                               ],
@@ -308,7 +310,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                                       widget.restoreUpgrade ?? _restoreDefault,
                                     ),
                               icon: const Icon(Icons.refresh),
-                              label: const Text('Restore Purchase'),
+                              label: Text(l10n.proRestorePurchase),
                             ),
                           ],
                         ),
@@ -326,27 +328,24 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                     const SizedBox(height: 16),
                     _ProFeatureCard(
                       icon: Icons.crop,
-                      title: 'Auto-Crop',
-                      description:
-                          'Trim empty manga page margins after a one-time setup per book.',
+                      title: l10n.proFeatureAutoCropTitle,
+                      description: l10n.proFeatureAutoCropDescription,
                     ),
                     const SizedBox(height: 12),
                     _ProFeatureCard(
                       icon: Icons.highlight,
-                      title: 'Book Highlights',
-                      description:
-                          'Save and review highlighted passages while reading EPUB books.',
+                      title: l10n.proFeatureHighlightsTitle,
+                      description: l10n.proFeatureHighlightsDescription,
                     ),
                     const SizedBox(height: 12),
                     _ProFeatureCard(
                       icon: Icons.document_scanner_outlined,
-                      title: 'Custom OCR Server',
-                      description:
-                          'Run remote manga OCR with your own server and shared key.',
+                      title: l10n.proFeatureCustomOcrTitle,
+                      description: l10n.proFeatureCustomOcrDescription,
                       trailing: TextButton.icon(
                         onPressed: _openSelfHostRepo,
                         icon: const Icon(Icons.open_in_new),
-                        label: const Text('Server Repo'),
+                        label: Text(l10n.proServerRepo),
                       ),
                     ),
                     const SizedBox(height: 24),

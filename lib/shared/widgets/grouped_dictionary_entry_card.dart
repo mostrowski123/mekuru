@@ -17,6 +17,7 @@ import 'package:mekuru/features/dictionary/presentation/widgets/source_section_l
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart' show scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
@@ -116,7 +117,11 @@ class _GroupedDictionaryEntryCardState
       setState(() => _isSaved = true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Saved "${_primaryEntry.expression}"'),
+          content: Text(
+            context.l10n.dictionarySavedWord(
+              expression: _primaryEntry.expression,
+            ),
+          ),
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -126,8 +131,8 @@ class _GroupedDictionaryEntryCardState
 
   void _showVocabAlreadySavedToast() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Word already exists in vocab list'),
+      SnackBar(
+        content: Text(context.l10n.dictionaryWordAlreadyExistsInVocab),
         duration: Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
@@ -138,7 +143,11 @@ class _GroupedDictionaryEntryCardState
     Clipboard.setData(ClipboardData(text: _primaryEntry.expression));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Copied "${_primaryEntry.expression}"'),
+        content: Text(
+          context.l10n.dictionaryCopiedWord(
+            expression: _primaryEntry.expression,
+          ),
+        ),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
@@ -147,8 +156,8 @@ class _GroupedDictionaryEntryCardState
 
   void _showAnkiAlreadySavedToast() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Word already exists in default deck'),
+      SnackBar(
+        content: Text(context.l10n.dictionaryWordAlreadyExistsInAnki),
         duration: Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
@@ -229,6 +238,9 @@ class _GroupedDictionaryEntryCardState
 
   void _sendToAnki() {
     final config = ref.read(ankidroidConfigProvider);
+    final addedToAnkiMessage = context.l10n.dictionaryAddedToAnki(
+      expression: _primaryEntry.expression,
+    );
     if (!config.isConfigured) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const AnkidroidSettingsScreen()),
@@ -248,7 +260,7 @@ class _GroupedDictionaryEntryCardState
             _checkIfInAnki(force: true);
             scaffoldMessengerKey.currentState?.showSnackBar(
               SnackBar(
-                content: Text('Added "${_primaryEntry.expression}" to Anki'),
+                content: Text(addedToAnkiMessage),
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
               ),
@@ -345,7 +357,7 @@ class _GroupedDictionaryEntryCardState
       IconButton(
         onPressed: _copyExpression,
         icon: const Icon(Icons.copy_outlined),
-        tooltip: 'Copy',
+        tooltip: context.l10n.dictionaryCopyTooltip,
         iconSize: 20,
       ),
       if (defaultTargetPlatform == TargetPlatform.android)
@@ -363,16 +375,18 @@ class _GroupedDictionaryEntryCardState
                 )
               : Icon(_isInAnki ? Icons.check : Icons.electric_bolt_outlined),
           tooltip: _isInAnki
-              ? 'Already in default Anki deck. Long press to add anyway'
+              ? context.l10n.dictionaryAlreadyInAnkiTooltip
               : _isCheckingAnki && ankidroidConfig.isConfigured
-              ? 'Checking default Anki deck'
-              : 'Send to AnkiDroid',
+              ? context.l10n.dictionaryCheckingAnkiTooltip
+              : context.l10n.dictionarySendToAnkiTooltip,
           iconSize: 20,
         ),
       IconButton.filledTonal(
         onPressed: _isSaved ? _showVocabAlreadySavedToast : _toggleSave,
         icon: Icon(_isSaved ? Icons.check : Icons.bookmark_add_outlined),
-        tooltip: _isSaved ? 'Already in vocab list' : 'Save to Vocabulary',
+        tooltip: _isSaved
+            ? context.l10n.dictionaryAlreadyInVocabTooltip
+            : context.l10n.dictionarySaveToVocabularyTooltip,
       ),
     ];
   }

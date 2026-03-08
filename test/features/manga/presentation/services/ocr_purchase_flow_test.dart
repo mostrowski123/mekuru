@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart';
 
+import '../../../../test_app.dart';
+
 void main() {
   testWidgets('locked users are routed to Pro before OCR can continue', (
     tester,
@@ -20,7 +22,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedTestApp(
         home: _FlowHarness(
           onRun: (context) async {
             result = await flow.ensureProAndCustomOcrReady(
@@ -56,7 +58,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedTestApp(
         home: _FlowHarness(
           onRun: (context) async {
             result = await flow.ensureProAndCustomOcrReady(
@@ -98,7 +100,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedTestApp(
         home: _FlowHarness(
           onRun: (context) async {
             result = await flow.ensureProAndCustomOcrReady(
@@ -139,7 +141,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      buildLocalizedTestApp(
         home: _FlowHarness(
           onRun: (context) async {
             result = await flow.ensureProAndCustomOcrReady(

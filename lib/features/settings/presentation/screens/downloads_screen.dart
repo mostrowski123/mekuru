@@ -9,6 +9,7 @@ import 'package:mekuru/features/settings/presentation/providers/jmdict_providers
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -34,6 +35,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final kanjiVgState = ref.watch(kanjiVgProvider);
     final jpdbFreqState = ref.watch(jpdbFreqProvider);
     final jmdictState = ref.watch(jmdictProvider);
@@ -47,7 +49,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
         kanjidicState.successMessage != null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Downloads')),
+      appBar: AppBar(title: Text(l10n.downloadsTitle)),
       body: ListView(
         children: [
           // ── Dictionaries ──
@@ -63,24 +65,24 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Recommended starter pack',
+                    l10n.downloadsRecommendedStarterPackTitle,
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Install JMdict English and word frequency data together for the fastest setup.',
+                    l10n.downloadsRecommendedStarterPackSubtitle,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 12),
                   _StarterPackStatusRow(
-                    label: 'JMdict English',
+                    label: l10n.downloadsStarterPackJmdict,
                     isReady: jmdictState.isImported,
                   ),
                   const SizedBox(height: 8),
                   _StarterPackStatusRow(
-                    label: 'Word Frequency',
+                    label: l10n.downloadsStarterPackWordFrequency,
                     isReady: jpdbFreqState.isImported,
                   ),
                   const SizedBox(height: 16),
@@ -111,8 +113,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                         ),
                         label: Text(
                           starterPackReady
-                              ? 'Open Dictionary'
-                              : 'Install Starter Pack',
+                              ? l10n.commonOpenDictionary
+                              : l10n.downloadsInstallStarterPack,
                         ),
                       ),
                       if (hasDictionarySuccess && !starterPackReady)
@@ -125,7 +127,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                               ),
                             );
                           },
-                          child: const Text('Open Dictionary'),
+                          child: Text(l10n.commonOpenDictionary),
                         ),
                     ],
                   ),
@@ -133,7 +135,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               ),
             ),
           ),
-          _SectionHeader(title: 'Dictionaries'),
+          _SectionHeader(title: l10n.downloadsSectionDictionaries),
 
           // JMdict English
           _JmdictTile(state: jmdictState, theme: theme),
@@ -141,10 +143,13 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             _DownloadProgress(
               progress: jmdictState.progress,
               label: jmdictState.progress < 0.05
-                  ? 'Fetching latest release...'
+                  ? l10n.downloadsFetchingLatestRelease
                   : jmdictState.progress < 0.7
-                  ? 'Downloading... ${((jmdictState.progress - 0.05) / 0.65 * 100).toInt()}%'
-                  : 'Importing...',
+                  ? l10n.downloadsDownloadingPercent(
+                      percent: ((jmdictState.progress - 0.05) / 0.65 * 100)
+                          .toInt(),
+                    )
+                  : l10n.downloadsImporting,
               theme: theme,
             ),
           if (jmdictState.error != null)
@@ -197,7 +202,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           const Divider(),
 
           // ── Assets ──
-          _SectionHeader(title: 'Assets'),
+          _SectionHeader(title: l10n.downloadsSectionAssets),
 
           // KanjiVG
           _KanjiVgTile(state: kanjiVgState, theme: theme),
@@ -205,8 +210,10 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             _DownloadProgress(
               progress: kanjiVgState.progress,
               label: kanjiVgState.progress < 0.9
-                  ? 'Downloading... ${(kanjiVgState.progress * 100).toInt()}%'
-                  : 'Extracting files...',
+                  ? l10n.downloadsDownloadingPercent(
+                      percent: (kanjiVgState.progress * 100).toInt(),
+                    )
+                  : l10n.downloadsExtractingFiles,
               theme: theme,
             ),
           if (kanjiVgState.error != null)
@@ -231,8 +238,10 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             _DownloadProgress(
               progress: jpdbFreqState.progress,
               label: jpdbFreqState.progress < 0.7
-                  ? 'Downloading... ${(jpdbFreqState.progress / 0.7 * 100).toInt()}%'
-                  : 'Importing...',
+                  ? l10n.downloadsDownloadingPercent(
+                      percent: (jpdbFreqState.progress / 0.7 * 100).toInt(),
+                    )
+                  : l10n.downloadsImporting,
               theme: theme,
             ),
           if (jpdbFreqState.error != null)
@@ -242,8 +251,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
-              'Word frequency data from JPDB (jpdb.io), '
-              'distributed by Kuuuube.',
+              l10n.downloadsJpdbAttribution,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -443,13 +451,14 @@ class _KanjiVgTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final subtitle = state.isDownloaded
-        ? '${state.fileCount} stroke order files downloaded'
-        : 'Download kanji stroke order data from KanjiVG';
+        ? l10n.downloadsKanjiStrokeOrderDownloaded(count: state.fileCount)
+        : l10n.downloadsKanjiStrokeOrderDescription;
 
     return ListTile(
       leading: Icon(Icons.brush_outlined, color: theme.colorScheme.primary),
-      title: const Text('Kanji Stroke Order'),
+      title: Text(l10n.downloadsKanjiStrokeOrderTitle),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
     );
@@ -470,7 +479,7 @@ class _KanjiVgTile extends ConsumerWidget {
           Icons.delete_outline,
           color: Theme.of(context).colorScheme.error,
         ),
-        tooltip: 'Delete kanji data',
+        tooltip: context.l10n.downloadsDeleteKanjiDataTooltip,
         onPressed: () => _confirmDelete(context, ref),
       );
     }
@@ -480,7 +489,7 @@ class _KanjiVgTile extends ConsumerWidget {
         AppHaptics.light();
         ref.read(kanjiVgProvider.notifier).download();
       },
-      child: const Text('Download'),
+      child: Text(context.l10n.commonDownload),
     );
   }
 
@@ -488,22 +497,22 @@ class _KanjiVgTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Kanji Data'),
-        content: const Text(
-          'Delete all downloaded kanji stroke order files? '
-          'You can re-download them later.',
-        ),
+        title: Text(ctx.l10n.downloadsDeleteKanjiDataTitle),
+        content: Text(ctx.l10n.downloadsDeleteKanjiDataBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               ref.read(kanjiVgProvider.notifier).delete();
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(
+              ctx.l10n.commonDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -519,13 +528,14 @@ class _JpdbFreqTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final subtitle = state.isImported
-        ? 'Frequency data downloaded'
-        : 'Download word frequency data for search ranking';
+        ? l10n.downloadsWordFrequencyDownloaded
+        : l10n.downloadsWordFrequencyDescription;
 
     return ListTile(
       leading: Icon(Icons.bar_chart_outlined, color: theme.colorScheme.primary),
-      title: const Text('Word Frequency'),
+      title: Text(l10n.downloadsStarterPackWordFrequency),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
     );
@@ -546,7 +556,7 @@ class _JpdbFreqTile extends ConsumerWidget {
           Icons.delete_outline,
           color: Theme.of(context).colorScheme.error,
         ),
-        tooltip: 'Delete frequency data',
+        tooltip: context.l10n.downloadsDeleteFrequencyDataTooltip,
         onPressed: () => _confirmDelete(context, ref),
       );
     }
@@ -556,7 +566,7 @@ class _JpdbFreqTile extends ConsumerWidget {
         AppHaptics.light();
         ref.read(jpdbFreqProvider.notifier).download();
       },
-      child: const Text('Download'),
+      child: Text(context.l10n.commonDownload),
     );
   }
 
@@ -564,23 +574,22 @@ class _JpdbFreqTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Frequency Data'),
-        content: const Text(
-          'Delete word frequency data? '
-          'Search results will no longer be ranked by frequency. '
-          'You can re-download it later.',
-        ),
+        title: Text(ctx.l10n.downloadsDeleteFrequencyDataTitle),
+        content: Text(ctx.l10n.downloadsDeleteFrequencyDataBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               ref.read(jpdbFreqProvider.notifier).delete();
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(
+              ctx.l10n.commonDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -596,13 +605,14 @@ class _JmdictTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final subtitle = state.isImported
-        ? 'Japanese-English dictionary downloaded'
-        : 'Download Japanese-English dictionary';
+        ? l10n.downloadsJmdictDownloaded
+        : l10n.downloadsJmdictDescription;
 
     return ListTile(
       leading: Icon(Icons.translate, color: theme.colorScheme.primary),
-      title: const Text('JMdict English'),
+      title: Text(l10n.downloadsStarterPackJmdict),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
     );
@@ -623,7 +633,7 @@ class _JmdictTile extends ConsumerWidget {
           Icons.delete_outline,
           color: Theme.of(context).colorScheme.error,
         ),
-        tooltip: 'Delete JMdict',
+        tooltip: context.l10n.downloadsDeleteJmdictTooltip,
         onPressed: () => _confirmDelete(context, ref),
       );
     }
@@ -633,7 +643,7 @@ class _JmdictTile extends ConsumerWidget {
         AppHaptics.light();
         _showVariantPicker(context, ref);
       },
-      child: const Text('Download'),
+      child: Text(context.l10n.commonDownload),
     );
   }
 
@@ -647,15 +657,15 @@ class _JmdictTile extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Choose JMdict variant',
+                ctx.l10n.downloadsChooseJmdictVariant,
                 style: Theme.of(ctx).textTheme.titleMedium,
               ),
             ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.download),
-              title: const Text('JMdict English'),
-              subtitle: const Text('Standard dictionary (~15 MB)'),
+              title: Text(ctx.l10n.downloadsStarterPackJmdict),
+              subtitle: Text(ctx.l10n.downloadsJmdictStandardSubtitle),
               onTap: () {
                 Navigator.of(ctx).pop();
                 AppHaptics.light();
@@ -666,8 +676,8 @@ class _JmdictTile extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.download),
-              title: const Text('JMdict English with Examples'),
-              subtitle: const Text('Includes example sentences (~18 MB)'),
+              title: Text(ctx.l10n.downloadsJmdictExamplesTitle),
+              subtitle: Text(ctx.l10n.downloadsJmdictExamplesSubtitle),
               onTap: () {
                 Navigator.of(ctx).pop();
                 AppHaptics.light();
@@ -686,22 +696,22 @@ class _JmdictTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete JMdict'),
-        content: const Text(
-          'Delete JMdict and all its entries? '
-          'You can re-download it later.',
-        ),
+        title: Text(ctx.l10n.downloadsDeleteJmdictTitle),
+        content: Text(ctx.l10n.downloadsDeleteJmdictBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               ref.read(jmdictProvider.notifier).delete();
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(
+              ctx.l10n.commonDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -717,9 +727,10 @@ class _KanjidicTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final subtitle = state.isImported
-        ? 'Kanji dictionary downloaded'
-        : 'Download kanji dictionary';
+        ? l10n.downloadsKanjidicDownloaded
+        : l10n.downloadsKanjidicDescription;
 
     return ListTile(
       leading: Icon(
@@ -747,7 +758,7 @@ class _KanjidicTile extends ConsumerWidget {
           Icons.delete_outline,
           color: Theme.of(context).colorScheme.error,
         ),
-        tooltip: 'Delete KANJIDIC',
+        tooltip: context.l10n.downloadsDeleteKanjidicTooltip,
         onPressed: () => _confirmDelete(context, ref),
       );
     }
@@ -757,7 +768,7 @@ class _KanjidicTile extends ConsumerWidget {
         AppHaptics.light();
         ref.read(kanjidicProvider.notifier).download();
       },
-      child: const Text('Download'),
+      child: Text(context.l10n.commonDownload),
     );
   }
 
@@ -765,22 +776,22 @@ class _KanjidicTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete KANJIDIC'),
-        content: const Text(
-          'Delete KANJIDIC and all its entries? '
-          'You can re-download it later.',
-        ),
+        title: Text(ctx.l10n.downloadsDeleteKanjidicTitle),
+        content: Text(ctx.l10n.downloadsDeleteKanjidicBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               ref.read(kanjidicProvider.notifier).delete();
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(
+              ctx.l10n.commonDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),

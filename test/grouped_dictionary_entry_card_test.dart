@@ -11,6 +11,8 @@ import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 
+import 'test_app.dart';
+
 DictionaryEntry _buildEntry({
   required int id,
   required String expression,
@@ -39,7 +41,7 @@ Widget _buildTestApp({
 }) {
   return ProviderScope(
     overrides: [databaseProvider.overrideWithValue(db)],
-    child: MaterialApp(
+    child: buildLocalizedTestApp(
       home: Scaffold(
         body: Center(
           child: SizedBox(width: width, child: child),

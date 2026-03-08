@@ -4,6 +4,7 @@ import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.da
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 import '../../data/services/ocr_billing_client.dart';
 
@@ -121,23 +122,20 @@ class OcrPurchaseFlow {
     return showDialog<_ServerSetupDialogAction>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Custom OCR Server Required'),
-        content: const Text(
-          'Remote manga OCR now uses your own server. Open Settings and add '
-          'a custom OCR server URL plus the matching shared key.',
-        ),
+        title: Text(dialogContext.l10n.ocrCustomServerRequiredTitle),
+        content: Text(dialogContext.l10n.ocrCustomServerRequiredBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(
               dialogContext,
             ).pop(_ServerSetupDialogAction.cancel),
-            child: const Text('Cancel'),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(
               dialogContext,
             ).pop(_ServerSetupDialogAction.openSettings),
-            child: const Text('Open Settings'),
+            child: Text(dialogContext.l10n.commonOpenSettings),
           ),
         ],
       ),
@@ -150,24 +148,20 @@ class OcrPurchaseFlow {
     return showDialog<_CustomServerDialogAction>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Custom Server Setup Required'),
-        content: const Text(
-          'Custom OCR servers require a shared key. Open Custom OCR Server '
-          'settings and enter the same AUTH_API_KEY value configured on your '
-          'server.',
-        ),
+        title: Text(dialogContext.l10n.ocrCustomServerKeyRequiredTitle),
+        content: Text(dialogContext.l10n.ocrCustomServerKeyRequiredBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(
               dialogContext,
             ).pop(_CustomServerDialogAction.cancel),
-            child: const Text('Cancel'),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(
               dialogContext,
             ).pop(_CustomServerDialogAction.openSettings),
-            child: const Text('Open Settings'),
+            child: Text(dialogContext.l10n.commonOpenSettings),
           ),
         ],
       ),

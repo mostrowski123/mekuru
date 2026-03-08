@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 class KanjiReadingsBlock extends StatelessWidget {
   const KanjiReadingsBlock({
@@ -31,6 +32,7 @@ class KanjiReadingsBlock extends StatelessWidget {
         theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurface,
         );
+    final l10n = context.l10n;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,7 +41,10 @@ class KanjiReadingsBlock extends StatelessWidget {
           Text.rich(
             TextSpan(
               children: [
-                TextSpan(text: 'Onyomi: ', style: resolvedLabelStyle),
+                TextSpan(
+                  text: l10n.dictionaryOnyomiLabel,
+                  style: resolvedLabelStyle,
+                ),
                 TextSpan(
                   text: data.onyomi.join(', '),
                   style: resolvedReadingStyle,
@@ -53,7 +58,10 @@ class KanjiReadingsBlock extends StatelessWidget {
           Text.rich(
             TextSpan(
               children: [
-                TextSpan(text: 'Kunyomi: ', style: resolvedLabelStyle),
+                TextSpan(
+                  text: l10n.dictionaryKunyomiLabel,
+                  style: resolvedLabelStyle,
+                ),
                 TextSpan(
                   text: data.kunyomi.join(', '),
                   style: resolvedReadingStyle,

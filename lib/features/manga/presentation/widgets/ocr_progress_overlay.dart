@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 import '../../data/services/ocr_background_worker.dart';
 import '../providers/ocr_progress_provider.dart';
@@ -62,6 +63,7 @@ class _RunningOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final fraction = progress.total > 0
         ? progress.completed / progress.total
         : 0.0;
@@ -72,13 +74,15 @@ class _RunningOverlay extends StatelessWidget {
       final remaining = progress.total - progress.completed;
       final etaSeconds = (remaining * progress.avgSecondsPerPage!).round();
       if (etaSeconds < 60) {
-        etaText = '~${etaSeconds}s remaining';
+        etaText = l10n.ocrEtaSecondsRemaining(seconds: etaSeconds);
       } else if (etaSeconds < 3600) {
-        etaText = '~${(etaSeconds / 60).ceil()} min remaining';
+        etaText = l10n.ocrEtaMinutesRemaining(
+          minutes: (etaSeconds / 60).ceil(),
+        );
       } else {
         final hours = etaSeconds ~/ 3600;
         final mins = (etaSeconds % 3600) ~/ 60;
-        etaText = '~${hours}h ${mins}m remaining';
+        etaText = l10n.ocrEtaHoursMinutesRemaining(hours: hours, minutes: mins);
       }
     }
 
@@ -98,7 +102,10 @@ class _RunningOverlay extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '${progress.completed}/${progress.total} pages',
+              l10n.ocrPagesProgress(
+                completed: progress.completed,
+                total: progress.total,
+              ),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -156,7 +163,7 @@ class _PausedOverlay extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '$completed/$total pages',
+              context.l10n.ocrPagesProgress(completed: completed, total: total),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -165,7 +172,7 @@ class _PausedOverlay extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'OCR Paused',
+              context.l10n.ocrPaused,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.8),
                 fontSize: 10,
@@ -184,14 +191,14 @@ class _CompletedOverlay extends StatelessWidget {
     return Positioned.fill(
       child: Container(
         color: Colors.green.withValues(alpha: 0.7),
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 32),
-            SizedBox(height: 4),
+            const Icon(Icons.check_circle, color: Colors.white, size: 32),
+            const SizedBox(height: 4),
             Text(
-              'OCR Complete',
-              style: TextStyle(
+              context.l10n.ocrComplete,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -224,9 +231,9 @@ class _FailedOverlay extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, color: Colors.white, size: 28),
               const SizedBox(height: 4),
-              const Text(
-                'OCR Failed',
-                style: TextStyle(
+              Text(
+                context.l10n.ocrFailed,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -235,7 +242,7 @@ class _FailedOverlay extends StatelessWidget {
               if (errorMessage != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  'Tap for details',
+                  context.l10n.ocrTapForDetails,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 10,
@@ -253,12 +260,12 @@ class _FailedOverlay extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('OCR Failed'),
+        title: Text(context.l10n.ocrFailed),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(context.l10n.commonOk),
           ),
         ],
       ),

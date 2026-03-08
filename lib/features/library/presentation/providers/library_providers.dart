@@ -7,6 +7,7 @@ import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -21,11 +22,12 @@ LibrarySortOrder _sortOrderFromString(String? value) => switch (value) {
   _ => LibrarySortOrder.dateAdded,
 };
 
-String librarySortLabel(LibrarySortOrder order) => switch (order) {
-  LibrarySortOrder.dateAdded => 'Date imported',
-  LibrarySortOrder.lastRead => 'Recently read',
-  LibrarySortOrder.alphabetical => 'Alphabetical',
-};
+String librarySortLabel(AppLocalizations l10n, LibrarySortOrder order) =>
+    switch (order) {
+      LibrarySortOrder.dateAdded => l10n.librarySortDateImported,
+      LibrarySortOrder.lastRead => l10n.librarySortRecentlyRead,
+      LibrarySortOrder.alphabetical => l10n.librarySortAlphabetical,
+    };
 
 /// Manages the library sort order, persisted via app settings.
 class LibrarySortNotifier extends Notifier<LibrarySortOrder> {

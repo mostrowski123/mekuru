@@ -4,13 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 
+import '../../../../test_app.dart';
+
 void main() {
   testWidgets('locked state shows Pro upgrade CTA and feature list', (
     tester,
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(
+        child: buildLocalizedTestApp(
           home: ProUpgradeScreen(
             loadSnapshot: () async => const ProUpgradeSnapshot(
               isUnlocked: false,
@@ -61,7 +63,7 @@ void main() {
   testWidgets('unlocked state shows already unlocked', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(
+        child: buildLocalizedTestApp(
           home: ProUpgradeScreen(
             loadSnapshot: () async => const ProUpgradeSnapshot(
               isUnlocked: true,
@@ -85,7 +87,7 @@ void main() {
   testWidgets('auth throttling shows retry guidance', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        child: MaterialApp(
+        child: buildLocalizedTestApp(
           home: ProUpgradeScreen(
             loadSnapshot: () async => const ProUpgradeSnapshot(
               isUnlocked: false,

@@ -1,0 +1,1493 @@
+{
+  "@@locale": "en",
+  "appTitle": "Mekuru",
+  "@appTitle": {
+    "description": "Application title."
+  },
+  "navLibrary": "Library",
+  "@navLibrary": {
+    "description": "Bottom navigation label for the library tab."
+  },
+  "navDictionary": "Dictionary",
+  "@navDictionary": {
+    "description": "Bottom navigation label for the dictionary tab."
+  },
+  "navVocabulary": "Vocabulary",
+  "@navVocabulary": {
+    "description": "Bottom navigation label for the vocabulary tab."
+  },
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "Bottom navigation label for the settings tab."
+  },
+  "commonHelp": "Help",
+  "@commonHelp": {
+    "description": "Tooltip or button label for help."
+  },
+  "commonImport": "Import",
+  "@commonImport": {
+    "description": "Generic import label."
+  },
+  "commonOpenNow": "Open now",
+  "@commonOpenNow": {
+    "description": "Action label to open imported content immediately."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic cancel action."
+  },
+  "commonClose": "Close",
+  "@commonClose": {
+    "description": "Generic close action."
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Generic save action."
+  },
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "Generic delete action."
+  },
+  "commonDownload": "Download",
+  "@commonDownload": {
+    "description": "Generic download action."
+  },
+  "commonOpenDictionary": "Open Dictionary",
+  "@commonOpenDictionary": {
+    "description": "Button label to open the dictionary screen."
+  },
+  "commonManageDictionaries": "Manage Dictionaries",
+  "@commonManageDictionaries": {
+    "description": "Action label to manage installed dictionaries."
+  },
+  "commonClearAll": "Clear all",
+  "@commonClearAll": {
+    "description": "Action label to clear a list."
+  },
+  "commonClearSearch": "Clear search",
+  "@commonClearSearch": {
+    "description": "Action label to clear the search query."
+  },
+  "commonSearch": "Search",
+  "@commonSearch": {
+    "description": "Generic search label."
+  },
+  "commonBack": "Back",
+  "@commonBack": {
+    "description": "Generic back action."
+  },
+  "commonRetry": "Retry",
+  "@commonRetry": {
+    "description": "Generic retry action."
+  },
+  "commonOk": "OK",
+  "@commonOk": {
+    "description": "Generic confirmation action."
+  },
+  "commonUndo": "Undo",
+  "@commonUndo": {
+    "description": "Generic undo action."
+  },
+  "commonUnlock": "Unlock",
+  "@commonUnlock": {
+    "description": "Generic unlock action."
+  },
+  "commonOpenSettings": "Open Settings",
+  "@commonOpenSettings": {
+    "description": "Action label to open the settings screen."
+  },
+  "commonGotIt": "Got it",
+  "@commonGotIt": {
+    "description": "Acknowledgement action label."
+  },
+  "commonErrorWithDetails": "Error: {details}",
+  "@commonErrorWithDetails": {
+    "description": "Generic error message with details.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "librarySortTooltip": "Sort: {label}",
+  "@librarySortTooltip": {
+    "description": "Tooltip for the library sort button.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "libraryEmptyTitle": "Your library is ready for its first book",
+  "@libraryEmptyTitle": {
+    "description": "Title shown when the library has no books."
+  },
+  "libraryEmptySubtitle": "Import something to read, install a dictionary, and you will be ready to save words in a few minutes.",
+  "@libraryEmptySubtitle": {
+    "description": "Description shown when the library has no books."
+  },
+  "libraryImportEpub": "Import EPUB",
+  "@libraryImportEpub": {
+    "description": "Button label to import an EPUB file."
+  },
+  "libraryImportManga": "Import Manga",
+  "@libraryImportManga": {
+    "description": "Button label to import manga content."
+  },
+  "libraryGetDictionaries": "Get Dictionaries",
+  "@libraryGetDictionaries": {
+    "description": "Button label to open downloadable dictionaries."
+  },
+  "libraryRestoreBackup": "Restore Backup",
+  "@libraryRestoreBackup": {
+    "description": "Button label to restore a backup."
+  },
+  "librarySupportedMediaTitle": "Supported Media",
+  "@librarySupportedMediaTitle": {
+    "description": "Title for the supported media help dialog."
+  },
+  "libraryEpubBooksTitle": "EPUB Books",
+  "@libraryEpubBooksTitle": {
+    "description": "Heading for EPUB help information."
+  },
+  "libraryEpubBooksDescription": "Standard .epub files are supported. Tap the + button and select \"Import EPUB\" to add one from your device.",
+  "@libraryEpubBooksDescription": {
+    "description": "Description of supported EPUB imports."
+  },
+  "libraryMokuroTitle": "Mokuro Manga",
+  "@libraryMokuroTitle": {
+    "description": "Heading for Mokuro import help."
+  },
+  "libraryMokuroDescription": "Import manga by selecting a folder, then choosing a .mokuro or .html file. The page images are loaded from a sibling folder with the same name.",
+  "@libraryMokuroDescription": {
+    "description": "Description of Mokuro manga imports."
+  },
+  "libraryMokuroFormatDescription": "The .mokuro file is generated by the mokuro tool, which runs OCR on manga pages to extract Japanese text.",
+  "@libraryMokuroFormatDescription": {
+    "description": "Description of the Mokuro format."
+  },
+  "libraryLearnHowToCreateMokuroFiles": "Learn how to create .mokuro files",
+  "@libraryLearnHowToCreateMokuroFiles": {
+    "description": "Button label to learn about Mokuro file creation."
+  },
+  "librarySortBy": "Sort by",
+  "@librarySortBy": {
+    "description": "Title for the library sort picker."
+  },
+  "librarySortDateImported": "Date imported",
+  "@librarySortDateImported": {
+    "description": "Sort label for imported date."
+  },
+  "librarySortRecentlyRead": "Recently read",
+  "@librarySortRecentlyRead": {
+    "description": "Sort label for recently read books."
+  },
+  "librarySortAlphabetical": "Alphabetical",
+  "@librarySortAlphabetical": {
+    "description": "Sort label for alphabetical ordering."
+  },
+  "libraryImportTitle": "Import",
+  "@libraryImportTitle": {
+    "description": "Title for the import picker."
+  },
+  "libraryImportEpubSubtitle": "Import an EPUB file",
+  "@libraryImportEpubSubtitle": {
+    "description": "Subtitle describing EPUB import."
+  },
+  "libraryImportMangaSubtitle": "Choose a CBZ archive or Mokuro folder",
+  "@libraryImportMangaSubtitle": {
+    "description": "Subtitle describing manga import."
+  },
+  "libraryImportMangaTitle": "Import Manga",
+  "@libraryImportMangaTitle": {
+    "description": "Title for the manga import type picker."
+  },
+  "libraryImportMangaDescription": "Choose whether you want to import a CBZ archive or a Mokuro-exported folder.",
+  "@libraryImportMangaDescription": {
+    "description": "Description for the manga import type picker."
+  },
+  "libraryImportMokuroFolder": "Mokuro folder",
+  "@libraryImportMokuroFolder": {
+    "description": "Title for the Mokuro folder import option."
+  },
+  "libraryImportMokuroFolderSubtitle": "Select the folder that contains a .mokuro or .html file alongside the images folder.",
+  "@libraryImportMokuroFolderSubtitle": {
+    "description": "Subtitle for the Mokuro folder import option."
+  },
+  "libraryWhatIsMokuro": "What is Mokuro?",
+  "@libraryWhatIsMokuro": {
+    "description": "Button label to learn what Mokuro is."
+  },
+  "libraryImportCbzArchive": "CBZ archive",
+  "@libraryImportCbzArchive": {
+    "description": "Title for the CBZ import option."
+  },
+  "libraryImportCbzArchiveSubtitle": "Import a .cbz comic book archive",
+  "@libraryImportCbzArchiveSubtitle": {
+    "description": "Subtitle for the CBZ import option."
+  },
+  "libraryImportedWithoutOcrMessage": "Imported without OCR. To get text overlays, import external OCR output (e.g. .mokuro).",
+  "@libraryImportedWithoutOcrMessage": {
+    "description": "Snackbar shown after importing manga without OCR data."
+  },
+  "libraryCouldNotOpenMokuroProjectPage": "Could not open the Mokuro project page.",
+  "@libraryCouldNotOpenMokuroProjectPage": {
+    "description": "Snackbar shown when the Mokuro project link cannot be opened."
+  },
+  "libraryNoMangaManifestFound": "No .mokuro or .html files found in the selected folder.",
+  "@libraryNoMangaManifestFound": {
+    "description": "Error shown when no supported manga manifest file is found."
+  },
+  "librarySelectMangaFolder": "Select manga folder",
+  "@librarySelectMangaFolder": {
+    "description": "Native dialog title for picking a manga folder."
+  },
+  "librarySelectedFolder": "Selected folder",
+  "@librarySelectedFolder": {
+    "description": "Fallback label for a selected folder."
+  },
+  "libraryMangaFilesFound": "{count, plural, one {# manga file found} other {# manga files found}}",
+  "@libraryMangaFilesFound": {
+    "description": "Subtitle showing how many manga manifest files were found.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionarySearchHint": "Search in kanji, kana, or romaji...",
+  "@dictionarySearchHint": {
+    "description": "Placeholder text for the dictionary search field."
+  },
+  "dictionaryNoDictionariesTitle": "No dictionaries imported",
+  "@dictionaryNoDictionariesTitle": {
+    "description": "Title shown when no dictionaries have been imported."
+  },
+  "dictionaryNoDictionariesSubtitle": "Install the starter pack or import your own Yomitan dictionaries to start searching.",
+  "@dictionaryNoDictionariesSubtitle": {
+    "description": "Description shown when no dictionaries have been imported."
+  },
+  "dictionaryRecommendedStarterPack": "Recommended starter pack",
+  "@dictionaryRecommendedStarterPack": {
+    "description": "Button label for the recommended dictionary starter pack."
+  },
+  "dictionaryNoEnabledTitle": "Your dictionaries are turned off",
+  "@dictionaryNoEnabledTitle": {
+    "description": "Title shown when all dictionaries are disabled."
+  },
+  "dictionaryNoEnabledSubtitle": "Enable at least one dictionary to make lookups work, or install the recommended starter pack.",
+  "@dictionaryNoEnabledSubtitle": {
+    "description": "Description shown when all dictionaries are disabled."
+  },
+  "dictionaryEnableDictionaries": "Enable dictionaries",
+  "@dictionaryEnableDictionaries": {
+    "description": "Button label to enable dictionaries."
+  },
+  "dictionaryStarterPack": "Starter pack",
+  "@dictionaryStarterPack": {
+    "description": "Button label for the starter pack."
+  },
+  "dictionaryNoResultsFound": "No results found.",
+  "@dictionaryNoResultsFound": {
+    "description": "Message shown when a dictionary search returns no matches."
+  },
+  "dictionarySearchForAWord": "Search for a word",
+  "@dictionarySearchForAWord": {
+    "description": "Title shown in the empty dictionary search state."
+  },
+  "dictionarySearchForAWordSubtitle": "Type in kanji, hiragana, katakana, or romaji",
+  "@dictionarySearchForAWordSubtitle": {
+    "description": "Description shown in the empty dictionary search state."
+  },
+  "dictionaryRecent": "Recent",
+  "@dictionaryRecent": {
+    "description": "Heading for recent dictionary searches."
+  },
+  "dictionarySavedWord": "Saved \"{expression}\"",
+  "@dictionarySavedWord": {
+    "description": "Snackbar shown after saving a word to vocabulary.",
+    "placeholders": {
+      "expression": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryWordAlreadyExistsInVocab": "Word already exists in vocab list",
+  "@dictionaryWordAlreadyExistsInVocab": {
+    "description": "Snackbar shown when a word is already saved in vocabulary."
+  },
+  "dictionaryCopiedWord": "Copied \"{expression}\"",
+  "@dictionaryCopiedWord": {
+    "description": "Snackbar shown after copying a word.",
+    "placeholders": {
+      "expression": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryWordAlreadyExistsInAnki": "Word already exists in default deck",
+  "@dictionaryWordAlreadyExistsInAnki": {
+    "description": "Snackbar shown when a word already exists in Anki."
+  },
+  "dictionaryAddedToAnki": "Added \"{expression}\" to Anki",
+  "@dictionaryAddedToAnki": {
+    "description": "Snackbar shown after adding a word to Anki.",
+    "placeholders": {
+      "expression": {
+        "type": "String"
+      }
+    }
+  },
+  "dictionaryCopyTooltip": "Copy",
+  "@dictionaryCopyTooltip": {
+    "description": "Tooltip for copying a dictionary expression."
+  },
+  "dictionaryAlreadyInAnkiTooltip": "Already in default Anki deck. Long press to add anyway",
+  "@dictionaryAlreadyInAnkiTooltip": {
+    "description": "Tooltip shown when the word already exists in Anki."
+  },
+  "dictionaryCheckingAnkiTooltip": "Checking default Anki deck",
+  "@dictionaryCheckingAnkiTooltip": {
+    "description": "Tooltip shown while checking for an existing Anki note."
+  },
+  "dictionarySendToAnkiTooltip": "Send to AnkiDroid",
+  "@dictionarySendToAnkiTooltip": {
+    "description": "Tooltip for sending a word to AnkiDroid."
+  },
+  "dictionaryAlreadyInVocabTooltip": "Already in vocab list",
+  "@dictionaryAlreadyInVocabTooltip": {
+    "description": "Tooltip shown when a word is already saved to vocabulary."
+  },
+  "dictionarySaveToVocabularyTooltip": "Save to Vocabulary",
+  "@dictionarySaveToVocabularyTooltip": {
+    "description": "Tooltip for saving a word to vocabulary."
+  },
+  "dictionaryVeryCommon": "Very Common",
+  "@dictionaryVeryCommon": {
+    "description": "Badge label for very common words."
+  },
+  "dictionaryOnyomiLabel": "Onyomi: ",
+  "@dictionaryOnyomiLabel": {
+    "description": "Label for onyomi readings."
+  },
+  "dictionaryKunyomiLabel": "Kunyomi: ",
+  "@dictionaryKunyomiLabel": {
+    "description": "Label for kunyomi readings."
+  },
+  "vocabularySearchSavedWordsHint": "Search saved words",
+  "@vocabularySearchSavedWordsHint": {
+    "description": "Placeholder text for searching saved vocabulary."
+  },
+  "vocabularyExportCsvTooltip": "Export CSV",
+  "@vocabularyExportCsvTooltip": {
+    "description": "Tooltip for exporting vocabulary as CSV."
+  },
+  "vocabularyEmptyTitle": "No saved words yet",
+  "@vocabularyEmptyTitle": {
+    "description": "Title shown when there are no saved vocabulary entries."
+  },
+  "vocabularyEmptySubtitle": "Save words from dictionary searches or while reading, and they will show up here with context.",
+  "@vocabularyEmptySubtitle": {
+    "description": "Description shown when there are no saved vocabulary entries."
+  },
+  "vocabularyNoMatches": "No matches for \"{query}\"",
+  "@vocabularyNoMatches": {
+    "description": "Title shown when no saved vocabulary matches the search query.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "vocabularyNoMatchesSubtitle": "Try the expression, reading, or part of a definition.",
+  "@vocabularyNoMatchesSubtitle": {
+    "description": "Description shown when no vocabulary items match the search query."
+  },
+  "vocabularySelectedCount": "{count} selected",
+  "@vocabularySelectedCount": {
+    "description": "App bar title showing how many vocabulary items are selected.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vocabularyDeselectAllTooltip": "Deselect all",
+  "@vocabularyDeselectAllTooltip": {
+    "description": "Tooltip for deselecting all vocabulary items."
+  },
+  "vocabularySelectAllTooltip": "Select all",
+  "@vocabularySelectAllTooltip": {
+    "description": "Tooltip for selecting all vocabulary items."
+  },
+  "vocabularyExportSelectedTooltip": "Export selected",
+  "@vocabularyExportSelectedTooltip": {
+    "description": "Tooltip for exporting selected vocabulary items."
+  },
+  "vocabularyNoDefinition": "No definition",
+  "@vocabularyNoDefinition": {
+    "description": "Fallback text when a saved word has no definition."
+  },
+  "vocabularyContextLabel": "Context:",
+  "@vocabularyContextLabel": {
+    "description": "Label for the saved sentence context."
+  },
+  "vocabularyAddedOn": "Added: {date}",
+  "@vocabularyAddedOn": {
+    "description": "Date label shown for a saved vocabulary entry.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "vocabularyDeletedWord": "Deleted \"{expression}\"",
+  "@vocabularyDeletedWord": {
+    "description": "Snackbar shown after deleting a vocabulary entry.",
+    "placeholders": {
+      "expression": {
+        "type": "String"
+      }
+    }
+  },
+  "ocrPagesProgress": "{completed}/{total} pages",
+  "@ocrPagesProgress": {
+    "description": "Progress label for OCR pages completed.",
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ocrEtaSecondsRemaining": "~{seconds}s remaining",
+  "@ocrEtaSecondsRemaining": {
+    "description": "ETA label for OCR progress under one minute.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "ocrEtaMinutesRemaining": "~{minutes} min remaining",
+  "@ocrEtaMinutesRemaining": {
+    "description": "ETA label for OCR progress in minutes.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ocrEtaHoursMinutesRemaining": "~{hours}h {minutes}m remaining",
+  "@ocrEtaHoursMinutesRemaining": {
+    "description": "ETA label for OCR progress in hours and minutes.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "ocrPaused": "OCR Paused",
+  "@ocrPaused": {
+    "description": "Title shown when OCR work is paused."
+  },
+  "ocrComplete": "OCR Complete",
+  "@ocrComplete": {
+    "description": "Title shown when OCR work is complete."
+  },
+  "ocrFailed": "OCR Failed",
+  "@ocrFailed": {
+    "description": "Title shown when OCR work fails."
+  },
+  "ocrTapForDetails": "Tap for details",
+  "@ocrTapForDetails": {
+    "description": "Prompt shown when OCR errors have details."
+  },
+  "ocrCustomServerRequiredTitle": "Custom OCR Server Required",
+  "@ocrCustomServerRequiredTitle": {
+    "description": "Dialog title shown when OCR requires a custom server."
+  },
+  "ocrCustomServerRequiredBody": "Remote manga OCR now uses your own server. Open Settings and add a custom OCR server URL plus the matching shared key.",
+  "@ocrCustomServerRequiredBody": {
+    "description": "Dialog body shown when OCR requires a custom server."
+  },
+  "ocrCustomServerKeyRequiredTitle": "Custom Server Setup Required",
+  "@ocrCustomServerKeyRequiredTitle": {
+    "description": "Dialog title shown when a custom OCR server key is missing."
+  },
+  "ocrCustomServerKeyRequiredBody": "Custom OCR servers require a shared key. Open Custom OCR Server settings and enter the same AUTH_API_KEY value configured on your server.",
+  "@ocrCustomServerKeyRequiredBody": {
+    "description": "Dialog body shown when a custom OCR server key is missing."
+  },
+  "proTitle": "Pro",
+  "@proTitle": {
+    "description": "Title for the Pro upgrade screen."
+  },
+  "proPurchaseConfirmed": "Your purchase has been confirmed!",
+  "@proPurchaseConfirmed": {
+    "description": "Snackbar shown after a purchase confirmation is received."
+  },
+  "proUnlockOnceTitle": "Unlock Pro once",
+  "@proUnlockOnceTitle": {
+    "description": "Heading for the Pro purchase card."
+  },
+  "proStatusUnlocked": "Unlocked",
+  "@proStatusUnlocked": {
+    "description": "Chip label when Pro is unlocked."
+  },
+  "proStatusLocked": "Locked",
+  "@proStatusLocked": {
+    "description": "Chip label when Pro is locked."
+  },
+  "proUnlockDescription": "One-time purchase for reader power features.",
+  "@proUnlockDescription": {
+    "description": "Description of the Pro purchase."
+  },
+  "proRestorePurchase": "Restore Purchase",
+  "@proRestorePurchase": {
+    "description": "Button label to restore a Pro purchase."
+  },
+  "proFeatureAutoCropTitle": "Auto-Crop",
+  "@proFeatureAutoCropTitle": {
+    "description": "Title of the auto-crop Pro feature."
+  },
+  "proFeatureAutoCropDescription": "Trim empty manga page margins after a one-time setup per book.",
+  "@proFeatureAutoCropDescription": {
+    "description": "Description of the auto-crop Pro feature."
+  },
+  "proFeatureHighlightsTitle": "Book Highlights",
+  "@proFeatureHighlightsTitle": {
+    "description": "Title of the book highlights Pro feature."
+  },
+  "proFeatureHighlightsDescription": "Save and review highlighted passages while reading EPUB books.",
+  "@proFeatureHighlightsDescription": {
+    "description": "Description of the book highlights Pro feature."
+  },
+  "proFeatureCustomOcrTitle": "Custom OCR Server",
+  "@proFeatureCustomOcrTitle": {
+    "description": "Title of the custom OCR server Pro feature."
+  },
+  "proFeatureCustomOcrDescription": "Run remote manga OCR with your own server and shared key.",
+  "@proFeatureCustomOcrDescription": {
+    "description": "Description of the custom OCR server Pro feature."
+  },
+  "proServerRepo": "Server Repo",
+  "@proServerRepo": {
+    "description": "Button label linking to the OCR server repository."
+  },
+  "proAlreadyUnlocked": "Already Unlocked",
+  "@proAlreadyUnlocked": {
+    "description": "Button label when Pro is already unlocked."
+  },
+  "proUnlock": "Unlock Pro",
+  "@proUnlock": {
+    "description": "Button label to unlock Pro."
+  },
+  "proUnlockWithPrice": "Unlock Pro {price}",
+  "@proUnlockWithPrice": {
+    "description": "Button label to unlock Pro with the price included.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsTitle": "Downloads",
+  "@downloadsTitle": {
+    "description": "Title for the downloads screen."
+  },
+  "downloadsRecommendedStarterPackTitle": "Recommended starter pack",
+  "@downloadsRecommendedStarterPackTitle": {
+    "description": "Heading for the recommended dictionary starter pack."
+  },
+  "downloadsRecommendedStarterPackSubtitle": "Install JMdict English and word frequency data together for the fastest setup.",
+  "@downloadsRecommendedStarterPackSubtitle": {
+    "description": "Description for the recommended starter pack."
+  },
+  "downloadsStarterPackJmdict": "JMdict English",
+  "@downloadsStarterPackJmdict": {
+    "description": "Starter pack row label for JMdict English."
+  },
+  "downloadsStarterPackWordFrequency": "Word Frequency",
+  "@downloadsStarterPackWordFrequency": {
+    "description": "Starter pack row label for word frequency data."
+  },
+  "downloadsInstallStarterPack": "Install Starter Pack",
+  "@downloadsInstallStarterPack": {
+    "description": "Button label to install the starter pack."
+  },
+  "downloadsSectionDictionaries": "Dictionaries",
+  "@downloadsSectionDictionaries": {
+    "description": "Section header for downloadable dictionaries."
+  },
+  "downloadsSectionAssets": "Assets",
+  "@downloadsSectionAssets": {
+    "description": "Section header for downloadable assets."
+  },
+  "downloadsFetchingLatestRelease": "Fetching latest release...",
+  "@downloadsFetchingLatestRelease": {
+    "description": "Progress message shown while fetching the latest downloadable release."
+  },
+  "downloadsDownloadingPercent": "Downloading... {percent}%",
+  "@downloadsDownloadingPercent": {
+    "description": "Progress message shown while downloading data.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsImporting": "Importing...",
+  "@downloadsImporting": {
+    "description": "Progress message shown while importing downloaded data."
+  },
+  "downloadsExtractingFiles": "Extracting files...",
+  "@downloadsExtractingFiles": {
+    "description": "Progress message shown while extracting downloaded files."
+  },
+  "downloadsJpdbAttribution": "Word frequency data from JPDB (jpdb.io), distributed by Kuuuube.",
+  "@downloadsJpdbAttribution": {
+    "description": "Attribution text for JPDB frequency data."
+  },
+  "downloadsKanjiStrokeOrderTitle": "Kanji Stroke Order",
+  "@downloadsKanjiStrokeOrderTitle": {
+    "description": "Title for the KanjiVG download tile."
+  },
+  "downloadsKanjiStrokeOrderDownloaded": "{count} stroke order files downloaded",
+  "@downloadsKanjiStrokeOrderDownloaded": {
+    "description": "Subtitle shown when KanjiVG data has been downloaded.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsKanjiStrokeOrderDescription": "Download kanji stroke order data from KanjiVG",
+  "@downloadsKanjiStrokeOrderDescription": {
+    "description": "Subtitle shown before KanjiVG data is downloaded."
+  },
+  "downloadsDeleteKanjiDataTooltip": "Delete kanji data",
+  "@downloadsDeleteKanjiDataTooltip": {
+    "description": "Tooltip for deleting KanjiVG data."
+  },
+  "downloadsDeleteKanjiDataTitle": "Delete Kanji Data",
+  "@downloadsDeleteKanjiDataTitle": {
+    "description": "Dialog title for deleting KanjiVG data."
+  },
+  "downloadsDeleteKanjiDataBody": "Delete all downloaded kanji stroke order files? You can re-download them later.",
+  "@downloadsDeleteKanjiDataBody": {
+    "description": "Dialog body for deleting KanjiVG data."
+  },
+  "downloadsWordFrequencyDownloaded": "Frequency data downloaded",
+  "@downloadsWordFrequencyDownloaded": {
+    "description": "Subtitle shown when word frequency data has been downloaded."
+  },
+  "downloadsWordFrequencyDescription": "Download word frequency data for search ranking",
+  "@downloadsWordFrequencyDescription": {
+    "description": "Subtitle shown before word frequency data is downloaded."
+  },
+  "downloadsDeleteFrequencyDataTooltip": "Delete frequency data",
+  "@downloadsDeleteFrequencyDataTooltip": {
+    "description": "Tooltip for deleting word frequency data."
+  },
+  "downloadsDeleteFrequencyDataTitle": "Delete Frequency Data",
+  "@downloadsDeleteFrequencyDataTitle": {
+    "description": "Dialog title for deleting word frequency data."
+  },
+  "downloadsDeleteFrequencyDataBody": "Delete word frequency data? Search results will no longer be ranked by frequency. You can re-download it later.",
+  "@downloadsDeleteFrequencyDataBody": {
+    "description": "Dialog body for deleting word frequency data."
+  },
+  "downloadsJmdictDownloaded": "Japanese-English dictionary downloaded",
+  "@downloadsJmdictDownloaded": {
+    "description": "Subtitle shown when JMdict has been downloaded."
+  },
+  "downloadsJmdictDescription": "Download Japanese-English dictionary",
+  "@downloadsJmdictDescription": {
+    "description": "Subtitle shown before JMdict has been downloaded."
+  },
+  "downloadsDeleteJmdictTooltip": "Delete JMdict",
+  "@downloadsDeleteJmdictTooltip": {
+    "description": "Tooltip for deleting JMdict data."
+  },
+  "downloadsChooseJmdictVariant": "Choose JMdict variant",
+  "@downloadsChooseJmdictVariant": {
+    "description": "Title for the JMdict variant picker."
+  },
+  "downloadsJmdictStandardSubtitle": "Standard dictionary (~15 MB)",
+  "@downloadsJmdictStandardSubtitle": {
+    "description": "Subtitle for the standard JMdict variant."
+  },
+  "downloadsJmdictExamplesTitle": "JMdict English with Examples",
+  "@downloadsJmdictExamplesTitle": {
+    "description": "Title for the JMdict variant with example sentences."
+  },
+  "downloadsJmdictExamplesSubtitle": "Includes example sentences (~18 MB)",
+  "@downloadsJmdictExamplesSubtitle": {
+    "description": "Subtitle for the JMdict variant with example sentences."
+  },
+  "downloadsDeleteJmdictTitle": "Delete JMdict",
+  "@downloadsDeleteJmdictTitle": {
+    "description": "Dialog title for deleting JMdict data."
+  },
+  "downloadsDeleteJmdictBody": "Delete JMdict and all its entries? You can re-download it later.",
+  "@downloadsDeleteJmdictBody": {
+    "description": "Dialog body for deleting JMdict data."
+  },
+  "downloadsKanjidicDownloaded": "Kanji dictionary downloaded",
+  "@downloadsKanjidicDownloaded": {
+    "description": "Subtitle shown when KANJIDIC has been downloaded."
+  },
+  "downloadsKanjidicDescription": "Download kanji dictionary",
+  "@downloadsKanjidicDescription": {
+    "description": "Subtitle shown before KANJIDIC has been downloaded."
+  },
+  "downloadsDeleteKanjidicTooltip": "Delete KANJIDIC",
+  "@downloadsDeleteKanjidicTooltip": {
+    "description": "Tooltip for deleting KANJIDIC data."
+  },
+  "downloadsDeleteKanjidicTitle": "Delete KANJIDIC",
+  "@downloadsDeleteKanjidicTitle": {
+    "description": "Dialog title for deleting KANJIDIC data."
+  },
+  "downloadsDeleteKanjidicBody": "Delete KANJIDIC and all its entries? You can re-download it later.",
+  "@downloadsDeleteKanjidicBody": {
+    "description": "Dialog body for deleting KANJIDIC data."
+  },
+  "commonClear": "Clear",
+  "@commonClear": {
+    "description": "Generic clear action."
+  },
+  "commonSubmit": "Submit",
+  "@commonSubmit": {
+    "description": "Generic submit action."
+  },
+  "commonLoading": "Loading...",
+  "@commonLoading": {
+    "description": "Generic loading label."
+  },
+  "commonError": "Error",
+  "@commonError": {
+    "description": "Generic error label."
+  },
+  "commonRestore": "Restore",
+  "@commonRestore": {
+    "description": "Generic restore action."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Title for the settings screen."
+  },
+  "settingsSectionGeneral": "General",
+  "@settingsSectionGeneral": {
+    "description": "Settings section header for general preferences."
+  },
+  "settingsSectionAppearance": "Appearance",
+  "@settingsSectionAppearance": {
+    "description": "Settings section header for appearance preferences."
+  },
+  "settingsSectionReadingDefaults": "Reading Defaults",
+  "@settingsSectionReadingDefaults": {
+    "description": "Settings section header for default reader settings."
+  },
+  "settingsSectionDictionary": "Dictionary",
+  "@settingsSectionDictionary": {
+    "description": "Settings section header for dictionary settings."
+  },
+  "settingsSectionVocabularyExport": "Vocabulary & Export",
+  "@settingsSectionVocabularyExport": {
+    "description": "Settings section header for vocabulary export settings."
+  },
+  "settingsSectionPro": "Pro",
+  "@settingsSectionPro": {
+    "description": "Settings section header for Pro settings."
+  },
+  "settingsSectionMangaAutoCrop": "Manga Auto-Crop",
+  "@settingsSectionMangaAutoCrop": {
+    "description": "Settings section header for manga auto-crop preferences."
+  },
+  "settingsSectionMangaOcr": "Manga OCR",
+  "@settingsSectionMangaOcr": {
+    "description": "Settings section header for manga OCR preferences."
+  },
+  "settingsSectionDownloads": "Downloads",
+  "@settingsSectionDownloads": {
+    "description": "Settings section header for downloads."
+  },
+  "settingsSectionBackupRestore": "Backup & Restore",
+  "@settingsSectionBackupRestore": {
+    "description": "Settings section header for backup settings."
+  },
+  "settingsSectionAboutFeedback": "About & Feedback",
+  "@settingsSectionAboutFeedback": {
+    "description": "Settings section header for about and feedback links."
+  },
+  "settingsStartupScreenTitle": "Startup Screen",
+  "@settingsStartupScreenTitle": {
+    "description": "Title for the startup screen setting."
+  },
+  "settingsStartupScreenLibrary": "Library",
+  "@settingsStartupScreenLibrary": {
+    "description": "Label for the library startup screen option."
+  },
+  "settingsStartupScreenDictionary": "Dictionary",
+  "@settingsStartupScreenDictionary": {
+    "description": "Label for the dictionary startup screen option."
+  },
+  "settingsStartupScreenLastRead": "Last Read Book",
+  "@settingsStartupScreenLastRead": {
+    "description": "Label for the last-read-book startup screen option."
+  },
+  "settingsThemeTitle": "Theme",
+  "@settingsThemeTitle": {
+    "description": "Title for the app theme setting."
+  },
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {
+    "description": "Label for the light theme option."
+  },
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {
+    "description": "Label for the dark theme option."
+  },
+  "settingsThemeSystemDefault": "System default",
+  "@settingsThemeSystemDefault": {
+    "description": "Label for the system theme option."
+  },
+  "settingsColorThemeTitle": "Color Theme",
+  "@settingsColorThemeTitle": {
+    "description": "Title for the color theme setting."
+  },
+  "settingsColorThemeMekuruRed": "Mekuru Red",
+  "@settingsColorThemeMekuruRed": {
+    "description": "Color theme label for Mekuru Red."
+  },
+  "settingsColorThemeIndigo": "Indigo",
+  "@settingsColorThemeIndigo": {
+    "description": "Color theme label for Indigo."
+  },
+  "settingsColorThemeTeal": "Teal",
+  "@settingsColorThemeTeal": {
+    "description": "Color theme label for Teal."
+  },
+  "settingsColorThemeDeepPurple": "Deep Purple",
+  "@settingsColorThemeDeepPurple": {
+    "description": "Color theme label for Deep Purple."
+  },
+  "settingsColorThemeBlue": "Blue",
+  "@settingsColorThemeBlue": {
+    "description": "Color theme label for Blue."
+  },
+  "settingsColorThemeGreen": "Green",
+  "@settingsColorThemeGreen": {
+    "description": "Color theme label for Green."
+  },
+  "settingsColorThemeOrange": "Orange",
+  "@settingsColorThemeOrange": {
+    "description": "Color theme label for Orange."
+  },
+  "settingsColorThemePink": "Pink",
+  "@settingsColorThemePink": {
+    "description": "Color theme label for Pink."
+  },
+  "settingsColorThemeBlueGrey": "Blue Grey",
+  "@settingsColorThemeBlueGrey": {
+    "description": "Color theme label for Blue Grey."
+  },
+  "settingsFontSizeTitle": "Font Size",
+  "@settingsFontSizeTitle": {
+    "description": "Title for the reader font size setting."
+  },
+  "settingsPointsValue": "{points} pt",
+  "@settingsPointsValue": {
+    "description": "Value label showing a size in points.",
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsColorModeTitle": "Color Mode",
+  "@settingsColorModeTitle": {
+    "description": "Title for the reader color mode setting."
+  },
+  "settingsColorModeNormal": "Normal",
+  "@settingsColorModeNormal": {
+    "description": "Label for the normal reader color mode."
+  },
+  "settingsColorModeSepia": "Sepia",
+  "@settingsColorModeSepia": {
+    "description": "Label for the sepia reader color mode."
+  },
+  "settingsColorModeDark": "Dark",
+  "@settingsColorModeDark": {
+    "description": "Label for the dark reader color mode."
+  },
+  "settingsSepiaIntensityTitle": "Sepia Intensity",
+  "@settingsSepiaIntensityTitle": {
+    "description": "Label for the sepia intensity slider."
+  },
+  "settingsKeepScreenOnTitle": "Keep Screen On",
+  "@settingsKeepScreenOnTitle": {
+    "description": "Title for the keep-screen-on setting."
+  },
+  "settingsKeepScreenOnSubtitle": "Prevent screen from sleeping while reading",
+  "@settingsKeepScreenOnSubtitle": {
+    "description": "Subtitle for the keep-screen-on setting."
+  },
+  "settingsHorizontalMarginValue": "Horizontal Margin: {pixels}px",
+  "@settingsHorizontalMarginValue": {
+    "description": "Label showing the horizontal reader margin.",
+    "placeholders": {
+      "pixels": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsVerticalMarginValue": "Vertical Margin: {pixels}px",
+  "@settingsVerticalMarginValue": {
+    "description": "Label showing the vertical reader margin.",
+    "placeholders": {
+      "pixels": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSwipeSensitivityTitle": "Swipe Sensitivity",
+  "@settingsSwipeSensitivityTitle": {
+    "description": "Title for the swipe sensitivity setting."
+  },
+  "settingsPercentValue": "{percent}%",
+  "@settingsPercentValue": {
+    "description": "Value label showing a percentage.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSwipeSensitivityHint": "Lower = less finger movement needed to swipe",
+  "@settingsSwipeSensitivityHint": {
+    "description": "Help text for the swipe sensitivity setting."
+  },
+  "settingsManageDictionariesSubtitle": "Import, reorder, enable/disable",
+  "@settingsManageDictionariesSubtitle": {
+    "description": "Subtitle for managing dictionaries."
+  },
+  "settingsLookupFontSizeTitle": "Lookup Font Size",
+  "@settingsLookupFontSizeTitle": {
+    "description": "Title for the lookup font size setting."
+  },
+  "settingsFilterRomanLetterEntriesTitle": "Filter Roman Letter Entries",
+  "@settingsFilterRomanLetterEntriesTitle": {
+    "description": "Title for the roman-letter dictionary filter setting."
+  },
+  "settingsFilterRomanLetterEntriesSubtitle": "Hide entries using English letters in headword",
+  "@settingsFilterRomanLetterEntriesSubtitle": {
+    "description": "Subtitle for the roman-letter dictionary filter setting."
+  },
+  "settingsAutoFocusSearchTitle": "Auto-Focus Search",
+  "@settingsAutoFocusSearchTitle": {
+    "description": "Title for the auto-focus dictionary search setting."
+  },
+  "settingsAutoFocusSearchSubtitle": "Open keyboard when dictionary tab is selected",
+  "@settingsAutoFocusSearchSubtitle": {
+    "description": "Subtitle for the auto-focus dictionary search setting."
+  },
+  "settingsAnkiDroidIntegrationTitle": "AnkiDroid Integration",
+  "@settingsAnkiDroidIntegrationTitle": {
+    "description": "Title for the AnkiDroid settings entry."
+  },
+  "settingsAnkiDroidIntegrationSubtitle": "Configure note type, deck, and field mapping",
+  "@settingsAnkiDroidIntegrationSubtitle": {
+    "description": "Subtitle for the AnkiDroid settings entry."
+  },
+  "settingsProUnavailableSubtitle": "Pro services are temporarily unavailable.",
+  "@settingsProUnavailableSubtitle": {
+    "description": "Subtitle shown when Pro services are unavailable."
+  },
+  "settingsProSubtitle": "Unlock auto-crop, book highlights, and custom OCR",
+  "@settingsProSubtitle": {
+    "description": "Subtitle describing the Pro upgrade."
+  },
+  "settingsWhiteThresholdTitle": "White Threshold",
+  "@settingsWhiteThresholdTitle": {
+    "description": "Title for the manga auto-crop white threshold setting."
+  },
+  "settingsWhiteThresholdSubtitle": "{threshold} (lower values ignore more near-white artifacts)",
+  "@settingsWhiteThresholdSubtitle": {
+    "description": "Subtitle for the manga auto-crop white threshold setting.",
+    "placeholders": {
+      "threshold": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCustomOcrServerTitle": "Custom OCR Server",
+  "@settingsCustomOcrServerTitle": {
+    "description": "Title for the custom OCR server setting and dialog."
+  },
+  "settingsCustomOcrServerUnavailableSubtitle": "OCR services are temporarily unavailable.",
+  "@settingsCustomOcrServerUnavailableSubtitle": {
+    "description": "Subtitle shown when OCR services are unavailable."
+  },
+  "settingsCustomOcrServerNotConfigured": "Not configured. Add your own server URL and shared key.",
+  "@settingsCustomOcrServerNotConfigured": {
+    "description": "Subtitle shown when a custom OCR server has not been configured."
+  },
+  "settingsCustomOcrServerConfigured": "{url}\nUse the same shared key configured on your server.",
+  "@settingsCustomOcrServerConfigured": {
+    "description": "Subtitle shown when a custom OCR server has been configured.",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCustomOcrServerUrlLabel": "Server URL",
+  "@settingsCustomOcrServerUrlLabel": {
+    "description": "Label for the custom OCR server URL field."
+  },
+  "settingsCustomOcrServerUrlHint": "http://192.168.1.100:8000",
+  "@settingsCustomOcrServerUrlHint": {
+    "description": "Hint for the custom OCR server URL field."
+  },
+  "settingsCustomOcrServerLearnHow": "Learn how to run your own server",
+  "@settingsCustomOcrServerLearnHow": {
+    "description": "Button label linking to custom OCR server setup instructions."
+  },
+  "settingsCustomOcrServerKeyLabel": "Custom shared key",
+  "@settingsCustomOcrServerKeyLabel": {
+    "description": "Label for the custom OCR shared key field."
+  },
+  "settingsCustomOcrServerKeyHint": "Required AUTH_API_KEY",
+  "@settingsCustomOcrServerKeyHint": {
+    "description": "Hint for the custom OCR shared key field."
+  },
+  "settingsCustomOcrServerDescription": "Enter the same shared AUTH_API_KEY used by your OCR server. Mekuru sends it as Authorization: Bearer <key> for remote manga OCR requests.",
+  "@settingsCustomOcrServerDescription": {
+    "description": "Description shown in the custom OCR server dialog."
+  },
+  "settingsCustomOcrServerUrlRequired": "Enter your server URL.",
+  "@settingsCustomOcrServerUrlRequired": {
+    "description": "Validation error shown when the custom OCR server URL is empty."
+  },
+  "settingsCustomOcrServerUrlInvalid": "Enter a full http:// or https:// server URL.",
+  "@settingsCustomOcrServerUrlInvalid": {
+    "description": "Validation error shown when the custom OCR server URL is invalid."
+  },
+  "settingsCustomOcrServerKeyRequired": "A shared key is required for custom servers.",
+  "@settingsCustomOcrServerKeyRequired": {
+    "description": "Validation error shown when the custom OCR server key is empty."
+  },
+  "settingsDownloadsSubtitle": "Dictionaries, kanji data, and more",
+  "@settingsDownloadsSubtitle": {
+    "description": "Subtitle for the downloads settings entry."
+  },
+  "settingsBackupRestoreTitle": "Backup & Restore",
+  "@settingsBackupRestoreTitle": {
+    "description": "Title for the backup settings entry."
+  },
+  "settingsBackupRestoreSubtitle": "Back up and restore your data",
+  "@settingsBackupRestoreSubtitle": {
+    "description": "Subtitle for the backup settings entry."
+  },
+  "settingsSendFeedbackSubtitle": "Report a bug or suggest a feature",
+  "@settingsSendFeedbackSubtitle": {
+    "description": "Subtitle for the feedback settings entry."
+  },
+  "settingsFeedbackThanks": "Thank you for your feedback!",
+  "@settingsFeedbackThanks": {
+    "description": "Snackbar shown after feedback is submitted successfully."
+  },
+  "settingsFeedbackFailed": "Failed to send feedback. Please try again.",
+  "@settingsFeedbackFailed": {
+    "description": "Snackbar shown when feedback submission fails."
+  },
+  "settingsDocumentationTitle": "Documentation",
+  "@settingsDocumentationTitle": {
+    "description": "Title for the documentation settings entry."
+  },
+  "settingsDocumentationSubtitle": "Guides and how-to articles",
+  "@settingsDocumentationSubtitle": {
+    "description": "Subtitle for the documentation settings entry."
+  },
+  "settingsAboutMekuruTitle": "About Mekuru",
+  "@settingsAboutMekuruTitle": {
+    "description": "Title for the about screen settings entry."
+  },
+  "settingsAboutMekuruSubtitle": "Version, licenses, and more",
+  "@settingsAboutMekuruSubtitle": {
+    "description": "Subtitle for the about screen settings entry."
+  },
+  "feedbackTitle": "Send Feedback",
+  "@feedbackTitle": {
+    "description": "Title for the feedback screen."
+  },
+  "feedbackNameLabel": "Name",
+  "@feedbackNameLabel": {
+    "description": "Label for the feedback name field."
+  },
+  "feedbackNameHint": "Your name",
+  "@feedbackNameHint": {
+    "description": "Hint for the feedback name field."
+  },
+  "feedbackEmailLabel": "Email",
+  "@feedbackEmailLabel": {
+    "description": "Label for the feedback email field."
+  },
+  "feedbackEmailHint": "your@email.com",
+  "@feedbackEmailHint": {
+    "description": "Hint for the feedback email field."
+  },
+  "feedbackMessageLabel": "Message",
+  "@feedbackMessageLabel": {
+    "description": "Label for the feedback message field."
+  },
+  "feedbackRequired": "(required)",
+  "@feedbackRequired": {
+    "description": "Label shown next to a required field."
+  },
+  "feedbackMessageHint": "Describe your bug or feature request...",
+  "@feedbackMessageHint": {
+    "description": "Hint for the feedback message field."
+  },
+  "feedbackMessageRequiredError": "Please enter a message",
+  "@feedbackMessageRequiredError": {
+    "description": "Validation error shown when the feedback message is empty."
+  },
+  "backupTitle": "Backup & Restore",
+  "@backupTitle": {
+    "description": "Title for the backup screen."
+  },
+  "backupSectionBackup": "Backup",
+  "@backupSectionBackup": {
+    "description": "Section header for backup actions."
+  },
+  "backupCreateNowTitle": "Create Backup Now",
+  "@backupCreateNowTitle": {
+    "description": "Title for the create-backup action."
+  },
+  "backupCreateNowSubtitle": "Save all settings and reading data",
+  "@backupCreateNowSubtitle": {
+    "description": "Subtitle for the create-backup action."
+  },
+  "backupExportTitle": "Export Backup",
+  "@backupExportTitle": {
+    "description": "Title for the export-backup action."
+  },
+  "backupExportSubtitle": "Save your latest backup to a file",
+  "@backupExportSubtitle": {
+    "description": "Subtitle for the export-backup action."
+  },
+  "backupSectionAutoBackup": "Auto-Backup",
+  "@backupSectionAutoBackup": {
+    "description": "Section header for auto-backup settings."
+  },
+  "backupAutoBackupIntervalTitle": "Auto-Backup Interval",
+  "@backupAutoBackupIntervalTitle": {
+    "description": "Title for the auto-backup interval setting."
+  },
+  "backupIntervalOff": "Off",
+  "@backupIntervalOff": {
+    "description": "Label for turning auto-backup off."
+  },
+  "backupIntervalDaily": "Daily",
+  "@backupIntervalDaily": {
+    "description": "Label for daily auto-backups."
+  },
+  "backupIntervalWeekly": "Weekly",
+  "@backupIntervalWeekly": {
+    "description": "Label for weekly auto-backups."
+  },
+  "backupSectionRestore": "Restore",
+  "@backupSectionRestore": {
+    "description": "Section header for restore actions."
+  },
+  "backupImportFileTitle": "Import Backup File",
+  "@backupImportFileTitle": {
+    "description": "Title for the import-backup action."
+  },
+  "backupImportFileSubtitle": "Restore from a .mekuru file",
+  "@backupImportFileSubtitle": {
+    "description": "Subtitle for the import-backup action."
+  },
+  "backupSectionHistory": "Backup History",
+  "@backupSectionHistory": {
+    "description": "Section header for the backup history list."
+  },
+  "backupNoBackupsYet": "No backups yet",
+  "@backupNoBackupsYet": {
+    "description": "Message shown when there are no backups."
+  },
+  "backupErrorLoadingHistory": "Error loading backups: {details}",
+  "@backupErrorLoadingHistory": {
+    "description": "Message shown when backup history fails to load.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "backupCreatedSuccess": "Backup created successfully",
+  "@backupCreatedSuccess": {
+    "description": "Snackbar shown after a backup is created."
+  },
+  "backupFailed": "Backup failed: {details}",
+  "@backupFailed": {
+    "description": "Snackbar shown when backup creation fails.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "backupNoBackupsToExport": "No backups to export. Create one first.",
+  "@backupNoBackupsToExport": {
+    "description": "Snackbar shown when there are no backups to export."
+  },
+  "backupExportedSuccess": "Backup exported successfully",
+  "@backupExportedSuccess": {
+    "description": "Snackbar shown after exporting a backup."
+  },
+  "backupExportFailed": "Export failed: {details}",
+  "@backupExportFailed": {
+    "description": "Snackbar shown when exporting a backup fails.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "backupInvalidFile": "Please select a .mekuru backup file.",
+  "@backupInvalidFile": {
+    "description": "Snackbar shown when the selected restore file has the wrong extension."
+  },
+  "backupCouldNotOpenFile": "Could not open file: {details}",
+  "@backupCouldNotOpenFile": {
+    "description": "Snackbar shown when the backup file picker fails.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "backupRestoreFailed": "Restore failed: {details}",
+  "@backupRestoreFailed": {
+    "description": "Snackbar shown when restoring a backup fails.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "backupBooksUpdatedFromBackup": "{count, plural, one {# book updated from backup} other {# books updated from backup}}",
+  "@backupBooksUpdatedFromBackup": {
+    "description": "Snackbar shown after applying conflict selections during restore.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupApplyBookDataFailed": "Failed to apply book data: {details}",
+  "@backupApplyBookDataFailed": {
+    "description": "Snackbar shown when applying restored book data fails.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "backupRestoreSummarySettingsRestored": "Settings restored",
+  "@backupRestoreSummarySettingsRestored": {
+    "description": "Part of the restore summary message when settings are restored."
+  },
+  "backupRestoreSummarySettingsPartial": "Some settings could not be restored",
+  "@backupRestoreSummarySettingsPartial": {
+    "description": "Part of the restore summary message when some settings could not be restored."
+  },
+  "backupRestoreSummaryWords": "{added} words added, {skipped} skipped",
+  "@backupRestoreSummaryWords": {
+    "description": "Part of the restore summary message for restored words.",
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestoreSummaryBooksRestored": "{count, plural, one {# book restored} other {# books restored}}",
+  "@backupRestoreSummaryBooksRestored": {
+    "description": "Part of the restore summary message for restored books.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestoreSummaryBooksPending": "{count, plural, one {# book saved for later import} other {# books saved for later import}}",
+  "@backupRestoreSummaryBooksPending": {
+    "description": "Part of the restore summary message for pending book data.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestoreComplete": "Restore complete",
+  "@backupRestoreComplete": {
+    "description": "Fallback restore summary when there is nothing else to report."
+  },
+  "backupRestoreDialogTitle": "Restore Backup?",
+  "@backupRestoreDialogTitle": {
+    "description": "Title for the restore backup confirmation dialog."
+  },
+  "backupRestoreDialogBody": "This will restore settings and reading data from {fileName}. Your current settings will be overwritten.",
+  "@backupRestoreDialogBody": {
+    "description": "Body for the restore backup confirmation dialog.",
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "backupDeleteDialogTitle": "Delete Backup?",
+  "@backupDeleteDialogTitle": {
+    "description": "Title for the delete backup confirmation dialog."
+  },
+  "backupDeleteDialogBody": "Delete {fileName}? This cannot be undone.",
+  "@backupDeleteDialogBody": {
+    "description": "Body for the delete backup confirmation dialog.",
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "backupHistoryTypeAuto": "Auto backup",
+  "@backupHistoryTypeAuto": {
+    "description": "Label for an automatic backup in backup history."
+  },
+  "backupHistoryTypeManual": "Manual backup",
+  "@backupHistoryTypeManual": {
+    "description": "Label for a manual backup in backup history."
+  },
+  "readerDismiss": "Dismiss",
+  "@readerDismiss": {
+    "description": "Barrier label for dismissing reader overlays."
+  },
+  "readerFailedToLoadContent": "Failed to load EPUB content.\n{details}",
+  "@readerFailedToLoadContent": {
+    "description": "Reader error shown when the EPUB viewer reports a content-loading failure.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "readerFailedToLoad": "Failed to load EPUB.\n{details}",
+  "@readerFailedToLoad": {
+    "description": "Reader error shown when the EPUB file fails to load.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "readerVerticalTextNonNativeWarning": "This book was not originally formatted for vertical text. Some display issues may occur.",
+  "@readerVerticalTextNonNativeWarning": {
+    "description": "Warning shown when vertical text is forced for a non-vertical book."
+  },
+  "readerHorizontalTextNonNativeWarning": "This book was originally formatted for vertical text. Some display issues may occur in horizontal mode.",
+  "@readerHorizontalTextNonNativeWarning": {
+    "description": "Warning shown when horizontal text is forced for a vertical book."
+  },
+  "readerBookmarkRemoved": "Bookmark removed",
+  "@readerBookmarkRemoved": {
+    "description": "Snackbar shown after removing a bookmark."
+  },
+  "readerPageBookmarked": "Page bookmarked",
+  "@readerPageBookmarked": {
+    "description": "Snackbar shown after bookmarking the current page."
+  },
+  "readerTableOfContents": "Table of Contents",
+  "@readerTableOfContents": {
+    "description": "Title or tooltip for the reader table of contents."
+  },
+  "readerRemoveBookmarkTooltip": "Remove Bookmark",
+  "@readerRemoveBookmarkTooltip": {
+    "description": "Tooltip for removing the current page bookmark."
+  },
+  "readerBookmarkPageTooltip": "Bookmark Page",
+  "@readerBookmarkPageTooltip": {
+    "description": "Tooltip for bookmarking the current page."
+  },
+  "readerViewBookmarksTooltip": "View Bookmarks",
+  "@readerViewBookmarksTooltip": {
+    "description": "Tooltip for opening the bookmarks sheet."
+  },
+  "readerHighlightsTooltip": "Highlights",
+  "@readerHighlightsTooltip": {
+    "description": "Tooltip for opening the highlights sheet."
+  },
+  "readerNextPageTooltip": "Next Page",
+  "@readerNextPageTooltip": {
+    "description": "Tooltip for moving to the next page."
+  },
+  "readerPreviousPageTooltip": "Previous Page",
+  "@readerPreviousPageTooltip": {
+    "description": "Tooltip for moving to the previous page."
+  },
+  "readerUnknownError": "Unknown reader error.",
+  "@readerUnknownError": {
+    "description": "Fallback error shown in the reader when no specific error is available."
+  },
+  "readerQuickSettings": "Quick Settings",
+  "@readerQuickSettings": {
+    "description": "Title for the reader quick settings sheet."
+  },
+  "readerVerticalTextTitle": "Vertical Text",
+  "@readerVerticalTextTitle": {
+    "description": "Title for the per-book vertical text setting."
+  },
+  "readerThisBook": "This book",
+  "@readerThisBook": {
+    "description": "Label indicating a reader setting applies to the current book."
+  },
+  "readerVerticalTextUnavailable": "Not available for this book's language",
+  "@readerVerticalTextUnavailable": {
+    "description": "Subtitle shown when vertical text is unavailable for the current book."
+  },
+  "readerReadingDirectionTitle": "Reading Direction",
+  "@readerReadingDirectionTitle": {
+    "description": "Title for the per-book reading direction setting."
+  },
+  "readerReadingDirectionRtl": "Right to Left",
+  "@readerReadingDirectionRtl": {
+    "description": "Label for right-to-left reading direction."
+  },
+  "readerReadingDirectionLtr": "Left to Right",
+  "@readerReadingDirectionLtr": {
+    "description": "Label for left-to-right reading direction."
+  },
+  "readerDisableLinksTitle": "Disable Links",
+  "@readerDisableLinksTitle": {
+    "description": "Title for the disable-links reader setting."
+  },
+  "readerDisableLinksSubtitle": "Tap linked text to look up words instead of navigating",
+  "@readerDisableLinksSubtitle": {
+    "description": "Subtitle for the disable-links reader setting."
+  },
+  "readerHighlightSelectionTooltip": "Highlight selection",
+  "@readerHighlightSelectionTooltip": {
+    "description": "Tooltip for the highlight-selection action."
+  }
+}

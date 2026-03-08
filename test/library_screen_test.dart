@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'test_app.dart';
 
 void main() {
   testWidgets('empty library shows quick-start actions', (tester) async {
@@ -15,7 +16,7 @@ void main() {
         overrides: [
           booksProvider.overrideWith((ref) => Stream.value(<Book>[])),
         ],
-        child: const MaterialApp(home: LibraryScreen()),
+        child: buildLocalizedTestApp(home: const LibraryScreen()),
       ),
     );
 
@@ -38,7 +39,7 @@ void main() {
         overrides: [
           booksProvider.overrideWith((ref) => Stream.value(<Book>[])),
         ],
-        child: const MaterialApp(home: LibraryScreen()),
+        child: buildLocalizedTestApp(home: const LibraryScreen()),
       ),
     );
 

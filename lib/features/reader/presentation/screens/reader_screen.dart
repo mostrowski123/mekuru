@@ -23,6 +23,7 @@ import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controll
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -343,8 +344,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       onLoadError: (description) {
                         if (!mounted) return;
                         setState(() {
-                          _errorMessage =
-                              'Failed to load EPUB content.\n$description';
+                          _errorMessage = context.l10n
+                              .readerFailedToLoadContent(details: description);
                         });
                       },
                     ),
@@ -453,7 +454,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Failed to load EPUB.\n$error';
+        _errorMessage = context.l10n.readerFailedToLoad(
+          details: error.toString(),
+        );
       });
     }
   }
@@ -511,12 +514,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   /// Returns a short warning explaining the display mode mismatch.
   String _nonNativeDisplayWarning(ReaderSettings settings) {
+    final l10n = context.l10n;
     if (settings.verticalText) {
-      return 'This book was not originally formatted for vertical text. '
-          'Some display issues may occur.';
+      return l10n.readerVerticalTextNonNativeWarning;
     }
-    return 'This book was originally formatted for vertical text. '
-        'Some display issues may occur in horizontal mode.';
+    return l10n.readerHorizontalTextNonNativeWarning;
   }
 
   void _handleTouchUp(
@@ -734,7 +736,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Dismiss',
+      barrierLabel: context.l10n.readerDismiss,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
@@ -875,9 +877,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (mounted) {
         _checkBookmarkState();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Bookmark removed'),
-            duration: Duration(seconds: 1),
+          SnackBar(
+            content: Text(context.l10n.readerBookmarkRemoved),
+            duration: const Duration(seconds: 1),
           ),
         );
       }
@@ -902,9 +904,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (mounted) {
         _checkBookmarkState();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Page bookmarked'),
-            duration: Duration(seconds: 5),
+          SnackBar(
+            content: Text(context.l10n.readerPageBookmarked),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -1012,6 +1014,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   Widget _buildTopBar(bool isProUnlocked) {
+    final l10n = context.l10n;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1027,7 +1031,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.of(context).pop(),
-              tooltip: 'Back',
+              tooltip: l10n.commonBack,
             ),
             Expanded(
               child: Text(
@@ -1044,7 +1048,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             if (_chapters.isNotEmpty)
               IconButton(
                 icon: const Icon(Icons.list, color: Colors.white),
-                tooltip: 'Table of Contents',
+                tooltip: l10n.readerTableOfContents,
                 onPressed: () => _showChapterDrawer(context),
               ),
             IconButton(
@@ -1055,13 +1059,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 color: _isCurrentPageBookmarked ? Colors.amber : Colors.white,
               ),
               tooltip: _isCurrentPageBookmarked
-                  ? 'Remove Bookmark'
-                  : 'Bookmark Page',
+                  ? l10n.readerRemoveBookmarkTooltip
+                  : l10n.readerBookmarkPageTooltip,
               onPressed: _toggleBookmark,
             ),
             IconButton(
               icon: const Icon(Icons.bookmarks_outlined, color: Colors.white),
-              tooltip: 'View Bookmarks',
+              tooltip: l10n.readerViewBookmarksTooltip,
               onPressed: _showBookmarksSheet,
             ),
             IconButton(
@@ -1069,14 +1073,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 Icons.highlight,
                 color: isProUnlocked ? Colors.white : Colors.white38,
               ),
-              tooltip: 'Highlights',
+              tooltip: l10n.readerHighlightsTooltip,
               onPressed: isProUnlocked
                   ? _showHighlightsSheet
                   : _openProUpgradeFromReader,
             ),
             IconButton(
               icon: const Icon(Icons.settings, color: Colors.white),
-              tooltip: 'Settings',
+              tooltip: l10n.navSettings,
               onPressed: () {
                 AppHaptics.light();
                 _showSettingsSheet(context);
@@ -1091,6 +1095,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   Widget _buildBottomBar(ReaderSettings settings) {
     final isRtl = settings.readingDirection == ReaderDirection.rtl;
     final bottomPadding = bottomControlPadding(MediaQuery.of(context));
+    final l10n = context.l10n;
 
     return Container(
       decoration: BoxDecoration(
@@ -1131,7 +1136,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       Icons.navigate_before,
                       color: Colors.white,
                     ),
-                    tooltip: isRtl ? 'Next Page' : 'Previous Page',
+                    tooltip: isRtl
+                        ? l10n.readerNextPageTooltip
+                        : l10n.readerPreviousPageTooltip,
                     onPressed: _isEpubLoaded
                         ? (isRtl ? _goForward : _goBackward)
                         : null,
@@ -1139,7 +1146,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   const SizedBox(width: 32),
                   IconButton(
                     icon: const Icon(Icons.navigate_next, color: Colors.white),
-                    tooltip: isRtl ? 'Previous Page' : 'Next Page',
+                    tooltip: isRtl
+                        ? l10n.readerPreviousPageTooltip
+                        : l10n.readerNextPageTooltip,
                     onPressed: _isEpubLoaded
                         ? (isRtl ? _goBackward : _goForward)
                         : null,
@@ -1161,6 +1170,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   Widget _buildErrorState(BuildContext context) {
+    final l10n = context.l10n;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1170,7 +1181,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             const Icon(Icons.error_outline, size: 48),
             const SizedBox(height: 12),
             Text(
-              _errorMessage ?? 'Unknown reader error.',
+              _errorMessage ?? l10n.readerUnknownError,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -1180,13 +1191,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 FilledButton.icon(
                   onPressed: _loadEpubData,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  label: Text(l10n.commonRetry),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back'),
+                  label: Text(l10n.commonBack),
                 ),
               ],
             ),
@@ -1197,6 +1208,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   void _showChapterDrawer(BuildContext context) {
+    final l10n = context.l10n;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1209,7 +1222,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Table of Contents',
+                l10n.readerTableOfContents,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
@@ -1243,6 +1256,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       isScrollControlled: true,
       builder: (context) => Consumer(
         builder: (context, ref, _) {
+          final l10n = context.l10n;
           final settings = ref.watch(readerSettingsProvider);
           final notifier = ref.read(readerSettingsProvider.notifier);
           final brightness = ref.watch(brightnessProvider);
@@ -1258,7 +1272,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 controller: scrollController,
                 children: [
                   Text(
-                    'Quick Settings',
+                    l10n.readerQuickSettings,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 24),
@@ -1268,7 +1282,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                     children: [
                       const Icon(Icons.text_fields),
                       const SizedBox(width: 8),
-                      const Text('Font Size'),
+                      Text(l10n.settingsFontSizeTitle),
                       const Spacer(),
                       Text('${settings.fontSize.round()}'),
                     ],
@@ -1308,20 +1322,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
                   // ── Color Mode ──
                   SegmentedButton<ColorMode>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: ColorMode.normal,
-                        label: Text('Normal'),
+                        label: Text(l10n.settingsColorModeNormal),
                         icon: Icon(Icons.brightness_5),
                       ),
                       ButtonSegment(
                         value: ColorMode.sepia,
-                        label: Text('Sepia'),
+                        label: Text(l10n.settingsColorModeSepia),
                         icon: Icon(Icons.filter_vintage),
                       ),
                       ButtonSegment(
                         value: ColorMode.dark,
-                        label: Text('Dark'),
+                        label: Text(l10n.settingsColorModeDark),
                         icon: Icon(Icons.dark_mode),
                       ),
                     ],
@@ -1355,11 +1369,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
                   // ── Vertical Text (per-book) ──
                   SwitchListTile(
-                    title: const Text('Vertical Text'),
+                    title: Text(l10n.readerVerticalTextTitle),
                     subtitle: Text(
                       bookSupportsVerticalText(_bookLanguage)
-                          ? 'This book'
-                          : 'Not available for this book\'s language',
+                          ? l10n.readerThisBook
+                          : l10n.readerVerticalTextUnavailable,
                     ),
                     value: settings.verticalText,
                     onChanged: bookSupportsVerticalText(_bookLanguage)
@@ -1410,12 +1424,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Reading Direction',
+                          l10n.readerReadingDirectionTitle,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'This book',
+                          l10n.readerThisBook,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
                                 color: Theme.of(
@@ -1425,14 +1439,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         ),
                         const SizedBox(height: 8),
                         SegmentedButton<ReaderDirection>(
-                          segments: const [
+                          segments: [
                             ButtonSegment(
                               value: ReaderDirection.rtl,
-                              label: Text('Right to Left'),
+                              label: Text(l10n.readerReadingDirectionRtl),
                             ),
                             ButtonSegment(
                               value: ReaderDirection.ltr,
-                              label: Text('Left to Right'),
+                              label: Text(l10n.readerReadingDirectionLtr),
                             ),
                           ],
                           selected: {settings.readingDirection},
@@ -1448,10 +1462,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
                   // ── Disable Links ──
                   SwitchListTile(
-                    title: const Text('Disable Links'),
-                    subtitle: const Text(
-                      'Tap linked text to look up words instead of navigating',
-                    ),
+                    title: Text(l10n.readerDisableLinksTitle),
+                    subtitle: Text(l10n.readerDisableLinksSubtitle),
                     value: settings.disableLinks,
                     onChanged: (value) {
                       AppHaptics.medium();
@@ -1539,6 +1551,7 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
     final colors = HighlightColor.values;
     final theme = Theme.of(context);
     final isLocked = widget.isLocked;
+    final l10n = context.l10n;
 
     return Positioned(
       bottom: 100,
@@ -1607,7 +1620,9 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
               FloatingActionButton.small(
                 heroTag: 'highlight_fab',
                 onPressed: isLocked ? widget.onLockedTap : _toggle,
-                tooltip: isLocked ? 'Unlock Pro' : 'Highlight selection',
+                tooltip: isLocked
+                    ? l10n.proUnlock
+                    : l10n.readerHighlightSelectionTooltip,
                 backgroundColor: isLocked
                     ? theme.colorScheme.surfaceContainerHighest
                     : null,

@@ -9,6 +9,7 @@ import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manag
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_stroke_order.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 
 /// Dictionary search screen with live fuzzy search.
@@ -150,11 +151,11 @@ class DictionarySearchScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dictionary'),
+        title: Text(context.l10n.navDictionary),
         actions: [
           IconButton(
             icon: const Icon(Icons.library_books_outlined),
-            tooltip: 'Manage Dictionaries',
+            tooltip: context.l10n.commonManageDictionaries,
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -175,7 +176,7 @@ class DictionarySearchScreenState
               focusNode: _searchFocusNode,
               autofocus: false,
               decoration: InputDecoration(
-                hintText: 'Search in kanji, kana, or romaji...',
+                hintText: context.l10n.dictionarySearchHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
@@ -207,7 +208,11 @@ class DictionarySearchScreenState
           Expanded(
             child: hasDictionaries.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
+              error: (err, _) => Center(
+                child: Text(
+                  context.l10n.commonErrorWithDetails(details: err.toString()),
+                ),
+              ),
               data: (dictionaries) {
                 if (dictionaries.isEmpty) {
                   return _buildNoDictionariesState(theme);
@@ -225,6 +230,7 @@ class DictionarySearchScreenState
   }
 
   Widget _buildNoDictionariesState(ThemeData theme) {
+    final l10n = context.l10n;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -238,14 +244,14 @@ class DictionarySearchScreenState
             ),
             const SizedBox(height: 16),
             Text(
-              'No dictionaries imported',
+              l10n.dictionaryNoDictionariesTitle,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Install the starter pack or import your own Yomitan dictionaries to start searching.',
+              l10n.dictionaryNoDictionariesSubtitle,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
               ),
@@ -260,12 +266,12 @@ class DictionarySearchScreenState
                 FilledButton.icon(
                   onPressed: _openDownloads,
                   icon: const Icon(Icons.download_outlined),
-                  label: const Text('Recommended starter pack'),
+                  label: Text(l10n.dictionaryRecommendedStarterPack),
                 ),
                 OutlinedButton.icon(
                   onPressed: _openDictionaryManager,
                   icon: const Icon(Icons.library_books_outlined),
-                  label: const Text('Manage Dictionaries'),
+                  label: Text(l10n.commonManageDictionaries),
                 ),
               ],
             ),
@@ -276,6 +282,7 @@ class DictionarySearchScreenState
   }
 
   Widget _buildNoEnabledDictionariesState(ThemeData theme) {
+    final l10n = context.l10n;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -289,14 +296,14 @@ class DictionarySearchScreenState
             ),
             const SizedBox(height: 16),
             Text(
-              'Your dictionaries are turned off',
+              l10n.dictionaryNoEnabledTitle,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Enable at least one dictionary to make lookups work, or install the recommended starter pack.',
+              l10n.dictionaryNoEnabledSubtitle,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
               ),
@@ -311,12 +318,12 @@ class DictionarySearchScreenState
                 FilledButton.icon(
                   onPressed: _openDictionaryManager,
                   icon: const Icon(Icons.toggle_on_outlined),
-                  label: const Text('Enable dictionaries'),
+                  label: Text(l10n.dictionaryEnableDictionaries),
                 ),
                 OutlinedButton.icon(
                   onPressed: _openDownloads,
                   icon: const Icon(Icons.download_outlined),
-                  label: const Text('Starter pack'),
+                  label: Text(l10n.dictionaryStarterPack),
                 ),
               ],
             ),
@@ -342,7 +349,7 @@ class DictionarySearchScreenState
       }
       return Center(
         child: Text(
-          'No results found.',
+          context.l10n.dictionaryNoResultsFound,
           style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -392,6 +399,7 @@ class DictionarySearchScreenState
   }
 
   Widget _buildEmptySearchState(ThemeData theme) {
+    final l10n = context.l10n;
     final history = ref.watch(searchHistoryProvider);
 
     if (history.isEmpty) {
@@ -408,14 +416,14 @@ class DictionarySearchScreenState
               ),
               const SizedBox(height: 16),
               Text(
-                'Search for a word',
+                l10n.dictionarySearchForAWord,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Type in kanji, hiragana, katakana, or romaji',
+                l10n.dictionarySearchForAWordSubtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
                 ),
@@ -434,7 +442,7 @@ class DictionarySearchScreenState
           child: Row(
             children: [
               Text(
-                'Recent',
+                l10n.dictionaryRecent,
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -444,7 +452,7 @@ class DictionarySearchScreenState
                 onPressed: () {
                   ref.read(searchHistoryProvider.notifier).clearAll();
                 },
-                child: const Text('Clear all'),
+                child: Text(l10n.commonClearAll),
               ),
             ],
           ),

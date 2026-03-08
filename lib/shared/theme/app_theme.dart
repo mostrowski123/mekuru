@@ -3,20 +3,19 @@ import 'package:flutter/material.dart';
 /// Available color themes for the app.
 enum AppColorTheme {
   // Default — the app's signature Japanese-inspired red
-  mekuruRed('Mekuru Red', Color(0xFFB71C1C)),
-  indigo('Indigo', Color(0xFF3F51B5)),
-  teal('Teal', Color(0xFF009688)),
-  deepPurple('Deep Purple', Color(0xFF673AB7)),
-  blue('Blue', Color(0xFF2196F3)),
-  green('Green', Color(0xFF4CAF50)),
-  orange('Orange', Color(0xFFFF9800)),
-  pink('Pink', Color(0xFFE91E63)),
-  blueGrey('Blue Grey', Color(0xFF607D8B));
+  mekuruRed(Color(0xFFB71C1C)),
+  indigo(Color(0xFF3F51B5)),
+  teal(Color(0xFF009688)),
+  deepPurple(Color(0xFF673AB7)),
+  blue(Color(0xFF2196F3)),
+  green(Color(0xFF4CAF50)),
+  orange(Color(0xFFFF9800)),
+  pink(Color(0xFFE91E63)),
+  blueGrey(Color(0xFF607D8B));
 
-  final String label;
   final Color seedColor;
 
-  const AppColorTheme(this.label, this.seedColor);
+  const AppColorTheme(this.seedColor);
 }
 
 /// App-wide theme configuration using Material 3 color schemes.

@@ -25,6 +25,7 @@ import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
@@ -46,6 +47,8 @@ class LibraryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+
     // Load persisted sort order on first build.
     ref.read(librarySortProvider.notifier).loadPersistedSort();
 
@@ -55,16 +58,18 @@ class LibraryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Library'),
+        title: Text(l10n.navLibrary),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
-            tooltip: 'Help',
+            tooltip: l10n.commonHelp,
             onPressed: () => _showHelpDialog(context),
           ),
           IconButton(
             icon: const Icon(Icons.sort),
-            tooltip: 'Sort: ${librarySortLabel(sortOrder)}',
+            tooltip: l10n.librarySortTooltip(
+              label: librarySortLabel(l10n, sortOrder),
+            ),
             onPressed: () {
               AppHaptics.light();
               _showSortPicker(context, ref, sortOrder);
@@ -76,7 +81,7 @@ class LibraryScreen extends ConsumerWidget {
         onPressed: importState.isImporting
             ? null
             : () => _showImportChoice(context, ref),
-        tooltip: 'Import',
+        tooltip: l10n.commonImport,
         child: const Icon(Icons.add),
       ),
       body: Column(
@@ -100,7 +105,9 @@ class LibraryScreen extends ConsumerWidget {
               color: Colors.green.withValues(alpha: 0.1),
               textColor: Colors.green,
               message: importState.successMessage!,
-              actionLabel: importState.importedBook != null ? 'Open now' : null,
+              actionLabel: importState.importedBook != null
+                  ? l10n.commonOpenNow
+                  : null,
               onAction: importState.importedBook == null
                   ? null
                   : () {
@@ -114,7 +121,11 @@ class LibraryScreen extends ConsumerWidget {
           Expanded(
             child: booksAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
+              error: (err, _) => Center(
+                child: Text(
+                  l10n.commonErrorWithDetails(details: err.toString()),
+                ),
+              ),
               data: (books) {
                 if (books.isEmpty) return _buildEmptyState(context, ref);
                 return _buildBookGrid(context, ref, books);
@@ -175,6 +186,7 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -202,13 +214,13 @@ class LibraryScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Your library is ready for its first book',
+                      l10n.libraryEmptyTitle,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Import something to read, install a dictionary, and you will be ready to save words in a few minutes.',
+                      l10n.libraryEmptySubtitle,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
@@ -229,7 +241,7 @@ class LibraryScreen extends ConsumerWidget {
                       _importEpub(ref);
                     },
                     icon: const Icon(Icons.book),
-                    label: const Text('Import EPUB'),
+                    label: Text(l10n.libraryImportEpub),
                   ),
                   FilledButton.icon(
                     onPressed: () {
@@ -237,7 +249,7 @@ class LibraryScreen extends ConsumerWidget {
                       _showMangaImportTypeChoice(context, ref);
                     },
                     icon: const Icon(Icons.photo_library),
-                    label: const Text('Import Manga'),
+                    label: Text(l10n.libraryImportManga),
                   ),
                   OutlinedButton.icon(
                     onPressed: () {
@@ -249,7 +261,7 @@ class LibraryScreen extends ConsumerWidget {
                       );
                     },
                     icon: const Icon(Icons.download_outlined),
-                    label: const Text('Get Dictionaries'),
+                    label: Text(l10n.libraryGetDictionaries),
                   ),
                   OutlinedButton.icon(
                     onPressed: () {
@@ -261,7 +273,7 @@ class LibraryScreen extends ConsumerWidget {
                       );
                     },
                     icon: const Icon(Icons.restore),
-                    label: const Text('Restore Backup'),
+                    label: Text(l10n.libraryRestoreBackup),
                   ),
                 ],
               ),
@@ -287,36 +299,33 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   void _showHelpDialog(BuildContext context) {
+    final l10n = context.l10n;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Supported Media'),
+        title: Text(l10n.librarySupportedMediaTitle),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               // EPUB section
-              Text('EPUB Books', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 4),
-              const Text(
-                'Standard .epub files are supported. Tap the + button '
-                'and select "Import EPUB" to add one from your device.',
+              Text(
+                l10n.libraryEpubBooksTitle,
+                style: Theme.of(context).textTheme.titleSmall,
               ),
+              const SizedBox(height: 4),
+              Text(l10n.libraryEpubBooksDescription),
               const SizedBox(height: 16),
 
               // Mokuro Manga section
               Text(
-                'Mokuro Manga',
+                l10n.libraryMokuroTitle,
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Import manga by selecting a folder, then choosing a '
-                '.mokuro or .html file. '
-                'The page images are loaded from a sibling folder '
-                'with the same name.',
-              ),
+              Text(l10n.libraryMokuroDescription),
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
@@ -344,15 +353,12 @@ class LibraryScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'The .mokuro file is generated by the mokuro tool, '
-                'which runs OCR on manga pages to extract Japanese text.',
-              ),
+              Text(l10n.libraryMokuroFormatDescription),
               const SizedBox(height: 12),
               TextButton.icon(
                 onPressed: () => _launchMokuroProject(context),
                 icon: const Icon(Icons.open_in_new),
-                label: const Text('Learn how to create .mokuro files'),
+                label: Text(l10n.libraryLearnHowToCreateMokuroFiles),
               ),
             ],
           ),
@@ -360,7 +366,7 @@ class LibraryScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it'),
+            child: Text(l10n.commonGotIt),
           ),
         ],
       ),
@@ -372,6 +378,8 @@ class LibraryScreen extends ConsumerWidget {
     WidgetRef ref,
     LibrarySortOrder currentOrder,
   ) {
+    final l10n = context.l10n;
+
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -381,7 +389,7 @@ class LibraryScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Sort by',
+                l10n.librarySortBy,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),
@@ -389,7 +397,7 @@ class LibraryScreen extends ConsumerWidget {
             for (final order in LibrarySortOrder.values)
               ListTile(
                 leading: Icon(_sortIcon(order)),
-                title: Text(librarySortLabel(order)),
+                title: Text(librarySortLabel(l10n, order)),
                 trailing: order == currentOrder
                     ? Icon(
                         Icons.check,
@@ -415,6 +423,8 @@ class LibraryScreen extends ConsumerWidget {
   };
 
   void _showImportChoice(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -424,15 +434,15 @@ class LibraryScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Import',
+                l10n.libraryImportTitle,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.book),
-              title: const Text('EPUB'),
-              subtitle: const Text('Import an EPUB file'),
+              title: Text(l10n.libraryImportEpub),
+              subtitle: Text(l10n.libraryImportEpubSubtitle),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 _importEpub(ref);
@@ -440,8 +450,8 @@ class LibraryScreen extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Manga'),
-              subtitle: const Text('Choose a CBZ archive or Mokuro folder'),
+              title: Text(l10n.libraryImportManga),
+              subtitle: Text(l10n.libraryImportMangaSubtitle),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -463,6 +473,7 @@ class LibraryScreen extends ConsumerWidget {
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetContext) {
+        final l10n = sheetContext.l10n;
         final theme = Theme.of(sheetContext);
         return SafeArea(
           child: SingleChildScrollView(
@@ -472,10 +483,13 @@ class LibraryScreen extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Import Manga', style: theme.textTheme.titleMedium),
+                  Text(
+                    l10n.libraryImportMangaTitle,
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    'Choose whether you want to import a CBZ archive or a Mokuro-exported folder.',
+                    l10n.libraryImportMangaDescription,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -484,10 +498,8 @@ class LibraryScreen extends ConsumerWidget {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.photo_library),
-                    title: const Text('Mokuro folder'),
-                    subtitle: const Text(
-                      'Select the folder that contains a .mokuro or .html file alongside the images folder.',
-                    ),
+                    title: Text(l10n.libraryImportMokuroFolder),
+                    subtitle: Text(l10n.libraryImportMokuroFolderSubtitle),
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       _importManga(context, ref);
@@ -498,14 +510,14 @@ class LibraryScreen extends ConsumerWidget {
                     child: TextButton.icon(
                       onPressed: () => _launchMokuroProject(sheetContext),
                       icon: const Icon(Icons.open_in_new),
-                      label: const Text('What is Mokuro?'),
+                      label: Text(l10n.libraryWhatIsMokuro),
                     ),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.collections),
-                    title: const Text('CBZ archive'),
-                    subtitle: const Text('Import a .cbz comic book archive'),
+                    title: Text(l10n.libraryImportCbzArchive),
+                    subtitle: Text(l10n.libraryImportCbzArchiveSubtitle),
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       _importCbz(context, ref);
@@ -552,11 +564,7 @@ class LibraryScreen extends ConsumerWidget {
         .importCbz(filePath);
     if (book != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Imported without OCR. To get text overlays, import external OCR output (e.g. .mokuro).',
-          ),
-        ),
+        SnackBar(content: Text(context.l10n.libraryImportedWithoutOcrMessage)),
       );
     }
   }
@@ -579,7 +587,9 @@ class LibraryScreen extends ConsumerWidget {
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Could not open the Mokuro project page.')),
+      SnackBar(
+        content: Text(context.l10n.libraryCouldNotOpenMokuroProjectPage),
+      ),
     );
   }
 
@@ -597,11 +607,7 @@ class LibraryScreen extends ConsumerWidget {
     if (candidates.isEmpty) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No .mokuro or .html files found in the selected folder.',
-          ),
-        ),
+        SnackBar(content: Text(context.l10n.libraryNoMangaManifestFound)),
       );
       return;
     }
@@ -610,7 +616,10 @@ class LibraryScreen extends ConsumerWidget {
     final selectedName = await _showMangaManifestPickerSheet(
       context,
       files: candidates,
-      folderLabel: _folderLabelFromTreeDocumentId(folder.treeDocumentId),
+      folderLabel: _folderLabelFromTreeDocumentId(
+        context,
+        folder.treeDocumentId,
+      ),
     );
     if (!context.mounted) return;
     if (selectedName == null) return;
@@ -634,7 +643,7 @@ class LibraryScreen extends ConsumerWidget {
     WidgetRef ref,
   ) async {
     final dirPath = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Select manga folder',
+      dialogTitle: context.l10n.librarySelectMangaFolder,
     );
     if (dirPath == null || dirPath.isEmpty) return;
 
@@ -661,11 +670,7 @@ class LibraryScreen extends ConsumerWidget {
     if (candidates.isEmpty) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No .mokuro or .html files found in the selected folder.',
-          ),
-        ),
+        SnackBar(content: Text(context.l10n.libraryNoMangaManifestFound)),
       );
       return;
     }
@@ -689,14 +694,19 @@ class LibraryScreen extends ConsumerWidget {
     return lower.endsWith('.mokuro') || lower.endsWith('.html');
   }
 
-  String _folderLabelFromTreeDocumentId(String? documentId) {
-    if (documentId == null || documentId.isEmpty) return 'Selected folder';
+  String _folderLabelFromTreeDocumentId(
+    BuildContext context,
+    String? documentId,
+  ) {
+    if (documentId == null || documentId.isEmpty) {
+      return context.l10n.librarySelectedFolder;
+    }
     final afterColon = documentId.contains(':')
         ? documentId.split(':').last
         : documentId;
     final normalized = afterColon.replaceAll('\\', '/');
     final base = normalized.isEmpty ? documentId : p.posix.basename(normalized);
-    return base.isEmpty ? 'Selected folder' : base;
+    return base.isEmpty ? context.l10n.librarySelectedFolder : base;
   }
 
   Future<String?> _showMangaManifestPickerSheet(
@@ -704,6 +714,8 @@ class LibraryScreen extends ConsumerWidget {
     required List<String> files,
     required String folderLabel,
   }) {
+    final l10n = context.l10n;
+
     return showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -714,9 +726,7 @@ class LibraryScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.folder_open),
               title: Text(folderLabel),
-              subtitle: Text(
-                '${files.length} manga file${files.length == 1 ? '' : 's'} found',
-              ),
+              subtitle: Text(l10n.libraryMangaFilesFound(count: files.length)),
             ),
             const Divider(height: 1),
             Flexible(

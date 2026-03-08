@@ -172,14 +172,7 @@ final filterRomanLettersProvider =
     );
 
 /// Which screen the app opens to on cold start.
-enum StartupScreen {
-  library('Library'),
-  dictionary('Dictionary'),
-  lastRead('Last Read Book');
-
-  final String label;
-  const StartupScreen(this.label);
-}
+enum StartupScreen { library, dictionary, lastRead }
 
 /// Manages the startup screen preference.
 class StartupScreenNotifier extends Notifier<StartupScreen> {

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://lingo.dev/schema/i18n.json",
+  "version": "1.10",
+  "locale": {
+    "source": "en",
+    "targets": ["ja"]
+  },
+  "buckets": {
+    "flutter": {
+      "include": ["lib/l10n/app_[locale].arb"]
+    }
+  }
+}

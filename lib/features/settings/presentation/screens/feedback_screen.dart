@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Custom feedback screen that calls [Sentry.captureFeedback] directly
@@ -49,9 +50,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Send Feedback')),
+      appBar: AppBar(title: Text(l10n.feedbackTitle)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -63,34 +65,43 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Name', style: theme.textTheme.labelMedium),
+                      Text(
+                        l10n.feedbackNameLabel,
+                        style: theme.textTheme.labelMedium,
+                      ),
                       const SizedBox(height: 4),
                       TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Your name',
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          hintText: l10n.feedbackNameHint,
                         ),
                         keyboardType: TextInputType.text,
                       ),
                       const SizedBox(height: 16),
-                      Text('Email', style: theme.textTheme.labelMedium),
+                      Text(
+                        l10n.feedbackEmailLabel,
+                        style: theme.textTheme.labelMedium,
+                      ),
                       const SizedBox(height: 4),
                       TextFormField(
                         controller: _emailController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'your@email.com',
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          hintText: l10n.feedbackEmailHint,
                         ),
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Text('Message', style: theme.textTheme.labelMedium),
+                          Text(
+                            l10n.feedbackMessageLabel,
+                            style: theme.textTheme.labelMedium,
+                          ),
                           const SizedBox(width: 4),
                           Text(
-                            '(required)',
+                            l10n.feedbackRequired,
                             style: theme.textTheme.labelMedium,
                           ),
                         ],
@@ -100,14 +111,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         controller: _messageController,
                         minLines: 5,
                         maxLines: null,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: "Describe your bug or feature request…",
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          hintText: l10n.feedbackMessageHint,
                         ),
                         keyboardType: TextInputType.multiline,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a message';
+                            return l10n.feedbackMessageRequiredError;
                           }
                           return null;
                         },
@@ -135,7 +146,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Submit'),
+                    : Text(l10n.commonSubmit),
               ),
             ),
             SizedBox(
@@ -144,7 +155,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 onPressed: _isSubmitting
                     ? null
                     : () => Navigator.pop(context, null),
-                child: const Text('Cancel'),
+                child: Text(l10n.commonCancel),
               ),
             ),
           ],

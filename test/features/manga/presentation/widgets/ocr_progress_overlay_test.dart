@@ -5,6 +5,8 @@ import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
 
+import '../../../../test_app.dart';
+
 void main() {
   /// Builds a test widget with the ocrProgressProvider overridden to emit
   /// a single value (no polling), so the test framework isn't stuck waiting.
@@ -15,7 +17,7 @@ void main() {
           bookId,
         ).overrideWith((ref) => Stream.value(progress)),
       ],
-      child: MaterialApp(
+      child: buildLocalizedTestApp(
         home: Scaffold(
           body: SizedBox(
             width: 200,

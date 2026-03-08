@@ -56,10 +56,71 @@ final backupSchedulerProvider = Provider<BackupScheduler>((ref) {
 
 // ──────────────── Backup State ────────────────
 
+enum BackupMessageKind {
+  backupCreated,
+  backupFailed,
+  noBackupsToExport,
+  backupExported,
+  exportFailed,
+  invalidBackupFile,
+  couldNotOpenFile,
+  restoreSummary,
+  restoreFailed,
+  booksUpdatedFromBackup,
+  applyBookDataFailed,
+}
+
+class BackupMessage {
+  const BackupMessage._({
+    required this.kind,
+    this.details,
+    this.count,
+    this.result,
+  });
+
+  final BackupMessageKind kind;
+  final String? details;
+  final int? count;
+  final RestoreResult? result;
+
+  const BackupMessage.backupCreated()
+    : this._(kind: BackupMessageKind.backupCreated);
+
+  const BackupMessage.backupFailed(String details)
+    : this._(kind: BackupMessageKind.backupFailed, details: details);
+
+  const BackupMessage.noBackupsToExport()
+    : this._(kind: BackupMessageKind.noBackupsToExport);
+
+  const BackupMessage.backupExported()
+    : this._(kind: BackupMessageKind.backupExported);
+
+  const BackupMessage.exportFailed(String details)
+    : this._(kind: BackupMessageKind.exportFailed, details: details);
+
+  const BackupMessage.invalidBackupFile()
+    : this._(kind: BackupMessageKind.invalidBackupFile);
+
+  const BackupMessage.couldNotOpenFile(String details)
+    : this._(kind: BackupMessageKind.couldNotOpenFile, details: details);
+
+  const BackupMessage.restoreSummary(RestoreResult result)
+    : this._(kind: BackupMessageKind.restoreSummary, result: result);
+
+  const BackupMessage.restoreFailed(String details)
+    : this._(kind: BackupMessageKind.restoreFailed, details: details);
+
+  const BackupMessage.booksUpdatedFromBackup(int count)
+    : this._(kind: BackupMessageKind.booksUpdatedFromBackup, count: count);
+
+  const BackupMessage.applyBookDataFailed(String details)
+    : this._(kind: BackupMessageKind.applyBookDataFailed, details: details);
+}
+
 class BackupState {
   final bool isWorking;
-  final String? error;
-  final String? successMessage;
+  final BackupMessage? error;
+  final BackupMessage? successMessage;
 
   const BackupState({this.isWorking = false, this.error, this.successMessage});
 }
@@ -81,10 +142,10 @@ class BackupNotifier extends Notifier<BackupState> {
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Manual backup created', category: 'backup'),
       );
-      _showSuccess('Backup created successfully');
+      _showSuccess(const BackupMessage.backupCreated());
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = BackupState(error: 'Backup failed: $e');
+      state = BackupState(error: BackupMessage.backupFailed(e.toString()));
     }
   }
 
@@ -95,20 +156,18 @@ class BackupNotifier extends Notifier<BackupState> {
       final fileManager = ref.read(backupFileManagerProvider);
       final backups = await fileManager.listBackups();
       if (backups.isEmpty) {
-        state = const BackupState(
-          error: 'No backups to export. Create one first.',
-        );
+        state = const BackupState(error: BackupMessage.noBackupsToExport());
         return;
       }
       final saved = await fileManager.exportBackupFile(backups.first.filePath);
       if (saved) {
-        _showSuccess('Backup exported successfully');
+        _showSuccess(const BackupMessage.backupExported());
       } else {
         state = const BackupState();
       }
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = BackupState(error: 'Export failed: $e');
+      state = BackupState(error: BackupMessage.exportFailed(e.toString()));
     }
   }
 
@@ -117,7 +176,7 @@ class BackupNotifier extends Notifier<BackupState> {
     state = const BackupState();
   }
 
-  void _showSuccess(String message) {
+  void _showSuccess(BackupMessage message) {
     _autoDismissTimer?.cancel();
     state = BackupState(successMessage: message);
     _autoDismissTimer = Timer(const Duration(seconds: 3), clearState);
@@ -132,8 +191,8 @@ final backupNotifierProvider = NotifierProvider<BackupNotifier, BackupState>(
 
 class RestoreState {
   final bool isWorking;
-  final String? error;
-  final String? successMessage;
+  final BackupMessage? error;
+  final BackupMessage? successMessage;
   final RestoreResult? result;
   final List<BookRestoreConflict>? pendingConflicts;
 
@@ -176,16 +235,14 @@ class RestoreNotifier extends Notifier<RestoreState> {
       if (filePath == null) return;
 
       if (!filePath.endsWith('.mekuru')) {
-        state = const RestoreState(
-          error: 'Please select a .mekuru backup file.',
-        );
+        state = const RestoreState(error: BackupMessage.invalidBackupFile());
         return;
       }
 
       await _restoreFromPath(filePath);
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = RestoreState(error: 'Could not open file: $e');
+      state = RestoreState(error: BackupMessage.couldNotOpenFile(e.toString()));
     }
   }
 
@@ -239,15 +296,15 @@ class RestoreNotifier extends Notifier<RestoreState> {
           pendingConflicts: booksResult.conflicts,
         );
       } else {
-        _showSuccess(_buildSummary(result));
+        _showSuccess(BackupMessage.restoreSummary(result));
       }
     } on BackupVersionException catch (e) {
-      state = RestoreState(error: e.toString());
+      state = RestoreState(error: BackupMessage.restoreFailed(e.toString()));
     } on BackupFormatException catch (e) {
-      state = RestoreState(error: e.toString());
+      state = RestoreState(error: BackupMessage.restoreFailed(e.toString()));
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = RestoreState(error: 'Restore failed: $e');
+      state = RestoreState(error: BackupMessage.restoreFailed(e.toString()));
     }
   }
 
@@ -262,10 +319,12 @@ class RestoreNotifier extends Notifier<RestoreState> {
           conflict.backupEntry,
         );
       }
-      _showSuccess('${toApply.length} book(s) updated from backup');
+      _showSuccess(BackupMessage.booksUpdatedFromBackup(toApply.length));
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = RestoreState(error: 'Failed to apply book data: $e');
+      state = RestoreState(
+        error: BackupMessage.applyBookDataFailed(e.toString()),
+      );
     }
   }
 
@@ -274,7 +333,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
     state = const RestoreState();
   }
 
-  void _showSuccess(String message) {
+  void _showSuccess(BackupMessage message) {
     _autoDismissTimer?.cancel();
     state = RestoreState(successMessage: message);
     _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
@@ -318,21 +377,6 @@ class RestoreNotifier extends Notifier<RestoreState> {
         }
       }),
     );
-  }
-
-  String _buildSummary(RestoreResult result) {
-    final parts = <String>[];
-    if (result.settingsRestored) parts.add('Settings restored');
-    final w = result.wordsResult;
-    if (w.added > 0 || w.skipped > 0) {
-      parts.add('${w.added} words added, ${w.skipped} skipped');
-    }
-    final b = result.booksResult;
-    if (b.applied > 0) parts.add('${b.applied} book(s) restored');
-    if (b.pending > 0) {
-      parts.add('${b.pending} book(s) saved for later import');
-    }
-    return parts.isEmpty ? 'Restore complete' : parts.join('. ');
   }
 }
 

@@ -9,6 +9,8 @@ import 'package:mekuru/features/settings/presentation/providers/kanjivg_provider
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'test_app.dart';
+
 class _FakeJmdictNotifier extends JmdictNotifier {
   _FakeJmdictNotifier(this.onDownload);
 
@@ -78,7 +80,7 @@ void main() {
           kanjidicProvider.overrideWith(_FakeKanjidicNotifier.new),
           kanjiVgProvider.overrideWith(_FakeKanjiVgNotifier.new),
         ],
-        child: const MaterialApp(home: DownloadsScreen()),
+        child: buildLocalizedTestApp(home: const DownloadsScreen()),
       ),
     );
 
