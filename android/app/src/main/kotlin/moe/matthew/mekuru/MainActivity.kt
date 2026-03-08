@@ -4,9 +4,11 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.ichi2.anki.FlashCardsContract
 import com.ichi2.anki.api.AddContentApi
 import io.flutter.embedding.android.FlutterActivity
@@ -23,6 +25,11 @@ class MainActivity : FlutterActivity() {
 
     private var pendingTreePickerResult: MethodChannel.Result? = null
     private var pendingPickedDocumentUri: Uri? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        WindowCompat.enableEdgeToEdge(window)
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
