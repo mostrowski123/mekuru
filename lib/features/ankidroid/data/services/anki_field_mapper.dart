@@ -1,3 +1,4 @@
+import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
@@ -66,6 +67,28 @@ class AnkiFieldMapper {
   static String _formatFurigana(AnkiNoteData noteData) {
     return formatAnkiFurigana(noteData.expression, noteData.reading);
   }
+}
+
+/// Resolves the first Anki field value for the configured note type.
+///
+/// Duplicate detection in AnkiDroid is keyed off the note type's first field,
+/// so this mirrors the value that will actually be sent when creating a note.
+String? resolveAnkiFirstFieldValue({
+  required AnkidroidConfig config,
+  required AnkiNoteData noteData,
+}) {
+  if (!config.isConfigured || config.fieldMapping.isEmpty) return null;
+
+  final orderedFieldNames = config.fieldMapping.keys.toList(growable: false);
+  final resolvedFields = AnkiFieldMapper.resolveFields(
+    ankiFieldNames: orderedFieldNames,
+    fieldMapping: config.fieldMapping,
+    noteData: noteData,
+  );
+  if (resolvedFields.isEmpty) return null;
+
+  final firstFieldValue = resolvedFields.first.trim();
+  return firstFieldValue.isEmpty ? null : firstFieldValue;
 }
 
 /// Format expression + reading into Anki Japanese addon furigana notation.

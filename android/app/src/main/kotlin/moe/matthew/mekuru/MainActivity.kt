@@ -2,9 +2,13 @@ package moe.matthew.mekuru
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
+import androidx.core.content.ContextCompat
+import com.ichi2.anki.FlashCardsContract
+import com.ichi2.anki.api.AddContentApi
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -12,7 +16,8 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     companion object {
-        private const val CHANNEL_NAME = "mekuru/android_saf"
+        private const val SAF_CHANNEL_NAME = "mekuru/android_saf"
+        private const val ANKI_CHANNEL_NAME = "mekuru/ankidroid_native"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
     }
 
@@ -22,12 +27,21 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_NAME)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SAF_CHANNEL_NAME)
             .setMethodCallHandler { call, result ->
                 try {
                     handleSafMethodCall(call, result)
                 } catch (e: Exception) {
                     result.error("saf_error", e.message, null)
+                }
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ANKI_CHANNEL_NAME)
+            .setMethodCallHandler { call, result ->
+                try {
+                    handleAnkiMethodCall(call, result)
+                } catch (e: Exception) {
+                    result.error("anki_error", e.message, null)
                 }
             }
     }
@@ -175,6 +189,30 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun handleAnkiMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "hasDuplicateInDeck" -> {
+                val modelId = call.longArgument("modelId")
+                val deckId = call.longArgument("deckId")
+                val firstFieldValue = call.argument<String>("firstFieldValue")
+
+                if (modelId == null || deckId == null || firstFieldValue.isNullOrBlank()) {
+                    result.success(false)
+                    return
+                }
+
+                runIo(result) {
+                    hasDuplicateInDeck(
+                        modelId = modelId,
+                        deckId = deckId,
+                        firstFieldValue = firstFieldValue,
+                    )
+                }
+            }
+            else -> result.notImplemented()
+        }
+    }
+
     private fun runIo(
         result: MethodChannel.Result,
         task: () -> Any?,
@@ -187,6 +225,55 @@ class MainActivity : FlutterActivity() {
                 runOnUiThread { result.error("saf_io_error", e.message, null) }
             }
         }.start()
+    }
+
+    private fun hasDuplicateInDeck(
+        modelId: Long,
+        deckId: Long,
+        firstFieldValue: String,
+    ): Boolean {
+        if (!canQueryAnkiDuplicates()) return false
+
+        val api = AddContentApi(applicationContext)
+        val duplicates = api.findDuplicateNotes(modelId, firstFieldValue)
+        if (duplicates.isEmpty()) return false
+
+        return duplicates.any { noteInfo ->
+            noteInfo != null && noteHasCardInDeck(noteInfo.getId(), deckId)
+        }
+    }
+
+    private fun canQueryAnkiDuplicates(): Boolean {
+        val provider = packageManager.resolveContentProvider(
+            FlashCardsContract.AUTHORITY,
+            PackageManager.GET_META_DATA,
+        )
+        if (provider == null) return false
+
+        return ContextCompat.checkSelfPermission(
+            applicationContext,
+            AddContentApi.READ_WRITE_PERMISSION,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun noteHasCardInDeck(noteId: Long, deckId: Long): Boolean {
+        val noteUri = Uri.withAppendedPath(
+            FlashCardsContract.Note.CONTENT_URI,
+            noteId.toString(),
+        )
+        val cardsUri = Uri.withAppendedPath(noteUri, "cards")
+        val projection = arrayOf(FlashCardsContract.Card.DECK_ID)
+
+        contentResolver.query(cardsUri, projection, null, null, null)?.use { cursor ->
+            val deckIdIndex = cursor.getColumnIndex(FlashCardsContract.Card.DECK_ID)
+            while (cursor.moveToNext()) {
+                if (deckIdIndex >= 0 && cursor.getLong(deckIdIndex) == deckId) {
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     private fun requestDirectoryAccessForDocument(
@@ -347,6 +434,16 @@ class MainActivity : FlutterActivity() {
             fileDocId.removePrefix(prefix)
         } else {
             null
+        }
+    }
+
+    private fun MethodCall.longArgument(name: String): Long? {
+        val value = (arguments as? Map<*, *>)?.get(name)
+        return when (value) {
+            is Int -> value.toLong()
+            is Long -> value
+            is Number -> value.toLong()
+            else -> null
         }
     }
 }

@@ -213,6 +213,10 @@ android {
     }
 }
 
+dependencies {
+    implementation("com.github.ankidroid:Anki-Android:v2.17.4")
+}
+
 flutter {
     source = "../.."
 }

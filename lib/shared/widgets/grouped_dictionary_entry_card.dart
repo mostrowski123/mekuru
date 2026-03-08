@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
+import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
@@ -60,6 +61,10 @@ class GroupedDictionaryEntryCard extends ConsumerStatefulWidget {
 class _GroupedDictionaryEntryCardState
     extends ConsumerState<GroupedDictionaryEntryCard> {
   bool _isSaved = false;
+  bool _isInAnki = false;
+  bool _isCheckingAnki = false;
+  int _ankiLookupRequestId = 0;
+  String? _lastAnkiLookupCacheKey;
 
   DictionaryEntryWithSource get _primaryResult => widget.entries.first;
   DictionaryEntry get _primaryEntry => _primaryResult.entry;
@@ -69,6 +74,24 @@ class _GroupedDictionaryEntryCardState
   void initState() {
     super.initState();
     _checkIfSaved();
+    _checkIfInAnki();
+    ref.listenManual(ankidroidConfigProvider, (previous, next) {
+      _checkIfInAnki(force: true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupedDictionaryEntryCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final entryChanged =
+        oldWidget.entries.first.entry.expression != _primaryEntry.expression ||
+        oldWidget.entries.first.entry.reading != _primaryEntry.reading;
+    if (entryChanged) {
+      _checkIfSaved();
+    }
+
+    _checkIfInAnki();
   }
 
   Future<void> _checkIfSaved() async {
@@ -101,6 +124,16 @@ class _GroupedDictionaryEntryCardState
     }
   }
 
+  void _showVocabAlreadySavedToast() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Word already exists in vocab list'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   void _copyExpression() {
     Clipboard.setData(ClipboardData(text: _primaryEntry.expression));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -112,6 +145,88 @@ class _GroupedDictionaryEntryCardState
     );
   }
 
+  void _showAnkiAlreadySavedToast() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Word already exists in default deck'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  AnkiNoteData _buildAnkiNoteData() {
+    return AnkiNoteData(
+      expression: _primaryEntry.expression,
+      reading: _primaryEntry.reading,
+      glossaries: _primaryEntry.glossaries,
+      dictionaryName: _primaryResult.dictionaryName,
+      frequencyRank: _frequencyRank,
+      sentenceContext: widget.sentenceContext,
+      pitchAccents: widget.pitchAccents,
+    );
+  }
+
+  ({String cacheKey, int modelId, int deckId, String firstFieldValue})?
+  _buildAnkiDuplicateLookup() {
+    final config = ref.read(ankidroidConfigProvider);
+    final modelId = config.modelId;
+    final deckId = config.deckId;
+    if (modelId == null || deckId == null) return null;
+
+    final firstFieldValue = resolveAnkiFirstFieldValue(
+      config: config,
+      noteData: _buildAnkiNoteData(),
+    );
+    if (firstFieldValue == null) return null;
+
+    return (
+      cacheKey: '$modelId\u0000$deckId\u0000$firstFieldValue',
+      modelId: modelId,
+      deckId: deckId,
+      firstFieldValue: firstFieldValue,
+    );
+  }
+
+  Future<void> _checkIfInAnki({bool force = false}) async {
+    final lookup = _buildAnkiDuplicateLookup();
+    final cacheKey = lookup?.cacheKey;
+    if (!force && cacheKey == _lastAnkiLookupCacheKey) return;
+    _lastAnkiLookupCacheKey = cacheKey;
+
+    final requestId = ++_ankiLookupRequestId;
+    if (lookup == null) {
+      if (mounted) {
+        setState(() {
+          _isInAnki = false;
+          _isCheckingAnki = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isInAnki = false;
+        _isCheckingAnki = true;
+      });
+    }
+
+    final exists = await ref
+        .read(ankidroidServiceProvider)
+        .hasDuplicateInDeck(
+          modelId: lookup.modelId,
+          deckId: lookup.deckId,
+          firstFieldValue: lookup.firstFieldValue,
+        );
+    if (!mounted || requestId != _ankiLookupRequestId) return;
+
+    setState(() {
+      _isInAnki = exists;
+      _isCheckingAnki = false;
+    });
+  }
+
   void _sendToAnki() {
     final config = ref.read(ankidroidConfigProvider);
     if (!config.isConfigured) {
@@ -121,15 +236,7 @@ class _GroupedDictionaryEntryCardState
       return;
     }
 
-    final noteData = AnkiNoteData(
-      expression: _primaryEntry.expression,
-      reading: _primaryEntry.reading,
-      glossaries: _primaryEntry.glossaries,
-      dictionaryName: _primaryResult.dictionaryName,
-      frequencyRank: _frequencyRank,
-      sentenceContext: widget.sentenceContext,
-      pitchAccents: widget.pitchAccents,
-    );
+    final noteData = _buildAnkiNoteData();
     Navigator.of(context)
         .push<bool>(
           MaterialPageRoute(
@@ -138,6 +245,7 @@ class _GroupedDictionaryEntryCardState
         )
         .then((result) {
           if (result == true) {
+            _checkIfInAnki(force: true);
             scaffoldMessengerKey.currentState?.showSnackBar(
               SnackBar(
                 content: Text('Added "${_primaryEntry.expression}" to Anki'),
@@ -232,6 +340,7 @@ class _GroupedDictionaryEntryCardState
   }
 
   List<Widget> _buildActionButtons() {
+    final ankidroidConfig = ref.watch(ankidroidConfigProvider);
     return [
       IconButton(
         onPressed: _copyExpression,
@@ -241,15 +350,29 @@ class _GroupedDictionaryEntryCardState
       ),
       if (defaultTargetPlatform == TargetPlatform.android)
         IconButton(
-          onPressed: _sendToAnki,
-          icon: const Icon(Icons.electric_bolt_outlined),
-          tooltip: 'Send to AnkiDroid',
+          onPressed: _isCheckingAnki && ankidroidConfig.isConfigured
+              ? null
+              : _isInAnki
+              ? _showAnkiAlreadySavedToast
+              : _sendToAnki,
+          onLongPress: _isInAnki ? _sendToAnki : null,
+          icon: _isCheckingAnki && ankidroidConfig.isConfigured
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(_isInAnki ? Icons.check : Icons.electric_bolt_outlined),
+          tooltip: _isInAnki
+              ? 'Already in default Anki deck. Long press to add anyway'
+              : _isCheckingAnki && ankidroidConfig.isConfigured
+              ? 'Checking default Anki deck'
+              : 'Send to AnkiDroid',
           iconSize: 20,
         ),
       IconButton.filledTonal(
-        onPressed: _isSaved ? null : _toggleSave,
+        onPressed: _isSaved ? _showVocabAlreadySavedToast : _toggleSave,
         icon: Icon(_isSaved ? Icons.check : Icons.bookmark_add_outlined),
-        tooltip: _isSaved ? 'Saved' : 'Save to Vocabulary',
+        tooltip: _isSaved ? 'Already in vocab list' : 'Save to Vocabulary',
       ),
     ];
   }

@@ -1,10 +1,15 @@
 import 'package:ankidroid_for_flutter/ankidroid_for_flutter.dart';
+import 'package:flutter/services.dart';
 
 /// Wrapper around the ankidroid_for_flutter API.
 ///
 /// Handles permission requests, isolate lifecycle, and all API calls.
 /// Methods return null/empty on failure to allow graceful degradation.
 class AnkidroidService {
+  static const MethodChannel _nativeChannel = MethodChannel(
+    'mekuru/ankidroid_native',
+  );
+
   Ankidroid? _ankidroid;
 
   /// Whether the service is currently initialized.
@@ -96,6 +101,32 @@ class AnkidroidService {
       final value = result.asValue?.value;
       return value != null && value.isNotEmpty;
     } catch (_) {
+      return false;
+    }
+  }
+
+  /// Check whether a duplicate note already exists in a specific deck.
+  Future<bool> hasDuplicateInDeck({
+    required int modelId,
+    required int deckId,
+    required String firstFieldValue,
+  }) async {
+    final normalizedValue = firstFieldValue.trim();
+    if (normalizedValue.isEmpty) return false;
+
+    try {
+      final result = await _nativeChannel.invokeMethod<bool>(
+        'hasDuplicateInDeck',
+        {
+          'modelId': modelId,
+          'deckId': deckId,
+          'firstFieldValue': normalizedValue,
+        },
+      );
+      return result ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
       return false;
     }
   }
