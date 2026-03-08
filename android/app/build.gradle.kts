@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import java.io.File
 import java.util.Properties
 
@@ -34,12 +35,23 @@ val libcxxAbiToNdkTriple = mapOf(
     "x86_64" to "x86_64-linux-android",
 )
 
+val mecabHookArchToAbi = mapOf(
+    "arm" to "armeabi-v7a",
+    "arm64" to "arm64-v8a",
+    "x64" to "x86_64",
+)
+
 val mecabHookLibcxxAliases = mapOf(
     "armv7a-linux-androideabi" to "arm-linux-androideabi",
 )
 
 val flutterNativeAssetsJniLibsDir =
     rootProject.projectDir.parentFile.resolve("build/native_assets/android/jniLibs/lib")
+
+val mecabHooksRunnerDir =
+    rootProject.projectDir.parentFile.resolve(".dart_tool/hooks_runner/mecab_for_dart")
+
+val mecabNativeAssetId = "package:mecab_for_dart/mecab_ffi_native.dart"
 
 fun Project.resolveAndroidSdkDir(): File {
     val envSdkDir = sequenceOf("ANDROID_SDK_ROOT", "ANDROID_HOME")
@@ -132,7 +144,11 @@ val ensureMecabHookLibCppAliases by tasks.registering {
 val ensureBundledLibCppShared by tasks.registering {
     inputs.property("androidNdkVersion", androidNdkVersion)
     inputs.property("libcxxAbiToNdkTriple", libcxxAbiToNdkTriple)
-    outputs.dir(flutterNativeAssetsJniLibsDir)
+    outputs.files(
+        libcxxAbiToNdkTriple.keys.map { abi ->
+            flutterNativeAssetsJniLibsDir.resolve(abi).resolve("libc++_shared.so")
+        }
+    )
 
     doLast {
         val sysrootLibDir = project.resolveAndroidNdkSysrootLibDir()
@@ -152,6 +168,88 @@ val ensureBundledLibCppShared by tasks.registering {
     }
 }
 
+val ensureBundledMecabNativeAssets by tasks.registering {
+    inputs.property("mecabHookArchToAbi", mecabHookArchToAbi)
+    inputs.dir(mecabHooksRunnerDir)
+    outputs.files(
+        mecabHookArchToAbi.values.map { abi ->
+            flutterNativeAssetsJniLibsDir.resolve(abi).resolve("libmecab_dart.so")
+        }
+    )
+    dependsOn(
+        tasks.matching { it.name == "compileFlutterBuildRelease" }
+    )
+
+    doLast {
+        if (!mecabHooksRunnerDir.exists()) {
+            throw org.gradle.api.GradleException(
+                "Could not find MeCab hook outputs under $mecabHooksRunnerDir",
+            )
+        }
+
+        val jsonSlurper = JsonSlurper()
+        val latestAssetByAbi = mutableMapOf<String, Pair<Long, File>>()
+
+        mecabHooksRunnerDir.listFiles()
+            ?.asSequence()
+            ?.filter(File::isDirectory)
+            ?.forEach { hookRunDir ->
+                val inputFile = hookRunDir.resolve("input.json")
+                val outputFile = hookRunDir.resolve("output.json")
+                if (!inputFile.exists() || !outputFile.exists()) {
+                    return@forEach
+                }
+
+                val input = jsonSlurper.parse(inputFile) as? Map<*, *> ?: return@forEach
+                val config = input["config"] as? Map<*, *> ?: return@forEach
+                val extensions = config["extensions"] as? Map<*, *> ?: return@forEach
+                val codeAssets = extensions["code_assets"] as? Map<*, *> ?: return@forEach
+                if (codeAssets["target_os"] != "android") {
+                    return@forEach
+                }
+
+                val targetArch = codeAssets["target_architecture"]?.toString() ?: return@forEach
+                val abi = mecabHookArchToAbi[targetArch] ?: return@forEach
+
+                val output = jsonSlurper.parse(outputFile) as? Map<*, *> ?: return@forEach
+                val assets = output["assets"] as? List<*> ?: return@forEach
+                val mecabAssetFile = assets
+                    .asSequence()
+                    .mapNotNull { it as? Map<*, *> }
+                    .mapNotNull { it["encoding"] as? Map<*, *> }
+                    .firstOrNull { it["id"] == mecabNativeAssetId }
+                    ?.get("file")
+                    ?.toString()
+                    ?.let(::File)
+                    ?: return@forEach
+
+                if (!mecabAssetFile.exists()) {
+                    throw org.gradle.api.GradleException(
+                        "Expected MeCab native asset for $abi at $mecabAssetFile",
+                    )
+                }
+
+                val candidateTimestamp = outputFile.lastModified()
+                val existing = latestAssetByAbi[abi]
+                if (existing == null || candidateTimestamp > existing.first) {
+                    latestAssetByAbi[abi] = candidateTimestamp to mecabAssetFile
+                }
+            }
+
+        val missingAbis = mecabHookArchToAbi.values.filterNot(latestAssetByAbi::containsKey)
+        if (missingAbis.isNotEmpty()) {
+            throw org.gradle.api.GradleException(
+                "Could not locate MeCab native hook outputs for ${missingAbis.joinToString(", ")} under $mecabHooksRunnerDir",
+            )
+        }
+
+        latestAssetByAbi.forEach { (abi, asset) ->
+            val destinationDir = flutterNativeAssetsJniLibsDir.resolve(abi).apply { mkdirs() }
+            asset.second.copyTo(destinationDir.resolve("libmecab_dart.so"), overwrite = true)
+        }
+    }
+}
+
 tasks.matching { it.name.startsWith("compileFlutterBuild") }.configureEach {
     dependsOn(ensureMecabHookLibCppAliases)
 }
@@ -165,6 +263,17 @@ tasks.matching {
         (it.name.endsWith("JniLibFolders") || it.name.endsWith("NativeLibs"))
 }.configureEach {
     dependsOn(ensureBundledLibCppShared)
+}
+
+tasks.matching { it.name == "packJniLibsflutterBuildRelease" }.configureEach {
+    finalizedBy(ensureBundledMecabNativeAssets)
+}
+
+tasks.matching {
+    it.name.startsWith("mergeRelease") &&
+        (it.name.endsWith("JniLibFolders") || it.name.endsWith("NativeLibs"))
+}.configureEach {
+    dependsOn(ensureBundledMecabNativeAssets)
 }
 
 android {
