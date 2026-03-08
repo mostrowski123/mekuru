@@ -8,6 +8,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_stroke_order.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 
 /// Dictionary search screen with live fuzzy search.
@@ -211,6 +212,9 @@ class DictionarySearchScreenState
                 if (dictionaries.isEmpty) {
                   return _buildNoDictionariesState(theme);
                 }
+                if (!dictionaries.any((dictionary) => dictionary.isEnabled)) {
+                  return _buildNoEnabledDictionariesState(theme);
+                }
                 return _buildResultsArea(theme);
               },
             ),
@@ -241,11 +245,80 @@ class DictionarySearchScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              'Tap the manage button in the top right to import a dictionary.',
+              'Install the starter pack or import your own Yomitan dictionaries to start searching.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
               ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                FilledButton.icon(
+                  onPressed: _openDownloads,
+                  icon: const Icon(Icons.download_outlined),
+                  label: const Text('Recommended starter pack'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _openDictionaryManager,
+                  icon: const Icon(Icons.library_books_outlined),
+                  label: const Text('Manage Dictionaries'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoEnabledDictionariesState(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.visibility_off_outlined,
+              size: 64,
+              color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Your dictionaries are turned off',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Enable at least one dictionary to make lookups work, or install the recommended starter pack.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                FilledButton.icon(
+                  onPressed: _openDictionaryManager,
+                  icon: const Icon(Icons.toggle_on_outlined),
+                  label: const Text('Enable dictionaries'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _openDownloads,
+                  icon: const Icon(Icons.download_outlined),
+                  label: const Text('Starter pack'),
+                ),
+              ],
             ),
           ],
         ),
@@ -410,6 +483,18 @@ class DictionarySearchScreenState
         ),
       ],
     );
+  }
+
+  void _openDictionaryManager() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const DictionaryManagerScreen()));
+  }
+
+  void _openDownloads() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const DownloadsScreen()));
   }
 }
 

@@ -22,11 +22,23 @@ import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 import 'package:mekuru/features/reader/presentation/widgets/bookmarks_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
+import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
+
+void _openBookReader(BuildContext context, Book book) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => book.bookType == 'manga'
+          ? MangaReaderScreen(book: book)
+          : ReaderScreen(book: book),
+    ),
+  );
+}
 
 /// Library screen displaying imported books in a grid view.
 class LibraryScreen extends ConsumerWidget {
@@ -88,6 +100,14 @@ class LibraryScreen extends ConsumerWidget {
               color: Colors.green.withValues(alpha: 0.1),
               textColor: Colors.green,
               message: importState.successMessage!,
+              actionLabel: importState.importedBook != null ? 'Open now' : null,
+              onAction: importState.importedBook == null
+                  ? null
+                  : () {
+                      final book = importState.importedBook!;
+                      ref.read(bookImportProvider.notifier).clearState();
+                      _openBookReader(context, book);
+                    },
               onDismiss: () =>
                   ref.read(bookImportProvider.notifier).clearState(),
             ),
@@ -96,7 +116,7 @@ class LibraryScreen extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (books) {
-                if (books.isEmpty) return _buildEmptyState(context);
+                if (books.isEmpty) return _buildEmptyState(context, ref);
                 return _buildBookGrid(context, ref, books);
               },
             ),
@@ -112,6 +132,8 @@ class LibraryScreen extends ConsumerWidget {
     required Color color,
     required Color textColor,
     required String message,
+    String? actionLabel,
+    VoidCallback? onAction,
     VoidCallback? onDismiss,
   }) {
     return Container(
@@ -127,6 +149,19 @@ class LibraryScreen extends ConsumerWidget {
               style: TextStyle(color: textColor, fontSize: 13),
             ),
           ),
+          if (actionLabel != null && onAction != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: TextButton(
+                onPressed: onAction,
+                style: TextButton.styleFrom(
+                  foregroundColor: textColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 36),
+                ),
+                child: Text(actionLabel),
+              ),
+            ),
           if (onDismiss != null)
             IconButton(
               icon: Icon(Icons.close, color: textColor, size: 18),
@@ -139,32 +174,100 @@ class LibraryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.auto_stories_outlined,
-            size: 72,
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.auto_stories_outlined,
+                      size: 72,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Your library is ready for its first book',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Import something to read, install a dictionary, and you will be ready to save words in a few minutes.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () {
+                      AppHaptics.light();
+                      _importEpub(ref);
+                    },
+                    icon: const Icon(Icons.book),
+                    label: const Text('Import EPUB'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () {
+                      AppHaptics.light();
+                      _showMangaImportTypeChoice(context, ref);
+                    },
+                    icon: const Icon(Icons.photo_library),
+                    label: const Text('Import Manga'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      AppHaptics.light();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const DownloadsScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.download_outlined),
+                    label: const Text('Get Dictionaries'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      AppHaptics.light();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const BackupSettingsScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.restore),
+                    label: const Text('Restore Backup'),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Your library is empty',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tap + to import a book',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -226,17 +329,17 @@ class LibraryScreen extends ConsumerWidget {
                   '.mokuro format:\n'
                   '  manga_title.mokuro  <-- choose this from the folder sheet\n'
                   '  manga_title/\n'
-                  '    ├── 001.jpg\n'
-                  '    └── ...\n'
+                  '  |-- 001.jpg\n'
+                  '  `-- ...\n'
                   '\n'
                   'Legacy format:\n'
                   '  manga_title.html    <-- or choose this\n'
                   '  manga_title/\n'
-                  '    ├── 001.jpg\n'
-                  '    └── ...\n'
+                  '  |-- 001.jpg\n'
+                  '  `-- ...\n'
                   '  _ocr/manga_title/\n'
-                  '    ├── 001.json\n'
-                  '    └── ...',
+                  '  |-- 001.json\n'
+                  '  `-- ...',
                   style: TextStyle(fontFamily: 'monospace', fontSize: 12),
                 ),
               ),
@@ -246,20 +349,10 @@ class LibraryScreen extends ConsumerWidget {
                 'which runs OCR on manga pages to extract Japanese text.',
               ),
               const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () async {
-                  final uri = Uri.parse('https://github.com/kha-white/mokuro');
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                },
-                child: Text(
-                  'Learn how to create .mokuro files →',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
+              TextButton.icon(
+                onPressed: () => _launchMokuroProject(context),
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Learn how to create .mokuro files'),
               ),
             ],
           ),
@@ -347,25 +440,83 @@ class LibraryScreen extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Manga (Mokuro)'),
-              subtitle: const Text('Select a folder with .mokuro OCR data'),
+              title: const Text('Manga'),
+              subtitle: const Text('Choose a CBZ archive or Mokuro folder'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                _importManga(context, ref);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.collections),
-              title: const Text('Manga (CBZ)'),
-              subtitle: const Text('Import a .cbz comic book archive'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _importCbz(context, ref);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) {
+                    _showMangaImportTypeChoice(context, ref);
+                  }
+                });
               },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showMangaImportTypeChoice(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Import Manga', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Choose whether you want to import a CBZ archive or a Mokuro-exported folder.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.photo_library),
+                    title: const Text('Mokuro folder'),
+                    subtitle: const Text(
+                      'Select the folder that contains a .mokuro or .html file alongside the images folder.',
+                    ),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _importManga(context, ref);
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 56, bottom: 8),
+                    child: TextButton.icon(
+                      onPressed: () => _launchMokuroProject(sheetContext),
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('What is Mokuro?'),
+                    ),
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.collections),
+                    title: const Text('CBZ archive'),
+                    subtitle: const Text('Import a .cbz comic book archive'),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _importCbz(context, ref);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -417,6 +568,19 @@ class LibraryScreen extends ConsumerWidget {
     }
 
     await _importMangaFromLocalFolder(context, ref);
+  }
+
+  Future<void> _launchMokuroProject(BuildContext context) async {
+    final uri = Uri.parse('https://github.com/kha-white/mokuro');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not open the Mokuro project page.')),
+    );
   }
 
   Future<void> _importMangaFromAndroidSafFolder(
@@ -742,15 +906,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     final downPos = _pointerDownPosition;
     if (downPos != null) {
       final distance = (e.localPosition - downPos).distance;
-      if (distance < 20) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => book.bookType == 'manga'
-                ? MangaReaderScreen(book: book)
-                : ReaderScreen(book: book),
-          ),
-        );
-      }
+      if (distance < 20) _openBookReader(context, book);
     }
   }
 

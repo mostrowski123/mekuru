@@ -1,6 +1,9 @@
 import 'package:flutter/gestures.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
@@ -36,12 +39,100 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     final jmdictState = ref.watch(jmdictProvider);
     final kanjidicState = ref.watch(kanjidicProvider);
     final theme = Theme.of(context);
+    final starterPackReady = jmdictState.isImported && jpdbFreqState.isImported;
+    final starterPackBusy =
+        jmdictState.isDownloading || jpdbFreqState.isDownloading;
+    final hasDictionarySuccess =
+        jmdictState.successMessage != null ||
+        kanjidicState.successMessage != null;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Downloads')),
       body: ListView(
         children: [
           // ── Dictionaries ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recommended starter pack',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Install JMdict English and word frequency data together for the fastest setup.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _StarterPackStatusRow(
+                    label: 'JMdict English',
+                    isReady: jmdictState.isImported,
+                  ),
+                  const SizedBox(height: 8),
+                  _StarterPackStatusRow(
+                    label: 'Word Frequency',
+                    isReady: jpdbFreqState.isImported,
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: starterPackBusy
+                            ? null
+                            : () {
+                                AppHaptics.light();
+                                if (starterPackReady) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const DictionarySearchScreen(),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                _installStarterPack();
+                              },
+                        icon: Icon(
+                          starterPackReady
+                              ? Icons.search
+                              : Icons.download_outlined,
+                        ),
+                        label: Text(
+                          starterPackReady
+                              ? 'Open Dictionary'
+                              : 'Install Starter Pack',
+                        ),
+                      ),
+                      if (hasDictionarySuccess && !starterPackReady)
+                        OutlinedButton(
+                          onPressed: () {
+                            AppHaptics.light();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const DictionarySearchScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text('Open Dictionary'),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
           _SectionHeader(title: 'Dictionaries'),
 
           // JMdict English
@@ -162,6 +253,21 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
         ],
       ),
     );
+  }
+
+  void _installStarterPack() {
+    // Start both imports right away so they can continue even if the user
+    // leaves this screen before the downloads finish.
+    if (!ref.read(jmdictProvider).isImported) {
+      unawaited(
+        ref
+            .read(jmdictProvider.notifier)
+            .download(YomitanDictType.jmdictEnglish),
+      );
+    }
+    if (!ref.read(jpdbFreqProvider).isImported) {
+      unawaited(ref.read(jpdbFreqProvider.notifier).download());
+    }
   }
 }
 
@@ -298,6 +404,31 @@ class _AttributionText extends StatelessWidget {
           TextSpan(text: suffix),
         ],
       ),
+    );
+  }
+}
+
+class _StarterPackStatusRow extends StatelessWidget {
+  const _StarterPackStatusRow({required this.label, required this.isReady});
+
+  final String label;
+  final bool isReady;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(
+          isReady ? Icons.check_circle : Icons.radio_button_unchecked,
+          size: 18,
+          color: isReady
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 8),
+        Text(label, style: theme.textTheme.bodyMedium),
+      ],
     );
   }
 }

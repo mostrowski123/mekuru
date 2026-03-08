@@ -122,6 +122,21 @@ class _MainShellState extends ConsumerState<_MainShell> {
     );
   }
 
+  void _setCurrentIndex(int index) {
+    _hasAppliedStartup = true;
+    setState(() => _currentIndex = index);
+    if (index == 1) {
+      _focusDictionarySearchIfNeeded();
+    }
+  }
+
+  void _focusDictionarySearchIfNeeded() {
+    if (!ref.read(autoFocusSearchProvider)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _dictionaryKey.currentState?.requestSearchFocus();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Apply startup screen once after the provider has finished loading
@@ -135,11 +150,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
           _currentIndex = 0;
         case StartupScreen.dictionary:
           _currentIndex = 1;
-          if (ref.read(autoFocusSearchProvider)) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _dictionaryKey.currentState?.requestSearchFocus();
-            });
-          }
+          _focusDictionarySearchIfNeeded();
         case StartupScreen.lastRead:
           _currentIndex = 0;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -155,13 +166,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
-          _hasAppliedStartup = true;
-          setState(() => _currentIndex = index);
-          if (index == 1 && ref.read(autoFocusSearchProvider)) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _dictionaryKey.currentState?.requestSearchFocus();
-            });
-          }
+          _setCurrentIndex(index);
         },
         destinations: const [
           NavigationDestination(

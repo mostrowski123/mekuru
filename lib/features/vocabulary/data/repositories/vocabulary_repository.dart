@@ -82,6 +82,21 @@ class VocabularyRepository {
   Future<void> deleteWord(int id) =>
       (_db.delete(_db.savedWords)..where((t) => t.id.equals(id))).go();
 
+  Future<void> restoreWord(SavedWord word) {
+    return _db
+        .into(_db.savedWords)
+        .insertOnConflictUpdate(
+          SavedWordsCompanion(
+            id: Value(word.id),
+            expression: Value(word.expression),
+            reading: Value(word.reading),
+            glossaries: Value(word.glossaries),
+            sentenceContext: Value(word.sentenceContext),
+            dateAdded: Value(word.dateAdded),
+          ),
+        );
+  }
+
   // ──────────────── Export ────────────────
 
   /// Export vocabulary to a CSV file and return the file.

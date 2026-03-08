@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
+import 'package:mekuru/features/vocabulary/presentation/utils/vocabulary_search.dart';
 
 class VocabularyScreen extends ConsumerStatefulWidget {
   const VocabularyScreen({super.key});
@@ -14,6 +17,20 @@ class VocabularyScreen extends ConsumerStatefulWidget {
 class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
   bool _isSelectionMode = false;
   final Set<int> _selectedIds = {};
+  late final TextEditingController _searchController;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _enterSelectionMode() {
     setState(() {
@@ -56,33 +73,77 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     ref.read(exportVocabularyProvider)(selectedIds: _selectedIds);
   }
 
+  void _setSearchQuery(String value) {
+    setState(() {
+      _searchQuery = value;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final wordsAsync = ref.watch(vocabularyListProvider);
+    final visibleWords = wordsAsync.maybeWhen(
+      data: (words) => filterVocabularyWords(words, _searchQuery),
+      orElse: () => const <SavedWord>[],
+    );
 
     return Scaffold(
       appBar: _isSelectionMode
-          ? _buildSelectionAppBar(wordsAsync)
+          ? _buildSelectionAppBar(visibleWords)
           : _buildNormalAppBar(),
       body: wordsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (words) {
           if (words.isEmpty) {
-            return const Center(child: Text('No saved words yet.'));
+            return _buildEmptyState(context);
           }
-          return ListView.separated(
-            itemCount: words.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final word = words[index];
-              return _VocabularyItem(
-                word: word,
-                isSelectionMode: _isSelectionMode,
-                isSelected: _selectedIds.contains(word.id),
-                onToggleSelection: () => _toggleSelection(word.id),
-              );
-            },
+          final filteredWords = filterVocabularyWords(words, _searchQuery);
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search saved words',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _setSearchQuery('');
+                            },
+                          ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    filled: true,
+                  ),
+                  onChanged: _setSearchQuery,
+                ),
+              ),
+              Expanded(
+                child: filteredWords.isEmpty
+                    ? _buildNoMatchesState(context)
+                    : ListView.separated(
+                        itemCount: filteredWords.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final word = filteredWords[index];
+                          return _VocabularyItem(
+                            word: word,
+                            isSelectionMode: _isSelectionMode,
+                            isSelected: _selectedIds.contains(word.id),
+                            onToggleSelection: () => _toggleSelection(word.id),
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -102,10 +163,110 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     );
   }
 
-  AppBar _buildSelectionAppBar(AsyncValue<List<SavedWord>> wordsAsync) {
-    final allWords = wordsAsync.asData?.value ?? [];
+  Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.bookmark_outline,
+              size: 64,
+              color: theme.colorScheme.onSurfaceVariant.withAlpha(100),
+            ),
+            const SizedBox(height: 16),
+            Text('No saved words yet', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Save words from dictionary searches or while reading, and they will show up here with context.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const DictionarySearchScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.search),
+                  label: const Text('Open Dictionary'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const DownloadsScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.download_outlined),
+                  label: const Text('Get Dictionaries'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoMatchesState(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off_outlined,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant.withAlpha(110),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No matches for "$_searchQuery"',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try the expression, reading, or part of a definition.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: () {
+                _searchController.clear();
+                _setSearchQuery('');
+              },
+              child: const Text('Clear search'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  AppBar _buildSelectionAppBar(List<SavedWord> visibleWords) {
     final allSelected =
-        allWords.isNotEmpty && _selectedIds.length == allWords.length;
+        visibleWords.isNotEmpty &&
+        visibleWords.every((word) => _selectedIds.contains(word.id));
 
     return AppBar(
       leading: IconButton(
@@ -121,7 +282,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
             if (allSelected) {
               _deselectAll();
             } else {
-              _selectAll(allWords);
+              _selectAll(visibleWords);
             }
           },
         ),
@@ -229,19 +390,23 @@ class _VocabularyItem extends ConsumerWidget {
         padding: const EdgeInsets.only(right: 16),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (_) {
-        ref.read(vocabularyRepositoryProvider).deleteWord(word.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Deleted "${word.expression}"'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () {
-                // To implement undo, we'd need to re-add the word.
-              },
+      onDismissed: (_) async {
+        final repository = ref.read(vocabularyRepositoryProvider);
+        await repository.deleteWord(word.id);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('Deleted "${word.expression}"'),
+              action: SnackBarAction(
+                label: 'Undo',
+                onPressed: () async {
+                  await repository.restoreWord(word);
+                },
+              ),
             ),
-          ),
-        );
+          );
       },
       child: tile,
     );

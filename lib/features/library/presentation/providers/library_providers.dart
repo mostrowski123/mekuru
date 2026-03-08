@@ -91,12 +91,14 @@ class BookImportState {
   final double? progress; // null = indeterminate, 0.0–1.0 = determinate
   final String? error;
   final String? successMessage;
+  final Book? importedBook;
 
   const BookImportState({
     this.isImporting = false,
     this.progress,
     this.error,
     this.successMessage,
+    this.importedBook,
   });
 }
 
@@ -107,10 +109,10 @@ class BookImportNotifier extends Notifier<BookImportState> {
   @override
   BookImportState build() => const BookImportState();
 
-  void _showSuccess(String message) {
+  void _showSuccess(String message, Book book) {
     _autoDismissTimer?.cancel();
-    state = BookImportState(successMessage: message);
-    _autoDismissTimer = Timer(const Duration(seconds: 3), clearState);
+    state = BookImportState(successMessage: message, importedBook: book);
+    _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
   }
 
   Future<Book?> importEpub(String filePath) async {
@@ -123,7 +125,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'EPUB imported', category: 'library'),
       );
-      _showSuccess('"${book.title}" added to library!');
+      _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
@@ -147,7 +149,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'CBZ imported', category: 'library'),
       );
-      _showSuccess('"${book.title}" added to library!');
+      _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
@@ -171,7 +173,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Manga imported', category: 'library'),
       );
-      _showSuccess('"${book.title}" added to library!');
+      _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
@@ -200,7 +202,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Manga imported (SAF)', category: 'library'),
       );
-      _showSuccess('"${book.title}" added to library!');
+      _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
