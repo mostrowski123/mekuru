@@ -1168,6 +1168,42 @@ abstract class AppLocalizations {
   /// **'General'**
   String get settingsSectionGeneral;
 
+  /// Title for the app language setting.
+  ///
+  /// In en, this message translates to:
+  /// **'App Language'**
+  String get settingsAppLanguageTitle;
+
+  /// Subtitle shown when the app language follows the system language.
+  ///
+  /// In en, this message translates to:
+  /// **'System default ({language})'**
+  String settingsAppLanguageSystemValue({required String language});
+
+  /// Language option label for English.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsAppLanguageEnglish;
+
+  /// Language option label for Spanish.
+  ///
+  /// In en, this message translates to:
+  /// **'Español'**
+  String get settingsAppLanguageSpanish;
+
+  /// Language option label for Indonesian.
+  ///
+  /// In en, this message translates to:
+  /// **'Bahasa Indonesia'**
+  String get settingsAppLanguageIndonesian;
+
+  /// Language option label for Simplified Chinese.
+  ///
+  /// In en, this message translates to:
+  /// **'简体中文'**
+  String get settingsAppLanguageSimplifiedChinese;
+
   /// Settings section header for appearance preferences.
   ///
   /// In en, this message translates to:

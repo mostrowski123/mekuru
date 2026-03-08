@@ -345,6 +345,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
   /// Force-refresh settings providers so restored values are applied
   /// immediately in memory and reflected by the UI.
   Future<void> _reloadSettingsProviders() async {
+    await ref.refresh(appLanguageProvider.notifier).loadPersistedSettings();
     await ref.refresh(appThemeModeProvider.notifier).loadPersistedSettings();
     await ref.refresh(appColorThemeProvider.notifier).loadPersistedSettings();
     await ref.refresh(lookupFontSizeProvider.notifier).loadPersistedSettings();

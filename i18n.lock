@@ -178,6 +178,12 @@ checksums:
     commonRestore: 91b4fad20d5f2d8e17cb62999942d2b7
     settingsTitle: 8df6777277469c1fd88cc18dde2f1cc3
     settingsSectionGeneral: b891e8f15579fc5d97bcaf3637f5ae59
+    settingsAppLanguageTitle: 2b7eaaca25bc7ae218db64345ef72629
+    settingsAppLanguageSystemValue: 7df3f8e34e5ba3d2e08c8db54b3136c2
+    settingsAppLanguageEnglish: e1eeeb379f86a015d6e581fcbc4af7f3
+    settingsAppLanguageSpanish: e1cd9645ddb854071941a3a23af9eaaf
+    settingsAppLanguageIndonesian: a84d44041dd3e712bb199e0081c45aff
+    settingsAppLanguageSimplifiedChinese: 56d7ebc7e245c2150d34cd2908dec619
     settingsSectionAppearance: cdd8c41c5fb859234e8a603544fce631
     settingsSectionReadingDefaults: 72896d9a261272c628e2f4839b5f4c1e
     settingsSectionDictionary: 7a799edef739a367396b606b7da906a2

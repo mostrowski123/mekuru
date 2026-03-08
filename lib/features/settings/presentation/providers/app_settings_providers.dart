@@ -12,6 +12,40 @@ final appSettingsStorageProvider = Provider<AppSettingsStorage>((ref) {
   return SharedPreferencesAppSettingsStorage();
 });
 
+/// Manages the app-wide language preference.
+class AppLanguageNotifier extends Notifier<AppLanguage> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  AppLanguage build() => PreloadedAppSettings.initialAppLanguage;
+
+  /// Load persisted app language from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadAppLanguage();
+    if (persisted != null) {
+      state = persisted;
+      PreloadedAppSettings.setAppLanguageFromValue(persisted.storageValue);
+    }
+  }
+
+  /// Set app language and persist to storage.
+  void setAppLanguage(AppLanguage language) {
+    state = language;
+    PreloadedAppSettings.setAppLanguageFromValue(language.storageValue);
+    unawaited(ref.read(appSettingsStorageProvider).saveAppLanguage(language));
+  }
+}
+
+/// Provider for the app language preference.
+final appLanguageProvider = NotifierProvider<AppLanguageNotifier, AppLanguage>(
+  AppLanguageNotifier.new,
+);
+
 /// Manages the app-wide theme mode.
 class AppThemeNotifier extends Notifier<ThemeMode> {
   bool _hasLoadedPersistedSettings = false;

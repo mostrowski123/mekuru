@@ -12,6 +12,7 @@ import 'features/library/data/repositories/book_repository.dart';
 import 'features/library/presentation/screens/library_screen.dart';
 import 'features/reader/presentation/providers/reader_providers.dart';
 import 'features/reader/presentation/screens/reader_screen.dart';
+import 'features/settings/data/services/app_settings_storage.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
@@ -36,6 +37,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp> {
   }
 
   void _bootstrapAppState() {
+    unawaited(ref.read(appLanguageProvider.notifier).loadPersistedSettings());
     unawaited(ref.read(appThemeModeProvider.notifier).loadPersistedSettings());
     unawaited(ref.read(appColorThemeProvider.notifier).loadPersistedSettings());
     unawaited(
@@ -70,6 +72,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp> {
 
   @override
   Widget build(BuildContext context) {
+    final appLanguage = ref.watch(appLanguageProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
 
@@ -79,6 +82,8 @@ class _MekuruAppState extends ConsumerState<MekuruApp> {
       theme: AppTheme.lightTheme(colorTheme.seedColor),
       darkTheme: AppTheme.darkTheme(colorTheme.seedColor),
       themeMode: themeMode,
+      locale: appLanguageLocaleOverride(appLanguage),
+      localeResolutionCallback: resolveSupportedAppLocale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

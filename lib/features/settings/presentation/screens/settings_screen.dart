@@ -12,6 +12,7 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
+import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
@@ -40,6 +41,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appLanguage = ref.watch(appLanguageProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final colorTheme = ref.watch(appColorThemeProvider);
     final startupScreen = ref.watch(startupScreenProvider);
@@ -51,6 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final theme = Theme.of(context);
     final l10n = context.l10n;
+    final resolvedLocale = Localizations.localeOf(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
@@ -58,6 +61,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           // ── General ──
           _SectionHeader(title: l10n.settingsSectionGeneral),
+          ListTile(
+            leading: Icon(
+              Icons.translate_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.settingsAppLanguageTitle),
+            subtitle: Text(
+              _currentAppLanguageLabel(l10n, appLanguage, resolvedLocale),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              _showAppLanguagePicker(context, ref, appLanguage);
+            },
+          ),
+          const Divider(),
           ListTile(
             leading: Icon(
               Icons.home_outlined,
@@ -638,6 +657,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     StartupScreen.lastRead => l10n.settingsStartupScreenLastRead,
   };
 
+  static String _currentAppLanguageLabel(
+    AppLocalizations l10n,
+    AppLanguage language,
+    Locale resolvedLocale,
+  ) {
+    return switch (language) {
+      AppLanguage.system => l10n.settingsAppLanguageSystemValue(
+        language: _resolvedAppLanguageLabel(l10n, resolvedLocale),
+      ),
+      _ => _appLanguageLabel(l10n, language),
+    };
+  }
+
+  static String _resolvedAppLanguageLabel(
+    AppLocalizations l10n,
+    Locale locale,
+  ) {
+    return switch (locale.languageCode) {
+      'es' => l10n.settingsAppLanguageSpanish,
+      'id' => l10n.settingsAppLanguageIndonesian,
+      'zh' => l10n.settingsAppLanguageSimplifiedChinese,
+      _ => l10n.settingsAppLanguageEnglish,
+    };
+  }
+
+  static String _appLanguageLabel(
+    AppLocalizations l10n,
+    AppLanguage language,
+  ) => switch (language) {
+    AppLanguage.system => l10n.settingsThemeSystemDefault,
+    AppLanguage.english => l10n.settingsAppLanguageEnglish,
+    AppLanguage.spanish => l10n.settingsAppLanguageSpanish,
+    AppLanguage.indonesian => l10n.settingsAppLanguageIndonesian,
+    AppLanguage.simplifiedChinese => l10n.settingsAppLanguageSimplifiedChinese,
+  };
+
   static String _colorThemeLabel(AppLocalizations l10n, AppColorTheme theme) =>
       switch (theme) {
         AppColorTheme.mekuruRed => l10n.settingsColorThemeMekuruRed,
@@ -711,6 +766,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Navigator.of(sheetContext).pop();
               },
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAppLanguagePicker(
+    BuildContext context,
+    WidgetRef ref,
+    AppLanguage currentLanguage,
+  ) {
+    final l10n = context.l10n;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                l10n.settingsAppLanguageTitle,
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+            ),
+            const Divider(height: 1),
+            for (final language in AppLanguage.values)
+              ListTile(
+                title: Text(_appLanguageLabel(l10n, language)),
+                trailing: currentLanguage == language
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () {
+                  AppHaptics.medium();
+                  ref
+                      .read(appLanguageProvider.notifier)
+                      .setAppLanguage(language);
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
           ],
         ),
       ),

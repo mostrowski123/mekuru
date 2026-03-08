@@ -601,6 +601,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSectionGeneral => '通用';
 
   @override
+  String get settingsAppLanguageTitle => '应用语言';
+
+  @override
+  String settingsAppLanguageSystemValue({required String language}) {
+    return '系统默认（$language）';
+  }
+
+  @override
+  String get settingsAppLanguageEnglish => 'English';
+
+  @override
+  String get settingsAppLanguageSpanish => 'Español';
+
+  @override
+  String get settingsAppLanguageIndonesian => 'Bahasa Indonesia';
+
+  @override
+  String get settingsAppLanguageSimplifiedChinese => '简体中文';
+
+  @override
   String get settingsSectionAppearance => '外观';
 
   @override
@@ -2210,6 +2230,26 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settingsSectionGeneral => '通用';
+
+  @override
+  String get settingsAppLanguageTitle => '应用语言';
+
+  @override
+  String settingsAppLanguageSystemValue({required String language}) {
+    return '系统默认（$language）';
+  }
+
+  @override
+  String get settingsAppLanguageEnglish => 'English';
+
+  @override
+  String get settingsAppLanguageSpanish => 'Español';
+
+  @override
+  String get settingsAppLanguageIndonesian => 'Bahasa Indonesia';
+
+  @override
+  String get settingsAppLanguageSimplifiedChinese => '简体中文';
 
   @override
   String get settingsSectionAppearance => '外观';

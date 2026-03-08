@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/app.dart';
+import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
@@ -61,6 +62,29 @@ void main() {
       expect(find.text(l10n.navLibrary), findsOneWidget);
     },
   );
+
+  test(
+    'Chinese locale with CN country resolves to Simplified Chinese support',
+    () {
+      expect(
+        resolveSupportedAppLocale(
+          const Locale.fromSubtags(languageCode: 'zh', countryCode: 'CN'),
+          AppLocalizations.supportedLocales,
+        ),
+        const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+      );
+    },
+  );
+
+  test('Traditional Chinese locale falls back to English support', () {
+    expect(
+      resolveSupportedAppLocale(
+        const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
+        AppLocalizations.supportedLocales,
+      ),
+      const Locale('en'),
+    );
+  });
 
   testWidgets('Unsupported locale falls back to English', (
     WidgetTester tester,

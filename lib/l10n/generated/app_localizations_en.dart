@@ -628,6 +628,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSectionGeneral => 'General';
 
   @override
+  String get settingsAppLanguageTitle => 'App Language';
+
+  @override
+  String settingsAppLanguageSystemValue({required String language}) {
+    return 'System default ($language)';
+  }
+
+  @override
+  String get settingsAppLanguageEnglish => 'English';
+
+  @override
+  String get settingsAppLanguageSpanish => 'Español';
+
+  @override
+  String get settingsAppLanguageIndonesian => 'Bahasa Indonesia';
+
+  @override
+  String get settingsAppLanguageSimplifiedChinese => '简体中文';
+
+  @override
   String get settingsSectionAppearance => 'Appearance';
 
   @override

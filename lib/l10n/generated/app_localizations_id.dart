@@ -630,6 +630,26 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsSectionGeneral => 'Umum';
 
   @override
+  String get settingsAppLanguageTitle => 'Bahasa Aplikasi';
+
+  @override
+  String settingsAppLanguageSystemValue({required String language}) {
+    return 'Default sistem ($language)';
+  }
+
+  @override
+  String get settingsAppLanguageEnglish => 'English';
+
+  @override
+  String get settingsAppLanguageSpanish => 'Español';
+
+  @override
+  String get settingsAppLanguageIndonesian => 'Bahasa Indonesia';
+
+  @override
+  String get settingsAppLanguageSimplifiedChinese => '简体中文';
+
+  @override
   String get settingsSectionAppearance => 'Tampilan';
 
   @override

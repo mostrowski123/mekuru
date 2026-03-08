@@ -804,6 +804,35 @@
   "@settingsSectionGeneral": {
     "description": "Settings section header for general preferences."
   },
+  "settingsAppLanguageTitle": "Bahasa Aplikasi",
+  "@settingsAppLanguageTitle": {
+    "description": "Title for the app language setting."
+  },
+  "settingsAppLanguageSystemValue": "Default sistem ({language})",
+  "@settingsAppLanguageSystemValue": {
+    "description": "Subtitle shown when the app language follows the system language.",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppLanguageEnglish": "English",
+  "@settingsAppLanguageEnglish": {
+    "description": "Language option label for English."
+  },
+  "settingsAppLanguageSpanish": "Español",
+  "@settingsAppLanguageSpanish": {
+    "description": "Language option label for Spanish."
+  },
+  "settingsAppLanguageIndonesian": "Bahasa Indonesia",
+  "@settingsAppLanguageIndonesian": {
+    "description": "Language option label for Indonesian."
+  },
+  "settingsAppLanguageSimplifiedChinese": "简体中文",
+  "@settingsAppLanguageSimplifiedChinese": {
+    "description": "Language option label for Simplified Chinese."
+  },
   "settingsSectionAppearance": "Tampilan",
   "@settingsSectionAppearance": {
     "description": "Settings section header for appearance preferences."
