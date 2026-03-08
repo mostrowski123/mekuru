@@ -6,6 +6,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 
 class LookupSheet extends ConsumerStatefulWidget {
@@ -313,11 +314,15 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(
+            child: Text(
+              context.l10n.commonErrorWithDetails(details: '${snapshot.error}'),
+            ),
+          );
         }
         final results = snapshot.data ?? [];
         if (results.isEmpty) {
-          return const Center(child: Text('No definitions found.'));
+          return Center(child: Text(context.l10n.dictionaryNoResultsFound));
         }
 
         // Group results by (expression, reading).

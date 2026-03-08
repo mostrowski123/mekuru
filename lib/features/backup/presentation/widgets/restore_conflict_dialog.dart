@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 /// Batch modal listing all conflicting books with checkboxes.
 /// Returns the list of conflicts the user chose to overwrite, or null if cancelled.
@@ -39,9 +40,10 @@ class _RestoreConflictDialogState extends State<RestoreConflictDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return AlertDialog(
-      title: const Text('Conflicting Books'),
+      title: Text(l10n.backupConflictDialogTitle),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -49,8 +51,7 @@ class _RestoreConflictDialogState extends State<RestoreConflictDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'The following books already have reading data. '
-              'Select which to overwrite with backup data:',
+              l10n.backupConflictDialogBody,
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -79,8 +80,14 @@ class _RestoreConflictDialogState extends State<RestoreConflictDialog> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
-                      '${conflict.backupEntry.bookType.toUpperCase()} '
-                      '- ${(conflict.backupEntry.readProgress * 100).round()}% in backup',
+                      l10n.backupConflictEntrySubtitle(
+                        bookType: _bookTypeLabel(
+                          context,
+                          conflict.backupEntry.bookType,
+                        ),
+                        progress: (conflict.backupEntry.readProgress * 100)
+                            .round(),
+                      ),
                       style: theme.textTheme.bodySmall,
                     ),
                     dense: true,
@@ -95,7 +102,7 @@ class _RestoreConflictDialogState extends State<RestoreConflictDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Skip All'),
+          child: Text(l10n.backupConflictSkipAll),
         ),
         TextButton(
           onPressed: () {
@@ -106,11 +113,21 @@ class _RestoreConflictDialogState extends State<RestoreConflictDialog> {
           },
           child: Text(
             _selectedIndices.isEmpty
-                ? 'Done'
-                : 'Overwrite ${_selectedIndices.length}',
+                ? l10n.commonDone
+                : l10n.backupConflictOverwriteSelected(
+                    count: _selectedIndices.length,
+                  ),
           ),
         ),
       ],
     );
+  }
+
+  String _bookTypeLabel(BuildContext context, String bookType) {
+    return switch (bookType.toLowerCase()) {
+      'manga' => context.l10n.backupBookTypeManga,
+      'epub' => context.l10n.backupBookTypeEpub,
+      _ => bookType.toUpperCase(),
+    };
   }
 }

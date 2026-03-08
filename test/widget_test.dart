@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/app.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
 import 'test_app.dart';
@@ -21,20 +22,45 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
   });
 
-  testWidgets('Japanese locale resolves localized navigation labels', (
+  testWidgets('Spanish locale resolves localized navigation labels', (
     WidgetTester tester,
   ) async {
+    final locale = const Locale('es');
+    final l10n = await AppLocalizations.delegate.load(locale);
+
     await tester.pumpWidget(
       buildLocalizedTestApp(
-        locale: const Locale('ja'),
+        locale: locale,
         home: const Scaffold(body: _NavLabelProbe()),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('ライブラリ'), findsOneWidget);
+    expect(find.text(l10n.navLibrary), findsOneWidget);
   });
+
+  testWidgets(
+    'Simplified Chinese locale resolves localized navigation labels',
+    (WidgetTester tester) async {
+      final locale = const Locale.fromSubtags(
+        languageCode: 'zh',
+        scriptCode: 'Hans',
+      );
+      final l10n = await AppLocalizations.delegate.load(locale);
+
+      await tester.pumpWidget(
+        buildLocalizedTestApp(
+          locale: locale,
+          home: const Scaffold(body: _NavLabelProbe()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.navLibrary), findsOneWidget);
+    },
+  );
 
   testWidgets('Unsupported locale falls back to English', (
     WidgetTester tester,

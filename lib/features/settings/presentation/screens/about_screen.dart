@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -15,22 +16,21 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return FutureBuilder<PackageInfo>(
       future: _packageInfoFuture,
       builder: (context, snapshot) {
         final appVersion = snapshot.hasData
             ? '${snapshot.data!.version}+${snapshot.data!.buildNumber}'
-            : 'Unknown';
+            : l10n.commonUnknown;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('About')),
+          appBar: AppBar(title: Text(l10n.settingsAboutMekuruTitle)),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               const SizedBox(height: 24),
-
-              // App icon
               Center(
                 child: Icon(
                   Icons.auto_stories,
@@ -39,8 +39,6 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // App name
               Text(
                 _appName,
                 style: theme.textTheme.headlineMedium?.copyWith(
@@ -49,37 +47,28 @@ class AboutScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-
-              // Version
               Text(
-                'Version $appVersion',
+                l10n.aboutVersion(version: appVersion),
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-
-              // Description
               Text(
-                'A Japanese-first EPUB reader with vertical text, '
-                'offline dictionary, and vocabulary management.',
+                l10n.aboutDescription,
                 style: theme.textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-
-              // ── Attribution ──
               Text(
-                'Attribution',
+                l10n.aboutAttributionTitle,
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 12),
-
-              // KanjiVG attribution card
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -95,7 +84,7 @@ class AboutScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'KanjiVG',
+                            l10n.aboutKanjiVgTitle,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -104,8 +93,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Kanji stroke order data is provided by the KanjiVG '
-                        'project, created by Ulrich Apel.',
+                        l10n.aboutKanjiVgDescription,
                         style: theme.textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 8),
@@ -115,7 +103,7 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'Licensed under the '),
+                            TextSpan(text: l10n.aboutLicensedUnderPrefix),
                             TextSpan(
                               text:
                                   'Creative Commons Attribution-Share Alike 3.0',
@@ -128,7 +116,7 @@ class AboutScreen extends StatelessWidget {
                                   'https://creativecommons.org/licenses/by-sa/3.0/',
                                 ),
                             ),
-                            const TextSpan(text: ' license.'),
+                            TextSpan(text: l10n.aboutLicenseSuffix),
                           ],
                         ),
                       ),
@@ -139,7 +127,7 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'Project: '),
+                            TextSpan(text: l10n.aboutProjectLabel),
                             TextSpan(
                               text: 'kanjivg.tagaini.net',
                               style: TextStyle(
@@ -159,7 +147,7 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'Source: '),
+                            TextSpan(text: l10n.aboutSourceLabel),
                             TextSpan(
                               text: 'github.com/KanjiVG/kanjivg',
                               style: TextStyle(
@@ -179,8 +167,6 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // JPDB Frequency Dictionary attribution card
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -197,7 +183,7 @@ class AboutScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'JPDB Frequency Dictionary',
+                              l10n.aboutJpdbTitle,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -207,8 +193,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Word frequency data is provided by the JPDB frequency '
-                        'dictionary, distributed via yomitan-dictionaries by Kuuuube.',
+                        l10n.aboutJpdbDescription,
                         style: theme.textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 8),
@@ -218,7 +203,7 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'Data source: '),
+                            TextSpan(text: l10n.aboutDataSourceLabel),
                             TextSpan(
                               text: 'jpdb.io',
                               style: TextStyle(
@@ -237,7 +222,7 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'Dictionary: '),
+                            TextSpan(text: l10n.aboutDictionaryLabel),
                             TextSpan(
                               text: 'github.com/Kuuuube/yomitan-dictionaries',
                               style: TextStyle(
@@ -257,8 +242,6 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // JMdict & KANJIDIC attribution card
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -275,7 +258,7 @@ class AboutScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'JMdict & KANJIDIC',
+                              l10n.aboutJmdictKanjidicTitle,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -288,12 +271,8 @@ class AboutScreen extends StatelessWidget {
                         TextSpan(
                           style: theme.textTheme.bodyMedium,
                           children: [
-                            const TextSpan(
-                              text:
-                                  'Japanese–multilingual dictionary data is '
-                                  'provided by the JMdict/EDICT project and kanji '
-                                  'dictionary data by the KANJIDIC project, both '
-                                  'created by Jim Breen and the ',
+                            TextSpan(
+                              text: l10n.aboutJmdictKanjidicDescriptionPrefix,
                             ),
                             TextSpan(
                               text:
@@ -318,7 +297,7 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'Licensed under the '),
+                            TextSpan(text: l10n.aboutLicensedUnderPrefix),
                             TextSpan(
                               text:
                                   'Creative Commons Attribution-Share Alike 4.0',
@@ -331,7 +310,7 @@ class AboutScreen extends StatelessWidget {
                                   'https://creativecommons.org/licenses/by-sa/4.0/',
                                 ),
                             ),
-                            const TextSpan(text: ' license.'),
+                            TextSpan(text: l10n.aboutLicenseSuffix),
                           ],
                         ),
                       ),
@@ -342,9 +321,9 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'JMdict: '),
+                            TextSpan(text: l10n.aboutJmdictLabel),
                             TextSpan(
-                              text: 'edrdg.org/wiki – JMdict-EDICT',
+                              text: 'edrdg.org/wiki - JMdict-EDICT',
                               style: TextStyle(
                                 color: theme.colorScheme.primary,
                                 decoration: TextDecoration.underline,
@@ -363,9 +342,9 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'KANJIDIC: '),
+                            TextSpan(text: l10n.aboutKanjidicLabel),
                             TextSpan(
-                              text: 'edrdg.org/wiki – KANJIDIC',
+                              text: 'edrdg.org/wiki - KANJIDIC',
                               style: TextStyle(
                                 color: theme.colorScheme.primary,
                                 decoration: TextDecoration.underline,
@@ -383,8 +362,6 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // epub.js attribution card
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -400,7 +377,7 @@ class AboutScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'epub.js',
+                            l10n.aboutEpubJsTitle,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -409,8 +386,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'EPUB rendering is powered by epub.js, '
-                        'an open source JavaScript EPUB reader library.',
+                        l10n.aboutEpubJsDescription,
                         style: theme.textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 8),
@@ -420,7 +396,7 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'Licensed under the '),
+                            TextSpan(text: l10n.aboutLicensedUnderPrefix),
                             TextSpan(
                               text: 'BSD 2-Clause License',
                               style: TextStyle(
@@ -441,7 +417,7 @@ class AboutScreen extends StatelessWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                           children: [
-                            const TextSpan(text: 'Source: '),
+                            TextSpan(text: l10n.aboutSourceLabel),
                             TextSpan(
                               text: 'github.com/futurepress/epub.js',
                               style: TextStyle(
@@ -460,10 +436,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
               const SizedBox(height: 16),
-
-              // Privacy
               Card(
                 child: Column(
                   children: [
@@ -472,10 +445,8 @@ class AboutScreen extends StatelessWidget {
                         Icons.privacy_tip_outlined,
                         color: theme.colorScheme.primary,
                       ),
-                      title: const Text('Privacy Policy'),
-                      subtitle: const Text(
-                        'See how Mekuru handles local and OCR data',
-                      ),
+                      title: Text(l10n.aboutPrivacyPolicyTitle),
+                      subtitle: Text(l10n.aboutPrivacyPolicySubtitle),
                       trailing: const Icon(Icons.open_in_new),
                       onTap: () => _launchUrl(_privacyPolicyUrl),
                     ),
@@ -483,16 +454,14 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Licenses
               Card(
                 child: ListTile(
                   leading: Icon(
                     Icons.description_outlined,
                     color: theme.colorScheme.primary,
                   ),
-                  title: const Text('Open Source Licenses'),
-                  subtitle: const Text('View licenses for dependencies'),
+                  title: Text(l10n.aboutOpenSourceLicensesTitle),
+                  subtitle: Text(l10n.aboutOpenSourceLicensesSubtitle),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => showLicensePage(
                     context: context,
@@ -510,11 +479,9 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Tagline
               Center(
                 child: Text(
-                  '"to turn pages"',
+                  l10n.aboutTagline,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -532,7 +499,7 @@ class AboutScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('epub.js License'),
+        title: Text(context.l10n.aboutEpubJsLicenseTitle),
         content: const SingleChildScrollView(
           child: Text(
             'Copyright (c) 2013, FuturePress\n\n'
@@ -568,7 +535,7 @@ class AboutScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Close'),
+            child: Text(context.l10n.commonClose),
           ),
         ],
       ),

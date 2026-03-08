@@ -99,7 +99,9 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                     AppHaptics.light();
                     ref
                         .read(backupNotifierProvider.notifier)
-                        .exportLatestBackup();
+                        .exportLatestBackup(
+                          dialogTitle: l10n.backupSaveFileDialogTitle,
+                        );
                   },
           ),
           const Divider(),

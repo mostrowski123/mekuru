@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/features/reader/data/models/highlight_color.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Floating action bar shown when text is selected or a sentence is long-pressed.
@@ -95,12 +96,12 @@ class SelectionActionBar extends StatelessWidget {
       children: [
         _ActionButton(
           icon: Icons.copy,
-          label: 'Copy',
+          label: context.l10n.commonCopy,
           onTap: () {
             Clipboard.setData(ClipboardData(text: selectedText));
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Copied to clipboard'),
+              SnackBar(
+                content: Text(context.l10n.readerCopiedToClipboard),
                 duration: Duration(seconds: 1),
               ),
             );
@@ -109,7 +110,7 @@ class SelectionActionBar extends StatelessWidget {
         ),
         _ActionButton(
           icon: Icons.highlight,
-          label: 'Highlight',
+          label: context.l10n.readerHighlightSelectionTooltip,
           onTap: () {
             if (isLocked) {
               onLockedTap?.call();
@@ -120,7 +121,7 @@ class SelectionActionBar extends StatelessWidget {
         ),
         _ActionButton(
           icon: Icons.share,
-          label: 'Share',
+          label: context.l10n.commonShare,
           onTap: () {
             SharePlus.instance.share(ShareParams(text: selectedText));
             onDismiss?.call();

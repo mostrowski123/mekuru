@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 
 /// Settings screen for configuring AnkiDroid integration.
@@ -50,9 +51,7 @@ class _AnkidroidSettingsScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error =
-              'AnkiDroid permission not granted. '
-              'Make sure AnkiDroid is installed and try again.';
+          _error = context.l10n.ankidroidPermissionNotGrantedLong;
         });
       }
       return;
@@ -63,9 +62,7 @@ class _AnkidroidSettingsScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error =
-              'Could not connect to AnkiDroid. '
-              'Make sure AnkiDroid is installed and running.';
+          _error = context.l10n.ankidroidCouldNotConnectLong;
         });
       }
       return;
@@ -101,9 +98,10 @@ class _AnkidroidSettingsScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final config = ref.watch(ankidroidConfigProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AnkiDroid Integration')),
+      appBar: AppBar(title: Text(l10n.settingsAnkiDroidIntegrationTitle)),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -113,6 +111,8 @@ class _AnkidroidSettingsScreenState
   }
 
   Widget _buildError(ThemeData theme) {
+    final l10n = context.l10n;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -131,7 +131,7 @@ class _AnkidroidSettingsScreenState
                 });
                 _initAnkidroid();
               },
-              child: const Text('Retry'),
+              child: Text(l10n.commonRetry),
             ),
           ],
         ),
@@ -140,28 +140,30 @@ class _AnkidroidSettingsScreenState
   }
 
   Widget _buildSettings(ThemeData theme, AnkidroidConfig config) {
+    final l10n = context.l10n;
+
     return ListView(
       children: [
         // ── Note Type ──
-        _SectionHeader(title: 'Note Type'),
+        _SectionHeader(title: l10n.ankidroidSettingsNoteTypeSection),
         ListTile(
           leading: Icon(Icons.note_outlined, color: theme.colorScheme.primary),
-          title: const Text('Anki Note Type'),
-          subtitle: Text(config.modelName ?? 'Not selected'),
+          title: Text(l10n.ankidroidSettingsNoteTypeTitle),
+          subtitle: Text(config.modelName ?? l10n.commonNotSelected),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showModelPicker(context),
         ),
         const Divider(),
 
         // ── Default Deck ──
-        _SectionHeader(title: 'Default Deck'),
+        _SectionHeader(title: l10n.ankidroidSettingsDefaultDeckSection),
         ListTile(
           leading: Icon(
             Icons.layers_outlined,
             color: theme.colorScheme.primary,
           ),
-          title: const Text('Target Deck'),
-          subtitle: Text(config.deckName ?? 'Not selected'),
+          title: Text(l10n.ankidroidSettingsTargetDeckTitle),
+          subtitle: Text(config.deckName ?? l10n.commonNotSelected),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showDeckPicker(context),
         ),
@@ -169,11 +171,11 @@ class _AnkidroidSettingsScreenState
 
         // ── Field Mapping ──
         if (config.modelId != null && _currentModelFields.isNotEmpty) ...[
-          _SectionHeader(title: 'Field Mapping'),
+          _SectionHeader(title: l10n.ankidroidSettingsFieldMappingSection),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
-              'Map each Anki field to a data source from the app.',
+              l10n.ankidroidSettingsFieldMappingHelp,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -184,7 +186,7 @@ class _AnkidroidSettingsScreenState
             final currentSource = AppDataSource.fromKey(currentMapping);
             return ListTile(
               title: Text(fieldName),
-              subtitle: Text(currentSource.displayName),
+              subtitle: Text(currentSource.localizedLabel(l10n)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () =>
                   _showFieldMappingPicker(context, fieldName, currentMapping),
@@ -194,11 +196,11 @@ class _AnkidroidSettingsScreenState
         ],
 
         // ── Default Tags ──
-        _SectionHeader(title: 'Default Tags'),
+        _SectionHeader(title: l10n.ankidroidSettingsDefaultTagsSection),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Text(
-            'Comma-separated tags applied to every exported note.',
+            l10n.ankidroidSettingsDefaultTagsHelp,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -208,9 +210,9 @@ class _AnkidroidSettingsScreenState
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: TextField(
             controller: _tagsController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               border: OutlineInputBorder(),
-              hintText: 'mekuru, japanese',
+              hintText: l10n.ankidroidTagsHint,
               isDense: true,
             ),
             onChanged: (_) => _saveTags(),
@@ -230,7 +232,7 @@ class _AnkidroidSettingsScreenState
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Select Note Type',
+                sheetContext.l10n.ankidroidSettingsSelectNoteType,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),
@@ -282,7 +284,7 @@ class _AnkidroidSettingsScreenState
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Select Deck',
+                sheetContext.l10n.ankidroidSettingsSelectDeck,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),
@@ -332,7 +334,9 @@ class _AnkidroidSettingsScreenState
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Map "$ankiFieldName" to:',
+                sheetContext.l10n.ankidroidSettingsMapFieldTo(
+                  ankiFieldName: ankiFieldName,
+                ),
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),
@@ -342,7 +346,7 @@ class _AnkidroidSettingsScreenState
                 shrinkWrap: true,
                 children: AppDataSource.values.map((source) {
                   return ListTile(
-                    title: Text(source.displayName),
+                    title: Text(source.localizedLabel(sheetContext.l10n)),
                     trailing: currentKey == source.key
                         ? Icon(
                             Icons.check,

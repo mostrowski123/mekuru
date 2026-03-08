@@ -5,3 +5,4 @@ output-localization-file: app_localizations.dart
 nullable-getter: false
 use-named-parameters: true
 required-resource-attributes: true
+untranslated-messages-file: build/untranslated_messages.json

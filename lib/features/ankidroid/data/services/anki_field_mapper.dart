@@ -2,6 +2,7 @@ import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 
 /// Available app data sources that can be mapped to Anki fields.
 enum AppDataSource {
@@ -18,6 +19,20 @@ enum AppDataSource {
   final String displayName;
   final String key;
   const AppDataSource(this.displayName, this.key);
+
+  String localizedLabel(AppLocalizations l10n) {
+    return switch (this) {
+      AppDataSource.expression => l10n.ankidroidDataSourceExpression,
+      AppDataSource.reading => l10n.ankidroidDataSourceReading,
+      AppDataSource.furigana => l10n.ankidroidDataSourceFurigana,
+      AppDataSource.glossary => l10n.ankidroidDataSourceGlossary,
+      AppDataSource.sentenceContext => l10n.ankidroidDataSourceSentenceContext,
+      AppDataSource.frequency => l10n.ankidroidDataSourceFrequency,
+      AppDataSource.dictionaryName => l10n.ankidroidDataSourceDictionaryName,
+      AppDataSource.pitchAccent => l10n.ankidroidDataSourcePitchAccent,
+      AppDataSource.empty => l10n.ankidroidDataSourceEmpty,
+    };
+  }
 
   static AppDataSource fromKey(String key) {
     return AppDataSource.values.firstWhere(

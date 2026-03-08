@@ -150,7 +150,7 @@ class BackupNotifier extends Notifier<BackupState> {
   }
 
   /// Export the most recent backup file via the system file browser.
-  Future<void> exportLatestBackup() async {
+  Future<void> exportLatestBackup({required String dialogTitle}) async {
     state = const BackupState(isWorking: true);
     try {
       final fileManager = ref.read(backupFileManagerProvider);
@@ -159,7 +159,10 @@ class BackupNotifier extends Notifier<BackupState> {
         state = const BackupState(error: BackupMessage.noBackupsToExport());
         return;
       }
-      final saved = await fileManager.exportBackupFile(backups.first.filePath);
+      final saved = await fileManager.exportBackupFile(
+        backups.first.filePath,
+        dialogTitle: dialogTitle,
+      );
       if (saved) {
         _showSuccess(const BackupMessage.backupExported());
       } else {

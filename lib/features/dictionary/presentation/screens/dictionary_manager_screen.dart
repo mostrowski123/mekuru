@@ -7,6 +7,7 @@ import 'package:mekuru/features/settings/presentation/providers/jmdict_providers
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -38,14 +39,15 @@ class _DictionaryManagerScreenState
   Widget build(BuildContext context) {
     final dictionariesAsync = ref.watch(dictionariesProvider);
     final importState = ref.watch(dictionaryImportProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dictionary Manager'),
+        title: Text(l10n.dictionaryManagerTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
-            tooltip: 'Help',
+            tooltip: l10n.commonHelp,
             onPressed: () => _showHelpDialog(context),
           ),
         ],
@@ -54,7 +56,7 @@ class _DictionaryManagerScreenState
         onPressed: importState.isImporting
             ? null
             : () => _importDictionary(context, ref),
-        tooltip: 'Import Dictionary',
+        tooltip: l10n.dictionaryManagerImportTooltip,
         child: const Icon(Icons.add),
       ),
       body: Column(
@@ -67,7 +69,9 @@ class _DictionaryManagerScreenState
           Expanded(
             child: dictionariesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
+              error: (err, _) => Center(
+                child: Text(l10n.commonErrorWithDetails(details: '$err')),
+              ),
               data: (dictionaries) {
                 if (dictionaries.isEmpty) {
                   _localOrder = null;
@@ -198,26 +202,28 @@ class _DictionaryManagerScreenState
   }
 
   Widget _buildEmptyState() {
+    final l10n = context.l10n;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.book_outlined, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text(
-            'No dictionaries imported',
+          Text(
+            l10n.dictionaryNoDictionariesTitle,
             style: TextStyle(fontSize: 18, color: Colors.grey),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Tap + to import a Yomitan dictionary (.zip)\nor collection (.json)',
+          Text(
+            l10n.dictionaryManagerEmptySubtitle,
             style: TextStyle(color: Colors.grey),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
             icon: const Icon(Icons.download),
-            label: const Text('Browse Downloads'),
+            label: Text(l10n.dictionaryManagerBrowseDownloads),
             onPressed: () {
               AppHaptics.light();
               Navigator.of(context).push(
@@ -226,8 +232,8 @@ class _DictionaryManagerScreenState
             },
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Download dictionaries and other assets',
+          Text(
+            l10n.dictionaryManagerBrowseDownloadsCaption,
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
         ],
@@ -241,6 +247,8 @@ class _DictionaryManagerScreenState
     dynamic dict, {
     required int index,
   }) {
+    final l10n = context.l10n;
+
     return Card(
       key: ValueKey(dict.id),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -251,7 +259,9 @@ class _DictionaryManagerScreenState
         ),
         title: Text(dict.name),
         subtitle: Text(
-          'Imported ${_formatDate(dict.dateImported)}',
+          l10n.dictionaryManagerImportedOn(
+            date: _formatDate(dict.dateImported),
+          ),
           style: Theme.of(context).textTheme.bodySmall,
         ),
         trailing: Row(
@@ -281,52 +291,48 @@ class _DictionaryManagerScreenState
 
   void _showHelpDialog(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dictionary Manager'),
+        title: Text(l10n.dictionaryManagerTitle),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Supported Formats', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              const Text(
-                'Yomitan dictionary (.zip)\n'
-                'Any dictionary that can be imported into Yomitan is '
-                'supported. These are .zip files containing term bank '
-                'JSON files.',
+              Text(
+                l10n.dictionaryManagerSupportedFormatsTitle,
+                style: theme.textTheme.titleSmall,
               ),
+              const SizedBox(height: 8),
+              Text(l10n.dictionaryManagerSupportedFormatsYomitan),
               const SizedBox(height: 12),
-              const Text(
-                'Yomitan collection (.json)\n'
-                'A Dexie database export containing multiple dictionaries '
-                'in a single file. You can export this from Yomitan\'s '
-                'settings under Backup.',
-              ),
+              Text(l10n.dictionaryManagerSupportedFormatsCollection),
               const SizedBox(height: 16),
-              Text('Dictionary Order', style: theme.textTheme.titleSmall),
+              Text(
+                l10n.dictionaryManagerOrderTitle,
+                style: theme.textTheme.titleSmall,
+              ),
               const SizedBox(height: 8),
-              const Text(
-                'Drag dictionaries using the handle on the left to '
-                'reorder them. The order here controls the order that '
-                'definitions appear when you tap a word while reading.',
-              ),
+              Text(l10n.dictionaryManagerOrderBody),
               const SizedBox(height: 16),
-              Text('Enabling & Disabling', style: theme.textTheme.titleSmall),
+              Text(
+                l10n.dictionaryManagerEnablingTitle,
+                style: theme.textTheme.titleSmall,
+              ),
               const SizedBox(height: 8),
-              const Text(
-                'Use the toggle switch to enable or disable a dictionary. '
-                'Disabled dictionaries are not searched when looking up words.',
-              ),
+              Text(l10n.dictionaryManagerEnablingBody),
               const SizedBox(height: 16),
-              Text('Finding Dictionaries', style: theme.textTheme.titleSmall),
+              Text(
+                l10n.dictionaryManagerFindingTitle,
+                style: theme.textTheme.titleSmall,
+              ),
               const SizedBox(height: 8),
               Text.rich(
                 TextSpan(
                   children: [
-                    const TextSpan(text: 'Browse compatible dictionaries at '),
+                    TextSpan(text: l10n.dictionaryManagerFindingPrefix),
                     TextSpan(
                       text: 'yomitan.wiki/dictionaries',
                       style: TextStyle(
@@ -348,7 +354,7 @@ class _DictionaryManagerScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(l10n.commonOk),
           ),
         ],
       ),
@@ -376,24 +382,24 @@ class _DictionaryManagerScreenState
     int id,
     String name,
   ) async {
+    final l10n = context.l10n;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Dictionary'),
-        content: Text(
-          'Delete "$name" and all its entries?\nThis cannot be undone.',
-        ),
+        title: Text(l10n.dictionaryManagerDeleteTitle),
+        content: Text(l10n.dictionaryManagerDeleteBody(name: name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),

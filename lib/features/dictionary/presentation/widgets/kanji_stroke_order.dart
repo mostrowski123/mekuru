@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mekuru/features/settings/data/services/kanjivg_download_service.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 /// Displays a kanji character's stroke order diagram from KanjiVG SVG data.
 ///
@@ -171,6 +172,7 @@ class _KanjiStrokeOrderState extends State<KanjiStrokeOrder>
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
 
     // Adjust SVG colors for dark mode
     var displaySvg = _buildPartialSvg(_svgData!, _currentStroke);
@@ -202,7 +204,7 @@ class _KanjiStrokeOrderState extends State<KanjiStrokeOrder>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$_strokeCount strokes',
+              l10n.dictionaryKanjiStrokeCount(count: _strokeCount),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -217,7 +219,7 @@ class _KanjiStrokeOrderState extends State<KanjiStrokeOrder>
                   size: 18,
                 ),
                 padding: EdgeInsets.zero,
-                tooltip: 'Animate stroke order',
+                tooltip: l10n.dictionaryAnimateStrokeOrderTooltip,
               ),
             ),
           ],

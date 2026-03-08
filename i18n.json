@@ -3,7 +3,7 @@
   "version": "1.10",
   "locale": {
     "source": "en",
-    "targets": ["ja"]
+    "targets": ["es", "id", "zh_Hans"]
   },
   "buckets": {
     "flutter": {

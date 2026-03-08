@@ -82,8 +82,11 @@ Runtime localization uses Flutter's native `gen_l10n` pipeline with ARB files in
 - Source strings live in `lib/l10n/app_en.arb`
 - Generated localizations are produced with `flutter gen-l10n`
 - Lingo.dev configuration lives in `i18n.json`
-- New locales are added by creating `lib/l10n/app_<locale>.arb` and updating `i18n.json`
-- AI translations are expected to be generated with your Lingo.dev workflow, including MCP-assisted translation work
+- Target locales are currently `es`, `id`, and Simplified Chinese (`zh_Hans`)
+- Flutter also keeps a matching `app_zh.arb` base fallback because script-code locales require a base `zh` ARB
+- Generate or update translations with `npx lingo.dev@latest run --no-interactive`
+- Refresh the lockfile with `npx lingo.dev@latest lockfile --no-interactive` and commit `i18n.lock`
+- Regenerate Flutter localization output with `flutter gen-l10n`
 - If a translation is wrong or awkward, contributors should open an issue or send a pull request against the ARB files
 
 See [docs/translation-workflow.md](docs/translation-workflow.md) for the repo-specific translation workflow.

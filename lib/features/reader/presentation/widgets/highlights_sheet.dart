@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/reader/data/models/highlight_color.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 /// Bottom sheet listing all highlights for a book.
 ///
@@ -73,7 +74,9 @@ class HighlightsSheet extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(
+                child: Text(context.l10n.commonErrorWithDetails(details: '$e')),
+              ),
             ),
           ),
         ],
@@ -95,20 +98,20 @@ class HighlightsSheet extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Note'),
+        title: Text(context.l10n.readerEditNoteTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Add a note...',
+          decoration: InputDecoration(
+            hintText: context.l10n.readerAddNoteHint,
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () {
@@ -117,7 +120,7 @@ class HighlightsSheet extends ConsumerWidget {
                   .updateHighlightNote(highlight.id, controller.text);
               Navigator.pop(context);
             },
-            child: const Text('Save'),
+            child: Text(context.l10n.commonSave),
           ),
         ],
       ),

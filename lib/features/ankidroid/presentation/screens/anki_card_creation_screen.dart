@@ -4,6 +4,7 @@ import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 /// Screen for reviewing and sending a note to AnkiDroid.
 ///
@@ -48,7 +49,7 @@ class _AnkiCardCreationScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'AnkiDroid permission not granted.';
+          _error = context.l10n.ankidroidPermissionNotGrantedShort;
         });
       }
       return;
@@ -59,7 +60,7 @@ class _AnkiCardCreationScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Could not connect to AnkiDroid.';
+          _error = context.l10n.ankidroidCouldNotConnectShort;
         });
       }
       return;
@@ -169,15 +170,13 @@ class _AnkiCardCreationScreenState
         // lookup sheet.
         Navigator.pop(context, true);
       } else {
-        const errorMsg =
-            'Failed to add note. Make sure AnkiDroid is running and '
-            'the selected note type and deck still exist.';
+        final errorMsg = context.l10n.ankidroidFailedToAddNote;
         setState(() {
           _isSending = false;
           _error = errorMsg;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(errorMsg),
             duration: Duration(seconds: 4),
             behavior: SnackBarBehavior.floating,
@@ -190,6 +189,7 @@ class _AnkiCardCreationScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
@@ -197,7 +197,7 @@ class _AnkiCardCreationScreenState
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: 'AnkiDroid Settings',
+            tooltip: l10n.ankidroidCardSettingsTooltip,
             onPressed: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute(
@@ -234,6 +234,8 @@ class _AnkiCardCreationScreenState
   }
 
   Widget _buildForm(ThemeData theme) {
+    final l10n = context.l10n;
+
     return Column(
       children: [
         Expanded(
@@ -247,8 +249,8 @@ class _AnkiCardCreationScreenState
                   Icons.layers_outlined,
                   color: theme.colorScheme.primary,
                 ),
-                title: const Text('Deck'),
-                subtitle: Text(_selectedDeckName ?? 'Not selected'),
+                title: Text(l10n.ankidroidCardDeckTitle),
+                subtitle: Text(_selectedDeckName ?? l10n.commonNotSelected),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _showDeckPicker,
               ),
@@ -285,13 +287,16 @@ class _AnkiCardCreationScreenState
 
               // Tags (at the bottom)
               const SizedBox(height: 4),
-              Text('Tags', style: theme.textTheme.labelMedium),
+              Text(
+                l10n.ankidroidCardTagsTitle,
+                style: theme.textTheme.labelMedium,
+              ),
               const SizedBox(height: 4),
               TextField(
                 controller: _tagsController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: 'mekuru, japanese',
+                  hintText: l10n.ankidroidTagsHint,
                   isDense: true,
                 ),
               ),
@@ -312,7 +317,7 @@ class _AnkiCardCreationScreenState
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Add to Anki'),
+                  : Text(l10n.ankidroidCardAddToAnki),
             ),
           ),
         ),
@@ -330,7 +335,7 @@ class _AnkiCardCreationScreenState
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Select Deck',
+                sheetContext.l10n.ankidroidSettingsSelectDeck,
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
             ),

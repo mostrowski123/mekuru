@@ -72,6 +72,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonOk => 'OK';
 
   @override
+  String get commonDone => 'Done';
+
+  @override
   String get commonUndo => 'Undo';
 
   @override
@@ -301,6 +304,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dictionaryKunyomiLabel => 'Kunyomi: ';
+
+  @override
+  String dictionaryKanjiStrokeCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# strokes',
+      one: '# stroke',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dictionaryAnimateStrokeOrderTooltip => 'Animate stroke order';
 
   @override
   String get vocabularySearchSavedWordsHint => 'Search saved words';
@@ -916,6 +933,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupExportSubtitle => 'Save your latest backup to a file';
 
   @override
+  String get backupSaveFileDialogTitle => 'Save Backup';
+
+  @override
   String get backupSectionAutoBackup => 'Auto-Backup';
 
   @override
@@ -998,6 +1018,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String backupApplyBookDataFailed({required String details}) {
     return 'Failed to apply book data: $details';
   }
+
+  @override
+  String get backupConflictDialogTitle => 'Conflicting Books';
+
+  @override
+  String get backupConflictDialogBody =>
+      'The following books already have reading data. Select which to overwrite with backup data:';
+
+  @override
+  String backupConflictEntrySubtitle({
+    required String bookType,
+    required int progress,
+  }) {
+    return '$bookType - $progress% in backup';
+  }
+
+  @override
+  String get backupConflictSkipAll => 'Skip All';
+
+  @override
+  String backupConflictOverwriteSelected({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Overwrite #',
+      one: 'Overwrite #',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backupBookTypeEpub => 'EPUB';
+
+  @override
+  String get backupBookTypeManga => 'Manga';
 
   @override
   String get backupRestoreSummarySettingsRestored => 'Settings restored';
@@ -1140,4 +1195,494 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readerHighlightSelectionTooltip => 'Highlight selection';
+
+  @override
+  String get commonCopy => 'Copy';
+
+  @override
+  String get commonShare => 'Share';
+
+  @override
+  String get commonContinue => 'Continue';
+
+  @override
+  String get commonNotSelected => 'Not selected';
+
+  @override
+  String get commonUnknown => 'Unknown';
+
+  @override
+  String get commonRename => 'Rename';
+
+  @override
+  String get commonTitleLabel => 'Title';
+
+  @override
+  String libraryCouldNotReadFolder({required String details}) {
+    return 'Could not read folder:\n$details';
+  }
+
+  @override
+  String get libraryBookmarksTitle => 'Bookmarks';
+
+  @override
+  String get libraryChangeCoverAction => 'Change Cover';
+
+  @override
+  String get libraryRenameBookTitle => 'Rename Book';
+
+  @override
+  String get libraryDeleteBookTitle => 'Delete Book';
+
+  @override
+  String libraryDeleteBookBody({required String title}) {
+    return 'Delete \"$title\" from your library?';
+  }
+
+  @override
+  String libraryChangeCoverFailed({required String details}) {
+    return 'Failed to change cover: $details';
+  }
+
+  @override
+  String get dictionaryManagerTitle => 'Dictionary Manager';
+
+  @override
+  String get dictionaryManagerImportTooltip => 'Import Dictionary';
+
+  @override
+  String get dictionaryManagerEmptySubtitle =>
+      'Tap + to import a Yomitan dictionary (.zip)\nor collection (.json)';
+
+  @override
+  String get dictionaryManagerBrowseDownloads => 'Browse Downloads';
+
+  @override
+  String get dictionaryManagerBrowseDownloadsCaption =>
+      'Download dictionaries and other assets';
+
+  @override
+  String dictionaryManagerImportedOn({required String date}) {
+    return 'Imported $date';
+  }
+
+  @override
+  String get dictionaryManagerSupportedFormatsTitle => 'Supported Formats';
+
+  @override
+  String get dictionaryManagerSupportedFormatsYomitan =>
+      'Yomitan dictionary (.zip)\nAny dictionary that can be imported into Yomitan is supported. These are .zip files containing term bank JSON files.';
+
+  @override
+  String get dictionaryManagerSupportedFormatsCollection =>
+      'Yomitan collection (.json)\nA Dexie database export containing multiple dictionaries in a single file. You can export this from Yomitan\'s settings under Backup.';
+
+  @override
+  String get dictionaryManagerOrderTitle => 'Dictionary Order';
+
+  @override
+  String get dictionaryManagerOrderBody =>
+      'Drag dictionaries using the handle on the left to reorder them. The order here controls the order that definitions appear when you tap a word while reading.';
+
+  @override
+  String get dictionaryManagerEnablingTitle => 'Enabling & Disabling';
+
+  @override
+  String get dictionaryManagerEnablingBody =>
+      'Use the toggle switch to enable or disable a dictionary. Disabled dictionaries are not searched when looking up words.';
+
+  @override
+  String get dictionaryManagerFindingTitle => 'Finding Dictionaries';
+
+  @override
+  String get dictionaryManagerFindingPrefix =>
+      'Browse compatible dictionaries at ';
+
+  @override
+  String get dictionaryManagerDeleteTitle => 'Delete Dictionary';
+
+  @override
+  String dictionaryManagerDeleteBody({required String name}) {
+    return 'Delete \"$name\" and all its entries?\nThis cannot be undone.';
+  }
+
+  @override
+  String get ankidroidDataSourceExpression => 'Expression';
+
+  @override
+  String get ankidroidDataSourceReading => 'Reading';
+
+  @override
+  String get ankidroidDataSourceFurigana => 'Furigana (Anki format)';
+
+  @override
+  String get ankidroidDataSourceGlossary => 'Glossary / Meaning';
+
+  @override
+  String get ankidroidDataSourceSentenceContext => 'Sentence Context';
+
+  @override
+  String get ankidroidDataSourceFrequency => 'Frequency Rank';
+
+  @override
+  String get ankidroidDataSourceDictionaryName => 'Dictionary Name';
+
+  @override
+  String get ankidroidDataSourcePitchAccent => 'Pitch Accent';
+
+  @override
+  String get ankidroidDataSourceEmpty => '(Empty)';
+
+  @override
+  String get ankidroidPermissionNotGrantedLong =>
+      'AnkiDroid permission not granted. Make sure AnkiDroid is installed and try again.';
+
+  @override
+  String get ankidroidCouldNotConnectLong =>
+      'Could not connect to AnkiDroid. Make sure AnkiDroid is installed and running.';
+
+  @override
+  String get ankidroidPermissionNotGrantedShort =>
+      'AnkiDroid permission not granted.';
+
+  @override
+  String get ankidroidCouldNotConnectShort => 'Could not connect to AnkiDroid.';
+
+  @override
+  String get ankidroidFailedToAddNote =>
+      'Failed to add note. Make sure AnkiDroid is running and the selected note type and deck still exist.';
+
+  @override
+  String get ankidroidSettingsNoteTypeSection => 'Note Type';
+
+  @override
+  String get ankidroidSettingsNoteTypeTitle => 'Anki Note Type';
+
+  @override
+  String get ankidroidSettingsDefaultDeckSection => 'Default Deck';
+
+  @override
+  String get ankidroidSettingsTargetDeckTitle => 'Target Deck';
+
+  @override
+  String get ankidroidSettingsFieldMappingSection => 'Field Mapping';
+
+  @override
+  String get ankidroidSettingsFieldMappingHelp =>
+      'Map each Anki field to a data source from the app.';
+
+  @override
+  String get ankidroidSettingsDefaultTagsSection => 'Default Tags';
+
+  @override
+  String get ankidroidSettingsDefaultTagsHelp =>
+      'Comma-separated tags applied to every exported note.';
+
+  @override
+  String get ankidroidTagsHint => 'mekuru, japanese';
+
+  @override
+  String get ankidroidSettingsSelectNoteType => 'Select Note Type';
+
+  @override
+  String get ankidroidSettingsSelectDeck => 'Select Deck';
+
+  @override
+  String ankidroidSettingsMapFieldTo({required String ankiFieldName}) {
+    return 'Map \"$ankiFieldName\" to:';
+  }
+
+  @override
+  String get ankidroidCardSettingsTooltip => 'AnkiDroid Settings';
+
+  @override
+  String get ankidroidCardDeckTitle => 'Deck';
+
+  @override
+  String get ankidroidCardTagsTitle => 'Tags';
+
+  @override
+  String get ankidroidCardAddToAnki => 'Add to Anki';
+
+  @override
+  String get mangaReaderSettingsTitle => 'Reader Settings';
+
+  @override
+  String get mangaViewModeSingle => 'Single';
+
+  @override
+  String get mangaViewModeSpread => 'Spread';
+
+  @override
+  String get mangaViewModeScroll => 'Scroll';
+
+  @override
+  String get mangaAutoCropSubtitle => 'Remove empty margins';
+
+  @override
+  String get mangaAutoCropRerunTitle => 'Re-run Auto-Crop';
+
+  @override
+  String get mangaAutoCropRerunSubtitle =>
+      'Re-scan every page image for this book';
+
+  @override
+  String get mangaTransparentLookupTitle => 'Transparent Lookup';
+
+  @override
+  String get mangaTransparentLookupSubtitle => 'See-through dictionary sheet';
+
+  @override
+  String get mangaDebugWordOverlayTitle => 'Debug Word Overlay';
+
+  @override
+  String get mangaDebugWordOverlaySubtitle => 'Show word bounding boxes';
+
+  @override
+  String get mangaAutoCropComputeTitle => 'Compute Auto-Crop?';
+
+  @override
+  String get mangaAutoCropComputeBody =>
+      'Auto-crop needs to scan every page image for this book before it can be enabled. This may take a minute.';
+
+  @override
+  String get mangaAutoCropRerunDialogTitle => 'Re-run Auto-Crop?';
+
+  @override
+  String get mangaAutoCropRerunDialogBody =>
+      'Auto-crop will re-scan every page image for this book and replace the saved crop bounds. This may take a minute.';
+
+  @override
+  String get mangaAutoCropComputingProgress =>
+      'Computing auto-crop bounds. This may take a minute.';
+
+  @override
+  String get mangaAutoCropRecomputingProgress =>
+      'Recomputing auto-crop bounds. This may take a minute.';
+
+  @override
+  String get mangaAutoCropBoundsRefreshed => 'Auto-crop bounds refreshed.';
+
+  @override
+  String mangaAutoCropSetupFailed({required String details}) {
+    return 'Auto-crop setup failed: $details';
+  }
+
+  @override
+  String get ocrNoPagesCacheFound => 'No pages cache found for this book';
+
+  @override
+  String get ocrAlreadyCompleteResetHint =>
+      'OCR is already complete. Use \"Remove OCR\" to reset.';
+
+  @override
+  String get ocrMangaImageDirectoryNotFound =>
+      'Manga image directory not found';
+
+  @override
+  String get ocrBuildWordOverlaysTitle => 'Build Word Overlays';
+
+  @override
+  String get ocrBuildWordOverlaysBody =>
+      'OCR text already exists. This will rebuild word tap targets so lookup overlays appear correctly.';
+
+  @override
+  String get ocrRunActionTitle => 'Run OCR';
+
+  @override
+  String ocrProcessPagesBody({required int count}) {
+    return 'This will process $count pages. OCR will run in the background and continue even if you close the app.';
+  }
+
+  @override
+  String get ocrProcessAction => 'Process';
+
+  @override
+  String get ocrStartAction => 'Start';
+
+  @override
+  String ocrPrepareFailed({required String details}) {
+    return 'Unable to prepare OCR: $details';
+  }
+
+  @override
+  String ocrStartFailed({required String details}) {
+    return 'Failed to start OCR: $details';
+  }
+
+  @override
+  String get ocrWordOverlayStartedBackground =>
+      'Word overlay processing started in background';
+
+  @override
+  String get ocrStartedBackground => 'OCR started in background';
+
+  @override
+  String get ocrCancelActionTitle => 'Cancel OCR';
+
+  @override
+  String get ocrCancelSavedProgress => 'OCR cancelled. Progress saved.';
+
+  @override
+  String get ocrReplaceActionTitle => 'Replace OCR';
+
+  @override
+  String get ocrReplaceMokuroBody =>
+      'This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nTo restore the original OCR, re-import the book.';
+
+  @override
+  String get ocrReplaceStartedBackground =>
+      'OCR replacement started in background';
+
+  @override
+  String get ocrRemoveActionTitle => 'Remove OCR';
+
+  @override
+  String get ocrRemoveBody =>
+      'Remove OCR text and word overlays from this manga? You can run OCR again later.';
+
+  @override
+  String get ocrRemoveSubtitle => 'Remove OCR text from all pages';
+
+  @override
+  String get ocrRemovedFromBook => 'OCR removed from this book';
+
+  @override
+  String ocrRemoveFailed({required String details}) {
+    return 'Failed to remove OCR: $details';
+  }
+
+  @override
+  String get ocrUnlockProSubtitle => 'Unlock Pro to use your custom OCR server';
+
+  @override
+  String get ocrStopAndSaveProgressSubtitle =>
+      'Stop processing and save progress';
+
+  @override
+  String get ocrReplaceMokuroSubtitle =>
+      'Replace Mokuro OCR with your custom OCR server';
+
+  @override
+  String get ocrBuildWordTargetsSubtitle =>
+      'Build word tap targets from saved OCR';
+
+  @override
+  String ocrResumeSubtitle({required int completed, required int total}) {
+    return 'Resume OCR ($completed/$total done)';
+  }
+
+  @override
+  String get ocrRecognizeAllPagesSubtitle => 'Recognize text on all pages';
+
+  @override
+  String get readerEditNoteTitle => 'Edit Note';
+
+  @override
+  String get readerAddNoteHint => 'Add a note...';
+
+  @override
+  String get readerCopiedToClipboard => 'Copied to clipboard';
+
+  @override
+  String get aboutPrivacyPolicyTitle => 'Privacy Policy';
+
+  @override
+  String get aboutPrivacyPolicySubtitle =>
+      'See how Mekuru handles local and OCR data';
+
+  @override
+  String get aboutOpenSourceLicensesTitle => 'Open Source Licenses';
+
+  @override
+  String get aboutOpenSourceLicensesSubtitle =>
+      'View licenses for dependencies';
+
+  @override
+  String get aboutTagline => '\"to turn pages\"';
+
+  @override
+  String get aboutEpubJsLicenseTitle => 'epub.js License';
+
+  @override
+  String get downloadsKanjidicTitle => 'KANJIDIC';
+
+  @override
+  String get readerBookmarksTitle => 'Bookmarks';
+
+  @override
+  String get readerNoBookmarksYet =>
+      'No bookmarks yet.\nTap the bookmark icon while reading to add one.';
+
+  @override
+  String readerBookmarkProgressDate({
+    required String progress,
+    required String date,
+  }) {
+    return '$progress - $date';
+  }
+
+  @override
+  String aboutVersion({required String version}) {
+    return 'Version $version';
+  }
+
+  @override
+  String get aboutDescription =>
+      'A Japanese-first EPUB reader with vertical text, offline dictionary, and vocabulary management.';
+
+  @override
+  String get aboutAttributionTitle => 'Attribution';
+
+  @override
+  String get aboutKanjiVgTitle => 'KanjiVG';
+
+  @override
+  String get aboutKanjiVgDescription =>
+      'Kanji stroke order data is provided by the KanjiVG project, created by Ulrich Apel.';
+
+  @override
+  String get aboutLicensedUnderPrefix => 'Licensed under the ';
+
+  @override
+  String get aboutLicenseSuffix => ' license.';
+
+  @override
+  String get aboutProjectLabel => 'Project: ';
+
+  @override
+  String get aboutSourceLabel => 'Source: ';
+
+  @override
+  String get aboutJpdbTitle => 'JPDB Frequency Dictionary';
+
+  @override
+  String get aboutJpdbDescription =>
+      'Word frequency data is provided by the JPDB frequency dictionary, distributed via yomitan-dictionaries by Kuuuube.';
+
+  @override
+  String get aboutDataSourceLabel => 'Data source: ';
+
+  @override
+  String get aboutDictionaryLabel => 'Dictionary: ';
+
+  @override
+  String get aboutJmdictKanjidicTitle => 'JMdict & KANJIDIC';
+
+  @override
+  String get aboutJmdictKanjidicDescriptionPrefix =>
+      'Japanese-multilingual dictionary data is provided by the JMdict/EDICT project and kanji dictionary data by the KANJIDIC project, both created by Jim Breen and the ';
+
+  @override
+  String get aboutJmdictLabel => 'JMdict: ';
+
+  @override
+  String get aboutKanjidicLabel => 'KANJIDIC: ';
+
+  @override
+  String get aboutEpubJsTitle => 'epub.js';
+
+  @override
+  String get aboutEpubJsDescription =>
+      'EPUB rendering is powered by epub.js, an open source JavaScript EPUB reader library.';
 }

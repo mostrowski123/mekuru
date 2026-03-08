@@ -737,7 +737,7 @@ class _KanjidicTile extends ConsumerWidget {
         Icons.font_download_outlined,
         color: theme.colorScheme.primary,
       ),
-      title: const Text('KANJIDIC'),
+      title: Text(l10n.downloadsKanjidicTitle),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
     );

@@ -1,82 +1,82 @@
 {
-  "@@locale": "en",
+  "@@locale": "id",
   "appTitle": "Mekuru",
   "@appTitle": {
     "description": "Application title."
   },
-  "navLibrary": "Library",
+  "navLibrary": "Pustaka",
   "@navLibrary": {
     "description": "Bottom navigation label for the library tab."
   },
-  "navDictionary": "Dictionary",
+  "navDictionary": "Kamus",
   "@navDictionary": {
     "description": "Bottom navigation label for the dictionary tab."
   },
-  "navVocabulary": "Vocabulary",
+  "navVocabulary": "Kosakata",
   "@navVocabulary": {
     "description": "Bottom navigation label for the vocabulary tab."
   },
-  "navSettings": "Settings",
+  "navSettings": "Pengaturan",
   "@navSettings": {
     "description": "Bottom navigation label for the settings tab."
   },
-  "commonHelp": "Help",
+  "commonHelp": "Bantuan",
   "@commonHelp": {
     "description": "Tooltip or button label for help."
   },
-  "commonImport": "Import",
+  "commonImport": "Impor",
   "@commonImport": {
     "description": "Generic import label."
   },
-  "commonOpenNow": "Open now",
+  "commonOpenNow": "Buka sekarang",
   "@commonOpenNow": {
     "description": "Action label to open imported content immediately."
   },
-  "commonCancel": "Cancel",
+  "commonCancel": "Batal",
   "@commonCancel": {
     "description": "Generic cancel action."
   },
-  "commonClose": "Close",
+  "commonClose": "Tutup",
   "@commonClose": {
     "description": "Generic close action."
   },
-  "commonSave": "Save",
+  "commonSave": "Simpan",
   "@commonSave": {
     "description": "Generic save action."
   },
-  "commonDelete": "Delete",
+  "commonDelete": "Hapus",
   "@commonDelete": {
     "description": "Generic delete action."
   },
-  "commonDownload": "Download",
+  "commonDownload": "Unduh",
   "@commonDownload": {
     "description": "Generic download action."
   },
-  "commonOpenDictionary": "Open Dictionary",
+  "commonOpenDictionary": "Buka Kamus",
   "@commonOpenDictionary": {
     "description": "Button label to open the dictionary screen."
   },
-  "commonManageDictionaries": "Manage Dictionaries",
+  "commonManageDictionaries": "Kelola Kamus",
   "@commonManageDictionaries": {
     "description": "Action label to manage installed dictionaries."
   },
-  "commonClearAll": "Clear all",
+  "commonClearAll": "Bersihkan semua",
   "@commonClearAll": {
     "description": "Action label to clear a list."
   },
-  "commonClearSearch": "Clear search",
+  "commonClearSearch": "Hapus pencarian",
   "@commonClearSearch": {
     "description": "Action label to clear the search query."
   },
-  "commonSearch": "Search",
+  "commonSearch": "Cari",
   "@commonSearch": {
     "description": "Generic search label."
   },
-  "commonBack": "Back",
+  "commonBack": "Kembali",
   "@commonBack": {
     "description": "Generic back action."
   },
-  "commonRetry": "Retry",
+  "commonRetry": "Coba lagi",
   "@commonRetry": {
     "description": "Generic retry action."
   },
@@ -84,27 +84,27 @@
   "@commonOk": {
     "description": "Generic confirmation action."
   },
-  "commonDone": "Done",
+  "commonDone": "Selesai",
   "@commonDone": {
     "description": "Generic label for finishing a flow."
   },
-  "commonUndo": "Undo",
+  "commonUndo": "Batalkan",
   "@commonUndo": {
     "description": "Generic undo action."
   },
-  "commonUnlock": "Unlock",
+  "commonUnlock": "Buka kunci",
   "@commonUnlock": {
     "description": "Generic unlock action."
   },
-  "commonOpenSettings": "Open Settings",
+  "commonOpenSettings": "Buka Pengaturan",
   "@commonOpenSettings": {
     "description": "Action label to open the settings screen."
   },
-  "commonGotIt": "Got it",
+  "commonGotIt": "Mengerti",
   "@commonGotIt": {
     "description": "Acknowledgement action label."
   },
-  "commonErrorWithDetails": "Error: {details}",
+  "commonErrorWithDetails": "Kesalahan: {details}",
   "@commonErrorWithDetails": {
     "description": "Generic error message with details.",
     "placeholders": {
@@ -113,7 +113,7 @@
       }
     }
   },
-  "librarySortTooltip": "Sort: {label}",
+  "librarySortTooltip": "Urutkan: {label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",
     "placeholders": {
@@ -122,135 +122,135 @@
       }
     }
   },
-  "libraryEmptyTitle": "Your library is ready for its first book",
+  "libraryEmptyTitle": "Perpustakaan Anda siap untuk buku pertama",
   "@libraryEmptyTitle": {
     "description": "Title shown when the library has no books."
   },
-  "libraryEmptySubtitle": "Import something to read, install a dictionary, and you will be ready to save words in a few minutes.",
+  "libraryEmptySubtitle": "Impor sesuatu untuk dibaca, pasang kamus, dan Anda akan siap menyimpan kata dalam beberapa menit.",
   "@libraryEmptySubtitle": {
     "description": "Description shown when the library has no books."
   },
-  "libraryImportEpub": "Import EPUB",
+  "libraryImportEpub": "Impor EPUB",
   "@libraryImportEpub": {
     "description": "Button label to import an EPUB file."
   },
-  "libraryImportManga": "Import Manga",
+  "libraryImportManga": "Impor Manga",
   "@libraryImportManga": {
     "description": "Button label to import manga content."
   },
-  "libraryGetDictionaries": "Get Dictionaries",
+  "libraryGetDictionaries": "Dapatkan Kamus",
   "@libraryGetDictionaries": {
     "description": "Button label to open downloadable dictionaries."
   },
-  "libraryRestoreBackup": "Restore Backup",
+  "libraryRestoreBackup": "Pulihkan Cadangan",
   "@libraryRestoreBackup": {
     "description": "Button label to restore a backup."
   },
-  "librarySupportedMediaTitle": "Supported Media",
+  "librarySupportedMediaTitle": "Media yang Didukung",
   "@librarySupportedMediaTitle": {
     "description": "Title for the supported media help dialog."
   },
-  "libraryEpubBooksTitle": "EPUB Books",
+  "libraryEpubBooksTitle": "Buku EPUB",
   "@libraryEpubBooksTitle": {
     "description": "Heading for EPUB help information."
   },
-  "libraryEpubBooksDescription": "Standard .epub files are supported. Tap the + button and select \"Import EPUB\" to add one from your device.",
+  "libraryEpubBooksDescription": "File .epub standar didukung. Ketuk tombol + lalu pilih \"Impor EPUB\" untuk menambahkannya dari perangkat Anda.",
   "@libraryEpubBooksDescription": {
     "description": "Description of supported EPUB imports."
   },
-  "libraryMokuroTitle": "Mokuro Manga",
+  "libraryMokuroTitle": "Manga Mokuro",
   "@libraryMokuroTitle": {
     "description": "Heading for Mokuro import help."
   },
-  "libraryMokuroDescription": "Import manga by selecting a folder, then choosing a .mokuro or .html file. The page images are loaded from a sibling folder with the same name.",
+  "libraryMokuroDescription": "Impor manga dengan memilih sebuah folder, lalu pilih file .mokuro atau .html. Gambar halaman akan dimuat dari folder saudara dengan nama yang sama.",
   "@libraryMokuroDescription": {
     "description": "Description of Mokuro manga imports."
   },
-  "libraryMokuroFormatDescription": "The .mokuro file is generated by the mokuro tool, which runs OCR on manga pages to extract Japanese text.",
+  "libraryMokuroFormatDescription": "File .mokuro dihasilkan oleh alat mokuro, yang menjalankan OCR pada halaman manga untuk mengekstrak teks Jepang.",
   "@libraryMokuroFormatDescription": {
     "description": "Description of the Mokuro format."
   },
-  "libraryLearnHowToCreateMokuroFiles": "Learn how to create .mokuro files",
+  "libraryLearnHowToCreateMokuroFiles": "Pelajari cara membuat file .mokuro",
   "@libraryLearnHowToCreateMokuroFiles": {
     "description": "Button label to learn about Mokuro file creation."
   },
-  "librarySortBy": "Sort by",
+  "librarySortBy": "Urutkan berdasarkan",
   "@librarySortBy": {
     "description": "Title for the library sort picker."
   },
-  "librarySortDateImported": "Date imported",
+  "librarySortDateImported": "Tanggal diimpor",
   "@librarySortDateImported": {
     "description": "Sort label for imported date."
   },
-  "librarySortRecentlyRead": "Recently read",
+  "librarySortRecentlyRead": "Baru saja dibaca",
   "@librarySortRecentlyRead": {
     "description": "Sort label for recently read books."
   },
-  "librarySortAlphabetical": "Alphabetical",
+  "librarySortAlphabetical": "Alfabetis",
   "@librarySortAlphabetical": {
     "description": "Sort label for alphabetical ordering."
   },
-  "libraryImportTitle": "Import",
+  "libraryImportTitle": "Impor",
   "@libraryImportTitle": {
     "description": "Title for the import picker."
   },
-  "libraryImportEpubSubtitle": "Import an EPUB file",
+  "libraryImportEpubSubtitle": "Impor file EPUB",
   "@libraryImportEpubSubtitle": {
     "description": "Subtitle describing EPUB import."
   },
-  "libraryImportMangaSubtitle": "Choose a CBZ archive or Mokuro folder",
+  "libraryImportMangaSubtitle": "Pilih arsip CBZ atau folder Mokuro",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."
   },
-  "libraryImportMangaTitle": "Import Manga",
+  "libraryImportMangaTitle": "Impor Manga",
   "@libraryImportMangaTitle": {
     "description": "Title for the manga import type picker."
   },
-  "libraryImportMangaDescription": "Choose whether you want to import a CBZ archive or a Mokuro-exported folder.",
+  "libraryImportMangaDescription": "Pilih apakah Anda ingin mengimpor arsip CBZ atau folder hasil ekspor Mokuro.",
   "@libraryImportMangaDescription": {
     "description": "Description for the manga import type picker."
   },
-  "libraryImportMokuroFolder": "Mokuro folder",
+  "libraryImportMokuroFolder": "Folder Mokuro",
   "@libraryImportMokuroFolder": {
     "description": "Title for the Mokuro folder import option."
   },
-  "libraryImportMokuroFolderSubtitle": "Select the folder that contains a .mokuro or .html file alongside the images folder.",
+  "libraryImportMokuroFolderSubtitle": "Pilih folder yang berisi file .mokuro atau .html beserta folder gambar.",
   "@libraryImportMokuroFolderSubtitle": {
     "description": "Subtitle for the Mokuro folder import option."
   },
-  "libraryWhatIsMokuro": "What is Mokuro?",
+  "libraryWhatIsMokuro": "Apa itu Mokuro?",
   "@libraryWhatIsMokuro": {
     "description": "Button label to learn what Mokuro is."
   },
-  "libraryImportCbzArchive": "CBZ archive",
+  "libraryImportCbzArchive": "Arsip CBZ",
   "@libraryImportCbzArchive": {
     "description": "Title for the CBZ import option."
   },
-  "libraryImportCbzArchiveSubtitle": "Import a .cbz comic book archive",
+  "libraryImportCbzArchiveSubtitle": "Impor arsip komik .cbz",
   "@libraryImportCbzArchiveSubtitle": {
     "description": "Subtitle for the CBZ import option."
   },
-  "libraryImportedWithoutOcrMessage": "Imported without OCR. To get text overlays, import external OCR output (e.g. .mokuro).",
+  "libraryImportedWithoutOcrMessage": "Diimpor tanpa OCR. Untuk mendapatkan overlay teks, impor hasil OCR eksternal (misal: .mokuro).",
   "@libraryImportedWithoutOcrMessage": {
     "description": "Snackbar shown after importing manga without OCR data."
   },
-  "libraryCouldNotOpenMokuroProjectPage": "Could not open the Mokuro project page.",
+  "libraryCouldNotOpenMokuroProjectPage": "Tidak dapat membuka halaman proyek Mokuro.",
   "@libraryCouldNotOpenMokuroProjectPage": {
     "description": "Snackbar shown when the Mokuro project link cannot be opened."
   },
-  "libraryNoMangaManifestFound": "No .mokuro or .html files found in the selected folder.",
+  "libraryNoMangaManifestFound": "Tidak ditemukan file .mokuro atau .html di folder yang dipilih.",
   "@libraryNoMangaManifestFound": {
     "description": "Error shown when no supported manga manifest file is found."
   },
-  "librarySelectMangaFolder": "Select manga folder",
+  "librarySelectMangaFolder": "Pilih folder manga",
   "@librarySelectMangaFolder": {
     "description": "Native dialog title for picking a manga folder."
   },
-  "librarySelectedFolder": "Selected folder",
+  "librarySelectedFolder": "Folder dipilih",
   "@librarySelectedFolder": {
     "description": "Fallback label for a selected folder."
   },
-  "libraryMangaFilesFound": "{count, plural, one {# manga file found} other {# manga files found}}",
+  "libraryMangaFilesFound": "{count, plural, one {# file manga ditemukan} other {# file manga ditemukan}}",
   "@libraryMangaFilesFound": {
     "description": "Subtitle showing how many manga manifest files were found.",
     "placeholders": {
@@ -259,31 +259,31 @@
       }
     }
   },
-  "dictionarySearchHint": "Search in kanji, kana, or romaji...",
+  "dictionarySearchHint": "Cari dengan kanji, kana, atau romaji...",
   "@dictionarySearchHint": {
     "description": "Placeholder text for the dictionary search field."
   },
-  "dictionaryNoDictionariesTitle": "No dictionaries imported",
+  "dictionaryNoDictionariesTitle": "Belum ada kamus diimpor",
   "@dictionaryNoDictionariesTitle": {
     "description": "Title shown when no dictionaries have been imported."
   },
-  "dictionaryNoDictionariesSubtitle": "Install the starter pack or import your own Yomitan dictionaries to start searching.",
+  "dictionaryNoDictionariesSubtitle": "Pasang starter pack atau impor kamus Yomitan Anda sendiri untuk mulai mencari.",
   "@dictionaryNoDictionariesSubtitle": {
     "description": "Description shown when no dictionaries have been imported."
   },
-  "dictionaryRecommendedStarterPack": "Recommended starter pack",
+  "dictionaryRecommendedStarterPack": "Starter pack yang direkomendasikan",
   "@dictionaryRecommendedStarterPack": {
     "description": "Button label for the recommended dictionary starter pack."
   },
-  "dictionaryNoEnabledTitle": "Your dictionaries are turned off",
+  "dictionaryNoEnabledTitle": "Kamus Anda dinonaktifkan",
   "@dictionaryNoEnabledTitle": {
     "description": "Title shown when all dictionaries are disabled."
   },
-  "dictionaryNoEnabledSubtitle": "Enable at least one dictionary to make lookups work, or install the recommended starter pack.",
+  "dictionaryNoEnabledSubtitle": "Aktifkan setidaknya satu kamus agar pencarian berfungsi, atau instal starter pack yang direkomendasikan.",
   "@dictionaryNoEnabledSubtitle": {
     "description": "Description shown when all dictionaries are disabled."
   },
-  "dictionaryEnableDictionaries": "Enable dictionaries",
+  "dictionaryEnableDictionaries": "Aktifkan kamus",
   "@dictionaryEnableDictionaries": {
     "description": "Button label to enable dictionaries."
   },
@@ -291,23 +291,23 @@
   "@dictionaryStarterPack": {
     "description": "Button label for the starter pack."
   },
-  "dictionaryNoResultsFound": "No results found.",
+  "dictionaryNoResultsFound": "Tidak ada hasil.",
   "@dictionaryNoResultsFound": {
     "description": "Message shown when a dictionary search returns no matches."
   },
-  "dictionarySearchForAWord": "Search for a word",
+  "dictionarySearchForAWord": "Cari sebuah kata",
   "@dictionarySearchForAWord": {
     "description": "Title shown in the empty dictionary search state."
   },
-  "dictionarySearchForAWordSubtitle": "Type in kanji, hiragana, katakana, or romaji",
+  "dictionarySearchForAWordSubtitle": "Ketik dalam kanji, hiragana, katakana, atau romaji",
   "@dictionarySearchForAWordSubtitle": {
     "description": "Description shown in the empty dictionary search state."
   },
-  "dictionaryRecent": "Recent",
+  "dictionaryRecent": "Terbaru",
   "@dictionaryRecent": {
     "description": "Heading for recent dictionary searches."
   },
-  "dictionarySavedWord": "Saved \"{expression}\"",
+  "dictionarySavedWord": "Disimpan \"{expression}\"",
   "@dictionarySavedWord": {
     "description": "Snackbar shown after saving a word to vocabulary.",
     "placeholders": {
@@ -316,11 +316,11 @@
       }
     }
   },
-  "dictionaryWordAlreadyExistsInVocab": "Word already exists in vocab list",
+  "dictionaryWordAlreadyExistsInVocab": "Kata sudah ada di daftar kosakata",
   "@dictionaryWordAlreadyExistsInVocab": {
     "description": "Snackbar shown when a word is already saved in vocabulary."
   },
-  "dictionaryCopiedWord": "Copied \"{expression}\"",
+  "dictionaryCopiedWord": "Disalin \"{expression}\"",
   "@dictionaryCopiedWord": {
     "description": "Snackbar shown after copying a word.",
     "placeholders": {
@@ -329,11 +329,11 @@
       }
     }
   },
-  "dictionaryWordAlreadyExistsInAnki": "Word already exists in default deck",
+  "dictionaryWordAlreadyExistsInAnki": "Kata sudah ada di dek default",
   "@dictionaryWordAlreadyExistsInAnki": {
     "description": "Snackbar shown when a word already exists in Anki."
   },
-  "dictionaryAddedToAnki": "Added \"{expression}\" to Anki",
+  "dictionaryAddedToAnki": "\"{expression}\" ditambahkan ke Anki",
   "@dictionaryAddedToAnki": {
     "description": "Snackbar shown after adding a word to Anki.",
     "placeholders": {
@@ -342,31 +342,31 @@
       }
     }
   },
-  "dictionaryCopyTooltip": "Copy",
+  "dictionaryCopyTooltip": "Salin",
   "@dictionaryCopyTooltip": {
     "description": "Tooltip for copying a dictionary expression."
   },
-  "dictionaryAlreadyInAnkiTooltip": "Already in default Anki deck. Long press to add anyway",
+  "dictionaryAlreadyInAnkiTooltip": "Sudah ada di dek Anki default. Tekan lama untuk tetap menambahkannya",
   "@dictionaryAlreadyInAnkiTooltip": {
     "description": "Tooltip shown when the word already exists in Anki."
   },
-  "dictionaryCheckingAnkiTooltip": "Checking default Anki deck",
+  "dictionaryCheckingAnkiTooltip": "Memeriksa dek Anki default",
   "@dictionaryCheckingAnkiTooltip": {
     "description": "Tooltip shown while checking for an existing Anki note."
   },
-  "dictionarySendToAnkiTooltip": "Send to AnkiDroid",
+  "dictionarySendToAnkiTooltip": "Kirim ke AnkiDroid",
   "@dictionarySendToAnkiTooltip": {
     "description": "Tooltip for sending a word to AnkiDroid."
   },
-  "dictionaryAlreadyInVocabTooltip": "Already in vocab list",
+  "dictionaryAlreadyInVocabTooltip": "Sudah ada di daftar kosakata",
   "@dictionaryAlreadyInVocabTooltip": {
     "description": "Tooltip shown when a word is already saved to vocabulary."
   },
-  "dictionarySaveToVocabularyTooltip": "Save to Vocabulary",
+  "dictionarySaveToVocabularyTooltip": "Simpan ke Kosakata",
   "@dictionarySaveToVocabularyTooltip": {
     "description": "Tooltip for saving a word to vocabulary."
   },
-  "dictionaryVeryCommon": "Very Common",
+  "dictionaryVeryCommon": "Sangat Umum",
   "@dictionaryVeryCommon": {
     "description": "Badge label for very common words."
   },
@@ -378,7 +378,7 @@
   "@dictionaryKunyomiLabel": {
     "description": "Label for kunyomi readings."
   },
-  "dictionaryKanjiStrokeCount": "{count, plural, one {# stroke} other {# strokes}}",
+  "dictionaryKanjiStrokeCount": "{count, plural, one {# guratan} other {# guratan}}",
   "@dictionaryKanjiStrokeCount": {
     "description": "Label showing how many strokes are in the current kanji stroke order diagram.",
     "placeholders": {
@@ -387,27 +387,27 @@
       }
     }
   },
-  "dictionaryAnimateStrokeOrderTooltip": "Animate stroke order",
+  "dictionaryAnimateStrokeOrderTooltip": "Animasi urutan guratan",
   "@dictionaryAnimateStrokeOrderTooltip": {
     "description": "Tooltip for replaying the kanji stroke order animation."
   },
-  "vocabularySearchSavedWordsHint": "Search saved words",
+  "vocabularySearchSavedWordsHint": "Cari kata tersimpan",
   "@vocabularySearchSavedWordsHint": {
     "description": "Placeholder text for searching saved vocabulary."
   },
-  "vocabularyExportCsvTooltip": "Export CSV",
+  "vocabularyExportCsvTooltip": "Ekspor CSV",
   "@vocabularyExportCsvTooltip": {
     "description": "Tooltip for exporting vocabulary as CSV."
   },
-  "vocabularyEmptyTitle": "No saved words yet",
+  "vocabularyEmptyTitle": "Belum ada kata tersimpan",
   "@vocabularyEmptyTitle": {
     "description": "Title shown when there are no saved vocabulary entries."
   },
-  "vocabularyEmptySubtitle": "Save words from dictionary searches or while reading, and they will show up here with context.",
+  "vocabularyEmptySubtitle": "Simpan kata dari pencarian kamus atau saat membaca, dan akan muncul di sini beserta konteksnya.",
   "@vocabularyEmptySubtitle": {
     "description": "Description shown when there are no saved vocabulary entries."
   },
-  "vocabularyNoMatches": "No matches for \"{query}\"",
+  "vocabularyNoMatches": "Tidak ada kecocokan untuk \"{query}\"",
   "@vocabularyNoMatches": {
     "description": "Title shown when no saved vocabulary matches the search query.",
     "placeholders": {
@@ -416,11 +416,11 @@
       }
     }
   },
-  "vocabularyNoMatchesSubtitle": "Try the expression, reading, or part of a definition.",
+  "vocabularyNoMatchesSubtitle": "Coba masukkan ekspresi, bacaan, atau sebagian definisi.",
   "@vocabularyNoMatchesSubtitle": {
     "description": "Description shown when no vocabulary items match the search query."
   },
-  "vocabularySelectedCount": "{count} selected",
+  "vocabularySelectedCount": "{count} dipilih",
   "@vocabularySelectedCount": {
     "description": "App bar title showing how many vocabulary items are selected.",
     "placeholders": {
@@ -429,27 +429,27 @@
       }
     }
   },
-  "vocabularyDeselectAllTooltip": "Deselect all",
+  "vocabularyDeselectAllTooltip": "Batal pilih semua",
   "@vocabularyDeselectAllTooltip": {
     "description": "Tooltip for deselecting all vocabulary items."
   },
-  "vocabularySelectAllTooltip": "Select all",
+  "vocabularySelectAllTooltip": "Pilih semua",
   "@vocabularySelectAllTooltip": {
     "description": "Tooltip for selecting all vocabulary items."
   },
-  "vocabularyExportSelectedTooltip": "Export selected",
+  "vocabularyExportSelectedTooltip": "Ekspor yang dipilih",
   "@vocabularyExportSelectedTooltip": {
     "description": "Tooltip for exporting selected vocabulary items."
   },
-  "vocabularyNoDefinition": "No definition",
+  "vocabularyNoDefinition": "Tidak ada definisi",
   "@vocabularyNoDefinition": {
     "description": "Fallback text when a saved word has no definition."
   },
-  "vocabularyContextLabel": "Context:",
+  "vocabularyContextLabel": "Konteks:",
   "@vocabularyContextLabel": {
     "description": "Label for the saved sentence context."
   },
-  "vocabularyAddedOn": "Added: {date}",
+  "vocabularyAddedOn": "Ditambahkan: {date}",
   "@vocabularyAddedOn": {
     "description": "Date label shown for a saved vocabulary entry.",
     "placeholders": {
@@ -458,7 +458,7 @@
       }
     }
   },
-  "vocabularyDeletedWord": "Deleted \"{expression}\"",
+  "vocabularyDeletedWord": "Menghapus \"{expression}\"",
   "@vocabularyDeletedWord": {
     "description": "Snackbar shown after deleting a vocabulary entry.",
     "placeholders": {
@@ -467,7 +467,7 @@
       }
     }
   },
-  "ocrPagesProgress": "{completed}/{total} pages",
+  "ocrPagesProgress": "{completed}/{total} halaman",
   "@ocrPagesProgress": {
     "description": "Progress label for OCR pages completed.",
     "placeholders": {
@@ -479,7 +479,7 @@
       }
     }
   },
-  "ocrEtaSecondsRemaining": "~{seconds}s remaining",
+  "ocrEtaSecondsRemaining": "~{seconds} detik tersisa",
   "@ocrEtaSecondsRemaining": {
     "description": "ETA label for OCR progress under one minute.",
     "placeholders": {
@@ -488,7 +488,7 @@
       }
     }
   },
-  "ocrEtaMinutesRemaining": "~{minutes} min remaining",
+  "ocrEtaMinutesRemaining": "~{minutes} menit tersisa",
   "@ocrEtaMinutesRemaining": {
     "description": "ETA label for OCR progress in minutes.",
     "placeholders": {
@@ -497,7 +497,7 @@
       }
     }
   },
-  "ocrEtaHoursMinutesRemaining": "~{hours}h {minutes}m remaining",
+  "ocrEtaHoursMinutesRemaining": "~{hours}j {minutes}m tersisa",
   "@ocrEtaHoursMinutesRemaining": {
     "description": "ETA label for OCR progress in hours and minutes.",
     "placeholders": {
@@ -509,35 +509,35 @@
       }
     }
   },
-  "ocrPaused": "OCR Paused",
+  "ocrPaused": "OCR Dijeda",
   "@ocrPaused": {
     "description": "Title shown when OCR work is paused."
   },
-  "ocrComplete": "OCR Complete",
+  "ocrComplete": "OCR Selesai",
   "@ocrComplete": {
     "description": "Title shown when OCR work is complete."
   },
-  "ocrFailed": "OCR Failed",
+  "ocrFailed": "OCR Gagal",
   "@ocrFailed": {
     "description": "Title shown when OCR work fails."
   },
-  "ocrTapForDetails": "Tap for details",
+  "ocrTapForDetails": "Ketuk untuk detail",
   "@ocrTapForDetails": {
     "description": "Prompt shown when OCR errors have details."
   },
-  "ocrCustomServerRequiredTitle": "Custom OCR Server Required",
+  "ocrCustomServerRequiredTitle": "Server OCR Kustom Diperlukan",
   "@ocrCustomServerRequiredTitle": {
     "description": "Dialog title shown when OCR requires a custom server."
   },
-  "ocrCustomServerRequiredBody": "Remote manga OCR now uses your own server. Open Settings and add a custom OCR server URL plus the matching shared key.",
+  "ocrCustomServerRequiredBody": "OCR manga jarak jauh sekarang menggunakan server milik Anda. Buka Pengaturan dan tambahkan URL server OCR kustom beserta shared key yang sesuai.",
   "@ocrCustomServerRequiredBody": {
     "description": "Dialog body shown when OCR requires a custom server."
   },
-  "ocrCustomServerKeyRequiredTitle": "Custom Server Setup Required",
+  "ocrCustomServerKeyRequiredTitle": "Pengaturan Server Kustom Diperlukan",
   "@ocrCustomServerKeyRequiredTitle": {
     "description": "Dialog title shown when a custom OCR server key is missing."
   },
-  "ocrCustomServerKeyRequiredBody": "Custom OCR servers require a shared key. Open Custom OCR Server settings and enter the same AUTH_API_KEY value configured on your server.",
+  "ocrCustomServerKeyRequiredBody": "Server OCR kustom memerlukan shared key. Buka pengaturan Server OCR Kustom dan masukkan nilai AUTH_API_KEY yang sama seperti di server Anda.",
   "@ocrCustomServerKeyRequiredBody": {
     "description": "Dialog body shown when a custom OCR server key is missing."
   },
@@ -545,67 +545,67 @@
   "@proTitle": {
     "description": "Title for the Pro upgrade screen."
   },
-  "proPurchaseConfirmed": "Your purchase has been confirmed!",
+  "proPurchaseConfirmed": "Pembelian Anda telah dikonfirmasi!",
   "@proPurchaseConfirmed": {
     "description": "Snackbar shown after a purchase confirmation is received."
   },
-  "proUnlockOnceTitle": "Unlock Pro once",
+  "proUnlockOnceTitle": "Buka Pro sekali",
   "@proUnlockOnceTitle": {
     "description": "Heading for the Pro purchase card."
   },
-  "proStatusUnlocked": "Unlocked",
+  "proStatusUnlocked": "Terbuka",
   "@proStatusUnlocked": {
     "description": "Chip label when Pro is unlocked."
   },
-  "proStatusLocked": "Locked",
+  "proStatusLocked": "Terkunci",
   "@proStatusLocked": {
     "description": "Chip label when Pro is locked."
   },
-  "proUnlockDescription": "One-time purchase for reader power features.",
+  "proUnlockDescription": "Pembelian satu kali untuk fitur pembaca tingkat lanjut.",
   "@proUnlockDescription": {
     "description": "Description of the Pro purchase."
   },
-  "proRestorePurchase": "Restore Purchase",
+  "proRestorePurchase": "Pulihkan Pembelian",
   "@proRestorePurchase": {
     "description": "Button label to restore a Pro purchase."
   },
-  "proFeatureAutoCropTitle": "Auto-Crop",
+  "proFeatureAutoCropTitle": "Pangkas Otomatis",
   "@proFeatureAutoCropTitle": {
     "description": "Title of the auto-crop Pro feature."
   },
-  "proFeatureAutoCropDescription": "Trim empty manga page margins after a one-time setup per book.",
+  "proFeatureAutoCropDescription": "Pangkas margin kosong halaman manga setelah pengaturan satu kali per buku.",
   "@proFeatureAutoCropDescription": {
     "description": "Description of the auto-crop Pro feature."
   },
-  "proFeatureHighlightsTitle": "Book Highlights",
+  "proFeatureHighlightsTitle": "Sorotan Buku",
   "@proFeatureHighlightsTitle": {
     "description": "Title of the book highlights Pro feature."
   },
-  "proFeatureHighlightsDescription": "Save and review highlighted passages while reading EPUB books.",
+  "proFeatureHighlightsDescription": "Simpan dan tinjau kembali bagian-bagian yang disorot saat membaca buku EPUB.",
   "@proFeatureHighlightsDescription": {
     "description": "Description of the book highlights Pro feature."
   },
-  "proFeatureCustomOcrTitle": "Custom OCR Server",
+  "proFeatureCustomOcrTitle": "Server OCR Kustom",
   "@proFeatureCustomOcrTitle": {
     "description": "Title of the custom OCR server Pro feature."
   },
-  "proFeatureCustomOcrDescription": "Run remote manga OCR with your own server and shared key.",
+  "proFeatureCustomOcrDescription": "Jalankan OCR manga jarak jauh dengan server dan kunci bersama milik Anda sendiri.",
   "@proFeatureCustomOcrDescription": {
     "description": "Description of the custom OCR server Pro feature."
   },
-  "proServerRepo": "Server Repo",
+  "proServerRepo": "Repositori Server",
   "@proServerRepo": {
     "description": "Button label linking to the OCR server repository."
   },
-  "proAlreadyUnlocked": "Already Unlocked",
+  "proAlreadyUnlocked": "Sudah Dibuka",
   "@proAlreadyUnlocked": {
     "description": "Button label when Pro is already unlocked."
   },
-  "proUnlock": "Unlock Pro",
+  "proUnlock": "Buka Pro",
   "@proUnlock": {
     "description": "Button label to unlock Pro."
   },
-  "proUnlockWithPrice": "Unlock Pro {price}",
+  "proUnlockWithPrice": "Buka Pro {price}",
   "@proUnlockWithPrice": {
     "description": "Button label to unlock Pro with the price included.",
     "placeholders": {
@@ -614,15 +614,15 @@
       }
     }
   },
-  "downloadsTitle": "Downloads",
+  "downloadsTitle": "Unduhan",
   "@downloadsTitle": {
     "description": "Title for the downloads screen."
   },
-  "downloadsRecommendedStarterPackTitle": "Recommended starter pack",
+  "downloadsRecommendedStarterPackTitle": "Paket awal yang direkomendasikan",
   "@downloadsRecommendedStarterPackTitle": {
     "description": "Heading for the recommended dictionary starter pack."
   },
-  "downloadsRecommendedStarterPackSubtitle": "Install JMdict English and word frequency data together for the fastest setup.",
+  "downloadsRecommendedStarterPackSubtitle": "Instal JMdict English dan data frekuensi kata secara bersamaan untuk penyiapan tercepat.",
   "@downloadsRecommendedStarterPackSubtitle": {
     "description": "Description for the recommended starter pack."
   },
@@ -630,27 +630,27 @@
   "@downloadsStarterPackJmdict": {
     "description": "Starter pack row label for JMdict English."
   },
-  "downloadsStarterPackWordFrequency": "Word Frequency",
+  "downloadsStarterPackWordFrequency": "Frekuensi Kata",
   "@downloadsStarterPackWordFrequency": {
     "description": "Starter pack row label for word frequency data."
   },
-  "downloadsInstallStarterPack": "Install Starter Pack",
+  "downloadsInstallStarterPack": "Instal Paket Awal",
   "@downloadsInstallStarterPack": {
     "description": "Button label to install the starter pack."
   },
-  "downloadsSectionDictionaries": "Dictionaries",
+  "downloadsSectionDictionaries": "Kamus",
   "@downloadsSectionDictionaries": {
     "description": "Section header for downloadable dictionaries."
   },
-  "downloadsSectionAssets": "Assets",
+  "downloadsSectionAssets": "Aset",
   "@downloadsSectionAssets": {
     "description": "Section header for downloadable assets."
   },
-  "downloadsFetchingLatestRelease": "Fetching latest release...",
+  "downloadsFetchingLatestRelease": "Mengambil rilis terbaru...",
   "@downloadsFetchingLatestRelease": {
     "description": "Progress message shown while fetching the latest downloadable release."
   },
-  "downloadsDownloadingPercent": "Downloading... {percent}%",
+  "downloadsDownloadingPercent": "Mengunduh... {percent}%",
   "@downloadsDownloadingPercent": {
     "description": "Progress message shown while downloading data.",
     "placeholders": {
@@ -659,23 +659,23 @@
       }
     }
   },
-  "downloadsImporting": "Importing...",
+  "downloadsImporting": "Mengimpor...",
   "@downloadsImporting": {
     "description": "Progress message shown while importing downloaded data."
   },
-  "downloadsExtractingFiles": "Extracting files...",
+  "downloadsExtractingFiles": "Mengekstrak file...",
   "@downloadsExtractingFiles": {
     "description": "Progress message shown while extracting downloaded files."
   },
-  "downloadsJpdbAttribution": "Word frequency data from JPDB (jpdb.io), distributed by Kuuuube.",
+  "downloadsJpdbAttribution": "Data frekuensi kata dari JPDB (jpdb.io), didistribusikan oleh Kuuuube.",
   "@downloadsJpdbAttribution": {
     "description": "Attribution text for JPDB frequency data."
   },
-  "downloadsKanjiStrokeOrderTitle": "Kanji Stroke Order",
+  "downloadsKanjiStrokeOrderTitle": "Urutan Guratan Kanji",
   "@downloadsKanjiStrokeOrderTitle": {
     "description": "Title for the KanjiVG download tile."
   },
-  "downloadsKanjiStrokeOrderDownloaded": "{count} stroke order files downloaded",
+  "downloadsKanjiStrokeOrderDownloaded": "{count} file urutan guratan telah diunduh",
   "@downloadsKanjiStrokeOrderDownloaded": {
     "description": "Subtitle shown when KanjiVG data has been downloaded.",
     "placeholders": {
@@ -684,139 +684,139 @@
       }
     }
   },
-  "downloadsKanjiStrokeOrderDescription": "Download kanji stroke order data from KanjiVG",
+  "downloadsKanjiStrokeOrderDescription": "Unduh data urutan guratan kanji dari KanjiVG",
   "@downloadsKanjiStrokeOrderDescription": {
     "description": "Subtitle shown before KanjiVG data is downloaded."
   },
-  "downloadsDeleteKanjiDataTooltip": "Delete kanji data",
+  "downloadsDeleteKanjiDataTooltip": "Hapus data kanji",
   "@downloadsDeleteKanjiDataTooltip": {
     "description": "Tooltip for deleting KanjiVG data."
   },
-  "downloadsDeleteKanjiDataTitle": "Delete Kanji Data",
+  "downloadsDeleteKanjiDataTitle": "Hapus Data Kanji",
   "@downloadsDeleteKanjiDataTitle": {
     "description": "Dialog title for deleting KanjiVG data."
   },
-  "downloadsDeleteKanjiDataBody": "Delete all downloaded kanji stroke order files? You can re-download them later.",
+  "downloadsDeleteKanjiDataBody": "Hapus semua file urutan goresan kanji yang sudah diunduh? Anda dapat mengunduhnya lagi nanti.",
   "@downloadsDeleteKanjiDataBody": {
     "description": "Dialog body for deleting KanjiVG data."
   },
-  "downloadsWordFrequencyDownloaded": "Frequency data downloaded",
+  "downloadsWordFrequencyDownloaded": "Data frekuensi kata berhasil diunduh",
   "@downloadsWordFrequencyDownloaded": {
     "description": "Subtitle shown when word frequency data has been downloaded."
   },
-  "downloadsWordFrequencyDescription": "Download word frequency data for search ranking",
+  "downloadsWordFrequencyDescription": "Unduh data frekuensi kata untuk peringkat hasil pencarian",
   "@downloadsWordFrequencyDescription": {
     "description": "Subtitle shown before word frequency data is downloaded."
   },
-  "downloadsDeleteFrequencyDataTooltip": "Delete frequency data",
+  "downloadsDeleteFrequencyDataTooltip": "Hapus data frekuensi",
   "@downloadsDeleteFrequencyDataTooltip": {
     "description": "Tooltip for deleting word frequency data."
   },
-  "downloadsDeleteFrequencyDataTitle": "Delete Frequency Data",
+  "downloadsDeleteFrequencyDataTitle": "Hapus Data Frekuensi",
   "@downloadsDeleteFrequencyDataTitle": {
     "description": "Dialog title for deleting word frequency data."
   },
-  "downloadsDeleteFrequencyDataBody": "Delete word frequency data? Search results will no longer be ranked by frequency. You can re-download it later.",
+  "downloadsDeleteFrequencyDataBody": "Hapus data frekuensi kata? Hasil pencarian tidak lagi diurutkan berdasarkan frekuensi. Anda bisa mengunduhnya lagi nanti.",
   "@downloadsDeleteFrequencyDataBody": {
     "description": "Dialog body for deleting word frequency data."
   },
-  "downloadsJmdictDownloaded": "Japanese-English dictionary downloaded",
+  "downloadsJmdictDownloaded": "Kamus Jepang-Inggris berhasil diunduh",
   "@downloadsJmdictDownloaded": {
     "description": "Subtitle shown when JMdict has been downloaded."
   },
-  "downloadsJmdictDescription": "Download Japanese-English dictionary",
+  "downloadsJmdictDescription": "Unduh kamus Jepang-Inggris",
   "@downloadsJmdictDescription": {
     "description": "Subtitle shown before JMdict has been downloaded."
   },
-  "downloadsDeleteJmdictTooltip": "Delete JMdict",
+  "downloadsDeleteJmdictTooltip": "Hapus JMdict",
   "@downloadsDeleteJmdictTooltip": {
     "description": "Tooltip for deleting JMdict data."
   },
-  "downloadsChooseJmdictVariant": "Choose JMdict variant",
+  "downloadsChooseJmdictVariant": "Pilih varian JMdict",
   "@downloadsChooseJmdictVariant": {
     "description": "Title for the JMdict variant picker."
   },
-  "downloadsJmdictStandardSubtitle": "Standard dictionary (~15 MB)",
+  "downloadsJmdictStandardSubtitle": "Kamus standar (~15 MB)",
   "@downloadsJmdictStandardSubtitle": {
     "description": "Subtitle for the standard JMdict variant."
   },
-  "downloadsJmdictExamplesTitle": "JMdict English with Examples",
+  "downloadsJmdictExamplesTitle": "JMdict Inggris dengan Contoh Kalimat",
   "@downloadsJmdictExamplesTitle": {
     "description": "Title for the JMdict variant with example sentences."
   },
-  "downloadsJmdictExamplesSubtitle": "Includes example sentences (~18 MB)",
+  "downloadsJmdictExamplesSubtitle": "Termasuk contoh kalimat (~18 MB)",
   "@downloadsJmdictExamplesSubtitle": {
     "description": "Subtitle for the JMdict variant with example sentences."
   },
-  "downloadsDeleteJmdictTitle": "Delete JMdict",
+  "downloadsDeleteJmdictTitle": "Hapus JMdict",
   "@downloadsDeleteJmdictTitle": {
     "description": "Dialog title for deleting JMdict data."
   },
-  "downloadsDeleteJmdictBody": "Delete JMdict and all its entries? You can re-download it later.",
+  "downloadsDeleteJmdictBody": "Hapus JMdict beserta seluruh entri di dalamnya? Anda dapat mengunduhnya lagi nanti.",
   "@downloadsDeleteJmdictBody": {
     "description": "Dialog body for deleting JMdict data."
   },
-  "downloadsKanjidicDownloaded": "Kanji dictionary downloaded",
+  "downloadsKanjidicDownloaded": "Kamus kanji berhasil diunduh",
   "@downloadsKanjidicDownloaded": {
     "description": "Subtitle shown when KANJIDIC has been downloaded."
   },
-  "downloadsKanjidicDescription": "Download kanji dictionary",
+  "downloadsKanjidicDescription": "Unduh kamus kanji",
   "@downloadsKanjidicDescription": {
     "description": "Subtitle shown before KANJIDIC has been downloaded."
   },
-  "downloadsDeleteKanjidicTooltip": "Delete KANJIDIC",
+  "downloadsDeleteKanjidicTooltip": "Hapus KANJIDIC",
   "@downloadsDeleteKanjidicTooltip": {
     "description": "Tooltip for deleting KANJIDIC data."
   },
-  "downloadsDeleteKanjidicTitle": "Delete KANJIDIC",
+  "downloadsDeleteKanjidicTitle": "Hapus KANJIDIC",
   "@downloadsDeleteKanjidicTitle": {
     "description": "Dialog title for deleting KANJIDIC data."
   },
-  "downloadsDeleteKanjidicBody": "Delete KANJIDIC and all its entries? You can re-download it later.",
+  "downloadsDeleteKanjidicBody": "Hapus KANJIDIC dan semua entri di dalamnya? Anda bisa mengunduhnya lagi nanti.",
   "@downloadsDeleteKanjidicBody": {
     "description": "Dialog body for deleting KANJIDIC data."
   },
-  "commonClear": "Clear",
+  "commonClear": "Bersihkan",
   "@commonClear": {
     "description": "Generic clear action."
   },
-  "commonSubmit": "Submit",
+  "commonSubmit": "Kirim",
   "@commonSubmit": {
     "description": "Generic submit action."
   },
-  "commonLoading": "Loading...",
+  "commonLoading": "Memuat...",
   "@commonLoading": {
     "description": "Generic loading label."
   },
-  "commonError": "Error",
+  "commonError": "Kesalahan",
   "@commonError": {
     "description": "Generic error label."
   },
-  "commonRestore": "Restore",
+  "commonRestore": "Pulihkan",
   "@commonRestore": {
     "description": "Generic restore action."
   },
-  "settingsTitle": "Settings",
+  "settingsTitle": "Pengaturan",
   "@settingsTitle": {
     "description": "Title for the settings screen."
   },
-  "settingsSectionGeneral": "General",
+  "settingsSectionGeneral": "Umum",
   "@settingsSectionGeneral": {
     "description": "Settings section header for general preferences."
   },
-  "settingsSectionAppearance": "Appearance",
+  "settingsSectionAppearance": "Tampilan",
   "@settingsSectionAppearance": {
     "description": "Settings section header for appearance preferences."
   },
-  "settingsSectionReadingDefaults": "Reading Defaults",
+  "settingsSectionReadingDefaults": "Pengaturan Baca Default",
   "@settingsSectionReadingDefaults": {
     "description": "Settings section header for default reader settings."
   },
-  "settingsSectionDictionary": "Dictionary",
+  "settingsSectionDictionary": "Kamus",
   "@settingsSectionDictionary": {
     "description": "Settings section header for dictionary settings."
   },
-  "settingsSectionVocabularyExport": "Vocabulary & Export",
+  "settingsSectionVocabularyExport": "Kosakata & Ekspor",
   "@settingsSectionVocabularyExport": {
     "description": "Settings section header for vocabulary export settings."
   },
@@ -824,63 +824,63 @@
   "@settingsSectionPro": {
     "description": "Settings section header for Pro settings."
   },
-  "settingsSectionMangaAutoCrop": "Manga Auto-Crop",
+  "settingsSectionMangaAutoCrop": "Otomatis Pangkas Manga",
   "@settingsSectionMangaAutoCrop": {
     "description": "Settings section header for manga auto-crop preferences."
   },
-  "settingsSectionMangaOcr": "Manga OCR",
+  "settingsSectionMangaOcr": "OCR Manga",
   "@settingsSectionMangaOcr": {
     "description": "Settings section header for manga OCR preferences."
   },
-  "settingsSectionDownloads": "Downloads",
+  "settingsSectionDownloads": "Unduhan",
   "@settingsSectionDownloads": {
     "description": "Settings section header for downloads."
   },
-  "settingsSectionBackupRestore": "Backup & Restore",
+  "settingsSectionBackupRestore": "Cadangan & Pulihkan",
   "@settingsSectionBackupRestore": {
     "description": "Settings section header for backup settings."
   },
-  "settingsSectionAboutFeedback": "About & Feedback",
+  "settingsSectionAboutFeedback": "Tentang & Masukan",
   "@settingsSectionAboutFeedback": {
     "description": "Settings section header for about and feedback links."
   },
-  "settingsStartupScreenTitle": "Startup Screen",
+  "settingsStartupScreenTitle": "Layar Awal",
   "@settingsStartupScreenTitle": {
     "description": "Title for the startup screen setting."
   },
-  "settingsStartupScreenLibrary": "Library",
+  "settingsStartupScreenLibrary": "Perpustakaan",
   "@settingsStartupScreenLibrary": {
     "description": "Label for the library startup screen option."
   },
-  "settingsStartupScreenDictionary": "Dictionary",
+  "settingsStartupScreenDictionary": "Kamus",
   "@settingsStartupScreenDictionary": {
     "description": "Label for the dictionary startup screen option."
   },
-  "settingsStartupScreenLastRead": "Last Read Book",
+  "settingsStartupScreenLastRead": "Buku Terakhir Dibaca",
   "@settingsStartupScreenLastRead": {
     "description": "Label for the last-read-book startup screen option."
   },
-  "settingsThemeTitle": "Theme",
+  "settingsThemeTitle": "Tema",
   "@settingsThemeTitle": {
     "description": "Title for the app theme setting."
   },
-  "settingsThemeLight": "Light",
+  "settingsThemeLight": "Terang",
   "@settingsThemeLight": {
     "description": "Label for the light theme option."
   },
-  "settingsThemeDark": "Dark",
+  "settingsThemeDark": "Gelap",
   "@settingsThemeDark": {
     "description": "Label for the dark theme option."
   },
-  "settingsThemeSystemDefault": "System default",
+  "settingsThemeSystemDefault": "Default sistem",
   "@settingsThemeSystemDefault": {
     "description": "Label for the system theme option."
   },
-  "settingsColorThemeTitle": "Color Theme",
+  "settingsColorThemeTitle": "Tema Warna",
   "@settingsColorThemeTitle": {
     "description": "Title for the color theme setting."
   },
-  "settingsColorThemeMekuruRed": "Mekuru Red",
+  "settingsColorThemeMekuruRed": "Mekuru Merah",
   "@settingsColorThemeMekuruRed": {
     "description": "Color theme label for Mekuru Red."
   },
@@ -892,31 +892,31 @@
   "@settingsColorThemeTeal": {
     "description": "Color theme label for Teal."
   },
-  "settingsColorThemeDeepPurple": "Deep Purple",
+  "settingsColorThemeDeepPurple": "Ungu Tua",
   "@settingsColorThemeDeepPurple": {
     "description": "Color theme label for Deep Purple."
   },
-  "settingsColorThemeBlue": "Blue",
+  "settingsColorThemeBlue": "Biru",
   "@settingsColorThemeBlue": {
     "description": "Color theme label for Blue."
   },
-  "settingsColorThemeGreen": "Green",
+  "settingsColorThemeGreen": "Hijau",
   "@settingsColorThemeGreen": {
     "description": "Color theme label for Green."
   },
-  "settingsColorThemeOrange": "Orange",
+  "settingsColorThemeOrange": "Oranye",
   "@settingsColorThemeOrange": {
     "description": "Color theme label for Orange."
   },
-  "settingsColorThemePink": "Pink",
+  "settingsColorThemePink": "Merah Muda",
   "@settingsColorThemePink": {
     "description": "Color theme label for Pink."
   },
-  "settingsColorThemeBlueGrey": "Blue Grey",
+  "settingsColorThemeBlueGrey": "Abu-abu Kebiruan",
   "@settingsColorThemeBlueGrey": {
     "description": "Color theme label for Blue Grey."
   },
-  "settingsFontSizeTitle": "Font Size",
+  "settingsFontSizeTitle": "Ukuran Font",
   "@settingsFontSizeTitle": {
     "description": "Title for the reader font size setting."
   },
@@ -929,7 +929,7 @@
       }
     }
   },
-  "settingsColorModeTitle": "Color Mode",
+  "settingsColorModeTitle": "Mode Warna",
   "@settingsColorModeTitle": {
     "description": "Title for the reader color mode setting."
   },
@@ -941,23 +941,23 @@
   "@settingsColorModeSepia": {
     "description": "Label for the sepia reader color mode."
   },
-  "settingsColorModeDark": "Dark",
+  "settingsColorModeDark": "Gelap",
   "@settingsColorModeDark": {
     "description": "Label for the dark reader color mode."
   },
-  "settingsSepiaIntensityTitle": "Sepia Intensity",
+  "settingsSepiaIntensityTitle": "Intensitas Sepia",
   "@settingsSepiaIntensityTitle": {
     "description": "Label for the sepia intensity slider."
   },
-  "settingsKeepScreenOnTitle": "Keep Screen On",
+  "settingsKeepScreenOnTitle": "Layar Selalu Aktif",
   "@settingsKeepScreenOnTitle": {
     "description": "Title for the keep-screen-on setting."
   },
-  "settingsKeepScreenOnSubtitle": "Prevent screen from sleeping while reading",
+  "settingsKeepScreenOnSubtitle": "Cegah layar mati saat membaca",
   "@settingsKeepScreenOnSubtitle": {
     "description": "Subtitle for the keep-screen-on setting."
   },
-  "settingsHorizontalMarginValue": "Horizontal Margin: {pixels}px",
+  "settingsHorizontalMarginValue": "Margin Horizontal: {pixels}px",
   "@settingsHorizontalMarginValue": {
     "description": "Label showing the horizontal reader margin.",
     "placeholders": {
@@ -966,7 +966,7 @@
       }
     }
   },
-  "settingsVerticalMarginValue": "Vertical Margin: {pixels}px",
+  "settingsVerticalMarginValue": "Margin Vertikal: {pixels}px",
   "@settingsVerticalMarginValue": {
     "description": "Label showing the vertical reader margin.",
     "placeholders": {
@@ -975,7 +975,7 @@
       }
     }
   },
-  "settingsSwipeSensitivityTitle": "Swipe Sensitivity",
+  "settingsSwipeSensitivityTitle": "Sensitivitas Geser",
   "@settingsSwipeSensitivityTitle": {
     "description": "Title for the swipe sensitivity setting."
   },
@@ -988,55 +988,55 @@
       }
     }
   },
-  "settingsSwipeSensitivityHint": "Lower = less finger movement needed to swipe",
+  "settingsSwipeSensitivityHint": "Lebih rendah = butuh gerakan jari lebih sedikit untuk menggeser",
   "@settingsSwipeSensitivityHint": {
     "description": "Help text for the swipe sensitivity setting."
   },
-  "settingsManageDictionariesSubtitle": "Import, reorder, enable/disable",
+  "settingsManageDictionariesSubtitle": "Impor, urutkan ulang, aktif/nonaktifkan",
   "@settingsManageDictionariesSubtitle": {
     "description": "Subtitle for managing dictionaries."
   },
-  "settingsLookupFontSizeTitle": "Lookup Font Size",
+  "settingsLookupFontSizeTitle": "Ukuran Font Pencarian",
   "@settingsLookupFontSizeTitle": {
     "description": "Title for the lookup font size setting."
   },
-  "settingsFilterRomanLetterEntriesTitle": "Filter Roman Letter Entries",
+  "settingsFilterRomanLetterEntriesTitle": "Saring Entri Huruf Romawi",
   "@settingsFilterRomanLetterEntriesTitle": {
     "description": "Title for the roman-letter dictionary filter setting."
   },
-  "settingsFilterRomanLetterEntriesSubtitle": "Hide entries using English letters in headword",
+  "settingsFilterRomanLetterEntriesSubtitle": "Sembunyikan entri yang menggunakan huruf Inggris di judul",
   "@settingsFilterRomanLetterEntriesSubtitle": {
     "description": "Subtitle for the roman-letter dictionary filter setting."
   },
-  "settingsAutoFocusSearchTitle": "Auto-Focus Search",
+  "settingsAutoFocusSearchTitle": "Pencarian Autofokus",
   "@settingsAutoFocusSearchTitle": {
     "description": "Title for the auto-focus dictionary search setting."
   },
-  "settingsAutoFocusSearchSubtitle": "Open keyboard when dictionary tab is selected",
+  "settingsAutoFocusSearchSubtitle": "Buka keyboard saat tab kamus dipilih",
   "@settingsAutoFocusSearchSubtitle": {
     "description": "Subtitle for the auto-focus dictionary search setting."
   },
-  "settingsAnkiDroidIntegrationTitle": "AnkiDroid Integration",
+  "settingsAnkiDroidIntegrationTitle": "Integrasi AnkiDroid",
   "@settingsAnkiDroidIntegrationTitle": {
     "description": "Title for the AnkiDroid settings entry."
   },
-  "settingsAnkiDroidIntegrationSubtitle": "Configure note type, deck, and field mapping",
+  "settingsAnkiDroidIntegrationSubtitle": "Atur tipe catatan, dek, dan pemetaan kolom",
   "@settingsAnkiDroidIntegrationSubtitle": {
     "description": "Subtitle for the AnkiDroid settings entry."
   },
-  "settingsProUnavailableSubtitle": "Pro services are temporarily unavailable.",
+  "settingsProUnavailableSubtitle": "Layanan Pro sedang tidak tersedia sementara.",
   "@settingsProUnavailableSubtitle": {
     "description": "Subtitle shown when Pro services are unavailable."
   },
-  "settingsProSubtitle": "Unlock auto-crop, book highlights, and custom OCR",
+  "settingsProSubtitle": "Buka fitur auto-crop, sorotan buku, dan OCR kustom",
   "@settingsProSubtitle": {
     "description": "Subtitle describing the Pro upgrade."
   },
-  "settingsWhiteThresholdTitle": "White Threshold",
+  "settingsWhiteThresholdTitle": "Ambang Putih",
   "@settingsWhiteThresholdTitle": {
     "description": "Title for the manga auto-crop white threshold setting."
   },
-  "settingsWhiteThresholdSubtitle": "{threshold} (lower values ignore more near-white artifacts)",
+  "settingsWhiteThresholdSubtitle": "{threshold} (nilai lebih rendah mengabaikan lebih banyak artefak mendekati putih)",
   "@settingsWhiteThresholdSubtitle": {
     "description": "Subtitle for the manga auto-crop white threshold setting.",
     "placeholders": {
@@ -1045,19 +1045,19 @@
       }
     }
   },
-  "settingsCustomOcrServerTitle": "Custom OCR Server",
+  "settingsCustomOcrServerTitle": "Server OCR Kustom",
   "@settingsCustomOcrServerTitle": {
     "description": "Title for the custom OCR server setting and dialog."
   },
-  "settingsCustomOcrServerUnavailableSubtitle": "OCR services are temporarily unavailable.",
+  "settingsCustomOcrServerUnavailableSubtitle": "Layanan OCR sedang tidak tersedia sementara.",
   "@settingsCustomOcrServerUnavailableSubtitle": {
     "description": "Subtitle shown when OCR services are unavailable."
   },
-  "settingsCustomOcrServerNotConfigured": "Not configured. Add your own server URL and shared key.",
+  "settingsCustomOcrServerNotConfigured": "Belum dikonfigurasi. Tambahkan URL server dan shared key milik Anda sendiri.",
   "@settingsCustomOcrServerNotConfigured": {
     "description": "Subtitle shown when a custom OCR server has not been configured."
   },
-  "settingsCustomOcrServerConfigured": "{url}\nUse the same shared key configured on your server.",
+  "settingsCustomOcrServerConfigured": "{url}\nGunakan shared key yang sama seperti di server Anda.",
   "@settingsCustomOcrServerConfigured": {
     "description": "Subtitle shown when a custom OCR server has been configured.",
     "placeholders": {
@@ -1066,7 +1066,7 @@
       }
     }
   },
-  "settingsCustomOcrServerUrlLabel": "Server URL",
+  "settingsCustomOcrServerUrlLabel": "URL Server",
   "@settingsCustomOcrServerUrlLabel": {
     "description": "Label for the custom OCR server URL field."
   },
@@ -1074,83 +1074,83 @@
   "@settingsCustomOcrServerUrlHint": {
     "description": "Hint for the custom OCR server URL field."
   },
-  "settingsCustomOcrServerLearnHow": "Learn how to run your own server",
+  "settingsCustomOcrServerLearnHow": "Pelajari cara menjalankan server sendiri",
   "@settingsCustomOcrServerLearnHow": {
     "description": "Button label linking to custom OCR server setup instructions."
   },
-  "settingsCustomOcrServerKeyLabel": "Custom shared key",
+  "settingsCustomOcrServerKeyLabel": "Shared key kustom",
   "@settingsCustomOcrServerKeyLabel": {
     "description": "Label for the custom OCR shared key field."
   },
-  "settingsCustomOcrServerKeyHint": "Required AUTH_API_KEY",
+  "settingsCustomOcrServerKeyHint": "Diperlukan AUTH_API_KEY",
   "@settingsCustomOcrServerKeyHint": {
     "description": "Hint for the custom OCR shared key field."
   },
-  "settingsCustomOcrServerDescription": "Enter the same shared AUTH_API_KEY used by your OCR server. Mekuru sends it as Authorization: Bearer <key> for remote manga OCR requests.",
+  "settingsCustomOcrServerDescription": "Masukkan AUTH_API_KEY bersama yang sama dengan server OCR Anda. Mekuru akan mengirim sebagai Authorization: Bearer <key> untuk permintaan OCR manga jarak jauh.",
   "@settingsCustomOcrServerDescription": {
     "description": "Description shown in the custom OCR server dialog."
   },
-  "settingsCustomOcrServerUrlRequired": "Enter your server URL.",
+  "settingsCustomOcrServerUrlRequired": "Masukkan URL server Anda.",
   "@settingsCustomOcrServerUrlRequired": {
     "description": "Validation error shown when the custom OCR server URL is empty."
   },
-  "settingsCustomOcrServerUrlInvalid": "Enter a full http:// or https:// server URL.",
+  "settingsCustomOcrServerUrlInvalid": "Masukkan URL server lengkap http:// atau https://.",
   "@settingsCustomOcrServerUrlInvalid": {
     "description": "Validation error shown when the custom OCR server URL is invalid."
   },
-  "settingsCustomOcrServerKeyRequired": "A shared key is required for custom servers.",
+  "settingsCustomOcrServerKeyRequired": "Shared key diperlukan untuk server kustom.",
   "@settingsCustomOcrServerKeyRequired": {
     "description": "Validation error shown when the custom OCR server key is empty."
   },
-  "settingsDownloadsSubtitle": "Dictionaries, kanji data, and more",
+  "settingsDownloadsSubtitle": "Kamus, data kanji, dan lainnya",
   "@settingsDownloadsSubtitle": {
     "description": "Subtitle for the downloads settings entry."
   },
-  "settingsBackupRestoreTitle": "Backup & Restore",
+  "settingsBackupRestoreTitle": "Cadangkan & Pulihkan",
   "@settingsBackupRestoreTitle": {
     "description": "Title for the backup settings entry."
   },
-  "settingsBackupRestoreSubtitle": "Back up and restore your data",
+  "settingsBackupRestoreSubtitle": "Cadangkan dan pulihkan data Anda",
   "@settingsBackupRestoreSubtitle": {
     "description": "Subtitle for the backup settings entry."
   },
-  "settingsSendFeedbackSubtitle": "Report a bug or suggest a feature",
+  "settingsSendFeedbackSubtitle": "Laporkan bug atau sarankan fitur",
   "@settingsSendFeedbackSubtitle": {
     "description": "Subtitle for the feedback settings entry."
   },
-  "settingsFeedbackThanks": "Thank you for your feedback!",
+  "settingsFeedbackThanks": "Terima kasih atas masukan Anda!",
   "@settingsFeedbackThanks": {
     "description": "Snackbar shown after feedback is submitted successfully."
   },
-  "settingsFeedbackFailed": "Failed to send feedback. Please try again.",
+  "settingsFeedbackFailed": "Gagal mengirim masukan. Silakan coba lagi.",
   "@settingsFeedbackFailed": {
     "description": "Snackbar shown when feedback submission fails."
   },
-  "settingsDocumentationTitle": "Documentation",
+  "settingsDocumentationTitle": "Dokumentasi",
   "@settingsDocumentationTitle": {
     "description": "Title for the documentation settings entry."
   },
-  "settingsDocumentationSubtitle": "Guides and how-to articles",
+  "settingsDocumentationSubtitle": "Panduan dan artikel cara pakai",
   "@settingsDocumentationSubtitle": {
     "description": "Subtitle for the documentation settings entry."
   },
-  "settingsAboutMekuruTitle": "About Mekuru",
+  "settingsAboutMekuruTitle": "Tentang Mekuru",
   "@settingsAboutMekuruTitle": {
     "description": "Title for the about screen settings entry."
   },
-  "settingsAboutMekuruSubtitle": "Version, licenses, and more",
+  "settingsAboutMekuruSubtitle": "Versi, lisensi, dan lainnya",
   "@settingsAboutMekuruSubtitle": {
     "description": "Subtitle for the about screen settings entry."
   },
-  "feedbackTitle": "Send Feedback",
+  "feedbackTitle": "Kirim Masukan",
   "@feedbackTitle": {
     "description": "Title for the feedback screen."
   },
-  "feedbackNameLabel": "Name",
+  "feedbackNameLabel": "Nama",
   "@feedbackNameLabel": {
     "description": "Label for the feedback name field."
   },
-  "feedbackNameHint": "Your name",
+  "feedbackNameHint": "Nama Anda",
   "@feedbackNameHint": {
     "description": "Hint for the feedback name field."
   },
@@ -1162,91 +1162,91 @@
   "@feedbackEmailHint": {
     "description": "Hint for the feedback email field."
   },
-  "feedbackMessageLabel": "Message",
+  "feedbackMessageLabel": "Pesan",
   "@feedbackMessageLabel": {
     "description": "Label for the feedback message field."
   },
-  "feedbackRequired": "(required)",
+  "feedbackRequired": "(wajib diisi)",
   "@feedbackRequired": {
     "description": "Label shown next to a required field."
   },
-  "feedbackMessageHint": "Describe your bug or feature request...",
+  "feedbackMessageHint": "Jelaskan bug atau permintaan fitur Anda...",
   "@feedbackMessageHint": {
     "description": "Hint for the feedback message field."
   },
-  "feedbackMessageRequiredError": "Please enter a message",
+  "feedbackMessageRequiredError": "Silakan masukkan pesan",
   "@feedbackMessageRequiredError": {
     "description": "Validation error shown when the feedback message is empty."
   },
-  "backupTitle": "Backup & Restore",
+  "backupTitle": "Cadangkan & Pulihkan",
   "@backupTitle": {
     "description": "Title for the backup screen."
   },
-  "backupSectionBackup": "Backup",
+  "backupSectionBackup": "Cadangkan",
   "@backupSectionBackup": {
     "description": "Section header for backup actions."
   },
-  "backupCreateNowTitle": "Create Backup Now",
+  "backupCreateNowTitle": "Buat Cadangan Sekarang",
   "@backupCreateNowTitle": {
     "description": "Title for the create-backup action."
   },
-  "backupCreateNowSubtitle": "Save all settings and reading data",
+  "backupCreateNowSubtitle": "Simpan semua pengaturan dan data bacaan",
   "@backupCreateNowSubtitle": {
     "description": "Subtitle for the create-backup action."
   },
-  "backupExportTitle": "Export Backup",
+  "backupExportTitle": "Ekspor Cadangan",
   "@backupExportTitle": {
     "description": "Title for the export-backup action."
   },
-  "backupExportSubtitle": "Save your latest backup to a file",
+  "backupExportSubtitle": "Simpan cadangan terbaru Anda ke file",
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
-  "backupSaveFileDialogTitle": "Save Backup",
+  "backupSaveFileDialogTitle": "Simpan Cadangan",
   "@backupSaveFileDialogTitle": {
     "description": "Native file picker title when exporting a backup."
   },
-  "backupSectionAutoBackup": "Auto-Backup",
+  "backupSectionAutoBackup": "Cadangan Otomatis",
   "@backupSectionAutoBackup": {
     "description": "Section header for auto-backup settings."
   },
-  "backupAutoBackupIntervalTitle": "Auto-Backup Interval",
+  "backupAutoBackupIntervalTitle": "Interval Cadangan Otomatis",
   "@backupAutoBackupIntervalTitle": {
     "description": "Title for the auto-backup interval setting."
   },
-  "backupIntervalOff": "Off",
+  "backupIntervalOff": "Mati",
   "@backupIntervalOff": {
     "description": "Label for turning auto-backup off."
   },
-  "backupIntervalDaily": "Daily",
+  "backupIntervalDaily": "Harian",
   "@backupIntervalDaily": {
     "description": "Label for daily auto-backups."
   },
-  "backupIntervalWeekly": "Weekly",
+  "backupIntervalWeekly": "Mingguan",
   "@backupIntervalWeekly": {
     "description": "Label for weekly auto-backups."
   },
-  "backupSectionRestore": "Restore",
+  "backupSectionRestore": "Pulihkan",
   "@backupSectionRestore": {
     "description": "Section header for restore actions."
   },
-  "backupImportFileTitle": "Import Backup File",
+  "backupImportFileTitle": "Impor File Cadangan",
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
   },
-  "backupImportFileSubtitle": "Restore from a .mekuru file",
+  "backupImportFileSubtitle": "Pulihkan dari file .mekuru",
   "@backupImportFileSubtitle": {
     "description": "Subtitle for the import-backup action."
   },
-  "backupSectionHistory": "Backup History",
+  "backupSectionHistory": "Riwayat Cadangan",
   "@backupSectionHistory": {
     "description": "Section header for the backup history list."
   },
-  "backupNoBackupsYet": "No backups yet",
+  "backupNoBackupsYet": "Belum ada cadangan",
   "@backupNoBackupsYet": {
     "description": "Message shown when there are no backups."
   },
-  "backupErrorLoadingHistory": "Error loading backups: {details}",
+  "backupErrorLoadingHistory": "Galat memuat cadangan: {details}",
   "@backupErrorLoadingHistory": {
     "description": "Message shown when backup history fails to load.",
     "placeholders": {
@@ -1255,11 +1255,11 @@
       }
     }
   },
-  "backupCreatedSuccess": "Backup created successfully",
+  "backupCreatedSuccess": "Cadangan berhasil dibuat",
   "@backupCreatedSuccess": {
     "description": "Snackbar shown after a backup is created."
   },
-  "backupFailed": "Backup failed: {details}",
+  "backupFailed": "Cadangan gagal: {details}",
   "@backupFailed": {
     "description": "Snackbar shown when backup creation fails.",
     "placeholders": {
@@ -1268,15 +1268,15 @@
       }
     }
   },
-  "backupNoBackupsToExport": "No backups to export. Create one first.",
+  "backupNoBackupsToExport": "Tidak ada cadangan untuk diekspor. Buat satu terlebih dahulu.",
   "@backupNoBackupsToExport": {
     "description": "Snackbar shown when there are no backups to export."
   },
-  "backupExportedSuccess": "Backup exported successfully",
+  "backupExportedSuccess": "Cadangan berhasil diekspor",
   "@backupExportedSuccess": {
     "description": "Snackbar shown after exporting a backup."
   },
-  "backupExportFailed": "Export failed: {details}",
+  "backupExportFailed": "Ekspor gagal: {details}",
   "@backupExportFailed": {
     "description": "Snackbar shown when exporting a backup fails.",
     "placeholders": {
@@ -1285,11 +1285,11 @@
       }
     }
   },
-  "backupInvalidFile": "Please select a .mekuru backup file.",
+  "backupInvalidFile": "Silakan pilih file cadangan .mekuru.",
   "@backupInvalidFile": {
     "description": "Snackbar shown when the selected restore file has the wrong extension."
   },
-  "backupCouldNotOpenFile": "Could not open file: {details}",
+  "backupCouldNotOpenFile": "Tidak dapat membuka file: {details}",
   "@backupCouldNotOpenFile": {
     "description": "Snackbar shown when the backup file picker fails.",
     "placeholders": {
@@ -1298,7 +1298,7 @@
       }
     }
   },
-  "backupRestoreFailed": "Restore failed: {details}",
+  "backupRestoreFailed": "Pemulihan gagal: {details}",
   "@backupRestoreFailed": {
     "description": "Snackbar shown when restoring a backup fails.",
     "placeholders": {
@@ -1307,7 +1307,7 @@
       }
     }
   },
-  "backupBooksUpdatedFromBackup": "{count, plural, one {# book updated from backup} other {# books updated from backup}}",
+  "backupBooksUpdatedFromBackup": "{count, plural, one {# buku diperbarui dari cadangan} other {# buku diperbarui dari cadangan}}",
   "@backupBooksUpdatedFromBackup": {
     "description": "Snackbar shown after applying conflict selections during restore.",
     "placeholders": {
@@ -1316,7 +1316,7 @@
       }
     }
   },
-  "backupApplyBookDataFailed": "Failed to apply book data: {details}",
+  "backupApplyBookDataFailed": "Gagal menerapkan data buku: {details}",
   "@backupApplyBookDataFailed": {
     "description": "Snackbar shown when applying restored book data fails.",
     "placeholders": {
@@ -1325,15 +1325,15 @@
       }
     }
   },
-  "backupConflictDialogTitle": "Conflicting Books",
+  "backupConflictDialogTitle": "Buku Konflik",
   "@backupConflictDialogTitle": {
     "description": "Title for the restore dialog that lists books with conflicting reading data."
   },
-  "backupConflictDialogBody": "The following books already have reading data. Select which to overwrite with backup data:",
+  "backupConflictDialogBody": "Buku-buku berikut sudah memiliki data bacaan. Pilih yang ingin ditimpa dengan data cadangan:",
   "@backupConflictDialogBody": {
     "description": "Body text for the restore dialog that lists books with conflicting reading data."
   },
-  "backupConflictEntrySubtitle": "{bookType} - {progress}% in backup",
+  "backupConflictEntrySubtitle": "{bookType} - {progress}% dalam cadangan",
   "@backupConflictEntrySubtitle": {
     "description": "Subtitle for a conflicting book in the restore dialog, showing the book type and backup progress.",
     "placeholders": {
@@ -1345,11 +1345,11 @@
       }
     }
   },
-  "backupConflictSkipAll": "Skip All",
+  "backupConflictSkipAll": "Lewati Semua",
   "@backupConflictSkipAll": {
     "description": "Button label to skip applying all conflicting backup entries."
   },
-  "backupConflictOverwriteSelected": "{count, plural, one {Overwrite #} other {Overwrite #}}",
+  "backupConflictOverwriteSelected": "{count, plural, one {Timpa #} other {Timpa #}}",
   "@backupConflictOverwriteSelected": {
     "description": "Button label to overwrite the selected conflicting backup entries.",
     "placeholders": {
@@ -1366,15 +1366,15 @@
   "@backupBookTypeManga": {
     "description": "Book type label for manga items in backup conflict UI."
   },
-  "backupRestoreSummarySettingsRestored": "Settings restored",
+  "backupRestoreSummarySettingsRestored": "Pengaturan berhasil dipulihkan",
   "@backupRestoreSummarySettingsRestored": {
     "description": "Part of the restore summary message when settings are restored."
   },
-  "backupRestoreSummarySettingsPartial": "Some settings could not be restored",
+  "backupRestoreSummarySettingsPartial": "Sebagian pengaturan tidak dapat dipulihkan",
   "@backupRestoreSummarySettingsPartial": {
     "description": "Part of the restore summary message when some settings could not be restored."
   },
-  "backupRestoreSummaryWords": "{added} words added, {skipped} skipped",
+  "backupRestoreSummaryWords": "{added} kata ditambahkan, {skipped} dilewati",
   "@backupRestoreSummaryWords": {
     "description": "Part of the restore summary message for restored words.",
     "placeholders": {
@@ -1386,7 +1386,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksRestored": "{count, plural, one {# book restored} other {# books restored}}",
+  "backupRestoreSummaryBooksRestored": "{count, plural, one {# buku berhasil dipulihkan} other {# buku berhasil dipulihkan}}",
   "@backupRestoreSummaryBooksRestored": {
     "description": "Part of the restore summary message for restored books.",
     "placeholders": {
@@ -1395,7 +1395,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# book saved for later import} other {# books saved for later import}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {# buku disimpan untuk impor nanti} other {# buku disimpan untuk impor nanti}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {
@@ -1404,15 +1404,15 @@
       }
     }
   },
-  "backupRestoreComplete": "Restore complete",
+  "backupRestoreComplete": "Pemulihan selesai",
   "@backupRestoreComplete": {
     "description": "Fallback restore summary when there is nothing else to report."
   },
-  "backupRestoreDialogTitle": "Restore Backup?",
+  "backupRestoreDialogTitle": "Pulihkan Cadangan?",
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "This will restore settings and reading data from {fileName}. Your current settings will be overwritten.",
+  "backupRestoreDialogBody": "Ini akan memulihkan pengaturan dan data bacaan dari {fileName}. Pengaturan Anda saat ini akan ditimpa.",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {
@@ -1421,11 +1421,11 @@
       }
     }
   },
-  "backupDeleteDialogTitle": "Delete Backup?",
+  "backupDeleteDialogTitle": "Hapus Cadangan?",
   "@backupDeleteDialogTitle": {
     "description": "Title for the delete backup confirmation dialog."
   },
-  "backupDeleteDialogBody": "Delete {fileName}? This cannot be undone.",
+  "backupDeleteDialogBody": "Hapus {fileName}? Tindakan ini tidak dapat dibatalkan.",
   "@backupDeleteDialogBody": {
     "description": "Body for the delete backup confirmation dialog.",
     "placeholders": {
@@ -1434,19 +1434,19 @@
       }
     }
   },
-  "backupHistoryTypeAuto": "Auto backup",
+  "backupHistoryTypeAuto": "Cadangan otomatis",
   "@backupHistoryTypeAuto": {
     "description": "Label for an automatic backup in backup history."
   },
-  "backupHistoryTypeManual": "Manual backup",
+  "backupHistoryTypeManual": "Cadangan manual",
   "@backupHistoryTypeManual": {
     "description": "Label for a manual backup in backup history."
   },
-  "readerDismiss": "Dismiss",
+  "readerDismiss": "Tutup",
   "@readerDismiss": {
     "description": "Barrier label for dismissing reader overlays."
   },
-  "readerFailedToLoadContent": "Failed to load EPUB content.\n{details}",
+  "readerFailedToLoadContent": "Gagal memuat konten EPUB.\n{details}",
   "@readerFailedToLoadContent": {
     "description": "Reader error shown when the EPUB viewer reports a content-loading failure.",
     "placeholders": {
@@ -1455,7 +1455,7 @@
       }
     }
   },
-  "readerFailedToLoad": "Failed to load EPUB.\n{details}",
+  "readerFailedToLoad": "Gagal memuat EPUB.\n{details}",
   "@readerFailedToLoad": {
     "description": "Reader error shown when the EPUB file fails to load.",
     "placeholders": {
@@ -1464,123 +1464,123 @@
       }
     }
   },
-  "readerVerticalTextNonNativeWarning": "This book was not originally formatted for vertical text. Some display issues may occur.",
+  "readerVerticalTextNonNativeWarning": "Buku ini awalnya tidak diformat untuk teks vertikal. Beberapa tampilan mungkin bermasalah.",
   "@readerVerticalTextNonNativeWarning": {
     "description": "Warning shown when vertical text is forced for a non-vertical book."
   },
-  "readerHorizontalTextNonNativeWarning": "This book was originally formatted for vertical text. Some display issues may occur in horizontal mode.",
+  "readerHorizontalTextNonNativeWarning": "Buku ini awalnya diformat untuk teks vertikal. Beberapa tampilan mungkin bermasalah dalam mode horizontal.",
   "@readerHorizontalTextNonNativeWarning": {
     "description": "Warning shown when horizontal text is forced for a vertical book."
   },
-  "readerBookmarkRemoved": "Bookmark removed",
+  "readerBookmarkRemoved": "Bookmark dihapus",
   "@readerBookmarkRemoved": {
     "description": "Snackbar shown after removing a bookmark."
   },
-  "readerPageBookmarked": "Page bookmarked",
+  "readerPageBookmarked": "Halaman ditandai",
   "@readerPageBookmarked": {
     "description": "Snackbar shown after bookmarking the current page."
   },
-  "readerTableOfContents": "Table of Contents",
+  "readerTableOfContents": "Daftar Isi",
   "@readerTableOfContents": {
     "description": "Title or tooltip for the reader table of contents."
   },
-  "readerRemoveBookmarkTooltip": "Remove Bookmark",
+  "readerRemoveBookmarkTooltip": "Hapus Bookmark",
   "@readerRemoveBookmarkTooltip": {
     "description": "Tooltip for removing the current page bookmark."
   },
-  "readerBookmarkPageTooltip": "Bookmark Page",
+  "readerBookmarkPageTooltip": "Tandai Halaman",
   "@readerBookmarkPageTooltip": {
     "description": "Tooltip for bookmarking the current page."
   },
-  "readerViewBookmarksTooltip": "View Bookmarks",
+  "readerViewBookmarksTooltip": "Lihat Bookmark",
   "@readerViewBookmarksTooltip": {
     "description": "Tooltip for opening the bookmarks sheet."
   },
-  "readerHighlightsTooltip": "Highlights",
+  "readerHighlightsTooltip": "Sorotan",
   "@readerHighlightsTooltip": {
     "description": "Tooltip for opening the highlights sheet."
   },
-  "readerNextPageTooltip": "Next Page",
+  "readerNextPageTooltip": "Halaman Berikutnya",
   "@readerNextPageTooltip": {
     "description": "Tooltip for moving to the next page."
   },
-  "readerPreviousPageTooltip": "Previous Page",
+  "readerPreviousPageTooltip": "Halaman Sebelumnya",
   "@readerPreviousPageTooltip": {
     "description": "Tooltip for moving to the previous page."
   },
-  "readerUnknownError": "Unknown reader error.",
+  "readerUnknownError": "Kesalahan pembaca tidak diketahui.",
   "@readerUnknownError": {
     "description": "Fallback error shown in the reader when no specific error is available."
   },
-  "readerQuickSettings": "Quick Settings",
+  "readerQuickSettings": "Pengaturan Cepat",
   "@readerQuickSettings": {
     "description": "Title for the reader quick settings sheet."
   },
-  "readerVerticalTextTitle": "Vertical Text",
+  "readerVerticalTextTitle": "Teks Vertikal",
   "@readerVerticalTextTitle": {
     "description": "Title for the per-book vertical text setting."
   },
-  "readerThisBook": "This book",
+  "readerThisBook": "Buku ini",
   "@readerThisBook": {
     "description": "Label indicating a reader setting applies to the current book."
   },
-  "readerVerticalTextUnavailable": "Not available for this book's language",
+  "readerVerticalTextUnavailable": "Tidak tersedia untuk bahasa buku ini",
   "@readerVerticalTextUnavailable": {
     "description": "Subtitle shown when vertical text is unavailable for the current book."
   },
-  "readerReadingDirectionTitle": "Reading Direction",
+  "readerReadingDirectionTitle": "Arah Membaca",
   "@readerReadingDirectionTitle": {
     "description": "Title for the per-book reading direction setting."
   },
-  "readerReadingDirectionRtl": "Right to Left",
+  "readerReadingDirectionRtl": "Kanan ke Kiri",
   "@readerReadingDirectionRtl": {
     "description": "Label for right-to-left reading direction."
   },
-  "readerReadingDirectionLtr": "Left to Right",
+  "readerReadingDirectionLtr": "Kiri ke Kanan",
   "@readerReadingDirectionLtr": {
     "description": "Label for left-to-right reading direction."
   },
-  "readerDisableLinksTitle": "Disable Links",
+  "readerDisableLinksTitle": "Nonaktifkan Tautan",
   "@readerDisableLinksTitle": {
     "description": "Title for the disable-links reader setting."
   },
-  "readerDisableLinksSubtitle": "Tap linked text to look up words instead of navigating",
+  "readerDisableLinksSubtitle": "Ketuk teks terhubung untuk mencari kata, bukan untuk navigasi",
   "@readerDisableLinksSubtitle": {
     "description": "Subtitle for the disable-links reader setting."
   },
-  "readerHighlightSelectionTooltip": "Highlight selection",
+  "readerHighlightSelectionTooltip": "Sorot pilihan",
   "@readerHighlightSelectionTooltip": {
     "description": "Tooltip for the highlight-selection action."
   },
-  "commonCopy": "Copy",
+  "commonCopy": "Salin",
   "@commonCopy": {
     "description": "Generic copy action."
   },
-  "commonShare": "Share",
+  "commonShare": "Bagikan",
   "@commonShare": {
     "description": "Generic share action."
   },
-  "commonContinue": "Continue",
+  "commonContinue": "Lanjutkan",
   "@commonContinue": {
     "description": "Generic continue action."
   },
-  "commonNotSelected": "Not selected",
+  "commonNotSelected": "Belum dipilih",
   "@commonNotSelected": {
     "description": "Fallback label when no option has been selected."
   },
-  "commonUnknown": "Unknown",
+  "commonUnknown": "Tidak diketahui",
   "@commonUnknown": {
     "description": "Fallback label when a value is unknown."
   },
-  "commonRename": "Rename",
+  "commonRename": "Ganti nama",
   "@commonRename": {
     "description": "Generic rename action."
   },
-  "commonTitleLabel": "Title",
+  "commonTitleLabel": "Judul",
   "@commonTitleLabel": {
     "description": "Generic title field label."
   },
-  "libraryCouldNotReadFolder": "Could not read folder:\n{details}",
+  "libraryCouldNotReadFolder": "Tidak dapat membaca folder:\n{details}",
   "@libraryCouldNotReadFolder": {
     "description": "Snackbar shown when the selected manga folder cannot be read.",
     "placeholders": {
@@ -1589,23 +1589,23 @@
       }
     }
   },
-  "libraryBookmarksTitle": "Bookmarks",
+  "libraryBookmarksTitle": "Penanda Halaman",
   "@libraryBookmarksTitle": {
     "description": "Title for the book bookmarks action in library options."
   },
-  "libraryChangeCoverAction": "Change Cover",
+  "libraryChangeCoverAction": "Ubah Sampul",
   "@libraryChangeCoverAction": {
     "description": "Action label to change a book cover image."
   },
-  "libraryRenameBookTitle": "Rename Book",
+  "libraryRenameBookTitle": "Ganti Nama Buku",
   "@libraryRenameBookTitle": {
     "description": "Title for the rename book dialog."
   },
-  "libraryDeleteBookTitle": "Delete Book",
+  "libraryDeleteBookTitle": "Hapus Buku",
   "@libraryDeleteBookTitle": {
     "description": "Title for deleting a book from the library."
   },
-  "libraryDeleteBookBody": "Delete \"{title}\" from your library?",
+  "libraryDeleteBookBody": "Hapus \"{title}\" dari perpustakaan Anda?",
   "@libraryDeleteBookBody": {
     "description": "Confirmation body for deleting a book from the library.",
     "placeholders": {
@@ -1614,7 +1614,7 @@
       }
     }
   },
-  "libraryChangeCoverFailed": "Failed to change cover: {details}",
+  "libraryChangeCoverFailed": "Gagal mengubah sampul: {details}",
   "@libraryChangeCoverFailed": {
     "description": "Snackbar shown when changing the cover image fails.",
     "placeholders": {
@@ -1623,27 +1623,27 @@
       }
     }
   },
-  "dictionaryManagerTitle": "Dictionary Manager",
+  "dictionaryManagerTitle": "Pengelola Kamus",
   "@dictionaryManagerTitle": {
     "description": "Title for the dictionary manager screen and help dialog."
   },
-  "dictionaryManagerImportTooltip": "Import Dictionary",
+  "dictionaryManagerImportTooltip": "Impor Kamus",
   "@dictionaryManagerImportTooltip": {
     "description": "Tooltip for importing a dictionary from the manager screen."
   },
-  "dictionaryManagerEmptySubtitle": "Tap + to import a Yomitan dictionary (.zip)\nor collection (.json)",
+  "dictionaryManagerEmptySubtitle": "Ketuk + untuk mengimpor kamus Yomitan (.zip)\natau koleksi (.json)",
   "@dictionaryManagerEmptySubtitle": {
     "description": "Subtitle shown when no dictionaries are installed in the manager screen."
   },
-  "dictionaryManagerBrowseDownloads": "Browse Downloads",
+  "dictionaryManagerBrowseDownloads": "Jelajahi Unduhan",
   "@dictionaryManagerBrowseDownloads": {
     "description": "Button label that opens the downloads screen from the dictionary manager."
   },
-  "dictionaryManagerBrowseDownloadsCaption": "Download dictionaries and other assets",
+  "dictionaryManagerBrowseDownloadsCaption": "Unduh kamus dan aset lainnya",
   "@dictionaryManagerBrowseDownloadsCaption": {
     "description": "Caption under the browse downloads button in the dictionary manager empty state."
   },
-  "dictionaryManagerImportedOn": "Imported {date}",
+  "dictionaryManagerImportedOn": "Diimpor pada {date}",
   "@dictionaryManagerImportedOn": {
     "description": "Subtitle showing when a dictionary was imported.",
     "placeholders": {
@@ -1652,47 +1652,47 @@
       }
     }
   },
-  "dictionaryManagerSupportedFormatsTitle": "Supported Formats",
+  "dictionaryManagerSupportedFormatsTitle": "Format yang Didukung",
   "@dictionaryManagerSupportedFormatsTitle": {
     "description": "Heading for supported dictionary formats in the dictionary manager help dialog."
   },
-  "dictionaryManagerSupportedFormatsYomitan": "Yomitan dictionary (.zip)\nAny dictionary that can be imported into Yomitan is supported. These are .zip files containing term bank JSON files.",
+  "dictionaryManagerSupportedFormatsYomitan": "Kamus Yomitan (.zip)\nSemua kamus yang dapat diimpor ke Yomitan didukung. Ini adalah file .zip yang berisi file JSON bank istilah.",
   "@dictionaryManagerSupportedFormatsYomitan": {
     "description": "Help text describing supported Yomitan zip dictionaries."
   },
-  "dictionaryManagerSupportedFormatsCollection": "Yomitan collection (.json)\nA Dexie database export containing multiple dictionaries in a single file. You can export this from Yomitan's settings under Backup.",
+  "dictionaryManagerSupportedFormatsCollection": "Koleksi Yomitan (.json)\nEkspor basis data Dexie yang berisi beberapa kamus dalam satu file. Anda dapat mengekspor ini dari pengaturan Yomitan di bagian Cadangan.",
   "@dictionaryManagerSupportedFormatsCollection": {
     "description": "Help text describing supported Yomitan collection backups."
   },
-  "dictionaryManagerOrderTitle": "Dictionary Order",
+  "dictionaryManagerOrderTitle": "Urutan Kamus",
   "@dictionaryManagerOrderTitle": {
     "description": "Heading for dictionary ordering help."
   },
-  "dictionaryManagerOrderBody": "Drag dictionaries using the handle on the left to reorder them. The order here controls the order that definitions appear when you tap a word while reading.",
+  "dictionaryManagerOrderBody": "Seret kamus menggunakan pegangan di kiri untuk mengatur ulang urutannya. Urutan di sini menentukan urutan definisi yang muncul saat Anda mengetuk kata ketika membaca.",
   "@dictionaryManagerOrderBody": {
     "description": "Help text explaining dictionary ordering."
   },
-  "dictionaryManagerEnablingTitle": "Enabling & Disabling",
+  "dictionaryManagerEnablingTitle": "Aktivasi & Nonaktifkan",
   "@dictionaryManagerEnablingTitle": {
     "description": "Heading for dictionary enable and disable help."
   },
-  "dictionaryManagerEnablingBody": "Use the toggle switch to enable or disable a dictionary. Disabled dictionaries are not searched when looking up words.",
+  "dictionaryManagerEnablingBody": "Gunakan tombol sakelar untuk mengaktifkan atau menonaktifkan kamus. Kamus yang dinonaktifkan tidak akan dicari saat melakukan penelusuran kata.",
   "@dictionaryManagerEnablingBody": {
     "description": "Help text explaining dictionary enable and disable behavior."
   },
-  "dictionaryManagerFindingTitle": "Finding Dictionaries",
+  "dictionaryManagerFindingTitle": "Mencari Kamus",
   "@dictionaryManagerFindingTitle": {
     "description": "Heading for dictionary discovery help."
   },
-  "dictionaryManagerFindingPrefix": "Browse compatible dictionaries at ",
+  "dictionaryManagerFindingPrefix": "Jelajahi kamus yang kompatibel di ",
   "@dictionaryManagerFindingPrefix": {
     "description": "Lead-in text before the dictionary website link in the help dialog."
   },
-  "dictionaryManagerDeleteTitle": "Delete Dictionary",
+  "dictionaryManagerDeleteTitle": "Hapus Kamus",
   "@dictionaryManagerDeleteTitle": {
     "description": "Title for deleting a dictionary."
   },
-  "dictionaryManagerDeleteBody": "Delete \"{name}\" and all its entries?\nThis cannot be undone.",
+  "dictionaryManagerDeleteBody": "Hapus \"{name}\" beserta semua entri di dalamnya?\nTindakan ini tidak dapat dibatalkan.",
   "@dictionaryManagerDeleteBody": {
     "description": "Confirmation body for deleting a dictionary and its entries.",
     "placeholders": {
@@ -1701,91 +1701,91 @@
       }
     }
   },
-  "ankidroidDataSourceExpression": "Expression",
+  "ankidroidDataSourceExpression": "Ekspresi",
   "@ankidroidDataSourceExpression": {
     "description": "Anki mapping source label for the expression field."
   },
-  "ankidroidDataSourceReading": "Reading",
+  "ankidroidDataSourceReading": "Pembacaan",
   "@ankidroidDataSourceReading": {
     "description": "Anki mapping source label for the reading field."
   },
-  "ankidroidDataSourceFurigana": "Furigana (Anki format)",
+  "ankidroidDataSourceFurigana": "Furigana (format Anki)",
   "@ankidroidDataSourceFurigana": {
     "description": "Anki mapping source label for furigana-formatted text."
   },
-  "ankidroidDataSourceGlossary": "Glossary / Meaning",
+  "ankidroidDataSourceGlossary": "Glosarium / Makna",
   "@ankidroidDataSourceGlossary": {
     "description": "Anki mapping source label for glossary content."
   },
-  "ankidroidDataSourceSentenceContext": "Sentence Context",
+  "ankidroidDataSourceSentenceContext": "Konteks Kalimat",
   "@ankidroidDataSourceSentenceContext": {
     "description": "Anki mapping source label for sentence context."
   },
-  "ankidroidDataSourceFrequency": "Frequency Rank",
+  "ankidroidDataSourceFrequency": "Peringkat Frekuensi",
   "@ankidroidDataSourceFrequency": {
     "description": "Anki mapping source label for frequency rank."
   },
-  "ankidroidDataSourceDictionaryName": "Dictionary Name",
+  "ankidroidDataSourceDictionaryName": "Nama Kamus",
   "@ankidroidDataSourceDictionaryName": {
     "description": "Anki mapping source label for the source dictionary name."
   },
-  "ankidroidDataSourcePitchAccent": "Pitch Accent",
+  "ankidroidDataSourcePitchAccent": "Aksen Nada",
   "@ankidroidDataSourcePitchAccent": {
     "description": "Anki mapping source label for pitch accent information."
   },
-  "ankidroidDataSourceEmpty": "(Empty)",
+  "ankidroidDataSourceEmpty": "(Kosong)",
   "@ankidroidDataSourceEmpty": {
     "description": "Anki mapping source label for an empty field."
   },
-  "ankidroidPermissionNotGrantedLong": "AnkiDroid permission not granted. Make sure AnkiDroid is installed and try again.",
+  "ankidroidPermissionNotGrantedLong": "Izin AnkiDroid belum diberikan. Pastikan AnkiDroid sudah terpasang dan coba lagi.",
   "@ankidroidPermissionNotGrantedLong": {
     "description": "Detailed error shown when AnkiDroid permission is not granted in settings."
   },
-  "ankidroidCouldNotConnectLong": "Could not connect to AnkiDroid. Make sure AnkiDroid is installed and running.",
+  "ankidroidCouldNotConnectLong": "Tidak dapat terhubung ke AnkiDroid. Pastikan AnkiDroid sudah diinstal dan dijalankan.",
   "@ankidroidCouldNotConnectLong": {
     "description": "Detailed error shown when the app cannot connect to AnkiDroid in settings."
   },
-  "ankidroidPermissionNotGrantedShort": "AnkiDroid permission not granted.",
+  "ankidroidPermissionNotGrantedShort": "Izin AnkiDroid tidak diberikan.",
   "@ankidroidPermissionNotGrantedShort": {
     "description": "Short error shown when AnkiDroid permission is not granted in the create-card flow."
   },
-  "ankidroidCouldNotConnectShort": "Could not connect to AnkiDroid.",
+  "ankidroidCouldNotConnectShort": "Tidak dapat terhubung ke AnkiDroid.",
   "@ankidroidCouldNotConnectShort": {
     "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow."
   },
-  "ankidroidFailedToAddNote": "Failed to add note. Make sure AnkiDroid is running and the selected note type and deck still exist.",
+  "ankidroidFailedToAddNote": "Gagal menambahkan catatan. Pastikan AnkiDroid sedang berjalan dan tipe catatan serta dek yang dipilih masih ada.",
   "@ankidroidFailedToAddNote": {
     "description": "Error shown when sending a note to AnkiDroid fails."
   },
-  "ankidroidSettingsNoteTypeSection": "Note Type",
+  "ankidroidSettingsNoteTypeSection": "Tipe Catatan",
   "@ankidroidSettingsNoteTypeSection": {
     "description": "Section heading for Anki note type settings."
   },
-  "ankidroidSettingsNoteTypeTitle": "Anki Note Type",
+  "ankidroidSettingsNoteTypeTitle": "Tipe Catatan Anki",
   "@ankidroidSettingsNoteTypeTitle": {
     "description": "Title for the selected Anki note type row."
   },
-  "ankidroidSettingsDefaultDeckSection": "Default Deck",
+  "ankidroidSettingsDefaultDeckSection": "Dek Default",
   "@ankidroidSettingsDefaultDeckSection": {
     "description": "Section heading for the default Anki deck."
   },
-  "ankidroidSettingsTargetDeckTitle": "Target Deck",
+  "ankidroidSettingsTargetDeckTitle": "Dek Tujuan",
   "@ankidroidSettingsTargetDeckTitle": {
     "description": "Title for the selected Anki target deck row."
   },
-  "ankidroidSettingsFieldMappingSection": "Field Mapping",
+  "ankidroidSettingsFieldMappingSection": "Pemetaan Kolom",
   "@ankidroidSettingsFieldMappingSection": {
     "description": "Section heading for Anki field mapping."
   },
-  "ankidroidSettingsFieldMappingHelp": "Map each Anki field to a data source from the app.",
+  "ankidroidSettingsFieldMappingHelp": "Petakan setiap kolom Anki ke sumber data dari aplikasi.",
   "@ankidroidSettingsFieldMappingHelp": {
     "description": "Help text describing how Anki field mapping works."
   },
-  "ankidroidSettingsDefaultTagsSection": "Default Tags",
+  "ankidroidSettingsDefaultTagsSection": "Tag Default",
   "@ankidroidSettingsDefaultTagsSection": {
     "description": "Section heading for default Anki tags."
   },
-  "ankidroidSettingsDefaultTagsHelp": "Comma-separated tags applied to every exported note.",
+  "ankidroidSettingsDefaultTagsHelp": "Tag yang dipisahkan koma dan akan diterapkan pada setiap catatan yang diekspor.",
   "@ankidroidSettingsDefaultTagsHelp": {
     "description": "Help text describing default Anki tags."
   },
@@ -1793,15 +1793,15 @@
   "@ankidroidTagsHint": {
     "description": "Hint text for comma-separated Anki tags."
   },
-  "ankidroidSettingsSelectNoteType": "Select Note Type",
+  "ankidroidSettingsSelectNoteType": "Pilih Tipe Catatan",
   "@ankidroidSettingsSelectNoteType": {
     "description": "Title for the Anki note type picker sheet."
   },
-  "ankidroidSettingsSelectDeck": "Select Deck",
+  "ankidroidSettingsSelectDeck": "Pilih Dek",
   "@ankidroidSettingsSelectDeck": {
     "description": "Title for the Anki deck picker sheet."
   },
-  "ankidroidSettingsMapFieldTo": "Map \"{ankiFieldName}\" to:",
+  "ankidroidSettingsMapFieldTo": "Petakan \"{ankiFieldName}\" ke:",
   "@ankidroidSettingsMapFieldTo": {
     "description": "Title for the field mapping picker sheet.",
     "placeholders": {
@@ -1810,95 +1810,95 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "AnkiDroid Settings",
+  "ankidroidCardSettingsTooltip": "Pengaturan AnkiDroid",
   "@ankidroidCardSettingsTooltip": {
     "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
   },
-  "ankidroidCardDeckTitle": "Deck",
+  "ankidroidCardDeckTitle": "Dek",
   "@ankidroidCardDeckTitle": {
     "description": "Label for the selected Anki deck in the create-card flow."
   },
-  "ankidroidCardTagsTitle": "Tags",
+  "ankidroidCardTagsTitle": "Tag",
   "@ankidroidCardTagsTitle": {
     "description": "Label for the tags field in the create-card flow."
   },
-  "ankidroidCardAddToAnki": "Add to Anki",
+  "ankidroidCardAddToAnki": "Tambah ke Anki",
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
   },
-  "mangaReaderSettingsTitle": "Reader Settings",
+  "mangaReaderSettingsTitle": "Pengaturan Pembaca",
   "@mangaReaderSettingsTitle": {
     "description": "Title for the manga reader settings sheet."
   },
-  "mangaViewModeSingle": "Single",
+  "mangaViewModeSingle": "Tunggal",
   "@mangaViewModeSingle": {
     "description": "Label for the single-page manga view mode."
   },
-  "mangaViewModeSpread": "Spread",
+  "mangaViewModeSpread": "Dua Halaman",
   "@mangaViewModeSpread": {
     "description": "Label for the two-page spread manga view mode."
   },
-  "mangaViewModeScroll": "Scroll",
+  "mangaViewModeScroll": "Gulir",
   "@mangaViewModeScroll": {
     "description": "Label for the scrolling manga view mode."
   },
-  "mangaAutoCropSubtitle": "Remove empty margins",
+  "mangaAutoCropSubtitle": "Hapus margin kosong",
   "@mangaAutoCropSubtitle": {
     "description": "Subtitle for the manga auto-crop setting."
   },
-  "mangaAutoCropRerunTitle": "Re-run Auto-Crop",
+  "mangaAutoCropRerunTitle": "Jalankan Ulang Pemotongan Otomatis",
   "@mangaAutoCropRerunTitle": {
     "description": "Title for re-running manga auto-crop."
   },
-  "mangaAutoCropRerunSubtitle": "Re-scan every page image for this book",
+  "mangaAutoCropRerunSubtitle": "Pindai ulang setiap gambar halaman untuk buku ini",
   "@mangaAutoCropRerunSubtitle": {
     "description": "Subtitle for re-running manga auto-crop."
   },
-  "mangaTransparentLookupTitle": "Transparent Lookup",
+  "mangaTransparentLookupTitle": "Pencarian Transparan",
   "@mangaTransparentLookupTitle": {
     "description": "Title for the transparent lookup setting in the manga reader."
   },
-  "mangaTransparentLookupSubtitle": "See-through dictionary sheet",
+  "mangaTransparentLookupSubtitle": "Lembar kamus tembus pandang",
   "@mangaTransparentLookupSubtitle": {
     "description": "Subtitle for the transparent lookup setting in the manga reader."
   },
-  "mangaDebugWordOverlayTitle": "Debug Word Overlay",
+  "mangaDebugWordOverlayTitle": "Debug Overlay Kata",
   "@mangaDebugWordOverlayTitle": {
     "description": "Title for the debug word overlay setting in the manga reader."
   },
-  "mangaDebugWordOverlaySubtitle": "Show word bounding boxes",
+  "mangaDebugWordOverlaySubtitle": "Tampilkan kotak pembatas kata",
   "@mangaDebugWordOverlaySubtitle": {
     "description": "Subtitle for the debug word overlay setting in the manga reader."
   },
-  "mangaAutoCropComputeTitle": "Compute Auto-Crop?",
+  "mangaAutoCropComputeTitle": "Hitung Pemotongan Otomatis?",
   "@mangaAutoCropComputeTitle": {
     "description": "Dialog title shown before computing auto-crop for the first time."
   },
-  "mangaAutoCropComputeBody": "Auto-crop needs to scan every page image for this book before it can be enabled. This may take a minute.",
+  "mangaAutoCropComputeBody": "Pemotongan otomatis harus memindai setiap gambar halaman pada buku ini sebelum dapat diaktifkan. Ini mungkin memerlukan waktu satu menit.",
   "@mangaAutoCropComputeBody": {
     "description": "Dialog body shown before computing auto-crop for the first time."
   },
-  "mangaAutoCropRerunDialogTitle": "Re-run Auto-Crop?",
+  "mangaAutoCropRerunDialogTitle": "Jalankan Ulang Pemotongan Otomatis?",
   "@mangaAutoCropRerunDialogTitle": {
     "description": "Dialog title shown before recomputing auto-crop."
   },
-  "mangaAutoCropRerunDialogBody": "Auto-crop will re-scan every page image for this book and replace the saved crop bounds. This may take a minute.",
+  "mangaAutoCropRerunDialogBody": "Pemotongan otomatis akan memindai ulang setiap gambar halaman untuk buku ini dan menggantikan batas potongan yang tersimpan. Ini mungkin memerlukan waktu satu menit.",
   "@mangaAutoCropRerunDialogBody": {
     "description": "Dialog body shown before recomputing auto-crop."
   },
-  "mangaAutoCropComputingProgress": "Computing auto-crop bounds. This may take a minute.",
+  "mangaAutoCropComputingProgress": "Menghitung batas pemotongan otomatis. Ini mungkin memerlukan waktu satu menit.",
   "@mangaAutoCropComputingProgress": {
     "description": "Progress message shown while computing auto-crop bounds."
   },
-  "mangaAutoCropRecomputingProgress": "Recomputing auto-crop bounds. This may take a minute.",
+  "mangaAutoCropRecomputingProgress": "Menghitung ulang batas pemotongan otomatis. Ini mungkin memerlukan waktu satu menit.",
   "@mangaAutoCropRecomputingProgress": {
     "description": "Progress message shown while recomputing auto-crop bounds."
   },
-  "mangaAutoCropBoundsRefreshed": "Auto-crop bounds refreshed.",
+  "mangaAutoCropBoundsRefreshed": "Batas pemotongan otomatis telah diperbarui.",
   "@mangaAutoCropBoundsRefreshed": {
     "description": "Snackbar shown after auto-crop bounds are refreshed."
   },
-  "mangaAutoCropSetupFailed": "Auto-crop setup failed: {details}",
+  "mangaAutoCropSetupFailed": "Pengaturan pemotongan otomatis gagal: {details}",
   "@mangaAutoCropSetupFailed": {
     "description": "Snackbar shown when auto-crop setup fails.",
     "placeholders": {
@@ -1907,31 +1907,31 @@
       }
     }
   },
-  "ocrNoPagesCacheFound": "No pages cache found for this book",
+  "ocrNoPagesCacheFound": "Cache halaman tidak ditemukan untuk buku ini",
   "@ocrNoPagesCacheFound": {
     "description": "Snackbar shown when OCR cannot start because the pages cache is missing."
   },
-  "ocrAlreadyCompleteResetHint": "OCR is already complete. Use \"Remove OCR\" to reset.",
+  "ocrAlreadyCompleteResetHint": "OCR sudah selesai. Gunakan \"Hapus OCR\" untuk mereset.",
   "@ocrAlreadyCompleteResetHint": {
     "description": "Snackbar shown when OCR is already complete for a manga book."
   },
-  "ocrMangaImageDirectoryNotFound": "Manga image directory not found",
+  "ocrMangaImageDirectoryNotFound": "Direktori gambar manga tidak ditemukan",
   "@ocrMangaImageDirectoryNotFound": {
     "description": "Snackbar shown when the manga image directory is missing."
   },
-  "ocrBuildWordOverlaysTitle": "Build Word Overlays",
+  "ocrBuildWordOverlaysTitle": "Bangun Overlay Kata",
   "@ocrBuildWordOverlaysTitle": {
     "description": "Dialog title for rebuilding word overlays from existing OCR."
   },
-  "ocrBuildWordOverlaysBody": "OCR text already exists. This will rebuild word tap targets so lookup overlays appear correctly.",
+  "ocrBuildWordOverlaysBody": "Teks OCR sudah ada. Ini akan membangun ulang target ketukan kata agar overlay pencarian tampil dengan benar.",
   "@ocrBuildWordOverlaysBody": {
     "description": "Dialog body for rebuilding word overlays from existing OCR."
   },
-  "ocrRunActionTitle": "Run OCR",
+  "ocrRunActionTitle": "Jalankan OCR",
   "@ocrRunActionTitle": {
     "description": "Action title for starting OCR."
   },
-  "ocrProcessPagesBody": "This will process {count} pages. OCR will run in the background and continue even if you close the app.",
+  "ocrProcessPagesBody": "Ini akan memproses {count} halaman. OCR akan berjalan di latar belakang dan tetap berjalan meskipun Anda menutup aplikasi.",
   "@ocrProcessPagesBody": {
     "description": "Dialog body shown before OCR begins processing pages.",
     "placeholders": {
@@ -1940,15 +1940,15 @@
       }
     }
   },
-  "ocrProcessAction": "Process",
+  "ocrProcessAction": "Proses",
   "@ocrProcessAction": {
     "description": "Button label for processing existing OCR into word overlays."
   },
-  "ocrStartAction": "Start",
+  "ocrStartAction": "Mulai",
   "@ocrStartAction": {
     "description": "Button label for starting OCR."
   },
-  "ocrPrepareFailed": "Unable to prepare OCR: {details}",
+  "ocrPrepareFailed": "Tidak dapat menyiapkan OCR: {details}",
   "@ocrPrepareFailed": {
     "description": "Snackbar shown when OCR setup fails before processing starts.",
     "placeholders": {
@@ -1957,7 +1957,7 @@
       }
     }
   },
-  "ocrStartFailed": "Failed to start OCR: {details}",
+  "ocrStartFailed": "Gagal memulai OCR: {details}",
   "@ocrStartFailed": {
     "description": "Snackbar shown when OCR background work fails to start.",
     "placeholders": {
@@ -1966,51 +1966,51 @@
       }
     }
   },
-  "ocrWordOverlayStartedBackground": "Word overlay processing started in background",
+  "ocrWordOverlayStartedBackground": "Proses overlay kata dimulai di latar belakang",
   "@ocrWordOverlayStartedBackground": {
     "description": "Snackbar shown when rebuilding word overlays starts in the background."
   },
-  "ocrStartedBackground": "OCR started in background",
+  "ocrStartedBackground": "OCR dimulai di latar belakang",
   "@ocrStartedBackground": {
     "description": "Snackbar shown when OCR starts in the background."
   },
-  "ocrCancelActionTitle": "Cancel OCR",
+  "ocrCancelActionTitle": "Batalkan OCR",
   "@ocrCancelActionTitle": {
     "description": "Action title for cancelling OCR."
   },
-  "ocrCancelSavedProgress": "OCR cancelled. Progress saved.",
+  "ocrCancelSavedProgress": "OCR dibatalkan. Progres disimpan.",
   "@ocrCancelSavedProgress": {
     "description": "Snackbar shown when OCR is cancelled and progress is preserved."
   },
-  "ocrReplaceActionTitle": "Replace OCR",
+  "ocrReplaceActionTitle": "Ganti OCR",
   "@ocrReplaceActionTitle": {
     "description": "Action title for replacing imported OCR with custom OCR."
   },
-  "ocrReplaceMokuroBody": "This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nTo restore the original OCR, re-import the book.",
+  "ocrReplaceMokuroBody": "Ini akan menimpa data OCR yang diimpor dari file Mokuro/HTML dan menjalankan ulang OCR pada SEMUA halaman menggunakan server kustom Anda.\n\nUntuk mengembalikan OCR asli, impor ulang bukunya.",
   "@ocrReplaceMokuroBody": {
     "description": "Confirmation dialog body for replacing Mokuro OCR with custom OCR."
   },
-  "ocrReplaceStartedBackground": "OCR replacement started in background",
+  "ocrReplaceStartedBackground": "Penggantian OCR dimulai di latar belakang",
   "@ocrReplaceStartedBackground": {
     "description": "Snackbar shown when replacing OCR starts in the background."
   },
-  "ocrRemoveActionTitle": "Remove OCR",
+  "ocrRemoveActionTitle": "Hapus OCR",
   "@ocrRemoveActionTitle": {
     "description": "Action title for removing OCR."
   },
-  "ocrRemoveBody": "Remove OCR text and word overlays from this manga? You can run OCR again later.",
+  "ocrRemoveBody": "Hapus teks OCR dan overlay kata dari manga ini? Anda dapat menjalankan OCR lagi nanti.",
   "@ocrRemoveBody": {
     "description": "Confirmation dialog body for removing OCR from a manga book."
   },
-  "ocrRemoveSubtitle": "Remove OCR text from all pages",
+  "ocrRemoveSubtitle": "Hapus teks OCR dari semua halaman",
   "@ocrRemoveSubtitle": {
     "description": "Subtitle for removing OCR from all manga pages."
   },
-  "ocrRemovedFromBook": "OCR removed from this book",
+  "ocrRemovedFromBook": "OCR dihapus dari buku ini",
   "@ocrRemovedFromBook": {
     "description": "Snackbar shown after OCR has been removed from a book."
   },
-  "ocrRemoveFailed": "Failed to remove OCR: {details}",
+  "ocrRemoveFailed": "Gagal menghapus OCR: {details}",
   "@ocrRemoveFailed": {
     "description": "Snackbar shown when removing OCR fails.",
     "placeholders": {
@@ -2019,23 +2019,23 @@
       }
     }
   },
-  "ocrUnlockProSubtitle": "Unlock Pro to use your custom OCR server",
+  "ocrUnlockProSubtitle": "Buka Pro untuk menggunakan server OCR kustom Anda",
   "@ocrUnlockProSubtitle": {
     "description": "Subtitle shown when OCR requires a Pro unlock."
   },
-  "ocrStopAndSaveProgressSubtitle": "Stop processing and save progress",
+  "ocrStopAndSaveProgressSubtitle": "Hentikan proses dan simpan progres",
   "@ocrStopAndSaveProgressSubtitle": {
     "description": "Subtitle shown for the OCR cancel action."
   },
-  "ocrReplaceMokuroSubtitle": "Replace Mokuro OCR with your custom OCR server",
+  "ocrReplaceMokuroSubtitle": "Ganti OCR Mokuro dengan server OCR kustom Anda",
   "@ocrReplaceMokuroSubtitle": {
     "description": "Subtitle shown when replacing OCR imported from Mokuro."
   },
-  "ocrBuildWordTargetsSubtitle": "Build word tap targets from saved OCR",
+  "ocrBuildWordTargetsSubtitle": "Buat target ketukan kata dari OCR yang disimpan",
   "@ocrBuildWordTargetsSubtitle": {
     "description": "Subtitle shown when only word overlay generation is needed."
   },
-  "ocrResumeSubtitle": "Resume OCR ({completed}/{total} done)",
+  "ocrResumeSubtitle": "Lanjutkan OCR ({completed}/{total} selesai)",
   "@ocrResumeSubtitle": {
     "description": "Subtitle shown when OCR can resume partially completed work.",
     "placeholders": {
@@ -2047,43 +2047,43 @@
       }
     }
   },
-  "ocrRecognizeAllPagesSubtitle": "Recognize text on all pages",
+  "ocrRecognizeAllPagesSubtitle": "Kenali teks pada semua halaman",
   "@ocrRecognizeAllPagesSubtitle": {
     "description": "Subtitle shown when OCR will run on all pages."
   },
-  "readerEditNoteTitle": "Edit Note",
+  "readerEditNoteTitle": "Edit Catatan",
   "@readerEditNoteTitle": {
     "description": "Title for editing a highlight note."
   },
-  "readerAddNoteHint": "Add a note...",
+  "readerAddNoteHint": "Tambah catatan...",
   "@readerAddNoteHint": {
     "description": "Hint text for adding or editing a highlight note."
   },
-  "readerCopiedToClipboard": "Copied to clipboard",
+  "readerCopiedToClipboard": "Disalin ke clipboard",
   "@readerCopiedToClipboard": {
     "description": "Snackbar shown after copying text from the reader."
   },
-  "aboutPrivacyPolicyTitle": "Privacy Policy",
+  "aboutPrivacyPolicyTitle": "Kebijakan Privasi",
   "@aboutPrivacyPolicyTitle": {
     "description": "Title for the privacy policy link on the about screen."
   },
-  "aboutPrivacyPolicySubtitle": "See how Mekuru handles local and OCR data",
+  "aboutPrivacyPolicySubtitle": "Lihat bagaimana Mekuru menangani data lokal dan OCR",
   "@aboutPrivacyPolicySubtitle": {
     "description": "Subtitle for the privacy policy link on the about screen."
   },
-  "aboutOpenSourceLicensesTitle": "Open Source Licenses",
+  "aboutOpenSourceLicensesTitle": "Lisensi Open Source",
   "@aboutOpenSourceLicensesTitle": {
     "description": "Title for the open source licenses row on the about screen."
   },
-  "aboutOpenSourceLicensesSubtitle": "View licenses for dependencies",
+  "aboutOpenSourceLicensesSubtitle": "Lihat lisensi untuk dependensi",
   "@aboutOpenSourceLicensesSubtitle": {
     "description": "Subtitle for the open source licenses row on the about screen."
   },
-  "aboutTagline": "\"to turn pages\"",
+  "aboutTagline": "\"untuk membalik halaman\"",
   "@aboutTagline": {
     "description": "Tagline shown at the bottom of the about screen."
   },
-  "aboutEpubJsLicenseTitle": "epub.js License",
+  "aboutEpubJsLicenseTitle": "Lisensi epub.js",
   "@aboutEpubJsLicenseTitle": {
     "description": "Title for the epub.js license dialog."
   },
@@ -2091,11 +2091,11 @@
   "@downloadsKanjidicTitle": {
     "description": "Title for the KANJIDIC download tile."
   },
-  "readerBookmarksTitle": "Bookmarks",
+  "readerBookmarksTitle": "Penanda Halaman",
   "@readerBookmarksTitle": {
     "description": "Title for the bookmarks bottom sheet."
   },
-  "readerNoBookmarksYet": "No bookmarks yet.\nTap the bookmark icon while reading to add one.",
+  "readerNoBookmarksYet": "Belum ada penanda halaman.\nKetuk ikon penanda saat membaca untuk menambahkannya.",
   "@readerNoBookmarksYet": {
     "description": "Empty state message shown when a book has no bookmarks."
   },
@@ -2111,7 +2111,7 @@
       }
     }
   },
-  "aboutVersion": "Version {version}",
+  "aboutVersion": "Versi {version}",
   "@aboutVersion": {
     "description": "Version label on the about screen.",
     "placeholders": {
@@ -2120,11 +2120,11 @@
       }
     }
   },
-  "aboutDescription": "A Japanese-first EPUB reader with vertical text, offline dictionary, and vocabulary management.",
+  "aboutDescription": "Pembaca EPUB berfokus pada bahasa Jepang dengan teks vertikal, kamus offline, dan manajemen kosakata.",
   "@aboutDescription": {
     "description": "Short description shown near the top of the about screen."
   },
-  "aboutAttributionTitle": "Attribution",
+  "aboutAttributionTitle": "Atribusi",
   "@aboutAttributionTitle": {
     "description": "Section heading for attributions on the about screen."
   },
@@ -2132,39 +2132,39 @@
   "@aboutKanjiVgTitle": {
     "description": "Title for the KanjiVG attribution card."
   },
-  "aboutKanjiVgDescription": "Kanji stroke order data is provided by the KanjiVG project, created by Ulrich Apel.",
+  "aboutKanjiVgDescription": "Data urutan goresan kanji disediakan oleh proyek KanjiVG, dibuat oleh Ulrich Apel.",
   "@aboutKanjiVgDescription": {
     "description": "Description text for the KanjiVG attribution card."
   },
-  "aboutLicensedUnderPrefix": "Licensed under the ",
+  "aboutLicensedUnderPrefix": "Dilindungi di bawah lisensi ",
   "@aboutLicensedUnderPrefix": {
     "description": "Prefix before a linked license name in attribution text."
   },
-  "aboutLicenseSuffix": " license.",
+  "aboutLicenseSuffix": " .",
   "@aboutLicenseSuffix": {
     "description": "Suffix after a linked license name in attribution text."
   },
-  "aboutProjectLabel": "Project: ",
+  "aboutProjectLabel": "Proyek: ",
   "@aboutProjectLabel": {
     "description": "Label before a linked project URL in attribution text."
   },
-  "aboutSourceLabel": "Source: ",
+  "aboutSourceLabel": "Sumber: ",
   "@aboutSourceLabel": {
     "description": "Label before a linked source URL in attribution text."
   },
-  "aboutJpdbTitle": "JPDB Frequency Dictionary",
+  "aboutJpdbTitle": "Kamus Frekuensi JPDB",
   "@aboutJpdbTitle": {
     "description": "Title for the JPDB attribution card."
   },
-  "aboutJpdbDescription": "Word frequency data is provided by the JPDB frequency dictionary, distributed via yomitan-dictionaries by Kuuuube.",
+  "aboutJpdbDescription": "Data frekuensi kata disediakan oleh kamus frekuensi JPDB, didistribusikan melalui yomitan-dictionaries oleh Kuuuube.",
   "@aboutJpdbDescription": {
     "description": "Description text for the JPDB attribution card."
   },
-  "aboutDataSourceLabel": "Data source: ",
+  "aboutDataSourceLabel": "Sumber data: ",
   "@aboutDataSourceLabel": {
     "description": "Label before a linked data source URL in attribution text."
   },
-  "aboutDictionaryLabel": "Dictionary: ",
+  "aboutDictionaryLabel": "Kamus: ",
   "@aboutDictionaryLabel": {
     "description": "Label before a linked dictionary URL in attribution text."
   },
@@ -2172,7 +2172,7 @@
   "@aboutJmdictKanjidicTitle": {
     "description": "Title for the JMdict and KANJIDIC attribution card."
   },
-  "aboutJmdictKanjidicDescriptionPrefix": "Japanese-multilingual dictionary data is provided by the JMdict/EDICT project and kanji dictionary data by the KANJIDIC project, both created by Jim Breen and the ",
+  "aboutJmdictKanjidicDescriptionPrefix": "Data kamus multibahasa Jepang disediakan oleh proyek JMdict/EDICT dan data kamus kanji oleh proyek KANJIDIC, keduanya dibuat oleh Jim Breen dan ",
   "@aboutJmdictKanjidicDescriptionPrefix": {
     "description": "Prefix text before the linked EDRDG name in the JMdict and KANJIDIC attribution card."
   },
@@ -2188,7 +2188,7 @@
   "@aboutEpubJsTitle": {
     "description": "Title for the epub.js attribution card."
   },
-  "aboutEpubJsDescription": "EPUB rendering is powered by epub.js, an open source JavaScript EPUB reader library.",
+  "aboutEpubJsDescription": "Rendering EPUB didukung oleh epub.js, pustaka pembaca EPUB JavaScript sumber terbuka.",
   "@aboutEpubJsDescription": {
     "description": "Description text for the epub.js attribution card."
   }

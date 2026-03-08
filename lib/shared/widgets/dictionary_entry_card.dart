@@ -14,6 +14,7 @@ import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart' show scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
@@ -112,10 +113,13 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
       sentenceContext: widget.sentenceContext ?? '',
     );
     if (mounted) {
+      final l10n = context.l10n;
       setState(() => _isSaved = true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Saved "${widget.entry.expression}"'),
+          content: Text(
+            l10n.dictionarySavedWord(expression: widget.entry.expression),
+          ),
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -124,9 +128,11 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
   }
 
   void _showVocabAlreadySavedToast() {
+    final l10n = context.l10n;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Word already exists in vocab list'),
+      SnackBar(
+        content: Text(l10n.dictionaryWordAlreadyExistsInVocab),
         duration: Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
@@ -134,10 +140,14 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
   }
 
   void _copyExpression() {
+    final l10n = context.l10n;
+
     Clipboard.setData(ClipboardData(text: widget.entry.expression));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Copied "${widget.entry.expression}"'),
+        content: Text(
+          l10n.dictionaryCopiedWord(expression: widget.entry.expression),
+        ),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
@@ -145,9 +155,11 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
   }
 
   void _showAnkiAlreadySavedToast() {
+    final l10n = context.l10n;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Word already exists in default deck'),
+      SnackBar(
+        content: Text(l10n.dictionaryWordAlreadyExistsInAnki),
         duration: Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
@@ -245,9 +257,15 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
         .then((result) {
           if (result == true) {
             _checkIfInAnki(force: true);
+            if (!mounted) return;
+            final l10n = context.l10n;
             scaffoldMessengerKey.currentState?.showSnackBar(
               SnackBar(
-                content: Text('Added "${widget.entry.expression}" to Anki'),
+                content: Text(
+                  l10n.dictionaryAddedToAnki(
+                    expression: widget.entry.expression,
+                  ),
+                ),
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
               ),
@@ -334,7 +352,7 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
               IconButton(
                 onPressed: _copyExpression,
                 icon: const Icon(Icons.copy_outlined),
-                tooltip: 'Copy',
+                tooltip: context.l10n.dictionaryCopyTooltip,
                 iconSize: 20,
               ),
               if (defaultTargetPlatform == TargetPlatform.android)
@@ -356,10 +374,10 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
                               : Icons.electric_bolt_outlined,
                         ),
                   tooltip: _isInAnki
-                      ? 'Already in default Anki deck. Long press to add anyway'
+                      ? context.l10n.dictionaryAlreadyInAnkiTooltip
                       : _isCheckingAnki && ankidroidConfig.isConfigured
-                      ? 'Checking default Anki deck'
-                      : 'Send to AnkiDroid',
+                      ? context.l10n.dictionaryCheckingAnkiTooltip
+                      : context.l10n.dictionarySendToAnkiTooltip,
                   iconSize: 20,
                 ),
               IconButton.filledTonal(
@@ -368,8 +386,8 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
                   _isSaved ? Icons.check : Icons.bookmark_add_outlined,
                 ),
                 tooltip: _isSaved
-                    ? 'Already in vocab list'
-                    : 'Save to Vocabulary',
+                    ? context.l10n.dictionaryAlreadyInVocabTooltip
+                    : context.l10n.dictionarySaveToVocabularyTooltip,
               ),
             ],
           ),

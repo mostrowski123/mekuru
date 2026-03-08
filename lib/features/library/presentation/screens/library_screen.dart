@@ -642,8 +642,9 @@ class LibraryScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = context.l10n;
     final dirPath = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: context.l10n.librarySelectMangaFolder,
+      dialogTitle: l10n.librarySelectMangaFolder,
     );
     if (dirPath == null || dirPath.isEmpty) return;
 
@@ -653,9 +654,9 @@ class LibraryScreen extends ConsumerWidget {
       entities = await dir.list().toList();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not read folder:\n$e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.libraryCouldNotReadFolder(details: '$e'))),
+      );
       return;
     }
 
@@ -1141,14 +1142,18 @@ class _BookTileState extends ConsumerState<_BookTile>
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: Text(book.title),
-              subtitle: Text('Added ${_formatDate(book.dateAdded)}'),
+              subtitle: Text(
+                context.l10n.vocabularyAddedOn(
+                  date: _formatDate(book.dateAdded),
+                ),
+              ),
             ),
             const Divider(),
             // Bookmarks/highlights are EPUB-only features
             if (book.bookType != 'manga') ...[
               ListTile(
                 leading: const Icon(Icons.bookmark_outline),
-                title: const Text('Bookmarks'),
+                title: Text(context.l10n.libraryBookmarksTitle),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   _showBookBookmarks(context);
@@ -1167,7 +1172,7 @@ class _BookTileState extends ConsumerState<_BookTile>
                           ? null
                           : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    title: const Text('Highlights'),
+                    title: Text(context.l10n.readerHighlightsTooltip),
                     trailing: isProUnlocked
                         ? null
                         : TextButton(
@@ -1175,7 +1180,7 @@ class _BookTileState extends ConsumerState<_BookTile>
                               Navigator.of(sheetContext).pop();
                               _openProUpgrade(context);
                             },
-                            child: const Text('Unlock'),
+                            child: Text(context.l10n.commonUnlock),
                           ),
                     onTap: isProUnlocked
                         ? () {
@@ -1216,27 +1221,31 @@ class _BookTileState extends ConsumerState<_BookTile>
                       !isWordOnlyPass &&
                       !isMokuroComplete;
                   final isProLocked = needsProUnlock && !isProUnlocked;
+                  final l10n = context.l10n;
 
                   final title = isRunning
-                      ? 'Cancel OCR'
+                      ? l10n.ocrCancelActionTitle
                       : isMokuroComplete
-                      ? 'Replace OCR'
+                      ? l10n.ocrReplaceActionTitle
                       : hasCompleteOcr
-                      ? 'Remove OCR'
-                      : 'Run OCR';
+                      ? l10n.ocrRemoveActionTitle
+                      : l10n.ocrRunActionTitle;
                   final subtitle = isProLocked
-                      ? 'Unlock Pro to use your custom OCR server'
+                      ? l10n.ocrUnlockProSubtitle
                       : isRunning
-                      ? 'Stop processing and save progress'
+                      ? l10n.ocrStopAndSaveProgressSubtitle
                       : isMokuroComplete
-                      ? 'Replace Mokuro OCR with your custom OCR server'
+                      ? l10n.ocrReplaceMokuroSubtitle
                       : hasCompleteOcr
-                      ? 'Remove OCR text from all pages'
+                      ? l10n.ocrRemoveSubtitle
                       : isWordOnlyPass
-                      ? 'Build word tap targets from saved OCR'
+                      ? l10n.ocrBuildWordTargetsSubtitle
                       : canResume
-                      ? 'Resume OCR (${completedPages ?? summary.pagesWithOcr}/${totalPages ?? summary.totalPages} done)'
-                      : 'Recognize text on all pages';
+                      ? l10n.ocrResumeSubtitle(
+                          completed: completedPages ?? summary.pagesWithOcr,
+                          total: totalPages ?? summary.totalPages,
+                        )
+                      : l10n.ocrRecognizeAllPagesSubtitle;
 
                   return Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1260,7 +1269,7 @@ class _BookTileState extends ConsumerState<_BookTile>
                                   Navigator.of(sheetContext).pop();
                                   _openProUpgrade(context);
                                 },
-                                child: const Text('Unlock'),
+                                child: Text(l10n.commonUnlock),
                               )
                             : null,
                         onTap: isProLocked
@@ -1285,10 +1294,8 @@ class _BookTileState extends ConsumerState<_BookTile>
                       if (isMokuroComplete)
                         ListTile(
                           leading: const Icon(Icons.delete_sweep_outlined),
-                          title: const Text('Remove OCR'),
-                          subtitle: const Text(
-                            'Remove OCR text from all pages',
-                          ),
+                          title: Text(l10n.ocrRemoveActionTitle),
+                          subtitle: Text(l10n.ocrRemoveSubtitle),
                           onTap: () {
                             Navigator.of(sheetContext).pop();
                             _removeOcr(context, ref);
@@ -1302,7 +1309,7 @@ class _BookTileState extends ConsumerState<_BookTile>
             const Divider(),
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('Rename'),
+              title: Text(context.l10n.commonRename),
               onTap: () {
                 AppHaptics.light();
                 Navigator.of(sheetContext).pop();
@@ -1311,7 +1318,7 @@ class _BookTileState extends ConsumerState<_BookTile>
             ),
             ListTile(
               leading: const Icon(Icons.image_outlined),
-              title: const Text('Change Cover'),
+              title: Text(context.l10n.libraryChangeCoverAction),
               onTap: () {
                 AppHaptics.light();
                 Navigator.of(sheetContext).pop();
@@ -1320,9 +1327,9 @@ class _BookTileState extends ConsumerState<_BookTile>
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text(
-                'Delete Book',
-                style: TextStyle(color: Colors.red),
+              title: Text(
+                context.l10n.libraryDeleteBookTitle,
+                style: const TextStyle(color: Colors.red),
               ),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -1372,12 +1379,12 @@ class _BookTileState extends ConsumerState<_BookTile>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Rename Book'),
+        title: Text(context.l10n.libraryRenameBookTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Title',
+          decoration: InputDecoration(
+            labelText: context.l10n.commonTitleLabel,
             border: OutlineInputBorder(),
           ),
           textCapitalization: TextCapitalization.words,
@@ -1385,7 +1392,7 @@ class _BookTileState extends ConsumerState<_BookTile>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
@@ -1395,7 +1402,7 @@ class _BookTileState extends ConsumerState<_BookTile>
               }
               Navigator.of(ctx).pop();
             },
-            child: const Text('Rename'),
+            child: Text(context.l10n.commonRename),
           ),
         ],
       ),
@@ -1423,9 +1430,11 @@ class _BookTileState extends ConsumerState<_BookTile>
       ref.read(bookRepositoryProvider).updateCoverImagePath(book.id, destPath);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to change cover: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.libraryChangeCoverFailed(details: '$e')),
+        ),
+      );
     }
   }
 
@@ -1444,7 +1453,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     if (!cacheFile.existsSync()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No pages cache found for this book')),
+          SnackBar(content: Text(context.l10n.ocrNoPagesCacheFound)),
         );
       }
       return;
@@ -1463,11 +1472,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     if (emptyCount == 0 && !summary.needsWordSegmentation) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'OCR is already complete. Use "Remove OCR" to reset.',
-            ),
-          ),
+          SnackBar(content: Text(context.l10n.ocrAlreadyCompleteResetHint)),
         );
       }
       return;
@@ -1476,7 +1481,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     if (!isWordOnlyPass && imageDirPath.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Manga image directory not found')),
+          SnackBar(content: Text(context.l10n.ocrMangaImageDirectoryNotFound)),
         );
       }
       return;
@@ -1487,22 +1492,28 @@ class _BookTileState extends ConsumerState<_BookTile>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isWordOnlyPass ? 'Build Word Overlays' : 'Run OCR'),
+        title: Text(
+          isWordOnlyPass
+              ? context.l10n.ocrBuildWordOverlaysTitle
+              : context.l10n.ocrRunActionTitle,
+        ),
         content: Text(
           isWordOnlyPass
-              ? 'OCR text already exists. This will rebuild word tap targets '
-                    'so lookup overlays appear correctly.'
-              : 'This will process $emptyCount pages. OCR will run in the '
-                    'background and continue even if you close the app.',
+              ? context.l10n.ocrBuildWordOverlaysBody
+              : context.l10n.ocrProcessPagesBody(count: emptyCount),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(isWordOnlyPass ? 'Process' : 'Start'),
+            child: Text(
+              isWordOnlyPass
+                  ? context.l10n.ocrProcessAction
+                  : context.l10n.ocrStartAction,
+            ),
           ),
         ],
       ),
@@ -1520,9 +1531,11 @@ class _BookTileState extends ConsumerState<_BookTile>
         if (!ready) return;
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Unable to prepare OCR: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.ocrPrepareFailed(details: '$e')),
+            ),
+          );
         }
         return;
       }
@@ -1536,9 +1549,9 @@ class _BookTileState extends ConsumerState<_BookTile>
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to start OCR: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.ocrStartFailed(details: '$e'))),
+        );
       }
       return;
     }
@@ -1551,8 +1564,8 @@ class _BookTileState extends ConsumerState<_BookTile>
         SnackBar(
           content: Text(
             isWordOnlyPass
-                ? 'Word overlay processing started in background'
-                : 'OCR started in background',
+                ? context.l10n.ocrWordOverlayStartedBackground
+                : context.l10n.ocrStartedBackground,
           ),
         ),
       );
@@ -1564,20 +1577,16 @@ class _BookTileState extends ConsumerState<_BookTile>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Replace OCR'),
-        content: const Text(
-          'This will overwrite the OCR data imported from the Mokuro/HTML file '
-          'and re-run OCR on ALL pages using your custom server.\n\n'
-          'To restore the original OCR, re-import the book.',
-        ),
+        title: Text(context.l10n.ocrReplaceActionTitle),
+        content: Text(context.l10n.ocrReplaceMokuroBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Replace'),
+            child: Text(context.l10n.ocrReplaceActionTitle),
           ),
         ],
       ),
@@ -1594,9 +1603,9 @@ class _BookTileState extends ConsumerState<_BookTile>
       if (!ready) return;
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Unable to prepare OCR: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.ocrPrepareFailed(details: '$e'))),
+        );
       }
       return;
     }
@@ -1607,7 +1616,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     if (!cacheFile.existsSync()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No pages cache found for this book')),
+          SnackBar(content: Text(context.l10n.ocrNoPagesCacheFound)),
         );
       }
       return;
@@ -1644,16 +1653,14 @@ class _BookTileState extends ConsumerState<_BookTile>
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('OCR replacement started in background'),
-          ),
+          SnackBar(content: Text(context.l10n.ocrReplaceStartedBackground)),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to start OCR: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.ocrStartFailed(details: '$e'))),
+        );
       }
     }
   }
@@ -1667,7 +1674,7 @@ class _BookTileState extends ConsumerState<_BookTile>
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OCR cancelled. Progress saved.')),
+        SnackBar(content: Text(context.l10n.ocrCancelSavedProgress)),
       );
     }
   }
@@ -1677,19 +1684,16 @@ class _BookTileState extends ConsumerState<_BookTile>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Remove OCR'),
-        content: const Text(
-          'Remove OCR text and word overlays from this manga? '
-          'You can run OCR again later.',
-        ),
+        title: Text(context.l10n.ocrRemoveActionTitle),
+        content: Text(context.l10n.ocrRemoveBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Remove'),
+            child: Text(context.l10n.ocrRemoveActionTitle),
           ),
         ],
       ),
@@ -1704,14 +1708,14 @@ class _BookTileState extends ConsumerState<_BookTile>
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OCR removed from this book')),
+          SnackBar(content: Text(context.l10n.ocrRemovedFromBook)),
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to remove OCR: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.ocrRemoveFailed(details: '$e'))),
+        );
       }
     }
   }
@@ -1775,12 +1779,12 @@ class _BookTileState extends ConsumerState<_BookTile>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Book'),
-        content: Text('Delete "${book.title}" from your library?'),
+        title: Text(context.l10n.libraryDeleteBookTitle),
+        content: Text(context.l10n.libraryDeleteBookBody(title: book.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
@@ -1788,7 +1792,10 @@ class _BookTileState extends ConsumerState<_BookTile>
               final container = ProviderScope.containerOf(context);
               container.read(bookImportProvider.notifier).deleteBook(book.id);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(
+              context.l10n.commonDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),

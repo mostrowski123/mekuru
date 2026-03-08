@@ -6,7 +6,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
-import 'app_localizations_ja.dart';
+import 'app_localizations_es.dart';
+import 'app_localizations_id.dart';
+import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -95,7 +97,10 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja'),
+    Locale('es'),
+    Locale('id'),
+    Locale('zh'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
   /// Application title.
@@ -223,6 +228,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OK'**
   String get commonOk;
+
+  /// Generic label for finishing a flow.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get commonDone;
 
   /// Generic undo action.
   ///
@@ -613,6 +624,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Kunyomi: '**
   String get dictionaryKunyomiLabel;
+
+  /// Label showing how many strokes are in the current kanji stroke order diagram.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {# stroke} other {# strokes}}'**
+  String dictionaryKanjiStrokeCount({required int count});
+
+  /// Tooltip for replaying the kanji stroke order animation.
+  ///
+  /// In en, this message translates to:
+  /// **'Animate stroke order'**
+  String get dictionaryAnimateStrokeOrderTooltip;
 
   /// Placeholder text for searching saved vocabulary.
   ///
@@ -1697,6 +1720,12 @@ abstract class AppLocalizations {
   /// **'Save your latest backup to a file'**
   String get backupExportSubtitle;
 
+  /// Native file picker title when exporting a backup.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Backup'**
+  String get backupSaveFileDialogTitle;
+
   /// Section header for auto-backup settings.
   ///
   /// In en, this message translates to:
@@ -1822,6 +1851,51 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to apply book data: {details}'**
   String backupApplyBookDataFailed({required String details});
+
+  /// Title for the restore dialog that lists books with conflicting reading data.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflicting Books'**
+  String get backupConflictDialogTitle;
+
+  /// Body text for the restore dialog that lists books with conflicting reading data.
+  ///
+  /// In en, this message translates to:
+  /// **'The following books already have reading data. Select which to overwrite with backup data:'**
+  String get backupConflictDialogBody;
+
+  /// Subtitle for a conflicting book in the restore dialog, showing the book type and backup progress.
+  ///
+  /// In en, this message translates to:
+  /// **'{bookType} - {progress}% in backup'**
+  String backupConflictEntrySubtitle({
+    required String bookType,
+    required int progress,
+  });
+
+  /// Button label to skip applying all conflicting backup entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip All'**
+  String get backupConflictSkipAll;
+
+  /// Button label to overwrite the selected conflicting backup entries.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {Overwrite #} other {Overwrite #}}'**
+  String backupConflictOverwriteSelected({required int count});
+
+  /// Book type label for EPUB items in backup conflict UI.
+  ///
+  /// In en, this message translates to:
+  /// **'EPUB'**
+  String get backupBookTypeEpub;
+
+  /// Book type label for manga items in backup conflict UI.
+  ///
+  /// In en, this message translates to:
+  /// **'Manga'**
+  String get backupBookTypeManga;
 
   /// Part of the restore summary message when settings are restored.
   ///
@@ -2044,6 +2118,855 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Highlight selection'**
   String get readerHighlightSelectionTooltip;
+
+  /// Generic copy action.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get commonCopy;
+
+  /// Generic share action.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get commonShare;
+
+  /// Generic continue action.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get commonContinue;
+
+  /// Fallback label when no option has been selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get commonNotSelected;
+
+  /// Fallback label when a value is unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get commonUnknown;
+
+  /// Generic rename action.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get commonRename;
+
+  /// Generic title field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get commonTitleLabel;
+
+  /// Snackbar shown when the selected manga folder cannot be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read folder:\n{details}'**
+  String libraryCouldNotReadFolder({required String details});
+
+  /// Title for the book bookmarks action in library options.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks'**
+  String get libraryBookmarksTitle;
+
+  /// Action label to change a book cover image.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Cover'**
+  String get libraryChangeCoverAction;
+
+  /// Title for the rename book dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Book'**
+  String get libraryRenameBookTitle;
+
+  /// Title for deleting a book from the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Book'**
+  String get libraryDeleteBookTitle;
+
+  /// Confirmation body for deleting a book from the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{title}\" from your library?'**
+  String libraryDeleteBookBody({required String title});
+
+  /// Snackbar shown when changing the cover image fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to change cover: {details}'**
+  String libraryChangeCoverFailed({required String details});
+
+  /// Title for the dictionary manager screen and help dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary Manager'**
+  String get dictionaryManagerTitle;
+
+  /// Tooltip for importing a dictionary from the manager screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Dictionary'**
+  String get dictionaryManagerImportTooltip;
+
+  /// Subtitle shown when no dictionaries are installed in the manager screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap + to import a Yomitan dictionary (.zip)\nor collection (.json)'**
+  String get dictionaryManagerEmptySubtitle;
+
+  /// Button label that opens the downloads screen from the dictionary manager.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse Downloads'**
+  String get dictionaryManagerBrowseDownloads;
+
+  /// Caption under the browse downloads button in the dictionary manager empty state.
+  ///
+  /// In en, this message translates to:
+  /// **'Download dictionaries and other assets'**
+  String get dictionaryManagerBrowseDownloadsCaption;
+
+  /// Subtitle showing when a dictionary was imported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {date}'**
+  String dictionaryManagerImportedOn({required String date});
+
+  /// Heading for supported dictionary formats in the dictionary manager help dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported Formats'**
+  String get dictionaryManagerSupportedFormatsTitle;
+
+  /// Help text describing supported Yomitan zip dictionaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Yomitan dictionary (.zip)\nAny dictionary that can be imported into Yomitan is supported. These are .zip files containing term bank JSON files.'**
+  String get dictionaryManagerSupportedFormatsYomitan;
+
+  /// Help text describing supported Yomitan collection backups.
+  ///
+  /// In en, this message translates to:
+  /// **'Yomitan collection (.json)\nA Dexie database export containing multiple dictionaries in a single file. You can export this from Yomitan\'s settings under Backup.'**
+  String get dictionaryManagerSupportedFormatsCollection;
+
+  /// Heading for dictionary ordering help.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary Order'**
+  String get dictionaryManagerOrderTitle;
+
+  /// Help text explaining dictionary ordering.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag dictionaries using the handle on the left to reorder them. The order here controls the order that definitions appear when you tap a word while reading.'**
+  String get dictionaryManagerOrderBody;
+
+  /// Heading for dictionary enable and disable help.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabling & Disabling'**
+  String get dictionaryManagerEnablingTitle;
+
+  /// Help text explaining dictionary enable and disable behavior.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the toggle switch to enable or disable a dictionary. Disabled dictionaries are not searched when looking up words.'**
+  String get dictionaryManagerEnablingBody;
+
+  /// Heading for dictionary discovery help.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding Dictionaries'**
+  String get dictionaryManagerFindingTitle;
+
+  /// Lead-in text before the dictionary website link in the help dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse compatible dictionaries at '**
+  String get dictionaryManagerFindingPrefix;
+
+  /// Title for deleting a dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Dictionary'**
+  String get dictionaryManagerDeleteTitle;
+
+  /// Confirmation body for deleting a dictionary and its entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\" and all its entries?\nThis cannot be undone.'**
+  String dictionaryManagerDeleteBody({required String name});
+
+  /// Anki mapping source label for the expression field.
+  ///
+  /// In en, this message translates to:
+  /// **'Expression'**
+  String get ankidroidDataSourceExpression;
+
+  /// Anki mapping source label for the reading field.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get ankidroidDataSourceReading;
+
+  /// Anki mapping source label for furigana-formatted text.
+  ///
+  /// In en, this message translates to:
+  /// **'Furigana (Anki format)'**
+  String get ankidroidDataSourceFurigana;
+
+  /// Anki mapping source label for glossary content.
+  ///
+  /// In en, this message translates to:
+  /// **'Glossary / Meaning'**
+  String get ankidroidDataSourceGlossary;
+
+  /// Anki mapping source label for sentence context.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence Context'**
+  String get ankidroidDataSourceSentenceContext;
+
+  /// Anki mapping source label for frequency rank.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency Rank'**
+  String get ankidroidDataSourceFrequency;
+
+  /// Anki mapping source label for the source dictionary name.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary Name'**
+  String get ankidroidDataSourceDictionaryName;
+
+  /// Anki mapping source label for pitch accent information.
+  ///
+  /// In en, this message translates to:
+  /// **'Pitch Accent'**
+  String get ankidroidDataSourcePitchAccent;
+
+  /// Anki mapping source label for an empty field.
+  ///
+  /// In en, this message translates to:
+  /// **'(Empty)'**
+  String get ankidroidDataSourceEmpty;
+
+  /// Detailed error shown when AnkiDroid permission is not granted in settings.
+  ///
+  /// In en, this message translates to:
+  /// **'AnkiDroid permission not granted. Make sure AnkiDroid is installed and try again.'**
+  String get ankidroidPermissionNotGrantedLong;
+
+  /// Detailed error shown when the app cannot connect to AnkiDroid in settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to AnkiDroid. Make sure AnkiDroid is installed and running.'**
+  String get ankidroidCouldNotConnectLong;
+
+  /// Short error shown when AnkiDroid permission is not granted in the create-card flow.
+  ///
+  /// In en, this message translates to:
+  /// **'AnkiDroid permission not granted.'**
+  String get ankidroidPermissionNotGrantedShort;
+
+  /// Short error shown when the app cannot connect to AnkiDroid in the create-card flow.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to AnkiDroid.'**
+  String get ankidroidCouldNotConnectShort;
+
+  /// Error shown when sending a note to AnkiDroid fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add note. Make sure AnkiDroid is running and the selected note type and deck still exist.'**
+  String get ankidroidFailedToAddNote;
+
+  /// Section heading for Anki note type settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Note Type'**
+  String get ankidroidSettingsNoteTypeSection;
+
+  /// Title for the selected Anki note type row.
+  ///
+  /// In en, this message translates to:
+  /// **'Anki Note Type'**
+  String get ankidroidSettingsNoteTypeTitle;
+
+  /// Section heading for the default Anki deck.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Deck'**
+  String get ankidroidSettingsDefaultDeckSection;
+
+  /// Title for the selected Anki target deck row.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Deck'**
+  String get ankidroidSettingsTargetDeckTitle;
+
+  /// Section heading for Anki field mapping.
+  ///
+  /// In en, this message translates to:
+  /// **'Field Mapping'**
+  String get ankidroidSettingsFieldMappingSection;
+
+  /// Help text describing how Anki field mapping works.
+  ///
+  /// In en, this message translates to:
+  /// **'Map each Anki field to a data source from the app.'**
+  String get ankidroidSettingsFieldMappingHelp;
+
+  /// Section heading for default Anki tags.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Tags'**
+  String get ankidroidSettingsDefaultTagsSection;
+
+  /// Help text describing default Anki tags.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated tags applied to every exported note.'**
+  String get ankidroidSettingsDefaultTagsHelp;
+
+  /// Hint text for comma-separated Anki tags.
+  ///
+  /// In en, this message translates to:
+  /// **'mekuru, japanese'**
+  String get ankidroidTagsHint;
+
+  /// Title for the Anki note type picker sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Note Type'**
+  String get ankidroidSettingsSelectNoteType;
+
+  /// Title for the Anki deck picker sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Deck'**
+  String get ankidroidSettingsSelectDeck;
+
+  /// Title for the field mapping picker sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Map \"{ankiFieldName}\" to:'**
+  String ankidroidSettingsMapFieldTo({required String ankiFieldName});
+
+  /// Tooltip for opening AnkiDroid settings from the create-card flow.
+  ///
+  /// In en, this message translates to:
+  /// **'AnkiDroid Settings'**
+  String get ankidroidCardSettingsTooltip;
+
+  /// Label for the selected Anki deck in the create-card flow.
+  ///
+  /// In en, this message translates to:
+  /// **'Deck'**
+  String get ankidroidCardDeckTitle;
+
+  /// Label for the tags field in the create-card flow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get ankidroidCardTagsTitle;
+
+  /// Button label to submit a note to AnkiDroid.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Anki'**
+  String get ankidroidCardAddToAnki;
+
+  /// Title for the manga reader settings sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Reader Settings'**
+  String get mangaReaderSettingsTitle;
+
+  /// Label for the single-page manga view mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Single'**
+  String get mangaViewModeSingle;
+
+  /// Label for the two-page spread manga view mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Spread'**
+  String get mangaViewModeSpread;
+
+  /// Label for the scrolling manga view mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll'**
+  String get mangaViewModeScroll;
+
+  /// Subtitle for the manga auto-crop setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove empty margins'**
+  String get mangaAutoCropSubtitle;
+
+  /// Title for re-running manga auto-crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-run Auto-Crop'**
+  String get mangaAutoCropRerunTitle;
+
+  /// Subtitle for re-running manga auto-crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-scan every page image for this book'**
+  String get mangaAutoCropRerunSubtitle;
+
+  /// Title for the transparent lookup setting in the manga reader.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent Lookup'**
+  String get mangaTransparentLookupTitle;
+
+  /// Subtitle for the transparent lookup setting in the manga reader.
+  ///
+  /// In en, this message translates to:
+  /// **'See-through dictionary sheet'**
+  String get mangaTransparentLookupSubtitle;
+
+  /// Title for the debug word overlay setting in the manga reader.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug Word Overlay'**
+  String get mangaDebugWordOverlayTitle;
+
+  /// Subtitle for the debug word overlay setting in the manga reader.
+  ///
+  /// In en, this message translates to:
+  /// **'Show word bounding boxes'**
+  String get mangaDebugWordOverlaySubtitle;
+
+  /// Dialog title shown before computing auto-crop for the first time.
+  ///
+  /// In en, this message translates to:
+  /// **'Compute Auto-Crop?'**
+  String get mangaAutoCropComputeTitle;
+
+  /// Dialog body shown before computing auto-crop for the first time.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-crop needs to scan every page image for this book before it can be enabled. This may take a minute.'**
+  String get mangaAutoCropComputeBody;
+
+  /// Dialog title shown before recomputing auto-crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-run Auto-Crop?'**
+  String get mangaAutoCropRerunDialogTitle;
+
+  /// Dialog body shown before recomputing auto-crop.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-crop will re-scan every page image for this book and replace the saved crop bounds. This may take a minute.'**
+  String get mangaAutoCropRerunDialogBody;
+
+  /// Progress message shown while computing auto-crop bounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Computing auto-crop bounds. This may take a minute.'**
+  String get mangaAutoCropComputingProgress;
+
+  /// Progress message shown while recomputing auto-crop bounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Recomputing auto-crop bounds. This may take a minute.'**
+  String get mangaAutoCropRecomputingProgress;
+
+  /// Snackbar shown after auto-crop bounds are refreshed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-crop bounds refreshed.'**
+  String get mangaAutoCropBoundsRefreshed;
+
+  /// Snackbar shown when auto-crop setup fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-crop setup failed: {details}'**
+  String mangaAutoCropSetupFailed({required String details});
+
+  /// Snackbar shown when OCR cannot start because the pages cache is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'No pages cache found for this book'**
+  String get ocrNoPagesCacheFound;
+
+  /// Snackbar shown when OCR is already complete for a manga book.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR is already complete. Use \"Remove OCR\" to reset.'**
+  String get ocrAlreadyCompleteResetHint;
+
+  /// Snackbar shown when the manga image directory is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Manga image directory not found'**
+  String get ocrMangaImageDirectoryNotFound;
+
+  /// Dialog title for rebuilding word overlays from existing OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Build Word Overlays'**
+  String get ocrBuildWordOverlaysTitle;
+
+  /// Dialog body for rebuilding word overlays from existing OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR text already exists. This will rebuild word tap targets so lookup overlays appear correctly.'**
+  String get ocrBuildWordOverlaysBody;
+
+  /// Action title for starting OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Run OCR'**
+  String get ocrRunActionTitle;
+
+  /// Dialog body shown before OCR begins processing pages.
+  ///
+  /// In en, this message translates to:
+  /// **'This will process {count} pages. OCR will run in the background and continue even if you close the app.'**
+  String ocrProcessPagesBody({required int count});
+
+  /// Button label for processing existing OCR into word overlays.
+  ///
+  /// In en, this message translates to:
+  /// **'Process'**
+  String get ocrProcessAction;
+
+  /// Button label for starting OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get ocrStartAction;
+
+  /// Snackbar shown when OCR setup fails before processing starts.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to prepare OCR: {details}'**
+  String ocrPrepareFailed({required String details});
+
+  /// Snackbar shown when OCR background work fails to start.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start OCR: {details}'**
+  String ocrStartFailed({required String details});
+
+  /// Snackbar shown when rebuilding word overlays starts in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'Word overlay processing started in background'**
+  String get ocrWordOverlayStartedBackground;
+
+  /// Snackbar shown when OCR starts in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR started in background'**
+  String get ocrStartedBackground;
+
+  /// Action title for cancelling OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel OCR'**
+  String get ocrCancelActionTitle;
+
+  /// Snackbar shown when OCR is cancelled and progress is preserved.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR cancelled. Progress saved.'**
+  String get ocrCancelSavedProgress;
+
+  /// Action title for replacing imported OCR with custom OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace OCR'**
+  String get ocrReplaceActionTitle;
+
+  /// Confirmation dialog body for replacing Mokuro OCR with custom OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nTo restore the original OCR, re-import the book.'**
+  String get ocrReplaceMokuroBody;
+
+  /// Snackbar shown when replacing OCR starts in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR replacement started in background'**
+  String get ocrReplaceStartedBackground;
+
+  /// Action title for removing OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove OCR'**
+  String get ocrRemoveActionTitle;
+
+  /// Confirmation dialog body for removing OCR from a manga book.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove OCR text and word overlays from this manga? You can run OCR again later.'**
+  String get ocrRemoveBody;
+
+  /// Subtitle for removing OCR from all manga pages.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove OCR text from all pages'**
+  String get ocrRemoveSubtitle;
+
+  /// Snackbar shown after OCR has been removed from a book.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR removed from this book'**
+  String get ocrRemovedFromBook;
+
+  /// Snackbar shown when removing OCR fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove OCR: {details}'**
+  String ocrRemoveFailed({required String details});
+
+  /// Subtitle shown when OCR requires a Pro unlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Pro to use your custom OCR server'**
+  String get ocrUnlockProSubtitle;
+
+  /// Subtitle shown for the OCR cancel action.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop processing and save progress'**
+  String get ocrStopAndSaveProgressSubtitle;
+
+  /// Subtitle shown when replacing OCR imported from Mokuro.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace Mokuro OCR with your custom OCR server'**
+  String get ocrReplaceMokuroSubtitle;
+
+  /// Subtitle shown when only word overlay generation is needed.
+  ///
+  /// In en, this message translates to:
+  /// **'Build word tap targets from saved OCR'**
+  String get ocrBuildWordTargetsSubtitle;
+
+  /// Subtitle shown when OCR can resume partially completed work.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume OCR ({completed}/{total} done)'**
+  String ocrResumeSubtitle({required int completed, required int total});
+
+  /// Subtitle shown when OCR will run on all pages.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize text on all pages'**
+  String get ocrRecognizeAllPagesSubtitle;
+
+  /// Title for editing a highlight note.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Note'**
+  String get readerEditNoteTitle;
+
+  /// Hint text for adding or editing a highlight note.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a note...'**
+  String get readerAddNoteHint;
+
+  /// Snackbar shown after copying text from the reader.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get readerCopiedToClipboard;
+
+  /// Title for the privacy policy link on the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get aboutPrivacyPolicyTitle;
+
+  /// Subtitle for the privacy policy link on the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'See how Mekuru handles local and OCR data'**
+  String get aboutPrivacyPolicySubtitle;
+
+  /// Title for the open source licenses row on the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Source Licenses'**
+  String get aboutOpenSourceLicensesTitle;
+
+  /// Subtitle for the open source licenses row on the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'View licenses for dependencies'**
+  String get aboutOpenSourceLicensesSubtitle;
+
+  /// Tagline shown at the bottom of the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'\"to turn pages\"'**
+  String get aboutTagline;
+
+  /// Title for the epub.js license dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'epub.js License'**
+  String get aboutEpubJsLicenseTitle;
+
+  /// Title for the KANJIDIC download tile.
+  ///
+  /// In en, this message translates to:
+  /// **'KANJIDIC'**
+  String get downloadsKanjidicTitle;
+
+  /// Title for the bookmarks bottom sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks'**
+  String get readerBookmarksTitle;
+
+  /// Empty state message shown when a book has no bookmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'No bookmarks yet.\nTap the bookmark icon while reading to add one.'**
+  String get readerNoBookmarksYet;
+
+  /// Title format for a bookmark row showing reading progress and added date.
+  ///
+  /// In en, this message translates to:
+  /// **'{progress} - {date}'**
+  String readerBookmarkProgressDate({
+    required String progress,
+    required String date,
+  });
+
+  /// Version label on the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String aboutVersion({required String version});
+
+  /// Short description shown near the top of the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'A Japanese-first EPUB reader with vertical text, offline dictionary, and vocabulary management.'**
+  String get aboutDescription;
+
+  /// Section heading for attributions on the about screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Attribution'**
+  String get aboutAttributionTitle;
+
+  /// Title for the KanjiVG attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'KanjiVG'**
+  String get aboutKanjiVgTitle;
+
+  /// Description text for the KanjiVG attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'Kanji stroke order data is provided by the KanjiVG project, created by Ulrich Apel.'**
+  String get aboutKanjiVgDescription;
+
+  /// Prefix before a linked license name in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **'Licensed under the '**
+  String get aboutLicensedUnderPrefix;
+
+  /// Suffix after a linked license name in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **' license.'**
+  String get aboutLicenseSuffix;
+
+  /// Label before a linked project URL in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **'Project: '**
+  String get aboutProjectLabel;
+
+  /// Label before a linked source URL in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: '**
+  String get aboutSourceLabel;
+
+  /// Title for the JPDB attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'JPDB Frequency Dictionary'**
+  String get aboutJpdbTitle;
+
+  /// Description text for the JPDB attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'Word frequency data is provided by the JPDB frequency dictionary, distributed via yomitan-dictionaries by Kuuuube.'**
+  String get aboutJpdbDescription;
+
+  /// Label before a linked data source URL in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **'Data source: '**
+  String get aboutDataSourceLabel;
+
+  /// Label before a linked dictionary URL in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary: '**
+  String get aboutDictionaryLabel;
+
+  /// Title for the JMdict and KANJIDIC attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'JMdict & KANJIDIC'**
+  String get aboutJmdictKanjidicTitle;
+
+  /// Prefix text before the linked EDRDG name in the JMdict and KANJIDIC attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese-multilingual dictionary data is provided by the JMdict/EDICT project and kanji dictionary data by the KANJIDIC project, both created by Jim Breen and the '**
+  String get aboutJmdictKanjidicDescriptionPrefix;
+
+  /// Label before a linked JMdict project URL in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **'JMdict: '**
+  String get aboutJmdictLabel;
+
+  /// Label before a linked KANJIDIC project URL in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **'KANJIDIC: '**
+  String get aboutKanjidicLabel;
+
+  /// Title for the epub.js attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'epub.js'**
+  String get aboutEpubJsTitle;
+
+  /// Description text for the epub.js attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'EPUB rendering is powered by epub.js, an open source JavaScript EPUB reader library.'**
+  String get aboutEpubJsDescription;
 }
 
 class _AppLocalizationsDelegate
@@ -2057,19 +2980,35 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'ja'].contains(locale.languageCode);
+      <String>['en', 'es', 'id', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+script codes are specified.
+  switch (locale.languageCode) {
+    case 'zh':
+      {
+        switch (locale.scriptCode) {
+          case 'Hans':
+            return AppLocalizationsZhHans();
+        }
+        break;
+      }
+  }
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
-    case 'ja':
-      return AppLocalizationsJa();
+    case 'es':
+      return AppLocalizationsEs();
+    case 'id':
+      return AppLocalizationsId();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(

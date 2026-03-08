@@ -98,11 +98,14 @@ class BackupFileManager {
 
   /// Exports a backup file by letting the user choose a save location.
   /// Returns `true` if the file was saved, `false` if cancelled.
-  Future<bool> exportBackupFile(String filePath) async {
+  Future<bool> exportBackupFile(
+    String filePath, {
+    required String dialogTitle,
+  }) async {
     final sourceFile = File(filePath);
     final fileName = path.basename(filePath);
     final outputPath = await FilePicker.platform.saveFile(
-      dialogTitle: 'Save Backup',
+      dialogTitle: dialogTitle,
       fileName: fileName,
       bytes: await sourceFile.readAsBytes(),
     );

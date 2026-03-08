@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 /// Bottom sheet listing all bookmarks for a book.
 ///
@@ -22,6 +23,7 @@ class BookmarksSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bookmarksAsync = ref.watch(bookmarksForBookProvider(bookId));
+    final l10n = context.l10n;
 
     return DraggableScrollableSheet(
       expand: false,
@@ -32,7 +34,7 @@ class BookmarksSheet extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Bookmarks',
+              l10n.readerBookmarksTitle,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
@@ -41,11 +43,11 @@ class BookmarksSheet extends ConsumerWidget {
             child: bookmarksAsync.when(
               data: (bookmarks) {
                 if (bookmarks.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
-                        'No bookmarks yet.\nTap the bookmark icon while reading to add one.',
+                        l10n.readerNoBookmarksYet,
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -70,7 +72,9 @@ class BookmarksSheet extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(
+                child: Text(l10n.commonErrorWithDetails(details: '$e')),
+              ),
             ),
           ),
         ],
@@ -114,7 +118,12 @@ class _BookmarkTile extends StatelessWidget {
       onDismissed: (_) => onDelete(),
       child: ListTile(
         leading: const Icon(Icons.bookmark, color: Colors.amber),
-        title: Text('$progressStr  ·  $dateStr'),
+        title: Text(
+          context.l10n.readerBookmarkProgressDate(
+            progress: progressStr,
+            date: dateStr,
+          ),
+        ),
         subtitle: bookmark.chapterTitle.isNotEmpty
             ? Text(
                 bookmark.chapterTitle,

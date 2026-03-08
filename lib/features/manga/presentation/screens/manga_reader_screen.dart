@@ -20,6 +20,7 @@ import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provid
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -331,6 +332,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           final direction = ref.watch(mangaReadingDirectionProvider);
           final transparent = ref.watch(mangaLookupTransparencyProvider);
           final autoCrop = ref.watch(mangaAutoCropProvider);
+          final l10n = context.l10n;
           final hasComputedAutoCrop =
               mokuroBook.autoCropVersion > 0 ||
               mokuroBook.pages.any((page) => page.contentBounds != null);
@@ -345,27 +347,27 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Reader Settings',
+                    l10n.mangaReaderSettingsTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 16),
                   // View mode selector
                   SegmentedButton<MangaViewMode>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: MangaViewMode.singlePage,
-                        icon: Icon(Icons.looks_one),
-                        label: Text('Single'),
+                        icon: const Icon(Icons.looks_one),
+                        label: Text(l10n.mangaViewModeSingle),
                       ),
                       ButtonSegment(
                         value: MangaViewMode.twoPageSpread,
-                        icon: Icon(Icons.looks_two),
-                        label: Text('Spread'),
+                        icon: const Icon(Icons.looks_two),
+                        label: Text(l10n.mangaViewModeSpread),
                       ),
                       ButtonSegment(
                         value: MangaViewMode.scroll,
-                        icon: Icon(Icons.view_day),
-                        label: Text('Scroll'),
+                        icon: const Icon(Icons.view_day),
+                        label: Text(l10n.mangaViewModeScroll),
                       ),
                     ],
                     selected: {viewMode},
@@ -379,11 +381,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                   // Reading direction
                   ListTile(
                     leading: const Icon(Icons.swap_horiz),
-                    title: const Text('Reading Direction'),
+                    title: Text(l10n.readerReadingDirectionTitle),
                     subtitle: Text(
                       direction == MangaReadingDirection.rtl
-                          ? 'Right to Left'
-                          : 'Left to Right',
+                          ? l10n.readerReadingDirectionRtl
+                          : l10n.readerReadingDirectionLtr,
                     ),
                     onTap: () {
                       ref.read(mangaReadingDirectionProvider.notifier).toggle();
@@ -393,8 +395,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                   if (isProUnlocked)
                     SwitchListTile(
                       secondary: const Icon(Icons.crop),
-                      title: const Text('Auto-Crop'),
-                      subtitle: const Text('Remove empty margins'),
+                      title: Text(l10n.proFeatureAutoCropTitle),
+                      subtitle: Text(l10n.mangaAutoCropSubtitle),
                       value: autoCrop,
                       onChanged: (value) =>
                           _handleAutoCropToggle(ref, mokuroBook, value),
@@ -406,30 +408,28 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                         Icons.crop,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                      title: const Text('Auto-Crop'),
-                      subtitle: const Text('Remove empty margins'),
+                      title: Text(l10n.proFeatureAutoCropTitle),
+                      subtitle: Text(l10n.mangaAutoCropSubtitle),
                       trailing: TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
                           _openProUpgradeFromReader();
                         },
-                        child: const Text('Unlock'),
+                        child: Text(l10n.commonUnlock),
                       ),
                     ),
                   if (isProUnlocked && autoCrop && hasComputedAutoCrop)
                     ListTile(
                       leading: const Icon(Icons.refresh),
-                      title: const Text('Re-run Auto-Crop'),
-                      subtitle: const Text(
-                        'Re-scan every page image for this book',
-                      ),
+                      title: Text(l10n.mangaAutoCropRerunTitle),
+                      subtitle: Text(l10n.mangaAutoCropRerunSubtitle),
                       onTap: () => _handleAutoCropRerun(ref),
                     ),
                   // Transparent lookup toggle
                   SwitchListTile(
                     secondary: const Icon(Icons.opacity),
-                    title: const Text('Transparent Lookup'),
-                    subtitle: const Text('See-through dictionary sheet'),
+                    title: Text(l10n.mangaTransparentLookupTitle),
+                    subtitle: Text(l10n.mangaTransparentLookupSubtitle),
                     value: transparent,
                     onChanged: (value) {
                       ref
@@ -440,8 +440,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                   // Debug overlay toggle
                   SwitchListTile(
                     secondary: const Icon(Icons.grid_on),
-                    title: const Text('Debug Word Overlay'),
-                    subtitle: const Text('Show word bounding boxes'),
+                    title: Text(l10n.mangaDebugWordOverlayTitle),
+                    subtitle: Text(l10n.mangaDebugWordOverlaySubtitle),
                     value: _debugOverlay,
                     onChanged: (value) {
                       setState(() => _debugOverlay = value);
@@ -507,17 +507,18 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     required bool enableAfterCompute,
   }) async {
     if (_isComputingAutoCrop) return;
+    final l10n = context.l10n;
     final whiteThreshold = ref.read(autoCropWhiteThresholdProvider);
 
-    final dialogTitle = force ? 'Re-run Auto-Crop?' : 'Compute Auto-Crop?';
+    final dialogTitle = force
+        ? l10n.mangaAutoCropRerunDialogTitle
+        : l10n.mangaAutoCropComputeTitle;
     final dialogBody = force
-        ? 'Auto-crop will re-scan every page image for this book and '
-              'replace the saved crop bounds. This may take a minute.'
-        : 'Auto-crop needs to scan every page image for this book before it '
-              'can be enabled. This may take a minute.';
+        ? l10n.mangaAutoCropRerunDialogBody
+        : l10n.mangaAutoCropComputeBody;
     final progressBody = force
-        ? 'Recomputing auto-crop bounds. This may take a minute.'
-        : 'Computing auto-crop bounds. This may take a minute.';
+        ? l10n.mangaAutoCropRecomputingProgress
+        : l10n.mangaAutoCropComputingProgress;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -527,11 +528,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Continue'),
+            child: Text(l10n.commonContinue),
           ),
         ],
       ),
@@ -575,14 +576,14 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       ref.read(mangaAutoCropProvider.notifier).setEnabled(enableAfterCompute);
       if (force && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Auto-crop bounds refreshed.')),
+          SnackBar(content: Text(l10n.mangaAutoCropBoundsRefreshed)),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Auto-crop setup failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.mangaAutoCropSetupFailed(details: '$e'))),
+        );
       }
     } finally {
       _isComputingAutoCrop = false;

@@ -1,110 +1,110 @@
 {
-  "@@locale": "en",
+  "@@locale": "zh_Hans",
   "appTitle": "Mekuru",
   "@appTitle": {
     "description": "Application title."
   },
-  "navLibrary": "Library",
+  "navLibrary": "书库",
   "@navLibrary": {
     "description": "Bottom navigation label for the library tab."
   },
-  "navDictionary": "Dictionary",
+  "navDictionary": "词典",
   "@navDictionary": {
     "description": "Bottom navigation label for the dictionary tab."
   },
-  "navVocabulary": "Vocabulary",
+  "navVocabulary": "生词本",
   "@navVocabulary": {
     "description": "Bottom navigation label for the vocabulary tab."
   },
-  "navSettings": "Settings",
+  "navSettings": "设置",
   "@navSettings": {
     "description": "Bottom navigation label for the settings tab."
   },
-  "commonHelp": "Help",
+  "commonHelp": "帮助",
   "@commonHelp": {
     "description": "Tooltip or button label for help."
   },
-  "commonImport": "Import",
+  "commonImport": "导入",
   "@commonImport": {
     "description": "Generic import label."
   },
-  "commonOpenNow": "Open now",
+  "commonOpenNow": "立即打开",
   "@commonOpenNow": {
     "description": "Action label to open imported content immediately."
   },
-  "commonCancel": "Cancel",
+  "commonCancel": "取消",
   "@commonCancel": {
     "description": "Generic cancel action."
   },
-  "commonClose": "Close",
+  "commonClose": "关闭",
   "@commonClose": {
     "description": "Generic close action."
   },
-  "commonSave": "Save",
+  "commonSave": "保存",
   "@commonSave": {
     "description": "Generic save action."
   },
-  "commonDelete": "Delete",
+  "commonDelete": "删除",
   "@commonDelete": {
     "description": "Generic delete action."
   },
-  "commonDownload": "Download",
+  "commonDownload": "下载",
   "@commonDownload": {
     "description": "Generic download action."
   },
-  "commonOpenDictionary": "Open Dictionary",
+  "commonOpenDictionary": "打开词典",
   "@commonOpenDictionary": {
     "description": "Button label to open the dictionary screen."
   },
-  "commonManageDictionaries": "Manage Dictionaries",
+  "commonManageDictionaries": "管理词典",
   "@commonManageDictionaries": {
     "description": "Action label to manage installed dictionaries."
   },
-  "commonClearAll": "Clear all",
+  "commonClearAll": "全部清除",
   "@commonClearAll": {
     "description": "Action label to clear a list."
   },
-  "commonClearSearch": "Clear search",
+  "commonClearSearch": "清除搜索",
   "@commonClearSearch": {
     "description": "Action label to clear the search query."
   },
-  "commonSearch": "Search",
+  "commonSearch": "搜索",
   "@commonSearch": {
     "description": "Generic search label."
   },
-  "commonBack": "Back",
+  "commonBack": "返回",
   "@commonBack": {
     "description": "Generic back action."
   },
-  "commonRetry": "Retry",
+  "commonRetry": "重试",
   "@commonRetry": {
     "description": "Generic retry action."
   },
-  "commonOk": "OK",
+  "commonOk": "确定",
   "@commonOk": {
     "description": "Generic confirmation action."
   },
-  "commonDone": "Done",
+  "commonDone": "完成",
   "@commonDone": {
     "description": "Generic label for finishing a flow."
   },
-  "commonUndo": "Undo",
+  "commonUndo": "撤销",
   "@commonUndo": {
     "description": "Generic undo action."
   },
-  "commonUnlock": "Unlock",
+  "commonUnlock": "解锁",
   "@commonUnlock": {
     "description": "Generic unlock action."
   },
-  "commonOpenSettings": "Open Settings",
+  "commonOpenSettings": "打开设置",
   "@commonOpenSettings": {
     "description": "Action label to open the settings screen."
   },
-  "commonGotIt": "Got it",
+  "commonGotIt": "知道了",
   "@commonGotIt": {
     "description": "Acknowledgement action label."
   },
-  "commonErrorWithDetails": "Error: {details}",
+  "commonErrorWithDetails": "错误：{details}",
   "@commonErrorWithDetails": {
     "description": "Generic error message with details.",
     "placeholders": {
@@ -113,7 +113,7 @@
       }
     }
   },
-  "librarySortTooltip": "Sort: {label}",
+  "librarySortTooltip": "排序：{label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",
     "placeholders": {
@@ -122,135 +122,135 @@
       }
     }
   },
-  "libraryEmptyTitle": "Your library is ready for its first book",
+  "libraryEmptyTitle": "你的书库已准备好迎接第一本书",
   "@libraryEmptyTitle": {
     "description": "Title shown when the library has no books."
   },
-  "libraryEmptySubtitle": "Import something to read, install a dictionary, and you will be ready to save words in a few minutes.",
+  "libraryEmptySubtitle": "导入一些可阅读的内容，安装词典，几分钟内就可以开始保存单词。",
   "@libraryEmptySubtitle": {
     "description": "Description shown when the library has no books."
   },
-  "libraryImportEpub": "Import EPUB",
+  "libraryImportEpub": "导入EPUB",
   "@libraryImportEpub": {
     "description": "Button label to import an EPUB file."
   },
-  "libraryImportManga": "Import Manga",
+  "libraryImportManga": "导入漫画",
   "@libraryImportManga": {
     "description": "Button label to import manga content."
   },
-  "libraryGetDictionaries": "Get Dictionaries",
+  "libraryGetDictionaries": "获取词典",
   "@libraryGetDictionaries": {
     "description": "Button label to open downloadable dictionaries."
   },
-  "libraryRestoreBackup": "Restore Backup",
+  "libraryRestoreBackup": "恢复备份",
   "@libraryRestoreBackup": {
     "description": "Button label to restore a backup."
   },
-  "librarySupportedMediaTitle": "Supported Media",
+  "librarySupportedMediaTitle": "支持的媒体格式",
   "@librarySupportedMediaTitle": {
     "description": "Title for the supported media help dialog."
   },
-  "libraryEpubBooksTitle": "EPUB Books",
+  "libraryEpubBooksTitle": "EPUB电子书",
   "@libraryEpubBooksTitle": {
     "description": "Heading for EPUB help information."
   },
-  "libraryEpubBooksDescription": "Standard .epub files are supported. Tap the + button and select \"Import EPUB\" to add one from your device.",
+  "libraryEpubBooksDescription": "支持标准.epub文件。点击“+”按钮并选择“导入EPUB”即可从设备添加。",
   "@libraryEpubBooksDescription": {
     "description": "Description of supported EPUB imports."
   },
-  "libraryMokuroTitle": "Mokuro Manga",
+  "libraryMokuroTitle": "Mokuro漫画",
   "@libraryMokuroTitle": {
     "description": "Heading for Mokuro import help."
   },
-  "libraryMokuroDescription": "Import manga by selecting a folder, then choosing a .mokuro or .html file. The page images are loaded from a sibling folder with the same name.",
+  "libraryMokuroDescription": "通过选择文件夹，然后选择.mokuro或.html文件来导入漫画。页面图片将从同名的相邻文件夹加载。",
   "@libraryMokuroDescription": {
     "description": "Description of Mokuro manga imports."
   },
-  "libraryMokuroFormatDescription": "The .mokuro file is generated by the mokuro tool, which runs OCR on manga pages to extract Japanese text.",
+  "libraryMokuroFormatDescription": ".mokuro文件由mokuro工具生成，该工具对漫画页面进行OCR以提取日文文本。",
   "@libraryMokuroFormatDescription": {
     "description": "Description of the Mokuro format."
   },
-  "libraryLearnHowToCreateMokuroFiles": "Learn how to create .mokuro files",
+  "libraryLearnHowToCreateMokuroFiles": "了解如何创建.mokuro文件",
   "@libraryLearnHowToCreateMokuroFiles": {
     "description": "Button label to learn about Mokuro file creation."
   },
-  "librarySortBy": "Sort by",
+  "librarySortBy": "排序方式",
   "@librarySortBy": {
     "description": "Title for the library sort picker."
   },
-  "librarySortDateImported": "Date imported",
+  "librarySortDateImported": "导入日期",
   "@librarySortDateImported": {
     "description": "Sort label for imported date."
   },
-  "librarySortRecentlyRead": "Recently read",
+  "librarySortRecentlyRead": "最近阅读",
   "@librarySortRecentlyRead": {
     "description": "Sort label for recently read books."
   },
-  "librarySortAlphabetical": "Alphabetical",
+  "librarySortAlphabetical": "按字母顺序",
   "@librarySortAlphabetical": {
     "description": "Sort label for alphabetical ordering."
   },
-  "libraryImportTitle": "Import",
+  "libraryImportTitle": "导入",
   "@libraryImportTitle": {
     "description": "Title for the import picker."
   },
-  "libraryImportEpubSubtitle": "Import an EPUB file",
+  "libraryImportEpubSubtitle": "导入EPUB文件",
   "@libraryImportEpubSubtitle": {
     "description": "Subtitle describing EPUB import."
   },
-  "libraryImportMangaSubtitle": "Choose a CBZ archive or Mokuro folder",
+  "libraryImportMangaSubtitle": "选择CBZ压缩包或Mokuro文件夹",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."
   },
-  "libraryImportMangaTitle": "Import Manga",
+  "libraryImportMangaTitle": "导入漫画",
   "@libraryImportMangaTitle": {
     "description": "Title for the manga import type picker."
   },
-  "libraryImportMangaDescription": "Choose whether you want to import a CBZ archive or a Mokuro-exported folder.",
+  "libraryImportMangaDescription": "请选择要导入CBZ压缩包还是Mokuro导出的文件夹。",
   "@libraryImportMangaDescription": {
     "description": "Description for the manga import type picker."
   },
-  "libraryImportMokuroFolder": "Mokuro folder",
+  "libraryImportMokuroFolder": "Mokuro 文件夹",
   "@libraryImportMokuroFolder": {
     "description": "Title for the Mokuro folder import option."
   },
-  "libraryImportMokuroFolderSubtitle": "Select the folder that contains a .mokuro or .html file alongside the images folder.",
+  "libraryImportMokuroFolderSubtitle": "请选择包含 .mokuro 或 .html 文件及图片文件夹的文件夹。",
   "@libraryImportMokuroFolderSubtitle": {
     "description": "Subtitle for the Mokuro folder import option."
   },
-  "libraryWhatIsMokuro": "What is Mokuro?",
+  "libraryWhatIsMokuro": "什么是 Mokuro？",
   "@libraryWhatIsMokuro": {
     "description": "Button label to learn what Mokuro is."
   },
-  "libraryImportCbzArchive": "CBZ archive",
+  "libraryImportCbzArchive": "CBZ 压缩包",
   "@libraryImportCbzArchive": {
     "description": "Title for the CBZ import option."
   },
-  "libraryImportCbzArchiveSubtitle": "Import a .cbz comic book archive",
+  "libraryImportCbzArchiveSubtitle": "导入 .cbz 漫画压缩包",
   "@libraryImportCbzArchiveSubtitle": {
     "description": "Subtitle for the CBZ import option."
   },
-  "libraryImportedWithoutOcrMessage": "Imported without OCR. To get text overlays, import external OCR output (e.g. .mokuro).",
+  "libraryImportedWithoutOcrMessage": "已导入，但未包含 OCR。要获得文本覆盖层，请导入外部 OCR 输出（如 .mokuro）。",
   "@libraryImportedWithoutOcrMessage": {
     "description": "Snackbar shown after importing manga without OCR data."
   },
-  "libraryCouldNotOpenMokuroProjectPage": "Could not open the Mokuro project page.",
+  "libraryCouldNotOpenMokuroProjectPage": "无法打开 Mokuro 项目页面。",
   "@libraryCouldNotOpenMokuroProjectPage": {
     "description": "Snackbar shown when the Mokuro project link cannot be opened."
   },
-  "libraryNoMangaManifestFound": "No .mokuro or .html files found in the selected folder.",
+  "libraryNoMangaManifestFound": "在选定的文件夹中未找到 .mokuro 或 .html 文件。",
   "@libraryNoMangaManifestFound": {
     "description": "Error shown when no supported manga manifest file is found."
   },
-  "librarySelectMangaFolder": "Select manga folder",
+  "librarySelectMangaFolder": "选择漫画文件夹",
   "@librarySelectMangaFolder": {
     "description": "Native dialog title for picking a manga folder."
   },
-  "librarySelectedFolder": "Selected folder",
+  "librarySelectedFolder": "已选择文件夹",
   "@librarySelectedFolder": {
     "description": "Fallback label for a selected folder."
   },
-  "libraryMangaFilesFound": "{count, plural, one {# manga file found} other {# manga files found}}",
+  "libraryMangaFilesFound": "{count, plural, one {找到#个漫画文件} other {找到#个漫画文件}}",
   "@libraryMangaFilesFound": {
     "description": "Subtitle showing how many manga manifest files were found.",
     "placeholders": {
@@ -259,55 +259,55 @@
       }
     }
   },
-  "dictionarySearchHint": "Search in kanji, kana, or romaji...",
+  "dictionarySearchHint": "可用汉字、假名或罗马音搜索...",
   "@dictionarySearchHint": {
     "description": "Placeholder text for the dictionary search field."
   },
-  "dictionaryNoDictionariesTitle": "No dictionaries imported",
+  "dictionaryNoDictionariesTitle": "尚未导入词典",
   "@dictionaryNoDictionariesTitle": {
     "description": "Title shown when no dictionaries have been imported."
   },
-  "dictionaryNoDictionariesSubtitle": "Install the starter pack or import your own Yomitan dictionaries to start searching.",
+  "dictionaryNoDictionariesSubtitle": "安装入门词包或导入你自己的 Yomitan 词典后即可开始搜索。",
   "@dictionaryNoDictionariesSubtitle": {
     "description": "Description shown when no dictionaries have been imported."
   },
-  "dictionaryRecommendedStarterPack": "Recommended starter pack",
+  "dictionaryRecommendedStarterPack": "推荐入门词包",
   "@dictionaryRecommendedStarterPack": {
     "description": "Button label for the recommended dictionary starter pack."
   },
-  "dictionaryNoEnabledTitle": "Your dictionaries are turned off",
+  "dictionaryNoEnabledTitle": "你的词典已关闭",
   "@dictionaryNoEnabledTitle": {
     "description": "Title shown when all dictionaries are disabled."
   },
-  "dictionaryNoEnabledSubtitle": "Enable at least one dictionary to make lookups work, or install the recommended starter pack.",
+  "dictionaryNoEnabledSubtitle": "至少启用一个词典以完成查词，或安装推荐入门词包。",
   "@dictionaryNoEnabledSubtitle": {
     "description": "Description shown when all dictionaries are disabled."
   },
-  "dictionaryEnableDictionaries": "Enable dictionaries",
+  "dictionaryEnableDictionaries": "启用词典",
   "@dictionaryEnableDictionaries": {
     "description": "Button label to enable dictionaries."
   },
-  "dictionaryStarterPack": "Starter pack",
+  "dictionaryStarterPack": "入门词包",
   "@dictionaryStarterPack": {
     "description": "Button label for the starter pack."
   },
-  "dictionaryNoResultsFound": "No results found.",
+  "dictionaryNoResultsFound": "未找到结果。",
   "@dictionaryNoResultsFound": {
     "description": "Message shown when a dictionary search returns no matches."
   },
-  "dictionarySearchForAWord": "Search for a word",
+  "dictionarySearchForAWord": "查找单词",
   "@dictionarySearchForAWord": {
     "description": "Title shown in the empty dictionary search state."
   },
-  "dictionarySearchForAWordSubtitle": "Type in kanji, hiragana, katakana, or romaji",
+  "dictionarySearchForAWordSubtitle": "可输入汉字、平假名、片假名或罗马音",
   "@dictionarySearchForAWordSubtitle": {
     "description": "Description shown in the empty dictionary search state."
   },
-  "dictionaryRecent": "Recent",
+  "dictionaryRecent": "最近",
   "@dictionaryRecent": {
     "description": "Heading for recent dictionary searches."
   },
-  "dictionarySavedWord": "Saved \"{expression}\"",
+  "dictionarySavedWord": "已保存“{expression}”",
   "@dictionarySavedWord": {
     "description": "Snackbar shown after saving a word to vocabulary.",
     "placeholders": {
@@ -316,11 +316,11 @@
       }
     }
   },
-  "dictionaryWordAlreadyExistsInVocab": "Word already exists in vocab list",
+  "dictionaryWordAlreadyExistsInVocab": "单词已存在于词汇列表",
   "@dictionaryWordAlreadyExistsInVocab": {
     "description": "Snackbar shown when a word is already saved in vocabulary."
   },
-  "dictionaryCopiedWord": "Copied \"{expression}\"",
+  "dictionaryCopiedWord": "已复制“{expression}”",
   "@dictionaryCopiedWord": {
     "description": "Snackbar shown after copying a word.",
     "placeholders": {
@@ -329,11 +329,11 @@
       }
     }
   },
-  "dictionaryWordAlreadyExistsInAnki": "Word already exists in default deck",
+  "dictionaryWordAlreadyExistsInAnki": "单词已存在于默认牌组",
   "@dictionaryWordAlreadyExistsInAnki": {
     "description": "Snackbar shown when a word already exists in Anki."
   },
-  "dictionaryAddedToAnki": "Added \"{expression}\" to Anki",
+  "dictionaryAddedToAnki": "已将“{expression}”添加到Anki",
   "@dictionaryAddedToAnki": {
     "description": "Snackbar shown after adding a word to Anki.",
     "placeholders": {
@@ -342,43 +342,43 @@
       }
     }
   },
-  "dictionaryCopyTooltip": "Copy",
+  "dictionaryCopyTooltip": "复制",
   "@dictionaryCopyTooltip": {
     "description": "Tooltip for copying a dictionary expression."
   },
-  "dictionaryAlreadyInAnkiTooltip": "Already in default Anki deck. Long press to add anyway",
+  "dictionaryAlreadyInAnkiTooltip": "已在默认Anki牌组。长按可强制添加",
   "@dictionaryAlreadyInAnkiTooltip": {
     "description": "Tooltip shown when the word already exists in Anki."
   },
-  "dictionaryCheckingAnkiTooltip": "Checking default Anki deck",
+  "dictionaryCheckingAnkiTooltip": "正在检查默认Anki牌组",
   "@dictionaryCheckingAnkiTooltip": {
     "description": "Tooltip shown while checking for an existing Anki note."
   },
-  "dictionarySendToAnkiTooltip": "Send to AnkiDroid",
+  "dictionarySendToAnkiTooltip": "发送到AnkiDroid",
   "@dictionarySendToAnkiTooltip": {
     "description": "Tooltip for sending a word to AnkiDroid."
   },
-  "dictionaryAlreadyInVocabTooltip": "Already in vocab list",
+  "dictionaryAlreadyInVocabTooltip": "已在单词本",
   "@dictionaryAlreadyInVocabTooltip": {
     "description": "Tooltip shown when a word is already saved to vocabulary."
   },
-  "dictionarySaveToVocabularyTooltip": "Save to Vocabulary",
+  "dictionarySaveToVocabularyTooltip": "保存到单词本",
   "@dictionarySaveToVocabularyTooltip": {
     "description": "Tooltip for saving a word to vocabulary."
   },
-  "dictionaryVeryCommon": "Very Common",
+  "dictionaryVeryCommon": "非常常见",
   "@dictionaryVeryCommon": {
     "description": "Badge label for very common words."
   },
-  "dictionaryOnyomiLabel": "Onyomi: ",
+  "dictionaryOnyomiLabel": "音读：",
   "@dictionaryOnyomiLabel": {
     "description": "Label for onyomi readings."
   },
-  "dictionaryKunyomiLabel": "Kunyomi: ",
+  "dictionaryKunyomiLabel": "训读：",
   "@dictionaryKunyomiLabel": {
     "description": "Label for kunyomi readings."
   },
-  "dictionaryKanjiStrokeCount": "{count, plural, one {# stroke} other {# strokes}}",
+  "dictionaryKanjiStrokeCount": "{count, plural, one {#画} other {#画}}",
   "@dictionaryKanjiStrokeCount": {
     "description": "Label showing how many strokes are in the current kanji stroke order diagram.",
     "placeholders": {
@@ -387,27 +387,27 @@
       }
     }
   },
-  "dictionaryAnimateStrokeOrderTooltip": "Animate stroke order",
+  "dictionaryAnimateStrokeOrderTooltip": "演示笔顺",
   "@dictionaryAnimateStrokeOrderTooltip": {
     "description": "Tooltip for replaying the kanji stroke order animation."
   },
-  "vocabularySearchSavedWordsHint": "Search saved words",
+  "vocabularySearchSavedWordsHint": "搜索已保存单词",
   "@vocabularySearchSavedWordsHint": {
     "description": "Placeholder text for searching saved vocabulary."
   },
-  "vocabularyExportCsvTooltip": "Export CSV",
+  "vocabularyExportCsvTooltip": "导出CSV",
   "@vocabularyExportCsvTooltip": {
     "description": "Tooltip for exporting vocabulary as CSV."
   },
-  "vocabularyEmptyTitle": "No saved words yet",
+  "vocabularyEmptyTitle": "还没有已保存的单词",
   "@vocabularyEmptyTitle": {
     "description": "Title shown when there are no saved vocabulary entries."
   },
-  "vocabularyEmptySubtitle": "Save words from dictionary searches or while reading, and they will show up here with context.",
+  "vocabularyEmptySubtitle": "通过词典查询或阅读时保存单词，它们会带有上下文显示在这里。",
   "@vocabularyEmptySubtitle": {
     "description": "Description shown when there are no saved vocabulary entries."
   },
-  "vocabularyNoMatches": "No matches for \"{query}\"",
+  "vocabularyNoMatches": "未找到与“{query}”匹配的内容",
   "@vocabularyNoMatches": {
     "description": "Title shown when no saved vocabulary matches the search query.",
     "placeholders": {
@@ -416,11 +416,11 @@
       }
     }
   },
-  "vocabularyNoMatchesSubtitle": "Try the expression, reading, or part of a definition.",
+  "vocabularyNoMatchesSubtitle": "请尝试表达、读音或释义片段。",
   "@vocabularyNoMatchesSubtitle": {
     "description": "Description shown when no vocabulary items match the search query."
   },
-  "vocabularySelectedCount": "{count} selected",
+  "vocabularySelectedCount": "已选{count}个",
   "@vocabularySelectedCount": {
     "description": "App bar title showing how many vocabulary items are selected.",
     "placeholders": {
@@ -429,27 +429,27 @@
       }
     }
   },
-  "vocabularyDeselectAllTooltip": "Deselect all",
+  "vocabularyDeselectAllTooltip": "取消全选",
   "@vocabularyDeselectAllTooltip": {
     "description": "Tooltip for deselecting all vocabulary items."
   },
-  "vocabularySelectAllTooltip": "Select all",
+  "vocabularySelectAllTooltip": "全选",
   "@vocabularySelectAllTooltip": {
     "description": "Tooltip for selecting all vocabulary items."
   },
-  "vocabularyExportSelectedTooltip": "Export selected",
+  "vocabularyExportSelectedTooltip": "导出已选",
   "@vocabularyExportSelectedTooltip": {
     "description": "Tooltip for exporting selected vocabulary items."
   },
-  "vocabularyNoDefinition": "No definition",
+  "vocabularyNoDefinition": "暂无释义",
   "@vocabularyNoDefinition": {
     "description": "Fallback text when a saved word has no definition."
   },
-  "vocabularyContextLabel": "Context:",
+  "vocabularyContextLabel": "上下文：",
   "@vocabularyContextLabel": {
     "description": "Label for the saved sentence context."
   },
-  "vocabularyAddedOn": "Added: {date}",
+  "vocabularyAddedOn": "添加时间：{date}",
   "@vocabularyAddedOn": {
     "description": "Date label shown for a saved vocabulary entry.",
     "placeholders": {
@@ -458,7 +458,7 @@
       }
     }
   },
-  "vocabularyDeletedWord": "Deleted \"{expression}\"",
+  "vocabularyDeletedWord": "已删除“{expression}”",
   "@vocabularyDeletedWord": {
     "description": "Snackbar shown after deleting a vocabulary entry.",
     "placeholders": {
@@ -467,7 +467,7 @@
       }
     }
   },
-  "ocrPagesProgress": "{completed}/{total} pages",
+  "ocrPagesProgress": "{completed}/{total} 页",
   "@ocrPagesProgress": {
     "description": "Progress label for OCR pages completed.",
     "placeholders": {
@@ -479,7 +479,7 @@
       }
     }
   },
-  "ocrEtaSecondsRemaining": "~{seconds}s remaining",
+  "ocrEtaSecondsRemaining": "约剩余 {seconds} 秒",
   "@ocrEtaSecondsRemaining": {
     "description": "ETA label for OCR progress under one minute.",
     "placeholders": {
@@ -488,7 +488,7 @@
       }
     }
   },
-  "ocrEtaMinutesRemaining": "~{minutes} min remaining",
+  "ocrEtaMinutesRemaining": "约剩余 {minutes} 分钟",
   "@ocrEtaMinutesRemaining": {
     "description": "ETA label for OCR progress in minutes.",
     "placeholders": {
@@ -497,7 +497,7 @@
       }
     }
   },
-  "ocrEtaHoursMinutesRemaining": "~{hours}h {minutes}m remaining",
+  "ocrEtaHoursMinutesRemaining": "约剩余 {hours} 小时 {minutes} 分钟",
   "@ocrEtaHoursMinutesRemaining": {
     "description": "ETA label for OCR progress in hours and minutes.",
     "placeholders": {
@@ -509,103 +509,103 @@
       }
     }
   },
-  "ocrPaused": "OCR Paused",
+  "ocrPaused": "OCR 已暂停",
   "@ocrPaused": {
     "description": "Title shown when OCR work is paused."
   },
-  "ocrComplete": "OCR Complete",
+  "ocrComplete": "OCR 完成",
   "@ocrComplete": {
     "description": "Title shown when OCR work is complete."
   },
-  "ocrFailed": "OCR Failed",
+  "ocrFailed": "OCR 失败",
   "@ocrFailed": {
     "description": "Title shown when OCR work fails."
   },
-  "ocrTapForDetails": "Tap for details",
+  "ocrTapForDetails": "点击查看详情",
   "@ocrTapForDetails": {
     "description": "Prompt shown when OCR errors have details."
   },
-  "ocrCustomServerRequiredTitle": "Custom OCR Server Required",
+  "ocrCustomServerRequiredTitle": "需要自定义 OCR 服务器",
   "@ocrCustomServerRequiredTitle": {
     "description": "Dialog title shown when OCR requires a custom server."
   },
-  "ocrCustomServerRequiredBody": "Remote manga OCR now uses your own server. Open Settings and add a custom OCR server URL plus the matching shared key.",
+  "ocrCustomServerRequiredBody": "远程漫画 OCR 现在需要使用您自己的服务器。请在设置中添加自定义 OCR 服务器地址和匹配的共享密钥。",
   "@ocrCustomServerRequiredBody": {
     "description": "Dialog body shown when OCR requires a custom server."
   },
-  "ocrCustomServerKeyRequiredTitle": "Custom Server Setup Required",
+  "ocrCustomServerKeyRequiredTitle": "需要自定义服务器设置",
   "@ocrCustomServerKeyRequiredTitle": {
     "description": "Dialog title shown when a custom OCR server key is missing."
   },
-  "ocrCustomServerKeyRequiredBody": "Custom OCR servers require a shared key. Open Custom OCR Server settings and enter the same AUTH_API_KEY value configured on your server.",
+  "ocrCustomServerKeyRequiredBody": "自定义 OCR 服务器需要共享密钥。请在自定义 OCR 服务器设置中输入与您的服务器一致的 AUTH_API_KEY。",
   "@ocrCustomServerKeyRequiredBody": {
     "description": "Dialog body shown when a custom OCR server key is missing."
   },
-  "proTitle": "Pro",
+  "proTitle": "专业版",
   "@proTitle": {
     "description": "Title for the Pro upgrade screen."
   },
-  "proPurchaseConfirmed": "Your purchase has been confirmed!",
+  "proPurchaseConfirmed": "您的购买已确认！",
   "@proPurchaseConfirmed": {
     "description": "Snackbar shown after a purchase confirmation is received."
   },
-  "proUnlockOnceTitle": "Unlock Pro once",
+  "proUnlockOnceTitle": "一次性解锁专业版",
   "@proUnlockOnceTitle": {
     "description": "Heading for the Pro purchase card."
   },
-  "proStatusUnlocked": "Unlocked",
+  "proStatusUnlocked": "已解锁",
   "@proStatusUnlocked": {
     "description": "Chip label when Pro is unlocked."
   },
-  "proStatusLocked": "Locked",
+  "proStatusLocked": "未解锁",
   "@proStatusLocked": {
     "description": "Chip label when Pro is locked."
   },
-  "proUnlockDescription": "One-time purchase for reader power features.",
+  "proUnlockDescription": "一次性购买，解锁阅读增强功能。",
   "@proUnlockDescription": {
     "description": "Description of the Pro purchase."
   },
-  "proRestorePurchase": "Restore Purchase",
+  "proRestorePurchase": "恢复购买",
   "@proRestorePurchase": {
     "description": "Button label to restore a Pro purchase."
   },
-  "proFeatureAutoCropTitle": "Auto-Crop",
+  "proFeatureAutoCropTitle": "自动裁边",
   "@proFeatureAutoCropTitle": {
     "description": "Title of the auto-crop Pro feature."
   },
-  "proFeatureAutoCropDescription": "Trim empty manga page margins after a one-time setup per book.",
+  "proFeatureAutoCropDescription": "每本书设置一次后，自动裁剪漫画页面的空白边缘。",
   "@proFeatureAutoCropDescription": {
     "description": "Description of the auto-crop Pro feature."
   },
-  "proFeatureHighlightsTitle": "Book Highlights",
+  "proFeatureHighlightsTitle": "书籍高亮",
   "@proFeatureHighlightsTitle": {
     "description": "Title of the book highlights Pro feature."
   },
-  "proFeatureHighlightsDescription": "Save and review highlighted passages while reading EPUB books.",
+  "proFeatureHighlightsDescription": "在阅读 EPUB 书籍时保存并回顾高亮内容。",
   "@proFeatureHighlightsDescription": {
     "description": "Description of the book highlights Pro feature."
   },
-  "proFeatureCustomOcrTitle": "Custom OCR Server",
+  "proFeatureCustomOcrTitle": "自定义 OCR 服务器",
   "@proFeatureCustomOcrTitle": {
     "description": "Title of the custom OCR server Pro feature."
   },
-  "proFeatureCustomOcrDescription": "Run remote manga OCR with your own server and shared key.",
+  "proFeatureCustomOcrDescription": "使用你自己的服务器和共享密钥进行远程漫画 OCR。",
   "@proFeatureCustomOcrDescription": {
     "description": "Description of the custom OCR server Pro feature."
   },
-  "proServerRepo": "Server Repo",
+  "proServerRepo": "服务器仓库",
   "@proServerRepo": {
     "description": "Button label linking to the OCR server repository."
   },
-  "proAlreadyUnlocked": "Already Unlocked",
+  "proAlreadyUnlocked": "已解锁",
   "@proAlreadyUnlocked": {
     "description": "Button label when Pro is already unlocked."
   },
-  "proUnlock": "Unlock Pro",
+  "proUnlock": "解锁 Pro 版",
   "@proUnlock": {
     "description": "Button label to unlock Pro."
   },
-  "proUnlockWithPrice": "Unlock Pro {price}",
+  "proUnlockWithPrice": "解锁 Pro 版 {price}",
   "@proUnlockWithPrice": {
     "description": "Button label to unlock Pro with the price included.",
     "placeholders": {
@@ -614,43 +614,43 @@
       }
     }
   },
-  "downloadsTitle": "Downloads",
+  "downloadsTitle": "下载",
   "@downloadsTitle": {
     "description": "Title for the downloads screen."
   },
-  "downloadsRecommendedStarterPackTitle": "Recommended starter pack",
+  "downloadsRecommendedStarterPackTitle": "推荐入门包",
   "@downloadsRecommendedStarterPackTitle": {
     "description": "Heading for the recommended dictionary starter pack."
   },
-  "downloadsRecommendedStarterPackSubtitle": "Install JMdict English and word frequency data together for the fastest setup.",
+  "downloadsRecommendedStarterPackSubtitle": "一起安装 JMdict 英文词典和词频数据，实现最快速设置。",
   "@downloadsRecommendedStarterPackSubtitle": {
     "description": "Description for the recommended starter pack."
   },
-  "downloadsStarterPackJmdict": "JMdict English",
+  "downloadsStarterPackJmdict": "JMdict 英文版",
   "@downloadsStarterPackJmdict": {
     "description": "Starter pack row label for JMdict English."
   },
-  "downloadsStarterPackWordFrequency": "Word Frequency",
+  "downloadsStarterPackWordFrequency": "词频",
   "@downloadsStarterPackWordFrequency": {
     "description": "Starter pack row label for word frequency data."
   },
-  "downloadsInstallStarterPack": "Install Starter Pack",
+  "downloadsInstallStarterPack": "安装入门包",
   "@downloadsInstallStarterPack": {
     "description": "Button label to install the starter pack."
   },
-  "downloadsSectionDictionaries": "Dictionaries",
+  "downloadsSectionDictionaries": "词典",
   "@downloadsSectionDictionaries": {
     "description": "Section header for downloadable dictionaries."
   },
-  "downloadsSectionAssets": "Assets",
+  "downloadsSectionAssets": "资源",
   "@downloadsSectionAssets": {
     "description": "Section header for downloadable assets."
   },
-  "downloadsFetchingLatestRelease": "Fetching latest release...",
+  "downloadsFetchingLatestRelease": "正在获取最新版本…",
   "@downloadsFetchingLatestRelease": {
     "description": "Progress message shown while fetching the latest downloadable release."
   },
-  "downloadsDownloadingPercent": "Downloading... {percent}%",
+  "downloadsDownloadingPercent": "正在下载…{percent}%",
   "@downloadsDownloadingPercent": {
     "description": "Progress message shown while downloading data.",
     "placeholders": {
@@ -659,23 +659,23 @@
       }
     }
   },
-  "downloadsImporting": "Importing...",
+  "downloadsImporting": "正在导入…",
   "@downloadsImporting": {
     "description": "Progress message shown while importing downloaded data."
   },
-  "downloadsExtractingFiles": "Extracting files...",
+  "downloadsExtractingFiles": "正在解压文件…",
   "@downloadsExtractingFiles": {
     "description": "Progress message shown while extracting downloaded files."
   },
-  "downloadsJpdbAttribution": "Word frequency data from JPDB (jpdb.io), distributed by Kuuuube.",
+  "downloadsJpdbAttribution": "词频数据来自 JPDB（jpdb.io），由 Kuuuube 分发。",
   "@downloadsJpdbAttribution": {
     "description": "Attribution text for JPDB frequency data."
   },
-  "downloadsKanjiStrokeOrderTitle": "Kanji Stroke Order",
+  "downloadsKanjiStrokeOrderTitle": "汉字笔顺",
   "@downloadsKanjiStrokeOrderTitle": {
     "description": "Title for the KanjiVG download tile."
   },
-  "downloadsKanjiStrokeOrderDownloaded": "{count} stroke order files downloaded",
+  "downloadsKanjiStrokeOrderDownloaded": "已下载 {count} 个笔顺文件",
   "@downloadsKanjiStrokeOrderDownloaded": {
     "description": "Subtitle shown when KanjiVG data has been downloaded.",
     "placeholders": {
@@ -684,243 +684,243 @@
       }
     }
   },
-  "downloadsKanjiStrokeOrderDescription": "Download kanji stroke order data from KanjiVG",
+  "downloadsKanjiStrokeOrderDescription": "从 KanjiVG 下载汉字笔顺数据",
   "@downloadsKanjiStrokeOrderDescription": {
     "description": "Subtitle shown before KanjiVG data is downloaded."
   },
-  "downloadsDeleteKanjiDataTooltip": "Delete kanji data",
+  "downloadsDeleteKanjiDataTooltip": "删除汉字数据",
   "@downloadsDeleteKanjiDataTooltip": {
     "description": "Tooltip for deleting KanjiVG data."
   },
-  "downloadsDeleteKanjiDataTitle": "Delete Kanji Data",
+  "downloadsDeleteKanjiDataTitle": "删除汉字数据",
   "@downloadsDeleteKanjiDataTitle": {
     "description": "Dialog title for deleting KanjiVG data."
   },
-  "downloadsDeleteKanjiDataBody": "Delete all downloaded kanji stroke order files? You can re-download them later.",
+  "downloadsDeleteKanjiDataBody": "删除所有已下载的汉字笔顺文件？您可以稍后重新下载。",
   "@downloadsDeleteKanjiDataBody": {
     "description": "Dialog body for deleting KanjiVG data."
   },
-  "downloadsWordFrequencyDownloaded": "Frequency data downloaded",
+  "downloadsWordFrequencyDownloaded": "词频数据已下载",
   "@downloadsWordFrequencyDownloaded": {
     "description": "Subtitle shown when word frequency data has been downloaded."
   },
-  "downloadsWordFrequencyDescription": "Download word frequency data for search ranking",
+  "downloadsWordFrequencyDescription": "下载词频数据，用于搜索排名",
   "@downloadsWordFrequencyDescription": {
     "description": "Subtitle shown before word frequency data is downloaded."
   },
-  "downloadsDeleteFrequencyDataTooltip": "Delete frequency data",
+  "downloadsDeleteFrequencyDataTooltip": "删除词频数据",
   "@downloadsDeleteFrequencyDataTooltip": {
     "description": "Tooltip for deleting word frequency data."
   },
-  "downloadsDeleteFrequencyDataTitle": "Delete Frequency Data",
+  "downloadsDeleteFrequencyDataTitle": "删除词频数据",
   "@downloadsDeleteFrequencyDataTitle": {
     "description": "Dialog title for deleting word frequency data."
   },
-  "downloadsDeleteFrequencyDataBody": "Delete word frequency data? Search results will no longer be ranked by frequency. You can re-download it later.",
+  "downloadsDeleteFrequencyDataBody": "删除词频数据？搜索结果将不再按词频排序。您可以稍后重新下载。",
   "@downloadsDeleteFrequencyDataBody": {
     "description": "Dialog body for deleting word frequency data."
   },
-  "downloadsJmdictDownloaded": "Japanese-English dictionary downloaded",
+  "downloadsJmdictDownloaded": "日英词典已下载",
   "@downloadsJmdictDownloaded": {
     "description": "Subtitle shown when JMdict has been downloaded."
   },
-  "downloadsJmdictDescription": "Download Japanese-English dictionary",
+  "downloadsJmdictDescription": "下载日英词典",
   "@downloadsJmdictDescription": {
     "description": "Subtitle shown before JMdict has been downloaded."
   },
-  "downloadsDeleteJmdictTooltip": "Delete JMdict",
+  "downloadsDeleteJmdictTooltip": "删除 JMdict",
   "@downloadsDeleteJmdictTooltip": {
     "description": "Tooltip for deleting JMdict data."
   },
-  "downloadsChooseJmdictVariant": "Choose JMdict variant",
+  "downloadsChooseJmdictVariant": "选择 JMdict 版本",
   "@downloadsChooseJmdictVariant": {
     "description": "Title for the JMdict variant picker."
   },
-  "downloadsJmdictStandardSubtitle": "Standard dictionary (~15 MB)",
+  "downloadsJmdictStandardSubtitle": "标准词典（约 15 MB）",
   "@downloadsJmdictStandardSubtitle": {
     "description": "Subtitle for the standard JMdict variant."
   },
-  "downloadsJmdictExamplesTitle": "JMdict English with Examples",
+  "downloadsJmdictExamplesTitle": "JMdict 英文带例句",
   "@downloadsJmdictExamplesTitle": {
     "description": "Title for the JMdict variant with example sentences."
   },
-  "downloadsJmdictExamplesSubtitle": "Includes example sentences (~18 MB)",
+  "downloadsJmdictExamplesSubtitle": "包含例句（约 18 MB）",
   "@downloadsJmdictExamplesSubtitle": {
     "description": "Subtitle for the JMdict variant with example sentences."
   },
-  "downloadsDeleteJmdictTitle": "Delete JMdict",
+  "downloadsDeleteJmdictTitle": "删除 JMdict",
   "@downloadsDeleteJmdictTitle": {
     "description": "Dialog title for deleting JMdict data."
   },
-  "downloadsDeleteJmdictBody": "Delete JMdict and all its entries? You can re-download it later.",
+  "downloadsDeleteJmdictBody": "删除 JMdict 及其所有词条？您可以稍后重新下载。",
   "@downloadsDeleteJmdictBody": {
     "description": "Dialog body for deleting JMdict data."
   },
-  "downloadsKanjidicDownloaded": "Kanji dictionary downloaded",
+  "downloadsKanjidicDownloaded": "汉字字典已下载",
   "@downloadsKanjidicDownloaded": {
     "description": "Subtitle shown when KANJIDIC has been downloaded."
   },
-  "downloadsKanjidicDescription": "Download kanji dictionary",
+  "downloadsKanjidicDescription": "下载汉字字典",
   "@downloadsKanjidicDescription": {
     "description": "Subtitle shown before KANJIDIC has been downloaded."
   },
-  "downloadsDeleteKanjidicTooltip": "Delete KANJIDIC",
+  "downloadsDeleteKanjidicTooltip": "删除 KANJIDIC",
   "@downloadsDeleteKanjidicTooltip": {
     "description": "Tooltip for deleting KANJIDIC data."
   },
-  "downloadsDeleteKanjidicTitle": "Delete KANJIDIC",
+  "downloadsDeleteKanjidicTitle": "删除 KANJIDIC",
   "@downloadsDeleteKanjidicTitle": {
     "description": "Dialog title for deleting KANJIDIC data."
   },
-  "downloadsDeleteKanjidicBody": "Delete KANJIDIC and all its entries? You can re-download it later.",
+  "downloadsDeleteKanjidicBody": "删除 KANJIDIC 及其所有词条？您可以稍后重新下载。",
   "@downloadsDeleteKanjidicBody": {
     "description": "Dialog body for deleting KANJIDIC data."
   },
-  "commonClear": "Clear",
+  "commonClear": "清除",
   "@commonClear": {
     "description": "Generic clear action."
   },
-  "commonSubmit": "Submit",
+  "commonSubmit": "提交",
   "@commonSubmit": {
     "description": "Generic submit action."
   },
-  "commonLoading": "Loading...",
+  "commonLoading": "加载中...",
   "@commonLoading": {
     "description": "Generic loading label."
   },
-  "commonError": "Error",
+  "commonError": "错误",
   "@commonError": {
     "description": "Generic error label."
   },
-  "commonRestore": "Restore",
+  "commonRestore": "恢复",
   "@commonRestore": {
     "description": "Generic restore action."
   },
-  "settingsTitle": "Settings",
+  "settingsTitle": "设置",
   "@settingsTitle": {
     "description": "Title for the settings screen."
   },
-  "settingsSectionGeneral": "General",
+  "settingsSectionGeneral": "通用",
   "@settingsSectionGeneral": {
     "description": "Settings section header for general preferences."
   },
-  "settingsSectionAppearance": "Appearance",
+  "settingsSectionAppearance": "外观",
   "@settingsSectionAppearance": {
     "description": "Settings section header for appearance preferences."
   },
-  "settingsSectionReadingDefaults": "Reading Defaults",
+  "settingsSectionReadingDefaults": "阅读默认",
   "@settingsSectionReadingDefaults": {
     "description": "Settings section header for default reader settings."
   },
-  "settingsSectionDictionary": "Dictionary",
+  "settingsSectionDictionary": "词典",
   "@settingsSectionDictionary": {
     "description": "Settings section header for dictionary settings."
   },
-  "settingsSectionVocabularyExport": "Vocabulary & Export",
+  "settingsSectionVocabularyExport": "词汇与导出",
   "@settingsSectionVocabularyExport": {
     "description": "Settings section header for vocabulary export settings."
   },
-  "settingsSectionPro": "Pro",
+  "settingsSectionPro": "专业版",
   "@settingsSectionPro": {
     "description": "Settings section header for Pro settings."
   },
-  "settingsSectionMangaAutoCrop": "Manga Auto-Crop",
+  "settingsSectionMangaAutoCrop": "漫画自动裁边",
   "@settingsSectionMangaAutoCrop": {
     "description": "Settings section header for manga auto-crop preferences."
   },
-  "settingsSectionMangaOcr": "Manga OCR",
+  "settingsSectionMangaOcr": "漫画OCR",
   "@settingsSectionMangaOcr": {
     "description": "Settings section header for manga OCR preferences."
   },
-  "settingsSectionDownloads": "Downloads",
+  "settingsSectionDownloads": "下载",
   "@settingsSectionDownloads": {
     "description": "Settings section header for downloads."
   },
-  "settingsSectionBackupRestore": "Backup & Restore",
+  "settingsSectionBackupRestore": "备份与恢复",
   "@settingsSectionBackupRestore": {
     "description": "Settings section header for backup settings."
   },
-  "settingsSectionAboutFeedback": "About & Feedback",
+  "settingsSectionAboutFeedback": "关于与反馈",
   "@settingsSectionAboutFeedback": {
     "description": "Settings section header for about and feedback links."
   },
-  "settingsStartupScreenTitle": "Startup Screen",
+  "settingsStartupScreenTitle": "启动界面",
   "@settingsStartupScreenTitle": {
     "description": "Title for the startup screen setting."
   },
-  "settingsStartupScreenLibrary": "Library",
+  "settingsStartupScreenLibrary": "书库",
   "@settingsStartupScreenLibrary": {
     "description": "Label for the library startup screen option."
   },
-  "settingsStartupScreenDictionary": "Dictionary",
+  "settingsStartupScreenDictionary": "词典",
   "@settingsStartupScreenDictionary": {
     "description": "Label for the dictionary startup screen option."
   },
-  "settingsStartupScreenLastRead": "Last Read Book",
+  "settingsStartupScreenLastRead": "上次阅读",
   "@settingsStartupScreenLastRead": {
     "description": "Label for the last-read-book startup screen option."
   },
-  "settingsThemeTitle": "Theme",
+  "settingsThemeTitle": "主题",
   "@settingsThemeTitle": {
     "description": "Title for the app theme setting."
   },
-  "settingsThemeLight": "Light",
+  "settingsThemeLight": "浅色",
   "@settingsThemeLight": {
     "description": "Label for the light theme option."
   },
-  "settingsThemeDark": "Dark",
+  "settingsThemeDark": "深色",
   "@settingsThemeDark": {
     "description": "Label for the dark theme option."
   },
-  "settingsThemeSystemDefault": "System default",
+  "settingsThemeSystemDefault": "系统默认",
   "@settingsThemeSystemDefault": {
     "description": "Label for the system theme option."
   },
-  "settingsColorThemeTitle": "Color Theme",
+  "settingsColorThemeTitle": "配色主题",
   "@settingsColorThemeTitle": {
     "description": "Title for the color theme setting."
   },
-  "settingsColorThemeMekuruRed": "Mekuru Red",
+  "settingsColorThemeMekuruRed": "Mekuru红",
   "@settingsColorThemeMekuruRed": {
     "description": "Color theme label for Mekuru Red."
   },
-  "settingsColorThemeIndigo": "Indigo",
+  "settingsColorThemeIndigo": "靛蓝",
   "@settingsColorThemeIndigo": {
     "description": "Color theme label for Indigo."
   },
-  "settingsColorThemeTeal": "Teal",
+  "settingsColorThemeTeal": "青色",
   "@settingsColorThemeTeal": {
     "description": "Color theme label for Teal."
   },
-  "settingsColorThemeDeepPurple": "Deep Purple",
+  "settingsColorThemeDeepPurple": "深紫色",
   "@settingsColorThemeDeepPurple": {
     "description": "Color theme label for Deep Purple."
   },
-  "settingsColorThemeBlue": "Blue",
+  "settingsColorThemeBlue": "蓝色",
   "@settingsColorThemeBlue": {
     "description": "Color theme label for Blue."
   },
-  "settingsColorThemeGreen": "Green",
+  "settingsColorThemeGreen": "绿色",
   "@settingsColorThemeGreen": {
     "description": "Color theme label for Green."
   },
-  "settingsColorThemeOrange": "Orange",
+  "settingsColorThemeOrange": "橙色",
   "@settingsColorThemeOrange": {
     "description": "Color theme label for Orange."
   },
-  "settingsColorThemePink": "Pink",
+  "settingsColorThemePink": "粉色",
   "@settingsColorThemePink": {
     "description": "Color theme label for Pink."
   },
-  "settingsColorThemeBlueGrey": "Blue Grey",
+  "settingsColorThemeBlueGrey": "蓝灰色",
   "@settingsColorThemeBlueGrey": {
     "description": "Color theme label for Blue Grey."
   },
-  "settingsFontSizeTitle": "Font Size",
+  "settingsFontSizeTitle": "字体大小",
   "@settingsFontSizeTitle": {
     "description": "Title for the reader font size setting."
   },
-  "settingsPointsValue": "{points} pt",
+  "settingsPointsValue": "{points} 磅",
   "@settingsPointsValue": {
     "description": "Value label showing a size in points.",
     "placeholders": {
@@ -929,35 +929,35 @@
       }
     }
   },
-  "settingsColorModeTitle": "Color Mode",
+  "settingsColorModeTitle": "色彩模式",
   "@settingsColorModeTitle": {
     "description": "Title for the reader color mode setting."
   },
-  "settingsColorModeNormal": "Normal",
+  "settingsColorModeNormal": "正常",
   "@settingsColorModeNormal": {
     "description": "Label for the normal reader color mode."
   },
-  "settingsColorModeSepia": "Sepia",
+  "settingsColorModeSepia": "仿古色",
   "@settingsColorModeSepia": {
     "description": "Label for the sepia reader color mode."
   },
-  "settingsColorModeDark": "Dark",
+  "settingsColorModeDark": "深色",
   "@settingsColorModeDark": {
     "description": "Label for the dark reader color mode."
   },
-  "settingsSepiaIntensityTitle": "Sepia Intensity",
+  "settingsSepiaIntensityTitle": "仿古色强度",
   "@settingsSepiaIntensityTitle": {
     "description": "Label for the sepia intensity slider."
   },
-  "settingsKeepScreenOnTitle": "Keep Screen On",
+  "settingsKeepScreenOnTitle": "保持屏幕常亮",
   "@settingsKeepScreenOnTitle": {
     "description": "Title for the keep-screen-on setting."
   },
-  "settingsKeepScreenOnSubtitle": "Prevent screen from sleeping while reading",
+  "settingsKeepScreenOnSubtitle": "阅读时防止屏幕休眠",
   "@settingsKeepScreenOnSubtitle": {
     "description": "Subtitle for the keep-screen-on setting."
   },
-  "settingsHorizontalMarginValue": "Horizontal Margin: {pixels}px",
+  "settingsHorizontalMarginValue": "左右边距：{pixels}px",
   "@settingsHorizontalMarginValue": {
     "description": "Label showing the horizontal reader margin.",
     "placeholders": {
@@ -966,7 +966,7 @@
       }
     }
   },
-  "settingsVerticalMarginValue": "Vertical Margin: {pixels}px",
+  "settingsVerticalMarginValue": "上下边距：{pixels}px",
   "@settingsVerticalMarginValue": {
     "description": "Label showing the vertical reader margin.",
     "placeholders": {
@@ -975,7 +975,7 @@
       }
     }
   },
-  "settingsSwipeSensitivityTitle": "Swipe Sensitivity",
+  "settingsSwipeSensitivityTitle": "滑动灵敏度",
   "@settingsSwipeSensitivityTitle": {
     "description": "Title for the swipe sensitivity setting."
   },
@@ -988,55 +988,55 @@
       }
     }
   },
-  "settingsSwipeSensitivityHint": "Lower = less finger movement needed to swipe",
+  "settingsSwipeSensitivityHint": "数值越低滑动所需手指移动越小",
   "@settingsSwipeSensitivityHint": {
     "description": "Help text for the swipe sensitivity setting."
   },
-  "settingsManageDictionariesSubtitle": "Import, reorder, enable/disable",
+  "settingsManageDictionariesSubtitle": "导入、排序、启用/禁用",
   "@settingsManageDictionariesSubtitle": {
     "description": "Subtitle for managing dictionaries."
   },
-  "settingsLookupFontSizeTitle": "Lookup Font Size",
+  "settingsLookupFontSizeTitle": "查词字体大小",
   "@settingsLookupFontSizeTitle": {
     "description": "Title for the lookup font size setting."
   },
-  "settingsFilterRomanLetterEntriesTitle": "Filter Roman Letter Entries",
+  "settingsFilterRomanLetterEntriesTitle": "过滤西文词条",
   "@settingsFilterRomanLetterEntriesTitle": {
     "description": "Title for the roman-letter dictionary filter setting."
   },
-  "settingsFilterRomanLetterEntriesSubtitle": "Hide entries using English letters in headword",
+  "settingsFilterRomanLetterEntriesSubtitle": "隐藏使用英文字符作为词头的词条",
   "@settingsFilterRomanLetterEntriesSubtitle": {
     "description": "Subtitle for the roman-letter dictionary filter setting."
   },
-  "settingsAutoFocusSearchTitle": "Auto-Focus Search",
+  "settingsAutoFocusSearchTitle": "自动聚焦搜索框",
   "@settingsAutoFocusSearchTitle": {
     "description": "Title for the auto-focus dictionary search setting."
   },
-  "settingsAutoFocusSearchSubtitle": "Open keyboard when dictionary tab is selected",
+  "settingsAutoFocusSearchSubtitle": "切换到词典页时自动打开键盘",
   "@settingsAutoFocusSearchSubtitle": {
     "description": "Subtitle for the auto-focus dictionary search setting."
   },
-  "settingsAnkiDroidIntegrationTitle": "AnkiDroid Integration",
+  "settingsAnkiDroidIntegrationTitle": "AnkiDroid 集成",
   "@settingsAnkiDroidIntegrationTitle": {
     "description": "Title for the AnkiDroid settings entry."
   },
-  "settingsAnkiDroidIntegrationSubtitle": "Configure note type, deck, and field mapping",
+  "settingsAnkiDroidIntegrationSubtitle": "配置笔记类型、牌组和字段映射",
   "@settingsAnkiDroidIntegrationSubtitle": {
     "description": "Subtitle for the AnkiDroid settings entry."
   },
-  "settingsProUnavailableSubtitle": "Pro services are temporarily unavailable.",
+  "settingsProUnavailableSubtitle": "专业版服务暂时不可用。",
   "@settingsProUnavailableSubtitle": {
     "description": "Subtitle shown when Pro services are unavailable."
   },
-  "settingsProSubtitle": "Unlock auto-crop, book highlights, and custom OCR",
+  "settingsProSubtitle": "解锁自动裁边、书籍高亮和自定义 OCR",
   "@settingsProSubtitle": {
     "description": "Subtitle describing the Pro upgrade."
   },
-  "settingsWhiteThresholdTitle": "White Threshold",
+  "settingsWhiteThresholdTitle": "白色阈值",
   "@settingsWhiteThresholdTitle": {
     "description": "Title for the manga auto-crop white threshold setting."
   },
-  "settingsWhiteThresholdSubtitle": "{threshold} (lower values ignore more near-white artifacts)",
+  "settingsWhiteThresholdSubtitle": "{threshold}（值越低，忽略更多近白杂质）",
   "@settingsWhiteThresholdSubtitle": {
     "description": "Subtitle for the manga auto-crop white threshold setting.",
     "placeholders": {
@@ -1045,19 +1045,19 @@
       }
     }
   },
-  "settingsCustomOcrServerTitle": "Custom OCR Server",
+  "settingsCustomOcrServerTitle": "自定义 OCR 服务器",
   "@settingsCustomOcrServerTitle": {
     "description": "Title for the custom OCR server setting and dialog."
   },
-  "settingsCustomOcrServerUnavailableSubtitle": "OCR services are temporarily unavailable.",
+  "settingsCustomOcrServerUnavailableSubtitle": "OCR 服务暂时不可用。",
   "@settingsCustomOcrServerUnavailableSubtitle": {
     "description": "Subtitle shown when OCR services are unavailable."
   },
-  "settingsCustomOcrServerNotConfigured": "Not configured. Add your own server URL and shared key.",
+  "settingsCustomOcrServerNotConfigured": "未配置。请添加您的服务器 URL 和共享密钥。",
   "@settingsCustomOcrServerNotConfigured": {
     "description": "Subtitle shown when a custom OCR server has not been configured."
   },
-  "settingsCustomOcrServerConfigured": "{url}\nUse the same shared key configured on your server.",
+  "settingsCustomOcrServerConfigured": "{url}\n请使用您服务器配置的相同共享密钥。",
   "@settingsCustomOcrServerConfigured": {
     "description": "Subtitle shown when a custom OCR server has been configured.",
     "placeholders": {
@@ -1066,7 +1066,7 @@
       }
     }
   },
-  "settingsCustomOcrServerUrlLabel": "Server URL",
+  "settingsCustomOcrServerUrlLabel": "服务器 URL",
   "@settingsCustomOcrServerUrlLabel": {
     "description": "Label for the custom OCR server URL field."
   },
@@ -1074,87 +1074,87 @@
   "@settingsCustomOcrServerUrlHint": {
     "description": "Hint for the custom OCR server URL field."
   },
-  "settingsCustomOcrServerLearnHow": "Learn how to run your own server",
+  "settingsCustomOcrServerLearnHow": "了解如何运行自有服务器",
   "@settingsCustomOcrServerLearnHow": {
     "description": "Button label linking to custom OCR server setup instructions."
   },
-  "settingsCustomOcrServerKeyLabel": "Custom shared key",
+  "settingsCustomOcrServerKeyLabel": "自定义共享密钥",
   "@settingsCustomOcrServerKeyLabel": {
     "description": "Label for the custom OCR shared key field."
   },
-  "settingsCustomOcrServerKeyHint": "Required AUTH_API_KEY",
+  "settingsCustomOcrServerKeyHint": "需要 AUTH_API_KEY",
   "@settingsCustomOcrServerKeyHint": {
     "description": "Hint for the custom OCR shared key field."
   },
-  "settingsCustomOcrServerDescription": "Enter the same shared AUTH_API_KEY used by your OCR server. Mekuru sends it as Authorization: Bearer <key> for remote manga OCR requests.",
+  "settingsCustomOcrServerDescription": "请填写与您的 OCR 服务器相同的 AUTH_API_KEY。Mekuru 会以 Authorization: Bearer <key> 的形式发送远程漫画 OCR 请求。",
   "@settingsCustomOcrServerDescription": {
     "description": "Description shown in the custom OCR server dialog."
   },
-  "settingsCustomOcrServerUrlRequired": "Enter your server URL.",
+  "settingsCustomOcrServerUrlRequired": "请输入服务器 URL。",
   "@settingsCustomOcrServerUrlRequired": {
     "description": "Validation error shown when the custom OCR server URL is empty."
   },
-  "settingsCustomOcrServerUrlInvalid": "Enter a full http:// or https:// server URL.",
+  "settingsCustomOcrServerUrlInvalid": "请输入完整的 http:// 或 https:// 服务器 URL。",
   "@settingsCustomOcrServerUrlInvalid": {
     "description": "Validation error shown when the custom OCR server URL is invalid."
   },
-  "settingsCustomOcrServerKeyRequired": "A shared key is required for custom servers.",
+  "settingsCustomOcrServerKeyRequired": "自定义服务器需要共享密钥。",
   "@settingsCustomOcrServerKeyRequired": {
     "description": "Validation error shown when the custom OCR server key is empty."
   },
-  "settingsDownloadsSubtitle": "Dictionaries, kanji data, and more",
+  "settingsDownloadsSubtitle": "词典、汉字数据等",
   "@settingsDownloadsSubtitle": {
     "description": "Subtitle for the downloads settings entry."
   },
-  "settingsBackupRestoreTitle": "Backup & Restore",
+  "settingsBackupRestoreTitle": "备份与恢复",
   "@settingsBackupRestoreTitle": {
     "description": "Title for the backup settings entry."
   },
-  "settingsBackupRestoreSubtitle": "Back up and restore your data",
+  "settingsBackupRestoreSubtitle": "备份和恢复您的数据",
   "@settingsBackupRestoreSubtitle": {
     "description": "Subtitle for the backup settings entry."
   },
-  "settingsSendFeedbackSubtitle": "Report a bug or suggest a feature",
+  "settingsSendFeedbackSubtitle": "报告错误或建议新功能",
   "@settingsSendFeedbackSubtitle": {
     "description": "Subtitle for the feedback settings entry."
   },
-  "settingsFeedbackThanks": "Thank you for your feedback!",
+  "settingsFeedbackThanks": "感谢您的反馈！",
   "@settingsFeedbackThanks": {
     "description": "Snackbar shown after feedback is submitted successfully."
   },
-  "settingsFeedbackFailed": "Failed to send feedback. Please try again.",
+  "settingsFeedbackFailed": "反馈发送失败，请重试。",
   "@settingsFeedbackFailed": {
     "description": "Snackbar shown when feedback submission fails."
   },
-  "settingsDocumentationTitle": "Documentation",
+  "settingsDocumentationTitle": "文档",
   "@settingsDocumentationTitle": {
     "description": "Title for the documentation settings entry."
   },
-  "settingsDocumentationSubtitle": "Guides and how-to articles",
+  "settingsDocumentationSubtitle": "指南和操作文章",
   "@settingsDocumentationSubtitle": {
     "description": "Subtitle for the documentation settings entry."
   },
-  "settingsAboutMekuruTitle": "About Mekuru",
+  "settingsAboutMekuruTitle": "关于Mekuru",
   "@settingsAboutMekuruTitle": {
     "description": "Title for the about screen settings entry."
   },
-  "settingsAboutMekuruSubtitle": "Version, licenses, and more",
+  "settingsAboutMekuruSubtitle": "版本、许可证等信息",
   "@settingsAboutMekuruSubtitle": {
     "description": "Subtitle for the about screen settings entry."
   },
-  "feedbackTitle": "Send Feedback",
+  "feedbackTitle": "发送反馈",
   "@feedbackTitle": {
     "description": "Title for the feedback screen."
   },
-  "feedbackNameLabel": "Name",
+  "feedbackNameLabel": "姓名",
   "@feedbackNameLabel": {
     "description": "Label for the feedback name field."
   },
-  "feedbackNameHint": "Your name",
+  "feedbackNameHint": "你的名字",
   "@feedbackNameHint": {
     "description": "Hint for the feedback name field."
   },
-  "feedbackEmailLabel": "Email",
+  "feedbackEmailLabel": "邮箱",
   "@feedbackEmailLabel": {
     "description": "Label for the feedback email field."
   },
@@ -1162,91 +1162,91 @@
   "@feedbackEmailHint": {
     "description": "Hint for the feedback email field."
   },
-  "feedbackMessageLabel": "Message",
+  "feedbackMessageLabel": "留言",
   "@feedbackMessageLabel": {
     "description": "Label for the feedback message field."
   },
-  "feedbackRequired": "(required)",
+  "feedbackRequired": "（必填）",
   "@feedbackRequired": {
     "description": "Label shown next to a required field."
   },
-  "feedbackMessageHint": "Describe your bug or feature request...",
+  "feedbackMessageHint": "请描述你的问题或功能建议...",
   "@feedbackMessageHint": {
     "description": "Hint for the feedback message field."
   },
-  "feedbackMessageRequiredError": "Please enter a message",
+  "feedbackMessageRequiredError": "请输入留言内容",
   "@feedbackMessageRequiredError": {
     "description": "Validation error shown when the feedback message is empty."
   },
-  "backupTitle": "Backup & Restore",
+  "backupTitle": "备份与恢复",
   "@backupTitle": {
     "description": "Title for the backup screen."
   },
-  "backupSectionBackup": "Backup",
+  "backupSectionBackup": "备份",
   "@backupSectionBackup": {
     "description": "Section header for backup actions."
   },
-  "backupCreateNowTitle": "Create Backup Now",
+  "backupCreateNowTitle": "立即创建备份",
   "@backupCreateNowTitle": {
     "description": "Title for the create-backup action."
   },
-  "backupCreateNowSubtitle": "Save all settings and reading data",
+  "backupCreateNowSubtitle": "保存所有设置和阅读数据",
   "@backupCreateNowSubtitle": {
     "description": "Subtitle for the create-backup action."
   },
-  "backupExportTitle": "Export Backup",
+  "backupExportTitle": "导出备份",
   "@backupExportTitle": {
     "description": "Title for the export-backup action."
   },
-  "backupExportSubtitle": "Save your latest backup to a file",
+  "backupExportSubtitle": "将最近的备份保存为文件",
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
-  "backupSaveFileDialogTitle": "Save Backup",
+  "backupSaveFileDialogTitle": "保存备份",
   "@backupSaveFileDialogTitle": {
     "description": "Native file picker title when exporting a backup."
   },
-  "backupSectionAutoBackup": "Auto-Backup",
+  "backupSectionAutoBackup": "自动备份",
   "@backupSectionAutoBackup": {
     "description": "Section header for auto-backup settings."
   },
-  "backupAutoBackupIntervalTitle": "Auto-Backup Interval",
+  "backupAutoBackupIntervalTitle": "自动备份间隔",
   "@backupAutoBackupIntervalTitle": {
     "description": "Title for the auto-backup interval setting."
   },
-  "backupIntervalOff": "Off",
+  "backupIntervalOff": "关闭",
   "@backupIntervalOff": {
     "description": "Label for turning auto-backup off."
   },
-  "backupIntervalDaily": "Daily",
+  "backupIntervalDaily": "每日",
   "@backupIntervalDaily": {
     "description": "Label for daily auto-backups."
   },
-  "backupIntervalWeekly": "Weekly",
+  "backupIntervalWeekly": "每周",
   "@backupIntervalWeekly": {
     "description": "Label for weekly auto-backups."
   },
-  "backupSectionRestore": "Restore",
+  "backupSectionRestore": "恢复",
   "@backupSectionRestore": {
     "description": "Section header for restore actions."
   },
-  "backupImportFileTitle": "Import Backup File",
+  "backupImportFileTitle": "导入备份文件",
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
   },
-  "backupImportFileSubtitle": "Restore from a .mekuru file",
+  "backupImportFileSubtitle": "从 .mekuru 文件恢复",
   "@backupImportFileSubtitle": {
     "description": "Subtitle for the import-backup action."
   },
-  "backupSectionHistory": "Backup History",
+  "backupSectionHistory": "备份历史",
   "@backupSectionHistory": {
     "description": "Section header for the backup history list."
   },
-  "backupNoBackupsYet": "No backups yet",
+  "backupNoBackupsYet": "暂无备份",
   "@backupNoBackupsYet": {
     "description": "Message shown when there are no backups."
   },
-  "backupErrorLoadingHistory": "Error loading backups: {details}",
+  "backupErrorLoadingHistory": "加载备份时出错：{details}",
   "@backupErrorLoadingHistory": {
     "description": "Message shown when backup history fails to load.",
     "placeholders": {
@@ -1255,11 +1255,11 @@
       }
     }
   },
-  "backupCreatedSuccess": "Backup created successfully",
+  "backupCreatedSuccess": "备份创建成功",
   "@backupCreatedSuccess": {
     "description": "Snackbar shown after a backup is created."
   },
-  "backupFailed": "Backup failed: {details}",
+  "backupFailed": "备份失败：{details}",
   "@backupFailed": {
     "description": "Snackbar shown when backup creation fails.",
     "placeholders": {
@@ -1268,15 +1268,15 @@
       }
     }
   },
-  "backupNoBackupsToExport": "No backups to export. Create one first.",
+  "backupNoBackupsToExport": "没有可导出的备份，请先创建。",
   "@backupNoBackupsToExport": {
     "description": "Snackbar shown when there are no backups to export."
   },
-  "backupExportedSuccess": "Backup exported successfully",
+  "backupExportedSuccess": "备份导出成功",
   "@backupExportedSuccess": {
     "description": "Snackbar shown after exporting a backup."
   },
-  "backupExportFailed": "Export failed: {details}",
+  "backupExportFailed": "导出失败：{details}",
   "@backupExportFailed": {
     "description": "Snackbar shown when exporting a backup fails.",
     "placeholders": {
@@ -1285,11 +1285,11 @@
       }
     }
   },
-  "backupInvalidFile": "Please select a .mekuru backup file.",
+  "backupInvalidFile": "请选择一个 .mekuru 备份文件。",
   "@backupInvalidFile": {
     "description": "Snackbar shown when the selected restore file has the wrong extension."
   },
-  "backupCouldNotOpenFile": "Could not open file: {details}",
+  "backupCouldNotOpenFile": "无法打开文件：{details}",
   "@backupCouldNotOpenFile": {
     "description": "Snackbar shown when the backup file picker fails.",
     "placeholders": {
@@ -1298,7 +1298,7 @@
       }
     }
   },
-  "backupRestoreFailed": "Restore failed: {details}",
+  "backupRestoreFailed": "恢复失败：{details}",
   "@backupRestoreFailed": {
     "description": "Snackbar shown when restoring a backup fails.",
     "placeholders": {
@@ -1307,7 +1307,7 @@
       }
     }
   },
-  "backupBooksUpdatedFromBackup": "{count, plural, one {# book updated from backup} other {# books updated from backup}}",
+  "backupBooksUpdatedFromBackup": "{count, plural, one {# 本书已通过备份更新} other {# 本书已通过备份更新}}",
   "@backupBooksUpdatedFromBackup": {
     "description": "Snackbar shown after applying conflict selections during restore.",
     "placeholders": {
@@ -1316,7 +1316,7 @@
       }
     }
   },
-  "backupApplyBookDataFailed": "Failed to apply book data: {details}",
+  "backupApplyBookDataFailed": "应用书籍数据失败：{details}",
   "@backupApplyBookDataFailed": {
     "description": "Snackbar shown when applying restored book data fails.",
     "placeholders": {
@@ -1325,15 +1325,15 @@
       }
     }
   },
-  "backupConflictDialogTitle": "Conflicting Books",
+  "backupConflictDialogTitle": "书籍冲突",
   "@backupConflictDialogTitle": {
     "description": "Title for the restore dialog that lists books with conflicting reading data."
   },
-  "backupConflictDialogBody": "The following books already have reading data. Select which to overwrite with backup data:",
+  "backupConflictDialogBody": "以下书籍已存在阅读数据。请选择要用备份数据覆盖的书籍：",
   "@backupConflictDialogBody": {
     "description": "Body text for the restore dialog that lists books with conflicting reading data."
   },
-  "backupConflictEntrySubtitle": "{bookType} - {progress}% in backup",
+  "backupConflictEntrySubtitle": "{bookType} - 备份进度 {progress}%",
   "@backupConflictEntrySubtitle": {
     "description": "Subtitle for a conflicting book in the restore dialog, showing the book type and backup progress.",
     "placeholders": {
@@ -1345,11 +1345,11 @@
       }
     }
   },
-  "backupConflictSkipAll": "Skip All",
+  "backupConflictSkipAll": "全部跳过",
   "@backupConflictSkipAll": {
     "description": "Button label to skip applying all conflicting backup entries."
   },
-  "backupConflictOverwriteSelected": "{count, plural, one {Overwrite #} other {Overwrite #}}",
+  "backupConflictOverwriteSelected": "{count, plural, one {覆盖 # 本} other {覆盖 # 本}}",
   "@backupConflictOverwriteSelected": {
     "description": "Button label to overwrite the selected conflicting backup entries.",
     "placeholders": {
@@ -1362,19 +1362,19 @@
   "@backupBookTypeEpub": {
     "description": "Book type label for EPUB items in backup conflict UI."
   },
-  "backupBookTypeManga": "Manga",
+  "backupBookTypeManga": "漫画",
   "@backupBookTypeManga": {
     "description": "Book type label for manga items in backup conflict UI."
   },
-  "backupRestoreSummarySettingsRestored": "Settings restored",
+  "backupRestoreSummarySettingsRestored": "设置已恢复",
   "@backupRestoreSummarySettingsRestored": {
     "description": "Part of the restore summary message when settings are restored."
   },
-  "backupRestoreSummarySettingsPartial": "Some settings could not be restored",
+  "backupRestoreSummarySettingsPartial": "部分设置无法恢复",
   "@backupRestoreSummarySettingsPartial": {
     "description": "Part of the restore summary message when some settings could not be restored."
   },
-  "backupRestoreSummaryWords": "{added} words added, {skipped} skipped",
+  "backupRestoreSummaryWords": "已添加 {added} 个单词，跳过 {skipped} 个",
   "@backupRestoreSummaryWords": {
     "description": "Part of the restore summary message for restored words.",
     "placeholders": {
@@ -1386,7 +1386,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksRestored": "{count, plural, one {# book restored} other {# books restored}}",
+  "backupRestoreSummaryBooksRestored": "{count, plural, one {# 本书已恢复} other {# 本书已恢复}}",
   "@backupRestoreSummaryBooksRestored": {
     "description": "Part of the restore summary message for restored books.",
     "placeholders": {
@@ -1395,7 +1395,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# book saved for later import} other {# books saved for later import}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {# 本书已保存，稍后导入} other {# 本书已保存，稍后导入}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {
@@ -1404,15 +1404,15 @@
       }
     }
   },
-  "backupRestoreComplete": "Restore complete",
+  "backupRestoreComplete": "恢复完成",
   "@backupRestoreComplete": {
     "description": "Fallback restore summary when there is nothing else to report."
   },
-  "backupRestoreDialogTitle": "Restore Backup?",
+  "backupRestoreDialogTitle": "恢复备份？",
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "This will restore settings and reading data from {fileName}. Your current settings will be overwritten.",
+  "backupRestoreDialogBody": "这将从 {fileName} 恢复设置和阅读数据。您当前的设置将被覆盖。",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {
@@ -1421,11 +1421,11 @@
       }
     }
   },
-  "backupDeleteDialogTitle": "Delete Backup?",
+  "backupDeleteDialogTitle": "删除备份？",
   "@backupDeleteDialogTitle": {
     "description": "Title for the delete backup confirmation dialog."
   },
-  "backupDeleteDialogBody": "Delete {fileName}? This cannot be undone.",
+  "backupDeleteDialogBody": "删除 {fileName}？此操作无法撤销。",
   "@backupDeleteDialogBody": {
     "description": "Body for the delete backup confirmation dialog.",
     "placeholders": {
@@ -1434,19 +1434,19 @@
       }
     }
   },
-  "backupHistoryTypeAuto": "Auto backup",
+  "backupHistoryTypeAuto": "自动备份",
   "@backupHistoryTypeAuto": {
     "description": "Label for an automatic backup in backup history."
   },
-  "backupHistoryTypeManual": "Manual backup",
+  "backupHistoryTypeManual": "手动备份",
   "@backupHistoryTypeManual": {
     "description": "Label for a manual backup in backup history."
   },
-  "readerDismiss": "Dismiss",
+  "readerDismiss": "关闭",
   "@readerDismiss": {
     "description": "Barrier label for dismissing reader overlays."
   },
-  "readerFailedToLoadContent": "Failed to load EPUB content.\n{details}",
+  "readerFailedToLoadContent": "无法加载 EPUB 内容。\n{details}",
   "@readerFailedToLoadContent": {
     "description": "Reader error shown when the EPUB viewer reports a content-loading failure.",
     "placeholders": {
@@ -1455,7 +1455,7 @@
       }
     }
   },
-  "readerFailedToLoad": "Failed to load EPUB.\n{details}",
+  "readerFailedToLoad": "无法加载 EPUB 文件。\n{details}",
   "@readerFailedToLoad": {
     "description": "Reader error shown when the EPUB file fails to load.",
     "placeholders": {
@@ -1464,123 +1464,123 @@
       }
     }
   },
-  "readerVerticalTextNonNativeWarning": "This book was not originally formatted for vertical text. Some display issues may occur.",
+  "readerVerticalTextNonNativeWarning": "此书最初未为竖排文本设计，可能会出现显示问题。",
   "@readerVerticalTextNonNativeWarning": {
     "description": "Warning shown when vertical text is forced for a non-vertical book."
   },
-  "readerHorizontalTextNonNativeWarning": "This book was originally formatted for vertical text. Some display issues may occur in horizontal mode.",
+  "readerHorizontalTextNonNativeWarning": "此书最初为竖排文本设计，横排模式下可能会出现显示问题。",
   "@readerHorizontalTextNonNativeWarning": {
     "description": "Warning shown when horizontal text is forced for a vertical book."
   },
-  "readerBookmarkRemoved": "Bookmark removed",
+  "readerBookmarkRemoved": "书签已移除",
   "@readerBookmarkRemoved": {
     "description": "Snackbar shown after removing a bookmark."
   },
-  "readerPageBookmarked": "Page bookmarked",
+  "readerPageBookmarked": "已添加书签",
   "@readerPageBookmarked": {
     "description": "Snackbar shown after bookmarking the current page."
   },
-  "readerTableOfContents": "Table of Contents",
+  "readerTableOfContents": "目录",
   "@readerTableOfContents": {
     "description": "Title or tooltip for the reader table of contents."
   },
-  "readerRemoveBookmarkTooltip": "Remove Bookmark",
+  "readerRemoveBookmarkTooltip": "移除书签",
   "@readerRemoveBookmarkTooltip": {
     "description": "Tooltip for removing the current page bookmark."
   },
-  "readerBookmarkPageTooltip": "Bookmark Page",
+  "readerBookmarkPageTooltip": "添加书签",
   "@readerBookmarkPageTooltip": {
     "description": "Tooltip for bookmarking the current page."
   },
-  "readerViewBookmarksTooltip": "View Bookmarks",
+  "readerViewBookmarksTooltip": "查看书签",
   "@readerViewBookmarksTooltip": {
     "description": "Tooltip for opening the bookmarks sheet."
   },
-  "readerHighlightsTooltip": "Highlights",
+  "readerHighlightsTooltip": "高亮",
   "@readerHighlightsTooltip": {
     "description": "Tooltip for opening the highlights sheet."
   },
-  "readerNextPageTooltip": "Next Page",
+  "readerNextPageTooltip": "下一页",
   "@readerNextPageTooltip": {
     "description": "Tooltip for moving to the next page."
   },
-  "readerPreviousPageTooltip": "Previous Page",
+  "readerPreviousPageTooltip": "上一页",
   "@readerPreviousPageTooltip": {
     "description": "Tooltip for moving to the previous page."
   },
-  "readerUnknownError": "Unknown reader error.",
+  "readerUnknownError": "未知阅读器错误。",
   "@readerUnknownError": {
     "description": "Fallback error shown in the reader when no specific error is available."
   },
-  "readerQuickSettings": "Quick Settings",
+  "readerQuickSettings": "快速设置",
   "@readerQuickSettings": {
     "description": "Title for the reader quick settings sheet."
   },
-  "readerVerticalTextTitle": "Vertical Text",
+  "readerVerticalTextTitle": "竖排文本",
   "@readerVerticalTextTitle": {
     "description": "Title for the per-book vertical text setting."
   },
-  "readerThisBook": "This book",
+  "readerThisBook": "本书",
   "@readerThisBook": {
     "description": "Label indicating a reader setting applies to the current book."
   },
-  "readerVerticalTextUnavailable": "Not available for this book's language",
+  "readerVerticalTextUnavailable": "本书的语言暂不支持竖排显示",
   "@readerVerticalTextUnavailable": {
     "description": "Subtitle shown when vertical text is unavailable for the current book."
   },
-  "readerReadingDirectionTitle": "Reading Direction",
+  "readerReadingDirectionTitle": "阅读方向",
   "@readerReadingDirectionTitle": {
     "description": "Title for the per-book reading direction setting."
   },
-  "readerReadingDirectionRtl": "Right to Left",
+  "readerReadingDirectionRtl": "从右到左",
   "@readerReadingDirectionRtl": {
     "description": "Label for right-to-left reading direction."
   },
-  "readerReadingDirectionLtr": "Left to Right",
+  "readerReadingDirectionLtr": "从左到右",
   "@readerReadingDirectionLtr": {
     "description": "Label for left-to-right reading direction."
   },
-  "readerDisableLinksTitle": "Disable Links",
+  "readerDisableLinksTitle": "禁用链接",
   "@readerDisableLinksTitle": {
     "description": "Title for the disable-links reader setting."
   },
-  "readerDisableLinksSubtitle": "Tap linked text to look up words instead of navigating",
+  "readerDisableLinksSubtitle": "点击已链接的文本以查词，而不是跳转",
   "@readerDisableLinksSubtitle": {
     "description": "Subtitle for the disable-links reader setting."
   },
-  "readerHighlightSelectionTooltip": "Highlight selection",
+  "readerHighlightSelectionTooltip": "高亮所选内容",
   "@readerHighlightSelectionTooltip": {
     "description": "Tooltip for the highlight-selection action."
   },
-  "commonCopy": "Copy",
+  "commonCopy": "复制",
   "@commonCopy": {
     "description": "Generic copy action."
   },
-  "commonShare": "Share",
+  "commonShare": "分享",
   "@commonShare": {
     "description": "Generic share action."
   },
-  "commonContinue": "Continue",
+  "commonContinue": "继续",
   "@commonContinue": {
     "description": "Generic continue action."
   },
-  "commonNotSelected": "Not selected",
+  "commonNotSelected": "未选择",
   "@commonNotSelected": {
     "description": "Fallback label when no option has been selected."
   },
-  "commonUnknown": "Unknown",
+  "commonUnknown": "未知",
   "@commonUnknown": {
     "description": "Fallback label when a value is unknown."
   },
-  "commonRename": "Rename",
+  "commonRename": "重命名",
   "@commonRename": {
     "description": "Generic rename action."
   },
-  "commonTitleLabel": "Title",
+  "commonTitleLabel": "标题",
   "@commonTitleLabel": {
     "description": "Generic title field label."
   },
-  "libraryCouldNotReadFolder": "Could not read folder:\n{details}",
+  "libraryCouldNotReadFolder": "无法读取文件夹：\n{details}",
   "@libraryCouldNotReadFolder": {
     "description": "Snackbar shown when the selected manga folder cannot be read.",
     "placeholders": {
@@ -1589,23 +1589,23 @@
       }
     }
   },
-  "libraryBookmarksTitle": "Bookmarks",
+  "libraryBookmarksTitle": "书签",
   "@libraryBookmarksTitle": {
     "description": "Title for the book bookmarks action in library options."
   },
-  "libraryChangeCoverAction": "Change Cover",
+  "libraryChangeCoverAction": "更换封面",
   "@libraryChangeCoverAction": {
     "description": "Action label to change a book cover image."
   },
-  "libraryRenameBookTitle": "Rename Book",
+  "libraryRenameBookTitle": "重命名图书",
   "@libraryRenameBookTitle": {
     "description": "Title for the rename book dialog."
   },
-  "libraryDeleteBookTitle": "Delete Book",
+  "libraryDeleteBookTitle": "删除图书",
   "@libraryDeleteBookTitle": {
     "description": "Title for deleting a book from the library."
   },
-  "libraryDeleteBookBody": "Delete \"{title}\" from your library?",
+  "libraryDeleteBookBody": "从您的书库中删除“{title}”？",
   "@libraryDeleteBookBody": {
     "description": "Confirmation body for deleting a book from the library.",
     "placeholders": {
@@ -1614,7 +1614,7 @@
       }
     }
   },
-  "libraryChangeCoverFailed": "Failed to change cover: {details}",
+  "libraryChangeCoverFailed": "更换封面失败：{details}",
   "@libraryChangeCoverFailed": {
     "description": "Snackbar shown when changing the cover image fails.",
     "placeholders": {
@@ -1623,27 +1623,27 @@
       }
     }
   },
-  "dictionaryManagerTitle": "Dictionary Manager",
+  "dictionaryManagerTitle": "词典管理",
   "@dictionaryManagerTitle": {
     "description": "Title for the dictionary manager screen and help dialog."
   },
-  "dictionaryManagerImportTooltip": "Import Dictionary",
+  "dictionaryManagerImportTooltip": "导入词典",
   "@dictionaryManagerImportTooltip": {
     "description": "Tooltip for importing a dictionary from the manager screen."
   },
-  "dictionaryManagerEmptySubtitle": "Tap + to import a Yomitan dictionary (.zip)\nor collection (.json)",
+  "dictionaryManagerEmptySubtitle": "点击 + 导入一个 Yomitan 词典（.zip）\n或词典集合（.json）",
   "@dictionaryManagerEmptySubtitle": {
     "description": "Subtitle shown when no dictionaries are installed in the manager screen."
   },
-  "dictionaryManagerBrowseDownloads": "Browse Downloads",
+  "dictionaryManagerBrowseDownloads": "浏览下载",
   "@dictionaryManagerBrowseDownloads": {
     "description": "Button label that opens the downloads screen from the dictionary manager."
   },
-  "dictionaryManagerBrowseDownloadsCaption": "Download dictionaries and other assets",
+  "dictionaryManagerBrowseDownloadsCaption": "下载词典和其他资源",
   "@dictionaryManagerBrowseDownloadsCaption": {
     "description": "Caption under the browse downloads button in the dictionary manager empty state."
   },
-  "dictionaryManagerImportedOn": "Imported {date}",
+  "dictionaryManagerImportedOn": "已导入 {date}",
   "@dictionaryManagerImportedOn": {
     "description": "Subtitle showing when a dictionary was imported.",
     "placeholders": {
@@ -1652,47 +1652,47 @@
       }
     }
   },
-  "dictionaryManagerSupportedFormatsTitle": "Supported Formats",
+  "dictionaryManagerSupportedFormatsTitle": "支持的格式",
   "@dictionaryManagerSupportedFormatsTitle": {
     "description": "Heading for supported dictionary formats in the dictionary manager help dialog."
   },
-  "dictionaryManagerSupportedFormatsYomitan": "Yomitan dictionary (.zip)\nAny dictionary that can be imported into Yomitan is supported. These are .zip files containing term bank JSON files.",
+  "dictionaryManagerSupportedFormatsYomitan": "Yomitan 词典（.zip）\n支持可导入到 Yomitan 的所有词典。这些是包含词库 JSON 文件的 .zip 文件。",
   "@dictionaryManagerSupportedFormatsYomitan": {
     "description": "Help text describing supported Yomitan zip dictionaries."
   },
-  "dictionaryManagerSupportedFormatsCollection": "Yomitan collection (.json)\nA Dexie database export containing multiple dictionaries in a single file. You can export this from Yomitan's settings under Backup.",
+  "dictionaryManagerSupportedFormatsCollection": "Yomitan 集合（.json）\n包含多个词典的 Dexie 数据库导出文件。你可以在 Yomitan 的设置中通过“备份”导出此文件。",
   "@dictionaryManagerSupportedFormatsCollection": {
     "description": "Help text describing supported Yomitan collection backups."
   },
-  "dictionaryManagerOrderTitle": "Dictionary Order",
+  "dictionaryManagerOrderTitle": "词典顺序",
   "@dictionaryManagerOrderTitle": {
     "description": "Heading for dictionary ordering help."
   },
-  "dictionaryManagerOrderBody": "Drag dictionaries using the handle on the left to reorder them. The order here controls the order that definitions appear when you tap a word while reading.",
+  "dictionaryManagerOrderBody": "使用左侧的拖动柄拖动词典进行排序。这里的顺序决定你阅读时点击单词时词典释义的显示顺序。",
   "@dictionaryManagerOrderBody": {
     "description": "Help text explaining dictionary ordering."
   },
-  "dictionaryManagerEnablingTitle": "Enabling & Disabling",
+  "dictionaryManagerEnablingTitle": "启用与禁用",
   "@dictionaryManagerEnablingTitle": {
     "description": "Heading for dictionary enable and disable help."
   },
-  "dictionaryManagerEnablingBody": "Use the toggle switch to enable or disable a dictionary. Disabled dictionaries are not searched when looking up words.",
+  "dictionaryManagerEnablingBody": "使用开关按钮启用或禁用词典。禁用的词典不会在查词时被检索。",
   "@dictionaryManagerEnablingBody": {
     "description": "Help text explaining dictionary enable and disable behavior."
   },
-  "dictionaryManagerFindingTitle": "Finding Dictionaries",
+  "dictionaryManagerFindingTitle": "查找词典",
   "@dictionaryManagerFindingTitle": {
     "description": "Heading for dictionary discovery help."
   },
-  "dictionaryManagerFindingPrefix": "Browse compatible dictionaries at ",
+  "dictionaryManagerFindingPrefix": "在此处浏览兼容词典 ",
   "@dictionaryManagerFindingPrefix": {
     "description": "Lead-in text before the dictionary website link in the help dialog."
   },
-  "dictionaryManagerDeleteTitle": "Delete Dictionary",
+  "dictionaryManagerDeleteTitle": "删除词典",
   "@dictionaryManagerDeleteTitle": {
     "description": "Title for deleting a dictionary."
   },
-  "dictionaryManagerDeleteBody": "Delete \"{name}\" and all its entries?\nThis cannot be undone.",
+  "dictionaryManagerDeleteBody": "删除“{name}”及其所有词条？\n此操作不可撤销。",
   "@dictionaryManagerDeleteBody": {
     "description": "Confirmation body for deleting a dictionary and its entries.",
     "placeholders": {
@@ -1701,91 +1701,91 @@
       }
     }
   },
-  "ankidroidDataSourceExpression": "Expression",
+  "ankidroidDataSourceExpression": "表达式",
   "@ankidroidDataSourceExpression": {
     "description": "Anki mapping source label for the expression field."
   },
-  "ankidroidDataSourceReading": "Reading",
+  "ankidroidDataSourceReading": "读音",
   "@ankidroidDataSourceReading": {
     "description": "Anki mapping source label for the reading field."
   },
-  "ankidroidDataSourceFurigana": "Furigana (Anki format)",
+  "ankidroidDataSourceFurigana": "振假名（Anki 格式）",
   "@ankidroidDataSourceFurigana": {
     "description": "Anki mapping source label for furigana-formatted text."
   },
-  "ankidroidDataSourceGlossary": "Glossary / Meaning",
+  "ankidroidDataSourceGlossary": "释义/含义",
   "@ankidroidDataSourceGlossary": {
     "description": "Anki mapping source label for glossary content."
   },
-  "ankidroidDataSourceSentenceContext": "Sentence Context",
+  "ankidroidDataSourceSentenceContext": "例句上下文",
   "@ankidroidDataSourceSentenceContext": {
     "description": "Anki mapping source label for sentence context."
   },
-  "ankidroidDataSourceFrequency": "Frequency Rank",
+  "ankidroidDataSourceFrequency": "频率排名",
   "@ankidroidDataSourceFrequency": {
     "description": "Anki mapping source label for frequency rank."
   },
-  "ankidroidDataSourceDictionaryName": "Dictionary Name",
+  "ankidroidDataSourceDictionaryName": "词典名称",
   "@ankidroidDataSourceDictionaryName": {
     "description": "Anki mapping source label for the source dictionary name."
   },
-  "ankidroidDataSourcePitchAccent": "Pitch Accent",
+  "ankidroidDataSourcePitchAccent": "音调",
   "@ankidroidDataSourcePitchAccent": {
     "description": "Anki mapping source label for pitch accent information."
   },
-  "ankidroidDataSourceEmpty": "(Empty)",
+  "ankidroidDataSourceEmpty": "（空）",
   "@ankidroidDataSourceEmpty": {
     "description": "Anki mapping source label for an empty field."
   },
-  "ankidroidPermissionNotGrantedLong": "AnkiDroid permission not granted. Make sure AnkiDroid is installed and try again.",
+  "ankidroidPermissionNotGrantedLong": "未授予 AnkiDroid 权限。请确保已安装 AnkiDroid 后重试。",
   "@ankidroidPermissionNotGrantedLong": {
     "description": "Detailed error shown when AnkiDroid permission is not granted in settings."
   },
-  "ankidroidCouldNotConnectLong": "Could not connect to AnkiDroid. Make sure AnkiDroid is installed and running.",
+  "ankidroidCouldNotConnectLong": "无法连接到 AnkiDroid。请确保已安装并正在运行 AnkiDroid。",
   "@ankidroidCouldNotConnectLong": {
     "description": "Detailed error shown when the app cannot connect to AnkiDroid in settings."
   },
-  "ankidroidPermissionNotGrantedShort": "AnkiDroid permission not granted.",
+  "ankidroidPermissionNotGrantedShort": "未授予 AnkiDroid 权限。",
   "@ankidroidPermissionNotGrantedShort": {
     "description": "Short error shown when AnkiDroid permission is not granted in the create-card flow."
   },
-  "ankidroidCouldNotConnectShort": "Could not connect to AnkiDroid.",
+  "ankidroidCouldNotConnectShort": "无法连接到 AnkiDroid。",
   "@ankidroidCouldNotConnectShort": {
     "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow."
   },
-  "ankidroidFailedToAddNote": "Failed to add note. Make sure AnkiDroid is running and the selected note type and deck still exist.",
+  "ankidroidFailedToAddNote": "添加笔记失败。请确认 AnkiDroid 正在运行，所选笔记类型和牌组仍然存在。",
   "@ankidroidFailedToAddNote": {
     "description": "Error shown when sending a note to AnkiDroid fails."
   },
-  "ankidroidSettingsNoteTypeSection": "Note Type",
+  "ankidroidSettingsNoteTypeSection": "笔记类型",
   "@ankidroidSettingsNoteTypeSection": {
     "description": "Section heading for Anki note type settings."
   },
-  "ankidroidSettingsNoteTypeTitle": "Anki Note Type",
+  "ankidroidSettingsNoteTypeTitle": "Anki 笔记类型",
   "@ankidroidSettingsNoteTypeTitle": {
     "description": "Title for the selected Anki note type row."
   },
-  "ankidroidSettingsDefaultDeckSection": "Default Deck",
+  "ankidroidSettingsDefaultDeckSection": "默认牌组",
   "@ankidroidSettingsDefaultDeckSection": {
     "description": "Section heading for the default Anki deck."
   },
-  "ankidroidSettingsTargetDeckTitle": "Target Deck",
+  "ankidroidSettingsTargetDeckTitle": "目标牌组",
   "@ankidroidSettingsTargetDeckTitle": {
     "description": "Title for the selected Anki target deck row."
   },
-  "ankidroidSettingsFieldMappingSection": "Field Mapping",
+  "ankidroidSettingsFieldMappingSection": "字段映射",
   "@ankidroidSettingsFieldMappingSection": {
     "description": "Section heading for Anki field mapping."
   },
-  "ankidroidSettingsFieldMappingHelp": "Map each Anki field to a data source from the app.",
+  "ankidroidSettingsFieldMappingHelp": "将每个 Anki 字段映射到应用的数据来源。",
   "@ankidroidSettingsFieldMappingHelp": {
     "description": "Help text describing how Anki field mapping works."
   },
-  "ankidroidSettingsDefaultTagsSection": "Default Tags",
+  "ankidroidSettingsDefaultTagsSection": "默认标签",
   "@ankidroidSettingsDefaultTagsSection": {
     "description": "Section heading for default Anki tags."
   },
-  "ankidroidSettingsDefaultTagsHelp": "Comma-separated tags applied to every exported note.",
+  "ankidroidSettingsDefaultTagsHelp": "每条导出笔记都会添加以逗号分隔的标签。",
   "@ankidroidSettingsDefaultTagsHelp": {
     "description": "Help text describing default Anki tags."
   },
@@ -1793,15 +1793,15 @@
   "@ankidroidTagsHint": {
     "description": "Hint text for comma-separated Anki tags."
   },
-  "ankidroidSettingsSelectNoteType": "Select Note Type",
+  "ankidroidSettingsSelectNoteType": "选择笔记类型",
   "@ankidroidSettingsSelectNoteType": {
     "description": "Title for the Anki note type picker sheet."
   },
-  "ankidroidSettingsSelectDeck": "Select Deck",
+  "ankidroidSettingsSelectDeck": "选择牌组",
   "@ankidroidSettingsSelectDeck": {
     "description": "Title for the Anki deck picker sheet."
   },
-  "ankidroidSettingsMapFieldTo": "Map \"{ankiFieldName}\" to:",
+  "ankidroidSettingsMapFieldTo": "将“{ankiFieldName}”映射为：",
   "@ankidroidSettingsMapFieldTo": {
     "description": "Title for the field mapping picker sheet.",
     "placeholders": {
@@ -1810,95 +1810,95 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "AnkiDroid Settings",
+  "ankidroidCardSettingsTooltip": "AnkiDroid 设置",
   "@ankidroidCardSettingsTooltip": {
     "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
   },
-  "ankidroidCardDeckTitle": "Deck",
+  "ankidroidCardDeckTitle": "牌组",
   "@ankidroidCardDeckTitle": {
     "description": "Label for the selected Anki deck in the create-card flow."
   },
-  "ankidroidCardTagsTitle": "Tags",
+  "ankidroidCardTagsTitle": "标签",
   "@ankidroidCardTagsTitle": {
     "description": "Label for the tags field in the create-card flow."
   },
-  "ankidroidCardAddToAnki": "Add to Anki",
+  "ankidroidCardAddToAnki": "添加到 Anki",
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
   },
-  "mangaReaderSettingsTitle": "Reader Settings",
+  "mangaReaderSettingsTitle": "阅读器设置",
   "@mangaReaderSettingsTitle": {
     "description": "Title for the manga reader settings sheet."
   },
-  "mangaViewModeSingle": "Single",
+  "mangaViewModeSingle": "单页",
   "@mangaViewModeSingle": {
     "description": "Label for the single-page manga view mode."
   },
-  "mangaViewModeSpread": "Spread",
+  "mangaViewModeSpread": "双页",
   "@mangaViewModeSpread": {
     "description": "Label for the two-page spread manga view mode."
   },
-  "mangaViewModeScroll": "Scroll",
+  "mangaViewModeScroll": "滚动",
   "@mangaViewModeScroll": {
     "description": "Label for the scrolling manga view mode."
   },
-  "mangaAutoCropSubtitle": "Remove empty margins",
+  "mangaAutoCropSubtitle": "移除空白边距",
   "@mangaAutoCropSubtitle": {
     "description": "Subtitle for the manga auto-crop setting."
   },
-  "mangaAutoCropRerunTitle": "Re-run Auto-Crop",
+  "mangaAutoCropRerunTitle": "重新执行自动裁边",
   "@mangaAutoCropRerunTitle": {
     "description": "Title for re-running manga auto-crop."
   },
-  "mangaAutoCropRerunSubtitle": "Re-scan every page image for this book",
+  "mangaAutoCropRerunSubtitle": "重新扫描本书的每一页图片",
   "@mangaAutoCropRerunSubtitle": {
     "description": "Subtitle for re-running manga auto-crop."
   },
-  "mangaTransparentLookupTitle": "Transparent Lookup",
+  "mangaTransparentLookupTitle": "透明查词",
   "@mangaTransparentLookupTitle": {
     "description": "Title for the transparent lookup setting in the manga reader."
   },
-  "mangaTransparentLookupSubtitle": "See-through dictionary sheet",
+  "mangaTransparentLookupSubtitle": "半透明字典面板",
   "@mangaTransparentLookupSubtitle": {
     "description": "Subtitle for the transparent lookup setting in the manga reader."
   },
-  "mangaDebugWordOverlayTitle": "Debug Word Overlay",
+  "mangaDebugWordOverlayTitle": "调试词语覆盖层",
   "@mangaDebugWordOverlayTitle": {
     "description": "Title for the debug word overlay setting in the manga reader."
   },
-  "mangaDebugWordOverlaySubtitle": "Show word bounding boxes",
+  "mangaDebugWordOverlaySubtitle": "显示单词边框",
   "@mangaDebugWordOverlaySubtitle": {
     "description": "Subtitle for the debug word overlay setting in the manga reader."
   },
-  "mangaAutoCropComputeTitle": "Compute Auto-Crop?",
+  "mangaAutoCropComputeTitle": "计算自动裁边？",
   "@mangaAutoCropComputeTitle": {
     "description": "Dialog title shown before computing auto-crop for the first time."
   },
-  "mangaAutoCropComputeBody": "Auto-crop needs to scan every page image for this book before it can be enabled. This may take a minute.",
+  "mangaAutoCropComputeBody": "自动裁边需要先扫描本书的所有页面图片，才能启用。可能需要几分钟。",
   "@mangaAutoCropComputeBody": {
     "description": "Dialog body shown before computing auto-crop for the first time."
   },
-  "mangaAutoCropRerunDialogTitle": "Re-run Auto-Crop?",
+  "mangaAutoCropRerunDialogTitle": "重新执行自动裁边？",
   "@mangaAutoCropRerunDialogTitle": {
     "description": "Dialog title shown before recomputing auto-crop."
   },
-  "mangaAutoCropRerunDialogBody": "Auto-crop will re-scan every page image for this book and replace the saved crop bounds. This may take a minute.",
+  "mangaAutoCropRerunDialogBody": "自动裁边将重新扫描本书的每一页图片，并替换已保存的裁切范围。可能需要几分钟。",
   "@mangaAutoCropRerunDialogBody": {
     "description": "Dialog body shown before recomputing auto-crop."
   },
-  "mangaAutoCropComputingProgress": "Computing auto-crop bounds. This may take a minute.",
+  "mangaAutoCropComputingProgress": "正在计算自动裁边范围，可能需要几分钟。",
   "@mangaAutoCropComputingProgress": {
     "description": "Progress message shown while computing auto-crop bounds."
   },
-  "mangaAutoCropRecomputingProgress": "Recomputing auto-crop bounds. This may take a minute.",
+  "mangaAutoCropRecomputingProgress": "正在重新计算自动裁边范围，可能需要几分钟。",
   "@mangaAutoCropRecomputingProgress": {
     "description": "Progress message shown while recomputing auto-crop bounds."
   },
-  "mangaAutoCropBoundsRefreshed": "Auto-crop bounds refreshed.",
+  "mangaAutoCropBoundsRefreshed": "自动裁边范围已刷新。",
   "@mangaAutoCropBoundsRefreshed": {
     "description": "Snackbar shown after auto-crop bounds are refreshed."
   },
-  "mangaAutoCropSetupFailed": "Auto-crop setup failed: {details}",
+  "mangaAutoCropSetupFailed": "自动裁边设置失败：{details}",
   "@mangaAutoCropSetupFailed": {
     "description": "Snackbar shown when auto-crop setup fails.",
     "placeholders": {
@@ -1907,31 +1907,31 @@
       }
     }
   },
-  "ocrNoPagesCacheFound": "No pages cache found for this book",
+  "ocrNoPagesCacheFound": "未找到本书的页面缓存",
   "@ocrNoPagesCacheFound": {
     "description": "Snackbar shown when OCR cannot start because the pages cache is missing."
   },
-  "ocrAlreadyCompleteResetHint": "OCR is already complete. Use \"Remove OCR\" to reset.",
+  "ocrAlreadyCompleteResetHint": "OCR 已完成。使用“移除 OCR”可重置。",
   "@ocrAlreadyCompleteResetHint": {
     "description": "Snackbar shown when OCR is already complete for a manga book."
   },
-  "ocrMangaImageDirectoryNotFound": "Manga image directory not found",
+  "ocrMangaImageDirectoryNotFound": "未找到漫画图片目录",
   "@ocrMangaImageDirectoryNotFound": {
     "description": "Snackbar shown when the manga image directory is missing."
   },
-  "ocrBuildWordOverlaysTitle": "Build Word Overlays",
+  "ocrBuildWordOverlaysTitle": "生成单词覆盖层",
   "@ocrBuildWordOverlaysTitle": {
     "description": "Dialog title for rebuilding word overlays from existing OCR."
   },
-  "ocrBuildWordOverlaysBody": "OCR text already exists. This will rebuild word tap targets so lookup overlays appear correctly.",
+  "ocrBuildWordOverlaysBody": "OCR 文本已存在。这会重新生成单词点击目标，使查词覆盖层正确显示。",
   "@ocrBuildWordOverlaysBody": {
     "description": "Dialog body for rebuilding word overlays from existing OCR."
   },
-  "ocrRunActionTitle": "Run OCR",
+  "ocrRunActionTitle": "运行 OCR",
   "@ocrRunActionTitle": {
     "description": "Action title for starting OCR."
   },
-  "ocrProcessPagesBody": "This will process {count} pages. OCR will run in the background and continue even if you close the app.",
+  "ocrProcessPagesBody": "将处理 {count} 页。OCR 会在后台运行，即使关闭应用也会继续。",
   "@ocrProcessPagesBody": {
     "description": "Dialog body shown before OCR begins processing pages.",
     "placeholders": {
@@ -1940,15 +1940,15 @@
       }
     }
   },
-  "ocrProcessAction": "Process",
+  "ocrProcessAction": "处理",
   "@ocrProcessAction": {
     "description": "Button label for processing existing OCR into word overlays."
   },
-  "ocrStartAction": "Start",
+  "ocrStartAction": "开始",
   "@ocrStartAction": {
     "description": "Button label for starting OCR."
   },
-  "ocrPrepareFailed": "Unable to prepare OCR: {details}",
+  "ocrPrepareFailed": "无法准备 OCR：{details}",
   "@ocrPrepareFailed": {
     "description": "Snackbar shown when OCR setup fails before processing starts.",
     "placeholders": {
@@ -1957,7 +1957,7 @@
       }
     }
   },
-  "ocrStartFailed": "Failed to start OCR: {details}",
+  "ocrStartFailed": "启动 OCR 失败：{details}",
   "@ocrStartFailed": {
     "description": "Snackbar shown when OCR background work fails to start.",
     "placeholders": {
@@ -1966,51 +1966,51 @@
       }
     }
   },
-  "ocrWordOverlayStartedBackground": "Word overlay processing started in background",
+  "ocrWordOverlayStartedBackground": "词语遮罩处理已在后台开始",
   "@ocrWordOverlayStartedBackground": {
     "description": "Snackbar shown when rebuilding word overlays starts in the background."
   },
-  "ocrStartedBackground": "OCR started in background",
+  "ocrStartedBackground": "OCR 已在后台启动",
   "@ocrStartedBackground": {
     "description": "Snackbar shown when OCR starts in the background."
   },
-  "ocrCancelActionTitle": "Cancel OCR",
+  "ocrCancelActionTitle": "取消 OCR",
   "@ocrCancelActionTitle": {
     "description": "Action title for cancelling OCR."
   },
-  "ocrCancelSavedProgress": "OCR cancelled. Progress saved.",
+  "ocrCancelSavedProgress": "OCR 已取消。进度已保存。",
   "@ocrCancelSavedProgress": {
     "description": "Snackbar shown when OCR is cancelled and progress is preserved."
   },
-  "ocrReplaceActionTitle": "Replace OCR",
+  "ocrReplaceActionTitle": "替换 OCR",
   "@ocrReplaceActionTitle": {
     "description": "Action title for replacing imported OCR with custom OCR."
   },
-  "ocrReplaceMokuroBody": "This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nTo restore the original OCR, re-import the book.",
+  "ocrReplaceMokuroBody": "这将覆盖从 Mokuro/HTML 文件导入的 OCR 数据，并使用您的自定义服务器对所有页面重新执行 OCR。\n\n要恢复原始 OCR，请重新导入书籍。",
   "@ocrReplaceMokuroBody": {
     "description": "Confirmation dialog body for replacing Mokuro OCR with custom OCR."
   },
-  "ocrReplaceStartedBackground": "OCR replacement started in background",
+  "ocrReplaceStartedBackground": "OCR 替换已在后台开始",
   "@ocrReplaceStartedBackground": {
     "description": "Snackbar shown when replacing OCR starts in the background."
   },
-  "ocrRemoveActionTitle": "Remove OCR",
+  "ocrRemoveActionTitle": "移除 OCR",
   "@ocrRemoveActionTitle": {
     "description": "Action title for removing OCR."
   },
-  "ocrRemoveBody": "Remove OCR text and word overlays from this manga? You can run OCR again later.",
+  "ocrRemoveBody": "要从本漫画中移除 OCR 文字和词语遮罩吗？您以后可以再次运行 OCR。",
   "@ocrRemoveBody": {
     "description": "Confirmation dialog body for removing OCR from a manga book."
   },
-  "ocrRemoveSubtitle": "Remove OCR text from all pages",
+  "ocrRemoveSubtitle": "从所有页面移除 OCR 文字",
   "@ocrRemoveSubtitle": {
     "description": "Subtitle for removing OCR from all manga pages."
   },
-  "ocrRemovedFromBook": "OCR removed from this book",
+  "ocrRemovedFromBook": "已从本书移除 OCR",
   "@ocrRemovedFromBook": {
     "description": "Snackbar shown after OCR has been removed from a book."
   },
-  "ocrRemoveFailed": "Failed to remove OCR: {details}",
+  "ocrRemoveFailed": "移除 OCR 失败：{details}",
   "@ocrRemoveFailed": {
     "description": "Snackbar shown when removing OCR fails.",
     "placeholders": {
@@ -2019,23 +2019,23 @@
       }
     }
   },
-  "ocrUnlockProSubtitle": "Unlock Pro to use your custom OCR server",
+  "ocrUnlockProSubtitle": "解锁 Pro 以使用自定义 OCR 服务器",
   "@ocrUnlockProSubtitle": {
     "description": "Subtitle shown when OCR requires a Pro unlock."
   },
-  "ocrStopAndSaveProgressSubtitle": "Stop processing and save progress",
+  "ocrStopAndSaveProgressSubtitle": "停止处理并保存进度",
   "@ocrStopAndSaveProgressSubtitle": {
     "description": "Subtitle shown for the OCR cancel action."
   },
-  "ocrReplaceMokuroSubtitle": "Replace Mokuro OCR with your custom OCR server",
+  "ocrReplaceMokuroSubtitle": "用自定义 OCR 服务器替换 Mokuro 的 OCR",
   "@ocrReplaceMokuroSubtitle": {
     "description": "Subtitle shown when replacing OCR imported from Mokuro."
   },
-  "ocrBuildWordTargetsSubtitle": "Build word tap targets from saved OCR",
+  "ocrBuildWordTargetsSubtitle": "根据已保存的 OCR 构建词语点击区域",
   "@ocrBuildWordTargetsSubtitle": {
     "description": "Subtitle shown when only word overlay generation is needed."
   },
-  "ocrResumeSubtitle": "Resume OCR ({completed}/{total} done)",
+  "ocrResumeSubtitle": "继续 OCR（已完成 {completed}/{total}）",
   "@ocrResumeSubtitle": {
     "description": "Subtitle shown when OCR can resume partially completed work.",
     "placeholders": {
@@ -2047,43 +2047,43 @@
       }
     }
   },
-  "ocrRecognizeAllPagesSubtitle": "Recognize text on all pages",
+  "ocrRecognizeAllPagesSubtitle": "识别所有页面中的文本",
   "@ocrRecognizeAllPagesSubtitle": {
     "description": "Subtitle shown when OCR will run on all pages."
   },
-  "readerEditNoteTitle": "Edit Note",
+  "readerEditNoteTitle": "编辑笔记",
   "@readerEditNoteTitle": {
     "description": "Title for editing a highlight note."
   },
-  "readerAddNoteHint": "Add a note...",
+  "readerAddNoteHint": "添加笔记...",
   "@readerAddNoteHint": {
     "description": "Hint text for adding or editing a highlight note."
   },
-  "readerCopiedToClipboard": "Copied to clipboard",
+  "readerCopiedToClipboard": "已复制到剪贴板",
   "@readerCopiedToClipboard": {
     "description": "Snackbar shown after copying text from the reader."
   },
-  "aboutPrivacyPolicyTitle": "Privacy Policy",
+  "aboutPrivacyPolicyTitle": "隐私政策",
   "@aboutPrivacyPolicyTitle": {
     "description": "Title for the privacy policy link on the about screen."
   },
-  "aboutPrivacyPolicySubtitle": "See how Mekuru handles local and OCR data",
+  "aboutPrivacyPolicySubtitle": "查看 Mekuru 如何处理本地与 OCR 数据",
   "@aboutPrivacyPolicySubtitle": {
     "description": "Subtitle for the privacy policy link on the about screen."
   },
-  "aboutOpenSourceLicensesTitle": "Open Source Licenses",
+  "aboutOpenSourceLicensesTitle": "开源许可证",
   "@aboutOpenSourceLicensesTitle": {
     "description": "Title for the open source licenses row on the about screen."
   },
-  "aboutOpenSourceLicensesSubtitle": "View licenses for dependencies",
+  "aboutOpenSourceLicensesSubtitle": "查看依赖项的许可证",
   "@aboutOpenSourceLicensesSubtitle": {
     "description": "Subtitle for the open source licenses row on the about screen."
   },
-  "aboutTagline": "\"to turn pages\"",
+  "aboutTagline": "“翻页”",
   "@aboutTagline": {
     "description": "Tagline shown at the bottom of the about screen."
   },
-  "aboutEpubJsLicenseTitle": "epub.js License",
+  "aboutEpubJsLicenseTitle": "epub.js 许可证",
   "@aboutEpubJsLicenseTitle": {
     "description": "Title for the epub.js license dialog."
   },
@@ -2091,11 +2091,11 @@
   "@downloadsKanjidicTitle": {
     "description": "Title for the KANJIDIC download tile."
   },
-  "readerBookmarksTitle": "Bookmarks",
+  "readerBookmarksTitle": "书签",
   "@readerBookmarksTitle": {
     "description": "Title for the bookmarks bottom sheet."
   },
-  "readerNoBookmarksYet": "No bookmarks yet.\nTap the bookmark icon while reading to add one.",
+  "readerNoBookmarksYet": "还没有书签。\n阅读时点击书签图标即可添加。",
   "@readerNoBookmarksYet": {
     "description": "Empty state message shown when a book has no bookmarks."
   },
@@ -2111,7 +2111,7 @@
       }
     }
   },
-  "aboutVersion": "Version {version}",
+  "aboutVersion": "版本 {version}",
   "@aboutVersion": {
     "description": "Version label on the about screen.",
     "placeholders": {
@@ -2120,11 +2120,11 @@
       }
     }
   },
-  "aboutDescription": "A Japanese-first EPUB reader with vertical text, offline dictionary, and vocabulary management.",
+  "aboutDescription": "一款以日语为主的EPUB阅读器，支持竖排、离线词典和词汇管理。",
   "@aboutDescription": {
     "description": "Short description shown near the top of the about screen."
   },
-  "aboutAttributionTitle": "Attribution",
+  "aboutAttributionTitle": "归属",
   "@aboutAttributionTitle": {
     "description": "Section heading for attributions on the about screen."
   },
@@ -2132,39 +2132,39 @@
   "@aboutKanjiVgTitle": {
     "description": "Title for the KanjiVG attribution card."
   },
-  "aboutKanjiVgDescription": "Kanji stroke order data is provided by the KanjiVG project, created by Ulrich Apel.",
+  "aboutKanjiVgDescription": "汉字笔顺数据由Ulrich Apel创建的KanjiVG项目提供。",
   "@aboutKanjiVgDescription": {
     "description": "Description text for the KanjiVG attribution card."
   },
-  "aboutLicensedUnderPrefix": "Licensed under the ",
+  "aboutLicensedUnderPrefix": "授权协议：",
   "@aboutLicensedUnderPrefix": {
     "description": "Prefix before a linked license name in attribution text."
   },
-  "aboutLicenseSuffix": " license.",
+  "aboutLicenseSuffix": " 协议。",
   "@aboutLicenseSuffix": {
     "description": "Suffix after a linked license name in attribution text."
   },
-  "aboutProjectLabel": "Project: ",
+  "aboutProjectLabel": "项目：",
   "@aboutProjectLabel": {
     "description": "Label before a linked project URL in attribution text."
   },
-  "aboutSourceLabel": "Source: ",
+  "aboutSourceLabel": "来源：",
   "@aboutSourceLabel": {
     "description": "Label before a linked source URL in attribution text."
   },
-  "aboutJpdbTitle": "JPDB Frequency Dictionary",
+  "aboutJpdbTitle": "JPDB 词频词典",
   "@aboutJpdbTitle": {
     "description": "Title for the JPDB attribution card."
   },
-  "aboutJpdbDescription": "Word frequency data is provided by the JPDB frequency dictionary, distributed via yomitan-dictionaries by Kuuuube.",
+  "aboutJpdbDescription": "词频数据由JPDB词频词典提供，通过Kuuuube的yomitan-dictionaries分发。",
   "@aboutJpdbDescription": {
     "description": "Description text for the JPDB attribution card."
   },
-  "aboutDataSourceLabel": "Data source: ",
+  "aboutDataSourceLabel": "数据来源：",
   "@aboutDataSourceLabel": {
     "description": "Label before a linked data source URL in attribution text."
   },
-  "aboutDictionaryLabel": "Dictionary: ",
+  "aboutDictionaryLabel": "词典：",
   "@aboutDictionaryLabel": {
     "description": "Label before a linked dictionary URL in attribution text."
   },
@@ -2172,15 +2172,15 @@
   "@aboutJmdictKanjidicTitle": {
     "description": "Title for the JMdict and KANJIDIC attribution card."
   },
-  "aboutJmdictKanjidicDescriptionPrefix": "Japanese-multilingual dictionary data is provided by the JMdict/EDICT project and kanji dictionary data by the KANJIDIC project, both created by Jim Breen and the ",
+  "aboutJmdictKanjidicDescriptionPrefix": "日语多语种词典数据由JMdict/EDICT项目提供，汉字词典数据由KANJIDIC项目提供，二者均由Jim Breen和",
   "@aboutJmdictKanjidicDescriptionPrefix": {
     "description": "Prefix text before the linked EDRDG name in the JMdict and KANJIDIC attribution card."
   },
-  "aboutJmdictLabel": "JMdict: ",
+  "aboutJmdictLabel": "JMdict：",
   "@aboutJmdictLabel": {
     "description": "Label before a linked JMdict project URL in attribution text."
   },
-  "aboutKanjidicLabel": "KANJIDIC: ",
+  "aboutKanjidicLabel": "KANJIDIC：",
   "@aboutKanjidicLabel": {
     "description": "Label before a linked KANJIDIC project URL in attribution text."
   },
@@ -2188,7 +2188,7 @@
   "@aboutEpubJsTitle": {
     "description": "Title for the epub.js attribution card."
   },
-  "aboutEpubJsDescription": "EPUB rendering is powered by epub.js, an open source JavaScript EPUB reader library.",
+  "aboutEpubJsDescription": "EPUB渲染由epub.js驱动，这是一款开源的JavaScript EPUB阅读库。",
   "@aboutEpubJsDescription": {
     "description": "Description text for the epub.js attribution card."
   }
