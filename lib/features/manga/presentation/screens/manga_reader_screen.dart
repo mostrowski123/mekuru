@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,6 +35,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// controls; edge taps navigate pages. Pinch-to-zoom is handled by each
 /// [MangaPageView] via [InteractiveViewer].
 const double _mangaCenterTapZoneWidthFraction = 0.60;
+const SystemUiOverlayStyle _mangaReaderOverlayStyle = SystemUiOverlayStyle(
+  statusBarIconBrightness: Brightness.light,
+  statusBarBrightness: Brightness.dark,
+  systemNavigationBarIconBrightness: Brightness.light,
+  systemStatusBarContrastEnforced: false,
+  systemNavigationBarContrastEnforced: false,
+);
 
 class MangaReaderScreen extends ConsumerStatefulWidget {
   final Book book;
@@ -45,6 +53,8 @@ class MangaReaderScreen extends ConsumerStatefulWidget {
 }
 
 class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
+  static const _systemUiChannel = MethodChannel('mekuru/android_system_ui');
+
   late PageController _pageController;
   int _currentPage = 0;
   bool _showControls = false;
@@ -71,8 +81,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     _currentPage = cfi.startsWith('scroll:') ? 0 : (int.tryParse(cfi) ?? 0);
     _pageController = PageController(initialPage: _currentPage);
 
-    // Enter immersive mode
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    unawaited(_setReaderSystemBarsVisible(false));
 
     // Dismiss the library's "OCR Complete" overlay after the user opens
     // this manga once.
@@ -82,8 +91,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   @override
   void dispose() {
     _pageController.dispose();
-    // Restore system UI
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    unawaited(_setReaderSystemBarsVisible(true));
     super.dispose();
   }
 
@@ -109,11 +117,25 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   }
 
   void _toggleControls() {
-    setState(() => _showControls = !_showControls);
-    if (_showControls) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    } else {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _setControlsVisible(!_showControls);
+  }
+
+  void _setControlsVisible(bool visible) {
+    if (_showControls == visible) return;
+    setState(() => _showControls = visible);
+    unawaited(_setReaderSystemBarsVisible(visible));
+  }
+
+  Future<void> _setReaderSystemBarsVisible(bool visible) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+
+    try {
+      await _systemUiChannel.invokeMethod<void>('setSystemBarsVisible', {
+        'visible': visible,
+      });
+    } catch (_) {
+      // Best effort only; the reader still works if the native host declines
+      // the request on a non-Android platform or older embedder.
     }
   }
 
@@ -172,7 +194,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
 
     // Hide controls if visible
     if (_showControls) {
-      setState(() => _showControls = false);
+      _setControlsVisible(false);
     }
 
     final requestId = ++_lookupRequestId;
@@ -604,200 +626,203 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     final enableWordOverlays = !isOcrRunning;
     final bottomSliderPadding = bottomControlPadding(MediaQuery.of(context));
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: pagesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load manga',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  style: const TextStyle(color: Colors.white70),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _mangaReaderOverlayStyle,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: pagesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Failed to load manga',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    error.toString(),
+                    style: const TextStyle(color: Colors.white70),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        data: (mokuroBook) {
-          final totalPages = mokuroBook.pages.length;
-          if (totalPages == 0) {
-            return const Center(
-              child: Text(
-                'No pages found',
-                style: TextStyle(color: Colors.white),
-              ),
-            );
-          }
-
-          // Clamp restored page to valid range
-          if (_currentPage >= totalPages) {
-            _currentPage = totalPages - 1;
-          }
-
-          final isRtl = direction == MangaReadingDirection.rtl;
-          final spreads = viewMode == MangaViewMode.twoPageSpread
-              ? computeSpreads(totalPages, isRtl: isRtl)
-              : <PageSpread>[];
-
-          return Stack(
-            children: [
-              // Page content with tap zones
-              GestureDetector(
-                onTapUp: (details) => _handleTap(details, totalPages, spreads),
-                child: _buildViewContent(
-                  mokuroBook,
-                  viewMode,
-                  spreads,
-                  totalPages,
-                  isRtl,
-                  autoCrop,
-                  enableWordOverlays,
+          data: (mokuroBook) {
+            final totalPages = mokuroBook.pages.length;
+            if (totalPages == 0) {
+              return const Center(
+                child: Text(
+                  'No pages found',
+                  style: TextStyle(color: Colors.white),
                 ),
-              ),
+              );
+            }
 
-              // Top controls bar
-              if (_showControls)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.black87, Colors.transparent],
-                      ),
-                    ),
-                    child: SafeArea(
-                      bottom: false,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: Text(
-                              widget.book.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.settings,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => _showSettingsSheet(mokuroBook),
-                          ),
-                        ],
-                      ),
-                    ),
+            // Clamp restored page to valid range
+            if (_currentPage >= totalPages) {
+              _currentPage = totalPages - 1;
+            }
+
+            final isRtl = direction == MangaReadingDirection.rtl;
+            final spreads = viewMode == MangaViewMode.twoPageSpread
+                ? computeSpreads(totalPages, isRtl: isRtl)
+                : <PageSpread>[];
+
+            return Stack(
+              children: [
+                // Page content with tap zones
+                GestureDetector(
+                  onTapUp: (details) =>
+                      _handleTap(details, totalPages, spreads),
+                  child: _buildViewContent(
+                    mokuroBook,
+                    viewMode,
+                    spreads,
+                    totalPages,
+                    isRtl,
+                    autoCrop,
+                    enableWordOverlays,
                   ),
                 ),
 
-              // Bottom controls bar with page slider
-              if (_showControls)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [Colors.black87, Colors.transparent],
-                      ),
-                    ),
-                    child: SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          0,
-                          16,
-                          bottomSliderPadding,
+                // Top controls bar
+                if (_showControls)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.black87, Colors.transparent],
                         ),
+                      ),
+                      child: SafeArea(
+                        bottom: false,
                         child: Row(
                           children: [
-                            Text(
-                              '${_currentPage + 1}',
-                              style: const TextStyle(
+                            IconButton(
+                              icon: const Icon(
+                                Icons.arrow_back,
                                 color: Colors.white,
-                                fontSize: 14,
                               ),
+                              onPressed: () => Navigator.pop(context),
                             ),
                             Expanded(
-                              child: Directionality(
-                                textDirection: isRtl
-                                    ? TextDirection.rtl
-                                    : TextDirection.ltr,
-                                child: Slider(
-                                  value: _currentPage.toDouble(),
-                                  min: 0,
-                                  max: (totalPages - 1).toDouble(),
-                                  divisions: totalPages > 1
-                                      ? totalPages - 1
-                                      : null,
-                                  onChanged: (value) {
-                                    final page = value.round();
-                                    switch (viewMode) {
-                                      case MangaViewMode.singlePage:
-                                        _goToPage(page, totalPages);
-                                      case MangaViewMode.twoPageSpread:
-                                        final si = spreadIndexForPage(
-                                          spreads,
-                                          page,
-                                        );
-                                        _spreadViewKey.currentState?.goToSpread(
-                                          si,
-                                        );
-                                      case MangaViewMode.scroll:
-                                        _scrollViewKey.currentState
-                                            ?.scrollToPage(page);
-                                    }
-                                  },
+                              child: Text(
+                                widget.book.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            Text(
-                              '$totalPages',
-                              style: const TextStyle(
+                            IconButton(
+                              icon: const Icon(
+                                Icons.settings,
                                 color: Colors.white,
-                                fontSize: 14,
                               ),
+                              onPressed: () => _showSettingsSheet(mokuroBook),
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          );
-        },
+
+                // Bottom controls bar with page slider
+                if (_showControls)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [Colors.black87, Colors.transparent],
+                        ),
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            16,
+                            0,
+                            16,
+                            bottomSliderPadding,
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${_currentPage + 1}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Expanded(
+                                child: Directionality(
+                                  textDirection: isRtl
+                                      ? TextDirection.rtl
+                                      : TextDirection.ltr,
+                                  child: Slider(
+                                    value: _currentPage.toDouble(),
+                                    min: 0,
+                                    max: (totalPages - 1).toDouble(),
+                                    divisions: totalPages > 1
+                                        ? totalPages - 1
+                                        : null,
+                                    onChanged: (value) {
+                                      final page = value.round();
+                                      switch (viewMode) {
+                                        case MangaViewMode.singlePage:
+                                          _goToPage(page, totalPages);
+                                        case MangaViewMode.twoPageSpread:
+                                          final si = spreadIndexForPage(
+                                            spreads,
+                                            page,
+                                          );
+                                          _spreadViewKey.currentState
+                                              ?.goToSpread(si);
+                                        case MangaViewMode.scroll:
+                                          _scrollViewKey.currentState
+                                              ?.scrollToPage(page);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '$totalPages',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

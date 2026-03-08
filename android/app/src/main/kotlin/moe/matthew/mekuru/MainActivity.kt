@@ -9,6 +9,8 @@ import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.ichi2.anki.FlashCardsContract
 import com.ichi2.anki.api.AddContentApi
 import io.flutter.embedding.android.FlutterActivity
@@ -20,6 +22,7 @@ class MainActivity : FlutterActivity() {
     companion object {
         private const val SAF_CHANNEL_NAME = "mekuru/android_saf"
         private const val ANKI_CHANNEL_NAME = "mekuru/ankidroid_native"
+        private const val SYSTEM_UI_CHANNEL_NAME = "mekuru/android_system_ui"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
     }
 
@@ -49,6 +52,15 @@ class MainActivity : FlutterActivity() {
                     handleAnkiMethodCall(call, result)
                 } catch (e: Exception) {
                     result.error("anki_error", e.message, null)
+                }
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SYSTEM_UI_CHANNEL_NAME)
+            .setMethodCallHandler { call, result ->
+                try {
+                    handleSystemUiMethodCall(call, result)
+                } catch (e: Exception) {
+                    result.error("system_ui_error", e.message, null)
                 }
             }
     }
@@ -217,6 +229,36 @@ class MainActivity : FlutterActivity() {
                 }
             }
             else -> result.notImplemented()
+        }
+    }
+
+    private fun handleSystemUiMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "setSystemBarsVisible" -> {
+                val visible = call.argument<Boolean>("visible")
+                if (visible == null) {
+                    result.error("bad_args", "visible is required", null)
+                    return
+                }
+
+                setSystemBarsVisible(visible)
+                result.success(null)
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    private fun setSystemBarsVisible(visible: Boolean) {
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.isAppearanceLightStatusBars = false
+        controller.isAppearanceLightNavigationBars = false
+
+        if (visible) {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.hide(WindowInsetsCompat.Type.systemBars())
         }
     }
 
