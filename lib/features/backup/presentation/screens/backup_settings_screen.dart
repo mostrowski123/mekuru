@@ -60,6 +60,45 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       body: ListView(
         children: [
           if (isWorking) const LinearProgressIndicator(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Card(
+              color: theme.colorScheme.surfaceContainerHighest,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, color: theme.colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.backupScopeNoteTitle,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.backupScopeNoteBody,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.backupScopeNoteRestore,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           _SectionHeader(title: l10n.backupSectionBackup),
           ListTile(
             leading: Icon(

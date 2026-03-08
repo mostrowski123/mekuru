@@ -1741,7 +1741,7 @@ abstract class AppLocalizations {
   /// Subtitle for the create-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Save all settings and reading data'**
+  /// **'Save your settings and user data, like bookmarks, highlights, and vocabulary lists. EPUB and manga files are not included.'**
   String get backupCreateNowSubtitle;
 
   /// Title for the export-backup action.
@@ -1753,7 +1753,7 @@ abstract class AppLocalizations {
   /// Subtitle for the export-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Save your latest backup to a file'**
+  /// **'Save your latest settings and user-data backup to a file. EPUB and manga files are not included.'**
   String get backupExportSubtitle;
 
   /// Native file picker title when exporting a backup.
@@ -1761,6 +1761,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Backup'**
   String get backupSaveFileDialogTitle;
+
+  /// Title for the informational note explaining backup scope.
+  ///
+  /// In en, this message translates to:
+  /// **'What gets backed up?'**
+  String get backupScopeNoteTitle;
+
+  /// Body text for the informational note explaining backup scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Backups include your settings and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB or manga files.'**
+  String get backupScopeNoteBody;
+
+  /// Follow-up text for the informational note explaining how restored history is reapplied.
+  ///
+  /// In en, this message translates to:
+  /// **'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back.'**
+  String get backupScopeNoteRestore;
 
   /// Section header for auto-backup settings.
   ///
@@ -1807,7 +1825,7 @@ abstract class AppLocalizations {
   /// Subtitle for the import-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Restore from a .mekuru file'**
+  /// **'Restore settings and user data from a .mekuru file. Re-import the same EPUB or manga content to bring back its history.'**
   String get backupImportFileSubtitle;
 
   /// Section header for the backup history list.
@@ -1960,7 +1978,7 @@ abstract class AppLocalizations {
   /// Part of the restore summary message for pending book data.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one {# book saved for later import} other {# books saved for later import}}'**
+  /// **'{count, plural, one {# book is waiting for the same EPUB or manga content to be re-imported} other {# books are waiting for the same EPUB or manga content to be re-imported}}'**
   String backupRestoreSummaryBooksPending({required int count});
 
   /// Fallback restore summary when there is nothing else to report.
@@ -1978,7 +1996,7 @@ abstract class AppLocalizations {
   /// Body for the restore backup confirmation dialog.
   ///
   /// In en, this message translates to:
-  /// **'This will restore settings and reading data from {fileName}. Your current settings will be overwritten.'**
+  /// **'This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB or manga files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.'**
   String backupRestoreDialogBody({required String fileName});
 
   /// Title for the delete backup confirmation dialog.

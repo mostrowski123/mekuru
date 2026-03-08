@@ -338,6 +338,108 @@ void main() {
     });
 
     test(
+      'restores pending history after re-importing identical content',
+      () async {
+        final backupDir = Directory(p.join(tempDir.path, 'backup_content'))
+          ..createSync();
+        final restoredDir = Directory(p.join(tempDir.path, 'restored_content'))
+          ..createSync();
+
+        File(
+          p.join(backupDir.path, 'chapter.txt'),
+        ).writeAsStringSync('same content');
+        File(
+          p.join(restoredDir.path, 'chapter.txt'),
+        ).writeAsStringSync('same content');
+
+        final matchService = BookMatchService();
+        final bookKey = await matchService.generateHashKeyForPath(
+          backupDir.path,
+          'epub',
+        );
+        expect(bookKey, isNotNull);
+
+        final manifest = buildManifest(
+          books: [
+            BackupBookEntry(
+              bookKey: bookKey!,
+              title: 'Imported Later',
+              bookType: 'epub',
+              readProgress: 0.75,
+              lastReadCfi: 'epubcfi(/6/14)',
+              bookmarks: [
+                BackupBookmarkEntry(
+                  cfi: 'epubcfi(/6/18)',
+                  progress: 0.9,
+                  chapterTitle: 'Chapter 3',
+                  userNote: 'Resume here',
+                  dateAdded: DateTime.utc(2026, 1, 3),
+                ),
+              ],
+              highlights: [
+                BackupHighlightEntry(
+                  cfiRange: 'epubcfi(/6/20,/1:0,/1:6)',
+                  selectedText: 'sample',
+                  color: 'yellow',
+                  userNote: 'Important',
+                  dateAdded: DateTime.utc(2026, 1, 4),
+                ),
+              ],
+            ),
+          ],
+        );
+
+        final restoreResult = await restoreService.restoreBooks(manifest);
+        expect(restoreResult.applied, 0);
+        expect(restoreResult.pending, 1);
+
+        final bookId = await db
+            .into(db.books)
+            .insert(
+              BooksCompanion.insert(
+                title: 'Imported Later',
+                filePath: restoredDir.path,
+              ),
+            );
+
+        final restoredKey = await matchService.generateHashKeyForPath(
+          restoredDir.path,
+          'epub',
+        );
+        expect(restoredKey, bookKey);
+
+        final pending = await pendingRepo.findByBookKey(restoredKey!);
+        expect(pending, isNotNull);
+
+        final entry = BackupSerializer.decodeBookEntry(pending!.dataJson);
+        await restoreService.applyBookData(bookId, entry);
+        await pendingRepo.deleteById(pending.id);
+
+        final restoredBook = await (db.select(
+          db.books,
+        )..where((t) => t.id.equals(bookId))).getSingle();
+        expect(restoredBook.readProgress, 0.75);
+        expect(restoredBook.lastReadCfi, 'epubcfi(/6/14)');
+
+        final bookmarks = await (db.select(
+          db.bookmarks,
+        )..where((t) => t.bookId.equals(bookId))).get();
+        expect(bookmarks, hasLength(1));
+        expect(bookmarks.single.cfi, 'epubcfi(/6/18)');
+        expect(bookmarks.single.userNote, 'Resume here');
+
+        final highlights = await (db.select(
+          db.highlights,
+        )..where((t) => t.bookId.equals(bookId))).get();
+        expect(highlights, hasLength(1));
+        expect(highlights.single.selectedText, 'sample');
+        expect(highlights.single.userNote, 'Important');
+
+        expect(await pendingRepo.findByBookKey(restoredKey), equals(null));
+      },
+    );
+
+    test(
       'restoring unmatched book repeatedly keeps one pending row with latest data',
       () async {
         final firstManifest = buildManifest(

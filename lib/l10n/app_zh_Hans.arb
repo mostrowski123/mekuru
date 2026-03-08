@@ -1219,7 +1219,7 @@
   "@backupCreateNowTitle": {
     "description": "Title for the create-backup action."
   },
-  "backupCreateNowSubtitle": "保存所有设置和阅读数据",
+  "backupCreateNowSubtitle": "保存您的设置和用户数据，例如书签、高亮和词汇表。实际的 EPUB 和漫画文件不会包含在备份中。",
   "@backupCreateNowSubtitle": {
     "description": "Subtitle for the create-backup action."
   },
@@ -1227,13 +1227,25 @@
   "@backupExportTitle": {
     "description": "Title for the export-backup action."
   },
-  "backupExportSubtitle": "将最近的备份保存为文件",
+  "backupExportSubtitle": "将最新的设置和用户数据备份保存为文件。实际的 EPUB 和漫画文件不会包含在备份中。",
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
   "backupSaveFileDialogTitle": "保存备份",
   "@backupSaveFileDialogTitle": {
     "description": "Native file picker title when exporting a backup."
+  },
+  "backupScopeNoteTitle": "会备份哪些内容？",
+  "@backupScopeNoteTitle": {
+    "description": "Title for the informational note explaining backup scope."
+  },
+  "backupScopeNoteBody": "备份会保存您在 Mekuru 中的设置和自己创建的数据，例如书签、高亮和词汇表。实际的 EPUB 或漫画文件不会包含在备份中。",
+  "@backupScopeNoteBody": {
+    "description": "Body text for the informational note explaining backup scope."
+  },
+  "backupScopeNoteRestore": "恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。",
+  "@backupScopeNoteRestore": {
+    "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
   "backupSectionAutoBackup": "自动备份",
   "@backupSectionAutoBackup": {
@@ -1263,7 +1275,7 @@
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
   },
-  "backupImportFileSubtitle": "从 .mekuru 文件恢复",
+  "backupImportFileSubtitle": "从 .mekuru 文件恢复设置和用户数据。重新导入相同的 EPUB 或漫画内容即可恢复记录。",
   "@backupImportFileSubtitle": {
     "description": "Subtitle for the import-backup action."
   },
@@ -1424,7 +1436,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# 本书已保存，稍后导入} other {# 本书已保存，稍后导入}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {# 本书正在等待重新导入相同的 EPUB 或漫画内容} other {# 本书正在等待重新导入相同的 EPUB 或漫画内容}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {
@@ -1441,7 +1453,7 @@
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "这将从 {fileName} 恢复设置和阅读数据。您当前的设置将被覆盖。",
+  "backupRestoreDialogBody": "这将从 {fileName} 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB 或漫画文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。您当前的设置将被覆盖。",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {

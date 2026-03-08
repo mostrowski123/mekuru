@@ -1219,7 +1219,7 @@
   "@backupCreateNowTitle": {
     "description": "Title for the create-backup action."
   },
-  "backupCreateNowSubtitle": "Guarda todas las configuraciones y datos de lectura",
+  "backupCreateNowSubtitle": "Guarda tu configuración y tus datos de usuario, como marcadores, resaltados y listas de vocabulario. Los archivos EPUB y manga no se incluyen.",
   "@backupCreateNowSubtitle": {
     "description": "Subtitle for the create-backup action."
   },
@@ -1227,13 +1227,25 @@
   "@backupExportTitle": {
     "description": "Title for the export-backup action."
   },
-  "backupExportSubtitle": "Guarda tu copia de seguridad más reciente en un archivo",
+  "backupExportSubtitle": "Guarda en un archivo tu copia más reciente de configuración y datos de usuario. Los archivos EPUB y manga no se incluyen.",
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
   "backupSaveFileDialogTitle": "Guardar copia de seguridad",
   "@backupSaveFileDialogTitle": {
     "description": "Native file picker title when exporting a backup."
+  },
+  "backupScopeNoteTitle": "¿Qué se respalda?",
+  "@backupScopeNoteTitle": {
+    "description": "Title for the informational note explaining backup scope."
+  },
+  "backupScopeNoteBody": "Las copias de seguridad incluyen tu configuración y los datos que creaste en Mekuru, como marcadores, resaltados y listas de vocabulario. No incluyen los archivos EPUB o manga reales.",
+  "@backupScopeNoteBody": {
+    "description": "Body text for the informational note explaining backup scope."
+  },
+  "backupScopeNoteRestore": "Después de restaurar, vuelve a importar el mismo contenido EPUB o manga. Si el contenido coincide exactamente, tu historial volverá.",
+  "@backupScopeNoteRestore": {
+    "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
   "backupSectionAutoBackup": "Copia automática",
   "@backupSectionAutoBackup": {
@@ -1263,7 +1275,7 @@
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
   },
-  "backupImportFileSubtitle": "Restaurar desde un archivo .mekuru",
+  "backupImportFileSubtitle": "Restaura la configuración y los datos de usuario desde un archivo .mekuru. Vuelve a importar el mismo contenido EPUB o manga para recuperar su historial.",
   "@backupImportFileSubtitle": {
     "description": "Subtitle for the import-backup action."
   },
@@ -1424,7 +1436,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# libro guardado para importar más tarde} other {# libros guardados para importar más tarde}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {# libro está esperando que se vuelva a importar el mismo contenido EPUB o manga} other {# libros están esperando que se vuelva a importar el mismo contenido EPUB o manga}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {
@@ -1441,7 +1453,7 @@
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "Esto restaurará la configuración y los datos de lectura desde {fileName}. Tu configuración actual será sobrescrita.",
+  "backupRestoreDialogBody": "Esto restaurará la configuración y los datos de usuario desde {fileName}, como marcadores, resaltados y listas de vocabulario. No restaura los archivos EPUB o manga reales. Después de restaurar, vuelve a importar el mismo contenido EPUB o manga para recuperar su historial. Tu configuración actual será sobrescrita.",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {

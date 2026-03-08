@@ -944,16 +944,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupCreateNowTitle => 'Create Backup Now';
 
   @override
-  String get backupCreateNowSubtitle => 'Save all settings and reading data';
+  String get backupCreateNowSubtitle =>
+      'Save your settings and user data, like bookmarks, highlights, and vocabulary lists. EPUB and manga files are not included.';
 
   @override
   String get backupExportTitle => 'Export Backup';
 
   @override
-  String get backupExportSubtitle => 'Save your latest backup to a file';
+  String get backupExportSubtitle =>
+      'Save your latest settings and user-data backup to a file. EPUB and manga files are not included.';
 
   @override
   String get backupSaveFileDialogTitle => 'Save Backup';
+
+  @override
+  String get backupScopeNoteTitle => 'What gets backed up?';
+
+  @override
+  String get backupScopeNoteBody =>
+      'Backups include your settings and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB or manga files.';
+
+  @override
+  String get backupScopeNoteRestore =>
+      'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back.';
 
   @override
   String get backupSectionAutoBackup => 'Auto-Backup';
@@ -977,7 +990,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupImportFileTitle => 'Import Backup File';
 
   @override
-  String get backupImportFileSubtitle => 'Restore from a .mekuru file';
+  String get backupImportFileSubtitle =>
+      'Restore settings and user data from a .mekuru file. Re-import the same EPUB or manga content to bring back its history.';
 
   @override
   String get backupSectionHistory => 'Backup History';
@@ -1102,8 +1116,10 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# books saved for later import',
-      one: '# book saved for later import',
+      other:
+          '# books are waiting for the same EPUB or manga content to be re-imported',
+      one:
+          '# book is waiting for the same EPUB or manga content to be re-imported',
     );
     return '$_temp0';
   }
@@ -1116,7 +1132,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'This will restore settings and reading data from $fileName. Your current settings will be overwritten.';
+    return 'This will restore settings and user data from $fileName, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB or manga files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.';
   }
 
   @override

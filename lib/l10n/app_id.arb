@@ -1219,7 +1219,7 @@
   "@backupCreateNowTitle": {
     "description": "Title for the create-backup action."
   },
-  "backupCreateNowSubtitle": "Simpan semua pengaturan dan data bacaan",
+  "backupCreateNowSubtitle": "Simpan pengaturan dan data pengguna Anda, seperti bookmark, sorotan, dan daftar kosakata. File EPUB dan manga tidak disertakan.",
   "@backupCreateNowSubtitle": {
     "description": "Subtitle for the create-backup action."
   },
@@ -1227,13 +1227,25 @@
   "@backupExportTitle": {
     "description": "Title for the export-backup action."
   },
-  "backupExportSubtitle": "Simpan cadangan terbaru Anda ke file",
+  "backupExportSubtitle": "Simpan cadangan terbaru untuk pengaturan dan data pengguna Anda ke file. File EPUB dan manga tidak disertakan.",
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
   "backupSaveFileDialogTitle": "Simpan Cadangan",
   "@backupSaveFileDialogTitle": {
     "description": "Native file picker title when exporting a backup."
+  },
+  "backupScopeNoteTitle": "Apa yang dicadangkan?",
+  "@backupScopeNoteTitle": {
+    "description": "Title for the informational note explaining backup scope."
+  },
+  "backupScopeNoteBody": "Cadangan mencakup pengaturan dan data yang Anda buat di Mekuru, seperti bookmark, sorotan, dan daftar kosakata. Cadangan tidak mencakup file EPUB atau manga yang sebenarnya.",
+  "@backupScopeNoteBody": {
+    "description": "Body text for the informational note explaining backup scope."
+  },
+  "backupScopeNoteRestore": "Setelah memulihkan, impor ulang konten EPUB atau manga yang sama. Jika kontennya sama persis, riwayat Anda akan kembali.",
+  "@backupScopeNoteRestore": {
+    "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
   "backupSectionAutoBackup": "Cadangan Otomatis",
   "@backupSectionAutoBackup": {
@@ -1263,7 +1275,7 @@
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
   },
-  "backupImportFileSubtitle": "Pulihkan dari file .mekuru",
+  "backupImportFileSubtitle": "Pulihkan pengaturan dan data pengguna dari file .mekuru. Impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya.",
   "@backupImportFileSubtitle": {
     "description": "Subtitle for the import-backup action."
   },
@@ -1424,7 +1436,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# buku disimpan untuk impor nanti} other {# buku disimpan untuk impor nanti}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {# buku menunggu konten EPUB atau manga yang sama untuk diimpor ulang} other {# buku menunggu konten EPUB atau manga yang sama untuk diimpor ulang}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {
@@ -1441,7 +1453,7 @@
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "Ini akan memulihkan pengaturan dan data bacaan dari {fileName}. Pengaturan Anda saat ini akan ditimpa.",
+  "backupRestoreDialogBody": "Ini akan memulihkan pengaturan dan data pengguna dari {fileName}, seperti bookmark, sorotan, dan daftar kosakata. Ini tidak memulihkan file EPUB atau manga yang sebenarnya. Setelah memulihkan, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Pengaturan Anda saat ini akan ditimpa.",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {

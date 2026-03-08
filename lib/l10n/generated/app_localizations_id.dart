@@ -947,16 +947,28 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupCreateNowSubtitle =>
-      'Simpan semua pengaturan dan data bacaan';
+      'Simpan pengaturan dan data pengguna Anda, seperti bookmark, sorotan, dan daftar kosakata. File EPUB dan manga tidak disertakan.';
 
   @override
   String get backupExportTitle => 'Ekspor Cadangan';
 
   @override
-  String get backupExportSubtitle => 'Simpan cadangan terbaru Anda ke file';
+  String get backupExportSubtitle =>
+      'Simpan cadangan terbaru untuk pengaturan dan data pengguna Anda ke file. File EPUB dan manga tidak disertakan.';
 
   @override
   String get backupSaveFileDialogTitle => 'Simpan Cadangan';
+
+  @override
+  String get backupScopeNoteTitle => 'Apa yang dicadangkan?';
+
+  @override
+  String get backupScopeNoteBody =>
+      'Cadangan mencakup pengaturan dan data yang Anda buat di Mekuru, seperti bookmark, sorotan, dan daftar kosakata. Cadangan tidak mencakup file EPUB atau manga yang sebenarnya.';
+
+  @override
+  String get backupScopeNoteRestore =>
+      'Setelah memulihkan, impor ulang konten EPUB atau manga yang sama. Jika kontennya sama persis, riwayat Anda akan kembali.';
 
   @override
   String get backupSectionAutoBackup => 'Cadangan Otomatis';
@@ -980,7 +992,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupImportFileTitle => 'Impor File Cadangan';
 
   @override
-  String get backupImportFileSubtitle => 'Pulihkan dari file .mekuru';
+  String get backupImportFileSubtitle =>
+      'Pulihkan pengaturan dan data pengguna dari file .mekuru. Impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya.';
 
   @override
   String get backupSectionHistory => 'Riwayat Cadangan';
@@ -1106,8 +1119,10 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# buku disimpan untuk impor nanti',
-      one: '# buku disimpan untuk impor nanti',
+      other:
+          '# buku menunggu konten EPUB atau manga yang sama untuk diimpor ulang',
+      one:
+          '# buku menunggu konten EPUB atau manga yang sama untuk diimpor ulang',
     );
     return '$_temp0';
   }
@@ -1120,7 +1135,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'Ini akan memulihkan pengaturan dan data bacaan dari $fileName. Pengaturan Anda saat ini akan ditimpa.';
+    return 'Ini akan memulihkan pengaturan dan data pengguna dari $fileName, seperti bookmark, sorotan, dan daftar kosakata. Ini tidak memulihkan file EPUB atau manga yang sebenarnya. Setelah memulihkan, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Pengaturan Anda saat ini akan ditimpa.';
   }
 
   @override

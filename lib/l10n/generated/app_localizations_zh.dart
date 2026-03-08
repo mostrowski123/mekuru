@@ -902,16 +902,29 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupCreateNowTitle => '立即创建备份';
 
   @override
-  String get backupCreateNowSubtitle => '保存所有设置和阅读数据';
+  String get backupCreateNowSubtitle =>
+      '保存您的设置和用户数据，例如书签、高亮和词汇表。实际的 EPUB 和漫画文件不会包含在备份中。';
 
   @override
   String get backupExportTitle => '导出备份';
 
   @override
-  String get backupExportSubtitle => '将最近的备份保存为文件';
+  String get backupExportSubtitle =>
+      '将最新的设置和用户数据备份保存为文件。实际的 EPUB 和漫画文件不会包含在备份中。';
 
   @override
   String get backupSaveFileDialogTitle => '保存备份';
+
+  @override
+  String get backupScopeNoteTitle => '会备份哪些内容？';
+
+  @override
+  String get backupScopeNoteBody =>
+      '备份会保存您在 Mekuru 中的设置和自己创建的数据，例如书签、高亮和词汇表。实际的 EPUB 或漫画文件不会包含在备份中。';
+
+  @override
+  String get backupScopeNoteRestore =>
+      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。';
 
   @override
   String get backupSectionAutoBackup => '自动备份';
@@ -935,7 +948,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupImportFileTitle => '导入备份文件';
 
   @override
-  String get backupImportFileSubtitle => '从 .mekuru 文件恢复';
+  String get backupImportFileSubtitle =>
+      '从 .mekuru 文件恢复设置和用户数据。重新导入相同的 EPUB 或漫画内容即可恢复记录。';
 
   @override
   String get backupSectionHistory => '备份历史';
@@ -1057,8 +1071,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 本书已保存，稍后导入',
-      one: '# 本书已保存，稍后导入',
+      other: '# 本书正在等待重新导入相同的 EPUB 或漫画内容',
+      one: '# 本书正在等待重新导入相同的 EPUB 或漫画内容',
     );
     return '$_temp0';
   }
@@ -1071,7 +1085,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return '这将从 $fileName 恢复设置和阅读数据。您当前的设置将被覆盖。';
+    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB 或漫画文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。您当前的设置将被覆盖。';
   }
 
   @override
@@ -2533,16 +2547,29 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupCreateNowTitle => '立即创建备份';
 
   @override
-  String get backupCreateNowSubtitle => '保存所有设置和阅读数据';
+  String get backupCreateNowSubtitle =>
+      '保存您的设置和用户数据，例如书签、高亮和词汇表。实际的 EPUB 和漫画文件不会包含在备份中。';
 
   @override
   String get backupExportTitle => '导出备份';
 
   @override
-  String get backupExportSubtitle => '将最近的备份保存为文件';
+  String get backupExportSubtitle =>
+      '将最新的设置和用户数据备份保存为文件。实际的 EPUB 和漫画文件不会包含在备份中。';
 
   @override
   String get backupSaveFileDialogTitle => '保存备份';
+
+  @override
+  String get backupScopeNoteTitle => '会备份哪些内容？';
+
+  @override
+  String get backupScopeNoteBody =>
+      '备份会保存您在 Mekuru 中的设置和自己创建的数据，例如书签、高亮和词汇表。实际的 EPUB 或漫画文件不会包含在备份中。';
+
+  @override
+  String get backupScopeNoteRestore =>
+      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。';
 
   @override
   String get backupSectionAutoBackup => '自动备份';
@@ -2566,7 +2593,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupImportFileTitle => '导入备份文件';
 
   @override
-  String get backupImportFileSubtitle => '从 .mekuru 文件恢复';
+  String get backupImportFileSubtitle =>
+      '从 .mekuru 文件恢复设置和用户数据。重新导入相同的 EPUB 或漫画内容即可恢复记录。';
 
   @override
   String get backupSectionHistory => '备份历史';
@@ -2688,8 +2716,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 本书已保存，稍后导入',
-      one: '# 本书已保存，稍后导入',
+      other: '# 本书正在等待重新导入相同的 EPUB 或漫画内容',
+      one: '# 本书正在等待重新导入相同的 EPUB 或漫画内容',
     );
     return '$_temp0';
   }
@@ -2702,7 +2730,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return '这将从 $fileName 恢复设置和阅读数据。您当前的设置将被覆盖。';
+    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB 或漫画文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。您当前的设置将被覆盖。';
   }
 
   @override
