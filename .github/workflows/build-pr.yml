@@ -23,6 +23,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      # Keep Android CI on the same Gradle watcher settings as release builds.
+      GRADLE_OPTS: -Dorg.gradle.vfs.watch=false
 
     steps:
       - uses: actions/checkout@v4

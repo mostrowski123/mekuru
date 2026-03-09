@@ -23,6 +23,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      # GitHub-hosted Ubuntu runners intermittently trip Gradle's VFS watcher
+      # when Flutter runs Android builds, which can terminate release bundling.
+      GRADLE_OPTS: -Dorg.gradle.vfs.watch=false
 
     steps:
       - uses: actions/checkout@v4
