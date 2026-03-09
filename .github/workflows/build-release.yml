@@ -23,10 +23,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    env:
-      # GitHub-hosted Ubuntu runners intermittently trip Gradle's VFS watcher
-      # when Flutter runs Android builds, which can terminate release bundling.
-      GRADLE_OPTS: -Dorg.gradle.vfs.watch=false
 
     steps:
       - uses: actions/checkout@v4
@@ -60,6 +56,17 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/build.gradle.kts', 'android/app/build.gradle.kts') }}
           restore-keys: gradle-
+
+      - name: Configure Gradle for GitHub runner
+        run: |
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/gradle.properties <<'EOF'
+          # Keep Android release builds within the memory limits of GitHub-hosted runners.
+          org.gradle.daemon=false
+          org.gradle.jvmargs=-Xmx3G -XX:MaxMetaspaceSize=1G -XX:ReservedCodeCacheSize=512m -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.workers.max=2
+          org.gradle.vfs.watch=false
+          EOF
 
       - name: Install dependencies
         run: flutter pub get
@@ -105,7 +112,7 @@ jobs:
 
       - name: Build release APK
         timeout-minutes: 15
-        run: flutter build apk --release --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
+        run: flutter build apk --release --no-pub --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
       - name: Verify MeCab native libs in release APK
         run: |
@@ -145,7 +152,7 @@ jobs:
 
       - name: Build release App Bundle
         timeout-minutes: 15
-        run: flutter build appbundle --release --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
+        run: flutter build appbundle --release --no-pub --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
       - name: Verify MeCab native libs in release App Bundle
         run: |
