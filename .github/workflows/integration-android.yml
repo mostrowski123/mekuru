@@ -20,10 +20,6 @@ on:
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/integration-android.yml'
-  schedule:
-    # 03:17 JST daily. Avoid the top of the hour because GitHub schedules can
-    # be delayed or dropped during heavy load windows.
-    - cron: '17 18 * * *'
   workflow_dispatch:
 
 permissions:
@@ -102,13 +98,25 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Run Android integration smoke test
+        timeout-minutes: 30
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
+          target: google_atd
           arch: x86_64
-          profile: pixel_7
+          cores: 2
+          ram-size: 2048M
+          heap-size: 512M
+          disk-size: 2048M
           disable-animations: true
           emulator-boot-timeout: 1200
+          emulator-options: >-
+            -no-window
+            -gpu swiftshader_indirect
+            -no-snapshot
+            -noaudio
+            -no-boot-anim
+            -no-metrics
           script: >
             flutter test integration_test/app_smoke_test.dart
             -d emulator-5554
