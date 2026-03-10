@@ -1,38 +1,49 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
+name: Bug Report
+about: Report a problem with Mekuru
+title: '[Bug] '
+labels: bug
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**App version**
+<!-- Go to Settings to find this. Example: 1.2.3 -->
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+
+**Device info**
+- Device: <!-- e.g. Pixel 8, Samsung Galaxy S24 -->
+- Android version: <!-- e.g. Android 14 -->
+
+**Feature area**
+<!-- Which part of the app is affected? Check all that apply. -->
+- [ ] Library / book import
+- [ ] EPUB reader
+- [ ] Manga viewer
+- [ ] OCR
+- [ ] Dictionary lookup
+- [ ] Vocabulary / Anki export
+- [ ] Backup / restore
+- [ ] Settings
+- [ ] Other
+
+**Describe the bug**
+<!-- A clear description of what went wrong. -->
+
+
+**Steps to reproduce**
+1.
+2.
+3.
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+<!-- What should have happened instead? -->
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Screenshots or screen recordings**
+<!-- If applicable, attach images or videos that show the problem. -->
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
 
 **Additional context**
-Add any other context about the problem here.
+<!-- Any other details: specific book/file that triggers it, dictionary in use, error messages, etc. -->
+
