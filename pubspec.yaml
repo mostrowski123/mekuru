@@ -96,6 +96,8 @@ dev_dependencies:
   sentry_dart_plugin: ^3.2.1
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^6.0.0
 
   # Code generation
@@ -117,4 +119,3 @@ sentry:
   upload_source_maps: true
   project: mekuru
   org: matt-dl
-
