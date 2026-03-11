@@ -86,7 +86,7 @@ jobs:
           --sentryEnvironment=production
 
       - name: Run static analysis
-        run: flutter analyze
+        run: flutter analyze lib test
 
       - name: Run tests
         timeout-minutes: 20

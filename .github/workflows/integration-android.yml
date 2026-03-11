@@ -110,8 +110,17 @@ jobs:
       - name: Pre-create AVD
         if: steps.avd-cache.outputs.cache-hit != 'true'
         run: |
-          yes | sdkmanager --install "system-images;android-34;google_atd;x86_64" --channel=0
-          echo "no" | avdmanager create avd -n test -k "system-images;android-34;google_atd;x86_64" --device "pixel_6" --force
+          ANDROID_SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(find "$ANDROID_SDK_ROOT" -type f -path '*/bin/sdkmanager' | head -n 1)"
+          AVDMANAGER="$(find "$ANDROID_SDK_ROOT" -type f -path '*/bin/avdmanager' | head -n 1)"
+
+          if [ -z "$SDKMANAGER" ] || [ -z "$AVDMANAGER" ]; then
+            echo "Android SDK command-line tools not found under $ANDROID_SDK_ROOT" >&2
+            exit 1
+          fi
+
+          yes | "$SDKMANAGER" --install "system-images;android-34;google_atd;x86_64" --channel=0
+          echo "no" | "$AVDMANAGER" create avd -n test -k "system-images;android-34;google_atd;x86_64" --device "pixel_6" --force
 
       - name: Run Android integration smoke test
         timeout-minutes: 30
