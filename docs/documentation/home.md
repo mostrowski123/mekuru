@@ -6,6 +6,10 @@ Mekuru is a Japanese-first EPUB and manga reader built for language learners and
 
 ## Quick Start
 
+**0. Install Mekuru**
+
+Mekuru is not live on the public Google Play listing yet. To install it through Google Play, join [mekuru-testing-group](https://groups.google.com/g/mekuru-testing-group) first, then use the [Google Play testing page](https://play.google.com/apps/testing/moe.matthew.mekuru). This is the easiest option if you do not want to download an APK from GitHub or build one yourself. See [Installing Mekuru](getting-started/installing-mekuru.md).
+
 **1. Import something to read**
 
 From the **Library** tab, tap **+** and choose one of the supported import flows:

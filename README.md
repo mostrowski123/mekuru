@@ -8,7 +8,17 @@
 
 Mekuru is a Japanese-first EPUB and manga reader built with Flutter for language learners and native readers. It combines vertical EPUB reading, Mokuro and CBZ manga support, offline dictionaries, and vocabulary tools in one app.
 
-**[Documentation](https://mostrowski123.github.io/japanese-e-reader/documentation/)** | **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)**
+**[Documentation](https://mostrowski123.github.io/japanese-e-reader/documentation/)** | **[Google Play Testing](https://play.google.com/apps/testing/moe.matthew.mekuru)**
+
+## Android Test Version
+
+Mekuru is not live on the public Google Play listing yet. If you want to install it through Google Play instead of downloading an APK from GitHub Releases or building the APK yourself, use the testing track:
+
+1. Join [mekuru-testing-group](https://groups.google.com/g/mekuru-testing-group).
+2. Open the [Google Play testing page](https://play.google.com/apps/testing/moe.matthew.mekuru).
+3. Install or update Mekuru from that page.
+
+Until you join the group, the app will not be visible on Google Play for your account. Signed APKs are also published on [GitHub Releases](https://github.com/mostrowski123/japanese-e-reader/releases).
 
 ## Features
 

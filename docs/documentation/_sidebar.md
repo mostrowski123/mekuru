@@ -1,5 +1,6 @@
 - [Home](/home.md)
 - **Getting Started**
+  - [Installing Mekuru](/getting-started/installing-mekuru.md)
   - [Importing Books (EPUB)](/getting-started/importing-books.md)
   - [Importing Manga](/getting-started/importing-manga.md)
   - [Setting Up Dictionaries](/getting-started/dictionaries.md)
