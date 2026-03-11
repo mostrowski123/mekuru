@@ -97,6 +97,22 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Cache AVD system image
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+            /usr/local/lib/android/sdk/system-images/android-34
+          key: avd-34-google_atd-x86_64-v1
+
+      - name: Pre-create AVD
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        run: |
+          yes | sdkmanager --install "system-images;android-34;google_atd;x86_64" --channel=0
+          echo "no" | avdmanager create avd -n test -k "system-images;android-34;google_atd;x86_64" --device "pixel_6" --force
+
       - name: Run Android integration smoke test
         timeout-minutes: 30
         uses: reactivecircus/android-emulator-runner@v2
@@ -117,6 +133,7 @@ jobs:
             -noaudio
             -no-boot-anim
             -no-metrics
+          force-avd-creation: ${{ steps.avd-cache.outputs.cache-hit != 'true' }}
           script: >
             flutter test integration_test/app_smoke_test.dart
             -d emulator-5554

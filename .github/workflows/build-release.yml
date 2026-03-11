@@ -68,8 +68,13 @@ jobs:
           org.gradle.vfs.watch=false
           EOF
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Install dependencies (without integration_test)
+        run: |
+          # Remove integration_test dev dependency before pub get so that
+          # GeneratedPluginRegistrant does not reference IntegrationTestPlugin,
+          # which is unavailable in release builds.
+          sed -i '/integration_test:/,/sdk: flutter/d' pubspec.yaml
+          flutter pub get
 
       - name: Run code generation
         run: dart run build_runner build --delete-conflicting-outputs
