@@ -19,6 +19,7 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
+import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -34,7 +35,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Supports RTL (default) and LTR reading directions. Center tap toggles
 /// controls; edge taps navigate pages. Pinch-to-zoom is handled by each
 /// [MangaPageView] via [InteractiveViewer].
-const double _mangaCenterTapZoneWidthFraction = 0.60;
 const SystemUiOverlayStyle _mangaReaderOverlayStyle = SystemUiOverlayStyle(
   statusBarIconBrightness: Brightness.light,
   statusBarBrightness: Brightness.dark,
@@ -359,11 +359,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   ]) {
     if (_isZoomed) return; // Don't navigate when zoomed
 
-    final screenSize = MediaQuery.of(context).size;
-    final normalizedX = details.localPosition.dx / screenSize.width;
-    final normalizedY = details.localPosition.dy / screenSize.height;
+    final screenSize = MediaQuery.sizeOf(context);
+    final normalizedX = (details.globalPosition.dx / screenSize.width)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    final normalizedY = (details.globalPosition.dy / screenSize.height)
+        .clamp(0.0, 1.0)
+        .toDouble();
 
     final direction = ref.read(mangaReadingDirectionProvider);
+    final readerSettings = ref.read(readerSettingsProvider);
     final readerDir = direction == MangaReadingDirection.rtl
         ? ReaderDirection.rtl
         : ReaderDirection.ltr;
@@ -372,7 +377,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       normalizedX: normalizedX,
       normalizedY: normalizedY,
       readingDirection: readerDir,
-      centerZoneWidthFraction: _mangaCenterTapZoneWidthFraction,
+      centerZoneWidthFraction: mangaCenterTapZoneWidthFromEdgeZoneWidth(
+        readerSettings.mangaPageTurnEdgeZoneWidthFraction,
+      ),
     );
 
     switch (intent) {
@@ -400,13 +407,18 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           final direction = ref.watch(mangaReadingDirectionProvider);
           final transparent = ref.watch(mangaLookupTransparencyProvider);
           final autoCrop = ref.watch(mangaAutoCropProvider);
+          final readerSettings = ref.watch(readerSettingsProvider);
+          final readerNotifier = ref.read(readerSettingsProvider.notifier);
           final l10n = context.l10n;
+          final theme = Theme.of(context);
           final hasComputedAutoCrop =
               mokuroBook.autoCropVersion > 0 ||
               mokuroBook.pages.any((page) => page.contentBounds != null);
           final isProUnlocked = proUnlockedValue(
             ref.watch(proUnlockedProvider),
           );
+          final pageTurnEdgeZonePercent =
+              (readerSettings.mangaPageTurnEdgeZoneWidthFraction * 100).round();
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -458,6 +470,48 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                     onTap: () {
                       ref.read(mangaReadingDirectionProvider.notifier).toggle();
                     },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.touch_app),
+                            const SizedBox(width: 8),
+                            Text(l10n.mangaPageTurnEdgeZoneTitle),
+                            const Spacer(),
+                            Text(
+                              l10n.settingsPercentValue(
+                                percent: pageTurnEdgeZonePercent,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Slider(
+                          value:
+                              readerSettings.mangaPageTurnEdgeZoneWidthFraction,
+                          min: kMinMangaPageTurnEdgeZoneWidthFraction,
+                          max: kMaxMangaPageTurnEdgeZoneWidthFraction,
+                          divisions: 20,
+                          label: l10n.settingsPercentValue(
+                            percent: pageTurnEdgeZonePercent,
+                          ),
+                          onChanged: (value) {
+                            readerNotifier
+                                .setMangaPageTurnEdgeZoneWidthFraction(value);
+                          },
+                        ),
+                        Text(
+                          l10n.mangaPageTurnEdgeZoneSubtitle,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
                   ),
                   // Auto-crop toggle
                   if (isProUnlocked)

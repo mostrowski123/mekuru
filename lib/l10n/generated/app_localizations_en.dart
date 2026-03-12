@@ -1556,6 +1556,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mangaTransparentLookupSubtitle => 'See-through dictionary sheet';
 
   @override
+  String get mangaPageTurnEdgeZoneTitle => 'Page Turn Edge Zone';
+
+  @override
+  String get mangaPageTurnEdgeZoneSubtitle =>
+      'How much of each device edge is reserved for page turns.';
+
+  @override
   String get mangaDebugWordOverlayTitle => 'Debug Word Overlay';
 
   @override

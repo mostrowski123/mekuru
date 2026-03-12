@@ -1576,6 +1576,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Hoja de diccionario translúcida';
 
   @override
+  String get mangaPageTurnEdgeZoneTitle => 'Zona lateral para pasar página';
+
+  @override
+  String get mangaPageTurnEdgeZoneSubtitle =>
+      'Cuánto de cada borde del dispositivo se reserva para pasar de página.';
+
+  @override
   String get mangaDebugWordOverlayTitle => 'Depurar Superposición de Palabras';
 
   @override

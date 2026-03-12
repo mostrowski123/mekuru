@@ -1920,6 +1920,14 @@
   "@mangaTransparentLookupSubtitle": {
     "description": "Subtitle for the transparent lookup setting in the manga reader."
   },
+  "mangaPageTurnEdgeZoneTitle": "Zona Tepi Balik Halaman",
+  "@mangaPageTurnEdgeZoneTitle": {
+    "description": "Title for the page-turn edge zone width setting in the manga reader."
+  },
+  "mangaPageTurnEdgeZoneSubtitle": "Seberapa besar tiap tepi perangkat disisihkan untuk membalik halaman.",
+  "@mangaPageTurnEdgeZoneSubtitle": {
+    "description": "Subtitle for the page-turn edge zone width setting in the manga reader."
+  },
   "mangaDebugWordOverlayTitle": "Debug Overlay Kata",
   "@mangaDebugWordOverlayTitle": {
     "description": "Title for the debug word overlay setting in the manga reader."

@@ -26,6 +26,34 @@ extension ColorModeStorage on ColorMode {
   String get storageValue => name;
 }
 
+/// Default width fraction reserved for page-turn taps on each device edge in
+/// the manga reader.
+const double kDefaultMangaPageTurnEdgeZoneWidthFraction = 0.15;
+
+/// Minimum width fraction reserved for page-turn taps on each device edge in
+/// the manga reader.
+const double kMinMangaPageTurnEdgeZoneWidthFraction = 0.05;
+
+/// Maximum width fraction reserved for page-turn taps on each device edge in
+/// the manga reader.
+const double kMaxMangaPageTurnEdgeZoneWidthFraction = 0.25;
+
+double clampMangaPageTurnEdgeZoneWidthFraction(double value) {
+  return value
+      .clamp(
+        kMinMangaPageTurnEdgeZoneWidthFraction,
+        kMaxMangaPageTurnEdgeZoneWidthFraction,
+      )
+      .toDouble();
+}
+
+double mangaCenterTapZoneWidthFromEdgeZoneWidth(double edgeZoneWidthFraction) {
+  final clampedEdgeZoneWidth = clampMangaPageTurnEdgeZoneWidthFraction(
+    edgeZoneWidthFraction,
+  );
+  return 1.0 - (clampedEdgeZoneWidth * 2);
+}
+
 /// Reader display and interaction preferences.
 class ReaderSettings {
   final double fontSize;
@@ -38,6 +66,10 @@ class ReaderSettings {
   /// Swipe sensitivity as a fraction of screen dimension (0.01–0.20).
   /// Lower values require less finger movement to trigger a swipe.
   final double swipeSensitivity;
+
+  /// Width fraction reserved for page-turn taps on each device edge in the
+  /// manga reader.
+  final double mangaPageTurnEdgeZoneWidthFraction;
 
   final ColorMode colorMode;
   final bool keepScreenOn;
@@ -59,6 +91,8 @@ class ReaderSettings {
     this.horizontalPadding = 28,
     this.verticalPadding = 28,
     this.swipeSensitivity = 0.05,
+    this.mangaPageTurnEdgeZoneWidthFraction =
+        kDefaultMangaPageTurnEdgeZoneWidthFraction,
     this.colorMode = ColorMode.normal,
     this.keepScreenOn = false,
     this.sepiaIntensity = 0.5,
@@ -73,6 +107,7 @@ class ReaderSettings {
     int? horizontalPadding,
     int? verticalPadding,
     double? swipeSensitivity,
+    double? mangaPageTurnEdgeZoneWidthFraction,
     ColorMode? colorMode,
     bool? keepScreenOn,
     double? sepiaIntensity,
@@ -87,6 +122,9 @@ class ReaderSettings {
       horizontalPadding: horizontalPadding ?? this.horizontalPadding,
       verticalPadding: verticalPadding ?? this.verticalPadding,
       swipeSensitivity: swipeSensitivity ?? this.swipeSensitivity,
+      mangaPageTurnEdgeZoneWidthFraction:
+          mangaPageTurnEdgeZoneWidthFraction ??
+          this.mangaPageTurnEdgeZoneWidthFraction,
       colorMode: colorMode ?? this.colorMode,
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       sepiaIntensity: sepiaIntensity ?? this.sepiaIntensity,

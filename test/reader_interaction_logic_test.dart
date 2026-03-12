@@ -44,6 +44,22 @@ void main() {
     });
   });
 
+  group('mangaCenterTapZoneWidthFromEdgeZoneWidth', () {
+    test('uses a thinner default manga edge zone', () {
+      expect(
+        mangaCenterTapZoneWidthFromEdgeZoneWidth(
+          kDefaultMangaPageTurnEdgeZoneWidthFraction,
+        ),
+        0.7,
+      );
+    });
+
+    test('clamps values outside the supported range', () {
+      expect(mangaCenterTapZoneWidthFromEdgeZoneWidth(0.0), 0.9);
+      expect(mangaCenterTapZoneWidthFromEdgeZoneWidth(0.5), 0.5);
+    });
+  });
+
   // ── inferPageTransitionDirection ──────────────────────────────────────
 
   group('inferPageTransitionDirection', () {
@@ -230,18 +246,22 @@ void main() {
       expect(intent, ReaderNavigationIntent.goBackward);
     });
 
-    test('supports wider center zone for manga page turns near the edge', () {
+    test('supports thinner manga edge zones near the device edge', () {
       final nearEdgeIntent = resolveTapIntent(
-        normalizedX: 0.18,
+        normalizedX: 0.14,
         normalizedY: 0.5,
         readingDirection: ReaderDirection.rtl,
-        centerZoneWidthFraction: 0.60,
+        centerZoneWidthFraction: mangaCenterTapZoneWidthFromEdgeZoneWidth(
+          kDefaultMangaPageTurnEdgeZoneWidthFraction,
+        ),
       );
       final innerIntent = resolveTapIntent(
-        normalizedX: 0.22,
+        normalizedX: 0.16,
         normalizedY: 0.5,
         readingDirection: ReaderDirection.rtl,
-        centerZoneWidthFraction: 0.60,
+        centerZoneWidthFraction: mangaCenterTapZoneWidthFromEdgeZoneWidth(
+          kDefaultMangaPageTurnEdgeZoneWidthFraction,
+        ),
       );
 
       expect(nearEdgeIntent, ReaderNavigationIntent.goForward);

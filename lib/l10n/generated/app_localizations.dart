@@ -2695,6 +2695,18 @@ abstract class AppLocalizations {
   /// **'See-through dictionary sheet'**
   String get mangaTransparentLookupSubtitle;
 
+  /// Title for the page-turn edge zone width setting in the manga reader.
+  ///
+  /// In en, this message translates to:
+  /// **'Page Turn Edge Zone'**
+  String get mangaPageTurnEdgeZoneTitle;
+
+  /// Subtitle for the page-turn edge zone width setting in the manga reader.
+  ///
+  /// In en, this message translates to:
+  /// **'How much of each device edge is reserved for page turns.'**
+  String get mangaPageTurnEdgeZoneSubtitle;
+
   /// Title for the debug word overlay setting in the manga reader.
   ///
   /// In en, this message translates to:

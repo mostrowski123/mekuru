@@ -1998,6 +1998,14 @@
   "@mangaTransparentLookupSubtitle": {
     "description": "Subtitle for the transparent lookup setting in the manga reader."
   },
+  "mangaPageTurnEdgeZoneTitle": "Page Turn Edge Zone",
+  "@mangaPageTurnEdgeZoneTitle": {
+    "description": "Title for the page-turn edge zone width setting in the manga reader."
+  },
+  "mangaPageTurnEdgeZoneSubtitle": "How much of each device edge is reserved for page turns.",
+  "@mangaPageTurnEdgeZoneSubtitle": {
+    "description": "Subtitle for the page-turn edge zone width setting in the manga reader."
+  },
   "mangaDebugWordOverlayTitle": "Debug Word Overlay",
   "@mangaDebugWordOverlayTitle": {
     "description": "Title for the debug word overlay setting in the manga reader."

@@ -13,6 +13,8 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _horizontalPaddingKey = 'reader.horizontal_padding';
   static const _verticalPaddingKey = 'reader.vertical_padding';
   static const _swipeSensitivityKey = 'reader.swipe_sensitivity';
+  static const _mangaPageTurnEdgeZoneWidthKey =
+      'reader.manga_page_turn_edge_zone_width';
   static const _colorModeKey = 'reader.color_mode';
   static const _keepScreenOnKey = 'reader.keep_screen_on';
   static const _sepiaIntensityKey = 'reader.sepia_intensity';
@@ -27,6 +29,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
         prefs.containsKey(_horizontalPaddingKey) ||
         prefs.containsKey(_verticalPaddingKey) ||
         prefs.containsKey(_swipeSensitivityKey) ||
+        prefs.containsKey(_mangaPageTurnEdgeZoneWidthKey) ||
         prefs.containsKey(_colorModeKey) ||
         prefs.containsKey(_keepScreenOnKey) ||
         prefs.containsKey(_sepiaIntensityKey) ||
@@ -44,6 +47,11 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       horizontalPadding: prefs.getInt(_horizontalPaddingKey) ?? 28,
       verticalPadding: prefs.getInt(_verticalPaddingKey) ?? 28,
       swipeSensitivity: prefs.getDouble(_swipeSensitivityKey) ?? 0.05,
+      mangaPageTurnEdgeZoneWidthFraction:
+          clampMangaPageTurnEdgeZoneWidthFraction(
+            prefs.getDouble(_mangaPageTurnEdgeZoneWidthKey) ??
+                kDefaultMangaPageTurnEdgeZoneWidthFraction,
+          ),
       colorMode: colorModeFromString(prefs.getString(_colorModeKey)),
       keepScreenOn: prefs.getBool(_keepScreenOnKey) ?? false,
       sepiaIntensity: prefs.getDouble(_sepiaIntensityKey) ?? 0.5,
@@ -63,6 +71,10 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     await prefs.setInt(_horizontalPaddingKey, settings.horizontalPadding);
     await prefs.setInt(_verticalPaddingKey, settings.verticalPadding);
     await prefs.setDouble(_swipeSensitivityKey, settings.swipeSensitivity);
+    await prefs.setDouble(
+      _mangaPageTurnEdgeZoneWidthKey,
+      settings.mangaPageTurnEdgeZoneWidthFraction,
+    );
     await prefs.setString(_colorModeKey, settings.colorMode.storageValue);
     await prefs.setBool(_keepScreenOnKey, settings.keepScreenOn);
     await prefs.setDouble(_sepiaIntensityKey, settings.sepiaIntensity);

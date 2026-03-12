@@ -1499,6 +1499,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mangaTransparentLookupSubtitle => '半透明字典面板';
 
   @override
+  String get mangaPageTurnEdgeZoneTitle => '翻页边缘区域';
+
+  @override
+  String get mangaPageTurnEdgeZoneSubtitle => '控制设备两侧边缘各有多少区域用于翻页。';
+
+  @override
   String get mangaDebugWordOverlayTitle => '调试词语覆盖层';
 
   @override
@@ -3248,6 +3254,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get mangaTransparentLookupSubtitle => '半透明字典面板';
+
+  @override
+  String get mangaPageTurnEdgeZoneTitle => '翻页边缘区域';
+
+  @override
+  String get mangaPageTurnEdgeZoneSubtitle => '控制设备两侧边缘各有多少区域用于翻页。';
 
   @override
   String get mangaDebugWordOverlayTitle => '调试词语覆盖层';

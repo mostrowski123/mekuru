@@ -84,6 +84,7 @@ void main() {
         initialSettings: const ReaderSettings(
           fontSize: 24,
           pageTurnAnimationEnabled: false,
+          mangaPageTurnEdgeZoneWidthFraction: 0.12,
         ),
       );
 
@@ -100,6 +101,7 @@ void main() {
       expect(settings.verticalText, isTrue);
       expect(settings.readingDirection, ReaderDirection.rtl);
       expect(settings.pageTurnAnimationEnabled, isFalse);
+      expect(settings.mangaPageTurnEdgeZoneWidthFraction, 0.12);
     });
 
     test('persists updates for global reader settings', () async {
@@ -111,13 +113,41 @@ void main() {
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.setFontSize(20);
       notifier.setPageTurnAnimationEnabled(false);
+      notifier.setMangaPageTurnEdgeZoneWidthFraction(0.12);
 
       await Future<void>.delayed(Duration.zero);
 
-      expect(fakeStorage.saveCalls, greaterThanOrEqualTo(2));
+      expect(fakeStorage.saveCalls, greaterThanOrEqualTo(3));
       expect(fakeStorage.savedSettings, isNotNull);
       expect(fakeStorage.savedSettings!.fontSize, 20);
       expect(fakeStorage.savedSettings!.pageTurnAnimationEnabled, isFalse);
+      expect(
+        fakeStorage.savedSettings!.mangaPageTurnEdgeZoneWidthFraction,
+        0.12,
+      );
+    });
+
+    test('clamps manga page turn edge zone width before persisting', () async {
+      final fakeStorage = _FakeReaderSettingsStorage();
+      final harness = _createHarness(storage: fakeStorage);
+      addTearDown(harness.dispose);
+      final container = harness.container;
+
+      final notifier = container.read(readerSettingsProvider.notifier);
+      notifier.setMangaPageTurnEdgeZoneWidthFraction(0.5);
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container
+            .read(readerSettingsProvider)
+            .mangaPageTurnEdgeZoneWidthFraction,
+        kMaxMangaPageTurnEdgeZoneWidthFraction,
+      );
+      expect(
+        fakeStorage.savedSettings!.mangaPageTurnEdgeZoneWidthFraction,
+        kMaxMangaPageTurnEdgeZoneWidthFraction,
+      );
     });
 
     test(

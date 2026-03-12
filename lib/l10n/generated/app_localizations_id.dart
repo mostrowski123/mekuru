@@ -1560,6 +1560,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get mangaTransparentLookupSubtitle => 'Lembar kamus tembus pandang';
 
   @override
+  String get mangaPageTurnEdgeZoneTitle => 'Zona Tepi Balik Halaman';
+
+  @override
+  String get mangaPageTurnEdgeZoneSubtitle =>
+      'Seberapa besar tiap tepi perangkat disisihkan untuk membalik halaman.';
+
+  @override
   String get mangaDebugWordOverlayTitle => 'Debug Overlay Kata';
 
   @override

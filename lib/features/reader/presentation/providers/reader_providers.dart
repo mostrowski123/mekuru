@@ -92,6 +92,14 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _persistSettings();
   }
 
+  void setMangaPageTurnEdgeZoneWidthFraction(double widthFraction) {
+    state = state.copyWith(
+      mangaPageTurnEdgeZoneWidthFraction:
+          clampMangaPageTurnEdgeZoneWidthFraction(widthFraction),
+    );
+    _persistSettings();
+  }
+
   void setColorMode(ColorMode mode) {
     state = state.copyWith(colorMode: mode);
     _persistSettings();

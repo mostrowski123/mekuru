@@ -36,6 +36,7 @@ class BackupService {
     'reader.horizontal_padding',
     'reader.vertical_padding',
     'reader.swipe_sensitivity',
+    'reader.manga_page_turn_edge_zone_width',
     'reader.color_mode',
     'reader.keep_screen_on',
     'reader.sepia_intensity',
