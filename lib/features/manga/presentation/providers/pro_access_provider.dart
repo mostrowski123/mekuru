@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/services/ocr_billing_client.dart';
@@ -8,18 +10,47 @@ final ocrBillingClientProvider = Provider<OcrBillingClient>((ref) {
   return client;
 });
 
-final proUnlockedProvider = FutureProvider<bool>((ref) async {
-  final billingClient = ref.watch(ocrBillingClientProvider);
-  try {
-    // Passive UI checks should not create anonymous Firebase users. Use the
-    // cached entitlement first and only refresh from the server when a real
-    // Firebase session already exists.
-    final status = await billingClient.fetchStatusIfAuthenticated();
-    return status?.ocrUnlocked ?? false;
-  } catch (_) {
-    return false;
+class ProUnlockedNotifier extends AsyncNotifier<bool> {
+  @override
+  FutureOr<bool> build() {
+    ref.watch(ocrBillingClientProvider);
+    return PreloadedProEntitlement.isInitiallyUnlocked;
   }
-});
+
+  Future<void> refreshIfDue() async {
+    final billingClient = ref.read(ocrBillingClientProvider);
+    if (!await billingClient.isRefreshDue()) {
+      return;
+    }
+    await _refresh(forceRefresh: false);
+  }
+
+  Future<void> forceRefresh() {
+    return _refresh(forceRefresh: true);
+  }
+
+  Future<void> _refresh({required bool forceRefresh}) async {
+    final billingClient = ref.read(ocrBillingClientProvider);
+    final currentValue =
+        state.asData?.value ?? PreloadedProEntitlement.isInitiallyUnlocked;
+    try {
+      final status = await billingClient.refreshStatusIfAuthenticated(
+        forceRefresh: forceRefresh,
+      );
+      if (status == null) {
+        state = AsyncData(currentValue);
+        return;
+      }
+      state = AsyncData(status.ocrUnlocked);
+    } catch (_) {
+      state = AsyncData(currentValue);
+    }
+  }
+}
+
+final proUnlockedProvider = AsyncNotifierProvider<ProUnlockedNotifier, bool>(
+  ProUnlockedNotifier.new,
+);
 
 bool proUnlockedValue(AsyncValue<bool> value) {
   return value.maybeWhen(data: (isUnlocked) => isUnlocked, orElse: () => false);

@@ -142,11 +142,19 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       errorMessage ??= 'Failed to initialize Google Play billing: $e';
     }
 
+    final localStatus = await _billingClient.readLastKnownStatus();
+    unlocked = localStatus?.ocrUnlocked ?? false;
+
     try {
-      final status = await _billingClient.fetchStatusIfAuthenticated();
-      unlocked = status?.ocrUnlocked ?? false;
+      final shouldForceRefresh = localStatus == null || !unlocked;
+      final status = await _billingClient.refreshStatusIfAuthenticated(
+        forceRefresh: shouldForceRefresh,
+      );
+      unlocked = status?.ocrUnlocked ?? unlocked;
     } catch (e) {
-      errorMessage ??= 'Failed to load your Pro access: $e';
+      if (!unlocked) {
+        errorMessage ??= 'Failed to load your Pro access: $e';
+      }
     }
 
     try {

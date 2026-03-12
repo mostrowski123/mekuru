@@ -84,8 +84,15 @@ class OcrPurchaseFlow {
       return _readProUnlockedOverride();
     }
 
-    final status = await _billingClient.fetchStatusIfAuthenticated();
-    return status?.ocrUnlocked ?? false;
+    final localStatus = await _billingClient.readLastKnownStatus();
+    if (localStatus?.ocrUnlocked ?? false) {
+      return true;
+    }
+
+    final refreshedStatus = await _billingClient.refreshStatusIfAuthenticated(
+      forceRefresh: localStatus == null,
+    );
+    return refreshedStatus?.ocrUnlocked ?? false;
   }
 
   Future<String?> _loadCustomServerBearerKey() {

@@ -1,22 +1,43 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 
 class _FakeBillingClient extends OcrBillingClient {
-  _FakeBillingClient({this.status, this.error});
+  _FakeBillingClient({
+    this.localStatus,
+    this.refreshedStatus,
+    this.refreshDue = true,
+    this.refreshError,
+  });
 
-  final OcrBillingStatus? status;
-  final Object? error;
+  final OcrBillingStatus? localStatus;
+  final OcrBillingStatus? refreshedStatus;
+  final bool refreshDue;
+  final Object? refreshError;
+
+  int refreshCalls = 0;
 
   @override
-  Future<OcrBillingStatus?> fetchStatusIfAuthenticated({
+  Future<OcrBillingStatus?> readLastKnownStatus() async {
+    return localStatus;
+  }
+
+  @override
+  Future<bool> isRefreshDue() async {
+    return refreshDue;
+  }
+
+  @override
+  Future<OcrBillingStatus?> refreshStatusIfAuthenticated({
     bool forceRefresh = false,
   }) async {
-    if (error != null) {
-      throw error!;
+    refreshCalls++;
+    if (refreshError != null) {
+      throw refreshError!;
     }
-    return status;
+    return refreshedStatus ?? localStatus;
   }
 
   @override
@@ -24,61 +45,122 @@ class _FakeBillingClient extends OcrBillingClient {
 }
 
 void main() {
-  test(
-    'proUnlockedProvider returns false when no authenticated status exists',
-    () async {
-      final container = ProviderContainer(
-        overrides: [
-          ocrBillingClientProvider.overrideWithValue(
-            _FakeBillingClient(status: null),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      final result = await container.read(proUnlockedProvider.future);
-
-      expect(result, isFalse);
-    },
-  );
+  tearDown(() {
+    PreloadedProEntitlement.setInitialSnapshot(null);
+  });
 
   test(
-    'proUnlockedProvider returns cached/live unlock state when available',
-    () async {
-      final container = ProviderContainer(
-        overrides: [
-          ocrBillingClientProvider.overrideWithValue(
-            _FakeBillingClient(
-              status: const OcrBillingStatus(
-                ocrUnlocked: true,
-                creditBalance: 500,
-              ),
-            ),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      final result = await container.read(proUnlockedProvider.future);
-
-      expect(result, isTrue);
-    },
-  );
-
-  test('proUnlockedProvider returns false when status lookup fails', () async {
-    final container = ProviderContainer(
-      overrides: [
-        ocrBillingClientProvider.overrideWithValue(
-          _FakeBillingClient(
-            error: const OcrBillingException(401, 'auth_required'),
-          ),
+    'proUnlockedProvider uses the preloaded unlocked snapshot immediately',
+    () {
+      PreloadedProEntitlement.setInitialSnapshot(
+        const OcrBillingCacheSnapshot(
+          uid: 'user-1',
+          ocrUnlocked: true,
+          creditBalance: 500,
         ),
-      ],
+      );
+      final container = ProviderContainer(
+        overrides: [
+          ocrBillingClientProvider.overrideWithValue(_FakeBillingClient()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = container.read(proUnlockedProvider);
+
+      expect(result.requireValue, isTrue);
+    },
+  );
+
+  test('refreshIfDue updates the provider when live status changes', () async {
+    PreloadedProEntitlement.setInitialSnapshot(
+      const OcrBillingCacheSnapshot(
+        uid: 'user-1',
+        ocrUnlocked: false,
+        creditBalance: 0,
+      ),
+    );
+    final billingClient = _FakeBillingClient(
+      refreshedStatus: const OcrBillingStatus(
+        ocrUnlocked: true,
+        creditBalance: 500,
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [ocrBillingClientProvider.overrideWithValue(billingClient)],
     );
     addTearDown(container.dispose);
 
-    final result = await container.read(proUnlockedProvider.future);
+    expect(container.read(proUnlockedProvider).requireValue, isFalse);
 
-    expect(result, isFalse);
+    await container.read(proUnlockedProvider.notifier).refreshIfDue();
+
+    expect(container.read(proUnlockedProvider).requireValue, isTrue);
+    expect(billingClient.refreshCalls, 1);
   });
+
+  test(
+    'refreshIfDue skips network refresh when the cached snapshot is fresh',
+    () async {
+      PreloadedProEntitlement.setInitialSnapshot(
+        const OcrBillingCacheSnapshot(
+          uid: 'user-1',
+          ocrUnlocked: true,
+          creditBalance: 500,
+        ),
+      );
+      final billingClient = _FakeBillingClient(
+        refreshDue: false,
+        refreshedStatus: const OcrBillingStatus(
+          ocrUnlocked: false,
+          creditBalance: 0,
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [ocrBillingClientProvider.overrideWithValue(billingClient)],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(proUnlockedProvider.notifier).refreshIfDue();
+
+      expect(container.read(proUnlockedProvider).requireValue, isTrue);
+      expect(billingClient.refreshCalls, 0);
+    },
+  );
+
+  testWidgets(
+    'preloaded unlocked snapshot does not render a transient locked state',
+    (tester) async {
+      PreloadedProEntitlement.setInitialSnapshot(
+        const OcrBillingCacheSnapshot(
+          uid: 'user-1',
+          ocrUnlocked: true,
+          creditBalance: 500,
+        ),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            ocrBillingClientProvider.overrideWithValue(
+              _FakeBillingClient(refreshDue: false),
+            ),
+          ],
+          child: MaterialApp(
+            home: Consumer(
+              builder: (context, ref, _) {
+                final isUnlocked = proUnlockedValue(
+                  ref.watch(proUnlockedProvider),
+                );
+                return Text(isUnlocked ? 'unlocked' : 'locked');
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('unlocked'), findsOneWidget);
+      expect(find.text('locked'), findsNothing);
+    },
+  );
 }

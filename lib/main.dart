@@ -10,6 +10,7 @@ import 'config/environment_config.dart';
 import 'core/database/database_provider.dart';
 import 'core/services/firebase_runtime.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
+import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
 import 'features/reader/data/services/mecab_service.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
@@ -41,6 +42,7 @@ Future<void> main() async {
     },
     appRunner: () async {
       await PreloadedAppSettings.load();
+      await PreloadedProEntitlement.load();
       runApp(SentryWidget(child: const ProviderScope(child: MekuruApp())));
       _scheduleDeferredStartupWarmups();
     },

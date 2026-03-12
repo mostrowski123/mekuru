@@ -10,6 +10,7 @@ import 'features/backup/presentation/providers/backup_providers.dart';
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/data/repositories/book_repository.dart';
 import 'features/library/presentation/screens/library_screen.dart';
+import 'features/manga/presentation/providers/pro_access_provider.dart';
 import 'features/reader/presentation/providers/reader_providers.dart';
 import 'features/reader/presentation/screens/reader_screen.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
@@ -29,11 +30,19 @@ class MekuruApp extends ConsumerStatefulWidget {
   ConsumerState<MekuruApp> createState() => _MekuruAppState();
 }
 
-class _MekuruAppState extends ConsumerState<MekuruApp> {
+class _MekuruAppState extends ConsumerState<MekuruApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _bootstrapAppState();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   void _bootstrapAppState() {
@@ -67,7 +76,15 @@ class _MekuruAppState extends ConsumerState<MekuruApp> {
 
       // Backups can do meaningful file I/O, so let the first frame land first.
       ref.read(autoBackupCheckerProvider);
+      unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
+    }
   }
 
   @override

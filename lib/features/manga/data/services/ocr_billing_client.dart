@@ -16,6 +16,35 @@ const _billingFunctionsName = 'billingApiV2';
 const _billingFunctionsBaseUrlOverride = String.fromEnvironment(
   'OCR_BILLING_FUNCTIONS_BASE_URL',
 );
+const _entitlementRefreshInterval = Duration(hours: 24);
+
+abstract class OcrBillingStatusStorage {
+  Future<String?> read({required String key});
+  Future<void> write({required String key, required String value});
+  Future<void> delete({required String key});
+}
+
+class SecureOcrBillingStatusStorage implements OcrBillingStatusStorage {
+  SecureOcrBillingStatusStorage({FlutterSecureStorage? secureStorage})
+    : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+
+  final FlutterSecureStorage _secureStorage;
+
+  @override
+  Future<String?> read({required String key}) {
+    return _secureStorage.read(key: key);
+  }
+
+  @override
+  Future<void> write({required String key, required String value}) {
+    return _secureStorage.write(key: key, value: value);
+  }
+
+  @override
+  Future<void> delete({required String key}) {
+    return _secureStorage.delete(key: key);
+  }
+}
 
 class OcrBillingStatus {
   final bool ocrUnlocked;
@@ -25,6 +54,57 @@ class OcrBillingStatus {
     required this.ocrUnlocked,
     required this.creditBalance,
   });
+}
+
+class OcrBillingCacheSnapshot {
+  const OcrBillingCacheSnapshot({
+    required this.ocrUnlocked,
+    required this.creditBalance,
+    this.uid,
+    this.cachedAt,
+  });
+
+  final String? uid;
+  final bool ocrUnlocked;
+  final int creditBalance;
+  final DateTime? cachedAt;
+
+  OcrBillingStatus get status =>
+      OcrBillingStatus(ocrUnlocked: ocrUnlocked, creditBalance: creditBalance);
+
+  bool isRefreshDue({
+    required DateTime now,
+    Duration refreshInterval = _entitlementRefreshInterval,
+  }) {
+    final cachedAt = this.cachedAt;
+    if (cachedAt == null) {
+      return true;
+    }
+    return now.toUtc().difference(cachedAt.toUtc()) >= refreshInterval;
+  }
+}
+
+class PreloadedProEntitlement {
+  static OcrBillingCacheSnapshot? initialSnapshot;
+
+  static OcrBillingStatus? get initialStatus => initialSnapshot?.status;
+
+  static bool get isInitiallyUnlocked => initialStatus?.ocrUnlocked ?? false;
+
+  static Future<void> load({OcrBillingClient? billingClient}) async {
+    final ownedClient = billingClient ?? OcrBillingClient();
+    try {
+      initialSnapshot = await ownedClient.readLastKnownSnapshot();
+    } finally {
+      if (billingClient == null) {
+        ownedClient.dispose();
+      }
+    }
+  }
+
+  static void setInitialSnapshot(OcrBillingCacheSnapshot? snapshot) {
+    initialSnapshot = snapshot;
+  }
 }
 
 class PurchaseGrantResult {
@@ -128,69 +208,94 @@ class OcrBillingClient {
         'No internet connection. Check your connection and try again.',
         code: 'network_unavailable',
       );
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   final http.Client _httpClient;
+  final OcrBillingStatusStorage _statusStorage;
+  final DateTime Function() _now;
+  final Future<void> Function() _ensureFirebaseApp;
+  final String? Function() _readCurrentUid;
   final Duration requestTimeout;
   final Duration baseRetryDelay;
 
   OcrBillingClient({
     http.Client? httpClient,
+    OcrBillingStatusStorage? statusStorage,
+    DateTime Function()? now,
+    Future<void> Function()? ensureFirebaseApp,
+    String? Function()? readCurrentUid,
     this.requestTimeout = const Duration(seconds: 15),
     this.baseRetryDelay = const Duration(seconds: 1),
-  }) : _httpClient = httpClient ?? http.Client();
+  }) : _httpClient = httpClient ?? http.Client(),
+       _statusStorage = statusStorage ?? SecureOcrBillingStatusStorage(),
+       _now = now ?? DateTime.now,
+       _ensureFirebaseApp =
+           ensureFirebaseApp ?? FirebaseRuntime.instance.ensureFirebaseApp,
+       _readCurrentUid =
+           readCurrentUid ?? (() => FirebaseAuth.instance.currentUser?.uid);
 
   void _log(String message, [Map<String, Object?> details = const {}]) {
     final suffix = details.isEmpty ? '' : ' $details';
     debugPrint('[OcrBillingClient] $message$suffix');
   }
 
-  Future<OcrBillingStatus?> readCachedStatus() async {
-    if (!FirebaseRuntime.instance.hasFirebaseApp) {
-      return null;
-    }
-
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return null;
-    }
-
+  Future<OcrBillingCacheSnapshot?> readLastKnownSnapshot() async {
     try {
-      final raw = await _secureStorage.read(key: _cachedStatusKey);
+      final raw = await _statusStorage.read(key: _cachedStatusKey);
       if (raw == null || raw.isEmpty) {
         return null;
       }
 
       final decoded = json.decode(raw) as Map<String, dynamic>;
-      if (decoded['uid'] != user.uid) {
-        await _secureStorage.delete(key: _cachedStatusKey);
-        _log('cleared stale cached status', {'cachedUid': decoded['uid']});
-        return null;
-      }
-
-      // Treat cache as stale after 24 hours.
-      final cachedAt = decoded['cachedAt'] as String?;
-      if (cachedAt != null) {
-        final age = DateTime.now().toUtc().difference(DateTime.parse(cachedAt));
-        if (age > const Duration(hours: 24)) {
-          _log('cached status expired', {'age': age.toString()});
-          return null;
-        }
-      }
-
-      final status = OcrBillingStatus(
+      final snapshot = OcrBillingCacheSnapshot(
+        uid: decoded['uid'] as String?,
         ocrUnlocked: decoded['ocrUnlocked'] as bool? ?? false,
         creditBalance: decoded['creditBalance'] as int? ?? 0,
+        cachedAt: _parseCachedAt(decoded['cachedAt'] as String?),
       );
       _log('cached status hit', {
-        'ocrUnlocked': status.ocrUnlocked,
-        'creditBalance': status.creditBalance,
+        'uid': snapshot.uid,
+        'ocrUnlocked': snapshot.ocrUnlocked,
+        'creditBalance': snapshot.creditBalance,
+        'cachedAt': snapshot.cachedAt?.toIso8601String(),
       });
-      return status;
+      return snapshot;
     } catch (e) {
       _log('failed to read cached status', {'error': e.toString()});
       return null;
     }
+  }
+
+  Future<OcrBillingStatus?> readLastKnownStatus() async {
+    return (await readLastKnownSnapshot())?.status;
+  }
+
+  Future<bool> isRefreshDue() async {
+    final snapshot = await readLastKnownSnapshot();
+    if (snapshot == null) {
+      return true;
+    }
+    return snapshot.isRefreshDue(now: _now());
+  }
+
+  Future<OcrBillingStatus?> readCachedStatus() async {
+    final snapshot = await readLastKnownSnapshot();
+    if (snapshot == null) {
+      return null;
+    }
+
+    final currentUid = _readCurrentUid();
+    if (currentUid != null &&
+        snapshot.uid != null &&
+        snapshot.uid != currentUid) {
+      await _clearCachedStatus();
+      _log('cleared cached status for another user', {
+        'cachedUid': snapshot.uid,
+        'currentUid': currentUid,
+      });
+      return null;
+    }
+
+    return snapshot.status;
   }
 
   Future<OcrBillingStatus> fetchStatus({bool forceRefresh = false}) async {
@@ -224,26 +329,36 @@ class OcrBillingClient {
   Future<OcrBillingStatus?> fetchStatusIfAuthenticated({
     bool forceRefresh = false,
   }) async {
-    if (!forceRefresh) {
-      final cached = await readCachedStatus();
-      if (cached != null) {
-        return cached;
-      }
+    return refreshStatusIfAuthenticated(forceRefresh: forceRefresh);
+  }
+
+  Future<OcrBillingStatus?> refreshStatusIfAuthenticated({
+    bool forceRefresh = false,
+  }) async {
+    final cached = await readCachedStatus();
+    if (!forceRefresh && !await isRefreshDue()) {
+      return cached;
     }
 
     try {
-      await FirebaseRuntime.instance.ensureFirebaseApp();
+      await _ensureFirebaseApp();
     } catch (e) {
       _log('skipping passive status refresh', {'error': e.toString()});
       return null;
     }
 
-    if (FirebaseAuth.instance.currentUser == null) {
+    final currentUid = _readCurrentUid();
+    if (currentUid == null) {
       _log('skipping passive status refresh: no signed-in Firebase user');
       return null;
     }
 
-    return fetchStatus(forceRefresh: forceRefresh);
+    final snapshot = await readLastKnownSnapshot();
+    if (snapshot?.uid != null && snapshot!.uid != currentUid) {
+      await _clearCachedStatus();
+    }
+
+    return fetchStatus(forceRefresh: true);
   }
 
   Future<PurchaseGrantResult> verifyAndroidPurchase({
@@ -452,7 +567,7 @@ class OcrBillingClient {
   }
 
   Future<String> _getIdToken() async {
-    await FirebaseRuntime.instance.ensureFirebaseApp();
+    await _ensureFirebaseApp();
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       throw const OcrBillingException(
@@ -537,21 +652,28 @@ class OcrBillingClient {
   }
 
   Future<void> _writeCachedStatus(OcrBillingStatus status) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
+    final currentUid = _readCurrentUid();
+    if (currentUid == null) {
       return;
     }
 
     try {
-      await _secureStorage.write(
+      final snapshot = OcrBillingCacheSnapshot(
+        uid: currentUid,
+        ocrUnlocked: status.ocrUnlocked,
+        creditBalance: status.creditBalance,
+        cachedAt: _now().toUtc(),
+      );
+      await _statusStorage.write(
         key: _cachedStatusKey,
         value: json.encode({
-          'uid': user.uid,
-          'ocrUnlocked': status.ocrUnlocked,
-          'creditBalance': status.creditBalance,
-          'cachedAt': DateTime.now().toUtc().toIso8601String(),
+          'uid': snapshot.uid,
+          'ocrUnlocked': snapshot.ocrUnlocked,
+          'creditBalance': snapshot.creditBalance,
+          'cachedAt': snapshot.cachedAt?.toIso8601String(),
         }),
       );
+      PreloadedProEntitlement.setInitialSnapshot(snapshot);
       _log('cached status updated', {
         'ocrUnlocked': status.ocrUnlocked,
         'creditBalance': status.creditBalance,
@@ -563,7 +685,8 @@ class OcrBillingClient {
 
   Future<void> _clearCachedStatus() async {
     try {
-      await _secureStorage.delete(key: _cachedStatusKey);
+      await _statusStorage.delete(key: _cachedStatusKey);
+      PreloadedProEntitlement.setInitialSnapshot(null);
       _log('cached status cleared');
     } catch (e) {
       _log('failed to clear cached status', {'error': e.toString()});
@@ -598,7 +721,29 @@ class OcrBillingClient {
     }
   }
 
+  @visibleForTesting
+  Future<void> cacheStatusForTesting(OcrBillingStatus status) {
+    return _writeCachedStatus(status);
+  }
+
+  @visibleForTesting
+  Future<void> applyErrorStatusHintForTesting(OcrBillingException error) {
+    return _applyErrorStatusHint(error);
+  }
+
   void dispose() {
     _httpClient.close();
+  }
+}
+
+DateTime? _parseCachedAt(String? raw) {
+  if (raw == null || raw.isEmpty) {
+    return null;
+  }
+
+  try {
+    return DateTime.parse(raw);
+  } catch (_) {
+    return null;
   }
 }
