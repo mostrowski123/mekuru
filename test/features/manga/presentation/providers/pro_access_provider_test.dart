@@ -6,16 +6,14 @@ import 'package:mekuru/features/manga/presentation/providers/pro_access_provider
 
 class _FakeBillingClient extends OcrBillingClient {
   _FakeBillingClient({
-    this.localStatus,
     this.refreshedStatus,
     this.refreshDue = true,
-    this.refreshError,
   });
 
-  final OcrBillingStatus? localStatus;
+  OcrBillingStatus? localStatus;
   final OcrBillingStatus? refreshedStatus;
   final bool refreshDue;
-  final Object? refreshError;
+  Object? refreshError;
 
   int refreshCalls = 0;
 

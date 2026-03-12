@@ -99,6 +99,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  sqlite3: ^2.9.4
 
   # Code generation
   drift_dev: ^2.31.0

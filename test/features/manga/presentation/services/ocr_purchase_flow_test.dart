@@ -7,10 +7,10 @@ import 'package:mekuru/features/settings/data/services/ocr_server_config.dart';
 import '../../../../test_app.dart';
 
 class _FakeBillingClient extends OcrBillingClient {
-  _FakeBillingClient({this.localStatus, this.refreshedStatus});
+  _FakeBillingClient({this.localStatus});
 
   OcrBillingStatus? localStatus;
-  final OcrBillingStatus? refreshedStatus;
+  OcrBillingStatus? refreshedStatus;
 
   int refreshCalls = 0;
 

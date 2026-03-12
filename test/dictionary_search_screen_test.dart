@@ -31,11 +31,10 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
   _FakeDictionaryQueryService(
     super.db, {
     required this.results,
-    this.pitchAccents = const [],
   });
 
   final List<DictionaryEntryWithSource> results;
-  final List<PitchAccentResult> pitchAccents;
+  final List<PitchAccentResult> pitchAccents = const [];
 
   @override
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
