@@ -4,13 +4,16 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/data/repositories/pending_book_data_repository.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
 import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
+import 'package:mekuru/features/backup/data/services/pending_dictionary_restore_service.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
@@ -53,6 +56,19 @@ final backupFileManagerProvider = Provider<BackupFileManager>((ref) {
 final backupSchedulerProvider = Provider<BackupScheduler>((ref) {
   return BackupScheduler();
 });
+
+final pendingDictionaryRestoreServiceProvider =
+    Provider<PendingDictionaryRestoreService>((ref) {
+      return PendingDictionaryRestoreService();
+    });
+
+final pendingDictionaryRestorePreviewProvider =
+    FutureProvider<PendingDictionaryRestorePreview?>((ref) async {
+      ref.watch(dictionariesProvider);
+      final service = ref.watch(pendingDictionaryRestoreServiceProvider);
+      final repository = ref.watch(dictionaryRepositoryProvider);
+      return service.getPendingRestorePreview(repository);
+    });
 
 // ──────────────── Backup State ────────────────
 
@@ -242,7 +258,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
         return;
       }
 
-      await _restoreFromPath(filePath);
+      await _restoreFromPath(filePath, queueDictionaryPreferences: true);
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
       state = RestoreState(error: BackupMessage.couldNotOpenFile(e.toString()));
@@ -250,15 +266,28 @@ class RestoreNotifier extends Notifier<RestoreState> {
   }
 
   /// Restore from a backup file path (internal backups list).
-  Future<void> restoreFromPath(String filePath) async {
-    await _restoreFromPath(filePath);
+  Future<void> restoreFromPath(
+    String filePath, {
+    bool queueDictionaryPreferences = true,
+  }) async {
+    await _restoreFromPath(
+      filePath,
+      queueDictionaryPreferences: queueDictionaryPreferences,
+    );
   }
 
-  Future<void> _restoreFromPath(String filePath) async {
+  Future<void> _restoreFromPath(
+    String filePath, {
+    required bool queueDictionaryPreferences,
+  }) async {
     state = const RestoreState(isWorking: true);
     try {
       final fileManager = ref.read(backupFileManagerProvider);
       final restoreService = ref.read(restoreServiceProvider);
+      final pendingDictionaryRestoreService = ref.read(
+        pendingDictionaryRestoreServiceProvider,
+      );
+      final dictionaryRepository = ref.read(dictionaryRepositoryProvider);
 
       final manifest = await fileManager.importBackupFile(filePath);
       final errors = <String>[];
@@ -270,6 +299,14 @@ class RestoreNotifier extends Notifier<RestoreState> {
       // Reload all in-memory settings providers from SharedPreferences
       if (settingsOk) await _reloadSettingsProviders();
 
+      final dictionaryPreferencesResult = await pendingDictionaryRestoreService
+          .queueFromBackup(
+            preferences: manifest.dictionaryPreferences,
+            shouldQueue: queueDictionaryPreferences,
+            repository: dictionaryRepository,
+          );
+      ref.invalidate(pendingDictionaryRestorePreviewProvider);
+
       // Restore saved words
       final wordsResult = await restoreService.restoreSavedWords(manifest);
 
@@ -278,6 +315,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
 
       final result = RestoreResult(
         settingsRestored: settingsOk,
+        dictionaryPreferencesResult: dictionaryPreferencesResult,
         wordsResult: wordsResult,
         booksResult: booksResult,
         errors: errors,

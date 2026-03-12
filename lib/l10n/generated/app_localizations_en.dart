@@ -962,11 +962,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupScopeNoteBody =>
-      'Backups include your settings and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB or manga files.';
+      'Backups include your settings, dictionary order and enabled states, and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB, manga, or dictionary files.';
 
   @override
   String get backupScopeNoteRestore =>
-      'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back.';
+      'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Matching dictionary settings can be applied later from Dictionary Manager.';
 
   @override
   String get backupSectionAutoBackup => 'Auto-Backup';
@@ -1105,8 +1105,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# books restored',
-      one: '# book restored',
+      other: '$count books restored',
+      one: '$count book restored',
     );
     return '$_temp0';
   }
@@ -1117,9 +1117,9 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '# books are waiting for the same EPUB or manga content to be re-imported',
+          '$count books are waiting for the same EPUB or manga content to be re-imported',
       one:
-          '# book is waiting for the same EPUB or manga content to be re-imported',
+          '$count book is waiting for the same EPUB or manga content to be re-imported',
     );
     return '$_temp0';
   }
@@ -1132,8 +1132,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'This will restore settings and user data from $fileName, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB or manga files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.';
+    return 'This will restore settings and user data from $fileName, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.';
   }
+
+  @override
+  String get backupQueueDictionaryPreferencesTitle =>
+      'Queue dictionary settings from this backup';
+
+  @override
+  String get backupQueueDictionaryPreferencesBody =>
+      'You can apply matching dictionary order and enabled states later from Dictionary Manager.';
+
+  @override
+  String backupRestoreSummaryDictionaryPreferencesQueued({
+    required int matching,
+    required int missing,
+  }) {
+    return 'Dictionary settings queued: $matching ready to apply, $missing missing and will be skipped';
+  }
+
+  @override
+  String get backupRestoreSummaryDictionaryPreferencesSkipped =>
+      'Dictionary settings were not queued';
 
   @override
   String get backupDeleteDialogTitle => 'Delete Backup?';
@@ -1319,6 +1339,62 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dictionaryManagerOrderBody =>
       'Drag dictionaries using the handle on the left to reorder them. The order here controls the order that definitions appear when you tap a word while reading.';
+
+  @override
+  String get dictionaryManagerPendingBackupTitle =>
+      'Backup dictionary settings ready';
+
+  @override
+  String get dictionaryManagerPendingBackupBody =>
+      'Apply the dictionary order and enabled states saved in your restored backup. Missing dictionaries will be skipped.';
+
+  @override
+  String dictionaryManagerPendingBackupMatching({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count matching dictionaries installed',
+      one: '1 matching dictionary installed',
+      zero: '0 matching dictionaries installed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dictionaryManagerPendingBackupMissing({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dictionaries missing and will be skipped',
+      one: '1 dictionary missing and will be skipped',
+      zero: '0 dictionaries missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dictionaryManagerPendingBackupNoMatches =>
+      'Install at least one matching dictionary to apply these backup settings.';
+
+  @override
+  String get dictionaryManagerPendingBackupApplyButton =>
+      'Apply Backup Settings';
+
+  @override
+  String get dictionaryManagerPendingBackupWarningTitle =>
+      'Overwrite current dictionary settings?';
+
+  @override
+  String get dictionaryManagerPendingBackupWarningBody =>
+      'This will overwrite the current order and enabled or disabled state for matching dictionaries. Missing dictionaries will be skipped.';
+
+  @override
+  String dictionaryManagerPendingBackupApplied({
+    required int applied,
+    required int missing,
+  }) {
+    return 'Applied backup settings to $applied dictionaries. Skipped $missing missing dictionaries.';
+  }
 
   @override
   String get dictionaryManagerEnablingTitle => 'Enabling & Disabling';

@@ -1427,7 +1427,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksRestored": "{count, plural, one {# buku berhasil dipulihkan} other {# buku berhasil dipulihkan}}",
+  "backupRestoreSummaryBooksRestored": "{count, plural, one {{count} buku berhasil dipulihkan} other {{count} buku berhasil dipulihkan}}",
   "@backupRestoreSummaryBooksRestored": {
     "description": "Part of the restore summary message for restored books.",
     "placeholders": {
@@ -1436,7 +1436,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# buku menunggu konten EPUB atau manga yang sama untuk diimpor ulang} other {# buku menunggu konten EPUB atau manga yang sama untuk diimpor ulang}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {{count} buku menunggu konten EPUB atau manga yang sama untuk diimpor ulang} other {{count} buku menunggu konten EPUB atau manga yang sama untuk diimpor ulang}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {

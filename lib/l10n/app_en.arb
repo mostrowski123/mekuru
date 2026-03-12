@@ -1239,11 +1239,11 @@
   "@backupScopeNoteTitle": {
     "description": "Title for the informational note explaining backup scope."
   },
-  "backupScopeNoteBody": "Backups include your settings and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB or manga files.",
+  "backupScopeNoteBody": "Backups include your settings, dictionary order and enabled states, and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB, manga, or dictionary files.",
   "@backupScopeNoteBody": {
     "description": "Body text for the informational note explaining backup scope."
   },
-  "backupScopeNoteRestore": "After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back.",
+  "backupScopeNoteRestore": "After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Matching dictionary settings can be applied later from Dictionary Manager.",
   "@backupScopeNoteRestore": {
     "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
@@ -1427,7 +1427,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksRestored": "{count, plural, one {# book restored} other {# books restored}}",
+  "backupRestoreSummaryBooksRestored": "{count, plural, one {{count} book restored} other {{count} books restored}}",
   "@backupRestoreSummaryBooksRestored": {
     "description": "Part of the restore summary message for restored books.",
     "placeholders": {
@@ -1436,7 +1436,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# book is waiting for the same EPUB or manga content to be re-imported} other {# books are waiting for the same EPUB or manga content to be re-imported}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {{count} book is waiting for the same EPUB or manga content to be re-imported} other {{count} books are waiting for the same EPUB or manga content to be re-imported}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {
@@ -1453,7 +1453,7 @@
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB or manga files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.",
+  "backupRestoreDialogBody": "This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {
@@ -1461,6 +1461,30 @@
         "type": "String"
       }
     }
+  },
+  "backupQueueDictionaryPreferencesTitle": "Queue dictionary settings from this backup",
+  "@backupQueueDictionaryPreferencesTitle": {
+    "description": "Checkbox label for queueing dictionary order and enabled states from a restored backup."
+  },
+  "backupQueueDictionaryPreferencesBody": "You can apply matching dictionary order and enabled states later from Dictionary Manager.",
+  "@backupQueueDictionaryPreferencesBody": {
+    "description": "Checkbox helper text for queueing dictionary preferences during restore."
+  },
+  "backupRestoreSummaryDictionaryPreferencesQueued": "Dictionary settings queued: {matching} ready to apply, {missing} missing and will be skipped",
+  "@backupRestoreSummaryDictionaryPreferencesQueued": {
+    "description": "Restore summary for queued dictionary preferences.",
+    "placeholders": {
+      "matching": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestoreSummaryDictionaryPreferencesSkipped": "Dictionary settings were not queued",
+  "@backupRestoreSummaryDictionaryPreferencesSkipped": {
+    "description": "Restore summary when dictionary preferences are skipped during restore."
   },
   "backupDeleteDialogTitle": "Delete Backup?",
   "@backupDeleteDialogTitle": {
@@ -1712,6 +1736,60 @@
   "dictionaryManagerOrderBody": "Drag dictionaries using the handle on the left to reorder them. The order here controls the order that definitions appear when you tap a word while reading.",
   "@dictionaryManagerOrderBody": {
     "description": "Help text explaining dictionary ordering."
+  },
+  "dictionaryManagerPendingBackupTitle": "Backup dictionary settings ready",
+  "@dictionaryManagerPendingBackupTitle": {
+    "description": "Title for the pending backup dictionary settings card in Dictionary Manager."
+  },
+  "dictionaryManagerPendingBackupBody": "Apply the dictionary order and enabled states saved in your restored backup. Missing dictionaries will be skipped.",
+  "@dictionaryManagerPendingBackupBody": {
+    "description": "Body for the pending backup dictionary settings card in Dictionary Manager."
+  },
+  "dictionaryManagerPendingBackupMatching": "{count, plural, =0 {0 matching dictionaries installed} =1 {1 matching dictionary installed} other {{count} matching dictionaries installed}}",
+  "@dictionaryManagerPendingBackupMatching": {
+    "description": "Count of installed dictionaries that can be updated from the pending backup snapshot.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionaryManagerPendingBackupMissing": "{count, plural, =0 {0 dictionaries missing} =1 {1 dictionary missing and will be skipped} other {{count} dictionaries missing and will be skipped}}",
+  "@dictionaryManagerPendingBackupMissing": {
+    "description": "Count of missing backup dictionaries that will be skipped on apply.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionaryManagerPendingBackupNoMatches": "Install at least one matching dictionary to apply these backup settings.",
+  "@dictionaryManagerPendingBackupNoMatches": {
+    "description": "Message shown when no matching installed dictionaries exist for a pending backup snapshot."
+  },
+  "dictionaryManagerPendingBackupApplyButton": "Apply Backup Settings",
+  "@dictionaryManagerPendingBackupApplyButton": {
+    "description": "Button label for applying pending backup dictionary settings."
+  },
+  "dictionaryManagerPendingBackupWarningTitle": "Overwrite current dictionary settings?",
+  "@dictionaryManagerPendingBackupWarningTitle": {
+    "description": "Title for the warning dialog shown before applying pending backup dictionary settings."
+  },
+  "dictionaryManagerPendingBackupWarningBody": "This will overwrite the current order and enabled or disabled state for matching dictionaries. Missing dictionaries will be skipped.",
+  "@dictionaryManagerPendingBackupWarningBody": {
+    "description": "Body for the warning dialog shown before applying pending backup dictionary settings."
+  },
+  "dictionaryManagerPendingBackupApplied": "Applied backup settings to {applied} dictionaries. Skipped {missing} missing dictionaries.",
+  "@dictionaryManagerPendingBackupApplied": {
+    "description": "Snackbar text after applying pending backup dictionary settings.",
+    "placeholders": {
+      "applied": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
   },
   "dictionaryManagerEnablingTitle": "Enabling & Disabling",
   "@dictionaryManagerEnablingTitle": {

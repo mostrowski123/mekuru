@@ -36,6 +36,15 @@ class BackupSerializer {
         'app': manifest.settings.app,
         'reader': manifest.settings.reader,
       },
+      'dictionaryPreferences': manifest.dictionaryPreferences
+          .map(
+            (preference) => {
+              'name': preference.name,
+              'sortOrder': preference.sortOrder,
+              'isEnabled': preference.isEnabled,
+            },
+          )
+          .toList(growable: false),
       'savedWords': manifest.savedWords
           .map(
             (w) => {
@@ -99,6 +108,10 @@ class BackupSerializer {
       ),
     );
 
+    final dictionaryPreferences = _decodeDictionaryPreferences(
+      parsed['dictionaryPreferences'],
+    );
+
     final savedWordsList = parsed['savedWords'];
     if (savedWordsList is! List) {
       throw BackupFormatException('missing or invalid "savedWords" field');
@@ -115,6 +128,7 @@ class BackupSerializer {
       version: version,
       createdAt: createdAt,
       settings: settings,
+      dictionaryPreferences: dictionaryPreferences,
       savedWords: savedWords,
       books: books,
     );
@@ -191,6 +205,27 @@ class BackupSerializer {
       dateAdded:
           DateTime.tryParse(item['dateAdded'] as String? ?? '') ??
           DateTime.now(),
+    );
+  }
+
+  static List<BackupDictionaryPreference> _decodeDictionaryPreferences(
+    dynamic rawPreferences,
+  ) {
+    if (rawPreferences == null) return const [];
+    if (rawPreferences is! List) {
+      throw BackupFormatException('invalid "dictionaryPreferences" field');
+    }
+    return rawPreferences.map(_decodeDictionaryPreference).toList();
+  }
+
+  static BackupDictionaryPreference _decodeDictionaryPreference(dynamic item) {
+    if (item is! Map<String, dynamic>) {
+      throw BackupFormatException('invalid dictionary preference entry');
+    }
+    return BackupDictionaryPreference(
+      name: item['name'] as String? ?? '',
+      sortOrder: item['sortOrder'] as int? ?? 0,
+      isEnabled: item['isEnabled'] as bool? ?? true,
     );
   }
 

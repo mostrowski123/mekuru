@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
@@ -46,6 +47,11 @@ class BackupService {
 
     final appSettings = _readPrefsMap(prefs, _appKeys);
     final readerSettings = _readPrefsMap(prefs, _readerKeys);
+    final dictionaryPreferences =
+        await (_db.select(_db.dictionaryMetas)
+              ..where((t) => t.isHidden.equals(false))
+              ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+            .get();
 
     final savedWords = await _db.select(_db.savedWords).get();
     final books = await _db.select(_db.books).get();
@@ -109,6 +115,15 @@ class BackupService {
       version: BackupManifest.currentVersion,
       createdAt: DateTime.now().toUtc(),
       settings: BackupSettings(app: appSettings, reader: readerSettings),
+      dictionaryPreferences: dictionaryPreferences
+          .map(
+            (dictionary) => BackupDictionaryPreference(
+              name: dictionary.name,
+              sortOrder: dictionary.sortOrder,
+              isEnabled: dictionary.isEnabled,
+            ),
+          )
+          .toList(growable: false),
       savedWords: savedWords
           .map(
             (w) => BackupSavedWordEntry(

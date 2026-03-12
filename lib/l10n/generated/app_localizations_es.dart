@@ -1123,8 +1123,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# libros restaurados',
-      one: '# libro restaurado',
+      other: '$count libros restaurados',
+      one: '$count libro restaurado',
     );
     return '$_temp0';
   }
@@ -1135,9 +1135,9 @@ class AppLocalizationsEs extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '# libros están esperando que se vuelva a importar el mismo contenido EPUB o manga',
+          '$count libros están esperando que se vuelva a importar el mismo contenido EPUB o manga',
       one:
-          '# libro está esperando que se vuelva a importar el mismo contenido EPUB o manga',
+          '$count libro está esperando que se vuelva a importar el mismo contenido EPUB o manga',
     );
     return '$_temp0';
   }
@@ -1152,6 +1152,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String backupRestoreDialogBody({required String fileName}) {
     return 'Esto restaurará la configuración y los datos de usuario desde $fileName, como marcadores, resaltados y listas de vocabulario. No restaura los archivos EPUB o manga reales. Después de restaurar, vuelve a importar el mismo contenido EPUB o manga para recuperar su historial. Tu configuración actual será sobrescrita.';
   }
+
+  @override
+  String get backupQueueDictionaryPreferencesTitle =>
+      'Queue dictionary settings from this backup';
+
+  @override
+  String get backupQueueDictionaryPreferencesBody =>
+      'You can apply matching dictionary order and enabled states later from Dictionary Manager.';
+
+  @override
+  String backupRestoreSummaryDictionaryPreferencesQueued({
+    required int matching,
+    required int missing,
+  }) {
+    return 'Dictionary settings queued: $matching ready to apply, $missing missing and will be skipped';
+  }
+
+  @override
+  String get backupRestoreSummaryDictionaryPreferencesSkipped =>
+      'Dictionary settings were not queued';
 
   @override
   String get backupDeleteDialogTitle => '¿Eliminar copia de seguridad?';
@@ -1337,6 +1357,62 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get dictionaryManagerOrderBody =>
       'Arrastra los diccionarios usando el asa a la izquierda para reordenarlos. El orden aquí controla cómo aparecen las definiciones al pulsar una palabra mientras lees.';
+
+  @override
+  String get dictionaryManagerPendingBackupTitle =>
+      'Backup dictionary settings ready';
+
+  @override
+  String get dictionaryManagerPendingBackupBody =>
+      'Apply the dictionary order and enabled states saved in your restored backup. Missing dictionaries will be skipped.';
+
+  @override
+  String dictionaryManagerPendingBackupMatching({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count matching dictionaries installed',
+      one: '1 matching dictionary installed',
+      zero: '0 matching dictionaries installed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dictionaryManagerPendingBackupMissing({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dictionaries missing and will be skipped',
+      one: '1 dictionary missing and will be skipped',
+      zero: '0 dictionaries missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dictionaryManagerPendingBackupNoMatches =>
+      'Install at least one matching dictionary to apply these backup settings.';
+
+  @override
+  String get dictionaryManagerPendingBackupApplyButton =>
+      'Apply Backup Settings';
+
+  @override
+  String get dictionaryManagerPendingBackupWarningTitle =>
+      'Overwrite current dictionary settings?';
+
+  @override
+  String get dictionaryManagerPendingBackupWarningBody =>
+      'This will overwrite the current order and enabled or disabled state for matching dictionaries. Missing dictionaries will be skipped.';
+
+  @override
+  String dictionaryManagerPendingBackupApplied({
+    required int applied,
+    required int missing,
+  }) {
+    return 'Applied backup settings to $applied dictionaries. Skipped $missing missing dictionaries.';
+  }
 
   @override
   String get dictionaryManagerEnablingTitle => 'Activar y desactivar';

@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
+import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
@@ -25,13 +27,10 @@ class _DictionaryManagerScreenState
   /// Holds the reordered list while the async DB write is in flight.
   /// When null, the reactive stream data is used directly.
   List<dynamic>? _localOrder;
+  bool _isApplyingPendingRestore = false;
 
   @override
   void dispose() {
-    // Clear any lingering success/error banners when leaving the screen.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(dictionaryImportProvider.notifier).clearMessages();
-    });
     super.dispose();
   }
 
@@ -39,6 +38,9 @@ class _DictionaryManagerScreenState
   Widget build(BuildContext context) {
     final dictionariesAsync = ref.watch(dictionariesProvider);
     final importState = ref.watch(dictionaryImportProvider);
+    final pendingRestoreAsync = ref.watch(
+      pendingDictionaryRestorePreviewProvider,
+    );
     final l10n = context.l10n;
 
     return Scaffold(
@@ -66,6 +68,7 @@ class _DictionaryManagerScreenState
             _buildErrorBanner(context, importState),
           if (importState.successMessage != null)
             _buildSuccessBanner(context, importState),
+          _buildPendingRestoreCard(pendingRestoreAsync),
           Expanded(
             child: dictionariesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -201,6 +204,104 @@ class _DictionaryManagerScreenState
     );
   }
 
+  Widget _buildPendingRestoreCard(
+    AsyncValue<PendingDictionaryRestorePreview?> pendingRestoreAsync,
+  ) {
+    return pendingRestoreAsync.when(
+      data: (preview) {
+        if (preview == null) return const SizedBox.shrink();
+
+        final l10n = context.l10n;
+        final theme = Theme.of(context);
+        final canApply = preview.canApply && !_isApplyingPendingRestore;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Card(
+            color: theme.colorScheme.surfaceContainerHighest,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.settings_backup_restore,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.dictionaryManagerPendingBackupTitle,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              l10n.dictionaryManagerPendingBackupBody,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.dictionaryManagerPendingBackupMatching(
+                      count: preview.matchingCount,
+                    ),
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.dictionaryManagerPendingBackupMissing(
+                      count: preview.missingCount,
+                    ),
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  if (preview.canApply)
+                    FilledButton.icon(
+                      onPressed: canApply ? _confirmApplyPendingRestore : null,
+                      icon: _isApplyingPendingRestore
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.done_all),
+                      label: Text(
+                        l10n.dictionaryManagerPendingBackupApplyButton,
+                      ),
+                    )
+                  else
+                    Text(
+                      l10n.dictionaryManagerPendingBackupNoMatches,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
   Widget _buildEmptyState() {
     final l10n = context.l10n;
 
@@ -237,6 +338,87 @@ class _DictionaryManagerScreenState
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _confirmApplyPendingRestore() async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.dictionaryManagerPendingBackupWarningTitle),
+        content: Text(l10n.dictionaryManagerPendingBackupWarningBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.dictionaryManagerPendingBackupApplyButton),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _applyPendingRestore();
+    }
+  }
+
+  Future<void> _applyPendingRestore() async {
+    if (_isApplyingPendingRestore) return;
+
+    setState(() {
+      _isApplyingPendingRestore = true;
+      _localOrder = null;
+    });
+
+    try {
+      final result = await ref
+          .read(pendingDictionaryRestoreServiceProvider)
+          .applyPendingRestore(ref.read(dictionaryRepositoryProvider));
+
+      ref.invalidate(pendingDictionaryRestorePreviewProvider);
+
+      if (!mounted) return;
+
+      if (result.appliedCount == 0) {
+        _showMessage(
+          context.l10n.dictionaryManagerPendingBackupNoMatches,
+          isError: true,
+        );
+      } else {
+        _showMessage(
+          context.l10n.dictionaryManagerPendingBackupApplied(
+            applied: result.appliedCount,
+            missing: result.missingCount,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage(
+        context.l10n.commonErrorWithDetails(details: '$e'),
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isApplyingPendingRestore = false);
+      }
+    }
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
       ),
     );
   }

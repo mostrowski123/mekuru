@@ -1060,8 +1060,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 本书已恢复',
-      one: '# 本书已恢复',
+      other: '$count 本书已恢复',
+      one: '$count 本书已恢复',
     );
     return '$_temp0';
   }
@@ -1071,8 +1071,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 本书正在等待重新导入相同的 EPUB 或漫画内容',
-      one: '# 本书正在等待重新导入相同的 EPUB 或漫画内容',
+      other: '$count 本书正在等待重新导入相同的 EPUB 或漫画内容',
+      one: '$count 本书正在等待重新导入相同的 EPUB 或漫画内容',
     );
     return '$_temp0';
   }
@@ -1087,6 +1087,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String backupRestoreDialogBody({required String fileName}) {
     return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB 或漫画文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。您当前的设置将被覆盖。';
   }
+
+  @override
+  String get backupQueueDictionaryPreferencesTitle =>
+      'Queue dictionary settings from this backup';
+
+  @override
+  String get backupQueueDictionaryPreferencesBody =>
+      'You can apply matching dictionary order and enabled states later from Dictionary Manager.';
+
+  @override
+  String backupRestoreSummaryDictionaryPreferencesQueued({
+    required int matching,
+    required int missing,
+  }) {
+    return 'Dictionary settings queued: $matching ready to apply, $missing missing and will be skipped';
+  }
+
+  @override
+  String get backupRestoreSummaryDictionaryPreferencesSkipped =>
+      'Dictionary settings were not queued';
 
   @override
   String get backupDeleteDialogTitle => '删除备份？';
@@ -1268,6 +1288,62 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get dictionaryManagerOrderBody =>
       '使用左侧的拖动柄拖动词典进行排序。这里的顺序决定你阅读时点击单词时词典释义的显示顺序。';
+
+  @override
+  String get dictionaryManagerPendingBackupTitle =>
+      'Backup dictionary settings ready';
+
+  @override
+  String get dictionaryManagerPendingBackupBody =>
+      'Apply the dictionary order and enabled states saved in your restored backup. Missing dictionaries will be skipped.';
+
+  @override
+  String dictionaryManagerPendingBackupMatching({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count matching dictionaries installed',
+      one: '1 matching dictionary installed',
+      zero: '0 matching dictionaries installed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dictionaryManagerPendingBackupMissing({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dictionaries missing and will be skipped',
+      one: '1 dictionary missing and will be skipped',
+      zero: '0 dictionaries missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dictionaryManagerPendingBackupNoMatches =>
+      'Install at least one matching dictionary to apply these backup settings.';
+
+  @override
+  String get dictionaryManagerPendingBackupApplyButton =>
+      'Apply Backup Settings';
+
+  @override
+  String get dictionaryManagerPendingBackupWarningTitle =>
+      'Overwrite current dictionary settings?';
+
+  @override
+  String get dictionaryManagerPendingBackupWarningBody =>
+      'This will overwrite the current order and enabled or disabled state for matching dictionaries. Missing dictionaries will be skipped.';
+
+  @override
+  String dictionaryManagerPendingBackupApplied({
+    required int applied,
+    required int missing,
+  }) {
+    return 'Applied backup settings to $applied dictionaries. Skipped $missing missing dictionaries.';
+  }
 
   @override
   String get dictionaryManagerEnablingTitle => '启用与禁用';
@@ -2789,8 +2865,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 本书已恢复',
-      one: '# 本书已恢复',
+      other: '$count 本书已恢复',
+      one: '$count 本书已恢复',
     );
     return '$_temp0';
   }
@@ -2800,8 +2876,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 本书正在等待重新导入相同的 EPUB 或漫画内容',
-      one: '# 本书正在等待重新导入相同的 EPUB 或漫画内容',
+      other: '$count 本书正在等待重新导入相同的 EPUB 或漫画内容',
+      one: '$count 本书正在等待重新导入相同的 EPUB 或漫画内容',
     );
     return '$_temp0';
   }

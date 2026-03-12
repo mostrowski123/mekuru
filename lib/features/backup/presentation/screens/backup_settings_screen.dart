@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
@@ -176,9 +177,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 ? null
                 : () {
                     AppHaptics.light();
-                    ref
-                        .read(restoreNotifierProvider.notifier)
-                        .restoreFromFilePicker();
+                    _pickAndConfirmRestore(context);
                   },
           ),
           const Divider(),
@@ -203,7 +202,11 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                             ? null
                             : () {
                                 AppHaptics.light();
-                                _confirmRestore(context, info);
+                                _confirmRestore(
+                                  context,
+                                  filePath: info.filePath,
+                                  fileName: info.fileName,
+                                );
                               },
                         onDelete: isWorking
                             ? null
@@ -301,6 +304,18 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       parts.add(l10n.backupRestoreSummaryBooksPending(count: books.pending));
     }
 
+    final dictionaryPreferences = result.dictionaryPreferencesResult;
+    if (dictionaryPreferences.queued) {
+      parts.add(
+        l10n.backupRestoreSummaryDictionaryPreferencesQueued(
+          matching: dictionaryPreferences.matchingCount,
+          missing: dictionaryPreferences.missingCount,
+        ),
+      );
+    } else if (dictionaryPreferences.skipped) {
+      parts.add(l10n.backupRestoreSummaryDictionaryPreferencesSkipped);
+    }
+
     return parts.isEmpty ? l10n.backupRestoreComplete : parts.join('. ');
   }
 
@@ -337,29 +352,93 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     }
   }
 
-  void _confirmRestore(BuildContext context, BackupFileInfo info) {
+  Future<void> _pickAndConfirmRestore(BuildContext context) async {
     final l10n = context.l10n;
+
+    try {
+      PlatformFile? picked;
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['mekuru'],
+        );
+        if (result == null || result.files.isEmpty) return;
+        picked = result.files.single;
+      } catch (_) {
+        final result = await FilePicker.platform.pickFiles(type: FileType.any);
+        if (result == null || result.files.isEmpty) return;
+        picked = result.files.single;
+      }
+
+      if (!context.mounted) return;
+
+      final filePath = picked.path;
+      if (filePath == null) return;
+      if (!filePath.endsWith('.mekuru')) {
+        _showSnackbar(l10n.backupInvalidFile, isError: true);
+        return;
+      }
+
+      _confirmRestore(context, filePath: filePath, fileName: picked.name);
+    } catch (e) {
+      _showSnackbar(
+        l10n.backupCouldNotOpenFile(details: e.toString()),
+        isError: true,
+      );
+    }
+  }
+
+  void _confirmRestore(
+    BuildContext context, {
+    required String filePath,
+    required String fileName,
+  }) {
+    final l10n = context.l10n;
+    var queueDictionaryPreferences = true;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.backupRestoreDialogTitle),
-        content: Text(l10n.backupRestoreDialogBody(fileName: info.fileName)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.commonCancel),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.backupRestoreDialogTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.backupRestoreDialogBody(fileName: fileName)),
+              const SizedBox(height: 16),
+              CheckboxListTile(
+                value: queueDictionaryPreferences,
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.backupQueueDictionaryPreferencesTitle),
+                subtitle: Text(l10n.backupQueueDictionaryPreferencesBody),
+                onChanged: (value) {
+                  setDialogState(() {
+                    queueDictionaryPreferences = value ?? true;
+                  });
+                },
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref
-                  .read(restoreNotifierProvider.notifier)
-                  .restoreFromPath(info.filePath);
-            },
-            child: Text(l10n.commonRestore),
-          ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                ref
+                    .read(restoreNotifierProvider.notifier)
+                    .restoreFromPath(
+                      filePath,
+                      queueDictionaryPreferences: queueDictionaryPreferences,
+                    );
+              },
+              child: Text(l10n.commonRestore),
+            ),
+          ],
+        ),
       ),
     );
   }

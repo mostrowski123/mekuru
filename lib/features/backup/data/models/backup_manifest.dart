@@ -6,6 +6,7 @@ class BackupManifest {
   final int version;
   final DateTime createdAt;
   final BackupSettings settings;
+  final List<BackupDictionaryPreference> dictionaryPreferences;
   final List<BackupSavedWordEntry> savedWords;
   final List<BackupBookEntry> books;
 
@@ -13,8 +14,21 @@ class BackupManifest {
     required this.version,
     required this.createdAt,
     required this.settings,
+    this.dictionaryPreferences = const [],
     required this.savedWords,
     required this.books,
+  });
+}
+
+class BackupDictionaryPreference {
+  final String name;
+  final int sortOrder;
+  final bool isEnabled;
+
+  const BackupDictionaryPreference({
+    required this.name,
+    required this.sortOrder,
+    required this.isEnabled,
   });
 }
 

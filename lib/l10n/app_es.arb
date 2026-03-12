@@ -1427,7 +1427,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksRestored": "{count, plural, one {# libro restaurado} other {# libros restaurados}}",
+  "backupRestoreSummaryBooksRestored": "{count, plural, one {{count} libro restaurado} other {{count} libros restaurados}}",
   "@backupRestoreSummaryBooksRestored": {
     "description": "Part of the restore summary message for restored books.",
     "placeholders": {
@@ -1436,7 +1436,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# libro está esperando que se vuelva a importar el mismo contenido EPUB o manga} other {# libros están esperando que se vuelva a importar el mismo contenido EPUB o manga}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {{count} libro está esperando que se vuelva a importar el mismo contenido EPUB o manga} other {{count} libros están esperando que se vuelva a importar el mismo contenido EPUB o manga}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {

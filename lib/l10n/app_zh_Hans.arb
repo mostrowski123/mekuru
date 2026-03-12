@@ -1427,7 +1427,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksRestored": "{count, plural, one {# 本书已恢复} other {# 本书已恢复}}",
+  "backupRestoreSummaryBooksRestored": "{count, plural, one {{count} 本书已恢复} other {{count} 本书已恢复}}",
   "@backupRestoreSummaryBooksRestored": {
     "description": "Part of the restore summary message for restored books.",
     "placeholders": {
@@ -1436,7 +1436,7 @@
       }
     }
   },
-  "backupRestoreSummaryBooksPending": "{count, plural, one {# 本书正在等待重新导入相同的 EPUB 或漫画内容} other {# 本书正在等待重新导入相同的 EPUB 或漫画内容}}",
+  "backupRestoreSummaryBooksPending": "{count, plural, one {{count} 本书正在等待重新导入相同的 EPUB 或漫画内容} other {{count} 本书正在等待重新导入相同的 EPUB 或漫画内容}}",
   "@backupRestoreSummaryBooksPending": {
     "description": "Part of the restore summary message for pending book data.",
     "placeholders": {

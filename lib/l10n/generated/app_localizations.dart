@@ -1771,13 +1771,13 @@ abstract class AppLocalizations {
   /// Body text for the informational note explaining backup scope.
   ///
   /// In en, this message translates to:
-  /// **'Backups include your settings and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB or manga files.'**
+  /// **'Backups include your settings, dictionary order and enabled states, and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB, manga, or dictionary files.'**
   String get backupScopeNoteBody;
 
   /// Follow-up text for the informational note explaining how restored history is reapplied.
   ///
   /// In en, this message translates to:
-  /// **'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back.'**
+  /// **'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Matching dictionary settings can be applied later from Dictionary Manager.'**
   String get backupScopeNoteRestore;
 
   /// Section header for auto-backup settings.
@@ -1972,13 +1972,13 @@ abstract class AppLocalizations {
   /// Part of the restore summary message for restored books.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one {# book restored} other {# books restored}}'**
+  /// **'{count, plural, one {{count} book restored} other {{count} books restored}}'**
   String backupRestoreSummaryBooksRestored({required int count});
 
   /// Part of the restore summary message for pending book data.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one {# book is waiting for the same EPUB or manga content to be re-imported} other {# books are waiting for the same EPUB or manga content to be re-imported}}'**
+  /// **'{count, plural, one {{count} book is waiting for the same EPUB or manga content to be re-imported} other {{count} books are waiting for the same EPUB or manga content to be re-imported}}'**
   String backupRestoreSummaryBooksPending({required int count});
 
   /// Fallback restore summary when there is nothing else to report.
@@ -1996,8 +1996,35 @@ abstract class AppLocalizations {
   /// Body for the restore backup confirmation dialog.
   ///
   /// In en, this message translates to:
-  /// **'This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB or manga files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.'**
+  /// **'This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.'**
   String backupRestoreDialogBody({required String fileName});
+
+  /// Checkbox label for queueing dictionary order and enabled states from a restored backup.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue dictionary settings from this backup'**
+  String get backupQueueDictionaryPreferencesTitle;
+
+  /// Checkbox helper text for queueing dictionary preferences during restore.
+  ///
+  /// In en, this message translates to:
+  /// **'You can apply matching dictionary order and enabled states later from Dictionary Manager.'**
+  String get backupQueueDictionaryPreferencesBody;
+
+  /// Restore summary for queued dictionary preferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary settings queued: {matching} ready to apply, {missing} missing and will be skipped'**
+  String backupRestoreSummaryDictionaryPreferencesQueued({
+    required int matching,
+    required int missing,
+  });
+
+  /// Restore summary when dictionary preferences are skipped during restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary settings were not queued'**
+  String get backupRestoreSummaryDictionaryPreferencesSkipped;
 
   /// Title for the delete backup confirmation dialog.
   ///
@@ -2322,6 +2349,63 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drag dictionaries using the handle on the left to reorder them. The order here controls the order that definitions appear when you tap a word while reading.'**
   String get dictionaryManagerOrderBody;
+
+  /// Title for the pending backup dictionary settings card in Dictionary Manager.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup dictionary settings ready'**
+  String get dictionaryManagerPendingBackupTitle;
+
+  /// Body for the pending backup dictionary settings card in Dictionary Manager.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply the dictionary order and enabled states saved in your restored backup. Missing dictionaries will be skipped.'**
+  String get dictionaryManagerPendingBackupBody;
+
+  /// Count of installed dictionaries that can be updated from the pending backup snapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0 {0 matching dictionaries installed} =1 {1 matching dictionary installed} other {{count} matching dictionaries installed}}'**
+  String dictionaryManagerPendingBackupMatching({required int count});
+
+  /// Count of missing backup dictionaries that will be skipped on apply.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0 {0 dictionaries missing} =1 {1 dictionary missing and will be skipped} other {{count} dictionaries missing and will be skipped}}'**
+  String dictionaryManagerPendingBackupMissing({required int count});
+
+  /// Message shown when no matching installed dictionaries exist for a pending backup snapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Install at least one matching dictionary to apply these backup settings.'**
+  String get dictionaryManagerPendingBackupNoMatches;
+
+  /// Button label for applying pending backup dictionary settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Backup Settings'**
+  String get dictionaryManagerPendingBackupApplyButton;
+
+  /// Title for the warning dialog shown before applying pending backup dictionary settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Overwrite current dictionary settings?'**
+  String get dictionaryManagerPendingBackupWarningTitle;
+
+  /// Body for the warning dialog shown before applying pending backup dictionary settings.
+  ///
+  /// In en, this message translates to:
+  /// **'This will overwrite the current order and enabled or disabled state for matching dictionaries. Missing dictionaries will be skipped.'**
+  String get dictionaryManagerPendingBackupWarningBody;
+
+  /// Snackbar text after applying pending backup dictionary settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied backup settings to {applied} dictionaries. Skipped {missing} missing dictionaries.'**
+  String dictionaryManagerPendingBackupApplied({
+    required int applied,
+    required int missing,
+  });
 
   /// Heading for dictionary enable and disable help.
   ///

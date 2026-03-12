@@ -7,6 +7,7 @@ import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 void main() {
   BackupManifest buildManifest({
     int version = 1,
+    List<BackupDictionaryPreference>? dictionaryPreferences,
     List<BackupSavedWordEntry>? savedWords,
     List<BackupBookEntry>? books,
     Map<String, dynamic>? appSettings,
@@ -19,6 +20,7 @@ void main() {
         app: appSettings ?? {'app.theme_mode': 'dark'},
         reader: readerSettings ?? {'reader.font_size': 18.0},
       ),
+      dictionaryPreferences: dictionaryPreferences ?? const [],
       savedWords: savedWords ?? [],
       books: books ?? [],
     );
@@ -36,6 +38,18 @@ void main() {
           'reader.font_size': 20.0,
           'reader.keep_screen_on': true,
         },
+        dictionaryPreferences: const [
+          BackupDictionaryPreference(
+            name: 'JMdict',
+            sortOrder: 0,
+            isEnabled: true,
+          ),
+          BackupDictionaryPreference(
+            name: 'Pitch Accent',
+            sortOrder: 1,
+            isEnabled: false,
+          ),
+        ],
         savedWords: [
           BackupSavedWordEntry(
             expression: '食べる',
@@ -90,6 +104,9 @@ void main() {
       expect(decoded.settings.app['app.color_theme'], 'mekuruRed');
       expect(decoded.settings.reader['reader.font_size'], 20.0);
       expect(decoded.settings.reader['reader.keep_screen_on'], true);
+      expect(decoded.dictionaryPreferences, hasLength(2));
+      expect(decoded.dictionaryPreferences[0].name, 'JMdict');
+      expect(decoded.dictionaryPreferences[1].isEnabled, isFalse);
 
       // Saved words
       expect(decoded.savedWords, hasLength(1));
@@ -216,6 +233,23 @@ void main() {
         () => BackupSerializer.decode(json),
         throwsA(isA<BackupVersionException>()),
       );
+    });
+
+    test('decodes backups without dictionary preferences', () {
+      final json = jsonEncode({
+        'version': 1,
+        'appName': 'mekuru',
+        'createdAt': '2026-01-01T00:00:00.000Z',
+        'settings': {
+          'app': {'app.theme_mode': 'dark'},
+          'reader': {'reader.font_size': 18.0},
+        },
+        'savedWords': [],
+        'books': [],
+      });
+
+      final decoded = BackupSerializer.decode(json);
+      expect(decoded.dictionaryPreferences, isEmpty);
     });
 
     test('rejects malformed JSON with BackupFormatException', () {

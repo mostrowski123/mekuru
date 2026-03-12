@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
+import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/data/repositories/pending_book_data_repository.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
@@ -10,12 +11,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Result of a full restore operation.
 class RestoreResult {
   final bool settingsRestored;
+  final RestoreDictionaryPreferencesResult dictionaryPreferencesResult;
   final RestoreWordResult wordsResult;
   final RestoreBookResult booksResult;
   final List<String> errors;
 
   const RestoreResult({
     required this.settingsRestored,
+    this.dictionaryPreferencesResult =
+        const RestoreDictionaryPreferencesResult(),
     required this.wordsResult,
     required this.booksResult,
     this.errors = const [],
