@@ -18,7 +18,7 @@ You can add dictionaries in three ways:
 4. Select a supported `.zip` or `.json` file.
 5. Wait for the import to finish. Large dictionaries can take a moment.
 
-> TODO: Add screenshot - Dictionary import progress or completion state
+![Dictionary manager showing imported dictionaries](../screenshots/dictionary-manager-imported-dictionaries.jpg)
 
 > Tip: You can import multiple dictionaries. Mekuru merges enabled dictionaries into the same lookup workflow and orders them based on the order it appears in the dictionary manager.
 

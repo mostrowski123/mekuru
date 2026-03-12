@@ -15,7 +15,7 @@ While reading EPUB text, Mokuro word overlays, or OCR-generated manga overlays, 
 - **Frequency ranking** - when [JPDB data is installed](getting-started/downloadable-data.md)
 - **Actions** - copy, save to vocabulary, and Android-only send to AnkiDroid
 
-> TODO: Add screenshot - Dictionary popup showing definition, pitch accent pattern, stroke order, and frequency badge
+![Dictionary lookup sheet with grouped results](../screenshots/dictionary-lookup-grouped-results.jpg)
 
 ## Dictionary Search
 

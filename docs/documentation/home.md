@@ -2,7 +2,7 @@
 
 Mekuru is a Japanese-first EPUB and manga reader built for language learners and native readers. It combines vertical EPUB reading, Mokuro and CBZ manga support, offline dictionaries, and vocabulary tools in one app.
 
-> TODO: Add screenshot - Library screen with imported books and manga
+![Library screen with imported books and manga](screenshots/library-screen-imported-books-and-manga.jpg)
 
 ## Quick Start
 

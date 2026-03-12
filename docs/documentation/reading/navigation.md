@@ -10,7 +10,7 @@ The EPUB reader uses three main tap zones:
 - **Right edge** - go backward in RTL mode, or forward in LTR mode
 - **Center** - show or hide the reader controls
 
-> TODO: Add screenshot - Tap zone overlay diagram for the reader
+![EPUB reader view with navigation controls visible](../screenshots/epub-reader-navigation-view.jpg)
 
 ## Swipe Navigation
 

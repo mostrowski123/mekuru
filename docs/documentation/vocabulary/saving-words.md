@@ -16,7 +16,7 @@ Duplicate detection prevents the same expression and reading pair from being sav
 
 ## Vocabulary List
 
-> TODO: Add screenshot - Vocabulary list with expanded entry details
+![Vocabulary list with an expanded entry](../screenshots/vocabulary-expanded-entry.jpg)
 
 The **Vocabulary** tab is a chronological review list rather than a searchable index.
 

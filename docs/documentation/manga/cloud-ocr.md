@@ -13,7 +13,7 @@ Remote OCR extracts text from CBZ manga pages so you can tap words and look them
 5. Mekuru uploads page images to your configured server and processes pages in the background.
 6. Once text overlays are available, open the manga and tap the detected words.
 
-> TODO: Add screenshot - Library action sheet showing the Run OCR action
+![Library screen showing OCR progress on a manga entry](../screenshots/library-ocr-progress-overlay.jpg)
 
 ## Background Processing
 

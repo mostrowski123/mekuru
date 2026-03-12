@@ -25,7 +25,7 @@ The manga reader settings sheet includes:
 - **Transparent Lookup** - makes the dictionary sheet more see-through over the page
 - **Debug Word Overlay** - shows word boxes for troubleshooting OCR or Mokuro alignment
 
-> TODO: Add screenshot - Manga spread view with visible overlays
+![Manga reader in spread mode with reader settings open](../screenshots/manga-reader-spread-settings.jpg)
 
 ## Dictionary Lookups
 

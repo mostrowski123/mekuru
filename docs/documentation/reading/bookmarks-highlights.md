@@ -20,7 +20,7 @@ Bookmarks are saved per book and stay available between sessions.
 
 Select text in the reader, then use the highlight controls to save a marked passage.
 
-> TODO: Add screenshot - EPUB reader with multiple highlight colors
+![Highlights list showing multiple highlight colors](../screenshots/epub-highlights-list-colors.jpg)
 
 ### Creating a Highlight
 

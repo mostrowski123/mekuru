@@ -16,7 +16,7 @@ The **Settings > Reading Defaults** section controls the defaults used across bo
 | **Vertical Margin** | Top and bottom padding around EPUB text |
 | **Swipe Sensitivity** | How far you need to drag before a page swipe triggers |
 
-> TODO: Add screenshot - Comparison of the available reader color modes
+![Settings screen with reading defaults](../screenshots/reader-reading-defaults-settings.jpg)
 
 ## Per-Book Quick Settings
 

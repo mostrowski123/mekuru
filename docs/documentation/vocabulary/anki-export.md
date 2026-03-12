@@ -30,7 +30,7 @@ The generated CSV can be imported into Anki on desktop or mobile.
 
 Mekuru can send cards directly to AnkiDroid from dictionary lookup cards.
 
-> TODO: Add screenshot - AnkiDroid field-mapping configuration screen
+![AnkiDroid integration field mapping screen](../screenshots/ankidroid-field-mapping.jpg)
 
 ### Setup
 
