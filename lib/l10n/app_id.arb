@@ -250,7 +250,7 @@
   "@librarySelectedFolder": {
     "description": "Fallback label for a selected folder."
   },
-  "libraryMangaFilesFound": "{count, plural, one {# file manga ditemukan} other {# file manga ditemukan}}",
+  "libraryMangaFilesFound": "{count, plural, one {{count} file manga ditemukan} other {{count} file manga ditemukan}}",
   "@libraryMangaFilesFound": {
     "description": "Subtitle showing how many manga manifest files were found.",
     "placeholders": {
@@ -378,7 +378,7 @@
   "@dictionaryKunyomiLabel": {
     "description": "Label for kunyomi readings."
   },
-  "dictionaryKanjiStrokeCount": "{count, plural, one {# guratan} other {# guratan}}",
+  "dictionaryKanjiStrokeCount": "{count, plural, one {{count} guratan} other {{count} guratan}}",
   "@dictionaryKanjiStrokeCount": {
     "description": "Label showing how many strokes are in the current kanji stroke order diagram.",
     "placeholders": {
@@ -1348,7 +1348,7 @@
       }
     }
   },
-  "backupBooksUpdatedFromBackup": "{count, plural, one {# buku diperbarui dari cadangan} other {# buku diperbarui dari cadangan}}",
+  "backupBooksUpdatedFromBackup": "{count, plural, one {{count} buku diperbarui dari cadangan} other {{count} buku diperbarui dari cadangan}}",
   "@backupBooksUpdatedFromBackup": {
     "description": "Snackbar shown after applying conflict selections during restore.",
     "placeholders": {
@@ -1390,7 +1390,7 @@
   "@backupConflictSkipAll": {
     "description": "Button label to skip applying all conflicting backup entries."
   },
-  "backupConflictOverwriteSelected": "{count, plural, one {Timpa #} other {Timpa #}}",
+  "backupConflictOverwriteSelected": "{count, plural, one {Timpa {count}} other {Timpa {count}}}",
   "@backupConflictOverwriteSelected": {
     "description": "Button label to overwrite the selected conflicting backup entries.",
     "placeholders": {

@@ -209,8 +209,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# manga files found',
-      one: '# manga file found',
+      other: '$count manga files found',
+      one: '$count manga file found',
     );
     return '$_temp0';
   }
@@ -310,8 +310,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# strokes',
-      one: '# stroke',
+      other: '$count strokes',
+      one: '$count stroke',
     );
     return '$_temp0';
   }
@@ -1042,8 +1042,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# books updated from backup',
-      one: '# book updated from backup',
+      other: '$count books updated from backup',
+      one: '$count book updated from backup',
     );
     return '$_temp0';
   }
@@ -1076,8 +1076,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Overwrite #',
-      one: 'Overwrite #',
+      other: 'Overwrite $count',
+      one: 'Overwrite $count',
     );
     return '$_temp0';
   }

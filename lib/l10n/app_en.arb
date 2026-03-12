@@ -250,7 +250,7 @@
   "@librarySelectedFolder": {
     "description": "Fallback label for a selected folder."
   },
-  "libraryMangaFilesFound": "{count, plural, one {# manga file found} other {# manga files found}}",
+  "libraryMangaFilesFound": "{count, plural, one {{count} manga file found} other {{count} manga files found}}",
   "@libraryMangaFilesFound": {
     "description": "Subtitle showing how many manga manifest files were found.",
     "placeholders": {
@@ -378,7 +378,7 @@
   "@dictionaryKunyomiLabel": {
     "description": "Label for kunyomi readings."
   },
-  "dictionaryKanjiStrokeCount": "{count, plural, one {# stroke} other {# strokes}}",
+  "dictionaryKanjiStrokeCount": "{count, plural, one {{count} stroke} other {{count} strokes}}",
   "@dictionaryKanjiStrokeCount": {
     "description": "Label showing how many strokes are in the current kanji stroke order diagram.",
     "placeholders": {
@@ -1348,7 +1348,7 @@
       }
     }
   },
-  "backupBooksUpdatedFromBackup": "{count, plural, one {# book updated from backup} other {# books updated from backup}}",
+  "backupBooksUpdatedFromBackup": "{count, plural, one {{count} book updated from backup} other {{count} books updated from backup}}",
   "@backupBooksUpdatedFromBackup": {
     "description": "Snackbar shown after applying conflict selections during restore.",
     "placeholders": {
@@ -1390,7 +1390,7 @@
   "@backupConflictSkipAll": {
     "description": "Button label to skip applying all conflicting backup entries."
   },
-  "backupConflictOverwriteSelected": "{count, plural, one {Overwrite #} other {Overwrite #}}",
+  "backupConflictOverwriteSelected": "{count, plural, one {Overwrite {count}} other {Overwrite {count}}}",
   "@backupConflictOverwriteSelected": {
     "description": "Button label to overwrite the selected conflicting backup entries.",
     "placeholders": {

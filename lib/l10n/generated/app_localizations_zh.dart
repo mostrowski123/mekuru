@@ -202,8 +202,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '找到#个漫画文件',
-      one: '找到#个漫画文件',
+      other: '找到$count个漫画文件',
+      one: '找到$count个漫画文件',
     );
     return '$_temp0';
   }
@@ -298,8 +298,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '#画',
-      one: '#画',
+      other: '$count画',
+      one: '$count画',
     );
     return '$_temp0';
   }
@@ -999,8 +999,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 本书已通过备份更新',
-      one: '# 本书已通过备份更新',
+      other: '$count 本书已通过备份更新',
+      one: '$count 本书已通过备份更新',
     );
     return '$_temp0';
   }
@@ -1032,8 +1032,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '覆盖 # 本',
-      one: '覆盖 # 本',
+      other: '覆盖 $count 本',
+      one: '覆盖 $count 本',
     );
     return '$_temp0';
   }
@@ -2007,8 +2007,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '找到#个漫画文件',
-      one: '找到#个漫画文件',
+      other: '找到$count个漫画文件',
+      one: '找到$count个漫画文件',
     );
     return '$_temp0';
   }
@@ -2103,8 +2103,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '#画',
-      one: '#画',
+      other: '$count画',
+      one: '$count画',
     );
     return '$_temp0';
   }
@@ -2804,8 +2804,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 本书已通过备份更新',
-      one: '# 本书已通过备份更新',
+      other: '$count 本书已通过备份更新',
+      one: '$count 本书已通过备份更新',
     );
     return '$_temp0';
   }
@@ -2837,8 +2837,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '覆盖 # 本',
-      one: '覆盖 # 本',
+      other: '覆盖 $count 本',
+      one: '覆盖 $count 本',
     );
     return '$_temp0';
   }

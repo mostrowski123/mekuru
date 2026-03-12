@@ -210,8 +210,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# archivos de manga encontrados',
-      one: '# archivo de manga encontrado',
+      other: '$count archivos de manga encontrados',
+      one: '$count archivo de manga encontrado',
     );
     return '$_temp0';
   }
@@ -314,8 +314,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# trazos',
-      one: '# trazo',
+      other: '$count trazos',
+      one: '$count trazo',
     );
     return '$_temp0';
   }
@@ -1060,8 +1060,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# libros actualizados desde la copia de seguridad',
-      one: '# libro actualizado desde la copia de seguridad',
+      other: '$count libros actualizados desde la copia de seguridad',
+      one: '$count libro actualizado desde la copia de seguridad',
     );
     return '$_temp0';
   }
@@ -1094,8 +1094,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Sobrescribir #',
-      one: 'Sobrescribir #',
+      other: 'Sobrescribir $count',
+      one: 'Sobrescribir $count',
     );
     return '$_temp0';
   }

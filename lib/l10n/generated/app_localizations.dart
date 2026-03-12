@@ -466,7 +466,7 @@ abstract class AppLocalizations {
   /// Subtitle showing how many manga manifest files were found.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one {# manga file found} other {# manga files found}}'**
+  /// **'{count, plural, one {{count} manga file found} other {{count} manga files found}}'**
   String libraryMangaFilesFound({required int count});
 
   /// Placeholder text for the dictionary search field.
@@ -628,7 +628,7 @@ abstract class AppLocalizations {
   /// Label showing how many strokes are in the current kanji stroke order diagram.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one {# stroke} other {# strokes}}'**
+  /// **'{count, plural, one {{count} stroke} other {{count} strokes}}'**
   String dictionaryKanjiStrokeCount({required int count});
 
   /// Tooltip for replaying the kanji stroke order animation.
@@ -1897,7 +1897,7 @@ abstract class AppLocalizations {
   /// Snackbar shown after applying conflict selections during restore.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one {# book updated from backup} other {# books updated from backup}}'**
+  /// **'{count, plural, one {{count} book updated from backup} other {{count} books updated from backup}}'**
   String backupBooksUpdatedFromBackup({required int count});
 
   /// Snackbar shown when applying restored book data fails.
@@ -1936,7 +1936,7 @@ abstract class AppLocalizations {
   /// Button label to overwrite the selected conflicting backup entries.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one {Overwrite #} other {Overwrite #}}'**
+  /// **'{count, plural, one {Overwrite {count}} other {Overwrite {count}}}'**
   String backupConflictOverwriteSelected({required int count});
 
   /// Book type label for EPUB items in backup conflict UI.
