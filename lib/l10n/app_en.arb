@@ -2232,5 +2232,117 @@
   "aboutEpubJsDescription": "EPUB rendering is powered by epub.js, an open source JavaScript EPUB reader library.",
   "@aboutEpubJsDescription": {
     "description": "Description text for the epub.js attribution card."
+  },
+  "dictionaryPartOfSpeechNoun": "Noun",
+  "dictionaryPartOfSpeechPronoun": "Pronoun",
+  "dictionaryPartOfSpeechPrefix": "Prefix",
+  "dictionaryPartOfSpeechSuffix": "Suffix",
+  "dictionaryPartOfSpeechCounter": "Counter",
+  "dictionaryPartOfSpeechNumeric": "Numeric",
+  "dictionaryPartOfSpeechExpression": "Expression",
+  "dictionaryPartOfSpeechInterjection": "Interjection",
+  "dictionaryPartOfSpeechConjunction": "Conjunction",
+  "dictionaryPartOfSpeechParticle": "Particle",
+  "dictionaryPartOfSpeechCopula": "Copula",
+  "dictionaryPartOfSpeechAuxiliary": "Auxiliary",
+  "dictionaryPartOfSpeechAuxiliaryVerb": "Auxiliary verb",
+  "dictionaryPartOfSpeechAuxiliaryAdjective": "Auxiliary adjective",
+  "dictionaryPartOfSpeechIAdjective": "I-adjective",
+  "dictionaryPartOfSpeechNaAdjective": "Na-adjective",
+  "dictionaryPartOfSpeechNoAdjective": "No-adjective",
+  "dictionaryPartOfSpeechPreNounAdjectival": "Pre-noun adjectival",
+  "dictionaryPartOfSpeechAdverb": "Adverb",
+  "dictionaryPartOfSpeechToAdverb": "To-adverb",
+  "dictionaryPartOfSpeechAdverbialNoun": "Adverbial noun",
+  "dictionaryPartOfSpeechSuruVerb": "Suru verb",
+  "dictionaryPartOfSpeechKuruVerb": "Kuru verb",
+  "dictionaryPartOfSpeechIchidanVerb": "Ichidan verb",
+  "dictionaryPartOfSpeechGodanVerb": "Godan verb",
+  "dictionaryPartOfSpeechZuruVerb": "Zuru verb",
+  "dictionaryPartOfSpeechIntransitiveVerb": "Intransitive verb",
+  "dictionaryPartOfSpeechTransitiveVerb": "Transitive verb",
+  "@dictionaryPartOfSpeechNoun": {
+    "description": "Part of speech label for nouns."
+  },
+  "@dictionaryPartOfSpeechPronoun": {
+    "description": "Part of speech label for pronouns."
+  },
+  "@dictionaryPartOfSpeechPrefix": {
+    "description": "Part of speech label for prefixes."
+  },
+  "@dictionaryPartOfSpeechSuffix": {
+    "description": "Part of speech label for suffixes."
+  },
+  "@dictionaryPartOfSpeechCounter": {
+    "description": "Part of speech label for counters."
+  },
+  "@dictionaryPartOfSpeechNumeric": {
+    "description": "Part of speech label for numeric terms."
+  },
+  "@dictionaryPartOfSpeechExpression": {
+    "description": "Part of speech label for expressions."
+  },
+  "@dictionaryPartOfSpeechInterjection": {
+    "description": "Part of speech label for interjections."
+  },
+  "@dictionaryPartOfSpeechConjunction": {
+    "description": "Part of speech label for conjunctions."
+  },
+  "@dictionaryPartOfSpeechParticle": {
+    "description": "Part of speech label for particles."
+  },
+  "@dictionaryPartOfSpeechCopula": {
+    "description": "Part of speech label for copulas."
+  },
+  "@dictionaryPartOfSpeechAuxiliary": {
+    "description": "Part of speech label for auxiliaries."
+  },
+  "@dictionaryPartOfSpeechAuxiliaryVerb": {
+    "description": "Part of speech label for auxiliary verbs."
+  },
+  "@dictionaryPartOfSpeechAuxiliaryAdjective": {
+    "description": "Part of speech label for auxiliary adjectives."
+  },
+  "@dictionaryPartOfSpeechIAdjective": {
+    "description": "Part of speech label for i-adjectives."
+  },
+  "@dictionaryPartOfSpeechNaAdjective": {
+    "description": "Part of speech label for na-adjectives."
+  },
+  "@dictionaryPartOfSpeechNoAdjective": {
+    "description": "Part of speech label for no-adjectives."
+  },
+  "@dictionaryPartOfSpeechPreNounAdjectival": {
+    "description": "Part of speech label for pre-noun adjectival terms."
+  },
+  "@dictionaryPartOfSpeechAdverb": {
+    "description": "Part of speech label for adverbs."
+  },
+  "@dictionaryPartOfSpeechToAdverb": {
+    "description": "Part of speech label for to-adverbs."
+  },
+  "@dictionaryPartOfSpeechAdverbialNoun": {
+    "description": "Part of speech label for adverbial nouns."
+  },
+  "@dictionaryPartOfSpeechSuruVerb": {
+    "description": "Part of speech label for suru verbs."
+  },
+  "@dictionaryPartOfSpeechKuruVerb": {
+    "description": "Part of speech label for kuru verbs."
+  },
+  "@dictionaryPartOfSpeechIchidanVerb": {
+    "description": "Part of speech label for ichidan verbs."
+  },
+  "@dictionaryPartOfSpeechGodanVerb": {
+    "description": "Part of speech label for godan verbs."
+  },
+  "@dictionaryPartOfSpeechZuruVerb": {
+    "description": "Part of speech label for zuru verbs."
+  },
+  "@dictionaryPartOfSpeechIntransitiveVerb": {
+    "description": "Part of speech label for intransitive verbs."
+  },
+  "@dictionaryPartOfSpeechTransitiveVerb": {
+    "description": "Part of speech label for transitive verbs."
   }
 }

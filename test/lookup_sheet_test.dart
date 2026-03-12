@@ -1,11 +1,12 @@
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
-import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
+import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,18 +31,19 @@ DictionaryEntry _buildEntry() {
 class _FakeDictionaryQueryService extends DictionaryQueryService {
   _FakeDictionaryQueryService(
     super.db, {
-    required this.results,
+    required this.lookupResults,
     this.pitchAccents = const [],
   });
 
-  final List<DictionaryEntryWithSource> results;
+  final List<DictionaryEntryWithSource> lookupResults;
   final List<PitchAccentResult> pitchAccents;
 
   @override
-  Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
-    String term,
-  ) async {
-    return results;
+  Future<List<DictionaryEntryWithSource>> searchLookupWithSource(
+    String primary, [
+    String? secondary,
+  ]) async {
+    return lookupResults;
   }
 
   @override
@@ -51,40 +53,7 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
 }
 
 void main() {
-  testWidgets('shows guidance when all imported dictionaries are disabled', (
-    tester,
-  ) async {
-    SharedPreferences.setMockInitialValues({});
-    final dictionaries = [
-      DictionaryMeta(
-        id: 1,
-        name: 'JMdict English',
-        isEnabled: false,
-        dateImported: DateTime(2026, 3, 8),
-        sortOrder: 1,
-        isHidden: false,
-      ),
-    ];
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          dictionariesProvider.overrideWith(
-            (ref) => Stream.value(dictionaries),
-          ),
-        ],
-        child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    expect(find.text('Your dictionaries are turned off'), findsOneWidget);
-    expect(find.text('Enable dictionaries'), findsOneWidget);
-    expect(find.text('Starter pack'), findsOneWidget);
-  });
-
-  testWidgets('renders part-of-speech labels in dictionary search results', (
+  testWidgets('renders part-of-speech labels in lookup sheet results', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -94,33 +63,23 @@ void main() {
     final entry = _buildEntry();
     final service = _FakeDictionaryQueryService(
       db,
-      results: [
+      lookupResults: [
         DictionaryEntryWithSource(entry: entry, dictionaryName: 'JMdict'),
       ],
     );
-
-    final dictionaries = [
-      DictionaryMeta(
-        id: 1,
-        name: 'JMdict',
-        isEnabled: true,
-        dateImported: DateTime(2026, 3, 12),
-        sortOrder: 0,
-        isHidden: false,
-      ),
-    ];
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
           dictionaryQueryServiceProvider.overrideWithValue(service),
-          dictionariesProvider.overrideWith(
-            (ref) => Stream.value(dictionaries),
-          ),
         ],
         child: buildLocalizedTestApp(
-          home: const DictionarySearchScreen(initialQuery: '食べる'),
+          home: const Scaffold(
+            body: SizedBox.expand(
+              child: LookupSheet(selectedText: '食べる'),
+            ),
+          ),
         ),
       ),
     );

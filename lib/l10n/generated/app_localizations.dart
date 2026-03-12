@@ -3021,6 +3021,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'EPUB rendering is powered by epub.js, an open source JavaScript EPUB reader library.'**
   String get aboutEpubJsDescription;
+
+  /// Part of speech label for nouns.
+  ///
+  /// In en, this message translates to:
+  /// **'Noun'**
+  String get dictionaryPartOfSpeechNoun;
+
+  /// Part of speech label for pronouns.
+  ///
+  /// In en, this message translates to:
+  /// **'Pronoun'**
+  String get dictionaryPartOfSpeechPronoun;
+
+  /// Part of speech label for prefixes.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefix'**
+  String get dictionaryPartOfSpeechPrefix;
+
+  /// Part of speech label for suffixes.
+  ///
+  /// In en, this message translates to:
+  /// **'Suffix'**
+  String get dictionaryPartOfSpeechSuffix;
+
+  /// Part of speech label for counters.
+  ///
+  /// In en, this message translates to:
+  /// **'Counter'**
+  String get dictionaryPartOfSpeechCounter;
+
+  /// Part of speech label for numeric terms.
+  ///
+  /// In en, this message translates to:
+  /// **'Numeric'**
+  String get dictionaryPartOfSpeechNumeric;
+
+  /// Part of speech label for expressions.
+  ///
+  /// In en, this message translates to:
+  /// **'Expression'**
+  String get dictionaryPartOfSpeechExpression;
+
+  /// Part of speech label for interjections.
+  ///
+  /// In en, this message translates to:
+  /// **'Interjection'**
+  String get dictionaryPartOfSpeechInterjection;
+
+  /// Part of speech label for conjunctions.
+  ///
+  /// In en, this message translates to:
+  /// **'Conjunction'**
+  String get dictionaryPartOfSpeechConjunction;
+
+  /// Part of speech label for particles.
+  ///
+  /// In en, this message translates to:
+  /// **'Particle'**
+  String get dictionaryPartOfSpeechParticle;
+
+  /// Part of speech label for copulas.
+  ///
+  /// In en, this message translates to:
+  /// **'Copula'**
+  String get dictionaryPartOfSpeechCopula;
+
+  /// Part of speech label for auxiliaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary'**
+  String get dictionaryPartOfSpeechAuxiliary;
+
+  /// Part of speech label for auxiliary verbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary verb'**
+  String get dictionaryPartOfSpeechAuxiliaryVerb;
+
+  /// Part of speech label for auxiliary adjectives.
+  ///
+  /// In en, this message translates to:
+  /// **'Auxiliary adjective'**
+  String get dictionaryPartOfSpeechAuxiliaryAdjective;
+
+  /// Part of speech label for i-adjectives.
+  ///
+  /// In en, this message translates to:
+  /// **'I-adjective'**
+  String get dictionaryPartOfSpeechIAdjective;
+
+  /// Part of speech label for na-adjectives.
+  ///
+  /// In en, this message translates to:
+  /// **'Na-adjective'**
+  String get dictionaryPartOfSpeechNaAdjective;
+
+  /// Part of speech label for no-adjectives.
+  ///
+  /// In en, this message translates to:
+  /// **'No-adjective'**
+  String get dictionaryPartOfSpeechNoAdjective;
+
+  /// Part of speech label for pre-noun adjectival terms.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-noun adjectival'**
+  String get dictionaryPartOfSpeechPreNounAdjectival;
+
+  /// Part of speech label for adverbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Adverb'**
+  String get dictionaryPartOfSpeechAdverb;
+
+  /// Part of speech label for to-adverbs.
+  ///
+  /// In en, this message translates to:
+  /// **'To-adverb'**
+  String get dictionaryPartOfSpeechToAdverb;
+
+  /// Part of speech label for adverbial nouns.
+  ///
+  /// In en, this message translates to:
+  /// **'Adverbial noun'**
+  String get dictionaryPartOfSpeechAdverbialNoun;
+
+  /// Part of speech label for suru verbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Suru verb'**
+  String get dictionaryPartOfSpeechSuruVerb;
+
+  /// Part of speech label for kuru verbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Kuru verb'**
+  String get dictionaryPartOfSpeechKuruVerb;
+
+  /// Part of speech label for ichidan verbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Ichidan verb'**
+  String get dictionaryPartOfSpeechIchidanVerb;
+
+  /// Part of speech label for godan verbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Godan verb'**
+  String get dictionaryPartOfSpeechGodanVerb;
+
+  /// Part of speech label for zuru verbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Zuru verb'**
+  String get dictionaryPartOfSpeechZuruVerb;
+
+  /// Part of speech label for intransitive verbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Intransitive verb'**
+  String get dictionaryPartOfSpeechIntransitiveVerb;
+
+  /// Part of speech label for transitive verbs.
+  ///
+  /// In en, this message translates to:
+  /// **'Transitive verb'**
+  String get dictionaryPartOfSpeechTransitiveVerb;
 }
 
 class _AppLocalizationsDelegate

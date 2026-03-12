@@ -12,6 +12,7 @@ import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_setting
 import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
+import 'package:mekuru/features/dictionary/data/services/part_of_speech_resolver.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_readings_block.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
@@ -297,6 +298,7 @@ class _GroupedDictionaryEntryCardState
     );
 
     final actionButtons = _buildActionButtons();
+    final partOfSpeech = PartOfSpeechResolver.resolve(_primaryEntry);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -334,6 +336,11 @@ class _GroupedDictionaryEntryCardState
                     ...actionButtons,
                   ],
                 ),
+
+              if (partOfSpeech.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _buildPartOfSpeechChips(theme, partOfSpeech),
+              ],
 
               // Row 2: Pitch accent diagrams (if available)
               if (widget.pitchAccents.isNotEmpty) ...[
@@ -433,6 +440,102 @@ class _GroupedDictionaryEntryCardState
         ],
       ],
     );
+  }
+
+  Widget _buildPartOfSpeechChips(
+    ThemeData theme,
+    List<ResolvedPartOfSpeech> items,
+  ) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: items
+          .map((item) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondaryContainer.withAlpha(140),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withAlpha(160),
+                ),
+              ),
+              child: Text(
+                _localizePartOfSpeech(item),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.onSecondaryContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            );
+          })
+          .toList(growable: false),
+    );
+  }
+
+  String _localizePartOfSpeech(ResolvedPartOfSpeech item) {
+    switch (item.localizationKey) {
+      case 'noun':
+        return context.l10n.dictionaryPartOfSpeechNoun;
+      case 'pronoun':
+        return context.l10n.dictionaryPartOfSpeechPronoun;
+      case 'prefix':
+        return context.l10n.dictionaryPartOfSpeechPrefix;
+      case 'suffix':
+        return context.l10n.dictionaryPartOfSpeechSuffix;
+      case 'counter':
+        return context.l10n.dictionaryPartOfSpeechCounter;
+      case 'numeric':
+        return context.l10n.dictionaryPartOfSpeechNumeric;
+      case 'expression':
+        return context.l10n.dictionaryPartOfSpeechExpression;
+      case 'interjection':
+        return context.l10n.dictionaryPartOfSpeechInterjection;
+      case 'conjunction':
+        return context.l10n.dictionaryPartOfSpeechConjunction;
+      case 'particle':
+        return context.l10n.dictionaryPartOfSpeechParticle;
+      case 'copula':
+        return context.l10n.dictionaryPartOfSpeechCopula;
+      case 'auxiliary':
+        return context.l10n.dictionaryPartOfSpeechAuxiliary;
+      case 'auxiliaryVerb':
+        return context.l10n.dictionaryPartOfSpeechAuxiliaryVerb;
+      case 'auxiliaryAdjective':
+        return context.l10n.dictionaryPartOfSpeechAuxiliaryAdjective;
+      case 'iAdjective':
+        return context.l10n.dictionaryPartOfSpeechIAdjective;
+      case 'naAdjective':
+        return context.l10n.dictionaryPartOfSpeechNaAdjective;
+      case 'noAdjective':
+        return context.l10n.dictionaryPartOfSpeechNoAdjective;
+      case 'preNounAdjectival':
+        return context.l10n.dictionaryPartOfSpeechPreNounAdjectival;
+      case 'adverb':
+        return context.l10n.dictionaryPartOfSpeechAdverb;
+      case 'toAdverb':
+        return context.l10n.dictionaryPartOfSpeechToAdverb;
+      case 'adverbialNoun':
+        return context.l10n.dictionaryPartOfSpeechAdverbialNoun;
+      case 'suruVerb':
+        return context.l10n.dictionaryPartOfSpeechSuruVerb;
+      case 'kuruVerb':
+        return context.l10n.dictionaryPartOfSpeechKuruVerb;
+      case 'ichidanVerb':
+        return context.l10n.dictionaryPartOfSpeechIchidanVerb;
+      case 'godanVerb':
+        return context.l10n.dictionaryPartOfSpeechGodanVerb;
+      case 'zuruVerb':
+        return context.l10n.dictionaryPartOfSpeechZuruVerb;
+      case 'intransitiveVerb':
+        return context.l10n.dictionaryPartOfSpeechIntransitiveVerb;
+      case 'transitiveVerb':
+        return context.l10n.dictionaryPartOfSpeechTransitiveVerb;
+      case null:
+        return item.label;
+    }
+
+    return item.label;
   }
 
   Widget _buildKanjiExpression(ThemeData theme, TextStyle expressionStyle) {

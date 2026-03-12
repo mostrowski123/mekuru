@@ -30,8 +30,23 @@ part 'database_provider.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
+  static const Map<String, String> _dictionaryEntriesRepairColumns = {
+    'entry_kind':
+        "ALTER TABLE dictionary_entries ADD COLUMN entry_kind TEXT NOT NULL DEFAULT 'regular'",
+    'kanji_onyomi':
+        "ALTER TABLE dictionary_entries ADD COLUMN kanji_onyomi TEXT NOT NULL DEFAULT ''",
+    'kanji_kunyomi':
+        "ALTER TABLE dictionary_entries ADD COLUMN kanji_kunyomi TEXT NOT NULL DEFAULT ''",
+    'definition_tags':
+        "ALTER TABLE dictionary_entries ADD COLUMN definition_tags TEXT NOT NULL DEFAULT ''",
+    'rules':
+        "ALTER TABLE dictionary_entries ADD COLUMN rules TEXT NOT NULL DEFAULT ''",
+    'term_tags':
+        "ALTER TABLE dictionary_entries ADD COLUMN term_tags TEXT NOT NULL DEFAULT ''",
+  };
+
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -103,8 +118,40 @@ class AppDatabase extends _$AppDatabase {
           dictionaryEntries.kanjiKunyomi,
         );
       }
+      if (from < 15) {
+        await migrator.addColumn(
+          dictionaryEntries,
+          dictionaryEntries.definitionTags,
+        );
+        await migrator.addColumn(dictionaryEntries, dictionaryEntries.rules);
+        await migrator.addColumn(dictionaryEntries, dictionaryEntries.termTags);
+      }
+    },
+    beforeOpen: (details) async {
+      await _repairDictionaryEntriesSchemaIfNeeded();
     },
   );
+
+  Future<void> _repairDictionaryEntriesSchemaIfNeeded() async {
+    final tableRows = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'dictionary_entries'",
+    ).get();
+    if (tableRows.isEmpty) return;
+
+    final pragmaRows = await customSelect(
+      "PRAGMA table_info('dictionary_entries')",
+    ).get();
+    final existingColumns = pragmaRows
+        .map((row) => row.data['name']?.toString())
+        .whereType<String>()
+        .toSet();
+
+    for (final entry in _dictionaryEntriesRepairColumns.entries) {
+      if (!existingColumns.contains(entry.key)) {
+        await customStatement(entry.value);
+      }
+    }
+  }
 
   static QueryExecutor _openConnection() {
     return driftDatabase(

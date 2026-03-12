@@ -20,6 +20,9 @@ DictionaryEntry _buildEntry({
   String entryKind = DictionaryEntryKinds.regular,
   String kanjiOnyomi = '',
   String kanjiKunyomi = '',
+  String definitionTags = '',
+  String rules = '',
+  String termTags = '',
   String glossaries = '["definition"]',
 }) {
   return DictionaryEntry(
@@ -29,6 +32,9 @@ DictionaryEntry _buildEntry({
     entryKind: entryKind,
     kanjiOnyomi: kanjiOnyomi,
     kanjiKunyomi: kanjiKunyomi,
+    definitionTags: definitionTags,
+    rules: rules,
+    termTags: termTags,
     glossaries: glossaries,
     dictionaryId: id,
   );
@@ -66,7 +72,7 @@ void main() {
     await tester.pumpWidget(
       _buildTestApp(
         db: db,
-        width: 420,
+        width: 520,
         child: GroupedDictionaryEntryCard(
           entries: [
             DictionaryEntryWithSource(
@@ -86,6 +92,67 @@ void main() {
     expect(find.textContaining('Onyomi:'), findsNothing);
     expect(find.textContaining('Kunyomi:'), findsNothing);
     expect(find.text('Very Common'), findsOneWidget);
+  });
+
+  testWidgets('renders part-of-speech chips when tags are present', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildTestApp(
+        db: db,
+        width: 520,
+        child: GroupedDictionaryEntryCard(
+          entries: [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: 1,
+                expression: '食べる',
+                reading: 'たべる',
+                rules: 'v1 vt',
+                termTags: 'P',
+              ),
+              dictionaryName: 'JMdict',
+            ),
+          ],
+          pitchAccents: const [],
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ichidan verb'), findsOneWidget);
+    expect(find.text('Transitive verb'), findsOneWidget);
+    expect(find.text('P'), findsNothing);
+  });
+
+  testWidgets('omits part-of-speech chips when tags are absent', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildTestApp(
+        db: db,
+        width: 420,
+        child: GroupedDictionaryEntryCard(
+          entries: [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: 1,
+                expression: '飲む',
+                reading: 'のむ',
+              ),
+              dictionaryName: 'JMdict',
+            ),
+          ],
+          pitchAccents: const [],
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ichidan verb'), findsNothing);
+    expect(find.text('Noun'), findsNothing);
   });
 
   testWidgets('kanji entries render labeled reading lines without furigana', (

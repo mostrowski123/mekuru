@@ -175,9 +175,38 @@ void main() {
       expect(allEntries.first.entryKind, DictionaryEntryKinds.regular);
       expect(allEntries.first.kanjiOnyomi, isEmpty);
       expect(allEntries.first.kanjiKunyomi, isEmpty);
+      expect(allEntries.first.definitionTags, isEmpty);
+      expect(allEntries.first.rules, isEmpty);
+      expect(allEntries.first.termTags, isEmpty);
 
       final glossaries = jsonDecode(allEntries.first.glossaries) as List;
       expect(glossaries, ['Chinese character']);
+    });
+
+    test('stores part of speech fields from Yomitan term rows', () async {
+      final zipPath = await createTestYomitanZip(
+        entries: [
+          [
+      '食べる',
+      'たべる',
+            'v1',
+            'vt',
+            0,
+            ['to eat'],
+            1,
+            'P',
+          ],
+        ],
+      );
+      trackTempFile(zipPath);
+
+      await importer.importFromFile(zipPath);
+
+      final allEntries = await db.select(db.dictionaryEntries).get();
+      expect(allEntries, hasLength(1));
+      expect(allEntries.first.definitionTags, 'v1');
+      expect(allEntries.first.rules, 'vt');
+      expect(allEntries.first.termTags, 'P');
     });
 
     test(
@@ -614,8 +643,95 @@ void main() {
       expect(entries, hasLength(1));
       expect(entries.first.expression, '食べる');
       expect(entries.first.reading, 'たべる');
+      expect(entries.first.definitionTags, isEmpty);
+      expect(entries.first.rules, isEmpty);
+      expect(entries.first.termTags, isEmpty);
       expect(jsonDecode(entries.first.glossaries), ['to eat', 'to consume']);
     });
+
+    test('stores part of speech fields from collection term rows', () async {
+      final rows = [
+        {
+          'expression': '食べる',
+          'reading': 'たべる',
+          'definitionTags': 'v1',
+          'rules': 'vt',
+          'termTags': 'P',
+          'glossary': ['to eat'],
+          'dictionary': 'TaggedDict',
+          'id': 1,
+        },
+      ];
+      final jsonStr = jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+          ],
+          'data': [
+            {'tableName': 'terms', 'inbound': true, 'rows': rows},
+          ],
+        },
+      });
+      final filePath = await writeCollectionFile(jsonStr);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final dicts = await repo.getAllDictionaries();
+      final dict = dicts.firstWhere((d) => d.name == 'TaggedDict');
+      final entries = await (db.select(
+        db.dictionaryEntries,
+      )..where((t) => t.dictionaryId.equals(dict.id))).get();
+
+      expect(entries, hasLength(1));
+      expect(entries.first.definitionTags, 'v1');
+      expect(entries.first.rules, 'vt');
+      expect(entries.first.termTags, 'P');
+    });
+
+    test(
+      'collection stores empty part of speech fields when tags are absent',
+      () async {
+        final rows = [
+          {
+            'expression': '走る',
+            'reading': 'はしる',
+            'glossary': ['to run'],
+            'dictionary': 'PlainDict',
+            'id': 1,
+          },
+        ];
+        final jsonStr = jsonEncode({
+          'formatName': 'dexie',
+          'formatVersion': 1,
+          'data': {
+            'databaseName': 'dict',
+            'tables': [
+              {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+            ],
+            'data': [
+              {'tableName': 'terms', 'inbound': true, 'rows': rows},
+            ],
+          },
+        });
+        final filePath = await writeCollectionFile(jsonStr);
+
+        await importer.importCollectionFromFile(filePath);
+
+        final dicts = await repo.getAllDictionaries();
+        final dict = dicts.firstWhere((d) => d.name == 'PlainDict');
+        final entries = await (db.select(
+          db.dictionaryEntries,
+        )..where((t) => t.dictionaryId.equals(dict.id))).get();
+
+        expect(entries, hasLength(1));
+        expect(entries.first.definitionTags, isEmpty);
+        expect(entries.first.rules, isEmpty);
+        expect(entries.first.termTags, isEmpty);
+      },
+    );
 
     test('calls onDictionaryStart with correct parameters', () async {
       final json = buildCollectionJson({

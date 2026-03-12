@@ -19,6 +19,9 @@ DictionaryEntry _buildEntry({
     entryKind: entryKind,
     kanjiOnyomi: kanjiOnyomi,
     kanjiKunyomi: kanjiKunyomi,
+    definitionTags: '',
+    rules: '',
+    termTags: '',
     glossaries: '[]',
     dictionaryId: 1,
   );

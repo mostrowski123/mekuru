@@ -24,6 +24,9 @@ class DictionaryEntries extends Table {
       text().withDefault(const Constant(DictionaryEntryKinds.regular))();
   TextColumn get kanjiOnyomi => text().withDefault(const Constant(''))();
   TextColumn get kanjiKunyomi => text().withDefault(const Constant(''))();
+  TextColumn get definitionTags => text().withDefault(const Constant(''))();
+  TextColumn get rules => text().withDefault(const Constant(''))();
+  TextColumn get termTags => text().withDefault(const Constant(''))();
   TextColumn get glossaries => text()(); // JSON-encoded List<String>
   IntColumn get dictionaryId => integer()();
 }

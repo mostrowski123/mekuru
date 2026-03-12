@@ -86,6 +86,17 @@ class DictionaryImporter {
     return splitKanjiReadingTokens(raw.toString());
   }
 
+  static String _stringifyTagValue(dynamic raw) {
+    if (raw == null) return '';
+    if (raw is List) {
+      return raw
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .join(' ');
+    }
+    return raw.toString().trim();
+  }
+
   static ({int? rank, String reading}) _parseFrequencyData(dynamic data) {
     int? rank;
     var reading = '';
@@ -310,6 +321,9 @@ class DictionaryImporter {
           return DictionaryEntriesCompanion.insert(
             expression: raw['expression']!,
             reading: Value(raw['reading'] ?? ''),
+            definitionTags: Value(raw['definitionTags'] ?? ''),
+            rules: Value(raw['rules'] ?? ''),
+            termTags: Value(raw['termTags'] ?? ''),
             glossaries: raw['glossaries']!,
             dictionaryId: dictionaryId,
           );
@@ -458,6 +472,9 @@ class DictionaryImporter {
       String? termExpression;
       String? termReading;
       String? termDictionary;
+      String? termDefinitionTags;
+      String? termRules;
+      String? termTermTags;
       List<dynamic>? termGlossary;
 
       // Track glossary array within a term.
@@ -531,6 +548,9 @@ class DictionaryImporter {
               termExpression = null;
               termReading = null;
               termDictionary = null;
+              termDefinitionTags = null;
+              termRules = null;
+              termTermTags = null;
               termGlossary = null;
             } else if (inDataDataArray &&
                 !inTableObject &&
@@ -612,6 +632,9 @@ class DictionaryImporter {
                   'expression': termExpression,
                   'reading': termReading ?? '',
                   'dictionary': termDictionary ?? 'Unknown Dictionary',
+                  'definitionTags': termDefinitionTags ?? '',
+                  'rules': termRules ?? '',
+                  'termTags': termTermTags ?? '',
                   'glossaries': jsonEncode(glossaryList),
                 });
 
@@ -772,10 +795,26 @@ class DictionaryImporter {
               switch (currentKey) {
                 case 'expression':
                   termExpression = event.value?.toString();
+                  break;
                 case 'reading':
                   termReading = event.value?.toString();
+                  break;
                 case 'dictionary':
                   termDictionary = event.value?.toString();
+                  break;
+                case 'definitionTags':
+                case 'definition_tags':
+                  termDefinitionTags = _stringifyTagValue(event.value);
+                  break;
+                case 'rules':
+                  termRules = _stringifyTagValue(event.value);
+                  break;
+                case 'termTags':
+                case 'term_tags':
+                  termTermTags = _stringifyTagValue(event.value);
+                  break;
+                case null:
+                  break;
               }
               currentKey = null;
             } else if (inTableObject &&
@@ -959,6 +998,11 @@ class DictionaryImporter {
 
         final expression = term[0]?.toString() ?? '';
         final reading = term[1]?.toString() ?? '';
+        final definitionTags = _stringifyTagValue(
+          term.length > 2 ? term[2] : null,
+        );
+        final rules = _stringifyTagValue(term.length > 3 ? term[3] : null);
+        final termTags = _stringifyTagValue(term.length > 7 ? term[7] : null);
 
         final rawGlossary = term[5];
         final glossaryList = <String>[];
@@ -980,6 +1024,9 @@ class DictionaryImporter {
           DictionaryEntriesCompanion.insert(
             expression: expression,
             reading: Value(reading),
+            definitionTags: Value(definitionTags),
+            rules: Value(rules),
+            termTags: Value(termTags),
             glossaries: jsonEncode(glossaryList),
             dictionaryId: 0, // Placeholder — will be replaced after insert
           ),

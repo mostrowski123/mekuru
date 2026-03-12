@@ -1721,4 +1721,88 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aboutEpubJsDescription =>
       'EPUB rendering is powered by epub.js, an open source JavaScript EPUB reader library.';
+
+  @override
+  String get dictionaryPartOfSpeechNoun => 'Noun';
+
+  @override
+  String get dictionaryPartOfSpeechPronoun => 'Pronoun';
+
+  @override
+  String get dictionaryPartOfSpeechPrefix => 'Prefix';
+
+  @override
+  String get dictionaryPartOfSpeechSuffix => 'Suffix';
+
+  @override
+  String get dictionaryPartOfSpeechCounter => 'Counter';
+
+  @override
+  String get dictionaryPartOfSpeechNumeric => 'Numeric';
+
+  @override
+  String get dictionaryPartOfSpeechExpression => 'Expression';
+
+  @override
+  String get dictionaryPartOfSpeechInterjection => 'Interjection';
+
+  @override
+  String get dictionaryPartOfSpeechConjunction => 'Conjunction';
+
+  @override
+  String get dictionaryPartOfSpeechParticle => 'Particle';
+
+  @override
+  String get dictionaryPartOfSpeechCopula => 'Copula';
+
+  @override
+  String get dictionaryPartOfSpeechAuxiliary => 'Auxiliary';
+
+  @override
+  String get dictionaryPartOfSpeechAuxiliaryVerb => 'Auxiliary verb';
+
+  @override
+  String get dictionaryPartOfSpeechAuxiliaryAdjective => 'Auxiliary adjective';
+
+  @override
+  String get dictionaryPartOfSpeechIAdjective => 'I-adjective';
+
+  @override
+  String get dictionaryPartOfSpeechNaAdjective => 'Na-adjective';
+
+  @override
+  String get dictionaryPartOfSpeechNoAdjective => 'No-adjective';
+
+  @override
+  String get dictionaryPartOfSpeechPreNounAdjectival => 'Pre-noun adjectival';
+
+  @override
+  String get dictionaryPartOfSpeechAdverb => 'Adverb';
+
+  @override
+  String get dictionaryPartOfSpeechToAdverb => 'To-adverb';
+
+  @override
+  String get dictionaryPartOfSpeechAdverbialNoun => 'Adverbial noun';
+
+  @override
+  String get dictionaryPartOfSpeechSuruVerb => 'Suru verb';
+
+  @override
+  String get dictionaryPartOfSpeechKuruVerb => 'Kuru verb';
+
+  @override
+  String get dictionaryPartOfSpeechIchidanVerb => 'Ichidan verb';
+
+  @override
+  String get dictionaryPartOfSpeechGodanVerb => 'Godan verb';
+
+  @override
+  String get dictionaryPartOfSpeechZuruVerb => 'Zuru verb';
+
+  @override
+  String get dictionaryPartOfSpeechIntransitiveVerb => 'Intransitive verb';
+
+  @override
+  String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
 }
