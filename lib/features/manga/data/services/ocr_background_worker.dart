@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
+import '../../../../core/platform/android_saf_service.dart';
 import '../../../../core/services/firebase_runtime.dart';
 import '../../data/models/mokuro_models.dart';
 import '../../../settings/data/services/ocr_server_config.dart'
@@ -26,6 +29,9 @@ const ocrProgressKeyPrefix = 'ocr.progress.';
 
 /// SharedPreferences key prefix for the active OCR billing job per book.
 const ocrActiveJobKeyPrefix = 'ocr.job.';
+
+/// SharedPreferences key prefix for requested OCR stop actions per book.
+const ocrStopRequestKeyPrefix = 'ocr.stop.';
 
 /// SharedPreferences queue of billing finalizations that need to be retried.
 const ocrPendingFinalizationsKey = 'ocr.pending_finalizations';
@@ -52,6 +58,13 @@ abstract class OcrStatus {
   static const failed = 'failed';
   static const idle = 'idle';
 }
+
+abstract class OcrStopRequest {
+  static const paused = 'paused';
+  static const deleted = 'deleted';
+}
+
+enum OcrTaskExecutionMode { workmanager, foreground }
 
 /// Progress data stored in SharedPreferences as JSON.
 class OcrProgress {
@@ -185,6 +198,17 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   final jobId = inputData['jobId'] as String?;
 
   final prefs = await SharedPreferences.getInstance();
+  final initialStopRequest = await _loadOcrStopRequest(
+    prefs,
+    bookId,
+    reload: true,
+  );
+  if (initialStopRequest != null) {
+    if (initialStopRequest == OcrStopRequest.deleted) {
+      await _saveIdleOcrProgress(prefs, bookId);
+    }
+    return true;
+  }
   final serverUrl = ocr_server_config.normalizeOcrServerUrl(
     prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl,
   );
@@ -283,7 +307,11 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   var finalizationSent = false;
 
   Future<void> finalizeIfNeeded(String status) async {
-    if (effectiveJobId == null || finalizationSent) {
+    await prefs.reload();
+    final activeJobId = prefs.getString('$ocrActiveJobKeyPrefix$bookId');
+    if (effectiveJobId == null ||
+        finalizationSent ||
+        activeJobId != effectiveJobId) {
       await _clearActiveOcrJob(bookId);
       return;
     }
@@ -314,15 +342,84 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
 
     final pagesToProcess = <int>[];
     for (var i = 0; i < mokuroBook.pages.length; i++) {
-      if (mokuroBook.pages[i].blocks.isEmpty) {
+      if (_pageNeedsOcr(mokuroBook, mokuroBook.pages[i])) {
         pagesToProcess.add(i);
       }
     }
 
+    final total = mokuroBook.pages.length;
+    final startingCompleted = total - pagesToProcess.length;
+    var completed = 0;
+    final stopwatch = Stopwatch()..start();
+    final updatedPages = List<MokuroPage>.from(mokuroBook.pages);
+    var consecutiveFailures = 0;
+    var anyPageSucceeded = false;
+
+    Future<String?> loadStopRequest() =>
+        _loadOcrStopRequest(prefs, bookId, reload: true);
+
+    Future<bool> handleStopRequest({
+      required String? stopRequest,
+      required List<MokuroPage> pagesToKeep,
+    }) async {
+      if (stopRequest == null) {
+        return false;
+      }
+
+      if (stopRequest == OcrStopRequest.deleted) {
+        await _saveIdleOcrProgress(prefs, bookId);
+      } else {
+        await OcrProgress.save(
+          prefs,
+          bookId,
+          OcrProgress(
+            completed: startingCompleted + completed,
+            total: total,
+            status: OcrStatus.cancelled,
+          ),
+        );
+        await _saveCache(cacheFile, mokuroBook, pagesToKeep);
+      }
+
+      await finalizeIfNeeded(OcrStatus.cancelled);
+      return true;
+    }
+
     if (pagesToProcess.isEmpty) {
+      if (await handleStopRequest(
+        stopRequest: await loadStopRequest(),
+        pagesToKeep: mokuroBook.pages,
+      )) {
+        return true;
+      }
+
       if (_needsWordSegmentation(mokuroBook.pages)) {
         final segmentedPages = await _segmentPagesForLookup(mokuroBook.pages);
-        await _saveCache(cacheFile, mokuroBook, segmentedPages);
+        if (await handleStopRequest(
+          stopRequest: await loadStopRequest(),
+          pagesToKeep: segmentedPages,
+        )) {
+          return true;
+        }
+        await _saveCache(
+          cacheFile,
+          mokuroBook,
+          segmentedPages,
+          ocrCompletedOverride: true,
+        );
+        if (await handleStopRequest(
+          stopRequest: await loadStopRequest(),
+          pagesToKeep: segmentedPages,
+        )) {
+          return true;
+        }
+      } else if (!mokuroBook.ocrCompleted) {
+        await _saveCache(
+          cacheFile,
+          mokuroBook,
+          mokuroBook.pages,
+          ocrCompletedOverride: true,
+        );
       }
       await OcrProgress.save(
         prefs,
@@ -337,13 +434,6 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
       return true;
     }
 
-    final total = pagesToProcess.length;
-    var completed = 0;
-    final stopwatch = Stopwatch()..start();
-    final updatedPages = List<MokuroPage>.from(mokuroBook.pages);
-    var consecutiveFailures = 0;
-    var anyPageSucceeded = false;
-
     Future<void> saveRunningProgress() async {
       final avgSeconds = completed > 0
           ? stopwatch.elapsedMilliseconds / 1000.0 / completed
@@ -353,7 +443,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         prefs,
         bookId,
         OcrProgress(
-          completed: completed,
+          completed: startingCompleted + completed,
           total: total,
           status: OcrStatus.running,
           avgSecondsPerPage: avgSeconds,
@@ -366,7 +456,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         prefs,
         bookId,
         OcrProgress(
-          completed: completed,
+          completed: startingCompleted + completed,
           total: total,
           status: OcrStatus.failed,
           errorMessage: errorMessage,
@@ -380,29 +470,51 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     await OcrProgress.save(
       prefs,
       bookId,
-      OcrProgress(completed: 0, total: total, status: OcrStatus.running),
+      OcrProgress(
+        completed: startingCompleted,
+        total: total,
+        status: OcrStatus.running,
+      ),
     );
 
     for (final pageIndex in pagesToProcess) {
-      final currentProgress = OcrProgress.load(prefs, bookId);
-      if (currentProgress?.status == OcrStatus.cancelled) {
-        await _saveCache(cacheFile, mokuroBook, updatedPages);
-        await finalizeIfNeeded(OcrStatus.cancelled);
+      if (await handleStopRequest(
+        stopRequest: await loadStopRequest(),
+        pagesToKeep: updatedPages,
+      )) {
         return true;
       }
 
       final page = mokuroBook.pages[pageIndex];
-      final imagePath = '$imageDir/${page.imageFileName}';
-      final imageFile = File(imagePath);
-
-      if (!imageFile.existsSync()) {
+      final imageBytes = await _readOcrPageImageBytes(
+        mokuroBook: mokuroBook,
+        page: page,
+        imageDir: imageDir,
+      );
+      if (await handleStopRequest(
+        stopRequest: await loadStopRequest(),
+        pagesToKeep: updatedPages,
+      )) {
+        return true;
+      }
+      if (imageBytes == null) {
+        consecutiveFailures++;
+        if (!anyPageSucceeded ||
+            consecutiveFailures >= _maxConsecutiveFailures) {
+          return failWithError(
+            _describeMissingPageImage(
+              mokuroBook: mokuroBook,
+              page: page,
+              imageDir: imageDir,
+            ),
+          );
+        }
         completed++;
         await saveRunningProgress();
         continue;
       }
 
       try {
-        final imageBytes = await imageFile.readAsBytes();
         final result = await ocrClient.processPage(
           imageBytes,
           page.imageFileName,
@@ -415,12 +527,31 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         completed++;
         consecutiveFailures = 0;
         anyPageSucceeded = true;
+
+        if (await handleStopRequest(
+          stopRequest: await loadStopRequest(),
+          pagesToKeep: updatedPages,
+        )) {
+          return true;
+        }
         await saveRunningProgress();
 
         if (completed % _saveIntervalPages == 0) {
           await _saveCache(cacheFile, mokuroBook, updatedPages);
+          if (await handleStopRequest(
+            stopRequest: await loadStopRequest(),
+            pagesToKeep: updatedPages,
+          )) {
+            return true;
+          }
         }
       } on OcrServerException catch (e) {
+        if (await handleStopRequest(
+          stopRequest: await loadStopRequest(),
+          pagesToKeep: updatedPages,
+        )) {
+          return true;
+        }
         if (e.statusCode == 401) {
           return failWithError(
             'Authentication failed. '
@@ -435,6 +566,12 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         completed++;
         await saveRunningProgress();
       } catch (e) {
+        if (await handleStopRequest(
+          stopRequest: await loadStopRequest(),
+          pagesToKeep: updatedPages,
+        )) {
+          return true;
+        }
         consecutiveFailures++;
         if (!anyPageSucceeded ||
             consecutiveFailures >= _maxConsecutiveFailures) {
@@ -449,12 +586,26 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         ? await _segmentPagesForLookup(updatedPages)
         : updatedPages;
 
+    if (await handleStopRequest(
+      stopRequest: await loadStopRequest(),
+      pagesToKeep: pagesToSave,
+    )) {
+      return true;
+    }
+
     await _saveCache(
       cacheFile,
       mokuroBook,
       pagesToSave,
       ocrSourceOverride: 'custom_ocr',
+      ocrCompletedOverride: true,
     );
+    if (await handleStopRequest(
+      stopRequest: await loadStopRequest(),
+      pagesToKeep: pagesToSave,
+    )) {
+      return true;
+    }
     await OcrProgress.save(
       prefs,
       bookId,
@@ -526,6 +677,10 @@ bool _needsWordSegmentation(List<MokuroPage> pages) {
   return false;
 }
 
+bool _pageNeedsOcr(MokuroBook book, MokuroPage page) {
+  return !book.ocrCompleted && page.blocks.isEmpty;
+}
+
 Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
   final segmentedPages = <MokuroPage>[];
 
@@ -571,6 +726,7 @@ Future<void> _saveCache(
   MokuroBook originalBook,
   List<MokuroPage> updatedPages, {
   String? ocrSourceOverride,
+  bool? ocrCompletedOverride,
 }) async {
   final updated = MokuroBook(
     title: originalBook.title,
@@ -579,6 +735,7 @@ Future<void> _saveCache(
     safImageDirRelativePath: originalBook.safImageDirRelativePath,
     autoCropVersion: originalBook.autoCropVersion,
     ocrSource: ocrSourceOverride ?? originalBook.ocrSource,
+    ocrCompleted: ocrCompletedOverride ?? originalBook.ocrCompleted,
     pages: updatedPages,
   );
   await cacheFile.writeAsString(json.encode(updated.toJson()));
@@ -603,6 +760,190 @@ Future<void> _clearActiveOcrJob(int bookId) async {
   await prefs.remove('$ocrActiveJobKeyPrefix$bookId');
 }
 
+Future<void> _setOcrStopRequest(int bookId, String stopRequest) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('$ocrStopRequestKeyPrefix$bookId', stopRequest);
+}
+
+Future<void> _clearOcrStopRequest(int bookId) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove('$ocrStopRequestKeyPrefix$bookId');
+}
+
+@visibleForTesting
+Future<String?> loadOcrStopRequest(int bookId) async {
+  final prefs = await SharedPreferences.getInstance();
+  return _loadOcrStopRequest(prefs, bookId, reload: true);
+}
+
+Future<String?> _loadOcrStopRequest(
+  SharedPreferences prefs,
+  int bookId, {
+  bool reload = false,
+}) async {
+  if (reload) {
+    await prefs.reload();
+  }
+  return prefs.getString('$ocrStopRequestKeyPrefix$bookId');
+}
+
+Future<void> _saveIdleOcrProgress(SharedPreferences prefs, int bookId) {
+  return OcrProgress.save(
+    prefs,
+    bookId,
+    const OcrProgress(completed: 0, total: 0, status: OcrStatus.idle),
+  );
+}
+
+Future<void> _finalizeActiveOcrJobAsCancelled({
+  required SharedPreferences prefs,
+  required int bookId,
+}) async {
+  await prefs.reload();
+  final activeJobId = prefs.getString('$ocrActiveJobKeyPrefix$bookId');
+  if (activeJobId == null) {
+    await _clearActiveOcrJob(bookId);
+    return;
+  }
+
+  final billingClient = OcrBillingClient();
+  try {
+    await billingClient.finalizeOcrJob(
+      jobId: activeJobId,
+      status: OcrStatus.cancelled,
+    );
+  } catch (_) {
+    await _queuePendingOcrFinalization(activeJobId, OcrStatus.cancelled);
+  } finally {
+    billingClient.dispose();
+    await _clearActiveOcrJob(bookId);
+  }
+}
+
+@visibleForTesting
+Future<OcrProgress> buildScheduledOcrProgress({
+  required String cacheFilePath,
+  int? reservedPages,
+}) async {
+  var completed = 0;
+  var total = reservedPages ?? 0;
+  final cacheFile = File(cacheFilePath);
+  if (await cacheFile.exists()) {
+    try {
+      final cacheJson =
+          json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
+      final mokuroBook = MokuroBook.fromJson(cacheJson);
+      final pendingPageCount = mokuroBook.pages
+          .where((page) => _pageNeedsOcr(mokuroBook, page))
+          .length;
+      if (pendingPageCount > 0) {
+        completed = mokuroBook.pages.length - pendingPageCount;
+        total = mokuroBook.pages.length;
+      } else if (_needsWordSegmentation(mokuroBook.pages)) {
+        final pagesNeedingSegmentation = mokuroBook.pages
+            .where(_pageNeedsWordSegmentation)
+            .length;
+        completed = mokuroBook.pages.length - pagesNeedingSegmentation;
+        total = mokuroBook.pages.length;
+      } else if (mokuroBook.pages.isNotEmpty) {
+        completed = mokuroBook.pages.length;
+        total = mokuroBook.pages.length;
+      }
+    } catch (_) {
+      // Leave total at the reserved/fallback value if the cache is unreadable.
+    }
+  }
+
+  return OcrProgress(
+    completed: completed,
+    total: total,
+    status: OcrStatus.running,
+  );
+}
+
+Future<void> _saveScheduledOcrProgress({
+  required int bookId,
+  required String cacheFilePath,
+  int? reservedPages,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final progress = await buildScheduledOcrProgress(
+    cacheFilePath: cacheFilePath,
+    reservedPages: reservedPages,
+  );
+  await OcrProgress.save(prefs, bookId, progress);
+}
+
+@visibleForTesting
+Future<OcrTaskExecutionMode> determineOcrTaskExecutionMode({
+  required String cacheFilePath,
+}) async {
+  final cacheFile = File(cacheFilePath);
+  if (!await cacheFile.exists()) {
+    return OcrTaskExecutionMode.workmanager;
+  }
+
+  try {
+    final cacheJson =
+        json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
+    final safTreeUri = cacheJson['safTreeUri'] as String?;
+    final safImageDirRelativePath =
+        cacheJson['safImageDirRelativePath'] as String?;
+    if ((safTreeUri?.isNotEmpty ?? false) &&
+        (safImageDirRelativePath?.isNotEmpty ?? false)) {
+      return OcrTaskExecutionMode.foreground;
+    }
+  } catch (_) {
+    // Fall back to WorkManager if the cache cannot be parsed yet.
+  }
+
+  return OcrTaskExecutionMode.workmanager;
+}
+
+Future<Uint8List?> _readOcrPageImageBytes({
+  required MokuroBook mokuroBook,
+  required MokuroPage page,
+  required String imageDir,
+}) async {
+  if (mokuroBook.safTreeUri != null &&
+      mokuroBook.safImageDirRelativePath != null) {
+    final relativePath = p.posix.join(
+      mokuroBook.safImageDirRelativePath!,
+      page.imageFileName,
+    );
+    return AndroidSafService.readBytesFromTreePath(
+      mokuroBook.safTreeUri!,
+      relativePath,
+    );
+  }
+
+  final imageFile = File(p.join(imageDir, page.imageFileName));
+  if (!imageFile.existsSync()) {
+    return null;
+  }
+  return imageFile.readAsBytes();
+}
+
+String _describeMissingPageImage({
+  required MokuroBook mokuroBook,
+  required MokuroPage page,
+  required String imageDir,
+}) {
+  if (mokuroBook.safTreeUri != null &&
+      mokuroBook.safImageDirRelativePath != null) {
+    final relativePath = p.posix.join(
+      mokuroBook.safImageDirRelativePath!,
+      page.imageFileName,
+    );
+    return 'Could not read manga image "$relativePath" from the selected '
+        'folder access grant. Re-import the manga if folder access changed.';
+  }
+
+  final imagePath = p.join(imageDir, page.imageFileName);
+  return 'Could not read manga image "$imagePath". '
+      'Check that the manga image folder is still available.';
+}
+
 /// Schedule an OCR task for a book.
 Future<void> scheduleOcrTask({
   required int bookId,
@@ -613,6 +954,50 @@ Future<void> scheduleOcrTask({
 }) async {
   if ((jobId == null) != (reservedPages == null)) {
     throw ArgumentError('jobId and reservedPages must be provided together.');
+  }
+
+  await _clearOcrStopRequest(bookId);
+
+  final executionMode = await determineOcrTaskExecutionMode(
+    cacheFilePath: cacheFilePath,
+  );
+  if (executionMode == OcrTaskExecutionMode.foreground) {
+    debugPrint(
+      '[OCR_WORKER] Using foreground OCR for SAF-backed manga bookId=$bookId',
+    );
+    await _saveScheduledOcrProgress(
+      bookId: bookId,
+      cacheFilePath: cacheFilePath,
+      reservedPages: reservedPages,
+    );
+    if (jobId != null) {
+      await _storeActiveOcrJob(bookId, jobId);
+    } else {
+      await _clearActiveOcrJob(bookId);
+    }
+
+    unawaited(() async {
+      try {
+        await _processOcrTask({
+          'bookId': bookId,
+          'cacheFilePath': cacheFilePath,
+          'imageDir': imageDir,
+          ...?jobId == null ? null : {'jobId': jobId},
+          ...?reservedPages == null ? null : {'reservedPages': reservedPages},
+        });
+      } catch (error, stackTrace) {
+        debugPrint('[OCR_WORKER] Foreground OCR failed: $error');
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: error,
+            stack: stackTrace,
+            library: 'ocr_background_worker',
+            context: ErrorDescription('while running SAF-backed OCR'),
+          ),
+        );
+      }
+    }());
+    return;
   }
 
   await Workmanager().registerOneOffTask(
@@ -630,6 +1015,11 @@ Future<void> scheduleOcrTask({
     backoffPolicy: BackoffPolicy.exponential,
     existingWorkPolicy: ExistingWorkPolicy.replace,
   );
+  await _saveScheduledOcrProgress(
+    bookId: bookId,
+    cacheFilePath: cacheFilePath,
+    reservedPages: reservedPages,
+  );
 
   if (jobId != null) {
     await _storeActiveOcrJob(bookId, jobId);
@@ -641,39 +1031,26 @@ Future<void> scheduleOcrTask({
 /// Cancel an OCR task for a book.
 Future<void> cancelOcrTask(int bookId) async {
   final prefs = await SharedPreferences.getInstance();
+  final existingProgress = OcrProgress.load(prefs, bookId);
+  await _setOcrStopRequest(bookId, OcrStopRequest.paused);
   await OcrProgress.save(
     prefs,
     bookId,
     OcrProgress(
-      completed: OcrProgress.load(prefs, bookId)?.completed ?? 0,
-      total: OcrProgress.load(prefs, bookId)?.total ?? 0,
+      completed: existingProgress?.completed ?? 0,
+      total: existingProgress?.total ?? 0,
       status: OcrStatus.cancelled,
     ),
   );
-
-  final activeJobId = prefs.getString('$ocrActiveJobKeyPrefix$bookId');
-  if (activeJobId != null) {
-    final billingClient = OcrBillingClient();
-    try {
-      await billingClient.finalizeOcrJob(
-        jobId: activeJobId,
-        status: OcrStatus.cancelled,
-      );
-    } catch (_) {
-      await _queuePendingOcrFinalization(activeJobId, OcrStatus.cancelled);
-    } finally {
-      billingClient.dispose();
-      await _clearActiveOcrJob(bookId);
-    }
-  }
-
+  await _finalizeActiveOcrJobAsCancelled(prefs: prefs, bookId: bookId);
   await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
 }
 
-/// Remove queued/running OCR work and clear persisted OCR progress state.
+/// Remove queued/running OCR work and hide persisted OCR progress state.
 Future<void> clearOcrTaskState(int bookId) async {
   final prefs = await SharedPreferences.getInstance();
-  await OcrProgress.clear(prefs, bookId);
-  await _clearActiveOcrJob(bookId);
+  await _setOcrStopRequest(bookId, OcrStopRequest.deleted);
+  await _saveIdleOcrProgress(prefs, bookId);
+  await _finalizeActiveOcrJobAsCancelled(prefs: prefs, bookId: bookId);
   await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
 }

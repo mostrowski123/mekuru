@@ -856,6 +856,17 @@ class AppLocalizationsId extends AppLocalizations {
       'Pelajari cara menjalankan server sendiri';
 
   @override
+  String get settingsCustomOcrServerTestAction => 'Uji koneksi';
+
+  @override
+  String get settingsCustomOcrServerTesting => 'Menguji koneksi...';
+
+  @override
+  String settingsCustomOcrServerHealthy({required String status}) {
+    return 'Terhubung. /health mengembalikan status: $status.';
+  }
+
+  @override
   String get settingsCustomOcrServerKeyLabel => 'Shared key kustom';
 
   @override
@@ -1637,17 +1648,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get ocrStartedBackground => 'OCR dimulai di latar belakang';
 
   @override
-  String get ocrCancelActionTitle => 'Batalkan OCR';
+  String get ocrCancelActionTitle => 'Jeda OCR';
 
   @override
-  String get ocrCancelSavedProgress => 'OCR dibatalkan. Progres disimpan.';
+  String get ocrCancelSavedProgress => 'OCR dijeda. Progres disimpan.';
 
   @override
   String get ocrReplaceActionTitle => 'Ganti OCR';
 
   @override
   String get ocrReplaceMokuroBody =>
-      'Ini akan menimpa data OCR yang diimpor dari file Mokuro/HTML dan menjalankan ulang OCR pada SEMUA halaman menggunakan server kustom Anda.\n\nUntuk mengembalikan OCR asli, impor ulang bukunya.';
+      'Ini akan menimpa data OCR yang diimpor dari file Mokuro/HTML dan menjalankan ulang OCR pada SEMUA halaman menggunakan server kustom Anda.\n\nNanti Anda dapat menggunakan Hapus OCR untuk memulihkan OCR asli.';
 
   @override
   String get ocrReplaceStartedBackground =>
@@ -1658,10 +1669,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get ocrRemoveBody =>
-      'Hapus teks OCR dan overlay kata dari manga ini? Anda dapat menjalankan OCR lagi nanti.';
+      'Hapus semua teks OCR dan overlay kata dari manga ini? Anda dapat menjalankan OCR lagi nanti.';
 
   @override
-  String get ocrRemoveSubtitle => 'Hapus teks OCR dari semua halaman';
+  String get ocrRemoveSubtitle => 'Hapus semua teks OCR dari buku ini';
 
   @override
   String get ocrRemovedFromBook => 'OCR dihapus dari buku ini';
@@ -1676,12 +1687,22 @@ class AppLocalizationsId extends AppLocalizations {
       'Buka Pro untuk menggunakan server OCR kustom Anda';
 
   @override
-  String get ocrStopAndSaveProgressSubtitle =>
-      'Hentikan proses dan simpan progres';
+  String get ocrStopAndSaveProgressSubtitle => 'Jeda proses dan simpan progres';
 
   @override
   String get ocrReplaceMokuroSubtitle =>
       'Ganti OCR Mokuro dengan server OCR kustom Anda';
+
+  @override
+  String get ocrRestoreOriginalMokuroBody =>
+      'Hapus OCR saat ini dan pulihkan OCR asli yang diimpor dari file Mokuro/HTML?';
+
+  @override
+  String get ocrRestoreOriginalMokuroSubtitle =>
+      'Hapus OCR saat ini dan pulihkan OCR asli Mokuro/HTML';
+
+  @override
+  String get ocrOriginalMokuroRestored => 'OCR asli Mokuro/HTML dipulihkan';
 
   @override
   String get ocrBuildWordTargetsSubtitle =>

@@ -1107,6 +1107,23 @@
   "@settingsCustomOcrServerLearnHow": {
     "description": "Button label linking to custom OCR server setup instructions."
   },
+  "settingsCustomOcrServerTestAction": "Probar conexión",
+  "@settingsCustomOcrServerTestAction": {
+    "description": "Button label to test the custom OCR server health endpoint."
+  },
+  "settingsCustomOcrServerTesting": "Probando conexión...",
+  "@settingsCustomOcrServerTesting": {
+    "description": "Status text shown while testing the custom OCR server connection."
+  },
+  "settingsCustomOcrServerHealthy": "Conectado. /health devolvió el estado: {status}.",
+  "@settingsCustomOcrServerHealthy": {
+    "description": "Status text shown when the custom OCR server health check succeeds.",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
   "settingsCustomOcrServerKeyLabel": "Clave compartida personalizada",
   "@settingsCustomOcrServerKeyLabel": {
     "description": "Label for the custom OCR shared key field."
@@ -2015,11 +2032,11 @@
   "@ocrStartedBackground": {
     "description": "Snackbar shown when OCR starts in the background."
   },
-  "ocrCancelActionTitle": "Cancelar OCR",
+  "ocrCancelActionTitle": "Pausar OCR",
   "@ocrCancelActionTitle": {
     "description": "Action title for cancelling OCR."
   },
-  "ocrCancelSavedProgress": "OCR cancelado. Progreso guardado.",
+  "ocrCancelSavedProgress": "OCR en pausa. Progreso guardado.",
   "@ocrCancelSavedProgress": {
     "description": "Snackbar shown when OCR is cancelled and progress is preserved."
   },
@@ -2027,7 +2044,7 @@
   "@ocrReplaceActionTitle": {
     "description": "Action title for replacing imported OCR with custom OCR."
   },
-  "ocrReplaceMokuroBody": "Esto sobrescribirá los datos de OCR importados del archivo Mokuro/HTML y volverá a ejecutar el OCR en TODAS las páginas usando tu propio servidor.\n\nPara restaurar el OCR original, vuelve a importar el libro.",
+  "ocrReplaceMokuroBody": "Esto sobrescribirá los datos de OCR importados del archivo Mokuro/HTML y volverá a ejecutar el OCR en TODAS las páginas usando tu propio servidor.\n\nDespués podrás usar Eliminar OCR para restaurar el OCR original.",
   "@ocrReplaceMokuroBody": {
     "description": "Confirmation dialog body for replacing Mokuro OCR with custom OCR."
   },
@@ -2039,11 +2056,11 @@
   "@ocrRemoveActionTitle": {
     "description": "Action title for removing OCR."
   },
-  "ocrRemoveBody": "¿Eliminar el texto OCR y las superposiciones de palabras de este manga? Puedes ejecutar OCR de nuevo más tarde.",
+  "ocrRemoveBody": "¿Eliminar todo el texto OCR y las superposiciones de palabras de este manga? Puedes ejecutar OCR de nuevo más tarde.",
   "@ocrRemoveBody": {
     "description": "Confirmation dialog body for removing OCR from a manga book."
   },
-  "ocrRemoveSubtitle": "Eliminar texto OCR de todas las páginas",
+  "ocrRemoveSubtitle": "Eliminar todo el texto OCR de este libro",
   "@ocrRemoveSubtitle": {
     "description": "Subtitle for removing OCR from all manga pages."
   },
@@ -2064,13 +2081,25 @@
   "@ocrUnlockProSubtitle": {
     "description": "Subtitle shown when OCR requires a Pro unlock."
   },
-  "ocrStopAndSaveProgressSubtitle": "Detener el procesamiento y guardar el progreso",
+  "ocrStopAndSaveProgressSubtitle": "Pausar el procesamiento y guardar el progreso",
   "@ocrStopAndSaveProgressSubtitle": {
     "description": "Subtitle shown for the OCR cancel action."
   },
   "ocrReplaceMokuroSubtitle": "Reemplaza el OCR de Mokuro con tu propio servidor OCR",
   "@ocrReplaceMokuroSubtitle": {
     "description": "Subtitle shown when replacing OCR imported from Mokuro."
+  },
+  "ocrRestoreOriginalMokuroBody": "¿Eliminar el OCR actual y restaurar el OCR original importado desde el archivo Mokuro/HTML?",
+  "@ocrRestoreOriginalMokuroBody": {
+    "description": "Confirmation dialog body for deleting custom OCR and restoring the original Mokuro or HTML OCR."
+  },
+  "ocrRestoreOriginalMokuroSubtitle": "Eliminar el OCR actual y restaurar el OCR original de Mokuro/HTML",
+  "@ocrRestoreOriginalMokuroSubtitle": {
+    "description": "Subtitle shown when deleting OCR will restore the original Mokuro or HTML OCR."
+  },
+  "ocrOriginalMokuroRestored": "Se restauró el OCR original de Mokuro/HTML",
+  "@ocrOriginalMokuroRestored": {
+    "description": "Snackbar shown after the original Mokuro or HTML OCR has been restored."
   },
   "ocrBuildWordTargetsSubtitle": "Generar zonas táctiles desde el OCR guardado",
   "@ocrBuildWordTargetsSubtitle": {

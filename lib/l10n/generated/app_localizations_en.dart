@@ -855,6 +855,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Learn how to run your own server';
 
   @override
+  String get settingsCustomOcrServerTestAction => 'Test connection';
+
+  @override
+  String get settingsCustomOcrServerTesting => 'Testing connection...';
+
+  @override
+  String settingsCustomOcrServerHealthy({required String status}) {
+    return 'Connected. /health returned status: $status.';
+  }
+
+  @override
   String get settingsCustomOcrServerKeyLabel => 'Custom shared key';
 
   @override
@@ -1630,34 +1641,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ocrStartedBackground => 'OCR started in background';
 
   @override
-  String get ocrCancelActionTitle => 'Cancel OCR';
+  String get ocrCancelActionTitle => 'Pause OCR';
 
   @override
-  String get ocrCancelSavedProgress => 'OCR cancelled. Progress saved.';
+  String get ocrCancelSavedProgress => 'OCR paused. Progress saved.';
 
   @override
   String get ocrReplaceActionTitle => 'Replace OCR';
 
   @override
   String get ocrReplaceMokuroBody =>
-      'This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nTo restore the original OCR, re-import the book.';
+      'This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nYou can use Delete OCR later to restore the original OCR.';
 
   @override
   String get ocrReplaceStartedBackground =>
       'OCR replacement started in background';
 
   @override
-  String get ocrRemoveActionTitle => 'Remove OCR';
+  String get ocrRemoveActionTitle => 'Delete OCR';
 
   @override
   String get ocrRemoveBody =>
-      'Remove OCR text and word overlays from this manga? You can run OCR again later.';
+      'Delete all OCR text and word overlays from this manga? You can run OCR again later.';
 
   @override
-  String get ocrRemoveSubtitle => 'Remove OCR text from all pages';
+  String get ocrRemoveSubtitle => 'Delete all OCR text from this book';
 
   @override
-  String get ocrRemovedFromBook => 'OCR removed from this book';
+  String get ocrRemovedFromBook => 'OCR deleted from this book';
 
   @override
   String ocrRemoveFailed({required String details}) {
@@ -1669,11 +1680,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ocrStopAndSaveProgressSubtitle =>
-      'Stop processing and save progress';
+      'Pause processing and save progress';
 
   @override
   String get ocrReplaceMokuroSubtitle =>
       'Replace Mokuro OCR with your custom OCR server';
+
+  @override
+  String get ocrRestoreOriginalMokuroBody =>
+      'Delete the current OCR and restore the original OCR imported from the Mokuro/HTML file?';
+
+  @override
+  String get ocrRestoreOriginalMokuroSubtitle =>
+      'Delete the current OCR and restore the original Mokuro/HTML OCR';
+
+  @override
+  String get ocrOriginalMokuroRestored => 'Original Mokuro/HTML OCR restored';
 
   @override
   String get ocrBuildWordTargetsSubtitle =>

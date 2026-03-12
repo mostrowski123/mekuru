@@ -335,4 +335,79 @@ void main() {
       },
     );
   });
+
+  group('BookRepository Mokuro OCR restore', () {
+    test(
+      'can back up and restore original Mokuro OCR after clearing it',
+      () async {
+        final cacheDir = Directory(p.join(tempDir.path, 'cache'))
+          ..createSync(recursive: true);
+        final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+        final original = MokuroBook(
+          title: 'Imported Mokuro',
+          imageDirPath: p.join(tempDir.path, 'images'),
+          ocrSource: 'mokuro',
+          ocrCompleted: true,
+          pages: const [
+            MokuroPage(
+              pageIndex: 0,
+              imageFileName: 'page1.jpg',
+              imgWidth: 100,
+              imgHeight: 100,
+              blocks: [
+                MokuroTextBlock(
+                  box: [0, 0, 10, 10],
+                  vertical: true,
+                  fontSize: 12,
+                  linesCoords: [],
+                  lines: ['hello'],
+                ),
+              ],
+            ),
+          ],
+        );
+        await cacheFile.writeAsString(jsonEncode(original.toJson()));
+
+        final id = await db
+            .into(db.books)
+            .insert(
+              BooksCompanion.insert(
+                title: 'Imported Mokuro',
+                filePath: cacheDir.path,
+                bookType: const Value('manga'),
+              ),
+            );
+        final book = (await repo.getBookById(id))!;
+
+        await repo.backupOriginalMokuroOcrIfNeeded(book);
+        await repo.clearMangaOcr(book);
+
+        final cleared = MokuroBook.fromJson(
+          jsonDecode(await cacheFile.readAsString()) as Map<String, dynamic>,
+        );
+        expect(cleared.pages.single.blocks, isEmpty);
+        expect(cleared.ocrSource, isNull);
+        expect(cleared.ocrCompleted, isFalse);
+
+        final restored = await repo.restoreOriginalMokuroOcr(book);
+
+        expect(restored, isTrue);
+        final restoredBook = MokuroBook.fromJson(
+          jsonDecode(await cacheFile.readAsString()) as Map<String, dynamic>,
+        );
+        expect(restoredBook.ocrSource, 'mokuro');
+        expect(restoredBook.ocrCompleted, isTrue);
+        expect(restoredBook.pages.single.blocks, hasLength(1));
+        expect(
+          File(
+            p.join(
+              cacheDir.path,
+              BookRepository.originalMokuroOcrBackupFileName,
+            ),
+          ).existsSync(),
+          isTrue,
+        );
+      },
+    );
+  });
 }

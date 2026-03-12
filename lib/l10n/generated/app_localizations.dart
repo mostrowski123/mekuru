@@ -1570,6 +1570,24 @@ abstract class AppLocalizations {
   /// **'Learn how to run your own server'**
   String get settingsCustomOcrServerLearnHow;
 
+  /// Button label to test the custom OCR server health endpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get settingsCustomOcrServerTestAction;
+
+  /// Status text shown while testing the custom OCR server connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing connection...'**
+  String get settingsCustomOcrServerTesting;
+
+  /// Status text shown when the custom OCR server health check succeeds.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected. /health returned status: {status}.'**
+  String settingsCustomOcrServerHealthy({required String status});
+
   /// Label for the custom OCR shared key field.
   ///
   /// In en, this message translates to:
@@ -2818,13 +2836,13 @@ abstract class AppLocalizations {
   /// Action title for cancelling OCR.
   ///
   /// In en, this message translates to:
-  /// **'Cancel OCR'**
+  /// **'Pause OCR'**
   String get ocrCancelActionTitle;
 
   /// Snackbar shown when OCR is cancelled and progress is preserved.
   ///
   /// In en, this message translates to:
-  /// **'OCR cancelled. Progress saved.'**
+  /// **'OCR paused. Progress saved.'**
   String get ocrCancelSavedProgress;
 
   /// Action title for replacing imported OCR with custom OCR.
@@ -2836,7 +2854,7 @@ abstract class AppLocalizations {
   /// Confirmation dialog body for replacing Mokuro OCR with custom OCR.
   ///
   /// In en, this message translates to:
-  /// **'This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nTo restore the original OCR, re-import the book.'**
+  /// **'This will overwrite the OCR data imported from the Mokuro/HTML file and re-run OCR on ALL pages using your custom server.\n\nYou can use Delete OCR later to restore the original OCR.'**
   String get ocrReplaceMokuroBody;
 
   /// Snackbar shown when replacing OCR starts in the background.
@@ -2848,25 +2866,25 @@ abstract class AppLocalizations {
   /// Action title for removing OCR.
   ///
   /// In en, this message translates to:
-  /// **'Remove OCR'**
+  /// **'Delete OCR'**
   String get ocrRemoveActionTitle;
 
   /// Confirmation dialog body for removing OCR from a manga book.
   ///
   /// In en, this message translates to:
-  /// **'Remove OCR text and word overlays from this manga? You can run OCR again later.'**
+  /// **'Delete all OCR text and word overlays from this manga? You can run OCR again later.'**
   String get ocrRemoveBody;
 
   /// Subtitle for removing OCR from all manga pages.
   ///
   /// In en, this message translates to:
-  /// **'Remove OCR text from all pages'**
+  /// **'Delete all OCR text from this book'**
   String get ocrRemoveSubtitle;
 
   /// Snackbar shown after OCR has been removed from a book.
   ///
   /// In en, this message translates to:
-  /// **'OCR removed from this book'**
+  /// **'OCR deleted from this book'**
   String get ocrRemovedFromBook;
 
   /// Snackbar shown when removing OCR fails.
@@ -2884,7 +2902,7 @@ abstract class AppLocalizations {
   /// Subtitle shown for the OCR cancel action.
   ///
   /// In en, this message translates to:
-  /// **'Stop processing and save progress'**
+  /// **'Pause processing and save progress'**
   String get ocrStopAndSaveProgressSubtitle;
 
   /// Subtitle shown when replacing OCR imported from Mokuro.
@@ -2892,6 +2910,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replace Mokuro OCR with your custom OCR server'**
   String get ocrReplaceMokuroSubtitle;
+
+  /// Confirmation dialog body for deleting custom OCR and restoring the original Mokuro or HTML OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the current OCR and restore the original OCR imported from the Mokuro/HTML file?'**
+  String get ocrRestoreOriginalMokuroBody;
+
+  /// Subtitle shown when deleting OCR will restore the original Mokuro or HTML OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the current OCR and restore the original Mokuro/HTML OCR'**
+  String get ocrRestoreOriginalMokuroSubtitle;
+
+  /// Snackbar shown after the original Mokuro or HTML OCR has been restored.
+  ///
+  /// In en, this message translates to:
+  /// **'Original Mokuro/HTML OCR restored'**
+  String get ocrOriginalMokuroRestored;
 
   /// Subtitle shown when only word overlay generation is needed.
   ///

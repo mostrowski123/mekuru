@@ -816,6 +816,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsCustomOcrServerLearnHow => '了解如何运行自有服务器';
 
   @override
+  String get settingsCustomOcrServerTestAction => '测试连接';
+
+  @override
+  String get settingsCustomOcrServerTesting => '正在测试连接...';
+
+  @override
+  String settingsCustomOcrServerHealthy({required String status}) {
+    return '已连接。/health 返回状态：$status。';
+  }
+
+  @override
   String get settingsCustomOcrServerKeyLabel => '自定义共享密钥';
 
   @override
@@ -1566,32 +1577,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ocrStartedBackground => 'OCR 已在后台启动';
 
   @override
-  String get ocrCancelActionTitle => '取消 OCR';
+  String get ocrCancelActionTitle => '暂停 OCR';
 
   @override
-  String get ocrCancelSavedProgress => 'OCR 已取消。进度已保存。';
+  String get ocrCancelSavedProgress => 'OCR 已暂停。进度已保存。';
 
   @override
   String get ocrReplaceActionTitle => '替换 OCR';
 
   @override
   String get ocrReplaceMokuroBody =>
-      '这将覆盖从 Mokuro/HTML 文件导入的 OCR 数据，并使用您的自定义服务器对所有页面重新执行 OCR。\n\n要恢复原始 OCR，请重新导入书籍。';
+      '这将覆盖从 Mokuro/HTML 文件导入的 OCR 数据，并使用您的自定义服务器对所有页面重新执行 OCR。\n\n之后您可以使用“删除 OCR”来恢复原始 OCR。';
 
   @override
   String get ocrReplaceStartedBackground => 'OCR 替换已在后台开始';
 
   @override
-  String get ocrRemoveActionTitle => '移除 OCR';
+  String get ocrRemoveActionTitle => '删除 OCR';
 
   @override
-  String get ocrRemoveBody => '要从本漫画中移除 OCR 文字和词语遮罩吗？您以后可以再次运行 OCR。';
+  String get ocrRemoveBody => '要删除这本漫画中的全部 OCR 文本和词语遮罩吗？您以后可以再次运行 OCR。';
 
   @override
-  String get ocrRemoveSubtitle => '从所有页面移除 OCR 文字';
+  String get ocrRemoveSubtitle => '删除这本书中的全部 OCR 文本';
 
   @override
-  String get ocrRemovedFromBook => '已从本书移除 OCR';
+  String get ocrRemovedFromBook => '已从本书删除 OCR';
 
   @override
   String ocrRemoveFailed({required String details}) {
@@ -1602,10 +1613,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ocrUnlockProSubtitle => '解锁 Pro 以使用自定义 OCR 服务器';
 
   @override
-  String get ocrStopAndSaveProgressSubtitle => '停止处理并保存进度';
+  String get ocrStopAndSaveProgressSubtitle => '暂停处理并保存进度';
 
   @override
   String get ocrReplaceMokuroSubtitle => '用自定义 OCR 服务器替换 Mokuro 的 OCR';
+
+  @override
+  String get ocrRestoreOriginalMokuroBody =>
+      '要删除当前 OCR，并恢复从 Mokuro/HTML 文件导入的原始 OCR 吗？';
+
+  @override
+  String get ocrRestoreOriginalMokuroSubtitle =>
+      '删除当前 OCR 并恢复原始 Mokuro/HTML OCR';
+
+  @override
+  String get ocrOriginalMokuroRestored => '已恢复原始 Mokuro/HTML OCR';
 
   @override
   String get ocrBuildWordTargetsSubtitle => '根据已保存的 OCR 构建词语点击区域';
@@ -2621,6 +2643,17 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get settingsCustomOcrServerLearnHow => '了解如何运行自有服务器';
 
   @override
+  String get settingsCustomOcrServerTestAction => '测试连接';
+
+  @override
+  String get settingsCustomOcrServerTesting => '正在测试连接...';
+
+  @override
+  String settingsCustomOcrServerHealthy({required String status}) {
+    return '已连接。/health 返回状态：$status。';
+  }
+
+  @override
   String get settingsCustomOcrServerKeyLabel => '自定义共享密钥';
 
   @override
@@ -3295,32 +3328,32 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get ocrStartedBackground => 'OCR 已在后台启动';
 
   @override
-  String get ocrCancelActionTitle => '取消 OCR';
+  String get ocrCancelActionTitle => '暂停 OCR';
 
   @override
-  String get ocrCancelSavedProgress => 'OCR 已取消。进度已保存。';
+  String get ocrCancelSavedProgress => 'OCR 已暂停。进度已保存。';
 
   @override
   String get ocrReplaceActionTitle => '替换 OCR';
 
   @override
   String get ocrReplaceMokuroBody =>
-      '这将覆盖从 Mokuro/HTML 文件导入的 OCR 数据，并使用您的自定义服务器对所有页面重新执行 OCR。\n\n要恢复原始 OCR，请重新导入书籍。';
+      '这将覆盖从 Mokuro/HTML 文件导入的 OCR 数据，并使用您的自定义服务器对所有页面重新执行 OCR。\n\n之后您可以使用“删除 OCR”来恢复原始 OCR。';
 
   @override
   String get ocrReplaceStartedBackground => 'OCR 替换已在后台开始';
 
   @override
-  String get ocrRemoveActionTitle => '移除 OCR';
+  String get ocrRemoveActionTitle => '删除 OCR';
 
   @override
-  String get ocrRemoveBody => '要从本漫画中移除 OCR 文字和词语遮罩吗？您以后可以再次运行 OCR。';
+  String get ocrRemoveBody => '要删除这本漫画中的全部 OCR 文本和词语遮罩吗？您以后可以再次运行 OCR。';
 
   @override
-  String get ocrRemoveSubtitle => '从所有页面移除 OCR 文字';
+  String get ocrRemoveSubtitle => '删除这本书中的全部 OCR 文本';
 
   @override
-  String get ocrRemovedFromBook => '已从本书移除 OCR';
+  String get ocrRemovedFromBook => '已从本书删除 OCR';
 
   @override
   String ocrRemoveFailed({required String details}) {
@@ -3331,10 +3364,21 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get ocrUnlockProSubtitle => '解锁 Pro 以使用自定义 OCR 服务器';
 
   @override
-  String get ocrStopAndSaveProgressSubtitle => '停止处理并保存进度';
+  String get ocrStopAndSaveProgressSubtitle => '暂停处理并保存进度';
 
   @override
   String get ocrReplaceMokuroSubtitle => '用自定义 OCR 服务器替换 Mokuro 的 OCR';
+
+  @override
+  String get ocrRestoreOriginalMokuroBody =>
+      '要删除当前 OCR，并恢复从 Mokuro/HTML 文件导入的原始 OCR 吗？';
+
+  @override
+  String get ocrRestoreOriginalMokuroSubtitle =>
+      '删除当前 OCR 并恢复原始 Mokuro/HTML OCR';
+
+  @override
+  String get ocrOriginalMokuroRestored => '已恢复原始 Mokuro/HTML OCR';
 
   @override
   String get ocrBuildWordTargetsSubtitle => '根据已保存的 OCR 构建词语点击区域';

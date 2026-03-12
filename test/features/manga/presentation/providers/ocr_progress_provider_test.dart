@@ -72,6 +72,29 @@ void main() {
       expect(state.hasValue, isTrue);
       expect(state.value!.status, OcrStatus.completed);
     });
+
+    test('stops polling when status is idle', () async {
+      const progress = OcrProgress(
+        completed: 0,
+        total: 0,
+        status: OcrStatus.idle,
+      );
+
+      SharedPreferences.setMockInitialValues({
+        '${ocrProgressKeyPrefix}42': progress.toJson(),
+      });
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final sub = container.listen(ocrProgressProvider(42), (_, _) {});
+
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      final state = sub.read();
+      expect(state.hasValue, isTrue);
+      expect(state.value!.status, OcrStatus.idle);
+    });
   });
 
   group('isOcrRunningProvider', () {

@@ -16,6 +16,8 @@ import 'package:path_provider/path_provider.dart';
 /// Repository for book CRUD operations and EPUB import.
 class BookRepository {
   final AppDatabase _db;
+  static const String originalMokuroOcrBackupFileName =
+      'pages_cache.original_mokuro.json';
 
   BookRepository(this._db);
 
@@ -252,6 +254,7 @@ class BookRepository {
     final mokuroBook = MokuroBook(
       title: cbzMeta.title,
       imageDirPath: cbzMeta.imageDirPath,
+      ocrCompleted: false,
       pages: pages,
     );
     final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
@@ -306,10 +309,16 @@ class BookRepository {
       safTreeUri: manifest.safTreeUri,
       safImageDirRelativePath: manifest.safImageDirRelativePath,
       ocrSource: 'mokuro',
+      ocrCompleted: true,
       pages: pages,
     );
+    final cacheJson = jsonEncode(mokuroBook.toJson());
     final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
-    await cacheFile.writeAsString(jsonEncode(mokuroBook.toJson()));
+    await cacheFile.writeAsString(cacheJson);
+    final originalBackupFile = File(
+      p.join(cacheDir.path, originalMokuroOcrBackupFileName),
+    );
+    await originalBackupFile.writeAsString(cacheJson);
 
     debugPrint(
       '[MangaImport] Cached ${pages.length} pages for "${manifest.title}"',
@@ -484,6 +493,7 @@ class BookRepository {
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
       autoCropVersion: mokuroBook.autoCropVersion,
       ocrSource: mokuroBook.ocrSource,
+      ocrCompleted: mokuroBook.ocrCompleted,
       pages: resegmented,
     );
     await cacheFile.writeAsString(jsonEncode(updated.toJson()));
@@ -491,6 +501,56 @@ class BookRepository {
     debugPrint(
       '[MangaOCR] Reprocessed ${resegmented.length} pages for "${book.title}"',
     );
+  }
+
+  Future<void> backupOriginalMokuroOcrIfNeeded(Book book) async {
+    if (book.bookType != 'manga') return;
+
+    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    if (!await cacheFile.exists()) {
+      throw Exception('Pages cache not found. Try re-importing this manga.');
+    }
+
+    final backupFile = File(
+      p.join(book.filePath, originalMokuroOcrBackupFileName),
+    );
+    if (await backupFile.exists()) {
+      return;
+    }
+
+    final content = await cacheFile.readAsString();
+    final json = jsonDecode(content) as Map<String, dynamic>;
+    final mokuroBook = MokuroBook.fromJson(json);
+    if (mokuroBook.ocrSource != 'mokuro') {
+      return;
+    }
+
+    await backupFile.writeAsString(content);
+    debugPrint('[MangaOCR] Backed up original Mokuro OCR for "${book.title}"');
+  }
+
+  Future<bool> restoreOriginalMokuroOcr(Book book) async {
+    if (book.bookType != 'manga') return false;
+
+    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    if (!await cacheFile.exists()) {
+      throw Exception('Pages cache not found. Try re-importing this manga.');
+    }
+
+    final backupFile = File(
+      p.join(book.filePath, originalMokuroOcrBackupFileName),
+    );
+    if (!await backupFile.exists()) {
+      return false;
+    }
+
+    final content = await backupFile.readAsString();
+    final json = jsonDecode(content) as Map<String, dynamic>;
+    MokuroBook.fromJson(json); // Validate the backup before restoring it.
+
+    await cacheFile.writeAsString(content);
+    debugPrint('[MangaOCR] Restored original Mokuro OCR for "${book.title}"');
+    return true;
   }
 
   /// Remove OCR data from all pages in a manga cache file.
@@ -520,6 +580,7 @@ class BookRepository {
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
       autoCropVersion: mokuroBook.autoCropVersion,
       ocrSource: null,
+      ocrCompleted: false,
       pages: clearedPages,
     );
 
@@ -574,6 +635,7 @@ class BookRepository {
       safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
       autoCropVersion: MokuroBook.currentAutoCropVersion,
       ocrSource: mokuroBook.ocrSource,
+      ocrCompleted: mokuroBook.ocrCompleted,
       pages: withBounds,
     );
 

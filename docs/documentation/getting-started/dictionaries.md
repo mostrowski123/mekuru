@@ -20,7 +20,7 @@ You can add dictionaries in three ways:
 
 > TODO: Add screenshot - Dictionary import progress or completion state
 
-> Tip: You can import multiple dictionaries. Mekuru merges enabled dictionaries into the same lookup workflow.
+> Tip: You can import multiple dictionaries. Mekuru merges enabled dictionaries into the same lookup workflow and orders them based on the order it appears in the dictionary manager.
 
 ## Using Built-in Downloads
 

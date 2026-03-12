@@ -22,8 +22,8 @@ OCR runs in the background, so it can continue after you leave the library scree
 Depending on the current state, the long-press actions can change to:
 
 - **Resume OCR** - continue a partial pass
-- **Cancel OCR** - stop the background job and keep completed work
-- **Remove OCR** - clear OCR text and overlays
+- **Pause OCR** - pause the background job and keep completed work
+- **Delete OCR** - remove OCR text and overlays; for replaced Mokuro/HTML books this restores the original imported OCR
 - **Build Word Overlays** - rebuild tap targets when OCR text exists but word segmentation is still missing
 
 ## Pro Access

@@ -1107,6 +1107,23 @@
   "@settingsCustomOcrServerLearnHow": {
     "description": "Button label linking to custom OCR server setup instructions."
   },
+  "settingsCustomOcrServerTestAction": "Uji koneksi",
+  "@settingsCustomOcrServerTestAction": {
+    "description": "Button label to test the custom OCR server health endpoint."
+  },
+  "settingsCustomOcrServerTesting": "Menguji koneksi...",
+  "@settingsCustomOcrServerTesting": {
+    "description": "Status text shown while testing the custom OCR server connection."
+  },
+  "settingsCustomOcrServerHealthy": "Terhubung. /health mengembalikan status: {status}.",
+  "@settingsCustomOcrServerHealthy": {
+    "description": "Status text shown when the custom OCR server health check succeeds.",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
   "settingsCustomOcrServerKeyLabel": "Shared key kustom",
   "@settingsCustomOcrServerKeyLabel": {
     "description": "Label for the custom OCR shared key field."
@@ -2015,11 +2032,11 @@
   "@ocrStartedBackground": {
     "description": "Snackbar shown when OCR starts in the background."
   },
-  "ocrCancelActionTitle": "Batalkan OCR",
+  "ocrCancelActionTitle": "Jeda OCR",
   "@ocrCancelActionTitle": {
     "description": "Action title for cancelling OCR."
   },
-  "ocrCancelSavedProgress": "OCR dibatalkan. Progres disimpan.",
+  "ocrCancelSavedProgress": "OCR dijeda. Progres disimpan.",
   "@ocrCancelSavedProgress": {
     "description": "Snackbar shown when OCR is cancelled and progress is preserved."
   },
@@ -2027,7 +2044,7 @@
   "@ocrReplaceActionTitle": {
     "description": "Action title for replacing imported OCR with custom OCR."
   },
-  "ocrReplaceMokuroBody": "Ini akan menimpa data OCR yang diimpor dari file Mokuro/HTML dan menjalankan ulang OCR pada SEMUA halaman menggunakan server kustom Anda.\n\nUntuk mengembalikan OCR asli, impor ulang bukunya.",
+  "ocrReplaceMokuroBody": "Ini akan menimpa data OCR yang diimpor dari file Mokuro/HTML dan menjalankan ulang OCR pada SEMUA halaman menggunakan server kustom Anda.\n\nNanti Anda dapat menggunakan Hapus OCR untuk memulihkan OCR asli.",
   "@ocrReplaceMokuroBody": {
     "description": "Confirmation dialog body for replacing Mokuro OCR with custom OCR."
   },
@@ -2039,11 +2056,11 @@
   "@ocrRemoveActionTitle": {
     "description": "Action title for removing OCR."
   },
-  "ocrRemoveBody": "Hapus teks OCR dan overlay kata dari manga ini? Anda dapat menjalankan OCR lagi nanti.",
+  "ocrRemoveBody": "Hapus semua teks OCR dan overlay kata dari manga ini? Anda dapat menjalankan OCR lagi nanti.",
   "@ocrRemoveBody": {
     "description": "Confirmation dialog body for removing OCR from a manga book."
   },
-  "ocrRemoveSubtitle": "Hapus teks OCR dari semua halaman",
+  "ocrRemoveSubtitle": "Hapus semua teks OCR dari buku ini",
   "@ocrRemoveSubtitle": {
     "description": "Subtitle for removing OCR from all manga pages."
   },
@@ -2064,13 +2081,25 @@
   "@ocrUnlockProSubtitle": {
     "description": "Subtitle shown when OCR requires a Pro unlock."
   },
-  "ocrStopAndSaveProgressSubtitle": "Hentikan proses dan simpan progres",
+  "ocrStopAndSaveProgressSubtitle": "Jeda proses dan simpan progres",
   "@ocrStopAndSaveProgressSubtitle": {
     "description": "Subtitle shown for the OCR cancel action."
   },
   "ocrReplaceMokuroSubtitle": "Ganti OCR Mokuro dengan server OCR kustom Anda",
   "@ocrReplaceMokuroSubtitle": {
     "description": "Subtitle shown when replacing OCR imported from Mokuro."
+  },
+  "ocrRestoreOriginalMokuroBody": "Hapus OCR saat ini dan pulihkan OCR asli yang diimpor dari file Mokuro/HTML?",
+  "@ocrRestoreOriginalMokuroBody": {
+    "description": "Confirmation dialog body for deleting custom OCR and restoring the original Mokuro or HTML OCR."
+  },
+  "ocrRestoreOriginalMokuroSubtitle": "Hapus OCR saat ini dan pulihkan OCR asli Mokuro/HTML",
+  "@ocrRestoreOriginalMokuroSubtitle": {
+    "description": "Subtitle shown when deleting OCR will restore the original Mokuro or HTML OCR."
+  },
+  "ocrOriginalMokuroRestored": "OCR asli Mokuro/HTML dipulihkan",
+  "@ocrOriginalMokuroRestored": {
+    "description": "Snackbar shown after the original Mokuro or HTML OCR has been restored."
   },
   "ocrBuildWordTargetsSubtitle": "Buat target ketukan kata dari OCR yang disimpan",
   "@ocrBuildWordTargetsSubtitle": {

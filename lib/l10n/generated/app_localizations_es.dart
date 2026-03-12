@@ -868,6 +868,17 @@ class AppLocalizationsEs extends AppLocalizations {
       'Aprende cómo ejecutar tu propio servidor';
 
   @override
+  String get settingsCustomOcrServerTestAction => 'Probar conexión';
+
+  @override
+  String get settingsCustomOcrServerTesting => 'Probando conexión...';
+
+  @override
+  String settingsCustomOcrServerHealthy({required String status}) {
+    return 'Conectado. /health devolvió el estado: $status.';
+  }
+
+  @override
   String get settingsCustomOcrServerKeyLabel =>
       'Clave compartida personalizada';
 
@@ -1654,17 +1665,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ocrStartedBackground => 'OCR iniciado en segundo plano';
 
   @override
-  String get ocrCancelActionTitle => 'Cancelar OCR';
+  String get ocrCancelActionTitle => 'Pausar OCR';
 
   @override
-  String get ocrCancelSavedProgress => 'OCR cancelado. Progreso guardado.';
+  String get ocrCancelSavedProgress => 'OCR en pausa. Progreso guardado.';
 
   @override
   String get ocrReplaceActionTitle => 'Reemplazar OCR';
 
   @override
   String get ocrReplaceMokuroBody =>
-      'Esto sobrescribirá los datos de OCR importados del archivo Mokuro/HTML y volverá a ejecutar el OCR en TODAS las páginas usando tu propio servidor.\n\nPara restaurar el OCR original, vuelve a importar el libro.';
+      'Esto sobrescribirá los datos de OCR importados del archivo Mokuro/HTML y volverá a ejecutar el OCR en TODAS las páginas usando tu propio servidor.\n\nDespués podrás usar Eliminar OCR para restaurar el OCR original.';
 
   @override
   String get ocrReplaceStartedBackground =>
@@ -1675,10 +1686,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ocrRemoveBody =>
-      '¿Eliminar el texto OCR y las superposiciones de palabras de este manga? Puedes ejecutar OCR de nuevo más tarde.';
+      '¿Eliminar todo el texto OCR y las superposiciones de palabras de este manga? Puedes ejecutar OCR de nuevo más tarde.';
 
   @override
-  String get ocrRemoveSubtitle => 'Eliminar texto OCR de todas las páginas';
+  String get ocrRemoveSubtitle => 'Eliminar todo el texto OCR de este libro';
 
   @override
   String get ocrRemovedFromBook => 'OCR eliminado de este libro';
@@ -1694,11 +1705,23 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ocrStopAndSaveProgressSubtitle =>
-      'Detener el procesamiento y guardar el progreso';
+      'Pausar el procesamiento y guardar el progreso';
 
   @override
   String get ocrReplaceMokuroSubtitle =>
       'Reemplaza el OCR de Mokuro con tu propio servidor OCR';
+
+  @override
+  String get ocrRestoreOriginalMokuroBody =>
+      '¿Eliminar el OCR actual y restaurar el OCR original importado desde el archivo Mokuro/HTML?';
+
+  @override
+  String get ocrRestoreOriginalMokuroSubtitle =>
+      'Eliminar el OCR actual y restaurar el OCR original de Mokuro/HTML';
+
+  @override
+  String get ocrOriginalMokuroRestored =>
+      'Se restauró el OCR original de Mokuro/HTML';
 
   @override
   String get ocrBuildWordTargetsSubtitle =>

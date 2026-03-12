@@ -32,6 +32,7 @@ class MokuroBook {
   final String? safImageDirRelativePath;
   final int autoCropVersion;
   final String? ocrSource;
+  final bool ocrCompleted;
   final List<MokuroPage> pages;
 
   const MokuroBook({
@@ -41,6 +42,7 @@ class MokuroBook {
     this.safImageDirRelativePath,
     this.autoCropVersion = 0,
     this.ocrSource,
+    this.ocrCompleted = false,
     required this.pages,
   });
 
@@ -52,20 +54,28 @@ class MokuroBook {
       'safImageDirRelativePath': safImageDirRelativePath,
     'autoCropVersion': autoCropVersion,
     if (ocrSource != null) 'ocrSource': ocrSource,
+    'ocrCompleted': ocrCompleted,
     'pages': pages.map((p) => p.toJson()).toList(),
   };
 
-  factory MokuroBook.fromJson(Map<String, dynamic> json) => MokuroBook(
-    title: (json['title'] as String?) ?? '',
-    imageDirPath: json['imageDirPath'] as String,
-    safTreeUri: json['safTreeUri'] as String?,
-    safImageDirRelativePath: json['safImageDirRelativePath'] as String?,
-    autoCropVersion: (json['autoCropVersion'] as num?)?.toInt() ?? 0,
-    ocrSource: json['ocrSource'] as String?,
-    pages: (json['pages'] as List)
-        .map((p) => MokuroPage.fromJson(p as Map<String, dynamic>))
-        .toList(),
-  );
+  factory MokuroBook.fromJson(Map<String, dynamic> json) {
+    final ocrSource = json['ocrSource'] as String?;
+    final hasExplicitOcrCompleted = json.containsKey('ocrCompleted');
+    return MokuroBook(
+      title: (json['title'] as String?) ?? '',
+      imageDirPath: json['imageDirPath'] as String,
+      safTreeUri: json['safTreeUri'] as String?,
+      safImageDirRelativePath: json['safImageDirRelativePath'] as String?,
+      autoCropVersion: (json['autoCropVersion'] as num?)?.toInt() ?? 0,
+      ocrSource: ocrSource,
+      ocrCompleted: hasExplicitOcrCompleted
+          ? (json['ocrCompleted'] as bool? ?? false)
+          : ocrSource != null,
+      pages: (json['pages'] as List)
+          .map((p) => MokuroPage.fromJson(p as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }
 
 /// A single manga page with its OCR data and computed word positions.

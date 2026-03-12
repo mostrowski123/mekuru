@@ -24,11 +24,12 @@ Stream<OcrProgress?> _pollOcrProgress(int bookId) async* {
     final progress = OcrProgress.load(prefs, bookId);
     yield progress;
 
-    // Stop polling if completed, cancelled, or failed
+    // Stop polling if the task is no longer active.
     if (progress != null &&
         (progress.status == OcrStatus.completed ||
             progress.status == OcrStatus.cancelled ||
-            progress.status == OcrStatus.failed)) {
+            progress.status == OcrStatus.failed ||
+            progress.status == OcrStatus.idle)) {
       // Yield one final time, then stop
       return;
     }

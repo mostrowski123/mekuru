@@ -61,8 +61,8 @@ After import, long-press the manga entry in the library to open its actions. Fro
 
 - **Run OCR** - start OCR for pages that do not have text yet
 - **Resume OCR** - continue a partial OCR pass
-- **Cancel OCR** - stop the background job and keep progress so far
-- **Remove OCR** - clear OCR text and word overlays
+- **Pause OCR** - pause the current OCR job and keep progress so far
+- **Delete OCR** - remove OCR text and word overlays; for replaced Mokuro/HTML books this restores the original imported OCR
 - **Build Word Overlays** - rebuild tap targets when OCR text exists but word segmentation is missing
 
 OCR is started from the library item actions, not from a button inside the manga reader.

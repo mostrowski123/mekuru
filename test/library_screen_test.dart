@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_app.dart';
@@ -58,5 +60,29 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('What is Mokuro?'), findsOneWidget);
+  });
+
+  testWidgets('completed OCR uses Delete OCR as the primary action title', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildLocalizedTestApp(
+        home: Builder(
+          builder: (context) => Text(
+            mangaOcrPrimaryActionTitle(
+              l10n: context.l10n,
+              isRunning: false,
+              isMokuroComplete: false,
+              hasCompleteOcr: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.text('Delete OCR'), findsOneWidget);
+    expect(find.text('Run OCR'), findsNothing);
   });
 }
