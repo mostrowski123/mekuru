@@ -12,42 +12,45 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_app.dart';
 
-DictionaryEntry _buildEntry() {
+DictionaryEntry _buildEntry({
+  required int id,
+  required String expression,
+  required String reading,
+  required String glossaries,
+}) {
   return DictionaryEntry(
-    id: 1,
-    expression: '食べる',
-    reading: 'たべる',
+    id: id,
+    expression: expression,
+    reading: reading,
     entryKind: DictionaryEntryKinds.regular,
     kanjiOnyomi: '',
     kanjiKunyomi: '',
     definitionTags: 'v1',
     rules: 'vt',
     termTags: 'P',
-    glossaries: '["to eat"]',
+    glossaries: glossaries,
     dictionaryId: 1,
   );
 }
 
 class _FakeDictionaryQueryService extends DictionaryQueryService {
-  _FakeDictionaryQueryService(
-    super.db, {
-    required this.lookupResults,
-  });
+  _FakeDictionaryQueryService(super.db, {required this.lookupResultsByTerm});
 
-  final List<DictionaryEntryWithSource> lookupResults;
-  final List<PitchAccentResult> pitchAccents = const [];
+  final Map<String, List<DictionaryEntryWithSource>> lookupResultsByTerm;
+  final List<String> pitchAccentQueries = [];
 
   @override
   Future<List<DictionaryEntryWithSource>> searchLookupWithSource(
     String primary, [
     String? secondary,
   ]) async {
-    return lookupResults;
+    return lookupResultsByTerm[primary] ?? const [];
   }
 
   @override
   Future<List<PitchAccentResult>> searchPitchAccents(String term) async {
-    return pitchAccents;
+    pitchAccentQueries.add(term);
+    return const [];
   }
 }
 
@@ -59,12 +62,19 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 
-    final entry = _buildEntry();
+    final entry = _buildEntry(
+      id: 1,
+      expression: '食べる',
+      reading: 'たべる',
+      glossaries: '["to eat"]',
+    );
     final service = _FakeDictionaryQueryService(
       db,
-      lookupResults: [
-        DictionaryEntryWithSource(entry: entry, dictionaryName: 'JMdict'),
-      ],
+      lookupResultsByTerm: {
+        '食べる': [
+          DictionaryEntryWithSource(entry: entry, dictionaryName: 'JMdict'),
+        ],
+      },
     );
 
     await tester.pumpWidget(
@@ -75,9 +85,7 @@ void main() {
         ],
         child: buildLocalizedTestApp(
           home: const Scaffold(
-            body: SizedBox.expand(
-              child: LookupSheet(selectedText: '食べる'),
-            ),
+            body: SizedBox.expand(child: LookupSheet(selectedText: '食べる')),
           ),
         ),
       ),
@@ -89,5 +97,72 @@ void main() {
 
     expect(find.text('Ichidan verb'), findsOneWidget);
     expect(find.text('Transitive verb'), findsOneWidget);
+  });
+
+  testWidgets('refreshes pitch accents when the lookup term changes', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    final service = _FakeDictionaryQueryService(
+      db,
+      lookupResultsByTerm: {
+        '食べる': [
+          DictionaryEntryWithSource(
+            entry: _buildEntry(
+              id: 1,
+              expression: '食べる',
+              reading: 'たべる',
+              glossaries: '["to eat"]',
+            ),
+            dictionaryName: 'JMdict',
+          ),
+        ],
+        '走る': [
+          DictionaryEntryWithSource(
+            entry: _buildEntry(
+              id: 2,
+              expression: '走る',
+              reading: 'はしる',
+              glossaries: '["to run"]',
+            ),
+            dictionaryName: 'JMdict',
+          ),
+        ],
+      },
+    );
+
+    Future<void> pumpLookupSheet(String selectedText) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(service),
+          ],
+          child: buildLocalizedTestApp(
+            home: Scaffold(
+              body: SizedBox.expand(
+                child: LookupSheet(selectedText: selectedText),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    await pumpLookupSheet('食べる');
+    expect(find.text('to eat'), findsOneWidget);
+    expect(service.pitchAccentQueries, ['食べる']);
+
+    await pumpLookupSheet('走る');
+    expect(find.text('to eat'), findsNothing);
+    expect(find.text('to run'), findsOneWidget);
+    expect(service.pitchAccentQueries, ['食べる', '走る']);
   });
 }

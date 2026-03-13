@@ -397,6 +397,10 @@ class DictionarySearchScreenState
         final resultIndex = isSingleKanji ? index - 1 : index;
         final group = groupedResults[resultIndex];
         return _GroupedSearchResultWithPitchAccents(
+          key: ValueKey((
+            group.first.entry.expression,
+            group.first.entry.reading,
+          )),
           entries: group,
           fontSize: fontSize,
           onWordTap: _navigateToWord,
@@ -522,6 +526,7 @@ bool _isCjk(int codeUnit) {
 /// delegates to [GroupedDictionaryEntryCard].
 class _GroupedSearchResultWithPitchAccents extends ConsumerStatefulWidget {
   const _GroupedSearchResultWithPitchAccents({
+    super.key,
     required this.entries,
     required this.fontSize,
     required this.onWordTap,
@@ -542,12 +547,31 @@ class _GroupedSearchResultWithPitchAccentsState
 
   DictionaryEntry get _primaryEntry => widget.entries.first.entry;
 
-  @override
-  void initState() {
-    super.initState();
+  void _refreshPitchAccentsFuture() {
     _pitchAccentsFuture = ref
         .read(dictionaryQueryServiceProvider)
         .searchPitchAccents(_primaryEntry.expression);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPitchAccentsFuture();
+  }
+
+  @override
+  void didUpdateWidget(
+    covariant _GroupedSearchResultWithPitchAccents oldWidget,
+  ) {
+    super.didUpdateWidget(oldWidget);
+
+    final oldEntry = oldWidget.entries.first.entry;
+    final entryChanged =
+        oldEntry.expression != _primaryEntry.expression ||
+        oldEntry.reading != _primaryEntry.reading;
+    if (entryChanged) {
+      _refreshPitchAccentsFuture();
+    }
   }
 
   /// Filter pitch accents to match this group's reading or expression,

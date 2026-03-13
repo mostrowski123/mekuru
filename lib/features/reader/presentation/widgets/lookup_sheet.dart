@@ -65,20 +65,45 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
   late TextEditingController _editController;
   String? _editedText;
 
-  @override
-  void initState() {
-    super.initState();
-    _editController = TextEditingController();
-    final restoredText = widget.initialEditedText?.trim();
-    _editedText = restoredText != null && restoredText.isNotEmpty
-        ? restoredText
-        : null;
-    final primarySearchTerm = _editedText ?? widget.selectedText;
+  String? _normalizeEditedText(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  void _refreshLookupFutures(String primarySearchTerm) {
     _searchResultsFuture = _search(primarySearchTerm, widget.surfaceForm);
     _pitchAccentsFuture = _searchPitchAccents(
       primarySearchTerm,
       widget.surfaceForm,
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _editController = TextEditingController();
+    _editedText = _normalizeEditedText(widget.initialEditedText);
+    final primarySearchTerm = _editedText ?? widget.selectedText;
+    _refreshLookupFutures(primarySearchTerm);
+  }
+
+  @override
+  void didUpdateWidget(covariant LookupSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final lookupChanged =
+        oldWidget.selectedText != widget.selectedText ||
+        oldWidget.surfaceForm != widget.surfaceForm ||
+        oldWidget.initialEditedText != widget.initialEditedText;
+    if (!lookupChanged) return;
+
+    _isEditing = false;
+    _editedText = _normalizeEditedText(widget.initialEditedText);
+    final primarySearchTerm = _editedText ?? widget.selectedText;
+    _refreshLookupFutures(primarySearchTerm);
   }
 
   @override
@@ -137,11 +162,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     setState(() {
       _isEditing = false;
       _editedText = trimmedValue;
-      _searchResultsFuture = _search(trimmedValue, widget.surfaceForm);
-      _pitchAccentsFuture = _searchPitchAccents(
-        trimmedValue,
-        widget.surfaceForm,
-      );
+      _refreshLookupFutures(trimmedValue);
     });
     widget.onTermSubmitted?.call(trimmedValue);
     widget.onEditingEnded?.call();
