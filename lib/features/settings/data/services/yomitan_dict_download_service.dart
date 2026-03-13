@@ -90,19 +90,18 @@ class YomitanDictDownloadService {
     final tag = await _fetchLatestTag();
     onProgress?.call(0.05);
 
-    // Phase 2: Download ZIP
+    // Phase 2: Download ZIP straight to disk to avoid buffering large
+    // dictionaries in memory.
     final url =
         'https://github.com/yomidevs/jmdict-yomitan/releases/download/'
         '$tag/${_assetFilename(type)}';
-    final zipBytes = await _downloadZip(
-      url,
-      onProgress: (p) => onProgress?.call(0.05 + p * 0.65),
-    );
-
-    // Phase 3: Write to temp file and import
     final tempDir = await getTemporaryDirectory();
     final tempFile = File(p.join(tempDir.path, '${type.name}_download.zip'));
-    await tempFile.writeAsBytes(zipBytes);
+    await _downloadZipToFile(
+      url,
+      tempFile.path,
+      onProgress: (p) => onProgress?.call(0.05 + p * 0.65),
+    );
 
     try {
       onProgress?.call(0.75);
@@ -156,24 +155,35 @@ class YomitanDictDownloadService {
     }
   }
 
-  /// Download a ZIP archive from [url], returning raw bytes.
-  static Future<List<int>> _downloadZip(
-    String url, {
+  /// Download a ZIP archive from [url] directly into [destinationPath].
+  static Future<void> _downloadZipToFile(
+    String url,
+    String destinationPath, {
     void Function(double progress)? onProgress,
+    int redirectCount = 0,
   }) async {
+    if (redirectCount > 5) {
+      throw const HttpException(
+        'Too many redirects while downloading dictionary',
+      );
+    }
+
     final client = HttpClient();
     try {
       final request = await client.getUrl(Uri.parse(url));
       final response = await request.close();
 
       // Follow redirects manually if needed (GitHub releases redirect)
-      if (response.statusCode == 301 || response.statusCode == 302) {
+      if (_isRedirectStatus(response.statusCode)) {
         final redirectUrl = response.headers.value('location');
         if (redirectUrl != null) {
           await response.drain<void>();
-          final redirectRequest = await client.getUrl(Uri.parse(redirectUrl));
-          final redirectResponse = await redirectRequest.close();
-          return _readResponse(redirectResponse, onProgress: onProgress);
+          return _downloadZipToFile(
+            redirectUrl,
+            destinationPath,
+            onProgress: onProgress,
+            redirectCount: redirectCount + 1,
+          );
         }
       }
 
@@ -184,28 +194,42 @@ class YomitanDictDownloadService {
         );
       }
 
-      return _readResponse(response, onProgress: onProgress);
+      await _writeResponseToFile(
+        response,
+        destinationPath: destinationPath,
+        onProgress: onProgress,
+      );
     } finally {
       client.close();
     }
   }
 
-  static Future<List<int>> _readResponse(
+  static bool _isRedirectStatus(int statusCode) =>
+      statusCode == HttpStatus.movedPermanently ||
+      statusCode == HttpStatus.found ||
+      statusCode == HttpStatus.seeOther ||
+      statusCode == HttpStatus.temporaryRedirect ||
+      statusCode == HttpStatus.permanentRedirect;
+
+  static Future<void> _writeResponseToFile(
     HttpClientResponse response, {
+    required String destinationPath,
     void Function(double progress)? onProgress,
   }) async {
     final contentLength = response.contentLength;
-    final bytes = <int>[];
     var received = 0;
+    final sink = File(destinationPath).openWrite();
 
-    await for (final chunk in response) {
-      bytes.addAll(chunk);
-      received += chunk.length;
-      if (contentLength > 0) {
-        onProgress?.call(received / contentLength);
+    try {
+      await for (final chunk in response) {
+        sink.add(chunk);
+        received += chunk.length;
+        if (contentLength > 0) {
+          onProgress?.call(received / contentLength);
+        }
       }
+    } finally {
+      await sink.close();
     }
-
-    return bytes;
   }
 }

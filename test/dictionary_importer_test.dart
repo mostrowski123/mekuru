@@ -14,6 +14,25 @@ AppDatabase createTestDatabase() {
   return AppDatabase(NativeDatabase.memory());
 }
 
+class _ThrowingDictionaryRepository extends DictionaryRepository {
+  _ThrowingDictionaryRepository(super.db, {this.throwOnPitchInsert = false});
+
+  final bool throwOnPitchInsert;
+  bool _hasThrown = false;
+
+  @override
+  Future<int> batchInsertPitchAccents(
+    List<PitchAccentsCompanion> entries, {
+    int batchSize = 10000,
+  }) async {
+    if (throwOnPitchInsert && !_hasThrown && entries.isNotEmpty) {
+      _hasThrown = true;
+      throw StateError('forced pitch insert failure');
+    }
+    return super.batchInsertPitchAccents(entries, batchSize: batchSize);
+  }
+}
+
 /// Creates a temporary Yomitan-format zip file for testing.
 Future<String> createTestYomitanZip({
   String dictionaryName = 'Test Dictionary',
@@ -187,8 +206,8 @@ void main() {
       final zipPath = await createTestYomitanZip(
         entries: [
           [
-      '食べる',
-      'たべる',
+            '食べる',
+            'たべる',
             'v1',
             'vt',
             0,
@@ -474,6 +493,45 @@ void main() {
         ),
         isTrue,
       );
+    });
+
+    test('rolls back a zip import when a later batch insert fails', () async {
+      final rollbackDb = createTestDatabase();
+      addTearDown(rollbackDb.close);
+      final rollbackRepo = _ThrowingDictionaryRepository(
+        rollbackDb,
+        throwOnPitchInsert: true,
+      );
+      final rollbackImporter = DictionaryImporter(rollbackRepo);
+
+      final zipPath = await createTestYomitanZip(
+        dictionaryName: 'Rollback Zip',
+        termMetaEntries: [
+          [
+            '食べる',
+            'pitch',
+            {
+              'reading': 'たべる',
+              'pitches': [
+                {'position': 2},
+              ],
+            },
+          ],
+        ],
+      );
+      trackTempFile(zipPath);
+
+      await expectLater(
+        rollbackImporter.importFromFile(zipPath),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(await rollbackRepo.getAllDictionaries(), isEmpty);
+      expect(
+        await rollbackDb.select(rollbackDb.dictionaryEntries).get(),
+        isEmpty,
+      );
+      expect(await rollbackDb.select(rollbackDb.pitchAccents).get(), isEmpty);
     });
   });
 
@@ -818,6 +876,77 @@ void main() {
         throwsA(isA<FileSystemException>()),
       );
     });
+
+    test(
+      'rolls back a collection import when a later batch insert fails',
+      () async {
+        final rollbackDb = createTestDatabase();
+        addTearDown(rollbackDb.close);
+        final rollbackRepo = _ThrowingDictionaryRepository(
+          rollbackDb,
+          throwOnPitchInsert: true,
+        );
+        final rollbackImporter = DictionaryImporter(rollbackRepo);
+
+        final jsonStr = jsonEncode({
+          'formatName': 'dexie',
+          'formatVersion': 1,
+          'data': {
+            'databaseName': 'dict',
+            'tables': [
+              {'name': 'terms', 'schema': '++id', 'rowCount': 1},
+              {'name': 'termMeta', 'schema': '++id', 'rowCount': 1},
+            ],
+            'data': [
+              {
+                'tableName': 'terms',
+                'inbound': true,
+                'rows': [
+                  {
+                    'expression': '食べる',
+                    'reading': 'たべる',
+                    'glossary': ['to eat'],
+                    'dictionary': 'Rollback Collection',
+                    'id': 1,
+                  },
+                ],
+              },
+              {
+                'tableName': 'termMeta',
+                'inbound': true,
+                'rows': [
+                  {
+                    'expression': '食べる',
+                    'mode': 'pitch',
+                    'dictionary': 'Rollback Collection',
+                    'data': {
+                      'reading': 'たべる',
+                      'pitches': [
+                        {'position': 2},
+                      ],
+                    },
+                    'id': 2,
+                  },
+                ],
+              },
+            ],
+          },
+        });
+        final filePath = await writeCollectionFile(jsonStr);
+
+        await expectLater(
+          rollbackImporter.importCollectionFromFile(filePath),
+          throwsA(isA<StateError>()),
+        );
+
+        expect(await rollbackRepo.getAllDictionaries(), isEmpty);
+        expect(
+          await rollbackDb.select(rollbackDb.dictionaryEntries).get(),
+          isEmpty,
+        );
+        expect(await rollbackDb.select(rollbackDb.pitchAccents).get(), isEmpty);
+      },
+    );
 
     test('handles glossary with structured objects', () async {
       final rows = [

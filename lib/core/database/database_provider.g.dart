@@ -4359,6 +4359,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_pitch_reading',
     'CREATE INDEX idx_pitch_reading ON pitch_accents (reading)',
   );
+  late final Index idxPitchExprDictid = Index(
+    'idx_pitch_expr_dictid',
+    'CREATE INDEX idx_pitch_expr_dictid ON pitch_accents (expression, dictionary_id)',
+  );
   late final Index idxFreqExpression = Index(
     'idx_freq_expression',
     'CREATE INDEX idx_freq_expression ON frequencies (expression)',
@@ -4391,6 +4395,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxReadDictid,
     idxPitchExpression,
     idxPitchReading,
+    idxPitchExprDictid,
     idxFreqExpression,
     idxFreqReading,
     idxFreqExprRead,

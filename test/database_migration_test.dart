@@ -102,7 +102,7 @@ void main() {
       expect(entries.single.definitionTags, isEmpty);
       expect(entries.single.rules, isEmpty);
       expect(entries.single.termTags, isEmpty);
-      expect(migratedDb.schemaVersion, 15);
+      expect(migratedDb.schemaVersion, 16);
     },
   );
 
@@ -195,6 +195,56 @@ void main() {
           .select(repairedDb.dictionaryEntries)
           .get();
       expect(repairedEntries, hasLength(2));
+    },
+  );
+
+  test(
+    'adds the pitch expression+dictionary index when migrating to schema 16',
+    () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'mekuru_pitch_index_',
+      );
+      addTearDown(() async {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final dbFile = File('${tempDir.path}/mekuru.sqlite');
+
+      final seedDb = AppDatabase(NativeDatabase(dbFile));
+      final repo = DictionaryRepository(seedDb);
+      final dictionaryId = await repo.insertDictionary('PitchDict');
+      await seedDb
+          .into(seedDb.pitchAccents)
+          .insert(
+            PitchAccentsCompanion.insert(
+              expression: '食べる',
+              reading: const Value('たべる'),
+              downstepPosition: 2,
+              dictionaryId: dictionaryId,
+            ),
+          );
+      await seedDb.close();
+
+      final legacyDb = sqlite.sqlite3.open(dbFile.path);
+      legacyDb.execute('PRAGMA user_version = 15;');
+      legacyDb.execute('DROP INDEX IF EXISTS idx_pitch_expr_dictid;');
+      legacyDb.dispose();
+
+      final migratedDb = AppDatabase(NativeDatabase(dbFile));
+      addTearDown(migratedDb.close);
+
+      final indexRows = await migratedDb
+          .customSelect("PRAGMA index_list('pitch_accents')")
+          .get();
+      final indexNames = indexRows
+          .map((row) => row.data['name']?.toString())
+          .whereType<String>()
+          .toSet();
+
+      expect(indexNames, contains('idx_pitch_expr_dictid'));
+      expect(migratedDb.schemaVersion, 16);
     },
   );
 }

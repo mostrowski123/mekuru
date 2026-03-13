@@ -6,6 +6,10 @@ import 'package:drift/drift.dart';
 /// Position 0 = heiban (flat), position 1 = atamadaka, etc.
 @TableIndex(name: 'idx_pitch_expression', columns: {#expression})
 @TableIndex(name: 'idx_pitch_reading', columns: {#reading})
+@TableIndex(
+  name: 'idx_pitch_expr_dictid',
+  columns: {#expression, #dictionaryId},
+)
 class PitchAccents extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get expression => text()();

@@ -67,6 +67,8 @@ class _GroupedDictionaryEntryCardState
   bool _isCheckingAnki = false;
   int _ankiLookupRequestId = 0;
   String? _lastAnkiLookupCacheKey;
+  KanjiEntryDisplayData? _kanjiDisplayData;
+  List<_DefinitionSectionData> _definitionSections = const [];
 
   DictionaryEntryWithSource get _primaryResult => widget.entries.first;
   DictionaryEntry get _primaryEntry => _primaryResult.entry;
@@ -75,6 +77,7 @@ class _GroupedDictionaryEntryCardState
   @override
   void initState() {
     super.initState();
+    _rebuildDerivedContent();
     _checkIfSaved();
     _checkIfInAnki();
     ref.listenManual(ankidroidConfigProvider, (previous, next) {
@@ -86,6 +89,10 @@ class _GroupedDictionaryEntryCardState
   void didUpdateWidget(covariant GroupedDictionaryEntryCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    if (_didEntriesChange(oldWidget.entries, widget.entries)) {
+      _rebuildDerivedContent();
+    }
+
     final entryChanged =
         oldWidget.entries.first.entry.expression != _primaryEntry.expression ||
         oldWidget.entries.first.entry.reading != _primaryEntry.reading;
@@ -94,6 +101,88 @@ class _GroupedDictionaryEntryCardState
     }
 
     _checkIfInAnki();
+  }
+
+  bool _didEntriesChange(
+    List<DictionaryEntryWithSource> oldEntries,
+    List<DictionaryEntryWithSource> newEntries,
+  ) {
+    if (identical(oldEntries, newEntries)) return false;
+    if (oldEntries.length != newEntries.length) return true;
+
+    for (var i = 0; i < oldEntries.length; i++) {
+      final oldEntry = oldEntries[i];
+      final newEntry = newEntries[i];
+      if (oldEntry.dictionaryName != newEntry.dictionaryName ||
+          oldEntry.frequencyRank != newEntry.frequencyRank ||
+          oldEntry.entry.id != newEntry.entry.id ||
+          oldEntry.entry.expression != newEntry.entry.expression ||
+          oldEntry.entry.reading != newEntry.entry.reading ||
+          oldEntry.entry.entryKind != newEntry.entry.entryKind ||
+          oldEntry.entry.kanjiOnyomi != newEntry.entry.kanjiOnyomi ||
+          oldEntry.entry.kanjiKunyomi != newEntry.entry.kanjiKunyomi ||
+          oldEntry.entry.glossaries != newEntry.entry.glossaries) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  void _rebuildDerivedContent() {
+    _kanjiDisplayData = parseKanjiEntryDisplayData(
+      entry: _primaryEntry,
+      dictionaryName: _primaryResult.dictionaryName,
+    );
+    _definitionSections = _buildDefinitionSections(widget.entries);
+  }
+
+  List<_DefinitionSectionData> _buildDefinitionSections(
+    List<DictionaryEntryWithSource> entries,
+  ) {
+    final byDict = <String, List<DictionaryEntryWithSource>>{};
+    final dictOrder = <String>[];
+    for (final result in entries) {
+      if (!byDict.containsKey(result.dictionaryName)) {
+        dictOrder.add(result.dictionaryName);
+        byDict[result.dictionaryName] = [];
+      }
+      byDict[result.dictionaryName]!.add(result);
+    }
+
+    return [
+      for (final dictName in dictOrder)
+        _DefinitionSectionData(
+          dictionaryName: dictName,
+          lines: _buildDefinitionLines(byDict[dictName]!),
+        ),
+    ];
+  }
+
+  List<String> _buildDefinitionLines(List<DictionaryEntryWithSource> entries) {
+    final showNumbers = entries.length > 1;
+    return [
+      for (var i = 0; i < entries.length; i++)
+        _formatDefinitionLine(
+          entries[i].entry.glossaries,
+          index: i,
+          showNumbers: showNumbers,
+        ),
+    ];
+  }
+
+  String _formatDefinitionLine(
+    String glossaries, {
+    required int index,
+    required bool showNumbers,
+  }) {
+    final definitions = GlossaryParser.parse(glossaries);
+    final fragments = definitions
+        .expand((definition) => definition.split('\n'))
+        .map((line) => line.replaceFirst(RegExp(r'^\s*\u25b8\s*'), '').trim())
+        .where((line) => line.isNotEmpty);
+    final joined = fragments.join('; ');
+    return showNumbers ? '${index + 1}. $joined' : joined;
   }
 
   Future<void> _checkIfSaved() async {
@@ -274,10 +363,6 @@ class _GroupedDictionaryEntryCardState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fs = widget.fontSize;
-    final kanjiDisplayData = parseKanjiEntryDisplayData(
-      entry: _primaryEntry,
-      dictionaryName: _primaryResult.dictionaryName,
-    );
 
     final expressionStyle = TextStyle(
       fontSize: fs * 1.25,
@@ -315,13 +400,13 @@ class _GroupedDictionaryEntryCardState
                   theme,
                   expressionStyle,
                   furiganaStyle,
-                  kanjiDisplayData,
+                  _kanjiDisplayData,
                 ),
                 const SizedBox(height: 8),
                 Wrap(spacing: 4, runSpacing: 4, children: actionButtons),
               ] else
                 Row(
-                  crossAxisAlignment: kanjiDisplayData == null
+                  crossAxisAlignment: _kanjiDisplayData == null
                       ? CrossAxisAlignment.end
                       : CrossAxisAlignment.start,
                   children: [
@@ -330,7 +415,7 @@ class _GroupedDictionaryEntryCardState
                         theme,
                         expressionStyle,
                         furiganaStyle,
-                        kanjiDisplayData,
+                        _kanjiDisplayData,
                       ),
                     ),
                     ...actionButtons,
@@ -350,7 +435,7 @@ class _GroupedDictionaryEntryCardState
 
               // Row 3+: Definitions grouped by dictionary
               const SizedBox(height: 8),
-              ..._buildGroupedDefinitions(theme, fs, definitionStyle),
+              ..._buildGroupedDefinitions(fs, definitionStyle),
             ],
           );
         },
@@ -578,52 +663,28 @@ class _GroupedDictionaryEntryCardState
   /// Build definitions for each dictionary in the group, with a subdued source
   /// footer shown after each section. Entries from the same dictionary are
   /// grouped under a single footer label and numbered when there are multiple.
-  List<Widget> _buildGroupedDefinitions(
-    ThemeData theme,
-    double fs,
-    TextStyle definitionStyle,
-  ) {
-    // Group entries by dictionary name, preserving order.
-    final byDict = <String, List<DictionaryEntryWithSource>>{};
-    final dictOrder = <String>[];
-    for (final result in widget.entries) {
-      if (!byDict.containsKey(result.dictionaryName)) {
-        dictOrder.add(result.dictionaryName);
-        byDict[result.dictionaryName] = [];
-      }
-      byDict[result.dictionaryName]!.add(result);
-    }
-
+  List<Widget> _buildGroupedDefinitions(double fs, TextStyle definitionStyle) {
     final widgets = <Widget>[];
-    for (var dictIndex = 0; dictIndex < dictOrder.length; dictIndex++) {
-      final dictName = dictOrder[dictIndex];
-      final entries = byDict[dictName]!;
-      final showNumbers = entries.length > 1;
-
-      for (var i = 0; i < entries.length; i++) {
-        final definitions = GlossaryParser.parse(entries[i].entry.glossaries);
-        // Flatten multi-line bulleted definitions into a single
-        // semicolon-separated line.
-        final fragments = definitions
-            .expand((d) => d.split('\n'))
-            .map((s) => s.replaceFirst(RegExp(r'^\s*\u25b8\s*'), '').trim())
-            .where((s) => s.isNotEmpty);
-        final joined = fragments.join('; ');
-        final text = showNumbers ? '${i + 1}. $joined' : joined;
-
+    for (
+      var dictIndex = 0;
+      dictIndex < _definitionSections.length;
+      dictIndex++
+    ) {
+      final section = _definitionSections[dictIndex];
+      for (final line in section.lines) {
         widgets.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: _buildDefinition(text, definitionStyle),
+            child: _buildDefinition(line, definitionStyle),
           ),
         );
       }
 
       widgets.add(
         SourceSectionLabel(
-          label: dictName,
+          label: section.dictionaryName,
           topPadding: 2,
-          bottomPadding: dictIndex < dictOrder.length - 1 ? 10 : 0,
+          bottomPadding: dictIndex < _definitionSections.length - 1 ? 10 : 0,
           fontSize: fs * 0.64,
         ),
       );
@@ -743,4 +804,14 @@ class _FrequencyTag extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DefinitionSectionData {
+  const _DefinitionSectionData({
+    required this.dictionaryName,
+    required this.lines,
+  });
+
+  final String dictionaryName;
+  final List<String> lines;
 }

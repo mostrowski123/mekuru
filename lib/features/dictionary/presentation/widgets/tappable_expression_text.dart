@@ -31,10 +31,18 @@ class TappableExpressionText extends StatefulWidget {
 
 class _TappableExpressionTextState extends State<TappableExpressionText> {
   final List<TapGestureRecognizer> _recognizers = [];
+  List<_ExpressionSegmentCache> _segmentCache = const [];
+  bool _showFurigana = false;
 
   static bool _isKanji(int codeUnit) {
     return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||
         (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _rebuildSegmentCache();
   }
 
   @override
@@ -53,41 +61,74 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
   @override
   void didUpdateWidget(TappableExpressionText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.expression != widget.expression) {
+    if (oldWidget.expression != widget.expression ||
+        oldWidget.reading != widget.reading) {
       _disposeRecognizers();
+      _rebuildSegmentCache();
     }
   }
 
-  /// Build per-character spans for a text segment, making kanji tappable.
-  List<InlineSpan> _buildCharSpans(
-    String text,
-    TextStyle? baseStyle,
-    TextStyle? kanjiStyle,
-  ) {
-    final spans = <InlineSpan>[];
+  @override
+  void reassemble() {
+    super.reassemble();
+    _disposeRecognizers();
+    _rebuildSegmentCache();
+  }
+
+  void _rebuildSegmentCache() {
+    _showFurigana =
+        widget.reading.isNotEmpty && widget.reading != widget.expression;
+
+    final rawSegments = _showFurigana
+        ? segmentFurigana(widget.expression, widget.reading)
+        : [FuriganaSegment(widget.expression)];
+
+    _segmentCache = rawSegments
+        .map((segment) {
+          return _ExpressionSegmentCache(
+            text: segment.text,
+            furigana: segment.furigana,
+            glyphs: _buildGlyphCache(segment.text),
+          );
+        })
+        .toList(growable: false);
+  }
+
+  List<_ExpressionGlyphCache> _buildGlyphCache(String text) {
+    final glyphs = <_ExpressionGlyphCache>[];
     for (var i = 0; i < text.length; i++) {
       final char = text[i];
       if (_isKanji(char.codeUnitAt(0))) {
         final recognizer = TapGestureRecognizer()
           ..onTap = () => widget.onKanjiTap(char);
         _recognizers.add(recognizer);
-        spans.add(
-          TextSpan(text: char, style: kanjiStyle, recognizer: recognizer),
-        );
+        glyphs.add(_ExpressionGlyphCache(char, recognizer: recognizer));
       } else {
-        spans.add(TextSpan(text: char, style: baseStyle));
+        glyphs.add(_ExpressionGlyphCache(char));
       }
     }
-    return spans;
+    return glyphs;
+  }
+
+  List<InlineSpan> _buildCharSpans(
+    List<_ExpressionGlyphCache> glyphs,
+    TextStyle? baseStyle,
+    TextStyle? kanjiStyle,
+  ) {
+    return glyphs
+        .map((glyph) {
+          return TextSpan(
+            text: glyph.char,
+            style: glyph.recognizer == null ? baseStyle : kanjiStyle,
+            recognizer: glyph.recognizer,
+          );
+        })
+        .toList(growable: false);
   }
 
   @override
   Widget build(BuildContext context) {
-    _disposeRecognizers();
-
     final theme = Theme.of(context);
-    final showFurigana =
-        widget.reading.isNotEmpty && widget.reading != widget.expression;
 
     final exprStyle =
         widget.expressionStyle ??
@@ -102,11 +143,13 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
       decorationColor: theme.colorScheme.primary.withAlpha(100),
     );
 
-    if (!showFurigana) {
-      // No furigana: render expression as a flat Text.rich with tappable kanji.
+    if (!_showFurigana) {
+      final glyphs = _segmentCache.isEmpty
+          ? const <_ExpressionGlyphCache>[]
+          : _segmentCache.first.glyphs;
       return Text.rich(
         TextSpan(
-          children: _buildCharSpans(widget.expression, exprStyle, kanjiStyle),
+          children: _buildCharSpans(glyphs, exprStyle, kanjiStyle),
           style: exprStyle,
         ),
       );
@@ -120,40 +163,65 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
           height: 1.0,
         );
 
-    final segments = segmentFurigana(widget.expression, widget.reading);
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
-      children: segments.map((seg) {
-        if (seg.furigana != null) {
-          // Kanji segment: furigana above, tappable kanji below.
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                seg.furigana!,
-                style: furiStyle,
-                textAlign: TextAlign.center,
-              ),
-              Text.rich(
-                TextSpan(
-                  children: _buildCharSpans(seg.text, exprStyle, kanjiStyle),
-                  style: exprStyle,
+      children: _segmentCache
+          .map((segment) {
+            if (segment.furigana != null) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    segment.furigana!,
+                    style: furiStyle,
+                    textAlign: TextAlign.center,
+                  ),
+                  Text.rich(
+                    TextSpan(
+                      children: _buildCharSpans(
+                        segment.glyphs,
+                        exprStyle,
+                        kanjiStyle,
+                      ),
+                      style: exprStyle,
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return Text.rich(
+              TextSpan(
+                children: _buildCharSpans(
+                  segment.glyphs,
+                  exprStyle,
+                  kanjiStyle,
                 ),
+                style: exprStyle,
               ),
-            ],
-          );
-        }
-        // Kana segment: plain text with tappable kanji detection
-        // (rare, but handles edge cases like 々).
-        return Text.rich(
-          TextSpan(
-            children: _buildCharSpans(seg.text, exprStyle, kanjiStyle),
-            style: exprStyle,
-          ),
-        );
-      }).toList(),
+            );
+          })
+          .toList(growable: false),
     );
   }
+}
+
+class _ExpressionSegmentCache {
+  const _ExpressionSegmentCache({
+    required this.text,
+    required this.furigana,
+    required this.glyphs,
+  });
+
+  final String text;
+  final String? furigana;
+  final List<_ExpressionGlyphCache> glyphs;
+}
+
+class _ExpressionGlyphCache {
+  const _ExpressionGlyphCache(this.char, {this.recognizer});
+
+  final String char;
+  final TapGestureRecognizer? recognizer;
 }

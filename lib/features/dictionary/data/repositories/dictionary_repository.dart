@@ -28,8 +28,8 @@ class DictionaryRepository {
 
   /// Insert a new dictionary and return its auto-generated id.
   /// Automatically assigns the next sort order (appends to end).
-  Future<int> insertDictionary(String name) async {
-    final nextOrder = await getNextSortOrder();
+  Future<int> insertDictionary(String name, {int? sortOrder}) async {
+    final nextOrder = sortOrder ?? await getNextSortOrder();
     return _db
         .into(_db.dictionaryMetas)
         .insert(
@@ -38,6 +38,10 @@ class DictionaryRepository {
             sortOrder: Value(nextOrder),
           ),
         );
+  }
+
+  Future<T> runInTransaction<T>(Future<T> Function() action) {
+    return _db.transaction(action);
   }
 
   /// Get the next available sort order value (max + 1).

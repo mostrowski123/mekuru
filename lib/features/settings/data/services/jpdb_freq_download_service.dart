@@ -40,15 +40,12 @@ class JpdbFreqDownloadService {
   }) async {
     onProgress?.call(0.0);
 
-    // Phase 1: Download ZIP
-    final zipBytes = await _downloadZip(
-      onProgress: (p) => onProgress?.call(p * 0.7),
-    );
-
-    // Phase 2: Write to temp file
     final tempDir = await getTemporaryDirectory();
     final tempFile = File(p.join(tempDir.path, 'jpdb_freq_download.zip'));
-    await tempFile.writeAsBytes(zipBytes);
+    await _downloadZipToFile(
+      tempFile.path,
+      onProgress: (p) => onProgress?.call(p * 0.7),
+    );
 
     try {
       // Phase 3: Import via standard importer
@@ -79,54 +76,82 @@ class JpdbFreqDownloadService {
     }
   }
 
-  /// Download the ZIP archive, returning raw bytes.
-  static Future<List<int>> _downloadZip({
+  /// Download the ZIP archive directly to disk.
+  static Future<void> _downloadZipToFile(
+    String destinationPath, {
     void Function(double progress)? onProgress,
+    String url = downloadUrl,
+    int redirectCount = 0,
   }) async {
+    if (redirectCount > 5) {
+      throw const HttpException(
+        'Too many redirects while downloading JPDB frequency dictionary',
+      );
+    }
+
     final client = HttpClient();
     try {
-      final uri = Uri.parse(downloadUrl);
+      final uri = Uri.parse(url);
       final request = await client.getUrl(uri);
       final response = await request.close();
 
       // Follow redirects manually if needed
-      if (response.statusCode == 301 || response.statusCode == 302) {
+      if (_isRedirectStatus(response.statusCode)) {
         final redirectUrl = response.headers.value('location');
         if (redirectUrl != null) {
-          final redirectRequest = await client.getUrl(Uri.parse(redirectUrl));
-          final redirectResponse = await redirectRequest.close();
-          return _readResponse(redirectResponse, onProgress: onProgress);
+          await response.drain<void>();
+          return _downloadZipToFile(
+            destinationPath,
+            onProgress: onProgress,
+            url: redirectUrl,
+            redirectCount: redirectCount + 1,
+          );
         }
       }
 
       if (response.statusCode != 200) {
+        await response.drain<void>();
         throw HttpException(
           'Failed to download JPDB frequency dictionary: HTTP ${response.statusCode}',
         );
       }
 
-      return _readResponse(response, onProgress: onProgress);
+      await _writeResponseToFile(
+        response,
+        destinationPath: destinationPath,
+        onProgress: onProgress,
+      );
     } finally {
       client.close();
     }
   }
 
-  static Future<List<int>> _readResponse(
+  static bool _isRedirectStatus(int statusCode) =>
+      statusCode == HttpStatus.movedPermanently ||
+      statusCode == HttpStatus.found ||
+      statusCode == HttpStatus.seeOther ||
+      statusCode == HttpStatus.temporaryRedirect ||
+      statusCode == HttpStatus.permanentRedirect;
+
+  static Future<void> _writeResponseToFile(
     HttpClientResponse response, {
+    required String destinationPath,
     void Function(double progress)? onProgress,
   }) async {
     final contentLength = response.contentLength;
-    final bytes = <int>[];
     var received = 0;
+    final sink = File(destinationPath).openWrite();
 
-    await for (final chunk in response) {
-      bytes.addAll(chunk);
-      received += chunk.length;
-      if (contentLength > 0) {
-        onProgress?.call(received / contentLength);
+    try {
+      await for (final chunk in response) {
+        sink.add(chunk);
+        received += chunk.length;
+        if (contentLength > 0) {
+          onProgress?.call(received / contentLength);
+        }
       }
+    } finally {
+      await sink.close();
     }
-
-    return bytes;
   }
 }

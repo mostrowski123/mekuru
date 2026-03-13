@@ -1146,6 +1146,55 @@ void main() {
       expect(results[0].dictionaryName, 'PitchDict');
       expect(results[1].dictionaryName, 'PitchDict B');
     });
+
+    test(
+      'batch lookup returns grouped results for multiple expressions',
+      () async {
+        final results = await pitchQueryService.searchPitchAccentsBatch([
+          '食べる',
+          '走る',
+        ]);
+
+        expect(results.keys, containsAll(['食べる', '走る']));
+        expect(results['食べる'], hasLength(1));
+        expect(results['走る'], hasLength(1));
+        expect(results['食べる']!.first.reading, 'たべる');
+        expect(results['走る']!.first.reading, 'はしる');
+      },
+    );
+
+    test(
+      'batch lookup preserves input expression order and enabled filtering',
+      () async {
+        final dictB = await pitchRepo.insertDictionary('PitchDict B');
+        await pitchRepo.batchInsertPitchAccents([
+          PitchAccentsCompanion.insert(
+            expression: '食べる',
+            reading: const Value('たべる'),
+            downstepPosition: 0,
+            dictionaryId: dictB,
+          ),
+        ]);
+
+        final results = await pitchQueryService.searchPitchAccentsBatch([
+          '走る',
+          '食べる',
+        ]);
+
+        expect(results.keys.toList(), ['走る', '食べる']);
+        expect(results['食べる'], hasLength(2));
+        expect(
+          results['食べる']!.map((result) => result.dictionaryName).toList(),
+          ['PitchDict', 'PitchDict B'],
+        );
+        expect(
+          results['食べる']!.every(
+            (result) => result.dictionaryName != 'DisabledPitch',
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 
   // ── getFrequencyRank ───────────────────────────────────────────

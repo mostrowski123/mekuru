@@ -33,7 +33,7 @@ class DictionarySearchScreenState
   late final TextEditingController _controller;
   late final FocusNode _searchFocusNode;
   Timer? _debounce;
-  List<DictionaryEntryWithSource>? _results;
+  List<_GroupedSearchResultData>? _groupedResults;
   bool _isSearching = false;
   String _lastQuery = '';
 
@@ -74,7 +74,7 @@ class DictionarySearchScreenState
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
       setState(() {
-        _results = null;
+        _groupedResults = null;
         _isSearching = false;
         _lastQuery = '';
       });
@@ -112,20 +112,25 @@ class DictionarySearchScreenState
             .toList();
       }
 
+      final groupedResults = await _buildGroupedResults(
+        results,
+        queryService: queryService,
+      );
+
       // Only update if this is still the latest query
       if (mounted && term == _lastQuery) {
         if (results.isNotEmpty) {
           ref.read(searchHistoryProvider.notifier).addSearch(term);
         }
         setState(() {
-          _results = results;
+          _groupedResults = groupedResults;
           _isSearching = false;
         });
       }
     } catch (e) {
       if (mounted && term == _lastQuery) {
         setState(() {
-          _results = [];
+          _groupedResults = const [];
           _isSearching = false;
         });
       }
@@ -138,6 +143,62 @@ class DictionarySearchScreenState
         builder: (_) => DictionarySearchScreen(initialQuery: word),
       ),
     );
+  }
+
+  Future<List<_GroupedSearchResultData>> _buildGroupedResults(
+    List<DictionaryEntryWithSource> results, {
+    required DictionaryQueryService queryService,
+  }) async {
+    if (results.isEmpty) return const [];
+
+    final groups = <(String, String), List<DictionaryEntryWithSource>>{};
+    final groupOrder = <(String, String)>[];
+    for (final result in results) {
+      final key = (result.entry.expression, result.entry.reading);
+      if (groups.containsKey(key)) {
+        groups[key]!.add(result);
+      } else {
+        groups[key] = [result];
+        groupOrder.add(key);
+      }
+    }
+
+    final pitchAccentsByExpression = await queryService.searchPitchAccentsBatch(
+      groupOrder.map((key) => key.$1),
+    );
+
+    return [
+      for (final key in groupOrder)
+        _GroupedSearchResultData(
+          entries: groups[key]!,
+          pitchAccents: _filterPitchAccentsForGroup(
+            groups[key]!.first.entry,
+            pitchAccentsByExpression[key.$1] ?? const [],
+          ),
+        ),
+    ];
+  }
+
+  List<PitchAccentResult> _filterPitchAccentsForGroup(
+    DictionaryEntry primaryEntry,
+    List<PitchAccentResult> allPitchAccents,
+  ) {
+    if (allPitchAccents.isEmpty) return const [];
+
+    final filtered = allPitchAccents.where((pitch) {
+      if (primaryEntry.reading.isNotEmpty &&
+          pitch.reading == primaryEntry.reading) {
+        return true;
+      }
+      if (pitch.reading == primaryEntry.expression) return true;
+      if (pitch.reading.isEmpty) return true;
+      return false;
+    });
+
+    final seen = <(String, int)>{};
+    return filtered
+        .where((pitch) => seen.add((pitch.reading, pitch.downstepPosition)))
+        .toList(growable: false);
   }
 
   @override
@@ -345,12 +406,12 @@ class DictionarySearchScreenState
       return _buildEmptySearchState(theme);
     }
 
-    if (_isSearching && _results == null) {
+    if (_isSearching && _groupedResults == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final results = _results;
-    if (results == null || results.isEmpty) {
+    final groupedResults = _groupedResults;
+    if (groupedResults == null || groupedResults.isEmpty) {
       if (_isSearching) {
         return const Center(child: CircularProgressIndicator());
       }
@@ -368,20 +429,6 @@ class DictionarySearchScreenState
     final query = _lastQuery;
     final isSingleKanji = query.length == 1 && _isCjk(query.codeUnitAt(0));
 
-    // Group results by (expression, reading) for unified display.
-    final groups = <(String, String), List<DictionaryEntryWithSource>>{};
-    final groupOrder = <(String, String)>[];
-    for (final r in results) {
-      final key = (r.entry.expression, r.entry.reading);
-      if (groups.containsKey(key)) {
-        groups[key]!.add(r);
-      } else {
-        groups[key] = [r];
-        groupOrder.add(key);
-      }
-    }
-    final groupedResults = [for (final key in groupOrder) groups[key]!];
-
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: groupedResults.length + (isSingleKanji ? 1 : 0),
@@ -396,12 +443,13 @@ class DictionarySearchScreenState
         }
         final resultIndex = isSingleKanji ? index - 1 : index;
         final group = groupedResults[resultIndex];
-        return _GroupedSearchResultWithPitchAccents(
+        return GroupedDictionaryEntryCard(
           key: ValueKey((
-            group.first.entry.expression,
-            group.first.entry.reading,
+            group.entries.first.entry.expression,
+            group.entries.first.entry.reading,
           )),
-          entries: group,
+          entries: group.entries,
+          pitchAccents: group.pitchAccents,
           fontSize: fontSize,
           onWordTap: _navigateToWord,
         );
@@ -522,94 +570,12 @@ bool _isCjk(int codeUnit) {
       (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
 }
 
-/// Thin wrapper that fetches pitch accents for a grouped result and
-/// delegates to [GroupedDictionaryEntryCard].
-class _GroupedSearchResultWithPitchAccents extends ConsumerStatefulWidget {
-  const _GroupedSearchResultWithPitchAccents({
-    super.key,
+class _GroupedSearchResultData {
+  const _GroupedSearchResultData({
     required this.entries,
-    required this.fontSize,
-    required this.onWordTap,
+    required this.pitchAccents,
   });
 
   final List<DictionaryEntryWithSource> entries;
-  final double fontSize;
-  final void Function(String word) onWordTap;
-
-  @override
-  ConsumerState<_GroupedSearchResultWithPitchAccents> createState() =>
-      _GroupedSearchResultWithPitchAccentsState();
-}
-
-class _GroupedSearchResultWithPitchAccentsState
-    extends ConsumerState<_GroupedSearchResultWithPitchAccents> {
-  late Future<List<PitchAccentResult>> _pitchAccentsFuture;
-
-  DictionaryEntry get _primaryEntry => widget.entries.first.entry;
-
-  void _refreshPitchAccentsFuture() {
-    _pitchAccentsFuture = ref
-        .read(dictionaryQueryServiceProvider)
-        .searchPitchAccents(_primaryEntry.expression);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshPitchAccentsFuture();
-  }
-
-  @override
-  void didUpdateWidget(
-    covariant _GroupedSearchResultWithPitchAccents oldWidget,
-  ) {
-    super.didUpdateWidget(oldWidget);
-
-    final oldEntry = oldWidget.entries.first.entry;
-    final entryChanged =
-        oldEntry.expression != _primaryEntry.expression ||
-        oldEntry.reading != _primaryEntry.reading;
-    if (entryChanged) {
-      _refreshPitchAccentsFuture();
-    }
-  }
-
-  /// Filter pitch accents to match this group's reading or expression,
-  /// then deduplicate by (reading, downstepPosition).
-  List<PitchAccentResult> _filterPitchAccents(
-    List<PitchAccentResult> allPitchAccents,
-  ) {
-    if (allPitchAccents.isEmpty) return [];
-
-    final filtered = allPitchAccents.where((p) {
-      if (_primaryEntry.reading.isNotEmpty &&
-          p.reading == _primaryEntry.reading) {
-        return true;
-      }
-      if (p.reading == _primaryEntry.expression) return true;
-      if (p.reading.isEmpty) return true;
-      return false;
-    });
-
-    final seen = <(String, int)>{};
-    return filtered
-        .where((p) => seen.add((p.reading, p.downstepPosition)))
-        .toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<PitchAccentResult>>(
-      future: _pitchAccentsFuture,
-      builder: (context, snapshot) {
-        final filtered = _filterPitchAccents(snapshot.data ?? []);
-        return GroupedDictionaryEntryCard(
-          entries: widget.entries,
-          pitchAccents: filtered,
-          fontSize: widget.fontSize,
-          onWordTap: widget.onWordTap,
-        );
-      },
-    );
-  }
+  final List<PitchAccentResult> pitchAccents;
 }

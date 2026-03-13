@@ -28,13 +28,15 @@ class VocabularyRepository {
 
   /// Check if a word is already saved (by expression and reading).
   Future<bool> isWordSaved(String expression, String reading) async {
-    final count =
-        await (_db.select(_db.savedWords)..where(
-              (t) =>
-                  t.expression.equals(expression) & t.reading.equals(reading),
-            ))
-            .get();
-    return count.isNotEmpty;
+    final query = _db.selectOnly(_db.savedWords)
+      ..addColumns([_db.savedWords.id])
+      ..where(
+        (_db.savedWords.expression.equals(expression) &
+            _db.savedWords.reading.equals(reading)),
+      )
+      ..limit(1);
+
+    return await query.getSingleOrNull() != null;
   }
 
   // ──────────────── CRUD ────────────────

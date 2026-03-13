@@ -10,21 +10,6 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
 
-/// Result of parsing Yomitan term bank files inside an isolate.
-class YomitanParseResult {
-  final String dictionaryName;
-  final List<DictionaryEntriesCompanion> entries;
-  final List<PitchAccentsCompanion> pitchAccents;
-  final List<FrequenciesCompanion> frequencies;
-
-  YomitanParseResult({
-    required this.dictionaryName,
-    required this.entries,
-    this.pitchAccents = const [],
-    this.frequencies = const [],
-  });
-}
-
 /// Summary of a collection import operation.
 class CollectionImportResult {
   final List<String> importedDictionaries;
@@ -42,18 +27,12 @@ class CollectionImportResult {
   });
 }
 
-/// Data passed into the isolate for parsing.
-class _IsolatePayload {
-  final Uint8List zipBytes;
-
-  _IsolatePayload(this.zipBytes);
-}
-
 // Isolate message protocol for collection parsing.
 // We use simple types (String, List, Map) that can cross isolate boundaries.
 //
 // Messages from worker → main:
-//   ['batch', List<Map<String, String>>]        — a batch of parsed terms
+//   ['meta', Map<String, Object?>]              — dictionary metadata
+//   ['batch', List<Map<String, dynamic>>]       — a batch of parsed entries
 //   ['pitch_batch', List<Map<String, dynamic>>]  — a batch of parsed pitch accents
 //   ['freq_batch', List<Map<String, dynamic>>]   — a batch of parsed frequencies
 //   ['done']                                    — parsing complete
@@ -137,59 +116,157 @@ class DictionaryImporter {
     String filePath, {
     void Function(int processed, int total)? onProgress,
   }) async {
-    // Read the file bytes
     final file = File(filePath);
     if (!await file.exists()) {
       throw FileSystemException('Dictionary file not found', filePath);
     }
-    final zipBytes = await file.readAsBytes();
+    final receivePort = ReceivePort();
+    final isolate = await Isolate.spawn(_streamParseZip, [
+      receivePort.sendPort,
+      filePath,
+    ]);
 
-    // Parse in isolate to avoid UI freeze
-    final parseResult = await Isolate.run(
-      () => _parseZipInIsolate(_IsolatePayload(zipBytes)),
-    );
+    try {
+      return await _repository.runInTransaction(() async {
+        int? dictionaryId;
+        int totalEntries = 0;
+        int insertedEntries = 0;
 
-    // Insert dictionary metadata
-    final dictionaryId = await _repository.insertDictionary(
-      parseResult.dictionaryName,
-    );
+        await for (final message in receivePort) {
+          final msg = message as List;
+          final type = msg[0] as String;
 
-    // Assign the dictionaryId to all entries
-    final entriesWithId = parseResult.entries.map((entry) {
-      return entry.copyWith(dictionaryId: Value(dictionaryId));
-    }).toList();
+          if (type == 'meta') {
+            final meta = Map<String, Object?>.from(msg[1] as Map);
+            final dictionaryName =
+                meta['dictionaryName'] as String? ?? 'Unknown Dictionary';
+            totalEntries = meta['totalEntries'] as int? ?? 0;
+            dictionaryId = await _repository.insertDictionary(dictionaryName);
+            continue;
+          }
 
-    // Batch insert entries with progress reporting
-    int totalInserted = 0;
-    const batchSize = 10000;
-    for (var i = 0; i < entriesWithId.length; i += batchSize) {
-      final end = (i + batchSize < entriesWithId.length)
-          ? i + batchSize
-          : entriesWithId.length;
-      final batch = entriesWithId.sublist(i, end);
+          if (type == 'batch') {
+            if (dictionaryId == null) {
+              throw const FormatException(
+                'ZIP import stream did not provide dictionary metadata',
+              );
+            }
+            final resolvedDictionaryId = dictionaryId;
 
-      await _repository.batchInsertEntries(batch, batchSize: batch.length);
-      totalInserted += batch.length;
-      onProgress?.call(totalInserted, entriesWithId.length);
+            final rawEntries = (msg[1] as List)
+                .cast<Map>()
+                .map((entry) => Map<String, dynamic>.from(entry))
+                .toList(growable: false);
+            final batch = rawEntries
+                .map((raw) {
+                  return DictionaryEntriesCompanion.insert(
+                    expression: raw['expression'] as String,
+                    reading: Value(raw['reading'] as String? ?? ''),
+                    entryKind: Value(
+                      raw['entryKind'] as String? ??
+                          DictionaryEntryKinds.regular,
+                    ),
+                    kanjiOnyomi: Value(raw['kanjiOnyomi'] as String? ?? ''),
+                    kanjiKunyomi: Value(raw['kanjiKunyomi'] as String? ?? ''),
+                    definitionTags: Value(
+                      raw['definitionTags'] as String? ?? '',
+                    ),
+                    rules: Value(raw['rules'] as String? ?? ''),
+                    termTags: Value(raw['termTags'] as String? ?? ''),
+                    glossaries: raw['glossaries'] as String,
+                    dictionaryId: resolvedDictionaryId,
+                  );
+                })
+                .toList(growable: false);
+
+            await _repository.batchInsertEntries(
+              batch,
+              batchSize: batch.length,
+            );
+            insertedEntries += batch.length;
+            onProgress?.call(insertedEntries, totalEntries);
+            continue;
+          }
+
+          if (type == 'pitch_batch') {
+            if (dictionaryId == null) {
+              throw const FormatException(
+                'ZIP import stream did not provide dictionary metadata',
+              );
+            }
+            final resolvedDictionaryId = dictionaryId;
+
+            final rawPitchEntries = (msg[1] as List)
+                .cast<Map>()
+                .map((entry) => Map<String, dynamic>.from(entry))
+                .toList(growable: false);
+            final batch = rawPitchEntries
+                .map((raw) {
+                  return PitchAccentsCompanion.insert(
+                    expression: raw['expression'] as String,
+                    reading: Value(raw['reading'] as String? ?? ''),
+                    downstepPosition: raw['position'] as int,
+                    dictionaryId: resolvedDictionaryId,
+                  );
+                })
+                .toList(growable: false);
+
+            await _repository.batchInsertPitchAccents(
+              batch,
+              batchSize: batch.length,
+            );
+            continue;
+          }
+
+          if (type == 'freq_batch') {
+            if (dictionaryId == null) {
+              throw const FormatException(
+                'ZIP import stream did not provide dictionary metadata',
+              );
+            }
+            final resolvedDictionaryId = dictionaryId;
+
+            final rawFrequencyEntries = (msg[1] as List)
+                .cast<Map>()
+                .map((entry) => Map<String, dynamic>.from(entry))
+                .toList(growable: false);
+            final batch = rawFrequencyEntries
+                .map((raw) {
+                  return FrequenciesCompanion.insert(
+                    expression: raw['expression'] as String,
+                    reading: Value(raw['reading'] as String? ?? ''),
+                    frequencyRank: raw['rank'] as int,
+                    dictionaryId: resolvedDictionaryId,
+                  );
+                })
+                .toList(growable: false);
+
+            await _repository.batchInsertFrequencies(
+              batch,
+              batchSize: batch.length,
+            );
+            continue;
+          }
+
+          if (type == 'done') {
+            break;
+          }
+
+          if (type == 'error') {
+            throw FormatException(msg[1] as String);
+          }
+        }
+
+        if (dictionaryId == null) {
+          throw const FormatException('ZIP import stream produced no metadata');
+        }
+
+        return insertedEntries;
+      });
+    } finally {
+      receivePort.close();
+      isolate.kill(priority: Isolate.immediate);
     }
-
-    // Insert pitch accents if present
-    if (parseResult.pitchAccents.isNotEmpty) {
-      final pitchWithId = parseResult.pitchAccents.map((p) {
-        return p.copyWith(dictionaryId: Value(dictionaryId));
-      }).toList();
-      await _repository.batchInsertPitchAccents(pitchWithId);
-    }
-
-    // Insert frequencies if present
-    if (parseResult.frequencies.isNotEmpty) {
-      final freqWithId = parseResult.frequencies.map((f) {
-        return f.copyWith(dictionaryId: Value(dictionaryId));
-      }).toList();
-      await _repository.batchInsertFrequencies(freqWithId);
-    }
-
-    return totalInserted;
   }
 
   /// Import a Yomitan dictionary collection from a Dexie JSON export.
@@ -287,6 +364,16 @@ class DictionaryImporter {
     int totalEntriesImported = 0;
     int totalPitchAccentsImported = 0;
     int totalFrequenciesImported = 0;
+    final existingDictionaries = await _repository.getAllDictionaries();
+    final existingNames = existingDictionaries
+        .map((dictionary) => dictionary.name)
+        .toSet();
+    var nextSortOrder = existingDictionaries.fold<int>(
+      0,
+      (maxOrder, dictionary) => dictionary.sortOrder >= maxOrder
+          ? dictionary.sortOrder + 1
+          : maxOrder,
+    );
 
     for (var i = 0; i < allDictNames.length; i++) {
       final dictName = allDictNames[i];
@@ -295,8 +382,7 @@ class DictionaryImporter {
       final rawFreqEntries = freqEntriesByDict[dictName] ?? [];
 
       // Check if dictionary already exists
-      final existing = await _repository.getDictionaryByName(dictName);
-      if (existing != null) {
+      if (existingNames.contains(dictName)) {
         skippedDicts.add(dictName);
         onDictionarySkipped?.call(dictName);
         continue;
@@ -306,52 +392,57 @@ class DictionaryImporter {
           rawEntries.length + rawPitchEntries.length + rawFreqEntries.length;
       onDictionaryStart?.call(dictName, totalItems, i, allDictNames.length);
 
-      // Insert dictionary metadata
-      final dictionaryId = await _repository.insertDictionary(dictName);
-
-      // Convert to DictionaryEntriesCompanion and batch insert
       int inserted = 0;
+      int pitchInserted = 0;
+      int freqInserted = 0;
       const batchSize = 10000;
-      for (var j = 0; j < rawEntries.length; j += batchSize) {
-        final end = (j + batchSize < rawEntries.length)
-            ? j + batchSize
-            : rawEntries.length;
+      await _repository.runInTransaction(() async {
+        final dictionaryId = await _repository.insertDictionary(
+          dictName,
+          sortOrder: nextSortOrder++,
+        );
 
-        final batch = rawEntries.sublist(j, end).map((raw) {
-          return DictionaryEntriesCompanion.insert(
-            expression: raw['expression']!,
-            reading: Value(raw['reading'] ?? ''),
-            definitionTags: Value(raw['definitionTags'] ?? ''),
-            rules: Value(raw['rules'] ?? ''),
-            termTags: Value(raw['termTags'] ?? ''),
-            glossaries: raw['glossaries']!,
-            dictionaryId: dictionaryId,
-          );
-        }).toList();
+        for (var j = 0; j < rawEntries.length; j += batchSize) {
+          final end = (j + batchSize < rawEntries.length)
+              ? j + batchSize
+              : rawEntries.length;
 
-        await _repository.batchInsertEntries(batch, batchSize: batch.length);
-        inserted += batch.length;
-        onProgress?.call(inserted, totalItems);
-      }
+          final batch = rawEntries
+              .sublist(j, end)
+              .map((raw) {
+                return DictionaryEntriesCompanion.insert(
+                  expression: raw['expression']!,
+                  reading: Value(raw['reading'] ?? ''),
+                  definitionTags: Value(raw['definitionTags'] ?? ''),
+                  rules: Value(raw['rules'] ?? ''),
+                  termTags: Value(raw['termTags'] ?? ''),
+                  glossaries: raw['glossaries']!,
+                  dictionaryId: dictionaryId,
+                );
+              })
+              .toList(growable: false);
 
-      totalEntriesImported += inserted;
+          await _repository.batchInsertEntries(batch, batchSize: batch.length);
+          inserted += batch.length;
+          onProgress?.call(inserted, totalItems);
+        }
 
-      // Insert pitch accents
-      if (rawPitchEntries.isNotEmpty) {
-        int pitchInserted = 0;
         for (var j = 0; j < rawPitchEntries.length; j += batchSize) {
           final end = (j + batchSize < rawPitchEntries.length)
               ? j + batchSize
               : rawPitchEntries.length;
 
-          final batch = rawPitchEntries.sublist(j, end).map((raw) {
-            return PitchAccentsCompanion.insert(
-              expression: raw['expression'] as String,
-              reading: Value(raw['reading'] as String? ?? ''),
-              downstepPosition: raw['position'] as int,
-              dictionaryId: dictionaryId,
-            );
-          }).toList();
+          final batch = rawPitchEntries
+              .sublist(j, end)
+              .map((raw) {
+                return PitchAccentsCompanion.insert(
+                  expression: raw['expression'] as String,
+                  reading: Value(raw['reading'] as String? ?? ''),
+                  downstepPosition: raw['position'] as int,
+                  dictionaryId: dictionaryId,
+                );
+              })
+              .toList(growable: false);
 
           await _repository.batchInsertPitchAccents(
             batch,
@@ -360,26 +451,23 @@ class DictionaryImporter {
           pitchInserted += batch.length;
           onProgress?.call(inserted + pitchInserted, totalItems);
         }
-        totalPitchAccentsImported += pitchInserted;
-      }
 
-      // Insert frequencies
-      int totalFreqInserted = 0;
-      if (rawFreqEntries.isNotEmpty) {
-        int freqInserted = 0;
         for (var j = 0; j < rawFreqEntries.length; j += batchSize) {
           final end = (j + batchSize < rawFreqEntries.length)
               ? j + batchSize
               : rawFreqEntries.length;
 
-          final batch = rawFreqEntries.sublist(j, end).map((raw) {
-            return FrequenciesCompanion.insert(
-              expression: raw['expression'] as String,
-              reading: Value(raw['reading'] as String? ?? ''),
-              frequencyRank: raw['rank'] as int,
-              dictionaryId: dictionaryId,
-            );
-          }).toList();
+          final batch = rawFreqEntries
+              .sublist(j, end)
+              .map((raw) {
+                return FrequenciesCompanion.insert(
+                  expression: raw['expression'] as String,
+                  reading: Value(raw['reading'] as String? ?? ''),
+                  frequencyRank: raw['rank'] as int,
+                  dictionaryId: dictionaryId,
+                );
+              })
+              .toList(growable: false);
 
           await _repository.batchInsertFrequencies(
             batch,
@@ -387,17 +475,17 @@ class DictionaryImporter {
           );
           freqInserted += batch.length;
           onProgress?.call(
-            inserted +
-                (rawPitchEntries.isEmpty ? 0 : rawPitchEntries.length) +
-                freqInserted,
+            inserted + rawPitchEntries.length + freqInserted,
             totalItems,
           );
         }
-        totalFreqInserted += freqInserted;
-      }
+      });
 
+      existingNames.add(dictName);
       importedDicts.add(dictName);
-      totalFrequenciesImported += totalFreqInserted;
+      totalEntriesImported += inserted;
+      totalPitchAccentsImported += pitchInserted;
+      totalFrequenciesImported += freqInserted;
     }
 
     return CollectionImportResult(
@@ -967,196 +1055,257 @@ class DictionaryImporter {
     }
   }
 
-  /// Parse a Yomitan zip file on an isolate.
-  static YomitanParseResult _parseZipInIsolate(_IsolatePayload payload) {
-    final archive = ZipDecoder().decodeBytes(payload.zipBytes);
+  /// Parse a Yomitan zip file on a worker isolate and stream simple batches
+  /// back to the main isolate to keep peak memory bounded.
+  static Future<void> _streamParseZip(List args) async {
+    final sendPort = args[0] as SendPort;
+    final filePath = args[1] as String;
+    InputFileStream? input;
 
-    // 1. Parse index.json for dictionary name
-    String dictionaryName = 'Unknown Dictionary';
-    final indexFile = archive.findFile('index.json');
-    if (indexFile != null) {
-      final indexContent = utf8.decode(indexFile.content as List<int>);
-      final indexJson = jsonDecode(indexContent) as Map<String, dynamic>;
-      dictionaryName = (indexJson['title'] as String?) ?? 'Unknown Dictionary';
-    }
+    try {
+      input = InputFileStream(filePath);
+      final archive = ZipDecoder().decodeStream(input);
 
-    // 2. Parse all term_bank_*.json files
-    final entries = <DictionaryEntriesCompanion>[];
+      final dictionaryName = _readZipDictionaryName(archive);
+      final termBankFiles = archive.files
+          .where(
+            (file) =>
+                file.name.startsWith('term_bank_') &&
+                file.name.endsWith('.json'),
+          )
+          .toList(growable: false);
+      final kanjiBankFiles = archive.files
+          .where(
+            (file) =>
+                file.name.startsWith('kanji_bank_') &&
+                file.name.endsWith('.json'),
+          )
+          .toList(growable: false);
+      final metaBankFiles = archive.files
+          .where(
+            (file) =>
+                file.name.startsWith('term_meta_bank_') &&
+                file.name.endsWith('.json'),
+          )
+          .toList(growable: false);
 
-    final termBankFiles = archive.files
-        .where(
-          (f) => f.name.startsWith('term_bank_') && f.name.endsWith('.json'),
-        )
-        .toList();
+      final totalEntries =
+          _countParsedZipEntries(termBankFiles, _parseZipTermRow) +
+          _countParsedZipEntries(kanjiBankFiles, _parseZipKanjiRow);
+      sendPort.send([
+        'meta',
+        {'dictionaryName': dictionaryName, 'totalEntries': totalEntries},
+      ]);
 
-    for (final termBank in termBankFiles) {
-      final content = utf8.decode(termBank.content as List<int>);
-      final termArray = jsonDecode(content) as List<dynamic>;
+      const batchSize = 5000;
+      final entryBatch = <Map<String, dynamic>>[];
+      for (final termBank in termBankFiles) {
+        for (final row in _decodeZipListFile(termBank)) {
+          final parsed = _parseZipTermRow(row);
+          if (parsed == null) continue;
+          entryBatch.add(parsed);
+          if (entryBatch.length >= batchSize) {
+            sendPort.send(['batch', List<Map<String, dynamic>>.of(entryBatch)]);
+            entryBatch.clear();
+          }
+        }
+      }
 
-      for (final term in termArray) {
-        if (term is! List || term.length < 6) continue;
+      for (final kanjiBank in kanjiBankFiles) {
+        for (final row in _decodeZipListFile(kanjiBank)) {
+          final parsed = _parseZipKanjiRow(row);
+          if (parsed == null) continue;
+          entryBatch.add(parsed);
+          if (entryBatch.length >= batchSize) {
+            sendPort.send(['batch', List<Map<String, dynamic>>.of(entryBatch)]);
+            entryBatch.clear();
+          }
+        }
+      }
+      if (entryBatch.isNotEmpty) {
+        sendPort.send(['batch', List<Map<String, dynamic>>.of(entryBatch)]);
+      }
 
-        final expression = term[0]?.toString() ?? '';
-        final reading = term[1]?.toString() ?? '';
-        final definitionTags = _stringifyTagValue(
-          term.length > 2 ? term[2] : null,
-        );
-        final rules = _stringifyTagValue(term.length > 3 ? term[3] : null);
-        final termTags = _stringifyTagValue(term.length > 7 ? term[7] : null);
+      final pitchBatch = <Map<String, dynamic>>[];
+      final freqBatch = <Map<String, dynamic>>[];
+      for (final metaBank in metaBankFiles) {
+        for (final row in _decodeZipListFile(metaBank)) {
+          if (row is! List || row.length < 3) continue;
 
-        final rawGlossary = term[5];
-        final glossaryList = <String>[];
-        if (rawGlossary is List) {
-          for (final item in rawGlossary) {
-            if (item is String) {
-              glossaryList.add(item);
-            } else if (item is Map) {
-              glossaryList.add(jsonEncode(item));
-            } else {
-              glossaryList.add(item.toString());
+          final expression = row[0]?.toString() ?? '';
+          final mode = row[1]?.toString() ?? '';
+          if (expression.isEmpty) continue;
+
+          if (mode == 'pitch') {
+            final data = row[2];
+            if (data is! Map) continue;
+            final reading = data['reading']?.toString() ?? '';
+            final pitches = data['pitches'];
+            if (pitches is! List) continue;
+
+            for (final pitch in pitches) {
+              if (pitch is! Map || pitch['position'] is! int) continue;
+              pitchBatch.add({
+                'expression': expression,
+                'reading': reading,
+                'position': pitch['position'] as int,
+              });
+              if (pitchBatch.length >= batchSize) {
+                sendPort.send([
+                  'pitch_batch',
+                  List<Map<String, dynamic>>.of(pitchBatch),
+                ]);
+                pitchBatch.clear();
+              }
+            }
+          } else if (mode == 'freq') {
+            final parsed = _parseFrequencyData(row[2]);
+            if (parsed.rank == null) continue;
+            freqBatch.add({
+              'expression': expression,
+              'reading': parsed.reading,
+              'rank': parsed.rank,
+            });
+            if (freqBatch.length >= batchSize) {
+              sendPort.send([
+                'freq_batch',
+                List<Map<String, dynamic>>.of(freqBatch),
+              ]);
+              freqBatch.clear();
             }
           }
         }
-
-        if (expression.isEmpty) continue;
-
-        entries.add(
-          DictionaryEntriesCompanion.insert(
-            expression: expression,
-            reading: Value(reading),
-            definitionTags: Value(definitionTags),
-            rules: Value(rules),
-            termTags: Value(termTags),
-            glossaries: jsonEncode(glossaryList),
-            dictionaryId: 0, // Placeholder — will be replaced after insert
-          ),
-        );
       }
+
+      if (pitchBatch.isNotEmpty) {
+        sendPort.send([
+          'pitch_batch',
+          List<Map<String, dynamic>>.of(pitchBatch),
+        ]);
+      }
+      if (freqBatch.isNotEmpty) {
+        sendPort.send(['freq_batch', List<Map<String, dynamic>>.of(freqBatch)]);
+      }
+
+      sendPort.send(['done']);
+    } catch (e) {
+      sendPort.send(['error', e.toString()]);
+    } finally {
+      await input?.close();
     }
+  }
 
-    // 2b. Parse all kanji_bank_*.json files (e.g. KANJIDIC)
-    final kanjiBankFiles = archive.files
-        .where(
-          (f) => f.name.startsWith('kanji_bank_') && f.name.endsWith('.json'),
-        )
-        .toList();
+  static String _readZipDictionaryName(Archive archive) {
+    final indexFile = archive.findFile('index.json');
+    if (indexFile == null) return 'Unknown Dictionary';
 
-    for (final kanjiBank in kanjiBankFiles) {
-      final content = utf8.decode(kanjiBank.content as List<int>);
-      final kanjiArray = jsonDecode(content) as List<dynamic>;
+    final indexBytes = indexFile.readBytes();
+    if (indexBytes == null) return 'Unknown Dictionary';
 
-      for (final kanji in kanjiArray) {
-        if (kanji is! List || kanji.length < 5) continue;
+    final indexJson =
+        jsonDecode(utf8.decode(indexBytes)) as Map<String, dynamic>;
+    return (indexJson['title'] as String?) ?? 'Unknown Dictionary';
+  }
 
-        final character = kanji[0]?.toString() ?? '';
-        final onyomi = _stringifyKanjiReadingSource(kanji[1]);
-        final kunyomi = _stringifyKanjiReadingSource(kanji[2]);
-        // kanji[3] = tags (unused)
-        final meanings = kanji[4];
-
-        if (character.isEmpty) continue;
-
-        final onyomiReadings = _normalizeKanjiReadings(kanji[1]);
-        final kunyomiReadings = _normalizeKanjiReadings(kanji[2]);
-
-        // Combine onyomi and kunyomi as reading
-        final readingParts = <String>[
-          if (onyomi.isNotEmpty) onyomi,
-          if (kunyomi.isNotEmpty) kunyomi,
-        ];
-        final reading = readingParts.join(' ');
-
-        // Build glossary from meanings array
-        final glossaryList = <String>[];
-        if (meanings is List) {
-          for (final m in meanings) {
-            if (m is String && m.isNotEmpty) glossaryList.add(m);
-          }
+  static int _countParsedZipEntries(
+    List<ArchiveFile> files,
+    Map<String, dynamic>? Function(dynamic row) parser,
+  ) {
+    var count = 0;
+    for (final file in files) {
+      for (final row in _decodeZipListFile(file)) {
+        if (parser(row) != null) {
+          count++;
         }
-
-        entries.add(
-          DictionaryEntriesCompanion.insert(
-            expression: character,
-            reading: Value(reading),
-            entryKind: const Value(DictionaryEntryKinds.kanji),
-            kanjiOnyomi: Value(encodeKanjiReadings(onyomiReadings)),
-            kanjiKunyomi: Value(encodeKanjiReadings(kunyomiReadings)),
-            glossaries: jsonEncode(glossaryList),
-            dictionaryId: 0,
-          ),
-        );
       }
     }
+    return count;
+  }
 
-    // 3. Parse all term_meta_bank_*.json files for pitch accents and frequencies
-    final pitchAccents = <PitchAccentsCompanion>[];
-    final frequencies = <FrequenciesCompanion>[];
+  static List<dynamic> _decodeZipListFile(ArchiveFile file) {
+    final bytes = file.readBytes();
+    if (bytes == null) return const [];
 
-    final metaBankFiles = archive.files
-        .where(
-          (f) =>
-              f.name.startsWith('term_meta_bank_') && f.name.endsWith('.json'),
-        )
-        .toList();
+    final decoded = jsonDecode(utf8.decode(bytes));
+    if (decoded is List<dynamic>) {
+      return decoded;
+    }
+    return const [];
+  }
 
-    for (final metaBank in metaBankFiles) {
-      final content = utf8.decode(metaBank.content as List<int>);
-      final metaArray = jsonDecode(content) as List<dynamic>;
+  static Map<String, dynamic>? _parseZipTermRow(dynamic row) {
+    if (row is! List || row.length < 6) return null;
 
-      for (final meta in metaArray) {
-        if (meta is! List || meta.length < 3) continue;
+    final expression = row[0]?.toString() ?? '';
+    if (expression.isEmpty) return null;
 
-        final expression = meta[0]?.toString() ?? '';
-        final mode = meta[1]?.toString() ?? '';
-        if (expression.isEmpty) continue;
+    final reading = row[1]?.toString() ?? '';
+    final definitionTags = _stringifyTagValue(row.length > 2 ? row[2] : null);
+    final rules = _stringifyTagValue(row.length > 3 ? row[3] : null);
+    final termTags = _stringifyTagValue(row.length > 7 ? row[7] : null);
 
-        if (mode == 'pitch') {
-          final data = meta[2];
-          if (data is! Map) continue;
-
-          final reading = data['reading']?.toString() ?? '';
-          final pitches = data['pitches'];
-          if (pitches is! List) continue;
-
-          for (final pitch in pitches) {
-            if (pitch is! Map) continue;
-            final position = pitch['position'];
-            if (position is! int) continue;
-
-            pitchAccents.add(
-              PitchAccentsCompanion.insert(
-                expression: expression,
-                reading: Value(reading),
-                downstepPosition: position,
-                dictionaryId: 0,
-              ),
-            );
-          }
-        } else if (mode == 'freq') {
-          final data = meta[2];
-          final parsed = _parseFrequencyData(data);
-          final rank = parsed.rank;
-          final reading = parsed.reading;
-
-          if (rank != null) {
-            frequencies.add(
-              FrequenciesCompanion.insert(
-                expression: expression,
-                reading: Value(reading),
-                frequencyRank: rank,
-                dictionaryId: 0,
-              ),
-            );
-          }
+    final rawGlossary = row[5];
+    final glossaryList = <String>[];
+    if (rawGlossary is List) {
+      for (final item in rawGlossary) {
+        if (item is String) {
+          glossaryList.add(item);
+        } else if (item is Map) {
+          glossaryList.add(jsonEncode(item));
+        } else {
+          glossaryList.add(item.toString());
         }
       }
     }
 
-    return YomitanParseResult(
-      dictionaryName: dictionaryName,
-      entries: entries,
-      pitchAccents: pitchAccents,
-      frequencies: frequencies,
-    );
+    return {
+      'expression': expression,
+      'reading': reading,
+      'definitionTags': definitionTags,
+      'rules': rules,
+      'termTags': termTags,
+      'glossaries': jsonEncode(glossaryList),
+      'entryKind': DictionaryEntryKinds.regular,
+      'kanjiOnyomi': '',
+      'kanjiKunyomi': '',
+    };
+  }
+
+  static Map<String, dynamic>? _parseZipKanjiRow(dynamic row) {
+    if (row is! List || row.length < 5) return null;
+
+    final character = row[0]?.toString() ?? '';
+    if (character.isEmpty) return null;
+
+    final onyomi = _stringifyKanjiReadingSource(row[1]);
+    final kunyomi = _stringifyKanjiReadingSource(row[2]);
+    final onyomiReadings = _normalizeKanjiReadings(row[1]);
+    final kunyomiReadings = _normalizeKanjiReadings(row[2]);
+    final meanings = row[4];
+
+    final readingParts = <String>[
+      if (onyomi.isNotEmpty) onyomi,
+      if (kunyomi.isNotEmpty) kunyomi,
+    ];
+    final glossaryList = <String>[];
+    if (meanings is List) {
+      for (final meaning in meanings) {
+        if (meaning is String && meaning.isNotEmpty) {
+          glossaryList.add(meaning);
+        }
+      }
+    }
+
+    return {
+      'expression': character,
+      'reading': readingParts.join(' '),
+      'definitionTags': '',
+      'rules': '',
+      'termTags': '',
+      'glossaries': jsonEncode(glossaryList),
+      'entryKind': DictionaryEntryKinds.kanji,
+      'kanjiOnyomi': encodeKanjiReadings(onyomiReadings),
+      'kanjiKunyomi': encodeKanjiReadings(kunyomiReadings),
+    };
   }
 }

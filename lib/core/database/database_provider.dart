@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   };
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -125,6 +125,11 @@ class AppDatabase extends _$AppDatabase {
         );
         await migrator.addColumn(dictionaryEntries, dictionaryEntries.rules);
         await migrator.addColumn(dictionaryEntries, dictionaryEntries.termTags);
+      }
+      if (from < 16) {
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_pitch_expr_dictid ON pitch_accents (expression, dictionary_id)',
+        );
       }
     },
     beforeOpen: (details) async {

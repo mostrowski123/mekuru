@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:drift/drift.dart';
 import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -950,32 +952,64 @@ class DictionaryQueryService {
   /// Search pitch accents by expression.
   /// Only returns results from enabled dictionaries, ordered by dictionary sort order.
   Future<List<PitchAccentResult>> searchPitchAccents(String expression) async {
+    final results = await searchPitchAccentsBatch([expression]);
+    return results[expression] ?? const [];
+  }
+
+  /// Search pitch accents for multiple expressions in a single query.
+  ///
+  /// Only returns results from enabled dictionaries. Each expression's results
+  /// are ordered by dictionary sort order and grouped under that expression.
+  Future<Map<String, List<PitchAccentResult>>> searchPitchAccentsBatch(
+    Iterable<String> expressions,
+  ) async {
+    final uniqueExpressions = LinkedHashSet<String>.from(
+      expressions.where((expression) => expression.isNotEmpty),
+    );
+    if (uniqueExpressions.isEmpty) return const {};
+
     final cache = await _ensureMetasCached();
-    if (cache.enabledIds.isEmpty) return [];
+    if (cache.enabledIds.isEmpty) return const {};
+
+    final expressionOrder = <String, int>{};
+    var expressionIndex = 0;
+    for (final expression in uniqueExpressions) {
+      expressionOrder[expression] = expressionIndex++;
+    }
 
     final query = _db.select(_db.pitchAccents)
       ..where(
         (t) =>
-            t.expression.equals(expression) &
+            t.expression.isIn(uniqueExpressions.toList()) &
             t.dictionaryId.isIn(cache.enabledIds),
       );
 
     final rows = await query.get();
-
-    // Sort by dictionary sort order using the dictionaryId from each row.
     rows.sort((a, b) {
+      final expressionCompare = (expressionOrder[a.expression] ?? 0).compareTo(
+        expressionOrder[b.expression] ?? 0,
+      );
+      if (expressionCompare != 0) {
+        return expressionCompare;
+      }
+
       final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
       final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
       return orderA.compareTo(orderB);
     });
 
-    return rows.map((pitch) {
-      return PitchAccentResult(
-        reading: pitch.reading,
-        downstepPosition: pitch.downstepPosition,
-        dictionaryName: cache.names[pitch.dictionaryId] ?? '',
+    final results = <String, List<PitchAccentResult>>{};
+    for (final pitch in rows) {
+      (results[pitch.expression] ??= []).add(
+        PitchAccentResult(
+          reading: pitch.reading,
+          downstepPosition: pitch.downstepPosition,
+          dictionaryName: cache.names[pitch.dictionaryId] ?? '',
+        ),
       );
-    }).toList();
+    }
+
+    return results;
   }
 
   /// Fetch a broad set of candidates whose expression or reading starts with

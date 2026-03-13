@@ -37,7 +37,7 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
   _FakeDictionaryQueryService(super.db, {required this.resultsByTerm});
 
   final Map<String, List<DictionaryEntryWithSource>> resultsByTerm;
-  final List<String> pitchAccentQueries = [];
+  final List<List<String>> pitchAccentBatchQueries = [];
 
   @override
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
@@ -48,8 +48,16 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
 
   @override
   Future<List<PitchAccentResult>> searchPitchAccents(String term) async {
-    pitchAccentQueries.add(term);
     return const [];
+  }
+
+  @override
+  Future<Map<String, List<PitchAccentResult>>> searchPitchAccentsBatch(
+    Iterable<String> expressions,
+  ) async {
+    final batch = expressions.toList(growable: false);
+    pitchAccentBatchQueries.add(batch);
+    return {for (final expression in batch) expression: const []};
   }
 }
 
@@ -143,80 +151,91 @@ void main() {
     expect(find.text('Transitive verb'), findsOneWidget);
   });
 
-  testWidgets('refetches pitch accents when the visible result changes', (
-    tester,
-  ) async {
-    SharedPreferences.setMockInitialValues({});
-    final db = AppDatabase(NativeDatabase.memory());
-    addTearDown(db.close);
+  testWidgets(
+    'refetches batched pitch accents when the visible result changes',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
 
-    final service = _FakeDictionaryQueryService(
-      db,
-      resultsByTerm: {
-        '食べる': [
-          DictionaryEntryWithSource(
-            entry: _buildEntry(
-              id: 1,
-              expression: '食べる',
-              reading: 'たべる',
-              glossaries: '["to eat"]',
+      final service = _FakeDictionaryQueryService(
+        db,
+        resultsByTerm: {
+          '食べる': [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: 1,
+                expression: '食べる',
+                reading: 'たべる',
+                glossaries: '["to eat"]',
+              ),
+              dictionaryName: 'JMdict',
             ),
-            dictionaryName: 'JMdict',
-          ),
-        ],
-        '走る': [
-          DictionaryEntryWithSource(
-            entry: _buildEntry(
-              id: 2,
-              expression: '走る',
-              reading: 'はしる',
-              glossaries: '["to run"]',
+          ],
+          '走る': [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: 2,
+                expression: '走る',
+                reading: 'はしる',
+                glossaries: '["to run"]',
+              ),
+              dictionaryName: 'JMdict',
             ),
-            dictionaryName: 'JMdict',
-          ),
-        ],
-      },
-    );
+          ],
+        },
+      );
 
-    final dictionaries = [
-      DictionaryMeta(
-        id: 1,
-        name: 'JMdict',
-        isEnabled: true,
-        dateImported: DateTime(2026, 3, 12),
-        sortOrder: 0,
-        isHidden: false,
-      ),
-    ];
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          dictionaryQueryServiceProvider.overrideWithValue(service),
-          dictionariesProvider.overrideWith(
-            (ref) => Stream.value(dictionaries),
-          ),
-        ],
-        child: buildLocalizedTestApp(
-          home: const DictionarySearchScreen(initialQuery: '食べる'),
+      final dictionaries = [
+        DictionaryMeta(
+          id: 1,
+          name: 'JMdict',
+          isEnabled: true,
+          dateImported: DateTime(2026, 3, 12),
+          sortOrder: 0,
+          isHidden: false,
         ),
-      ),
-    );
+      ];
 
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(service),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value(dictionaries),
+            ),
+          ],
+          child: buildLocalizedTestApp(
+            home: const DictionarySearchScreen(initialQuery: '食べる'),
+          ),
+        ),
+      );
 
-    expect(find.text('to eat'), findsOneWidget);
-    expect(service.pitchAccentQueries, contains('食べる'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), '走る');
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pumpAndSettle();
+      expect(find.text('to eat'), findsOneWidget);
+      expect(
+        service.pitchAccentBatchQueries.any(
+          (batch) => batch.length == 1 && batch.first == '食べる',
+        ),
+        isTrue,
+      );
 
-    expect(find.text('to eat'), findsNothing);
-    expect(find.text('to run'), findsOneWidget);
-    expect(service.pitchAccentQueries, contains('走る'));
-  });
+      await tester.enterText(find.byType(TextField), '走る');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+
+      expect(find.text('to eat'), findsNothing);
+      expect(find.text('to run'), findsOneWidget);
+      expect(
+        service.pitchAccentBatchQueries.any(
+          (batch) => batch.length == 1 && batch.first == '走る',
+        ),
+        isTrue,
+      );
+    },
+  );
 }
