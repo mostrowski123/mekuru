@@ -1,13 +1,14 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/hit_testable_rich_text.dart';
 
 /// Renders definition text with Japanese words highlighted and tappable.
 ///
 /// Japanese character sequences are detected and segmented into individual
-/// words via MeCab (when available). Each word gets its own tap recognizer.
-/// Falls back to treating entire Japanese runs as single tappable units
-/// when MeCab is not initialized.
+/// words via MeCab (when available). Taps are resolved through a single
+/// hit-testable text widget instead of per-word recognizers.
+/// Falls back to treating entire Japanese runs as single tappable units when
+/// MeCab is not initialized.
 class TappableDefinitionText extends StatefulWidget {
   const TappableDefinitionText({
     super.key,
@@ -27,7 +28,6 @@ class TappableDefinitionText extends StatefulWidget {
 }
 
 class _TappableDefinitionTextState extends State<TappableDefinitionText> {
-  final List<TapGestureRecognizer> _recognizers = [];
   List<_DefinitionTextSegment> _segments = const [];
 
   // Matches runs of Japanese characters:
@@ -47,23 +47,9 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
   }
 
   @override
-  void dispose() {
-    _disposeRecognizers();
-    super.dispose();
-  }
-
-  void _disposeRecognizers() {
-    for (final r in _recognizers) {
-      r.dispose();
-    }
-    _recognizers.clear();
-  }
-
-  @override
   void didUpdateWidget(TappableDefinitionText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text) {
-      _disposeRecognizers();
       _rebuildSegments();
     }
   }
@@ -71,7 +57,6 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
   @override
   void reassemble() {
     super.reassemble();
-    _disposeRecognizers();
     _rebuildSegments();
   }
 
@@ -96,25 +81,16 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
         final reconstructed = tokens.join();
         if (reconstructed == japaneseText) {
           for (final token in tokens) {
-            final recognizer = TapGestureRecognizer()
-              ..onTap = () => widget.onWordTap(token);
-            _recognizers.add(recognizer);
-            segments.add(_DefinitionTextSegment(token, recognizer: recognizer));
+            segments.add(_DefinitionTextSegment(token, tapValue: token));
           }
         } else {
-          final recognizer = TapGestureRecognizer()
-            ..onTap = () => widget.onWordTap(japaneseText);
-          _recognizers.add(recognizer);
           segments.add(
-            _DefinitionTextSegment(japaneseText, recognizer: recognizer),
+            _DefinitionTextSegment(japaneseText, tapValue: japaneseText),
           );
         }
       } else {
-        final recognizer = TapGestureRecognizer()
-          ..onTap = () => widget.onWordTap(japaneseText);
-        _recognizers.add(recognizer);
         segments.add(
-          _DefinitionTextSegment(japaneseText, recognizer: recognizer),
+          _DefinitionTextSegment(japaneseText, tapValue: japaneseText),
         );
       }
 
@@ -145,32 +121,46 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
     }
 
     final hasTappableSegments = _segments.any(
-      (segment) => segment.recognizer != null,
+      (segment) => segment.tapValue != null,
     );
     if (!hasTappableSegments) {
       return Text(widget.text, style: baseStyle);
     }
 
-    return Text.rich(
-      TextSpan(
-        style: baseStyle,
-        children: _segments
-            .map((segment) {
-              return TextSpan(
-                text: segment.text,
-                style: segment.recognizer == null ? baseStyle : tapStyle,
-                recognizer: segment.recognizer,
-              );
-            })
-            .toList(growable: false),
-      ),
+    var offset = 0;
+    final targets = <TextTapTarget>[];
+    final children = _segments
+        .map((segment) {
+          final start = offset;
+          offset += segment.text.length;
+          if (segment.tapValue != null) {
+            targets.add(
+              TextTapTarget(
+                start: start,
+                end: offset,
+                value: segment.tapValue!,
+              ),
+            );
+          }
+
+          return TextSpan(
+            text: segment.text,
+            style: segment.tapValue == null ? baseStyle : tapStyle,
+          );
+        })
+        .toList(growable: false);
+
+    return HitTestableRichText(
+      text: TextSpan(style: baseStyle, children: children),
+      targets: targets,
+      onTapTarget: widget.onWordTap,
     );
   }
 }
 
 class _DefinitionTextSegment {
-  const _DefinitionTextSegment(this.text, {this.recognizer});
+  const _DefinitionTextSegment(this.text, {this.tapValue});
 
   final String text;
-  final TapGestureRecognizer? recognizer;
+  final String? tapValue;
 }

@@ -1,12 +1,13 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/hit_testable_rich_text.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 
 /// Displays a Japanese expression with furigana only above kanji, where each
 /// kanji character is individually tappable.
 ///
 /// Kana portions are rendered as plain text at the normal baseline. Kanji
-/// characters get tap recognizers and are styled to indicate tappability.
+/// characters are styled to indicate tappability, and a single gesture handler
+/// resolves which kanji was tapped.
 ///
 /// If [reading] is empty or matches [expression], only the expression is shown.
 class TappableExpressionText extends StatefulWidget {
@@ -30,9 +31,9 @@ class TappableExpressionText extends StatefulWidget {
 }
 
 class _TappableExpressionTextState extends State<TappableExpressionText> {
-  final List<TapGestureRecognizer> _recognizers = [];
   List<_ExpressionSegmentCache> _segmentCache = const [];
   bool _showFurigana = false;
+  List<_ExpressionTapTargetRect>? _furiganaTapTargetsCache;
 
   static bool _isKanji(int codeUnit) {
     return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||
@@ -46,24 +47,10 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
   }
 
   @override
-  void dispose() {
-    _disposeRecognizers();
-    super.dispose();
-  }
-
-  void _disposeRecognizers() {
-    for (final r in _recognizers) {
-      r.dispose();
-    }
-    _recognizers.clear();
-  }
-
-  @override
   void didUpdateWidget(TappableExpressionText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.expression != widget.expression ||
         oldWidget.reading != widget.reading) {
-      _disposeRecognizers();
       _rebuildSegmentCache();
     }
   }
@@ -71,7 +58,6 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
   @override
   void reassemble() {
     super.reassemble();
-    _disposeRecognizers();
     _rebuildSegmentCache();
   }
 
@@ -92,20 +78,17 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
           );
         })
         .toList(growable: false);
+
+    _furiganaTapTargetsCache = null;
   }
 
   List<_ExpressionGlyphCache> _buildGlyphCache(String text) {
     final glyphs = <_ExpressionGlyphCache>[];
     for (var i = 0; i < text.length; i++) {
       final char = text[i];
-      if (_isKanji(char.codeUnitAt(0))) {
-        final recognizer = TapGestureRecognizer()
-          ..onTap = () => widget.onKanjiTap(char);
-        _recognizers.add(recognizer);
-        glyphs.add(_ExpressionGlyphCache(char, recognizer: recognizer));
-      } else {
-        glyphs.add(_ExpressionGlyphCache(char));
-      }
+      glyphs.add(
+        _ExpressionGlyphCache(char, isTappable: _isKanji(char.codeUnitAt(0))),
+      );
     }
     return glyphs;
   }
@@ -119,11 +102,148 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
         .map((glyph) {
           return TextSpan(
             text: glyph.char,
-            style: glyph.recognizer == null ? baseStyle : kanjiStyle,
-            recognizer: glyph.recognizer,
+            style: glyph.isTappable ? kanjiStyle : baseStyle,
           );
         })
         .toList(growable: false);
+  }
+
+  List<TextTapTarget> _buildFlatTargets(List<_ExpressionGlyphCache> glyphs) {
+    final targets = <TextTapTarget>[];
+    for (var i = 0; i < glyphs.length; i++) {
+      final glyph = glyphs[i];
+      if (!glyph.isTappable) continue;
+      targets.add(TextTapTarget(start: i, end: i + 1, value: glyph.char));
+    }
+    return targets;
+  }
+
+  void _handleFuriganaTap(
+    Offset localPosition, {
+    required TextStyle? expressionStyle,
+    required TextStyle? kanjiStyle,
+    required TextStyle? furiganaStyle,
+  }) {
+    _furiganaTapTargetsCache ??= _buildFuriganaTapTargets(
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      expressionStyle: expressionStyle,
+      kanjiStyle: kanjiStyle,
+      furiganaStyle: furiganaStyle,
+    );
+
+    for (final target in _furiganaTapTargetsCache!) {
+      if (target.rect.inflate(4).contains(localPosition)) {
+        widget.onKanjiTap(target.char);
+        return;
+      }
+    }
+  }
+
+  List<_ExpressionTapTargetRect> _buildFuriganaTapTargets({
+    required TextDirection textDirection,
+    required TextScaler textScaler,
+    required TextStyle? expressionStyle,
+    required TextStyle? kanjiStyle,
+    required TextStyle? furiganaStyle,
+  }) {
+    final metrics = _segmentCache
+        .map(
+          (segment) => _measureExpressionSegment(
+            segment,
+            textDirection: textDirection,
+            textScaler: textScaler,
+            expressionStyle: expressionStyle,
+            kanjiStyle: kanjiStyle,
+            furiganaStyle: furiganaStyle,
+          ),
+        )
+        .toList(growable: false);
+
+    final rowHeight = metrics.fold<double>(
+      0,
+      (maxHeight, metric) =>
+          metric.height > maxHeight ? metric.height : maxHeight,
+    );
+
+    final targets = <_ExpressionTapTargetRect>[];
+    var dx = 0.0;
+    for (final metric in metrics) {
+      final baseX = dx + (metric.width - metric.baseSize.width) / 2;
+      final baseY = rowHeight - metric.baseSize.height;
+      for (final target in metric.targets) {
+        targets.add(
+          _ExpressionTapTargetRect(
+            char: target.char,
+            rect: target.rect.shift(Offset(baseX, baseY)),
+          ),
+        );
+      }
+      dx += metric.width;
+    }
+
+    return targets;
+  }
+
+  _MeasuredExpressionSegment _measureExpressionSegment(
+    _ExpressionSegmentCache segment, {
+    required TextDirection textDirection,
+    required TextScaler textScaler,
+    required TextStyle? expressionStyle,
+    required TextStyle? kanjiStyle,
+    required TextStyle? furiganaStyle,
+  }) {
+    final basePainter = TextPainter(
+      text: TextSpan(
+        children: _buildCharSpans(segment.glyphs, expressionStyle, kanjiStyle),
+        style: expressionStyle,
+      ),
+      textDirection: textDirection,
+      textScaler: textScaler,
+    )..layout();
+
+    TextPainter? furiganaPainter;
+    if (segment.furigana != null) {
+      furiganaPainter = TextPainter(
+        text: TextSpan(text: segment.furigana!, style: furiganaStyle),
+        textDirection: textDirection,
+        textScaler: textScaler,
+        textAlign: TextAlign.center,
+      )..layout();
+    }
+
+    final targets = <_ExpressionTapTargetRect>[];
+    for (var i = 0; i < segment.glyphs.length; i++) {
+      final glyph = segment.glyphs[i];
+      if (!glyph.isTappable) continue;
+      final boxes = basePainter.getBoxesForSelection(
+        TextSelection(baseOffset: i, extentOffset: i + 1),
+      );
+      for (final box in boxes) {
+        targets.add(
+          _ExpressionTapTargetRect(char: glyph.char, rect: box.toRect()),
+        );
+      }
+    }
+
+    final width = furiganaPainter == null
+        ? basePainter.width
+        : (furiganaPainter.width > basePainter.width
+              ? furiganaPainter.width
+              : basePainter.width);
+    final height = basePainter.height + (furiganaPainter?.height ?? 0);
+
+    final result = _MeasuredExpressionSegment(
+      width: width,
+      height: height,
+      baseSize: basePainter.size,
+      targets: targets,
+    );
+
+    basePainter.dispose();
+    furiganaPainter?.dispose();
+
+    return result;
   }
 
   @override
@@ -147,11 +267,14 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
       final glyphs = _segmentCache.isEmpty
           ? const <_ExpressionGlyphCache>[]
           : _segmentCache.first.glyphs;
-      return Text.rich(
-        TextSpan(
+
+      return HitTestableRichText(
+        text: TextSpan(
           children: _buildCharSpans(glyphs, exprStyle, kanjiStyle),
           style: exprStyle,
         ),
+        targets: _buildFlatTargets(glyphs),
+        onTapTarget: widget.onKanjiTap,
       );
     }
 
@@ -163,46 +286,55 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
           height: 1.0,
         );
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: _segmentCache
-          .map((segment) {
-            if (segment.furigana != null) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    segment.furigana!,
-                    style: furiStyle,
-                    textAlign: TextAlign.center,
-                  ),
-                  Text.rich(
-                    TextSpan(
-                      children: _buildCharSpans(
-                        segment.glyphs,
-                        exprStyle,
-                        kanjiStyle,
-                      ),
-                      style: exprStyle,
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTapUp: (details) => _handleFuriganaTap(
+        details.localPosition,
+        expressionStyle: exprStyle,
+        kanjiStyle: kanjiStyle,
+        furiganaStyle: furiStyle,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: _segmentCache
+            .map((segment) {
+              if (segment.furigana != null) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      segment.furigana!,
+                      style: furiStyle,
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                ],
-              );
-            }
+                    Text.rich(
+                      TextSpan(
+                        children: _buildCharSpans(
+                          segment.glyphs,
+                          exprStyle,
+                          kanjiStyle,
+                        ),
+                        style: exprStyle,
+                      ),
+                    ),
+                  ],
+                );
+              }
 
-            return Text.rich(
-              TextSpan(
-                children: _buildCharSpans(
-                  segment.glyphs,
-                  exprStyle,
-                  kanjiStyle,
+              return Text.rich(
+                TextSpan(
+                  children: _buildCharSpans(
+                    segment.glyphs,
+                    exprStyle,
+                    kanjiStyle,
+                  ),
+                  style: exprStyle,
                 ),
-                style: exprStyle,
-              ),
-            );
-          })
-          .toList(growable: false),
+              );
+            })
+            .toList(growable: false),
+      ),
     );
   }
 }
@@ -220,8 +352,29 @@ class _ExpressionSegmentCache {
 }
 
 class _ExpressionGlyphCache {
-  const _ExpressionGlyphCache(this.char, {this.recognizer});
+  const _ExpressionGlyphCache(this.char, {required this.isTappable});
 
   final String char;
-  final TapGestureRecognizer? recognizer;
+  final bool isTappable;
+}
+
+class _ExpressionTapTargetRect {
+  const _ExpressionTapTargetRect({required this.char, required this.rect});
+
+  final String char;
+  final Rect rect;
+}
+
+class _MeasuredExpressionSegment {
+  const _MeasuredExpressionSegment({
+    required this.width,
+    required this.height,
+    required this.baseSize,
+    required this.targets,
+  });
+
+  final double width;
+  final double height;
+  final Size baseSize;
+  final List<_ExpressionTapTargetRect> targets;
 }
