@@ -8,6 +8,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_query_servic
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
+import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_app.dart';
@@ -149,6 +150,117 @@ void main() {
 
     expect(find.text('Ichidan verb'), findsOneWidget);
     expect(find.text('Transitive verb'), findsOneWidget);
+  });
+
+  testWidgets('keeps each top-level word header sticky until the next word', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    final firstGroup = [
+      for (var i = 0; i < 18; i++)
+        DictionaryEntryWithSource(
+          entry: _buildEntry(
+            id: i + 1,
+            expression: '食べる',
+            reading: 'たべる',
+            glossaries: '["definition ${i + 1}"]',
+          ),
+          dictionaryName: 'JMdict',
+        ),
+    ];
+    final secondGroup = [
+      for (var i = 0; i < 20; i++)
+        DictionaryEntryWithSource(
+          entry: _buildEntry(
+            id: 200 + i,
+            expression: '走る',
+            reading: 'はしる',
+            glossaries: '["run definition ${i + 1}"]',
+          ),
+          dictionaryName: 'JMdict',
+        ),
+    ];
+
+    final service = _FakeDictionaryQueryService(
+      db,
+      resultsByTerm: {
+        'sticky': [...firstGroup, ...secondGroup],
+      },
+    );
+
+    final dictionaries = [
+      DictionaryMeta(
+        id: 1,
+        name: 'JMdict',
+        isEnabled: true,
+        dateImported: DateTime(2026, 3, 12),
+        sortOrder: 0,
+        isHidden: false,
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          dictionaryQueryServiceProvider.overrideWithValue(service),
+          dictionariesProvider.overrideWith(
+            (ref) => Stream.value(dictionaries),
+          ),
+        ],
+        child: buildLocalizedTestApp(
+          home: const DictionarySearchScreen(initialQuery: 'sticky'),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final resultsFinder = find.byType(CustomScrollView);
+    final firstHeaderFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is GroupedDictionaryEntryHeader &&
+          widget.entries.first.entry.expression == '食べる',
+    );
+    final secondHeaderFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is GroupedDictionaryEntryHeader &&
+          widget.entries.first.entry.expression == '走る',
+    );
+    final pinnedTop = tester.getTopLeft(firstHeaderFinder).dy;
+
+    await tester.drag(resultsFinder, const Offset(0, -500));
+    await tester.pumpAndSettle();
+
+    expect(firstHeaderFinder, findsOneWidget);
+    expect(tester.getTopLeft(firstHeaderFinder).dy, closeTo(pinnedTop, 1.0));
+
+    await tester.dragUntilVisible(
+      secondHeaderFinder,
+      resultsFinder,
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+
+    for (
+      var i = 0;
+      i < 10 && tester.getTopLeft(secondHeaderFinder).dy > pinnedTop + 1;
+      i++
+    ) {
+      await tester.drag(resultsFinder, const Offset(0, -80));
+      await tester.pumpAndSettle();
+    }
+
+    expect(secondHeaderFinder, findsOneWidget);
+    expect(tester.getTopLeft(secondHeaderFinder).dy, closeTo(pinnedTop, 1.0));
+    if (firstHeaderFinder.evaluate().isNotEmpty) {
+      expect(tester.getTopLeft(firstHeaderFinder).dy, lessThan(pinnedTop));
+    }
   });
 
   testWidgets(

@@ -428,33 +428,78 @@ class DictionarySearchScreenState
     final fontSize = ref.watch(lookupFontSizeProvider);
     final query = _lastQuery;
     final isSingleKanji = query.length == 1 && _isCjk(query.codeUnitAt(0));
-
-    return ListView.separated(
-      padding: const EdgeInsets.only(bottom: 16),
-      itemCount: groupedResults.length + (isSingleKanji ? 1 : 0),
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        // Show stroke order as the first item for single-kanji searches
-        if (isSingleKanji && index == 0) {
-          return Padding(
+    final slivers = <Widget>[
+      if (isSingleKanji) ...[
+        SliverToBoxAdapter(
+          child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Center(child: KanjiStrokeOrder(kanji: query)),
-          );
-        }
-        final resultIndex = isSingleKanji ? index - 1 : index;
-        final group = groupedResults[resultIndex];
-        return GroupedDictionaryEntryCard(
+          ),
+        ),
+        if (groupedResults.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(
+                height: 1,
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+              ),
+            ),
+          ),
+      ],
+      for (var index = 0; index < groupedResults.length; index++) ...[
+        SliverMainAxisGroup(
           key: ValueKey((
-            group.entries.first.entry.expression,
-            group.entries.first.entry.reading,
+            groupedResults[index].entries.first.entry.expression,
+            groupedResults[index].entries.first.entry.reading,
           )),
-          entries: group.entries,
-          pitchAccents: group.pitchAccents,
-          fontSize: fontSize,
-          onWordTap: _navigateToWord,
-        );
-      },
-    );
+          slivers: [
+            PinnedHeaderSliver(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.5,
+                      ),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+                child: GroupedDictionaryEntryHeader(
+                  entries: groupedResults[index].entries,
+                  pitchAccents: groupedResults[index].pitchAccents,
+                  fontSize: fontSize,
+                  onWordTap: _navigateToWord,
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: GroupedDictionaryEntryBody(
+                entries: groupedResults[index].entries,
+                pitchAccents: groupedResults[index].pitchAccents,
+                fontSize: fontSize,
+                onWordTap: _navigateToWord,
+              ),
+            ),
+          ],
+        ),
+        if (index < groupedResults.length - 1)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(
+                height: 1,
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+              ),
+            ),
+          ),
+      ],
+      const SliverToBoxAdapter(child: SizedBox(height: 16)),
+    ];
+
+    return CustomScrollView(slivers: slivers);
   }
 
   Widget _buildEmptySearchState(ThemeData theme) {

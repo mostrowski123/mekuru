@@ -29,7 +29,7 @@ import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 /// Multiple dictionaries' definitions are shown inside one card, each
 /// grouped under a subtle source label. This replaces rendering one
 /// [DictionaryEntryCard] per dictionary entry.
-class GroupedDictionaryEntryCard extends ConsumerStatefulWidget {
+class GroupedDictionaryEntryCard extends StatelessWidget {
   const GroupedDictionaryEntryCard({
     super.key,
     required this.entries,
@@ -56,28 +56,72 @@ class GroupedDictionaryEntryCard extends ConsumerStatefulWidget {
   final void Function(String word)? onWordTap;
 
   @override
-  ConsumerState<GroupedDictionaryEntryCard> createState() =>
-      _GroupedDictionaryEntryCardState();
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GroupedDictionaryEntryHeader(
+          entries: entries,
+          pitchAccents: pitchAccents,
+          fontSize: fontSize,
+          sentenceContext: sentenceContext,
+          onWordTap: onWordTap,
+        ),
+        GroupedDictionaryEntryBody(
+          entries: entries,
+          pitchAccents: pitchAccents,
+          fontSize: fontSize,
+          onWordTap: onWordTap,
+        ),
+      ],
+    );
+  }
 }
 
-class _GroupedDictionaryEntryCardState
-    extends ConsumerState<GroupedDictionaryEntryCard> {
+class GroupedDictionaryEntryHeader extends ConsumerStatefulWidget {
+  const GroupedDictionaryEntryHeader({
+    super.key,
+    required this.entries,
+    required this.pitchAccents,
+    this.fontSize = 16.0,
+    this.sentenceContext,
+    this.onWordTap,
+    this.padding = const EdgeInsets.fromLTRB(16, 14, 16, 10),
+  });
+
+  final List<DictionaryEntryWithSource> entries;
+  final List<PitchAccentResult> pitchAccents;
+  final double fontSize;
+  final String? sentenceContext;
+  final void Function(String word)? onWordTap;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  ConsumerState<GroupedDictionaryEntryHeader> createState() =>
+      _GroupedDictionaryEntryHeaderState();
+}
+
+class _GroupedDictionaryEntryHeaderState
+    extends ConsumerState<GroupedDictionaryEntryHeader> {
   bool _isSaved = false;
   bool _isInAnki = false;
   bool _isCheckingAnki = false;
   int _ankiLookupRequestId = 0;
   String? _lastAnkiLookupCacheKey;
   KanjiEntryDisplayData? _kanjiDisplayData;
-  List<_DefinitionSectionData> _definitionSections = const [];
 
   DictionaryEntryWithSource get _primaryResult => widget.entries.first;
   DictionaryEntry get _primaryEntry => _primaryResult.entry;
-  int? get _frequencyRank => widget.entries.first.frequencyRank;
+  int? get _frequencyRank => _primaryResult.frequencyRank;
 
   @override
   void initState() {
     super.initState();
-    _rebuildDerivedContent();
+    _kanjiDisplayData = parseKanjiEntryDisplayData(
+      entry: _primaryEntry,
+      dictionaryName: _primaryResult.dictionaryName,
+    );
     _checkIfSaved();
     _checkIfInAnki();
     ref.listenManual(ankidroidConfigProvider, (previous, next) {
@@ -86,16 +130,19 @@ class _GroupedDictionaryEntryCardState
   }
 
   @override
-  void didUpdateWidget(covariant GroupedDictionaryEntryCard oldWidget) {
+  void didUpdateWidget(covariant GroupedDictionaryEntryHeader oldWidget) {
     super.didUpdateWidget(oldWidget);
-
-    if (_didEntriesChange(oldWidget.entries, widget.entries)) {
-      _rebuildDerivedContent();
-    }
 
     final entryChanged =
         oldWidget.entries.first.entry.expression != _primaryEntry.expression ||
         oldWidget.entries.first.entry.reading != _primaryEntry.reading;
+
+    if (_didEntriesChange(oldWidget.entries, widget.entries)) {
+      _kanjiDisplayData = parseKanjiEntryDisplayData(
+        entry: _primaryEntry,
+        dictionaryName: _primaryResult.dictionaryName,
+      );
+    }
     if (entryChanged) {
       _checkIfSaved();
     }
@@ -127,62 +174,6 @@ class _GroupedDictionaryEntryCardState
     }
 
     return false;
-  }
-
-  void _rebuildDerivedContent() {
-    _kanjiDisplayData = parseKanjiEntryDisplayData(
-      entry: _primaryEntry,
-      dictionaryName: _primaryResult.dictionaryName,
-    );
-    _definitionSections = _buildDefinitionSections(widget.entries);
-  }
-
-  List<_DefinitionSectionData> _buildDefinitionSections(
-    List<DictionaryEntryWithSource> entries,
-  ) {
-    final byDict = <String, List<DictionaryEntryWithSource>>{};
-    final dictOrder = <String>[];
-    for (final result in entries) {
-      if (!byDict.containsKey(result.dictionaryName)) {
-        dictOrder.add(result.dictionaryName);
-        byDict[result.dictionaryName] = [];
-      }
-      byDict[result.dictionaryName]!.add(result);
-    }
-
-    return [
-      for (final dictName in dictOrder)
-        _DefinitionSectionData(
-          dictionaryName: dictName,
-          lines: _buildDefinitionLines(byDict[dictName]!),
-        ),
-    ];
-  }
-
-  List<String> _buildDefinitionLines(List<DictionaryEntryWithSource> entries) {
-    final showNumbers = entries.length > 1;
-    return [
-      for (var i = 0; i < entries.length; i++)
-        _formatDefinitionLine(
-          entries[i].entry.glossaries,
-          index: i,
-          showNumbers: showNumbers,
-        ),
-    ];
-  }
-
-  String _formatDefinitionLine(
-    String glossaries, {
-    required int index,
-    required bool showNumbers,
-  }) {
-    final definitions = GlossaryParser.parse(glossaries);
-    final fragments = definitions
-        .expand((definition) => definition.split('\n'))
-        .map((line) => line.replaceFirst(RegExp(r'^\s*\u25b8\s*'), '').trim())
-        .where((line) => line.isNotEmpty);
-    final joined = fragments.join('; ');
-    return showNumbers ? '${index + 1}. $joined' : joined;
   }
 
   Future<void> _checkIfSaved() async {
@@ -377,16 +368,11 @@ class _GroupedDictionaryEntryCardState
       height: 1.0,
     );
 
-    final definitionStyle = TextStyle(
-      fontSize: fs,
-      color: theme.colorScheme.onSurface,
-    );
-
     final actionButtons = _buildActionButtons();
     final partOfSpeech = PartOfSpeechResolver.resolve(_primaryEntry);
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: widget.padding,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isCompact = constraints.maxWidth < 260;
@@ -426,16 +412,6 @@ class _GroupedDictionaryEntryCardState
                 const SizedBox(height: 8),
                 _buildPartOfSpeechChips(theme, partOfSpeech),
               ],
-
-              // Row 2: Pitch accent diagrams (if available)
-              if (widget.pitchAccents.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                _buildPitchAccents(theme, fs),
-              ],
-
-              // Row 3+: Definitions grouped by dictionary
-              const SizedBox(height: 8),
-              ..._buildGroupedDefinitions(fs, definitionStyle),
             ],
           );
         },
@@ -659,18 +635,71 @@ class _GroupedDictionaryEntryCardState
       furiganaStyle: furiganaStyle,
     );
   }
+}
+
+class GroupedDictionaryEntryBody extends StatelessWidget {
+  const GroupedDictionaryEntryBody({
+    super.key,
+    required this.entries,
+    required this.pitchAccents,
+    this.fontSize = 16.0,
+    this.onWordTap,
+    this.padding = const EdgeInsets.fromLTRB(16, 2, 16, 16),
+  });
+
+  final List<DictionaryEntryWithSource> entries;
+  final List<PitchAccentResult> pitchAccents;
+  final double fontSize;
+  final void Function(String word)? onWordTap;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final definitionStyle = TextStyle(
+      fontSize: fontSize,
+      color: theme.colorScheme.onSurface,
+    );
+    final definitionSections = _buildDefinitionSections(entries);
+    final hasPitchAccents = pitchAccents.isNotEmpty;
+
+    return Padding(
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasPitchAccents) ...[
+            const SizedBox(height: 6),
+            _buildPitchAccents(theme, fontSize),
+          ],
+          if (definitionSections.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ..._buildGroupedDefinitions(
+              fontSize,
+              definitionStyle,
+              definitionSections,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   /// Build definitions for each dictionary in the group, with a subdued source
   /// footer shown after each section. Entries from the same dictionary are
   /// grouped under a single footer label and numbered when there are multiple.
-  List<Widget> _buildGroupedDefinitions(double fs, TextStyle definitionStyle) {
+  List<Widget> _buildGroupedDefinitions(
+    double fs,
+    TextStyle definitionStyle,
+    List<_DefinitionSectionData> definitionSections,
+  ) {
     final widgets = <Widget>[];
     for (
       var dictIndex = 0;
-      dictIndex < _definitionSections.length;
+      dictIndex < definitionSections.length;
       dictIndex++
     ) {
-      final section = _definitionSections[dictIndex];
+      final section = definitionSections[dictIndex];
       for (final line in section.lines) {
         widgets.add(
           Padding(
@@ -684,7 +713,7 @@ class _GroupedDictionaryEntryCardState
         SourceSectionLabel(
           label: section.dictionaryName,
           topPadding: 2,
-          bottomPadding: dictIndex < _definitionSections.length - 1 ? 10 : 0,
+          bottomPadding: dictIndex < definitionSections.length - 1 ? 10 : 0,
           fontSize: fs * 0.64,
         ),
       );
@@ -695,11 +724,11 @@ class _GroupedDictionaryEntryCardState
 
   /// Build a definition line — tappable or plain.
   Widget _buildDefinition(String text, TextStyle style) {
-    if (widget.onWordTap != null) {
+    if (onWordTap != null) {
       return TappableDefinitionText(
         text: text,
         style: style,
-        onWordTap: widget.onWordTap!,
+        onWordTap: onWordTap!,
       );
     }
     return Text(text, style: style);
@@ -708,7 +737,7 @@ class _GroupedDictionaryEntryCardState
   /// Build pitch accent diagrams grouped by source dictionary.
   Widget _buildPitchAccents(ThemeData theme, double fontSize) {
     final bySource = <String, List<PitchAccentResult>>{};
-    for (final p in widget.pitchAccents) {
+    for (final p in pitchAccents) {
       bySource.putIfAbsent(p.dictionaryName, () => []).add(p);
     }
 
@@ -762,6 +791,54 @@ class _GroupedDictionaryEntryCardState
       ),
     );
   }
+}
+
+List<_DefinitionSectionData> _buildDefinitionSections(
+  List<DictionaryEntryWithSource> entries,
+) {
+  final byDict = <String, List<DictionaryEntryWithSource>>{};
+  final dictOrder = <String>[];
+  for (final result in entries) {
+    if (!byDict.containsKey(result.dictionaryName)) {
+      dictOrder.add(result.dictionaryName);
+      byDict[result.dictionaryName] = [];
+    }
+    byDict[result.dictionaryName]!.add(result);
+  }
+
+  return [
+    for (final dictName in dictOrder)
+      _DefinitionSectionData(
+        dictionaryName: dictName,
+        lines: _buildDefinitionLines(byDict[dictName]!),
+      ),
+  ];
+}
+
+List<String> _buildDefinitionLines(List<DictionaryEntryWithSource> entries) {
+  final showNumbers = entries.length > 1;
+  return [
+    for (var i = 0; i < entries.length; i++)
+      _formatDefinitionLine(
+        entries[i].entry.glossaries,
+        index: i,
+        showNumbers: showNumbers,
+      ),
+  ];
+}
+
+String _formatDefinitionLine(
+  String glossaries, {
+  required int index,
+  required bool showNumbers,
+}) {
+  final definitions = GlossaryParser.parse(glossaries);
+  final fragments = definitions
+      .expand((definition) => definition.split('\n'))
+      .map((line) => line.replaceFirst(RegExp(r'^\s*\u25b8\s*'), '').trim())
+      .where((line) => line.isNotEmpty);
+  final joined = fragments.join('; ');
+  return showNumbers ? '${index + 1}. $joined' : joined;
 }
 
 /// A small colored tag showing word frequency level.
