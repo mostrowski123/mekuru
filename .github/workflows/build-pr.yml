@@ -1,4 +1,4 @@
-name: Build PR APK
+name: Build PR Checks
 
 on:
   pull_request:
@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -86,88 +85,3 @@ jobs:
       - name: Run tests
         timeout-minutes: 20
         run: flutter test -r expanded
-
-      - name: Decode release keystore
-        run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
-
-      - name: Set signing environment
-        run: |
-          echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
-          echo "RELEASE_KEYSTORE_PASSWORD=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> "$GITHUB_ENV"
-          echo "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> "$GITHUB_ENV"
-
-      - name: Build release APK
-        run: flutter build apk --release --no-pub --target-platform android-arm,android-arm64,android-x64
-
-      - name: Verify MeCab native libs in release APK
-        run: |
-          python - <<'PY'
-          import sys
-          import zipfile
-
-          archive = "build/app/outputs/flutter-apk/app-release.apk"
-          abis = ["armeabi-v7a", "arm64-v8a", "x86_64"]
-          libs = ["libc++_shared.so", "libmecab_dart.so"]
-
-          with zipfile.ZipFile(archive) as zf:
-              names = zf.namelist()
-
-          missing = [
-              f"lib/{abi}/{lib}"
-              for abi in abis
-              for lib in libs
-              if not any(entry.endswith(f"lib/{abi}/{lib}") for entry in names)
-          ]
-          if missing:
-              print(f"Missing required native libraries in {archive}:", file=sys.stderr)
-              for name in missing:
-                  print(f"  - {name}", file=sys.stderr)
-              print("Found MeCab-related ABI entries:", file=sys.stderr)
-              for entry in sorted(
-                  name
-                  for name in names
-                  if any(f"lib/{abi}/" in name for abi in abis)
-                  and ("libmecab_dart.so" in name or "libc++_shared.so" in name)
-              ):
-                  print(f"  - {entry}", file=sys.stderr)
-              sys.exit(1)
-
-          print(f"Verified required MeCab native libraries in {archive}")
-          PY
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mekuru-pr-${{ github.event.pull_request.number }}
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 14
-
-      - name: Comment download link on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const body = `### APK Build\nBuild succeeded! [Download the APK from the workflow artifacts](${runUrl}).`;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            for (const comment of comments) {
-              if (comment.user.type === 'Bot' && comment.body.includes('APK Build')) {
-                await github.rest.issues.deleteComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: comment.id,
-                });
-              }
-            }
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body,
-            });
