@@ -145,6 +145,9 @@ class _MangaPageViewState extends State<MangaPageView> {
             clipTranslateY = 0;
           }
 
+          final decodeCacheWidth =
+              (containerW * MediaQuery.devicePixelRatioOf(context)).toInt();
+
           return Stack(
             clipBehavior: Clip.hardEdge,
             children: [
@@ -168,6 +171,7 @@ class _MangaPageViewState extends State<MangaPageView> {
                           child: _buildImage(
                             imagePath,
                             safImageRelPath: safImageRelPath,
+                            cacheWidth: decodeCacheWidth,
                           ),
                         ),
                       ),
@@ -180,6 +184,7 @@ class _MangaPageViewState extends State<MangaPageView> {
                     imagePath,
                     safImageRelPath: safImageRelPath,
                     fit: BoxFit.contain,
+                    cacheWidth: decodeCacheWidth,
                   ),
                 ),
 
@@ -213,12 +218,14 @@ class _MangaPageViewState extends State<MangaPageView> {
     String imagePath, {
     String? safImageRelPath,
     BoxFit fit = BoxFit.fill,
+    int? cacheWidth,
   }) {
     if (widget.safTreeUri != null && safImageRelPath != null) {
       return AndroidSafImage(
         treeUri: widget.safTreeUri,
         relativePath: safImageRelPath,
         fit: fit,
+        cacheWidth: cacheWidth,
         filterQuality: FilterQuality.medium,
         errorBuilder: (_, error, _) => _buildImageError(context),
       );
@@ -227,6 +234,7 @@ class _MangaPageViewState extends State<MangaPageView> {
     return Image.file(
       File(imagePath),
       fit: fit,
+      cacheWidth: cacheWidth,
       filterQuality: FilterQuality.medium,
       errorBuilder: (_, error, _) => _buildImageError(context),
     );

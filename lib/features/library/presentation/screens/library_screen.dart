@@ -1081,49 +1081,67 @@ class _BookTileState extends ConsumerState<_BookTile>
 
   Widget _buildCoverImage(ThemeData theme) {
     final coverPath = book.coverImagePath;
-    if (coverPath != null) {
-      if (AndroidSafService.isContentUri(coverPath)) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: AndroidSafImage(
+    if (coverPath == null) return _buildPlaceholder(theme);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        final tileCacheWidth = (constraints.maxWidth * dpr).toInt();
+        // Blurred background can decode at half resolution — blur hides
+        // detail loss and saves ~75% memory per blurred image.
+        final blurCacheWidth = (tileCacheWidth * 0.5).toInt();
+
+        if (AndroidSafService.isContentUri(coverPath)) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: AndroidSafImage(
+                  uri: coverPath,
+                  fit: BoxFit.cover,
+                  cacheWidth: blurCacheWidth,
+                  errorBuilder: (_, _, _) => _buildPlaceholder(theme),
+                ),
+              ),
+              AndroidSafImage(
                 uri: coverPath,
-                fit: BoxFit.cover,
+                fit: BoxFit.fitHeight,
+                cacheWidth: tileCacheWidth,
                 errorBuilder: (_, _, _) => _buildPlaceholder(theme),
               ),
-            ),
-            AndroidSafImage(
-              uri: coverPath,
-              fit: BoxFit.fitHeight,
-              errorBuilder: (_, _, _) => _buildPlaceholder(theme),
-            ),
-          ],
-        );
-      }
+            ],
+          );
+        }
 
-      final coverFile = File(coverPath);
-      if (coverFile.existsSync()) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            // Blurred background fill (no darkening)
-            ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Image.file(coverFile, fit: BoxFit.cover),
-            ),
-            // Actual cover, fit by height first
-            Image.file(
-              coverFile,
-              fit: BoxFit.fitHeight,
-              errorBuilder: (_, _, _) => _buildPlaceholder(theme),
-            ),
-          ],
-        );
-      }
-    }
-    return _buildPlaceholder(theme);
+        final coverFile = File(coverPath);
+        if (coverFile.existsSync()) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // Blurred background fill (no darkening)
+              ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Image.file(
+                  coverFile,
+                  fit: BoxFit.cover,
+                  cacheWidth: blurCacheWidth,
+                ),
+              ),
+              // Actual cover, fit by height first
+              Image.file(
+                coverFile,
+                fit: BoxFit.fitHeight,
+                cacheWidth: tileCacheWidth,
+                errorBuilder: (_, _, _) => _buildPlaceholder(theme),
+              ),
+            ],
+          );
+        }
+
+        return _buildPlaceholder(theme);
+      },
+    );
   }
 
   Widget _buildPlaceholder(ThemeData theme) {

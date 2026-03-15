@@ -285,6 +285,9 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
           clipTranslateY = 0;
         }
 
+        final decodeCacheWidth =
+            (containerW * MediaQuery.devicePixelRatioOf(context)).toInt();
+
         return Stack(
           clipBehavior: Clip.hardEdge,
           children: [
@@ -309,6 +312,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
                           imagePath,
                           safImageRelPath: safImageRelPath,
                           fit: BoxFit.fill,
+                          cacheWidth: decodeCacheWidth,
                         ),
                       ),
                     ),
@@ -321,6 +325,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
                   imagePath,
                   safImageRelPath: safImageRelPath,
                   fit: BoxFit.contain,
+                  cacheWidth: decodeCacheWidth,
                 ),
               ),
 
@@ -385,12 +390,14 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     String imagePath, {
     required String? safImageRelPath,
     required BoxFit fit,
+    int? cacheWidth,
   }) {
     if (widget.mokuroBook.safTreeUri != null && safImageRelPath != null) {
       return AndroidSafImage(
         treeUri: widget.mokuroBook.safTreeUri,
         relativePath: safImageRelPath,
         fit: fit,
+        cacheWidth: cacheWidth,
         filterQuality: FilterQuality.medium,
       );
     }
@@ -398,6 +405,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     return Image.file(
       File(imagePath),
       fit: fit,
+      cacheWidth: cacheWidth,
       filterQuality: FilterQuality.medium,
     );
   }

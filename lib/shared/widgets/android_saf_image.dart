@@ -12,6 +12,8 @@ class AndroidSafImage extends StatefulWidget {
   final FilterQuality filterQuality;
   final Alignment alignment;
   final ImageErrorWidgetBuilder? errorBuilder;
+  final int? cacheWidth;
+  final int? cacheHeight;
 
   const AndroidSafImage({
     super.key,
@@ -22,6 +24,8 @@ class AndroidSafImage extends StatefulWidget {
     this.filterQuality = FilterQuality.medium,
     this.alignment = Alignment.center,
     this.errorBuilder,
+    this.cacheWidth,
+    this.cacheHeight,
   }) : assert(
          (uri != null) || (treeUri != null && relativePath != null),
          'Provide either uri or (treeUri + relativePath)',
@@ -72,6 +76,8 @@ class _AndroidSafImageState extends State<AndroidSafImage> {
             fit: widget.fit,
             filterQuality: widget.filterQuality,
             alignment: widget.alignment,
+            cacheWidth: widget.cacheWidth,
+            cacheHeight: widget.cacheHeight,
             gaplessPlayback: true,
             errorBuilder: widget.errorBuilder,
           );

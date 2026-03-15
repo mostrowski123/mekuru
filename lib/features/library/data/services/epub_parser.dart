@@ -55,17 +55,21 @@ class EpubParser {
       );
     }
 
-    // Unzip the EPUB
-    final bytes = await file.readAsBytes();
-    final archive = ZipDecoder().decodeBytes(bytes);
+    // Stream-decode the EPUB ZIP to avoid loading the entire file into memory.
+    final input = InputFileStream(epubPath);
+    try {
+      final archive = ZipDecoder().decodeStream(input);
 
-    // Extract all files
-    for (final entry in archive.files) {
-      if (entry.isFile) {
-        final outFile = File(p.join(extractDir, entry.name));
-        await outFile.parent.create(recursive: true);
-        await outFile.writeAsBytes(entry.content as List<int>);
+      // Extract all files
+      for (final entry in archive.files) {
+        if (entry.isFile) {
+          final outFile = File(p.join(extractDir, entry.name));
+          await outFile.parent.create(recursive: true);
+          await outFile.writeAsBytes(entry.content as List<int>);
+        }
       }
+    } finally {
+      input.close();
     }
 
     // 1. Parse META-INF/container.xml to find the OPF file path
@@ -94,33 +98,41 @@ class EpubParser {
       );
     }
 
-    final bytes = await file.readAsBytes();
-    final archive = ZipDecoder().decodeBytes(bytes);
+    // Stream-decode to extract only the 2 small XML files we need,
+    // avoiding loading the entire EPUB into memory.
+    final input = InputFileStream(epubPath);
+    try {
+      final archive = ZipDecoder().decodeStream(input);
 
-    // Find container.xml in the archive
-    final containerFile = archive.findFile('META-INF/container.xml');
-    if (containerFile == null) {
-      return const EpubMetadata(title: 'Unknown Title');
+      // Find container.xml in the archive
+      final containerFile = archive.findFile('META-INF/container.xml');
+      if (containerFile == null) {
+        return const EpubMetadata(title: 'Unknown Title');
+      }
+
+      final containerXml = XmlDocument.parse(
+        utf8.decode(containerFile.content as List<int>),
+      );
+      final opfPath = _extractOpfPathFromXml(containerXml);
+      if (opfPath == null) {
+        return const EpubMetadata(title: 'Unknown Title');
+      }
+
+      // Find the OPF file in the archive
+      final opfFile = archive.findFile(opfPath);
+      if (opfFile == null) {
+        return const EpubMetadata(title: 'Unknown Title');
+      }
+
+      final opfXml = XmlDocument.parse(
+        utf8.decode(opfFile.content as List<int>),
+      );
+      final opfDir = p.dirname(opfPath);
+
+      return _extractMetadataFromOpf(opfXml, opfDir);
+    } finally {
+      input.close();
     }
-
-    final containerXml = XmlDocument.parse(
-      utf8.decode(containerFile.content as List<int>),
-    );
-    final opfPath = _extractOpfPathFromXml(containerXml);
-    if (opfPath == null) {
-      return const EpubMetadata(title: 'Unknown Title');
-    }
-
-    // Find the OPF file in the archive
-    final opfFile = archive.findFile(opfPath);
-    if (opfFile == null) {
-      return const EpubMetadata(title: 'Unknown Title');
-    }
-
-    final opfXml = XmlDocument.parse(utf8.decode(opfFile.content as List<int>));
-    final opfDir = p.dirname(opfPath);
-
-    return _extractMetadataFromOpf(opfXml, opfDir);
   }
 
   /// Find the OPF file path from META-INF/container.xml.

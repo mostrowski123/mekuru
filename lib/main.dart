@@ -34,6 +34,12 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Cap Flutter's image cache to reduce memory pressure on low-end devices.
+  // Defaults are 1000 images / 100 MB which is excessive for a manga reader
+  // where each decoded page can be several MB.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
+  PaintingBinding.instance.imageCache.maximumSize = 50;
+
   await SentryFlutter.init(
     (options) {
       options.dsn = EnvironmentConfig.sentryDsn;

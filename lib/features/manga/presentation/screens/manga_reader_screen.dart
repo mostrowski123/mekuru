@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -92,6 +93,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   void dispose() {
     _pageController.dispose();
     unawaited(_setReaderSystemBarsVisible(true));
+    // Release cached manga page bitmaps so memory is reclaimed immediately
+    // when returning to the library.
+    PaintingBinding.instance.imageCache.clear();
     super.dispose();
   }
 
@@ -103,6 +107,43 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     ref
         .read(bookRepositoryProvider)
         .updateProgress(widget.book.id, page.toString(), progress: progress);
+
+    _precacheAdjacentPages(page, totalPages);
+  }
+
+  /// Precache the next few pages so they display instantly when swiped to.
+  void _precacheAdjacentPages(int currentPage, int totalPages) {
+    final asyncBook = ref.read(mangaPagesProvider(widget.book.id));
+    final mokuroBook = switch (asyncBook) {
+      AsyncData<MokuroBook>(:final value) => value,
+      _ => null,
+    };
+    if (mokuroBook == null || !mounted) return;
+
+    const pagesToPrecache = 5;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth = (screenWidth * dpr).toInt();
+
+    for (var i = 1; i <= pagesToPrecache; i++) {
+      final idx = currentPage + i;
+      if (idx >= totalPages) break;
+
+      final page = mokuroBook.pages[idx];
+
+      // SAF images are loaded via platform channel in AndroidSafImage,
+      // so we can only precache file-backed images here.
+      if (mokuroBook.safTreeUri != null) continue;
+
+      final path = '${mokuroBook.imageDirPath}/${page.imageFileName}';
+      final file = File(path);
+      if (!file.existsSync()) continue;
+
+      precacheImage(
+        ResizeImage(FileImage(file), width: cacheWidth),
+        context,
+      );
+    }
   }
 
   Future<void> _acknowledgeCompletedOcrOverlay() async {
@@ -771,6 +812,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
             if (_currentPage >= totalPages) {
               _currentPage = totalPages - 1;
             }
+
+            // Precache adjacent pages on first data load and after rebuilds.
+            // precacheImage is a no-op for already-cached images.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _precacheAdjacentPages(_currentPage, totalPages);
+            });
 
             final isRtl = direction == MangaReadingDirection.rtl;
             final spreads = viewMode == MangaViewMode.twoPageSpread
