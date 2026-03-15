@@ -1,16 +1,16 @@
 # Installing Mekuru
 
-Mekuru is not live on the public Google Play listing yet.
+## Google Play
 
-## Test Version
+Install Mekuru from the [Google Play listing](https://play.google.com/store/apps/details?id=moe.matthew.mekuru).
 
-If you want to install Mekuru through Google Play, you need to join the test group first. This is also the easiest option if you do not want to download an APK from GitHub or build the APK yourself:
+## Beta Testing
+
+To get early access to updates before they reach the public listing:
 
 1. Join [mekuru-testing-group](https://groups.google.com/g/mekuru-testing-group).
 2. Open the [Google Play testing page](https://play.google.com/apps/testing/moe.matthew.mekuru).
 3. Install or update Mekuru from that page.
-
-Until you join the group, the app will not appear on Google Play for your account.
 
 ## Other Options
 

@@ -8,17 +8,30 @@
 
 Mekuru is a Japanese-first EPUB and manga reader built with Flutter for language learners and native readers. It combines vertical EPUB reading, Mokuro and CBZ manga support, offline dictionaries, and vocabulary tools in one app.
 
-**[Homepage](https://mekuru.matthew.moe/)** | **[Documentation](https://mekuru.matthew.moe/documentation/#/)** | **[Google Play Testing](https://play.google.com/apps/testing/moe.matthew.mekuru)**
+<p align="center">
+  <img src="docs/documentation/screenshots/library-screen-imported-books-and-manga.jpg" alt="Library" width="200">
+  <img src="docs/documentation/screenshots/epub-reader-navigation-view.jpg" alt="EPUB Reader" width="200">
+  <img src="docs/documentation/screenshots/dictionary-lookup-grouped-results.jpg" alt="Dictionary Lookup" width="200">
+  <img src="docs/documentation/screenshots/manga-reader-spread-settings.jpg" alt="Manga Reader" width="200">
+</p>
 
-## Android Test Version
+**[Homepage](https://mekuru.matthew.moe/)** | **[Documentation](https://mekuru.matthew.moe/documentation/#/)** | **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)**
 
-Mekuru is not live on the public Google Play listing yet. If you want to install it through Google Play instead of downloading an APK from GitHub Releases or building the APK yourself, use the testing track:
+## Install
+
+<a href="https://play.google.com/store/apps/details?id=moe.matthew.mekuru">
+  <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="200">
+</a>
+
+Signed APKs are also available on [GitHub Releases](https://github.com/mostrowski123/japanese-e-reader/releases).
+
+### Beta Testing
+
+To get early access to updates before they reach the public listing:
 
 1. Join [mekuru-testing-group](https://groups.google.com/g/mekuru-testing-group).
 2. Open the [Google Play testing page](https://play.google.com/apps/testing/moe.matthew.mekuru).
 3. Install or update Mekuru from that page.
-
-Until you join the group, the app will not be visible on Google Play for your account. Signed APKs are also published on [GitHub Releases](https://github.com/mostrowski123/japanese-e-reader/releases).
 
 ## Features
 
