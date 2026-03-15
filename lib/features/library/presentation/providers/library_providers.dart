@@ -8,6 +8,7 @@ import 'package:mekuru/features/backup/presentation/providers/backup_providers.d
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/main.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -122,11 +123,19 @@ class BookImportNotifier extends Notifier<BookImportState> {
 
     try {
       final repo = ref.read(bookRepositoryProvider);
-      final book = await repo.importEpub(filePath);
-      await _applyPendingDataIfExists(book);
-      Sentry.addBreadcrumb(
-        Breadcrumb(message: 'EPUB imported', category: 'library'),
+      final book = await tracedOperation(
+        'book.import_duration_ms',
+        action: () => repo.importEpub(filePath),
+        attributes: {'format': SentryAttribute.string('epub')},
       );
+      await _applyPendingDataIfExists(book);
+      Sentry.logger.info('Book imported', attributes: {
+        'category': SentryAttribute.string('book.import'),
+        'format': SentryAttribute.string('epub'),
+      });
+      Sentry.metrics.count('book.imported', 1, attributes: {
+        'format': SentryAttribute.string('epub'),
+      });
       _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
@@ -141,16 +150,24 @@ class BookImportNotifier extends Notifier<BookImportState> {
 
     try {
       final repo = ref.read(bookRepositoryProvider);
-      final book = await repo.importCbz(
-        filePath,
-        onProgress: (p) {
-          state = BookImportState(isImporting: true, progress: p);
-        },
+      final book = await tracedOperation(
+        'book.import_duration_ms',
+        action: () => repo.importCbz(
+          filePath,
+          onProgress: (p) {
+            state = BookImportState(isImporting: true, progress: p);
+          },
+        ),
+        attributes: {'format': SentryAttribute.string('cbz')},
       );
       await _applyPendingDataIfExists(book);
-      Sentry.addBreadcrumb(
-        Breadcrumb(message: 'CBZ imported', category: 'library'),
-      );
+      Sentry.logger.info('Book imported', attributes: {
+        'category': SentryAttribute.string('book.import'),
+        'format': SentryAttribute.string('cbz'),
+      });
+      Sentry.metrics.count('book.imported', 1, attributes: {
+        'format': SentryAttribute.string('cbz'),
+      });
       _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
@@ -165,16 +182,24 @@ class BookImportNotifier extends Notifier<BookImportState> {
 
     try {
       final repo = ref.read(bookRepositoryProvider);
-      final book = await repo.importMangaFromFile(
-        filePath,
-        cachedFilePath: cachedFilePath,
-        safTreeUri: null,
-        safSelectedFileRelativePath: null,
+      final book = await tracedOperation(
+        'book.import_duration_ms',
+        action: () => repo.importMangaFromFile(
+          filePath,
+          cachedFilePath: cachedFilePath,
+          safTreeUri: null,
+          safSelectedFileRelativePath: null,
+        ),
+        attributes: {'format': SentryAttribute.string('manga')},
       );
       await _applyPendingDataIfExists(book);
-      Sentry.addBreadcrumb(
-        Breadcrumb(message: 'Manga imported', category: 'library'),
-      );
+      Sentry.logger.info('Book imported', attributes: {
+        'category': SentryAttribute.string('book.import'),
+        'format': SentryAttribute.string('manga'),
+      });
+      Sentry.metrics.count('book.imported', 1, attributes: {
+        'format': SentryAttribute.string('manga'),
+      });
       _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
@@ -194,16 +219,24 @@ class BookImportNotifier extends Notifier<BookImportState> {
 
     try {
       final repo = ref.read(bookRepositoryProvider);
-      final book = await repo.importMangaFromFile(
-        filePath,
-        cachedFilePath: cachedFilePath,
-        safTreeUri: safTreeUri,
-        safSelectedFileRelativePath: safSelectedFileRelativePath,
+      final book = await tracedOperation(
+        'book.import_duration_ms',
+        action: () => repo.importMangaFromFile(
+          filePath,
+          cachedFilePath: cachedFilePath,
+          safTreeUri: safTreeUri,
+          safSelectedFileRelativePath: safSelectedFileRelativePath,
+        ),
+        attributes: {'format': SentryAttribute.string('manga_saf')},
       );
       await _applyPendingDataIfExists(book);
-      Sentry.addBreadcrumb(
-        Breadcrumb(message: 'Manga imported (SAF)', category: 'library'),
-      );
+      Sentry.logger.info('Book imported', attributes: {
+        'category': SentryAttribute.string('book.import'),
+        'format': SentryAttribute.string('manga_saf'),
+      });
+      Sentry.metrics.count('book.imported', 1, attributes: {
+        'format': SentryAttribute.string('manga_saf'),
+      });
       _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {

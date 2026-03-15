@@ -73,9 +73,7 @@ class VocabularyRepository {
           ),
         );
 
-    Sentry.addBreadcrumb(
-      Breadcrumb(message: 'Word saved', category: 'vocabulary'),
-    );
+    Sentry.metrics.count('vocabulary.word_saved', 1);
 
     return id;
   }

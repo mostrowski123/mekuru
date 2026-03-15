@@ -3,6 +3,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/main.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -119,21 +120,23 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
 
     try {
       final importer = ref.read(dictionaryImporterProvider);
-      final count = await importer.importFromFile(
-        filePath,
-        onProgress: (processed, total) {
-          state = state.copyWith(
-            processedEntries: processed,
-            totalEntries: total,
-          );
-        },
-      );
-      Sentry.addBreadcrumb(
-        Breadcrumb(
-          message: 'Dictionary imported ($count entries)',
-          category: 'dictionary',
+      final count = await tracedOperation(
+        'dictionary.import_duration_ms',
+        action: () => importer.importFromFile(
+          filePath,
+          onProgress: (processed, total) {
+            state = state.copyWith(
+              processedEntries: processed,
+              totalEntries: total,
+            );
+          },
         ),
       );
+      Sentry.logger.info('Dictionary imported', attributes: {
+        'category': SentryAttribute.string('dictionary.import'),
+        'entry_count': SentryAttribute.int(count),
+      });
+      Sentry.metrics.count('dictionary.imported', 1);
       state = DictionaryImportState(
         successMessage: 'Imported $count entries successfully!',
       );
@@ -191,15 +194,13 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         parts.add('No dictionaries found in collection');
       }
 
-      Sentry.addBreadcrumb(
-        Breadcrumb(
-          message:
-              'Dictionary collection imported '
-              '(${result.importedDictionaries.length} dictionaries, '
-              '${result.totalEntriesImported} entries)',
-          category: 'dictionary',
-        ),
-      );
+      Sentry.logger.info('Dictionary collection imported', attributes: {
+        'category': SentryAttribute.string('dictionary.import'),
+        'dict_count': SentryAttribute.int(result.importedDictionaries.length),
+        'entry_count': SentryAttribute.int(result.totalEntriesImported),
+        'skipped_count': SentryAttribute.int(result.skippedDictionaries.length),
+      });
+      Sentry.metrics.count('dictionary.collection_imported', 1);
       state = DictionaryImportState(
         successMessage: parts.join('. '),
         skippedDictionaries: result.skippedDictionaries,

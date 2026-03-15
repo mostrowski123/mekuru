@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -40,11 +42,25 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
   PaintingBinding.instance.imageCache.maximumSize = 50;
 
+  // Detect install source to set Sentry environment.
+  // Debug builds always use 'debug'; release builds distinguish Play Store vs sideload.
+  final String sentryEnvironment;
+  if (kDebugMode) {
+    sentryEnvironment = 'debug';
+  } else {
+    final packageInfo = await PackageInfo.fromPlatform();
+    final isPlayStore = packageInfo.installerStore == 'com.android.vending';
+    sentryEnvironment = isPlayStore ? 'play-store' : 'sideload';
+  }
+
   await SentryFlutter.init(
     (options) {
       options.dsn = EnvironmentConfig.sentryDsn;
-      options.environment = EnvironmentConfig.sentryEnvironment;
+      options.environment = sentryEnvironment;
       options.navigatorKey = navigatorKey;
+      options.enableLogs = true;
+      options.enableMetrics = true;
+      options.tracesSampleRate = 0.1;
     },
     appRunner: () async {
       await PreloadedAppSettings.load();
@@ -62,6 +78,8 @@ void _scheduleDeferredStartupWarmups() {
 }
 
 Future<void> _runDeferredStartupWarmups() async {
+  final sw = Stopwatch()..start();
+
   // Keep the first frame light. These services all lazily initialize on
   // demand, so we can warm them after the UI is visible.
   await _runStartupWarmup(
@@ -86,12 +104,19 @@ Future<void> _runDeferredStartupWarmups() async {
       logMessage: 'MeCab init failed (app will continue)',
       action: () async {
         await MecabService.instance.init();
-        Sentry.addBreadcrumb(
-          Breadcrumb(message: 'MeCab initialized', category: 'app.init'),
-        );
+        Sentry.logger.info('MeCab initialized', attributes: {
+          'category': SentryAttribute.string('app.init'),
+        });
       },
     ),
   ]);
+
+  sw.stop();
+  Sentry.metrics.distribution(
+    'app.startup_warmup_ms',
+    sw.elapsedMilliseconds,
+    unit: SentryMetricUnit.millisecond,
+  );
 }
 
 Future<void> _runStartupWarmup({
@@ -101,7 +126,9 @@ Future<void> _runStartupWarmup({
   try {
     await action();
   } catch (error, stackTrace) {
-    debugPrint('[APP] $logMessage: $error');
+    Sentry.logger.warn('$logMessage: $error', attributes: {
+      'category': SentryAttribute.string('app.init'),
+    });
     await Sentry.captureException(error, stackTrace: stackTrace);
   }
 }

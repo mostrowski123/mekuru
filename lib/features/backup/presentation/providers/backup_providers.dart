@@ -155,9 +155,12 @@ class BackupNotifier extends Notifier<BackupState> {
       final fileManager = ref.read(backupFileManagerProvider);
       final manifest = await service.createBackup();
       await fileManager.createBackupFile(manifest);
-      Sentry.addBreadcrumb(
-        Breadcrumb(message: 'Manual backup created', category: 'backup'),
-      );
+      Sentry.logger.info('Manual backup created', attributes: {
+        'category': SentryAttribute.string('backup'),
+      });
+      Sentry.metrics.count('backup.created', 1, attributes: {
+        'type': SentryAttribute.string('manual'),
+      });
       _showSuccess(const BackupMessage.backupCreated());
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
@@ -321,9 +324,10 @@ class RestoreNotifier extends Notifier<RestoreState> {
         errors: errors,
       );
 
-      Sentry.addBreadcrumb(
-        Breadcrumb(message: 'Backup restored', category: 'backup'),
-      );
+      Sentry.logger.info('Backup restored', attributes: {
+        'category': SentryAttribute.string('backup'),
+      });
+      Sentry.metrics.count('backup.restored', 1);
 
       // If backup contains highlights, user was likely Pro — try restoring purchases
       final hasHighlights = manifest.books.any((b) => b.highlights.isNotEmpty);
@@ -448,9 +452,16 @@ final autoBackupCheckerProvider = FutureProvider<void>((ref) async {
       final manifest = await service.createBackup();
       await fileManager.createBackupFile(manifest, isAuto: true);
       await scheduler.recordAutoBackup();
-      debugPrint('[Backup] Auto-backup completed');
+      Sentry.logger.info('Auto-backup completed', attributes: {
+        'category': SentryAttribute.string('backup'),
+      });
+      Sentry.metrics.count('backup.created', 1, attributes: {
+        'type': SentryAttribute.string('auto'),
+      });
     } catch (e, st) {
-      debugPrint('[Backup] Auto-backup failed: $e');
+      Sentry.logger.error('Auto-backup failed: $e', attributes: {
+        'category': SentryAttribute.string('backup'),
+      });
       Sentry.captureException(e, stackTrace: st);
     }
   }

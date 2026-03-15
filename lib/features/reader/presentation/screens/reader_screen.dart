@@ -76,9 +76,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    Sentry.addBreadcrumb(
-      Breadcrumb(message: 'Opened book', category: 'reader'),
-    );
+    Sentry.metrics.count('reader.book_opened', 1);
 
     _progressPersistence = ReaderProgressPersistence(
       saveProgress: (cfi, progress) {
