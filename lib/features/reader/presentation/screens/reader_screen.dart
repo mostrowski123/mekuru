@@ -26,6 +26,7 @@ import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
+import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -77,6 +78,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     WidgetsBinding.instance.addObserver(this);
 
     Sentry.metrics.count('reader.book_opened', 1);
+    AnalyticsService.instance.logEvent('book_opened');
 
     _progressPersistence = ReaderProgressPersistence(
       saveProgress: (cfi, progress) {

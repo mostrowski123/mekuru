@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'core/services/analytics_service.dart';
 import 'features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'features/backup/presentation/providers/backup_providers.dart';
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
@@ -110,7 +111,10 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       supportedLocales: AppLocalizations.supportedLocales,
       scaffoldMessengerKey: scaffoldMessengerKey,
       navigatorKey: navigatorKey,
-      navigatorObservers: [SentryNavigatorObserver()],
+      navigatorObservers: [
+        SentryNavigatorObserver(),
+        ?AnalyticsService.instance.navigatorObserver,
+      ],
       home: const _MainShell(),
     );
   }

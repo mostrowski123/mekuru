@@ -75,10 +75,11 @@ dependencies:
   # AnkiDroid integration (Android only)
   ankidroid_for_flutter: ^1.0.3
 
-  # Firebase (OCR server authentication)
+  # Firebase (OCR server authentication + analytics)
   firebase_core: ^4.5.0
   firebase_auth: ^6.2.0
   firebase_app_check: ^0.4.1+4
+  firebase_analytics: ^12.1.3
   google_sign_in: ^7.2.0
 
   # In-app purchases (OCR monetization)

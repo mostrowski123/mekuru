@@ -3,6 +3,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/main.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -137,6 +138,8 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         'entry_count': SentryAttribute.int(count),
       });
       Sentry.metrics.count('dictionary.imported', 1);
+      AnalyticsService.instance
+          .logEvent('dictionary_imported', {'entry_count': count});
       state = DictionaryImportState(
         successMessage: 'Imported $count entries successfully!',
       );
@@ -201,6 +204,10 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         'skipped_count': SentryAttribute.int(result.skippedDictionaries.length),
       });
       Sentry.metrics.count('dictionary.collection_imported', 1);
+      AnalyticsService.instance.logEvent('dictionary_collection_imported', {
+        'dict_count': result.importedDictionaries.length,
+        'entry_count': result.totalEntriesImported,
+      });
       state = DictionaryImportState(
         successMessage: parts.join('. '),
         skippedDictionaries: result.skippedDictionaries,
