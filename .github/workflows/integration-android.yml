@@ -164,13 +164,4 @@ jobs:
             -no-boot-anim
             -no-metrics
           force-avd-creation: ${{ steps.avd-cache.outputs.cache-hit != 'true' }}
-          script: |
-            flutter test \
-              integration_test/app_smoke_test.dart \
-              integration_test/dictionary_search_flow_test.dart \
-              integration_test/vocabulary_lifecycle_test.dart \
-              integration_test/settings_persistence_test.dart \
-              integration_test/cross_feature_navigation_test.dart \
-              -d emulator-5554 \
-              --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true \
-              -r expanded
+          script: flutter test integration_test/app_smoke_test.dart integration_test/dictionary_search_flow_test.dart integration_test/vocabulary_lifecycle_test.dart integration_test/settings_persistence_test.dart integration_test/cross_feature_navigation_test.dart -d emulator-5554 --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded
