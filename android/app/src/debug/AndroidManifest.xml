@@ -4,4 +4,13 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application>
+        <!-- Disable Firebase Analytics collection in debug/test builds so
+             CI emulators and local dev devices don't pollute production metrics. -->
+        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />
+
+        <!-- Disable Firebase Crashlytics data collection in debug builds. -->
+        <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
+    </application>
 </manifest>

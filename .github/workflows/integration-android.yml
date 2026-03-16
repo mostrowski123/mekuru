@@ -34,6 +34,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - uses: actions/checkout@v4
 
@@ -140,7 +143,7 @@ jobs:
           yes | "$SDKMANAGER" --install "system-images;android-34;google_atd;x86_64" --channel=0
           echo "no" | "$AVDMANAGER" create avd -n test -k "system-images;android-34;google_atd;x86_64" --device "pixel_6" --force
 
-      - name: Run Android integration smoke test
+      - name: Run Android integration tests
         timeout-minutes: 30
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -161,8 +164,13 @@ jobs:
             -no-boot-anim
             -no-metrics
           force-avd-creation: ${{ steps.avd-cache.outputs.cache-hit != 'true' }}
-          script: >
-            flutter test integration_test/app_smoke_test.dart
-            -d emulator-5554
-            --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true
-            -r expanded
+          script: |
+            flutter test \
+              integration_test/app_smoke_test.dart \
+              integration_test/dictionary_search_flow_test.dart \
+              integration_test/vocabulary_lifecycle_test.dart \
+              integration_test/settings_persistence_test.dart \
+              integration_test/cross_feature_navigation_test.dart \
+              -d emulator-5554 \
+              --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true \
+              -r expanded

@@ -10,123 +10,12 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
-import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 
 import '../test/test_app.dart';
+import 'shared/test_infrastructure.dart';
 import 'test_helpers.dart';
-
-class _InMemoryAppSettingsStorage implements AppSettingsStorage {
-  AppLanguage? _appLanguage;
-  ThemeMode? _themeMode;
-  String? _sortOrder;
-  double? _lookupFontSize;
-  List<String> _searchHistory = const [];
-  bool? _filterRomanLetters;
-  String? _ankidroidConfig;
-  String? _startupScreen;
-  bool? _autoFocusSearch;
-  String? _colorTheme;
-  int? _autoCropWhiteThreshold;
-  String? _ocrServerUrl;
-
-  @override
-  Future<AppLanguage?> loadAppLanguage() async => _appLanguage;
-
-  @override
-  Future<void> saveAppLanguage(AppLanguage language) async {
-    _appLanguage = language;
-  }
-
-  @override
-  Future<ThemeMode?> loadThemeMode() async => _themeMode;
-
-  @override
-  Future<void> saveThemeMode(ThemeMode mode) async {
-    _themeMode = mode;
-  }
-
-  @override
-  Future<String?> loadSortOrder() async => _sortOrder;
-
-  @override
-  Future<void> saveSortOrder(String order) async {
-    _sortOrder = order;
-  }
-
-  @override
-  Future<double?> loadLookupFontSize() async => _lookupFontSize;
-
-  @override
-  Future<void> saveLookupFontSize(double size) async {
-    _lookupFontSize = size;
-  }
-
-  @override
-  Future<List<String>> loadSearchHistory() async => _searchHistory;
-
-  @override
-  Future<void> saveSearchHistory(List<String> history) async {
-    _searchHistory = List<String>.of(history);
-  }
-
-  @override
-  Future<bool?> loadFilterRomanLetters() async => _filterRomanLetters;
-
-  @override
-  Future<void> saveFilterRomanLetters(bool value) async {
-    _filterRomanLetters = value;
-  }
-
-  @override
-  Future<String?> loadAnkidroidConfig() async => _ankidroidConfig;
-
-  @override
-  Future<void> saveAnkidroidConfig(String configJson) async {
-    _ankidroidConfig = configJson;
-  }
-
-  @override
-  Future<String?> loadStartupScreen() async => _startupScreen;
-
-  @override
-  Future<void> saveStartupScreen(String screen) async {
-    _startupScreen = screen;
-  }
-
-  @override
-  Future<bool?> loadAutoFocusSearch() async => _autoFocusSearch;
-
-  @override
-  Future<void> saveAutoFocusSearch(bool value) async {
-    _autoFocusSearch = value;
-  }
-
-  @override
-  Future<String?> loadColorTheme() async => _colorTheme;
-
-  @override
-  Future<void> saveColorTheme(String theme) async {
-    _colorTheme = theme;
-  }
-
-  @override
-  Future<int?> loadAutoCropWhiteThreshold() async => _autoCropWhiteThreshold;
-
-  @override
-  Future<void> saveAutoCropWhiteThreshold(int value) async {
-    _autoCropWhiteThreshold = value;
-  }
-
-  @override
-  Future<String?> loadOcrServerUrl() async => _ocrServerUrl;
-
-  @override
-  Future<void> saveOcrServerUrl(String url) async {
-    _ocrServerUrl = url;
-  }
-}
 
 class _BenchmarkDictionaryQueryService extends DictionaryQueryService {
   _BenchmarkDictionaryQueryService(super.db, {required this.results});
@@ -268,7 +157,7 @@ void main() {
             (ref) => Stream.value(dictionaries),
           ),
           appSettingsStorageProvider.overrideWithValue(
-            _InMemoryAppSettingsStorage(),
+            InMemoryAppSettingsStorage(),
           ),
         ],
         child: buildLocalizedTestApp(
