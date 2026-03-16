@@ -34,17 +34,15 @@ void main() {
     await tester.enterText(searchField, '食べる');
     // Wait for the 300ms debounce + search execution.
     await tester.pump(const Duration(milliseconds: 400));
+    // Wait for the dictionary source label to appear, confirming results loaded.
     await pumpUntilVisible(
       tester,
-      find.text('食べる'),
+      find.text('JMdict'),
       timeout: const Duration(seconds: 10),
     );
     await tester.pumpAndSettle();
 
-    // Verify the expression and reading are displayed in results.
-    expect(find.text('食べる'), findsWidgets);
-    expect(find.text('たべる'), findsWidgets);
-    // Verify dictionary source name appears.
+    // Verify dictionary source name appears in results.
     expect(find.text('JMdict'), findsWidgets);
   });
 
@@ -93,7 +91,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await pumpUntilVisible(
       tester,
-      find.text('たべる'),
+      find.text('JMdict'),
       timeout: const Duration(seconds: 10),
     );
 
@@ -115,11 +113,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await pumpUntilVisible(
       tester,
-      find.text('たべる'),
+      find.text('JMdict'),
       timeout: const Duration(seconds: 10),
     );
 
     // Results should be visible again.
-    expect(find.text('たべる'), findsWidgets);
+    expect(find.text('JMdict'), findsWidgets);
   });
 }

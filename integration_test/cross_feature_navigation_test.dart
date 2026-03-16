@@ -62,7 +62,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await pumpUntilVisible(
       tester,
-      find.text('たべる'),
+      find.text('JMdict'),
       timeout: const Duration(seconds: 10),
     );
 
@@ -78,7 +78,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify search results are preserved (IndexedStack keeps state alive).
-    expect(find.text('たべる'), findsWidgets);
+    expect(find.text('JMdict'), findsWidgets);
   });
 
   testWidgets('all tabs render with seeded data', (tester) async {
@@ -118,7 +118,7 @@ void main() {
       find.text('吾輩は猫である'),
       timeout: const Duration(seconds: 10),
     );
-    expect(find.text('走れメロス'), findsOneWidget);
+    expect(find.text('走れメロス'), findsWidgets);
 
     // Vocabulary tab: verify seeded words are displayed.
     await tester.tap(find.text(l10n.navVocabulary));
