@@ -64,6 +64,81 @@ void main() {
       expect(segments[3].furigana, isNull);
     });
 
+    test(
+      'repeated kana boundary still assigns furigana to both kanji runs',
+      () {
+        final segments = segmentFurigana('聞き手', 'ききて');
+        expect(segments, hasLength(3));
+        expect(segments[0].text, '聞');
+        expect(segments[0].furigana, 'き');
+        expect(segments[1].text, 'き');
+        expect(segments[1].furigana, isNull);
+        expect(segments[2].text, '手');
+        expect(segments[2].furigana, 'て');
+      },
+    );
+
+    test(
+      'repeated kana boundary across multiple kanji groups aligns each group',
+      () {
+        final segments = segmentFurigana('聞き取り手', 'ききとりて');
+        expect(segments, hasLength(5));
+        expect(segments[0].text, '聞');
+        expect(segments[0].furigana, 'き');
+        expect(segments[1].text, 'き');
+        expect(segments[1].furigana, isNull);
+        expect(segments[2].text, '取');
+        expect(segments[2].furigana, 'と');
+        expect(segments[3].text, 'り');
+        expect(segments[3].furigana, isNull);
+        expect(segments[4].text, '手');
+        expect(segments[4].furigana, 'て');
+      },
+    );
+
+    test('mixed hiragana and katakana okurigana align correctly', () {
+      final segments = segmentFurigana('消しゴム', 'けしごむ');
+      expect(segments, hasLength(2));
+      expect(segments[0].text, '消');
+      expect(segments[0].furigana, 'け');
+      expect(segments[1].text, 'しゴム');
+      expect(segments[1].furigana, isNull);
+    });
+
+    test('small tsu between kanji groups is treated as kana', () {
+      final segments = segmentFurigana('突っ込む', 'つっこむ');
+      expect(segments, hasLength(4));
+      expect(segments[0].text, '突');
+      expect(segments[0].furigana, 'つ');
+      expect(segments[1].text, 'っ');
+      expect(segments[1].furigana, isNull);
+      expect(segments[2].text, '込');
+      expect(segments[2].furigana, 'こ');
+      expect(segments[3].text, 'む');
+      expect(segments[3].furigana, isNull);
+    });
+
+    test('kanji iteration mark is grouped with the kanji run', () {
+      final segments = segmentFurigana('時々', 'ときどき');
+      expect(segments, hasLength(1));
+      expect(segments[0].text, '時々');
+      expect(segments[0].furigana, 'ときどき');
+    });
+
+    test('kanji-like abbreviation mark is grouped with the kanji run', () {
+      final segments = segmentFurigana('一ヶ月', 'いっかげつ');
+      expect(segments, hasLength(1));
+      expect(segments[0].text, '一ヶ月');
+      expect(segments[0].furigana, 'いっかげつ');
+    });
+
+    test('kanji-like symbol at the start of a word is supported', () {
+      final segments = segmentFurigana('〆切', 'しめきり');
+      expect(segments, hasLength(1));
+      expect(segments[0].text, '〆切');
+      expect(segments[0].furigana, 'しめきり');
+    });
+
     test('katakana reading is converted to hiragana for alignment', () {
       // Reading in katakana (as MeCab returns)
       final segments = segmentFurigana('食べる', 'タベル');

@@ -44,7 +44,11 @@ List<FuriganaSegment> segmentFurigana(String expression, String reading) {
 
 bool _isKanji(int codeUnit) {
   return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||
-      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
+      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF) ||
+      codeUnit == 0x3005 || // 々 iteration mark
+      codeUnit == 0x3006 || // 〆
+      codeUnit == 0x30F5 || // ヵ
+      codeUnit == 0x30F6; // ヶ
 }
 
 String _katakanaToHiragana(String input) {
@@ -59,82 +63,141 @@ String _katakanaToHiragana(String input) {
   return buf.toString();
 }
 
-/// Convert a single character to its hiragana equivalent (for alignment).
-String _charToHiragana(String char) {
-  final code = char.codeUnitAt(0);
-  if (code >= 0x30A1 && code <= 0x30F6) {
-    return String.fromCharCode(code - 0x60);
-  }
-  return char;
-}
-
 /// Walk through [expression] and [hiraReading] in parallel, producing
 /// segments with kanji-only furigana. Returns empty list if alignment fails.
 List<FuriganaSegment> _alignSegments(String expression, String hiraReading) {
-  final segments = <FuriganaSegment>[];
-  int ri = 0; // current position in hiraReading
-  int i = 0; // current position in expression
+  final memo = <(int, int), List<FuriganaSegment>?>{};
+  return _alignSegmentsFrom(expression, hiraReading, 0, 0, memo) ?? [];
+}
 
-  while (i < expression.length) {
-    final code = expression.codeUnitAt(i);
+List<FuriganaSegment>? _alignSegmentsFrom(
+  String expression,
+  String hiraReading,
+  int expressionIndex,
+  int readingIndex,
+  Map<(int, int), List<FuriganaSegment>?> memo,
+) {
+  final key = (expressionIndex, readingIndex);
+  if (memo.containsKey(key)) {
+    return memo[key];
+  }
 
-    if (!_isKanji(code)) {
-      // Kana run: collect consecutive non-kanji characters.
-      final start = i;
-      while (i < expression.length && !_isKanji(expression.codeUnitAt(i))) {
-        i++;
-      }
-      final kanaRun = expression.substring(start, i);
-      segments.add(FuriganaSegment(kanaRun));
-      // Advance reading pointer past the matching kana.
-      ri += kanaRun.length;
-    } else {
-      // Kanji run: collect consecutive kanji.
-      final kanjiStart = i;
-      while (i < expression.length && _isKanji(expression.codeUnitAt(i))) {
-        i++;
-      }
-      final kanjiRun = expression.substring(kanjiStart, i);
+  if (expressionIndex == expression.length) {
+    final result = readingIndex == hiraReading.length
+        ? const <FuriganaSegment>[]
+        : null;
+    memo[key] = result;
+    return result;
+  }
 
-      if (i < expression.length) {
-        // There are characters after the kanji run. Find where the next
-        // non-kanji expression character appears in the remaining reading
-        // to determine the furigana boundary.
-        final nextExprHira = _charToHiragana(expression[i]);
+  final code = expression.codeUnitAt(expressionIndex);
 
-        int matchPos = -1;
-        for (int j = ri; j < hiraReading.length; j++) {
-          if (hiraReading[j] == nextExprHira) {
-            matchPos = j;
-            break;
-          }
-        }
+  if (!_isKanji(code)) {
+    // Kana run: it must line up exactly with the remaining reading.
+    final start = expressionIndex;
+    var end = expressionIndex;
+    while (end < expression.length && !_isKanji(expression.codeUnitAt(end))) {
+      end++;
+    }
 
-        if (matchPos > ri) {
-          final furi = hiraReading.substring(ri, matchPos);
-          segments.add(FuriganaSegment(kanjiRun, furi));
-          ri = matchPos;
-        } else if (matchPos == ri) {
-          // Kanji has no reading characters (unusual) — emit without furigana.
-          segments.add(FuriganaSegment(kanjiRun));
-        } else {
-          // Alignment failed.
-          return [];
-        }
-      } else {
-        // Kanji run at end of expression: all remaining reading is furigana.
-        if (ri < hiraReading.length) {
-          final furi = hiraReading.substring(ri);
-          segments.add(FuriganaSegment(kanjiRun, furi));
-          ri = hiraReading.length;
-        } else {
-          segments.add(FuriganaSegment(kanjiRun));
-        }
-      }
+    final kanaRun = expression.substring(start, end);
+    final normalizedKanaRun = _katakanaToHiragana(kanaRun);
+
+    if (!hiraReading.startsWith(normalizedKanaRun, readingIndex)) {
+      memo[key] = null;
+      return null;
+    }
+
+    final rest = _alignSegmentsFrom(
+      expression,
+      hiraReading,
+      end,
+      readingIndex + normalizedKanaRun.length,
+      memo,
+    );
+    if (rest == null) {
+      memo[key] = null;
+      return null;
+    }
+
+    final result = [FuriganaSegment(kanaRun), ...rest];
+    memo[key] = result;
+    return result;
+  }
+
+  // Kanji run: try all possible furigana boundaries that allow the rest of
+  // the expression to align, instead of greedily taking the first kana match.
+  final kanjiStart = expressionIndex;
+  var kanjiEnd = expressionIndex;
+  while (kanjiEnd < expression.length &&
+      _isKanji(expression.codeUnitAt(kanjiEnd))) {
+    kanjiEnd++;
+  }
+
+  final kanjiRun = expression.substring(kanjiStart, kanjiEnd);
+  if (kanjiEnd == expression.length) {
+    final furigana = readingIndex < hiraReading.length
+        ? hiraReading.substring(readingIndex)
+        : null;
+    final result = [FuriganaSegment(kanjiRun, furigana)];
+    memo[key] = result;
+    return result;
+  }
+
+  var nextKanaEnd = kanjiEnd;
+  while (nextKanaEnd < expression.length &&
+      !_isKanji(expression.codeUnitAt(nextKanaEnd))) {
+    nextKanaEnd++;
+  }
+
+  final nextKanaRun = expression.substring(kanjiEnd, nextKanaEnd);
+  final normalizedNextKanaRun = _katakanaToHiragana(nextKanaRun);
+
+  for (
+    var boundary = readingIndex + 1;
+    boundary <= hiraReading.length - normalizedNextKanaRun.length;
+    boundary++
+  ) {
+    if (!hiraReading.startsWith(normalizedNextKanaRun, boundary)) {
+      continue;
+    }
+
+    final rest = _alignSegmentsFrom(
+      expression,
+      hiraReading,
+      kanjiEnd,
+      boundary,
+      memo,
+    );
+    if (rest == null) {
+      continue;
+    }
+
+    final result = [
+      FuriganaSegment(kanjiRun, hiraReading.substring(readingIndex, boundary)),
+      ...rest,
+    ];
+    memo[key] = result;
+    return result;
+  }
+
+  if (hiraReading.startsWith(normalizedNextKanaRun, readingIndex)) {
+    final rest = _alignSegmentsFrom(
+      expression,
+      hiraReading,
+      kanjiEnd,
+      readingIndex,
+      memo,
+    );
+    if (rest != null) {
+      final result = [FuriganaSegment(kanjiRun), ...rest];
+      memo[key] = result;
+      return result;
     }
   }
 
-  return segments;
+  memo[key] = null;
+  return null;
 }
 
 /// Displays a Japanese expression with furigana (reading) only above kanji.
