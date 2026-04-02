@@ -121,6 +121,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _epubController.detach();
     unawaited(_progressPersistence.dispose());
     ref.read(brightnessProvider.notifier).resetBrightness();
     WakelockPlus.disable();

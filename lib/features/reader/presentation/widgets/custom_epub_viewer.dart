@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -174,10 +176,22 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     );
   }
 
+  @override
+  void dispose() {
+    final controller = _webViewController;
+    _webViewController = null;
+    widget.controller.detach(controller);
+    super.dispose();
+  }
+
   void _registerHandlers(InAppWebViewController controller) {
     controller.addJavaScriptHandler(
       handlerName: 'readyToLoad',
-      callback: (_) => _loadBook(),
+      callback: (_) {
+        if (!_isActiveController(controller)) return null;
+        unawaited(_loadBook());
+        return null;
+      },
     );
 
     controller.addJavaScriptHandler(
@@ -200,15 +214,21 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           debugPrint(
             '[EPUB_DART] chapters data empty, trying evaluateJavascript fallback',
           );
+          if (!_isActiveController(controller)) {
+            widget.onChaptersLoaded?.call([]);
+            return;
+          }
           widget.controller
               .getChapters()
               .then((chapters) {
+                if (!_isActiveController(controller)) return;
                 debugPrint(
                   '[EPUB_DART] fallback got ${chapters.length} chapters',
                 );
                 widget.onChaptersLoaded?.call(chapters);
               })
               .catchError((e) {
+                if (!_isActiveController(controller)) return;
                 debugPrint('[EPUB_DART] chapters fallback error: $e');
                 widget.onChaptersLoaded?.call([]);
               });
@@ -397,7 +417,26 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     );
   }
 
-  void _loadBook() {
+  bool _isActiveController(InAppWebViewController controller) {
+    return mounted && identical(_webViewController, controller);
+  }
+
+  Future<void> _runJavascript(String source) async {
+    final controller = _webViewController;
+    if (controller == null) return;
+
+    try {
+      await controller.evaluateJavascript(source: source);
+    } on MissingPluginException catch (error) {
+      debugPrint('[EPUB_DART] skipping JS on disposed web view: $error');
+      if (identical(_webViewController, controller)) {
+        _webViewController = null;
+      }
+      widget.controller.detach(controller);
+    }
+  }
+
+  Future<void> _loadBook() async {
     final cfiParam = widget.initialCfi != null
         ? '"${widget.initialCfi!.replaceAll('"', '\\"')}"'
         : '""';
@@ -420,21 +459,20 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       cssParam = 'null';
     }
 
-    _webViewController?.evaluateJavascript(
-      source:
-          'loadBook('
-          '[${widget.epubData.join(',')}], '
-          '$cfiParam, '
-          '"${widget.direction}", '
-          '"paginated", '
-          'false, '
-          '"${widget.fontSize}", '
-          '$fgHex, '
-          '$cssParam, '
-          '${widget.horizontalMargin}, '
-          '${widget.verticalMargin}, '
-          '${widget.forceHorizontalAxis}'
-          ')',
+    await _runJavascript(
+      'loadBook('
+      '[${widget.epubData.join(',')}], '
+      '$cfiParam, '
+      '"${widget.direction}", '
+      '"paginated", '
+      'false, '
+      '"${widget.fontSize}", '
+      '$fgHex, '
+      '$cssParam, '
+      '${widget.horizontalMargin}, '
+      '${widget.verticalMargin}, '
+      '${widget.forceHorizontalAxis}'
+      ')',
     );
 
     // Set the outer HTML background to match the color mode immediately
@@ -448,9 +486,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           '#${r.toRadixString(16).padLeft(2, '0')}'
           '${g.toRadixString(16).padLeft(2, '0')}'
           '${b.toRadixString(16).padLeft(2, '0')}';
-      _webViewController?.evaluateJavascript(
-        source: 'setBodyBackground("$bgHex")',
-      );
+      await _runJavascript('setBodyBackground("$bgHex")');
     }
   }
 

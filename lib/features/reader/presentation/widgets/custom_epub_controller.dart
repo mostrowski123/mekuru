@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../data/models/epub_models.dart';
@@ -15,6 +16,14 @@ class CustomEpubController {
 
   void attach(InAppWebViewController controller) {
     _webView = controller;
+  }
+
+  void detach([InAppWebViewController? controller]) {
+    if (controller != null && !identical(_webView, controller)) {
+      return;
+    }
+    _webView = null;
+    _failPendingRequests(StateError('EPUB web view is no longer attached'));
   }
 
   // ── Navigation ──────────────────────────────────────────────────────
@@ -38,7 +47,7 @@ class CustomEpubController {
 
   Future<EpubLocation> getCurrentLocation() {
     _locationCompleter = Completer<EpubLocation>();
-    _eval('getCurrentLocation()');
+    unawaited(_requestCurrentLocation());
     return _locationCompleter!.future;
   }
 
@@ -46,12 +55,13 @@ class CustomEpubController {
     if (_locationCompleter != null && !_locationCompleter!.isCompleted) {
       _locationCompleter!.complete(EpubLocation.fromJson(data));
     }
+    _locationCompleter = null;
   }
 
   // ── Chapters ────────────────────────────────────────────────────────
 
   Future<List<EpubChapter>> getChapters() async {
-    final result = await _webView?.evaluateJavascript(source: 'getChapters()');
+    final result = await _evaluateJavascript('getChapters()');
     return parseChapterList(result);
   }
 
@@ -87,7 +97,7 @@ class CustomEpubController {
   Future<List<Map<String, dynamic>>> search(String query) {
     _searchCompleter = Completer<List<Map<String, dynamic>>>();
     final escaped = query.replaceAll('"', '\\"');
-    _eval('searchInBook("$escaped")');
+    unawaited(_requestSearch(escaped));
     return _searchCompleter!.future;
   }
 
@@ -97,6 +107,7 @@ class CustomEpubController {
         results.map((e) => Map<String, dynamic>.from(e as Map)).toList(),
       );
     }
+    _searchCompleter = null;
   }
 
   // ── Annotations ─────────────────────────────────────────────────────
@@ -139,7 +150,7 @@ class CustomEpubController {
 
   Future<String> getCurrentPageText() {
     _pageTextCompleter = Completer<String>();
-    _eval('getCurrentPageText()');
+    unawaited(_requestCurrentPageText());
     return _pageTextCompleter!.future;
   }
 
@@ -147,12 +158,98 @@ class CustomEpubController {
     if (_pageTextCompleter != null && !_pageTextCompleter!.isCompleted) {
       _pageTextCompleter!.complete(text);
     }
+    _pageTextCompleter = null;
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────
 
   void _eval(String source) {
-    _webView?.evaluateJavascript(source: source);
+    unawaited(_safeEval(source));
+  }
+
+  Future<void> _requestCurrentLocation() async {
+    try {
+      await _evaluateJavascript('getCurrentLocation()');
+    } catch (error, stackTrace) {
+      final completer = _locationCompleter;
+      _locationCompleter = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.completeError(error, stackTrace);
+      }
+    }
+  }
+
+  Future<void> _requestSearch(String escapedQuery) async {
+    try {
+      await _evaluateJavascript('searchInBook("$escapedQuery")');
+    } catch (error, stackTrace) {
+      final completer = _searchCompleter;
+      _searchCompleter = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.completeError(error, stackTrace);
+      }
+    }
+  }
+
+  Future<void> _requestCurrentPageText() async {
+    try {
+      await _evaluateJavascript('getCurrentPageText()');
+    } catch (error, stackTrace) {
+      final completer = _pageTextCompleter;
+      _pageTextCompleter = null;
+      if (completer != null && !completer.isCompleted) {
+        completer.completeError(error, stackTrace);
+      }
+    }
+  }
+
+  Future<dynamic> _evaluateJavascript(String source) async {
+    final webView = _webView;
+    if (webView == null) {
+      throw StateError('EPUB web view is not attached');
+    }
+
+    try {
+      return await webView.evaluateJavascript(source: source);
+    } on MissingPluginException catch (error, stackTrace) {
+      debugPrint('[EPUB_DART] JS bridge unavailable: $error');
+      if (identical(_webView, webView)) {
+        _webView = null;
+      }
+      _failPendingRequests(
+        StateError('EPUB web view is no longer attached'),
+        stackTrace,
+      );
+      throw StateError('EPUB web view is no longer attached');
+    }
+  }
+
+  Future<void> _safeEval(String source) async {
+    try {
+      await _evaluateJavascript(source);
+    } catch (error) {
+      debugPrint('[EPUB_DART] JS call ignored: $error');
+    }
+  }
+
+  void _failPendingRequests(Object error, [StackTrace? stackTrace]) {
+    final locationCompleter = _locationCompleter;
+    _locationCompleter = null;
+    if (locationCompleter != null && !locationCompleter.isCompleted) {
+      locationCompleter.completeError(error, stackTrace);
+    }
+
+    final searchCompleter = _searchCompleter;
+    _searchCompleter = null;
+    if (searchCompleter != null && !searchCompleter.isCompleted) {
+      searchCompleter.completeError(error, stackTrace);
+    }
+
+    final pageTextCompleter = _pageTextCompleter;
+    _pageTextCompleter = null;
+    if (pageTextCompleter != null && !pageTextCompleter.isCompleted) {
+      pageTextCompleter.completeError(error, stackTrace);
+    }
   }
 
   String _colorToHex(Color c) {
