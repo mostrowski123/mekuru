@@ -45,6 +45,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   final _epubController = CustomEpubController();
   final _epubFileResolver = EpubFileResolver();
 
+  late final BrightnessNotifier _brightnessNotifier;
   late final ReaderProgressPersistence _progressPersistence;
 
   Uint8List? _epubData;
@@ -80,6 +81,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     Sentry.metrics.count('reader.book_opened', 1);
     AnalyticsService.instance.logEvent('book_opened');
 
+    _brightnessNotifier = ref.read(brightnessProvider.notifier);
     _progressPersistence = ReaderProgressPersistence(
       saveProgress: (cfi, progress) {
         return ref
@@ -111,7 +113,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (settings.keepScreenOn) {
         WakelockPlus.enable();
       }
-      await ref.read(brightnessProvider.notifier).initialize();
+      await _brightnessNotifier.initialize();
 
       if (!mounted) return;
       await _loadEpubData();
@@ -123,7 +125,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     WidgetsBinding.instance.removeObserver(this);
     _epubController.detach();
     unawaited(_progressPersistence.dispose());
-    ref.read(brightnessProvider.notifier).resetBrightness();
+    unawaited(_brightnessNotifier.resetBrightness());
     WakelockPlus.disable();
     super.dispose();
   }
