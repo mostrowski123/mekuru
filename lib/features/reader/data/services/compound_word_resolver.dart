@@ -63,49 +63,83 @@ class CompoundWordResolver {
     // Determine the maximum span we can try.
     final maxEnd = (tappedIdx + maxTokenSpan).clamp(0, tokens.length);
 
-    // Try longest candidates first (greedy longest-match).
+    // Build the ordered list of candidate checks, longest span first and —
+    // within a span — exact surface before deinflected forms. This is the
+    // exact order the legacy per-call loop walked, so whichever path we take
+    // below picks the same winning candidate.
+    final checks = <_CompoundCheck>[];
     for (var end = maxEnd; end > tappedIdx + 1; end--) {
       final candidate = _buildCandidate(tokens, tappedIdx, end);
-      if (candidate == null) continue; // non-contiguous or unaligned
-
-      // Check exact dictionary match first.
-      final hasMatch = await _queryService.hasMatch(candidate.surface);
-      if (hasMatch) {
-        debugPrint(
-          '[Compound] Found compound match: "${candidate.surface}" '
-          '(${end - tappedIdx} tokens)',
-        );
-        return CompoundWordResult(
-          surfaceForm: candidate.surface,
-          dictionaryForm: candidate.surface,
-          reading: candidate.reading,
-          sentenceContext: singleResult.sentenceContext,
-          tokenStartOffset: singleResult.tokenStartOffset,
-          tokenCount: end - tappedIdx,
-        );
+      if (candidate == null) continue;
+      final tokenCount = end - tappedIdx;
+      checks.add(_CompoundCheck(
+        candidate: candidate,
+        dictionaryForm: candidate.surface,
+        tokenCount: tokenCount,
+        isDeinflection: false,
+      ));
+      for (final d in deinflect(candidate.surface)) {
+        checks.add(_CompoundCheck(
+          candidate: candidate,
+          dictionaryForm: d,
+          tokenCount: tokenCount,
+          isDeinflection: true,
+        ));
       }
+    }
 
-      // Try deinflected forms of the compound (e.g. 行って → 行く).
-      final deinflections = deinflect(candidate.surface);
-      for (final d in deinflections) {
-        if (await _queryService.hasMatch(d)) {
-          debugPrint(
-            '[Compound] Found deinflected compound match: '
-            '"${candidate.surface}" → "$d" (${end - tappedIdx} tokens)',
-          );
-          return CompoundWordResult(
-            surfaceForm: candidate.surface,
-            dictionaryForm: d,
-            reading: candidate.reading,
-            sentenceContext: singleResult.sentenceContext,
-            tokenStartOffset: singleResult.tokenStartOffset,
-            tokenCount: end - tappedIdx,
-          );
+    if (checks.isEmpty) {
+      return _singleTokenFallback(singleResult);
+    }
+
+    _CompoundCheck? winner;
+    if (kUseBatchedDictionaryLookup) {
+      // Single SQL round-trip covering every candidate.
+      final terms = <String>[for (final c in checks) c.dictionaryForm];
+      final matched = await _queryService.matchingTerms(terms);
+      for (final check in checks) {
+        if (matched.contains(check.dictionaryForm)) {
+          winner = check;
+          break;
+        }
+      }
+    } else {
+      // Legacy path: one SQL round-trip per candidate.
+      for (final check in checks) {
+        if (await _queryService.hasMatch(check.dictionaryForm)) {
+          winner = check;
+          break;
         }
       }
     }
 
-    // No compound match — return the single token result.
+    if (winner != null) {
+      if (winner.isDeinflection) {
+        debugPrint(
+          '[Compound] Found deinflected compound match: '
+          '"${winner.candidate.surface}" → "${winner.dictionaryForm}" '
+          '(${winner.tokenCount} tokens)',
+        );
+      } else {
+        debugPrint(
+          '[Compound] Found compound match: "${winner.candidate.surface}" '
+          '(${winner.tokenCount} tokens)',
+        );
+      }
+      return CompoundWordResult(
+        surfaceForm: winner.candidate.surface,
+        dictionaryForm: winner.dictionaryForm,
+        reading: winner.candidate.reading,
+        sentenceContext: singleResult.sentenceContext,
+        tokenStartOffset: singleResult.tokenStartOffset,
+        tokenCount: winner.tokenCount,
+      );
+    }
+
+    return _singleTokenFallback(singleResult);
+  }
+
+  CompoundWordResult _singleTokenFallback(WordLookupResult singleResult) {
     return CompoundWordResult(
       surfaceForm: singleResult.surfaceForm,
       dictionaryForm: singleResult.dictionaryForm,
@@ -154,4 +188,17 @@ class _CompoundCandidate {
   final String surface;
   final String reading;
   const _CompoundCandidate({required this.surface, required this.reading});
+}
+
+class _CompoundCheck {
+  final _CompoundCandidate candidate;
+  final String dictionaryForm;
+  final int tokenCount;
+  final bool isDeinflection;
+  const _CompoundCheck({
+    required this.candidate,
+    required this.dictionaryForm,
+    required this.tokenCount,
+    required this.isDeinflection,
+  });
 }

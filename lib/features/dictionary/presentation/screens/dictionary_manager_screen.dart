@@ -1,9 +1,11 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
+import 'package:mekuru/features/dictionary/data/services/lookup_benchmark.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
@@ -51,6 +53,12 @@ class _DictionaryManagerScreenState
       appBar: AppBar(
         title: Text(l10n.dictionaryManagerTitle),
         actions: [
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.speed),
+              tooltip: 'A/B benchmark lookup (debug)',
+              onPressed: () => _runLookupBenchmark(context, ref),
+            ),
           IconButton(
             icon: const Icon(Icons.help_outline),
             tooltip: l10n.commonHelp,
@@ -617,6 +625,39 @@ class _DictionaryManagerScreenState
       } finally {
         if (mounted) setState(() => _deleting.remove(id));
       }
+    }
+  }
+
+  Future<void> _runLookupBenchmark(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Running lookup benchmark...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      final service = ref.read(dictionaryQueryServiceProvider);
+      final report = await LookupBenchmark(service).run();
+      if (!mounted) return;
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'p50 ${(report.legacyP50 / 1000).toStringAsFixed(1)}ms → '
+            '${(report.batchedP50 / 1000).toStringAsFixed(1)}ms '
+            '(${report.speedupP50.toStringAsFixed(1)}× faster). '
+            'See console for details.',
+          ),
+          duration: const Duration(seconds: 8),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Benchmark failed: $e')),
+      );
     }
   }
 }

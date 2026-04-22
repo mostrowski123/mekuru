@@ -6,6 +6,14 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
 
+/// When true, word lookup and compound resolution use the batched query path
+/// that collapses per-candidate and per-tier round-trips into a single SQL
+/// query each. When false, the original per-candidate/per-tier path runs.
+/// Kept mutable (not `const`) so the A/B benchmark harness can flip it at
+/// runtime. Must not change results or ordering — enforced by a differential
+/// test.
+bool kUseBatchedDictionaryLookup = true;
+
 /// A dictionary entry paired with the name of the dictionary it came from.
 class DictionaryEntryWithSource {
   static const int missingFrequencySortRank = 1 << 62;
@@ -111,12 +119,17 @@ class DictionaryQueryService {
   }
 
   /// Sort entries by their dictionary's sort order using the cached metadata.
+  /// Ties within the same dictionary are broken by entry.id ascending so the
+  /// result is deterministic regardless of the SQL row order or the
+  /// underlying Dart sort algorithm's stability.
   void _sortBySortOrder(List<DictionaryEntry> entries, _MetasCache cache) {
     if (entries.length < 2) return;
     entries.sort((a, b) {
       final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
       final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
-      return orderA.compareTo(orderB);
+      final cmp = orderA.compareTo(orderB);
+      if (cmp != 0) return cmp;
+      return a.id.compareTo(b.id);
     });
   }
 
@@ -145,11 +158,14 @@ class DictionaryQueryService {
 
       final orderA = cache.sortOrders[a.dictionaryId] ?? 0;
       final orderB = cache.sortOrders[b.dictionaryId] ?? 0;
-      return orderA.compareTo(orderB);
+      final cmp = orderA.compareTo(orderB);
+      if (cmp != 0) return cmp;
+      return a.id.compareTo(b.id);
     });
   }
 
-  /// Sort entries-with-source by their dictionary's sort order.
+  /// Sort entries-with-source by their dictionary's sort order. Ties within
+  /// the same dictionary are broken by entry.id ascending for determinism.
   void _sortWithSourceBySortOrder(
     List<DictionaryEntryWithSource> entries,
     _MetasCache cache,
@@ -158,7 +174,9 @@ class DictionaryQueryService {
     entries.sort((a, b) {
       final orderA = cache.sortOrders[a.entry.dictionaryId] ?? 0;
       final orderB = cache.sortOrders[b.entry.dictionaryId] ?? 0;
-      return orderA.compareTo(orderB);
+      final cmp = orderA.compareTo(orderB);
+      if (cmp != 0) return cmp;
+      return a.entry.id.compareTo(b.entry.id);
     });
   }
 
@@ -217,7 +235,8 @@ class DictionaryQueryService {
         (t) =>
             (t.expression.equals(term) | t.reading.equals(term)) &
             t.dictionaryId.isIn(cache.enabledIds),
-      );
+      )
+      ..orderBy([(t) => OrderingTerm.asc(t.id)]);
 
     final rows = await query.get();
     return _mapEntriesWithSource(rows, cache);
@@ -234,7 +253,8 @@ class DictionaryQueryService {
         (t) =>
             (t.expression.isIn(terms) | t.reading.isIn(terms)) &
             t.dictionaryId.isIn(cache.enabledIds),
-      );
+      )
+      ..orderBy([(t) => OrderingTerm.asc(t.id)]);
 
     final rows = await query.get();
     return _mapEntriesWithSource(rows, cache);
@@ -314,6 +334,39 @@ class DictionaryQueryService {
 
     final row = await query.getSingleOrNull();
     return row != null;
+  }
+
+  /// Returns the subset of [terms] that exist as an expression or reading in
+  /// any enabled dictionary. Batched equivalent of calling [hasMatch] once per
+  /// term — one round-trip instead of N.
+  Future<Set<String>> matchingTerms(List<String> terms) async {
+    if (terms.isEmpty) return const <String>{};
+
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return const <String>{};
+
+    final termSet = terms.toSet();
+
+    final query = _db.selectOnly(_db.dictionaryEntries, distinct: true)
+      ..addColumns([
+        _db.dictionaryEntries.expression,
+        _db.dictionaryEntries.reading,
+      ])
+      ..where(
+        (_db.dictionaryEntries.expression.isIn(termSet) |
+                _db.dictionaryEntries.reading.isIn(termSet)) &
+            _db.dictionaryEntries.dictionaryId.isIn(cache.enabledIds),
+      );
+
+    final rows = await query.get();
+    final matched = <String>{};
+    for (final row in rows) {
+      final expr = row.read(_db.dictionaryEntries.expression);
+      final reading = row.read(_db.dictionaryEntries.reading);
+      if (expr != null && termSet.contains(expr)) matched.add(expr);
+      if (reading != null && termSet.contains(reading)) matched.add(reading);
+    }
+    return matched;
   }
 
   /// Search entries and include the dictionary name for each result.
@@ -607,18 +660,82 @@ class DictionaryQueryService {
       }
     }
 
+    final tierSets = <Set<String>>[
+      primaryKanaTerms,
+      exactSurfaceTerms,
+      preferredSurfaceTerms,
+      otherSurfaceTerms,
+      parserTerms,
+    ];
+
+    if (kUseBatchedDictionaryLookup) {
+      return _searchLookupTiersBatched(tierSets);
+    }
+
     return _mergeLookupTiers([
-      if (primaryKanaTerms.isNotEmpty)
-        await searchMultipleWithSource(primaryKanaTerms.toList()),
-      if (exactSurfaceTerms.isNotEmpty)
-        await searchMultipleWithSource(exactSurfaceTerms.toList()),
-      if (preferredSurfaceTerms.isNotEmpty)
-        await searchMultipleWithSource(preferredSurfaceTerms.toList()),
-      if (otherSurfaceTerms.isNotEmpty)
-        await searchMultipleWithSource(otherSurfaceTerms.toList()),
-      if (parserTerms.isNotEmpty)
-        await searchMultipleWithSource(parserTerms.toList()),
+      for (final tier in tierSets)
+        if (tier.isNotEmpty) await searchMultipleWithSource(tier.toList()),
     ]);
+  }
+
+  /// Batched equivalent of the per-tier `searchMultipleWithSource` fan-out.
+  /// Runs ONE entry-level SQL query for the union of all tier terms, partitions
+  /// rows into their originating tier (minimum tier index across the row's
+  /// expression and reading — matches the first-seen dedup behavior in
+  /// [_mergeLookupTiers]), and then delegates to the unchanged frequency-rank
+  /// and merge pipeline so ordering is identical to the legacy path.
+  Future<List<DictionaryEntryWithSource>> _searchLookupTiersBatched(
+    List<Set<String>> tierSets,
+  ) async {
+    // Build term → tier index. The `searchLookupWithSource` call site
+    // guarantees each term appears in exactly one tier.
+    final termToTier = <String, int>{};
+    final allTerms = <String>{};
+    for (var i = 0; i < tierSets.length; i++) {
+      for (final term in tierSets[i]) {
+        termToTier[term] = i;
+        allTerms.add(term);
+      }
+    }
+    if (allTerms.isEmpty) return const [];
+
+    final cache = await _ensureMetasCached();
+    if (cache.enabledIds.isEmpty) return const [];
+
+    final combined = await _searchMultipleWithSourceNoFrequency(
+      allTerms.toList(),
+      cache,
+    );
+
+    // Partition combined results into per-tier buckets. Each row goes into
+    // the minimum tier index across its matched columns, which is what
+    // `_mergeLookupTiers` (first-seen wins) would have produced when each
+    // tier ran separately.
+    final buckets = List<List<DictionaryEntryWithSource>>.generate(
+      tierSets.length,
+      (_) => <DictionaryEntryWithSource>[],
+    );
+    for (final row in combined) {
+      final exprTier = termToTier[row.entry.expression];
+      final readingTier = termToTier[row.entry.reading];
+      final int tier;
+      if (exprTier != null && readingTier != null) {
+        tier = exprTier < readingTier ? exprTier : readingTier;
+      } else {
+        tier = exprTier ?? readingTier!;
+      }
+      buckets[tier].add(row);
+    }
+
+    final ranked = <List<DictionaryEntryWithSource>>[];
+    for (var i = 0; i < buckets.length; i++) {
+      if (buckets[i].isEmpty) continue;
+      ranked.add(
+        await _attachFrequencyRanks(buckets[i], exactTerms: tierSets[i]),
+      );
+    }
+
+    return _mergeLookupTiers(ranked);
   }
 
   DeinflectionFamily? _inferLookupFamily(String primary) {
