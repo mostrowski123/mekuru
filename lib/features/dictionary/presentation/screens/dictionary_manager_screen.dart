@@ -29,6 +29,10 @@ class _DictionaryManagerScreenState
   List<dynamic>? _localOrder;
   bool _isApplyingPendingRestore = false;
 
+  /// Dictionary IDs with a delete operation in flight. Used to swap the
+  /// trash icon for a progress indicator and disable row controls.
+  final Set<int> _deleting = <int>{};
+
   @override
   void dispose() {
     super.dispose();
@@ -431,6 +435,8 @@ class _DictionaryManagerScreenState
   }) {
     final l10n = context.l10n;
 
+    final isDeleting = _deleting.contains(dict.id);
+
     return Card(
       key: ValueKey(dict.id),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -451,16 +457,29 @@ class _DictionaryManagerScreenState
           children: [
             Switch(
               value: dict.isEnabled,
-              onChanged: (value) {
-                ref
-                    .read(dictionaryRepositoryProvider)
-                    .toggleDictionary(dict.id, isEnabled: value);
-              },
+              onChanged: isDeleting
+                  ? null
+                  : (value) {
+                      ref
+                          .read(dictionaryRepositoryProvider)
+                          .toggleDictionary(dict.id, isEnabled: value);
+                    },
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => _confirmDelete(context, ref, dict.id, dict.name),
-            ),
+            if (isDeleting)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () =>
+                    _confirmDelete(context, ref, dict.id, dict.name),
+              ),
           ],
         ),
       ),
@@ -588,11 +607,16 @@ class _DictionaryManagerScreenState
     );
 
     if (confirmed == true) {
-      await ref.read(dictionaryRepositoryProvider).deleteDictionary(id);
-      // Refresh download status so the downloads page reflects the deletion.
-      ref.read(jmdictProvider.notifier).checkStatus();
-      ref.read(kanjidicProvider.notifier).checkStatus();
-      ref.read(jpdbFreqProvider.notifier).checkStatus();
+      if (mounted) setState(() => _deleting.add(id));
+      try {
+        await ref.read(dictionaryRepositoryProvider).deleteDictionary(id);
+        // Refresh download status so the downloads page reflects the deletion.
+        ref.read(jmdictProvider.notifier).checkStatus();
+        ref.read(kanjidicProvider.notifier).checkStatus();
+        ref.read(jpdbFreqProvider.notifier).checkStatus();
+      } finally {
+        if (mounted) setState(() => _deleting.remove(id));
+      }
     }
   }
 }
