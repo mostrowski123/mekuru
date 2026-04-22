@@ -13,14 +13,12 @@ import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.da
 /// Summary of a collection import operation.
 class CollectionImportResult {
   final List<String> importedDictionaries;
-  final List<String> skippedDictionaries;
   final int totalEntriesImported;
   final int totalPitchAccentsImported;
   final int totalFrequenciesImported;
 
   CollectionImportResult({
     required this.importedDictionaries,
-    required this.skippedDictionaries,
     required this.totalEntriesImported,
     this.totalPitchAccentsImported = 0,
     this.totalFrequenciesImported = 0,
@@ -279,14 +277,12 @@ class DictionaryImporter {
   /// - [onParsing] called when isolate parsing begins
   /// - [onDictionaryStart] called when starting to insert a dictionary
   /// - [onProgress] called with (processedEntries, totalEntries) per dictionary
-  /// - [onDictionarySkipped] called when a dictionary is skipped (already exists)
   Future<CollectionImportResult> importCollectionFromFile(
     String filePath, {
     void Function()? onParsing,
     void Function(String name, int entryCount, int dictIndex, int dictTotal)?
     onDictionaryStart,
     void Function(int processed, int total)? onProgress,
-    void Function(String name)? onDictionarySkipped,
   }) async {
     final file = File(filePath);
     if (!await file.exists()) {
@@ -360,14 +356,10 @@ class DictionaryImporter {
       ...freqEntriesByDict.keys,
     }.toList();
     final importedDicts = <String>[];
-    final skippedDicts = <String>[];
     int totalEntriesImported = 0;
     int totalPitchAccentsImported = 0;
     int totalFrequenciesImported = 0;
     final existingDictionaries = await _repository.getAllDictionaries();
-    final existingNames = existingDictionaries
-        .map((dictionary) => dictionary.name)
-        .toSet();
     var nextSortOrder = existingDictionaries.fold<int>(
       0,
       (maxOrder, dictionary) => dictionary.sortOrder >= maxOrder
@@ -380,13 +372,6 @@ class DictionaryImporter {
       final rawEntries = entriesByDict[dictName] ?? [];
       final rawPitchEntries = pitchEntriesByDict[dictName] ?? [];
       final rawFreqEntries = freqEntriesByDict[dictName] ?? [];
-
-      // Check if dictionary already exists
-      if (existingNames.contains(dictName)) {
-        skippedDicts.add(dictName);
-        onDictionarySkipped?.call(dictName);
-        continue;
-      }
 
       final totalItems =
           rawEntries.length + rawPitchEntries.length + rawFreqEntries.length;
@@ -481,7 +466,6 @@ class DictionaryImporter {
         }
       });
 
-      existingNames.add(dictName);
       importedDicts.add(dictName);
       totalEntriesImported += inserted;
       totalPitchAccentsImported += pitchInserted;
@@ -490,7 +474,6 @@ class DictionaryImporter {
 
     return CollectionImportResult(
       importedDictionaries: importedDicts,
-      skippedDictionaries: skippedDicts,
       totalEntriesImported: totalEntriesImported,
       totalPitchAccentsImported: totalPitchAccentsImported,
       totalFrequenciesImported: totalFrequenciesImported,

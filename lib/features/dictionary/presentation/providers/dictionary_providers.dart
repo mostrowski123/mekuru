@@ -49,7 +49,6 @@ class DictionaryImportState {
   final String? currentDictionary;
   final int dictionariesProcessed;
   final int dictionariesTotal;
-  final List<String> skippedDictionaries;
   final String? error;
   final String? successMessage;
 
@@ -60,7 +59,6 @@ class DictionaryImportState {
     this.currentDictionary,
     this.dictionariesProcessed = 0,
     this.dictionariesTotal = 0,
-    this.skippedDictionaries = const [],
     this.error,
     this.successMessage,
   });
@@ -74,7 +72,6 @@ class DictionaryImportState {
     String? currentDictionary,
     int? dictionariesProcessed,
     int? dictionariesTotal,
-    List<String>? skippedDictionaries,
     String? error,
     String? successMessage,
   }) {
@@ -86,7 +83,6 @@ class DictionaryImportState {
       dictionariesProcessed:
           dictionariesProcessed ?? this.dictionariesProcessed,
       dictionariesTotal: dictionariesTotal ?? this.dictionariesTotal,
-      skippedDictionaries: skippedDictionaries ?? this.skippedDictionaries,
       error: error,
       successMessage: successMessage,
     );
@@ -150,7 +146,6 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
 
   Future<void> _importCollection(String filePath) async {
     state = const DictionaryImportState(isImporting: true);
-    final skipped = <String>[];
 
     try {
       final importer = ref.read(dictionaryImporterProvider);
@@ -174,44 +169,24 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
             totalEntries: total,
           );
         },
-        onDictionarySkipped: (name) {
-          skipped.add(name);
-          state = state.copyWith(skippedDictionaries: List.of(skipped));
-        },
       );
 
-      final parts = <String>[];
-      if (result.importedDictionaries.isNotEmpty) {
-        parts.add(
-          'Imported ${result.importedDictionaries.length} '
-          'dictionaries (${result.totalEntriesImported} entries)',
-        );
-      }
-      if (result.skippedDictionaries.isNotEmpty) {
-        parts.add(
-          'Skipped ${result.skippedDictionaries.length} already imported: '
-          '${result.skippedDictionaries.join(", ")}',
-        );
-      }
-      if (parts.isEmpty) {
-        parts.add('No dictionaries found in collection');
-      }
+      final message = result.importedDictionaries.isNotEmpty
+          ? 'Imported ${result.importedDictionaries.length} '
+                'dictionaries (${result.totalEntriesImported} entries)'
+          : 'No dictionaries found in collection';
 
       Sentry.logger.info('Dictionary collection imported', attributes: {
         'category': SentryAttribute.string('dictionary.import'),
         'dict_count': SentryAttribute.int(result.importedDictionaries.length),
         'entry_count': SentryAttribute.int(result.totalEntriesImported),
-        'skipped_count': SentryAttribute.int(result.skippedDictionaries.length),
       });
       Sentry.metrics.count('dictionary.collection_imported', 1);
       AnalyticsService.instance.logEvent('dictionary_collection_imported', {
         'dict_count': result.importedDictionaries.length,
         'entry_count': result.totalEntriesImported,
       });
-      state = DictionaryImportState(
-        successMessage: parts.join('. '),
-        skippedDictionaries: result.skippedDictionaries,
-      );
+      state = DictionaryImportState(successMessage: message);
     } catch (e) {
       state = DictionaryImportState(error: e.toString());
     }

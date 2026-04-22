@@ -566,6 +566,26 @@ void main() {
       final dicts = await repo.getAllDictionaries();
       expect(dicts.first.name, 'Unknown Dictionary');
     });
+
+    test(
+      're-importing the same zip creates a duplicate dictionary row',
+      () async {
+        final zipPath = await createTestYomitanZip();
+        trackTempFile(zipPath);
+
+        await importer.importFromFile(zipPath);
+        await importer.importFromFile(zipPath);
+
+        final dicts = await repo.getAllDictionaries();
+        expect(
+          dicts.where((d) => d.name == 'Test Dictionary').length,
+          2,
+          reason:
+              'Single-ZIP import path intentionally does not dedup; users '
+              'remove duplicates manually from the dictionary manager.',
+        );
+      },
+    );
   });
 
   // ══════════════════════════════════════════════════════════════════
@@ -628,7 +648,6 @@ void main() {
       final result = await importer.importCollectionFromFile(filePath);
 
       expect(result.importedDictionaries, ['JMdict', 'JMnedict']);
-      expect(result.skippedDictionaries, isEmpty);
       expect(result.totalEntriesImported, 3);
 
       final dicts = await repo.getAllDictionaries();
@@ -656,7 +675,7 @@ void main() {
       expect(await repo.getEntryCount(dictB.id), 1);
     });
 
-    test('skips dictionaries that already exist by name', () async {
+    test('imports duplicates as new rows when name already exists', () async {
       await repo.insertDictionary('JMdict');
 
       final json = buildCollectionJson({
@@ -669,16 +688,14 @@ void main() {
       });
       final filePath = await writeCollectionFile(json);
 
-      final skippedNames = <String>[];
-      final result = await importer.importCollectionFromFile(
-        filePath,
-        onDictionarySkipped: (name) => skippedNames.add(name),
-      );
+      final result = await importer.importCollectionFromFile(filePath);
 
-      expect(result.importedDictionaries, ['NewDict']);
-      expect(result.skippedDictionaries, ['JMdict']);
-      expect(skippedNames, ['JMdict']);
-      expect(result.totalEntriesImported, 1);
+      expect(result.importedDictionaries, ['JMdict', 'NewDict']);
+      expect(result.totalEntriesImported, 2);
+
+      final dicts = await repo.getAllDictionaries();
+      final jmdictCount = dicts.where((d) => d.name == 'JMdict').length;
+      expect(jmdictCount, 2);
     });
 
     test('parses expression, reading, and glossary correctly', () async {
@@ -845,11 +862,10 @@ void main() {
       final result = await importer.importCollectionFromFile(filePath);
 
       expect(result.importedDictionaries, isEmpty);
-      expect(result.skippedDictionaries, isEmpty);
       expect(result.totalEntriesImported, 0);
     });
 
-    test('skips all dictionaries when all already exist', () async {
+    test('imports duplicates when all dictionaries already exist', () async {
       await repo.insertDictionary('DictA');
       await repo.insertDictionary('DictB');
 
@@ -865,9 +881,12 @@ void main() {
 
       final result = await importer.importCollectionFromFile(filePath);
 
-      expect(result.importedDictionaries, isEmpty);
-      expect(result.skippedDictionaries, ['DictA', 'DictB']);
-      expect(result.totalEntriesImported, 0);
+      expect(result.importedDictionaries, ['DictA', 'DictB']);
+      expect(result.totalEntriesImported, 2);
+
+      final dicts = await repo.getAllDictionaries();
+      expect(dicts.where((d) => d.name == 'DictA').length, 2);
+      expect(dicts.where((d) => d.name == 'DictB').length, 2);
     });
 
     test('throws for file not found', () async {
