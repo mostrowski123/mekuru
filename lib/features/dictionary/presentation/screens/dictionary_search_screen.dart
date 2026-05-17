@@ -32,10 +32,12 @@ class DictionarySearchScreenState
 
   late final TextEditingController _controller;
   late final FocusNode _searchFocusNode;
+  late final SearchHistoryNotifier _historyNotifier;
   Timer? _debounce;
   List<_GroupedSearchResultData>? _groupedResults;
   bool _isSearching = false;
   String _lastQuery = '';
+  bool _autoCommitNextResult = false;
 
   /// Request focus on the search field (e.g. when the tab becomes visible).
   ///
@@ -53,7 +55,12 @@ class DictionarySearchScreenState
     super.initState();
     _controller = TextEditingController(text: widget.initialQuery ?? '');
     _searchFocusNode = FocusNode();
+    // Cache so dispose() can save history without touching `ref` post-unmount.
+    _historyNotifier = ref.read(searchHistoryProvider.notifier);
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      // Reader-initiated lookups (e.g., tapping a word in the EPUB) should
+      // auto-save once results come back, since the tap itself is intent.
+      _autoCommitNextResult = true;
       // Trigger initial search after build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _performSearch(widget.initialQuery!);
@@ -63,6 +70,19 @@ class DictionarySearchScreenState
 
   @override
   void dispose() {
+    // Riverpod forbids provider mutations inside lifecycle methods; defer the
+    // commit so the addSearch state change happens after the tree finalizes.
+    // Swallow errors: in tests the container may be disposed before the
+    // microtask runs, and at app shutdown losing the last entry is harmless.
+    if (_lastQuery.isNotEmpty && (_groupedResults?.isNotEmpty ?? false)) {
+      final term = _lastQuery;
+      final notifier = _historyNotifier;
+      scheduleMicrotask(() {
+        try {
+          notifier.addSearch(term);
+        } catch (_) {}
+      });
+    }
     _debounce?.cancel();
     _controller.dispose();
     _searchFocusNode.dispose();
@@ -71,6 +91,8 @@ class DictionarySearchScreenState
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
+    // Any user-driven edit invalidates a pending reader-initiated auto-commit.
+    _autoCommitNextResult = false;
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
       setState(() {
@@ -84,6 +106,12 @@ class DictionarySearchScreenState
     _debounce = Timer(const Duration(milliseconds: 300), () {
       _performSearch(trimmed);
     });
+  }
+
+  void _commitToHistory() {
+    if (_lastQuery.isEmpty) return;
+    if (_groupedResults?.isNotEmpty != true) return;
+    _historyNotifier.addSearch(_lastQuery);
   }
 
   void _clearSearch() {
@@ -119,8 +147,9 @@ class DictionarySearchScreenState
 
       // Only update if this is still the latest query
       if (mounted && term == _lastQuery) {
-        if (results.isNotEmpty) {
-          ref.read(searchHistoryProvider.notifier).addSearch(term);
+        if (_autoCommitNextResult && results.isNotEmpty) {
+          _autoCommitNextResult = false;
+          _historyNotifier.addSearch(_lastQuery);
         }
         setState(() {
           _groupedResults = groupedResults;
@@ -138,6 +167,7 @@ class DictionarySearchScreenState
   }
 
   void _navigateToWord(String word) {
+    _commitToHistory();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DictionarySearchScreen(initialQuery: word),
@@ -268,6 +298,17 @@ class DictionarySearchScreenState
                 ),
               ),
               onChanged: _onSearchChanged,
+              onSubmitted: (value) async {
+                _debounce?.cancel();
+                final trimmed = value.trim();
+                if (trimmed.isEmpty) return;
+                // If a search is pending or in-flight, run it now and wait so
+                // _commitToHistory sees fresh results.
+                if (_isSearching || trimmed != _lastQuery) {
+                  await _performSearch(trimmed);
+                }
+                _commitToHistory();
+              },
               textInputAction: TextInputAction.search,
             ),
           ),
@@ -588,6 +629,8 @@ class DictionarySearchScreenState
                     TextPosition(offset: term.length),
                   );
                   _performSearch(term);
+                  // Re-promote the tapped term to the top of the MRU list.
+                  _historyNotifier.addSearch(term);
                 },
               );
             },

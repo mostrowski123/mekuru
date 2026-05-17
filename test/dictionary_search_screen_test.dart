@@ -7,6 +7,7 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -350,4 +351,147 @@ void main() {
       );
     },
   );
+
+  group('recent search history commit behavior', () {
+    DictionaryMeta enabledDictionary() => DictionaryMeta(
+      id: 1,
+      name: 'JMdict',
+      isEnabled: true,
+      dateImported: DateTime(2026, 3, 12),
+      sortOrder: 0,
+      isHidden: false,
+    );
+
+    _FakeDictionaryQueryService buildService(AppDatabase db) {
+      final entry = _buildEntry(
+        id: 1,
+        expression: '食べる',
+        reading: 'たべる',
+        glossaries: '["to eat"]',
+      );
+      return _FakeDictionaryQueryService(
+        db,
+        resultsByTerm: {
+          '食べる': [
+            DictionaryEntryWithSource(entry: entry, dictionaryName: 'JMdict'),
+          ],
+        },
+      );
+    }
+
+    testWidgets(
+      'typing characters does not save partial keystrokes to history',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value([enabledDictionary()]),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+          ),
+        );
+        await tester.pump();
+
+        await tester.enterText(find.byType(TextField), '食べる');
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpAndSettle();
+
+        // Results rendered, but the screen is still mounted — no commit yet.
+        expect(find.text('to eat'), findsOneWidget);
+        expect(container.read(searchHistoryProvider), isEmpty);
+      },
+    );
+
+    testWidgets(
+      'disposing the screen with shown results commits the query',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value([enabledDictionary()]),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+          ),
+        );
+        await tester.pump();
+
+        await tester.enterText(find.byType(TextField), '食べる');
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpAndSettle();
+
+        expect(container.read(searchHistoryProvider), isEmpty);
+
+        // Replace the tree to trigger DictionarySearchScreen.dispose().
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: buildLocalizedTestApp(home: const SizedBox()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(container.read(searchHistoryProvider), ['食べる']);
+      },
+    );
+
+    testWidgets(
+      'reader-initiated initialQuery auto-saves once results come back',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value([enabledDictionary()]),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: buildLocalizedTestApp(
+              home: const DictionarySearchScreen(initialQuery: '食べる'),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpAndSettle();
+
+        // Auto-commit fires as soon as the initial-query search resolves;
+        // no further user interaction required.
+        expect(find.text('to eat'), findsOneWidget);
+        expect(container.read(searchHistoryProvider), ['食べる']);
+      },
+    );
+  });
 }

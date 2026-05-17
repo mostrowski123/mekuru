@@ -141,6 +141,8 @@ class SearchHistoryNotifier extends Notifier<List<String>> {
   void addSearch(String term) {
     final trimmed = term.trim();
     if (trimmed.isEmpty) return;
+    // Already at the head — no list change, no persistence write.
+    if (state.isNotEmpty && state.first == trimmed) return;
 
     final updated = [trimmed, ...state.where((s) => s != trimmed)];
     if (updated.length > maxEntries) {
