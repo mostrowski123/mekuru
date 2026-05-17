@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/repositories/pending_book_data_repository.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
@@ -13,14 +13,14 @@ import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
+import 'shared/test_infrastructure.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  test(
+  testWidgets(
     'backup → encode → decode → restore preserves settings, words, books, bookmarks, highlights',
-    () async {
+    (tester) async {
       SharedPreferences.setMockInitialValues({
         'app.theme_mode': 'dark',
         'app.color_theme': 'mekuruBlue',
@@ -193,9 +193,9 @@ void main() {
     },
   );
 
-  test(
+  testWidgets(
     're-applying the same backup is safe: words dedupe, books conflict cleanly',
-    () async {
+    (tester) async {
       // Catches regressions where restore is invoked twice (e.g. user
       // re-imports the same file). We should never double-insert saved words
       // or silently overwrite book data.
