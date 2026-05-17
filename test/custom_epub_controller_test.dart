@@ -66,6 +66,41 @@ void main() {
       evaluateCompleter.complete(null);
     });
 
+    test(
+      'a second getCurrentLocation supersedes the first with StateError',
+      () async {
+        // Direction-change rebuilds can call getCurrentLocation() twice
+        // before the JS bridge resolves either request. Verify the first
+        // future fails fast rather than hanging forever.
+        final evaluateCompleter = Completer<dynamic>();
+        final platformController = _FakePlatformInAppWebViewController(
+          onEvaluateJavascript: (_) => evaluateCompleter.future,
+        );
+        final controller = CustomEpubController()
+          ..attach(
+            InAppWebViewController.fromPlatform(platform: platformController),
+          );
+
+        final first = controller.getCurrentLocation();
+        // Issuing a second call must supersede the first.
+        controller.getCurrentLocation();
+
+        await expectLater(
+          first,
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('superseded'),
+            ),
+          ),
+        );
+
+        // Cleanup so the unresolved second future doesn't dangle.
+        evaluateCompleter.complete(null);
+      },
+    );
+
     test('MissingPluginException from current location becomes StateError', () async {
       final platformController = _FakePlatformInAppWebViewController(
         onEvaluateJavascript: (_) => Future<dynamic>.error(

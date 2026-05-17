@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -452,12 +453,11 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           }()
         : '""';
 
-    String cssParam;
-    if (widget.customCss != null) {
-      cssParam = _jsEncodeCss(widget.customCss!);
-    } else {
-      cssParam = 'null';
-    }
+    // jsonEncode produces valid JS object-literal syntax and handles escaping
+    // of quotes/backslashes/newlines in values — matches CustomEpubController.
+    final cssParam = widget.customCss != null
+        ? jsonEncode(widget.customCss)
+        : 'null';
 
     await _runJavascript(
       'loadBook('
@@ -490,23 +490,4 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     }
   }
 
-  String _jsEncodeCss(Map<String, dynamic> css) {
-    // Build a JS object literal from the CSS map.
-    final buffer = StringBuffer('{');
-    var first = true;
-    for (final entry in css.entries) {
-      if (!first) buffer.write(', ');
-      first = false;
-      buffer.write('"${entry.key}": ');
-      if (entry.value is Map) {
-        buffer.write(
-          _jsEncodeCss(Map<String, dynamic>.from(entry.value as Map)),
-        );
-      } else {
-        buffer.write('"${entry.value}"');
-      }
-    }
-    buffer.write('}');
-    return buffer.toString();
-  }
 }

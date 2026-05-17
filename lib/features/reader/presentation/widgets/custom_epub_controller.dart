@@ -46,9 +46,22 @@ class CustomEpubController {
   Completer<EpubLocation>? _locationCompleter;
 
   Future<EpubLocation> getCurrentLocation() {
-    _locationCompleter = Completer<EpubLocation>();
+    // If a previous request hasn't completed yet (e.g. fast back-to-back
+    // direction-change rebuilds), supersede it rather than orphaning its
+    // future — otherwise the original caller's `await` hangs forever.
+    _supersedeCompleter(_locationCompleter, 'getCurrentLocation');
+    final completer = Completer<EpubLocation>();
+    _locationCompleter = completer;
     unawaited(_requestCurrentLocation());
-    return _locationCompleter!.future;
+    return completer.future;
+  }
+
+  void _supersedeCompleter(Completer<Object?>? completer, String label) {
+    if (completer != null && !completer.isCompleted) {
+      completer.completeError(
+        StateError('$label superseded by a newer request'),
+      );
+    }
   }
 
   void completeCurrentLocation(Map<String, dynamic> data) {
@@ -95,10 +108,12 @@ class CustomEpubController {
   Completer<List<Map<String, dynamic>>>? _searchCompleter;
 
   Future<List<Map<String, dynamic>>> search(String query) {
-    _searchCompleter = Completer<List<Map<String, dynamic>>>();
+    _supersedeCompleter(_searchCompleter, 'search');
+    final completer = Completer<List<Map<String, dynamic>>>();
+    _searchCompleter = completer;
     final escaped = query.replaceAll('"', '\\"');
     unawaited(_requestSearch(escaped));
-    return _searchCompleter!.future;
+    return completer.future;
   }
 
   void completeSearch(List<dynamic> results) {
@@ -149,9 +164,11 @@ class CustomEpubController {
   Completer<String>? _pageTextCompleter;
 
   Future<String> getCurrentPageText() {
-    _pageTextCompleter = Completer<String>();
+    _supersedeCompleter(_pageTextCompleter, 'getCurrentPageText');
+    final completer = Completer<String>();
+    _pageTextCompleter = completer;
     unawaited(_requestCurrentPageText());
-    return _pageTextCompleter!.future;
+    return completer.future;
   }
 
   void completePageText(String text) {

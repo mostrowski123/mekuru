@@ -977,13 +977,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (_hasRestoredHighlights) return;
 
     final isProUnlocked = await ref.read(proUnlockedProvider.future);
-    if (!isProUnlocked) {
-      return;
-    }
+    if (!mounted) return;
+    if (!isProUnlocked) return;
 
     final highlights = await ref
         .read(highlightRepositoryProvider)
         .getAllHighlightsForBook(widget.book.id);
+    if (!mounted) return;
+
     for (final h in highlights) {
       final color = HighlightColor.fromName(h.color);
       _epubController.addHighlight(cfi: h.cfiRange, color: color.color);
@@ -994,21 +995,34 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _hasRestoredHighlights = true;
   }
 
-  void _createHighlight(String cfi, String text, HighlightColor color) {
+  Future<void> _createHighlight(
+    String cfi,
+    String text,
+    HighlightColor color,
+  ) async {
     if (cfi.isEmpty) return;
     if (!proUnlockedValue(ref.read(proUnlockedProvider))) {
       unawaited(_openProUpgradeFromReader());
       return;
     }
 
-    ref
-        .read(highlightRepositoryProvider)
-        .addHighlight(
-          bookId: widget.book.id,
-          cfiRange: cfi,
-          selectedText: text,
-          color: color.name,
-        );
+    // Persist first; if the DB write fails the visual highlight would be
+    // orphaned (visible until reload, gone afterward), so don't apply it.
+    try {
+      await ref
+          .read(highlightRepositoryProvider)
+          .addHighlight(
+            bookId: widget.book.id,
+            cfiRange: cfi,
+            selectedText: text,
+            color: color.name,
+          );
+    } catch (e, st) {
+      Sentry.captureException(e, stackTrace: st);
+      return;
+    }
+    if (!mounted) return;
+
     _epubController.addHighlight(cfi: cfi, color: color.color);
     _dismissSelectionBar();
     AppHaptics.medium();

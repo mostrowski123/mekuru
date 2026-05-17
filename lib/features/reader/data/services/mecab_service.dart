@@ -145,7 +145,9 @@ class MecabService {
           data.offsetInBytes,
           data.lengthInBytes,
         );
-        File(destPath).writeAsBytesSync(bytes);
+        // Async write so first-launch dictionary install doesn't block the
+        // UI isolate while the ipadic files are copied to docs dir.
+        await File(destPath).writeAsBytes(bytes);
       }
     }
 
