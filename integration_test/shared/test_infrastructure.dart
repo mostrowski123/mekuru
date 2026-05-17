@@ -229,16 +229,22 @@ Future<void> seedBooks(AppDatabase db, {int count = 3}) async {
 /// Builds a test app with standard provider overrides for integration tests.
 ///
 /// The [home] widget is wrapped in a localized MaterialApp with ProviderScope.
+/// Pass [appSettingsStorage] / [readerSettingsStorage] to inspect or reuse a
+/// specific storage instance across rebuilds (useful for persistence tests).
 Widget buildIntegrationTestApp({
   required AppDatabase db,
   required Widget home,
+  InMemoryAppSettingsStorage? appSettingsStorage,
+  InMemoryReaderSettingsStorage? readerSettingsStorage,
 }) {
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
-      appSettingsStorageProvider.overrideWithValue(InMemoryAppSettingsStorage()),
+      appSettingsStorageProvider.overrideWithValue(
+        appSettingsStorage ?? InMemoryAppSettingsStorage(),
+      ),
       readerSettingsStorageProvider.overrideWithValue(
-        InMemoryReaderSettingsStorage(),
+        readerSettingsStorage ?? InMemoryReaderSettingsStorage(),
       ),
       proUnlockedProvider.overrideWithBuild((ref, notifier) => false),
       autoBackupCheckerProvider.overrideWith((ref) async {}),
