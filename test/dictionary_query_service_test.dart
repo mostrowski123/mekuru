@@ -1261,6 +1261,33 @@ void main() {
       final rank = await freqQueryService.getFrequencyRank('食べる');
       expect(rank, 100);
     });
+
+    test(
+      'still returns ranks from disabled+hidden frequency dictionaries '
+      '(frequency-only install pattern)',
+      () async {
+        // The frequency-only install pattern (also exercised by the
+        // "frequency install order" group below) keeps the freq dict
+        // disabled+hidden so its own entries don't pollute search results,
+        // while its ranks still apply. getFrequencyRank must respect that.
+        final hiddenFreqId =
+            await freqRepo.insertDictionary('HiddenFreqDict');
+        await freqRepo.batchInsertFrequencies([
+          FrequenciesCompanion.insert(
+            expression: '泳ぐ',
+            reading: const Value('およぐ'),
+            frequencyRank: 250,
+            dictionaryId: hiddenFreqId,
+          ),
+        ]);
+        await freqRepo.toggleDictionary(hiddenFreqId, isEnabled: false);
+        await freqRepo.setHidden(hiddenFreqId, isHidden: true);
+        freqQueryService.invalidateMetasCache();
+
+        final rank = await freqQueryService.getFrequencyRank('泳ぐ');
+        expect(rank, 250);
+      },
+    );
   });
 
   // ── DictionaryEntryWithSource.frequencyLabel ───────────────────

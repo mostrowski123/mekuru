@@ -83,8 +83,8 @@ class DictionaryImportState {
       dictionariesProcessed:
           dictionariesProcessed ?? this.dictionariesProcessed,
       dictionariesTotal: dictionariesTotal ?? this.dictionariesTotal,
-      error: error,
-      successMessage: successMessage,
+      error: error ?? this.error,
+      successMessage: successMessage ?? this.successMessage,
     );
   }
 }

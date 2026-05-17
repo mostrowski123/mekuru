@@ -303,181 +303,185 @@ class DictionaryImporter {
 
     // Set up isolate communication
     final receivePort = ReceivePort();
-    await Isolate.spawn(_streamParseCollection, [
+    final isolate = await Isolate.spawn(_streamParseCollection, [
       receivePort.sendPort,
       filePath,
     ]);
 
-    // Listen for batches from the isolate
-    String? errorMessage;
-    await for (final message in receivePort) {
-      final msg = message as List;
-      final type = msg[0] as String;
+    try {
+      // Listen for batches from the isolate
+      String? errorMessage;
+      await for (final message in receivePort) {
+        final msg = message as List;
+        final type = msg[0] as String;
 
-      if (type == 'batch') {
-        final terms = msg[1] as List;
-        for (final term in terms) {
-          final t = term as Map<String, String>;
-          final dictName = t['dictionary']!;
-          entriesByDict.putIfAbsent(dictName, () => []).add(t);
+        if (type == 'batch') {
+          final terms = msg[1] as List;
+          for (final term in terms) {
+            final t = term as Map<String, String>;
+            final dictName = t['dictionary']!;
+            entriesByDict.putIfAbsent(dictName, () => []).add(t);
+          }
+        } else if (type == 'pitch_batch') {
+          final pitches = msg[1] as List;
+          for (final pitch in pitches) {
+            final p = pitch as Map<String, dynamic>;
+            final dictName = p['dictionary'] as String;
+            pitchEntriesByDict.putIfAbsent(dictName, () => []).add(p);
+          }
+        } else if (type == 'freq_batch') {
+          final freqs = msg[1] as List;
+          for (final freq in freqs) {
+            final f = freq as Map<String, dynamic>;
+            final dictName = f['dictionary'] as String;
+            freqEntriesByDict.putIfAbsent(dictName, () => []).add(f);
+          }
+        } else if (type == 'done') {
+          break;
+        } else if (type == 'error') {
+          errorMessage = msg[1] as String;
+          break;
         }
-      } else if (type == 'pitch_batch') {
-        final pitches = msg[1] as List;
-        for (final pitch in pitches) {
-          final p = pitch as Map<String, dynamic>;
-          final dictName = p['dictionary'] as String;
-          pitchEntriesByDict.putIfAbsent(dictName, () => []).add(p);
-        }
-      } else if (type == 'freq_batch') {
-        final freqs = msg[1] as List;
-        for (final freq in freqs) {
-          final f = freq as Map<String, dynamic>;
-          final dictName = f['dictionary'] as String;
-          freqEntriesByDict.putIfAbsent(dictName, () => []).add(f);
-        }
-      } else if (type == 'done') {
-        break;
-      } else if (type == 'error') {
-        errorMessage = msg[1] as String;
-        break;
       }
-    }
-    receivePort.close();
 
-    if (errorMessage != null) {
-      throw FormatException(errorMessage);
-    }
+      if (errorMessage != null) {
+        throw FormatException(errorMessage);
+      }
 
-    // Insert each dictionary into the DB
-    // Merge dict names from term entries, pitch accents, and frequencies.
-    final allDictNames = <String>{
-      ...entriesByDict.keys,
-      ...pitchEntriesByDict.keys,
-      ...freqEntriesByDict.keys,
-    }.toList();
-    final importedDicts = <String>[];
-    int totalEntriesImported = 0;
-    int totalPitchAccentsImported = 0;
-    int totalFrequenciesImported = 0;
-    final existingDictionaries = await _repository.getAllDictionaries();
-    var nextSortOrder = existingDictionaries.fold<int>(
-      0,
-      (maxOrder, dictionary) => dictionary.sortOrder >= maxOrder
-          ? dictionary.sortOrder + 1
-          : maxOrder,
-    );
+      // Insert each dictionary into the DB
+      // Merge dict names from term entries, pitch accents, and frequencies.
+      final allDictNames = <String>{
+        ...entriesByDict.keys,
+        ...pitchEntriesByDict.keys,
+        ...freqEntriesByDict.keys,
+      }.toList();
+      final importedDicts = <String>[];
+      int totalEntriesImported = 0;
+      int totalPitchAccentsImported = 0;
+      int totalFrequenciesImported = 0;
+      final existingDictionaries = await _repository.getAllDictionaries();
+      var nextSortOrder = existingDictionaries.fold<int>(
+        0,
+        (maxOrder, dictionary) => dictionary.sortOrder >= maxOrder
+            ? dictionary.sortOrder + 1
+            : maxOrder,
+      );
 
-    for (var i = 0; i < allDictNames.length; i++) {
-      final dictName = allDictNames[i];
-      final rawEntries = entriesByDict[dictName] ?? [];
-      final rawPitchEntries = pitchEntriesByDict[dictName] ?? [];
-      final rawFreqEntries = freqEntriesByDict[dictName] ?? [];
+      for (var i = 0; i < allDictNames.length; i++) {
+        final dictName = allDictNames[i];
+        final rawEntries = entriesByDict[dictName] ?? [];
+        final rawPitchEntries = pitchEntriesByDict[dictName] ?? [];
+        final rawFreqEntries = freqEntriesByDict[dictName] ?? [];
 
-      final totalItems =
-          rawEntries.length + rawPitchEntries.length + rawFreqEntries.length;
-      onDictionaryStart?.call(dictName, totalItems, i, allDictNames.length);
+        final totalItems =
+            rawEntries.length + rawPitchEntries.length + rawFreqEntries.length;
+        onDictionaryStart?.call(dictName, totalItems, i, allDictNames.length);
 
-      int inserted = 0;
-      int pitchInserted = 0;
-      int freqInserted = 0;
-      const batchSize = 10000;
-      await _repository.runInTransaction(() async {
-        final dictionaryId = await _repository.insertDictionary(
-          dictName,
-          sortOrder: nextSortOrder++,
-        );
-
-        for (var j = 0; j < rawEntries.length; j += batchSize) {
-          final end = (j + batchSize < rawEntries.length)
-              ? j + batchSize
-              : rawEntries.length;
-
-          final batch = rawEntries
-              .sublist(j, end)
-              .map((raw) {
-                return DictionaryEntriesCompanion.insert(
-                  expression: raw['expression']!,
-                  reading: Value(raw['reading'] ?? ''),
-                  definitionTags: Value(raw['definitionTags'] ?? ''),
-                  rules: Value(raw['rules'] ?? ''),
-                  termTags: Value(raw['termTags'] ?? ''),
-                  glossaries: raw['glossaries']!,
-                  dictionaryId: dictionaryId,
-                );
-              })
-              .toList(growable: false);
-
-          await _repository.batchInsertEntries(batch, batchSize: batch.length);
-          inserted += batch.length;
-          onProgress?.call(inserted, totalItems);
-        }
-
-        for (var j = 0; j < rawPitchEntries.length; j += batchSize) {
-          final end = (j + batchSize < rawPitchEntries.length)
-              ? j + batchSize
-              : rawPitchEntries.length;
-
-          final batch = rawPitchEntries
-              .sublist(j, end)
-              .map((raw) {
-                return PitchAccentsCompanion.insert(
-                  expression: raw['expression'] as String,
-                  reading: Value(raw['reading'] as String? ?? ''),
-                  downstepPosition: raw['position'] as int,
-                  dictionaryId: dictionaryId,
-                );
-              })
-              .toList(growable: false);
-
-          await _repository.batchInsertPitchAccents(
-            batch,
-            batchSize: batch.length,
+        int inserted = 0;
+        int pitchInserted = 0;
+        int freqInserted = 0;
+        const batchSize = 10000;
+        await _repository.runInTransaction(() async {
+          final dictionaryId = await _repository.insertDictionary(
+            dictName,
+            sortOrder: nextSortOrder++,
           );
-          pitchInserted += batch.length;
-          onProgress?.call(inserted + pitchInserted, totalItems);
-        }
 
-        for (var j = 0; j < rawFreqEntries.length; j += batchSize) {
-          final end = (j + batchSize < rawFreqEntries.length)
-              ? j + batchSize
-              : rawFreqEntries.length;
+          for (var j = 0; j < rawEntries.length; j += batchSize) {
+            final end = (j + batchSize < rawEntries.length)
+                ? j + batchSize
+                : rawEntries.length;
 
-          final batch = rawFreqEntries
-              .sublist(j, end)
-              .map((raw) {
-                return FrequenciesCompanion.insert(
-                  expression: raw['expression'] as String,
-                  reading: Value(raw['reading'] as String? ?? ''),
-                  frequencyRank: raw['rank'] as int,
-                  dictionaryId: dictionaryId,
-                );
-              })
-              .toList(growable: false);
+            final batch = rawEntries
+                .sublist(j, end)
+                .map((raw) {
+                  return DictionaryEntriesCompanion.insert(
+                    expression: raw['expression']!,
+                    reading: Value(raw['reading'] ?? ''),
+                    definitionTags: Value(raw['definitionTags'] ?? ''),
+                    rules: Value(raw['rules'] ?? ''),
+                    termTags: Value(raw['termTags'] ?? ''),
+                    glossaries: raw['glossaries']!,
+                    dictionaryId: dictionaryId,
+                  );
+                })
+                .toList(growable: false);
 
-          await _repository.batchInsertFrequencies(
-            batch,
-            batchSize: batch.length,
-          );
-          freqInserted += batch.length;
-          onProgress?.call(
-            inserted + rawPitchEntries.length + freqInserted,
-            totalItems,
-          );
-        }
-      });
+            await _repository.batchInsertEntries(batch, batchSize: batch.length);
+            inserted += batch.length;
+            onProgress?.call(inserted, totalItems);
+          }
 
-      importedDicts.add(dictName);
-      totalEntriesImported += inserted;
-      totalPitchAccentsImported += pitchInserted;
-      totalFrequenciesImported += freqInserted;
+          for (var j = 0; j < rawPitchEntries.length; j += batchSize) {
+            final end = (j + batchSize < rawPitchEntries.length)
+                ? j + batchSize
+                : rawPitchEntries.length;
+
+            final batch = rawPitchEntries
+                .sublist(j, end)
+                .map((raw) {
+                  return PitchAccentsCompanion.insert(
+                    expression: raw['expression'] as String,
+                    reading: Value(raw['reading'] as String? ?? ''),
+                    downstepPosition: raw['position'] as int,
+                    dictionaryId: dictionaryId,
+                  );
+                })
+                .toList(growable: false);
+
+            await _repository.batchInsertPitchAccents(
+              batch,
+              batchSize: batch.length,
+            );
+            pitchInserted += batch.length;
+            onProgress?.call(inserted + pitchInserted, totalItems);
+          }
+
+          for (var j = 0; j < rawFreqEntries.length; j += batchSize) {
+            final end = (j + batchSize < rawFreqEntries.length)
+                ? j + batchSize
+                : rawFreqEntries.length;
+
+            final batch = rawFreqEntries
+                .sublist(j, end)
+                .map((raw) {
+                  return FrequenciesCompanion.insert(
+                    expression: raw['expression'] as String,
+                    reading: Value(raw['reading'] as String? ?? ''),
+                    frequencyRank: raw['rank'] as int,
+                    dictionaryId: dictionaryId,
+                  );
+                })
+                .toList(growable: false);
+
+            await _repository.batchInsertFrequencies(
+              batch,
+              batchSize: batch.length,
+            );
+            freqInserted += batch.length;
+            onProgress?.call(
+              inserted + rawPitchEntries.length + freqInserted,
+              totalItems,
+            );
+          }
+        });
+
+        importedDicts.add(dictName);
+        totalEntriesImported += inserted;
+        totalPitchAccentsImported += pitchInserted;
+        totalFrequenciesImported += freqInserted;
+      }
+
+      return CollectionImportResult(
+        importedDictionaries: importedDicts,
+        totalEntriesImported: totalEntriesImported,
+        totalPitchAccentsImported: totalPitchAccentsImported,
+        totalFrequenciesImported: totalFrequenciesImported,
+      );
+    } finally {
+      receivePort.close();
+      isolate.kill(priority: Isolate.immediate);
     }
-
-    return CollectionImportResult(
-      importedDictionaries: importedDicts,
-      totalEntriesImported: totalEntriesImported,
-      totalPitchAccentsImported: totalPitchAccentsImported,
-      totalFrequenciesImported: totalFrequenciesImported,
-    );
   }
 
   /// Isolate entry point for streaming collection parsing.

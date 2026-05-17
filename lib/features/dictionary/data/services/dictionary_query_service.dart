@@ -382,7 +382,10 @@ class DictionaryQueryService {
   }
 
   /// Look up the best (lowest) frequency rank for a given expression.
-  /// Queries all frequency dictionaries regardless of isEnabled flag.
+  /// Queries all frequency dictionaries regardless of isEnabled flag — this
+  /// supports the frequency-only install pattern where the frequency dict is
+  /// disabled+hidden so its own entries don't appear in search results but
+  /// its ranks still apply to entries from other (enabled) dictionaries.
   Future<int?> getFrequencyRank(
     String expression, [
     String reading = '',
@@ -425,6 +428,8 @@ class DictionaryQueryService {
     if (lookupExpressions.isEmpty) return {};
 
     // Fetch ALL frequency rows for these expressions in batches.
+    // NOTE: Intentionally not filtered by DictionaryMetas.isEnabled — see
+    // getFrequencyRank for the frequency-only install pattern rationale.
     final allRows = <TypedResult>[];
     final exprList = lookupExpressions.toList();
     const batchSize = 200;
