@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -535,11 +536,19 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   Future<void> _importEpub(WidgetRef ref) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['epub'],
-      allowMultiple: false,
-    );
+    final FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['epub'],
+        allowMultiple: false,
+      );
+    } on PlatformException catch (e) {
+      // Another picker is still resolving (e.g. double-tap of the FAB).
+      // Let that one complete instead of crashing.
+      if (e.code == 'already_active') return;
+      rethrow;
+    }
 
     if (result == null || result.files.isEmpty) return;
 

@@ -82,11 +82,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     AnalyticsService.instance.logEvent('book_opened');
 
     _brightnessNotifier = ref.read(brightnessProvider.notifier);
+    // Capture the repository once so the persistence callback never reaches
+    // back through `ref` after the widget begins unmounting (queued saves can
+    // flush during dispose, when ConsumerStatefulElement disallows reads).
+    final bookRepository = ref.read(readerBookRepositoryProvider);
     _progressPersistence = ReaderProgressPersistence(
       saveProgress: (cfi, progress) {
-        return ref
-            .read(readerBookRepositoryProvider)
-            .updateProgress(widget.book.id, cfi, progress: progress);
+        return bookRepository.updateProgress(
+          widget.book.id,
+          cfi,
+          progress: progress,
+        );
       },
     );
 

@@ -58,7 +58,18 @@ class EpubParser {
     // Stream-decode the EPUB ZIP to avoid loading the entire file into memory.
     final input = InputFileStream(epubPath);
     try {
-      final archive = ZipDecoder().decodeStream(input);
+      final Archive archive;
+      try {
+        archive = ZipDecoder().decodeStream(input);
+      } catch (e) {
+        // archive throws ArgumentError/RangeError on truncated streams and
+        // FormatException on bad signatures; surface either as a clean
+        // "corrupt EPUB" rather than a raw RangeError to the import flow.
+        throw FileSystemException(
+          'EPUB file is corrupt or not a valid archive',
+          epubPath,
+        );
+      }
 
       // Extract all files
       for (final entry in archive.files) {
@@ -102,7 +113,15 @@ class EpubParser {
     // avoiding loading the entire EPUB into memory.
     final input = InputFileStream(epubPath);
     try {
-      final archive = ZipDecoder().decodeStream(input);
+      final Archive archive;
+      try {
+        archive = ZipDecoder().decodeStream(input);
+      } catch (e) {
+        throw FileSystemException(
+          'EPUB file is corrupt or not a valid archive',
+          epubPath,
+        );
+      }
 
       // Find container.xml in the archive
       final containerFile = archive.findFile('META-INF/container.xml');
