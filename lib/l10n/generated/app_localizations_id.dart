@@ -609,6 +609,46 @@ class AppLocalizationsId extends AppLocalizations {
       'Hapus KANJIDIC dan semua entri di dalamnya? Anda bisa mengunduhnya lagi nanti.';
 
   @override
+  String get downloadsEnhancedFuriganaTitle =>
+      'Kamus Furigana yang Ditingkatkan';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalled =>
+      'Aktif. Mulai ulang aplikasi jika perubahan belum muncul.';
+
+  @override
+  String get downloadsEnhancedFuriganaDescription =>
+      'Meningkatkan furigana untuk sekitar 10.000 kata tambahan. Unduh 45 MB, 250 MB di penyimpanan.';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoveTooltip =>
+      'Hapus kamus yang ditingkatkan';
+
+  @override
+  String downloadsEnhancedFuriganaDownloadingPercent({required int percent}) {
+    return 'Mengunduh kamus yang ditingkatkan... $percent%';
+  }
+
+  @override
+  String get downloadsEnhancedFuriganaExtracting => 'Mengekstrak...';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmDownloadTitle =>
+      'Unduh kamus yang ditingkatkan?';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
+      'Ini akan mengunduh sekitar 45 MB dan diekstrak menjadi sekitar 250 MB data kamus. Gunakan Wi-Fi jika memungkinkan. Anda bisa menghapusnya nanti dari layar ini.';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmRemoveTitle =>
+      'Hapus kamus yang ditingkatkan?';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmRemoveBody =>
+      'Ini akan membebaskan sekitar 250 MB ruang penyimpanan. Pada peluncuran berikutnya, aplikasi akan kembali ke kamus bawaan. Anda bisa mengunduhnya lagi nanti dari layar ini.';
+
+  @override
   String get commonClear => 'Bersihkan';
 
   @override

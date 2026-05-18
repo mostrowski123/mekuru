@@ -580,6 +580,41 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadsDeleteKanjidicBody => '删除 KANJIDIC 及其所有词条？您可以稍后重新下载。';
 
   @override
+  String get downloadsEnhancedFuriganaTitle => '增强振假名词典';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalled => '已启用。如果更改尚未生效，请重启应用。';
+
+  @override
+  String get downloadsEnhancedFuriganaDescription =>
+      '为约 10,000 个额外词条提供更准确的振假名。下载 45 MB，占用 250 MB 存储空间。';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoveTooltip => '移除增强词典';
+
+  @override
+  String downloadsEnhancedFuriganaDownloadingPercent({required int percent}) {
+    return '正在下载增强词典... $percent%';
+  }
+
+  @override
+  String get downloadsEnhancedFuriganaExtracting => '正在解压...';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmDownloadTitle => '下载增强词典？';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
+      '此操作将下载约 45 MB，并解压为约 250 MB 的词典数据。条件允许时请使用 Wi-Fi。您可以稍后从此页面将其移除。';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmRemoveTitle => '移除增强词典？';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmRemoveBody =>
+      '此操作将释放约 250 MB 存储空间。下次启动时，应用将回退至内置词典。您可以稍后从此页面重新下载。';
+
+  @override
   String get commonClear => '清除';
 
   @override
@@ -2411,6 +2446,41 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadsDeleteKanjidicBody => '删除 KANJIDIC 及其所有词条？您可以稍后重新下载。';
+
+  @override
+  String get downloadsEnhancedFuriganaTitle => '增强振假名词典';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalled => '已启用。如果更改尚未生效，请重启应用。';
+
+  @override
+  String get downloadsEnhancedFuriganaDescription =>
+      '为约 10,000 个额外词条提供更准确的振假名。下载 45 MB，占用 250 MB 存储空间。';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoveTooltip => '移除增强词典';
+
+  @override
+  String downloadsEnhancedFuriganaDownloadingPercent({required int percent}) {
+    return '正在下载增强词典... $percent%';
+  }
+
+  @override
+  String get downloadsEnhancedFuriganaExtracting => '正在解压...';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmDownloadTitle => '下载增强词典？';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
+      '此操作将下载约 45 MB，并解压为约 250 MB 的词典数据。条件允许时请使用 Wi-Fi。您可以稍后从此页面将其移除。';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmRemoveTitle => '移除增强词典？';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmRemoveBody =>
+      '此操作将释放约 250 MB 存储空间。下次启动时，应用将回退至内置词典。您可以稍后从此页面重新下载。';
 
   @override
   String get commonClear => '清除';

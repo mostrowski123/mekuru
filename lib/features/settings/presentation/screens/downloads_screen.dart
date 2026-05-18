@@ -271,9 +271,11 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             _DownloadProgress(
               progress: enhancedFuriganaState.progress,
               label: enhancedFuriganaState.progress < 0.85
-                  ? 'Downloading enhanced dictionary... '
-                      '${(enhancedFuriganaState.progress / 0.85 * 100).toInt()}%'
-                  : 'Extracting...',
+                  ? l10n.downloadsEnhancedFuriganaDownloadingPercent(
+                      percent:
+                          (enhancedFuriganaState.progress / 0.85 * 100).toInt(),
+                    )
+                  : l10n.downloadsEnhancedFuriganaExtracting,
               theme: theme,
             ),
           if (enhancedFuriganaState.error != null)
@@ -843,17 +845,17 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final subtitle = state.isInstalled
-        ? 'Active. Restart the app if changes do not appear.'
-        : 'Improves furigana for ~10,000 additional words. '
-            '45 MB download, 250 MB on disk.';
+        ? l10n.downloadsEnhancedFuriganaInstalled
+        : l10n.downloadsEnhancedFuriganaDescription;
 
     return ListTile(
       leading: Icon(
         Icons.spellcheck_outlined,
         color: theme.colorScheme.primary,
       ),
-      title: const Text('Enhanced Furigana Dictionary'),
+      title: Text(l10n.downloadsEnhancedFuriganaTitle),
       subtitle: Text(subtitle),
       trailing: _buildTrailing(context, ref),
     );
@@ -874,7 +876,7 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
           Icons.delete_outline,
           color: Theme.of(context).colorScheme.error,
         ),
-        tooltip: 'Remove enhanced dictionary',
+        tooltip: context.l10n.downloadsEnhancedFuriganaRemoveTooltip,
         onPressed: () => _confirmRemove(context, ref),
       );
     }
@@ -884,7 +886,7 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
         AppHaptics.light();
         _confirmDownload(context, ref);
       },
-      child: const Text('Download'),
+      child: Text(context.l10n.commonDownload),
     );
   }
 
@@ -892,12 +894,8 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Download enhanced dictionary?'),
-        content: const Text(
-          'This downloads ~45 MB and unpacks to ~250 MB of dictionary '
-          'data. Use Wi-Fi if you can. You can remove it later from this '
-          'screen.',
-        ),
+        title: Text(ctx.l10n.downloadsEnhancedFuriganaConfirmDownloadTitle),
+        content: Text(ctx.l10n.downloadsEnhancedFuriganaConfirmDownloadBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -919,12 +917,8 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove enhanced dictionary?'),
-        content: const Text(
-          'This frees ~250 MB of storage. On next launch the app will '
-          'fall back to the bundled dictionary. You can re-download '
-          'later from this screen.',
-        ),
+        title: Text(ctx.l10n.downloadsEnhancedFuriganaConfirmRemoveTitle),
+        content: Text(ctx.l10n.downloadsEnhancedFuriganaConfirmRemoveBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),

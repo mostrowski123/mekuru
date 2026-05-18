@@ -607,6 +607,45 @@ class AppLocalizationsEn extends AppLocalizations {
       'Delete KANJIDIC and all its entries? You can re-download it later.';
 
   @override
+  String get downloadsEnhancedFuriganaTitle => 'Enhanced Furigana Dictionary';
+
+  @override
+  String get downloadsEnhancedFuriganaInstalled =>
+      'Active. Restart the app if changes do not appear.';
+
+  @override
+  String get downloadsEnhancedFuriganaDescription =>
+      'Improves furigana for ~10,000 additional words. 45 MB download, 250 MB on disk.';
+
+  @override
+  String get downloadsEnhancedFuriganaRemoveTooltip =>
+      'Remove enhanced dictionary';
+
+  @override
+  String downloadsEnhancedFuriganaDownloadingPercent({required int percent}) {
+    return 'Downloading enhanced dictionary... $percent%';
+  }
+
+  @override
+  String get downloadsEnhancedFuriganaExtracting => 'Extracting...';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmDownloadTitle =>
+      'Download enhanced dictionary?';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
+      'This downloads ~45 MB and unpacks to ~250 MB of dictionary data. Use Wi-Fi if you can. You can remove it later from this screen.';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmRemoveTitle =>
+      'Remove enhanced dictionary?';
+
+  @override
+  String get downloadsEnhancedFuriganaConfirmRemoveBody =>
+      'This frees ~250 MB of storage. On next launch the app will fall back to the bundled dictionary. You can re-download later from this screen.';
+
+  @override
   String get commonClear => 'Clear';
 
   @override

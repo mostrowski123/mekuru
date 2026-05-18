@@ -1126,6 +1126,66 @@ abstract class AppLocalizations {
   /// **'Delete KANJIDIC and all its entries? You can re-download it later.'**
   String get downloadsDeleteKanjidicBody;
 
+  /// Title for the optional UniDic-lite enhanced furigana dictionary download tile.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced Furigana Dictionary'**
+  String get downloadsEnhancedFuriganaTitle;
+
+  /// Subtitle shown when the enhanced furigana dictionary is installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Active. Restart the app if changes do not appear.'**
+  String get downloadsEnhancedFuriganaInstalled;
+
+  /// Subtitle shown before the enhanced furigana dictionary is downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Improves furigana for ~10,000 additional words. 45 MB download, 250 MB on disk.'**
+  String get downloadsEnhancedFuriganaDescription;
+
+  /// Tooltip for removing the enhanced furigana dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove enhanced dictionary'**
+  String get downloadsEnhancedFuriganaRemoveTooltip;
+
+  /// Progress message while downloading the enhanced furigana dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading enhanced dictionary... {percent}%'**
+  String downloadsEnhancedFuriganaDownloadingPercent({required int percent});
+
+  /// Progress message shown while extracting the enhanced furigana dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Extracting...'**
+  String get downloadsEnhancedFuriganaExtracting;
+
+  /// Dialog title confirming download of the enhanced furigana dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Download enhanced dictionary?'**
+  String get downloadsEnhancedFuriganaConfirmDownloadTitle;
+
+  /// Dialog body confirming download of the enhanced furigana dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'This downloads ~45 MB and unpacks to ~250 MB of dictionary data. Use Wi-Fi if you can. You can remove it later from this screen.'**
+  String get downloadsEnhancedFuriganaConfirmDownloadBody;
+
+  /// Dialog title confirming removal of the enhanced furigana dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove enhanced dictionary?'**
+  String get downloadsEnhancedFuriganaConfirmRemoveTitle;
+
+  /// Dialog body confirming removal of the enhanced furigana dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'This frees ~250 MB of storage. On next launch the app will fall back to the bundled dictionary. You can re-download later from this screen.'**
+  String get downloadsEnhancedFuriganaConfirmRemoveBody;
+
   /// Generic clear action.
   ///
   /// In en, this message translates to:

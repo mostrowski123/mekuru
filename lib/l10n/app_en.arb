@@ -776,6 +776,51 @@
   "@downloadsDeleteKanjidicBody": {
     "description": "Dialog body for deleting KANJIDIC data."
   },
+  "downloadsEnhancedFuriganaTitle": "Enhanced Furigana Dictionary",
+  "@downloadsEnhancedFuriganaTitle": {
+    "description": "Title for the optional UniDic-lite enhanced furigana dictionary download tile."
+  },
+  "downloadsEnhancedFuriganaInstalled": "Active. Restart the app if changes do not appear.",
+  "@downloadsEnhancedFuriganaInstalled": {
+    "description": "Subtitle shown when the enhanced furigana dictionary is installed."
+  },
+  "downloadsEnhancedFuriganaDescription": "Improves furigana for ~10,000 additional words. 45 MB download, 250 MB on disk.",
+  "@downloadsEnhancedFuriganaDescription": {
+    "description": "Subtitle shown before the enhanced furigana dictionary is downloaded."
+  },
+  "downloadsEnhancedFuriganaRemoveTooltip": "Remove enhanced dictionary",
+  "@downloadsEnhancedFuriganaRemoveTooltip": {
+    "description": "Tooltip for removing the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaDownloadingPercent": "Downloading enhanced dictionary... {percent}%",
+  "@downloadsEnhancedFuriganaDownloadingPercent": {
+    "description": "Progress message while downloading the enhanced furigana dictionary.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsEnhancedFuriganaExtracting": "Extracting...",
+  "@downloadsEnhancedFuriganaExtracting": {
+    "description": "Progress message shown while extracting the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaConfirmDownloadTitle": "Download enhanced dictionary?",
+  "@downloadsEnhancedFuriganaConfirmDownloadTitle": {
+    "description": "Dialog title confirming download of the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaConfirmDownloadBody": "This downloads ~45 MB and unpacks to ~250 MB of dictionary data. Use Wi-Fi if you can. You can remove it later from this screen.",
+  "@downloadsEnhancedFuriganaConfirmDownloadBody": {
+    "description": "Dialog body confirming download of the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaConfirmRemoveTitle": "Remove enhanced dictionary?",
+  "@downloadsEnhancedFuriganaConfirmRemoveTitle": {
+    "description": "Dialog title confirming removal of the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaConfirmRemoveBody": "This frees ~250 MB of storage. On next launch the app will fall back to the bundled dictionary. You can re-download later from this screen.",
+  "@downloadsEnhancedFuriganaConfirmRemoveBody": {
+    "description": "Dialog body confirming removal of the enhanced furigana dictionary."
+  },
   "commonClear": "Clear",
   "@commonClear": {
     "description": "Generic clear action."

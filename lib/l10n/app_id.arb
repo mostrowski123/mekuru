@@ -776,6 +776,51 @@
   "@downloadsDeleteKanjidicBody": {
     "description": "Dialog body for deleting KANJIDIC data."
   },
+  "downloadsEnhancedFuriganaTitle": "Kamus Furigana yang Ditingkatkan",
+  "@downloadsEnhancedFuriganaTitle": {
+    "description": "Title for the optional UniDic-lite enhanced furigana dictionary download tile."
+  },
+  "downloadsEnhancedFuriganaInstalled": "Aktif. Mulai ulang aplikasi jika perubahan belum muncul.",
+  "@downloadsEnhancedFuriganaInstalled": {
+    "description": "Subtitle shown when the enhanced furigana dictionary is installed."
+  },
+  "downloadsEnhancedFuriganaDescription": "Meningkatkan furigana untuk sekitar 10.000 kata tambahan. Unduh 45 MB, 250 MB di penyimpanan.",
+  "@downloadsEnhancedFuriganaDescription": {
+    "description": "Subtitle shown before the enhanced furigana dictionary is downloaded."
+  },
+  "downloadsEnhancedFuriganaRemoveTooltip": "Hapus kamus yang ditingkatkan",
+  "@downloadsEnhancedFuriganaRemoveTooltip": {
+    "description": "Tooltip for removing the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaDownloadingPercent": "Mengunduh kamus yang ditingkatkan... {percent}%",
+  "@downloadsEnhancedFuriganaDownloadingPercent": {
+    "description": "Progress message while downloading the enhanced furigana dictionary.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadsEnhancedFuriganaExtracting": "Mengekstrak...",
+  "@downloadsEnhancedFuriganaExtracting": {
+    "description": "Progress message shown while extracting the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaConfirmDownloadTitle": "Unduh kamus yang ditingkatkan?",
+  "@downloadsEnhancedFuriganaConfirmDownloadTitle": {
+    "description": "Dialog title confirming download of the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaConfirmDownloadBody": "Ini akan mengunduh sekitar 45 MB dan diekstrak menjadi sekitar 250 MB data kamus. Gunakan Wi-Fi jika memungkinkan. Anda bisa menghapusnya nanti dari layar ini.",
+  "@downloadsEnhancedFuriganaConfirmDownloadBody": {
+    "description": "Dialog body confirming download of the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaConfirmRemoveTitle": "Hapus kamus yang ditingkatkan?",
+  "@downloadsEnhancedFuriganaConfirmRemoveTitle": {
+    "description": "Dialog title confirming removal of the enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaConfirmRemoveBody": "Ini akan membebaskan sekitar 250 MB ruang penyimpanan. Pada peluncuran berikutnya, aplikasi akan kembali ke kamus bawaan. Anda bisa mengunduhnya lagi nanti dari layar ini.",
+  "@downloadsEnhancedFuriganaConfirmRemoveBody": {
+    "description": "Dialog body confirming removal of the enhanced furigana dictionary."
+  },
   "commonClear": "Bersihkan",
   "@commonClear": {
     "description": "Generic clear action."
