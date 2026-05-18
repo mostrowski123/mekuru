@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   };
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -130,6 +130,18 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'CREATE INDEX IF NOT EXISTS idx_pitch_expr_dictid ON pitch_accents (expression, dictionary_id)',
         );
+      }
+      if (from < 17) {
+        final cols = await customSelect(
+          "PRAGMA table_info('books')",
+        ).get();
+        final names = cols
+            .map((r) => r.data['name']?.toString())
+            .whereType<String>()
+            .toSet();
+        if (!names.contains('furigana_mode')) {
+          await migrator.addColumn(books, books.furiganaMode);
+        }
       }
     },
     beforeOpen: (details) async {

@@ -434,14 +434,20 @@ class BookRepository {
   /// Save per-book display overrides (verticalText and readingDirection).
   ///
   /// Pass `null` to clear an override and revert to the book's default.
+  /// Save per-book display overrides (verticalText, readingDirection,
+  /// and furiganaMode).
+  ///
+  /// Pass `null` to clear an override and revert to the book's default.
   Future<void> updateDisplayOverrides(
     int bookId, {
     required bool? verticalText,
     required String? readingDirection,
+    Value<String?> furiganaMode = const Value.absent(),
   }) => (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
     BooksCompanion(
       overrideVerticalText: Value(verticalText),
       overrideReadingDirection: Value(readingDirection),
+      furiganaMode: furiganaMode,
     ),
   );
 

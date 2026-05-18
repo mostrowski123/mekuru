@@ -29,4 +29,9 @@ class Books extends Table {
   /// User's per-book override for reading direction ('ltr' or 'rtl').
   /// `null` means "use the book's default" (based on language/ppd).
   TextColumn get overrideReadingDirection => text().nullable()();
+
+  /// User's per-book override for furigana mode (stored as the enum's
+  /// [FuriganaModeStorage.storageValue]). `null` means "use the global
+  /// default from ReaderSettings".
+  TextColumn get furiganaMode => text().nullable()();
 }

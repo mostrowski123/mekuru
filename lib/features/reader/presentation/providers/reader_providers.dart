@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -120,6 +121,12 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _persistSettings();
   }
 
+  void setFuriganaMode(FuriganaMode mode) {
+    state = state.copyWith(furiganaMode: mode);
+    _persistSettings();
+    _persistPerBookOverrides();
+  }
+
   /// Apply book-specific defaults when opening a book.
   ///
   /// Uses per-book overrides from the database if the user has previously
@@ -135,6 +142,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     String? primaryWritingMode,
     bool? overrideVerticalText,
     String? overrideReadingDirection,
+    String? overrideFuriganaMode,
   }) {
     _currentBookId = bookId;
 
@@ -153,9 +161,14 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
             pageProgressionDirection: pageProgressionDirection,
           );
 
+    final effectiveFuriganaMode = overrideFuriganaMode != null
+        ? furiganaModeFromString(overrideFuriganaMode)
+        : state.furiganaMode;
+
     state = state.copyWith(
       verticalText: effectiveVerticalText,
       readingDirection: effectiveDirection,
+      furiganaMode: effectiveFuriganaMode,
     );
   }
 
@@ -177,6 +190,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
             bookId,
             verticalText: state.verticalText,
             readingDirection: state.readingDirection.storageValue,
+            furiganaMode: Value(state.furiganaMode.storageValue),
           ),
     );
   }

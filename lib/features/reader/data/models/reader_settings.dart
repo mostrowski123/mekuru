@@ -26,6 +26,20 @@ extension ColorModeStorage on ColorMode {
   String get storageValue => name;
 }
 
+enum FuriganaMode { off, all, aboveLevel }
+
+FuriganaMode furiganaModeFromString(String? value) {
+  return switch (value) {
+    'all' => FuriganaMode.all,
+    'aboveLevel' => FuriganaMode.aboveLevel,
+    _ => FuriganaMode.off,
+  };
+}
+
+extension FuriganaModeStorage on FuriganaMode {
+  String get storageValue => name;
+}
+
 /// Default width fraction reserved for page-turn taps on each device edge in
 /// the manga reader.
 const double kDefaultMangaPageTurnEdgeZoneWidthFraction = 0.15;
@@ -83,6 +97,15 @@ class ReaderSettings {
   /// styled blue regardless of this setting.
   final bool disableLinks;
 
+  /// Controls whether and how furigana is rendered above kanji in the reader.
+  ///
+  /// - [FuriganaMode.off]: hide all furigana, including EPUB-authored ruby.
+  /// - [FuriganaMode.all]: show EPUB-authored ruby and generate ruby (via
+  ///   MeCab) for kanji that lack it.
+  /// - [FuriganaMode.aboveLevel]: reserved for a future difficulty-aware
+  ///   filter. Currently behaves like [FuriganaMode.all].
+  final FuriganaMode furiganaMode;
+
   const ReaderSettings({
     this.fontSize = 18,
     this.verticalText = true,
@@ -97,6 +120,7 @@ class ReaderSettings {
     this.keepScreenOn = false,
     this.sepiaIntensity = 0.5,
     this.disableLinks = false,
+    this.furiganaMode = FuriganaMode.off,
   });
 
   ReaderSettings copyWith({
@@ -112,6 +136,7 @@ class ReaderSettings {
     bool? keepScreenOn,
     double? sepiaIntensity,
     bool? disableLinks,
+    FuriganaMode? furiganaMode,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -129,6 +154,7 @@ class ReaderSettings {
       keepScreenOn: keepScreenOn ?? this.keepScreenOn,
       sepiaIntensity: sepiaIntensity ?? this.sepiaIntensity,
       disableLinks: disableLinks ?? this.disableLinks,
+      furiganaMode: furiganaMode ?? this.furiganaMode,
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +31,7 @@ class _SpyBookRepository extends BookRepository {
 
   bool? lastVerticalText;
   String? lastReadingDirection;
+  Value<String?> lastFuriganaMode = const Value.absent();
   int? lastBookId;
   int updateDisplayOverridesCalls = 0;
 
@@ -38,11 +40,13 @@ class _SpyBookRepository extends BookRepository {
     int bookId, {
     required bool? verticalText,
     required String? readingDirection,
+    Value<String?> furiganaMode = const Value.absent(),
   }) async {
     updateDisplayOverridesCalls += 1;
     lastBookId = bookId;
     lastVerticalText = verticalText;
     lastReadingDirection = readingDirection;
+    lastFuriganaMode = furiganaMode;
     // Do not call super because these tests only need the write intent.
   }
 }
@@ -372,6 +376,45 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(spyRepo.updateDisplayOverridesCalls, 0);
+    });
+
+    test('persists per-book furigana override when mode is changed', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final spyRepo = _SpyBookRepository(db);
+      final harness = _createHarness(bookRepo: spyRepo);
+      addTearDown(() async {
+        await harness.dispose();
+        await db.close();
+      });
+
+      final notifier = harness.container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(bookId: 42, language: 'ja');
+      notifier.setFuriganaMode(FuriganaMode.all);
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spyRepo.updateDisplayOverridesCalls, 1);
+      expect(spyRepo.lastBookId, 42);
+      expect(spyRepo.lastFuriganaMode.present, isTrue);
+      expect(spyRepo.lastFuriganaMode.value, 'all');
+    });
+
+    test('per-book furigana override is remembered on reopen', () {
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
+
+      final notifier = container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(
+        bookId: 42,
+        language: 'ja',
+        overrideFuriganaMode: 'all',
+      );
+
+      expect(
+        container.read(readerSettingsProvider).furiganaMode,
+        FuriganaMode.all,
+      );
     });
 
     test('per-book override is remembered on simulated reopen', () {

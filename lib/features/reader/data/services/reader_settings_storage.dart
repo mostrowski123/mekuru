@@ -19,6 +19,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _keepScreenOnKey = 'reader.keep_screen_on';
   static const _sepiaIntensityKey = 'reader.sepia_intensity';
   static const _disableLinksKey = 'reader.disable_links';
+  static const _furiganaModeKey = 'reader.furigana_mode';
 
   @override
   Future<ReaderSettings?> load() async {
@@ -33,7 +34,8 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
         prefs.containsKey(_colorModeKey) ||
         prefs.containsKey(_keepScreenOnKey) ||
         prefs.containsKey(_sepiaIntensityKey) ||
-        prefs.containsKey(_disableLinksKey);
+        prefs.containsKey(_disableLinksKey) ||
+        prefs.containsKey(_furiganaModeKey);
 
     if (!hasSavedSettings) {
       return null;
@@ -56,6 +58,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       keepScreenOn: prefs.getBool(_keepScreenOnKey) ?? false,
       sepiaIntensity: prefs.getDouble(_sepiaIntensityKey) ?? 0.5,
       disableLinks: prefs.getBool(_disableLinksKey) ?? false,
+      furiganaMode: furiganaModeFromString(prefs.getString(_furiganaModeKey)),
     );
   }
 
@@ -79,5 +82,9 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     await prefs.setBool(_keepScreenOnKey, settings.keepScreenOn);
     await prefs.setDouble(_sepiaIntensityKey, settings.sepiaIntensity);
     await prefs.setBool(_disableLinksKey, settings.disableLinks);
+    await prefs.setString(
+      _furiganaModeKey,
+      settings.furiganaMode.storageValue,
+    );
   }
 }

@@ -179,6 +179,17 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _furiganaModeMeta = const VerificationMeta(
+    'furiganaMode',
+  );
+  @override
+  late final GeneratedColumn<String> furiganaMode = GeneratedColumn<String>(
+    'furigana_mode',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -196,6 +207,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     primaryWritingMode,
     overrideVerticalText,
     overrideReadingDirection,
+    furiganaMode,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -324,6 +336,15 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('furigana_mode')) {
+      context.handle(
+        _furiganaModeMeta,
+        furiganaMode.isAcceptableOrUnknown(
+          data['furigana_mode']!,
+          _furiganaModeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -393,6 +414,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.string,
         data['${effectivePrefix}override_reading_direction'],
       ),
+      furiganaMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}furigana_mode'],
+      ),
     );
   }
 
@@ -429,6 +454,11 @@ class Book extends DataClass implements Insertable<Book> {
   /// User's per-book override for reading direction ('ltr' or 'rtl').
   /// `null` means "use the book's default" (based on language/ppd).
   final String? overrideReadingDirection;
+
+  /// User's per-book override for furigana mode (stored as the enum's
+  /// [FuriganaModeStorage.storageValue]). `null` means "use the global
+  /// default from ReaderSettings".
+  final String? furiganaMode;
   const Book({
     required this.id,
     required this.title,
@@ -445,6 +475,7 @@ class Book extends DataClass implements Insertable<Book> {
     this.primaryWritingMode,
     this.overrideVerticalText,
     this.overrideReadingDirection,
+    this.furiganaMode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -484,6 +515,9 @@ class Book extends DataClass implements Insertable<Book> {
         overrideReadingDirection,
       );
     }
+    if (!nullToAbsent || furiganaMode != null) {
+      map['furigana_mode'] = Variable<String>(furiganaMode);
+    }
     return map;
   }
 
@@ -520,6 +554,9 @@ class Book extends DataClass implements Insertable<Book> {
       overrideReadingDirection: overrideReadingDirection == null && nullToAbsent
           ? const Value.absent()
           : Value(overrideReadingDirection),
+      furiganaMode: furiganaMode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(furiganaMode),
     );
   }
 
@@ -552,6 +589,7 @@ class Book extends DataClass implements Insertable<Book> {
       overrideReadingDirection: serializer.fromJson<String?>(
         json['overrideReadingDirection'],
       ),
+      furiganaMode: serializer.fromJson<String?>(json['furiganaMode']),
     );
   }
   @override
@@ -577,6 +615,7 @@ class Book extends DataClass implements Insertable<Book> {
       'overrideReadingDirection': serializer.toJson<String?>(
         overrideReadingDirection,
       ),
+      'furiganaMode': serializer.toJson<String?>(furiganaMode),
     };
   }
 
@@ -596,6 +635,7 @@ class Book extends DataClass implements Insertable<Book> {
     Value<String?> primaryWritingMode = const Value.absent(),
     Value<bool?> overrideVerticalText = const Value.absent(),
     Value<String?> overrideReadingDirection = const Value.absent(),
+    Value<String?> furiganaMode = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -622,6 +662,7 @@ class Book extends DataClass implements Insertable<Book> {
     overrideReadingDirection: overrideReadingDirection.present
         ? overrideReadingDirection.value
         : this.overrideReadingDirection,
+    furiganaMode: furiganaMode.present ? furiganaMode.value : this.furiganaMode,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -658,6 +699,9 @@ class Book extends DataClass implements Insertable<Book> {
       overrideReadingDirection: data.overrideReadingDirection.present
           ? data.overrideReadingDirection.value
           : this.overrideReadingDirection,
+      furiganaMode: data.furiganaMode.present
+          ? data.furiganaMode.value
+          : this.furiganaMode,
     );
   }
 
@@ -678,7 +722,8 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('pageProgressionDirection: $pageProgressionDirection, ')
           ..write('primaryWritingMode: $primaryWritingMode, ')
           ..write('overrideVerticalText: $overrideVerticalText, ')
-          ..write('overrideReadingDirection: $overrideReadingDirection')
+          ..write('overrideReadingDirection: $overrideReadingDirection, ')
+          ..write('furiganaMode: $furiganaMode')
           ..write(')'))
         .toString();
   }
@@ -700,6 +745,7 @@ class Book extends DataClass implements Insertable<Book> {
     primaryWritingMode,
     overrideVerticalText,
     overrideReadingDirection,
+    furiganaMode,
   );
   @override
   bool operator ==(Object other) =>
@@ -719,7 +765,8 @@ class Book extends DataClass implements Insertable<Book> {
           other.pageProgressionDirection == this.pageProgressionDirection &&
           other.primaryWritingMode == this.primaryWritingMode &&
           other.overrideVerticalText == this.overrideVerticalText &&
-          other.overrideReadingDirection == this.overrideReadingDirection);
+          other.overrideReadingDirection == this.overrideReadingDirection &&
+          other.furiganaMode == this.furiganaMode);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -738,6 +785,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<String?> primaryWritingMode;
   final Value<bool?> overrideVerticalText;
   final Value<String?> overrideReadingDirection;
+  final Value<String?> furiganaMode;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -754,6 +802,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.primaryWritingMode = const Value.absent(),
     this.overrideVerticalText = const Value.absent(),
     this.overrideReadingDirection = const Value.absent(),
+    this.furiganaMode = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -771,6 +820,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.primaryWritingMode = const Value.absent(),
     this.overrideVerticalText = const Value.absent(),
     this.overrideReadingDirection = const Value.absent(),
+    this.furiganaMode = const Value.absent(),
   }) : title = Value(title),
        filePath = Value(filePath);
   static Insertable<Book> custom({
@@ -789,6 +839,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<String>? primaryWritingMode,
     Expression<bool>? overrideVerticalText,
     Expression<String>? overrideReadingDirection,
+    Expression<String>? furiganaMode,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -810,6 +861,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
         'override_vertical_text': overrideVerticalText,
       if (overrideReadingDirection != null)
         'override_reading_direction': overrideReadingDirection,
+      if (furiganaMode != null) 'furigana_mode': furiganaMode,
     });
   }
 
@@ -829,6 +881,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<String?>? primaryWritingMode,
     Value<bool?>? overrideVerticalText,
     Value<String?>? overrideReadingDirection,
+    Value<String?>? furiganaMode,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -848,6 +901,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       overrideVerticalText: overrideVerticalText ?? this.overrideVerticalText,
       overrideReadingDirection:
           overrideReadingDirection ?? this.overrideReadingDirection,
+      furiganaMode: furiganaMode ?? this.furiganaMode,
     );
   }
 
@@ -905,6 +959,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
         overrideReadingDirection.value,
       );
     }
+    if (furiganaMode.present) {
+      map['furigana_mode'] = Variable<String>(furiganaMode.value);
+    }
     return map;
   }
 
@@ -925,7 +982,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('pageProgressionDirection: $pageProgressionDirection, ')
           ..write('primaryWritingMode: $primaryWritingMode, ')
           ..write('overrideVerticalText: $overrideVerticalText, ')
-          ..write('overrideReadingDirection: $overrideReadingDirection')
+          ..write('overrideReadingDirection: $overrideReadingDirection, ')
+          ..write('furiganaMode: $furiganaMode')
           ..write(')'))
         .toString();
   }
@@ -4419,6 +4477,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<String?> primaryWritingMode,
       Value<bool?> overrideVerticalText,
       Value<String?> overrideReadingDirection,
+      Value<String?> furiganaMode,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -4437,6 +4496,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<String?> primaryWritingMode,
       Value<bool?> overrideVerticalText,
       Value<String?> overrideReadingDirection,
+      Value<String?> furiganaMode,
     });
 
 final class $$BooksTableReferences
@@ -4560,6 +4620,11 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<String> get overrideReadingDirection => $composableBuilder(
     column: $table.overrideReadingDirection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get furiganaMode => $composableBuilder(
+    column: $table.furiganaMode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4697,6 +4762,11 @@ class $$BooksTableOrderingComposer
     column: $table.overrideReadingDirection,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get furiganaMode => $composableBuilder(
+    column: $table.furiganaMode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -4768,6 +4838,11 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<String> get overrideReadingDirection => $composableBuilder(
     column: $table.overrideReadingDirection,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get furiganaMode => $composableBuilder(
+    column: $table.furiganaMode,
     builder: (column) => column,
   );
 
@@ -4865,6 +4940,7 @@ class $$BooksTableTableManager
                 Value<String?> primaryWritingMode = const Value.absent(),
                 Value<bool?> overrideVerticalText = const Value.absent(),
                 Value<String?> overrideReadingDirection = const Value.absent(),
+                Value<String?> furiganaMode = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 title: title,
@@ -4881,6 +4957,7 @@ class $$BooksTableTableManager
                 primaryWritingMode: primaryWritingMode,
                 overrideVerticalText: overrideVerticalText,
                 overrideReadingDirection: overrideReadingDirection,
+                furiganaMode: furiganaMode,
               ),
           createCompanionCallback:
               ({
@@ -4899,6 +4976,7 @@ class $$BooksTableTableManager
                 Value<String?> primaryWritingMode = const Value.absent(),
                 Value<bool?> overrideVerticalText = const Value.absent(),
                 Value<String?> overrideReadingDirection = const Value.absent(),
+                Value<String?> furiganaMode = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 title: title,
@@ -4915,6 +4993,7 @@ class $$BooksTableTableManager
                 primaryWritingMode: primaryWritingMode,
                 overrideVerticalText: overrideVerticalText,
                 overrideReadingDirection: overrideReadingDirection,
+                furiganaMode: furiganaMode,
               ),
           withReferenceMapper: (p0) => p0
               .map(
