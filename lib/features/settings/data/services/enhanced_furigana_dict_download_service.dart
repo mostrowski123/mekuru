@@ -22,7 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// COPYING/BSD/GPL/LGPL files inside the archive).
 class EnhancedFuriganaDictDownloadService {
   static const downloadUrl =
-      'https://github.com/mostrowski123/japanese-e-reader/releases/download/'
+      'https://github.com/mostrowski123/mekuru/releases/download/'
       'dict-unidic-lite-v2.1.2/unidic-lite-2.1.2.tar.gz';
 
   /// SHA-256 of the published `unidic-lite-2.1.2.tar.gz`.
