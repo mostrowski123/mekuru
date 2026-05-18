@@ -182,6 +182,50 @@ class MecabService {
     return surfaces.isEmpty ? [text] : surfaces;
   }
 
+  /// Tokenize [text] for furigana generation.
+  ///
+  /// Returns aligned tokens with `surface`, `reading` (katakana), and
+  /// `startInText` set to the offset within the original input. Unlike
+  /// [identifyWordWithContext], this does NOT sanitize the input, so the
+  /// returned surfaces and offsets line up exactly with the characters in
+  /// [text] — important for callers that need to splice the tokens back into
+  /// the source string (e.g. inserting `<ruby>` tags into a DOM text node).
+  List<TokenInfo> tokenizeForFurigana(String text) {
+    if (!_initialized || text.isEmpty) return const <TokenInfo>[];
+
+    final allTokens = _tagger!.parse(text);
+    if (allTokens.isEmpty) return const <TokenInfo>[];
+
+    final tokens = allTokens.where((t) {
+      final s = t.surface;
+      if (s.isEmpty || s == 'EOS' || s == 'BOS') return false;
+      if (t.features.isNotEmpty && t.features[0] == 'BOS/EOS') return false;
+      return true;
+    }).toList();
+
+    final aligned = _alignTokensToText(tokens, text);
+    final result = <TokenInfo>[];
+    for (final entry in aligned) {
+      if (entry.startInText < 0) continue;
+      result.add(_tokenInfoFromAligned(entry));
+    }
+    return result;
+  }
+
+  static TokenInfo _tokenInfoFromAligned(_AlignedToken entry) {
+    final t = entry.token;
+    final features = t.features;
+    return TokenInfo(
+      surface: t.surface,
+      dictionaryForm: features.length > 6 && features[6] != '*'
+          ? features[6]
+          : t.surface,
+      reading: features.length > 7 && features[7] != '*' ? features[7] : '',
+      pos: features.isNotEmpty ? features[0] : '',
+      startInText: entry.startInText,
+    );
+  }
+
   /// Identify the word at [charOffset] within [text] using MeCab tokenization.
   ///
   /// Returns `null` if the offset falls on punctuation, whitespace, or if
@@ -233,22 +277,7 @@ class MecabService {
     final aligned = _alignTokensToText(tokens, cleanText);
 
     // Build the public TokenInfo list from aligned tokens.
-    final tokenInfoList = <TokenInfo>[];
-    for (final entry in aligned) {
-      final t = entry.token;
-      final features = t.features;
-      tokenInfoList.add(
-        TokenInfo(
-          surface: t.surface,
-          dictionaryForm: features.length > 6 && features[6] != '*'
-              ? features[6]
-              : t.surface,
-          reading: features.length > 7 && features[7] != '*' ? features[7] : '',
-          pos: features.isNotEmpty ? features[0] : '',
-          startInText: entry.startInText,
-        ),
-      );
-    }
+    final tokenInfoList = aligned.map(_tokenInfoFromAligned).toList();
 
     // Find the aligned token whose range covers the tapped offset.
     for (var i = 0; i < aligned.length; i++) {
