@@ -95,6 +95,9 @@ void main() {
       timeout: const Duration(seconds: 10),
     );
 
+    // Wait past the 1.5s typing-pause debounce so the term commits to history.
+    await tester.pump(const Duration(milliseconds: 1500));
+
     // Clear the search field to reveal history.
     final clearButton = find.byIcon(Icons.clear);
     await tester.tap(clearButton);

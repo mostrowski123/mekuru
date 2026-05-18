@@ -27,13 +27,15 @@ class DictionarySearchScreen extends ConsumerStatefulWidget {
 }
 
 class DictionarySearchScreenState
-    extends ConsumerState<DictionarySearchScreen> {
+    extends ConsumerState<DictionarySearchScreen>
+    with WidgetsBindingObserver {
   static final _latinPattern = RegExp(r'[a-zA-Z]');
 
   late final TextEditingController _controller;
   late final FocusNode _searchFocusNode;
   late final SearchHistoryNotifier _historyNotifier;
   Timer? _debounce;
+  Timer? _historyDebounce;
   List<_GroupedSearchResultData>? _groupedResults;
   bool _isSearching = false;
   String _lastQuery = '';
@@ -53,6 +55,7 @@ class DictionarySearchScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controller = TextEditingController(text: widget.initialQuery ?? '');
     _searchFocusNode = FocusNode();
     // Cache so dispose() can save history without touching `ref` post-unmount.
@@ -70,6 +73,7 @@ class DictionarySearchScreenState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     // Riverpod forbids provider mutations inside lifecycle methods; defer the
     // commit so the addSearch state change happens after the tree finalizes.
     // Swallow errors: in tests the container may be disposed before the
@@ -84,13 +88,46 @@ class DictionarySearchScreenState
       });
     }
     _debounce?.cancel();
+    _historyDebounce?.cancel();
     _controller.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    handleLifecycleStateChanged(state);
+  }
+
+  /// Lifecycle dispatcher split out so tests can drive transitions directly
+  /// instead of routing through the binding (which fans out to every observer).
+  @visibleForTesting
+  void handleLifecycleStateChanged(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        _commitToHistory();
+      case AppLifecycleState.resumed:
+        _restoreKeyboardIfFocused();
+    }
+  }
+
+  /// On Android the focus state survives backgrounding but the soft keyboard
+  /// does not. `requestFocus` is a no-op when focus is already held, so we
+  /// drop focus and re-claim it to force a fresh input connection.
+  void _restoreKeyboardIfFocused() {
+    if (!_searchFocusNode.hasFocus) return;
+    _searchFocusNode.unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocusNode.requestFocus();
+    });
+  }
+
   void _onSearchChanged(String value) {
     _debounce?.cancel();
+    _historyDebounce?.cancel();
     // Any user-driven edit invalidates a pending reader-initiated auto-commit.
     _autoCommitNextResult = false;
     final trimmed = value.trim();
@@ -106,6 +143,11 @@ class DictionarySearchScreenState
     _debounce = Timer(const Duration(milliseconds: 300), () {
       _performSearch(trimmed);
     });
+    // Pause-to-commit. If the 300ms search hasn't landed yet, _commitToHistory
+    // no-ops cleanly; the tab-switch and lifecycle paths backstop that gap.
+    _historyDebounce = Timer(const Duration(milliseconds: 1500), () {
+      _commitToHistory();
+    });
   }
 
   void _commitToHistory() {
@@ -114,7 +156,12 @@ class DictionarySearchScreenState
     _historyNotifier.addSearch(_lastQuery);
   }
 
+  /// Public hook so the parent shell can commit when the user navigates away
+  /// from the dictionary tab (the screen stays mounted inside IndexedStack).
+  void commitHistoryIfNeeded() => _commitToHistory();
+
   void _clearSearch() {
+    _historyDebounce?.cancel();
     _controller.clear();
     _onSearchChanged('');
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -167,7 +214,6 @@ class DictionarySearchScreenState
   }
 
   void _navigateToWord(String word) {
-    _commitToHistory();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DictionarySearchScreen(initialQuery: word),

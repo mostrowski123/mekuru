@@ -159,6 +159,9 @@ class _MainShellState extends ConsumerState<_MainShell> {
   }
 
   void _setCurrentIndex(int index) {
+    if (_currentIndex == 1 && index != 1) {
+      _dictionaryKey.currentState?.commitHistoryIfNeeded();
+    }
     _hasAppliedStartup = true;
     setState(() => _currentIndex = index);
     if (index == 1) {
