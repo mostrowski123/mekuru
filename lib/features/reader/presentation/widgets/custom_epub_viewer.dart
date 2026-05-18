@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../data/models/epub_models.dart';
+import '../../data/models/reader_settings.dart';
+import '../../data/services/furigana_generator.dart';
 import 'custom_epub_controller.dart';
 
 /// Builds the set of gesture recognizers that allow the iOS UiKitView
@@ -67,6 +69,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.horizontalMargin = 28,
     this.verticalMargin = 28,
     this.forceHorizontalAxis = false,
+    this.furiganaMode = FuriganaMode.off,
     this.onLoaded,
     this.onChaptersLoaded,
     this.onRelocated,
@@ -91,6 +94,10 @@ class CustomEpubViewer extends StatefulWidget {
   final int horizontalMargin;
   final int verticalMargin;
   final bool forceHorizontalAxis;
+
+  /// Initial furigana mode. Passed to the JS viewer so the first rendered
+  /// section applies the mode immediately.
+  final FuriganaMode furiganaMode;
 
   final VoidCallback? onLoaded;
   final ValueChanged<List<EpubChapter>>? onChaptersLoaded;
@@ -118,6 +125,8 @@ class CustomEpubViewer extends StatefulWidget {
 
 class _CustomEpubViewerState extends State<CustomEpubViewer> {
   InAppWebViewController? _webViewController;
+
+  static const _furiganaGenerator = FuriganaGenerator(MecabFuriganaTokenizer());
 
   final _settings = InAppWebViewSettings(
     isInspectable: kDebugMode,
@@ -411,6 +420,19 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     );
 
     controller.addJavaScriptHandler(
+      handlerName: 'generateFurigana',
+      callback: (data) {
+        // Accept either ['a','b'] or [['a','b']] depending on how the JS
+        // bridge serializes the batch.
+        final raw = data.isNotEmpty && data[0] is List
+            ? data[0] as List
+            : data;
+        final inputs = raw.map((e) => e?.toString() ?? '').toList();
+        return _furiganaGenerator.generate(inputs);
+      },
+    );
+
+    controller.addJavaScriptHandler(
       handlerName: 'displayError',
       callback: (_) {
         if (kDebugMode) debugPrint('EPUB display error');
@@ -439,7 +461,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
 
   Future<void> _loadBook() async {
     final cfiParam = widget.initialCfi != null
-        ? '"${widget.initialCfi!.replaceAll('"', '\\"')}"'
+        ? '"${widget.initialCfi!.replaceAll('"', '\\\\"')}"'
         : '""';
     final fgHex = widget.foregroundColor != null
         ? () {
@@ -459,6 +481,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         ? jsonEncode(widget.customCss)
         : 'null';
 
+    final furiganaParam = jsonEncode(widget.furiganaMode.storageValue);
+
     await _runJavascript(
       'loadBook('
       '[${widget.epubData.join(',')}], '
@@ -471,7 +495,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       '$cssParam, '
       '${widget.horizontalMargin}, '
       '${widget.verticalMargin}, '
-      '${widget.forceHorizontalAxis}'
+      '${widget.forceHorizontalAxis}, '
+      '$furiganaParam'
       ')',
     );
 

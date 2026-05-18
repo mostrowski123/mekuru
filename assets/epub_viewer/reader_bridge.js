@@ -12,6 +12,8 @@ var _lastTappedBlock = null;       // block element from last getTextAtPoint
 var _lastTappedDoc = null;         // document from last getTextAtPoint
 var _currentWordHighlightCfi = null; // CFI of current word highlight
 var _disableLinks = false;           // When true, links trigger dictionary instead of navigating
+var _furiganaMode = 'off';           // 'off' | 'all' | 'aboveLevel'
+var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processed
 // When true, epub.js patches in epub.js will override the detected
 // writing-mode to horizontal-tb, forcing horizontal pagination.
 // Set as a window global so epub.js code can read it.
@@ -26,9 +28,22 @@ function callDart(name) {
   }
 }
 
+function callDartAsync(name) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  try {
+    return Promise.resolve(
+      window.flutter_inappwebview.callHandler(name, ...args)
+    );
+  } catch (e) {
+    console.error('callDartAsync error (' + name + '):', e);
+    return Promise.reject(e);
+  }
+}
+
 // ── Book loading ──────────────────────────────────────────────────────
 
-function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis) {
+function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode) {
+  if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
   var uint8 = new Uint8Array(data);
   book.open(uint8);
 
@@ -187,6 +202,12 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
   // Monitor for selection clearing
   rendition.hooks.content.register(function (contents) {
     var doc = contents.window.document;
+
+    // Furigana: inject visibility style and (lazily) generate ruby for kanji.
+    applyFuriganaStyleToDoc(doc);
+    if (_furiganaMode !== 'off') {
+      processSectionForFurigana(doc);
+    }
 
     doc.addEventListener('selectionchange', function () {
       var sel = contents.window.getSelection();
@@ -534,6 +555,170 @@ function setBodyBackground(color) {
 function setDisableLinks(val) {
   _disableLinks = !!val;
   console.log('[EPUB_BRIDGE] setDisableLinks: ' + _disableLinks);
+}
+
+// ── Furigana ─────────────────────────────────────────────────────────
+
+var _kanjiRegex = /[一-鿿㐀-䶿々〆ヵヶ]/;
+// Module-level cache of generated annotations by text content. MeCab is
+// deterministic, so re-rendered sections (resize, font change) reuse results.
+var _furiganaCache = new Map();
+var FURI_CACHE_MAX = 4000;
+
+function _renderedIframeDocs() {
+  var docs = [];
+  if (!rendition || !rendition.manager || !rendition.manager.views) return docs;
+  var views = rendition.manager.views._views || [];
+  for (var i = 0; i < views.length; i++) {
+    var v = views[i];
+    var doc = (v && v.document) ||
+      (v && v.iframe && v.iframe.contentDocument) ||
+      null;
+    if (doc) docs.push(doc);
+  }
+  return docs;
+}
+
+function applyFuriganaStyleToDoc(doc) {
+  if (!doc || !doc.head) return;
+  var styleEl = doc.getElementById('__mekuruFuriganaStyle');
+  if (!styleEl) {
+    styleEl = doc.createElement('style');
+    styleEl.id = '__mekuruFuriganaStyle';
+    doc.head.appendChild(styleEl);
+  }
+  styleEl.textContent =
+    _furiganaMode === 'off' ? 'ruby > rt, ruby > rp { display: none !important; }' : '';
+}
+
+function setFuriganaMode(mode) {
+  _furiganaMode = (typeof mode === 'string') ? mode : 'off';
+  console.log('[EPUB_BRIDGE] setFuriganaMode: ' + _furiganaMode);
+  var docs = _renderedIframeDocs();
+  for (var i = 0; i < docs.length; i++) {
+    applyFuriganaStyleToDoc(docs[i]);
+    if (_furiganaMode !== 'off' && !_furiganaProcessedDocs.has(docs[i])) {
+      processSectionForFurigana(docs[i]);
+    }
+  }
+}
+
+function processSectionForFurigana(doc) {
+  if (!doc || !doc.body) return;
+  if (_furiganaMode === 'off') return;
+  if (_furiganaProcessedDocs.has(doc)) return;
+  _furiganaProcessedDocs.add(doc);
+
+  // SHOW_ELEMENT lets us FILTER_REJECT entire ruby/script/style subtrees
+  // up-front; without it the walker would visit each text node and we'd
+  // have to walk its ancestor chain.
+  var walker = doc.createTreeWalker(
+    doc.body,
+    NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: function (node) {
+        if (node.nodeType === 1) {
+          var tag = node.nodeName && node.nodeName.toLowerCase();
+          if (tag === 'ruby' || tag === 'rt' || tag === 'rp' ||
+              tag === 'script' || tag === 'style') {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_SKIP;
+        }
+        if (!node.nodeValue || !_kanjiRegex.test(node.nodeValue)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+
+  var cachedHits = []; // [node, annotation]
+  var uncachedNodes = [];
+  var uncachedInputs = [];
+  var n;
+  while ((n = walker.nextNode())) {
+    var val = n.nodeValue;
+    if (_furiganaCache.has(val)) {
+      cachedHits.push([n, _furiganaCache.get(val)]);
+    } else {
+      uncachedNodes.push(n);
+      uncachedInputs.push(val);
+    }
+  }
+
+  for (var i = 0; i < cachedHits.length; i++) {
+    _applyFuriganaAnnotation(doc, cachedHits[i][0], cachedHits[i][1]);
+  }
+
+  if (uncachedNodes.length === 0) return;
+
+  var BATCH = 50;
+  var batchPromises = [];
+  for (var start = 0; start < uncachedNodes.length; start += BATCH) {
+    var sliceNodes = uncachedNodes.slice(start, start + BATCH);
+    var sliceInputs = uncachedInputs.slice(start, start + BATCH);
+    batchPromises.push(
+      callDartAsync('generateFurigana', sliceInputs)
+        .then((function (nodesRef, inputsRef) {
+          return function (annotations) {
+            if (!Array.isArray(annotations)) {
+              console.warn('[EPUB_BRIDGE] generateFurigana returned non-array');
+              return;
+            }
+            for (var j = 0; j < nodesRef.length && j < annotations.length; j++) {
+              var ann = annotations[j];
+              _cacheFurigana(inputsRef[j], ann);
+              _applyFuriganaAnnotation(doc, nodesRef[j], ann);
+            }
+          };
+        })(sliceNodes, sliceInputs))
+        .catch(function (e) {
+          console.error('[EPUB_BRIDGE] generateFurigana failed:', e);
+        })
+    );
+  }
+  // Fire-and-forget; ruby fills in progressively as batches resolve.
+  Promise.all(batchPromises);
+}
+
+function _cacheFurigana(text, ann) {
+  if (!ann) return;
+  if (_furiganaCache.size >= FURI_CACHE_MAX) {
+    // Simple FIFO eviction: drop the oldest entry. Map preserves insertion
+    // order, so .keys().next() gives the oldest key.
+    var oldest = _furiganaCache.keys().next().value;
+    _furiganaCache.delete(oldest);
+  }
+  _furiganaCache.set(text, ann);
+}
+
+function _applyFuriganaAnnotation(doc, node, ann) {
+  if (!node.parentNode || !ann || !Array.isArray(ann.segments)) return;
+  var hasRuby = false;
+  for (var i = 0; i < ann.segments.length; i++) {
+    if (ann.segments[i] && ann.segments[i].f) { hasRuby = true; break; }
+  }
+  if (!hasRuby) return;
+
+  var fragment = doc.createDocumentFragment();
+  for (var k = 0; k < ann.segments.length; k++) {
+    var seg = ann.segments[k];
+    if (!seg || typeof seg.t !== 'string') continue;
+    if (seg.f) {
+      // Put the base text directly inside <ruby>; the existing tap-redirect
+      // code (getTextAtPoint) expects a text-node child, not <rb>.
+      var ruby = doc.createElement('ruby');
+      ruby.appendChild(doc.createTextNode(seg.t));
+      var rt = doc.createElement('rt');
+      rt.textContent = seg.f;
+      ruby.appendChild(rt);
+      fragment.appendChild(ruby);
+    } else {
+      fragment.appendChild(doc.createTextNode(seg.t));
+    }
+  }
+  node.parentNode.replaceChild(fragment, node);
 }
 
 // ── Margins ──────────────────────────────────────────────────────────

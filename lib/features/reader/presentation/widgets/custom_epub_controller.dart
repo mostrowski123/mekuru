@@ -103,6 +103,10 @@ class CustomEpubController {
     _eval('setDisableLinks($disabled)');
   }
 
+  void setFuriganaMode(String mode) {
+    _eval('setFuriganaMode(${jsonEncode(mode)})');
+  }
+
   // ── Search ──────────────────────────────────────────────────────────
 
   Completer<List<Map<String, dynamic>>>? _searchCompleter;
