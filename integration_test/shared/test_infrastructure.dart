@@ -100,6 +100,14 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   Future<String?> loadOcrServerUrl() async => _ocrServerUrl;
   @override
   Future<void> saveOcrServerUrl(String url) async => _ocrServerUrl = url;
+
+  bool? _enhancedFuriganaDictEnabled;
+  @override
+  Future<bool?> loadEnhancedFuriganaDictEnabled() async =>
+      _enhancedFuriganaDictEnabled;
+  @override
+  Future<void> saveEnhancedFuriganaDictEnabled(bool enabled) async =>
+      _enhancedFuriganaDictEnabled = enabled;
 }
 
 /// In-memory implementation of [ReaderSettingsStorage] for integration tests.

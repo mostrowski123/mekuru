@@ -7,6 +7,7 @@ import 'package:mekuru/features/dictionary/presentation/screens/dictionary_searc
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -30,6 +31,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
       ref.read(jpdbFreqProvider.notifier).checkStatus();
       ref.read(jmdictProvider.notifier).checkStatus();
       ref.read(kanjidicProvider.notifier).checkStatus();
+      ref.read(enhancedFuriganaDictProvider.notifier).checkStatus();
     });
   }
 
@@ -40,6 +42,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     final jpdbFreqState = ref.watch(jpdbFreqProvider);
     final jmdictState = ref.watch(jmdictProvider);
     final kanjidicState = ref.watch(kanjidicProvider);
+    final enhancedFuriganaState = ref.watch(enhancedFuriganaDictProvider);
     final theme = Theme.of(context);
     final starterPackReady = jmdictState.isImported && jpdbFreqState.isImported;
     final starterPackBusy =
@@ -255,6 +258,38 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Enhanced Furigana Dictionary (UniDic-lite, optional download)
+          _EnhancedFuriganaDictTile(
+            state: enhancedFuriganaState,
+            theme: theme,
+          ),
+          if (enhancedFuriganaState.isDownloading)
+            _DownloadProgress(
+              progress: enhancedFuriganaState.progress,
+              label: enhancedFuriganaState.progress < 0.85
+                  ? 'Downloading enhanced dictionary... '
+                      '${(enhancedFuriganaState.progress / 0.85 * 100).toInt()}%'
+                  : 'Extracting...',
+              theme: theme,
+            ),
+          if (enhancedFuriganaState.error != null)
+            _ErrorText(text: enhancedFuriganaState.error!, theme: theme),
+          if (enhancedFuriganaState.successMessage != null)
+            _SuccessText(text: enhancedFuriganaState.successMessage!),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: _AttributionText(
+              prefix: 'Powered by ',
+              linkText: 'UniDic',
+              url: 'https://clrd.ninjal.ac.jp/unidic/',
+              suffix:
+                  ' (NINJAL), distributed under the BSD/GPL/LGPL triple '
+                  'license.',
+              theme: theme,
             ),
           ),
           const SizedBox(height: 16),
@@ -787,6 +822,118 @@ class _KanjidicTile extends ConsumerWidget {
             onPressed: () {
               Navigator.of(ctx).pop();
               ref.read(kanjidicProvider.notifier).delete();
+            },
+            child: Text(
+              ctx.l10n.commonDelete,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+class _EnhancedFuriganaDictTile extends ConsumerWidget {
+  const _EnhancedFuriganaDictTile({required this.state, required this.theme});
+
+  final EnhancedFuriganaDictState state;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subtitle = state.isInstalled
+        ? 'Active. Restart the app if changes do not appear.'
+        : 'Improves furigana for ~10,000 additional words. '
+            '45 MB download, 250 MB on disk.';
+
+    return ListTile(
+      leading: Icon(
+        Icons.spellcheck_outlined,
+        color: theme.colorScheme.primary,
+      ),
+      title: const Text('Enhanced Furigana Dictionary'),
+      subtitle: Text(subtitle),
+      trailing: _buildTrailing(context, ref),
+    );
+  }
+
+  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
+    if (state.isDownloading || state.isUninstalling) {
+      return const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    if (state.isInstalled) {
+      return IconButton(
+        icon: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        tooltip: 'Remove enhanced dictionary',
+        onPressed: () => _confirmRemove(context, ref),
+      );
+    }
+
+    return FilledButton.tonal(
+      onPressed: () {
+        AppHaptics.light();
+        _confirmDownload(context, ref);
+      },
+      child: const Text('Download'),
+    );
+  }
+
+  void _confirmDownload(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Download enhanced dictionary?'),
+        content: const Text(
+          'This downloads ~45 MB and unpacks to ~250 MB of dictionary '
+          'data. Use Wi-Fi if you can. You can remove it later from this '
+          'screen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(ctx.l10n.commonCancel),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(enhancedFuriganaDictProvider.notifier).download();
+            },
+            child: Text(ctx.l10n.commonDownload),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRemove(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove enhanced dictionary?'),
+        content: const Text(
+          'This frees ~250 MB of storage. On next launch the app will '
+          'fall back to the bundled dictionary. You can re-download '
+          'later from this screen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(ctx.l10n.commonCancel),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(enhancedFuriganaDictProvider.notifier).uninstall();
             },
             child: Text(
               ctx.l10n.commonDelete,

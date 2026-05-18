@@ -126,6 +126,17 @@ class _InMemoryAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveOcrServerUrl(String url) async {
     _ocrServerUrl = url;
   }
+
+  bool? _enhancedFuriganaDictEnabled;
+
+  @override
+  Future<bool?> loadEnhancedFuriganaDictEnabled() async =>
+      _enhancedFuriganaDictEnabled;
+
+  @override
+  Future<void> saveEnhancedFuriganaDictEnabled(bool enabled) async {
+    _enhancedFuriganaDictEnabled = enabled;
+  }
 }
 
 class _BenchmarkDictionaryQueryService extends DictionaryQueryService {
