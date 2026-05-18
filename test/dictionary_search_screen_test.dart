@@ -493,5 +493,159 @@ void main() {
         expect(container.read(searchHistoryProvider), ['食べる']);
       },
     );
+
+    testWidgets(
+      'pausing for 1.5s after typing commits the query to history',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value([enabledDictionary()]),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+          ),
+        );
+        await tester.pump();
+
+        await tester.enterText(find.byType(TextField), '食べる');
+        // 300ms search debounce + a beat to flush async search results.
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump();
+        expect(container.read(searchHistoryProvider), isEmpty);
+
+        // Remaining time until the 1.5s history debounce fires.
+        await tester.pump(const Duration(milliseconds: 1200));
+
+        expect(container.read(searchHistoryProvider), ['食べる']);
+      },
+    );
+
+    testWidgets(
+      'clearing the field cancels the pending 1.5s history commit',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value([enabledDictionary()]),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+          ),
+        );
+        await tester.pump();
+
+        await tester.enterText(find.byType(TextField), '食べる');
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump();
+        // Tap the clear (X) icon before the 1.5s timer fires.
+        await tester.tap(find.byIcon(Icons.clear));
+        await tester.pump(const Duration(milliseconds: 1600));
+
+        expect(container.read(searchHistoryProvider), isEmpty);
+      },
+    );
+
+    testWidgets(
+      'app backgrounding commits the current search to history',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value([enabledDictionary()]),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final screenKey = GlobalKey<DictionarySearchScreenState>();
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: buildLocalizedTestApp(
+              home: DictionarySearchScreen(key: screenKey),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.enterText(find.byType(TextField), '食べる');
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump();
+        expect(container.read(searchHistoryProvider), isEmpty);
+
+        screenKey.currentState!.handleLifecycleStateChanged(
+          AppLifecycleState.paused,
+        );
+
+        expect(container.read(searchHistoryProvider), ['食べる']);
+      },
+    );
+
+    testWidgets(
+      'commitHistoryIfNeeded saves when the parent switches tabs',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final db = AppDatabase(NativeDatabase.memory());
+        addTearDown(db.close);
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value([enabledDictionary()]),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final screenKey = GlobalKey<DictionarySearchScreenState>();
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: buildLocalizedTestApp(
+              home: DictionarySearchScreen(key: screenKey),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        await tester.enterText(find.byType(TextField), '食べる');
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pump();
+        expect(container.read(searchHistoryProvider), isEmpty);
+
+        screenKey.currentState!.commitHistoryIfNeeded();
+
+        expect(container.read(searchHistoryProvider), ['食べる']);
+      },
+    );
   });
 }
