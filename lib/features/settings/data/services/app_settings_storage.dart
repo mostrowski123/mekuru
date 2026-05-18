@@ -158,6 +158,8 @@ abstract class AppSettingsStorage {
   Future<void> saveAutoCropWhiteThreshold(int value);
   Future<String?> loadOcrServerUrl();
   Future<void> saveOcrServerUrl(String url);
+  Future<bool?> loadEnhancedFuriganaDictEnabled();
+  Future<void> saveEnhancedFuriganaDictEnabled(bool enabled);
 }
 
 /// Holds theme values pre-loaded in [main] so Riverpod notifiers can use
@@ -207,6 +209,8 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _colorThemeKey = 'app.color_theme';
   static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
   static const _ocrServerUrlKey = 'app.ocr_server_url';
+  static const _enhancedFuriganaDictEnabledKey =
+      'app.enhanced_furigana_dict_enabled';
 
   @override
   Future<AppLanguage?> loadAppLanguage() async {
@@ -365,5 +369,17 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveOcrServerUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_ocrServerUrlKey, url);
+  }
+
+  @override
+  Future<bool?> loadEnhancedFuriganaDictEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_enhancedFuriganaDictEnabledKey);
+  }
+
+  @override
+  Future<void> saveEnhancedFuriganaDictEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_enhancedFuriganaDictEnabledKey, enabled);
   }
 }

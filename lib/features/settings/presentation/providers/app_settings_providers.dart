@@ -419,3 +419,41 @@ bool isUnsetOrBuiltInOcrServerUrl(String url) {
 final ocrServerUrlProvider = NotifierProvider<OcrServerUrlNotifier, String>(
   OcrServerUrlNotifier.new,
 );
+
+
+/// Whether the user has opted into the optional UniDic-lite furigana
+/// dictionary. Independent of whether the dict files have been downloaded
+/// — toggling this on without the files present leaves MecabService on
+/// IPADIC until the download completes.
+class EnhancedFuriganaDictEnabledNotifier extends Notifier<bool> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  bool build() => false;
+
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadEnhancedFuriganaDictEnabled();
+    if (persisted != null) {
+      state = persisted;
+    }
+  }
+
+  void setEnabled(bool value) {
+    state = value;
+    unawaited(
+      ref
+          .read(appSettingsStorageProvider)
+          .saveEnhancedFuriganaDictEnabled(value),
+    );
+  }
+}
+
+final enhancedFuriganaDictEnabledProvider =
+    NotifierProvider<EnhancedFuriganaDictEnabledNotifier, bool>(
+      EnhancedFuriganaDictEnabledNotifier.new,
+    );
