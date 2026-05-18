@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppLanguage {
@@ -209,8 +210,6 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _colorThemeKey = 'app.color_theme';
   static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
   static const _ocrServerUrlKey = 'app.ocr_server_url';
-  static const _enhancedFuriganaDictEnabledKey =
-      'app.enhanced_furigana_dict_enabled';
 
   @override
   Future<AppLanguage?> loadAppLanguage() async {
@@ -374,12 +373,17 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   @override
   Future<bool?> loadEnhancedFuriganaDictEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_enhancedFuriganaDictEnabledKey);
+    return prefs.getBool(
+      EnhancedFuriganaDictDownloadService.enabledPreferenceKey,
+    );
   }
 
   @override
   Future<void> saveEnhancedFuriganaDictEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_enhancedFuriganaDictEnabledKey, enabled);
+    await prefs.setBool(
+      EnhancedFuriganaDictDownloadService.enabledPreferenceKey,
+      enabled,
+    );
   }
 }

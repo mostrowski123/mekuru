@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Downloads and installs the optional UniDic-lite MeCab dictionary.
 ///
@@ -40,6 +41,27 @@ class EnhancedFuriganaDictDownloadService {
 
   static const _localDirName = 'unidic-lite';
   static const _markerFileName = '.install_complete';
+
+  /// Shared-preferences key matching
+  /// [SharedPreferencesAppSettingsStorage._enhancedFuriganaDictEnabledKey].
+  /// Read directly from MecabService (which has no DI surface for the
+  /// settings storage interface) to decide which dictionary to load.
+  static const enabledPreferenceKey = 'app.enhanced_furigana_dict_enabled';
+
+  /// `true` if the user has opted in AND the dict files are installed.
+  /// Used by MecabService to pick between IPADIC + user-dict (default)
+  /// and the downloaded UniDic-lite layout.
+  static Future<bool> shouldUse() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool(enabledPreferenceKey) ?? false;
+      if (!enabled) return false;
+      return isInstalled();
+    } catch (e) {
+      debugPrint('[EnhancedFurigana] shouldUse check failed: $e');
+      return false;
+    }
+  }
 
   /// Absolute path to the directory where unidic-lite files live on disk.
   static Future<String> getStorageDir() async {

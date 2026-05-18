@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mecab_for_flutter/mecab_for_flutter.dart';
+import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -156,29 +157,45 @@ class MecabService {
   /// The active feature-column layout, set by [init].
   MecabFeatureLayout get layout => _layout;
 
-  /// Initialize MeCab with IPAdic and the bundled gikun user dictionary.
-  /// Safe to call multiple times.
+  /// Initialize MeCab. Safe to call multiple times.
   ///
-  /// The native MeCab C library requires absolute filesystem paths to both
-  /// the dictionary directory and the user dictionary file. Flutter assets
-  /// live in the app bundle and cannot be accessed via the filesystem
-  /// directly, so we copy them to the application-documents directory on
-  /// first launch.
-  Future<void> init({
-    MecabFeatureLayout layout = MecabFeatureLayout.ipadic,
-  }) async {
+  /// Chooses between the bundled IPADIC + gikun user-dictionary (default)
+  /// and the optional downloaded UniDic-lite (when the user has opted in
+  /// and the files are present). On UniDic-lite initialization failure,
+  /// falls back to IPADIC so the reader stays usable.
+  Future<void> init() async {
     if (_initialized) return;
-    _layout = layout;
+
+    if (await EnhancedFuriganaDictDownloadService.shouldUse()) {
+      try {
+        final dictPath =
+            await EnhancedFuriganaDictDownloadService.getStorageDir();
+        debugPrint(
+          '[MeCab] Initializing (UniDic-lite) with dict path: $dictPath',
+        );
+        _tagger = await Mecab.create(dictDir: dictPath);
+        _layout = MecabFeatureLayout.unidicLite;
+        _initialized = true;
+        return;
+      } catch (e) {
+        debugPrint(
+          '[MeCab] UniDic-lite init failed, falling back to IPADIC: $e',
+        );
+      }
+    }
+
     final dictPath = await _getDictDir();
     final userDictPath = await _getUserDictPath();
-    debugPrint('[MeCab] Initializing (${layout.label}) with dict path: '
-        '$dictPath, user dict: $userDictPath');
+    _layout = MecabFeatureLayout.ipadic;
+    debugPrint(
+      '[MeCab] Initializing (IPADIC) with dict path: $dictPath, '
+      'user dict: $userDictPath',
+    );
     _tagger = await Mecab.create(
       dictDir: dictPath,
       options: '-u "$userDictPath"',
     );
     _initialized = true;
-    debugPrint('[MeCab] Initialized successfully');
   }
 
   /// List of files that make up an IPAdic MeCab dictionary.
