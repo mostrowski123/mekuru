@@ -113,6 +113,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             primaryWritingMode: widget.book.primaryWritingMode,
             overrideVerticalText: widget.book.overrideVerticalText,
             overrideReadingDirection: widget.book.overrideReadingDirection,
+            overrideFuriganaMode: widget.book.furiganaMode,
           );
 
       final settings = ref.read(readerSettingsProvider);
@@ -185,6 +186,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         _epubController.setDisableLinks(next.disableLinks);
       }
 
+      if (previous.furiganaMode != next.furiganaMode && _isEpubLoaded) {
+        _epubController.setFuriganaMode(next.furiganaMode.storageValue);
+      }
+
       final colorChanged =
           previous.colorMode != next.colorMode ||
           (next.colorMode == ColorMode.sepia &&
@@ -237,6 +242,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       // to vertical. This flag tells the JS bridge to force
                       // the axis back to horizontal after each section loads.
                       forceHorizontalAxis: !settings.verticalText,
+                      furiganaMode: settings.furiganaMode,
                       onLoaded: () {
                         if (!mounted) return;
                         setState(() {
@@ -1493,6 +1499,51 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       notifier.setDisableLinks(value);
                     },
                     secondary: const Icon(Icons.link_off),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Furigana ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Furigana'),
+                        const SizedBox(height: 8),
+                        SegmentedButton<FuriganaMode>(
+                          segments: const [
+                            ButtonSegment(
+                              value: FuriganaMode.off,
+                              label: Text('Off'),
+                              icon: Icon(Icons.visibility_off),
+                            ),
+                            ButtonSegment(
+                              value: FuriganaMode.all,
+                              label: Text('All kanji'),
+                              icon: Icon(Icons.visibility),
+                            ),
+                          ],
+                          selected: {
+                            settings.furiganaMode == FuriganaMode.aboveLevel
+                                ? FuriganaMode.all
+                                : settings.furiganaMode,
+                          },
+                          onSelectionChanged: (selection) {
+                            final chosen = selection.first;
+                            // Don't clobber a stored `aboveLevel` (which the
+                            // UI displays as `all`) when the user taps the
+                            // already-active "All kanji" segment.
+                            if (chosen == FuriganaMode.all &&
+                                settings.furiganaMode ==
+                                    FuriganaMode.aboveLevel) {
+                              return;
+                            }
+                            AppHaptics.medium();
+                            notifier.setFuriganaMode(chosen);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
