@@ -7,11 +7,12 @@ if [ ! -d /work/assets/ipadic ]; then
 fi
 
 apt-get update -qq >/dev/null
-apt-get install -y -qq --no-install-recommends mecab
+apt-get install -y -qq --no-install-recommends mecab mecab-utils
 
 mkdir -p /work/assets/user_dict
 
-mecab-dict-index \
+# mecab-utils installs mecab-dict-index to /usr/lib/mecab/, not on PATH.
+/usr/lib/mecab/mecab-dict-index \
   -d /work/assets/ipadic \
   -u /work/assets/user_dict/user.dic \
   -f utf-8 \

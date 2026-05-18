@@ -115,6 +115,7 @@ flutter:
   assets:
     - assets/epub_viewer/
     - assets/ipadic/
+    - assets/user_dict/
 
 sentry:
   upload_debug_symbols: true

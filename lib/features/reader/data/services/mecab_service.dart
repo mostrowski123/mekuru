@@ -92,17 +92,24 @@ class MecabService {
   Mecab? _tagger;
   bool _initialized = false;
 
-  /// Initialize MeCab with IPAdic. Safe to call multiple times.
+  /// Initialize MeCab with IPAdic and the bundled gikun user dictionary.
+  /// Safe to call multiple times.
   ///
-  /// The native MeCab C library requires an absolute filesystem path to the
-  /// dictionary directory. Flutter assets live in the app bundle and cannot
-  /// be accessed via the filesystem directly, so we copy them to the
-  /// application-documents directory on first launch.
+  /// The native MeCab C library requires absolute filesystem paths to both
+  /// the dictionary directory and the user dictionary file. Flutter assets
+  /// live in the app bundle and cannot be accessed via the filesystem
+  /// directly, so we copy them to the application-documents directory on
+  /// first launch.
   Future<void> init() async {
     if (_initialized) return;
     final dictPath = await _getDictDir();
-    debugPrint('[MeCab] Initializing with dict path: $dictPath');
-    _tagger = await Mecab.create(dictDir: dictPath);
+    final userDictPath = await _getUserDictPath();
+    debugPrint('[MeCab] Initializing with dict path: $dictPath, '
+        'user dict: $userDictPath');
+    _tagger = await Mecab.create(
+      dictDir: dictPath,
+      options: '-u "$userDictPath"',
+    );
     _initialized = true;
     debugPrint('[MeCab] Initialized successfully');
   }
@@ -129,29 +136,52 @@ class MecabService {
   Future<String> _getDictDir() async {
     final docsDir = await getApplicationDocumentsDirectory();
     final ipaDicDir = Directory(p.join(docsDir.path, 'assets', 'ipadic'));
+    await _copyAssetsToDir(
+      assetPrefix: 'assets/ipadic',
+      fileNames: _mecabDictFiles,
+      destDir: ipaDicDir,
+    );
+    return ipaDicDir.absolute.path;
+  }
 
-    if (!ipaDicDir.existsSync()) {
-      ipaDicDir.createSync(recursive: true);
+  /// Files are skipped if already present, so this is cheap to call on every
+  /// startup after the first launch.
+  Future<void> _copyAssetsToDir({
+    required String assetPrefix,
+    required List<String> fileNames,
+    required Directory destDir,
+  }) async {
+    if (!destDir.existsSync()) {
+      destDir.createSync(recursive: true);
     }
-
-    for (final fileName in _mecabDictFiles) {
-      final destPath = p.join(ipaDicDir.path, fileName);
+    for (final fileName in fileNames) {
+      final destPath = p.join(destDir.path, fileName);
       if (FileSystemEntity.typeSync(destPath) ==
           FileSystemEntityType.notFound) {
-        debugPrint('[MeCab] Copying asset: assets/ipadic/$fileName');
-        final ByteData data = await rootBundle.load('assets/ipadic/$fileName');
-        final buffer = data.buffer;
-        final bytes = buffer.asUint8List(
+        debugPrint('[MeCab] Copying asset: $assetPrefix/$fileName');
+        final ByteData data = await rootBundle.load('$assetPrefix/$fileName');
+        final bytes = data.buffer.asUint8List(
           data.offsetInBytes,
           data.lengthInBytes,
         );
         // Async write so first-launch dictionary install doesn't block the
-        // UI isolate while the ipadic files are copied to docs dir.
+        // UI isolate while the dict files are copied to docs dir.
         await File(destPath).writeAsBytes(bytes);
       }
     }
+  }
 
-    return ipaDicDir.absolute.path;
+  /// Copy the bundled user-dictionary (gikun / 熟字訓 overrides on top of
+  /// IPADIC) to disk and return the absolute path to `user.dic`.
+  Future<String> _getUserDictPath() async {
+    final docsDir = await getApplicationDocumentsDirectory();
+    final userDictDir = Directory(p.join(docsDir.path, 'assets', 'user_dict'));
+    await _copyAssetsToDir(
+      assetPrefix: 'assets/user_dict',
+      fileNames: const ['user.dic'],
+      destDir: userDictDir,
+    );
+    return p.join(userDictDir.absolute.path, 'user.dic');
   }
 
   /// Whether MeCab has been initialized.
