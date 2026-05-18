@@ -2247,9 +2247,29 @@
   "@aboutDescription": {
     "description": "Short description shown near the top of the about screen."
   },
-  "aboutAttributionTitle": "Atribución",
-  "@aboutAttributionTitle": {
-    "description": "Section heading for attributions on the about screen."
+  "attributionsTitle": "Atribuciones",
+  "@attributionsTitle": {
+    "description": "App bar title for the Attributions screen."
+  },
+  "aboutAttributionsTitle": "Atribuciones",
+  "@aboutAttributionsTitle": {
+    "description": "Title for the ListTile on the About screen that opens the Attributions screen."
+  },
+  "aboutAttributionsSubtitle": "Fuentes de datos, licencias y créditos",
+  "@aboutAttributionsSubtitle": {
+    "description": "Subtitle for the ListTile on the About screen that opens the Attributions screen."
+  },
+  "attributionUniDicTitle": "UniDic",
+  "@attributionUniDicTitle": {
+    "description": "Title for the UniDic attribution card."
+  },
+  "attributionUniDicDescription": "El análisis morfológico mejorado del furigana se realiza con UniDic, un diccionario de corpus mantenido por el Instituto Nacional de Lengua y Lingüística Japonesa (NINJAL).",
+  "@attributionUniDicDescription": {
+    "description": "Description text for the UniDic attribution card."
+  },
+  "attributionUniDicLicense": "Distribuido bajo la triple licencia BSD/GPL/LGPL.",
+  "@attributionUniDicLicense": {
+    "description": "License sentence shown in the UniDic attribution card."
   },
   "aboutKanjiVgTitle": "KanjiVG",
   "@aboutKanjiVgTitle": {

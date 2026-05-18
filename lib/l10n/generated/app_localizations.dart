@@ -3112,11 +3112,41 @@ abstract class AppLocalizations {
   /// **'A Japanese-first EPUB reader with vertical text, offline dictionary, and vocabulary management.'**
   String get aboutDescription;
 
-  /// Section heading for attributions on the about screen.
+  /// App bar title for the Attributions screen.
   ///
   /// In en, this message translates to:
-  /// **'Attribution'**
-  String get aboutAttributionTitle;
+  /// **'Attributions'**
+  String get attributionsTitle;
+
+  /// Title for the ListTile on the About screen that opens the Attributions screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Attributions'**
+  String get aboutAttributionsTitle;
+
+  /// Subtitle for the ListTile on the About screen that opens the Attributions screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Data sources, licenses, and credits'**
+  String get aboutAttributionsSubtitle;
+
+  /// Title for the UniDic attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'UniDic'**
+  String get attributionUniDicTitle;
+
+  /// Description text for the UniDic attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'Enhanced furigana morphological analysis is powered by UniDic, a corpus dictionary maintained by the National Institute for Japanese Language and Linguistics (NINJAL).'**
+  String get attributionUniDicDescription;
+
+  /// License sentence shown in the UniDic attribution card.
+  ///
+  /// In en, this message translates to:
+  /// **'Distributed under the BSD/GPL/LGPL triple license.'**
+  String get attributionUniDicLicense;
 
   /// Title for the KanjiVG attribution card.
   ///

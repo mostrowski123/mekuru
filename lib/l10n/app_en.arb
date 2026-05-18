@@ -2325,9 +2325,29 @@
   "@aboutDescription": {
     "description": "Short description shown near the top of the about screen."
   },
-  "aboutAttributionTitle": "Attribution",
-  "@aboutAttributionTitle": {
-    "description": "Section heading for attributions on the about screen."
+  "attributionsTitle": "Attributions",
+  "@attributionsTitle": {
+    "description": "App bar title for the Attributions screen."
+  },
+  "aboutAttributionsTitle": "Attributions",
+  "@aboutAttributionsTitle": {
+    "description": "Title for the ListTile on the About screen that opens the Attributions screen."
+  },
+  "aboutAttributionsSubtitle": "Data sources, licenses, and credits",
+  "@aboutAttributionsSubtitle": {
+    "description": "Subtitle for the ListTile on the About screen that opens the Attributions screen."
+  },
+  "attributionUniDicTitle": "UniDic",
+  "@attributionUniDicTitle": {
+    "description": "Title for the UniDic attribution card."
+  },
+  "attributionUniDicDescription": "Enhanced furigana morphological analysis is powered by UniDic, a corpus dictionary maintained by the National Institute for Japanese Language and Linguistics (NINJAL).",
+  "@attributionUniDicDescription": {
+    "description": "Description text for the UniDic attribution card."
+  },
+  "attributionUniDicLicense": "Distributed under the BSD/GPL/LGPL triple license.",
+  "@attributionUniDicLicense": {
+    "description": "License sentence shown in the UniDic attribution card."
   },
   "aboutKanjiVgTitle": "KanjiVG",
   "@aboutKanjiVgTitle": {

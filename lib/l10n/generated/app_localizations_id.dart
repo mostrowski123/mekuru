@@ -1820,7 +1820,24 @@ class AppLocalizationsId extends AppLocalizations {
       'Pembaca EPUB berfokus pada bahasa Jepang dengan teks vertikal, kamus offline, dan manajemen kosakata.';
 
   @override
-  String get aboutAttributionTitle => 'Atribusi';
+  String get attributionsTitle => 'Atribusi';
+
+  @override
+  String get aboutAttributionsTitle => 'Atribusi';
+
+  @override
+  String get aboutAttributionsSubtitle => 'Sumber data, lisensi, dan kredit';
+
+  @override
+  String get attributionUniDicTitle => 'UniDic';
+
+  @override
+  String get attributionUniDicDescription =>
+      'Analisis morfologis furigana yang ditingkatkan didukung oleh UniDic, kamus korpus yang dikelola oleh National Institute for Japanese Language and Linguistics (NINJAL).';
+
+  @override
+  String get attributionUniDicLicense =>
+      'Didistribusikan di bawah lisensi rangkap tiga BSD/GPL/LGPL.';
 
   @override
   String get aboutKanjiVgTitle => 'KanjiVG';

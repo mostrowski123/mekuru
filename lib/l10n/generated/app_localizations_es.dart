@@ -1839,7 +1839,25 @@ class AppLocalizationsEs extends AppLocalizations {
       'Un lector EPUB enfocado en japonés con texto vertical, diccionario sin conexión y gestión de vocabulario.';
 
   @override
-  String get aboutAttributionTitle => 'Atribución';
+  String get attributionsTitle => 'Atribuciones';
+
+  @override
+  String get aboutAttributionsTitle => 'Atribuciones';
+
+  @override
+  String get aboutAttributionsSubtitle =>
+      'Fuentes de datos, licencias y créditos';
+
+  @override
+  String get attributionUniDicTitle => 'UniDic';
+
+  @override
+  String get attributionUniDicDescription =>
+      'El análisis morfológico mejorado del furigana se realiza con UniDic, un diccionario de corpus mantenido por el Instituto Nacional de Lengua y Lingüística Japonesa (NINJAL).';
+
+  @override
+  String get attributionUniDicLicense =>
+      'Distribuido bajo la triple licencia BSD/GPL/LGPL.';
 
   @override
   String get aboutKanjiVgTitle => 'KanjiVG';

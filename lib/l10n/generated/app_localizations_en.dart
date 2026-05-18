@@ -1812,7 +1812,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'A Japanese-first EPUB reader with vertical text, offline dictionary, and vocabulary management.';
 
   @override
-  String get aboutAttributionTitle => 'Attribution';
+  String get attributionsTitle => 'Attributions';
+
+  @override
+  String get aboutAttributionsTitle => 'Attributions';
+
+  @override
+  String get aboutAttributionsSubtitle => 'Data sources, licenses, and credits';
+
+  @override
+  String get attributionUniDicTitle => 'UniDic';
+
+  @override
+  String get attributionUniDicDescription =>
+      'Enhanced furigana morphological analysis is powered by UniDic, a corpus dictionary maintained by the National Institute for Japanese Language and Linguistics (NINJAL).';
+
+  @override
+  String get attributionUniDicLicense =>
+      'Distributed under the BSD/GPL/LGPL triple license.';
 
   @override
   String get aboutKanjiVgTitle => 'KanjiVG';

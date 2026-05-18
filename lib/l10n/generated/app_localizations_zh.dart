@@ -1734,7 +1734,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutDescription => '一款以日语为主的EPUB阅读器，支持竖排、离线词典和词汇管理。';
 
   @override
-  String get aboutAttributionTitle => '归属';
+  String get attributionsTitle => '致谢';
+
+  @override
+  String get aboutAttributionsTitle => '致谢';
+
+  @override
+  String get aboutAttributionsSubtitle => '数据来源、许可证与致谢';
+
+  @override
+  String get attributionUniDicTitle => 'UniDic';
+
+  @override
+  String get attributionUniDicDescription =>
+      '增强振假名形态素分析由 UniDic 提供，该语料库词典由日本国立国语研究所（NINJAL）维护。';
+
+  @override
+  String get attributionUniDicLicense => '依 BSD/GPL/LGPL 三重许可证分发。';
 
   @override
   String get aboutKanjiVgTitle => 'KanjiVG';
@@ -3526,7 +3542,23 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get aboutDescription => '一款以日语为主的EPUB阅读器，支持竖排、离线词典和词汇管理。';
 
   @override
-  String get aboutAttributionTitle => '归属';
+  String get attributionsTitle => '致谢';
+
+  @override
+  String get aboutAttributionsTitle => '致谢';
+
+  @override
+  String get aboutAttributionsSubtitle => '数据来源、许可证与致谢';
+
+  @override
+  String get attributionUniDicTitle => 'UniDic';
+
+  @override
+  String get attributionUniDicDescription =>
+      '增强振假名形态素分析由 UniDic 提供，该语料库词典由日本国立国语研究所（NINJAL）维护。';
+
+  @override
+  String get attributionUniDicLicense => '依 BSD/GPL/LGPL 三重许可证分发。';
 
   @override
   String get aboutKanjiVgTitle => 'KanjiVG';

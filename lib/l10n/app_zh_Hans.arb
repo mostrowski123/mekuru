@@ -2247,9 +2247,29 @@
   "@aboutDescription": {
     "description": "Short description shown near the top of the about screen."
   },
-  "aboutAttributionTitle": "归属",
-  "@aboutAttributionTitle": {
-    "description": "Section heading for attributions on the about screen."
+  "attributionsTitle": "致谢",
+  "@attributionsTitle": {
+    "description": "App bar title for the Attributions screen."
+  },
+  "aboutAttributionsTitle": "致谢",
+  "@aboutAttributionsTitle": {
+    "description": "Title for the ListTile on the About screen that opens the Attributions screen."
+  },
+  "aboutAttributionsSubtitle": "数据来源、许可证与致谢",
+  "@aboutAttributionsSubtitle": {
+    "description": "Subtitle for the ListTile on the About screen that opens the Attributions screen."
+  },
+  "attributionUniDicTitle": "UniDic",
+  "@attributionUniDicTitle": {
+    "description": "Title for the UniDic attribution card."
+  },
+  "attributionUniDicDescription": "增强振假名形态素分析由 UniDic 提供，该语料库词典由日本国立国语研究所（NINJAL）维护。",
+  "@attributionUniDicDescription": {
+    "description": "Description text for the UniDic attribution card."
+  },
+  "attributionUniDicLicense": "依 BSD/GPL/LGPL 三重许可证分发。",
+  "@attributionUniDicLicense": {
+    "description": "License sentence shown in the UniDic attribution card."
   },
   "aboutKanjiVgTitle": "KanjiVG",
   "@aboutKanjiVgTitle": {
