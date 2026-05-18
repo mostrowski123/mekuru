@@ -97,6 +97,42 @@ void main() {
       }
     });
 
+    test('gikun compounds use the bundled user-dictionary reading', () {
+      // IPADIC alone mistokenizes these compounds (二人 → に+にん, 今日 → こん+
+      // にち, etc). The bundled user.dic supplies the correct gikun reading
+      // and MeCab prefers it via the -u flag set up in MecabService.init().
+      const expectations = <String, String>{
+        '二人': 'ふたり',
+        '一人': 'ひとり',
+        '今日': 'きょう',
+        '上手': 'じょうず',
+        '田舎': 'いなか',
+        '七夕': 'たなばた',
+      };
+      for (final entry in expectations.entries) {
+        final word = entry.key;
+        final reading = entry.value;
+        final segments = generator
+            .generate([word]).first['segments'] as List;
+        expect(
+          segments,
+          hasLength(1),
+          reason: '$word should be a single segment, got $segments',
+        );
+        final seg = segments.first as Map;
+        expect(
+          seg['t'],
+          word,
+          reason: '$word segment text should match the input',
+        );
+        expect(
+          seg['f'],
+          reading,
+          reason: '$word should carry reading $reading, got $segments',
+        );
+      }
+    });
+
     test('readings are hiragana, not katakana', () {
       // MeCab's raw reading field is katakana; FuriganaGenerator must
       // convert it to hiragana before emitting the segment.
