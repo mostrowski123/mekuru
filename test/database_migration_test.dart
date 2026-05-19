@@ -87,7 +87,7 @@ void main() {
       legacyDb.execute(
         'CREATE INDEX idx_read_dictid ON dictionary_entries (reading, dictionary_id);',
       );
-      legacyDb.dispose();
+      legacyDb.close();
 
       final migratedDb = AppDatabase(NativeDatabase(dbFile));
       addTearDown(migratedDb.close);
@@ -164,7 +164,7 @@ void main() {
       FROM dictionary_entries_old;
     ''');
       brokenDb.execute('DROP TABLE dictionary_entries_old;');
-      brokenDb.dispose();
+      brokenDb.close();
 
       final repairedDb = AppDatabase(NativeDatabase(dbFile));
       addTearDown(repairedDb.close);
@@ -230,7 +230,7 @@ void main() {
       final legacyDb = sqlite.sqlite3.open(dbFile.path);
       legacyDb.execute('PRAGMA user_version = 15;');
       legacyDb.execute('DROP INDEX IF EXISTS idx_pitch_expr_dictid;');
-      legacyDb.dispose();
+      legacyDb.close();
 
       final migratedDb = AppDatabase(NativeDatabase(dbFile));
       addTearDown(migratedDb.close);

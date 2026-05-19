@@ -20,9 +20,9 @@ dependencies:
   riverpod_annotation: ^4.0.0
 
   # Database (Drift — SQLite-backed, type-safe, isolate support)
-  drift: ^2.31.0
-  sqlite3_flutter_libs: ^0.5.41
-  drift_flutter: ^0.2.8
+  drift: ^2.33.0
+  sqlite3_flutter_libs: ^0.6.0+eol
+  drift_flutter: ^0.3.0
 
   # Reader rendering (custom epub.js bridge via InAppWebView)
   flutter_inappwebview: ^6.1.5
@@ -47,7 +47,7 @@ dependencies:
 
   # Utilities
   convert: ^3.1.2
-  csv: ^7.2.0
+  csv: ^8.0.0
   crypto: ^3.0.6
   uuid: ^4.5.3
   mime: ^2.0.0
@@ -100,10 +100,10 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  sqlite3: ^2.9.4
+  sqlite3: ^3.3.1
 
   # Code generation
-  drift_dev: ^2.31.0
+  drift_dev: ^2.33.0
   riverpod_generator: ^4.0.0
   build_runner: ^2.4.0
   environment_config: ^4.0.0+1
