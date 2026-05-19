@@ -96,8 +96,7 @@ class _DictionaryManagerScreenState
                 return ReorderableListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: displayList.length,
-                  onReorder: (oldIndex, newIndex) {
-                    if (oldIndex < newIndex) newIndex -= 1;
+                  onReorderItem: (oldIndex, newIndex) {
                     final reordered = List.of(displayList);
                     final item = reordered.removeAt(oldIndex);
                     reordered.insert(newIndex, item);
