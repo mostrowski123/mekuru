@@ -29,7 +29,7 @@ dependencies:
 
   # File Handling
   archive: ^4.0.7
-  file_picker: ^11.0.2
+  file_picker: ^12.0.0-beta.3
   path_provider: ^2.1.5
   path: ^1.9.1
 
@@ -52,11 +52,11 @@ dependencies:
   uuid: ^4.5.3
   mime: ^2.0.0
   xml: ^6.5.0
-  share_plus: ^12.0.1
+  share_plus: ^13.1.0
   shared_preferences: ^2.5.3
   flutter_secure_storage: ^10.0.0
   url_launcher: ^6.3.1
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.1.0
 
   # Error tracking and user feedback
   sentry_flutter: ^9.14.0
