@@ -1,97 +1,73 @@
-# Mekuru - Project Guide
+# Mekuru (めくる)
 
-## Overview
+Japanese-first EPUB and manga reader. Flutter, **Android-only** — `firebase_options.dart` throws on web/desktop.
 
-Mekuru (めくる — "to turn pages") is a Japanese-first EPUB and manga reader built with Flutter/Dart. It features vertical text rendering, a dedicated manga viewer with OCR support, offline Yomitan-compatible dictionary lookups, MeCab morphological analysis for word boundary detection, compound word resolution, and vocabulary management with Anki-compatible CSV export.
-
-## Architecture
-
-Feature-first modular structure:
-
-```
-lib/
-├── core/                          # Shared infrastructure
-│   ├── database/                  # Drift (SQLite) database definition
-│   │   └── database_provider.dart # AppDatabase with 9 tables
-│   ├── platform/                  # Platform-specific services (Android SAF)
-│   ├── server/                    # Local HTTP server (stub)
-│   ├── services/                  # Firebase runtime services
-│   └── utils/                     # Isolate helpers (stub)
-├── features/
-│   ├── ankidroid/                 # AnkiDroid integration, card creation
-│   ├── backup/                    # Backup/restore with scheduled backups
-│   ├── library/                   # Book import, EPUB parsing, library UI
-│   ├── reader/                    # EPUB viewer, MeCab, compound word resolution
-│   ├── manga/                     # Manga viewer, OCR, Pro billing
-│   ├── dictionary/                # Yomitan import, query engine, management UI
-│   ├── vocabulary/                # Saved words, CSV export
-│   └── settings/                  # App preferences, OCR server config
-└── shared/
-    ├── theme/                     # Light/dark Material 3 themes
-    ├── utils/                     # Adaptive routing, haptics, gesture padding
-    └── widgets/                   # Shared UI components
-```
-
-Each feature follows `data/` (models, repositories, services) and `presentation/` (screens, widgets, providers).
-
-## State Management
-
-Riverpod with code generation (`riverpod_annotation` + `riverpod_generator`). The global `databaseProvider` in `main.dart` provides the `AppDatabase` instance.
-
-## Database
-
-Drift (SQLite) with 9 tables: `Books`, `DictionaryMetas`, `DictionaryEntries`, `SavedWords`, `PitchAccents`, `Frequencies`, `Bookmarks`, `Highlights`, `PendingBookDatas`. Schema defined in `lib/core/database/database_provider.dart`. Glossaries are stored as raw JSON strings (no Drift type converters).
-
-## Build & Test Commands
+## Build & test commands
 
 ```bash
-flutter pub get                                             # Install dependencies
-dart run build_runner build --delete-conflicting-outputs    # Drift/Riverpod codegen
-flutter test                                                # Run unit tests
-flutter analyze                                             # Static analysis
-flutter run                                                 # Run on connected device
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs   # drift + riverpod + environment_config codegen
+dart run build_runner watch --delete-conflicting-outputs   # codegen, watch mode
+flutter analyze                                            # static analysis
+flutter test                                               # unit tests (in-memory Drift)
+flutter test test/path/to/file_test.dart                   # single test
+dart format lib test
+flutter run                                                # device/emulator
 ```
 
-## Testing Conventions
+Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_config.yaml`.
 
-- In-memory Drift databases: `AppDatabase(NativeDatabase.memory())`
-- Helper pattern: `createTestDatabase()` in test files
-- Always close DB in tearDown: `tearDown(() async { await db.close(); })`
-- Build test data inline (e.g., `DictionaryEntriesCompanion.insert(...)`)
-- MeCab requires device assets — cannot be fully tested in unit tests
-- `CompoundWordResolver` tests build `WordIdentification` objects manually (no MeCab needed)
+**Sentry**: local builds work without it. To enable, run `flutter pub run environment_config:generate --sentryDsn=<dsn> --sentryEnvironment=development` once. This writes `lib/config/environment_config.dart`.
 
-## Key Patterns
+## Before committing
 
-- **MeCab**: Singleton at `MecabService.instance`, requires `init()` with device assets at app startup
-- **Compound word resolution**: Greedy longest-match (up to 5 tokens) against dictionary via `hasMatch()`
-- **Dictionary queries**: Always join with `DictionaryMetas` to filter by `isEnabled`
-- **EPUB rendering**: Custom bridge (`assets/epub_viewer/reader_bridge.js`) communicating with Dart via `flutter_inappwebview`
-- **Reader interaction logic**: Pure functions (no Flutter deps) in `reader_interaction_logic.dart` — fully unit-testable
-- **AnkiDroid**: Direct integration via Android intent; field mapping configurable per note type
-- **Backup/Restore**: Serializes DB + book files into a single archive; scheduled backups via `BackupScheduler`
-- **Bookmarks/Highlights**: Stored per-book in DB with chapter/position references
+1. `flutter analyze lib test` — **must be clean.** CI fails on info-level deprecation warnings too.
+2. `flutter test` — must pass.
+3. For user-facing changes, bump `version:` in `pubspec.yaml` (minor for `feat:`, patch for `fix:`).
+4. Never add `Co-Authored-By:` trailers to commits.
 
-## Key Files
+## Conventions
 
-| File | Purpose |
-|------|---------|
-| `lib/core/database/database_provider.dart` | Full database schema and connection |
-| `lib/features/reader/presentation/screens/reader_screen.dart` | Main EPUB reader UI with WebView |
-| `lib/features/library/data/services/epub_parser.dart` | EPUB unzipping and metadata extraction |
-| `lib/features/dictionary/data/repositories/dictionary_repository.dart` | Dictionary CRUD operations |
-| `lib/features/dictionary/data/services/dictionary_query_service.dart` | Dictionary lookup/search queries |
-| `lib/features/dictionary/data/services/dictionary_importer.dart` | Yomitan ZIP import (runs in isolate) |
-| `lib/features/reader/data/services/mecab_service.dart` | Japanese morphological analysis |
-| `lib/features/reader/data/services/compound_word_resolver.dart` | Multi-token compound word matching |
-| `lib/features/reader/presentation/reader_interaction_logic.dart` | Tap/swipe gesture resolution |
-| `lib/features/vocabulary/data/repositories/vocabulary_repository.dart` | Saved words and CSV export |
-| `lib/features/manga/presentation/providers/pro_access_provider.dart` | Pro unlock state (server-validated) |
-| `lib/features/manga/data/services/ocr_billing_client.dart` | Firebase billing API client |
-| `lib/features/settings/data/services/ocr_server_config.dart` | OCR server URL configuration |
-| `lib/features/ankidroid/data/services/ankidroid_service.dart` | AnkiDroid card creation integration |
-| `lib/features/ankidroid/data/services/anki_field_mapper.dart` | Maps vocabulary data to Anki note fields |
-| `lib/features/backup/data/services/backup_service.dart` | Backup orchestration |
-| `lib/features/backup/data/services/restore_service.dart` | Restore from backup file |
-| `lib/features/backup/data/services/backup_scheduler.dart` | Scheduled automatic backups |
-| `lib/core/platform/android_saf_service.dart` | Android Storage Access Framework integration |
+- **Commits**: conventional prefix — `feat(scope): …`, `fix(scope): …`, `chore: …`, `refactor(scope): …`. CI / release tooling depends on it.
+- **Layout**: feature-first under `lib/features/<feature>/{data,presentation}/`. `data/` has `models|repositories|services`; `presentation/` has `providers|screens|widgets`. Shared infra in `lib/core/`.
+- **State**: Riverpod with codegen. The global `databaseProvider` is created once in `lib/main.dart` — **never instantiate `AppDatabase` elsewhere**, including in tests (use `createTestDatabase()` instead).
+- **Pure-logic files** (e.g. `reader_interaction_logic.dart`, `compound_word_resolver.dart`) must stay Flutter-free so they remain unit-testable.
+
+## Database — Drift, append-only migrations
+
+Schema is at version 17, defined inline in `lib/core/database/database_provider.dart`. Migrations live in the `MigrationStrategy.onUpgrade` block as cumulative `if (from < N) { … }` conditions.
+
+**YOU MUST** make schema changes append-only: add columns/tables, never drop or rename them on an existing version. Bump `schemaVersion` and add a new `if (from < N)` block. Reckless edits break installed users' data — there is no rollback.
+
+In-memory test databases skip migrations entirely (they start at the latest schema). Schema-compat issues won't surface in unit tests; rely on integration tests.
+
+## Japanese text pipeline
+
+- **MeCab**: singleton at `MecabService.instance`, initialized in `main.dart`. IPADIC is bundled at `assets/ipadic/` and copied to `applicationDocumentsDirectory` on first launch. UniDic-lite is optionally **downloaded** by the user; `init()` silently falls back to IPADIC if UniDic init fails.
+- **Compound words**: greedy longest-match up to 5 tokens (`maxTokenSpan = 5`) against the *enabled* dictionary set.
+- **Dictionary queries**: always join `DictionaryMetas` and filter by `isEnabled`. Disabled dictionaries must never surface results.
+- **Glossaries**: stored as raw JSON strings in Drift — no type converters. Parse on read.
+
+## Reader / EPUB viewer
+
+- `assets/epub_viewer/reader_bridge.js` — hand-written bridge that talks to Dart via `window.flutter_inappwebview.callHandler(...)`. Owns vertical text, margins, furigana injection, word tapping.
+- `assets/epub_viewer/epub.js` — **vendored** epub.js, locally modified. Before editing it, search for `[MEKURU PATCH]` — those markers flag every place upstream behavior is overridden (vertical-axis forcing, queue error handling, missing-manifest-entry skipping, etc.). Don't re-vendor without porting the patches.
+- Don't change the bridge's message protocol without updating the matching Dart handlers in the reader feature.
+
+## Android / native
+
+- **`libc++_shared.so` workaround**: `mecab_for_flutter`'s native_assets hook fails on GitHub-hosted runners, so we bundle the lib manually via a `jniLibs` source set in `android/app/build.gradle.kts` (search `bundledLibCppSharedJniLibsDir`). **Do not remove** without verifying CI Android builds still link.
+- **Firebase**: `lib/firebase_options.dart` is committed. `android/app/google-services.json` is required for local Android builds and is in the repo.
+- **OCR billing / Pro**: validated server-side by the `billingApiV2` Cloud Function. Never bypass token validation or treat the client-side `proAccessProvider` as ground truth — round-trip the server.
+- **AnkiDroid integration** is Android-intent-based; do not call from non-Android code paths.
+
+## Testing conventions
+
+- Use the `createTestDatabase()` helper — returns `AppDatabase(NativeDatabase.memory())`. Always `await db.close()` in `tearDown`.
+- Build seed rows inline with `Companion.insert(...)`. No fixture files.
+- MeCab needs device assets — cannot run in unit tests. For compound-word tests, construct `WordIdentification` objects directly.
+- Integration tests live in `integration_test/` and run on a real emulator via `.github/workflows/integration-android.yml`. Keep them out of `test/`.
+
+## Tools
+
+Prefer Serena MCP tools (`get_symbols_overview`, `find_symbol`, `find_referencing_symbols`, `search_for_pattern`, `replace_symbol_body`) over Read/Grep/Edit for code work — much cheaper in context.
