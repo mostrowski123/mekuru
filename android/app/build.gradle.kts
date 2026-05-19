@@ -118,6 +118,7 @@ fun Project.resolveInstalledAndroidNdkSysrootLibDirs(): List<File> {
 
 val ensureMecabHookLibCppAliases by tasks.registering {
     inputs.property("mecabHookLibcxxAliases", mecabHookLibcxxAliases)
+    inputs.property("libcxxAbiToNdkTriple", libcxxAbiToNdkTriple)
 
     doLast {
         val sysrootLibDirs = project.resolveInstalledAndroidNdkSysrootLibDirs()
@@ -145,6 +146,30 @@ val ensureMecabHookLibCppAliases by tasks.registering {
 
                 expectedLib.parentFile.mkdirs()
                 actualLib.copyTo(expectedLib, overwrite = true)
+            }
+        }
+
+        // mecab_for_dart 2.0.3's dart_build hook resolves the Android NDK via
+        // native_toolchain_c's clang resolver, which picks the FIRST clang it
+        // finds (alphabetical glob order over installed NDKs). On machines
+        // with NDK 25.x still installed, that clang's sysroot no longer ships
+        // libc++_shared.so. Backfill the missing file in every installed
+        // sysroot by copying from any sysroot that does have it, so the hook
+        // succeeds regardless of which NDK the resolver picks.
+        val requiredTriples = libcxxAbiToNdkTriple.values.toSet() + mecabHookLibcxxAliases.keys
+        sysrootLibDirs.forEach { sysrootLibDir ->
+            requiredTriples.forEach inner@{ triple ->
+                val expectedLib = sysrootLibDir.resolve(triple).resolve("libc++_shared.so")
+                if (expectedLib.exists()) return@inner
+
+                val sourceLib = sysrootLibDirs
+                    .asSequence()
+                    .map { it.resolve(triple).resolve("libc++_shared.so") }
+                    .firstOrNull(File::exists)
+                    ?: return@inner
+
+                expectedLib.parentFile.mkdirs()
+                sourceLib.copyTo(expectedLib, overwrite = true)
             }
         }
     }
