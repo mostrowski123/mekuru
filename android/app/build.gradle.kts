@@ -48,6 +48,15 @@ val mecabHookLibcxxAliases = mapOf(
 val flutterNativeAssetsJniLibsDir =
     rootProject.projectDir.parentFile.resolve("build/native_assets/android/jniLibs/lib")
 
+// Dedicated, AGP-readable jniLibs source directory for libc++_shared.so. The
+// directory we register here is wired into the `main` source set below, so
+// AGP's merge*NativeLibs task includes whatever we drop in. We intentionally
+// keep this separate from the legacy `flutterNativeAssetsJniLibsDir` (which
+// is consumed only by the legacy `ensureBundledMecabNativeAssets` task and is
+// not picked up by AGP).
+val bundledLibCppSharedJniLibsDir =
+    project.layout.buildDirectory.dir("flutter_bundled_libcxx_jniLibs")
+
 val mecabHooksRunnerDir =
     rootProject.projectDir.parentFile.resolve(".dart_tool/hooks_runner/mecab_for_dart")
 
@@ -144,16 +153,12 @@ val ensureMecabHookLibCppAliases by tasks.registering {
 val ensureBundledLibCppShared by tasks.registering {
     inputs.property("androidNdkVersion", androidNdkVersion)
     inputs.property("libcxxAbiToNdkTriple", libcxxAbiToNdkTriple)
-    outputs.files(
-        libcxxAbiToNdkTriple.keys.map { abi ->
-            flutterNativeAssetsJniLibsDir.resolve(abi).resolve("libc++_shared.so")
-        }
-    )
+    outputs.dir(bundledLibCppSharedJniLibsDir)
 
     doLast {
         val sysrootLibDir = project.resolveAndroidNdkSysrootLibDir()
 
-        val outputRoot = flutterNativeAssetsJniLibsDir
+        val outputRoot = bundledLibCppSharedJniLibsDir.get().asFile.apply { mkdirs() }
         libcxxAbiToNdkTriple.forEach { (abi, ndkTriple) ->
             val sourceLib = sysrootLibDir.resolve(ndkTriple).resolve("libc++_shared.so")
             if (!sourceLib.exists()) {
@@ -280,6 +285,19 @@ android {
     namespace = "moe.matthew.mekuru"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = androidNdkVersion
+
+    sourceSets {
+        getByName("main") {
+            // Make AGP merge libc++_shared.so from the dedicated dir populated
+            // by ensureBundledLibCppShared. The upstream mecab_for_dart hook is
+            // meant to register libc++_shared.so as a CodeAsset via the new
+            // native_assets pipeline, but on recent GitHub-hosted runner images
+            // its NDK resolver silently returns no tools and the workaround
+            // ships nothing, so we bundle it ourselves through a regular AGP
+            // jniLibs source set.
+            jniLibs.srcDir(bundledLibCppSharedJniLibsDir)
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
