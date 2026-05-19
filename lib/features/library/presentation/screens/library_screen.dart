@@ -538,7 +538,7 @@ class LibraryScreen extends ConsumerWidget {
   Future<void> _importEpub(WidgetRef ref) async {
     final FilePickerResult? result;
     try {
-      result = await FilePicker.platform.pickFiles(
+      result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['epub'],
         allowMultiple: false,
@@ -559,7 +559,7 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   Future<void> _importCbz(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['cbz'],
       allowMultiple: false,
@@ -654,7 +654,7 @@ class LibraryScreen extends ConsumerWidget {
     WidgetRef ref,
   ) async {
     final l10n = context.l10n;
-    final dirPath = await FilePicker.platform.getDirectoryPath(
+    final dirPath = await FilePicker.getDirectoryPath(
       dialogTitle: l10n.librarySelectMangaFolder,
     );
     if (dirPath == null || dirPath.isEmpty) return;
@@ -1488,7 +1488,7 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   Future<void> _changeCover(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.image,
       allowMultiple: false,
     );

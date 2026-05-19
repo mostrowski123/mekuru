@@ -570,7 +570,7 @@ class _DictionaryManagerScreenState
   }
 
   Future<void> _importDictionary(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['zip', 'json'],
       allowMultiple: false,

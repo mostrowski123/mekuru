@@ -25,7 +25,7 @@ final exportVocabularyProvider =
 
         final date = DateTime.now().toIso8601String().split('T').first;
 
-        await FilePicker.platform.saveFile(
+        await FilePicker.saveFile(
           dialogTitle: 'Save Vocabulary CSV',
           fileName: 'vocabulary_export_$date.csv',
           type: FileType.custom,

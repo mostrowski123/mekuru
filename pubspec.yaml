@@ -29,7 +29,7 @@ dependencies:
 
   # File Handling
   archive: ^4.0.7
-  file_picker: ^10.3.10
+  file_picker: ^11.0.2
   path_provider: ^2.1.5
   path: ^1.9.1
 

@@ -244,14 +244,14 @@ class RestoreNotifier extends Notifier<RestoreState> {
       // extension filtering), fall back to FileType.any.
       PlatformFile? picked;
       try {
-        final result = await FilePicker.platform.pickFiles(
+        final result = await FilePicker.pickFiles(
           type: FileType.custom,
           allowedExtensions: ['mekuru'],
         );
         if (result == null || result.files.isEmpty) return;
         picked = result.files.single;
       } catch (_) {
-        final result = await FilePicker.platform.pickFiles(type: FileType.any);
+        final result = await FilePicker.pickFiles(type: FileType.any);
         if (result == null || result.files.isEmpty) return;
         picked = result.files.single;
       }

@@ -104,7 +104,7 @@ class BackupFileManager {
   }) async {
     final sourceFile = File(filePath);
     final fileName = path.basename(filePath);
-    final outputPath = await FilePicker.platform.saveFile(
+    final outputPath = await FilePicker.saveFile(
       dialogTitle: dialogTitle,
       fileName: fileName,
       bytes: await sourceFile.readAsBytes(),
