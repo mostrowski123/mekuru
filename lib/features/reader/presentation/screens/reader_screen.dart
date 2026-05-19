@@ -66,6 +66,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   String? _errorMessage;
   int _viewerEpoch = 0;
 
+  // Safety net for the JS-bridge load handshake — if `onLoaded` doesn't fire
+  // within this window we surface the existing error+retry UI rather than
+  // leave the user staring at a spinner forever.
+  static const _kReaderLoadTimeout = Duration(seconds: 15);
+  Timer? _loadWatchdog;
+
   // Book language (from DB or re-parsed for legacy books).
   String? _bookLanguage;
 
@@ -130,6 +136,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _loadWatchdog?.cancel();
     _epubController.detach();
     unawaited(_progressPersistence.dispose());
     unawaited(_brightnessNotifier.resetBrightness());
@@ -245,6 +252,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       furiganaMode: settings.furiganaMode,
                       onLoaded: () {
                         if (!mounted) return;
+                        _loadWatchdog?.cancel();
                         setState(() {
                           _isLoading = false;
                           _isEpubLoaded = true;
@@ -465,8 +473,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         _progress = latestBook?.readProgress ?? widget.book.readProgress;
         _viewerEpoch += 1;
       });
+
+      _loadWatchdog?.cancel();
+      _loadWatchdog = Timer(_kReaderLoadTimeout, () {
+        if (!mounted || !_isLoading) return;
+        setState(() {
+          _isLoading = false;
+          _errorMessage = context.l10n.readerLoadTimeout;
+        });
+      });
     } catch (error) {
       if (!mounted) return;
+      _loadWatchdog?.cancel();
       setState(() {
         _isLoading = false;
         _errorMessage = context.l10n.readerFailedToLoad(
@@ -1193,6 +1211,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   Widget _buildLoadingOverlay(BuildContext context) {
     return Container(
+      key: const Key('reader-loading-overlay'),
       color: Colors.white,
       child: const Center(child: CircularProgressIndicator()),
     );

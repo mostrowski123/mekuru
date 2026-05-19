@@ -1567,6 +1567,10 @@
       }
     }
   },
+  "readerLoadTimeout": "阅读器加载时间过长。点击重试。",
+  "@readerLoadTimeout": {
+    "description": "Shown when the reader's load watchdog trips before the EPUB finishes opening."
+  },
   "readerVerticalTextNonNativeWarning": "此书最初未为竖排文本设计，可能会出现显示问题。",
   "@readerVerticalTextNonNativeWarning": {
     "description": "Warning shown when vertical text is forced for a non-vertical book."

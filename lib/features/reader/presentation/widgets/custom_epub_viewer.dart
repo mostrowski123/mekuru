@@ -125,6 +125,7 @@ class CustomEpubViewer extends StatefulWidget {
 
 class _CustomEpubViewerState extends State<CustomEpubViewer> {
   InAppWebViewController? _webViewController;
+  bool _loadBookInvoked = false;
 
   static const _furiganaGenerator = FuriganaGenerator(MecabFuriganaTokenizer());
 
@@ -154,6 +155,14 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         _webViewController = controller;
         widget.controller.attach(controller);
         _registerHandlers(controller);
+      },
+      // Trigger loadBook from onLoadStop (fires after WebViewClient.onPageFinished)
+      // rather than relying solely on the JS-initiated readyToLoad callHandler,
+      // which can race with handler registration after Activity pause/resume and
+      // leave the reader stuck on a forever-spinning load.
+      onLoadStop: (controller, url) {
+        if (!_isActiveController(controller)) return;
+        unawaited(_loadBook());
       },
       onConsoleMessage: (controller, msg) {
         if (kDebugMode) debugPrint('EPUB_JS: ${msg.message}');
@@ -460,6 +469,9 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
   }
 
   Future<void> _loadBook() async {
+    if (_loadBookInvoked) return;
+    _loadBookInvoked = true;
+
     final cfiParam = widget.initialCfi != null
         ? '"${widget.initialCfi!.replaceAll('"', '\\\\"')}"'
         : '""';

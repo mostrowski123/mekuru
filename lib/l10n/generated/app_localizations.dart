@@ -2146,6 +2146,12 @@ abstract class AppLocalizations {
   /// **'Failed to load EPUB.\n{details}'**
   String readerFailedToLoad({required String details});
 
+  /// Shown when the reader's load watchdog trips before the EPUB finishes opening.
+  ///
+  /// In en, this message translates to:
+  /// **'Reader took too long to load. Tap retry to try again.'**
+  String get readerLoadTimeout;
+
   /// Warning shown when vertical text is forced for a non-vertical book.
   ///
   /// In en, this message translates to:

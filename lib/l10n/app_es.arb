@@ -1567,6 +1567,10 @@
       }
     }
   },
+  "readerLoadTimeout": "El lector tardó demasiado en cargar. Toca reintentar para volver a intentarlo.",
+  "@readerLoadTimeout": {
+    "description": "Shown when the reader's load watchdog trips before the EPUB finishes opening."
+  },
   "readerVerticalTextNonNativeWarning": "Este libro no fue originalmente formateado para texto vertical. Puede haber problemas de visualización.",
   "@readerVerticalTextNonNativeWarning": {
     "description": "Warning shown when vertical text is forced for a non-vertical book."

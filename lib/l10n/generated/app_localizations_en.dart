@@ -1233,6 +1233,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get readerLoadTimeout =>
+      'Reader took too long to load. Tap retry to try again.';
+
+  @override
   String get readerVerticalTextNonNativeWarning =>
       'This book was not originally formatted for vertical text. Some display issues may occur.';
 

@@ -1182,6 +1182,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get readerLoadTimeout => '阅读器加载时间过长。点击重试。';
+
+  @override
   String get readerVerticalTextNonNativeWarning => '此书最初未为竖排文本设计，可能会出现显示问题。';
 
   @override
@@ -3044,6 +3047,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String readerFailedToLoad({required String details}) {
     return '无法加载 EPUB 文件。\n$details';
   }
+
+  @override
+  String get readerLoadTimeout => '阅读器加载时间过长。点击重试。';
 
   @override
   String get readerVerticalTextNonNativeWarning => '此书最初未为竖排文本设计，可能会出现显示问题。';
