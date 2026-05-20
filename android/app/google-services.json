@@ -45,6 +45,48 @@
       "api_key": [
         {
           "current_key": "AIzaSyDpLj7Yrh7PqmtjrtiO4muQt3R23PJOMuM"
+        },
+        {
+          "current_key": "AIzaSyCCRMQ-a1TLnltiby_tTBu0OE3rKTpz6q4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "65720946618-aatblfb0c5uo0bn47of1r8qcd9ik42ra.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "65720946618-5mnhfd83niaanvcr0j0g3sh92tdq6eor.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "moe.matthew.mekuru"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65720946618:android:f9b90ba268b3b1d2215783",
+        "android_client_info": {
+          "package_name": "moe.matthew.mekuru.parallel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "65720946618-aatblfb0c5uo0bn47of1r8qcd9ik42ra.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpLj7Yrh7PqmtjrtiO4muQt3R23PJOMuM"
+        },
+        {
+          "current_key": "AIzaSyCCRMQ-a1TLnltiby_tTBu0OE3rKTpz6q4"
         }
       ],
       "services": {

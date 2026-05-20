@@ -207,7 +207,9 @@ val ensureBundledMecabNativeAssets by tasks.registering {
         }
     )
     dependsOn(
-        tasks.matching { it.name == "compileFlutterBuildRelease" }
+        tasks.matching {
+            it.name.startsWith("compileFlutterBuild") && it.name.endsWith("Release")
+        }
     )
 
     doLast {
@@ -295,12 +297,15 @@ tasks.matching {
     dependsOn(ensureBundledLibCppShared)
 }
 
-tasks.matching { it.name == "packJniLibsflutterBuildRelease" }.configureEach {
+tasks.matching {
+    it.name.startsWith("packJniLibsflutterBuild") && it.name.endsWith("Release")
+}.configureEach {
     finalizedBy(ensureBundledMecabNativeAssets)
 }
 
 tasks.matching {
-    it.name.startsWith("mergeRelease") &&
+    it.name.startsWith("merge") &&
+        it.name.contains("Release") &&
         (it.name.endsWith("JniLibFolders") || it.name.endsWith("NativeLibs"))
 }.configureEach {
     dependsOn(ensureBundledMecabNativeAssets)
@@ -339,6 +344,20 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions += "variant"
+
+    productFlavors {
+        create("main") {
+            dimension = "variant"
+            resValue(type = "string", name = "app_name", value = "Mekuru")
+        }
+        create("parallel") {
+            dimension = "variant"
+            applicationIdSuffix = ".parallel"
+            resValue(type = "string", name = "app_name", value = "Mekuru Parallel")
+        }
     }
 
     signingConfigs {

@@ -5,7 +5,7 @@
     <!-- Manga import uses SAF (user-selected folder access) instead of broad media permissions. -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="true" />
     <application
-        android:label="Mekuru"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"

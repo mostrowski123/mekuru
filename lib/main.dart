@@ -9,6 +9,7 @@ import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'config/environment_config.dart';
+import 'core/config/app_flavor.dart';
 import 'core/database/database_provider.dart';
 import 'core/services/firebase_runtime.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
@@ -43,14 +44,20 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSize = 50;
 
   // Detect install source to set Sentry environment.
-  // Debug builds always use 'debug'; release builds distinguish Play Store vs sideload.
+  // Debug builds always use 'debug'; release builds distinguish Play Store
+  // from sideload, with the parallel flavor getting its own bucket so its
+  // App Check / Play Integrity errors don't mix with regular sideloads.
   final String sentryEnvironment;
   if (kDebugMode) {
     sentryEnvironment = 'debug';
   } else {
     final packageInfo = await PackageInfo.fromPlatform();
     final isPlayStore = packageInfo.installerStore == 'com.android.vending';
-    sentryEnvironment = isPlayStore ? 'play-store' : 'sideload';
+    if (isPlayStore) {
+      sentryEnvironment = 'play-store';
+    } else {
+      sentryEnvironment = kIsParallelBuild ? 'sideload-parallel' : 'sideload';
+    }
   }
 
   await SentryFlutter.init(

@@ -1,7 +1,7 @@
 name: mekuru
 description: "Japanese EPUB Reader with vertical text and offline Yomitan dictionary."
 publish_to: 'none'
-version: 1.8.3+3
+version: 1.9.0+1
 
 environment:
   sdk: ^3.10.8
@@ -109,6 +109,7 @@ dev_dependencies:
   environment_config: ^4.0.0+1
 
 flutter:
+  default-flavor: main
   generate: true
   uses-material-design: true
 
