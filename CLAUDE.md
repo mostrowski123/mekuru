@@ -61,6 +61,13 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 - **OCR billing / Pro**: validated server-side by the `billingApiV2` Cloud Function. Never bypass token validation or treat the client-side `proAccessProvider` as ground truth — round-trip the server.
 - **AnkiDroid integration** is Android-intent-based; do not call from non-Android code paths.
 
+## CI / release workflows
+
+`.github/workflows/build-release.yml` produces the Play artifact. Two gotchas have bitten this workflow repeatedly:
+
+- **AAB output path includes the flavor.** With `--flavor X`, AGP writes the bundle to `build/app/outputs/bundle/<flavor>Release/app-<flavor>-release.aab` — e.g. `bundle/playRelease/app-play-release.aab`. APKs are flat (`flutter-apk/app-<flavor>-release.apk`), but bundles are not. Any time you change the flavor flag, update every `bundle/...` path in the workflow (verify, GitHub Release `files:`, Play upload `releaseFiles:`).
+- **Never declare a workflow fix done from inspection alone.** Confirm the actual artifact path / behavior before claiming a fix — read the failing run's stdout (`✓ Built …` lines name the real path), or push to a branch and watch CI. If you cannot verify, say so explicitly instead of asserting success.
+
 ## Testing conventions
 
 - Use the `createTestDatabase()` helper — returns `AppDatabase(NativeDatabase.memory())`. Always `await db.close()` in `tearDown`.

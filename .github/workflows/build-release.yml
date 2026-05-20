@@ -130,7 +130,7 @@ jobs:
         run: flutter build appbundle --release --no-pub --flavor play --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
       - name: Verify MeCab native libs in release App Bundle
-        run: python scripts/verify_native_libs.py build/app/outputs/bundle/release/app-play-release.aab
+        run: python scripts/verify_native_libs.py build/app/outputs/bundle/playRelease/app-play-release.aab
 
       - name: Build parallel release APK
         timeout-minutes: 15
@@ -152,7 +152,7 @@ jobs:
           files: |
             build/app/outputs/flutter-apk/app-play-release.apk
             build/app/outputs/flutter-apk/app-parallel-release.apk
-            build/app/outputs/bundle/release/app-play-release.aab
+            build/app/outputs/bundle/playRelease/app-play-release.aab
 
       - name: Deploy to Google Play Console
         timeout-minutes: 10
@@ -160,6 +160,6 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: moe.matthew.mekuru
-          releaseFiles: build/app/outputs/bundle/release/app-play-release.aab
+          releaseFiles: build/app/outputs/bundle/playRelease/app-play-release.aab
           track: internal
           releaseName: ${{ steps.tag.outputs.name }}
