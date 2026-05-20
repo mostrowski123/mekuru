@@ -109,7 +109,7 @@ dev_dependencies:
   environment_config: ^4.0.0+1
 
 flutter:
-  default-flavor: main
+  default-flavor: play
   generate: true
   uses-material-design: true
 

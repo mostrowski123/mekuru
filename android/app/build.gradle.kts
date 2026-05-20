@@ -349,7 +349,7 @@ android {
     flavorDimensions += "variant"
 
     productFlavors {
-        create("main") {
+        create("play") {
             dimension = "variant"
             resValue(type = "string", name = "app_name", value = "Mekuru")
         }
