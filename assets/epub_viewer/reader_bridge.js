@@ -640,7 +640,12 @@ function processSectionForFurigana(doc) {
   while ((n = walker.nextNode())) {
     var val = n.nodeValue;
     if (_furiganaCache.has(val)) {
-      cachedHits.push([n, _furiganaCache.get(val)]);
+      var cached = _furiganaCache.get(val);
+      // Failed lookups are cached too; skip them instead of re-requesting
+      // the same un-annotatable text over the bridge on every re-render.
+      if (!cached.failed) {
+        cachedHits.push([n, cached]);
+      }
     } else {
       uncachedNodes.push(n);
       uncachedInputs.push(val);
@@ -683,7 +688,8 @@ function processSectionForFurigana(doc) {
 }
 
 function _cacheFurigana(text, ann) {
-  if (!ann) return;
+  // Cache failures as a sentinel so the text isn't re-requested forever.
+  if (!ann) ann = { failed: true };
   if (_furiganaCache.size >= FURI_CACHE_MAX) {
     // Simple FIFO eviction: drop the oldest entry. Map preserves insertion
     // order, so .keys().next() gives the oldest key.
@@ -694,7 +700,9 @@ function _cacheFurigana(text, ann) {
 }
 
 function _applyFuriganaAnnotation(doc, node, ann) {
-  if (!node.parentNode || !ann || !Array.isArray(ann.segments)) return;
+  if (!node.parentNode || !ann || ann.failed || !Array.isArray(ann.segments)) {
+    return;
+  }
   var hasRuby = false;
   for (var i = 0; i < ann.segments.length; i++) {
     if (ann.segments[i] && ann.segments[i].f) { hasRuby = true; break; }
