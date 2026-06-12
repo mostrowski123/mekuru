@@ -6,6 +6,11 @@ import 'dart:convert';
 /// objects (e.g. from Yomitan dictionaries like NEW斎藤和英大辞典).
 /// This parser extracts human-readable text from both formats.
 class GlossaryParser {
+  /// Shown instead of raw JSON when a stored glossary cannot be decoded
+  /// (e.g. truncated by a partial write). Glossary content itself is not
+  /// localized, so a plain-English constant is consistent.
+  static const unreadableDefinitionPlaceholder = '(unreadable definition)';
+
   /// Parse a glossaries JSON string into a list of human-readable definitions.
   ///
   /// The [glossariesJson] is a JSON-encoded list where each element is either:
@@ -16,6 +21,12 @@ class GlossaryParser {
       final List<dynamic> jsonList = jsonDecode(glossariesJson);
       return jsonList.map((item) => _itemToReadableText(item)).toList();
     } catch (_) {
+      // Corrupt JSON would render as JSON soup — show a placeholder instead.
+      // Plain non-JSON strings pass through unchanged.
+      final trimmed = glossariesJson.trim();
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        return const [unreadableDefinitionPlaceholder];
+      }
       return [glossariesJson];
     }
   }

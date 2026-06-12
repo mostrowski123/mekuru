@@ -78,6 +78,26 @@ void main() {
       expect(result, ['not valid json']);
     });
 
+    test('shows placeholder for truncated JSON list', () {
+      final result = GlossaryParser.parse('["definition one", "defini');
+      expect(result, [GlossaryParser.unreadableDefinitionPlaceholder]);
+    });
+
+    test('shows placeholder for truncated JSON object', () {
+      final result = GlossaryParser.parse('{"type": "structured-co');
+      expect(result, [GlossaryParser.unreadableDefinitionPlaceholder]);
+    });
+
+    test('shows placeholder for broken JSON with leading whitespace', () {
+      final result = GlossaryParser.parse('  [broken');
+      expect(result, [GlossaryParser.unreadableDefinitionPlaceholder]);
+    });
+
+    test('keeps plain-text passthrough for non-JSON-looking strings', () {
+      final result = GlossaryParser.parse('食べる: to eat');
+      expect(result, ['食べる: to eat']);
+    });
+
     test('formats li tags with bullet points', () {
       final structured = jsonEncode({
         'type': 'structured-content',
