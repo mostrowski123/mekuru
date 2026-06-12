@@ -15,6 +15,7 @@ Future<String> createTestEpub({
   bool includeCover = true,
   bool includeContainerXml = true,
   String? customOpfContent,
+  String fileName = 'test.epub',
 }) async {
   final archive = Archive();
 
@@ -83,7 +84,7 @@ Future<String> createTestEpub({
 
   // Write to temp file
   final tempDir = await Directory.systemTemp.createTemp('epub_test_');
-  final epubPath = '${tempDir.path}/test.epub';
+  final epubPath = '${tempDir.path}/$fileName';
   await File(epubPath).writeAsBytes(ZipEncoder().encode(archive));
 
   return epubPath;
@@ -156,13 +157,87 @@ void main() {
       expect(metadata.coverImageRelativePath, isNull);
     });
 
-    test('returns Unknown Title when container.xml is missing', () async {
+    test('falls back to filename when container.xml is missing', () async {
       final epubPath = await createTestEpub(includeContainerXml: false);
       trackTempFile(epubPath);
 
       final metadata = await EpubParser.parseMetadataOnly(epubPath);
-      expect(metadata.title, 'Unknown Title');
+      expect(metadata.title, 'test');
     });
+
+    test(
+      'falls back to Japanese filename when metadata has no title',
+      () async {
+        final epubPath = await createTestEpub(
+          includeContainerXml: false,
+          fileName: '吾輩は猫である.epub',
+        );
+        trackTempFile(epubPath);
+
+        final metadata = await EpubParser.parseMetadataOnly(epubPath);
+        expect(metadata.title, '吾輩は猫である');
+      },
+    );
+
+    test('falls back to filename when OPF has no dc:title', () async {
+      const opfContent = '''<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+  </metadata>
+  <manifest>
+    <item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+</package>''';
+      final epubPath = await createTestEpub(
+        customOpfContent: opfContent,
+        includeCover: false,
+        fileName: 'untitled-book.epub',
+      );
+      trackTempFile(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.title, 'untitled-book');
+    });
+
+    test('falls back to filename when dc:title is empty', () async {
+      const opfContent = '''<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>  </dc:title>
+  </metadata>
+  <manifest>
+    <item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+</package>''';
+      final epubPath = await createTestEpub(
+        customOpfContent: opfContent,
+        includeCover: false,
+        fileName: 'empty-title.epub',
+      );
+      trackTempFile(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.title, 'empty-title');
+    });
+
+    test(
+      'full extraction also falls back to filename for missing title',
+      () async {
+        final epubPath = await createTestEpub(
+          includeContainerXml: false,
+          fileName: 'extracted-fallback.epub',
+        );
+        trackTempFile(epubPath);
+
+        final extractDir = await Directory.systemTemp.createTemp(
+          'epub_extract_fallback_',
+        );
+        trackTempDir(extractDir.path);
+
+        final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
+        expect(metadata.title, 'extracted-fallback');
+      },
+    );
 
     test('throws FileSystemException for non-existent file', () async {
       expect(
@@ -188,11 +263,11 @@ void main() {
         0x00, 0x00, 0x00, 0x00, // crc
         0x00, 0x00, 0x00, 0x00, // compressed size
         0x00, 0x00, 0x00, 0x00, // uncompressed size
-        0xFF, 0x00,             // filename length = 255 (no bytes follow)
-        0x00, 0x00,             // extra length
-        0x00, 0x00,             // comment length
-        0x00, 0x00,             // disk number
-        0x00, 0x00,             // internal attrs
+        0xFF, 0x00, // filename length = 255 (no bytes follow)
+        0x00, 0x00, // extra length
+        0x00, 0x00, // comment length
+        0x00, 0x00, // disk number
+        0x00, 0x00, // internal attrs
         0x00, 0x00, 0x00, 0x00, // external attrs
         0x00, 0x00, 0x00, 0x00, // local header offset
         // End of Central Directory Record (22 bytes)
@@ -201,7 +276,7 @@ void main() {
         0x01, 0x00, 0x01, 0x00, // entries
         0x2E, 0x00, 0x00, 0x00, // CD size = 46
         0x00, 0x00, 0x00, 0x00, // CD offset = 0
-        0x00, 0x00,             // comment length
+        0x00, 0x00, // comment length
       ]);
 
       final extractDir = await Directory.systemTemp.createTemp(

@@ -33,6 +33,12 @@ const _maxEpubBytes = 200 * 1024 * 1024;
 
 /// Parses EPUB files to extract metadata and cover images.
 class EpubParser {
+  /// Title used when the EPUB metadata has no usable title: the file's own
+  /// name, which is far more recognizable in the library than a generic
+  /// "Unknown Title".
+  static String _fallbackTitleFor(String epubPath) =>
+      p.basenameWithoutExtension(epubPath);
+
   /// Parse an EPUB file and extract its metadata + cover image.
   ///
   /// [epubPath] is the path to the .epub file.
@@ -86,11 +92,15 @@ class EpubParser {
     // 1. Parse META-INF/container.xml to find the OPF file path
     final opfPath = await _findOpfPath(extractDir);
     if (opfPath == null) {
-      return const EpubMetadata(title: 'Unknown Title');
+      return EpubMetadata(title: _fallbackTitleFor(epubPath));
     }
 
     // 2. Parse the OPF file for title, author, cover
-    return _parseOpf(extractDir, opfPath);
+    return _parseOpf(
+      extractDir,
+      opfPath,
+      fallbackTitle: _fallbackTitleFor(epubPath),
+    );
   }
 
   /// Parse only metadata from an EPUB without full extraction.
@@ -111,6 +121,7 @@ class EpubParser {
 
     // Stream-decode to extract only the 2 small XML files we need,
     // avoiding loading the entire EPUB into memory.
+    final fallbackTitle = _fallbackTitleFor(epubPath);
     final input = InputFileStream(epubPath);
     try {
       final Archive archive;
@@ -126,7 +137,7 @@ class EpubParser {
       // Find container.xml in the archive
       final containerFile = archive.findFile('META-INF/container.xml');
       if (containerFile == null) {
-        return const EpubMetadata(title: 'Unknown Title');
+        return EpubMetadata(title: fallbackTitle);
       }
 
       final containerXml = XmlDocument.parse(
@@ -134,13 +145,13 @@ class EpubParser {
       );
       final opfPath = _extractOpfPathFromXml(containerXml);
       if (opfPath == null) {
-        return const EpubMetadata(title: 'Unknown Title');
+        return EpubMetadata(title: fallbackTitle);
       }
 
       // Find the OPF file in the archive
       final opfFile = archive.findFile(opfPath);
       if (opfFile == null) {
-        return const EpubMetadata(title: 'Unknown Title');
+        return EpubMetadata(title: fallbackTitle);
       }
 
       final opfXml = XmlDocument.parse(
@@ -148,7 +159,11 @@ class EpubParser {
       );
       final opfDir = p.dirname(opfPath);
 
-      return _extractMetadataFromOpf(opfXml, opfDir);
+      return _extractMetadataFromOpf(
+        opfXml,
+        opfDir,
+        fallbackTitle: fallbackTitle,
+      );
     } finally {
       input.close();
     }
@@ -176,35 +191,43 @@ class EpubParser {
   /// Parse the OPF file for metadata and cover image path.
   static Future<EpubMetadata> _parseOpf(
     String extractDir,
-    String opfPath,
-  ) async {
+    String opfPath, {
+    required String fallbackTitle,
+  }) async {
     final opfFile = File(p.join(extractDir, opfPath));
     if (!await opfFile.exists()) {
-      return const EpubMetadata(title: 'Unknown Title');
+      return EpubMetadata(title: fallbackTitle);
     }
 
     final opfXml = XmlDocument.parse(await opfFile.readAsString());
     final opfDir = p.dirname(opfPath);
 
-    return _extractMetadataFromOpf(opfXml, opfDir);
+    return _extractMetadataFromOpf(
+      opfXml,
+      opfDir,
+      fallbackTitle: fallbackTitle,
+    );
   }
 
   /// Extract metadata from a parsed OPF XML document.
   static EpubMetadata _extractMetadataFromOpf(
     XmlDocument opfXml,
-    String opfDir,
-  ) {
-    // Extract title from <dc:title>
-    String title = 'Unknown Title';
+    String opfDir, {
+    required String fallbackTitle,
+  }) {
+    // Extract title from <dc:title>, falling back to <title> without the
+    // namespace prefix, then to the EPUB's own filename.
+    String? title;
     final titleElements = opfXml.findAllElements('dc:title');
     if (titleElements.isNotEmpty) {
-      title = titleElements.first.innerText.trim();
+      final t = titleElements.first.innerText.trim();
+      if (t.isNotEmpty) title = t;
     }
-    // Fallback: try without namespace prefix
-    if (title == 'Unknown Title') {
+    if (title == null) {
       final titleElements2 = opfXml.findAllElements('title');
       if (titleElements2.isNotEmpty) {
-        title = titleElements2.first.innerText.trim();
+        final t = titleElements2.first.innerText.trim();
+        if (t.isNotEmpty) title = t;
       }
     }
 
@@ -309,7 +332,7 @@ class EpubParser {
     }
 
     return EpubMetadata(
-      title: title,
+      title: title ?? fallbackTitle,
       author: author,
       coverImageRelativePath: coverRelativePath,
       language: language,
