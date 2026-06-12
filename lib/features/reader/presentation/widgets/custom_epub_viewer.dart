@@ -433,9 +433,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       callback: (data) {
         // Accept either ['a','b'] or [['a','b']] depending on how the JS
         // bridge serializes the batch.
-        final raw = data.isNotEmpty && data[0] is List
-            ? data[0] as List
-            : data;
+        final raw = data.isNotEmpty && data[0] is List ? data[0] as List : data;
         final inputs = raw.map((e) => e?.toString() ?? '').toList();
         return _furiganaGenerator.generate(inputs);
       },
@@ -443,8 +441,10 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
 
     controller.addJavaScriptHandler(
       handlerName: 'displayError',
-      callback: (_) {
-        if (kDebugMode) debugPrint('EPUB display error');
+      callback: (data) {
+        final description = data.isNotEmpty ? '${data[0]}' : 'display error';
+        if (kDebugMode) debugPrint('EPUB display error: $description');
+        widget.onLoadError?.call(description);
       },
     );
   }
@@ -526,5 +526,4 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       await _runJavascript('setBodyBackground("$bgHex")');
     }
   }
-
 }

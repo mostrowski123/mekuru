@@ -134,9 +134,9 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
     });
   });
 
-  rendition.on('displayError', function () {
-    console.log('[EPUB_BRIDGE] displayError event');
-    callDart('displayError');
+  rendition.on('displayError', function (err) {
+    console.log('[EPUB_BRIDGE] displayError event:', err);
+    callDart('displayError', String(err || 'display error'));
   });
 
   // ── TOC ───────────────────────────────────────────────────────────
