@@ -167,20 +167,26 @@ void main() {
       final container = ProviderScope.containerOf(
         tester.element(find.byType(LibraryScreen)),
       );
-      // Cancel the success banner's auto-dismiss timer at teardown.
-      addTearDown(
-        () => container.read(bookImportProvider.notifier).clearState(),
-      );
 
       final imported = await container
           .read(bookImportProvider.notifier)
           .importFiles([firstPath, secondPath], format: 'epub');
       expect(imported, 2);
 
+      // Check the banner first: it auto-dismisses after 5s of real time,
+      // which can elapse while pumping for the grid tiles below.
+      await tester.pump();
+      expect(find.text('Imported 2 books'), findsOneWidget);
+
       await pumpUntilVisible(tester, find.text('こころ'));
       expect(find.text('こころ'), findsAtLeastNWidgets(1));
       expect(find.text('吾輩は猫である'), findsAtLeastNWidgets(1));
-      expect(find.text('Imported 2 books'), findsOneWidget);
+
+      // Cancel the success banner's auto-dismiss timer while the container
+      // is still alive (reading it in addTearDown would throw — the widget
+      // tree and its container are disposed before teardowns run).
+      container.read(bookImportProvider.notifier).clearState();
+      await tester.pump();
     },
   );
 }
