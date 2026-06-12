@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 
@@ -150,6 +153,176 @@ void main() {
       final result = service.identifyWord('食べる', 100);
       expect(result, isNull);
     });
+  });
+
+  // ── copyAssetsToDir (atomic, self-healing asset install) ───────────
+
+  group('MecabService.copyAssetsToDir', () {
+    late Directory destDir;
+
+    setUp(() {
+      destDir = Directory.systemTemp.createTempSync('mecab_copy_test_');
+    });
+
+    tearDown(() {
+      if (destDir.existsSync()) {
+        destDir.deleteSync(recursive: true);
+      }
+    });
+
+    ByteData byteData(List<int> bytes) =>
+        ByteData.view(Uint8List.fromList(bytes).buffer);
+
+    File destFile(String name) => File('${destDir.path}/$name');
+
+    test(
+      'copies missing files with exact bytes and writes the marker',
+      () async {
+        final assets = {
+          'assets/test/a.dic': [1, 2, 3],
+          'assets/test/b.dic': [4, 5],
+        };
+
+        await MecabService.copyAssetsToDir(
+          assetPrefix: 'assets/test',
+          fileNames: ['a.dic', 'b.dic'],
+          destDir: destDir,
+          loadAsset: (key) async => byteData(assets[key]!),
+        );
+
+        expect(destFile('a.dic').readAsBytesSync(), [1, 2, 3]);
+        expect(destFile('b.dic').readAsBytesSync(), [4, 5]);
+        expect(destFile('.install_ok').existsSync(), isTrue);
+      },
+    );
+
+    test('re-copies a truncated file when the marker is absent', () async {
+      destFile('a.dic').writeAsBytesSync([1]); // truncated leftover
+
+      await MecabService.copyAssetsToDir(
+        assetPrefix: 'assets/test',
+        fileNames: ['a.dic'],
+        destDir: destDir,
+        loadAsset: (key) async => byteData([1, 2, 3]),
+      );
+
+      expect(destFile('a.dic').readAsBytesSync(), [1, 2, 3]);
+    });
+
+    test('leaves a same-size file untouched (size-only heuristic)', () async {
+      destFile('a.dic').writeAsBytesSync([9, 9, 9]);
+
+      await MecabService.copyAssetsToDir(
+        assetPrefix: 'assets/test',
+        fileNames: ['a.dic'],
+        destDir: destDir,
+        loadAsset: (key) async => byteData([1, 2, 3]),
+      );
+
+      expect(destFile('a.dic').readAsBytesSync(), [9, 9, 9]);
+    });
+
+    test('skips asset loading entirely when marker and files exist', () async {
+      destFile('a.dic').writeAsBytesSync([1]); // even a truncated file
+      destFile('.install_ok').writeAsStringSync('');
+      final loadedKeys = <String>[];
+
+      await MecabService.copyAssetsToDir(
+        assetPrefix: 'assets/test',
+        fileNames: ['a.dic'],
+        destDir: destDir,
+        loadAsset: (key) async {
+          loadedKeys.add(key);
+          return byteData([1, 2, 3]);
+        },
+      );
+
+      expect(loadedKeys, isEmpty);
+    });
+
+    test(
+      'runs the full verify when marker exists but a file is missing',
+      () async {
+        destFile('.install_ok').writeAsStringSync('');
+
+        await MecabService.copyAssetsToDir(
+          assetPrefix: 'assets/test',
+          fileNames: ['a.dic'],
+          destDir: destDir,
+          loadAsset: (key) async => byteData([1, 2, 3]),
+        );
+
+        expect(destFile('a.dic').readAsBytesSync(), [1, 2, 3]);
+      },
+    );
+
+    test('cleans up orphaned .tmp files and leaves none behind', () async {
+      destFile('stale.dic.tmp').writeAsBytesSync([0]);
+
+      await MecabService.copyAssetsToDir(
+        assetPrefix: 'assets/test',
+        fileNames: ['a.dic'],
+        destDir: destDir,
+        loadAsset: (key) async => byteData([1, 2, 3]),
+      );
+
+      final tmpFiles = destDir.listSync().whereType<File>().where(
+        (f) => f.path.endsWith('.tmp'),
+      );
+      expect(tmpFiles, isEmpty);
+    });
+
+    test('propagates a loader failure mid-batch, keeps earlier files, '
+        'writes no marker', () async {
+      await expectLater(
+        MecabService.copyAssetsToDir(
+          assetPrefix: 'assets/test',
+          fileNames: ['a.dic', 'b.dic'],
+          destDir: destDir,
+          loadAsset: (key) async {
+            if (key.endsWith('b.dic')) throw Exception('asset missing');
+            return byteData([1, 2, 3]);
+          },
+        ),
+        throwsA(isA<Exception>()),
+      );
+
+      expect(destFile('a.dic').readAsBytesSync(), [1, 2, 3]);
+      expect(destFile('.install_ok').existsSync(), isFalse);
+    });
+  });
+
+  // ── init re-entrancy ────────────────────────────────────────────────
+  // In the unit-test environment init() always fails (no path_provider
+  // plugin), which is exactly what these tests need: they verify the
+  // memoization and retry behavior, not a successful initialization.
+
+  group('MecabService.init re-entrancy', () {
+    setUpAll(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+    });
+
+    test('concurrent calls share the same in-flight future', () async {
+      final first = MecabService.instance.init();
+      final second = MecabService.instance.init();
+
+      expect(identical(first, second), isTrue);
+      await expectLater(first, throwsA(anything));
+    });
+
+    test(
+      'a failed init can be retried without LateInitializationError',
+      () async {
+        final first = MecabService.instance.init();
+        await expectLater(first, throwsA(anything));
+
+        final second = MecabService.instance.init();
+        expect(identical(first, second), isFalse);
+        // The retry must fail with the same environment error, not a
+        // LateInitializationError from re-assigning internal state.
+        await expectLater(second, throwsA(isA<Exception>()));
+      },
+    );
   });
 
   // ── WordLookupResult — tokenStartOffset ───────────────────────────

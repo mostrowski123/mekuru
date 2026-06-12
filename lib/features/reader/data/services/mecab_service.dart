@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mecab_for_flutter/mecab_for_flutter.dart';
+import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -98,9 +99,9 @@ class MecabFeatureLayout {
     required int readingIndex,
     required bool stripLoanwordGloss,
     required this.label,
-  })  : _dictionaryFormIndex = dictionaryFormIndex,
-        _readingIndex = readingIndex,
-        _stripLoanwordGloss = stripLoanwordGloss;
+  }) : _dictionaryFormIndex = dictionaryFormIndex,
+       _readingIndex = readingIndex,
+       _stripLoanwordGloss = stripLoanwordGloss;
 
   /// IPADIC: `features[6]` is the lemma (dictionary form) and `features[7]`
   /// is the surface reading in katakana.
@@ -152,18 +153,30 @@ class MecabService {
 
   Mecab? _tagger;
   bool _initialized = false;
-  late final MecabFeatureLayout _layout;
+  Future<void>? _initFuture;
+  // Non-final: assigned on every (re-)initialization attempt, including
+  // retries after a failed init.
+  late MecabFeatureLayout _layout;
 
   /// The active feature-column layout, set by [init].
   MecabFeatureLayout get layout => _layout;
 
-  /// Initialize MeCab. Safe to call multiple times.
+  /// Initialize MeCab. Safe to call multiple times, including concurrently:
+  /// overlapping callers share the single in-flight initialization, and a
+  /// failed attempt can be retried by calling again.
   ///
   /// Chooses between the bundled IPADIC + gikun user-dictionary (default)
   /// and the optional downloaded UniDic-lite (when the user has opted in
   /// and the files are present). On UniDic-lite initialization failure,
   /// falls back to IPADIC so the reader stays usable.
-  Future<void> init() async {
+  Future<void> init() {
+    return _initFuture ??= _doInit().onError((Object error, StackTrace st) {
+      _initFuture = null; // allow a later retry
+      Error.throwWithStackTrace(error, st);
+    });
+  }
+
+  Future<void> _doInit() async {
     if (_initialized) return;
 
     if (await EnhancedFuriganaDictDownloadService.shouldUse()) {
@@ -215,12 +228,12 @@ class MecabService {
   /// Copy IPAdic dictionary files from Flutter assets to a filesystem
   /// directory and return the absolute path to that directory.
   ///
-  /// Files are only copied once — subsequent calls skip files that already
-  /// exist on disk.
+  /// Files are installed once and verified complete; subsequent calls are a
+  /// cheap stat-only check (see [copyAssetsToDir]).
   Future<String> _getDictDir() async {
     final docsDir = await getApplicationDocumentsDirectory();
     final ipaDicDir = Directory(p.join(docsDir.path, 'assets', 'ipadic'));
-    await _copyAssetsToDir(
+    await copyAssetsToDir(
       assetPrefix: 'assets/ipadic',
       fileNames: _mecabDictFiles,
       destDir: ipaDicDir,
@@ -228,31 +241,69 @@ class MecabService {
     return ipaDicDir.absolute.path;
   }
 
-  /// Files are skipped if already present, so this is cheap to call on every
-  /// startup after the first launch.
-  Future<void> _copyAssetsToDir({
+  /// Marker file written once an install has been verified complete. While
+  /// present, startup only stat-checks the files instead of re-reading the
+  /// bundled assets to verify their sizes.
+  static const _installMarkerName = '.install_ok';
+
+  /// Install bundled assets into [destDir], atomically and self-healing.
+  ///
+  /// When the [_installMarkerName] marker is missing (fresh install,
+  /// interrupted install, or first launch after an update), every file is
+  /// verified against the bundled asset's byte length and re-copied on
+  /// mismatch — this heals truncated files left behind by a kill mid-copy.
+  /// Writes go through [writeBytesAtomic] so an interrupted copy never
+  /// leaves a truncated file at the destination path.
+  @visibleForTesting
+  static Future<void> copyAssetsToDir({
     required String assetPrefix,
     required List<String> fileNames,
     required Directory destDir,
+    Future<ByteData> Function(String key)? loadAsset,
   }) async {
+    final load = loadAsset ?? rootBundle.load;
+    final usingDefaultLoader = loadAsset == null;
     if (!destDir.existsSync()) {
       destDir.createSync(recursive: true);
     }
+
+    final marker = File(p.join(destDir.path, _installMarkerName));
+    if (marker.existsSync() &&
+        fileNames.every((f) => File(p.join(destDir.path, f)).existsSync())) {
+      return;
+    }
+
+    // Clear orphaned temp files from a previously interrupted install.
+    for (final entity in destDir.listSync()) {
+      if (entity is File && entity.path.endsWith('.tmp')) {
+        try {
+          entity.deleteSync();
+        } catch (_) {
+          // Non-fatal; the atomic write below overwrites stale temp files.
+        }
+      }
+    }
+
     for (final fileName in fileNames) {
-      final destPath = p.join(destDir.path, fileName);
-      if (FileSystemEntity.typeSync(destPath) ==
-          FileSystemEntityType.notFound) {
-        debugPrint('[MeCab] Copying asset: $assetPrefix/$fileName');
-        final ByteData data = await rootBundle.load('$assetPrefix/$fileName');
+      final destFile = File(p.join(destDir.path, fileName));
+      final ByteData data = await load('$assetPrefix/$fileName');
+      final upToDate =
+          destFile.existsSync() && destFile.lengthSync() == data.lengthInBytes;
+      if (!upToDate) {
+        debugPrint('[MeCab] Installing asset: $assetPrefix/$fileName');
         final bytes = data.buffer.asUint8List(
           data.offsetInBytes,
           data.lengthInBytes,
         );
-        // Async write so first-launch dictionary install doesn't block the
-        // UI isolate while the dict files are copied to docs dir.
-        await File(destPath).writeAsBytes(bytes);
+        await writeBytesAtomic(destFile, bytes);
+      }
+      if (usingDefaultLoader) {
+        // rootBundle caches loaded assets; sys.dic alone is ~47 MB.
+        rootBundle.evict('$assetPrefix/$fileName');
       }
     }
+
+    marker.writeAsStringSync('');
   }
 
   /// Copy the bundled user-dictionary (gikun / 熟字訓 overrides on top of
@@ -260,7 +311,7 @@ class MecabService {
   Future<String> _getUserDictPath() async {
     final docsDir = await getApplicationDocumentsDirectory();
     final userDictDir = Directory(p.join(docsDir.path, 'assets', 'user_dict'));
-    await _copyAssetsToDir(
+    await copyAssetsToDir(
       assetPrefix: 'assets/user_dict',
       fileNames: const ['user.dic'],
       destDir: userDictDir,
