@@ -114,6 +114,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get libraryGetDictionaries => 'Obtener diccionarios';
 
   @override
+  String get libraryContinueReading => 'Seguir leyendo';
+
+  @override
   String get libraryRestoreBackup => 'Restaurar copia de seguridad';
 
   @override

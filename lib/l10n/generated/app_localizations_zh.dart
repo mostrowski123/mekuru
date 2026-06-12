@@ -112,6 +112,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryGetDictionaries => '获取词典';
 
   @override
+  String get libraryContinueReading => '继续阅读';
+
+  @override
   String get libraryRestoreBackup => '恢复备份';
 
   @override
@@ -1997,6 +2000,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryGetDictionaries => '获取词典';
+
+  @override
+  String get libraryContinueReading => '继续阅读';
 
   @override
   String get libraryRestoreBackup => '恢复备份';

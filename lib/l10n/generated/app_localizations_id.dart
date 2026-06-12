@@ -113,6 +113,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get libraryGetDictionaries => 'Dapatkan Kamus';
 
   @override
+  String get libraryContinueReading => 'Lanjutkan membaca';
+
+  @override
   String get libraryRestoreBackup => 'Pulihkan Cadangan';
 
   @override

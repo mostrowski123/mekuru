@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +12,8 @@ import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
+import 'package:mekuru/features/library/presentation/widgets/book_cover_image.dart';
+import 'package:mekuru/features/library/presentation/widgets/continue_reading_card.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
@@ -31,7 +32,6 @@ import 'package:mekuru/features/settings/presentation/screens/downloads_screen.d
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
-import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -43,6 +43,22 @@ void _openBookReader(BuildContext context, Book book) {
           : ReaderScreen(book: book),
     ),
   );
+}
+
+/// The book the user most recently read, or null when none has been opened
+/// yet. Derived from the already-watched book list so it stays reactive and
+/// independent of the user's chosen sort order.
+@visibleForTesting
+Book? mostRecentlyReadBook(List<Book> books) {
+  Book? recent;
+  for (final book in books) {
+    final lastReadAt = book.lastReadAt;
+    if (lastReadAt == null) continue;
+    if (recent == null || lastReadAt.isAfter(recent.lastReadAt!)) {
+      recent = book;
+    }
+  }
+  return recent;
 }
 
 /// Library screen displaying imported books in a grid view.
@@ -289,16 +305,35 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   Widget _buildBookGrid(BuildContext context, WidgetRef ref, List<Book> books) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 0.65,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: books.length,
-      itemBuilder: (context, index) => _BookTile(book: books[index]),
+    final recent = mostRecentlyReadBook(books);
+    return CustomScrollView(
+      slivers: [
+        if (recent != null)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            sliver: SliverToBoxAdapter(
+              child: ContinueReadingCard(
+                book: recent,
+                onTap: () => _openBookReader(context, recent),
+              ),
+            ),
+          ),
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 0.65,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 16,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _BookTile(book: books[index]),
+              childCount: books.length,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -951,7 +986,7 @@ class _BookTileState extends ConsumerState<_BookTile>
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        _buildCoverImage(theme),
+                        BookCoverImage(book: book),
                         if (book.bookType == 'manga')
                           Positioned(
                             top: 4,
@@ -1006,104 +1041,6 @@ class _BookTileState extends ConsumerState<_BookTile>
             textAlign: TextAlign.center,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCoverImage(ThemeData theme) {
-    final coverPath = book.coverImagePath;
-    if (coverPath == null) return _buildPlaceholder(theme);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final dpr = MediaQuery.devicePixelRatioOf(context);
-        final tileCacheWidth = (constraints.maxWidth * dpr).toInt();
-        // Blurred background can decode at half resolution — blur hides
-        // detail loss and saves ~75% memory per blurred image.
-        final blurCacheWidth = (tileCacheWidth * 0.5).toInt();
-
-        if (AndroidSafService.isContentUri(coverPath)) {
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: AndroidSafImage(
-                  uri: coverPath,
-                  fit: BoxFit.cover,
-                  cacheWidth: blurCacheWidth,
-                  errorBuilder: (_, _, _) => _buildPlaceholder(theme),
-                ),
-              ),
-              AndroidSafImage(
-                uri: coverPath,
-                fit: BoxFit.fitHeight,
-                cacheWidth: tileCacheWidth,
-                errorBuilder: (_, _, _) => _buildPlaceholder(theme),
-              ),
-            ],
-          );
-        }
-
-        final coverFile = File(coverPath);
-        if (coverFile.existsSync()) {
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              // Blurred background fill (no darkening)
-              ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Image.file(
-                  coverFile,
-                  fit: BoxFit.cover,
-                  cacheWidth: blurCacheWidth,
-                ),
-              ),
-              // Actual cover, fit by height first
-              Image.file(
-                coverFile,
-                fit: BoxFit.fitHeight,
-                cacheWidth: tileCacheWidth,
-                errorBuilder: (_, _, _) => _buildPlaceholder(theme),
-              ),
-            ],
-          );
-        }
-
-        return _buildPlaceholder(theme);
-      },
-    );
-  }
-
-  Widget _buildPlaceholder(ThemeData theme) {
-    return Container(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.menu_book,
-              size: 32,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                book.title,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.7,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

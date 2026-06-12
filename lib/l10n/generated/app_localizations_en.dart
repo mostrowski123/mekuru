@@ -113,6 +113,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryGetDictionaries => 'Get Dictionaries';
 
   @override
+  String get libraryContinueReading => 'Continue reading';
+
+  @override
   String get libraryRestoreBackup => 'Restore Backup';
 
   @override

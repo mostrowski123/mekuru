@@ -142,6 +142,10 @@
   "@libraryGetDictionaries": {
     "description": "Button label to open downloadable dictionaries."
   },
+  "libraryContinueReading": "Seguir leyendo",
+  "@libraryContinueReading": {
+    "description": "Label on the card that reopens the most recently read book."
+  },
   "libraryRestoreBackup": "Restaurar copia de seguridad",
   "@libraryRestoreBackup": {
     "description": "Button label to restore a backup."

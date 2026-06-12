@@ -301,6 +301,12 @@ abstract class AppLocalizations {
   /// **'Get Dictionaries'**
   String get libraryGetDictionaries;
 
+  /// Label on the card that reopens the most recently read book.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue reading'**
+  String get libraryContinueReading;
+
   /// Button label to restore a backup.
   ///
   /// In en, this message translates to:
