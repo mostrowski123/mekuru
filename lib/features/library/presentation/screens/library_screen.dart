@@ -586,24 +586,28 @@ class LibraryScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _importEpub(WidgetRef ref) async {
+  /// Open the file picker for [extensions] and return the selected paths.
+  /// Returns an empty list when the user cancels or when another picker is
+  /// still resolving (e.g. double-tap of the FAB).
+  Future<List<String>> _pickFilePaths(List<String> extensions) async {
     final FilePickerResult? result;
     try {
       result = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['epub'],
+        allowedExtensions: extensions,
         allowMultiple: true,
       );
     } on PlatformException catch (e) {
-      // Another picker is still resolving (e.g. double-tap of the FAB).
-      // Let that one complete instead of crashing.
-      if (e.code == 'already_active') return;
+      if (e.code == 'already_active') return const [];
       rethrow;
     }
 
-    if (result == null || result.files.isEmpty) return;
+    if (result == null) return const [];
+    return result.files.map((f) => f.path).nonNulls.toList();
+  }
 
-    final filePaths = result.files.map((f) => f.path).nonNulls.toList();
+  Future<void> _importEpub(WidgetRef ref) async {
+    final filePaths = await _pickFilePaths(const ['epub']);
     if (filePaths.isEmpty) return;
 
     ref
@@ -612,15 +616,7 @@ class LibraryScreen extends ConsumerWidget {
   }
 
   Future<void> _importCbz(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['cbz'],
-      allowMultiple: true,
-    );
-
-    if (result == null || result.files.isEmpty) return;
-
-    final filePaths = result.files.map((f) => f.path).nonNulls.toList();
+    final filePaths = await _pickFilePaths(const ['cbz']);
     if (filePaths.isEmpty) return;
 
     final imported = await ref
