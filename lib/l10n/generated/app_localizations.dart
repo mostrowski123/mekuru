@@ -265,6 +265,12 @@ abstract class AppLocalizations {
   /// **'Error: {details}'**
   String commonErrorWithDetails({required String details});
 
+  /// Warning banner when a note with the same first field already exists in the selected deck.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in “{deck}”'**
+  String ankidroidAlreadyInDeck({required String deck});
+
   /// Progress label shown while importing multiple files at once.
   ///
   /// In en, this message translates to:

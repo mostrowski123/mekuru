@@ -92,6 +92,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String ankidroidAlreadyInDeck({required String deck}) {
+    return 'Sudah ada di “$deck”';
+  }
+
+  @override
   String libraryBatchImportProgress({
     required int current,
     required int total,

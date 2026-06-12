@@ -113,6 +113,15 @@
       }
     }
   },
+  "ankidroidAlreadyInDeck": "Ya está en “{deck}”",
+  "@ankidroidAlreadyInDeck": {
+    "description": "Warning banner when a note with the same first field already exists in the selected deck.",
+    "placeholders": {
+      "deck": {
+        "type": "String"
+      }
+    }
+  },
   "libraryBatchImportProgress": "Importando {current} de {total}…",
   "@libraryBatchImportProgress": {
     "description": "Progress label shown while importing multiple files at once.",

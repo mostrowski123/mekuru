@@ -92,6 +92,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String ankidroidAlreadyInDeck({required String deck}) {
+    return 'Already in “$deck”';
+  }
+
+  @override
   String libraryBatchImportProgress({
     required int current,
     required int total,

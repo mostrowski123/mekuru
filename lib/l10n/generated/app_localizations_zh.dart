@@ -92,6 +92,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String ankidroidAlreadyInDeck({required String deck}) {
+    return '已存在于“$deck”';
+  }
+
+  @override
   String libraryBatchImportProgress({
     required int current,
     required int total,
@@ -1987,6 +1992,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String commonErrorWithDetails({required String details}) {
     return '错误：$details';
+  }
+
+  @override
+  String ankidroidAlreadyInDeck({required String deck}) {
+    return '已存在于“$deck”';
   }
 
   @override

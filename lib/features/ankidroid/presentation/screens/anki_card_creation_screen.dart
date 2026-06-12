@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
@@ -31,6 +33,9 @@ class _AnkiCardCreationScreenState
   int? _selectedDeckId;
   String? _selectedDeckName;
   Map<int, String> _decks = {};
+
+  bool _duplicateInDeck = false;
+  int _duplicateCheckGeneration = 0;
 
   @override
   void initState() {
@@ -81,6 +86,8 @@ class _AnkiCardCreationScreenState
       _controllers.add(TextEditingController(text: value));
     }
 
+    unawaited(_checkDuplicateInDeck());
+
     if (mounted) {
       setState(() => _isLoading = false);
     }
@@ -125,8 +132,36 @@ class _AnkiCardCreationScreenState
     // Update tags from config
     _tagsController.text = config.tags.join(', ');
 
+    unawaited(_checkDuplicateInDeck());
+
     if (mounted) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  /// Re-check whether a note with the same first field already exists in
+  /// the currently selected deck. Generation-guarded so a slow check for a
+  /// previously selected deck can't overwrite the current deck's result.
+  Future<void> _checkDuplicateInDeck() async {
+    final generation = ++_duplicateCheckGeneration;
+    final modelId = ref.read(ankidroidConfigProvider).modelId;
+    final deckId = _selectedDeckId;
+    final firstField = _controllers.isNotEmpty ? _controllers.first.text : '';
+    if (modelId == null || deckId == null || firstField.trim().isEmpty) {
+      if (mounted) setState(() => _duplicateInDeck = false);
+      return;
+    }
+
+    final exists = await ref
+        .read(ankidroidServiceProvider)
+        .hasDuplicateInDeck(
+          modelId: modelId,
+          deckId: deckId,
+          firstFieldValue: firstField,
+        );
+
+    if (mounted && generation == _duplicateCheckGeneration) {
+      setState(() => _duplicateInDeck = exists);
     }
   }
 
@@ -304,6 +339,41 @@ class _AnkiCardCreationScreenState
             ],
           ),
         ),
+        // Non-blocking duplicate warning for the selected deck.
+        if (_duplicateInDeck)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Material(
+              color: theme.colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: theme.colorScheme.onTertiaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l10n.ankidroidAlreadyInDeck(
+                          deck: _selectedDeckName ?? '',
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onTertiaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         // Send button
         Padding(
           padding: const EdgeInsets.all(16),
@@ -357,6 +427,7 @@ class _AnkiCardCreationScreenState
                         _selectedDeckId = entry.key;
                         _selectedDeckName = entry.value;
                       });
+                      unawaited(_checkDuplicateInDeck());
                       Navigator.pop(sheetContext);
                     },
                   );

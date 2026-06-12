@@ -113,6 +113,15 @@
       }
     }
   },
+  "ankidroidAlreadyInDeck": "已存在于“{deck}”",
+  "@ankidroidAlreadyInDeck": {
+    "description": "Warning banner when a note with the same first field already exists in the selected deck.",
+    "placeholders": {
+      "deck": {
+        "type": "String"
+      }
+    }
+  },
   "libraryBatchImportProgress": "正在导入第 {current} 个，共 {total} 个…",
   "@libraryBatchImportProgress": {
     "description": "Progress label shown while importing multiple files at once.",
