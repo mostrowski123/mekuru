@@ -92,6 +92,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String libraryBatchImportProgress({
+    required int current,
+    required int total,
+  }) {
+    return '正在导入第 $current 个，共 $total 个…';
+  }
+
+  @override
   String librarySortTooltip({required String label}) {
     return '排序：$label';
   }
@@ -1979,6 +1987,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String commonErrorWithDetails({required String details}) {
     return '错误：$details';
+  }
+
+  @override
+  String libraryBatchImportProgress({
+    required int current,
+    required int total,
+  }) {
+    return '正在导入第 $current 个，共 $total 个…';
   }
 
   @override

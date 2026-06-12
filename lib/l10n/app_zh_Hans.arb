@@ -113,6 +113,18 @@
       }
     }
   },
+  "libraryBatchImportProgress": "正在导入第 {current} 个，共 {total} 个…",
+  "@libraryBatchImportProgress": {
+    "description": "Progress label shown while importing multiple files at once.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "librarySortTooltip": "排序：{label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",

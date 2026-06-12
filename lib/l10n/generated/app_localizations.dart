@@ -265,6 +265,12 @@ abstract class AppLocalizations {
   /// **'Error: {details}'**
   String commonErrorWithDetails({required String details});
 
+  /// Progress label shown while importing multiple files at once.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing {current} of {total}…'**
+  String libraryBatchImportProgress({required int current, required int total});
+
   /// Tooltip for the library sort button.
   ///
   /// In en, this message translates to:

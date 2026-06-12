@@ -1,94 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 
-/// Creates a minimal valid EPUB zip file for testing.
-Future<String> createTestEpub({
-  String title = 'テスト本',
-  String? author,
-  String? language,
-  String? pageProgressionDirection,
-  String? primaryWritingMode,
-  bool includeCover = true,
-  bool includeContainerXml = true,
-  String? customOpfContent,
-  String fileName = 'test.epub',
-}) async {
-  final archive = Archive();
-
-  // META-INF/container.xml
-  if (includeContainerXml) {
-    final containerXml = '''<?xml version="1.0" encoding="UTF-8"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
-  </rootfiles>
-</container>''';
-    final containerBytes = utf8.encode(containerXml);
-    archive.addFile(
-      ArchiveFile(
-        'META-INF/container.xml',
-        containerBytes.length,
-        containerBytes,
-      ),
-    );
-  }
-
-  // OEBPS/content.opf
-  final opfContent =
-      customOpfContent ??
-      '''<?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title>$title</dc:title>
-    ${author != null ? '<dc:creator>$author</dc:creator>' : ''}
-    ${language != null ? '<dc:language>$language</dc:language>' : ''}
-    <meta name="cover" content="cover-img"/>
-    ${primaryWritingMode != null ? '<meta name="primary-writing-mode" content="$primaryWritingMode"/>' : ''}
-  </metadata>
-  <manifest>
-    ${includeCover ? '<item id="cover-img" href="images/cover.jpg" media-type="image/jpeg"/>' : ''}
-    <item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
-  </manifest>
-  <spine${pageProgressionDirection != null ? ' page-progression-direction="$pageProgressionDirection"' : ''}>
-    <itemref idref="chapter1"/>
-  </spine>
-</package>''';
-  final opfBytes = utf8.encode(opfContent);
-  archive.addFile(ArchiveFile('OEBPS/content.opf', opfBytes.length, opfBytes));
-
-  // Cover image (tiny 1x1 JPEG placeholder)
-  if (includeCover) {
-    // Minimal valid JPEG (1x1 pixel)
-    final jpegBytes = [
-      0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, //
-      0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9,
-    ];
-    archive.addFile(
-      ArchiveFile('OEBPS/images/cover.jpg', jpegBytes.length, jpegBytes),
-    );
-  }
-
-  // Chapter content
-  final chapterContent = utf8.encode('''<?xml version="1.0" encoding="UTF-8"?>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head><title>Chapter 1</title></head>
-<body><p>これはテストです。</p></body>
-</html>''');
-  archive.addFile(
-    ArchiveFile('OEBPS/chapter1.xhtml', chapterContent.length, chapterContent),
-  );
-
-  // Write to temp file
-  final tempDir = await Directory.systemTemp.createTemp('epub_test_');
-  final epubPath = '${tempDir.path}/$fileName';
-  await File(epubPath).writeAsBytes(ZipEncoder().encode(archive));
-
-  return epubPath;
-}
+import 'shared/epub_fixtures.dart';
 
 void main() {
   final tempDirs = <String>{};

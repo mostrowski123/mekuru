@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -44,9 +46,7 @@ Future<String> _writeFixtureEpub(Directory dir, {required String title}) async {
       '<spine><itemref idref="chapter1"/></spine>'
       '</package>';
   final opfBytes = utf8.encode(opfXml);
-  archive.addFile(
-    ArchiveFile('OEBPS/content.opf', opfBytes.length, opfBytes),
-  );
+  archive.addFile(ArchiveFile('OEBPS/content.opf', opfBytes.length, opfBytes));
 
   final chapterBytes = utf8.encode(
     '<?xml version="1.0" encoding="UTF-8"?>'
@@ -56,11 +56,7 @@ Future<String> _writeFixtureEpub(Directory dir, {required String title}) async {
     '</html>',
   );
   archive.addFile(
-    ArchiveFile(
-      'OEBPS/chapter1.xhtml',
-      chapterBytes.length,
-      chapterBytes,
-    ),
+    ArchiveFile('OEBPS/chapter1.xhtml', chapterBytes.length, chapterBytes),
   );
 
   final epubPath = p.join(dir.path, 'fixture.epub');
@@ -120,32 +116,71 @@ void main() {
     },
   );
 
+  testWidgets('importing two EPUBs renders both tiles in the grid', (
+    tester,
+  ) async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+
+    final repo = BookRepository(db);
+    final firstPath = await _writeFixtureEpub(
+      Directory(p.join(tempDir.path, 'a'))..createSync(),
+      title: 'こころ',
+    );
+    final secondPath = await _writeFixtureEpub(
+      Directory(p.join(tempDir.path, 'b'))..createSync(),
+      title: '坊っちゃん',
+    );
+
+    await repo.importEpub(firstPath);
+    await repo.importEpub(secondPath);
+
+    await tester.pumpWidget(
+      buildIntegrationTestApp(db: db, home: const LibraryScreen()),
+    );
+    await pumpUntilVisible(tester, find.text('こころ'));
+
+    expect(find.text('こころ'), findsAtLeastNWidgets(1));
+    expect(find.text('坊っちゃん'), findsAtLeastNWidgets(1));
+  });
+
   testWidgets(
-    'importing two EPUBs renders both tiles in the grid',
+    'batch importFiles imports every file and shows the batch summary',
     (tester) async {
       final db = createTestDatabase();
       addTearDown(db.close);
 
-      final repo = BookRepository(db);
       final firstPath = await _writeFixtureEpub(
         Directory(p.join(tempDir.path, 'a'))..createSync(),
         title: 'こころ',
       );
       final secondPath = await _writeFixtureEpub(
         Directory(p.join(tempDir.path, 'b'))..createSync(),
-        title: '坊っちゃん',
+        title: '吾輩は猫である',
       );
-
-      await repo.importEpub(firstPath);
-      await repo.importEpub(secondPath);
 
       await tester.pumpWidget(
         buildIntegrationTestApp(db: db, home: const LibraryScreen()),
       );
-      await pumpUntilVisible(tester, find.text('こころ'));
+      await tester.pumpAndSettle();
 
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(LibraryScreen)),
+      );
+      // Cancel the success banner's auto-dismiss timer at teardown.
+      addTearDown(
+        () => container.read(bookImportProvider.notifier).clearState(),
+      );
+
+      final imported = await container
+          .read(bookImportProvider.notifier)
+          .importFiles([firstPath, secondPath], format: 'epub');
+      expect(imported, 2);
+
+      await pumpUntilVisible(tester, find.text('こころ'));
       expect(find.text('こころ'), findsAtLeastNWidgets(1));
-      expect(find.text('坊っちゃん'), findsAtLeastNWidgets(1));
+      expect(find.text('吾輩は猫である'), findsAtLeastNWidgets(1));
+      expect(find.text('Imported 2 books'), findsOneWidget);
     },
   );
 }

@@ -113,6 +113,18 @@
       }
     }
   },
+  "libraryBatchImportProgress": "Mengimpor {current} dari {total}…",
+  "@libraryBatchImportProgress": {
+    "description": "Progress label shown while importing multiple files at once.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "librarySortTooltip": "Urutkan: {label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",

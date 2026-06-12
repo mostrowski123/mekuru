@@ -11,6 +11,7 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/main.dart';
+import 'package:path/path.dart' as p;
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 // ──────────────── Sort ────────────────
@@ -97,12 +98,19 @@ class BookImportState {
   final String? successMessage;
   final Book? importedBook;
 
+  /// 1-based index of the file currently importing within a batch.
+  /// Only set (along with [batchTotal]) when importing more than one file.
+  final int? batchCurrent;
+  final int? batchTotal;
+
   const BookImportState({
     this.isImporting = false,
     this.progress,
     this.error,
     this.successMessage,
     this.importedBook,
+    this.batchCurrent,
+    this.batchTotal,
   });
 }
 
@@ -119,65 +127,94 @@ class BookImportNotifier extends Notifier<BookImportState> {
     _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
   }
 
-  Future<Book?> importEpub(String filePath) async {
-    state = const BookImportState(isImporting: true);
+  /// Import one or more EPUB ('epub') or CBZ ('cbz') files.
+  ///
+  /// Individual failures don't abort the batch: remaining files still
+  /// import, and a summary error names the files that failed. Returns the
+  /// number of successfully imported books.
+  Future<int> importFiles(
+    List<String> filePaths, {
+    required String format,
+  }) async {
+    if (filePaths.isEmpty) return 0;
 
-    try {
-      final repo = ref.read(bookRepositoryProvider);
-      final book = await tracedOperation(
-        'book.import_duration_ms',
-        action: () => repo.importEpub(filePath),
-        attributes: {'format': SentryAttribute.string('epub')},
-      );
-      await _applyPendingDataIfExists(book);
-      Sentry.logger.info('Book imported', attributes: {
-        'category': SentryAttribute.string('book.import'),
-        'format': SentryAttribute.string('epub'),
-      });
-      Sentry.metrics.count('book.imported', 1, attributes: {
-        'format': SentryAttribute.string('epub'),
-      });
-      AnalyticsService.instance.logEvent('book_imported', {'format': 'epub'});
-      _showSuccess('"${book.title}" added to library!', book);
-      return book;
-    } catch (e, st) {
-      Sentry.captureException(e, stackTrace: st);
-      state = BookImportState(error: e.toString());
-      return null;
+    final total = filePaths.length;
+    final failures = <String>[];
+    Book? lastImported;
+
+    for (var i = 0; i < total; i++) {
+      void updateProgress(double? fileProgress) {
+        state = BookImportState(
+          isImporting: true,
+          progress: fileProgress == null && total == 1
+              ? null // single EPUB: indeterminate, as before
+              : (i + (fileProgress ?? 0)) / total,
+          batchCurrent: total > 1 ? i + 1 : null,
+          batchTotal: total > 1 ? total : null,
+        );
+      }
+
+      updateProgress(format == 'cbz' ? 0.0 : null);
+      try {
+        lastImported = await _importOne(
+          filePaths[i],
+          format: format,
+          onProgress: updateProgress,
+        );
+      } catch (e, st) {
+        Sentry.captureException(e, stackTrace: st);
+        failures.add(p.basename(filePaths[i]));
+      }
     }
+
+    final succeeded = total - failures.length;
+    if (failures.isEmpty) {
+      _showSuccess(
+        total == 1
+            ? '"${lastImported!.title}" added to library!'
+            : 'Imported $total books',
+        lastImported!,
+      );
+    } else {
+      state = BookImportState(
+        error:
+            'Imported $succeeded of $total — '
+            '${failures.length} failed: ${failures.join(', ')}',
+      );
+    }
+    return succeeded;
   }
 
-  Future<Book?> importCbz(String filePath) async {
-    state = const BookImportState(isImporting: true, progress: 0.0);
-
-    try {
-      final repo = ref.read(bookRepositoryProvider);
-      final book = await tracedOperation(
-        'book.import_duration_ms',
-        action: () => repo.importCbz(
-          filePath,
-          onProgress: (p) {
-            state = BookImportState(isImporting: true, progress: p);
-          },
-        ),
-        attributes: {'format': SentryAttribute.string('cbz')},
-      );
-      await _applyPendingDataIfExists(book);
-      Sentry.logger.info('Book imported', attributes: {
+  /// Shared per-file import: repository call + pending-backup application
+  /// + telemetry. Throws on failure; does not touch [state].
+  Future<Book> _importOne(
+    String filePath, {
+    required String format,
+    void Function(double progress)? onProgress,
+  }) async {
+    final repo = ref.read(bookRepositoryProvider);
+    final book = await tracedOperation(
+      'book.import_duration_ms',
+      action: () => format == 'cbz'
+          ? repo.importCbz(filePath, onProgress: onProgress)
+          : repo.importEpub(filePath),
+      attributes: {'format': SentryAttribute.string(format)},
+    );
+    await _applyPendingDataIfExists(book);
+    Sentry.logger.info(
+      'Book imported',
+      attributes: {
         'category': SentryAttribute.string('book.import'),
-        'format': SentryAttribute.string('cbz'),
-      });
-      Sentry.metrics.count('book.imported', 1, attributes: {
-        'format': SentryAttribute.string('cbz'),
-      });
-      AnalyticsService.instance.logEvent('book_imported', {'format': 'cbz'});
-      _showSuccess('"${book.title}" added to library!', book);
-      return book;
-    } catch (e, st) {
-      Sentry.captureException(e, stackTrace: st);
-      state = BookImportState(error: e.toString());
-      return null;
-    }
+        'format': SentryAttribute.string(format),
+      },
+    );
+    Sentry.metrics.count(
+      'book.imported',
+      1,
+      attributes: {'format': SentryAttribute.string(format)},
+    );
+    AnalyticsService.instance.logEvent('book_imported', {'format': format});
+    return book;
   }
 
   Future<Book?> importManga(String filePath, {String? cachedFilePath}) async {
@@ -196,13 +233,18 @@ class BookImportNotifier extends Notifier<BookImportState> {
         attributes: {'format': SentryAttribute.string('manga')},
       );
       await _applyPendingDataIfExists(book);
-      Sentry.logger.info('Book imported', attributes: {
-        'category': SentryAttribute.string('book.import'),
-        'format': SentryAttribute.string('manga'),
-      });
-      Sentry.metrics.count('book.imported', 1, attributes: {
-        'format': SentryAttribute.string('manga'),
-      });
+      Sentry.logger.info(
+        'Book imported',
+        attributes: {
+          'category': SentryAttribute.string('book.import'),
+          'format': SentryAttribute.string('manga'),
+        },
+      );
+      Sentry.metrics.count(
+        'book.imported',
+        1,
+        attributes: {'format': SentryAttribute.string('manga')},
+      );
       AnalyticsService.instance.logEvent('book_imported', {'format': 'manga'});
       _showSuccess('"${book.title}" added to library!', book);
       return book;
@@ -234,15 +276,21 @@ class BookImportNotifier extends Notifier<BookImportState> {
         attributes: {'format': SentryAttribute.string('manga_saf')},
       );
       await _applyPendingDataIfExists(book);
-      Sentry.logger.info('Book imported', attributes: {
-        'category': SentryAttribute.string('book.import'),
-        'format': SentryAttribute.string('manga_saf'),
+      Sentry.logger.info(
+        'Book imported',
+        attributes: {
+          'category': SentryAttribute.string('book.import'),
+          'format': SentryAttribute.string('manga_saf'),
+        },
+      );
+      Sentry.metrics.count(
+        'book.imported',
+        1,
+        attributes: {'format': SentryAttribute.string('manga_saf')},
+      );
+      AnalyticsService.instance.logEvent('book_imported', {
+        'format': 'manga_saf',
       });
-      Sentry.metrics.count('book.imported', 1, attributes: {
-        'format': SentryAttribute.string('manga_saf'),
-      });
-      AnalyticsService.instance
-          .logEvent('book_imported', {'format': 'manga_saf'});
       _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {

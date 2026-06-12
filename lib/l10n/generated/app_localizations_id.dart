@@ -92,6 +92,14 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String libraryBatchImportProgress({
+    required int current,
+    required int total,
+  }) {
+    return 'Mengimpor $current dari $total…';
+  }
+
+  @override
   String librarySortTooltip({required String label}) {
     return 'Urutkan: $label';
   }

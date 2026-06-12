@@ -106,8 +106,23 @@ class LibraryScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          if (importState.isImporting)
+          if (importState.isImporting) ...[
             LinearProgressIndicator(value: importState.progress),
+            if (importState.batchTotal != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Text(
+                  l10n.libraryBatchImportProgress(
+                    current: importState.batchCurrent ?? 0,
+                    total: importState.batchTotal!,
+                  ),
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
+          ],
           if (importState.error != null)
             _buildBanner(
               context,
@@ -577,7 +592,7 @@ class LibraryScreen extends ConsumerWidget {
       result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['epub'],
-        allowMultiple: false,
+        allowMultiple: true,
       );
     } on PlatformException catch (e) {
       // Another picker is still resolving (e.g. double-tap of the FAB).
@@ -588,28 +603,30 @@ class LibraryScreen extends ConsumerWidget {
 
     if (result == null || result.files.isEmpty) return;
 
-    final filePath = result.files.single.path;
-    if (filePath == null) return;
+    final filePaths = result.files.map((f) => f.path).nonNulls.toList();
+    if (filePaths.isEmpty) return;
 
-    ref.read(bookImportProvider.notifier).importEpub(filePath);
+    ref
+        .read(bookImportProvider.notifier)
+        .importFiles(filePaths, format: 'epub');
   }
 
   Future<void> _importCbz(BuildContext context, WidgetRef ref) async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['cbz'],
-      allowMultiple: false,
+      allowMultiple: true,
     );
 
     if (result == null || result.files.isEmpty) return;
 
-    final filePath = result.files.single.path;
-    if (filePath == null) return;
+    final filePaths = result.files.map((f) => f.path).nonNulls.toList();
+    if (filePaths.isEmpty) return;
 
-    final book = await ref
+    final imported = await ref
         .read(bookImportProvider.notifier)
-        .importCbz(filePath);
-    if (book != null && context.mounted) {
+        .importFiles(filePaths, format: 'cbz');
+    if (imported > 0 && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.libraryImportedWithoutOcrMessage)),
       );

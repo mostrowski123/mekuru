@@ -113,6 +113,18 @@
       }
     }
   },
+  "libraryBatchImportProgress": "Importando {current} de {total}…",
+  "@libraryBatchImportProgress": {
+    "description": "Progress label shown while importing multiple files at once.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "librarySortTooltip": "Ordenar: {label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",
