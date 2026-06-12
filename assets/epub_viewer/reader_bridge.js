@@ -639,8 +639,8 @@ function processSectionForFurigana(doc) {
   var n;
   while ((n = walker.nextNode())) {
     var val = n.nodeValue;
-    if (_furiganaCache.has(val)) {
-      var cached = _furiganaCache.get(val);
+    var cached = _furiganaCache.get(val);
+    if (cached !== undefined) {
       // Failed lookups are cached too; skip them instead of re-requesting
       // the same un-annotatable text over the bridge on every re-render.
       if (!cached.failed) {

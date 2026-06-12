@@ -218,16 +218,13 @@ class EpubParser {
     // Extract title from <dc:title>, falling back to <title> without the
     // namespace prefix, then to the EPUB's own filename.
     String? title;
-    final titleElements = opfXml.findAllElements('dc:title');
-    if (titleElements.isNotEmpty) {
-      final t = titleElements.first.innerText.trim();
-      if (t.isNotEmpty) title = t;
-    }
-    if (title == null) {
-      final titleElements2 = opfXml.findAllElements('title');
-      if (titleElements2.isNotEmpty) {
-        final t = titleElements2.first.innerText.trim();
-        if (t.isNotEmpty) title = t;
+    for (final tag in const ['dc:title', 'title']) {
+      final elements = opfXml.findAllElements(tag);
+      if (elements.isEmpty) continue;
+      final t = elements.first.innerText.trim();
+      if (t.isNotEmpty) {
+        title = t;
+        break;
       }
     }
 

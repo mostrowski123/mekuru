@@ -262,7 +262,6 @@ class MecabService {
     Future<ByteData> Function(String key)? loadAsset,
   }) async {
     final load = loadAsset ?? rootBundle.load;
-    final usingDefaultLoader = loadAsset == null;
     if (!destDir.existsSync()) {
       destDir.createSync(recursive: true);
     }
@@ -297,7 +296,7 @@ class MecabService {
         );
         await writeBytesAtomic(destFile, bytes);
       }
-      if (usingDefaultLoader) {
+      if (loadAsset == null) {
         // rootBundle caches loaded assets; sys.dic alone is ~47 MB.
         rootBundle.evict('$assetPrefix/$fileName');
       }
