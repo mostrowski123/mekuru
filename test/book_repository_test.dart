@@ -34,6 +34,21 @@ void main() {
     await db.close();
   });
 
+  group('BookRepository.uniqueImportDirName', () {
+    test('produces unique names across rapid calls', () {
+      final names = <String>{};
+      for (var i = 0; i < 1000; i++) {
+        names.add(BookRepository.uniqueImportDirName('book'));
+      }
+      expect(names, hasLength(1000));
+    });
+
+    test('starts with the given prefix', () {
+      expect(BookRepository.uniqueImportDirName('manga'), startsWith('manga_'));
+      expect(BookRepository.uniqueImportDirName('book'), startsWith('book_'));
+    });
+  });
+
   group('BookRepository — queries', () {
     test('getAllBooks returns empty list initially', () async {
       final books = await repo.getAllBooks();

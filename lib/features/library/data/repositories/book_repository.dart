@@ -12,14 +12,26 @@ import 'package:mekuru/features/manga/data/services/mokuro_parser.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 /// Repository for book CRUD operations and EPUB import.
 class BookRepository {
   final AppDatabase _db;
   static const String originalMokuroOcrBackupFileName =
       'pages_cache.original_mokuro.json';
+  static const _uuid = Uuid();
 
   BookRepository(this._db);
+
+  /// Collision-proof directory name for an imported book: a sortable
+  /// timestamp plus a random suffix, so concurrent or rapid imports (e.g.
+  /// batch import) can never claim the same directory.
+  @visibleForTesting
+  static String uniqueImportDirName(String prefix) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final suffix = _uuid.v4().substring(0, 8);
+    return '${prefix}_${timestamp}_$suffix';
+  }
 
   // ──────────────── Queries ────────────────
 
@@ -60,9 +72,9 @@ class BookRepository {
     final appDir = await getApplicationSupportDirectory();
     final booksDir = Directory(p.join(appDir.path, 'books'));
 
-    // Generate a unique directory name for this book
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final bookDir = Directory(p.join(booksDir.path, 'book_$timestamp'));
+    final bookDir = Directory(
+      p.join(booksDir.path, uniqueImportDirName('book')),
+    );
     await bookDir.create(recursive: true);
 
     // Copy EPUB to app storage
@@ -189,7 +201,7 @@ class BookRepository {
         );
       }
 
-      return _importManifestWithPages(parsed.$1, parsed.$2, 0);
+      return _importManifestWithPages(parsed.$1, parsed.$2);
     } finally {
       if (tempReadPath != null) {
         try {
@@ -217,8 +229,9 @@ class BookRepository {
   }) async {
     final appDir = await getApplicationSupportDirectory();
     final booksDir = Directory(p.join(appDir.path, 'books'));
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final cacheDir = Directory(p.join(booksDir.path, 'manga_$timestamp'));
+    final cacheDir = Directory(
+      p.join(booksDir.path, uniqueImportDirName('manga')),
+    );
     await cacheDir.create(recursive: true);
 
     // Extract CBZ archive to cache directory (0–70% of progress)
@@ -286,13 +299,13 @@ class BookRepository {
   Future<Book> _importManifestWithPages(
     MokuroBookManifest manifest,
     List<MokuroPage> rawPages,
-    int index,
   ) async {
     final appDir = await getApplicationSupportDirectory();
     final booksDir = Directory(p.join(appDir.path, 'books'));
 
-    final timestamp = DateTime.now().millisecondsSinceEpoch + index;
-    final cacheDir = Directory(p.join(booksDir.path, 'manga_$timestamp'));
+    final cacheDir = Directory(
+      p.join(booksDir.path, uniqueImportDirName('manga')),
+    );
     await cacheDir.create(recursive: true);
 
     // Segment words using MeCab
