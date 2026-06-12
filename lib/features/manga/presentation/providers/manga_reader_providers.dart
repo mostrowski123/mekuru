@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/manga_lookup_override_storage.dart';
@@ -50,7 +51,7 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
       ocrCompleted: mokuroBook.ocrCompleted,
       pages: segmentedPages,
     );
-    await cacheFile.writeAsString(jsonEncode(updated.toJson()));
+    await writeStringAtomic(cacheFile, jsonEncode(updated.toJson()));
     return updated;
   }
 

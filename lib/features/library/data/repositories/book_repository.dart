@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
@@ -271,7 +272,7 @@ class BookRepository {
       pages: pages,
     );
     final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
-    await cacheFile.writeAsString(jsonEncode(mokuroBook.toJson()));
+    await writeStringAtomic(cacheFile, jsonEncode(mokuroBook.toJson()));
 
     debugPrint(
       '[CbzImport] Cached ${pages.length} pages for "${cbzMeta.title}"',
@@ -327,11 +328,11 @@ class BookRepository {
     );
     final cacheJson = jsonEncode(mokuroBook.toJson());
     final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
-    await cacheFile.writeAsString(cacheJson);
+    await writeStringAtomic(cacheFile, cacheJson);
     final originalBackupFile = File(
       p.join(cacheDir.path, originalMokuroOcrBackupFileName),
     );
-    await originalBackupFile.writeAsString(cacheJson);
+    await writeStringAtomic(originalBackupFile, cacheJson);
 
     debugPrint(
       '[MangaImport] Cached ${pages.length} pages for "${manifest.title}"',
@@ -515,7 +516,7 @@ class BookRepository {
       ocrCompleted: mokuroBook.ocrCompleted,
       pages: resegmented,
     );
-    await cacheFile.writeAsString(jsonEncode(updated.toJson()));
+    await writeStringAtomic(cacheFile, jsonEncode(updated.toJson()));
 
     debugPrint(
       '[MangaOCR] Reprocessed ${resegmented.length} pages for "${book.title}"',
@@ -544,7 +545,7 @@ class BookRepository {
       return;
     }
 
-    await backupFile.writeAsString(content);
+    await writeStringAtomic(backupFile, content);
     debugPrint('[MangaOCR] Backed up original Mokuro OCR for "${book.title}"');
   }
 
@@ -567,7 +568,7 @@ class BookRepository {
     final json = jsonDecode(content) as Map<String, dynamic>;
     MokuroBook.fromJson(json); // Validate the backup before restoring it.
 
-    await cacheFile.writeAsString(content);
+    await writeStringAtomic(cacheFile, content);
     debugPrint('[MangaOCR] Restored original Mokuro OCR for "${book.title}"');
     return true;
   }
@@ -603,7 +604,7 @@ class BookRepository {
       pages: clearedPages,
     );
 
-    await cacheFile.writeAsString(jsonEncode(updated.toJson()));
+    await writeStringAtomic(cacheFile, jsonEncode(updated.toJson()));
     debugPrint('[MangaOCR] Cleared OCR for "${book.title}"');
   }
 
@@ -658,7 +659,7 @@ class BookRepository {
       pages: withBounds,
     );
 
-    await cacheFile.writeAsString(jsonEncode(updated.toJson()));
+    await writeStringAtomic(cacheFile, jsonEncode(updated.toJson()));
     debugPrint(
       '[MangaAutoCrop] Computed bounds for ${withBounds.length} pages '
       'for "${book.title}"',

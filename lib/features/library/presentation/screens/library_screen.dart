@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -1649,7 +1650,7 @@ class _BookTileState extends ConsumerState<_BookTile>
         ocrCompleted: false,
         pages: clearedPages,
       );
-      await cacheFile.writeAsString(json.encode(cleared.toJson()));
+      await writeStringAtomic(cacheFile, json.encode(cleared.toJson()));
 
       await scheduleOcrTask(
         bookId: book.id,
