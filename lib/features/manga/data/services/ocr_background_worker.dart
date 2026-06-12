@@ -9,6 +9,7 @@ import 'package:workmanager/workmanager.dart';
 
 import '../../../../core/platform/android_saf_service.dart';
 import '../../../../core/services/firebase_runtime.dart';
+import '../../../../core/utils/atomic_file.dart';
 import '../../data/models/mokuro_models.dart';
 import '../../../settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
@@ -738,7 +739,9 @@ Future<void> _saveCache(
     ocrCompleted: ocrCompletedOverride ?? originalBook.ocrCompleted,
     pages: updatedPages,
   );
-  await cacheFile.writeAsString(json.encode(updated.toJson()));
+  // Atomic write: the WorkManager process can be killed mid-write, and a
+  // truncated cache would corrupt already-completed OCR results.
+  await writeStringAtomic(cacheFile, json.encode(updated.toJson()));
 }
 
 Future<void> _queuePendingOcrFinalization(String jobId, String status) async {
