@@ -602,6 +602,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadsEnhancedFuriganaInstalled => '已启用。如果更改尚未生效，请重启应用。';
 
   @override
+  String get downloadsEnhancedFuriganaUseTitle => 'Use enhanced dictionary';
+
+  @override
+  String get downloadsEnhancedFuriganaUseSubtitle =>
+      'Turn this off if tapping words stops working. The download is kept, and you can re-enable it anytime. Restart the app to apply.';
+
+  @override
   String get downloadsEnhancedFuriganaDescription =>
       '为约 10,000 个额外词条提供更准确的振假名。下载 45 MB，占用 250 MB 存储空间。';
 
@@ -1209,6 +1216,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get readerBookmarkRemoved => '书签已移除';
+
+  @override
+  String get readerDictionaryLoading =>
+      'Dictionary is still loading — try again in a moment.';
+
+  @override
+  String get readerDictionaryUnavailable =>
+      'Dictionary failed to load. Restart the app to try again.';
 
   @override
   String get readerPageBookmarked => '已添加书签';

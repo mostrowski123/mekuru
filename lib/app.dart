@@ -71,6 +71,11 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     unawaited(
       ref.read(readerSettingsProvider.notifier).loadPersistedSettings(),
     );
+    unawaited(
+      ref
+          .read(enhancedFuriganaDictEnabledProvider.notifier)
+          .loadPersistedSettings(),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

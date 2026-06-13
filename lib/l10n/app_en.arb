@@ -809,6 +809,14 @@
   "@downloadsEnhancedFuriganaInstalled": {
     "description": "Subtitle shown when the enhanced furigana dictionary is installed."
   },
+  "downloadsEnhancedFuriganaUseTitle": "Use enhanced dictionary",
+  "@downloadsEnhancedFuriganaUseTitle": {
+    "description": "Title of the toggle that enables or disables the installed enhanced furigana dictionary."
+  },
+  "downloadsEnhancedFuriganaUseSubtitle": "Turn this off if tapping words stops working. The download is kept, and you can re-enable it anytime. Restart the app to apply.",
+  "@downloadsEnhancedFuriganaUseSubtitle": {
+    "description": "Help text under the enhanced furigana dictionary enable/disable toggle."
+  },
   "downloadsEnhancedFuriganaDescription": "Improves furigana for ~10,000 additional words. 45 MB download, 250 MB on disk.",
   "@downloadsEnhancedFuriganaDescription": {
     "description": "Subtitle shown before the enhanced furigana dictionary is downloaded."
@@ -1631,6 +1639,14 @@
   "readerBookmarkRemoved": "Bookmark removed",
   "@readerBookmarkRemoved": {
     "description": "Snackbar shown after removing a bookmark."
+  },
+  "readerDictionaryLoading": "Dictionary is still loading — try again in a moment.",
+  "@readerDictionaryLoading": {
+    "description": "Snackbar shown when a word is tapped before MeCab has finished initializing."
+  },
+  "readerDictionaryUnavailable": "Dictionary failed to load. Restart the app to try again.",
+  "@readerDictionaryUnavailable": {
+    "description": "Snackbar shown when a word is tapped but MeCab failed to initialize."
   },
   "readerPageBookmarked": "Page bookmarked",
   "@readerPageBookmarked": {

@@ -1156,6 +1156,18 @@ abstract class AppLocalizations {
   /// **'Active. Restart the app if changes do not appear.'**
   String get downloadsEnhancedFuriganaInstalled;
 
+  /// Title of the toggle that enables or disables the installed enhanced furigana dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Use enhanced dictionary'**
+  String get downloadsEnhancedFuriganaUseTitle;
+
+  /// Help text under the enhanced furigana dictionary enable/disable toggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn this off if tapping words stops working. The download is kept, and you can re-enable it anytime. Restart the app to apply.'**
+  String get downloadsEnhancedFuriganaUseSubtitle;
+
   /// Subtitle shown before the enhanced furigana dictionary is downloaded.
   ///
   /// In en, this message translates to:
@@ -2187,6 +2199,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bookmark removed'**
   String get readerBookmarkRemoved;
+
+  /// Snackbar shown when a word is tapped before MeCab has finished initializing.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary is still loading — try again in a moment.'**
+  String get readerDictionaryLoading;
+
+  /// Snackbar shown when a word is tapped but MeCab failed to initialize.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary failed to load. Restart the app to try again.'**
+  String get readerDictionaryUnavailable;
 
   /// Snackbar shown after bookmarking the current page.
   ///

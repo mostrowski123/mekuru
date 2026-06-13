@@ -290,7 +290,10 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   }
 
   try {
-    await MecabService.instance.init();
+    // The OCR worker only needs word segmentation, which IPADIC provides.
+    // Skip the heavy UniDic-lite upgrade so this background isolate never
+    // loads the ~260 MB enhanced dictionary.
+    await MecabService.instance.init(upgradeToEnhanced: false);
   } catch (e) {
     debugPrint(
       '[OCR_WORKER] MeCab init failed (word segmentation may be skipped): $e',

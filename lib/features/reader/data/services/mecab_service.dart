@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -158,45 +160,51 @@ class MecabService {
   // retries after a failed init.
   late MecabFeatureLayout _layout;
 
+  /// Set when initialization fails outright (i.e. even the bundled IPADIC
+  /// could not be loaded). Word taps surface this instead of failing
+  /// silently. Cleared on a successful (re-)initialization.
+  Object? _initError;
+
+  /// Guards against starting more than one background UniDic-lite upgrade.
+  bool _upgradingToUnidic = false;
+
   /// The active feature-column layout, set by [init].
   MecabFeatureLayout get layout => _layout;
+
+  /// The error from the last failed [init], or `null` if MeCab initialized
+  /// successfully. Lets the UI explain why a word tap produced no result.
+  Object? get initError => _initError;
 
   /// Initialize MeCab. Safe to call multiple times, including concurrently:
   /// overlapping callers share the single in-flight initialization, and a
   /// failed attempt can be retried by calling again.
   ///
-  /// Chooses between the bundled IPADIC + gikun user-dictionary (default)
-  /// and the optional downloaded UniDic-lite (when the user has opted in
-  /// and the files are present). On UniDic-lite initialization failure,
-  /// falls back to IPADIC so the reader stays usable.
-  Future<void> init() {
-    return _initFuture ??= _doInit().onError((Object error, StackTrace st) {
+  /// Always brings up the bundled IPADIC + gikun user-dictionary first so
+  /// word taps work within a moment of launch. If the user has opted into
+  /// the optional UniDic-lite dictionary and it is installed, that heavier
+  /// dictionary is then loaded off the main isolate and swapped in when
+  /// ready (see [_upgradeToUnidicLite]) — it never blocks taps or the UI.
+  ///
+  /// Set [upgradeToEnhanced] to `false` to stay on the lightweight IPADIC
+  /// dictionary even when UniDic-lite is enabled. Background isolates that
+  /// only need word segmentation (e.g. the OCR worker) pass `false` so they
+  /// don't pay the ~260 MB UniDic load.
+  Future<void> init({bool upgradeToEnhanced = true}) {
+    return _initFuture ??= _doInit(
+      upgradeToEnhanced: upgradeToEnhanced,
+    ).onError((Object error, StackTrace st) {
       _initFuture = null; // allow a later retry
+      _initError = error;
       Error.throwWithStackTrace(error, st);
     });
   }
 
-  Future<void> _doInit() async {
+  Future<void> _doInit({required bool upgradeToEnhanced}) async {
     if (_initialized) return;
 
-    if (await EnhancedFuriganaDictDownloadService.shouldUse()) {
-      try {
-        final dictPath =
-            await EnhancedFuriganaDictDownloadService.getStorageDir();
-        debugPrint(
-          '[MeCab] Initializing (UniDic-lite) with dict path: $dictPath',
-        );
-        _tagger = await Mecab.create(dictDir: dictPath);
-        _layout = MecabFeatureLayout.unidicLite;
-        _initialized = true;
-        return;
-      } catch (e) {
-        debugPrint(
-          '[MeCab] UniDic-lite init failed, falling back to IPADIC: $e',
-        );
-      }
-    }
-
+    // IPADIC is small (~50 MB) and loads quickly, so we bring it up
+    // synchronously here to get word taps working immediately. The optional
+    // UniDic-lite dictionary (~260 MB) is loaded later in the background.
     final dictPath = await _getDictDir();
     final userDictPath = await _getUserDictPath();
     _layout = MecabFeatureLayout.ipadic;
@@ -209,6 +217,64 @@ class MecabService {
       options: '-u "$userDictPath"',
     );
     _initialized = true;
+    _initError = null;
+    debugPrint('[MeCab] IPADIC ready — word taps enabled');
+
+    // Opt-in upgrade. Fire-and-forget: any failure simply leaves the reader
+    // on IPADIC, which is fully functional.
+    if (upgradeToEnhanced &&
+        await EnhancedFuriganaDictDownloadService.shouldUse()) {
+      unawaited(_upgradeToUnidicLite());
+    }
+  }
+
+  /// Load the optional UniDic-lite dictionary off the main isolate and swap
+  /// it in once ready, without ever blocking word taps.
+  ///
+  /// The heavy native dictionary load (`mecab_model_new`, ~260 MB) runs in a
+  /// throwaway background isolate. mecab_for_dart keeps loaded models in a
+  /// process-global, reference-counted registry keyed by dictionary path, so
+  /// once the background isolate has populated it, creating the tagger on the
+  /// main isolate is cheap — it just attaches to the already-resident model.
+  Future<void> _upgradeToUnidicLite() async {
+    if (_upgradingToUnidic) return;
+    _upgradingToUnidic = true;
+    try {
+      final dictPath =
+          await EnhancedFuriganaDictDownloadService.getStorageDir();
+      debugPrint('[MeCab] Warming UniDic-lite in background isolate…');
+      await _warmModelInBackground(dictPath);
+
+      // The model is now resident in the registry; this attaches cheaply.
+      final unidicTagger = await Mecab.create(dictDir: dictPath);
+
+      // Atomic swap. Reassigning a single field is synchronous, so no
+      // concurrent parse() can observe a half-initialized state. Dispose the
+      // IPADIC tagger afterwards to release its (smaller) model.
+      final previous = _tagger;
+      _tagger = unidicTagger;
+      _layout = MecabFeatureLayout.unidicLite;
+      previous?.dispose();
+      debugPrint('[MeCab] Upgraded to UniDic-lite');
+    } catch (e) {
+      debugPrint('[MeCab] UniDic-lite upgrade failed, staying on IPADIC: $e');
+    } finally {
+      _upgradingToUnidic = false;
+    }
+  }
+
+  /// Populate mecab_for_dart's process-global model registry by creating (and
+  /// intentionally not disposing) a tagger for [dictDir] inside a short-lived
+  /// background isolate. The native model persists in the registry after the
+  /// isolate exits — `Mecab` has no finalizer that frees it — so the caller
+  /// can attach to it cheaply on the main isolate.
+  static Future<void> _warmModelInBackground(String dictDir) {
+    return Isolate.run(() async {
+      // Creating the tagger triggers the heavy mecab_model_new load. We do
+      // NOT dispose it: keeping the registry refcount >= 1 ensures the model
+      // outlives this isolate so the main isolate reuses it.
+      await Mecab.create(dictDir: dictDir);
+    });
   }
 
   /// List of files that make up an IPAdic MeCab dictionary.
@@ -320,6 +386,18 @@ class MecabService {
 
   /// Whether MeCab has been initialized.
   bool get isInitialized => _initialized;
+
+  /// Tears down the singleton so an integration test can exercise [init] from
+  /// a clean state. Tests only — never call in production code.
+  @visibleForTesting
+  Future<void> resetForTest() async {
+    _initFuture = null;
+    _upgradingToUnidic = false;
+    _initialized = false;
+    _initError = null;
+    _tagger?.dispose();
+    _tagger = null;
+  }
 
   /// Tokenize [text] into a list of surface forms.
   ///

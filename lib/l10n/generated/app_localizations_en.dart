@@ -630,6 +630,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Active. Restart the app if changes do not appear.';
 
   @override
+  String get downloadsEnhancedFuriganaUseTitle => 'Use enhanced dictionary';
+
+  @override
+  String get downloadsEnhancedFuriganaUseSubtitle =>
+      'Turn this off if tapping words stops working. The download is kept, and you can re-enable it anytime. Restart the app to apply.';
+
+  @override
   String get downloadsEnhancedFuriganaDescription =>
       'Improves furigana for ~10,000 additional words. 45 MB download, 250 MB on disk.';
 
@@ -1262,6 +1269,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readerBookmarkRemoved => 'Bookmark removed';
+
+  @override
+  String get readerDictionaryLoading =>
+      'Dictionary is still loading — try again in a moment.';
+
+  @override
+  String get readerDictionaryUnavailable =>
+      'Dictionary failed to load. Restart the app to try again.';
 
   @override
   String get readerPageBookmarked => 'Page bookmarked';

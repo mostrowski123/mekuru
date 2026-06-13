@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
@@ -32,6 +33,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
       ref.read(jmdictProvider.notifier).checkStatus();
       ref.read(kanjidicProvider.notifier).checkStatus();
       ref.read(enhancedFuriganaDictProvider.notifier).checkStatus();
+      ref
+          .read(enhancedFuriganaDictEnabledProvider.notifier)
+          .loadPersistedSettings();
     });
   }
 
@@ -267,6 +271,25 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             state: enhancedFuriganaState,
             theme: theme,
           ),
+          // Kill-switch: lets the user disable the enhanced dictionary
+          // without deleting the ~250 MB download. Useful as a recovery step
+          // if word tapping ever stops working on a particular device.
+          if (enhancedFuriganaState.isInstalled)
+            SwitchListTile(
+              secondary: Icon(
+                Icons.tune_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(l10n.downloadsEnhancedFuriganaUseTitle),
+              subtitle: Text(l10n.downloadsEnhancedFuriganaUseSubtitle),
+              value: ref.watch(enhancedFuriganaDictEnabledProvider),
+              onChanged: (value) {
+                AppHaptics.light();
+                ref
+                    .read(enhancedFuriganaDictEnabledProvider.notifier)
+                    .setEnabled(value);
+              },
+            ),
           if (enhancedFuriganaState.isDownloading)
             _DownloadProgress(
               progress: enhancedFuriganaState.progress,

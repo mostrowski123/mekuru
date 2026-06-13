@@ -702,6 +702,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         '[READER] wordTapped but MeCab could not identify word '
         '(char="$tappedChar" offset=$charOffset)',
       );
+      // The dictionary is still loading, or failed to load. Surface that
+      // instead of leaving the tap looking broken.
+      if (!mecab.isInitialized && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              mecab.initError != null
+                  ? context.l10n.readerDictionaryUnavailable
+                  : context.l10n.readerDictionaryLoading,
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
       return;
     }
 
