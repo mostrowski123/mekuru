@@ -804,6 +804,10 @@ class DictionaryQueryService {
             _prefixMatchCondition(t, [term]) &
             t.dictionaryId.isIn(cache.enabledIds),
       )
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.expression.length),
+        (t) => OrderingTerm.asc(t.id),
+      ])
       ..limit(limit);
 
     final rows = await query.get();
@@ -1023,6 +1027,14 @@ class DictionaryQueryService {
         (t) =>
             t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
       )
+      // Relevance-order BEFORE the cap: the shorter the glossary, the larger
+      // the fraction of it the searched term occupies ("to eat" over an
+      // encyclopedic gloss that merely contains "eat"). Without an ORDER BY
+      // the cap keeps whichever rows the scan visits first.
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.glossaries.length),
+        (t) => OrderingTerm.asc(t.id),
+      ])
       ..limit(fetchLimit);
 
     final rows = await query.get();
@@ -1057,6 +1069,10 @@ class DictionaryQueryService {
         (t) =>
             t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
       )
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.glossaries.length),
+        (t) => OrderingTerm.asc(t.id),
+      ])
       ..limit(limit);
 
     final rows = await query.get();
@@ -1153,6 +1169,13 @@ class DictionaryQueryService {
             _prefixMatchCondition(t, nonEmptyTerms) &
             t.dictionaryId.isIn(cache.enabledIds),
       )
+      // Relevance-order BEFORE the cap: shortest expressions are the
+      // closest completions of a prefix (and skew common), and without an
+      // ORDER BY the cap keeps whichever rows the query plan visits first.
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.expression.length),
+        (t) => OrderingTerm.asc(t.id),
+      ])
       ..limit(limit);
 
     final rows = await query.get();
