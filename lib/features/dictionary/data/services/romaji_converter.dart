@@ -54,6 +54,44 @@ class RomajiConverter {
     'pya': 'ぴゃ',
     'pyu': 'ぴゅ',
     'pyo': 'ぴょ',
+    // Kunrei-shiki palatalized
+    'sya': 'しゃ',
+    'syu': 'しゅ',
+    'syo': 'しょ',
+    'tya': 'ちゃ',
+    'tyu': 'ちゅ',
+    'tyo': 'ちょ',
+    'zya': 'じゃ',
+    'zyu': 'じゅ',
+    'zyo': 'じょ',
+    'dya': 'ぢゃ',
+    'dyu': 'ぢゅ',
+    'dyo': 'ぢょ',
+    // t/d + small vowel (パーティー-style loanwords)
+    'tha': 'てゃ',
+    'thi': 'てぃ',
+    'thu': 'てゅ',
+    'the': 'てぇ',
+    'tho': 'てょ',
+    'dha': 'でゃ',
+    'dhi': 'でぃ',
+    'dhu': 'でゅ',
+    'dhe': 'でぇ',
+    'dho': 'でょ',
+    // w-row loanword sounds
+    'wha': 'うぁ',
+    'whi': 'うぃ',
+    'whe': 'うぇ',
+    'who': 'うぉ',
+    // Small kana
+    'xya': 'ゃ',
+    'xyu': 'ゅ',
+    'xyo': 'ょ',
+    'lya': 'ゃ',
+    'lyu': 'ゅ',
+    'lyo': 'ょ',
+    'xtu': 'っ',
+    'ltu': 'っ',
     // 2-char basic syllables
     'ka': 'か',
     'ki': 'き',
@@ -95,8 +133,10 @@ class RomajiConverter {
     're': 'れ',
     'ro': 'ろ',
     'wa': 'わ',
-    'wi': 'ゐ',
-    'we': 'ゑ',
+    // Wapuro convention: wi/we produce うぃ/うぇ (ウィスキー), not the
+    // archaic ゐ/ゑ, matching what IMEs and jisho.org do.
+    'wi': 'うぃ',
+    'we': 'うぇ',
     'wo': 'を',
     'ga': 'が',
     'gi': 'ぎ',
@@ -115,7 +155,30 @@ class RomajiConverter {
     'do': 'ど',
     'ja': 'じゃ',
     'ju': 'じゅ',
+    'je': 'じぇ',
     'jo': 'じょ',
+    'ye': 'いぇ',
+    // f-row and v-row loanword sounds
+    'fa': 'ふぁ',
+    'fi': 'ふぃ',
+    'fe': 'ふぇ',
+    'fo': 'ふぉ',
+    'va': 'ゔぁ',
+    'vi': 'ゔぃ',
+    'vu': 'ゔ',
+    've': 'ゔぇ',
+    'vo': 'ゔぉ',
+    // Small vowels
+    'xa': 'ぁ',
+    'xi': 'ぃ',
+    'xu': 'ぅ',
+    'xe': 'ぇ',
+    'xo': 'ぉ',
+    'la': 'ぁ',
+    'li': 'ぃ',
+    'lu': 'ぅ',
+    'le': 'ぇ',
+    'lo': 'ぉ',
     'ba': 'ば',
     'bi': 'び',
     'bu': 'ぶ',
@@ -136,13 +199,16 @@ class RomajiConverter {
     'o': 'お',
   };
 
-  /// Returns `true` if [text] looks like romaji (ASCII letters only).
+  /// Returns `true` if [text] looks like romaji: starts with an ASCII
+  /// letter, followed by letters and the separators wapuro input uses —
+  /// spaces ("ohayou gozaimasu"), hyphens for ー ("ka-do"), and apostrophes
+  /// after ん ("kon'nichiwa").
   static bool isRomaji(String text) {
     if (text.isEmpty) return false;
     return _romajiPattern.hasMatch(text);
   }
 
-  static final _romajiPattern = RegExp(r'^[a-zA-Z]+$');
+  static final _romajiPattern = RegExp(r"^[a-zA-Z][a-zA-Z '\-]*$");
 
   /// Convert [romaji] to hiragana. Non-convertible trailing characters
   /// are stripped so the result is pure hiragana suitable for prefix search.
@@ -152,6 +218,19 @@ class RomajiConverter {
     var i = 0;
 
     while (i < input.length) {
+      // Separators: spaces and apostrophes (syllable break after ん) are
+      // skipped; a hyphen is wapuro input for the prolonged sound mark.
+      final ch = input[i];
+      if (ch == ' ' || ch == "'") {
+        i++;
+        continue;
+      }
+      if (ch == '-') {
+        buffer.write('ー');
+        i++;
+        continue;
+      }
+
       // Syllabic n handling.
       // - "n" before consonant or end -> ん
       // - "nn" before vowel/y -> first n becomes ん, second starts next syllable
@@ -185,9 +264,11 @@ class RomajiConverter {
         }
       }
 
-      // Double consonant → っ (not 'n', which is handled by 'nn' mapping)
+      // Double consonant → っ (not 'n', which is handled by 'nn' mapping;
+      // only ASCII letters qualify — repeated separators are not sokuon)
       if (i + 1 < input.length &&
           input[i] == input[i + 1] &&
+          _isAsciiLetter(input[i]) &&
           !_vowels.contains(input[i]) &&
           input[i] != 'n') {
         buffer.write('っ');
@@ -239,5 +320,80 @@ class RomajiConverter {
       }
     }
     return buffer.toString();
+  }
+
+  /// Convert hiragana characters to katakana (offset 0x60). Loanwords are
+  /// stored in katakana in Yomitan dictionaries, so hiragana and romaji
+  /// input needs a katakana variant to reach カード-style entries.
+  static String hiraganaToKatakana(String text) {
+    final buffer = StringBuffer();
+    for (final rune in text.runes) {
+      if (rune >= 0x3041 && rune <= 0x3096) {
+        buffer.writeCharCode(rune + 0x60);
+      } else {
+        buffer.writeCharCode(rune);
+      }
+    }
+    return buffer.toString();
+  }
+
+  /// Collapse long vowels in [katakana] into the prolonged sound mark:
+  /// repeated vowels (カアド → カード) plus the standard digraphs エイ → エー
+  /// and オウ → オー. ン and ッ break the vowel run. Katakana loanwords are
+  /// written with ー, so a phonetic spelling (kaado → カアド) needs this
+  /// variant to match カード.
+  static String collapseKatakanaLongVowels(String katakana) {
+    final buffer = StringBuffer();
+    String? vowelClass;
+    for (final rune in katakana.runes) {
+      if (rune == 0x30FC) {
+        // ー: keep, and the vowel run continues through it.
+        buffer.writeCharCode(rune);
+        continue;
+      }
+
+      final standalone = switch (rune) {
+        0x30A2 => 'a',
+        0x30A4 => 'i',
+        0x30A6 => 'u',
+        0x30A8 => 'e',
+        0x30AA => 'o',
+        _ => null,
+      };
+      if (standalone != null &&
+          vowelClass != null &&
+          (standalone == vowelClass ||
+              (standalone == 'i' && vowelClass == 'e') ||
+              (standalone == 'u' && vowelClass == 'o'))) {
+        buffer.write('ー');
+        continue;
+      }
+
+      buffer.writeCharCode(rune);
+      final hiragana = (rune >= 0x30A1 && rune <= 0x30F6) ? rune - 0x60 : rune;
+      vowelClass = _kanaVowelClass[hiragana];
+    }
+    return buffer.toString();
+  }
+
+  /// Vowel class of each kana, derived from [_mappings] (the romaji key's
+  /// final letter names the vowel of the mapping's final kana). っ is
+  /// excluded — it carries no vowel for long-vowel purposes.
+  static final Map<int, String> _kanaVowelClass = _buildKanaVowelClass();
+
+  static Map<int, String> _buildKanaVowelClass() {
+    final map = <int, String>{};
+    _mappings.forEach((romaji, kana) {
+      final vowel = romaji[romaji.length - 1];
+      if (!_vowels.contains(vowel)) return;
+      map[kana.runes.last] = vowel;
+    });
+    map.remove(0x3063); // っ
+    return map;
+  }
+
+  static bool _isAsciiLetter(String char) {
+    final code = char.codeUnitAt(0);
+    return code >= 0x61 && code <= 0x7A; // input is lowercased before use
   }
 }

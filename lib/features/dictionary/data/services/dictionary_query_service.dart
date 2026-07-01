@@ -881,6 +881,22 @@ class DictionaryQueryService {
       searchTerms.add(hiraganaVersion);
     }
 
+    // Loanwords are stored in katakana (expression AND reading), so kana
+    // terms — typed directly or romaji-converted — also need their katakana
+    // form, plus a long-vowel-collapsed variant so phonetic spellings reach
+    // the ー orthography (kaado → カアド → カード).
+    for (final t in searchTerms.toList()) {
+      if (!_isKanaOnly(t)) continue;
+      final katakana = RomajiConverter.hiraganaToKatakana(t);
+      if (katakana != t && !searchTerms.contains(katakana)) {
+        searchTerms.add(katakana);
+      }
+      final collapsed = RomajiConverter.collapseKatakanaLongVowels(katakana);
+      if (collapsed != katakana && !searchTerms.contains(collapsed)) {
+        searchTerms.add(collapsed);
+      }
+    }
+
     // 1. Exact matches (highest priority — always on top)
     exactMatchTerms.addAll(searchTerms);
     for (final t in searchTerms) {
