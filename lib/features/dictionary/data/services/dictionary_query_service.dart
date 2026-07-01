@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:drift/drift.dart';
 import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/services/prefix_query_bounds.dart';
 import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
 
@@ -797,11 +798,10 @@ class DictionaryQueryService {
     final cache = await _ensureMetasCached();
     if (cache.enabledIds.isEmpty) return [];
 
-    final pattern = '$term%';
     final query = _db.select(_db.dictionaryEntries)
       ..where(
         (t) =>
-            (t.expression.like(pattern) | t.reading.like(pattern)) &
+            _prefixMatchCondition(t, [term]) &
             t.dictionaryId.isIn(cache.enabledIds),
       )
       ..limit(limit);
@@ -1147,24 +1147,48 @@ class DictionaryQueryService {
     final cache = await _ensureMetasCached();
     if (cache.enabledIds.isEmpty) return [];
 
-    final patterns = nonEmptyTerms.map((t) => '$t%').toList(growable: false);
-
     final query = _db.select(_db.dictionaryEntries)
-      ..where((t) {
-        Expression<bool>? condition;
-        for (final pattern in patterns) {
-          final termCondition =
-              t.expression.like(pattern) | t.reading.like(pattern);
-          condition = condition == null
-              ? termCondition
-              : (condition | termCondition);
-        }
-        return condition! & t.dictionaryId.isIn(cache.enabledIds);
-      })
+      ..where(
+        (t) =>
+            _prefixMatchCondition(t, nonEmptyTerms) &
+            t.dictionaryId.isIn(cache.enabledIds),
+      )
       ..limit(limit);
 
     final rows = await query.get();
     return _mapEntriesWithSourceUnsorted(rows, cache);
+  }
+
+  /// Index-friendly prefix condition over expression and reading. BINARY
+  /// range scans (`col >= prefix AND col < upperBound`) hit idx_expression /
+  /// idx_reading, unlike `LIKE 'prefix%'`, which SQLite cannot optimize
+  /// while case_sensitive_like is OFF. ASCII terms are expanded into case
+  /// variants to keep "dvd" matching "DVD".
+  Expression<bool> _prefixMatchCondition(
+    $DictionaryEntriesTable t,
+    List<String> terms,
+  ) {
+    Expression<bool>? condition;
+    for (final term in terms) {
+      for (final variant in prefixSearchVariants(term)) {
+        final upper = prefixUpperBound(variant);
+        final Expression<bool> termCondition;
+        if (upper == null) {
+          termCondition =
+              t.expression.like('$variant%') | t.reading.like('$variant%');
+        } else {
+          termCondition =
+              (t.expression.isBiggerOrEqualValue(variant) &
+                  t.expression.isSmallerThanValue(upper)) |
+              (t.reading.isBiggerOrEqualValue(variant) &
+                  t.reading.isSmallerThanValue(upper));
+        }
+        condition = condition == null
+            ? termCondition
+            : (condition | termCondition);
+      }
+    }
+    return condition ?? const Constant(false);
   }
 
   static bool _isKanji(String char) {
