@@ -804,10 +804,7 @@ class DictionaryQueryService {
             _prefixMatchCondition(t, [term]) &
             t.dictionaryId.isIn(cache.enabledIds),
       )
-      ..orderBy([
-        (t) => OrderingTerm.asc(t.expression.length),
-        (t) => OrderingTerm.asc(t.id),
-      ])
+      ..orderBy(_shortestFirst((t) => t.expression))
       ..limit(limit);
 
     final rows = await query.get();
@@ -835,6 +832,52 @@ class DictionaryQueryService {
   /// then glossary matches. Within each tier, results are sorted by frequency
   /// rank (most common first). Fuzzy and glossary tiers preserve their
   /// match-quality ordering as a secondary signal.
+  /// All orthographic variants of [term] worth searching: the term itself,
+  /// a hiragana conversion for romaji input, a hiragana version of katakana
+  /// input, and — because loanwords are stored in katakana (expression AND
+  /// reading) — katakana forms of every kana term plus long-vowel-collapsed
+  /// variants so phonetic spellings reach the ー orthography
+  /// (kaado → かあど → カアド → カード).
+  List<String> _expandSearchTerms(String term) {
+    final terms = <String>[term];
+
+    void add(String candidate) {
+      if (candidate.isNotEmpty && !terms.contains(candidate)) {
+        terms.add(candidate);
+      }
+    }
+
+    if (RomajiConverter.isRomaji(term)) {
+      add(RomajiConverter.convert(term));
+    }
+
+    add(RomajiConverter.katakanaToHiragana(term));
+
+    for (final t in terms.toList()) {
+      if (!_isKanaOnly(t)) continue;
+      final katakana = RomajiConverter.hiraganaToKatakana(t);
+      add(katakana);
+      add(RomajiConverter.collapseKatakanaLongVowels(katakana));
+    }
+
+    return terms;
+  }
+
+  /// Relevance ordering applied BEFORE a LIMIT cap: ascending length of the
+  /// column that best predicts a tight match (the searched text occupies the
+  /// largest fraction of it), tie-broken by id for determinism. Without
+  /// this, a capped candidate query keeps whichever rows the query plan
+  /// visits first, and the best match can be crowded out of the pool
+  /// entirely.
+  List<OrderingTerm Function($DictionaryEntriesTable)> _shortestFirst(
+    GeneratedColumn<String> Function($DictionaryEntriesTable) lengthColumn,
+  ) {
+    return [
+      (t) => OrderingTerm.asc(lengthColumn(t).length),
+      (t) => OrderingTerm.asc(t.id),
+    ];
+  }
+
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
     String term,
   ) async {
@@ -865,43 +908,16 @@ class DictionaryQueryService {
     }
 
     // Build search terms based on input type
-    final searchTerms = <String>[term];
+    final searchTerms = _expandSearchTerms(term);
     final isRomaji = RomajiConverter.isRomaji(term);
 
-    if (isRomaji) {
-      final hiragana = RomajiConverter.convert(term);
-      if (hiragana.isNotEmpty) {
-        searchTerms.add(hiragana);
-      }
-    }
-
-    // If input contains katakana, also try the hiragana version
-    final hiraganaVersion = RomajiConverter.katakanaToHiragana(term);
-    if (hiraganaVersion != term && !searchTerms.contains(hiraganaVersion)) {
-      searchTerms.add(hiraganaVersion);
-    }
-
-    // Loanwords are stored in katakana (expression AND reading), so kana
-    // terms — typed directly or romaji-converted — also need their katakana
-    // form, plus a long-vowel-collapsed variant so phonetic spellings reach
-    // the ー orthography (kaado → カアド → カード).
-    for (final t in searchTerms.toList()) {
-      if (!_isKanaOnly(t)) continue;
-      final katakana = RomajiConverter.hiraganaToKatakana(t);
-      if (katakana != t && !searchTerms.contains(katakana)) {
-        searchTerms.add(katakana);
-      }
-      final collapsed = RomajiConverter.collapseKatakanaLongVowels(katakana);
-      if (collapsed != katakana && !searchTerms.contains(collapsed)) {
-        searchTerms.add(collapsed);
-      }
-    }
-
-    // 1. Exact matches (highest priority — always on top)
+    // 1. Exact matches (highest priority — always on top), one batched
+    // query across all orthographic variants.
     exactMatchTerms.addAll(searchTerms);
-    for (final t in searchTerms) {
-      addTo(exactResults, await _searchWithSourceNoFrequency(t, cache));
-    }
+    addTo(
+      exactResults,
+      await _searchMultipleWithSourceNoFrequency(searchTerms, cache),
+    );
 
     // 1b. Deinflected exact matches (same tier as exact).
     // Reverses conjugation to find base forms (e.g., 行って → 行く, 行う).
@@ -1043,14 +1059,7 @@ class DictionaryQueryService {
         (t) =>
             t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
       )
-      // Relevance-order BEFORE the cap: the shorter the glossary, the larger
-      // the fraction of it the searched term occupies ("to eat" over an
-      // encyclopedic gloss that merely contains "eat"). Without an ORDER BY
-      // the cap keeps whichever rows the scan visits first.
-      ..orderBy([
-        (t) => OrderingTerm.asc(t.glossaries.length),
-        (t) => OrderingTerm.asc(t.id),
-      ])
+      ..orderBy(_shortestFirst((t) => t.glossaries))
       ..limit(fetchLimit);
 
     final rows = await query.get();
@@ -1085,10 +1094,7 @@ class DictionaryQueryService {
         (t) =>
             t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
       )
-      ..orderBy([
-        (t) => OrderingTerm.asc(t.glossaries.length),
-        (t) => OrderingTerm.asc(t.id),
-      ])
+      ..orderBy(_shortestFirst((t) => t.glossaries))
       ..limit(limit);
 
     final rows = await query.get();
@@ -1185,13 +1191,7 @@ class DictionaryQueryService {
             _prefixMatchCondition(t, nonEmptyTerms) &
             t.dictionaryId.isIn(cache.enabledIds),
       )
-      // Relevance-order BEFORE the cap: shortest expressions are the
-      // closest completions of a prefix (and skew common), and without an
-      // ORDER BY the cap keeps whichever rows the query plan visits first.
-      ..orderBy([
-        (t) => OrderingTerm.asc(t.expression.length),
-        (t) => OrderingTerm.asc(t.id),
-      ])
+      ..orderBy(_shortestFirst((t) => t.expression))
       ..limit(limit);
 
     final rows = await query.get();
