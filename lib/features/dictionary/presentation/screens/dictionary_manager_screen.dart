@@ -639,6 +639,7 @@ class _DictionaryManagerScreenState
     try {
       final service = ref.read(dictionaryQueryServiceProvider);
       final report = await LookupBenchmark(service).run();
+      final fuzzyReport = await FuzzySearchBenchmark(service).run();
       if (!mounted) return;
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
@@ -647,6 +648,7 @@ class _DictionaryManagerScreenState
             'p50 ${(report.legacyP50 / 1000).toStringAsFixed(1)}ms → '
             '${(report.batchedP50 / 1000).toStringAsFixed(1)}ms '
             '(${report.speedupP50.toStringAsFixed(1)}× faster). '
+            'Fuzzy p50 ${(fuzzyReport.p50 / 1000).toStringAsFixed(1)}ms. '
             'See console for details.',
           ),
           duration: const Duration(seconds: 8),

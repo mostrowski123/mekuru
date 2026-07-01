@@ -126,6 +126,118 @@ class LookupBenchmark {
   }
 }
 
+/// Times [DictionaryQueryService.fuzzySearchWithSource] — the search-screen
+/// path — against a fixed corpus covering kanji, kana, katakana, romaji, and
+/// English queries. Unlike [LookupBenchmark] there is no A/B flag: run it
+/// before and after a change (same corpus, same seed data) and compare the
+/// printed per-query medians.
+class FuzzySearchBenchmark {
+  FuzzySearchBenchmark(this._service);
+
+  final DictionaryQueryService _service;
+
+  /// Stable search-screen corpus. Every input family the screen accepts is
+  /// represented so a regression in any one path shows up. Keep this list
+  /// stable so successive runs stay comparable.
+  static const List<String> corpus = [
+    // Exact kanji words
+    '食べる', '日本語', '学校', '時間',
+    // Inflected forms (exercise deinflection)
+    '食べた', '行った',
+    // Kana words
+    'たべる', 'にほんご',
+    // Short kana prefixes (worst-case candidate fetches)
+    'た', 'しん',
+    // Katakana and hiragana-with-long-vowel loanword queries
+    'カード', 'コーヒー', 'かーど',
+    // Romaji
+    'taberu', 'nihongo', 'kaado', 'gakkou',
+    // English glossary lookups
+    'eat', 'run', 'school', 'teacher',
+  ];
+
+  /// Run the benchmark and return the report. Each query is timed [reps]
+  /// times after [warmupRuns] full-corpus warmups; the per-query median is
+  /// reported to damp GC/IO noise. Also prints via [debugPrint].
+  Future<FuzzySearchReport> run({int warmupRuns = 1, int reps = 5}) async {
+    _service.invalidateMetasCache();
+
+    for (var i = 0; i < warmupRuns; i++) {
+      for (final q in corpus) {
+        await _service.fuzzySearchWithSource(q);
+      }
+    }
+
+    final medians = <String, int>{};
+    final resultCounts = <String, int>{};
+    final stopwatch = Stopwatch();
+
+    for (final q in corpus) {
+      final times = <int>[];
+      var count = 0;
+      for (var r = 0; r < reps; r++) {
+        stopwatch
+          ..reset()
+          ..start();
+        final results = await _service.fuzzySearchWithSource(q);
+        stopwatch.stop();
+        times.add(stopwatch.elapsedMicroseconds);
+        count = results.length;
+      }
+      times.sort();
+      medians[q] = times[times.length ~/ 2];
+      resultCounts[q] = count;
+    }
+
+    final report = FuzzySearchReport._(
+      medians: medians,
+      resultCounts: resultCounts,
+    );
+    debugPrint(report.summary());
+    return report;
+  }
+}
+
+/// Per-query and aggregate timings for the fuzzy search benchmark.
+class FuzzySearchReport {
+  FuzzySearchReport._({
+    required Map<String, int> medians,
+    required Map<String, int> resultCounts,
+  })  : _medians = medians,
+        _resultCounts = resultCounts,
+        _aggregate = _PathTimings(
+          label: 'fuzzy',
+          durationsMicros: medians.values.toList(),
+        );
+
+  final Map<String, int> _medians;
+  final Map<String, int> _resultCounts;
+  final _PathTimings _aggregate;
+
+  Map<String, int> get medianMicrosByQuery => Map.unmodifiable(_medians);
+
+  int get p50 => _aggregate.p50;
+  int get p95 => _aggregate.p95;
+  double get mean => _aggregate.mean;
+
+  String summary() {
+    String fmtMicros(num micros) =>
+        '${(micros / 1000).toStringAsFixed(2)} ms';
+    final lines = [
+      '[FuzzySearchBenchmark] n=${_medians.length} queries',
+      'aggregate  p50=${fmtMicros(p50)}  p95=${fmtMicros(p95)}  '
+          'mean=${fmtMicros(mean)}',
+    ];
+    for (final entry in _medians.entries) {
+      lines.add(
+        '  ${entry.key.padRight(12)} ${fmtMicros(entry.value).padLeft(10)}  '
+        '(${_resultCounts[entry.key]} results)',
+      );
+    }
+    return lines.join('\n');
+  }
+}
+
 class _PathTimings {
   _PathTimings({required this.label, required this.durationsMicros}) {
     final sorted = [...durationsMicros]..sort();
