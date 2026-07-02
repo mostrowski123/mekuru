@@ -1036,49 +1036,91 @@ class DictionaryQueryService {
     int directLimit = 30,
     int candidateLimit = 100,
   }) async {
-    if (term.isEmpty || cache.enabledIds.isEmpty) {
-      return (
-        directMatches: <DictionaryEntryWithSource>[],
-        fuzzyCandidates: <DictionaryEntryWithSource>[],
-      );
-    }
-
     final fetchLimit = directLimit > candidateLimit
         ? directLimit
         : candidateLimit;
-    if (fetchLimit <= 0) {
-      return (
-        directMatches: <DictionaryEntryWithSource>[],
-        fuzzyCandidates: <DictionaryEntryWithSource>[],
-      );
-    }
-
-    final pattern = '%$term%';
-    final query = _db.select(_db.dictionaryEntries)
-      ..where(
-        (t) =>
-            t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
-      )
-      ..orderBy(_shortestFirst((t) => t.glossaries))
-      ..limit(fetchLimit);
-
-    final rows = await query.get();
-    final allMatches = _mapEntriesWithSourceUnsorted(rows, cache);
-
-    final directMatches = allMatches.take(directLimit).toList();
-    _sortWithSourceBySortOrder(directMatches, cache);
+    final allMatches = await _fetchGlossaryMatches(
+      term,
+      cache,
+      limit: fetchLimit,
+    );
 
     return (
-      directMatches: directMatches,
+      directMatches: allMatches.take(directLimit).toList(),
       fuzzyCandidates: allMatches.take(candidateLimit).toList(),
     );
   }
+
+  /// English glossary lookup on the dictionary_entries_fts FTS5 index
+  /// (word-boundary matching — "run" no longer matches "prune"). Results
+  /// come back in relevance order: bm25, then glossary length (the term
+  /// occupies the largest fraction of a short gloss), then id.
+  Future<List<DictionaryEntryWithSource>> _fetchGlossaryMatches(
+    String term,
+    _MetasCache cache, {
+    required int limit,
+  }) async {
+    final ftsQuery = _glossaryFtsQuery(term);
+    if (ftsQuery == null || limit <= 0 || cache.enabledIds.isEmpty) {
+      return [];
+    }
+
+    final idPlaceholders = List.filled(
+      cache.enabledIds.length,
+      '?',
+    ).join(', ');
+    final rows = await _db
+        .customSelect(
+          'SELECT de.* FROM dictionary_entries de '
+          'JOIN dictionary_entries_fts '
+          'ON dictionary_entries_fts.rowid = de.id '
+          'WHERE dictionary_entries_fts MATCH ? '
+          'AND de.dictionary_id IN ($idPlaceholders) '
+          'ORDER BY bm25(dictionary_entries_fts), '
+          'length(de.glossaries), de.id '
+          'LIMIT ?',
+          variables: [
+            Variable.withString(ftsQuery),
+            for (final id in cache.enabledIds) Variable.withInt(id),
+            Variable.withInt(limit),
+          ],
+          readsFrom: {_db.dictionaryEntries},
+        )
+        .get();
+
+    final entries = [
+      for (final row in rows) _db.dictionaryEntries.map(row.data),
+    ];
+    return _mapEntriesWithSourceUnsorted(entries, cache);
+  }
+
+  /// FTS5 MATCH expression for [term]: the whole term as a quoted phrase
+  /// with a trailing prefix star, so multi-word input matches adjacent
+  /// words and the final (possibly still being typed) word matches by
+  /// prefix. Embedded quotes are escaped by doubling, which also neutralizes
+  /// FTS query syntax. Returns null when the term has no indexable content
+  /// (FTS5 rejects token-less phrases).
+  static String? _glossaryFtsQuery(String term) {
+    final trimmed = term.trim();
+    if (trimmed.isEmpty || !_indexableContentPattern.hasMatch(trimmed)) {
+      return null;
+    }
+    return '"${trimmed.replaceAll('"', '""')}"*';
+  }
+
+  static final _indexableContentPattern = RegExp(
+    r'[\p{L}\p{N}]',
+    unicode: true,
+  );
 
   /// Search entries whose glossary text contains [term] (case-insensitive).
   ///
   /// This enables English-to-Japanese lookup by searching within the
   /// JSON-encoded definition strings. Results are ordered by dictionary
   /// sort order and limited to [limit] entries.
+  /// Direct English glossary lookup on the FTS index. Results are in
+  /// relevance order (bm25, then glossary length, then id) — see
+  /// [_fetchGlossaryMatches].
   Future<List<DictionaryEntryWithSource>> glossarySearchWithSource(
     String term, {
     int limit = 30,
@@ -1088,25 +1130,7 @@ class DictionaryQueryService {
     final cache = await _ensureMetasCached();
     if (cache.enabledIds.isEmpty) return [];
 
-    final pattern = '%$term%';
-    final query = _db.select(_db.dictionaryEntries)
-      ..where(
-        (t) =>
-            t.glossaries.like(pattern) & t.dictionaryId.isIn(cache.enabledIds),
-      )
-      ..orderBy(_shortestFirst((t) => t.glossaries))
-      ..limit(limit);
-
-    final rows = await query.get();
-    final results = rows.map((entry) {
-      return DictionaryEntryWithSource(
-        entry: entry,
-        dictionaryName: cache.names[entry.dictionaryId] ?? '',
-      );
-    }).toList();
-
-    _sortWithSourceBySortOrder(results, cache);
-    return results;
+    return _fetchGlossaryMatches(term, cache, limit: limit);
   }
 
   /// Search pitch accents by expression.

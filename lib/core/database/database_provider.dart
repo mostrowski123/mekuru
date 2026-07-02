@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 
 import '../../features/library/data/models/book.dart';
@@ -146,6 +147,7 @@ class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       await _repairDictionaryEntriesSchemaIfNeeded();
+      await _ensureGlossaryFtsIfNeeded();
     },
   );
 
@@ -169,6 +171,62 @@ class AppDatabase extends _$AppDatabase {
       }
     }
   }
+
+  static const String _glossaryFtsTable = 'dictionary_entries_fts';
+
+  /// English glossary search runs on an FTS5 index over
+  /// dictionary_entries.glossaries (external-content: rows live only in
+  /// dictionary_entries; triggers keep the index in sync). Created here —
+  /// not in a versioned migration — following the repair pattern above, so
+  /// it covers fresh installs, upgrades, and in-memory test databases
+  /// alike, and heals a lost index. The 'rebuild' backfill only costs
+  /// anything when the table was just created on a database that already
+  /// has entries: once, on the first open after the app update that
+  /// introduced the index.
+  Future<void> _ensureGlossaryFtsIfNeeded() async {
+    final existing = await customSelect(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = '$_glossaryFtsTable'",
+    ).get();
+    if (existing.isNotEmpty) return;
+
+    await customStatement(
+      'CREATE VIRTUAL TABLE $_glossaryFtsTable USING fts5('
+      'glossaries, '
+      'content=dictionary_entries, '
+      'content_rowid=id, '
+      "tokenize='porter unicode61')",
+    );
+    await customStatement(
+      'CREATE TRIGGER ${_glossaryFtsTable}_ai '
+      'AFTER INSERT ON dictionary_entries BEGIN '
+      'INSERT INTO $_glossaryFtsTable(rowid, glossaries) '
+      'VALUES (new.id, new.glossaries); '
+      'END',
+    );
+    await customStatement(
+      'CREATE TRIGGER ${_glossaryFtsTable}_ad '
+      'AFTER DELETE ON dictionary_entries BEGIN '
+      'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, glossaries) '
+      "VALUES ('delete', old.id, old.glossaries); "
+      'END',
+    );
+    await customStatement(
+      'CREATE TRIGGER ${_glossaryFtsTable}_au '
+      'AFTER UPDATE OF glossaries ON dictionary_entries BEGIN '
+      'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, glossaries) '
+      "VALUES ('delete', old.id, old.glossaries); "
+      'INSERT INTO $_glossaryFtsTable(rowid, glossaries) '
+      'VALUES (new.id, new.glossaries); '
+      'END',
+    );
+    await customStatement(
+      "INSERT INTO $_glossaryFtsTable($_glossaryFtsTable) VALUES ('rebuild')",
+    );
+  }
+
+  @visibleForTesting
+  Future<void> ensureGlossaryFtsForTesting() => _ensureGlossaryFtsIfNeeded();
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
