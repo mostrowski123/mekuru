@@ -11,6 +11,7 @@ import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.da
 import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/epub_models.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/data/reader_session_tracker.dart';
 import 'package:mekuru/features/reader/data/services/epub_file_resolver.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/data/services/reader_progress_persistence.dart';
@@ -27,6 +28,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -47,6 +49,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   late final BrightnessNotifier _brightnessNotifier;
   late final ReaderProgressPersistence _progressPersistence;
+  late final ReaderSessionTracker _sessionTracker;
+
+  // Latest settings snapshot, cached so the session summary emitted from
+  // dispose() never has to reach back through `ref` while unmounting.
+  ReaderSettings? _lastSettings;
 
   Uint8List? _epubData;
   List<_FlattenedChapter> _chapters = const [];
@@ -86,6 +93,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     Sentry.metrics.count('reader.book_opened', 1);
     AnalyticsService.instance.logEvent('book_opened');
+    _sessionTracker = ReaderSessionTracker(bookFormat: 'epub');
 
     _brightnessNotifier = ref.read(brightnessProvider.notifier);
     // Capture the repository once so the persistence callback never reaches
@@ -135,6 +143,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   @override
   void dispose() {
+    _emitSessionSummary('closed');
     WidgetsBinding.instance.removeObserver(this);
     _loadWatchdog?.cancel();
     _epubController.detach();
@@ -151,11 +160,57 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         state == AppLifecycleState.detached) {
       unawaited(_progressPersistence.flush());
     }
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      _emitSessionSummary('backgrounded');
+    } else if (state == AppLifecycleState.resumed) {
+      _sessionTracker.resume();
+    }
+  }
+
+  void _emitSessionSummary(String endReason) {
+    final summary = _sessionTracker.takeSummary(endReason: endReason);
+    if (summary == null) return;
+
+    final settings = _lastSettings;
+    logUsage(
+      'session.summary',
+      attrs: {
+        ...summary,
+        if (settings != null) ...{
+          'furigana_mode': settings.furiganaMode.name,
+          'direction': settings.readingDirection.name,
+          'color_mode': settings.colorMode.name,
+        },
+      },
+    );
+    durationUsage(
+      'session.duration_ms',
+      summary['duration_ms'] as int,
+      attrs: {'format': 'epub'},
+    );
+  }
+
+  void _recordLookupResolved(bool hit) {
+    _sessionTracker.recordLookup(hit: hit);
+    countUsage(
+      'lookup.performed',
+      attrs: {'source': 'tap', 'result': hit ? 'hit' : 'miss'},
+    );
+  }
+
+  void _recordSettingChanged(String setting, Object value) {
+    _sessionTracker.recordSettingsChanged();
+    logUsage(
+      'reader.settings_changed',
+      attrs: {'setting': setting, 'value': value},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(readerSettingsProvider);
+    _lastSettings = settings;
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
 
     ref.listen<ReaderSettings>(readerSettingsProvider, (previous, next) {
@@ -397,7 +452,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       _selectionData!.text,
                       color,
                     ),
-                    onLockedTap: _openProUpgradeFromReader,
+                    onLockedTap: () => unawaited(
+                      _openProUpgradeFromReader(feature: 'create_highlight'),
+                    ),
                     onExpandToSentence: () {
                       _epubController.expandToSentence();
                       AppHaptics.medium();
@@ -774,6 +831,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           selectedText: result.dictionaryForm,
           surfaceForm: result.surfaceForm,
           sentenceContext: result.sentenceContext,
+          onLookupResolved: _recordLookupResolved,
+          onWordSaved: _sessionTracker.recordWordSaved,
         ),
       ).then((_) => onDismissed());
     }
@@ -796,6 +855,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               surfaceForm: result.surfaceForm,
               sentenceContext: result.sentenceContext,
               showAtTop: true,
+              onLookupResolved: _recordLookupResolved,
+              onWordSaved: _sessionTracker.recordWordSaved,
             ),
           ),
         );
@@ -838,6 +899,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       return;
     }
     debugPrint('[READER] goForward executing');
+    _sessionTracker.recordPageTurn();
+    countUsage(
+      'reader.page_turn',
+      attrs: {'direction': 'forward', 'format': 'epub'},
+    );
     _epubController.next();
   }
 
@@ -850,6 +916,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       return;
     }
     debugPrint('[READER] goBackward executing');
+    _sessionTracker.recordPageTurn();
+    countUsage(
+      'reader.page_turn',
+      attrs: {'direction': 'backward', 'format': 'epub'},
+    );
     _epubController.prev();
   }
 
@@ -976,7 +1047,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  Future<void> _openProUpgradeFromReader() async {
+  Future<void> _openProUpgradeFromReader({required String feature}) async {
+    logUsage('pro.gate_hit', attrs: {'feature': feature, 'source': 'reader'});
     await openProUpgrade(context, ref);
     if (!mounted || !_isEpubLoaded) return;
 
@@ -988,7 +1060,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   void _showHighlightsSheet() {
     if (!proUnlockedValue(ref.read(proUnlockedProvider))) {
-      unawaited(_openProUpgradeFromReader());
+      unawaited(_openProUpgradeFromReader(feature: 'highlights'));
       return;
     }
 
@@ -1040,7 +1112,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   ) async {
     if (cfi.isEmpty) return;
     if (!proUnlockedValue(ref.read(proUnlockedProvider))) {
-      unawaited(_openProUpgradeFromReader());
+      unawaited(_openProUpgradeFromReader(feature: 'create_highlight'));
       return;
     }
 
@@ -1137,7 +1209,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               tooltip: l10n.readerHighlightsTooltip,
               onPressed: isProUnlocked
                   ? _showHighlightsSheet
-                  : _openProUpgradeFromReader,
+                  : () => unawaited(
+                      _openProUpgradeFromReader(feature: 'highlights'),
+                    ),
             ),
             IconButton(
               icon: const Icon(Icons.settings, color: Colors.white),
@@ -1359,6 +1433,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       AppHaptics.light();
                       notifier.setFontSize(value);
                     },
+                    // onChangeEnd so a drag logs once, not per tick.
+                    onChangeEnd: (value) =>
+                        _recordSettingChanged('font_size', value.round()),
                   ),
                   const SizedBox(height: 16),
 
@@ -1375,6 +1452,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             AppHaptics.light();
                             brightnessNotifier.setBrightness(value);
                           },
+                          onChangeEnd: (value) => _recordSettingChanged(
+                            'brightness',
+                            (value * 100).round(),
+                          ),
                         ),
                       ),
                       const Icon(Icons.brightness_high),
@@ -1405,6 +1486,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                     onSelectionChanged: (selection) {
                       AppHaptics.medium();
                       notifier.setColorMode(selection.first);
+                      _recordSettingChanged('color_mode', selection.first.name);
                     },
                   ),
                   if (settings.colorMode == ColorMode.sepia) ...[
@@ -1421,6 +1503,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                               AppHaptics.light();
                               notifier.setSepiaIntensity(value);
                             },
+                            onChangeEnd: (value) => _recordSettingChanged(
+                              'sepia_intensity',
+                              (value * 100).round(),
+                            ),
                           ),
                         ),
                         const Icon(Icons.local_fire_department, size: 20),
@@ -1442,6 +1528,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         ? (value) {
                             AppHaptics.medium();
                             notifier.setVerticalText(value);
+                            _recordSettingChanged('vertical_text', value);
                           }
                         : null,
                     secondary: const Icon(Icons.text_rotation_angledown),
@@ -1515,6 +1602,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                           onSelectionChanged: (selection) {
                             AppHaptics.medium();
                             notifier.setReadingDirection(selection.first);
+                            _recordSettingChanged(
+                              'direction',
+                              selection.first.name,
+                            );
                           },
                         ),
                       ],
@@ -1530,6 +1621,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                     onChanged: (value) {
                       AppHaptics.medium();
                       notifier.setDisableLinks(value);
+                      _recordSettingChanged('disable_links', value);
                     },
                     secondary: const Icon(Icons.link_off),
                   ),
@@ -1573,6 +1665,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             }
                             AppHaptics.medium();
                             notifier.setFuriganaMode(chosen);
+                            _recordSettingChanged('furigana_mode', chosen.name);
                           },
                         ),
                       ],

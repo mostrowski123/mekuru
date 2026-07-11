@@ -37,6 +37,7 @@ class GroupedDictionaryEntryCard extends StatelessWidget {
     this.fontSize = 16.0,
     this.sentenceContext,
     this.onWordTap,
+    this.onWordSaved,
   });
 
   /// All dictionary entries sharing the same (expression, reading).
@@ -55,6 +56,9 @@ class GroupedDictionaryEntryCard extends StatelessWidget {
   /// Callback when a Japanese word or kanji character is tapped.
   final void Function(String word)? onWordTap;
 
+  /// Callback when the word is saved to vocabulary from this card.
+  final VoidCallback? onWordSaved;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -67,6 +71,7 @@ class GroupedDictionaryEntryCard extends StatelessWidget {
           fontSize: fontSize,
           sentenceContext: sentenceContext,
           onWordTap: onWordTap,
+          onWordSaved: onWordSaved,
         ),
         GroupedDictionaryEntryBody(
           entries: entries,
@@ -87,6 +92,7 @@ class GroupedDictionaryEntryHeader extends ConsumerStatefulWidget {
     this.fontSize = 16.0,
     this.sentenceContext,
     this.onWordTap,
+    this.onWordSaved,
     this.padding = const EdgeInsets.fromLTRB(16, 14, 16, 10),
   });
 
@@ -95,6 +101,7 @@ class GroupedDictionaryEntryHeader extends ConsumerStatefulWidget {
   final double fontSize;
   final String? sentenceContext;
   final void Function(String word)? onWordTap;
+  final VoidCallback? onWordSaved;
   final EdgeInsetsGeometry padding;
 
   @override
@@ -194,6 +201,7 @@ class _GroupedDictionaryEntryHeaderState
       entry: _primaryEntry,
       sentenceContext: widget.sentenceContext ?? '',
     );
+    widget.onWordSaved?.call();
     if (mounted) {
       setState(() => _isSaved = true);
       ScaffoldMessenger.of(context).showSnackBar(

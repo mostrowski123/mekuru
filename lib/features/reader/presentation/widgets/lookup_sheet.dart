@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -22,6 +24,8 @@ class LookupSheet extends ConsumerStatefulWidget {
     this.onTermSubmitted,
     this.onEditingStarted,
     this.onEditingEnded,
+    this.onLookupResolved,
+    this.onWordSaved,
   });
 
   /// The dictionary/base form to look up (primary search term).
@@ -52,6 +56,13 @@ class LookupSheet extends ConsumerStatefulWidget {
 
   /// Called when the user finishes editing the word header.
   final VoidCallback? onEditingEnded;
+
+  /// Called once when the initial lookup completes, with whether any
+  /// dictionary results were found.
+  final ValueChanged<bool>? onLookupResolved;
+
+  /// Called when a word is saved to vocabulary from this sheet.
+  final VoidCallback? onWordSaved;
 
   @override
   ConsumerState<LookupSheet> createState() => _LookupSheetState();
@@ -88,6 +99,16 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     _editedText = _normalizeEditedText(widget.initialEditedText);
     final primarySearchTerm = _editedText ?? widget.selectedText;
     _refreshLookupFutures(primarySearchTerm);
+
+    final onLookupResolved = widget.onLookupResolved;
+    if (onLookupResolved != null) {
+      unawaited(
+        _searchResultsFuture.then<void>(
+          (results) => onLookupResolved(results.isNotEmpty),
+          onError: (Object _) => onLookupResolved(false),
+        ),
+      );
+    }
   }
 
   @override
@@ -389,6 +410,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
                   pitchAccents: groupPitchAccents,
                   fontSize: fontSize,
                   onWordTap: _navigateToWord,
+                  onWordSaved: widget.onWordSaved,
                 );
               },
             );

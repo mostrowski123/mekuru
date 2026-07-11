@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
@@ -17,6 +18,7 @@ import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart'
 import 'package:mekuru/features/manga/presentation/widgets/manga_scroll_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_spread_view.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/data/reader_session_tracker.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
@@ -53,8 +55,13 @@ class MangaReaderScreen extends ConsumerStatefulWidget {
   ConsumerState<MangaReaderScreen> createState() => _MangaReaderScreenState();
 }
 
-class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
+class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
+    with WidgetsBindingObserver {
   static const _systemUiChannel = MethodChannel('mekuru/android_system_ui');
+
+  final ReaderSessionTracker _sessionTracker = ReaderSessionTracker(
+    bookFormat: 'manga',
+  );
 
   late PageController _pageController;
   int _currentPage = 0;
@@ -81,6 +88,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     final cfi = widget.book.lastReadCfi ?? '';
     _currentPage = cfi.startsWith('scroll:') ? 0 : (int.tryParse(cfi) ?? 0);
     _pageController = PageController(initialPage: _currentPage);
+    WidgetsBinding.instance.addObserver(this);
 
     unawaited(_setReaderSystemBarsVisible(false));
 
@@ -91,6 +99,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _emitSessionSummary(endReason: 'closed');
     _pageController.dispose();
     unawaited(_setReaderSystemBarsVisible(true));
     // Release cached manga page bitmaps so memory is reclaimed immediately
@@ -99,7 +109,38 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _emitSessionSummary(endReason: 'backgrounded');
+    } else if (state == AppLifecycleState.resumed) {
+      _sessionTracker.resume();
+    }
+  }
+
+  void _emitSessionSummary({required String endReason}) {
+    final summary = _sessionTracker.takeSummary(endReason: endReason);
+    if (summary == null) return;
+    logUsage('session.summary', attrs: summary);
+    durationUsage(
+      'session.duration_ms',
+      summary['duration_ms'] as int,
+      attrs: {'format': 'manga'},
+    );
+  }
+
+  void _recordPageTurn({required bool forward}) {
+    _sessionTracker.recordPageTurn();
+    countUsage(
+      'reader.page_turn',
+      attrs: {'direction': forward ? 'forward' : 'backward', 'format': 'manga'},
+    );
+  }
+
   void _onPageChanged(int page, int totalPages) {
+    if (page != _currentPage) {
+      _recordPageTurn(forward: page > _currentPage);
+    }
     setState(() => _currentPage = page);
 
     // Save progress
@@ -139,10 +180,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       final file = File(path);
       if (!file.existsSync()) continue;
 
-      precacheImage(
-        ResizeImage(FileImage(file), width: cacheWidth),
-        context,
-      );
+      precacheImage(ResizeImage(FileImage(file), width: cacheWidth), context);
     }
   }
 
@@ -201,6 +239,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           _spreadViewKey.currentState?.goToSpread(si + delta);
         }
       case MangaViewMode.scroll:
+        _recordPageTurn(forward: delta > 0);
         _scrollViewKey.currentState?.scrollToPage(_currentPage + delta);
     }
   }
@@ -279,6 +318,14 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     _clearHighlight();
   }
 
+  void _recordLookupResolved(bool hit) {
+    _sessionTracker.recordLookup(hit: hit);
+    countUsage(
+      'lookup.performed',
+      attrs: {'source': 'ocr', 'result': hit ? 'hit' : 'miss'},
+    );
+  }
+
   Future<void> _saveLookupOverride(
     WordLookupResult lookup,
     String editedLookupTerm,
@@ -336,6 +383,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
         onEditingEnded: () {
           // Keep highlight while sheet is still open
         },
+        onLookupResolved: _recordLookupResolved,
+        onWordSaved: _sessionTracker.recordWordSaved,
       ),
     );
   }
@@ -377,6 +426,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
               onEditingEnded: () {
                 // Keep highlight while sheet is still open
               },
+              onLookupResolved: _recordLookupResolved,
+              onWordSaved: _sessionTracker.recordWordSaved,
             ),
           ),
         );
@@ -436,7 +487,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   }
 
   Future<void> _openProUpgradeFromReader() async {
-    await openProUpgrade(context, ref);
+    await openProUpgrade(context, ref, source: 'manga_reader');
   }
 
   void _showSettingsSheet(MokuroBook mokuroBook) {
