@@ -527,8 +527,16 @@ class MokuroParser {
     final imageFileNames = <String>[];
 
     for (int i = 0; i < pagesJson.length; i++) {
-      final pageJson = pagesJson[i] as Map<String, dynamic>;
-      final imgPath = pageJson['img_path'] as String;
+      final pageJson = pagesJson[i];
+      // Skip structurally unusable page entries instead of failing the
+      // whole import — third-party tools emit incomplete .mokuro files.
+      if (pageJson is! Map<String, dynamic>) continue;
+      final imgPath = pageJson['img_path'];
+      final imgWidth = pageJson['img_width'];
+      final imgHeight = pageJson['img_height'];
+      if (imgPath is! String || imgWidth is! num || imgHeight is! num) {
+        continue;
+      }
       // img_path may contain a relative path like "VolumeName/0001.jpg"
       final imageFileName = p.basename(imgPath);
 
@@ -537,16 +545,20 @@ class MokuroParser {
 
       imageFileNames.add(imageFileName);
 
-      final blocks = (pageJson['blocks'] as List)
-          .map((b) => MokuroTextBlock.fromOcrJson(b as Map<String, dynamic>))
-          .toList();
+      final rawBlocks = pageJson['blocks'];
+      final blocks = rawBlocks is List
+          ? rawBlocks
+                .whereType<Map<String, dynamic>>()
+                .map(MokuroTextBlock.fromOcrJson)
+                .toList()
+          : <MokuroTextBlock>[];
 
       pages.add(
         MokuroPage(
           pageIndex: pages.length,
           imageFileName: imageFileName,
-          imgWidth: pageJson['img_width'] as int,
-          imgHeight: pageJson['img_height'] as int,
+          imgWidth: imgWidth.toInt(),
+          imgHeight: imgHeight.toInt(),
           blocks: blocks,
         ),
       );
@@ -802,15 +814,19 @@ class MokuroParser {
   ) {
     final json = jsonDecode(content) as Map<String, dynamic>;
 
-    final blocks = (json['blocks'] as List)
-        .map((b) => MokuroTextBlock.fromOcrJson(b as Map<String, dynamic>))
-        .toList();
+    final rawBlocks = json['blocks'];
+    final blocks = rawBlocks is List
+        ? rawBlocks
+              .whereType<Map<String, dynamic>>()
+              .map(MokuroTextBlock.fromOcrJson)
+              .toList()
+        : <MokuroTextBlock>[];
 
     return MokuroPage(
       pageIndex: pageIndex,
       imageFileName: imageFileName,
-      imgWidth: json['img_width'] as int,
-      imgHeight: json['img_height'] as int,
+      imgWidth: (json['img_width'] as num).toInt(),
+      imgHeight: (json['img_height'] as num).toInt(),
       blocks: blocks,
     );
   }

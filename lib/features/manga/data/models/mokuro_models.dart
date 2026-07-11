@@ -219,24 +219,49 @@ class MokuroTextBlock {
   );
 
   /// Parse a mokuro OCR JSON block into a [MokuroTextBlock].
-  factory MokuroTextBlock.fromOcrJson(
-    Map<String, dynamic> json,
-  ) => MokuroTextBlock(
-    box: (json['box'] as List).map((e) => (e as num).toDouble()).toList(),
-    vertical: json['vertical'] as bool,
-    fontSize: (json['font_size'] as num).toDouble(),
-    linesCoords: (json['lines_coords'] as List)
-        .map(
-          (line) => (line as List)
-              .map(
-                (point) =>
-                    (point as List).map((v) => (v as num).toDouble()).toList(),
-              )
-              .toList(),
-        )
-        .toList(),
-    lines: (json['lines'] as List).cast<String>(),
-  );
+  factory MokuroTextBlock.fromOcrJson(Map<String, dynamic> json) {
+    final box = json['box'];
+    final vertical = json['vertical'];
+    final fontSize = json['font_size'];
+    final lines = json['lines'];
+    return MokuroTextBlock(
+      box: box is List
+          ? box.map((e) => e is num ? e.toDouble() : 0.0).toList()
+          : [0.0, 0.0, 0.0, 0.0],
+      vertical: vertical is bool ? vertical : true,
+      fontSize: fontSize is num ? fontSize.toDouble() : 0.0,
+      linesCoords: _parseOcrLinesCoords(json['lines_coords']),
+      // Unusable entries become empty strings rather than being dropped:
+      // `lines` must stay index-aligned with `linesCoords`.
+      lines: lines is List
+          ? lines.map((e) => e is String ? e : '').toList()
+          : const [],
+    );
+  }
+
+  /// Parse the OCR `lines_coords` field, tolerating missing or malformed
+  /// data — some mokuro-compatible tools omit it entirely or emit nulls.
+  ///
+  /// A malformed line quad becomes an empty list rather than being dropped,
+  /// so indices stay aligned with `lines` (consumers skip quads with fewer
+  /// than 4 points).
+  static List<List<List<double>>> _parseOcrLinesCoords(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw.map((line) {
+      if (line is! List) return <List<double>>[];
+      final quad = <List<double>>[];
+      for (final point in line) {
+        if (point is! List) return <List<double>>[];
+        final coords = <double>[];
+        for (final value in point) {
+          if (value is! num) return <List<double>>[];
+          coords.add(value.toDouble());
+        }
+        quad.add(coords);
+      }
+      return quad;
+    }).toList();
+  }
 }
 
 /// A single word within a text block, with its bounding box in image coords.
