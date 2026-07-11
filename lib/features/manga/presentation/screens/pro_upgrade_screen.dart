@@ -4,6 +4,7 @@ import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/firebase_runtime.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/l10n/l10n.dart';
@@ -37,6 +38,7 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
     this.restoreUpgrade,
     this.openSelfHostRepo,
     this.forceServicesAvailable,
+    this.source,
   });
 
   final Future<ProUpgradeSnapshot> Function()? loadSnapshot;
@@ -44,6 +46,10 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
   final Future<ProUpgradeSnapshot> Function()? restoreUpgrade;
   final Future<void> Function()? openSelfHostRepo;
   final bool? forceServicesAvailable;
+
+  /// Where the screen was opened from, for usage telemetry (enum-like value,
+  /// e.g. 'manga_reader' or 'ocr_setup').
+  final String? source;
 
   @override
   ConsumerState<ProUpgradeScreen> createState() => _ProUpgradeScreenState();
@@ -71,6 +77,11 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       duration: const Duration(seconds: 3),
     );
     _storeService.onLateDelivery = _handleLateDelivery;
+    final source = widget.source;
+    logUsage(
+      'pro.upgrade_screen_shown',
+      attrs: source == null ? null : {'source': source},
+    );
     unawaited(_loadSnapshot());
   }
 
@@ -98,6 +109,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       context,
     ).showSnackBar(SnackBar(content: Text(context.l10n.proPurchaseConfirmed)));
     if (!wasUnlocked && result.ocrUnlocked) {
+      logUsage('pro.purchase_completed');
       unawaited(_maybeShowConfetti());
     }
   }
@@ -214,6 +226,44 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     }
   }
 
+  Future<void> _handlePurchase() {
+    logUsage('pro.purchase_started');
+    final wasUnlocked = _snapshot.isUnlocked;
+    return _runBusyAction(() async {
+      try {
+        final snapshot = await (widget.purchaseUpgrade ?? _purchaseDefault)();
+        if (!wasUnlocked && snapshot.isUnlocked) {
+          logUsage('pro.purchase_completed');
+        }
+        return snapshot;
+      } on OcrBillingException catch (e) {
+        if (e.code == 'purchase_cancelled') {
+          logUsage('pro.purchase_cancelled');
+        } else if (e.code != 'purchase_pending') {
+          // Pending purchases resolve later via the late-delivery callback.
+          logFailure('pro.purchase_failed', e);
+        }
+        rethrow;
+      } catch (e) {
+        logFailure('pro.purchase_failed', e);
+        rethrow;
+      }
+    });
+  }
+
+  Future<void> _handleRestore() {
+    return _runBusyAction(() async {
+      try {
+        final snapshot = await (widget.restoreUpgrade ?? _restoreDefault)();
+        logUsage('pro.restore', attrs: {'result': 'ok'});
+        return snapshot;
+      } catch (_) {
+        logUsage('pro.restore', attrs: {'result': 'error'});
+        rethrow;
+      }
+    });
+  }
+
   Future<void> _maybeShowConfetti() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_confettiShownKey) ?? false) return;
@@ -314,9 +364,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                             OutlinedButton.icon(
                               onPressed: !_snapshot.servicesAvailable || _isBusy
                                   ? null
-                                  : () => _runBusyAction(
-                                      widget.restoreUpgrade ?? _restoreDefault,
-                                    ),
+                                  : () => _handleRestore(),
                               icon: const Icon(Icons.refresh),
                               label: Text(l10n.proRestorePurchase),
                             ),
@@ -365,9 +413,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                                 _isBusy ||
                                 _snapshot.isUnlocked
                             ? null
-                            : () => _runBusyAction(
-                                widget.purchaseUpgrade ?? _purchaseDefault,
-                              ),
+                            : () => _handlePurchase(),
                         child: _isBusy
                             ? const SizedBox(
                                 height: 20,
@@ -406,10 +452,14 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   }
 }
 
-Future<void> openProUpgrade(BuildContext context, WidgetRef ref) async {
+Future<void> openProUpgrade(
+  BuildContext context,
+  WidgetRef ref, {
+  String? source,
+}) async {
   await Navigator.of(
     context,
-  ).push(MaterialPageRoute(builder: (_) => const ProUpgradeScreen()));
+  ).push(MaterialPageRoute(builder: (_) => ProUpgradeScreen(source: source)));
   ref.invalidate(proUnlockedProvider);
 }
 

@@ -9,6 +9,7 @@ import 'package:workmanager/workmanager.dart';
 
 import '../../../../core/platform/android_saf_service.dart';
 import '../../../../core/services/firebase_runtime.dart';
+import '../../../../core/services/usage_telemetry.dart';
 import '../../../../core/utils/atomic_file.dart';
 import '../../data/models/mokuro_models.dart';
 import '../../../settings/data/services/ocr_server_config.dart'
@@ -193,6 +194,7 @@ Future<void> flushPendingOcrFinalizations() async {
 
 /// The actual OCR processing logic run by WorkManager.
 Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
+  final jobStopwatch = Stopwatch()..start();
   final bookId = inputData['bookId'] as int;
   final cacheFilePath = inputData['cacheFilePath'] as String;
   final imageDir = inputData['imageDir'] as String;
@@ -336,6 +338,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
   try {
     final cacheFile = File(cacheFilePath);
     if (!cacheFile.existsSync()) {
+      logFailure('ocr.job', const FileSystemException('pages cache missing'));
       await finalizeIfNeeded(OcrStatus.failed);
       return false;
     }
@@ -435,6 +438,14 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         ),
       );
       await finalizeIfNeeded(OcrStatus.completed);
+      logUsage(
+        'ocr.job',
+        attrs: {
+          'result': 'ok',
+          'duration_ms': jobStopwatch.elapsedMilliseconds,
+          'pages': 0,
+        },
+      );
       return true;
     }
 
@@ -455,7 +466,8 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
       );
     }
 
-    Future<bool> failWithError(String errorMessage) async {
+    Future<bool> failWithError(String errorMessage, Object error) async {
+      logFailure('ocr.job', error);
       await OcrProgress.save(
         prefs,
         bookId,
@@ -511,6 +523,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
               page: page,
               imageDir: imageDir,
             ),
+            const FileSystemException('page image unreadable'),
           );
         }
         completed++;
@@ -560,12 +573,13 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           return failWithError(
             'Authentication failed. '
             'Check your server bearer key.',
+            e,
           );
         }
         consecutiveFailures++;
         if (!anyPageSucceeded ||
             consecutiveFailures >= _maxConsecutiveFailures) {
-          return failWithError(_describeOcrError(e));
+          return failWithError(_describeOcrError(e), e);
         }
         completed++;
         await saveRunningProgress();
@@ -579,7 +593,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         consecutiveFailures++;
         if (!anyPageSucceeded ||
             consecutiveFailures >= _maxConsecutiveFailures) {
-          return failWithError(_describeOcrError(e));
+          return failWithError(_describeOcrError(e), e);
         }
         completed++;
         await saveRunningProgress();
@@ -616,8 +630,17 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
       OcrProgress(completed: total, total: total, status: OcrStatus.completed),
     );
     await finalizeIfNeeded(OcrStatus.completed);
+    logUsage(
+      'ocr.job',
+      attrs: {
+        'result': 'ok',
+        'duration_ms': jobStopwatch.elapsedMilliseconds,
+        'pages': pagesToProcess.length,
+      },
+    );
     return true;
-  } catch (_) {
+  } catch (e) {
+    logFailure('ocr.job', e);
     await finalizeIfNeeded(OcrStatus.failed);
     rethrow;
   } finally {

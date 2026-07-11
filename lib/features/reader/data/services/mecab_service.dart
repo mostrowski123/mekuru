@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mecab_for_flutter/mecab_for_flutter.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:path/path.dart' as p;
@@ -190,13 +191,12 @@ class MecabService {
   /// only need word segmentation (e.g. the OCR worker) pass `false` so they
   /// don't pay the ~260 MB UniDic load.
   Future<void> init({bool upgradeToEnhanced = true}) {
-    return _initFuture ??= _doInit(
-      upgradeToEnhanced: upgradeToEnhanced,
-    ).onError((Object error, StackTrace st) {
-      _initFuture = null; // allow a later retry
-      _initError = error;
-      Error.throwWithStackTrace(error, st);
-    });
+    return _initFuture ??= _doInit(upgradeToEnhanced: upgradeToEnhanced)
+        .onError((Object error, StackTrace st) {
+          _initFuture = null; // allow a later retry
+          _initError = error;
+          Error.throwWithStackTrace(error, st);
+        });
   }
 
   Future<void> _doInit({required bool upgradeToEnhanced}) async {
@@ -256,8 +256,10 @@ class MecabService {
       _layout = MecabFeatureLayout.unidicLite;
       previous?.dispose();
       debugPrint('[MeCab] Upgraded to UniDic-lite');
+      logUsage('mecab.upgraded', attrs: {'dictionary': 'unidic_lite'});
     } catch (e) {
       debugPrint('[MeCab] UniDic-lite upgrade failed, staying on IPADIC: $e');
+      logFailure('mecab.upgrade_failed', e);
     } finally {
       _upgradingToUnidic = false;
     }

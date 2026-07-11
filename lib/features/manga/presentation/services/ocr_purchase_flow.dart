@@ -108,9 +108,11 @@ class OcrPurchaseFlow {
       return _openProUpgradeScreenOverride(context);
     }
 
-    return Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const ProUpgradeScreen()));
+    return Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ProUpgradeScreen(source: 'ocr_setup'),
+      ),
+    );
   }
 
   Future<void> _openSettingsScreen(BuildContext context) {
