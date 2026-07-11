@@ -12,6 +12,7 @@ import 'config/environment_config.dart';
 import 'core/config/app_flavor.dart';
 import 'core/database/database_provider.dart';
 import 'core/services/firebase_runtime.dart';
+import 'core/services/pii_scrubber.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
@@ -68,6 +69,10 @@ Future<void> main() async {
       options.enableLogs = true;
       options.enableMetrics = true;
       options.tracesSampleRate = 0.1;
+      // Strip device file paths (which can embed book file names) from
+      // everything that leaves the device.
+      options.beforeSend = scrubEvent;
+      options.beforeSendLog = scrubLog;
     },
     appRunner: () async {
       await PreloadedAppSettings.load();
@@ -111,9 +116,15 @@ Future<void> _runDeferredStartupWarmups() async {
       logMessage: 'MeCab init failed (app will continue)',
       action: () async {
         await MecabService.instance.init();
-        Sentry.logger.info('MeCab initialized', attributes: {
-          'category': SentryAttribute.string('app.init'),
-        });
+        Sentry.logger.info(
+          'MeCab initialized',
+          attributes: {
+            'category': SentryAttribute.string('app.init'),
+            'dictionary': SentryAttribute.string(
+              MecabService.instance.layout.label,
+            ),
+          },
+        );
       },
     ),
   ]);
@@ -133,9 +144,14 @@ Future<void> _runStartupWarmup({
   try {
     await action();
   } catch (error, stackTrace) {
-    Sentry.logger.warn('$logMessage: $error', attributes: {
-      'category': SentryAttribute.string('app.init'),
-    });
+    // Keep the message static: exception text can embed file paths.
+    Sentry.logger.warn(
+      logMessage,
+      attributes: {
+        'category': SentryAttribute.string('app.init'),
+        'error_type': SentryAttribute.string(error.runtimeType.toString()),
+      },
+    );
     await Sentry.captureException(error, stackTrace: stackTrace);
   }
 }

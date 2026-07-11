@@ -156,14 +156,16 @@ class BackupNotifier extends Notifier<BackupState> {
       final fileManager = ref.read(backupFileManagerProvider);
       final manifest = await service.createBackup();
       await fileManager.createBackupFile(manifest);
-      Sentry.logger.info('Manual backup created', attributes: {
-        'category': SentryAttribute.string('backup'),
-      });
-      Sentry.metrics.count('backup.created', 1, attributes: {
-        'type': SentryAttribute.string('manual'),
-      });
-      AnalyticsService.instance
-          .logEvent('backup_created', {'type': 'manual'});
+      Sentry.logger.info(
+        'Manual backup created',
+        attributes: {'category': SentryAttribute.string('backup')},
+      );
+      Sentry.metrics.count(
+        'backup.created',
+        1,
+        attributes: {'type': SentryAttribute.string('manual')},
+      );
+      AnalyticsService.instance.logEvent('backup_created', {'type': 'manual'});
       _showSuccess(const BackupMessage.backupCreated());
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
@@ -327,9 +329,10 @@ class RestoreNotifier extends Notifier<RestoreState> {
         errors: errors,
       );
 
-      Sentry.logger.info('Backup restored', attributes: {
-        'category': SentryAttribute.string('backup'),
-      });
+      Sentry.logger.info(
+        'Backup restored',
+        attributes: {'category': SentryAttribute.string('backup')},
+      );
       Sentry.metrics.count('backup.restored', 1);
       AnalyticsService.instance.logEvent('backup_restored');
 
@@ -456,17 +459,25 @@ final autoBackupCheckerProvider = FutureProvider<void>((ref) async {
       final manifest = await service.createBackup();
       await fileManager.createBackupFile(manifest, isAuto: true);
       await scheduler.recordAutoBackup();
-      Sentry.logger.info('Auto-backup completed', attributes: {
-        'category': SentryAttribute.string('backup'),
-      });
-      Sentry.metrics.count('backup.created', 1, attributes: {
-        'type': SentryAttribute.string('auto'),
-      });
+      Sentry.logger.info(
+        'Auto-backup completed',
+        attributes: {'category': SentryAttribute.string('backup')},
+      );
+      Sentry.metrics.count(
+        'backup.created',
+        1,
+        attributes: {'type': SentryAttribute.string('auto')},
+      );
       AnalyticsService.instance.logEvent('backup_created', {'type': 'auto'});
     } catch (e, st) {
-      Sentry.logger.error('Auto-backup failed: $e', attributes: {
-        'category': SentryAttribute.string('backup'),
-      });
+      // Keep the message static: exception text can embed file paths.
+      Sentry.logger.error(
+        'Auto-backup failed',
+        attributes: {
+          'category': SentryAttribute.string('backup'),
+          'error_type': SentryAttribute.string(e.runtimeType.toString()),
+        },
+      );
       Sentry.captureException(e, stackTrace: st);
     }
   }
