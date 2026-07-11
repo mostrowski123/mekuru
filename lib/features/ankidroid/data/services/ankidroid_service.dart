@@ -1,19 +1,25 @@
 import 'package:ankidroid_for_flutter/ankidroid_for_flutter.dart';
 import 'package:flutter/services.dart';
 
-/// Wrapper around the ankidroid_for_flutter API.
+/// Wrapper around the AnkiDroid AddContentApi.
 ///
-/// Handles permission requests, isolate lifecycle, and all API calls.
+/// All content-provider operations go through the app's own
+/// `mekuru/ankidroid_native` channel, which runs them on a background
+/// thread — AnkiDroid's provider can block for seconds while its process
+/// cold-starts, and touching it on the Android main thread ANRs the app.
+/// The `ankidroid_for_flutter` plugin is only used for the permission
+/// prompt, which never touches the provider.
+///
 /// Methods return null/empty on failure to allow graceful degradation.
 class AnkidroidService {
   static const MethodChannel _nativeChannel = MethodChannel(
     'mekuru/ankidroid_native',
   );
 
-  Ankidroid? _ankidroid;
+  bool _initialized = false;
 
   /// Whether the service is currently initialized.
-  bool get isInitialized => _ankidroid != null;
+  bool get isInitialized => _initialized;
 
   /// Request AnkiDroid permission. Returns true if granted.
   Future<bool> requestPermission() async {
@@ -24,33 +30,28 @@ class AnkidroidService {
     }
   }
 
-  /// Initialize the AnkiDroid isolate. Safe to call multiple times.
+  /// Check that the AnkiDroid API is available. Safe to call multiple times.
   Future<bool> init() async {
-    if (_ankidroid != null) return true;
+    if (_initialized) return true;
     try {
-      _ankidroid = await Ankidroid.createAnkiIsolate();
-      return true;
+      final available = await _nativeChannel.invokeMethod<bool>(
+        'isApiAvailable',
+      );
+      _initialized = available ?? false;
     } catch (_) {
-      return false;
+      _initialized = false;
     }
+    return _initialized;
   }
 
   /// Get list of note models. Returns map of {modelId: modelName}.
   Future<Map<int, String>> getModelList() async {
-    if (_ankidroid == null) return {};
+    if (!_initialized) return {};
     try {
-      final result = await _ankidroid!.modelList();
-      final value = result.asValue?.value;
-      if (value == null) return {};
-      // AnkiDroid API returns {modelId (Long): modelName (String)}
-      return Map<int, String>.fromEntries(
-        value.entries.map(
-          (e) => MapEntry(
-            (e.key is int) ? e.key as int : int.parse(e.key.toString()),
-            e.value.toString(),
-          ),
-        ),
+      final result = await _nativeChannel.invokeMapMethod<int, String>(
+        'getModelList',
       );
+      return result ?? {};
     } catch (_) {
       return {};
     }
@@ -58,12 +59,13 @@ class AnkidroidService {
 
   /// Get field names for a given model ID.
   Future<List<String>> getFieldList(int modelId) async {
-    if (_ankidroid == null) return [];
+    if (!_initialized) return [];
     try {
-      final result = await _ankidroid!.getFieldList(modelId);
-      final value = result.asValue?.value;
-      if (value == null) return [];
-      return List<String>.from(value);
+      final result = await _nativeChannel.invokeListMethod<String>(
+        'getFieldList',
+        {'modelId': modelId},
+      );
+      return result ?? [];
     } catch (_) {
       return [];
     }
@@ -71,37 +73,14 @@ class AnkidroidService {
 
   /// Get list of decks. Returns map of {deckId: deckName}.
   Future<Map<int, String>> getDeckList() async {
-    if (_ankidroid == null) return {};
+    if (!_initialized) return {};
     try {
-      final result = await _ankidroid!.deckList();
-      final value = result.asValue?.value;
-      if (value == null) return {};
-      // AnkiDroid API returns {deckId (Long): deckName (String)}
-      return Map<int, String>.fromEntries(
-        value.entries.map(
-          (e) => MapEntry(
-            (e.key is int) ? e.key as int : int.parse(e.key.toString()),
-            e.value.toString(),
-          ),
-        ),
+      final result = await _nativeChannel.invokeMapMethod<int, String>(
+        'getDeckList',
       );
+      return result ?? {};
     } catch (_) {
       return {};
-    }
-  }
-
-  /// Check for duplicate notes by the first field value.
-  Future<bool> hasDuplicate(int modelId, String firstFieldValue) async {
-    if (_ankidroid == null) return false;
-    try {
-      final result = await _ankidroid!.findDuplicateNotesWithKey(
-        modelId,
-        firstFieldValue,
-      );
-      final value = result.asValue?.value;
-      return value != null && value.isNotEmpty;
-    } catch (_) {
-      return false;
     }
   }
 
@@ -138,18 +117,21 @@ class AnkidroidService {
     required List<String> fields,
     List<String> tags = const ['mekuru'],
   }) async {
-    if (_ankidroid == null) return null;
+    if (!_initialized) return null;
     try {
-      final result = await _ankidroid!.addNote(modelId, deckId, fields, tags);
-      return result.asValue?.value;
+      return await _nativeChannel.invokeMethod<int>('addNote', {
+        'modelId': modelId,
+        'deckId': deckId,
+        'fields': fields,
+        'tags': tags,
+      });
     } catch (_) {
       return null;
     }
   }
 
-  /// Clean up the isolate.
+  /// Reset initialization state.
   void dispose() {
-    _ankidroid?.killIsolate();
-    _ankidroid = null;
+    _initialized = false;
   }
 }

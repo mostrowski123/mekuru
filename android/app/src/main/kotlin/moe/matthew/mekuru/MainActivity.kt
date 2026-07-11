@@ -208,8 +208,54 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    // AnkiDroid's content provider can block for seconds while its process
+    // cold-starts, so every AddContentApi call must run via runIo — querying
+    // the provider on the main thread ANRs the app.
     private fun handleAnkiMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "isApiAvailable" -> {
+                runIo(result) {
+                    AddContentApi.getAnkiDroidPackageName(applicationContext) != null
+                }
+            }
+            "getModelList" -> {
+                runIo(result) {
+                    AddContentApi(applicationContext).modelList
+                }
+            }
+            "getFieldList" -> {
+                val modelId = call.longArgument("modelId")
+                if (modelId == null) {
+                    result.error("bad_args", "modelId is required", null)
+                    return
+                }
+                runIo(result) {
+                    AddContentApi(applicationContext).getFieldList(modelId)?.toList()
+                }
+            }
+            "getDeckList" -> {
+                runIo(result) {
+                    AddContentApi(applicationContext).deckList
+                }
+            }
+            "addNote" -> {
+                val modelId = call.longArgument("modelId")
+                val deckId = call.longArgument("deckId")
+                val fields = call.argument<List<String>>("fields")
+                val tags = call.argument<List<String>>("tags") ?: emptyList()
+                if (modelId == null || deckId == null || fields == null) {
+                    result.error("bad_args", "modelId, deckId and fields are required", null)
+                    return
+                }
+                runIo(result) {
+                    AddContentApi(applicationContext).addNote(
+                        modelId,
+                        deckId,
+                        fields.toTypedArray(),
+                        tags.toSet(),
+                    )
+                }
+            }
             "hasDuplicateInDeck" -> {
                 val modelId = call.longArgument("modelId")
                 val deckId = call.longArgument("deckId")
