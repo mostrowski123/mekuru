@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
@@ -26,8 +27,7 @@ class DictionarySearchScreen extends ConsumerStatefulWidget {
   DictionarySearchScreenState createState() => DictionarySearchScreenState();
 }
 
-class DictionarySearchScreenState
-    extends ConsumerState<DictionarySearchScreen>
+class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
     with WidgetsBindingObserver {
   static final _latinPattern = RegExp(r'[a-zA-Z]');
 
@@ -194,6 +194,17 @@ class DictionarySearchScreenState
 
       // Only update if this is still the latest query
       if (mounted && term == _lastQuery) {
+        logUsage(
+          'dictionary.search',
+          attrs: {'result_count': results.length, 'query_length': term.length},
+        );
+        countUsage(
+          'lookup.performed',
+          attrs: {
+            'source': 'search',
+            'result': results.isEmpty ? 'miss' : 'hit',
+          },
+        );
         if (_autoCommitNextResult && results.isNotEmpty) {
           _autoCommitNextResult = false;
           _historyNotifier.addSearch(_lastQuery);

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -71,6 +72,26 @@ class KanjiVgDownloadService {
   static Future<int> downloadAndExtract({
     void Function(double progress)? onProgress,
   }) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      final count = await _downloadAndExtract(onProgress: onProgress);
+      logUsage(
+        'download.completed',
+        attrs: {
+          'asset': 'kanjivg',
+          'duration_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
+      return count;
+    } catch (error) {
+      logFailure('download.failed', error, attrs: {'asset': 'kanjivg'});
+      rethrow;
+    }
+  }
+
+  static Future<int> _downloadAndExtract({
+    void Function(double progress)? onProgress,
+  }) async {
     final dir = await getStorageDir();
     final outputDir = Directory(dir);
     if (!await outputDir.exists()) {
@@ -106,6 +127,7 @@ class KanjiVgDownloadService {
     final dir = Directory(await getStorageDir());
     if (await dir.exists()) {
       await dir.delete(recursive: true);
+      logUsage('download.uninstalled', attrs: {'asset': 'kanjivg'});
     }
   }
 

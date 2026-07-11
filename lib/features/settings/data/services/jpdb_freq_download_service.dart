@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 import 'package:path/path.dart' as p;
@@ -34,6 +35,31 @@ class JpdbFreqDownloadService {
   /// - 0.7–0.95: import phase
   /// - 0.95–1.0: finalising
   static Future<void> downloadAndImport({
+    required DictionaryRepository repository,
+    required DictionaryImporter importer,
+    void Function(double progress)? onProgress,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      await _downloadAndImport(
+        repository: repository,
+        importer: importer,
+        onProgress: onProgress,
+      );
+      logUsage(
+        'download.completed',
+        attrs: {
+          'asset': 'jpdb_freq',
+          'duration_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
+    } catch (error) {
+      logFailure('download.failed', error, attrs: {'asset': 'jpdb_freq'});
+      rethrow;
+    }
+  }
+
+  static Future<void> _downloadAndImport({
     required DictionaryRepository repository,
     required DictionaryImporter importer,
     void Function(double progress)? onProgress,
@@ -73,6 +99,7 @@ class JpdbFreqDownloadService {
     final meta = await repository.getDictionaryByName(dictionaryName);
     if (meta != null) {
       await repository.deleteDictionary(meta.id);
+      logUsage('download.uninstalled', attrs: {'asset': 'jpdb_freq'});
     }
   }
 

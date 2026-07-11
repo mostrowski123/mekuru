@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -82,6 +83,7 @@ class EnhancedFuriganaDictDownloadService {
     final dir = Directory(await getStorageDir());
     if (await dir.exists()) {
       await dir.delete(recursive: true);
+      logUsage('download.uninstalled', attrs: {'asset': 'unidic'});
     }
   }
 
@@ -93,6 +95,25 @@ class EnhancedFuriganaDictDownloadService {
   /// when the SHA-256 doesn't match, or an [Exception] on archive
   /// decoding failures.
   static Future<void> downloadAndInstall({
+    void Function(double progress)? onProgress,
+  }) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      await _downloadAndInstall(onProgress: onProgress);
+      logUsage(
+        'download.completed',
+        attrs: {
+          'asset': 'unidic',
+          'duration_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
+    } catch (error) {
+      logFailure('download.failed', error, attrs: {'asset': 'unidic'});
+      rethrow;
+    }
+  }
+
+  static Future<void> _downloadAndInstall({
     void Function(double progress)? onProgress,
   }) async {
     onProgress?.call(0.0);

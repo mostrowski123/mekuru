@@ -10,6 +10,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -342,7 +343,11 @@ class BookImportNotifier extends Notifier<BookImportState> {
   Future<void> deleteBook(int bookId) async {
     try {
       final repo = ref.read(bookRepositoryProvider);
+      final book = await repo.getBookById(bookId);
       await repo.deleteBook(bookId);
+      if (book != null) {
+        logUsage('library.book_deleted', attrs: {'format': book.bookType});
+      }
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
       state = BookImportState(error: 'Delete failed: $e');

@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'core/services/analytics_service.dart';
+import 'core/services/usage_telemetry.dart';
 import 'features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'features/backup/presentation/providers/backup_providers.dart';
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/data/repositories/book_repository.dart';
 import 'features/library/presentation/screens/library_screen.dart';
+import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/presentation/providers/pro_access_provider.dart';
 import 'features/reader/presentation/providers/reader_providers.dart';
 import 'features/reader/presentation/screens/reader_screen.dart';
@@ -83,6 +85,12 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       // Backups can do meaningful file I/O, so let the first frame land first.
       ref.read(autoBackupCheckerProvider);
       unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
+      unawaited(
+        emitInstallGauges(
+          ref.read(databaseProvider),
+          isPro: PreloadedProEntitlement.isInitiallyUnlocked,
+        ),
+      );
     });
   }
 

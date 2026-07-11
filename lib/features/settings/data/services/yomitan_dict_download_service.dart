@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 import 'package:path/path.dart' as p;
@@ -84,6 +85,35 @@ class YomitanDictDownloadService {
     required DictionaryImporter importer,
     void Function(double progress)? onProgress,
   }) async {
+    final stopwatch = Stopwatch()..start();
+    try {
+      await _downloadAndImport(
+        type: type,
+        importer: importer,
+        onProgress: onProgress,
+      );
+      logUsage(
+        'download.completed',
+        attrs: {
+          'asset': 'yomitan_collection',
+          'duration_ms': stopwatch.elapsedMilliseconds,
+        },
+      );
+    } catch (error) {
+      logFailure(
+        'download.failed',
+        error,
+        attrs: {'asset': 'yomitan_collection'},
+      );
+      rethrow;
+    }
+  }
+
+  static Future<void> _downloadAndImport({
+    required YomitanDictType type,
+    required DictionaryImporter importer,
+    void Function(double progress)? onProgress,
+  }) async {
     onProgress?.call(0.0);
 
     // Phase 1: Resolve latest release tag
@@ -124,6 +154,7 @@ class YomitanDictDownloadService {
     final meta = await _findImported(type, repository);
     if (meta != null) {
       await repository.deleteDictionary(meta.id);
+      logUsage('download.uninstalled', attrs: {'asset': 'yomitan_collection'});
     }
   }
 

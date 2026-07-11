@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
@@ -197,6 +198,12 @@ class _AnkiCardCreationScreenState
       fields: fields,
       tags: tags,
     );
+
+    if (noteId != null) {
+      logUsage('anki.card_sent', attrs: {'result': 'ok'});
+    } else {
+      logFailure('anki.card_sent', StateError('addNote returned null'));
+    }
 
     if (mounted) {
       if (noteId != null) {

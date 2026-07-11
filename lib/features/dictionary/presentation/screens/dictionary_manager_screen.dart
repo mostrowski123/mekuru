@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/dictionary/data/services/lookup_benchmark.dart';
@@ -470,6 +471,7 @@ class _DictionaryManagerScreenState
                       ref
                           .read(dictionaryRepositoryProvider)
                           .toggleDictionary(dict.id, isEnabled: value);
+                      logUsage('dictionary.toggled', attrs: {'enabled': value});
                     },
             ),
             if (isDeleting)
@@ -656,9 +658,7 @@ class _DictionaryManagerScreenState
       );
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('Benchmark failed: $e')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text('Benchmark failed: $e')));
     }
   }
 }
