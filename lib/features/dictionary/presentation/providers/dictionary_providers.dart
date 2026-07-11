@@ -129,13 +129,17 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
           },
         ),
       );
-      Sentry.logger.info('Dictionary imported', attributes: {
-        'category': SentryAttribute.string('dictionary.import'),
-        'entry_count': SentryAttribute.int(count),
-      });
+      Sentry.logger.info(
+        'Dictionary imported',
+        attributes: {
+          'category': SentryAttribute.string('dictionary.import'),
+          'entry_count': SentryAttribute.int(count),
+        },
+      );
       Sentry.metrics.count('dictionary.imported', 1);
-      AnalyticsService.instance
-          .logEvent('dictionary_imported', {'entry_count': count});
+      AnalyticsService.instance.logEvent('dictionary_imported', {
+        'entry_count': count,
+      });
       state = DictionaryImportState(
         successMessage: 'Imported $count entries successfully!',
       );
@@ -176,11 +180,14 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
                 'dictionaries (${result.totalEntriesImported} entries)'
           : 'No dictionaries found in collection';
 
-      Sentry.logger.info('Dictionary collection imported', attributes: {
-        'category': SentryAttribute.string('dictionary.import'),
-        'dict_count': SentryAttribute.int(result.importedDictionaries.length),
-        'entry_count': SentryAttribute.int(result.totalEntriesImported),
-      });
+      Sentry.logger.info(
+        'Dictionary collection imported',
+        attributes: {
+          'category': SentryAttribute.string('dictionary.import'),
+          'dict_count': SentryAttribute.int(result.importedDictionaries.length),
+          'entry_count': SentryAttribute.int(result.totalEntriesImported),
+        },
+      );
       Sentry.metrics.count('dictionary.collection_imported', 1);
       AnalyticsService.instance.logEvent('dictionary_collection_imported', {
         'dict_count': result.importedDictionaries.length,

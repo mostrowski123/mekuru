@@ -267,10 +267,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           const SizedBox(height: 8),
 
           // Enhanced Furigana Dictionary (UniDic-lite, optional download)
-          _EnhancedFuriganaDictTile(
-            state: enhancedFuriganaState,
-            theme: theme,
-          ),
+          _EnhancedFuriganaDictTile(state: enhancedFuriganaState, theme: theme),
           // Kill-switch: lets the user disable the enhanced dictionary
           // without deleting the ~250 MB download. Useful as a recovery step
           // if word tapping ever stops working on a particular device.
@@ -295,8 +292,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               progress: enhancedFuriganaState.progress,
               label: enhancedFuriganaState.progress < 0.85
                   ? l10n.downloadsEnhancedFuriganaDownloadingPercent(
-                      percent:
-                          (enhancedFuriganaState.progress / 0.85 * 100).toInt(),
+                      percent: (enhancedFuriganaState.progress / 0.85 * 100)
+                          .toInt(),
                     )
                   : l10n.downloadsEnhancedFuriganaExtracting,
               theme: theme,
@@ -858,7 +855,6 @@ class _KanjidicTile extends ConsumerWidget {
     );
   }
 }
-
 
 class _EnhancedFuriganaDictTile extends ConsumerWidget {
   const _EnhancedFuriganaDictTile({required this.state, required this.theme});

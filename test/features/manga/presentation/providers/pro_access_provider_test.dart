@@ -5,10 +5,7 @@ import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 
 class _FakeBillingClient extends OcrBillingClient {
-  _FakeBillingClient({
-    this.refreshedStatus,
-    this.refreshDue = true,
-  });
+  _FakeBillingClient({this.refreshedStatus, this.refreshDue = true});
 
   OcrBillingStatus? localStatus;
   final OcrBillingStatus? refreshedStatus;

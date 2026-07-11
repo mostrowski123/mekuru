@@ -407,7 +407,10 @@ class DictionaryImporter {
                 })
                 .toList(growable: false);
 
-            await _repository.batchInsertEntries(batch, batchSize: batch.length);
+            await _repository.batchInsertEntries(
+              batch,
+              batchSize: batch.length,
+            );
             inserted += batch.length;
             onProgress?.call(inserted, totalItems);
           }

@@ -23,10 +23,7 @@ Future<T> tracedOperation<T>(
       metricName,
       sw.elapsedMilliseconds,
       unit: SentryMetricUnit.millisecond,
-      attributes: {
-        ...?attributes,
-        'error': SentryAttribute.bool(true),
-      },
+      attributes: {...?attributes, 'error': SentryAttribute.bool(true)},
     );
     rethrow;
   }

@@ -420,7 +420,6 @@ final ocrServerUrlProvider = NotifierProvider<OcrServerUrlNotifier, String>(
   OcrServerUrlNotifier.new,
 );
 
-
 /// Whether the user has opted into the optional UniDic-lite furigana
 /// dictionary. Independent of whether the dict files have been downloaded
 /// — toggling this on without the files present leaves MecabService on

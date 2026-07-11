@@ -203,12 +203,12 @@ class FuzzySearchReport {
   FuzzySearchReport._({
     required Map<String, int> medians,
     required Map<String, int> resultCounts,
-  })  : _medians = medians,
-        _resultCounts = resultCounts,
-        _aggregate = _PathTimings(
-          label: 'fuzzy',
-          durationsMicros: medians.values.toList(),
-        );
+  }) : _medians = medians,
+       _resultCounts = resultCounts,
+       _aggregate = _PathTimings(
+         label: 'fuzzy',
+         durationsMicros: medians.values.toList(),
+       );
 
   final Map<String, int> _medians;
   final Map<String, int> _resultCounts;
@@ -221,8 +221,7 @@ class FuzzySearchReport {
   double get mean => _aggregate.mean;
 
   String summary() {
-    String fmtMicros(num micros) =>
-        '${(micros / 1000).toStringAsFixed(2)} ms';
+    String fmtMicros(num micros) => '${(micros / 1000).toStringAsFixed(2)} ms';
     final lines = [
       '[FuzzySearchBenchmark] n=${_medians.length} queries',
       'aggregate  p50=${fmtMicros(p50)}  p95=${fmtMicros(p95)}  '
@@ -266,8 +265,8 @@ class BenchmarkReport {
   BenchmarkReport._({
     required _PathTimings legacy,
     required _PathTimings batched,
-  })  : _legacy = legacy,
-        _batched = batched;
+  }) : _legacy = legacy,
+       _batched = batched;
 
   final _PathTimings _legacy;
   final _PathTimings _batched;
@@ -282,14 +281,11 @@ class BenchmarkReport {
   int get batchedP95 => _batched.p95;
   double get batchedMean => _batched.mean;
 
-  double get speedupP50 =>
-      _batched.p50 == 0 ? 0 : _legacy.p50 / _batched.p50;
-  double get speedupP95 =>
-      _batched.p95 == 0 ? 0 : _legacy.p95 / _batched.p95;
+  double get speedupP50 => _batched.p50 == 0 ? 0 : _legacy.p50 / _batched.p50;
+  double get speedupP95 => _batched.p95 == 0 ? 0 : _legacy.p95 / _batched.p95;
 
   String summary() {
-    String fmtMicros(num micros) =>
-        '${(micros / 1000).toStringAsFixed(2)} ms';
+    String fmtMicros(num micros) => '${(micros / 1000).toStringAsFixed(2)} ms';
     return [
       '[LookupBenchmark] n=$samples',
       'legacy   p50=${fmtMicros(_legacy.p50)}  p95=${fmtMicros(_legacy.p95)}  '

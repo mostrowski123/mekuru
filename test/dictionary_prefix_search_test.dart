@@ -104,10 +104,7 @@ void main() {
 
     test('never returns entries from disabled dictionaries', () async {
       final results = await queryService.prefixSearchWithSource('日本');
-      expect(
-        results.map((r) => r.entry.expression),
-        isNot(contains('日本刀')),
-      );
+      expect(results.map((r) => r.entry.expression), isNot(contains('日本刀')));
     });
 
     test('returns empty for empty term', () async {

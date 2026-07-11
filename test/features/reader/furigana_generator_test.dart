@@ -108,7 +108,10 @@ void main() {
 
     test('empty input produces empty segments', () {
       final result = _generateOne({}, '');
-      expect(result, {'source': '', 'segments': const <Map<String, Object?>>[]});
+      expect(result, {
+        'source': '',
+        'segments': const <Map<String, Object?>>[],
+      });
     });
   });
 }

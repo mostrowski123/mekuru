@@ -133,9 +133,7 @@ class AppDatabase extends _$AppDatabase {
         );
       }
       if (from < 17) {
-        final cols = await customSelect(
-          "PRAGMA table_info('books')",
-        ).get();
+        final cols = await customSelect("PRAGMA table_info('books')").get();
         final names = cols
             .map((r) => r.data['name']?.toString())
             .whereType<String>()

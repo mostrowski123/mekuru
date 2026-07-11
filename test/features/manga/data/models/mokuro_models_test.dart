@@ -94,8 +94,7 @@ void main() {
       expect(block.linesCoords, isEmpty);
     });
 
-    test('applies defaults for missing box, vertical, font_size and lines',
-        () {
+    test('applies defaults for missing box, vertical, font_size and lines', () {
       final block = MokuroTextBlock.fromOcrJson(<String, dynamic>{});
 
       expect(block.box, [0.0, 0.0, 0.0, 0.0]);
@@ -150,8 +149,7 @@ void main() {
       expect(block.linesCoords.first, isEmpty);
     });
 
-    test('replaces null line entries with empty strings to keep alignment',
-        () {
+    test('replaces null line entries with empty strings to keep alignment', () {
       final json = validBlockJson()..['lines'] = ['一行目', null, '三行目'];
 
       final block = MokuroTextBlock.fromOcrJson(json);

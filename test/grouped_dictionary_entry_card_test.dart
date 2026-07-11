@@ -136,11 +136,7 @@ void main() {
         child: GroupedDictionaryEntryCard(
           entries: [
             DictionaryEntryWithSource(
-              entry: _buildEntry(
-                id: 1,
-                expression: '飲む',
-                reading: 'のむ',
-              ),
+              entry: _buildEntry(id: 1, expression: '飲む', reading: 'のむ'),
               dictionaryName: 'JMdict',
             ),
           ],

@@ -7,16 +7,12 @@ void main() {
 
     test('reads dictionary form from features[6]', () {
       // IPADIC noun: 食べる ← surface 食べ, conjugated form
-      final features = [
-        '動詞', '自立', '*', '*', '一段', '連用形', '食べる', 'タベ', 'タベ',
-      ];
+      final features = ['動詞', '自立', '*', '*', '一段', '連用形', '食べる', 'タベ', 'タベ'];
       expect(layout.dictionaryForm(features), '食べる');
     });
 
     test('reads reading from features[7]', () {
-      final features = [
-        '名詞', '一般', '*', '*', '*', '*', '本', 'ホン', 'ホン',
-      ];
+      final features = ['名詞', '一般', '*', '*', '*', '*', '本', 'ホン', 'ホン'];
       expect(layout.reading(features), 'ホン');
     });
 
@@ -30,9 +26,7 @@ void main() {
     });
 
     test('treats * as missing', () {
-      final features = [
-        '名詞', '一般', '*', '*', '*', '*', '*', '*', '*',
-      ];
+      final features = ['名詞', '一般', '*', '*', '*', '*', '*', '*', '*'];
       expect(layout.dictionaryForm(features), isNull);
       expect(layout.reading(features), '');
     });
@@ -40,7 +34,15 @@ void main() {
     test('does not strip loanword gloss', () {
       // IPADIC entries never carry an English gloss; passthrough is fine.
       final features = [
-        '名詞', '一般', '*', '*', '*', '*', 'foo-bar', 'フーバー', 'フーバー',
+        '名詞',
+        '一般',
+        '*',
+        '*',
+        '*',
+        '*',
+        'foo-bar',
+        'フーバー',
+        'フーバー',
       ];
       expect(layout.dictionaryForm(features), 'foo-bar');
     });
@@ -57,29 +59,87 @@ void main() {
     test('reads lemma from features[7]', () {
       // 食べる ← surface 食べ in unidic-lite
       final features = [
-        '動詞', '一般', '*', '*', '下一段-バ行', '連用形-一般',
-        'タベル', '食べる', '食べ', 'タベ', '食べる', 'タベル',
-        '和', '*', '*', '*', '*', 'タベ', 'タベル', 'タベ', 'タベル',
-        '*', '*', '2', 'C1', '*',
+        '動詞',
+        '一般',
+        '*',
+        '*',
+        '下一段-バ行',
+        '連用形-一般',
+        'タベル',
+        '食べる',
+        '食べ',
+        'タベ',
+        '食べる',
+        'タベル',
+        '和',
+        '*',
+        '*',
+        '*',
+        '*',
+        'タベ',
+        'タベル',
+        'タベ',
+        'タベル',
+        '*',
+        '*',
+        '2',
+        'C1',
+        '*',
       ];
       expect(layout.dictionaryForm(features), '食べる');
     });
 
     test('reads surface kana from features[17]', () {
       final features = [
-        '動詞', '一般', '*', '*', '下一段-バ行', '連用形-一般',
-        'タベル', '食べる', '食べ', 'タベ', '食べる', 'タベル',
-        '和', '*', '*', '*', '*', 'タベ', 'タベル', 'タベ', 'タベル',
-        '*', '*', '2', 'C1', '*',
+        '動詞',
+        '一般',
+        '*',
+        '*',
+        '下一段-バ行',
+        '連用形-一般',
+        'タベル',
+        '食べる',
+        '食べ',
+        'タベ',
+        '食べる',
+        'タベル',
+        '和',
+        '*',
+        '*',
+        '*',
+        '*',
+        'タベ',
+        'タベル',
+        'タベ',
+        'タベル',
+        '*',
+        '*',
+        '2',
+        'C1',
+        '*',
       ];
       expect(layout.reading(features), 'タベ');
     });
 
     test('strips english gloss suffix from loanword lemma', () {
       final features = [
-        '名詞', '普通名詞', '一般', '*', '*', '*',
-        'コンビニ', 'コンビニ-convenience', 'コンビニ', 'コンビニ',
-        'コンビニ-convenience', 'コンビニ', '外', '*', '*', '*', '*',
+        '名詞',
+        '普通名詞',
+        '一般',
+        '*',
+        '*',
+        '*',
+        'コンビニ',
+        'コンビニ-convenience',
+        'コンビニ',
+        'コンビニ',
+        'コンビニ-convenience',
+        'コンビニ',
+        '外',
+        '*',
+        '*',
+        '*',
+        '*',
         'コンビニ',
       ];
       expect(layout.dictionaryForm(features), 'コンビニ');
@@ -96,9 +156,23 @@ void main() {
       // Some unidic-lite katakana entries (e.g., 片仮名 ← カタカナ) have a
       // plain lemma with no `-english` suffix; nothing to strip.
       final features = [
-        '名詞', '普通名詞', '一般', '*', '*', '*',
-        'カタカナ', '片仮名', 'カタカナ', 'カタカナ',
-        '片仮名', 'カタカナ', '和', '*', '*', '*', '*',
+        '名詞',
+        '普通名詞',
+        '一般',
+        '*',
+        '*',
+        '*',
+        'カタカナ',
+        '片仮名',
+        'カタカナ',
+        'カタカナ',
+        '片仮名',
+        'カタカナ',
+        '和',
+        '*',
+        '*',
+        '*',
+        '*',
         'カタカナ',
       ];
       expect(layout.dictionaryForm(features), '片仮名');
@@ -108,8 +182,24 @@ void main() {
       // Degenerate input: lemma starts with `-`, so strip leaves an empty
       // string. Treat as missing rather than producing a blank dict key.
       final features = [
-        '名詞', '一般', '*', '*', '*', '*',
-        '*', '-bogus', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*',
+        '名詞',
+        '一般',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '-bogus',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
       ];
       expect(layout.dictionaryForm(features), isNull);
     });
@@ -123,9 +213,24 @@ void main() {
       // 公園: lemma reading コウエン, surface pron コーエン, kana[17] コウエン.
       // Layout reads kana[17] so the result has no ー.
       final features = [
-        '名詞', '普通名詞', '一般', '*', '*', '*',
-        'コウエン', '公園', '公園', 'コーエン', '公園', 'コーエン',
-        '漢', '*', '*', '*', '*', 'コウエン',
+        '名詞',
+        '普通名詞',
+        '一般',
+        '*',
+        '*',
+        '*',
+        'コウエン',
+        '公園',
+        '公園',
+        'コーエン',
+        '公園',
+        'コーエン',
+        '漢',
+        '*',
+        '*',
+        '*',
+        '*',
+        'コウエン',
       ];
       expect(layout.reading(features), 'コウエン');
     });

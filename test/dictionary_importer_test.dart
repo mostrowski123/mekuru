@@ -896,36 +896,34 @@ void main() {
       );
     });
 
-    test(
-      'malformed collection JSON throws and importer remains usable '
-      '(isolate cleanup on error path)',
-      () async {
-        // Write a syntactically invalid JSON file. The isolate's stream
-        // parser will send an 'error' message; the await-for loop breaks
-        // and rethrows as FormatException. The try/finally must close the
-        // ReceivePort and kill the isolate so subsequent imports work.
-        final badPath = await writeCollectionFile('{ not valid json ');
+    test('malformed collection JSON throws and importer remains usable '
+        '(isolate cleanup on error path)', () async {
+      // Write a syntactically invalid JSON file. The isolate's stream
+      // parser will send an 'error' message; the await-for loop breaks
+      // and rethrows as FormatException. The try/finally must close the
+      // ReceivePort and kill the isolate so subsequent imports work.
+      final badPath = await writeCollectionFile('{ not valid json ');
 
-        await expectLater(
-          importer.importCollectionFromFile(badPath)
-              .timeout(const Duration(seconds: 10)),
-          throwsA(isA<FormatException>()),
-        );
+      await expectLater(
+        importer
+            .importCollectionFromFile(badPath)
+            .timeout(const Duration(seconds: 10)),
+        throwsA(isA<FormatException>()),
+      );
 
-        // After the error path, the importer must still work — proves no
-        // wedged isolate or unclosed port is blocking the next call.
-        final goodJson = buildCollectionJson({
-          'AfterError': [
-            ('食べる', 'たべる', ['to eat']),
-          ],
-        });
-        final goodPath = await writeCollectionFile(goodJson);
+      // After the error path, the importer must still work — proves no
+      // wedged isolate or unclosed port is blocking the next call.
+      final goodJson = buildCollectionJson({
+        'AfterError': [
+          ('食べる', 'たべる', ['to eat']),
+        ],
+      });
+      final goodPath = await writeCollectionFile(goodJson);
 
-        final result = await importer.importCollectionFromFile(goodPath);
-        expect(result.importedDictionaries, ['AfterError']);
-        expect(result.totalEntriesImported, 1);
-      },
-    );
+      final result = await importer.importCollectionFromFile(goodPath);
+      expect(result.importedDictionaries, ['AfterError']);
+      expect(result.totalEntriesImported, 1);
+    });
 
     test(
       'rolls back a collection import when a later batch insert fails',

@@ -217,18 +217,20 @@ void main() {
       expect(result, isTrue);
     });
 
-    test('returns false for a blank field value without a channel call',
-        () async {
-      mockNativeChannel((call) async => fail('must not touch the channel'));
+    test(
+      'returns false for a blank field value without a channel call',
+      () async {
+        mockNativeChannel((call) async => fail('must not touch the channel'));
 
-      final result = await AnkidroidService().hasDuplicateInDeck(
-        modelId: 7,
-        deckId: 9,
-        firstFieldValue: '   ',
-      );
+        final result = await AnkidroidService().hasDuplicateInDeck(
+          modelId: 7,
+          deckId: 9,
+          firstFieldValue: '   ',
+        );
 
-      expect(result, isFalse);
-    });
+        expect(result, isFalse);
+      },
+    );
   });
 
   group('dispose', () {

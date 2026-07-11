@@ -55,46 +55,51 @@ void main() {
   });
 
   group('FTS schema lifecycle', () {
-    test('opening the database creates the FTS table and sync triggers',
-        () async {
-      final names = (await db
-              .customSelect(
-                "SELECT name FROM sqlite_master "
-                "WHERE name LIKE 'dictionary_entries_fts%' "
-                "OR type = 'trigger'",
-              )
-              .get())
-          .map((r) => r.data['name'])
-          .toSet();
+    test(
+      'opening the database creates the FTS table and sync triggers',
+      () async {
+        final names =
+            (await db
+                    .customSelect(
+                      "SELECT name FROM sqlite_master "
+                      "WHERE name LIKE 'dictionary_entries_fts%' "
+                      "OR type = 'trigger'",
+                    )
+                    .get())
+                .map((r) => r.data['name'])
+                .toSet();
 
-      expect(names, contains('dictionary_entries_fts'));
-      expect(names, contains('dictionary_entries_fts_ai'));
-      expect(names, contains('dictionary_entries_fts_ad'));
-      expect(names, contains('dictionary_entries_fts_au'));
-    });
+        expect(names, contains('dictionary_entries_fts'));
+        expect(names, contains('dictionary_entries_fts_ai'));
+        expect(names, contains('dictionary_entries_fts_ad'));
+        expect(names, contains('dictionary_entries_fts_au'));
+      },
+    );
 
-    test('rebuild repairs the index when it was lost, covering all rows',
-        () async {
-      await repo.batchInsertEntries([entry('食べる', 'たべる', 'to eat')]);
+    test(
+      'rebuild repairs the index when it was lost, covering all rows',
+      () async {
+        await repo.batchInsertEntries([entry('食べる', 'たべる', 'to eat')]);
 
-      // Simulate a database whose FTS index was lost (e.g. an install
-      // predating the index): drop table + triggers, then add rows that
-      // the triggers would have missed.
-      for (final trigger in ['ai', 'ad', 'au']) {
-        await db.customStatement(
-          'DROP TRIGGER dictionary_entries_fts_$trigger',
-        );
-      }
-      await db.customStatement('DROP TABLE dictionary_entries_fts');
-      await repo.batchInsertEntries([entry('飲む', 'のむ', 'to drink')]);
+        // Simulate a database whose FTS index was lost (e.g. an install
+        // predating the index): drop table + triggers, then add rows that
+        // the triggers would have missed.
+        for (final trigger in ['ai', 'ad', 'au']) {
+          await db.customStatement(
+            'DROP TRIGGER dictionary_entries_fts_$trigger',
+          );
+        }
+        await db.customStatement('DROP TABLE dictionary_entries_fts');
+        await repo.batchInsertEntries([entry('飲む', 'のむ', 'to drink')]);
 
-      await db.ensureGlossaryFtsForTesting();
+        await db.ensureGlossaryFtsForTesting();
 
-      final eat = await queryService.glossarySearchWithSource('eat');
-      final drink = await queryService.glossarySearchWithSource('drink');
-      expect(eat.map((r) => r.entry.expression), contains('食べる'));
-      expect(drink.map((r) => r.entry.expression), contains('飲む'));
-    });
+        final eat = await queryService.glossarySearchWithSource('eat');
+        final drink = await queryService.glossarySearchWithSource('drink');
+        expect(eat.map((r) => r.entry.expression), contains('食べる'));
+        expect(drink.map((r) => r.entry.expression), contains('飲む'));
+      },
+    );
   });
 
   group('trigger synchronization', () {
@@ -106,9 +111,9 @@ void main() {
 
     test('updated glossaries are reflected in search', () async {
       await repo.batchInsertEntries([entry('走る', 'はしる', 'to run')]);
-      await (db.update(db.dictionaryEntries)
-            ..where((t) => t.expression.equals('走る')))
-          .write(
+      await (db.update(
+        db.dictionaryEntries,
+      )..where((t) => t.expression.equals('走る'))).write(
         DictionaryEntriesCompanion(
           glossaries: Value(jsonEncode(['to sprint'])),
         ),
@@ -121,9 +126,9 @@ void main() {
 
     test('deleted rows disappear from search', () async {
       await repo.batchInsertEntries([entry('走る', 'はしる', 'to run')]);
-      await (db.delete(db.dictionaryEntries)
-            ..where((t) => t.expression.equals('走る')))
-          .go();
+      await (db.delete(
+        db.dictionaryEntries,
+      )..where((t) => t.expression.equals('走る'))).go();
 
       expect(await queryService.glossarySearchWithSource('run'), isEmpty);
     });
@@ -164,13 +169,15 @@ void main() {
       );
     });
 
-    test('search-screen English lookup no longer surfaces substring noise',
-        () async {
-      final results = await queryService.fuzzySearchWithSource('eat');
-      final expressions = results.map((r) => r.entry.expression).toList();
-      expect(expressions, contains('食べる'));
-      expect(expressions, isNot(contains('劇場')));
-    });
+    test(
+      'search-screen English lookup no longer surfaces substring noise',
+      () async {
+        final results = await queryService.fuzzySearchWithSource('eat');
+        final expressions = results.map((r) => r.entry.expression).toList();
+        expect(expressions, contains('食べる'));
+        expect(expressions, isNot(contains('劇場')));
+      },
+    );
 
     test('prefix typing matches (search-as-you-type)', () async {
       final results = await queryService.glossarySearchWithSource('ea');
@@ -194,8 +201,7 @@ void main() {
   });
 
   group('relevance and safety', () {
-    test('tight glosses rank above long glosses containing the term',
-        () async {
+    test('tight glosses rank above long glosses containing the term', () async {
       await repo.batchInsertEntries([
         entry(
           '長文',
@@ -217,17 +223,16 @@ void main() {
         await queryService.glossarySearchWithSource('ea"t OR NEAR('),
         isEmpty,
       );
-      expect(
-        await queryService.glossarySearchWithSource('"eat"'),
-        isNotEmpty,
-      );
+      expect(await queryService.glossarySearchWithSource('"eat"'), isNotEmpty);
     });
 
-    test('terms with no indexable content return empty without error',
-        () async {
-      await repo.batchInsertEntries([entry('食べる', 'たべる', 'to eat')]);
-      expect(await queryService.glossarySearchWithSource('!!!'), isEmpty);
-    });
+    test(
+      'terms with no indexable content return empty without error',
+      () async {
+        await repo.batchInsertEntries([entry('食べる', 'たべる', 'to eat')]);
+        expect(await queryService.glossarySearchWithSource('!!!'), isEmpty);
+      },
+    );
 
     test('excludes disabled dictionaries', () async {
       final disabledId = await repo.insertDictionary('Disabled');
@@ -239,10 +244,7 @@ void main() {
 
       final results = await queryService.glossarySearchWithSource('run');
       expect(results.map((r) => r.entry.expression), contains('走る'));
-      expect(
-        results.map((r) => r.entry.expression),
-        isNot(contains('駆ける')),
-      );
+      expect(results.map((r) => r.entry.expression), isNot(contains('駆ける')));
     });
   });
 }

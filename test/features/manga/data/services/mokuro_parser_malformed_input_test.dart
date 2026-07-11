@@ -86,28 +86,30 @@ void main() {
     expect(pages.map((page) => page.pageIndex), [0, 1]);
   });
 
-  test('treats null blocks as an empty page and accepts double dimensions',
-      () async {
-    final path = await writeMokuroFile({
-      'title': 'Volume',
-      'volume': 'Volume',
-      'pages': [
-        {
-          'img_path': '0001.jpg',
-          'img_width': 1000.0,
-          'img_height': 1500.0,
-          'blocks': null,
-        },
-      ],
-    });
+  test(
+    'treats null blocks as an empty page and accepts double dimensions',
+    () async {
+      final path = await writeMokuroFile({
+        'title': 'Volume',
+        'volume': 'Volume',
+        'pages': [
+          {
+            'img_path': '0001.jpg',
+            'img_width': 1000.0,
+            'img_height': 1500.0,
+            'blocks': null,
+          },
+        ],
+      });
 
-    final (_, pages) = await MokuroParser.parseMokuroFile(path);
+      final (_, pages) = await MokuroParser.parseMokuroFile(path);
 
-    expect(pages, hasLength(1));
-    expect(pages.first.blocks, isEmpty);
-    expect(pages.first.imgWidth, 1000);
-    expect(pages.first.imgHeight, 1500);
-  });
+      expect(pages, hasLength(1));
+      expect(pages.first.blocks, isEmpty);
+      expect(pages.first.imgWidth, 1000);
+      expect(pages.first.imgHeight, 1500);
+    },
+  );
 
   test('skips non-map entries inside a page blocks list', () async {
     final path = await writeMokuroFile({

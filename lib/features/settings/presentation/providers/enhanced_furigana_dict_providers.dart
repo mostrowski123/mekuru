@@ -45,8 +45,7 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
 
   Future<void> checkStatus() async {
     try {
-      final installed =
-          await EnhancedFuriganaDictDownloadService.isInstalled();
+      final installed = await EnhancedFuriganaDictDownloadService.isInstalled();
       state = state.copyWith(isInstalled: installed);
     } catch (e) {
       debugPrint('[EnhancedFurigana] Error checking status: $e');
@@ -68,9 +67,7 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
           state = state.copyWith(progress: p);
         },
       );
-      ref
-          .read(enhancedFuriganaDictEnabledProvider.notifier)
-          .setEnabled(true);
+      ref.read(enhancedFuriganaDictEnabledProvider.notifier).setEnabled(true);
       state = const EnhancedFuriganaDictState(
         isInstalled: true,
         successMessage:
@@ -94,9 +91,7 @@ class EnhancedFuriganaDictNotifier extends Notifier<EnhancedFuriganaDictState> {
 
     try {
       await EnhancedFuriganaDictDownloadService.uninstall();
-      ref
-          .read(enhancedFuriganaDictEnabledProvider.notifier)
-          .setEnabled(false);
+      ref.read(enhancedFuriganaDictEnabledProvider.notifier).setEnabled(false);
       state = const EnhancedFuriganaDictState(
         successMessage:
             'Enhanced dictionary removed. Restart the app to switch back to '

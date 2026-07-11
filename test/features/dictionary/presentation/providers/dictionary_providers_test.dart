@@ -12,16 +12,18 @@ void main() {
       expect(next.currentDictionary, 'Parsing collection...');
     });
 
-    test('preserves existing successMessage when copyWith does not pass one',
-        () {
-      const seeded = DictionaryImportState(successMessage: 'done!');
+    test(
+      'preserves existing successMessage when copyWith does not pass one',
+      () {
+        const seeded = DictionaryImportState(successMessage: 'done!');
 
-      final next = seeded.copyWith(processedEntries: 5, totalEntries: 10);
+        final next = seeded.copyWith(processedEntries: 5, totalEntries: 10);
 
-      expect(next.successMessage, 'done!');
-      expect(next.processedEntries, 5);
-      expect(next.totalEntries, 10);
-    });
+        expect(next.successMessage, 'done!');
+        expect(next.processedEntries, 5);
+        expect(next.totalEntries, 10);
+      },
+    );
 
     test('keeps all other fields when only one is updated', () {
       const seeded = DictionaryImportState(
@@ -47,17 +49,14 @@ void main() {
       expect(next.successMessage, 'ok');
     });
 
-    test(
-      'copyWith on a clean state leaves error/successMessage null',
-      () {
-        const seeded = DictionaryImportState();
+    test('copyWith on a clean state leaves error/successMessage null', () {
+      const seeded = DictionaryImportState();
 
-        final next = seeded.copyWith(isImporting: true);
+      final next = seeded.copyWith(isImporting: true);
 
-        expect(next.error, isNull);
-        expect(next.successMessage, isNull);
-        expect(next.isImporting, true);
-      },
-    );
+      expect(next.error, isNull);
+      expect(next.successMessage, isNull);
+      expect(next.isImporting, true);
+    });
   });
 }

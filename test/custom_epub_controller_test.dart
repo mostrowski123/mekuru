@@ -101,29 +101,32 @@ void main() {
       },
     );
 
-    test('MissingPluginException from current location becomes StateError', () async {
-      final platformController = _FakePlatformInAppWebViewController(
-        onEvaluateJavascript: (_) => Future<dynamic>.error(
-          MissingPluginException('No implementation found'),
-        ),
-      );
-      final controller = CustomEpubController()
-        ..attach(
-          InAppWebViewController.fromPlatform(platform: platformController),
-        );
-
-      await expectLater(
-        controller.getCurrentLocation(),
-        throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
-            'EPUB web view is no longer attached',
+    test(
+      'MissingPluginException from current location becomes StateError',
+      () async {
+        final platformController = _FakePlatformInAppWebViewController(
+          onEvaluateJavascript: (_) => Future<dynamic>.error(
+            MissingPluginException('No implementation found'),
           ),
-        ),
-      );
-      expect(platformController.evaluatedSources, ['getCurrentLocation()']);
-    });
+        );
+        final controller = CustomEpubController()
+          ..attach(
+            InAppWebViewController.fromPlatform(platform: platformController),
+          );
+
+        await expectLater(
+          controller.getCurrentLocation(),
+          throwsA(
+            isA<StateError>().having(
+              (error) => error.message,
+              'message',
+              'EPUB web view is no longer attached',
+            ),
+          ),
+        );
+        expect(platformController.evaluatedSources, ['getCurrentLocation()']);
+      },
+    );
 
     test(
       'MissingPluginException from getChapters detaches the stale controller',
@@ -163,7 +166,8 @@ Future<void> _flushMicrotasks() async {
   await Future<void>.delayed(Duration.zero);
 }
 
-class _FakePlatformInAppWebViewController extends PlatformInAppWebViewController {
+class _FakePlatformInAppWebViewController
+    extends PlatformInAppWebViewController {
   _FakePlatformInAppWebViewController({this.onEvaluateJavascript})
     : super.implementation(
         const PlatformInAppWebViewControllerCreationParams(id: 1),

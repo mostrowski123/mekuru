@@ -72,19 +72,23 @@ class CompoundWordResolver {
       final candidate = _buildCandidate(tokens, tappedIdx, end);
       if (candidate == null) continue;
       final tokenCount = end - tappedIdx;
-      checks.add(_CompoundCheck(
-        candidate: candidate,
-        dictionaryForm: candidate.surface,
-        tokenCount: tokenCount,
-        isDeinflection: false,
-      ));
-      for (final d in deinflect(candidate.surface)) {
-        checks.add(_CompoundCheck(
+      checks.add(
+        _CompoundCheck(
           candidate: candidate,
-          dictionaryForm: d,
+          dictionaryForm: candidate.surface,
           tokenCount: tokenCount,
-          isDeinflection: true,
-        ));
+          isDeinflection: false,
+        ),
+      );
+      for (final d in deinflect(candidate.surface)) {
+        checks.add(
+          _CompoundCheck(
+            candidate: candidate,
+            dictionaryForm: d,
+            tokenCount: tokenCount,
+            isDeinflection: true,
+          ),
+        );
       }
     }
 

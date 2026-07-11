@@ -184,28 +184,30 @@ void main() {
   });
 
   group('matchingTerms vs hasMatch — equivalence', () {
-    test('returns the same membership set as per-term hasMatch calls',
-        () async {
-      service.invalidateMetasCache();
-      final terms = <String>[
-        '食べる',
-        '食べた',
-        '走る',
-        '行く',
-        'わたし',
-        '私',
-        '存在しない',
-        '',
-      ];
+    test(
+      'returns the same membership set as per-term hasMatch calls',
+      () async {
+        service.invalidateMetasCache();
+        final terms = <String>[
+          '食べる',
+          '食べた',
+          '走る',
+          '行く',
+          'わたし',
+          '私',
+          '存在しない',
+          '',
+        ];
 
-      final expected = <String>{};
-      for (final t in terms) {
-        if (t.isEmpty) continue;
-        if (await service.hasMatch(t)) expected.add(t);
-      }
+        final expected = <String>{};
+        for (final t in terms) {
+          if (t.isEmpty) continue;
+          if (await service.hasMatch(t)) expected.add(t);
+        }
 
-      final actual = await service.matchingTerms(terms);
-      expect(actual, equals(expected));
-    });
+        final actual = await service.matchingTerms(terms);
+        expect(actual, equals(expected));
+      },
+    );
   });
 }

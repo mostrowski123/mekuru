@@ -22,10 +22,13 @@ void main() {
       expect(prefixUpperBound('퟿'), '');
     });
 
-    test('drops a trailing U+10FFFF and increments the previous code point', () {
-      // あ (U+3042) → ぃ (U+3043)
-      expect(prefixUpperBound('あ\u{10FFFF}'), 'ぃ');
-    });
+    test(
+      'drops a trailing U+10FFFF and increments the previous code point',
+      () {
+        // あ (U+3042) → ぃ (U+3043)
+        expect(prefixUpperBound('あ\u{10FFFF}'), 'ぃ');
+      },
+    );
 
     test('handles astral (surrogate-pair) code points', () {
       // 𩸽 (U+29E3D) → U+29E3E
@@ -44,10 +47,7 @@ void main() {
     });
 
     test('adds case variants for ASCII input', () {
-      expect(
-        prefixSearchVariants('dvd'),
-        containsAll(['dvd', 'DVD', 'Dvd']),
-      );
+      expect(prefixSearchVariants('dvd'), containsAll(['dvd', 'DVD', 'Dvd']));
     });
 
     test('deduplicates variants', () {

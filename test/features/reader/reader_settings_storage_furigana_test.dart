@@ -51,9 +51,7 @@ void main() {
 
     test('saves furiganaMode and reloads it', () async {
       final storage = SharedPreferencesReaderSettingsStorage();
-      await storage.save(
-        const ReaderSettings(furiganaMode: FuriganaMode.all),
-      );
+      await storage.save(const ReaderSettings(furiganaMode: FuriganaMode.all));
 
       final loaded = await storage.load();
       expect(loaded, isNotNull);
@@ -79,9 +77,7 @@ void main() {
       // Simulate a user upgrading from a version that did not have the
       // furigana key. The settings file has some other reader keys but no
       // 'reader.furigana_mode'.
-      SharedPreferences.setMockInitialValues({
-        'reader.font_size': 24.0,
-      });
+      SharedPreferences.setMockInitialValues({'reader.font_size': 24.0});
       final storage = SharedPreferencesReaderSettingsStorage();
       final loaded = await storage.load();
       expect(loaded, isNotNull);
@@ -89,14 +85,15 @@ void main() {
       expect(loaded.furiganaMode, FuriganaMode.off);
     });
 
-    test('load returns settings when only furiganaMode key is present', () async {
-      SharedPreferences.setMockInitialValues({
-        'reader.furigana_mode': 'all',
-      });
-      final storage = SharedPreferencesReaderSettingsStorage();
-      final loaded = await storage.load();
-      expect(loaded, isNotNull);
-      expect(loaded!.furiganaMode, FuriganaMode.all);
-    });
+    test(
+      'load returns settings when only furiganaMode key is present',
+      () async {
+        SharedPreferences.setMockInitialValues({'reader.furigana_mode': 'all'});
+        final storage = SharedPreferencesReaderSettingsStorage();
+        final loaded = await storage.load();
+        expect(loaded, isNotNull);
+        expect(loaded!.furiganaMode, FuriganaMode.all);
+      },
+    );
   });
 }

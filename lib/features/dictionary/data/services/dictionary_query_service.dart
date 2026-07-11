@@ -1065,10 +1065,7 @@ class DictionaryQueryService {
       return [];
     }
 
-    final idPlaceholders = List.filled(
-      cache.enabledIds.length,
-      '?',
-    ).join(', ');
+    final idPlaceholders = List.filled(cache.enabledIds.length, '?').join(', ');
     final rows = await _db
         .customSelect(
           'SELECT de.* FROM dictionary_entries de '

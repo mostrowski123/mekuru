@@ -82,9 +82,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     await prefs.setBool(_keepScreenOnKey, settings.keepScreenOn);
     await prefs.setDouble(_sepiaIntensityKey, settings.sepiaIntensity);
     await prefs.setBool(_disableLinksKey, settings.disableLinks);
-    await prefs.setString(
-      _furiganaModeKey,
-      settings.furiganaMode.storageValue,
-    );
+    await prefs.setString(_furiganaModeKey, settings.furiganaMode.storageValue);
   }
 }
