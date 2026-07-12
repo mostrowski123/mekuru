@@ -4,11 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ReviewPromptState {
   const ReviewPromptState({
     this.firstSeenAt,
+    this.qualifyingSessions = 0,
     this.requestCount = 0,
     this.lastRequestAt,
   });
 
   final DateTime? firstSeenAt;
+  final int qualifyingSessions;
   final int requestCount;
   final DateTime? lastRequestAt;
 }
@@ -16,11 +18,13 @@ class ReviewPromptState {
 abstract class ReviewPromptStorage {
   Future<ReviewPromptState> load();
   Future<void> saveFirstSeenAt(DateTime value);
+  Future<void> saveQualifyingSessions(int count);
   Future<void> recordRequest(DateTime requestedAt, int newCount);
 }
 
 class SharedPreferencesReviewPromptStorage implements ReviewPromptStorage {
   static const _firstSeenAtKey = 'review_prompt.first_seen_at';
+  static const _qualifyingSessionsKey = 'review_prompt.qualifying_sessions';
   static const _requestCountKey = 'review_prompt.request_count';
   static const _lastRequestAtKey = 'review_prompt.last_request_at';
 
@@ -29,6 +33,7 @@ class SharedPreferencesReviewPromptStorage implements ReviewPromptStorage {
     final prefs = await SharedPreferences.getInstance();
     return ReviewPromptState(
       firstSeenAt: _parseInstant(prefs.getString(_firstSeenAtKey)),
+      qualifyingSessions: prefs.getInt(_qualifyingSessionsKey) ?? 0,
       requestCount: prefs.getInt(_requestCountKey) ?? 0,
       lastRequestAt: _parseInstant(prefs.getString(_lastRequestAtKey)),
     );
@@ -38,6 +43,12 @@ class SharedPreferencesReviewPromptStorage implements ReviewPromptStorage {
   Future<void> saveFirstSeenAt(DateTime value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_firstSeenAtKey, value.toIso8601String());
+  }
+
+  @override
+  Future<void> saveQualifyingSessions(int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_qualifyingSessionsKey, count);
   }
 
   @override

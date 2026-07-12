@@ -7,32 +7,50 @@ void main() {
   /// Baseline arguments that satisfy every gate; each test flips one.
   bool decide({
     DateTime? firstSeenAt,
-    int savedWordCount = 20,
-    Duration sessionDuration = const Duration(minutes: 10),
+    int qualifyingSessions = 6,
     int requestCount = 0,
     DateTime? lastRequestAt,
   }) {
     return ReviewPromptPolicy.shouldRequestReview(
       now: now,
       firstSeenAt: firstSeenAt ?? now.subtract(const Duration(days: 30)),
-      savedWordCount: savedWordCount,
-      sessionDuration: sessionDuration,
+      qualifyingSessions: qualifyingSessions,
       requestCount: requestCount,
       lastRequestAt: lastRequestAt,
     );
   }
+
+  group('isQualifyingSession', () {
+    test('accepts sessions at or above the minimum duration', () {
+      expect(
+        ReviewPromptPolicy.isQualifyingSession(
+          ReviewPromptPolicy.minSessionDuration,
+        ),
+        isTrue,
+      );
+      expect(
+        ReviewPromptPolicy.isQualifyingSession(const Duration(minutes: 4)),
+        isFalse,
+      );
+    });
+  });
 
   group('shouldRequestReview', () {
     test('allows when every gate passes', () {
       expect(decide(), isTrue);
     });
 
-    test('blocks below the saved-word threshold', () {
+    test('blocks below the qualifying-session threshold', () {
       expect(
-        decide(savedWordCount: ReviewPromptPolicy.minSavedWords - 1),
+        decide(
+          qualifyingSessions: ReviewPromptPolicy.minQualifyingSessions - 1,
+        ),
         isFalse,
       );
-      expect(decide(savedWordCount: ReviewPromptPolicy.minSavedWords), isTrue);
+      expect(
+        decide(qualifyingSessions: ReviewPromptPolicy.minQualifyingSessions),
+        isTrue,
+      );
     });
 
     test('blocks when first seen is unknown', () {
@@ -40,8 +58,7 @@ void main() {
         ReviewPromptPolicy.shouldRequestReview(
           now: now,
           firstSeenAt: null,
-          savedWordCount: 20,
-          sessionDuration: const Duration(minutes: 10),
+          qualifyingSessions: 6,
           requestCount: 0,
           lastRequestAt: null,
         ),
@@ -58,10 +75,6 @@ void main() {
         decide(firstSeenAt: now.subtract(const Duration(days: 8))),
         isTrue,
       );
-    });
-
-    test('blocks short reading sessions', () {
-      expect(decide(sessionDuration: const Duration(minutes: 4)), isFalse);
     });
 
     test('blocks after the lifetime request budget is spent', () {

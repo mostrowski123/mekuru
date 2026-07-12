@@ -5,22 +5,25 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 
 /// Requests a Play in-app review after a qualifying reading session.
 ///
-/// Call [maybeRequestReview] fire-and-forget when the user returns to the
-/// library. It never throws and never blocks the caller; whether a dialog is
-/// actually shown remains at the discretion of the Play quota.
+/// Call [maybeRequestReview] fire-and-forget when a reader screen closes. It
+/// never throws and never blocks the caller; whether a dialog is actually
+/// shown remains at the discretion of the Play quota.
 class ReviewPromptService {
   ReviewPromptService({
     required ReviewPromptStorage storage,
-    required Future<int> Function() countSavedWords,
+    bool Function()? isSafeToPrompt,
     InAppReview? inAppReview,
     DateTime Function()? clock,
   }) : _storage = storage,
-       _countSavedWords = countSavedWords,
+       _isSafeToPrompt = isSafeToPrompt ?? (() => true),
        _inAppReview = inAppReview ?? InAppReview.instance,
        _clock = clock ?? DateTime.now;
 
   final ReviewPromptStorage _storage;
-  final Future<int> Function() _countSavedWords;
+
+  /// Last-moment veto — e.g. the user already opened another reader, so the
+  /// dialog would land on top of a reading session.
+  final bool Function() _isSafeToPrompt;
   final InAppReview _inAppReview;
   final DateTime Function() _clock;
 
@@ -29,22 +32,25 @@ class ReviewPromptService {
       final now = _clock();
       final state = await _storage.load();
       if (state.firstSeenAt == null) {
-        // Start the usage-age clock; never prompt on the visit that starts it.
+        // Start the usage-age clock on the first session ever seen.
         await _storage.saveFirstSeenAt(now);
+      }
+      if (!ReviewPromptPolicy.isQualifyingSession(
+        now.difference(sessionStartedAt),
+      )) {
         return;
       }
-      // Cheap prefs/clock gates first; the DB count only runs when a prompt
-      // is still possible.
-      final passesUsageGates = ReviewPromptPolicy.passesUsageGates(
+      final qualifyingSessions = state.qualifyingSessions + 1;
+      await _storage.saveQualifyingSessions(qualifyingSessions);
+      final shouldRequest = ReviewPromptPolicy.shouldRequestReview(
         now: now,
         firstSeenAt: state.firstSeenAt,
-        sessionDuration: now.difference(sessionStartedAt),
+        qualifyingSessions: qualifyingSessions,
         requestCount: state.requestCount,
         lastRequestAt: state.lastRequestAt,
       );
-      if (!passesUsageGates) return;
-      final savedWordCount = await _countSavedWords();
-      if (savedWordCount < ReviewPromptPolicy.minSavedWords) return;
+      if (!shouldRequest) return;
+      if (!_isSafeToPrompt()) return;
       if (!await _inAppReview.isAvailable()) return;
       // Record before requesting so a failure can never cause re-prompting.
       final newCount = state.requestCount + 1;
