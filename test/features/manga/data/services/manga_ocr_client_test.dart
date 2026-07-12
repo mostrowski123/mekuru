@@ -154,6 +154,102 @@ void main() {
       client.dispose();
     });
 
+    for (final statusCode in [402, 403, 404, 409]) {
+      test('$statusCode billing error throws immediately without retry',
+          () async {
+        var callCount = 0;
+        final mockClient = MockClient.streaming((request, _) async {
+          callCount++;
+          return http.StreamedResponse(
+            Stream.value(
+              utf8.encode(
+                '{"detail":{"code":"job_error","message":"Job problem."}}',
+              ),
+            ),
+            statusCode,
+            headers: jsonHeaders,
+          );
+        });
+
+        final client = createClient(mockClient);
+
+        await expectLater(
+          () => client.processPage(imageBytes, 'page_001.jpg'),
+          throwsA(
+            isA<OcrServerException>()
+                .having((e) => e.statusCode, 'statusCode', statusCode)
+                .having((e) => e.message, 'message', 'Job problem.')
+                .having((e) => e.code, 'code', 'job_error'),
+          ),
+        );
+
+        expect(callCount, 1);
+
+        client.dispose();
+      });
+    }
+
+    test('structured detail without message falls back to raw body', () async {
+      final mockClient = MockClient.streaming((request, _) async {
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('{"detail":{"code":"job_expired"}}')),
+          409,
+          headers: jsonHeaders,
+        );
+      });
+
+      final client = createClient(mockClient);
+
+      await expectLater(
+        () => client.processPage(imageBytes, 'page_001.jpg'),
+        throwsA(
+          isA<OcrServerException>()
+              .having((e) => e.code, 'code', 'job_expired')
+              .having(
+                (e) => e.message,
+                'message',
+                '{"detail":{"code":"job_expired"}}',
+              ),
+        ),
+      );
+
+      client.dispose();
+    });
+
+    test('429 with Retry-After header is honored and retried', () async {
+      var callCount = 0;
+      final requestTimes = <DateTime>[];
+      final mockClient = MockClient.streaming((request, _) async {
+        callCount++;
+        requestTimes.add(DateTime.now());
+        if (callCount == 1) {
+          return http.StreamedResponse(
+            Stream.value(utf8.encode('{"detail":"Rate limited"}')),
+            429,
+            headers: {...jsonHeaders, 'retry-after': '1'},
+          );
+        }
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(successResponse)),
+          200,
+          headers: jsonHeaders,
+        );
+      });
+
+      final client = createClient(mockClient);
+
+      final result = await client.processPage(imageBytes, 'page_001.jpg');
+
+      expect(result.imgWidth, 1700);
+      expect(callCount, 2);
+      // The 1-second Retry-After must be respected even though the
+      // client's own base retry delay is zero in tests.
+      final gap = requestTimes[1].difference(requestTimes[0]);
+      expect(gap, greaterThanOrEqualTo(const Duration(milliseconds: 900)));
+
+      client.dispose();
+    });
+
     test('500 retries and succeeds on second attempt', () async {
       var callCount = 0;
       final mockClient = MockClient.streaming((request, _) async {

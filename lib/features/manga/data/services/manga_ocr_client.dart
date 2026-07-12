@@ -28,7 +28,19 @@ class OcrServerException implements Exception {
   final int statusCode;
   final String message;
 
-  const OcrServerException(this.statusCode, this.message);
+  /// Machine-readable error code from structured server errors
+  /// (e.g. `job_not_found`, `job_expired`), when the server sent one.
+  final String? code;
+
+  /// Server-requested retry delay from a 429 Retry-After header.
+  final Duration? retryAfter;
+
+  const OcrServerException(
+    this.statusCode,
+    this.message, {
+    this.code,
+    this.retryAfter,
+  });
 
   @override
   String toString() => 'OcrServerException($statusCode): $message';
@@ -47,6 +59,12 @@ class MangaOcrClient {
 
   static const _maxRetries = 3;
   static const _timeoutDuration = Duration(seconds: 30);
+  static const _maxRetryAfterDelay = Duration(seconds: 30);
+
+  /// Statuses where a retry cannot succeed: auth failures, validation
+  /// errors, and billing-job errors (payment required, forbidden,
+  /// job not found, job no longer active).
+  static const _nonRetriableStatusCodes = {401, 402, 403, 404, 409, 422};
 
   MangaOcrClient({
     required this.serverUrl,
@@ -59,7 +77,8 @@ class MangaOcrClient {
   /// Process a single manga page image through the OCR server.
   ///
   /// Retries up to 3 times with exponential backoff (2s, 4s, 8s).
-  /// Throws [OcrServerException] for non-retryable errors (401, 422).
+  /// Throws [OcrServerException] immediately for non-retriable errors
+  /// (401, 402, 403, 404, 409, 422).
   /// Returns [OcrPageResult] with parsed text blocks on success.
   Future<OcrPageResult> processPage(
     Uint8List imageBytes,
@@ -78,17 +97,21 @@ class MangaOcrClient {
           pageIndex: pageIndex,
         );
       } on OcrServerException catch (e) {
-        // Don't retry auth errors or validation errors
-        if (e.statusCode == 401 || e.statusCode == 422) {
+        // Don't retry errors a retry cannot fix (auth, validation, billing)
+        if (_nonRetriableStatusCodes.contains(e.statusCode)) {
           rethrow;
         }
 
-        // For 429 (rate limited), respect Retry-After header if available
+        // For 429 (rate limited), honor the Retry-After header if present
         if (e.statusCode == 429) {
           lastError = e;
-          // Parse retry delay from message or use exponential backoff
-          final delay = _baseRetryDelay * (1 << attempt);
-          await Future<void>.delayed(delay);
+          if (attempt < _maxRetries - 1) {
+            var delay = e.retryAfter ?? _baseRetryDelay * (1 << attempt);
+            if (delay > _maxRetryAfterDelay) {
+              delay = _maxRetryAfterDelay;
+            }
+            await Future<void>.delayed(delay);
+          }
           continue;
         }
 
@@ -181,14 +204,7 @@ class MangaOcrClient {
     final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 200) {
-      String detail;
-      try {
-        final body = json.decode(response.body) as Map<String, dynamic>;
-        detail = body['detail'] as String? ?? response.body;
-      } catch (_) {
-        detail = response.body;
-      }
-      throw OcrServerException(response.statusCode, detail);
+      throw _errorFromResponse(response);
     }
 
     final data = json.decode(response.body) as Map<String, dynamic>;
@@ -201,6 +217,40 @@ class MangaOcrClient {
       imgHeight: data['img_height'] as int,
       blocks: blocks,
     );
+  }
+
+  /// Build an [OcrServerException] from a FastAPI-style error response.
+  ///
+  /// `detail` may be a plain string or a structured object like
+  /// `{"code": "job_expired", "message": "The OCR job has expired."}`.
+  static OcrServerException _errorFromResponse(http.Response response) {
+    var message = response.body;
+    String? code;
+    try {
+      final body = json.decode(response.body) as Map<String, dynamic>;
+      final detail = body['detail'];
+      if (detail is String) {
+        message = detail;
+      } else if (detail is Map<String, dynamic>) {
+        message = detail['message'] as String? ?? response.body;
+        code = detail['code'] as String?;
+      }
+    } catch (_) {
+      // Not JSON — keep the raw body as the message.
+    }
+    return OcrServerException(
+      response.statusCode,
+      message,
+      code: code,
+      retryAfter: _parseRetryAfter(response.headers['retry-after']),
+    );
+  }
+
+  static Duration? _parseRetryAfter(String? headerValue) {
+    if (headerValue == null) return null;
+    final seconds = int.tryParse(headerValue.trim());
+    if (seconds == null || seconds < 0) return null;
+    return Duration(seconds: seconds);
   }
 
   void dispose() {

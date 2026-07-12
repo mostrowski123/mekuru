@@ -653,8 +653,26 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
 String _describeOcrError(Object error) {
   if (error is OcrServerException) {
     final msg = error.message.toLowerCase();
-    if (error.statusCode == 401 || error.statusCode == 403) {
+    if (error.statusCode == 401) {
       return 'Authentication failed. Check your server bearer key.';
+    }
+    if (error.statusCode == 403) {
+      // job_forbidden: the OCR job belongs to a different account.
+      if (error.code == 'job_forbidden') {
+        return 'This OCR job belongs to a different account. '
+            'Start a new OCR run.';
+      }
+      return 'Authentication failed. Check your server bearer key.';
+    }
+    if (error.statusCode == 402) {
+      return 'Not enough OCR credits. ${error.message}';
+    }
+    if (error.statusCode == 404) {
+      return 'The OCR job was not found. Start a new OCR run.';
+    }
+    if (error.statusCode == 409) {
+      // job_expired or job_not_active
+      return 'The OCR job is no longer active. Start a new OCR run.';
     }
     if (error.statusCode == 422) {
       return 'Server rejected the request: ${error.message}';
