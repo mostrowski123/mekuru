@@ -67,6 +67,11 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     setVerticalText(!state.verticalText);
   }
 
+  void setSplitVerticalText(bool enabled) {
+    state = state.copyWith(splitVerticalText: enabled);
+    _persistSettings();
+  }
+
   void setReadingDirection(ReaderDirection direction) {
     state = state.copyWith(readingDirection: direction);
     _persistSettings();

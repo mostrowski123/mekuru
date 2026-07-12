@@ -1316,6 +1316,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerVerticalTextTitle => 'Teks Vertikal';
 
   @override
+  String get readerSplitVerticalTextTitle => 'Pisahkan Teks Vertikal';
+
+  @override
+  String get readerSplitVerticalTextSubtitle =>
+      'Tampilkan dua blok teks bertumpuk per halaman';
+
+  @override
   String get readerThisBook => 'Buku ini';
 
   @override

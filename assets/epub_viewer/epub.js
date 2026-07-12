@@ -6025,6 +6025,19 @@ class Contents {
     this.css("max-width", "inherit");
     this.css(COLUMN_FILL, "auto");
     this.css(COLUMN_GAP, gap + "px");
+    // [MEKURU PATCH] In vertical writing modes the CSS column inline size is
+    // the *vertical* extent, so the width-derived columnWidth from
+    // Layout.calculate splits each page into stacked top/bottom blocks
+    // (floor(height / pageWidth) columns). Derive the column size from the
+    // page height instead: height/n - gap gives n aligned blocks per page
+    // (column stride height/n matches the page delta). n comes from
+    // window._verticalBlockCount (reader setting, default 1 = full-height
+    // lines like standard Japanese e-readers).
+    if (axis === "vertical") {
+      var blocks = (typeof window._verticalBlockCount === 'number' && window._verticalBlockCount >= 1)
+        ? Math.floor(window._verticalBlockCount) : 1;
+      columnWidth = height / blocks - gap;
+    }
     this.css(COLUMN_WIDTH, columnWidth + "px");
 
     // Fix glyph clipping in WebKit

@@ -1652,6 +1652,14 @@
   "@readerVerticalTextTitle": {
     "description": "Title for the per-book vertical text setting."
   },
+  "readerSplitVerticalTextTitle": "Pisahkan Teks Vertikal",
+  "@readerSplitVerticalTextTitle": {
+    "description": "Title for the setting that splits vertical text into two stacked blocks per page."
+  },
+  "readerSplitVerticalTextSubtitle": "Tampilkan dua blok teks bertumpuk per halaman",
+  "@readerSplitVerticalTextSubtitle": {
+    "description": "Subtitle for the split vertical text setting."
+  },
   "readerThisBook": "Buku ini",
   "@readerThisBook": {
     "description": "Label indicating a reader setting applies to the current book."

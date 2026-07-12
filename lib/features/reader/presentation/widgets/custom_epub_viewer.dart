@@ -69,6 +69,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.horizontalMargin = 28,
     this.verticalMargin = 28,
     this.forceHorizontalAxis = false,
+    this.verticalTextBlocks = 1,
     this.furiganaMode = FuriganaMode.off,
     this.onLoaded,
     this.onChaptersLoaded,
@@ -94,6 +95,11 @@ class CustomEpubViewer extends StatefulWidget {
   final int horizontalMargin;
   final int verticalMargin;
   final bool forceHorizontalAxis;
+
+  /// Number of stacked text blocks per page for vertical writing modes
+  /// (1 = full-height lines, 2 = top/bottom split). Ignored for
+  /// horizontal pagination.
+  final int verticalTextBlocks;
 
   /// Initial furigana mode. Passed to the JS viewer so the first rendered
   /// section applies the mode immediately.
@@ -508,7 +514,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       '${widget.horizontalMargin}, '
       '${widget.verticalMargin}, '
       '${widget.forceHorizontalAxis}, '
-      '$furiganaParam'
+      '$furiganaParam, '
+      '${widget.verticalTextBlocks}'
       ')',
     );
 

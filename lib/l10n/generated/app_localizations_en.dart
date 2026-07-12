@@ -1312,6 +1312,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerVerticalTextTitle => 'Vertical Text';
 
   @override
+  String get readerSplitVerticalTextTitle => 'Split Vertical Text';
+
+  @override
+  String get readerSplitVerticalTextSubtitle =>
+      'Show two stacked text blocks per page';
+
+  @override
   String get readerThisBook => 'This book';
 
   @override

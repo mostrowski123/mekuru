@@ -2278,6 +2278,18 @@ abstract class AppLocalizations {
   /// **'Vertical Text'**
   String get readerVerticalTextTitle;
 
+  /// Title for the setting that splits vertical text into two stacked blocks per page.
+  ///
+  /// In en, this message translates to:
+  /// **'Split Vertical Text'**
+  String get readerSplitVerticalTextTitle;
+
+  /// Subtitle for the split vertical text setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Show two stacked text blocks per page'**
+  String get readerSplitVerticalTextSubtitle;
+
   /// Label indicating a reader setting applies to the current book.
   ///
   /// In en, this message translates to:

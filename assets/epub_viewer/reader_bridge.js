@@ -18,6 +18,10 @@ var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processe
 // writing-mode to horizontal-tb, forcing horizontal pagination.
 // Set as a window global so epub.js code can read it.
 window._forceHorizontalAxis = false;
+// Number of stacked text blocks per page for vertical writing modes
+// (1 = full-height lines, 2 = top/bottom split). Read by the epub.js
+// [MEKURU PATCH] in Contents.columns().
+window._verticalBlockCount = 1;
 
 function callDart(name) {
   var args = Array.prototype.slice.call(arguments, 1);
@@ -42,7 +46,7 @@ function callDartAsync(name) {
 
 // ── Book loading ──────────────────────────────────────────────────────
 
-function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode) {
+function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks) {
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
   var uint8 = new Uint8Array(data);
   book.open(uint8);
@@ -51,6 +55,10 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
   // this flag and override the detected writing-mode to horizontal-tb,
   // ensuring correct horizontal pagination from the start.
   window._forceHorizontalAxis = !!forceHorizontalAxis;
+
+  // Stacked block count for vertical text pagination (1 or 2).
+  window._verticalBlockCount = (typeof verticalBlocks === 'number' && verticalBlocks >= 1)
+    ? Math.floor(verticalBlocks) : 1;
 
   // Set initial margins from parameters
   if (typeof horizontalMargin === 'number') currentMargins.horizontal = horizontalMargin;
@@ -68,7 +76,7 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
     defaultDirection: direction || 'ltr'
   });
 
-  console.log('[EPUB_BRIDGE] rendition created with snap:false flow:' + (flow || 'paginated') + ' dir:' + (direction || 'ltr') + ' forceHorizontalAxis=' + window._forceHorizontalAxis);
+  console.log('[EPUB_BRIDGE] rendition created with snap:false flow:' + (flow || 'paginated') + ' dir:' + (direction || 'ltr') + ' forceHorizontalAxis=' + window._forceHorizontalAxis + ' verticalBlocks=' + window._verticalBlockCount);
   console.log('[EPUB_BRIDGE] customCss: ' + JSON.stringify(customCss));
 
   // Apply initial theme

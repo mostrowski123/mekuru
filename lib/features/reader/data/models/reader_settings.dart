@@ -72,6 +72,12 @@ double mangaCenterTapZoneWidthFromEdgeZoneWidth(double edgeZoneWidthFraction) {
 class ReaderSettings {
   final double fontSize;
   final bool verticalText;
+
+  /// When true, vertical text is laid out in two stacked blocks per page
+  /// (top and bottom rows, like newspaper 段組) instead of full-height lines.
+  /// Only takes effect while [verticalText] is enabled.
+  final bool splitVerticalText;
+
   final ReaderDirection readingDirection;
   final bool pageTurnAnimationEnabled;
   final int horizontalPadding;
@@ -109,6 +115,7 @@ class ReaderSettings {
   const ReaderSettings({
     this.fontSize = 18,
     this.verticalText = true,
+    this.splitVerticalText = false,
     this.readingDirection = ReaderDirection.rtl,
     this.pageTurnAnimationEnabled = true,
     this.horizontalPadding = 28,
@@ -126,6 +133,7 @@ class ReaderSettings {
   ReaderSettings copyWith({
     double? fontSize,
     bool? verticalText,
+    bool? splitVerticalText,
     ReaderDirection? readingDirection,
     bool? pageTurnAnimationEnabled,
     int? horizontalPadding,
@@ -141,6 +149,7 @@ class ReaderSettings {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
       verticalText: verticalText ?? this.verticalText,
+      splitVerticalText: splitVerticalText ?? this.splitVerticalText,
       readingDirection: readingDirection ?? this.readingDirection,
       pageTurnAnimationEnabled:
           pageTurnAnimationEnabled ?? this.pageTurnAnimationEnabled,

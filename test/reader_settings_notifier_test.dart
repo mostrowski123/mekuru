@@ -155,6 +155,48 @@ void main() {
     });
 
     test(
+      'setSplitVerticalText persists globally without per-book writes',
+      () async {
+        final fakeStorage = _FakeReaderSettingsStorage();
+        final db = AppDatabase(NativeDatabase.memory());
+        final spyRepo = _SpyBookRepository(db);
+        final harness = _createHarness(storage: fakeStorage, bookRepo: spyRepo);
+        addTearDown(() async {
+          await harness.dispose();
+          await db.close();
+        });
+
+        final notifier = harness.container.read(
+          readerSettingsProvider.notifier,
+        );
+        notifier.applyBookDefaults(bookId: 42, language: 'ja');
+        notifier.setSplitVerticalText(true);
+
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          harness.container.read(readerSettingsProvider).splitVerticalText,
+          isTrue,
+        );
+        expect(fakeStorage.savedSettings!.splitVerticalText, isTrue);
+        // splitVerticalText is a global display preference, not per-book.
+        expect(spyRepo.updateDisplayOverridesCalls, 0);
+      },
+    );
+
+    test('applyBookDefaults preserves splitVerticalText', () {
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
+
+      final notifier = container.read(readerSettingsProvider.notifier);
+      notifier.setSplitVerticalText(true);
+      notifier.applyBookDefaults(bookId: 1, language: 'ja');
+
+      expect(container.read(readerSettingsProvider).splitVerticalText, isTrue);
+    });
+
+    test(
       'keeps reading direction independent from vertical text setting',
       () async {
         final fakeStorage = _FakeReaderSettingsStorage();

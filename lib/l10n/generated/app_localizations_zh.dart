@@ -1259,6 +1259,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerVerticalTextTitle => '竖排文本';
 
   @override
+  String get readerSplitVerticalTextTitle => '分栏竖排';
+
+  @override
+  String get readerSplitVerticalTextSubtitle => '每页显示上下两栏文本';
+
+  @override
   String get readerThisBook => '本书';
 
   @override
@@ -3140,6 +3146,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerVerticalTextTitle => '竖排文本';
+
+  @override
+  String get readerSplitVerticalTextTitle => '分栏竖排';
+
+  @override
+  String get readerSplitVerticalTextSubtitle => '每页显示上下两栏文本';
 
   @override
   String get readerThisBook => '本书';

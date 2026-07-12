@@ -219,13 +219,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       }
 
       if (previous.readingDirection != next.readingDirection ||
-          previous.verticalText != next.verticalText) {
+          previous.verticalText != next.verticalText ||
+          previous.splitVerticalText != next.splitVerticalText) {
         debugPrint(
           '[READER] direction/verticalText changed: '
           'dir=${next.readingDirection} '
           'vertical=${next.verticalText} '
+          'split=${next.splitVerticalText} '
           '(was dir=${previous.readingDirection} '
-          'vertical=${previous.verticalText})',
+          'vertical=${previous.verticalText} '
+          'split=${previous.splitVerticalText})',
         );
         unawaited(_rebuildViewerForDirectionChange());
       }
@@ -304,6 +307,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       // to vertical. This flag tells the JS bridge to force
                       // the axis back to horizontal after each section loads.
                       forceHorizontalAxis: !settings.verticalText,
+                      verticalTextBlocks: settings.splitVerticalText ? 2 : 1,
                       furiganaMode: settings.furiganaMode,
                       onLoaded: () {
                         if (!mounted) return;
@@ -1564,6 +1568,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         ],
                       ),
                     ),
+                  // ── Split Vertical Text (global) ──
+                  SwitchListTile(
+                    title: Text(l10n.readerSplitVerticalTextTitle),
+                    subtitle: Text(l10n.readerSplitVerticalTextSubtitle),
+                    value: settings.splitVerticalText,
+                    onChanged: settings.verticalText
+                        ? (value) {
+                            AppHaptics.medium();
+                            notifier.setSplitVerticalText(value);
+                            _recordSettingChanged('split_vertical_text', value);
+                          }
+                        : null,
+                    secondary: const Icon(Icons.table_rows_outlined),
+                  ),
                   const SizedBox(height: 8),
 
                   // ── Reading Direction (per-book) ──

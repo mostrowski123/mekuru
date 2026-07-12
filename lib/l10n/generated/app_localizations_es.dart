@@ -1331,6 +1331,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerVerticalTextTitle => 'Texto vertical';
 
   @override
+  String get readerSplitVerticalTextTitle => 'Dividir texto vertical';
+
+  @override
+  String get readerSplitVerticalTextSubtitle =>
+      'Mostrar dos bloques de texto apilados por página';
+
+  @override
   String get readerThisBook => 'Este libro';
 
   @override

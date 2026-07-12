@@ -20,6 +20,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _sepiaIntensityKey = 'reader.sepia_intensity';
   static const _disableLinksKey = 'reader.disable_links';
   static const _furiganaModeKey = 'reader.furigana_mode';
+  static const _splitVerticalTextKey = 'reader.split_vertical_text';
 
   @override
   Future<ReaderSettings?> load() async {
@@ -35,7 +36,8 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
         prefs.containsKey(_keepScreenOnKey) ||
         prefs.containsKey(_sepiaIntensityKey) ||
         prefs.containsKey(_disableLinksKey) ||
-        prefs.containsKey(_furiganaModeKey);
+        prefs.containsKey(_furiganaModeKey) ||
+        prefs.containsKey(_splitVerticalTextKey);
 
     if (!hasSavedSettings) {
       return null;
@@ -59,6 +61,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       sepiaIntensity: prefs.getDouble(_sepiaIntensityKey) ?? 0.5,
       disableLinks: prefs.getBool(_disableLinksKey) ?? false,
       furiganaMode: furiganaModeFromString(prefs.getString(_furiganaModeKey)),
+      splitVerticalText: prefs.getBool(_splitVerticalTextKey) ?? false,
     );
   }
 
@@ -83,5 +86,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     await prefs.setDouble(_sepiaIntensityKey, settings.sepiaIntensity);
     await prefs.setBool(_disableLinksKey, settings.disableLinks);
     await prefs.setString(_furiganaModeKey, settings.furiganaMode.storageValue);
+    await prefs.setBool(_splitVerticalTextKey, settings.splitVerticalText);
   }
 }

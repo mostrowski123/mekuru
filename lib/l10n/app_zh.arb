@@ -1652,6 +1652,14 @@
   "@readerVerticalTextTitle": {
     "description": "Title for the per-book vertical text setting."
   },
+  "readerSplitVerticalTextTitle": "分栏竖排",
+  "@readerSplitVerticalTextTitle": {
+    "description": "Title for the setting that splits vertical text into two stacked blocks per page."
+  },
+  "readerSplitVerticalTextSubtitle": "每页显示上下两栏文本",
+  "@readerSplitVerticalTextSubtitle": {
+    "description": "Subtitle for the split vertical text setting."
+  },
   "readerThisBook": "本书",
   "@readerThisBook": {
     "description": "Label indicating a reader setting applies to the current book."
