@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:csv/csv.dart' as csv;
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/database/row_count.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,6 +22,9 @@ class VocabularyRepository {
   Future<List<SavedWord>> getAllWords() => (_db.select(
     _db.savedWords,
   )..orderBy([(t) => OrderingTerm.desc(t.dateAdded)])).get();
+
+  /// Count of saved words, without loading the rows.
+  Future<int> countWords() => countRows(_db, _db.savedWords);
 
   /// Watch all saved words (reactive stream).
   Stream<List<SavedWord>> watchAllWords() => (_db.select(

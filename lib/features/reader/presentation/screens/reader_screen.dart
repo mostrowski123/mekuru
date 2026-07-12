@@ -25,6 +25,7 @@ import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.d
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
@@ -43,7 +44,7 @@ class ReaderScreen extends ConsumerStatefulWidget {
 }
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, ReadingSessionReviewPrompt<ReaderScreen> {
   final _epubController = CustomEpubController();
   final _epubFileResolver = EpubFileResolver();
 

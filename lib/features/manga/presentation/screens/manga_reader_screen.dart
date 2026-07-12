@@ -26,6 +26,7 @@ import 'package:mekuru/features/reader/presentation/providers/reader_providers.d
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -56,7 +57,7 @@ class MangaReaderScreen extends ConsumerStatefulWidget {
 }
 
 class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, ReadingSessionReviewPrompt<MangaReaderScreen> {
   static const _systemUiChannel = MethodChannel('mekuru/android_system_ui');
 
   final ReaderSessionTracker _sessionTracker = ReaderSessionTracker(

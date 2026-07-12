@@ -7,11 +7,11 @@
 /// Never put book titles, file names, user text, or looked-up words in either.
 library;
 
-import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../database/database_provider.dart';
+import '../database/row_count.dart';
 import 'analytics_service.dart';
 
 typedef UsageLogSink =
@@ -88,13 +88,13 @@ void durationUsage(
 /// enabled, vocabulary size, Pro share) without any per-user tracking.
 Future<void> emitInstallGauges(AppDatabase db, {required bool isPro}) async {
   try {
-    final books = await _countRows(db, db.books);
-    final enabledDicts = await _countRows(
+    final books = await countRows(db, db.books);
+    final enabledDicts = await countRows(
       db,
       db.dictionaryMetas,
       where: db.dictionaryMetas.isEnabled.equals(true),
     );
-    final savedWords = await _countRows(db, db.savedWords);
+    final savedWords = await countRows(db, db.savedWords);
 
     Sentry.metrics.gauge('install.library_books', books);
     Sentry.metrics.gauge('install.dicts_enabled', enabledDicts);
@@ -186,18 +186,4 @@ Map<String, Object> _toAnalyticsParams(Map<String, Object> attrs) {
       _ => value.toString(),
     }),
   );
-}
-
-Future<int> _countRows(
-  AppDatabase db,
-  TableInfo<Table, dynamic> table, {
-  Expression<bool>? where,
-}) async {
-  final count = countAll();
-  final query = db.selectOnly(table)..addColumns([count]);
-  if (where != null) {
-    query.where(where);
-  }
-  final row = await query.getSingle();
-  return row.read(count) ?? 0;
 }
