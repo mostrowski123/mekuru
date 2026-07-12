@@ -9,7 +9,6 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import 'shared/test_infrastructure.dart';
 import 'test_helpers.dart';
@@ -64,17 +63,6 @@ Future<String> _writeFixtureEpub(Directory dir, {required String title}) async {
   return epubPath;
 }
 
-Future<void> _cleanupAppBooksDir() async {
-  // BookRepository.importEpub copies the EPUB into the app's support
-  // directory under books/. Tests should clean it up so consecutive runs
-  // start from a fresh library.
-  final appDir = await getApplicationSupportDirectory();
-  final booksDir = Directory(p.join(appDir.path, 'books'));
-  if (await booksDir.exists()) {
-    await booksDir.delete(recursive: true);
-  }
-}
-
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -82,14 +70,14 @@ void main() {
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('library_import_');
-    await _cleanupAppBooksDir();
+    await cleanupAppBooksDir();
   });
 
   tearDown(() async {
     if (await tempDir.exists()) {
       await tempDir.delete(recursive: true);
     }
-    await _cleanupAppBooksDir();
+    await cleanupAppBooksDir();
   });
 
   testWidgets(

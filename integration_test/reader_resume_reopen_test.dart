@@ -21,7 +21,6 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import 'shared/test_infrastructure.dart';
 import 'test_helpers.dart';
@@ -58,9 +57,7 @@ Future<String> _writeFixtureEpub(Directory dir, {required String title}) async {
       '<spine><itemref idref="chapter1"/></spine>'
       '</package>';
   final opfBytes = utf8.encode(opfXml);
-  archive.addFile(
-    ArchiveFile('OEBPS/content.opf', opfBytes.length, opfBytes),
-  );
+  archive.addFile(ArchiveFile('OEBPS/content.opf', opfBytes.length, opfBytes));
 
   final chapterBytes = utf8.encode(
     '<?xml version="1.0" encoding="UTF-8"?>'
@@ -70,38 +67,12 @@ Future<String> _writeFixtureEpub(Directory dir, {required String title}) async {
     '</html>',
   );
   archive.addFile(
-    ArchiveFile(
-      'OEBPS/chapter1.xhtml',
-      chapterBytes.length,
-      chapterBytes,
-    ),
+    ArchiveFile('OEBPS/chapter1.xhtml', chapterBytes.length, chapterBytes),
   );
 
   final epubPath = p.join(dir.path, 'fixture.epub');
   await File(epubPath).writeAsBytes(ZipEncoder().encode(archive));
   return epubPath;
-}
-
-Future<void> _cleanupAppBooksDir() async {
-  final appDir = await getApplicationSupportDirectory();
-  final booksDir = Directory(p.join(appDir.path, 'books'));
-  if (await booksDir.exists()) {
-    await booksDir.delete(recursive: true);
-  }
-}
-
-Future<void> pumpUntilGone(
-  WidgetTester tester,
-  Finder finder, {
-  Duration timeout = const Duration(seconds: 20),
-  Duration step = const Duration(milliseconds: 250),
-}) async {
-  final maxTicks = timeout.inMilliseconds ~/ step.inMilliseconds;
-  for (var tick = 0; tick < maxTicks; tick++) {
-    await tester.pump(step);
-    if (finder.evaluate().isEmpty) return;
-  }
-  throw TestFailure('Timed out waiting for $finder to disappear after $timeout.');
 }
 
 void main() {
@@ -111,14 +82,14 @@ void main() {
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('reader_resume_');
-    await _cleanupAppBooksDir();
+    await cleanupAppBooksDir();
   });
 
   tearDown(() async {
     if (await tempDir.exists()) {
       await tempDir.delete(recursive: true);
     }
-    await _cleanupAppBooksDir();
+    await cleanupAppBooksDir();
   });
 
   testWidgets(
@@ -150,12 +121,10 @@ void main() {
 
       // Background → foreground via the lifecycle channel, matching the
       // sequence Android dispatches when the user taps home then re-launches.
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       await tester.pump(const Duration(milliseconds: 200));
-      tester.binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump(const Duration(milliseconds: 200));
 
