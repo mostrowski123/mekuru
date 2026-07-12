@@ -8,7 +8,7 @@ import 'shared/word_tap_scenario.dart';
 
 void main() {
   registerWordTapScenario(
-    'tapping text opens the lookup sheet (furigana off)',
-    furiganaMode: FuriganaMode.off,
+    'tapping text opens the lookup sheet (furigana on)',
+    furiganaMode: FuriganaMode.all,
   );
 }

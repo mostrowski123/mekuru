@@ -8,7 +8,8 @@ import 'shared/word_tap_scenario.dart';
 
 void main() {
   registerWordTapScenario(
-    'tapping text opens the lookup sheet (furigana off)',
+    'tapping text opens the lookup sheet (vertical-rl book with ruby)',
     furiganaMode: FuriganaMode.off,
+    verticalWithRuby: true,
   );
 }

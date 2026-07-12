@@ -345,6 +345,8 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
       forwardUp(e.clientX, e.clientY, 'pointer:' + e.pointerType);
     }, { passive: true });
 
+    console.log('[EPUB_BRIDGE] content hook: input listeners attached');
+
     // Fallback for older engines without pointer events.
     if (!('PointerEvent' in contents.window)) {
       doc.addEventListener('mousedown', function (e) {
