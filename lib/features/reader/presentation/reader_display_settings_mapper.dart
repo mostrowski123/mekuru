@@ -62,6 +62,9 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
   // We also need to reset direction and text-align because Japanese EPUBs
   // typically set these for RTL vertical layout, which causes right-justified
   // text when the writing mode is forced to horizontal.
+  // The override must also cover descendants: InDesign-exported EPUBs
+  // (e.g. JGR Sakura) declare `-epub-writing-mode: vertical-rl` directly on
+  // inner divs, which a body-level rule cannot override.
   if (!settings.verticalText) {
     htmlCss['writing-mode'] = 'horizontal-tb !important';
     bodyCss['writing-mode'] = 'horizontal-tb !important';
@@ -76,6 +79,8 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
     customCss: {
       'html': htmlCss,
       'body': bodyCss,
+      if (!settings.verticalText)
+        'body *': {'writing-mode': 'horizontal-tb !important'},
       'p': {'color': '$fgHex !important'},
       'span': {'color': '$fgHex !important'},
       'a': {

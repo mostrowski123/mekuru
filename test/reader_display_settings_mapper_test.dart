@@ -87,6 +87,24 @@ void main() {
       },
     );
 
+    test('forces writing-mode on descendants when verticalText is false '
+        '(InDesign EPUBs declare -epub-writing-mode on inner divs)', () {
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(verticalText: false),
+      );
+      final descendantCss = theme.customCss!['body *'] as Map<String, dynamic>;
+
+      expect(descendantCss['writing-mode'], 'horizontal-tb !important');
+    });
+
+    test('does NOT add descendant selector when verticalText is true', () {
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(verticalText: true),
+      );
+
+      expect(theme.customCss!.containsKey('body *'), isFalse);
+    });
+
     test('writing-mode override works with dark color mode', () {
       final theme = buildReaderTheme(
         settings: const ReaderSettings(
