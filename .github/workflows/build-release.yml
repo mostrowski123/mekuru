@@ -99,13 +99,15 @@ jobs:
         id: tag
         run: |
           TAG="v$(date -u +'%Y%m%d.%H%M%S')"
+          # App version from pubspec.yaml, without the +buildNumber suffix.
+          APP_VERSION="$(sed -n 's/^version: *\([^+]*\).*/\1/p' pubspec.yaml)"
           # Keep Play Store version codes above the last published value.
           # Bump PLAY_VERSION_CODE_FLOOR if a manual Play upload ever skips
           # ahead of this sequence.
           PLAY_VERSION_CODE_FLOOR=2026030713
           VERSION_CODE="$((PLAY_VERSION_CODE_FLOOR + ${{ github.run_number }}))"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "name=Mekuru $TAG" >> "$GITHUB_OUTPUT"
+          echo "name=Mekuru $APP_VERSION ($TAG)" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
       - name: Decode release keystore
