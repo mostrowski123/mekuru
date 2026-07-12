@@ -452,6 +452,41 @@ void main() {
       client.dispose();
     });
 
+    test('request timeout is configurable and timeouts are retried', () async {
+      var callCount = 0;
+      final mockClient = MockClient.streaming((request, _) async {
+        callCount++;
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(emptyBlocksResponse)),
+          200,
+          headers: jsonHeaders,
+        );
+      });
+
+      final client = MangaOcrClient(
+        serverUrl: serverUrl,
+        getBearerToken: () => testToken,
+        httpClient: mockClient,
+        baseRetryDelay: Duration.zero,
+        requestTimeout: const Duration(milliseconds: 50),
+      );
+
+      await expectLater(
+        () => client.processPage(imageBytes, 'page_001.jpg'),
+        throwsA(
+          isA<OcrServerException>()
+              .having((e) => e.statusCode, 'statusCode', 0)
+              .having((e) => e.message, 'message', contains('timed out')),
+        ),
+      );
+
+      // Timeouts are transient (e.g. server cold start) and retried.
+      expect(callCount, 3);
+
+      client.dispose();
+    });
+
     test('OcrServerException has correct toString', () {
       const error = OcrServerException(429, 'Rate limited');
       expect(error.toString(), 'OcrServerException(429): Rate limited');

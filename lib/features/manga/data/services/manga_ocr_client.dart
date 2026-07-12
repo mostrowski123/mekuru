@@ -56,9 +56,14 @@ class MangaOcrClient {
   final String Function() getBearerToken;
   final http.Client _httpClient;
   final Duration _baseRetryDelay;
+  final Duration _requestTimeout;
 
   static const _maxRetries = 3;
-  static const _timeoutDuration = Duration(seconds: 30);
+
+  /// Generous default: a scaled-to-zero built-in server has to boot a
+  /// container and load models before answering the first request,
+  /// which routinely takes longer than 30 seconds.
+  static const _defaultRequestTimeout = Duration(seconds: 90);
   static const _maxRetryAfterDelay = Duration(seconds: 30);
 
   /// Statuses where a retry cannot succeed: auth failures, validation
@@ -71,8 +76,10 @@ class MangaOcrClient {
     required this.getBearerToken,
     http.Client? httpClient,
     Duration baseRetryDelay = const Duration(seconds: 2),
+    Duration requestTimeout = _defaultRequestTimeout,
   }) : _httpClient = httpClient ?? http.Client(),
-       _baseRetryDelay = baseRetryDelay;
+       _baseRetryDelay = baseRetryDelay,
+       _requestTimeout = requestTimeout;
 
   /// Process a single manga page image through the OCR server.
   ///
@@ -200,7 +207,7 @@ class MangaOcrClient {
 
     final streamedResponse = await _httpClient
         .send(request)
-        .timeout(_timeoutDuration);
+        .timeout(_requestTimeout);
     final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 200) {
