@@ -48,13 +48,25 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
   final bgHex = colorToHex(bgColor);
   final fgHex = colorToHex(fgColor);
 
+  // Disable CJK punctuation compression (full-width commas, periods, and
+  // corner brackets, like classic Japanese typesetting). Chromium's default
+  // compression miscounts line capacity on lines that contain <ruby>: when
+  // the natural break lands on a kinsoku boundary (e.g. kana followed by a
+  // closing bracket), the breaker falls back to the ruby boundary instead,
+  // and justification stretches the short line into visibly spaced-out kana.
+  // Inherited, so setting the roots covers all content; a no-op for non-CJK
+  // text and for WebViews without text-spacing-trim support.
+  const textSpacingTrim = 'space-all';
+
   final Map<String, dynamic> htmlCss = {
     'background': '$bgHex !important',
     'color': '$fgHex !important',
+    'text-spacing-trim': textSpacingTrim,
   };
   final Map<String, dynamic> bodyCss = {
     'background': '$bgHex !important',
     'color': '$fgHex !important',
+    'text-spacing-trim': textSpacingTrim,
   };
 
   // Force horizontal writing mode when vertical text is disabled.

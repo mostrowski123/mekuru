@@ -105,6 +105,16 @@ void main() {
       expect(theme.customCss!.containsKey('body *'), isFalse);
     });
 
+    test('disables CJK punctuation compression '
+        '(Chromium mis-breaks ruby lines at kinsoku boundaries otherwise)', () {
+      final theme = buildReaderTheme(settings: const ReaderSettings());
+      final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
+      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+
+      expect(htmlCss['text-spacing-trim'], 'space-all');
+      expect(bodyCss['text-spacing-trim'], 'space-all');
+    });
+
     test('writing-mode override works with dark color mode', () {
       final theme = buildReaderTheme(
         settings: const ReaderSettings(
