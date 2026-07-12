@@ -100,13 +100,26 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
     displayed = book.ready.then(function () {
       var spine = book.spine;
       if (spine && spine.spineItems) {
+        // Prefer the first *linear* item with an href. Non-linear sections
+        // (e.g. InDesign covers with linear="no") have no next()/prev()
+        // links in epub.js, so displaying one strands the reader — page
+        // turning can never leave it. Fall back to the first item with an
+        // href if nothing is linear.
+        var fallback = -1;
         for (var i = 0; i < spine.spineItems.length; i++) {
-          if (spine.spineItems[i].href) {
+          var spineItem = spine.spineItems[i];
+          if (!spineItem.href) continue;
+          if (spineItem.linear) {
             if (i > 0) {
-              console.log('[EPUB_BRIDGE] first spine item(s) have no href, skipping to index ' + i);
+              console.log('[EPUB_BRIDGE] skipping to first linear spine item at index ' + i);
             }
             return rendition.display(i);
           }
+          if (fallback === -1) fallback = i;
+        }
+        if (fallback !== -1) {
+          console.log('[EPUB_BRIDGE] no linear spine item found, displaying index ' + fallback);
+          return rendition.display(fallback);
         }
       }
       return rendition.display();

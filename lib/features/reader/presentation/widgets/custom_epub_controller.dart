@@ -18,6 +18,13 @@ class CustomEpubController {
     _webView = controller;
   }
 
+  /// Evaluates raw JavaScript in the reader WebView and returns the result.
+  /// Test-only escape hatch for integration tests that need to inspect
+  /// epub.js internals (e.g. detected writing mode and pagination axis).
+  @visibleForTesting
+  Future<dynamic> debugEvaluateJavascript(String source) =>
+      _evaluateJavascript(source);
+
   void detach([InAppWebViewController? controller]) {
     if (controller != null && !identical(_webView, controller)) {
       return;

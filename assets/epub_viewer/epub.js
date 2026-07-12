@@ -6123,7 +6123,24 @@ class Contents {
     if (mode && this.documentElement) {
       this.documentElement.style[WRITING_MODE] = mode;
     }
-    return this.window.getComputedStyle(this.documentElement)[WRITING_MODE] || '';
+    let rootMode = this.window.getComputedStyle(this.documentElement)[WRITING_MODE] || '';
+    // [MEKURU PATCH] Some EPUBs (notably InDesign exports) declare vertical
+    // writing-mode only on <body> — often via the -epub- prefixed alias,
+    // which Blink applies — while <html> stays horizontal-tb. epub.js only
+    // inspects <html>, so it would paginate horizontally while the body
+    // renders vertically (columns then stack top/bottom and pages overflow
+    // off-screen). Fall back to the body's computed writing-mode and promote
+    // it to the root so axis detection and column layout agree with the
+    // actual rendering.
+    if (!mode && rootMode.indexOf("vertical") !== 0 && this.content &&
+        !(typeof window._forceHorizontalAxis !== 'undefined' && window._forceHorizontalAxis)) {
+      let bodyMode = this.window.getComputedStyle(this.content)[WRITING_MODE] || '';
+      if (bodyMode.indexOf("vertical") === 0) {
+        this.documentElement.style[WRITING_MODE] = bodyMode;
+        return bodyMode;
+      }
+    }
+    return rootMode;
   }
 
   /**
