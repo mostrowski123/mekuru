@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/features/settings/presentation/screens/attributions_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
@@ -10,7 +11,6 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   static const _appName = 'Mekuru';
-  static const _privacyPolicyUrl = 'https://mekuru.pages.dev/privacy.html';
   static final Future<PackageInfo> _packageInfoFuture =
       PackageInfo.fromPlatform();
 
@@ -71,7 +71,7 @@ class AboutScreen extends StatelessWidget {
                   title: Text(l10n.aboutPrivacyPolicyTitle),
                   subtitle: Text(l10n.aboutPrivacyPolicySubtitle),
                   trailing: const Icon(Icons.open_in_new),
-                  onTap: () => _launchUrl(_privacyPolicyUrl),
+                  onTap: () => _launchUrl(AppLinks.privacyPolicy),
                 ),
               ),
               const SizedBox(height: 16),
@@ -111,8 +111,7 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  static Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
+  static Future<void> _launchUrl(Uri uri) async {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }

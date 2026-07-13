@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
@@ -555,7 +556,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               launchUrl(
-                Uri.parse('https://mekuru.matthew.moe/documentation/'),
+                AppLinks.documentation,
                 mode: LaunchMode.externalApplication,
               );
             },
