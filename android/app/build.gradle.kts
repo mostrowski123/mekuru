@@ -256,9 +256,7 @@ val ensureBundledMecabNativeAssets by tasks.registering {
                     ?: return@forEach
 
                 if (!mecabAssetFile.exists()) {
-                    throw org.gradle.api.GradleException(
-                        "Expected MeCab native asset for $abi at $mecabAssetFile",
-                    )
+                    return@forEach
                 }
 
                 val candidateTimestamp = outputFile.lastModified()

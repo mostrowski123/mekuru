@@ -5,6 +5,21 @@ Edits here are pushed to Play via the Developer API (`edits.listings.update`) us
 the service account at `~/.secrets/google-play-service-account.json` — nothing goes
 live until the edit is committed.
 
+Validate local metadata and screenshots without contacting Play:
+
+```powershell
+python tools/publish_play_store_listings.py
+```
+
+Compare the repository metadata with the current Play listings:
+
+```powershell
+python tools/publish_play_store_listings.py --remote-diff
+```
+
+Publishing requires an explicit `--commit`. Add `en-US` to `--locales` and pass
+`--include-tablets` only after both English tablet asset sets pass visual QA.
+
 | File | Play locale(s) |
 |------|----------------|
 | `en-US.md` | en-US (default) |

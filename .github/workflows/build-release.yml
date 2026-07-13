@@ -163,5 +163,6 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: moe.matthew.mekuru
           releaseFiles: build/app/outputs/bundle/playRelease/app-play-release.aab
-          track: internal
+          mappingFile: build/app/outputs/mapping/playRelease/mapping.txt
+          tracks: internal
           releaseName: ${{ steps.tag.outputs.name }}
