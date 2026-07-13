@@ -83,6 +83,6 @@ Because manga pages are images rather than flowing text, some features work diff
 
 ## Next Steps
 
-- [Reading Manga](manga/cbz-reading.md) - view modes, reader settings, and overlays
-- [Remote OCR](manga/cloud-ocr.md) - Pro-powered OCR with your own server
-- [Custom OCR Server](manga/custom-server.md) - using your own OCR endpoint
+- [Reading Manga](../manga/cbz-reading.md) - view modes, reader settings, and overlays
+- [Remote OCR](../manga/cloud-ocr.md) - Pro-powered OCR with your own server
+- [Custom OCR Server](../manga/custom-server.md) - using your own OCR endpoint

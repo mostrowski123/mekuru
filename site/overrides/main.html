@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  {% if page and page.meta.description %}
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mekuru Documentation">
+    <meta property="og:title" content="{{ page.title }} | Mekuru Documentation">
+    <meta property="og:description" content="{{ page.meta.description }}">
+    <meta property="og:url" content="{{ page.canonical_url }}">
+    <meta property="og:image" content="https://mekuru.matthew.moe/images/feature-graphic.png">
+    <meta name="twitter:card" content="summary_large_image">
+  {% endif %}
+{% endblock %}

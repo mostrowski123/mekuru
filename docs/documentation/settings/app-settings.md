@@ -2,7 +2,7 @@
 
 Mekuru's **Settings** screen mixes app-wide preferences, reading defaults, OCR controls, downloads, and support links.
 
-Many reader behaviors are split between global defaults here and per-book quick settings inside the reader. See [Display Settings](reading/display-settings.md).
+Many reader behaviors are split between global defaults here and per-book quick settings inside the reader. See [Display Settings](../reading/display-settings.md).
 
 ## General
 
@@ -48,7 +48,7 @@ The Dictionary section includes:
 
 ### AnkiDroid Integration
 
-On Android, **AnkiDroid Integration** opens the field-mapping setup used for direct card creation. See [Exporting to Anki](vocabulary/anki-export.md).
+On Android, **AnkiDroid Integration** opens the field-mapping setup used for direct card creation. See [Exporting to Anki](../vocabulary/anki-export.md).
 
 ## Pro
 
@@ -67,7 +67,7 @@ The **Custom OCR Server** setting controls the remote OCR endpoint used for CBZ 
 - Add the matching shared `AUTH_API_KEY`
 - Mekuru sends the key as a bearer token to your server
 
-See [Custom OCR Server](manga/custom-server.md) for server setup and the API contract.
+See [Custom OCR Server](../manga/custom-server.md) for server setup and the API contract.
 
 ## Downloads
 
@@ -79,7 +79,7 @@ The **Downloads** screen installs and removes built-in resources:
 - KanjiVG
 - JPDB frequency data
 
-See [Downloads](getting-started/downloadable-data.md) for details.
+See [Downloads](../getting-started/downloadable-data.md) for details.
 
 ## About & Feedback
 

@@ -1,0 +1,12 @@
+:root {
+  --md-primary-fg-color: #b71c1c;
+  --md-accent-fg-color: #d32f2f;
+}
+
+.md-header__button.md-logo img {
+  border-radius: 8px;
+}
+
+.md-content img {
+  border-radius: 12px;
+}

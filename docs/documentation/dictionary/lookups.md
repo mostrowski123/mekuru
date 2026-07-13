@@ -11,8 +11,8 @@ While reading EPUB text, Mokuro word overlays, or OCR-generated manga overlays, 
 - **Definitions** - glossary entries from your enabled dictionaries
 - **Dictionary grouping** - results grouped by source dictionary
 - **Pitch accent** - when a compatible pitch accent dictionary is installed
-- **Kanji stroke order** - when [KanjiVG is installed](getting-started/downloadable-data.md)
-- **Frequency ranking** - when [JPDB data is installed](getting-started/downloadable-data.md)
+- **Kanji stroke order** - when [KanjiVG is installed](../getting-started/downloadable-data.md)
+- **Frequency ranking** - when [JPDB data is installed](../getting-started/downloadable-data.md)
 - **Actions** - copy, save to vocabulary, and Android-only send to AnkiDroid
 
 ![Dictionary lookup sheet with grouped results](../screenshots/dictionary-lookup-grouped-results.jpg)
@@ -41,4 +41,4 @@ Mekuru checks progressively longer token sequences, up to 5 tokens, against your
 
 ## Multiple Dictionaries
 
-When multiple dictionaries are installed, results are merged and sorted by dictionary priority. You can control which dictionaries are enabled and how they are ordered in [Managing Dictionaries](dictionary/management.md).
+When multiple dictionaries are installed, results are merged and sorted by dictionary priority. You can control which dictionaries are enabled and how they are ordered in [Managing Dictionaries](management.md).

@@ -1,0 +1,70 @@
+site_name: Mekuru Documentation
+site_description: Documentation for Mekuru, a Japanese EPUB and manga reader for Android.
+site_url: https://mekuru.matthew.moe/documentation/
+docs_dir: ../docs/documentation
+site_dir: ../.site-dist/documentation
+use_directory_urls: true
+strict: true
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/icon.png
+  favicon: assets/icon.png
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: red
+      accent: red
+      toggle:
+        icon: material/weather-night
+        name: Use dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: red
+      accent: red
+      toggle:
+        icon: material/weather-sunny
+        name: Use light mode
+
+plugins:
+  - search
+
+hooks:
+  - site_hooks.py
+
+extra_css:
+  - assets/docs.css
+
+extra_javascript:
+  - assets/legacy-redirect.js
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installing Mekuru: getting-started/installing-mekuru.md
+      - Importing Books (EPUB): getting-started/importing-books.md
+      - Importing Manga: getting-started/importing-manga.md
+      - Setting Up Dictionaries: getting-started/dictionaries.md
+      - Downloads: getting-started/downloadable-data.md
+  - Reading:
+      - Navigation & Gestures: reading/navigation.md
+      - Display Settings: reading/display-settings.md
+      - Bookmarks & Highlights: reading/bookmarks-highlights.md
+  - Dictionary & Lookups:
+      - Looking Up Words: dictionary/lookups.md
+      - Managing Dictionaries: dictionary/management.md
+  - Vocabulary & Anki:
+      - Saving & Managing Words: vocabulary/saving-words.md
+      - Exporting to Anki: vocabulary/anki-export.md
+  - Manga & OCR:
+      - Reading Manga: manga/cbz-reading.md
+      - Pro (Remote OCR): manga/cloud-ocr.md
+      - Custom OCR Server: manga/custom-server.md
+  - Settings:
+      - App Settings: settings/app-settings.md

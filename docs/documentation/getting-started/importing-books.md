@@ -43,4 +43,4 @@ EPUB books support the full reader feature set:
 - Quick per-book reader settings
 - Reading progress auto-save and resume
 
-For image-based manga, see [Importing Manga](getting-started/importing-manga.md).
+For image-based manga, see [Importing Manga](importing-manga.md).

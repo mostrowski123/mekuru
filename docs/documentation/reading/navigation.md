@@ -19,7 +19,7 @@ Swipe horizontally to turn pages. The swipe direction follows the book's current
 - **RTL** - swipe left to go forward, swipe right to go back
 - **LTR** - swipe right to go forward, swipe left to go back
 
-Swipe sensitivity is part of the app-wide reading defaults described in [Display Settings](reading/display-settings.md).
+Swipe sensitivity is part of the app-wide reading defaults described in [Display Settings](display-settings.md).
 
 ## Table of Contents
 
@@ -37,8 +37,8 @@ Some reader options are configured inside the reader for the current book only:
 - **Reading Direction** - RTL or LTR for that book
 - **Disable Links** - tap linked text for lookups instead of navigation
 
-These are separate from the global defaults in [Display Settings](reading/display-settings.md).
+These are separate from the global defaults in [Display Settings](display-settings.md).
 
 ## Word Lookup
 
-Tap a word while reading to open the lookup sheet. Mekuru automatically detects word boundaries, then searches your enabled dictionaries. See [Looking Up Words](dictionary/lookups.md) for the full lookup behavior.
+Tap a word while reading to open the lookup sheet. Mekuru automatically detects word boundaries, then searches your enabled dictionaries. See [Looking Up Words](../dictionary/lookups.md) for the full lookup behavior.

@@ -35,6 +35,7 @@ example/*
 .pub/
 /build/
 /coverage/
+/.site-dist/
 
 # Symbolication related
 app.*.symbols

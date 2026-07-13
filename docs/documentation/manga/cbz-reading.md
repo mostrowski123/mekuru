@@ -1,6 +1,6 @@
 # Reading Manga
 
-Once you have [imported manga](getting-started/importing-manga.md), tap it in the library to open the manga reader.
+Once you have [imported manga](../getting-started/importing-manga.md), tap it in the library to open the manga reader.
 
 ## Navigation
 
@@ -38,4 +38,4 @@ Once text overlays exist, tapping a word opens the same dictionary lookup used i
 
 ## OCR Notes for CBZ
 
-CBZ OCR is managed from the library item's long-press actions, not from inside the reader. See [Remote OCR](manga/cloud-ocr.md) and [Custom OCR Server](manga/custom-server.md).
+CBZ OCR is managed from the library item's long-press actions, not from inside the reader. See [Remote OCR](cloud-ocr.md) and [Custom OCR Server](custom-server.md).

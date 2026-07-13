@@ -38,4 +38,4 @@ Once OCR text is available, the detected words behave like Mokuro overlays and o
 
 ## Server Setup
 
-Remote OCR requires a self-hosted OCR server. See the [Custom OCR Server](manga/custom-server.md) guide for setup instructions.
+Remote OCR requires a self-hosted OCR server. See the [Custom OCR Server](custom-server.md) guide for setup instructions.

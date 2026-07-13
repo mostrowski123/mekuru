@@ -34,4 +34,4 @@ Once a dictionary is available, it can be used for:
 - **Search** in the Dictionary tab
 - **Compound word resolution** for multi-token matches
 
-For enabling, disabling, reordering, or deleting dictionaries, see [Managing Dictionaries](dictionary/management.md).
+For enabling, disabling, reordering, or deleting dictionaries, see [Managing Dictionaries](../dictionary/management.md).

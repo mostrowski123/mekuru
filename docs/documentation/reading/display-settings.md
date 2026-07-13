@@ -32,4 +32,4 @@ These changes affect the current book view rather than the global app defaults.
 
 ## Manga Reader Settings
 
-Image-based manga does not use the EPUB text layout controls above. Instead, the manga reader exposes its own settings such as view mode, reading direction, auto-crop, and transparent lookup. See [Reading Manga](manga/cbz-reading.md).
+Image-based manga does not use the EPUB text layout controls above. Instead, the manga reader exposes its own settings such as view mode, reading direction, auto-crop, and transparent lookup. See [Reading Manga](../manga/cbz-reading.md).

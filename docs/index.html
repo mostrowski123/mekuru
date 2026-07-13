@@ -3,78 +3,149 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mekuru - Japanese EPUB and Manga Reader</title>
-  <meta name="description" content="A Japanese-first EPUB and manga reader with vertical text, offline dictionaries, OCR options, and vocabulary tools.">
+  <title>Mekuru - Japanese EPUB and Manga Reader for Android</title>
+  <meta name="description" content="Read Japanese EPUB books and manga on Android with vertical text, instant offline dictionary lookup, vocabulary tools, and AnkiDroid export.">
+  <link rel="canonical" href="https://mekuru.matthew.moe/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Mekuru">
+  <meta property="og:title" content="Mekuru - Japanese EPUB and Manga Reader for Android">
+  <meta property="og:description" content="Read vertically, look up Japanese words offline, save vocabulary, and export to AnkiDroid.">
+  <meta property="og:url" content="https://mekuru.matthew.moe/">
+  <meta property="og:image" content="https://mekuru.matthew.moe/images/feature-graphic.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Mekuru - Japanese EPUB and Manga Reader for Android">
+  <meta name="twitter:description" content="Read Japanese EPUB books and manga with instant offline dictionary lookup.">
+  <meta name="twitter:image" content="https://mekuru.matthew.moe/images/feature-graphic.png">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="icon.png" type="image/png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    "name": "Mekuru",
+    "description": "A Japanese EPUB and manga reader for Android with vertical text, offline dictionary lookup, vocabulary tools, and AnkiDroid export.",
+    "url": "https://mekuru.matthew.moe/",
+    "downloadUrl": "https://play.google.com/store/apps/details?id=moe.matthew.mekuru",
+    "operatingSystem": "Android",
+    "applicationCategory": "ReferenceApplication",
+    "image": "https://mekuru.matthew.moe/images/feature-graphic.png",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "sameAs": [
+      "https://play.google.com/store/apps/details?id=moe.matthew.mekuru",
+      "https://github.com/mostrowski123/japanese-e-reader"
+    ]
+  }
+  </script>
 </head>
 <body>
-  <section class="hero">
-    <img src="icon.png" alt="Mekuru app icon" width="96" height="96">
-    <h1>Mekuru</h1>
-    <p class="subtitle">Turn the page. Read Japanese books and manga.</p>
-  </section>
+  <header class="hero">
+    <div class="hero-copy">
+      <div class="brand-row">
+        <img src="icon.png" alt="Mekuru app icon" width="72" height="72">
+        <span>Mekuru for Android</span>
+      </div>
+      <h1>Japanese EPUB and Manga Reader for Android</h1>
+      <p class="subtitle">Read vertically, tap Japanese words for instant offline definitions, save vocabulary, and export it to AnkiDroid.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="https://play.google.com/store/apps/details?id=moe.matthew.mekuru">Get Mekuru on Google Play</a>
+        <a class="button button-secondary" href="documentation/">Read the documentation</a>
+      </div>
+    </div>
+    <img class="hero-art" src="images/feature-graphic.png" alt="Mekuru Japanese reader showing EPUB, dictionary, manga, and vocabulary features" width="1024" height="500">
+  </header>
 
-  <section class="features">
-    <div class="feature">
-      <div class="icon">&#x1F4D6;</div>
-      <h3>Vertical EPUB Reader</h3>
-      <p>Read Japanese EPUB books with vertical text rendering, right-to-left page flow, and automatic progress restore.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#x1F5BC;</div>
-      <h3>Manga Reader</h3>
-      <p>Import CBZ archives or Mokuro-processed manga with single-page, spread, and scroll reading modes.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#x1F4DA;</div>
-      <h3>Offline Dictionaries</h3>
-      <p>Import Yomitan ZIP files or collection backups. Built-in downloads for JMdict, KANJIDIC, KanjiVG stroke order, and JPDB frequency data.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#x1F50D;</div>
-      <h3>Smart Word Detection</h3>
-      <p>Accurate word boundary detection with compound word resolution for precise tap-to-lookup in Japanese text.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#x1F4DD;</div>
-      <h3>Vocabulary &amp; Anki</h3>
-      <p>Save words with sentence context, manage your vocabulary list, and export to CSV or send cards directly to AnkiDroid.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#x1F516;</div>
-      <h3>Bookmarks &amp; Highlights</h3>
-      <p>Save positions and notes in EPUB books. Highlight passages with Pro.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#x1F3A8;</div>
-      <h3>Reader Customization</h3>
-      <p>Themes, color modes, adjustable margins and font size, swipe sensitivity, and per-book quick settings.</p>
-    </div>
-    <div class="feature">
-      <div class="icon">&#x1F4F7;</div>
-      <h3>Manga OCR <span class="pro-badge">Pro</span></h3>
-      <p>Cloud OCR for CBZ manga pages with dictionary lookup. Auto-crop and custom self-hosted server support.</p>
-    </div>
-  </section>
+  <main>
+    <ul class="proof-bar" aria-label="Mekuru highlights">
+      <li>Vertical EPUB</li>
+      <li>Mokuro and CBZ</li>
+      <li>Offline dictionaries</li>
+      <li>AnkiDroid export</li>
+    </ul>
 
-  <p class="description">
-    Mekuru is a Japanese-first EPUB and manga reader designed for language learners and native readers alike.
-    Read vertically, look up words offline, build vocabulary with Anki export, and run OCR on manga &mdash; all in one app.
-  </p>
+    <section class="section intro" aria-labelledby="built-for-reading">
+      <p class="eyebrow">Built for reading Japanese</p>
+      <h2 id="built-for-reading">Stay inside the book, not inside a stack of lookup apps</h2>
+      <p>Mekuru combines Japanese-first reading layouts with offline dictionaries and vocabulary capture. Your EPUB books, manga, dictionaries, and reading progress stay together in one focused reader.</p>
+    </section>
 
-  <div class="links">
-    <a href="https://play.google.com/store/apps/details?id=moe.matthew.mekuru">Google Play</a>
-    <a href="documentation/">Documentation</a>
-  </div>
+    <section class="section screenshots" aria-labelledby="see-mekuru">
+      <p class="eyebrow">See Mekuru in action</p>
+      <h2 id="see-mekuru">From reading to flashcards in a few taps</h2>
+      <div class="screenshot-grid">
+        <figure>
+          <img src="images/instant-dictionary.webp" alt="Mekuru showing an offline JMdict definition after text is selected in a vertical Japanese EPUB" width="720" height="1280" loading="lazy">
+          <figcaption>Instant offline dictionary lookup</figcaption>
+        </figure>
+        <figure>
+          <img src="images/vertical-reading.webp" alt="A Japanese EPUB displayed in Mekuru's vertical tategaki reading layout" width="720" height="1280" loading="lazy">
+          <figcaption>Vertical Japanese EPUB reading</figcaption>
+        </figure>
+        <figure>
+          <img src="images/manga-mokuro.webp" alt="Mekuru selecting OCR text on a Mokuro manga page and displaying an offline definition" width="720" height="1280" loading="lazy">
+          <figcaption>
+            Manga OCR with Mokuro
+            <small>Give My Regards to Black Jack / SHUHO SATO</small>
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="images/save-vocabulary.webp" alt="Mekuru vocabulary list with a saved Japanese word, definition, and source sentence" width="720" height="1280" loading="lazy">
+          <figcaption>Save words with their source sentences</figcaption>
+        </figure>
+      </div>
+    </section>
 
-  <p class="description">
-    Install Mekuru from <a href="https://play.google.com/store/apps/details?id=moe.matthew.mekuru">Google Play</a> or download an APK from <a href="https://github.com/mostrowski123/japanese-e-reader/releases">GitHub Releases</a>.
-  </p>
+    <section class="section" aria-labelledby="features-heading">
+      <p class="eyebrow">One Japanese reading workflow</p>
+      <h2 id="features-heading">Everything you need to keep turning pages</h2>
+      <div class="features">
+        <article class="feature">
+          <h3>Japanese EPUB Reader</h3>
+          <p>Read vertical or horizontal text with right-to-left or left-to-right page flow, bookmarks, themes, and automatic progress restore.</p>
+        </article>
+        <article class="feature">
+          <h3>Manga Reader</h3>
+          <p>Import CBZ archives or Mokuro-processed manga with single-page, spread, and vertical-scroll modes.</p>
+        </article>
+        <article class="feature">
+          <h3>Offline Dictionaries</h3>
+          <p>Import Yomitan-compatible dictionaries or download JMdict, KANJIDIC, KanjiVG, and JPDB frequency data.</p>
+        </article>
+        <article class="feature">
+          <h3>Smart Japanese Lookups</h3>
+          <p>Tap text for compound-word detection, conjugation-aware definitions, pitch accents, frequency data, and kanji details.</p>
+        </article>
+        <article class="feature">
+          <h3>Vocabulary and Anki</h3>
+          <p>Save words with sentence context, export CSV files, or send flashcards directly to AnkiDroid.</p>
+        </article>
+        <article class="feature">
+          <h3>Free and Open Source</h3>
+          <p>Use the core reader for free. The source is available under AGPL-3.0, with an optional one-time Pro upgrade.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="cta" aria-labelledby="start-reading">
+      <div>
+        <p class="eyebrow">Less fumbling, more reading</p>
+        <h2 id="start-reading">Start reading Japanese on Android</h2>
+      </div>
+      <a class="button button-primary" href="https://play.google.com/store/apps/details?id=moe.matthew.mekuru">Install from Google Play</a>
+    </section>
+  </main>
 
   <footer>
-    <p>&copy; 2026 Mekuru &mdash; <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a></p>
-    <p><a href="privacy.html">Privacy Policy</a></p>
+    <p>&copy; 2026 Mekuru</p>
+    <nav aria-label="Footer navigation">
+      <a href="documentation/">Documentation</a>
+      <a href="privacy">Privacy</a>
+      <a href="credits">Image credits</a>
+      <a href="https://github.com/mostrowski123/japanese-e-reader">Source code</a>
+    </nav>
   </footer>
 </body>
 </html>

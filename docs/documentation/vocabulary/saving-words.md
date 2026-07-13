@@ -27,4 +27,4 @@ The **Vocabulary** tab is a chronological review list rather than a searchable i
 
 ## Export Entry Point
 
-When you tap the export icon, Mekuru switches into selection mode so you can choose exactly which entries to export. For the full export flow, see [Exporting to Anki](vocabulary/anki-export.md).
+When you tap the export icon, Mekuru switches into selection mode so you can choose exactly which entries to export. For the full export flow, see [Exporting to Anki](anki-export.md).
