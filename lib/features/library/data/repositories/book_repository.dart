@@ -235,34 +235,26 @@ class BookRepository {
     );
     await cacheDir.create(recursive: true);
 
-    // Extract CBZ archive to cache directory (0–70% of progress)
+    // Extract the archive, which also reports each page's dimensions from the
+    // bytes it already holds — no second pass over the extracted files.
     final cbzMeta = await CbzParser.extract(
       sourcePath,
       cacheDir.path,
-      onProgress: onProgress != null ? (p) => onProgress(p * 0.7) : null,
+      onProgress: onProgress,
     );
 
     // Build MokuroPages with empty blocks (no OCR yet).
-    // Read image dimensions from each extracted file (70–100% of progress).
-    final pages = <MokuroPage>[];
-    final total = cbzMeta.imageFileNames.length;
-    for (var i = 0; i < total; i++) {
-      final fileName = cbzMeta.imageFileNames[i];
-      final imagePath = p.join(cbzMeta.imageDirPath, fileName);
-      final dims = await CbzParser.readImageDimensions(imagePath);
-
-      pages.add(
+    final fileNames = cbzMeta.imageFileNames;
+    final pages = <MokuroPage>[
+      for (var i = 0; i < fileNames.length; i++)
         MokuroPage(
           pageIndex: i,
-          imageFileName: fileName,
-          imgWidth: dims?.width ?? 0,
-          imgHeight: dims?.height ?? 0,
+          imageFileName: fileNames[i],
+          imgWidth: cbzMeta.dimensionsOf(fileNames[i])?.width ?? 0,
+          imgHeight: cbzMeta.dimensionsOf(fileNames[i])?.height ?? 0,
           blocks: const [],
         ),
-      );
-
-      onProgress?.call(0.7 + (i + 1) / total * 0.3);
-    }
+    ];
 
     // Build and save pages_cache.json
     final mokuroBook = MokuroBook(

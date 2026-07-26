@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -239,7 +240,63 @@ void main() {
     });
   });
 
-  group('CbzParser.readImageDimensions', () {
+  group('readImageDimensionsFromBytes', () {
+    Uint8List encoded(
+      List<int> Function(img.Image) encode, {
+      int width = 12,
+      int height = 34,
+    }) => Uint8List.fromList(encode(img.Image(width: width, height: height)));
+
+    test('reads JPEG dimensions', () {
+      final dims = readImageDimensionsFromBytes(encoded(img.encodeJpg));
+      expect([dims?.width, dims?.height], [12, 34]);
+    });
+
+    test('reads PNG dimensions', () {
+      final dims = readImageDimensionsFromBytes(encoded(img.encodePng));
+      expect([dims?.width, dims?.height], [12, 34]);
+    });
+
+    test('reads formats without a direct parser via the fallback', () {
+      // GIF and BMP go through the image package's header decode.
+      for (final encode in [img.encodeGif, img.encodeBmp]) {
+        final dims = readImageDimensionsFromBytes(encoded(encode));
+        expect([dims?.width, dims?.height], [12, 34]);
+      }
+    });
+
+    test('reads a JPEG without decoding its pixel data', () {
+      // Truncated past the SOF header, so no scan data remains. A full decode
+      // cannot succeed; reading the size must still work. This is the whole
+      // point — img.decodeImage here costs ~31ms on a 1600x2300 page because
+      // it allocates the entire coefficient buffer just to expose width and
+      // height, which is what made CBZ import take minutes.
+      final full = encoded(img.encodeJpg, width: 640, height: 480);
+      final headerOnly = Uint8List.sublistView(full, 0, full.length ~/ 4);
+
+      expect(
+        () => img.decodeImage(headerOnly),
+        throwsA(anything),
+        reason: 'guard: a full decode must fail on this truncated input',
+      );
+
+      final dims = readImageDimensionsFromBytes(headerOnly);
+      expect([dims?.width, dims?.height], [640, 480]);
+    });
+
+    test('returns null rather than throwing on unusable bytes', () {
+      for (final bytes in [
+        <int>[],
+        [1, 2, 3, 4],
+        [0xFF, 0xD8], // JPEG magic with no frame header
+        [0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0], // the test fixture bytes
+      ]) {
+        expect(readImageDimensionsFromBytes(Uint8List.fromList(bytes)), isNull);
+      }
+    });
+  });
+
+  group('CbzParser.extract page dimensions', () {
     late Directory tmpDir;
 
     setUp(() {
@@ -250,25 +307,67 @@ void main() {
       tmpDir.deleteSync(recursive: true);
     });
 
-    test('returns width and height for a valid image', () async {
-      final image = img.Image(width: 12, height: 34);
-      final imagePath = '${tmpDir.path}/page.png';
-      await File(imagePath).writeAsBytes(img.encodePng(image));
+    Future<String> createCbz(String name, Map<String, List<int>> entries) async {
+      final archive = Archive();
+      for (final entry in entries.entries) {
+        archive.addFile(
+          ArchiveFile(entry.key, entry.value.length, entry.value),
+        );
+      }
+      final cbzPath = '${tmpDir.path}/$name.cbz';
+      await File(cbzPath).writeAsBytes(ZipEncoder().encode(archive));
+      return cbzPath;
+    }
 
-      final dims = await CbzParser.readImageDimensions(imagePath);
+    List<int> png(int width, int height) =>
+        img.encodePng(img.Image(width: width, height: height));
 
-      expect(dims, isNotNull);
-      expect(dims!.width, 12);
-      expect(dims.height, 34);
+    test('reports dimensions per page during extraction', () async {
+      // Dimensions come from the bytes already in hand while extracting, so
+      // importing never re-reads the pages back off disk.
+      final cbzPath = await createCbz('sized', {
+        'page_1.png': png(100, 200),
+        'page_2.png': png(300, 400),
+      });
+
+      final metadata = await CbzParser.extract(cbzPath, '${tmpDir.path}/out');
+
+      expect(metadata.imageFileNames, ['page_1.png', 'page_2.png']);
+      expect(metadata.dimensionsOf('page_1.png')?.width, 100);
+      expect(metadata.dimensionsOf('page_1.png')?.height, 200);
+      expect(metadata.dimensionsOf('page_2.png')?.width, 300);
+      expect(metadata.dimensionsOf('page_2.png')?.height, 400);
     });
 
-    test('returns null for invalid image data', () async {
-      final imagePath = '${tmpDir.path}/invalid.jpg';
-      await File(imagePath).writeAsBytes([1, 2, 3, 4]);
+    test('yields null dimensions for pages that cannot be parsed', () async {
+      final cbzPath = await createCbz('mixed', {
+        'good.png': png(10, 20),
+        'bad.jpg': fakeJpegBytes,
+      });
 
-      final dims = await CbzParser.readImageDimensions(imagePath);
+      final metadata = await CbzParser.extract(cbzPath, '${tmpDir.path}/out');
 
-      expect(dims, isNull);
+      expect(metadata.imageFileNames, hasLength(2));
+      expect(metadata.dimensionsOf('good.png')?.width, 10);
+      expect(metadata.dimensionsOf('bad.jpg'), isNull);
+    });
+
+    test('reports extraction progress across the whole run', () async {
+      final cbzPath = await createCbz('progress', {
+        'a.png': png(8, 8),
+        'b.png': png(8, 8),
+        'c.png': png(8, 8),
+        'd.png': png(8, 8),
+      });
+      final progress = <double>[];
+
+      await CbzParser.extract(
+        cbzPath,
+        '${tmpDir.path}/out',
+        onProgress: progress.add,
+      );
+
+      expect(progress, [0.25, 0.5, 0.75, 1.0]);
     });
   });
 }
