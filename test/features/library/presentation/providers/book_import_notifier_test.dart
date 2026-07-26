@@ -4,8 +4,10 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/main.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
@@ -142,6 +144,62 @@ void main() {
 
       expect(imported, 0);
       expect(container.read(bookImportProvider).isImporting, isFalse);
+    });
+  });
+
+  group('BookImportNotifier failure telemetry', () {
+    late List<({String message, Map<String, SentryAttribute> attrs, bool warn})>
+    logs;
+    late List<({String name, Map<String, SentryAttribute>? attrs})> counts;
+
+    setUp(() {
+      logs = [];
+      counts = [];
+      usageLogSinkOverride = (message, attributes, {required isWarning}) =>
+          logs.add((message: message, attrs: attributes, warn: isWarning));
+      usageCountSinkOverride = (name, value, attributes) =>
+          counts.add((name: name, attrs: attributes));
+      usageAnalyticsSinkOverride = (name, parameters) {};
+    });
+
+    tearDown(() {
+      usageLogSinkOverride = null;
+      usageCountSinkOverride = null;
+      usageAnalyticsSinkOverride = null;
+    });
+
+    test('reports a failed import as a warning, and counts it', () async {
+      final missing = '${tempDir.path}/missing.epub'; // never written
+
+      await container
+          .read(bookImportProvider.notifier)
+          .importFiles([missing], format: 'epub');
+
+      final failures = logs.where((l) => l.message == 'book.import_failed');
+      expect(failures, hasLength(1));
+      expect(failures.single.warn, isTrue);
+      expect(failures.single.attrs['format']?.value, 'epub');
+      // The exception text can embed the book file name, so only its type
+      // may leave the device.
+      expect(failures.single.attrs, contains('error_type'));
+      expect(failures.single.attrs.containsKey('missing.epub'), isFalse);
+
+      // Counting as well as logging is what makes a failure *rate* derivable
+      // against book.imported.
+      final counted = counts.where((c) => c.name == 'book.import_failed');
+      expect(counted, hasLength(1));
+      expect(counted.single.attrs?['format']?.value, 'epub');
+    });
+
+    test('logs nothing on the failure channel when imports succeed', () async {
+      final path = await fixtureEpub(title: '坊っちゃん', fileName: 'ok.epub');
+
+      await container
+          .read(bookImportProvider.notifier)
+          .importFiles([path], format: 'epub');
+
+      expect(logs.where((l) => l.warn), isEmpty);
+      expect(counts.where((c) => c.name == 'book.import_failed'), isEmpty);
     });
   });
 }
