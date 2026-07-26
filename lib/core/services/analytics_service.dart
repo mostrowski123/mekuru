@@ -9,8 +9,23 @@ class AnalyticsService {
   static final AnalyticsService instance = AnalyticsService._();
 
   FirebaseAnalytics? _analytics;
+  bool _suppressed = false;
+
+  /// Stops this install from reporting anything to Firebase Analytics.
+  ///
+  /// Called once at startup for synthetic clients — emulators, cloud device
+  /// farms, bots — whose activity would otherwise skew aggregate product
+  /// metrics. Gating here rather than at each call site also covers the
+  /// automatic screen tracking from [navigatorObserver], and callers that
+  /// reach for [logEvent] directly instead of going through
+  /// `usage_telemetry.dart`.
+  void suppress() {
+    _suppressed = true;
+    _analytics = null;
+  }
 
   FirebaseAnalytics? get _instance {
+    if (_suppressed) return null;
     if (_analytics != null) return _analytics;
     if (Firebase.apps.isEmpty) return null;
     _analytics = FirebaseAnalytics.instance;
