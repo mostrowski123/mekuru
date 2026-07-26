@@ -164,7 +164,6 @@ class BookImportNotifier extends Notifier<BookImportState> {
         );
       } catch (e, st) {
         Sentry.captureException(e, stackTrace: st);
-        _reportImportFailure(e, format);
         failures.add(p.basename(filePaths[i]));
       }
     }
@@ -200,7 +199,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
       action: () => format == 'cbz'
           ? repo.importCbz(filePath, onProgress: onProgress)
           : repo.importEpub(filePath),
-      attributes: {'format': SentryAttribute.string(format)},
+      attributes: {'format': format},
     );
     await _applyPendingDataIfExists(book);
     Sentry.logger.info(
@@ -219,14 +218,6 @@ class BookImportNotifier extends Notifier<BookImportState> {
     return book;
   }
 
-  /// Records a failed import on the telemetry failure channel. Counting as
-  /// well as logging keeps a failure *rate* derivable against `book.imported`
-  /// — a log alone can only ever show that something broke, not how often.
-  void _reportImportFailure(Object error, String format) {
-    logFailure('book.import_failed', error, attrs: {'format': format});
-    countUsage('book.import_failed', attrs: {'format': format});
-  }
-
   Future<Book?> importManga(String filePath, {String? cachedFilePath}) async {
     state = const BookImportState(isImporting: true);
 
@@ -240,7 +231,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
           safTreeUri: null,
           safSelectedFileRelativePath: null,
         ),
-        attributes: {'format': SentryAttribute.string('manga')},
+        attributes: {'format': 'manga'},
       );
       await _applyPendingDataIfExists(book);
       Sentry.logger.info(
@@ -260,7 +251,6 @@ class BookImportNotifier extends Notifier<BookImportState> {
       return book;
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      _reportImportFailure(e, 'manga');
       state = BookImportState(error: e.toString());
       return null;
     }
@@ -284,7 +274,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
           safTreeUri: safTreeUri,
           safSelectedFileRelativePath: safSelectedFileRelativePath,
         ),
-        attributes: {'format': SentryAttribute.string('manga_saf')},
+        attributes: {'format': 'manga_saf'},
       );
       await _applyPendingDataIfExists(book);
       Sentry.logger.info(
@@ -306,7 +296,6 @@ class BookImportNotifier extends Notifier<BookImportState> {
       return book;
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      _reportImportFailure(e, 'manga_saf');
       state = BookImportState(error: e.toString());
       return null;
     }

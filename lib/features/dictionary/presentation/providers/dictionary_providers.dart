@@ -153,26 +153,29 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
 
     try {
       final importer = ref.read(dictionaryImporterProvider);
-      final result = await importer.importCollectionFromFile(
-        filePath,
-        onParsing: () {
-          state = state.copyWith(currentDictionary: 'Parsing collection...');
-        },
-        onDictionaryStart: (name, entryCount, dictIndex, dictTotal) {
-          state = state.copyWith(
-            currentDictionary: name,
-            processedEntries: 0,
-            totalEntries: entryCount,
-            dictionariesProcessed: dictIndex,
-            dictionariesTotal: dictTotal,
-          );
-        },
-        onProgress: (processed, total) {
-          state = state.copyWith(
-            processedEntries: processed,
-            totalEntries: total,
-          );
-        },
+      final result = await tracedOperation(
+        'dictionary.collection_import_duration_ms',
+        action: () => importer.importCollectionFromFile(
+          filePath,
+          onParsing: () {
+            state = state.copyWith(currentDictionary: 'Parsing collection...');
+          },
+          onDictionaryStart: (name, entryCount, dictIndex, dictTotal) {
+            state = state.copyWith(
+              currentDictionary: name,
+              processedEntries: 0,
+              totalEntries: entryCount,
+              dictionariesProcessed: dictIndex,
+              dictionariesTotal: dictTotal,
+            );
+          },
+          onProgress: (processed, total) {
+            state = state.copyWith(
+              processedEntries: processed,
+              totalEntries: total,
+            );
+          },
+        ),
       );
 
       final message = result.importedDictionaries.isNotEmpty
