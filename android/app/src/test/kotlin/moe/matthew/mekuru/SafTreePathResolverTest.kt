@@ -306,6 +306,19 @@ class SafTreePathResolverTest {
     }
 
     @Test
+    fun `keeps the tree and the path from running together in the key`() {
+        val cache = SafResolutionCache()
+        // With a space between the two halves these would be the same key, and
+        // one tree would serve the other's document. Relative paths contain
+        // spaces all the time — "Volume 1.mokuro" is the one from MEKURU-15.
+        cache.putDocumentId("content://tree/a", "b c", "id-1")
+        cache.putDocumentId("content://tree/a b", "c", "id-2")
+
+        assertEquals("id-1", cache.documentId("content://tree/a", "b c"))
+        assertEquals("id-2", cache.documentId("content://tree/a b", "c"))
+    }
+
+    @Test
     fun `evicts the least recently used entry past its bound`() {
         val cache = SafResolutionCache(maxEntries = 2)
         cache.putDocumentId(TREE, "a", "id-a")
