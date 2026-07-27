@@ -1,0 +1,20 @@
+# Line endings
+#
+# Normalize every text file to LF, both in the repository and in the working
+# tree. This deliberately overrides per-machine `core.autocrlf` (Git for
+# Windows ships with `core.autocrlf=true` in its system config, and .git/config
+# is not cloned, so a repo-local override protects only one checkout).
+#
+# Without `eol=lf`, a Windows checkout writes CRLF while Dart/Flutter codegen
+# (`flutter gen-l10n`, `build_runner`, `dart format`) always writes LF. The
+# resulting size mismatch makes Git's stat cache report those files as modified
+# forever, even though `git diff` is empty and the blobs are identical.
+* text=auto eol=lf
+
+# Binary assets — never sniff or convert these.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.dic  binary
+*.bin  binary
