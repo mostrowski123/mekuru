@@ -201,8 +201,11 @@ class MainActivity : FlutterActivity() {
                     result.error("bad_args", "treeUri and relativePath are required", null)
                     return
                 }
-                val docUri = resolveTreeDocumentUri(Uri.parse(treeUri), relativePath)
-                result.success(docUri?.toString())
+                // Resolving a tree path queries the document provider, so it
+                // must not run on the main thread.
+                runIo(result) {
+                    resolveTreeDocumentUri(Uri.parse(treeUri), relativePath)?.toString()
+                }
             }
             else -> result.notImplemented()
         }
@@ -442,45 +445,99 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun listNamesInTreeDir(treeUri: Uri, relativePath: String): List<String> {
-        val parentDocUri = resolveTreeDocumentUri(treeUri, relativePath) ?: return emptyList()
-        val parentDocId = safeGetDocumentId(parentDocUri) ?: return emptyList()
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId)
-        val names = mutableListOf<String>()
-        val projection = arrayOf(Document.COLUMN_DISPLAY_NAME)
-        contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
-            val nameIdx = cursor.getColumnIndex(Document.COLUMN_DISPLAY_NAME)
-            while (cursor.moveToNext()) {
-                if (nameIdx >= 0) {
-                    cursor.getString(nameIdx)?.let { names.add(it) }
+        val parentDocId = resolveTreeDocumentId(treeUri, relativePath) ?: return emptyList()
+        return listChildDocuments(treeUri, parentDocId).map { it.displayName }
+    }
+
+    private fun listChildDocuments(
+        treeUri: Uri,
+        parentDocumentId: String,
+    ): List<SafChildDocument> {
+        val childrenUri = try {
+            DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId)
+        } catch (_: Exception) {
+            return emptyList()
+        }
+        val children = mutableListOf<SafChildDocument>()
+        val projection = arrayOf(Document.COLUMN_DOCUMENT_ID, Document.COLUMN_DISPLAY_NAME)
+        try {
+            contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+                val idIdx = cursor.getColumnIndex(Document.COLUMN_DOCUMENT_ID)
+                val nameIdx = cursor.getColumnIndex(Document.COLUMN_DISPLAY_NAME)
+                if (idIdx < 0 || nameIdx < 0) return@use
+                while (cursor.moveToNext()) {
+                    val documentId = cursor.getString(idIdx) ?: continue
+                    val displayName = cursor.getString(nameIdx) ?: continue
+                    children.add(SafChildDocument(documentId, displayName))
                 }
             }
+        } catch (_: Exception) {
+            return emptyList()
         }
-        return names
+        return children
+    }
+
+    /**
+     * Resolves [relativePath] inside [treeUri] to the provider's document ID.
+     *
+     * Appending the path to the tree document ID is correct and cheap for
+     * path-shaped providers, so it is tried first and verified against the
+     * provider. Everything else has opaque document IDs and has to be resolved
+     * by walking the children cursors; see [SafTreePathResolver].
+     */
+    private fun resolveTreeDocumentId(treeUri: Uri, relativePath: String): String? {
+        val treeDocId = safeGetTreeDocumentId(treeUri) ?: return null
+        val segments = SafTreePathResolver.splitSegments(relativePath) ?: return null
+        if (segments.isEmpty()) return treeDocId
+
+        val joined = SafTreePathResolver.joinDocumentId(treeDocId, segments)
+        if (documentIdResolves(treeUri, joined)) return joined
+
+        return SafTreePathResolver.walkDocumentId(treeDocId, segments) { parentDocumentId ->
+            listChildDocuments(treeUri, parentDocumentId)
+        }
     }
 
     private fun resolveTreeDocumentUri(treeUri: Uri, relativePath: String): Uri? {
-        val treeDocId = safeGetTreeDocumentId(treeUri) ?: return null
-        val normalized = normalizeRelativePath(relativePath) ?: return null
-        val fullDocId = if (normalized.isEmpty()) {
-            treeDocId
-        } else {
-            "$treeDocId/$normalized"
-        }
+        val documentId = resolveTreeDocumentId(treeUri, relativePath) ?: return null
+        return buildTreeDocumentUri(treeUri, documentId)
+    }
+
+    private fun buildTreeDocumentUri(treeUri: Uri, documentId: String): Uri? {
         return try {
-            DocumentsContract.buildDocumentUriUsingTree(treeUri, fullDocId)
+            DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
         } catch (_: Exception) {
             null
         }
     }
 
-    private fun normalizeRelativePath(relativePath: String): String? {
-        if (relativePath.isBlank() || relativePath == ".") return ""
-        val parts = relativePath
-            .replace('\\', '/')
-            .split('/')
-            .filter { it.isNotEmpty() && it != "." }
-        if (parts.any { it == ".." }) return null
-        return parts.joinToString("/")
+    /**
+     * True when [documentId] names a real document in [treeUri].
+     *
+     * The provider must both return a row and echo back the same document ID.
+     * A well-behaved provider throws for an unknown ID, but a lenient one can
+     * hand back a fabricated row for a concatenated ID it never issued, which
+     * would send the caller off to read a document that does not exist. A
+     * provider that canonicalises IDs instead falls through to the slower walk,
+     * which still resolves correctly.
+     */
+    private fun documentIdResolves(treeUri: Uri, documentId: String): Boolean {
+        val documentUri = buildTreeDocumentUri(treeUri, documentId) ?: return false
+        return try {
+            contentResolver.query(
+                documentUri,
+                arrayOf(Document.COLUMN_DOCUMENT_ID),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                if (!cursor.moveToFirst()) return@use false
+                val idIdx = cursor.getColumnIndex(Document.COLUMN_DOCUMENT_ID)
+                idIdx >= 0 && cursor.getString(idIdx) == documentId
+            } ?: false
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun buildParentDocumentUri(documentUri: Uri): Uri? {

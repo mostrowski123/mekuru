@@ -384,6 +384,7 @@ android {
 
 dependencies {
     implementation("com.github.ankidroid:Anki-Android:v2.17.4")
+    testImplementation("junit:junit:4.13.2")
 }
 
 flutter {

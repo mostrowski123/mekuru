@@ -88,3 +88,13 @@ jobs:
       - name: Run tests
         timeout-minutes: 20
         run: flutter test -r expanded
+
+      # Covers the SAF document-ID resolution in MainActivity.kt, which
+      # flutter test cannot reach. local.properties is not in the repo and is
+      # normally written by `flutter build`, which this workflow never runs.
+      - name: Run Android unit tests
+        timeout-minutes: 20
+        working-directory: android
+        run: |
+          echo "flutter.sdk=$FLUTTER_ROOT" > local.properties
+          ./gradlew :app:testPlayDebugUnitTest --console=plain
