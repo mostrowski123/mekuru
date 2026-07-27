@@ -319,8 +319,12 @@ class MainActivity : FlutterActivity() {
             try {
                 val value = task()
                 runOnUiThread { result.success(value) }
+            } catch (e: SafFailure) {
+                runOnUiThread { result.error(e.code, e.reason, e.details()) }
             } catch (e: Exception) {
-                runOnUiThread { result.error("saf_io_error", e.message, null) }
+                runOnUiThread {
+                    result.error("saf_io_error", describeThrowable(e), null)
+                }
             }
         }.start()
     }
@@ -408,32 +412,67 @@ class MainActivity : FlutterActivity() {
         startActivityForResult(intent, REQUEST_OPEN_DOCUMENT_TREE)
     }
 
-    private fun readBytesFromUri(uri: Uri): ByteArray? {
-        return try {
-            contentResolver.openInputStream(uri)?.use { it.readBytes() }
-        } catch (_: Exception) {
-            null
+    /**
+     * A SAF operation that failed for a reason worth reporting.
+     *
+     * Reads used to collapse every failure into a bare `null`, so a crash
+     * report could say a file could not be read but never why. [code] and
+     * [reason] travel to Dart as the method channel error, and [details] adds
+     * the provider authority and the stage that failed. Nothing here carries a
+     * file path or user content.
+     */
+    private class SafFailure(
+        val code: String,
+        val reason: String,
+        val authority: String?,
+        val stage: String,
+    ) : Exception(reason) {
+        fun details(): Map<String, String?> =
+            mapOf("authority" to authority, "stage" to stage)
+    }
+
+    private fun describeThrowable(e: Throwable): String {
+        val message = e.message
+        return if (message.isNullOrBlank()) {
+            e.javaClass.simpleName
+        } else {
+            "${e.javaClass.simpleName}: $message"
         }
     }
 
-    private fun readTextFromUri(uri: Uri): String? {
-        val bytes = readBytesFromUri(uri) ?: return null
-        return try {
-            bytes.toString(Charsets.UTF_8)
-        } catch (_: Exception) {
-            null
+    private fun readBytesFromUri(uri: Uri): ByteArray {
+        try {
+            return contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                ?: throw SafFailure(
+                    "saf_open_failed",
+                    "The document provider returned no stream for the document",
+                    uri.authority,
+                    "open",
+                )
+        } catch (e: SafFailure) {
+            throw e
+        } catch (e: Exception) {
+            throw SafFailure("saf_read_failed", describeThrowable(e), uri.authority, "read")
         }
     }
 
-    private fun readBytesFromTreePath(treeUri: Uri, relativePath: String): ByteArray? {
-        val docUri = resolveTreeDocumentUri(treeUri, relativePath) ?: return null
-        return readBytesFromUri(docUri)
-    }
+    private fun readTextFromUri(uri: Uri): String =
+        readBytesFromUri(uri).toString(Charsets.UTF_8)
 
-    private fun readTextFromTreePath(treeUri: Uri, relativePath: String): String? {
-        val docUri = resolveTreeDocumentUri(treeUri, relativePath) ?: return null
-        return readTextFromUri(docUri)
-    }
+    private fun readBytesFromTreePath(treeUri: Uri, relativePath: String): ByteArray =
+        readBytesFromUri(requireTreeDocumentUri(treeUri, relativePath))
+
+    private fun readTextFromTreePath(treeUri: Uri, relativePath: String): String =
+        readTextFromUri(requireTreeDocumentUri(treeUri, relativePath))
+
+    private fun requireTreeDocumentUri(treeUri: Uri, relativePath: String): Uri =
+        resolveTreeDocumentUri(treeUri, relativePath)
+            ?: throw SafFailure(
+                "saf_document_not_found",
+                "No document matching the requested path exists under the granted tree",
+                treeUri.authority,
+                "resolve",
+            )
 
     private fun existsInTreePath(treeUri: Uri, relativePath: String): Boolean {
         val docUri = resolveTreeDocumentUri(treeUri, relativePath) ?: return false

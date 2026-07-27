@@ -160,14 +160,17 @@ class BookRepository {
     if (safTreeUri != null &&
         safSelectedFileRelativePath != null &&
         cachedFilePath == null) {
+      AndroidSafFailure? readFailure;
       final bytes = await AndroidSafService.readBytesFromTreePath(
         safTreeUri,
         safSelectedFileRelativePath,
+        onFailure: (failure) => readFailure = failure,
       );
       if (bytes == null) {
         throw Exception(
           'Could not read selected file from folder access grant:\n'
-          '$safSelectedFileRelativePath',
+          '$safSelectedFileRelativePath'
+          '${readFailure == null ? '' : '\n$readFailure'}',
         );
       }
 
