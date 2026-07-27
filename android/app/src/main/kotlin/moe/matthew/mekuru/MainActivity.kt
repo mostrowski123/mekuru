@@ -24,6 +24,12 @@ class MainActivity : FlutterActivity() {
         private const val ANKI_CHANNEL_NAME = "mekuru/ankidroid_native"
         private const val SYSTEM_UI_CHANNEL_NAME = "mekuru/android_system_ui"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
+
+        /**
+         * Shared so a configuration change does not throw away everything
+         * learned about the trees the reader is currently paging through.
+         */
+        private val resolutionCache = SafResolutionCache()
     }
 
     private var pendingTreePickerResult: MethodChannel.Result? = null
@@ -460,10 +466,31 @@ class MainActivity : FlutterActivity() {
         readBytesFromUri(uri).toString(Charsets.UTF_8)
 
     private fun readBytesFromTreePath(treeUri: Uri, relativePath: String): ByteArray =
-        readBytesFromUri(requireTreeDocumentUri(treeUri, relativePath))
+        readTreePath(treeUri, relativePath, ::readBytesFromUri)
 
     private fun readTextFromTreePath(treeUri: Uri, relativePath: String): String =
-        readTextFromUri(requireTreeDocumentUri(treeUri, relativePath))
+        readTreePath(treeUri, relativePath, ::readTextFromUri)
+
+    /**
+     * Resolves [relativePath] and reads it with [read].
+     *
+     * A failed read drops everything cached for the tree, so a document that
+     * has since been moved, deleted or had its grant revoked cannot keep being
+     * served from stale state — the next attempt resolves from scratch.
+     */
+    private fun <T> readTreePath(
+        treeUri: Uri,
+        relativePath: String,
+        read: (Uri) -> T,
+    ): T {
+        val documentUri = requireTreeDocumentUri(treeUri, relativePath)
+        return try {
+            read(documentUri)
+        } catch (e: Exception) {
+            resolutionCache.invalidateTree(treeUri.toString())
+            throw e
+        }
+    }
 
     private fun requireTreeDocumentUri(treeUri: Uri, relativePath: String): Uri =
         resolveTreeDocumentUri(treeUri, relativePath)
@@ -483,9 +510,22 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    /**
+     * Lists a directory, always reading it fresh.
+     *
+     * This backs the folder picker, where showing a file the user just added
+     * matters more than saving a query, so it never serves the cached index —
+     * it refreshes it instead, which later resolutions then reuse.
+     */
     private fun listNamesInTreeDir(treeUri: Uri, relativePath: String): List<String> {
         val parentDocId = resolveTreeDocumentId(treeUri, relativePath) ?: return emptyList()
-        return listChildDocuments(treeUri, parentDocId).map { it.displayName }
+        val children = listChildDocuments(treeUri, parentDocId)
+        resolutionCache.putChildIndex(
+            treeUri.toString(),
+            parentDocId,
+            SafTreePathResolver.indexChildren(children),
+        )
+        return children.map { it.displayName }
     }
 
     private fun listChildDocuments(
@@ -529,12 +569,39 @@ class MainActivity : FlutterActivity() {
         val segments = SafTreePathResolver.splitSegments(relativePath) ?: return null
         if (segments.isEmpty()) return treeDocId
 
-        val joined = SafTreePathResolver.joinDocumentId(treeDocId, segments)
-        if (documentIdResolves(treeUri, joined)) return joined
+        val treeKey = treeUri.toString()
+        val fullPath = segments.joinToString("/")
+        resolutionCache.documentId(treeKey, fullPath)?.let { return it }
 
-        return SafTreePathResolver.walkDocumentId(treeDocId, segments) { parentDocumentId ->
+        // Skip the append attempt once this tree has proved it does not accept
+        // derived IDs; on a network provider that failed query is a wasted
+        // round trip on every single lookup.
+        val triedFastPath = !resolutionCache.isKnownOpaque(treeKey)
+        if (triedFastPath) {
+            val joined = SafTreePathResolver.joinDocumentId(treeDocId, segments)
+            if (documentIdResolves(treeUri, joined)) {
+                resolutionCache.putDocumentId(treeKey, fullPath, joined)
+                return joined
+            }
+        }
+
+        val walked = SafTreePathResolver.resolveCached(
+            treeKey,
+            treeDocId,
+            segments,
+            resolutionCache,
+        ) { parentDocumentId ->
             listChildDocuments(treeUri, parentDocumentId)
         }
+
+        // Only conclude the tree is opaque when the walk found a document the
+        // append could not name. A plain missing file says nothing about the
+        // provider's ID shape, and marking a path-shaped tree opaque would cost
+        // it the fast path forever.
+        if (triedFastPath && walked != null) {
+            resolutionCache.markOpaque(treeKey)
+        }
+        return walked
     }
 
     private fun resolveTreeDocumentUri(treeUri: Uri, relativePath: String): Uri? {
