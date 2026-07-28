@@ -262,12 +262,15 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _backfillSearchText() async {
+    // Small pages: each page's UPDATE batch is one write transaction on
+    // the shared connection, so its size bounds how long a concurrent
+    // search query can stall behind it while the backfill runs.
     var lastId = 0;
     while (true) {
       final rows = await customSelect(
         'SELECT id, glossaries FROM dictionary_entries '
         "WHERE search_text = '' AND glossaries NOT IN ('', '[]') "
-        'AND id > ? ORDER BY id LIMIT 2000',
+        'AND id > ? ORDER BY id LIMIT 500',
         variables: [Variable.withInt(lastId)],
       ).get();
       if (rows.isEmpty) return;
