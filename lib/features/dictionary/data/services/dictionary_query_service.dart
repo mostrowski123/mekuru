@@ -828,7 +828,7 @@ class DictionaryQueryService {
 
   /// All orthographic variants of [term] worth searching, in two groups.
   ///
-  /// `fuzzyProbes` are spellings of the term as typed: the term itself, its
+  /// `asTyped` are spellings of the term as typed: the term itself, its
   /// kana readings (every plausible reading of an ambiguous romaji query), a
   /// hiragana version of katakana input, and — because loanwords are stored
   /// in katakana (expression AND reading) — katakana forms of every kana
@@ -837,12 +837,14 @@ class DictionaryQueryService {
   ///
   /// `all` adds trailing-long-vowel completions (がっこ also searches
   /// がっこう, so "gakko" reaches 学校 as an exact match). Completions are
-  /// guesses at a different string, kept out of `fuzzyProbes` because each
-  /// fuzzy pass has a fixed per-term cost and a candidate like がっこう
-  /// already scores well against the がっこ probe.
-  ({List<String> all, List<String> fuzzyProbes}) _expandSearchTerms(
-    String term,
-  ) {
+  /// guesses at a different word and only widen the exact tier:
+  /// - not the prefix/fuzzy tiers — a completion's rows always sit inside
+  ///   its base term's prefix range, so extra range scans and fuzzy passes
+  ///   are pure cost (measured on real JMdict: an 11-term prefix OR-chain
+  ///   turned "konnyaku" from 7ms into ~480ms);
+  /// - not single-kana terms — completing ほ to ほう floods the exact tier
+  ///   with more-frequent ほう words above every as-typed ほ word.
+  ({List<String> all, List<String> asTyped}) _expandSearchTerms(String term) {
     // Insertion-ordered set: dedups while keeping the typed term first.
     final terms = <String>{};
 
@@ -860,16 +862,20 @@ class DictionaryQueryService {
     add(RomajiConverter.katakanaToHiragana(term));
     _addKatakanaVariants(terms);
 
-    final fuzzyProbes = terms.toList();
+    final asTyped = terms.toList();
 
-    for (final t in fuzzyProbes) {
-      if (_isKanaOnly(t) && RomajiConverter.endsInLongVowelStarter(t)) {
-        add('$tう');
-      }
-    }
-    _addKatakanaVariants(terms);
+    // Kana runes are BMP, so length equals rune count for kana-only terms.
+    final completions = <String>{
+      for (final t in asTyped)
+        if (_isKanaOnly(t) &&
+            t.length >= 2 &&
+            RomajiConverter.endsInLongVowelStarter(t))
+          '$tう',
+    };
+    _addKatakanaVariants(completions);
+    terms.addAll(completions);
 
-    return (all: terms.toList(), fuzzyProbes: fuzzyProbes);
+    return (all: terms.toList(), asTyped: asTyped);
   }
 
   /// Adds the katakana form and its long-vowel-collapsed variant for every
@@ -955,8 +961,9 @@ class DictionaryQueryService {
 
     // 1b. Deinflected exact matches (same tier as exact).
     // Reverses conjugation to find base forms (e.g., 行って → 行く, 行う).
+    // Deinflection applies to what the user typed, not to completions.
     final deinflectedCandidates = <String>{};
-    for (final t in searchTerms) {
+    for (final t in expansion.asTyped) {
       deinflectedCandidates.addAll(deinflect(t));
     }
     deinflectedCandidates.removeAll(searchTerms);
@@ -971,16 +978,15 @@ class DictionaryQueryService {
       );
     }
 
-    // 2. Fuzzy matches on expression/reading via fuzzy_bolt. The candidate
-    // pool is fetched with every term, but only the as-typed spellings get a
-    // fuzzy pass — each FuzzyBolt call has a fixed per-term cost, and the
-    // leniency completions exist for exact-tier recall.
+    // 2. Fuzzy matches on expression/reading via fuzzy_bolt. As-typed
+    // spellings only: completions live inside their base term's prefix
+    // range, so scanning or fuzzy-matching them separately is pure cost.
     final prefixCandidates = await _fetchPrefixCandidates(
-      searchTerms,
+      expansion.asTyped,
       limit: 100,
     );
     if (prefixCandidates.isNotEmpty) {
-      for (final t in expansion.fuzzyProbes) {
+      for (final t in expansion.asTyped) {
         final fuzzyMatches = await FuzzyBolt.search<DictionaryEntryWithSource>(
           prefixCandidates,
           t,

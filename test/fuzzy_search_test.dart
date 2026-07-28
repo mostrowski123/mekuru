@@ -452,6 +452,18 @@ void main() {
           glossaries: jsonEncode(['school']),
           dictionaryId: entriesId,
         ),
+        DictionaryEntriesCompanion.insert(
+          expression: '個',
+          reading: const Value('こ'),
+          glossaries: jsonEncode(['counter for articles']),
+          dictionaryId: entriesId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '高',
+          reading: const Value('こう'),
+          glossaries: jsonEncode(['high; expensive']),
+          dictionaryId: entriesId,
+        ),
       ]);
 
       // Frequency-only install pattern: disabled + hidden, ranks still apply.
@@ -479,6 +491,18 @@ void main() {
           expression: '学校',
           reading: const Value('がっこう'),
           frequencyRank: 300,
+          dictionaryId: freqDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '個',
+          reading: const Value('こ'),
+          frequencyRank: 400,
+          dictionaryId: freqDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '高',
+          reading: const Value('こう'),
+          frequencyRank: 50,
           dictionaryId: freqDictId,
         ),
       ]);
@@ -526,6 +550,19 @@ void main() {
         // leads the results rather than surfacing as a fuzzy afterthought.
         expect(results.first.entry.expression, '学校', reason: query);
       }
+    });
+
+    test('single-kana input is not flooded by completions', () async {
+      // 高/こう (rank 50) must not ride a こ→こう completion into the exact
+      // tier above the as-typed 個/こ (rank 400): completions only apply to
+      // kana terms of two or more characters.
+      final results = await queryService2.fuzzySearchWithSource('こ');
+      expect(results, isNotEmpty);
+      expect(results.first.entry.expression, '個');
+
+      // Typing the full word still finds it first.
+      final kou = await queryService2.fuzzySearchWithSource('こう');
+      expect(kou.first.entry.expression, '高');
     });
   });
 }
