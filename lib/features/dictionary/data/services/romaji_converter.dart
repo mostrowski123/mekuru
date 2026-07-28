@@ -212,98 +212,146 @@ class RomajiConverter {
 
   /// Convert [romaji] to hiragana. Non-convertible trailing characters
   /// are stripped so the result is pure hiragana suitable for prefix search.
-  static String convert(String romaji) {
+  /// Always the conventional reading — [convertAll]'s first candidate.
+  static String convert(String romaji) =>
+      convertAll(romaji, maxCandidates: 1).first;
+
+  /// Every plausible hiragana reading of [romaji], conventional guess first.
+  ///
+  /// Romaji "n" is ambiguous before a vowel or y: "renai" can be れない or
+  /// れんあい, and "rennai" can be れんない or れんあい. Candidates are
+  /// enumerated depth-first taking the conventional interpretation first at
+  /// every ambiguity point, so element 0 is always [convert]'s output and
+  /// truncation under [maxCandidates] drops the least conventional readings
+  /// first. Never returns an empty list.
+  static List<String> convertAll(String romaji, {int maxCandidates = 16}) {
     final input = romaji.toLowerCase();
-    final buffer = StringBuffer();
-    var i = 0;
+    final limit = maxCandidates < 1 ? 1 : maxCandidates;
+    final out = <String>{}; // Insertion-ordered: keeps conventional first
+    var paths = 1;
 
-    while (i < input.length) {
-      // Separators: spaces and apostrophes (syllable break after ん) are
-      // skipped; a hyphen is wapuro input for the prolonged sound mark.
-      final ch = input[i];
-      if (ch == ' ' || ch == "'") {
-        i++;
-        continue;
-      }
-      if (ch == '-') {
-        buffer.write('ー');
-        i++;
-        continue;
-      }
-
-      // Syllabic n handling.
-      // - "n" before consonant or end -> ん
-      // - "nn" before vowel/y -> first n becomes ん, second starts next syllable
-      // - "nn" before consonant/end -> ん
-      if (input[i] == 'n') {
-        if (i + 1 >= input.length) {
-          buffer.write('ん');
-          i++;
-          continue;
-        }
-
-        final next = input[i + 1];
-        if (next == 'n') {
-          if (i + 2 < input.length) {
-            final next2 = input[i + 2];
-            if (_vowels.contains(next2) || next2 == 'y') {
-              buffer.write('ん');
-              i++;
-              continue;
-            }
-          }
-          buffer.write('ん');
-          i += 2;
-          continue;
-        }
-
-        if (!_vowels.contains(next) && next != 'y') {
-          buffer.write('ん');
-          i++;
-          continue;
-        }
-      }
-
-      // Double consonant → っ (not 'n', which is handled by 'nn' mapping;
-      // only ASCII letters qualify — repeated separators are not sokuon)
-      if (i + 1 < input.length &&
-          input[i] == input[i + 1] &&
-          _isAsciiLetter(input[i]) &&
-          !_vowels.contains(input[i]) &&
-          input[i] != 'n') {
-        buffer.write('っ');
-        i++;
-        continue;
-      }
-
-      // Try longest match first: 4, 3, 2 chars
-      var matched = false;
-      for (var len = 4; len >= 2; len--) {
-        if (i + len > input.length) continue;
-        final substr = input.substring(i, i + len);
-        final kana = _mappings[substr];
-        if (kana != null) {
-          buffer.write(kana);
-          i += len;
-          matched = true;
-          break;
-        }
-      }
-      if (matched) continue;
-
-      // Single vowel
-      final singleKana = _mappings[input[i]];
-      if (singleKana != null) {
-        buffer.write(singleKana);
-        i++;
-        continue;
-      }
-
-      // Unrecognized character — stop (trailing partial syllable)
-      break;
+    bool tryFork() {
+      if (paths >= limit) return false;
+      paths++;
+      return true;
     }
 
-    return buffer.toString();
+    void scan(int start, String acc) {
+      var i = start;
+      var kana = acc;
+
+      while (i < input.length) {
+        // Separators: spaces and apostrophes (syllable break after ん) are
+        // skipped; a hyphen is wapuro input for the prolonged sound mark.
+        final ch = input[i];
+        if (ch == ' ' || ch == "'") {
+          i++;
+          continue;
+        }
+        if (ch == '-') {
+          kana += 'ー';
+          i++;
+          continue;
+        }
+
+        // Syllabic n handling.
+        // - "n" before consonant, apostrophe, or end -> ん (unambiguous)
+        // - "nn" before vowel/y -> ん + な-row (onna → おんな), or ん
+        //   absorbing both n's (rennai → れんあい)
+        // - "nn" before consonant/end -> ん
+        // - "n" before vowel/y -> な-row syllable (renai → れない), or ん +
+        //   the vowel syllable (renai → れんあい) unless that would put ん at
+        //   the start of the word or after another ん
+        if (ch == 'n') {
+          if (i + 1 >= input.length) {
+            kana += 'ん';
+            i++;
+            continue;
+          }
+
+          final next = input[i + 1];
+          if (next == 'n') {
+            final ambiguous =
+                i + 2 < input.length && _startsSyllableAfterN(input[i + 2]);
+            if (ambiguous && tryFork()) {
+              // Conventional subtree first: the second n starts the next
+              // syllable. This path continues as ん absorbing both n's.
+              scan(i + 1, '$kanaん');
+              kana += 'ん';
+              i += 2;
+              continue;
+            }
+            kana += 'ん';
+            // Out of budget, the ambiguous case stays conventional: leave
+            // the second n to the next iteration, where the no-んん rule
+            // forces the な-row.
+            i += ambiguous ? 1 : 2;
+            continue;
+          }
+          if (!_startsSyllableAfterN(next)) {
+            kana += 'ん';
+            i++;
+            continue;
+          }
+          // n before vowel/y: falls through so the syllable is consumed
+          // only once, whether or not the fork below is taken.
+        }
+
+        final chunk = _consumeSyllable(input, i);
+        if (ch == 'n' &&
+            chunk != null &&
+            kana.isNotEmpty &&
+            !kana.endsWith('ん') &&
+            tryFork()) {
+          // Conventional subtree first: the な-row syllable. This path
+          // continues as the ん + vowel alternative.
+          scan(i + chunk.length, kana + chunk.kana);
+          kana += 'ん';
+          i++;
+          continue;
+        }
+        if (chunk == null) break; // Unrecognized — drop trailing partial
+        kana += chunk.kana;
+        i += chunk.length;
+      }
+
+      out.add(kana);
+    }
+
+    scan(0, '');
+    return out.toList();
+  }
+
+  /// A vowel or y — what makes a preceding n ambiguous.
+  static bool _startsSyllableAfterN(String c) =>
+      _vowels.contains(c) || c == 'y';
+
+  /// Consume one non-ん syllable at [i]: sokuon, then longest mapping match
+  /// (4 → 2 chars), then a single character. Returns null on an unrecognized
+  /// character.
+  static ({String kana, int length})? _consumeSyllable(String input, int i) {
+    // Double consonant → っ (not 'n', which the syllabic-n logic owns;
+    // only ASCII letters qualify — repeated separators are not sokuon)
+    if (i + 1 < input.length &&
+        input[i] == input[i + 1] &&
+        _isAsciiLetter(input[i]) &&
+        !_vowels.contains(input[i]) &&
+        input[i] != 'n') {
+      return (kana: 'っ', length: 1);
+    }
+
+    // Try longest match first: 4, 3, 2 chars
+    for (var len = 4; len >= 2; len--) {
+      if (i + len > input.length) continue;
+      final kana = _mappings[input.substring(i, i + len)];
+      if (kana != null) return (kana: kana, length: len);
+    }
+
+    // Single vowel
+    final single = _mappings[input[i]];
+    if (single != null) return (kana: single, length: 1);
+
+    return null;
   }
 
   /// Convert katakana characters to hiragana (offset 0x60).
@@ -390,6 +438,18 @@ class RomajiConverter {
     });
     map.remove(0x3063); // っ
     return map;
+  }
+
+  /// True if [kana] ends in a kana whose vowel a following う lengthens —
+  /// the お-row and う-row, excluding う itself (うう is never a long-vowel
+  /// spelling). The inverse question of [collapseKatakanaLongVowels],
+  /// answered from the same [_mappings]-derived vowel table.
+  static bool endsInLongVowelStarter(String kana) {
+    if (kana.isEmpty) return false;
+    final last = kana.runes.last;
+    if (last == 0x3046) return false; // う
+    final vowel = _kanaVowelClass[last];
+    return vowel == 'o' || vowel == 'u';
   }
 
   static bool _isAsciiLetter(String char) {

@@ -268,4 +268,104 @@ void main() {
       expect(RomajiConverter.katakanaToHiragana('ラーメン'), 'らーめん');
     });
   });
+
+  group('RomajiConverter.convertAll', () {
+    test('expands n before a vowel into both readings', () {
+      expect(RomajiConverter.convertAll('renai'), ['れない', 'れんあい']);
+      expect(RomajiConverter.convertAll('kinen'), ['きねん', 'きんえん']);
+    });
+
+    test('expands nn before a vowel into both readings', () {
+      expect(RomajiConverter.convertAll('rennai'), ['れんない', 'れんあい']);
+      expect(RomajiConverter.convertAll('konnyaku'), ['こんにゃく', 'こんやく']);
+    });
+
+    test('keeps the conventional reading first', () {
+      expect(RomajiConverter.convertAll('sannen').first, 'さんねん');
+      expect(RomajiConverter.convertAll('sannen'), contains('さんえん'));
+      expect(RomajiConverter.convertAll('onna').first, 'おんな');
+    });
+
+    test('unambiguous input yields a single candidate', () {
+      const inputs = [
+        'shinbun',
+        'sensei',
+        'hon',
+        'gakkou',
+        'nomu',
+        'nihongo',
+        "kon'nichiwa",
+        "kin'en",
+        "ren'ai",
+      ];
+      for (final input in inputs) {
+        expect(RomajiConverter.convertAll(input), hasLength(1), reason: input);
+      }
+      expect(RomajiConverter.convertAll(''), ['']);
+    });
+
+    test('never starts a word with ん', () {
+      expect(RomajiConverter.convertAll('nomu'), ['のむ']);
+      expect(RomajiConverter.convertAll('nihongo'), ['にほんご']);
+    });
+
+    test('never doubles ん', () {
+      expect(RomajiConverter.convertAll('rennai'), isNot(contains('れんんあい')));
+      expect(
+        RomajiConverter.convertAll("kon'nichiwa"),
+        isNot(contains('こんんいちわ')),
+      );
+    });
+
+    test('first candidate always matches convert', () {
+      const corpus = [
+        'sakura',
+        'tokyo',
+        'kokuritsu',
+        'onna',
+        'konnichi',
+        'kitte',
+        'gakkou',
+        'zasshi',
+        'shinbun',
+        'sanpo',
+        "kin'en",
+        'ka-do',
+        'a--bu',
+        'ohayou gozaimasu',
+        'kok',
+        'kokur',
+        'whisukii',
+        'xtu',
+        'renai',
+        'rennai',
+        'kinen',
+        'konnyaku',
+        'nanananana',
+      ];
+      for (final input in corpus) {
+        expect(
+          RomajiConverter.convertAll(input).first,
+          RomajiConverter.convert(input),
+          reason: input,
+        );
+      }
+    });
+
+    test('respects maxCandidates and keeps the conventional reading', () {
+      expect(RomajiConverter.convertAll('renaikinen'), hasLength(4));
+
+      final capped = RomajiConverter.convertAll('renaikinen', maxCandidates: 2);
+      expect(capped, hasLength(2));
+      expect(capped.first, RomajiConverter.convert('renaikinen'));
+
+      expect(RomajiConverter.convertAll('renaikinen', maxCandidates: 1), [
+        RomajiConverter.convert('renaikinen'),
+      ]);
+      expect(
+        RomajiConverter.convertAll('nanananana', maxCandidates: 4).length,
+        lessThanOrEqualTo(4),
+      );
+    });
+  });
 }

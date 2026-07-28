@@ -150,8 +150,8 @@ class FuzzySearchBenchmark {
     'た', 'しん',
     // Katakana and hiragana-with-long-vowel loanword queries
     'カード', 'コーヒー', 'かーど',
-    // Romaji
-    'taberu', 'nihongo', 'kaado', 'gakkou',
+    // Romaji (rennai exercises the ambiguous-n multi-reading worst case)
+    'taberu', 'nihongo', 'kaado', 'gakkou', 'rennai',
     // English glossary lookups
     'eat', 'run', 'school', 'teacher',
   ];

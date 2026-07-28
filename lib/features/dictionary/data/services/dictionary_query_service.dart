@@ -819,48 +819,68 @@ class DictionaryQueryService {
     return results;
   }
 
-  /// Fuzzy search combining exact match, fuzzy_bolt ranked matches,
-  /// sub-component matches, and English definition search.
+  /// Alternate kana readings tried for an ambiguous romaji query
+  /// (renai → れない + れんあい). Each reading fans out into katakana,
+  /// long-vowel-collapsed, and trailing-う variants — up to ~6 terms per
+  /// reading — and every term widens the exact and prefix queries, so keep
+  /// this small.
+  static const int _maxRomajiReadings = 4;
+
+  /// All orthographic variants of [term] worth searching, in two groups.
   ///
-  /// For romaji input, converts to hiragana and searches by reading.
-  /// For katakana input, also searches the hiragana equivalent.
-  /// For kanji input, also decomposes into individual kanji for sub-matches.
-  /// For Latin/English input, also searches glossary definitions.
+  /// `fuzzyProbes` are spellings of the term as typed: the term itself, its
+  /// kana readings (every plausible reading of an ambiguous romaji query), a
+  /// hiragana version of katakana input, and — because loanwords are stored
+  /// in katakana (expression AND reading) — katakana forms of every kana
+  /// term plus long-vowel-collapsed variants so phonetic spellings reach the
+  /// ー orthography (kaado → かあど → カアド → カード).
   ///
-  /// Results are ordered by relevance tier: exact matches first, then
-  /// fuzzy-ranked matches (via fuzzy_bolt), then sub-component matches,
-  /// then glossary matches. Within each tier, results are sorted by frequency
-  /// rank (most common first). Fuzzy and glossary tiers preserve their
-  /// match-quality ordering as a secondary signal.
-  /// All orthographic variants of [term] worth searching: the term itself,
-  /// a hiragana conversion for romaji input, a hiragana version of katakana
-  /// input, and — because loanwords are stored in katakana (expression AND
-  /// reading) — katakana forms of every kana term plus long-vowel-collapsed
-  /// variants so phonetic spellings reach the ー orthography
-  /// (kaado → かあど → カアド → カード).
-  List<String> _expandSearchTerms(String term) {
-    final terms = <String>[term];
+  /// `all` adds trailing-long-vowel completions (がっこ also searches
+  /// がっこう, so "gakko" reaches 学校 as an exact match). Completions are
+  /// guesses at a different string, kept out of `fuzzyProbes` because each
+  /// fuzzy pass has a fixed per-term cost and a candidate like がっこう
+  /// already scores well against the がっこ probe.
+  ({List<String> all, List<String> fuzzyProbes}) _expandSearchTerms(
+    String term,
+  ) {
+    // Insertion-ordered set: dedups while keeping the typed term first.
+    final terms = <String>{};
 
     void add(String candidate) {
-      if (candidate.isNotEmpty && !terms.contains(candidate)) {
-        terms.add(candidate);
+      if (candidate.isNotEmpty) terms.add(candidate);
+    }
+
+    add(term);
+    if (RomajiConverter.isRomaji(term)) {
+      RomajiConverter.convertAll(
+        term,
+        maxCandidates: _maxRomajiReadings,
+      ).forEach(add);
+    }
+    add(RomajiConverter.katakanaToHiragana(term));
+    _addKatakanaVariants(terms);
+
+    final fuzzyProbes = terms.toList();
+
+    for (final t in fuzzyProbes) {
+      if (_isKanaOnly(t) && RomajiConverter.endsInLongVowelStarter(t)) {
+        add('$tう');
       }
     }
+    _addKatakanaVariants(terms);
 
-    if (RomajiConverter.isRomaji(term)) {
-      add(RomajiConverter.convert(term));
-    }
+    return (all: terms.toList(), fuzzyProbes: fuzzyProbes);
+  }
 
-    add(RomajiConverter.katakanaToHiragana(term));
-
+  /// Adds the katakana form and its long-vowel-collapsed variant for every
+  /// kana term in [terms].
+  void _addKatakanaVariants(Set<String> terms) {
     for (final t in terms.toList()) {
       if (!_isKanaOnly(t)) continue;
       final katakana = RomajiConverter.hiraganaToKatakana(t);
-      add(katakana);
-      add(RomajiConverter.collapseKatakanaLongVowels(katakana));
+      terms.add(katakana);
+      terms.add(RomajiConverter.collapseKatakanaLongVowels(katakana));
     }
-
-    return terms;
   }
 
   /// Relevance ordering applied BEFORE a LIMIT cap: ascending length of the
@@ -878,6 +898,19 @@ class DictionaryQueryService {
     ];
   }
 
+  /// Fuzzy search combining exact match, fuzzy_bolt ranked matches,
+  /// sub-component matches, and English definition search.
+  ///
+  /// For romaji input, converts to hiragana and searches by reading.
+  /// For katakana input, also searches the hiragana equivalent.
+  /// For kanji input, also decomposes into individual kanji for sub-matches.
+  /// For Latin/English input, also searches glossary definitions.
+  ///
+  /// Results are ordered by relevance tier: exact matches first, then
+  /// fuzzy-ranked matches (via fuzzy_bolt), then sub-component matches,
+  /// then glossary matches. Within each tier, results are sorted by frequency
+  /// rank (most common first). Fuzzy and glossary tiers preserve their
+  /// match-quality ordering as a secondary signal.
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
     String term,
   ) async {
@@ -908,7 +941,8 @@ class DictionaryQueryService {
     }
 
     // Build search terms based on input type
-    final searchTerms = _expandSearchTerms(term);
+    final expansion = _expandSearchTerms(term);
+    final searchTerms = expansion.all;
     final isRomaji = RomajiConverter.isRomaji(term);
 
     // 1. Exact matches (highest priority — always on top), one batched
@@ -937,13 +971,16 @@ class DictionaryQueryService {
       );
     }
 
-    // 2. Fuzzy matches on expression/reading via fuzzy_bolt
+    // 2. Fuzzy matches on expression/reading via fuzzy_bolt. The candidate
+    // pool is fetched with every term, but only the as-typed spellings get a
+    // fuzzy pass — each FuzzyBolt call has a fixed per-term cost, and the
+    // leniency completions exist for exact-tier recall.
     final prefixCandidates = await _fetchPrefixCandidates(
       searchTerms,
       limit: 100,
     );
     if (prefixCandidates.isNotEmpty) {
-      for (final t in searchTerms) {
+      for (final t in expansion.fuzzyProbes) {
         final fuzzyMatches = await FuzzyBolt.search<DictionaryEntryWithSource>(
           prefixCandidates,
           t,

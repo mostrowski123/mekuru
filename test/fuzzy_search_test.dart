@@ -409,4 +409,123 @@ void main() {
       expect(results.first.dictionaryName, 'Enabled');
     });
   });
+
+  group('fuzzySearchWithSource — ambiguous romaji readings', () {
+    late AppDatabase db2;
+    late DictionaryRepository repo2;
+    late DictionaryQueryService queryService2;
+
+    setUp(() async {
+      db2 = createTestDatabase();
+      repo2 = DictionaryRepository(db2);
+      queryService2 = DictionaryQueryService(db2);
+
+      final entriesId = await repo2.insertDictionary('Entries');
+      await repo2.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '恋愛',
+          reading: const Value('れんあい'),
+          glossaries: jsonEncode(['love', 'romance']),
+          dictionaryId: entriesId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '記念',
+          reading: const Value('きねん'),
+          glossaries: jsonEncode(['commemoration']),
+          dictionaryId: entriesId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '禁煙',
+          reading: const Value('きんえん'),
+          glossaries: jsonEncode(['no smoking']),
+          dictionaryId: entriesId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '新聞',
+          reading: const Value('しんぶん'),
+          glossaries: jsonEncode(['newspaper']),
+          dictionaryId: entriesId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '学校',
+          reading: const Value('がっこう'),
+          glossaries: jsonEncode(['school']),
+          dictionaryId: entriesId,
+        ),
+      ]);
+
+      // Frequency-only install pattern: disabled + hidden, ranks still apply.
+      final freqDictId = await repo2.insertDictionary('FreqDict');
+      await repo2.batchInsertFrequencies([
+        FrequenciesCompanion.insert(
+          expression: '恋愛',
+          reading: const Value('れんあい'),
+          frequencyRank: 500,
+          dictionaryId: freqDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '記念',
+          reading: const Value('きねん'),
+          frequencyRank: 900,
+          dictionaryId: freqDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '禁煙',
+          reading: const Value('きんえん'),
+          frequencyRank: 100,
+          dictionaryId: freqDictId,
+        ),
+        FrequenciesCompanion.insert(
+          expression: '学校',
+          reading: const Value('がっこう'),
+          frequencyRank: 300,
+          dictionaryId: freqDictId,
+        ),
+      ]);
+      await repo2.toggleDictionary(freqDictId, isEnabled: false);
+      await repo2.setHidden(freqDictId, isHidden: true);
+    });
+
+    tearDown(() async {
+      await db2.close();
+    });
+
+    test("finds 恋愛 via 'rennai', 'renai', and \"ren'ai\"", () async {
+      for (final query in ['rennai', 'renai', "ren'ai"]) {
+        final results = await queryService2.fuzzySearchWithSource(query);
+        final expressions = results.map((r) => r.entry.expression).toSet();
+        expect(expressions, contains('恋愛'), reason: query);
+      }
+    });
+
+    test(
+      'alternative readings rank by frequency among exact matches',
+      () async {
+        final results = await queryService2.fuzzySearchWithSource('kinen');
+        final expressions = results.map((r) => r.entry.expression).toList();
+        expect(expressions, contains('記念'));
+        expect(expressions, contains('禁煙'));
+        // 禁煙 (rank 100) is more common than 記念 (rank 900), so the word from
+        // the alternative reading comes first — alternative readings compete as
+        // first-class exact matches.
+        expect(expressions.indexOf('禁煙'), lessThan(expressions.indexOf('記念')));
+      },
+    );
+
+    test('unambiguous romaji is unaffected', () async {
+      final results = await queryService2.fuzzySearchWithSource('shinbun');
+      expect(results, isNotEmpty);
+      expect(results.first.entry.expression, '新聞');
+    });
+
+    test('finds 学校 when the trailing long vowel is omitted', () async {
+      for (final query in ['gakko', 'がっこ']) {
+        final results = await queryService2.fuzzySearchWithSource(query);
+        expect(results, isNotEmpty, reason: query);
+        // The completed reading がっこう is an exact-tier match, so 学校
+        // leads the results rather than surfacing as a fuzzy afterthought.
+        expect(results.first.entry.expression, '学校', reason: query);
+      }
+    });
+  });
 }
