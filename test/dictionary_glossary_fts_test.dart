@@ -360,6 +360,41 @@ void main() {
       );
     });
 
+    test('"to be/get/become <term>" glosses count as whole-gloss '
+        'matches', () async {
+      await repo.batchInsertEntries([
+        entry('怒る', 'おこる', 'to get angry'),
+        entry('怒号', 'どごう', 'angry roar'),
+        entry('疲れる', 'つかれる', 'to become tired'),
+        entry('疲労感', 'ひろうかん', 'tired feeling'),
+      ]);
+
+      // The short contains-matches score better on bm25; the framed
+      // whole-gloss verbs must still come first.
+      final angry = await queryService.glossarySearchWithSource('angry');
+      expect(angry.first.entry.expression, '怒る');
+
+      final tired = await queryService.glossarySearchWithSource('tired');
+      expect(tired.first.entry.expression, '疲れる');
+    });
+
+    test('single characters match whole tokens, not prefixes', () async {
+      await repo.batchInsertEntries([
+        entry('私', 'わたし', 'I'),
+        entry('氷', 'こおり', 'ice'),
+      ]);
+
+      // "i"* would match every gloss containing an i… word; as a whole
+      // token it finds only glosses where "i" stands alone.
+      final single = await queryService.glossarySearchWithSource('i');
+      expect(single.map((r) => r.entry.expression), contains('私'));
+      expect(single.map((r) => r.entry.expression), isNot(contains('氷')));
+
+      // From two characters on, prefix semantics resume.
+      final two = await queryService.glossarySearchWithSource('ic');
+      expect(two.map((r) => r.entry.expression), contains('氷'));
+    });
+
     test('search screen: a frequent word that merely mentions the term '
         'cannot outrank the word that means it', () async {
       await repo.batchInsertEntries([

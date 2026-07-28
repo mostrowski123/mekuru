@@ -464,6 +464,24 @@ void main() {
           glossaries: jsonEncode(['high; expensive']),
           dictionaryId: entriesId,
         ),
+        DictionaryEntriesCompanion.insert(
+          expression: 'こんにちは',
+          reading: const Value('こんにちは'),
+          glossaries: jsonEncode(['hello', 'good day']),
+          dictionaryId: entriesId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: '庭',
+          reading: const Value('にわ'),
+          glossaries: jsonEncode(['garden', 'yard']),
+          dictionaryId: entriesId,
+        ),
+        DictionaryEntriesCompanion.insert(
+          expression: 'には',
+          reading: const Value('には'),
+          glossaries: jsonEncode(['for (the purpose of)', 'in order to']),
+          dictionaryId: entriesId,
+        ),
       ]);
 
       // Frequency-only install pattern: disabled + hidden, ranks still apply.
@@ -563,6 +581,24 @@ void main() {
       // Typing the full word still finds it first.
       final kou = await queryService2.fuzzySearchWithSource('こう');
       expect(kou.first.entry.expression, '高');
+    });
+
+    test("finds こんにちは via 'konnichiwa' (trailing-particle は "
+        'spelling)', () async {
+      for (final query in ['konnichiwa', 'こんにちわ']) {
+        final results = await queryService2.fuzzySearchWithSource(query);
+        expect(results, isNotEmpty, reason: query);
+        expect(results.first.entry.expression, 'こんにちは', reason: query);
+      }
+    });
+
+    test('short …わ words do not gain a は-variant', () async {
+      // "niwa" means 庭; the は-variant には is a different (and typically
+      // far more frequent) word that must not invade the exact tier.
+      final results = await queryService2.fuzzySearchWithSource('niwa');
+      final expressions = results.map((r) => r.entry.expression).toList();
+      expect(expressions, contains('庭'));
+      expect(expressions, isNot(contains('には')));
     });
   });
 }

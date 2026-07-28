@@ -876,6 +876,19 @@ class DictionaryQueryService {
     _addKatakanaVariants(completions);
     terms.addAll(completions);
 
+    // Trailing-particle spelling: greetings pronounced …わ are written
+    // with the topic particle は (こんにちわ → こんにちは, それでわ →
+    // それでは). Exact tier only, like completions. Length-gated to 4+
+    // kana: for short romaji like "niwa"/"dewa" the typed word is real
+    // (庭, 出羽) and the は-variant is a different, often very frequent
+    // entry (には, では) that would crowd it out of the exact tier.
+    final particleSpellings = <String>{
+      for (final t in asTyped)
+        if (_isKanaOnly(t) && t.length >= 4 && t.endsWith('わ'))
+          '${t.substring(0, t.length - 1)}は',
+    };
+    terms.addAll(particleSpellings);
+
     return (all: terms.toList(), asTyped: asTyped);
   }
 
@@ -1142,13 +1155,19 @@ class DictionaryQueryService {
 
     // search_text is stored lowercase with one gloss per line, so a
     // newline-bounded instr() detects "the query is exactly one of this
-    // entry's glosses" (optionally behind "to " or before " (...)").
+    // entry's glosses". The prefixes cover the common lexicographic verb
+    // framings ("to eat", "to get angry", "to become tired"), and each
+    // form also matches with a trailing parenthetical qualifier, so
+    // "water (esp. cool or cold)" counts for "water".
     final needle = term.trim().toLowerCase();
     final needles = [
-      '\n$needle\n',
-      '\n$needle (',
-      '\nto $needle\n',
-      '\nto $needle (',
+      for (final prefix in const [
+        '',
+        'to ',
+        'to be ',
+        'to get ',
+        'to become ',
+      ]) ...['\n$prefix$needle\n', '\n$prefix$needle ('],
     ];
     final exactGlossCondition = needles
         .map((_) => "instr(char(10) || de.search_text || char(10), ?) > 0")
@@ -1195,12 +1214,18 @@ class DictionaryQueryService {
   /// prefix. Embedded quotes are escaped by doubling, which also neutralizes
   /// FTS query syntax. Returns null when the term has no indexable content
   /// (FTS5 rejects token-less phrases).
+  ///
+  /// Single characters match as a whole token instead: "r"* would match
+  /// every gloss containing any r… word (tens of thousands of rows whose
+  /// ranking terms all get evaluated, ~260ms per keystroke), while a
+  /// standalone "r"/"i" token still finds アール/私.
   static String? _glossaryFtsQuery(String term) {
     final trimmed = term.trim();
     if (trimmed.isEmpty || !_indexableContentPattern.hasMatch(trimmed)) {
       return null;
     }
-    return '"${trimmed.replaceAll('"', '""')}"*';
+    final prefixStar = trimmed.length > 1 ? '*' : '';
+    return '"${trimmed.replaceAll('"', '""')}"$prefixStar';
   }
 
   static final _indexableContentPattern = RegExp(

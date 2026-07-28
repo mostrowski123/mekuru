@@ -325,6 +325,20 @@ const List<EvalQuery> _battery = [
     expect: [Expect('三年', maxRank: 10)],
     note: 'junk alternate さんえん must not displace the real word',
   ),
+  EvalQuery(
+    'new.en.angry',
+    'angry',
+    EvalCategory.newFeature,
+    expect: [Expect('怒る', maxRank: 10)],
+    note: "'to get angry' whole-gloss framing",
+  ),
+  EvalQuery(
+    'new.en.tired',
+    'tired',
+    EvalCategory.newFeature,
+    expect: [Expect('疲れる', maxRank: 10)],
+    note: "'to become tired' whole-gloss framing",
+  ),
 
   // --- Noise-risk probes: per-keystroke states; flooding hypothesis. ---
   EvalQuery(
@@ -412,8 +426,8 @@ const List<EvalQuery> _battery = [
     'path.konnichiwa',
     'konnichiwa',
     EvalCategory.pathological,
-    expect: [Expect('こんにちは')],
-    note: 'rank recorded, not judged',
+    expect: [Expect('こんにちは', maxRank: 5)],
+    note: 'trailing-particle は spelling (わ→は)',
   ),
   EvalQuery('path.junk', 'kannnennnn', EvalCategory.pathological),
   EvalQuery(
