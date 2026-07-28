@@ -36,6 +36,7 @@ DictionaryEntry _buildEntry({
     rules: rules,
     termTags: termTags,
     glossaries: glossaries,
+    searchText: '',
     dictionaryId: id,
   );
 }

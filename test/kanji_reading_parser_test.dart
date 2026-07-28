@@ -23,6 +23,7 @@ DictionaryEntry _buildEntry({
     rules: '',
     termTags: '',
     glossaries: '[]',
+    searchText: '',
     dictionaryId: 1,
   );
 }

@@ -1922,6 +1922,18 @@ class $DictionaryEntriesTable extends DictionaryEntries
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _searchTextMeta = const VerificationMeta(
+    'searchText',
+  );
+  @override
+  late final GeneratedColumn<String> searchText = GeneratedColumn<String>(
+    'search_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _dictionaryIdMeta = const VerificationMeta(
     'dictionaryId',
   );
@@ -1945,6 +1957,7 @@ class $DictionaryEntriesTable extends DictionaryEntries
     rules,
     termTags,
     glossaries,
+    searchText,
     dictionaryId,
   ];
   @override
@@ -2029,6 +2042,12 @@ class $DictionaryEntriesTable extends DictionaryEntries
     } else if (isInserting) {
       context.missing(_glossariesMeta);
     }
+    if (data.containsKey('search_text')) {
+      context.handle(
+        _searchTextMeta,
+        searchText.isAcceptableOrUnknown(data['search_text']!, _searchTextMeta),
+      );
+    }
     if (data.containsKey('dictionary_id')) {
       context.handle(
         _dictionaryIdMeta,
@@ -2089,6 +2108,10 @@ class $DictionaryEntriesTable extends DictionaryEntries
         DriftSqlType.string,
         data['${effectivePrefix}glossaries'],
       )!,
+      searchText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}search_text'],
+      )!,
       dictionaryId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}dictionary_id'],
@@ -2113,6 +2136,15 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
   final String rules;
   final String termTags;
   final String glossaries;
+
+  /// Lowercased plain-text rendering of [glossaries] (one gloss per line),
+  /// extracted at insert time. This is what the English-search FTS index
+  /// tokenizes — raw [glossaries] may be Yomitan structured-content JSON
+  /// whose markup noise ("content", "tag", "li", …) would otherwise pollute
+  /// the index and skew bm25 ranking. Kept in sync by
+  /// DictionaryRepository.batchInsertEntries; writers that update
+  /// [glossaries] later must refresh this column too.
+  final String searchText;
   final int dictionaryId;
   const DictionaryEntry({
     required this.id,
@@ -2125,6 +2157,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
     required this.rules,
     required this.termTags,
     required this.glossaries,
+    required this.searchText,
     required this.dictionaryId,
   });
   @override
@@ -2140,6 +2173,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
     map['rules'] = Variable<String>(rules);
     map['term_tags'] = Variable<String>(termTags);
     map['glossaries'] = Variable<String>(glossaries);
+    map['search_text'] = Variable<String>(searchText);
     map['dictionary_id'] = Variable<int>(dictionaryId);
     return map;
   }
@@ -2156,6 +2190,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
       rules: Value(rules),
       termTags: Value(termTags),
       glossaries: Value(glossaries),
+      searchText: Value(searchText),
       dictionaryId: Value(dictionaryId),
     );
   }
@@ -2176,6 +2211,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
       rules: serializer.fromJson<String>(json['rules']),
       termTags: serializer.fromJson<String>(json['termTags']),
       glossaries: serializer.fromJson<String>(json['glossaries']),
+      searchText: serializer.fromJson<String>(json['searchText']),
       dictionaryId: serializer.fromJson<int>(json['dictionaryId']),
     );
   }
@@ -2193,6 +2229,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
       'rules': serializer.toJson<String>(rules),
       'termTags': serializer.toJson<String>(termTags),
       'glossaries': serializer.toJson<String>(glossaries),
+      'searchText': serializer.toJson<String>(searchText),
       'dictionaryId': serializer.toJson<int>(dictionaryId),
     };
   }
@@ -2208,6 +2245,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
     String? rules,
     String? termTags,
     String? glossaries,
+    String? searchText,
     int? dictionaryId,
   }) => DictionaryEntry(
     id: id ?? this.id,
@@ -2220,6 +2258,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
     rules: rules ?? this.rules,
     termTags: termTags ?? this.termTags,
     glossaries: glossaries ?? this.glossaries,
+    searchText: searchText ?? this.searchText,
     dictionaryId: dictionaryId ?? this.dictionaryId,
   );
   DictionaryEntry copyWithCompanion(DictionaryEntriesCompanion data) {
@@ -2244,6 +2283,9 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
       glossaries: data.glossaries.present
           ? data.glossaries.value
           : this.glossaries,
+      searchText: data.searchText.present
+          ? data.searchText.value
+          : this.searchText,
       dictionaryId: data.dictionaryId.present
           ? data.dictionaryId.value
           : this.dictionaryId,
@@ -2263,6 +2305,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
           ..write('rules: $rules, ')
           ..write('termTags: $termTags, ')
           ..write('glossaries: $glossaries, ')
+          ..write('searchText: $searchText, ')
           ..write('dictionaryId: $dictionaryId')
           ..write(')'))
         .toString();
@@ -2280,6 +2323,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
     rules,
     termTags,
     glossaries,
+    searchText,
     dictionaryId,
   );
   @override
@@ -2296,6 +2340,7 @@ class DictionaryEntry extends DataClass implements Insertable<DictionaryEntry> {
           other.rules == this.rules &&
           other.termTags == this.termTags &&
           other.glossaries == this.glossaries &&
+          other.searchText == this.searchText &&
           other.dictionaryId == this.dictionaryId);
 }
 
@@ -2310,6 +2355,7 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
   final Value<String> rules;
   final Value<String> termTags;
   final Value<String> glossaries;
+  final Value<String> searchText;
   final Value<int> dictionaryId;
   const DictionaryEntriesCompanion({
     this.id = const Value.absent(),
@@ -2322,6 +2368,7 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     this.rules = const Value.absent(),
     this.termTags = const Value.absent(),
     this.glossaries = const Value.absent(),
+    this.searchText = const Value.absent(),
     this.dictionaryId = const Value.absent(),
   });
   DictionaryEntriesCompanion.insert({
@@ -2335,6 +2382,7 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     this.rules = const Value.absent(),
     this.termTags = const Value.absent(),
     required String glossaries,
+    this.searchText = const Value.absent(),
     required int dictionaryId,
   }) : expression = Value(expression),
        glossaries = Value(glossaries),
@@ -2350,6 +2398,7 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     Expression<String>? rules,
     Expression<String>? termTags,
     Expression<String>? glossaries,
+    Expression<String>? searchText,
     Expression<int>? dictionaryId,
   }) {
     return RawValuesInsertable({
@@ -2363,6 +2412,7 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
       if (rules != null) 'rules': rules,
       if (termTags != null) 'term_tags': termTags,
       if (glossaries != null) 'glossaries': glossaries,
+      if (searchText != null) 'search_text': searchText,
       if (dictionaryId != null) 'dictionary_id': dictionaryId,
     });
   }
@@ -2378,6 +2428,7 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     Value<String>? rules,
     Value<String>? termTags,
     Value<String>? glossaries,
+    Value<String>? searchText,
     Value<int>? dictionaryId,
   }) {
     return DictionaryEntriesCompanion(
@@ -2391,6 +2442,7 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
       rules: rules ?? this.rules,
       termTags: termTags ?? this.termTags,
       glossaries: glossaries ?? this.glossaries,
+      searchText: searchText ?? this.searchText,
       dictionaryId: dictionaryId ?? this.dictionaryId,
     );
   }
@@ -2428,6 +2480,9 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
     if (glossaries.present) {
       map['glossaries'] = Variable<String>(glossaries.value);
     }
+    if (searchText.present) {
+      map['search_text'] = Variable<String>(searchText.value);
+    }
     if (dictionaryId.present) {
       map['dictionary_id'] = Variable<int>(dictionaryId.value);
     }
@@ -2447,6 +2502,7 @@ class DictionaryEntriesCompanion extends UpdateCompanion<DictionaryEntry> {
           ..write('rules: $rules, ')
           ..write('termTags: $termTags, ')
           ..write('glossaries: $glossaries, ')
+          ..write('searchText: $searchText, ')
           ..write('dictionaryId: $dictionaryId')
           ..write(')'))
         .toString();
@@ -5517,6 +5573,7 @@ typedef $$DictionaryEntriesTableCreateCompanionBuilder =
       Value<String> rules,
       Value<String> termTags,
       required String glossaries,
+      Value<String> searchText,
       required int dictionaryId,
     });
 typedef $$DictionaryEntriesTableUpdateCompanionBuilder =
@@ -5531,6 +5588,7 @@ typedef $$DictionaryEntriesTableUpdateCompanionBuilder =
       Value<String> rules,
       Value<String> termTags,
       Value<String> glossaries,
+      Value<String> searchText,
       Value<int> dictionaryId,
     });
 
@@ -5590,6 +5648,11 @@ class $$DictionaryEntriesTableFilterComposer
 
   ColumnFilters<String> get glossaries => $composableBuilder(
     column: $table.glossaries,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get searchText => $composableBuilder(
+    column: $table.searchText,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5658,6 +5721,11 @@ class $$DictionaryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get searchText => $composableBuilder(
+    column: $table.searchText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get dictionaryId => $composableBuilder(
     column: $table.dictionaryId,
     builder: (column) => ColumnOrderings(column),
@@ -5710,6 +5778,11 @@ class $$DictionaryEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get glossaries => $composableBuilder(
     column: $table.glossaries,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get searchText => $composableBuilder(
+    column: $table.searchText,
     builder: (column) => column,
   );
 
@@ -5769,6 +5842,7 @@ class $$DictionaryEntriesTableTableManager
                 Value<String> rules = const Value.absent(),
                 Value<String> termTags = const Value.absent(),
                 Value<String> glossaries = const Value.absent(),
+                Value<String> searchText = const Value.absent(),
                 Value<int> dictionaryId = const Value.absent(),
               }) => DictionaryEntriesCompanion(
                 id: id,
@@ -5781,6 +5855,7 @@ class $$DictionaryEntriesTableTableManager
                 rules: rules,
                 termTags: termTags,
                 glossaries: glossaries,
+                searchText: searchText,
                 dictionaryId: dictionaryId,
               ),
           createCompanionCallback:
@@ -5795,6 +5870,7 @@ class $$DictionaryEntriesTableTableManager
                 Value<String> rules = const Value.absent(),
                 Value<String> termTags = const Value.absent(),
                 required String glossaries,
+                Value<String> searchText = const Value.absent(),
                 required int dictionaryId,
               }) => DictionaryEntriesCompanion.insert(
                 id: id,
@@ -5807,6 +5883,7 @@ class $$DictionaryEntriesTableTableManager
                 rules: rules,
                 termTags: termTags,
                 glossaries: glossaries,
+                searchText: searchText,
                 dictionaryId: dictionaryId,
               ),
           withReferenceMapper: (p0) => p0

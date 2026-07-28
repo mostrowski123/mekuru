@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 import 'package:fuzzy_bolt/fuzzy_bolt.dart';
@@ -913,10 +914,12 @@ class DictionaryQueryService {
   /// For Latin/English input, also searches glossary definitions.
   ///
   /// Results are ordered by relevance tier: exact matches first, then
-  /// fuzzy-ranked matches (via fuzzy_bolt), then sub-component matches,
-  /// then glossary matches. Within each tier, results are sorted by frequency
-  /// rank (most common first). Fuzzy and glossary tiers preserve their
-  /// match-quality ordering as a secondary signal.
+  /// whole-gloss English matches (the term is exactly one of the entry's
+  /// definitions — "eat" must surface 食べる above fuzzy kana guesses like
+  /// エア), then fuzzy-ranked matches (via fuzzy_bolt), then sub-component
+  /// matches, then remaining glossary matches. Within each tier, results
+  /// are sorted by frequency rank (most common first). Fuzzy and glossary
+  /// tiers preserve their match-quality ordering as a secondary signal.
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
     String term,
   ) async {
@@ -930,6 +933,7 @@ class DictionaryQueryService {
     // Collect results per tier so we can sort within tiers by frequency
     // while preserving the tier ordering.
     final exactResults = <DictionaryEntryWithSource>[];
+    final glossaryExactResults = <DictionaryEntryWithSource>[];
     final fuzzyResults = <DictionaryEntryWithSource>[];
     final subComponentResults = <DictionaryEntryWithSource>[];
     final glossaryResults = <DictionaryEntryWithSource>[];
@@ -978,13 +982,26 @@ class DictionaryQueryService {
       );
     }
 
-    // 2. Fuzzy matches on expression/reading via fuzzy_bolt. As-typed
+    // 2. Whole-gloss English matches. Started here and claimed for this
+    // tier before the kana fuzzy tier: for an English word like "eat" the
+    // definitive translations must not drown under エア-style romaji
+    // guesses, of which there can be dozens. The fetch runs concurrently
+    // with the prefix-candidate query below — they are independent.
+    final glossaryFuture = _hasLatinLetters(term)
+        ? _fetchGlossaryDirectAndCandidates(term, cache)
+        : null;
+
+    // 3. Fuzzy matches on expression/reading via fuzzy_bolt. As-typed
     // spellings only: completions live inside their base term's prefix
     // range, so scanning or fuzzy-matching them separately is pure cost.
     final prefixCandidates = await _fetchPrefixCandidates(
       expansion.asTyped,
       limit: 100,
     );
+    final glossaryData = glossaryFuture != null ? await glossaryFuture : null;
+    if (glossaryData != null) {
+      addTo(glossaryExactResults, glossaryData.exactGlossMatches);
+    }
     if (prefixCandidates.isNotEmpty) {
       for (final t in expansion.asTyped) {
         final fuzzyMatches = await FuzzyBolt.search<DictionaryEntryWithSource>(
@@ -1000,7 +1017,7 @@ class DictionaryQueryService {
       }
     }
 
-    // 3. Sub-component matches (individual kanji from original term)
+    // 4. Sub-component matches (individual kanji from original term)
     if (!isRomaji && term.length > 1) {
       final seen = <String>{};
       for (final rune in term.runes) {
@@ -1014,26 +1031,19 @@ class DictionaryQueryService {
       }
     }
 
-    // 4. English definition fuzzy search via fuzzy_bolt
-    // Candidates are pre-filtered by SQL LIKE, so we use a lower threshold
-    // to avoid dropping short-term matches (e.g. "run" in "to run").
-    if (_hasLatinLetters(term)) {
-      // Always include direct glossary substring matches first so exact
-      // English lookups remain reliable even when fuzzy scoring thresholds
-      // are too strict for short terms (e.g. "run").
-      final glossaryData = await _fetchGlossaryDirectAndCandidates(
-        term,
-        cache,
-        directLimit: 30,
-        candidateLimit: 100,
-      );
-      addTo(glossaryResults, glossaryData.directMatches);
+    // 5. Remaining English definition matches: glosses that contain the
+    // term without being it, plus fuzzy_bolt scoring over the candidate
+    // pool. Candidates are pre-filtered by FTS, so we use a lower
+    // threshold to avoid dropping short-term matches (e.g. "run" in
+    // "to run").
+    if (glossaryData != null) {
+      addTo(glossaryResults, glossaryData.containsMatches);
 
       if (glossaryData.fuzzyCandidates.isNotEmpty) {
         final fuzzyMatches = await FuzzyBolt.search<DictionaryEntryWithSource>(
           glossaryData.fuzzyCandidates,
           term,
-          selectors: [(e) => e.entry.glossaries],
+          selectors: [(e) => e.entry.searchText],
           strictThreshold: 0.7,
           typeThreshold: 0.3,
           maxResults: 30,
@@ -1046,6 +1056,7 @@ class DictionaryQueryService {
     // Fetch frequency ranks once for all tiers combined, then apply per tier.
     final allResults = [
       ...exactResults,
+      ...glossaryExactResults,
       ...fuzzyResults,
       ...subComponentResults,
       ...glossaryResults,
@@ -1061,6 +1072,7 @@ class DictionaryQueryService {
           exactMatchTerms,
         ),
       ),
+      ..._applyFrequencyRanks(glossaryExactResults, ranks),
       ..._applyFrequencyRanks(fuzzyResults, ranks),
       ..._applyFrequencyRanks(subComponentResults, ranks),
       ..._applyFrequencyRanks(glossaryResults, ranks),
@@ -1069,57 +1081,93 @@ class DictionaryQueryService {
 
   Future<
     ({
-      List<DictionaryEntryWithSource> directMatches,
+      List<DictionaryEntryWithSource> exactGlossMatches,
+      List<DictionaryEntryWithSource> containsMatches,
       List<DictionaryEntryWithSource> fuzzyCandidates,
     })
   >
-  _fetchGlossaryDirectAndCandidates(
-    String term,
-    _MetasCache cache, {
-    int directLimit = 30,
-    int candidateLimit = 100,
-  }) async {
-    final fetchLimit = directLimit > candidateLimit
-        ? directLimit
-        : candidateLimit;
-    final allMatches = await _fetchGlossaryMatches(
+  _fetchGlossaryDirectAndCandidates(String term, _MetasCache cache) async {
+    // Contains-matches surfaced without fuzzy rescoring, and the total
+    // pool handed to fuzzy_bolt.
+    const containsLimit = 30;
+    const candidateLimit = 100;
+
+    final matches = await _fetchGlossaryMatchesRanked(
       term,
       cache,
-      limit: fetchLimit,
+      limit: candidateLimit,
     );
 
+    // Whole-gloss matches are definitive ("teacher" IS a definition of
+    // 先生), so all of them are kept regardless of containsLimit. Without
+    // this, multi-sense entries whose bm25 score is diluted across many
+    // glosses fall off the cutoff entirely.
+    final containsCount = math.max(
+      0,
+      containsLimit - matches.exactGloss.length,
+    );
     return (
-      directMatches: allMatches.take(directLimit).toList(),
-      fuzzyCandidates: allMatches.take(candidateLimit).toList(),
+      exactGlossMatches: matches.exactGloss,
+      containsMatches: matches.containing.take(containsCount).toList(),
+      fuzzyCandidates: [...matches.exactGloss, ...matches.containing],
     );
   }
 
   /// English glossary lookup on the dictionary_entries_fts FTS5 index
-  /// (word-boundary matching — "run" no longer matches "prune"). Results
-  /// come back in relevance order: bm25, then glossary length (the term
-  /// occupies the largest fraction of a short gloss), then id.
-  Future<List<DictionaryEntryWithSource>> _fetchGlossaryMatches(
+  /// (word-boundary matching — "run" no longer matches "prune"),
+  /// partitioned into whole-gloss matches (the term is exactly one of the
+  /// entry's glosses — also matching `to <term>` and a trailing
+  /// parenthetical, so "water (esp. cool or cold)" counts) and plain
+  /// contains-matches. Each list is in relevance order: bm25, then
+  /// search-text length (the term occupies the largest fraction of a
+  /// short gloss), then id.
+  Future<
+    ({
+      List<DictionaryEntryWithSource> exactGloss,
+      List<DictionaryEntryWithSource> containing,
+    })
+  >
+  _fetchGlossaryMatchesRanked(
     String term,
     _MetasCache cache, {
     required int limit,
   }) async {
     final ftsQuery = _glossaryFtsQuery(term);
     if (ftsQuery == null || limit <= 0 || cache.enabledIds.isEmpty) {
-      return [];
+      return (
+        exactGloss: <DictionaryEntryWithSource>[],
+        containing: <DictionaryEntryWithSource>[],
+      );
     }
 
+    // search_text is stored lowercase with one gloss per line, so a
+    // newline-bounded instr() detects "the query is exactly one of this
+    // entry's glosses" (optionally behind "to " or before " (...)").
+    final needle = term.trim().toLowerCase();
+    final needles = [
+      '\n$needle\n',
+      '\n$needle (',
+      '\nto $needle\n',
+      '\nto $needle (',
+    ];
+    final exactGlossCondition = needles
+        .map((_) => "instr(char(10) || de.search_text || char(10), ?) > 0")
+        .join(' OR ');
     final idPlaceholders = List.filled(cache.enabledIds.length, '?').join(', ');
     final rows = await _db
         .customSelect(
-          'SELECT de.* FROM dictionary_entries de '
+          'SELECT de.*, '
+          '(CASE WHEN $exactGlossCondition THEN 1 ELSE 0 END) AS exact_gloss '
+          'FROM dictionary_entries de '
           'JOIN dictionary_entries_fts '
           'ON dictionary_entries_fts.rowid = de.id '
           'WHERE dictionary_entries_fts MATCH ? '
           'AND de.dictionary_id IN ($idPlaceholders) '
-          'ORDER BY bm25(dictionary_entries_fts), '
-          'length(de.glossaries), de.id '
+          'ORDER BY exact_gloss DESC, bm25(dictionary_entries_fts), '
+          'length(de.search_text), de.id '
           'LIMIT ?',
           variables: [
+            for (final n in needles) Variable.withString(n),
             Variable.withString(ftsQuery),
             for (final id in cache.enabledIds) Variable.withInt(id),
             Variable.withInt(limit),
@@ -1131,7 +1179,14 @@ class DictionaryQueryService {
     final entries = [
       for (final row in rows) _db.dictionaryEntries.map(row.data),
     ];
-    return _mapEntriesWithSourceUnsorted(entries, cache);
+    final results = _mapEntriesWithSourceUnsorted(entries, cache);
+    final exactGloss = <DictionaryEntryWithSource>[];
+    final containing = <DictionaryEntryWithSource>[];
+    for (var i = 0; i < results.length; i++) {
+      final isExact = rows[i].data['exact_gloss'] as int == 1;
+      (isExact ? exactGloss : containing).add(results[i]);
+    }
+    return (exactGloss: exactGloss, containing: containing);
   }
 
   /// FTS5 MATCH expression for [term]: the whole term as a quoted phrase
@@ -1153,14 +1208,9 @@ class DictionaryQueryService {
     unicode: true,
   );
 
-  /// Search entries whose glossary text contains [term] (case-insensitive).
-  ///
-  /// This enables English-to-Japanese lookup by searching within the
-  /// JSON-encoded definition strings. Results are ordered by dictionary
-  /// sort order and limited to [limit] entries.
   /// Direct English glossary lookup on the FTS index. Results are in
-  /// relevance order (bm25, then glossary length, then id) — see
-  /// [_fetchGlossaryMatches].
+  /// relevance order (whole-gloss matches, then bm25, then search-text
+  /// length, then id) — see [_fetchGlossaryMatchesRanked].
   Future<List<DictionaryEntryWithSource>> glossarySearchWithSource(
     String term, {
     int limit = 30,
@@ -1170,7 +1220,12 @@ class DictionaryQueryService {
     final cache = await _ensureMetasCached();
     if (cache.enabledIds.isEmpty) return [];
 
-    return _fetchGlossaryMatches(term, cache, limit: limit);
+    final matches = await _fetchGlossaryMatchesRanked(
+      term,
+      cache,
+      limit: limit,
+    );
+    return [...matches.exactGloss, ...matches.containing];
   }
 
   /// Search pitch accents by expression.

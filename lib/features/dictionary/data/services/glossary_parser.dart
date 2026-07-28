@@ -31,11 +31,52 @@ class GlossaryParser {
     }
   }
 
+  /// Lowercase plain-text rendering of decoded glossary [items] (each a
+  /// plain string or a JSON-encoded structured-content object), one gloss
+  /// per line, without display decorations.
+  ///
+  /// Stored in dictionary_entries.search_text and tokenized by the
+  /// English-search FTS index. The line structure matters — the query side
+  /// detects "the query is exactly one of this entry's glosses" via
+  /// newline-bounded matching.
+  static String searchTextFromItems(List<String> items) {
+    final lines = <String>[];
+    for (final item in items) {
+      final text = _tryParseStructuredContent(item, decorate: false);
+      for (var line in text.split('\n')) {
+        line = line.trim();
+        if (line.isNotEmpty) {
+          lines.add(line.toLowerCase());
+        }
+      }
+    }
+    return lines.join('\n');
+  }
+
+  /// [searchTextFromItems] for a stored glossaries JSON string.
+  ///
+  /// Undecodable JSON yields an empty string — a display placeholder is
+  /// useful on screen but would only pollute the search index.
+  static String searchText(String glossariesJson) {
+    try {
+      final List<dynamic> jsonList = jsonDecode(glossariesJson);
+      return searchTextFromItems([
+        for (final item in jsonList) item is String ? item : item.toString(),
+      ]);
+    } catch (_) {
+      final trimmed = glossariesJson.trim();
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        return '';
+      }
+      return searchTextFromItems([glossariesJson]);
+    }
+  }
+
   /// Convert a single glossary item into readable text.
   static String _itemToReadableText(dynamic item) {
     if (item is String) {
       // Could be a plain string OR a JSON-encoded structured-content object.
-      return _tryParseStructuredContent(item);
+      return _tryParseStructuredContent(item, decorate: true);
     }
     // Shouldn't happen for DB-stored values, but handle gracefully.
     return item.toString();
@@ -44,14 +85,17 @@ class GlossaryParser {
   /// Try to parse a string as a structured-content JSON object.
   /// If it's a structured-content object, extract readable text.
   /// Otherwise return the string as-is.
-  static String _tryParseStructuredContent(String value) {
+  static String _tryParseStructuredContent(
+    String value, {
+    required bool decorate,
+  }) {
     if (!value.startsWith('{')) return value;
 
     try {
       final parsed = jsonDecode(value);
       if (parsed is Map<String, dynamic> &&
           parsed['type'] == 'structured-content') {
-        final text = _extractText(parsed['content']);
+        final text = _extractText(parsed['content'], decorate: decorate);
         return text.isNotEmpty ? text : value;
       }
       // JSON object but not structured-content — return as-is
@@ -67,7 +111,10 @@ class GlossaryParser {
   /// - A plain string
   /// - A list of mixed strings and tag objects
   /// - A tag object with its own content
-  static String _extractText(dynamic content) {
+  ///
+  /// With [decorate], list items get a display bullet; without, the raw
+  /// gloss lines come back undecorated (the search-index shape).
+  static String _extractText(dynamic content, {required bool decorate}) {
     if (content == null) return '';
     if (content is String) return content;
     if (content is num || content is bool) return content.toString();
@@ -75,7 +122,7 @@ class GlossaryParser {
     if (content is List) {
       final parts = <String>[];
       for (final item in content) {
-        final text = _extractText(item);
+        final text = _extractText(item, decorate: decorate);
         if (text.isNotEmpty) parts.add(text);
       }
       return parts.join('\n');
@@ -86,10 +133,10 @@ class GlossaryParser {
       final innerContent = content['content'];
 
       if (innerContent != null) {
-        final text = _extractText(innerContent);
+        final text = _extractText(innerContent, decorate: decorate);
         // Add appropriate formatting based on tag type
-        if (tag == 'li') {
-          return '  \u25b8 $text'; // small triangle bullet
+        if (decorate && tag == 'li') {
+          return '  ▸ $text'; // small triangle bullet
         }
         return text;
       }

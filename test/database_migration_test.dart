@@ -102,7 +102,7 @@ void main() {
       expect(entries.single.definitionTags, isEmpty);
       expect(entries.single.rules, isEmpty);
       expect(entries.single.termTags, isEmpty);
-      expect(migratedDb.schemaVersion, 17);
+      expect(migratedDb.schemaVersion, 18);
     },
   );
 
@@ -244,7 +244,7 @@ void main() {
           .toSet();
 
       expect(indexNames, contains('idx_pitch_expr_dictid'));
-      expect(migratedDb.schemaVersion, 17);
+      expect(migratedDb.schemaVersion, 18);
     },
   );
 }

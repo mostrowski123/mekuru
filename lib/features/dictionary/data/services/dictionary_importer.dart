@@ -8,6 +8,7 @@ import 'package:json_events/json_events.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
 
 /// Summary of a collection import operation.
@@ -172,6 +173,9 @@ class DictionaryImporter {
                     rules: Value(raw['rules'] as String? ?? ''),
                     termTags: Value(raw['termTags'] as String? ?? ''),
                     glossaries: raw['glossaries'] as String,
+                    searchText: raw['searchText'] is String
+                        ? Value(raw['searchText'] as String)
+                        : const Value.absent(),
                     dictionaryId: resolvedDictionaryId,
                   );
                 })
@@ -402,6 +406,9 @@ class DictionaryImporter {
                     rules: Value(raw['rules'] ?? ''),
                     termTags: Value(raw['termTags'] ?? ''),
                     glossaries: raw['glossaries']!,
+                    searchText: raw['searchText'] != null
+                        ? Value(raw['searchText']!)
+                        : const Value.absent(),
                     dictionaryId: dictionaryId,
                   );
                 })
@@ -714,6 +721,11 @@ class DictionaryImporter {
                   'rules': termRules ?? '',
                   'termTags': termTermTags ?? '',
                   'glossaries': jsonEncode(glossaryList),
+                  // Extracted here, in the parse isolate, so the insert
+                  // path doesn't re-decode the JSON on the UI isolate.
+                  'searchText': GlossaryParser.searchTextFromItems(
+                    glossaryList,
+                  ),
                 });
 
                 if (batch.length >= batchSize) {
@@ -1255,6 +1267,7 @@ class DictionaryImporter {
       'rules': rules,
       'termTags': termTags,
       'glossaries': jsonEncode(glossaryList),
+      'searchText': GlossaryParser.searchTextFromItems(glossaryList),
       'entryKind': DictionaryEntryKinds.regular,
       'kanjiOnyomi': '',
       'kanjiKunyomi': '',
@@ -1293,6 +1306,7 @@ class DictionaryImporter {
       'rules': '',
       'termTags': '',
       'glossaries': jsonEncode(glossaryList),
+      'searchText': GlossaryParser.searchTextFromItems(glossaryList),
       'entryKind': DictionaryEntryKinds.kanji,
       'kanjiOnyomi': encodeKanjiReadings(onyomiReadings),
       'kanjiKunyomi': encodeKanjiReadings(kunyomiReadings),

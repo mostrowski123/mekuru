@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 
 /// English glossary lookup runs on an FTS5 index (dictionary_entries_fts)
 /// instead of a full-table LIKE scan. These tests pin the index lifecycle
@@ -13,6 +14,24 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_query_servic
 /// word-boundary + relevance semantics that FTS provides.
 AppDatabase createTestDatabase() {
   return AppDatabase(NativeDatabase.memory());
+}
+
+/// Yomitan structured-content shape used by recent JMdict releases:
+/// the gloss text sits inside nested content/tag markup.
+String structured(List<String> glosses) {
+  return jsonEncode([
+    jsonEncode({
+      'type': 'structured-content',
+      'content': {
+        'tag': 'ul',
+        'style': {'listStyleType': 'circle'},
+        'data': {'content': 'glossary'},
+        'content': [
+          for (final g in glosses) {'tag': 'li', 'content': g},
+        ],
+      },
+    }),
+  ]);
 }
 
 void main() {
@@ -110,12 +129,17 @@ void main() {
     });
 
     test('updated glossaries are reflected in search', () async {
+      // Writers that change glossaries must refresh searchText too — the
+      // FTS index tokenizes searchText, and its sync trigger fires on
+      // updates of that column.
       await repo.batchInsertEntries([entry('走る', 'はしる', 'to run')]);
+      final newGlossaries = jsonEncode(['to sprint']);
       await (db.update(
         db.dictionaryEntries,
       )..where((t) => t.expression.equals('走る'))).write(
         DictionaryEntriesCompanion(
-          glossaries: Value(jsonEncode(['to sprint'])),
+          glossaries: Value(newGlossaries),
+          searchText: Value(GlossaryParser.searchText(newGlossaries)),
         ),
       );
 
@@ -245,6 +269,206 @@ void main() {
       final results = await queryService.glossarySearchWithSource('run');
       expect(results.map((r) => r.entry.expression), contains('走る'));
       expect(results.map((r) => r.entry.expression), isNot(contains('駆ける')));
+    });
+  });
+
+  group('structured-content glossaries', () {
+    test('gloss text inside structured content is searchable', () async {
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '学校',
+          reading: const Value('がっこう'),
+          glossaries: structured(['school']),
+          dictionaryId: dictId,
+        ),
+      ]);
+
+      final results = await queryService.glossarySearchWithSource('school');
+      expect(results.map((r) => r.entry.expression), contains('学校'));
+    });
+
+    test('structured-content markup noise is not indexed', () async {
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '学校',
+          reading: const Value('がっこう'),
+          glossaries: structured(['school']),
+          dictionaryId: dictId,
+        ),
+      ]);
+
+      // Tokens from the JSON wrapper ("content", "tag", "li", "glossary",
+      // "circle", …) polluted the old index and skewed bm25 ranking.
+      for (final noise in ['content', 'tag', 'li', 'glossary', 'circle']) {
+        expect(
+          await queryService.glossarySearchWithSource(noise),
+          isEmpty,
+          reason: 'markup token "$noise" must not be searchable',
+        );
+      }
+    });
+
+    test('whole-gloss matches outrank tighter partial glosses '
+        'even for multi-sense entries', () async {
+      await repo.batchInsertEntries([
+        // Multi-sense primary word: bm25 dilutes "teacher" across many
+        // glosses, but "teacher" is exactly one of its definitions.
+        DictionaryEntriesCompanion.insert(
+          expression: '先生',
+          reading: const Value('せんせい'),
+          glossaries: structured([
+            'teacher',
+            'instructor',
+            'master',
+            'doctor',
+            'with all due respect',
+          ]),
+          dictionaryId: dictId,
+        ),
+        // Short single-gloss entry that merely contains the term — the
+        // stronger bm25 score must not beat the whole-gloss match.
+        entry('ひいき生徒', 'ひいきせいと', "teacher's pet"),
+      ]);
+
+      final results = await queryService.glossarySearchWithSource('teacher');
+      expect(results.first.entry.expression, '先生');
+    });
+
+    test('"to <term>" and parenthesized glosses count as whole-gloss '
+        'matches', () async {
+      await repo.batchInsertEntries([
+        entry('食べる', 'たべる', 'to eat'),
+        entry('食堂車', 'しょくどうしゃ', 'dining car where people eat meals on trains'),
+        DictionaryEntriesCompanion.insert(
+          expression: '水',
+          reading: const Value('みず'),
+          glossaries: structured(['water (esp. cool or cold)']),
+          dictionaryId: dictId,
+        ),
+        entry('防水', 'ぼうすい', 'waterproofing'),
+      ]);
+
+      final eat = await queryService.glossarySearchWithSource('eat');
+      expect(eat.first.entry.expression, '食べる');
+
+      final water = await queryService.glossarySearchWithSource('water');
+      final waterExprs = water.map((r) => r.entry.expression).toList();
+      expect(
+        waterExprs.indexOf('水'),
+        lessThan(waterExprs.indexOf('防水')),
+        reason: 'whole-gloss "water (…)" must outrank prefix-only matches',
+      );
+    });
+
+    test('search screen: a frequent word that merely mentions the term '
+        'cannot outrank the word that means it', () async {
+      await repo.batchInsertEntries([
+        entry('食べる', 'たべる', 'to eat'),
+        entry('やる', 'やる', 'to eat or drink (casually)'),
+      ]);
+      await db
+          .into(db.frequencies)
+          .insert(
+            FrequenciesCompanion.insert(
+              expression: 'やる',
+              frequencyRank: 1,
+              dictionaryId: dictId,
+            ),
+          );
+      await db
+          .into(db.frequencies)
+          .insert(
+            FrequenciesCompanion.insert(
+              expression: '食べる',
+              frequencyRank: 200,
+              dictionaryId: dictId,
+            ),
+          );
+
+      final results = await queryService.fuzzySearchWithSource('eat');
+      final exprs = results.map((r) => r.entry.expression).toList();
+      expect(
+        exprs.indexOf('食べる'),
+        lessThan(exprs.indexOf('やる')),
+        reason:
+            'whole-gloss match must rank above a higher-frequency '
+            'contains-match in the glossary tier',
+      );
+    });
+  });
+
+  group('index shape upgrade', () {
+    test(
+      'an index over raw glossaries JSON is rebuilt over search text',
+      () async {
+        // Recreate the pre-search_text world: FTS over raw glossaries and
+        // rows whose search_text was never populated (inserted via raw SQL
+        // to bypass the repository's auto-fill).
+        for (final trigger in ['ai', 'ad', 'au']) {
+          await db.customStatement(
+            'DROP TRIGGER dictionary_entries_fts_$trigger',
+          );
+        }
+        await db.customStatement('DROP TABLE dictionary_entries_fts');
+        await db.customStatement(
+          'CREATE VIRTUAL TABLE dictionary_entries_fts USING fts5('
+          'glossaries, content=dictionary_entries, content_rowid=id, '
+          "tokenize='porter unicode61')",
+        );
+
+        await db.customInsert(
+          'INSERT INTO dictionary_entries '
+          '(expression, reading, glossaries, dictionary_id) '
+          'VALUES (?, ?, ?, ?)',
+          variables: [
+            Variable.withString('学校'),
+            Variable.withString('がっこう'),
+            Variable.withString(structured(['school'])),
+            Variable.withInt(dictId),
+          ],
+        );
+        await db.customStatement(
+          "INSERT INTO dictionary_entries_fts(dictionary_entries_fts) "
+          "VALUES ('rebuild')",
+        );
+
+        // The open-time shape fix swaps the index; the deferred startup
+        // job fills search_text for the pre-existing rows.
+        await db.ensureGlossaryFtsForTesting();
+        await db.backfillGlossarySearchText();
+
+        final ftsSql =
+            (await db
+                    .customSelect(
+                      "SELECT sql FROM sqlite_master "
+                      "WHERE name = 'dictionary_entries_fts'",
+                    )
+                    .getSingle())
+                .data['sql']
+                .toString();
+        expect(ftsSql, contains('search_text'));
+
+        final backfilled =
+            (await db
+                    .customSelect(
+                      'SELECT search_text FROM dictionary_entries '
+                      "WHERE expression = '学校'",
+                    )
+                    .getSingle())
+                .data['search_text'];
+        expect(backfilled, 'school');
+
+        final results = await queryService.glossarySearchWithSource('school');
+        expect(results.map((r) => r.entry.expression), contains('学校'));
+      },
+    );
+
+    test('the current index shape is left untouched on reopen', () async {
+      await repo.batchInsertEntries([entry('食べる', 'たべる', 'to eat')]);
+      await db.ensureGlossaryFtsForTesting();
+
+      final results = await queryService.glossarySearchWithSource('eat');
+      expect(results.map((r) => r.entry.expression), contains('食べる'));
     });
   });
 }

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 
 /// Repository for dictionary CRUD operations.
 class DictionaryRepository {
@@ -104,6 +105,10 @@ class DictionaryRepository {
 
   /// Batch insert entries in chunks for performance.
   /// Returns total number of entries inserted.
+  ///
+  /// Fills in [DictionaryEntriesCompanion.searchText] from the glossaries
+  /// when the caller didn't provide it, so every insert path feeds the
+  /// English-search FTS index consistently.
   Future<int> batchInsertEntries(
     List<DictionaryEntriesCompanion> entries, {
     int batchSize = 10000,
@@ -113,7 +118,18 @@ class DictionaryRepository {
       final end = (i + batchSize < entries.length)
           ? i + batchSize
           : entries.length;
-      final batch = entries.sublist(i, end);
+      final batch = entries
+          .sublist(i, end)
+          .map(
+            (e) => e.searchText.present || !e.glossaries.present
+                ? e
+                : e.copyWith(
+                    searchText: Value(
+                      GlossaryParser.searchText(e.glossaries.value),
+                    ),
+                  ),
+          )
+          .toList(growable: false);
 
       await _db.batch((b) {
         b.insertAll(_db.dictionaryEntries, batch);

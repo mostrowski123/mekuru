@@ -28,5 +28,14 @@ class DictionaryEntries extends Table {
   TextColumn get rules => text().withDefault(const Constant(''))();
   TextColumn get termTags => text().withDefault(const Constant(''))();
   TextColumn get glossaries => text()(); // JSON-encoded List<String>
+
+  /// Lowercased plain-text rendering of [glossaries] (one gloss per line),
+  /// extracted at insert time. This is what the English-search FTS index
+  /// tokenizes — raw [glossaries] may be Yomitan structured-content JSON
+  /// whose markup noise ("content", "tag", "li", …) would otherwise pollute
+  /// the index and skew bm25 ranking. Kept in sync by
+  /// DictionaryRepository.batchInsertEntries; writers that update
+  /// [glossaries] later must refresh this column too.
+  TextColumn get searchText => text().withDefault(const Constant(''))();
   IntColumn get dictionaryId => integer()();
 }

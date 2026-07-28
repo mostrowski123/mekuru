@@ -19,6 +19,7 @@ DictionaryEntry _buildEntry({
     rules: rules,
     termTags: termTags,
     glossaries: '["to eat"]',
+    searchText: '',
     dictionaryId: 1,
   );
 }

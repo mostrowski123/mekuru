@@ -29,6 +29,7 @@ DictionaryEntry _buildEntry({
     rules: 'vt',
     termTags: 'P',
     glossaries: glossaries,
+    searchText: '',
     dictionaryId: 1,
   );
 }

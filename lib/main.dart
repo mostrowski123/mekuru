@@ -35,6 +35,14 @@ final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 /// Created once at app startup and disposed when the app is torn down.
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
+  // Fill search_text for dictionary rows imported before schema v18 so
+  // English glossary search covers them. Runs in a background isolate,
+  // resumes if interrupted, and no-ops once complete.
+  unawaited(
+    db.backfillGlossarySearchText().catchError((Object e) {
+      debugPrint('Glossary search-text backfill failed: $e');
+    }),
+  );
   ref.onDispose(() => db.close());
   return db;
 });

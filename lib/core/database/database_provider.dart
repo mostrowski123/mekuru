@@ -7,6 +7,7 @@ import '../../features/library/data/models/book.dart';
 import '../../features/vocabulary/data/models/saved_word.dart';
 import '../../features/dictionary/data/models/dictionary_meta.dart';
 import '../../features/dictionary/data/models/dictionary_entry.dart';
+import '../../features/dictionary/data/services/glossary_parser.dart';
 import '../../features/dictionary/data/models/pitch_accent.dart';
 import '../../features/dictionary/data/models/frequency.dart';
 import '../../features/reader/data/models/bookmark.dart';
@@ -44,10 +45,12 @@ class AppDatabase extends _$AppDatabase {
         "ALTER TABLE dictionary_entries ADD COLUMN rules TEXT NOT NULL DEFAULT ''",
     'term_tags':
         "ALTER TABLE dictionary_entries ADD COLUMN term_tags TEXT NOT NULL DEFAULT ''",
+    'search_text':
+        "ALTER TABLE dictionary_entries ADD COLUMN search_text TEXT NOT NULL DEFAULT ''",
   };
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -142,6 +145,9 @@ class AppDatabase extends _$AppDatabase {
           await migrator.addColumn(books, books.furiganaMode);
         }
       }
+      // v18 (search_text) has no migration block: the repair pass in
+      // beforeOpen adds the column via _dictionaryEntriesRepairColumns,
+      // which also covers databases that missed migrations entirely.
     },
     beforeOpen: (details) async {
       await _repairDictionaryEntriesSchemaIfNeeded();
@@ -173,24 +179,40 @@ class AppDatabase extends _$AppDatabase {
   static const String _glossaryFtsTable = 'dictionary_entries_fts';
 
   /// English glossary search runs on an FTS5 index over
-  /// dictionary_entries.glossaries (external-content: rows live only in
+  /// dictionary_entries.search_text (external-content: rows live only in
   /// dictionary_entries; triggers keep the index in sync). Created here —
   /// not in a versioned migration — following the repair pattern above, so
   /// it covers fresh installs, upgrades, and in-memory test databases
-  /// alike, and heals a lost index. The 'rebuild' backfill only costs
-  /// anything when the table was just created on a database that already
-  /// has entries: once, on the first open after the app update that
-  /// introduced the index.
+  /// alike, and heals a lost index.
+  ///
+  /// An earlier shape of this index tokenized raw glossaries JSON, which
+  /// buried single-gloss entries under structured-content markup noise
+  /// (bm25 ranked 学校 ~200th for "school"). When that shape is detected,
+  /// the index is dropped and recreated over search_text. Rows that
+  /// predate the search_text column are filled in later by
+  /// [backfillGlossarySearchText] — deliberately NOT here, because
+  /// parsing every glossary would block the first open for tens of
+  /// seconds on a large dictionary set.
   Future<void> _ensureGlossaryFtsIfNeeded() async {
     final existing = await customSelect(
-      "SELECT name FROM sqlite_master "
+      "SELECT sql FROM sqlite_master "
       "WHERE type = 'table' AND name = '$_glossaryFtsTable'",
     ).get();
-    if (existing.isNotEmpty) return;
+    if (existing.isNotEmpty) {
+      final sql = existing.first.data['sql']?.toString() ?? '';
+      if (sql.contains('search_text')) return;
+      // Old shape indexing raw glossaries JSON: replace it.
+      for (final suffix in ['ai', 'ad', 'au']) {
+        await customStatement(
+          'DROP TRIGGER IF EXISTS ${_glossaryFtsTable}_$suffix',
+        );
+      }
+      await customStatement('DROP TABLE $_glossaryFtsTable');
+    }
 
     await customStatement(
       'CREATE VIRTUAL TABLE $_glossaryFtsTable USING fts5('
-      'glossaries, '
+      'search_text, '
       'content=dictionary_entries, '
       'content_rowid=id, '
       "tokenize='porter unicode61')",
@@ -198,29 +220,74 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE TRIGGER ${_glossaryFtsTable}_ai '
       'AFTER INSERT ON dictionary_entries BEGIN '
-      'INSERT INTO $_glossaryFtsTable(rowid, glossaries) '
-      'VALUES (new.id, new.glossaries); '
+      'INSERT INTO $_glossaryFtsTable(rowid, search_text) '
+      'VALUES (new.id, new.search_text); '
       'END',
     );
     await customStatement(
       'CREATE TRIGGER ${_glossaryFtsTable}_ad '
       'AFTER DELETE ON dictionary_entries BEGIN '
-      'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, glossaries) '
-      "VALUES ('delete', old.id, old.glossaries); "
+      'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, search_text) '
+      "VALUES ('delete', old.id, old.search_text); "
       'END',
     );
     await customStatement(
       'CREATE TRIGGER ${_glossaryFtsTable}_au '
-      'AFTER UPDATE OF glossaries ON dictionary_entries BEGIN '
-      'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, glossaries) '
-      "VALUES ('delete', old.id, old.glossaries); "
-      'INSERT INTO $_glossaryFtsTable(rowid, glossaries) '
-      'VALUES (new.id, new.glossaries); '
+      'AFTER UPDATE OF search_text ON dictionary_entries BEGIN '
+      'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, search_text) '
+      "VALUES ('delete', old.id, old.search_text); "
+      'INSERT INTO $_glossaryFtsTable(rowid, search_text) '
+      'VALUES (new.id, new.search_text); '
       'END',
     );
     await customStatement(
       "INSERT INTO $_glossaryFtsTable($_glossaryFtsTable) VALUES ('rebuild')",
     );
+  }
+
+  /// Fill empty search_text from glossaries for rows that predate the
+  /// column (installs upgrading past schema v18). Runs the JSON parsing in
+  /// a short-lived background isolate so the UI isolate never blocks.
+  ///
+  /// Called unawaited from app startup. Safe to call on every launch: it
+  /// resumes where it left off if the app was killed mid-backfill, and
+  /// once every row is filled it costs a single scan that finds nothing.
+  /// The FTS sync trigger indexes each backfilled row, so no index rebuild
+  /// is needed afterwards.
+  Future<void> backfillGlossarySearchText() {
+    return computeWithDatabase(
+      connect: AppDatabase.new,
+      computation: (db) => db._backfillSearchText(),
+    );
+  }
+
+  Future<void> _backfillSearchText() async {
+    var lastId = 0;
+    while (true) {
+      final rows = await customSelect(
+        'SELECT id, glossaries FROM dictionary_entries '
+        "WHERE search_text = '' AND glossaries NOT IN ('', '[]') "
+        'AND id > ? ORDER BY id LIMIT 2000',
+        variables: [Variable.withInt(lastId)],
+      ).get();
+      if (rows.isEmpty) return;
+      lastId = rows.last.data['id'] as int;
+
+      await batch((b) {
+        for (final row in rows) {
+          final id = row.data['id'] as int;
+          final searchText = GlossaryParser.searchText(
+            row.data['glossaries'] as String,
+          );
+          if (searchText.isEmpty) continue;
+          b.update(
+            dictionaryEntries,
+            DictionaryEntriesCompanion(searchText: Value(searchText)),
+            where: (t) => t.id.equals(id),
+          );
+        }
+      });
+    }
   }
 
   @visibleForTesting
