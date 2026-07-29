@@ -47,8 +47,7 @@ class MokuroWordSegmenter {
     bool onlyStale = false,
   }) async {
     // Bring MeCab up before segmenting; without it we'd produce no words at
-    // all (or, before tokenize() stopped falling back to whole-line tokens,
-    // cache line-sized pseudo-words). If init fails, return the pages
+    // all. If init fails, return the pages
     // untouched so callers cache nothing new and the reader's self-heal
     // path retries on a later load. Segmentation only needs IPADIC; the
     // flag only decides anything in background isolates — on the main
@@ -103,26 +102,19 @@ class MokuroWordSegmenter {
       final lineQuad = block.linesCoords[lineIdx];
       if (lineQuad.length < 4) continue;
 
-      // Tokenize the line text
-      final surfaces = mecab.tokenize(lineText);
+      // One MeCab parse for the whole line. An unusable parse collapses to
+      // a single unannotated whole-line token — the broken-cache signature
+      // blockHasBrokenWordSegmentation keys on, so self-heal retries it.
+      final tokens = mecab.annotateTokens(lineText);
+      if (tokens == null) continue;
 
-      // Build words with bounding boxes
+      // Build words with bounding boxes; char offsets must match the
+      // coordinates OCR tap targets use.
       int charPos = 0;
-      for (final surface in surfaces) {
+      for (final token in tokens) {
+        final surface = token.surface;
         final charStart = charPos;
         final charEnd = charPos + surface.length;
-
-        // Get dictionary form and reading via identifyWordWithContext
-        String? dictForm;
-        String? reading;
-        final identification = mecab.identifyWordWithContext(
-          lineText,
-          charStart,
-        );
-        if (identification != null) {
-          dictForm = identification.result.dictionaryForm;
-          reading = identification.result.reading;
-        }
 
         // Compute bounding box from line quad
         final bbox = lineCharRangeRect(
@@ -137,8 +129,8 @@ class MokuroWordSegmenter {
           words.add(
             MokuroWord(
               surface: surface,
-              dictionaryForm: dictForm,
-              reading: reading,
+              dictionaryForm: token.dictionaryForm,
+              reading: token.reading,
               boundingBox: bbox,
               blockIndex: blockIdx,
               lineIndex: lineIdx,

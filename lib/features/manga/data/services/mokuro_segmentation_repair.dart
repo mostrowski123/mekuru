@@ -44,10 +44,11 @@ bool pageNeedsWordSegmentation(MokuroPage page) {
   return false;
 }
 
-/// Whether [block] carries the signature of segmentation that ran while
-/// MeCab was uninitialized: `tokenize()` falls back to the whole line as a
-/// single token and `identifyWordWithContext()` returns null, producing one
-/// line-spanning word with neither dictionary form nor reading. A healthy
+/// Whether [block] carries the signature of segmentation that ran without a
+/// usable MeCab parse: the segmenter's whole-line fallback (today via
+/// `annotateTokens`, historically via `tokenize()` against an uninitialized
+/// MeCab) produces one line-spanning word with neither dictionary form nor
+/// reading. A healthy
 /// run always sets a dictionary form on words with Japanese content, so
 /// this cannot match correctly segmented blocks (and repairing is therefore
 /// a one-shot fix, not a rewrite-on-every-load loop).

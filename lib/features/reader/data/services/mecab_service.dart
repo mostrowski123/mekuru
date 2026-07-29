@@ -76,6 +76,27 @@ class WordIdentification {
   });
 }
 
+/// One token from [MecabService.annotateTokens]: the nullable lookup
+/// annotations a per-offset [MecabService.identifyWordWithContext] call
+/// would produce for that token.
+class TokenAnnotation {
+  final String surface;
+
+  /// Null when lookup rejects the token; otherwise the dictionary form,
+  /// defaulting to [surface] when the dictionary has none.
+  final String? dictionaryForm;
+
+  /// Null exactly when [dictionaryForm] is null; may be empty when the
+  /// dictionary has no reading.
+  final String? reading;
+
+  const TokenAnnotation({
+    required this.surface,
+    this.dictionaryForm,
+    this.reading,
+  });
+}
+
 /// POS sub-categories within 記号 that should be skipped (true punctuation).
 /// Other 記号 sub-categories (like 一般) may contain valid content.
 const _skipSymbolSubcats = {
@@ -401,12 +422,7 @@ class MecabService {
 
     final allTokens = _tagger!.parse(text);
     final surfaces = allTokens
-        .where((t) {
-          final s = t.surface;
-          if (s.isEmpty || s == 'EOS' || s == 'BOS') return false;
-          if (t.features.isNotEmpty && t.features[0] == 'BOS/EOS') return false;
-          return true;
-        })
+        .where((t) => !_isMarkerToken(t))
         .map((t) => t.surface)
         .toList();
 
@@ -427,12 +443,7 @@ class MecabService {
     final allTokens = _tagger!.parse(text);
     if (allTokens.isEmpty) return const <TokenInfo>[];
 
-    final tokens = allTokens.where((t) {
-      final s = t.surface;
-      if (s.isEmpty || s == 'EOS' || s == 'BOS') return false;
-      if (t.features.isNotEmpty && t.features[0] == 'BOS/EOS') return false;
-      return true;
-    }).toList();
+    final tokens = allTokens.where((t) => !_isMarkerToken(t)).toList();
 
     final aligned = _alignTokensToText(tokens, text);
     final result = <TokenInfo>[];
@@ -441,6 +452,37 @@ class MecabService {
       result.add(_tokenInfoFromAligned(entry));
     }
     return result;
+  }
+
+  /// Tokenizes [text] with a single MeCab parse and returns each token with
+  /// the same nullable dictionaryForm/reading a per-offset
+  /// [identifyWordWithContext] call would produce for it. Sanitizes
+  /// invisible characters like [identifyWordWithContext] does, so the
+  /// surfaces may differ from the raw [text] when it contains them.
+  ///
+  /// Returns null when MeCab is not initialized. When the parse yields no
+  /// usable tokens, falls back to the whole raw [text] as one unannotated
+  /// token, mirroring [tokenize]'s whole-line fallback.
+  List<TokenAnnotation>? annotateTokens(String text) {
+    if (!_initialized) return null;
+
+    final cleanText = _sanitizeText(text, 0).text;
+    if (cleanText.isEmpty) return [TokenAnnotation(surface: text)];
+
+    final allTokens = _tagger!.parse(cleanText);
+    final annotations = allTokens.where((t) => !_isMarkerToken(t)).map((t) {
+      final features = t.features;
+      if (_isLookupRejected(features)) {
+        return TokenAnnotation(surface: t.surface);
+      }
+      return TokenAnnotation(
+        surface: t.surface,
+        dictionaryForm: _layout.dictionaryForm(features) ?? t.surface,
+        reading: _layout.reading(features),
+      );
+    }).toList();
+
+    return annotations.isEmpty ? [TokenAnnotation(surface: text)] : annotations;
   }
 
   TokenInfo _tokenInfoFromAligned(_AlignedToken entry) {
@@ -492,15 +534,7 @@ class MecabService {
       return null;
     }
 
-    // Filter out EOS/BOS marker tokens — their surface text ("EOS", "BOS")
-    // does NOT correspond to characters in the input and would corrupt offset
-    // calculations.
-    final tokens = allTokens.where((t) {
-      final s = t.surface;
-      if (s == 'EOS' || s == 'BOS' || s.isEmpty) return false;
-      if (t.features.isNotEmpty && t.features[0] == 'BOS/EOS') return false;
-      return true;
-    }).toList();
+    final tokens = allTokens.where((t) => !_isMarkerToken(t)).toList();
 
     // Align tokens to their actual positions in the original text.
     final aligned = _alignTokensToText(tokens, cleanText);
@@ -676,19 +710,7 @@ class MecabService {
     final surface = token.surface;
     final features = token.features;
 
-    if (features.isEmpty) return null;
-
-    final pos = features[0];
-
-    if (pos == 'BOS/EOS') return null;
-
-    // For 記号 (symbol), only skip specific sub-categories that are true
-    // punctuation. Allow 記号,一般 through since some kanji can be tagged
-    // this way by IPAdic.
-    if (pos == '記号') {
-      final subcat1 = features.length > 1 ? features[1] : '';
-      if (_skipSymbolSubcats.contains(subcat1)) return null;
-    }
+    if (_isLookupRejected(features)) return null;
 
     final dictionaryForm = _layout.dictionaryForm(features) ?? surface;
     final reading = _layout.reading(features);
@@ -701,6 +723,30 @@ class MecabService {
       sentenceContext: sentenceContext,
       tokenStartOffset: tokenStartOffset,
     );
+  }
+
+  /// Whether a token with these [features] is rejected for word lookup:
+  /// feature-less tokens, BOS/EOS markers, and true punctuation. For 記号
+  /// (symbol), only specific sub-categories are rejected — 記号,一般 is
+  /// allowed through since some kanji can be tagged this way by IPAdic.
+  static bool _isLookupRejected(List<String> features) {
+    if (features.isEmpty) return true;
+    final pos = features[0];
+    if (pos == 'BOS/EOS') return true;
+    if (pos == '記号') {
+      final subcat1 = features.length > 1 ? features[1] : '';
+      if (_skipSymbolSubcats.contains(subcat1)) return true;
+    }
+    return false;
+  }
+
+  /// Whether [t] is a MeCab marker/pseudo token (BOS/EOS or an empty
+  /// surface) whose surface text does not correspond to characters in the
+  /// input and would corrupt offset math.
+  static bool _isMarkerToken(TokenNode t) {
+    final s = t.surface;
+    if (s.isEmpty || s == 'EOS' || s == 'BOS') return true;
+    return t.features.isNotEmpty && t.features[0] == 'BOS/EOS';
   }
 
   /// Extract the sentence containing [charOffset] from [text].
