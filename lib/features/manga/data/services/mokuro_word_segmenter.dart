@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../../reader/data/services/mecab_service.dart';
 import '../models/mokuro_models.dart';
 import 'mokuro_block_geometry.dart';
@@ -39,7 +41,7 @@ class MokuroWordSegmenter {
   /// Returns new pages with populated [MokuroWord] lists.
   ///
   /// Runs every MeCab parse synchronously on the calling isolate — from the
-  /// UI isolate use [segmentAllPagesInBackground] instead.
+  /// UI isolate use [segmentBookInBackground] instead.
   ///
   /// With [onlyStale], pages whose words are already present, healthy, and
   /// cut by the session's dictionary are returned untouched — so repairing
@@ -70,10 +72,11 @@ class MokuroWordSegmenter {
 
     final result = <MokuroPage>[];
     for (final page in pages) {
-      if (page.blocks.isEmpty ||
-          (onlyStale &&
-              !pageNeedsWordSegmentation(page) &&
-              !pageSegmentedWithDifferentDictionary(page, layout.label))) {
+      if (_pageUntouchedBySegmentation(
+        page,
+        onlyStale: onlyStale,
+        dictionary: layout.label,
+      )) {
         result.add(page);
         continue;
       }
@@ -90,23 +93,108 @@ class MokuroWordSegmenter {
     return result;
   }
 
-  /// Like [segmentAllPages], but runs the MeCab parses on a short-lived
-  /// background isolate via [MecabService.runOffIsolate].
+  /// Like [segmentAllPages], but for a whole [MokuroBook]: runs the MeCab
+  /// parses on a short-lived background isolate via
+  /// [MecabService.runOffIsolate], and encodes the book's `pages_cache.json`
+  /// content there too.
   ///
   /// [segmentAllPages]' page loop never awaits, so on the UI isolate a large
   /// book — an import, or a first-open self-heal of a legacy cache — becomes
-  /// one unbroken chunk of FFI parses: a visible hang. UI-isolate callers
-  /// use this variant; code already off the UI isolate (the OCR worker)
-  /// calls [segmentAllPages] directly rather than paying an isolate spawn
-  /// per page.
-  static Future<List<MokuroPage>> segmentAllPagesInBackground(
-    List<MokuroPage> pages, {
+  /// one unbroken chunk of FFI parses: a visible hang. Encoding the cache
+  /// JSON afterwards is the same kind of hazard (a multi-MB string build for
+  /// a long volume), so the worker does that too and returns both results.
+  /// UI-isolate callers use this variant; code already off the UI isolate
+  /// (the OCR worker) calls [segmentAllPages] directly rather than paying an
+  /// isolate spawn per page.
+  ///
+  /// Existing words on pages this run re-segments are replaced wholesale, so
+  /// they are stripped before the send to shrink the outbound copy. When
+  /// MeCab is unavailable (init failed here, or the attach failed in the
+  /// worker) nothing is segmented: the returned book is [book] itself —
+  /// words intact, never the stripped copy — and `cacheJson` is null so
+  /// callers neither pay an encode nor persist anything when nothing
+  /// changed.
+  static Future<({MokuroBook book, String? cacheJson})> segmentBookInBackground(
+    MokuroBook book, {
     bool onlyStale = false,
-  }) {
-    return MecabService.instance.runOffIsolate(
-      () => segmentAllPages(pages, onlyStale: onlyStale),
+  }) async {
+    final mecab = MecabService.instance;
+    if (!await mecab.ensureInitialized(upgradeToEnhanced: false)) {
+      return (book: book, cacheJson: null);
+    }
+    // The same settled label runOffIsolate is about to capture for the
+    // worker — the dictionary policy is fixed once settled — so strip
+    // decisions here match segmentation decisions there.
+    final dictionary = (await mecab.settledLayout()).label;
+    final outbound = _stripReplacedWords(
+      book,
+      onlyStale: onlyStale,
+      dictionary: dictionary,
     );
+    final result = await mecab.runOffIsolate(
+      () => _segmentAndEncode(outbound, onlyStale),
+    );
+    return result ?? (book: book, cacheJson: null);
   }
+
+  /// Worker-isolate side of [segmentBookInBackground]: segment [book]'s
+  /// pages and encode the result. Null when MeCab is not up on this isolate
+  /// (the attach failed) — the caller then falls back to its original,
+  /// un-stripped book.
+  static Future<({MokuroBook book, String? cacheJson})?> _segmentAndEncode(
+    MokuroBook book,
+    bool onlyStale,
+  ) async {
+    if (!MecabService.instance.isInitialized) return null;
+    final segmented = book.copyWith(
+      pages: await segmentAllPages(book.pages, onlyStale: onlyStale),
+    );
+    return (book: segmented, cacheJson: jsonEncode(segmented.toJson()));
+  }
+
+  /// [book] with words removed from every page [segmentAllPages] will
+  /// re-segment with these arguments. Pages the run leaves untouched keep
+  /// their words, and pages with no words to drop keep their identity — so
+  /// an import (no words yet) sends [book] through unchanged.
+  static MokuroBook _stripReplacedWords(
+    MokuroBook book, {
+    required bool onlyStale,
+    required String dictionary,
+  }) {
+    var stripped = false;
+    final pages = book.pages.map((page) {
+      if (_pageUntouchedBySegmentation(
+            page,
+            onlyStale: onlyStale,
+            dictionary: dictionary,
+          ) ||
+          page.blocks.every((block) => block.words.isEmpty)) {
+        return page;
+      }
+      stripped = true;
+      return page.copyWith(
+        blocks: [
+          for (final block in page.blocks)
+            block.words.isEmpty ? block : block.copyWith(words: const []),
+        ],
+      );
+    }).toList();
+    return stripped ? book.copyWith(pages: pages) : book;
+  }
+
+  /// Whether [segmentAllPages] with these arguments returns [page]
+  /// untouched. Shared with [_stripReplacedWords] so the pre-send word strip
+  /// can never disagree with the segmentation run about which pages get
+  /// their words rebuilt.
+  static bool _pageUntouchedBySegmentation(
+    MokuroPage page, {
+    required bool onlyStale,
+    required String dictionary,
+  }) =>
+      page.blocks.isEmpty ||
+      (onlyStale &&
+          !pageNeedsWordSegmentation(page) &&
+          !pageSegmentedWithDifferentDictionary(page, dictionary));
 
   /// Segment a single text block into words with bounding boxes.
   static List<MokuroWord> _segmentBlock(MokuroTextBlock block, int blockIdx) {

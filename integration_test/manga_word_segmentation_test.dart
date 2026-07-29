@@ -7,6 +7,8 @@
 // refactor loses the whole line, because a leading 「 makes
 // identifyWordWithContext return null.
 
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -130,24 +132,52 @@ void main() {
     },
   );
 
-  test(
-    'segmentAllPagesInBackground matches the direct on-isolate path',
-    () async {
-      final page = _buildPage();
-      final direct = await MokuroWordSegmenter.segmentAllPages([page]);
-      final background = await MokuroWordSegmenter.segmentAllPagesInBackground([
-        page,
-      ]);
+  test('segmentBookInBackground matches the direct on-isolate path', () async {
+    final page = _buildPage();
+    final direct = await MokuroWordSegmenter.segmentAllPages([page]);
+    final (
+      book: background,
+      :cacheJson,
+    ) = await MokuroWordSegmenter.segmentBookInBackground(
+      MokuroBook(title: 'seg-test', imageDirPath: '/img', pages: [page]),
+    );
 
-      // Guard against trivially passing on two empty results.
-      expect(background.single.blocks.single.words, isNotEmpty);
-      expect(
-        background.map((p) => p.toJson()).toList(),
-        direct.map((p) => p.toJson()).toList(),
-        reason:
-            'the background isolate must attach to the same dictionary and '
-            'produce identical words and provenance',
-      );
-    },
-  );
+    // Guard against trivially passing on two empty results.
+    expect(background.pages.single.blocks.single.words, isNotEmpty);
+    expect(
+      background.pages.map((p) => p.toJson()).toList(),
+      direct.map((p) => p.toJson()).toList(),
+      reason:
+          'the background isolate must attach to the same dictionary and '
+          'produce identical words and provenance',
+    );
+    // The worker-encoded cache JSON is the segmented result — not the
+    // word-stripped copy sent to it.
+    expect(cacheJson, jsonEncode(background.toJson()));
+  });
+
+  test('onlyStale keeps healthy pages — and their words — intact', () async {
+    final healthy = await MokuroWordSegmenter.segmentAllPages([_buildPage()]);
+    expect(healthy.single.blocks.single.words, isNotEmpty);
+
+    final book = MokuroBook(
+      title: 'seg-test',
+      imageDirPath: '/img',
+      pages: healthy,
+    );
+    final (
+      book: result,
+      :cacheJson,
+    ) = await MokuroWordSegmenter.segmentBookInBackground(
+      book,
+      onlyStale: true,
+    );
+
+    // The pre-send word strip must never eat words segmentation won't
+    // rebuild: a healthy page crosses the worker boundary untouched.
+    expect(result.pages.single.toJson(), healthy.single.toJson());
+    // Byte-identical encoding is what the reader's no-rewrite guard
+    // compares against the cache file.
+    expect(cacheJson, jsonEncode(book.toJson()));
+  });
 }

@@ -305,25 +305,27 @@ class BookRepository {
     await cacheDir.create(recursive: true);
 
     // Segment words using MeCab, off the UI isolate — imports can be large.
-    final segmented = await MokuroWordSegmenter.segmentAllPagesInBackground(
-      rawPages,
-    );
-
-    // Auto-crop bounds are now computed lazily the first time the user enables
+    // The worker also encodes the pages_cache.json content, keeping that
+    // multi-MB string build off the UI isolate too.
+    // Auto-crop bounds are computed lazily the first time the user enables
     // auto-crop for this manga. Import stores segmented OCR only.
-    final pages = segmented;
-
-    // Build and save pages_cache.json
-    final mokuroBook = MokuroBook(
-      title: manifest.title,
-      imageDirPath: manifest.imageDirPath,
-      safTreeUri: manifest.safTreeUri,
-      safImageDirRelativePath: manifest.safImageDirRelativePath,
-      ocrSource: 'mokuro',
-      ocrCompleted: true,
-      pages: pages,
+    final segmented = await MokuroWordSegmenter.segmentBookInBackground(
+      MokuroBook(
+        title: manifest.title,
+        imageDirPath: manifest.imageDirPath,
+        safTreeUri: manifest.safTreeUri,
+        safImageDirRelativePath: manifest.safImageDirRelativePath,
+        ocrSource: 'mokuro',
+        ocrCompleted: true,
+        pages: rawPages,
+      ),
     );
-    final cacheJson = jsonEncode(mokuroBook.toJson());
+    final mokuroBook = segmented.book;
+    // A null cacheJson means MeCab was unavailable and nothing was
+    // segmented; the import must still write a cache, so encode here.
+    final cacheJson = segmented.cacheJson ?? jsonEncode(mokuroBook.toJson());
+
+    // Save pages_cache.json
     final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
     await writeStringAtomic(cacheFile, cacheJson);
     final originalBackupFile = File(
@@ -332,7 +334,8 @@ class BookRepository {
     await writeStringAtomic(originalBackupFile, cacheJson);
 
     debugPrint(
-      '[MangaImport] Cached ${pages.length} pages for "${manifest.title}"',
+      '[MangaImport] Cached ${mokuroBook.pages.length} pages '
+      'for "${manifest.title}"',
     );
 
     // Cover = alphabetically first image file (ASCII sort).
@@ -395,7 +398,7 @@ class BookRepository {
             coverImagePath: coverImagePath != null
                 ? Value(coverImagePath)
                 : const Value.absent(),
-            totalPages: Value(pages.length),
+            totalPages: Value(mokuroBook.pages.length),
           ),
         );
 
@@ -473,7 +476,7 @@ class BookRepository {
   /// Re-run MeCab word segmentation on an existing manga book.
   ///
   /// Reads the cached page data, runs
-  /// [MokuroWordSegmenter.segmentAllPagesInBackground] to re-segment (it
+  /// [MokuroWordSegmenter.segmentBookInBackground] to re-segment (it
   /// replaces each block's words wholesale), and writes back the updated
   /// cache.
   Future<void> reprocessMangaOcr(Book book) async {
@@ -488,30 +491,26 @@ class BookRepository {
     final json = jsonDecode(content) as Map<String, dynamic>;
     final mokuroBook = MokuroBook.fromJson(json);
 
-    // Re-run segmentation. Existing contentBounds (if any) are preserved by
-    // MokuroPage.copyWith through the segmentation pipeline. No need to
-    // strip existing words first: segmentation replaces them wholesale, and
-    // if MeCab is unavailable the pages come back untouched (keeping the
-    // current words is strictly better than wiping them).
-    final resegmented = await MokuroWordSegmenter.segmentAllPagesInBackground(
-      mokuroBook.pages,
-    );
+    // Re-run segmentation; the worker isolate also encodes the updated
+    // cache JSON. Existing contentBounds (if any) are preserved by
+    // MokuroPage.copyWith through the segmentation pipeline, and if MeCab
+    // is unavailable the book comes back untouched (keeping the current
+    // words is strictly better than wiping them).
+    final (book: updated, cacheJson: updatedJson) =
+        await MokuroWordSegmenter.segmentBookInBackground(mokuroBook);
+    if (updatedJson == null) {
+      debugPrint(
+        '[MangaOCR] MeCab unavailable — cache left untouched '
+        'for "${book.title}"',
+      );
+      return;
+    }
 
-    // Write back
-    final updated = MokuroBook(
-      title: mokuroBook.title,
-      imageDirPath: mokuroBook.imageDirPath,
-      safTreeUri: mokuroBook.safTreeUri,
-      safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
-      autoCropVersion: mokuroBook.autoCropVersion,
-      ocrSource: mokuroBook.ocrSource,
-      ocrCompleted: mokuroBook.ocrCompleted,
-      pages: resegmented,
-    );
-    await writeStringAtomic(cacheFile, jsonEncode(updated.toJson()));
+    await writeStringAtomic(cacheFile, updatedJson);
 
     debugPrint(
-      '[MangaOCR] Reprocessed ${resegmented.length} pages for "${book.title}"',
+      '[MangaOCR] Reprocessed ${updated.pages.length} pages '
+      'for "${book.title}"',
     );
   }
 

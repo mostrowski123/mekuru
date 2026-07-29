@@ -46,6 +46,17 @@ class MokuroBook {
     required this.pages,
   });
 
+  MokuroBook copyWith({List<MokuroPage>? pages}) => MokuroBook(
+    title: title,
+    imageDirPath: imageDirPath,
+    safTreeUri: safTreeUri,
+    safImageDirRelativePath: safImageDirRelativePath,
+    autoCropVersion: autoCropVersion,
+    ocrSource: ocrSource,
+    ocrCompleted: ocrCompleted,
+    pages: pages ?? this.pages,
+  );
+
   Map<String, dynamic> toJson() => {
     'title': title,
     'imageDirPath': imageDirPath,

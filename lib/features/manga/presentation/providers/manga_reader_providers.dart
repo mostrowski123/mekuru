@@ -45,26 +45,20 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
   // The decision — including when to wait for MeCab init or for a pending
   // dictionary upgrade — lives in MokuroWordSegmenter.needsResegmentation.
   if (await MokuroWordSegmenter.needsResegmentation(mokuroBook.pages)) {
-    final segmentedPages =
-        await MokuroWordSegmenter.segmentAllPagesInBackground(
-          mokuroBook.pages,
-          onlyStale: true,
-        );
-    final updated = MokuroBook(
-      title: mokuroBook.title,
-      imageDirPath: mokuroBook.imageDirPath,
-      safTreeUri: mokuroBook.safTreeUri,
-      safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
-      autoCropVersion: mokuroBook.autoCropVersion,
-      ocrSource: mokuroBook.ocrSource,
-      ocrCompleted: mokuroBook.ocrCompleted,
-      pages: segmentedPages,
+    // The cache JSON comes back already encoded by the worker isolate — for
+    // a long volume that's a multi-MB string build kept off the UI isolate.
+    final (
+      book: updated,
+      cacheJson: updatedJson,
+    ) = await MokuroWordSegmenter.segmentBookInBackground(
+      mokuroBook,
+      onlyStale: true,
     );
-    // Only rewrite the cache when re-segmentation actually changed it, so a
-    // block that trips the repair heuristic but re-segments identically can
-    // never cause a rewrite-on-every-open loop.
-    final updatedJson = jsonEncode(updated.toJson());
-    if (updatedJson != content) {
+    // Only rewrite the cache when re-segmentation actually changed it (null
+    // means MeCab was unavailable and nothing did), so a block that trips
+    // the repair heuristic but re-segments identically can never cause a
+    // rewrite-on-every-open loop.
+    if (updatedJson != null && updatedJson != content) {
       await writeStringAtomic(cacheFile, updatedJson);
     }
     return updated;
