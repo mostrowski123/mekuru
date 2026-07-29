@@ -8,6 +8,8 @@ import 'package:mekuru/features/dictionary/data/repositories/dictionary_reposito
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 
+import 'dictionary_fts_test_support.dart';
+
 /// English glossary lookup runs on an FTS5 index (dictionary_entries_fts)
 /// instead of a full-table LIKE scan. These tests pin the index lifecycle
 /// (created on open, kept in sync by triggers, rebuildable) and the
@@ -103,11 +105,7 @@ void main() {
         // Simulate a database whose FTS index was lost (e.g. an install
         // predating the index): drop table + triggers, then add rows that
         // the triggers would have missed.
-        for (final trigger in ['ai', 'ad', 'au']) {
-          await db.customStatement(
-            'DROP TRIGGER dictionary_entries_fts_$trigger',
-          );
-        }
+        await dropGlossaryFtsTriggersForTest(db);
         await db.customStatement('DROP TABLE dictionary_entries_fts');
         await repo.batchInsertEntries([entry('飲む', 'のむ', 'to drink')]);
 
@@ -119,6 +117,46 @@ void main() {
         expect(drink.map((r) => r.entry.expression), contains('飲む'));
       },
     );
+
+  });
+
+  group('bulk FTS load', () {
+    test('bulk indexing in a transaction matches trigger indexing', () async {
+      await db.transaction(() async {
+        await repo.beginGlossaryFtsBulkLoad();
+        await repo.batchInsertEntries([
+          entry('食べる', 'たべる', 'to eat'),
+          entry('飲む', 'のむ', 'to drink'),
+        ]);
+        await repo.finishGlossaryFtsBulkLoad(dictId);
+      });
+
+      final eat = await queryService.glossarySearchWithSource('eat');
+      expect(eat.map((r) => r.entry.expression), contains('食べる'));
+      await expectGlossaryFtsConsistent(db);
+
+      // Triggers are back and firing after the bulk load.
+      await repo.batchInsertEntries([entry('走る', 'はしる', 'to run')]);
+      final run = await queryService.glossarySearchWithSource('run');
+      expect(run.map((r) => r.entry.expression), contains('走る'));
+    });
+
+    test('bulk load no-ops when the FTS index is missing', () async {
+      // The FTS-lost state: bulk load must not throw, and the rebuild
+      // path recovers the rows afterwards.
+      await dropGlossaryFtsTriggersForTest(db);
+      await db.customStatement('DROP TABLE dictionary_entries_fts');
+
+      await db.transaction(() async {
+        await repo.beginGlossaryFtsBulkLoad();
+        await repo.batchInsertEntries([entry('食べる', 'たべる', 'to eat')]);
+        await repo.finishGlossaryFtsBulkLoad(dictId);
+      });
+
+      await db.ensureGlossaryFtsForTesting();
+      final eat = await queryService.glossarySearchWithSource('eat');
+      expect(eat.map((r) => r.entry.expression), contains('食べる'));
+    });
   });
 
   group('trigger synchronization', () {
@@ -439,11 +477,7 @@ void main() {
         // Recreate the pre-search_text world: FTS over raw glossaries and
         // rows whose search_text was never populated (inserted via raw SQL
         // to bypass the repository's auto-fill).
-        for (final trigger in ['ai', 'ad', 'au']) {
-          await db.customStatement(
-            'DROP TRIGGER dictionary_entries_fts_$trigger',
-          );
-        }
+        await dropGlossaryFtsTriggersForTest(db);
         await db.customStatement('DROP TABLE dictionary_entries_fts');
         await db.customStatement(
           'CREATE VIRTUAL TABLE dictionary_entries_fts USING fts5('

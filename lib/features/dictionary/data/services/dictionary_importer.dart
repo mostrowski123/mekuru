@@ -127,6 +127,7 @@ class DictionaryImporter {
 
     try {
       return await _repository.runInTransaction(() async {
+        await _repository.beginGlossaryFtsBulkLoad();
         int? dictionaryId;
         int totalEntries = 0;
         int insertedEntries = 0;
@@ -262,6 +263,7 @@ class DictionaryImporter {
         if (dictionaryId == null) {
           throw const FormatException('ZIP import stream produced no metadata');
         }
+        await _repository.finishGlossaryFtsBulkLoad(dictionaryId);
 
         return insertedEntries;
       });
@@ -390,6 +392,9 @@ class DictionaryImporter {
             dictName,
             sortOrder: nextSortOrder++,
           );
+          // Nested inside this per-dictionary transaction so a crash
+          // between dictionaries can never commit a trigger-less schema.
+          await _repository.beginGlossaryFtsBulkLoad();
 
           for (var j = 0; j < rawEntries.length; j += batchSize) {
             final end = (j + batchSize < rawEntries.length)
@@ -474,6 +479,8 @@ class DictionaryImporter {
               totalItems,
             );
           }
+
+          await _repository.finishGlossaryFtsBulkLoad(dictionaryId);
         });
 
         importedDicts.add(dictName);

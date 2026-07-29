@@ -178,6 +178,76 @@ class AppDatabase extends _$AppDatabase {
 
   static const String _glossaryFtsTable = 'dictionary_entries_fts';
 
+  /// DDL for the three triggers that keep [_glossaryFtsTable] in sync with
+  /// dictionary_entries. Single source of truth: the open path
+  /// ([_ensureGlossaryFtsIfNeeded]) and the bulk-import path
+  /// ([createGlossaryFtsSyncTriggers]) must never construct different
+  /// triggers.
+  static const Map<String, String> _glossaryFtsTriggerSql = {
+    'ai':
+        'CREATE TRIGGER ${_glossaryFtsTable}_ai '
+        'AFTER INSERT ON dictionary_entries BEGIN '
+        'INSERT INTO $_glossaryFtsTable(rowid, search_text) '
+        'VALUES (new.id, new.search_text); '
+        'END',
+    'ad':
+        'CREATE TRIGGER ${_glossaryFtsTable}_ad '
+        'AFTER DELETE ON dictionary_entries BEGIN '
+        'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, search_text) '
+        "VALUES ('delete', old.id, old.search_text); "
+        'END',
+    'au':
+        'CREATE TRIGGER ${_glossaryFtsTable}_au '
+        'AFTER UPDATE OF search_text ON dictionary_entries BEGIN '
+        'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, search_text) '
+        "VALUES ('delete', old.id, old.search_text); "
+        'INSERT INTO $_glossaryFtsTable(rowid, search_text) '
+        'VALUES (new.id, new.search_text); '
+        'END',
+  };
+
+  /// Whether the current-shape glossary FTS index (over search_text)
+  /// exists. Bulk import uses this to no-op its FTS handling when the
+  /// index is missing or still has the pre-v18 shape.
+  Future<bool> hasGlossaryFtsIndex() async {
+    final existing = await customSelect(
+      "SELECT sql FROM sqlite_master "
+      "WHERE type = 'table' AND name = '$_glossaryFtsTable'",
+    ).get();
+    if (existing.isEmpty) return false;
+    final sql = existing.first.data['sql']?.toString() ?? '';
+    return sql.contains('search_text');
+  }
+
+  /// Drops the three dictionary_entries → FTS sync triggers.
+  Future<void> dropGlossaryFtsSyncTriggers() async {
+    for (final suffix in _glossaryFtsTriggerSql.keys) {
+      await customStatement(
+        'DROP TRIGGER IF EXISTS ${_glossaryFtsTable}_$suffix',
+      );
+    }
+  }
+
+  /// (Re)creates the three sync triggers. Idempotent.
+  Future<void> createGlossaryFtsSyncTriggers() async {
+    await dropGlossaryFtsSyncTriggers();
+    for (final sql in _glossaryFtsTriggerSql.values) {
+      await customStatement(sql);
+    }
+  }
+
+  /// Indexes every row of one dictionary into the glossary FTS index in a
+  /// single statement — the bulk-import fast path used in place of ~300k
+  /// individual _ai trigger firings (measured ~16x cheaper).
+  Future<void> indexGlossaryFtsForDictionary(int dictionaryId) {
+    return customStatement(
+      'INSERT INTO $_glossaryFtsTable(rowid, search_text) '
+      'SELECT id, search_text FROM dictionary_entries '
+      'WHERE dictionary_id = ?',
+      [dictionaryId],
+    );
+  }
+
   /// English glossary search runs on an FTS5 index over
   /// dictionary_entries.search_text (external-content: rows live only in
   /// dictionary_entries; triggers keep the index in sync). Created here —
@@ -194,22 +264,11 @@ class AppDatabase extends _$AppDatabase {
   /// parsing every glossary would block the first open for tens of
   /// seconds on a large dictionary set.
   Future<void> _ensureGlossaryFtsIfNeeded() async {
-    final existing = await customSelect(
-      "SELECT sql FROM sqlite_master "
-      "WHERE type = 'table' AND name = '$_glossaryFtsTable'",
-    ).get();
-    if (existing.isNotEmpty) {
-      final sql = existing.first.data['sql']?.toString() ?? '';
-      if (sql.contains('search_text')) return;
-      // Old shape indexing raw glossaries JSON: replace it.
-      for (final suffix in ['ai', 'ad', 'au']) {
-        await customStatement(
-          'DROP TRIGGER IF EXISTS ${_glossaryFtsTable}_$suffix',
-        );
-      }
-      await customStatement('DROP TABLE $_glossaryFtsTable');
-    }
+    if (await hasGlossaryFtsIndex()) return;
 
+    // Missing, or the old shape indexing raw glossaries JSON: replace it.
+    await dropGlossaryFtsSyncTriggers();
+    await customStatement('DROP TABLE IF EXISTS $_glossaryFtsTable');
     await customStatement(
       'CREATE VIRTUAL TABLE $_glossaryFtsTable USING fts5('
       'search_text, '
@@ -217,34 +276,17 @@ class AppDatabase extends _$AppDatabase {
       'content_rowid=id, '
       "tokenize='porter unicode61')",
     );
-    await customStatement(
-      'CREATE TRIGGER ${_glossaryFtsTable}_ai '
-      'AFTER INSERT ON dictionary_entries BEGIN '
-      'INSERT INTO $_glossaryFtsTable(rowid, search_text) '
-      'VALUES (new.id, new.search_text); '
-      'END',
-    );
-    await customStatement(
-      'CREATE TRIGGER ${_glossaryFtsTable}_ad '
-      'AFTER DELETE ON dictionary_entries BEGIN '
-      'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, search_text) '
-      "VALUES ('delete', old.id, old.search_text); "
-      'END',
-    );
-    await customStatement(
-      'CREATE TRIGGER ${_glossaryFtsTable}_au '
-      'AFTER UPDATE OF search_text ON dictionary_entries BEGIN '
-      'INSERT INTO $_glossaryFtsTable($_glossaryFtsTable, rowid, search_text) '
-      "VALUES ('delete', old.id, old.search_text); "
-      'INSERT INTO $_glossaryFtsTable(rowid, search_text) '
-      'VALUES (new.id, new.search_text); '
-      'END',
-    );
+    await createGlossaryFtsSyncTriggers();
     await customStatement(
       "INSERT INTO $_glossaryFtsTable($_glossaryFtsTable) VALUES ('rebuild')",
     );
   }
 
+  /// Recreates the sync triggers if any went missing while the index
+  /// table itself is current — the safety net against an interrupted or
+  /// buggy bulk load committing a trigger-less schema. Restores syncing
+  /// of future writes only; deliberately no index rebuild here, which
+  /// would stall every open on a large dictionary set.
   /// Fill empty search_text from glossaries for rows that predate the
   /// column (installs upgrading past schema v18). Runs the JSON parsing in
   /// a short-lived background isolate so the UI isolate never blocks.

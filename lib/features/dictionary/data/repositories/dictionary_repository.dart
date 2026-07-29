@@ -45,6 +45,30 @@ class DictionaryRepository {
     return _db.transaction(action);
   }
 
+  /// Suspends per-row glossary FTS indexing for a bulk entry load by
+  /// dropping the sync triggers.
+  ///
+  /// MUST be called inside a transaction whose callback also calls
+  /// [finishGlossaryFtsBulkLoad] before returning: committing with the
+  /// triggers dropped permanently desynchronizes the FTS index (the
+  /// open-path repair only inspects the table shape). Rolling back is
+  /// always safe — SQLite DDL is transactional, so the triggers come back
+  /// with the rollback. No-ops when the FTS index is missing or has the
+  /// pre-v18 shape.
+  Future<void> beginGlossaryFtsBulkLoad() async {
+    if (!await _db.hasGlossaryFtsIndex()) return;
+    await _db.dropGlossaryFtsSyncTriggers();
+  }
+
+  /// Counterpart of [beginGlossaryFtsBulkLoad]: indexes the freshly
+  /// inserted dictionary in one bulk statement, then restores the sync
+  /// triggers.
+  Future<void> finishGlossaryFtsBulkLoad(int dictionaryId) async {
+    if (!await _db.hasGlossaryFtsIndex()) return;
+    await _db.indexGlossaryFtsForDictionary(dictionaryId);
+    await _db.createGlossaryFtsSyncTriggers();
+  }
+
   /// Get the next available sort order value (max + 1).
   Future<int> getNextSortOrder() async {
     final maxOrder = _db.dictionaryMetas.sortOrder.max();

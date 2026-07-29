@@ -8,6 +8,9 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
+import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+
+import 'dictionary_fts_test_support.dart';
 
 /// Creates an in-memory Drift database for testing.
 AppDatabase createTestDatabase() {
@@ -533,6 +536,176 @@ void main() {
       );
       expect(await rollbackDb.select(rollbackDb.pitchAccents).get(), isEmpty);
     });
+
+    test(
+      'imported entries are searchable via the glossary FTS index',
+      () async {
+        final zipPath = await createTestYomitanZip();
+        trackTempFile(zipPath);
+
+        await importer.importFromFile(zipPath);
+
+        final queryService = DictionaryQueryService(db);
+        final eat = await queryService.glossarySearchWithSource('eat');
+        expect(eat.map((r) => r.entry.expression), contains('食べる'));
+        final drink = await queryService.glossarySearchWithSource('drink');
+        expect(drink.map((r) => r.entry.expression), contains('飲む'));
+        await expectGlossaryFtsConsistent(db);
+      },
+    );
+
+    test(
+      'the FTS sync triggers are restored and firing after import',
+      () async {
+        final zipPath = await createTestYomitanZip();
+        trackTempFile(zipPath);
+
+        await importer.importFromFile(zipPath);
+
+        expect(
+          await glossaryFtsTriggerNames(db),
+          containsAll(glossaryFtsTriggers),
+        );
+
+        // They fire, not just exist: a row inserted after the import (outside
+        // the bulk path) must be indexed by the recreated _ai trigger.
+        final dictId = (await repo.getAllDictionaries()).first.id;
+        await repo.batchInsertEntries([
+          DictionaryEntriesCompanion.insert(
+            expression: '泳ぐ',
+            glossaries: jsonEncode(['to swim']),
+            dictionaryId: dictId,
+          ),
+        ]);
+        final swim = await DictionaryQueryService(
+          db,
+        ).glossarySearchWithSource('swim');
+        expect(swim.map((r) => r.entry.expression), contains('泳ぐ'));
+        await expectGlossaryFtsConsistent(db);
+      },
+    );
+
+    test('a failed import leaves FTS triggers and index intact', () async {
+      final rollbackDb = createTestDatabase();
+      addTearDown(rollbackDb.close);
+      final rollbackRepo = _ThrowingDictionaryRepository(
+        rollbackDb,
+        throwOnPitchInsert: true,
+      );
+      final rollbackImporter = DictionaryImporter(rollbackRepo);
+
+      final zipPath = await createTestYomitanZip(
+        dictionaryName: 'Rollback FTS Zip',
+        termMetaEntries: [
+          [
+            '食べる',
+            'pitch',
+            {
+              'reading': 'たべる',
+              'pitches': [
+                {'position': 2},
+              ],
+            },
+          ],
+        ],
+      );
+      trackTempFile(zipPath);
+
+      await expectLater(
+        rollbackImporter.importFromFile(zipPath),
+        throwsA(isA<StateError>()),
+      );
+
+      // The rollback restored the dropped triggers and reverted the
+      // entry rows, so index and table agree (both empty).
+      expect(
+        await glossaryFtsTriggerNames(rollbackDb),
+        containsAll(glossaryFtsTriggers),
+      );
+      final queryService = DictionaryQueryService(rollbackDb);
+      expect(await queryService.glossarySearchWithSource('eat'), isEmpty);
+      await expectGlossaryFtsConsistent(rollbackDb);
+
+      // And the restored triggers still index later writes.
+      final dictId = await rollbackRepo.insertDictionary('After Rollback');
+      queryService.invalidateMetasCache();
+      await rollbackRepo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '泳ぐ',
+          glossaries: jsonEncode(['to swim']),
+          dictionaryId: dictId,
+        ),
+      ]);
+      final swim = await queryService.glossarySearchWithSource('swim');
+      expect(swim.map((r) => r.entry.expression), contains('泳ぐ'));
+    });
+
+    test('re-importing the same zip does not double-index entries', () async {
+      final zipPath = await createTestYomitanZip();
+      trackTempFile(zipPath);
+
+      await importer.importFromFile(zipPath);
+      await importer.importFromFile(zipPath);
+
+      await expectGlossaryFtsConsistent(db);
+      final eat = await DictionaryQueryService(
+        db,
+      ).glossarySearchWithSource('eat');
+      // One 食べる row per imported copy, each indexed exactly once.
+      final ids = eat.map((r) => r.entry.id).toList();
+      expect(ids.toSet().length, ids.length);
+      expect(eat.where((r) => r.entry.expression == '食べる').length, 2);
+    });
+
+    test('progress total counts only importable rows', () async {
+      final zipPath = await createTestYomitanZip(
+        entries: [
+          [
+            '',
+            'reading',
+            '',
+            '',
+            0,
+            ['meaning'],
+            1,
+            '',
+          ],
+          ['only', 'three', 'fields'],
+          [
+            '食べる',
+            'たべる',
+            '',
+            '',
+            0,
+            ['to eat'],
+            2,
+            '',
+          ],
+          [
+            '飲む',
+            'のむ',
+            '',
+            '',
+            0,
+            ['to drink'],
+            3,
+            '',
+          ],
+        ],
+      );
+      trackTempFile(zipPath);
+
+      final progressUpdates = <(int, int)>[];
+      final count = await importer.importFromFile(
+        zipPath,
+        onProgress: (processed, total) {
+          progressUpdates.add((processed, total));
+        },
+      );
+
+      expect(count, 2);
+      expect(progressUpdates.last, (2, 2));
+    });
   });
 
   group('DictionaryImporter — missing index.json', () {
@@ -853,6 +1026,33 @@ void main() {
 
       expect(progressCalls, isNotEmpty);
       expect(progressCalls.last.$1, progressCalls.last.$2);
+    });
+
+    test('bulk-indexes each dictionary and restores the triggers', () async {
+      // Two dictionaries: the FTS bulk load must nest inside each
+      // per-dictionary transaction, not span the whole collection.
+      final json = buildCollectionJson({
+        'DictA': [
+          ('食べる', 'たべる', ['to eat']),
+        ],
+        'DictB': [
+          ('飲む', 'のむ', ['to drink']),
+        ],
+      });
+      final filePath = await writeCollectionFile(json);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final queryService = DictionaryQueryService(db);
+      final eat = await queryService.glossarySearchWithSource('eat');
+      expect(eat.map((r) => r.entry.expression), contains('食べる'));
+      final drink = await queryService.glossarySearchWithSource('drink');
+      expect(drink.map((r) => r.entry.expression), contains('飲む'));
+      expect(
+        await glossaryFtsTriggerNames(db),
+        containsAll(glossaryFtsTriggers),
+      );
+      await expectGlossaryFtsConsistent(db);
     });
 
     test('handles empty collection', () async {

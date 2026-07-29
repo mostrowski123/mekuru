@@ -35,7 +35,7 @@ Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_con
 
 ## Database — Drift, append-only migrations
 
-Schema is at version 17, defined inline in `lib/core/database/database_provider.dart`. Migrations live in the `MigrationStrategy.onUpgrade` block as cumulative `if (from < N) { … }` conditions.
+Schema is at version 18, defined inline in `lib/core/database/database_provider.dart`. Migrations live in the `MigrationStrategy.onUpgrade` block as cumulative `if (from < N) { … }` conditions.
 
 **YOU MUST** make schema changes append-only: add columns/tables, never drop or rename them on an existing version. Bump `schemaVersion` and add a new `if (from < N)` block. Reckless edits break installed users' data — there is no rollback.
 
