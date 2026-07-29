@@ -1590,12 +1590,7 @@ class _BookTileState extends ConsumerState<_BookTile>
       final clearedPages = mokuroBook.pages
           .map((page) => page.copyWith(blocks: const []))
           .toList();
-      final cleared = MokuroBook(
-        title: mokuroBook.title,
-        imageDirPath: mokuroBook.imageDirPath,
-        safTreeUri: mokuroBook.safTreeUri,
-        safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
-        autoCropVersion: mokuroBook.autoCropVersion,
+      final cleared = mokuroBook.copyWith(
         ocrSource: null,
         ocrCompleted: false,
         pages: clearedPages,

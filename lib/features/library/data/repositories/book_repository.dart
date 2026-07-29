@@ -584,12 +584,7 @@ class BookRepository {
         .map((page) => page.copyWith(blocks: const []))
         .toList();
 
-    final updated = MokuroBook(
-      title: mokuroBook.title,
-      imageDirPath: mokuroBook.imageDirPath,
-      safTreeUri: mokuroBook.safTreeUri,
-      safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
-      autoCropVersion: mokuroBook.autoCropVersion,
+    final updated = mokuroBook.copyWith(
       ocrSource: null,
       ocrCompleted: false,
       pages: clearedPages,
@@ -639,14 +634,8 @@ class BookRepository {
             whiteThreshold: whiteThreshold,
           );
 
-    final updated = MokuroBook(
-      title: mokuroBook.title,
-      imageDirPath: mokuroBook.imageDirPath,
-      safTreeUri: mokuroBook.safTreeUri,
-      safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
+    final updated = mokuroBook.copyWith(
       autoCropVersion: MokuroBook.currentAutoCropVersion,
-      ocrSource: mokuroBook.ocrSource,
-      ocrCompleted: mokuroBook.ocrCompleted,
       pages: withBounds,
     );
 

@@ -46,14 +46,25 @@ class MokuroBook {
     required this.pages,
   });
 
-  MokuroBook copyWith({List<MokuroPage>? pages}) => MokuroBook(
+  static const Object _unset = Object();
+
+  /// `ocrSource` accepts an explicit `null` to clear the value; omitting the
+  /// argument keeps the current one (hence the `Object?` sentinel default).
+  MokuroBook copyWith({
+    int? autoCropVersion,
+    Object? ocrSource = _unset,
+    bool? ocrCompleted,
+    List<MokuroPage>? pages,
+  }) => MokuroBook(
     title: title,
     imageDirPath: imageDirPath,
     safTreeUri: safTreeUri,
     safImageDirRelativePath: safImageDirRelativePath,
-    autoCropVersion: autoCropVersion,
-    ocrSource: ocrSource,
-    ocrCompleted: ocrCompleted,
+    autoCropVersion: autoCropVersion ?? this.autoCropVersion,
+    ocrSource: identical(ocrSource, _unset)
+        ? this.ocrSource
+        : ocrSource as String?,
+    ocrCompleted: ocrCompleted ?? this.ocrCompleted,
     pages: pages ?? this.pages,
   );
 

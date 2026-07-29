@@ -752,14 +752,9 @@ Future<void> _saveCache(
   String? ocrSourceOverride,
   bool? ocrCompletedOverride,
 }) async {
-  final updated = MokuroBook(
-    title: originalBook.title,
-    imageDirPath: originalBook.imageDirPath,
-    safTreeUri: originalBook.safTreeUri,
-    safImageDirRelativePath: originalBook.safImageDirRelativePath,
-    autoCropVersion: originalBook.autoCropVersion,
+  final updated = originalBook.copyWith(
     ocrSource: ocrSourceOverride ?? originalBook.ocrSource,
-    ocrCompleted: ocrCompletedOverride ?? originalBook.ocrCompleted,
+    ocrCompleted: ocrCompletedOverride,
     pages: updatedPages,
   );
   // Atomic write: the WorkManager process can be killed mid-write, and a
