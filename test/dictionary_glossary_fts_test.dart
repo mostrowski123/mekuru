@@ -118,6 +118,21 @@ void main() {
       },
     );
 
+    test('missing sync triggers are restored on open', () async {
+      await dropGlossaryFtsTriggersForTest(db);
+
+      await db.ensureGlossaryFtsForTesting();
+
+      expect(
+        await glossaryFtsTriggerNames(db),
+        containsAll(glossaryFtsTriggers),
+      );
+
+      // The restored triggers fire for later writes.
+      await repo.batchInsertEntries([entry('走る', 'はしる', 'to run')]);
+      final run = await queryService.glossarySearchWithSource('run');
+      expect(run.map((r) => r.entry.expression), contains('走る'));
+    });
   });
 
   group('bulk FTS load', () {

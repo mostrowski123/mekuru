@@ -264,7 +264,10 @@ class AppDatabase extends _$AppDatabase {
   /// parsing every glossary would block the first open for tens of
   /// seconds on a large dictionary set.
   Future<void> _ensureGlossaryFtsIfNeeded() async {
-    if (await hasGlossaryFtsIndex()) return;
+    if (await hasGlossaryFtsIndex()) {
+      await _healMissingGlossaryFtsTriggers();
+      return;
+    }
 
     // Missing, or the old shape indexing raw glossaries JSON: replace it.
     await dropGlossaryFtsSyncTriggers();
@@ -280,6 +283,23 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       "INSERT INTO $_glossaryFtsTable($_glossaryFtsTable) VALUES ('rebuild')",
     );
+  }
+
+  /// Recreates the sync triggers if any went missing while the index
+  /// table itself is current — the safety net against an interrupted or
+  /// buggy bulk load committing a trigger-less schema. Restores syncing
+  /// of future writes only; deliberately no index rebuild here, which
+  /// would stall every open on a large dictionary set.
+  Future<void> _healMissingGlossaryFtsTriggers() async {
+    final names = _glossaryFtsTriggerSql.keys
+        .map((suffix) => "'${_glossaryFtsTable}_$suffix'")
+        .join(', ');
+    final row = await customSelect(
+      "SELECT COUNT(*) AS n FROM sqlite_master "
+      "WHERE type = 'trigger' AND name IN ($names)",
+    ).getSingle();
+    if (row.data['n'] as int == _glossaryFtsTriggerSql.length) return;
+    await createGlossaryFtsSyncTriggers();
   }
 
   /// Recreates the sync triggers if any went missing while the index
