@@ -1092,8 +1092,8 @@ class DictionaryImporter {
           .toList(growable: false);
 
       final totalEntries =
-          _countParsedZipEntries(termBankFiles, _parseZipTermRow) +
-          _countParsedZipEntries(kanjiBankFiles, _parseZipKanjiRow);
+          _countImportableZipRows(termBankFiles, _isImportableTermRow) +
+          _countImportableZipRows(kanjiBankFiles, _isImportableKanjiRow);
       sendPort.send([
         'meta',
         {'dictionaryName': dictionaryName, 'totalEntries': totalEntries},
@@ -1209,14 +1209,17 @@ class DictionaryImporter {
     return (indexJson['title'] as String?) ?? 'Unknown Dictionary';
   }
 
-  static int _countParsedZipEntries(
+  /// Counts importable rows for the progress total without paying for a
+  /// full parse (glossary JSON encode + search-text extraction); the emit
+  /// loop then parses each row exactly once.
+  static int _countImportableZipRows(
     List<ArchiveFile> files,
-    Map<String, dynamic>? Function(dynamic row) parser,
+    bool Function(dynamic row) isImportable,
   ) {
     var count = 0;
     for (final file in files) {
       for (final row in _decodeZipListFile(file)) {
-        if (parser(row) != null) {
+        if (isImportable(row)) {
           count++;
         }
       }
@@ -1235,18 +1238,27 @@ class DictionaryImporter {
     return const [];
   }
 
+  /// [_parseZipTermRow] returns null iff this returns false. Keep the two
+  /// in sync: [_countImportableZipRows] uses this predicate to compute the
+  /// exact progress total without parsing every row twice.
+  static bool _isImportableTermRow(dynamic row) =>
+      row is List && row.length >= 6 && (row[0]?.toString() ?? '').isNotEmpty;
+
+  /// Kanji-bank analogue of [_isImportableTermRow], for [_parseZipKanjiRow].
+  static bool _isImportableKanjiRow(dynamic row) =>
+      row is List && row.length >= 5 && (row[0]?.toString() ?? '').isNotEmpty;
+
   static Map<String, dynamic>? _parseZipTermRow(dynamic row) {
-    if (row is! List || row.length < 6) return null;
+    if (!_isImportableTermRow(row)) return null;
+    final list = row as List;
 
-    final expression = row[0]?.toString() ?? '';
-    if (expression.isEmpty) return null;
+    final expression = list[0].toString();
+    final reading = list[1]?.toString() ?? '';
+    final definitionTags = _stringifyTagValue(list.length > 2 ? list[2] : null);
+    final rules = _stringifyTagValue(list.length > 3 ? list[3] : null);
+    final termTags = _stringifyTagValue(list.length > 7 ? list[7] : null);
 
-    final reading = row[1]?.toString() ?? '';
-    final definitionTags = _stringifyTagValue(row.length > 2 ? row[2] : null);
-    final rules = _stringifyTagValue(row.length > 3 ? row[3] : null);
-    final termTags = _stringifyTagValue(row.length > 7 ? row[7] : null);
-
-    final rawGlossary = row[5];
+    final rawGlossary = list[5];
     final glossaryList = <String>[];
     if (rawGlossary is List) {
       for (final item in rawGlossary) {
@@ -1275,16 +1287,15 @@ class DictionaryImporter {
   }
 
   static Map<String, dynamic>? _parseZipKanjiRow(dynamic row) {
-    if (row is! List || row.length < 5) return null;
+    if (!_isImportableKanjiRow(row)) return null;
+    final list = row as List;
 
-    final character = row[0]?.toString() ?? '';
-    if (character.isEmpty) return null;
-
-    final onyomi = _stringifyKanjiReadingSource(row[1]);
-    final kunyomi = _stringifyKanjiReadingSource(row[2]);
-    final onyomiReadings = _normalizeKanjiReadings(row[1]);
-    final kunyomiReadings = _normalizeKanjiReadings(row[2]);
-    final meanings = row[4];
+    final character = list[0].toString();
+    final onyomi = _stringifyKanjiReadingSource(list[1]);
+    final kunyomi = _stringifyKanjiReadingSource(list[2]);
+    final onyomiReadings = _normalizeKanjiReadings(list[1]);
+    final kunyomiReadings = _normalizeKanjiReadings(list[2]);
+    final meanings = list[4];
 
     final readingParts = <String>[
       if (onyomi.isNotEmpty) onyomi,
