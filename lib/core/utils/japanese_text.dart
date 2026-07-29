@@ -1,5 +1,5 @@
-/// Shared Unicode character classes for Japanese text. Pure Dart
-/// (Flutter-free) so pure-logic services can use it and it stays
+/// Shared Unicode character classes and conversions for Japanese text.
+/// Pure Dart (Flutter-free) so pure-logic services can use it and it stays
 /// unit-testable.
 ///
 /// The predicates deliberately differ in how inclusive "Japanese" is —
@@ -36,6 +36,22 @@ bool isKatakana(int rune) => rune >= 0x30A0 && rune <= 0x30FF;
 /// also appears in hiragana words (らーめん).
 bool isHiragana(int rune) =>
     (rune >= 0x3040 && rune <= 0x309F) || rune == 0x30FC;
+
+/// Convert a katakana rune (U+30A1–U+30F6) to hiragana by the −0x60 offset;
+/// any other rune — including the prolonged sound mark ー (U+30FC) — is
+/// returned unchanged.
+int katakanaRuneToHiragana(int rune) =>
+    (rune >= 0x30A1 && rune <= 0x30F6) ? rune - 0x60 : rune;
+
+/// Convert katakana in [text] to hiragana; see [katakanaRuneToHiragana]
+/// for the per-rune rule.
+String katakanaToHiragana(String text) {
+  final buffer = StringBuffer();
+  for (final rune in text.runes) {
+    buffer.writeCharCode(katakanaRuneToHiragana(rune));
+  }
+  return buffer.toString();
+}
 
 /// Matches runs of Japanese text: hiragana (U+3040–U+309F), katakana
 /// (U+30A0–U+30FF, including ー), kanji (CJK Unified Ideographs and

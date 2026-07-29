@@ -1,4 +1,4 @@
-import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 
@@ -55,7 +55,7 @@ class FuriganaGenerator {
       if (token.reading.isEmpty) {
         segments.add({'t': token.surface});
       } else {
-        final hira = RomajiConverter.katakanaToHiragana(token.reading);
+        final hira = katakanaToHiragana(token.reading);
         final segs = segmentFurigana(token.surface, hira);
         for (final s in segs) {
           if (s.furigana == null) {

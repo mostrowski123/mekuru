@@ -851,7 +851,7 @@ class DictionaryQueryService {
         maxCandidates: _maxRomajiReadings,
       ).forEach(add);
     }
-    add(RomajiConverter.katakanaToHiragana(term));
+    add(katakanaToHiragana(term));
     _addKatakanaVariants(terms);
 
     final asTyped = terms.toList();

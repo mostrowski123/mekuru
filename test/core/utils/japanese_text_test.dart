@@ -19,10 +19,7 @@ Iterable<int> _sweep() sync* {
   yield 0x1F600; // 😀
 }
 
-void _expectMatchesLegacy(
-  bool Function(int) actual,
-  bool Function(int) legacy,
-) {
+void _expectMatchesLegacy<T>(T Function(int) actual, T Function(int) legacy) {
   for (final cp in _sweep()) {
     expect(actual(cp), legacy(cp), reason: 'U+${cp.toRadixString(16)}');
   }
@@ -104,6 +101,31 @@ void main() {
       // kanji_reading_parser._isHiraganaReadingToken also accepts U+002E;
       // that stays there as `|| rune == 0x002E`.
       expect(isHiragana(0x002E), isFalse);
+    });
+  });
+
+  group('katakanaToHiragana', () {
+    test('matches the three replaced conversions on every code point', () {
+      // RomajiConverter.katakanaToHiragana (old inline body),
+      // furigana_text._katakanaToHiragana, and the single-char ternary in
+      // anki_field_mapper.formatAnkiFurigana all mapped U+30A1–U+30F6 by
+      // -0x60 and passed every other rune through (RomajiConverter's
+      // explicit ー branch was a passthrough no-op).
+      _expectMatchesLegacy(
+        (cp) => katakanaToHiragana(String.fromCharCode(cp)),
+        (cp) => String.fromCharCode(
+          (cp >= 0x30A1 && cp <= 0x30F6) ? cp - 0x60 : cp,
+        ),
+      );
+    });
+
+    test('converts mixed text, preserving ー and non-katakana', () {
+      expect(katakanaToHiragana('カタカナ'), 'かたかな');
+      expect(katakanaToHiragana('ラーメン'), 'らーめん');
+      expect(katakanaToHiragana('東京タワー'), '東京たわー');
+      expect(katakanaToHiragana('ひらがな abc 123'), 'ひらがな abc 123');
+      expect(katakanaToHiragana('ヵヶ'), 'ゕゖ'); // range ends at ヶ U+30F6
+      expect(katakanaToHiragana('ヷヸヹヺ'), 'ヷヸヹヺ'); // past the range
     });
   });
 

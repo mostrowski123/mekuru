@@ -247,25 +247,11 @@ void main() {
   });
 
   group('RomajiConverter.katakanaToHiragana', () {
-    test('converts basic katakana', () {
-      expect(RomajiConverter.katakanaToHiragana('カタカナ'), 'かたかな');
-      expect(RomajiConverter.katakanaToHiragana('トウキョウ'), 'とうきょう');
-    });
-
-    test('preserves hiragana', () {
-      expect(RomajiConverter.katakanaToHiragana('ひらがな'), 'ひらがな');
-    });
-
-    test('handles mixed input', () {
-      expect(RomajiConverter.katakanaToHiragana('カタかな'), 'かたかな');
-    });
-
-    test('preserves kanji and other characters', () {
+    // Conversion behavior is pinned exhaustively in
+    // test/core/utils/japanese_text_test.dart; this only covers the
+    // delegate that benchmark/jmdict_eval_test.dart relies on.
+    test('forwards to the shared conversion', () {
       expect(RomajiConverter.katakanaToHiragana('東京タワー'), '東京たわー');
-    });
-
-    test('preserves prolonged sound mark', () {
-      expect(RomajiConverter.katakanaToHiragana('ラーメン'), 'らーめん');
     });
   });
 

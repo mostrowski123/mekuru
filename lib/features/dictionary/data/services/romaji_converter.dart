@@ -1,3 +1,5 @@
+import 'package:mekuru/core/utils/japanese_text.dart' as japanese_text;
+
 /// Converts romaji text to hiragana for dictionary lookups.
 ///
 /// Supports standard Hepburn romanization including:
@@ -354,21 +356,11 @@ class RomajiConverter {
     return null;
   }
 
-  /// Convert katakana characters to hiragana (offset 0x60).
-  static String katakanaToHiragana(String text) {
-    final buffer = StringBuffer();
-    for (final rune in text.runes) {
-      if (rune >= 0x30A1 && rune <= 0x30F6) {
-        buffer.writeCharCode(rune - 0x60);
-      } else if (rune == 0x30FC) {
-        // ー (katakana prolonged sound mark) — keep as-is
-        buffer.writeCharCode(rune);
-      } else {
-        buffer.writeCharCode(rune);
-      }
-    }
-    return buffer.toString();
-  }
+  /// Convert katakana characters to hiragana (offset 0x60). Delegates to
+  /// the shared [japanese_text.katakanaToHiragana]. Kept as a stable API:
+  /// benchmark/jmdict_eval_test.dart pins this name across commits.
+  static String katakanaToHiragana(String text) =>
+      japanese_text.katakanaToHiragana(text);
 
   /// Convert hiragana characters to katakana (offset 0x60). Loanwords are
   /// stored in katakana in Yomitan dictionaries, so hiragana and romaji
@@ -418,8 +410,7 @@ class RomajiConverter {
       }
 
       buffer.writeCharCode(rune);
-      final hiragana = (rune >= 0x30A1 && rune <= 0x30F6) ? rune - 0x60 : rune;
-      vowelClass = _kanaVowelClass[hiragana];
+      vowelClass = _kanaVowelClass[japanese_text.katakanaRuneToHiragana(rune)];
     }
     return buffer.toString();
   }

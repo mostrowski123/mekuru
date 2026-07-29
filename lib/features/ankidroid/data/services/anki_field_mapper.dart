@@ -2,7 +2,6 @@ import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
-import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 
 /// Available app data sources that can be mapped to Anki fields.
@@ -126,7 +125,7 @@ String formatAnkiFurigana(String expression, String reading) {
   final hasKanji = expression.runes.any(isKanji);
   if (!hasKanji) return expression;
 
-  final hiraganaReading = RomajiConverter.katakanaToHiragana(reading);
+  final hiraganaReading = katakanaToHiragana(reading);
 
   final buf = StringBuffer();
   int ri = 0; // reading index
@@ -153,10 +152,7 @@ String formatAnkiFurigana(String expression, String reading) {
 
       if (i < expression.length) {
         final nextExprChar = expression[i];
-        final nextCode = nextExprChar.codeUnitAt(0);
-        final nextExprHira = (nextCode >= 0x30A1 && nextCode <= 0x30F6)
-            ? String.fromCharCode(nextCode - 0x60)
-            : nextExprChar;
+        final nextExprHira = katakanaToHiragana(nextExprChar);
 
         int matchPos = -1;
         for (int j = ri; j < hiraganaReading.length; j++) {

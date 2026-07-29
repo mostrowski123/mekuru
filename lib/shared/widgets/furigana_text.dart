@@ -33,7 +33,7 @@ List<FuriganaSegment> segmentFurigana(String expression, String reading) {
     return [FuriganaSegment(expression)];
   }
 
-  final hiraReading = _katakanaToHiragana(reading);
+  final hiraReading = katakanaToHiragana(reading);
 
   // Try alignment; fall back to full-expression furigana on failure.
   final segments = _alignSegments(expression, hiraReading);
@@ -41,18 +41,6 @@ List<FuriganaSegment> segmentFurigana(String expression, String reading) {
     return [FuriganaSegment(expression, reading)];
   }
   return segments;
-}
-
-String _katakanaToHiragana(String input) {
-  final buf = StringBuffer();
-  for (final rune in input.runes) {
-    if (rune >= 0x30A1 && rune <= 0x30F6) {
-      buf.writeCharCode(rune - 0x60);
-    } else {
-      buf.writeCharCode(rune);
-    }
-  }
-  return buf.toString();
 }
 
 /// Walk through [expression] and [hiraReading] in parallel, producing
@@ -94,7 +82,7 @@ List<FuriganaSegment>? _alignSegmentsFrom(
     }
 
     final kanaRun = expression.substring(start, end);
-    final normalizedKanaRun = _katakanaToHiragana(kanaRun);
+    final normalizedKanaRun = katakanaToHiragana(kanaRun);
 
     if (!hiraReading.startsWith(normalizedKanaRun, readingIndex)) {
       memo[key] = null;
@@ -144,7 +132,7 @@ List<FuriganaSegment>? _alignSegmentsFrom(
   }
 
   final nextKanaRun = expression.substring(kanjiEnd, nextKanaEnd);
-  final normalizedNextKanaRun = _katakanaToHiragana(nextKanaRun);
+  final normalizedNextKanaRun = katakanaToHiragana(nextKanaRun);
 
   for (
     var boundary = readingIndex + 1;
