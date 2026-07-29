@@ -129,4 +129,25 @@ void main() {
       expect(blockHasBrokenWordSegmentation(block), isFalse);
     },
   );
+
+  test(
+    'segmentAllPagesInBackground matches the direct on-isolate path',
+    () async {
+      final page = _buildPage();
+      final direct = await MokuroWordSegmenter.segmentAllPages([page]);
+      final background = await MokuroWordSegmenter.segmentAllPagesInBackground([
+        page,
+      ]);
+
+      // Guard against trivially passing on two empty results.
+      expect(background.single.blocks.single.words, isNotEmpty);
+      expect(
+        background.map((p) => p.toJson()).toList(),
+        direct.map((p) => p.toJson()).toList(),
+        reason:
+            'the background isolate must attach to the same dictionary and '
+            'produce identical words and provenance',
+      );
+    },
+  );
 }

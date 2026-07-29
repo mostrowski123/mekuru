@@ -304,8 +304,10 @@ class BookRepository {
     );
     await cacheDir.create(recursive: true);
 
-    // Segment words using MeCab
-    final segmented = await MokuroWordSegmenter.segmentAllPages(rawPages);
+    // Segment words using MeCab, off the UI isolate — imports can be large.
+    final segmented = await MokuroWordSegmenter.segmentAllPagesInBackground(
+      rawPages,
+    );
 
     // Auto-crop bounds are now computed lazily the first time the user enables
     // auto-crop for this manga. Import stores segmented OCR only.
@@ -470,9 +472,10 @@ class BookRepository {
 
   /// Re-run MeCab word segmentation on an existing manga book.
   ///
-  /// Reads the cached page data, runs [MokuroWordSegmenter.segmentAllPages]
-  /// to re-segment (it replaces each block's words wholesale), and writes
-  /// back the updated cache.
+  /// Reads the cached page data, runs
+  /// [MokuroWordSegmenter.segmentAllPagesInBackground] to re-segment (it
+  /// replaces each block's words wholesale), and writes back the updated
+  /// cache.
   Future<void> reprocessMangaOcr(Book book) async {
     if (book.bookType != 'manga') return;
 
@@ -490,7 +493,7 @@ class BookRepository {
     // strip existing words first: segmentation replaces them wholesale, and
     // if MeCab is unavailable the pages come back untouched (keeping the
     // current words is strictly better than wiping them).
-    final resegmented = await MokuroWordSegmenter.segmentAllPages(
+    final resegmented = await MokuroWordSegmenter.segmentAllPagesInBackground(
       mokuroBook.pages,
     );
 

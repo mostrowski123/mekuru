@@ -45,10 +45,11 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
   // The decision — including when to wait for MeCab init or for a pending
   // dictionary upgrade — lives in MokuroWordSegmenter.needsResegmentation.
   if (await MokuroWordSegmenter.needsResegmentation(mokuroBook.pages)) {
-    final segmentedPages = await MokuroWordSegmenter.segmentAllPages(
-      mokuroBook.pages,
-      onlyStale: true,
-    );
+    final segmentedPages =
+        await MokuroWordSegmenter.segmentAllPagesInBackground(
+          mokuroBook.pages,
+          onlyStale: true,
+        );
     final updated = MokuroBook(
       title: mokuroBook.title,
       imageDirPath: mokuroBook.imageDirPath,

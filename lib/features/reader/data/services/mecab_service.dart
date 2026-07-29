@@ -97,6 +97,16 @@ class TokenAnnotation {
   });
 }
 
+/// Tagger state + feature layout captured by [MecabService.runOffIsolate] on
+/// the spawning isolate and used to attach the worker isolate's service to
+/// the same dictionary. Plain data — safe to send across isolates.
+class _TaggerSnapshot {
+  final MecabTransferableState taggerState;
+  final MecabFeatureLayout layout;
+
+  const _TaggerSnapshot(this.taggerState, this.layout);
+}
+
 /// POS sub-categories within 記号 that should be skipped (true punctuation).
 /// Other 記号 sub-categories (like 一般) may contain valid content.
 const _skipSymbolSubcats = {
@@ -163,6 +173,68 @@ class MecabService {
   /// The error from the last failed [init], or `null` if MeCab initialized
   /// successfully. Lets the UI explain why a word tap produced no result.
   Object? get initError => _initError;
+
+  /// Run [body] on a short-lived background isolate whose own
+  /// [MecabService.instance] is attached to the dictionary this isolate is
+  /// using — so CPU-heavy MeCab work (e.g. segmenting a whole manga) cannot
+  /// jank the UI isolate.
+  ///
+  /// Waits for init (sharing any in-flight attempt) and for a pending
+  /// UniDic-lite upgrade before capturing the tagger, so the worker can
+  /// never tokenize with a dictionary this session is about to swap out.
+  /// Attaching is cheap: mecab_for_dart keeps loaded models in a
+  /// process-global registry, so the worker reuses the already-resident
+  /// dictionary instead of loading a second copy.
+  ///
+  /// When MeCab is unavailable (init failed here, or the attach failed in
+  /// the worker), [body] still runs — against an uninitialized service, so
+  /// its usual MeCab gating (e.g. returning input untouched) applies
+  /// unchanged.
+  Future<R> runOffIsolate<R>(FutureOr<R> Function() body) async {
+    _TaggerSnapshot? snapshot;
+    if (await ensureInitialized(upgradeToEnhanced: false)) {
+      final layout = await settledLayout();
+      snapshot = _TaggerSnapshot(_tagger!.transferableState, layout);
+    }
+    final captured = snapshot;
+    // Static entry, not an inline closure body: nothing here may capture
+    // `this` — the main isolate's service holds a native tagger pointer,
+    // which cannot be sent across isolates.
+    return Isolate.run(() => _runAttached(captured, body));
+  }
+
+  /// Worker-isolate side of [runOffIsolate]: attach this isolate's fresh
+  /// singleton to [snapshot]'s dictionary, run [body], then release the
+  /// tagger. The dispose only drops this worker's registry refcount — the
+  /// model stays resident because the spawning isolate still holds it.
+  /// (Unlike [_warmModelInBackground], nothing here should outlive the
+  /// isolate.)
+  static Future<R> _runAttached<R>(
+    _TaggerSnapshot? snapshot,
+    FutureOr<R> Function() body,
+  ) async {
+    if (snapshot != null) await instance._attachFromSnapshot(snapshot);
+    try {
+      return await body();
+    } finally {
+      instance._tagger?.dispose();
+    }
+  }
+
+  /// Attach this (worker) isolate's singleton to the dictionary described
+  /// by [snapshot], skipping [init]'s platform-channel work (unavailable
+  /// off the main isolate) and its UniDic-lite upgrade. Failure leaves the
+  /// service uninitialized, which [runOffIsolate]'s body handles through
+  /// its normal MeCab gating.
+  Future<void> _attachFromSnapshot(_TaggerSnapshot snapshot) async {
+    try {
+      _tagger = await Mecab.fromTransferableState(snapshot.taggerState);
+      _layout = snapshot.layout;
+      _initialized = true;
+    } catch (e) {
+      _initError = e;
+    }
+  }
 
   /// Initialize MeCab. Safe to call multiple times, including concurrently:
   /// overlapping callers share the single in-flight initialization, and a

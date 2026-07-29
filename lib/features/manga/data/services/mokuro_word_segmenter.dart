@@ -38,6 +38,9 @@ class MokuroWordSegmenter {
   /// Segment all text blocks across all pages.
   /// Returns new pages with populated [MokuroWord] lists.
   ///
+  /// Runs every MeCab parse synchronously on the calling isolate — from the
+  /// UI isolate use [segmentAllPagesInBackground] instead.
+  ///
   /// With [onlyStale], pages whose words are already present, healthy, and
   /// cut by the session's dictionary are returned untouched — so repairing
   /// a book the OCR worker extended with IPADIC pages doesn't re-tokenize
@@ -85,6 +88,24 @@ class MokuroWordSegmenter {
       );
     }
     return result;
+  }
+
+  /// Like [segmentAllPages], but runs the MeCab parses on a short-lived
+  /// background isolate via [MecabService.runOffIsolate].
+  ///
+  /// [segmentAllPages]' page loop never awaits, so on the UI isolate a large
+  /// book — an import, or a first-open self-heal of a legacy cache — becomes
+  /// one unbroken chunk of FFI parses: a visible hang. UI-isolate callers
+  /// use this variant; code already off the UI isolate (the OCR worker)
+  /// calls [segmentAllPages] directly rather than paying an isolate spawn
+  /// per page.
+  static Future<List<MokuroPage>> segmentAllPagesInBackground(
+    List<MokuroPage> pages, {
+    bool onlyStale = false,
+  }) {
+    return MecabService.instance.runOffIsolate(
+      () => segmentAllPages(pages, onlyStale: onlyStale),
+    );
   }
 
   /// Segment a single text block into words with bounding boxes.
