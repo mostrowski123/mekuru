@@ -45,15 +45,27 @@ List<TokenInfo> _tokens(
   return tokens;
 }
 
+/// Vertical block whose line quads are 100px-wide columns side by side,
+/// 100px per character, so expected highlight rects are easy to derive.
 MokuroTextBlock _block(List<String> lines) {
   return MokuroTextBlock(
     box: const [0, 0, 100, 100],
     vertical: true,
     fontSize: 16,
-    linesCoords: const [],
+    linesCoords: [
+      for (var i = 0; i < lines.length; i++)
+        [
+          [100.0 * i, 0.0],
+          [100.0 * i + 100, 0.0],
+          [100.0 * i + 100, 100.0 * lines[i].length],
+          [100.0 * i, 100.0 * lines[i].length],
+        ],
+    ],
     lines: lines,
   );
 }
+
+const _tappedWordBox = Rect.fromLTRB(1, 2, 3, 4);
 
 MokuroWord _word({
   required String surface,
@@ -66,11 +78,37 @@ MokuroWord _word({
     surface: surface,
     dictionaryForm: dictionaryForm,
     reading: reading,
-    boundingBox: Rect.zero,
+    boundingBox: _tappedWordBox,
     blockIndex: 0,
     lineIndex: lineIndex,
     charStartInLine: charStartInLine,
     charEndInLine: charStartInLine + surface.length,
+  );
+}
+
+/// Resolver whose identification taps [tokenDefs] at [tappedIndex] and whose
+/// compound resolution returns [compoundSurface] at [compoundStartOffset].
+MangaWordLookupResolver _compoundResolver({
+  required List<(String, String, String)> tokenDefs,
+  required int tappedIndex,
+  required String compoundSurface,
+  required int compoundStartOffset,
+  required String sentenceContext,
+}) {
+  return MangaWordLookupResolver(
+    identifyWordWithContext: (text, charOffset) => _buildIdentification(
+      tokens: _tokens(tokenDefs),
+      tappedIndex: tappedIndex,
+      sentenceContext: sentenceContext,
+    ),
+    resolveCompoundWord: (_) async => CompoundWordResult(
+      surfaceForm: compoundSurface,
+      dictionaryForm: compoundSurface,
+      reading: 'ドウシタノ',
+      sentenceContext: sentenceContext,
+      tokenStartOffset: compoundStartOffset,
+      tokenCount: 3,
+    ),
   );
 }
 
@@ -105,7 +143,7 @@ void main() {
           ),
         );
 
-        final result = await resolver.resolve(
+        final lookup = await resolver.resolve(
           _word(
             surface: 'どう',
             dictionaryForm: 'どう',
@@ -118,10 +156,12 @@ void main() {
 
         expect(capturedText, 'どうしたの');
         expect(capturedOffset, 0);
-        expect(result.surfaceForm, 'どうしたの');
-        expect(result.dictionaryForm, 'どうしたの');
-        expect(result.reading, 'ドウシタノ');
-        expect(result.sentenceContext, 'どうしたの');
+        expect(lookup.result.surfaceForm, 'どうしたの');
+        expect(lookup.result.dictionaryForm, 'どうしたの');
+        expect(lookup.result.reading, 'ドウシタノ');
+        expect(lookup.result.sentenceContext, 'どうしたの');
+        // Span [0, 5) covers the whole single 5-char line.
+        expect(lookup.highlightRects, [const Rect.fromLTRB(0, 0, 100, 500)]);
       },
     );
 
@@ -157,7 +197,7 @@ void main() {
         },
       );
 
-      final result = await resolver.resolve(
+      final lookup = await resolver.resolve(
         _word(
           surface: 'どう',
           dictionaryForm: 'どう',
@@ -169,8 +209,109 @@ void main() {
       );
 
       expect(capturedOffset, 2);
-      expect(result.dictionaryForm, 'どうしたの');
-      expect(result.tokenStartOffset, 2);
+      expect(lookup.result.dictionaryForm, 'どうしたの');
+      expect(lookup.result.tokenStartOffset, 2);
+      // Span [2, 7) is exactly line 1 (the second 100px column, 5 chars).
+      expect(lookup.highlightRects, [const Rect.fromLTRB(100, 0, 200, 500)]);
+    });
+
+    test('reports a span that starts before the tapped word', () async {
+      final resolver = _compoundResolver(
+        tokenDefs: [
+          ('先', 'サキ', '先'),
+          ('に', 'ニ', 'に'),
+          ('どう', 'ドウ', 'どう'),
+          ('した', 'シタ', 'する'),
+          ('の', 'ノ', 'の'),
+        ],
+        tappedIndex: 3,
+        compoundSurface: 'どうしたの',
+        compoundStartOffset: 2,
+        sentenceContext: '先にどうしたの',
+      );
+
+      final lookup = await resolver.resolve(
+        _word(
+          surface: 'した',
+          dictionaryForm: 'する',
+          reading: 'シタ',
+          lineIndex: 0,
+          charStartInLine: 4,
+        ),
+        _block(['先にどうしたの']),
+      );
+
+      // Span [2, 7) of the 7-char line: the box starts two characters
+      // before the tapped token.
+      expect(lookup.highlightRects, hasLength(1));
+      expect(
+        lookup.highlightRects.single,
+        rectMoreOrLessEquals(const Rect.fromLTRB(0, 200, 100, 700)),
+      );
+    });
+
+    test('reports a span that crosses a line break', () async {
+      final resolver = _compoundResolver(
+        tokenDefs: [
+          ('先', 'サキ', '先'),
+          ('に', 'ニ', 'に'),
+          ('どう', 'ドウ', 'どう'),
+          ('した', 'シタ', 'する'),
+          ('の', 'ノ', 'の'),
+        ],
+        tappedIndex: 3,
+        compoundSurface: 'どうしたの',
+        compoundStartOffset: 2,
+        sentenceContext: '先にどうしたの',
+      );
+
+      final lookup = await resolver.resolve(
+        _word(
+          surface: 'した',
+          dictionaryForm: 'する',
+          reading: 'シタ',
+          lineIndex: 1,
+          charStartInLine: 0,
+        ),
+        _block(['先にどう', 'したの']),
+      );
+
+      // Span [2, 7): tail of line 0 plus all of line 1 — one rect per line.
+      expect(lookup.highlightRects, hasLength(2));
+      expect(
+        lookup.highlightRects[0],
+        rectMoreOrLessEquals(const Rect.fromLTRB(0, 200, 100, 400)),
+      );
+      expect(
+        lookup.highlightRects[1],
+        rectMoreOrLessEquals(const Rect.fromLTRB(100, 0, 200, 300)),
+      );
+    });
+
+    test('drops the span when it does not match the block text', () async {
+      // MeCab offsets are in sanitized coordinates: the zero-width space in
+      // the block text shifts the real position of the compound by one.
+      final resolver = _compoundResolver(
+        tokenDefs: [('どう', 'ドウ', 'どう'), ('した', 'シタ', 'する'), ('の', 'ノ', 'の')],
+        tappedIndex: 0,
+        compoundSurface: 'どうしたの',
+        compoundStartOffset: 0,
+        sentenceContext: 'どうしたの',
+      );
+
+      final lookup = await resolver.resolve(
+        _word(
+          surface: 'どう',
+          dictionaryForm: 'どう',
+          reading: 'ドウ',
+          lineIndex: 0,
+          charStartInLine: 0,
+        ),
+        _block(['ど​うしたの']),
+      );
+
+      expect(lookup.result.surfaceForm, 'どうしたの');
+      expect(lookup.highlightRects, [_tappedWordBox]);
     });
 
     test(
@@ -183,7 +324,7 @@ void main() {
           },
         );
 
-        final result = await resolver.resolve(
+        final lookup = await resolver.resolve(
           _word(
             surface: 'どう',
             dictionaryForm: 'どう',
@@ -194,11 +335,12 @@ void main() {
           _block(['どうしたの']),
         );
 
-        expect(result.surfaceForm, 'どう');
-        expect(result.dictionaryForm, 'どう');
-        expect(result.reading, 'ドウ');
-        expect(result.sentenceContext, 'どうしたの');
-        expect(result.tokenStartOffset, 0);
+        expect(lookup.result.surfaceForm, 'どう');
+        expect(lookup.result.dictionaryForm, 'どう');
+        expect(lookup.result.reading, 'ドウ');
+        expect(lookup.result.sentenceContext, 'どうしたの');
+        expect(lookup.result.tokenStartOffset, 0);
+        expect(lookup.highlightRects, [_tappedWordBox]);
       },
     );
   });

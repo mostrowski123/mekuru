@@ -139,12 +139,14 @@ void main() {
         'p1.jpg': img.encodeJpg(img.Image(width: 64, height: 96)),
       });
 
-      final cache = await readPagesCache((await repo.importCbz(cbzPath)).filePath);
+      final cache = await readPagesCache(
+        (await repo.importCbz(cbzPath)).filePath,
+      );
 
-      expect([cache.pages.single.imgWidth, cache.pages.single.imgHeight], [
-        64,
-        96,
-      ]);
+      expect(
+        [cache.pages.single.imgWidth, cache.pages.single.imgHeight],
+        [64, 96],
+      );
     });
 
     test('reports progress monotonically from 0 to 1', () async {
@@ -173,7 +175,9 @@ void main() {
     test('leaves OCR unmarked so it can be run later', () async {
       final cbzPath = await createCbz('no_ocr', {'a.png': png(8, 8)});
 
-      final cache = await readPagesCache((await repo.importCbz(cbzPath)).filePath);
+      final cache = await readPagesCache(
+        (await repo.importCbz(cbzPath)).filePath,
+      );
 
       expect(cache.ocrCompleted, isFalse);
       expect(cache.pages.single.blocks, isEmpty);

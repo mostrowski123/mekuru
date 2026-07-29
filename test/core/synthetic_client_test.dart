@@ -4,7 +4,8 @@ import 'package:mekuru/core/services/synthetic_client.dart';
 /// A stock, retail Pixel — the baseline every case below varies from.
 bool check({
   bool isPhysicalDevice = true,
-  String fingerprint = 'google/shiba/shiba:14/UQ1A.240205.004/11269751:user/release-keys',
+  String fingerprint =
+      'google/shiba/shiba:14/UQ1A.240205.004/11269751:user/release-keys',
   String hardware = 'zuma',
   String product = 'shiba',
   String model = 'Pixel 8',
@@ -105,7 +106,8 @@ void main() {
       // Real hardware on an x86 ABI. Filtering on x86 would drop these users.
       expect(
         check(
-          fingerprint: 'google/hatch/hatch_cheets:11/R110-15278.0.0/1:user/release-keys',
+          fingerprint:
+              'google/hatch/hatch_cheets:11/R110-15278.0.0/1:user/release-keys',
           hardware: 'hatch_cheets',
           product: 'hatch_cheets',
           model: 'kohaku',

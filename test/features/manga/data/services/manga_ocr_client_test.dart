@@ -155,38 +155,40 @@ void main() {
     });
 
     for (final statusCode in [402, 403, 404, 409]) {
-      test('$statusCode billing error throws immediately without retry',
-          () async {
-        var callCount = 0;
-        final mockClient = MockClient.streaming((request, _) async {
-          callCount++;
-          return http.StreamedResponse(
-            Stream.value(
-              utf8.encode(
-                '{"detail":{"code":"job_error","message":"Job problem."}}',
+      test(
+        '$statusCode billing error throws immediately without retry',
+        () async {
+          var callCount = 0;
+          final mockClient = MockClient.streaming((request, _) async {
+            callCount++;
+            return http.StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  '{"detail":{"code":"job_error","message":"Job problem."}}',
+                ),
               ),
+              statusCode,
+              headers: jsonHeaders,
+            );
+          });
+
+          final client = createClient(mockClient);
+
+          await expectLater(
+            () => client.processPage(imageBytes, 'page_001.jpg'),
+            throwsA(
+              isA<OcrServerException>()
+                  .having((e) => e.statusCode, 'statusCode', statusCode)
+                  .having((e) => e.message, 'message', 'Job problem.')
+                  .having((e) => e.code, 'code', 'job_error'),
             ),
-            statusCode,
-            headers: jsonHeaders,
           );
-        });
 
-        final client = createClient(mockClient);
+          expect(callCount, 1);
 
-        await expectLater(
-          () => client.processPage(imageBytes, 'page_001.jpg'),
-          throwsA(
-            isA<OcrServerException>()
-                .having((e) => e.statusCode, 'statusCode', statusCode)
-                .having((e) => e.message, 'message', 'Job problem.')
-                .having((e) => e.code, 'code', 'job_error'),
-          ),
-        );
-
-        expect(callCount, 1);
-
-        client.dispose();
-      });
+          client.dispose();
+        },
+      );
     }
 
     test('structured detail without message falls back to raw body', () async {

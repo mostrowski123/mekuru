@@ -76,12 +76,15 @@ ImageDimensions? _jpegDimensions(Uint8List b) {
     }
     final marker = b[i + 1];
     // Padding and standalone markers carry no length field.
-    if (marker == 0xFF || marker == 0x01 || (marker >= 0xD0 && marker <= 0xD8)) {
+    if (marker == 0xFF ||
+        marker == 0x01 ||
+        (marker >= 0xD0 && marker <= 0xD8)) {
       i += marker == 0xFF ? 1 : 2;
       continue;
     }
     if (marker == 0xDA) return null; // start of scan: no frame header found
-    final isFrameHeader = marker >= 0xC0 &&
+    final isFrameHeader =
+        marker >= 0xC0 &&
         marker <= 0xCF &&
         marker != 0xC4 &&
         marker != 0xC8 &&

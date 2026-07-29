@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_word_highlight_overlay.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
@@ -17,6 +18,7 @@ import 'package:path/path.dart' as p;
 /// Reports zoom state changes via [onZoomChanged] so the parent
 /// [PageView] can disable swiping when the user is zoomed in.
 class MangaPageView extends StatefulWidget {
+  final int pageIndex;
   final MokuroPage page;
   final String imageDirPath;
   final String? safTreeUri;
@@ -24,17 +26,17 @@ class MangaPageView extends StatefulWidget {
   final bool debugOverlay;
   final bool autoCrop;
   final bool enableWordOverlays;
-  final MokuroWord? highlightedWord;
-  final void Function(
-    MokuroWord word,
-    MokuroTextBlock block,
-    Offset globalPosition,
-  )?
-  onWordTapped;
+  final List<Rect> highlightedRects;
+
+  /// Page the [highlightedRects] belong to; they are drawn only when it
+  /// matches [pageIndex].
+  final int? highlightedPageIndex;
+  final MangaWordTapCallback? onWordTapped;
   final ValueChanged<bool>? onZoomChanged;
 
   const MangaPageView({
     super.key,
+    required this.pageIndex,
     required this.page,
     required this.imageDirPath,
     this.safTreeUri,
@@ -42,7 +44,8 @@ class MangaPageView extends StatefulWidget {
     this.debugOverlay = false,
     this.autoCrop = false,
     this.enableWordOverlays = true,
-    this.highlightedWord,
+    this.highlightedRects = const [],
+    this.highlightedPageIndex,
     this.onWordTapped,
     this.onZoomChanged,
   });
@@ -191,6 +194,7 @@ class _MangaPageViewState extends State<MangaPageView> {
               // Word tap targets (hidden during active OCR)
               if (widget.enableWordOverlays && widget.page.blocks.isNotEmpty)
                 MangaWordOverlay(
+                  pageIndex: widget.pageIndex,
                   blocks: widget.page.blocks,
                   scale: scale,
                   offsetX: overlayOffsetX,
@@ -199,13 +203,15 @@ class _MangaPageViewState extends State<MangaPageView> {
                   onWordTapped: widget.onWordTapped,
                 ),
 
-              // Highlighted word bounding box (single word selection indicator)
-              if (widget.enableWordOverlays && widget.highlightedWord != null)
-                _buildWordHighlight(
-                  widget.highlightedWord!,
-                  scale,
-                  overlayOffsetX,
-                  overlayOffsetY,
+              // Highlighted word bounding box(es) for the active lookup
+              if (widget.enableWordOverlays &&
+                  widget.highlightedPageIndex == widget.pageIndex &&
+                  widget.highlightedRects.isNotEmpty)
+                MangaWordHighlightOverlay(
+                  rects: widget.highlightedRects,
+                  scale: scale,
+                  offsetX: overlayOffsetX,
+                  offsetY: overlayOffsetY,
                 ),
             ],
           );
@@ -252,38 +258,6 @@ class _MangaPageViewState extends State<MangaPageView> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
-      ),
-    );
-  }
-
-  /// Renders a highlight box around a single word, similar to the debug
-  /// overlay but with a distinctive selection color.
-  Widget _buildWordHighlight(
-    MokuroWord word,
-    double scale,
-    double offsetX,
-    double offsetY,
-  ) {
-    final bbox = word.boundingBox;
-    final left = bbox.left * scale + offsetX;
-    final top = bbox.top * scale + offsetY;
-    final width = bbox.width * scale;
-    final height = bbox.height * scale;
-
-    if (width <= 0 || height <= 0) return const SizedBox.shrink();
-
-    return Positioned(
-      left: left,
-      top: top,
-      width: width,
-      height: height,
-      child: IgnorePointer(
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.cyan, width: 2),
-            color: Colors.cyan.withAlpha(30),
-          ),
-        ),
       ),
     );
   }

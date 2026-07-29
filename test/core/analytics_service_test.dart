@@ -13,7 +13,9 @@ void main() {
     service.suppress();
 
     expect(service.navigatorObserver, isNull);
-    expect(() => service.logEvent('book_imported', {'format': 'cbz'}),
-        returnsNormally);
+    expect(
+      () => service.logEvent('book_imported', {'format': 'cbz'}),
+      returnsNormally,
+    );
   });
 }

@@ -24,18 +24,20 @@ void main() {
     usageAnalyticsSinkOverride = null;
   });
 
-  test('reports nothing on the failure channel when the action succeeds',
-      () async {
-    final result = await tracedOperation(
-      'book.import_duration_ms',
-      action: () async => 'done',
-      attributes: {'format': 'epub'},
-    );
+  test(
+    'reports nothing on the failure channel when the action succeeds',
+    () async {
+      final result = await tracedOperation(
+        'book.import_duration_ms',
+        action: () async => 'done',
+        attributes: {'format': 'epub'},
+      );
 
-    expect(result, 'done');
-    expect(logs.where((l) => l.warn), isEmpty);
-    expect(counts, isEmpty);
-  });
+      expect(result, 'done');
+      expect(logs.where((l) => l.warn), isEmpty);
+      expect(counts, isEmpty);
+    },
+  );
 
   test('reports a failure derived from the duration metric name', () async {
     await expectLater(

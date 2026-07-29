@@ -77,8 +77,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   final _spreadViewKey = GlobalKey<MangaSpreadViewState>();
 
   // Word highlight state — shown while a lookup sheet is active
-  MokuroWord? _highlightedWord;
-  int? _highlightedPageIndex;
+  _WordHighlight? _highlight;
   int _lookupRequestId = 0;
 
   @override
@@ -246,15 +245,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   }
 
   void _clearHighlight() {
-    if (_highlightedWord != null) {
-      setState(() {
-        _highlightedWord = null;
-        _highlightedPageIndex = null;
-      });
+    if (_highlight != null) {
+      setState(() => _highlight = null);
     }
   }
 
   void _onWordTapped(
+    int pageIndex,
     MokuroWord word,
     MokuroTextBlock block,
     Offset globalPosition,
@@ -267,10 +264,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     // Read transparency preference
     final transparent = ref.read(mangaLookupTransparencyProvider);
 
-    // Set highlight on the page
+    // Instant feedback: highlight the tapped word's box. Refined to the
+    // resolved word's span once the lookup completes.
     setState(() {
-      _highlightedWord = word;
-      _highlightedPageIndex = _currentPage;
+      _highlight = _WordHighlight(
+        pageIndex: pageIndex,
+        rects: [word.boundingBox],
+      );
     });
 
     // Hide controls if visible
@@ -281,6 +281,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     final requestId = ++_lookupRequestId;
     unawaited(
       _openLookupSheet(
+        pageIndex: pageIndex,
         word: word,
         block: block,
         showAtTop: showAtTop,
@@ -291,16 +292,31 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   }
 
   Future<void> _openLookupSheet({
+    required int pageIndex,
     required MokuroWord word,
     required MokuroTextBlock block,
     required bool showAtTop,
     required bool transparent,
     required int requestId,
   }) async {
-    final lookup = await ref
+    final resolved = await ref
         .read(mangaWordLookupResolverProvider)
         .resolve(word, block);
     if (!mounted || requestId != _lookupRequestId) return;
+    final lookup = resolved.result;
+
+    // Grow the highlight to cover the word that was actually looked up —
+    // compound resolution can extend past (or start before) the tapped token.
+    final highlight = _WordHighlight(
+      pageIndex: pageIndex,
+      rects: resolved.highlightRects,
+    );
+    final current = _highlight;
+    if (current == null ||
+        current.pageIndex != highlight.pageIndex ||
+        !listEquals(current.rects, highlight.rects)) {
+      setState(() => _highlight = highlight);
+    }
 
     final restoredLookupTerm = await ref
         .read(mangaLookupOverrideStorageProvider)
@@ -312,8 +328,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     if (!mounted || requestId != _lookupRequestId) return;
 
     final sheet = showAtTop
-        ? _showTopSheet(word, lookup, transparent, restoredLookupTerm)
-        : _showBottomSheet(word, lookup, transparent, restoredLookupTerm);
+        ? _showTopSheet(highlight, lookup, transparent, restoredLookupTerm)
+        : _showBottomSheet(highlight, lookup, transparent, restoredLookupTerm);
     await sheet;
     if (!mounted || requestId != _lookupRequestId) return;
     _clearHighlight();
@@ -355,7 +371,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   }
 
   Future<void> _showBottomSheet(
-    MokuroWord word,
+    _WordHighlight highlight,
     WordLookupResult lookup,
     bool transparent,
     String? restoredLookupTerm,
@@ -376,10 +392,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           unawaited(_saveLookupOverride(lookup, value));
         },
         onEditingStarted: () {
-          setState(() {
-            _highlightedWord = word;
-            _highlightedPageIndex = _currentPage;
-          });
+          setState(() => _highlight = highlight);
         },
         onEditingEnded: () {
           // Keep highlight while sheet is still open
@@ -391,7 +404,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   }
 
   Future<void> _showTopSheet(
-    MokuroWord word,
+    _WordHighlight highlight,
     WordLookupResult lookup,
     bool transparent,
     String? restoredLookupTerm,
@@ -419,10 +432,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                 unawaited(_saveLookupOverride(lookup, value));
               },
               onEditingStarted: () {
-                setState(() {
-                  _highlightedWord = word;
-                  _highlightedPageIndex = _currentPage;
-                });
+                setState(() => _highlight = highlight);
               },
               onEditingEnded: () {
                 // Keep highlight while sheet is still open
@@ -1057,6 +1067,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           itemBuilder: (context, index) {
             final page = mokuroBook.pages[index];
             return MangaPageView(
+              pageIndex: index,
               page: page,
               imageDirPath: mokuroBook.imageDirPath,
               safTreeUri: mokuroBook.safTreeUri,
@@ -1064,9 +1075,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               debugOverlay: _debugOverlay,
               autoCrop: autoCrop,
               enableWordOverlays: enableWordOverlays,
-              highlightedWord: index == _highlightedPageIndex
-                  ? _highlightedWord
-                  : null,
+              highlightedRects: _highlight?.rects ?? const [],
+              highlightedPageIndex: _highlight?.pageIndex,
               onWordTapped: _onWordTapped,
               onZoomChanged: (zoomed) {
                 if (zoomed != _isZoomed) {
@@ -1087,8 +1097,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           debugOverlay: _debugOverlay,
           autoCrop: autoCrop,
           enableWordOverlays: enableWordOverlays,
-          highlightedWord: _highlightedWord,
-          highlightedPageIndex: _highlightedPageIndex,
+          highlightedRects: _highlight?.rects ?? const [],
+          highlightedPageIndex: _highlight?.pageIndex,
           onWordTapped: _onWordTapped,
           onZoomChanged: (zoomed) {
             if (zoomed != _isZoomed) {
@@ -1113,8 +1123,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           debugOverlay: _debugOverlay,
           autoCrop: autoCrop,
           enableWordOverlays: enableWordOverlays,
-          highlightedWord: _highlightedWord,
-          highlightedPageIndex: _highlightedPageIndex,
+          highlightedRects: _highlight?.rects ?? const [],
+          highlightedPageIndex: _highlight?.pageIndex,
           onWordTapped: _onWordTapped,
           onPageEstimateChanged: (page) {
             setState(() => _currentPage = page);
@@ -1123,4 +1133,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         );
     }
   }
+}
+
+/// The lookup highlight currently drawn on a page: image-space rects plus
+/// the index of the page they belong to.
+class _WordHighlight {
+  final int pageIndex;
+  final List<Rect> rects;
+
+  const _WordHighlight({required this.pageIndex, required this.rects});
 }

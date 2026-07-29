@@ -6,6 +6,24 @@ import 'dart:ui' show Rect;
 /// Extracted from widget build methods so the layout logic is fully
 /// unit-testable without pumping widgets.
 
+/// Maps an image-pixel [rect] to overlay screen space.
+///
+/// Uses the same `scale`/`offsetX`/`offsetY` for every overlay drawn on a
+/// page, so tap targets and highlights can never drift apart.
+Rect imageRectToOverlay(
+  Rect rect, {
+  required double scale,
+  required double offsetX,
+  required double offsetY,
+}) {
+  return Rect.fromLTWH(
+    rect.left * scale + offsetX,
+    rect.top * scale + offsetY,
+    rect.width * scale,
+    rect.height * scale,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // PageCropInsets — maps content bounds ↔ edge insets
 // ---------------------------------------------------------------------------

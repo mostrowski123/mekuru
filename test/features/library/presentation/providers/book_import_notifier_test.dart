@@ -171,9 +171,9 @@ void main() {
     test('reports a failed import as a warning, and counts it', () async {
       final missing = '${tempDir.path}/missing.epub'; // never written
 
-      await container
-          .read(bookImportProvider.notifier)
-          .importFiles([missing], format: 'epub');
+      await container.read(bookImportProvider.notifier).importFiles([
+        missing,
+      ], format: 'epub');
 
       final failures = logs.where((l) => l.message == 'book.import_failed');
       expect(failures, hasLength(1));
@@ -194,9 +194,9 @@ void main() {
     test('logs nothing on the failure channel when imports succeed', () async {
       final path = await fixtureEpub(title: '坊っちゃん', fileName: 'ok.epub');
 
-      await container
-          .read(bookImportProvider.notifier)
-          .importFiles([path], format: 'epub');
+      await container.read(bookImportProvider.notifier).importFiles([
+        path,
+      ], format: 'epub');
 
       expect(logs.where((l) => l.warn), isEmpty);
       expect(counts.where((c) => c.name == 'book.import_failed'), isEmpty);

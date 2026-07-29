@@ -307,7 +307,10 @@ void main() {
       tmpDir.deleteSync(recursive: true);
     });
 
-    Future<String> createCbz(String name, Map<String, List<int>> entries) async {
+    Future<String> createCbz(
+      String name,
+      Map<String, List<int>> entries,
+    ) async {
       final archive = Archive();
       for (final entry in entries.entries) {
         archive.addFile(

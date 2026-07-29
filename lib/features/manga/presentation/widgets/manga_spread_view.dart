@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_word_highlight_overlay.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
@@ -22,14 +23,9 @@ class MangaSpreadView extends StatefulWidget {
   final bool debugOverlay;
   final bool autoCrop;
   final bool enableWordOverlays;
-  final MokuroWord? highlightedWord;
+  final List<Rect> highlightedRects;
   final int? highlightedPageIndex;
-  final void Function(
-    MokuroWord word,
-    MokuroTextBlock block,
-    Offset globalPosition,
-  )?
-  onWordTapped;
+  final MangaWordTapCallback? onWordTapped;
   final ValueChanged<bool>? onZoomChanged;
   final ValueChanged<int>? onSpreadChanged;
 
@@ -42,7 +38,7 @@ class MangaSpreadView extends StatefulWidget {
     this.debugOverlay = false,
     this.autoCrop = false,
     this.enableWordOverlays = true,
-    this.highlightedWord,
+    this.highlightedRects = const [],
     this.highlightedPageIndex,
     this.onWordTapped,
     this.onZoomChanged,
@@ -332,6 +328,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
             // Word overlay (hidden during active OCR)
             if (widget.enableWordOverlays && page.blocks.isNotEmpty)
               MangaWordOverlay(
+                pageIndex: pageIndex,
                 blocks: page.blocks,
                 scale: scale,
                 offsetX: overlayOffsetX,
@@ -340,49 +337,19 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
                 onWordTapped: widget.onWordTapped,
               ),
 
-            // Highlighted word
+            // Highlighted word rect(s) for the active lookup
             if (widget.enableWordOverlays &&
-                widget.highlightedWord != null &&
+                widget.highlightedRects.isNotEmpty &&
                 widget.highlightedPageIndex == pageIndex)
-              _buildWordHighlight(
-                widget.highlightedWord!,
-                scale,
-                overlayOffsetX,
-                overlayOffsetY,
+              MangaWordHighlightOverlay(
+                rects: widget.highlightedRects,
+                scale: scale,
+                offsetX: overlayOffsetX,
+                offsetY: overlayOffsetY,
               ),
           ],
         );
       },
-    );
-  }
-
-  Widget _buildWordHighlight(
-    MokuroWord word,
-    double scale,
-    double offsetX,
-    double offsetY,
-  ) {
-    final bbox = word.boundingBox;
-    final left = bbox.left * scale + offsetX;
-    final top = bbox.top * scale + offsetY;
-    final width = bbox.width * scale;
-    final height = bbox.height * scale;
-
-    if (width <= 0 || height <= 0) return const SizedBox.shrink();
-
-    return Positioned(
-      left: left,
-      top: top,
-      width: width,
-      height: height,
-      child: IgnorePointer(
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.cyan, width: 2),
-            color: Colors.cyan.withAlpha(30),
-          ),
-        ),
-      ),
     );
   }
 

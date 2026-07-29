@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
 
 /// Continuous vertical scroll view for manga pages.
 ///
@@ -19,14 +20,9 @@ class MangaScrollView extends ConsumerStatefulWidget {
   final bool debugOverlay;
   final bool autoCrop;
   final bool enableWordOverlays;
-  final MokuroWord? highlightedWord;
+  final List<Rect> highlightedRects;
   final int? highlightedPageIndex;
-  final void Function(
-    MokuroWord word,
-    MokuroTextBlock block,
-    Offset globalPosition,
-  )?
-  onWordTapped;
+  final MangaWordTapCallback? onWordTapped;
   final ValueChanged<int>? onPageEstimateChanged;
 
   const MangaScrollView({
@@ -37,7 +33,7 @@ class MangaScrollView extends ConsumerStatefulWidget {
     this.debugOverlay = false,
     this.autoCrop = false,
     this.enableWordOverlays = true,
-    this.highlightedWord,
+    this.highlightedRects = const [],
     this.highlightedPageIndex,
     this.onWordTapped,
     this.onPageEstimateChanged,
@@ -134,6 +130,7 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
         return AspectRatio(
           aspectRatio: aspectRatio,
           child: MangaPageView(
+            pageIndex: index,
             page: page,
             imageDirPath: widget.mokuroBook.imageDirPath,
             safTreeUri: widget.mokuroBook.safTreeUri,
@@ -141,9 +138,8 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
             debugOverlay: widget.debugOverlay,
             autoCrop: widget.autoCrop,
             enableWordOverlays: widget.enableWordOverlays,
-            highlightedWord: index == widget.highlightedPageIndex
-                ? widget.highlightedWord
-                : null,
+            highlightedRects: widget.highlightedRects,
+            highlightedPageIndex: widget.highlightedPageIndex,
             onWordTapped: widget.onWordTapped,
             // No onZoomChanged — scroll view doesn't block scrolling on zoom
           ),

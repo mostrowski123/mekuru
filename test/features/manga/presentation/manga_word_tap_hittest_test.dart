@@ -62,14 +62,14 @@ void main() {
     );
   }
 
-  Future<({List<String> words, List<Offset> fallback})> pumpReader(
-    WidgetTester tester,
-  ) async {
+  Future<({List<String> words, List<int> pages, List<Offset> fallback})>
+  pumpReader(WidgetTester tester, {int pageIndex = 0}) async {
     tester.view.physicalSize = physicalSize;
     tester.view.devicePixelRatio = dpr;
     addTearDown(tester.view.reset);
 
     final words = <String>[];
+    final pages = <int>[];
     final fallback = <Offset>[];
 
     await tester.pumpWidget(
@@ -83,9 +83,13 @@ void main() {
                 child: PageView.builder(
                   itemCount: 1,
                   itemBuilder: (_, _) => MangaPageView(
+                    pageIndex: pageIndex,
                     page: buildPage(),
                     imageDirPath: 'Z:/does-not-exist',
-                    onWordTapped: (w, _, _) => words.add(w.surface),
+                    onWordTapped: (p, w, _, _) {
+                      pages.add(p);
+                      words.add(w.surface);
+                    },
                   ),
                 ),
               ),
@@ -98,7 +102,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    return (words: words, fallback: fallback);
+    return (words: words, pages: pages, fallback: fallback);
   }
 
   testWidgets('tap directly on a word near the top hits the word overlay', (
@@ -113,9 +117,7 @@ void main() {
     expect(taps.fallback, isEmpty);
   });
 
-  testWidgets('tap on a mid-screen word hits the word overlay', (
-    tester,
-  ) async {
+  testWidgets('tap on a mid-screen word hits the word overlay', (tester) async {
     final taps = await pumpReader(tester);
 
     await tester.tapAt(screenCenterOf(midWordBox));
@@ -135,5 +137,16 @@ void main() {
 
     expect(taps.words, isEmpty);
     expect(taps.fallback, hasLength(1));
+  });
+
+  testWidgets('word tap reports the page index it was constructed with', (
+    tester,
+  ) async {
+    final taps = await pumpReader(tester, pageIndex: 3);
+
+    await tester.tapAt(screenCenterOf(topWordBox));
+    await tester.pump();
+
+    expect(taps.pages, [3]);
   });
 }

@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.dart';
+
+/// Signature for a word tap on the page at [pageIndex] (index into
+/// `MokuroBook.pages`).
+typedef MangaWordTapCallback =
+    void Function(
+      int pageIndex,
+      MokuroWord word,
+      MokuroTextBlock block,
+      Offset globalPosition,
+    );
 
 /// Renders invisible tap targets over each [MokuroWord] in the given blocks.
 ///
@@ -9,20 +20,17 @@ import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 /// In debug mode, draws semi-transparent rectangles around each word for
 /// visual verification of bounding box accuracy.
 class MangaWordOverlay extends StatelessWidget {
+  final int pageIndex;
   final List<MokuroTextBlock> blocks;
   final double scale;
   final double offsetX;
   final double offsetY;
   final bool debugMode;
-  final void Function(
-    MokuroWord word,
-    MokuroTextBlock block,
-    Offset globalPosition,
-  )?
-  onWordTapped;
+  final MangaWordTapCallback? onWordTapped;
 
   const MangaWordOverlay({
     super.key,
+    required this.pageIndex,
     required this.blocks,
     required this.scale,
     required this.offsetX,
@@ -37,25 +45,28 @@ class MangaWordOverlay extends StatelessWidget {
 
     for (final block in blocks) {
       for (final word in block.words) {
-        final bbox = word.boundingBox;
-        final left = bbox.left * scale + offsetX;
-        final top = bbox.top * scale + offsetY;
-        final width = bbox.width * scale;
-        final height = bbox.height * scale;
+        final screenRect = imageRectToOverlay(
+          word.boundingBox,
+          scale: scale,
+          offsetX: offsetX,
+          offsetY: offsetY,
+        );
 
         // Skip words with degenerate bounding boxes
-        if (width <= 0 || height <= 0) continue;
+        if (screenRect.isEmpty) continue;
 
         children.add(
-          Positioned(
-            left: left,
-            top: top,
-            width: width,
-            height: height,
+          Positioned.fromRect(
+            rect: screenRect,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapUp: (details) {
-                onWordTapped?.call(word, block, details.globalPosition);
+                onWordTapped?.call(
+                  pageIndex,
+                  word,
+                  block,
+                  details.globalPosition,
+                );
               },
               child: debugMode
                   ? Container(
