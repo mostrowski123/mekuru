@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 
 class KanjiEntryDisplayData {
@@ -105,27 +106,15 @@ bool _isDownloadedKanjidicDictionary(String dictionaryName) {
 }
 
 bool _isSingleKanji(String expression) {
-  final runes = expression.runes.toList(growable: false);
-  if (runes.length != 1) return false;
-
-  final rune = runes.single;
-  return (rune >= 0x4E00 && rune <= 0x9FFF) ||
-      (rune >= 0x3400 && rune <= 0x4DBF);
+  final runes = expression.runes;
+  return runes.length == 1 && isKanji(runes.single);
 }
 
 bool _isKatakanaReadingToken(String token) {
-  for (final rune in token.runes) {
-    final isKatakana = (rune >= 0x30A0 && rune <= 0x30FF) || rune == 0x30FC;
-    if (!isKatakana) return false;
-  }
-  return true;
+  return token.runes.every(isKatakana);
 }
 
 bool _isHiraganaReadingToken(String token) {
-  for (final rune in token.runes) {
-    final isHiragana =
-        (rune >= 0x3040 && rune <= 0x309F) || rune == 0x30FC || rune == 0x002E;
-    if (!isHiragana) return false;
-  }
-  return true;
+  // U+002E: kanjidic readings use "." to mark the okurigana boundary.
+  return token.runes.every((rune) => isHiragana(rune) || rune == 0x002E);
 }

@@ -1,15 +1,10 @@
+import 'package:mekuru/core/utils/japanese_text.dart';
+
 import '../../../reader/data/services/mecab_feature_layout.dart';
 import '../models/mokuro_models.dart';
 
 /// Pure heuristics deciding when a mokuro page cache needs MeCab word
 /// segmentation (again). Flutter-free so it stays unit-testable.
-
-/// Matches characters MeCab reliably segments and annotates: kana, kanji,
-/// and the 々/〆 marks. Deliberately excludes standalone ー and ゝゞヽヾ,
-/// which can survive as unannotated unknown tokens even with MeCab up.
-final _japaneseWordChar = RegExp(
-  r'[々〆ぁ-ゖァ-ヺ㐀-䶿一-鿿]',
-);
 
 /// Whether [pages] contain any block that still needs word segmentation.
 bool pagesNeedWordSegmentation(List<MokuroPage> pages) =>
@@ -61,7 +56,7 @@ bool blockHasBrokenWordSegmentation(MokuroTextBlock block) {
     if (word.charStartInLine != 0) continue;
     if (word.lineIndex < 0 || word.lineIndex >= block.lines.length) continue;
     if (word.surface != block.lines[word.lineIndex]) continue;
-    if (!_japaneseWordChar.hasMatch(word.surface)) continue;
+    if (!mecabAnnotatedCharPattern.hasMatch(word.surface)) continue;
     return true;
   }
   return false;

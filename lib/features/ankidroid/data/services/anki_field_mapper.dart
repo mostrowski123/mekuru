@@ -1,3 +1,4 @@
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
@@ -122,7 +123,7 @@ String formatAnkiFurigana(String expression, String reading) {
   if (reading.isEmpty || expression == reading) return expression;
 
   // Check if expression contains any kanji at all
-  final hasKanji = expression.runes.any(_isKanjiFuri);
+  final hasKanji = expression.runes.any(isKanji);
   if (!hasKanji) return expression;
 
   final hiraganaReading = RomajiConverter.katakanaToHiragana(reading);
@@ -135,7 +136,7 @@ String formatAnkiFurigana(String expression, String reading) {
     final char = expression[i];
     final code = char.codeUnitAt(0);
 
-    if (!_isKanjiFuri(code)) {
+    if (!isKanji(code)) {
       // Non-kanji: emit as-is and advance reading past matching char
       buf.write(char);
       if (ri < hiraganaReading.length) {
@@ -145,8 +146,7 @@ String formatAnkiFurigana(String expression, String reading) {
     } else {
       // Kanji run: find the end of consecutive kanji
       final kanjiStart = i;
-      while (i < expression.length &&
-          _isKanjiFuri(expression[i].codeUnitAt(0))) {
+      while (i < expression.length && isKanji(expression[i].codeUnitAt(0))) {
         i++;
       }
       final kanjiRun = expression.substring(kanjiStart, i);
@@ -186,9 +186,4 @@ String formatAnkiFurigana(String expression, String reading) {
   }
 
   return buf.toString().trim();
-}
-
-bool _isKanjiFuri(int codeUnit) {
-  return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||
-      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
 }

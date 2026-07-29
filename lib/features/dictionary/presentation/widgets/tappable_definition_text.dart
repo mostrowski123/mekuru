@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/hit_testable_rich_text.dart';
 
@@ -30,16 +31,6 @@ class TappableDefinitionText extends StatefulWidget {
 class _TappableDefinitionTextState extends State<TappableDefinitionText> {
   List<_DefinitionTextSegment> _segments = const [];
 
-  // Matches runs of Japanese characters:
-  // - Kanji (CJK Unified Ideographs + Extension A)
-  // - Hiragana
-  // - Katakana
-  // - Katakana prolonged sound mark (U+30FC)
-  // - CJK iteration mark (U+3005)
-  static final _japanesePattern = RegExp(
-    r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF\u30FC\u3005]+',
-  );
-
   @override
   void initState() {
     super.initState();
@@ -62,7 +53,7 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
 
   void _rebuildSegments() {
     final segments = <_DefinitionTextSegment>[];
-    final matches = _japanesePattern.allMatches(widget.text);
+    final matches = japaneseRunPattern.allMatches(widget.text);
     var lastEnd = 0;
 
     final mecab = MecabService.instance;

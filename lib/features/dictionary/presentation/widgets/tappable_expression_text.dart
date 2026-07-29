@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/hit_testable_rich_text.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 
@@ -34,11 +35,6 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
   List<_ExpressionSegmentCache> _segmentCache = const [];
   bool _showFurigana = false;
   List<_ExpressionTapTargetRect>? _furiganaTapTargetsCache;
-
-  static bool _isKanji(int codeUnit) {
-    return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||
-        (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
-  }
 
   @override
   void initState() {
@@ -87,7 +83,7 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
     for (var i = 0; i < text.length; i++) {
       final char = text[i];
       glyphs.add(
-        _ExpressionGlyphCache(char, isTappable: _isKanji(char.codeUnitAt(0))),
+        _ExpressionGlyphCache(char, isTappable: isKanji(char.codeUnitAt(0))),
       );
     }
     return glyphs;

@@ -1,0 +1,53 @@
+/// Shared Unicode character classes for Japanese text. Pure Dart
+/// (Flutter-free) so pure-logic services can use it and it stays
+/// unit-testable.
+///
+/// The predicates deliberately differ in how inclusive "Japanese" is —
+/// pick the one whose documented semantics match the call site instead of
+/// widening an existing one.
+library;
+
+/// Kanji in the strict sense: CJK Unified Ideographs (U+4E00–U+9FFF) and
+/// Extension A (U+3400–U+4DBF). Marks like 々 are excluded.
+bool isKanji(int rune) =>
+    (rune >= 0x4E00 && rune <= 0x9FFF) || (rune >= 0x3400 && rune <= 0x4DBF);
+
+/// Characters that carry a reading during furigana alignment: kanji plus
+/// 々 (U+3005), 〆 (U+3006), ヵ (U+30F5), and ヶ (U+30F6).
+///
+/// Not every furigana path uses this: the Anki furigana exporter
+/// deliberately treats only strict [isKanji] runs as reading-bearing.
+bool isKanjiForFurigana(int rune) =>
+    isKanji(rune) ||
+    rune == 0x3005 ||
+    rune == 0x3006 ||
+    rune == 0x30F5 ||
+    rune == 0x30F6;
+
+/// Hiragana (U+3040–U+309F) or katakana (U+30A0–U+30FF, which includes the
+/// prolonged sound mark ー U+30FC).
+bool isKana(int rune) =>
+    (rune >= 0x3040 && rune <= 0x309F) || (rune >= 0x30A0 && rune <= 0x30FF);
+
+/// Katakana (U+30A0–U+30FF, which includes the prolonged sound mark ー).
+bool isKatakana(int rune) => rune >= 0x30A0 && rune <= 0x30FF;
+
+/// Hiragana (U+3040–U+309F) or the prolonged sound mark ー (U+30FC), which
+/// also appears in hiragana words (らーめん).
+bool isHiragana(int rune) =>
+    (rune >= 0x3040 && rune <= 0x309F) || rune == 0x30FC;
+
+/// Matches runs of Japanese text: hiragana (U+3040–U+309F), katakana
+/// (U+30A0–U+30FF, including ー), kanji (CJK Unified Ideographs and
+/// Extension A), and the iteration mark 々 (U+3005).
+final RegExp japaneseRunPattern = RegExp(
+  r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\u3400-\u4DBF\u3005]+',
+);
+
+/// Matches a single character MeCab reliably segments and annotates: kana,
+/// kanji, and the 々/〆 marks. Deliberately narrower than
+/// [japaneseRunPattern]: it excludes the standalone prolonged sound mark ー
+/// and the iteration marks ゝゞヽヾ, which can survive as unannotated
+/// unknown tokens even with MeCab up, so segmentation-repair heuristics
+/// must not treat them as evidence of healthy Japanese output.
+final RegExp mecabAnnotatedCharPattern = RegExp(r'[々〆ぁ-ゖァ-ヺ㐀-䶿一-鿿]');

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:drift/drift.dart';
 import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/dictionary/data/services/prefix_query_bounds.dart';
 import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
@@ -758,17 +759,7 @@ class DictionaryQueryService {
   }
 
   bool _isKanaOnly(String text) {
-    if (text.isEmpty) return false;
-    for (final rune in text.runes) {
-      if (!_isKanaRune(rune)) return false;
-    }
-    return true;
-  }
-
-  bool _isKanaRune(int rune) {
-    return (rune >= 0x3040 && rune <= 0x309F) ||
-        (rune >= 0x30A0 && rune <= 0x30FF) ||
-        rune == 0x30FC;
+    return text.isNotEmpty && text.runes.every(isKana);
   }
 
   List<DictionaryEntryWithSource> _mergeLookupTiers(
@@ -1034,8 +1025,9 @@ class DictionaryQueryService {
     if (!isRomaji && term.length > 1) {
       final seen = <String>{};
       for (final rune in term.runes) {
+        if (!isKanji(rune)) continue;
         final char = String.fromCharCode(rune);
-        if (_isKanji(char) && seen.add(char)) {
+        if (seen.add(char)) {
           addTo(
             subComponentResults,
             await _searchWithSourceNoFrequency(char, cache),
@@ -1372,15 +1364,6 @@ class DictionaryQueryService {
       }
     }
     return condition ?? const Constant(false);
-  }
-
-  static bool _isKanji(String char) {
-    if (char.isEmpty) return false;
-    final code = char.codeUnitAt(0);
-    // CJK Unified Ideographs: U+4E00–U+9FFF
-    // CJK Unified Ideographs Extension A: U+3400–U+4DBF
-    return (code >= 0x4E00 && code <= 0x9FFF) ||
-        (code >= 0x3400 && code <= 0x4DBF);
   }
 
   /// Returns `true` if [text] contains at least one Latin letter (a-z/A-Z).

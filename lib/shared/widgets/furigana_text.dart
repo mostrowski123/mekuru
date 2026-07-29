@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 
 /// A segment of text that may have furigana (reading) displayed above it.
 class FuriganaSegment {
@@ -28,7 +29,7 @@ List<FuriganaSegment> segmentFurigana(String expression, String reading) {
   }
 
   // If expression has no kanji, no furigana is needed.
-  if (!expression.runes.any(_isKanji)) {
+  if (!expression.runes.any(isKanjiForFurigana)) {
     return [FuriganaSegment(expression)];
   }
 
@@ -40,15 +41,6 @@ List<FuriganaSegment> segmentFurigana(String expression, String reading) {
     return [FuriganaSegment(expression, reading)];
   }
   return segments;
-}
-
-bool _isKanji(int codeUnit) {
-  return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||
-      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF) ||
-      codeUnit == 0x3005 || // 々 iteration mark
-      codeUnit == 0x3006 || // 〆
-      codeUnit == 0x30F5 || // ヵ
-      codeUnit == 0x30F6; // ヶ
 }
 
 String _katakanaToHiragana(String input) {
@@ -92,11 +84,12 @@ List<FuriganaSegment>? _alignSegmentsFrom(
 
   final code = expression.codeUnitAt(expressionIndex);
 
-  if (!_isKanji(code)) {
+  if (!isKanjiForFurigana(code)) {
     // Kana run: it must line up exactly with the remaining reading.
     final start = expressionIndex;
     var end = expressionIndex;
-    while (end < expression.length && !_isKanji(expression.codeUnitAt(end))) {
+    while (end < expression.length &&
+        !isKanjiForFurigana(expression.codeUnitAt(end))) {
       end++;
     }
 
@@ -130,7 +123,7 @@ List<FuriganaSegment>? _alignSegmentsFrom(
   final kanjiStart = expressionIndex;
   var kanjiEnd = expressionIndex;
   while (kanjiEnd < expression.length &&
-      _isKanji(expression.codeUnitAt(kanjiEnd))) {
+      isKanjiForFurigana(expression.codeUnitAt(kanjiEnd))) {
     kanjiEnd++;
   }
 
@@ -146,7 +139,7 @@ List<FuriganaSegment>? _alignSegmentsFrom(
 
   var nextKanaEnd = kanjiEnd;
   while (nextKanaEnd < expression.length &&
-      !_isKanji(expression.codeUnitAt(nextKanaEnd))) {
+      !isKanjiForFurigana(expression.codeUnitAt(nextKanaEnd))) {
     nextKanaEnd++;
   }
 

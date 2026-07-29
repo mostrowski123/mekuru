@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
@@ -525,7 +526,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
 
     final fontSize = ref.watch(lookupFontSizeProvider);
     final query = _lastQuery;
-    final isSingleKanji = query.length == 1 && _isCjk(query.codeUnitAt(0));
+    final isSingleKanji = query.length == 1 && isKanji(query.codeUnitAt(0));
     final slivers = <Widget>[
       if (isSingleKanji) ...[
         SliverToBoxAdapter(
@@ -708,11 +709,6 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
       context,
     ).push(MaterialPageRoute(builder: (_) => const DownloadsScreen()));
   }
-}
-
-bool _isCjk(int codeUnit) {
-  return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||
-      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF);
 }
 
 class _GroupedSearchResultData {
