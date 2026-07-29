@@ -17,7 +17,8 @@ bool pagesNeedWordSegmentation(List<MokuroPage> pages) =>
 bool pagesSegmentedWithDifferentDictionary(
   List<MokuroPage> pages,
   String dictionary,
-) => pages.any((page) => pageSegmentedWithDifferentDictionary(page, dictionary));
+) =>
+    pages.any((page) => pageSegmentedWithDifferentDictionary(page, dictionary));
 
 /// Whether [page]'s words were segmented with a different dictionary than
 /// [dictionary]. Pages without any words never mismatch: missing words are

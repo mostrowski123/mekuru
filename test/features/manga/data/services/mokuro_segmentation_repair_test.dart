@@ -58,20 +58,15 @@ MokuroPage _page(
   );
 }
 
-MokuroTextBlock _healthyBlock() => _block(
-  ['はい'],
-  [_word('はい', dictForm: 'はい', reading: 'ハイ')],
-);
+MokuroTextBlock _healthyBlock() =>
+    _block(['はい'], [_word('はい', dictForm: 'はい', reading: 'ハイ')]);
 
 void main() {
   group('blockHasBrokenWordSegmentation', () {
     test('detects the uninitialized-MeCab fallback signature', () {
       // tokenize() fell back to the whole line as one token, and
       // identifyWordWithContext() returned null → no dict form, no reading.
-      final block = _block(
-        ['そんなことないよ'],
-        [_word('そんなことないよ')],
-      );
+      final block = _block(['そんなことないよ'], [_word('そんなことないよ')]);
       expect(blockHasBrokenWordSegmentation(block), isTrue);
     });
 
@@ -98,10 +93,7 @@ void main() {
     });
 
     test('accepts a word with only a reading', () {
-      final block = _block(
-        ['はい'],
-        [_word('はい', reading: 'ハイ')],
-      );
+      final block = _block(['はい'], [_word('はい', reading: 'ハイ')]);
       expect(blockHasBrokenWordSegmentation(block), isFalse);
     });
 
@@ -121,26 +113,17 @@ void main() {
     test('ignores a line-spanning word without Japanese content', () {
       // Punctuation-only lines can legitimately survive as one word with no
       // dictionary form; re-segmenting them would loop forever.
-      final block = _block(
-        ['…!?'],
-        [_word('…!?')],
-      );
+      final block = _block(['…!?'], [_word('…!?')]);
       expect(blockHasBrokenWordSegmentation(block), isFalse);
     });
 
     test('ignores words that do not span their whole line', () {
-      final block = _block(
-        ['そんなことないよ'],
-        [_word('そんな')],
-      );
+      final block = _block(['そんなことないよ'], [_word('そんな')]);
       expect(blockHasBrokenWordSegmentation(block), isFalse);
     });
 
     test('ignores words whose lineIndex is out of range', () {
-      final block = _block(
-        ['そんなことないよ'],
-        [_word('そんなことないよ', lineIndex: 3)],
-      );
+      final block = _block(['そんなことないよ'], [_word('そんなことないよ', lineIndex: 3)]);
       expect(blockHasBrokenWordSegmentation(block), isFalse);
     });
 
@@ -160,10 +143,7 @@ void main() {
 
     test('false for a healthy page', () {
       final page = _page([
-        _block(
-          ['はい'],
-          [_word('はい', dictForm: 'はい', reading: 'ハイ')],
-        ),
+        _block(['はい'], [_word('はい', dictForm: 'はい', reading: 'ハイ')]),
       ]);
       expect(pageNeedsWordSegmentation(page), isFalse);
     });
@@ -183,26 +163,14 @@ void main() {
 
     test('treats an unlabeled segmented page as IPADIC', () {
       final page = _page([_healthyBlock()]);
-      expect(
-        pageSegmentedWithDifferentDictionary(page, 'UniDic'),
-        isTrue,
-      );
-      expect(
-        pageSegmentedWithDifferentDictionary(page, 'IPADIC'),
-        isFalse,
-      );
+      expect(pageSegmentedWithDifferentDictionary(page, 'UniDic'), isTrue);
+      expect(pageSegmentedWithDifferentDictionary(page, 'IPADIC'), isFalse);
     });
 
     test('compares the recorded label against the target dictionary', () {
       final page = _page([_healthyBlock()], segmentationDictionary: 'UniDic');
-      expect(
-        pageSegmentedWithDifferentDictionary(page, 'UniDic'),
-        isFalse,
-      );
-      expect(
-        pageSegmentedWithDifferentDictionary(page, 'IPADIC'),
-        isTrue,
-      );
+      expect(pageSegmentedWithDifferentDictionary(page, 'UniDic'), isFalse);
+      expect(pageSegmentedWithDifferentDictionary(page, 'IPADIC'), isTrue);
     });
 
     test('ignores pages without any words regardless of label', () {
@@ -214,10 +182,7 @@ void main() {
         pageSegmentedWithDifferentDictionary(unsegmented, 'UniDic'),
         isFalse,
       );
-      expect(
-        pageSegmentedWithDifferentDictionary(empty, 'IPADIC'),
-        isFalse,
-      );
+      expect(pageSegmentedWithDifferentDictionary(empty, 'IPADIC'), isFalse);
     });
   });
 
