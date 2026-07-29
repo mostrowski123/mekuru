@@ -1,6 +1,7 @@
 import '../../../reader/data/services/mecab_service.dart';
 import '../models/mokuro_models.dart';
 import 'mokuro_block_geometry.dart';
+import 'mokuro_segmentation_repair.dart';
 
 /// Segments mokuro OCR text blocks into individual words using MeCab,
 /// and computes approximate bounding boxes for each word based on
@@ -8,11 +9,43 @@ import 'mokuro_block_geometry.dart';
 class MokuroWordSegmenter {
   const MokuroWordSegmenter._();
 
+  /// Whether [pages] need a (re-)segmentation run before tap lookups behave:
+  /// words missing or broken, or word boxes cut by a different dictionary
+  /// than this session's tap-time lookups tokenize with.
+  ///
+  /// Missing/broken words are worth waiting for MeCab init. The dictionary
+  /// mismatch is only checked once MeCab is already up: the check needs the
+  /// session layout, and blocking a healthy-cache open on init isn't worth
+  /// a refinement that self-corrects on a later open. When a mismatch
+  /// against the expected dictionary is found, any in-flight UniDic-lite
+  /// upgrade is settled first, so a failed upgrade cannot trigger a
+  /// pointless re-segmentation.
+  static Future<bool> needsResegmentation(List<MokuroPage> pages) async {
+    final mecab = MecabService.instance;
+    if (pagesNeedWordSegmentation(pages)) {
+      return mecab.ensureInitialized();
+    }
+    if (!mecab.isInitialized) return false;
+    final expectedLabel = mecab.expectedLayout.label;
+    if (!pagesSegmentedWithDifferentDictionary(pages, expectedLabel)) {
+      return false;
+    }
+    final settledLabel = (await mecab.settledLayout()).label;
+    return settledLabel == expectedLabel ||
+        pagesSegmentedWithDifferentDictionary(pages, settledLabel);
+  }
+
   /// Segment all text blocks across all pages.
   /// Returns new pages with populated [MokuroWord] lists.
+  ///
+  /// With [onlyStale], pages whose words are already present, healthy, and
+  /// cut by the session's dictionary are returned untouched — so repairing
+  /// a book the OCR worker extended with IPADIC pages doesn't re-tokenize
+  /// the pages that already match.
   static Future<List<MokuroPage>> segmentAllPages(
-    List<MokuroPage> pages,
-  ) async {
+    List<MokuroPage> pages, {
+    bool onlyStale = false,
+  }) async {
     // Bring MeCab up before segmenting; without it we'd produce no words at
     // all (or, before tokenize() stopped falling back to whole-line tokens,
     // cache line-sized pseudo-words). If init fails, return the pages
@@ -25,9 +58,20 @@ class MokuroWordSegmenter {
     );
     if (!ready) return pages;
 
+    // Wait out any in-flight UniDic-lite upgrade so one run cannot mix
+    // dictionaries mid-swap, then record which dictionary cut the word
+    // boxes. Tap-time lookups tokenize with the live dictionary; the reader
+    // re-segments pages whose recorded dictionary no longer matches it. In
+    // background isolates (OCR worker) no upgrade ever starts, so this
+    // resolves immediately with IPADIC.
+    final layout = await MecabService.instance.settledLayout();
+
     final result = <MokuroPage>[];
     for (final page in pages) {
-      if (page.blocks.isEmpty) {
+      if (page.blocks.isEmpty ||
+          (onlyStale &&
+              !pageNeedsWordSegmentation(page) &&
+              !pageSegmentedWithDifferentDictionary(page, layout.label))) {
         result.add(page);
         continue;
       }
@@ -37,7 +81,9 @@ class MokuroWordSegmenter {
         final words = _segmentBlock(block, blockIdx);
         newBlocks.add(block.copyWith(words: words));
       }
-      result.add(page.copyWith(blocks: newBlocks));
+      result.add(
+        page.copyWith(blocks: newBlocks, segmentationDictionary: layout.label),
+      );
     }
     return result;
   }

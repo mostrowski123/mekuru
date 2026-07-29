@@ -145,6 +145,28 @@ void main() {
   );
 
   test(
+    'expectedLayout predicts the enhanced dictionary and settledLayout '
+    'waits for the swap',
+    () async {
+      await MecabService.instance.init();
+
+      // Immediately after init the swap may or may not have landed, but the
+      // session is already expected to settle on the enhanced dictionary —
+      // this is what lets manga self-heal checks skip waiting for the load.
+      expect(
+        MecabService.instance.expectedLayout,
+        MecabFeatureLayout.unidicLite,
+      );
+
+      // settledLayout must block until the upgrade finished and report the
+      // dictionary tap-time lookups will actually use.
+      final settled = await MecabService.instance.settledLayout();
+      expect(settled, MecabFeatureLayout.unidicLite);
+      expect(MecabService.instance.layout, MecabFeatureLayout.unidicLite);
+    },
+  );
+
+  test(
     'upgradeToEnhanced: false stays on IPADIC even when the enhanced '
     'dictionary is enabled + installed (OCR-worker path)',
     () async {
@@ -153,6 +175,14 @@ void main() {
       expect(MecabService.instance.isInitialized, isTrue);
       expect(MecabService.instance.layout, MecabFeatureLayout.ipadic);
       expect(MecabService.instance.identifyWord('日本語', 0), isNotNull);
+
+      // With no upgrade in flight, both accessors report IPADIC without
+      // waiting — the OCR worker records this as segmentation provenance.
+      expect(MecabService.instance.expectedLayout, MecabFeatureLayout.ipadic);
+      expect(
+        await MecabService.instance.settledLayout(),
+        MecabFeatureLayout.ipadic,
+      );
 
       // No upgrade must fire: the layout stays IPADIC for the whole window.
       final swapped = await _waitUntil(

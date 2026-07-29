@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_segmentation_repair.dart';
+import 'package:mekuru/features/reader/data/services/mecab_feature_layout.dart';
 
 MokuroWord _word(
   String surface, {
@@ -43,15 +44,24 @@ MokuroTextBlock _block(List<String> lines, List<MokuroWord> words) {
   );
 }
 
-MokuroPage _page(List<MokuroTextBlock> blocks) {
+MokuroPage _page(
+  List<MokuroTextBlock> blocks, {
+  String? segmentationDictionary,
+}) {
   return MokuroPage(
     pageIndex: 0,
     imageFileName: 'p1.jpg',
     imgWidth: 800,
     imgHeight: 1200,
     blocks: blocks,
+    segmentationDictionary: segmentationDictionary,
   );
 }
+
+MokuroTextBlock _healthyBlock() => _block(
+  ['はい'],
+  [_word('はい', dictForm: 'はい', reading: 'ハイ')],
+);
 
 void main() {
   group('blockHasBrokenWordSegmentation', () {
@@ -160,6 +170,84 @@ void main() {
 
     test('false for a page without text blocks', () {
       expect(pageNeedsWordSegmentation(_page(const [])), isFalse);
+    });
+  });
+
+  group('pageSegmentedWithDifferentDictionary', () {
+    test('layout labels are an on-disk contract', () {
+      // Persisted as segmentationDictionary in pages_cache.json; renaming a
+      // label would re-segment every installed book on next open.
+      expect(MecabFeatureLayout.ipadic.label, 'IPADIC');
+      expect(MecabFeatureLayout.unidicLite.label, 'UniDic');
+    });
+
+    test('treats an unlabeled segmented page as IPADIC', () {
+      final page = _page([_healthyBlock()]);
+      expect(
+        pageSegmentedWithDifferentDictionary(page, 'UniDic'),
+        isTrue,
+      );
+      expect(
+        pageSegmentedWithDifferentDictionary(page, 'IPADIC'),
+        isFalse,
+      );
+    });
+
+    test('compares the recorded label against the target dictionary', () {
+      final page = _page([_healthyBlock()], segmentationDictionary: 'UniDic');
+      expect(
+        pageSegmentedWithDifferentDictionary(page, 'UniDic'),
+        isFalse,
+      );
+      expect(
+        pageSegmentedWithDifferentDictionary(page, 'IPADIC'),
+        isTrue,
+      );
+    });
+
+    test('ignores pages without any words regardless of label', () {
+      final unsegmented = _page([
+        _block(['そんなことないよ'], const []),
+      ]);
+      final empty = _page(const [], segmentationDictionary: 'UniDic');
+      expect(
+        pageSegmentedWithDifferentDictionary(unsegmented, 'UniDic'),
+        isFalse,
+      );
+      expect(
+        pageSegmentedWithDifferentDictionary(empty, 'IPADIC'),
+        isFalse,
+      );
+    });
+  });
+
+  group('pagesSegmentedWithDifferentDictionary', () {
+    test('detects a single mismatched page among healthy ones', () {
+      final pages = [
+        _page([_healthyBlock()], segmentationDictionary: 'UniDic'),
+        _page([_healthyBlock()]), // legacy IPADIC page, e.g. from OCR worker
+      ];
+      expect(pagesSegmentedWithDifferentDictionary(pages, 'UniDic'), isTrue);
+    });
+
+    test('false when every segmented page matches', () {
+      final pages = [
+        _page([_healthyBlock()], segmentationDictionary: 'UniDic'),
+        _page(const []),
+      ];
+      expect(pagesSegmentedWithDifferentDictionary(pages, 'UniDic'), isFalse);
+    });
+
+    test('label survives a JSON round-trip', () {
+      final page = _page([_healthyBlock()], segmentationDictionary: 'UniDic');
+      final roundTripped = MokuroPage.fromJson(
+        jsonDecode(jsonEncode(page.toJson())) as Map<String, dynamic>,
+      );
+      expect(roundTripped.segmentationDictionary, 'UniDic');
+      expect(
+        pageSegmentedWithDifferentDictionary(roundTripped, 'IPADIC'),
+        isTrue,
+      );
     });
   });
 

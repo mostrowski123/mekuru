@@ -87,6 +87,11 @@ class MokuroPage {
   final List<MokuroTextBlock> blocks;
   final Rect? contentBounds;
 
+  /// Label of the MeCab dictionary that produced this page's word
+  /// segmentation (`MecabFeatureLayout.label`). `null` on caches written
+  /// before provenance was recorded; those are treated as IPADIC.
+  final String? segmentationDictionary;
+
   const MokuroPage({
     required this.pageIndex,
     required this.imageFileName,
@@ -94,17 +99,23 @@ class MokuroPage {
     required this.imgHeight,
     required this.blocks,
     this.contentBounds,
+    this.segmentationDictionary,
   });
 
-  MokuroPage copyWith({List<MokuroTextBlock>? blocks, Rect? contentBounds}) =>
-      MokuroPage(
-        pageIndex: pageIndex,
-        imageFileName: imageFileName,
-        imgWidth: imgWidth,
-        imgHeight: imgHeight,
-        blocks: blocks ?? this.blocks,
-        contentBounds: contentBounds ?? this.contentBounds,
-      );
+  MokuroPage copyWith({
+    List<MokuroTextBlock>? blocks,
+    Rect? contentBounds,
+    String? segmentationDictionary,
+  }) => MokuroPage(
+    pageIndex: pageIndex,
+    imageFileName: imageFileName,
+    imgWidth: imgWidth,
+    imgHeight: imgHeight,
+    blocks: blocks ?? this.blocks,
+    contentBounds: contentBounds ?? this.contentBounds,
+    segmentationDictionary:
+        segmentationDictionary ?? this.segmentationDictionary,
+  );
 
   Map<String, dynamic> toJson() => {
     'pageIndex': pageIndex,
@@ -112,6 +123,8 @@ class MokuroPage {
     'imgWidth': imgWidth,
     'imgHeight': imgHeight,
     'blocks': blocks.map((b) => b.toJson()).toList(),
+    if (segmentationDictionary != null)
+      'segmentationDictionary': segmentationDictionary,
     if (contentBounds != null)
       'contentBounds': [
         contentBounds!.left,
@@ -131,6 +144,7 @@ class MokuroPage {
       blocks: (json['blocks'] as List)
           .map((b) => MokuroTextBlock.fromJson(b as Map<String, dynamic>))
           .toList(),
+      segmentationDictionary: json['segmentationDictionary'] as String?,
       contentBounds: cb != null
           ? Rect.fromLTRB(
               (cb[0] as num).toDouble(),

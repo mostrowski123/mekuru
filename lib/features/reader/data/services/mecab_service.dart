@@ -7,9 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:mecab_for_flutter/mecab_for_flutter.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
+import 'package:mekuru/features/reader/data/services/mecab_feature_layout.dart';
 import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
+export 'package:mekuru/features/reader/data/services/mecab_feature_layout.dart';
 
 /// Result of identifying a word from tapped text via MeCab.
 class WordLookupResult {
@@ -86,66 +89,6 @@ final _invisibleCharsPattern = RegExp(
   '[\u200B\u200C\u200D\uFEFF\u00AD\u2060\u200E\u200F\u202A-\u202E]',
 );
 
-/// Maps MeCab feature columns to logical fields (dictionary form, reading).
-///
-/// IPADIC and UniDic place these fields at different column indexes and
-/// encode loanwords differently, so callers pass the matching layout to
-/// [MecabService.init].
-class MecabFeatureLayout {
-  final int _dictionaryFormIndex;
-  final int _readingIndex;
-  final bool _stripLoanwordGloss;
-  final String label;
-
-  const MecabFeatureLayout._({
-    required int dictionaryFormIndex,
-    required int readingIndex,
-    required bool stripLoanwordGloss,
-    required this.label,
-  }) : _dictionaryFormIndex = dictionaryFormIndex,
-       _readingIndex = readingIndex,
-       _stripLoanwordGloss = stripLoanwordGloss;
-
-  /// IPADIC: `features[6]` is the lemma (dictionary form) and `features[7]`
-  /// is the surface reading in katakana.
-  static const ipadic = MecabFeatureLayout._(
-    dictionaryFormIndex: 6,
-    readingIndex: 7,
-    stripLoanwordGloss: false,
-    label: 'IPADIC',
-  );
-
-  /// UniDic (unidic-lite 2.1.2): `features[7]` is the lemma and
-  /// `features[17]` is the surface kana form without long-vowel `ー`
-  /// marks. Loanword lemmas include an `-english_gloss` suffix that must
-  /// be stripped to recover the dictionary key.
-  static const unidicLite = MecabFeatureLayout._(
-    dictionaryFormIndex: 7,
-    readingIndex: 17,
-    stripLoanwordGloss: true,
-    label: 'UniDic',
-  );
-
-  /// Returns `null` when the column is missing, `*`, or strips to empty.
-  String? dictionaryForm(List<String> features) {
-    if (features.length <= _dictionaryFormIndex) return null;
-    final raw = features[_dictionaryFormIndex];
-    if (raw.isEmpty || raw == '*') return null;
-    if (!_stripLoanwordGloss) return raw;
-    final dashIdx = raw.indexOf('-');
-    if (dashIdx < 0) return raw;
-    final stripped = raw.substring(0, dashIdx);
-    return stripped.isEmpty ? null : stripped;
-  }
-
-  /// Returns `''` when the column is missing or `*`.
-  String reading(List<String> features) {
-    if (features.length <= _readingIndex) return '';
-    final raw = features[_readingIndex];
-    return (raw.isEmpty || raw == '*') ? '' : raw;
-  }
-}
-
 /// Service wrapping MeCab for Japanese word boundary detection.
 ///
 /// Call [init] once at app startup. Then use [identifyWord] to determine
@@ -166,11 +109,35 @@ class MecabService {
   /// silently. Cleared on a successful (re-)initialization.
   Object? _initError;
 
-  /// Guards against starting more than one background UniDic-lite upgrade.
-  bool _upgradingToUnidic = false;
+  /// The in-flight background UniDic-lite upgrade, or `null` when none is
+  /// running. Also guards against starting the upgrade twice.
+  Future<void>? _pendingUpgrade;
 
   /// The active feature-column layout, set by [init].
   MecabFeatureLayout get layout => _layout;
+
+  /// The layout this session is expected to settle on: [layout], or
+  /// UniDic-lite while its background upgrade is still in flight. Callers
+  /// that persist tokenization results can use this as a cheap prediction
+  /// without waiting for the upgrade — but a pending upgrade can still fail,
+  /// so decisions that must be exact use [settledLayout] instead.
+  ///
+  /// Only valid after a successful [init].
+  MecabFeatureLayout get expectedLayout =>
+      _pendingUpgrade != null ? MecabFeatureLayout.unidicLite : _layout;
+
+  /// The layout after any in-flight background dictionary upgrade has
+  /// finished (successfully or not). Completes immediately when no upgrade
+  /// is pending. Callers that persist tokenization results await this so a
+  /// run cannot mix dictionaries mid-swap and the recorded provenance
+  /// matches what tap-time lookups will use.
+  ///
+  /// Only valid after a successful [init].
+  Future<MecabFeatureLayout> settledLayout() async {
+    final pending = _pendingUpgrade;
+    if (pending != null) await pending;
+    return _layout;
+  }
 
   /// The error from the last failed [init], or `null` if MeCab initialized
   /// successfully. Lets the UI explain why a word tap produced no result.
@@ -250,9 +217,13 @@ class MecabService {
   /// process-global, reference-counted registry keyed by dictionary path, so
   /// once the background isolate has populated it, creating the tagger on the
   /// main isolate is cheap — it just attaches to the already-resident model.
-  Future<void> _upgradeToUnidicLite() async {
-    if (_upgradingToUnidic) return;
-    _upgradingToUnidic = true;
+  Future<void> _upgradeToUnidicLite() {
+    return _pendingUpgrade ??= _doUpgradeToUnidicLite().whenComplete(() {
+      _pendingUpgrade = null;
+    });
+  }
+
+  Future<void> _doUpgradeToUnidicLite() async {
     try {
       final dictPath =
           await EnhancedFuriganaDictDownloadService.getStorageDir();
@@ -274,8 +245,6 @@ class MecabService {
     } catch (e) {
       debugPrint('[MeCab] UniDic-lite upgrade failed, staying on IPADIC: $e');
       logFailure('mecab.upgrade_failed', e);
-    } finally {
-      _upgradingToUnidic = false;
     }
   }
 
@@ -408,7 +377,7 @@ class MecabService {
   @visibleForTesting
   Future<void> resetForTest() async {
     _initFuture = null;
-    _upgradingToUnidic = false;
+    _pendingUpgrade = null;
     _initialized = false;
     _initError = null;
     _tagger?.dispose();

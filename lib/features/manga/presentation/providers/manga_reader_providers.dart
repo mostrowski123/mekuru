@@ -7,7 +7,6 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/manga_lookup_override_storage.dart';
 import 'package:mekuru/features/manga/data/services/manga_word_lookup_resolver.dart';
-import 'package:mekuru/features/manga/data/services/mokuro_segmentation_repair.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:path/path.dart' as p;
@@ -38,16 +37,17 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
   final json = jsonDecode(content) as Map<String, dynamic>;
   final mokuroBook = MokuroBook.fromJson(json);
 
-  // Self-heal caches with missing word boxes (legacy/partial OCR) or broken
-  // ones (segmented while MeCab was still initializing), so overlays remain
-  // available after restarts. Gated on MeCab being ready: segmenting without
-  // it would yield no words, and rewriting the cache from that would drop
-  // data. Default init policy on purpose — the reader session wants the
-  // user's preferred dictionary anyway.
-  if (pagesNeedWordSegmentation(mokuroBook.pages) &&
-      await ref.read(mecabServiceProvider).ensureInitialized()) {
+  // Self-heal caches with missing word boxes (legacy/partial OCR), broken
+  // ones (segmented while MeCab was still initializing), or ones segmented
+  // with a different dictionary than tap-time lookups tokenize with (the
+  // OCR worker stays on IPADIC while this session may have upgraded to
+  // UniDic-lite), so overlays stay available and consistent after restarts.
+  // The decision — including when to wait for MeCab init or for a pending
+  // dictionary upgrade — lives in MokuroWordSegmenter.needsResegmentation.
+  if (await MokuroWordSegmenter.needsResegmentation(mokuroBook.pages)) {
     final segmentedPages = await MokuroWordSegmenter.segmentAllPages(
       mokuroBook.pages,
+      onlyStale: true,
     );
     final updated = MokuroBook(
       title: mokuroBook.title,

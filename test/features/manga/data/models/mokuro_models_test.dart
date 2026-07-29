@@ -50,6 +50,40 @@ void main() {
     });
   });
 
+  group('MokuroPage segmentationDictionary', () {
+    MokuroPage page({String? segmentationDictionary}) => MokuroPage(
+      pageIndex: 0,
+      imageFileName: 'p1.jpg',
+      imgWidth: 800,
+      imgHeight: 1200,
+      blocks: const [],
+      segmentationDictionary: segmentationDictionary,
+    );
+
+    test('toJson omits the key when unset', () {
+      expect(page().toJson().containsKey('segmentationDictionary'), isFalse);
+    });
+
+    test('round-trips through JSON', () {
+      final json = page(segmentationDictionary: 'UniDic').toJson();
+      expect(MokuroPage.fromJson(json).segmentationDictionary, 'UniDic');
+    });
+
+    test('fromJson reads null for a legacy cache', () {
+      final json = page().toJson();
+      expect(MokuroPage.fromJson(json).segmentationDictionary, isNull);
+    });
+
+    test('copyWith sets and preserves the label', () {
+      final labeled = page().copyWith(segmentationDictionary: 'UniDic');
+      expect(labeled.segmentationDictionary, 'UniDic');
+      expect(
+        labeled.copyWith(blocks: const []).segmentationDictionary,
+        'UniDic',
+      );
+    });
+  });
+
   group('MokuroTextBlock.fromOcrJson', () {
     Map<String, dynamic> validBlockJson() => {
       'box': [10, 20, 110, 220],

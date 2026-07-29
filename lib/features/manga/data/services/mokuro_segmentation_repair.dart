@@ -1,3 +1,4 @@
+import '../../../reader/data/services/mecab_feature_layout.dart';
 import '../models/mokuro_models.dart';
 
 /// Pure heuristics deciding when a mokuro page cache needs MeCab word
@@ -13,6 +14,28 @@ final _japaneseWordChar = RegExp(
 /// Whether [pages] contain any block that still needs word segmentation.
 bool pagesNeedWordSegmentation(List<MokuroPage> pages) =>
     pages.any(pageNeedsWordSegmentation);
+
+/// Whether any of [pages] carries word segmentation produced by a different
+/// dictionary than [dictionary] — the one tap-time lookups tokenize with.
+/// Mismatched pages have word boxes whose boundaries disagree with what a
+/// tap on them resolves, so they need re-segmentation.
+bool pagesSegmentedWithDifferentDictionary(
+  List<MokuroPage> pages,
+  String dictionary,
+) => pages.any((page) => pageSegmentedWithDifferentDictionary(page, dictionary));
+
+/// Whether [page]'s words were segmented with a different dictionary than
+/// [dictionary]. Pages without any words never mismatch: missing words are
+/// [pageNeedsWordSegmentation]'s concern, and flagging them here would churn
+/// caches that have nothing to re-segment. Unlabeled pages predate
+/// provenance recording; that segmentation historically came from IPADIC
+/// (the OCR worker never upgrades, and IPADIC is the main isolate's
+/// baseline before the optional UniDic-lite swap).
+bool pageSegmentedWithDifferentDictionary(MokuroPage page, String dictionary) {
+  if (page.blocks.every((block) => block.words.isEmpty)) return false;
+  return (page.segmentationDictionary ?? MecabFeatureLayout.ipadic.label) !=
+      dictionary;
+}
 
 /// Whether [page] has any block that still needs word segmentation: either
 /// never segmented (lines but no words) or carrying the broken output of a
