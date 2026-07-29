@@ -16,6 +16,7 @@ import '../../../settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import '../../../reader/data/services/mecab_service.dart';
 import 'manga_ocr_client.dart';
+import 'mokuro_segmentation_repair.dart';
 import 'mokuro_word_segmenter.dart';
 import 'ocr_auth_secret_storage.dart';
 import 'ocr_billing_client.dart';
@@ -291,15 +292,15 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     }
   }
 
-  try {
-    // The OCR worker only needs word segmentation, which IPADIC provides.
-    // Skip the heavy UniDic-lite upgrade so this background isolate never
-    // loads the ~260 MB enhanced dictionary.
-    await MecabService.instance.init(upgradeToEnhanced: false);
-  } catch (e) {
-    debugPrint(
-      '[OCR_WORKER] MeCab init failed (word segmentation may be skipped): $e',
-    );
+  // The OCR worker only needs word segmentation, which IPADIC provides.
+  // Skip the heavy UniDic-lite upgrade so this background isolate never
+  // loads the ~260 MB enhanced dictionary. This is the worker's one init
+  // attempt: per-page segmentation checks isInitialized instead of retrying.
+  final mecabReady = await MecabService.instance.ensureInitialized(
+    upgradeToEnhanced: false,
+  );
+  if (!mecabReady) {
+    debugPrint('[OCR_WORKER] MeCab init failed (word segmentation skipped)');
   }
 
   final bearerToken = usesBuiltInServer
@@ -400,7 +401,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         return true;
       }
 
-      if (_needsWordSegmentation(mokuroBook.pages)) {
+      if (pagesNeedWordSegmentation(mokuroBook.pages)) {
         final segmentedPages = await _segmentPagesForLookup(mokuroBook.pages);
         if (await handleStopRequest(
           stopRequest: await loadStopRequest(),
@@ -600,7 +601,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
       }
     }
 
-    final pagesToSave = _needsWordSegmentation(updatedPages)
+    final pagesToSave = pagesNeedWordSegmentation(updatedPages)
         ? await _segmentPagesForLookup(updatedPages)
         : updatedPages;
 
@@ -711,17 +712,6 @@ String _describeOcrError(Object error) {
   return 'Unexpected error: $error';
 }
 
-bool _needsWordSegmentation(List<MokuroPage> pages) {
-  for (final page in pages) {
-    for (final block in page.blocks) {
-      if (block.lines.isNotEmpty && block.words.isEmpty) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 bool _pageNeedsOcr(MokuroBook book, MokuroPage page) {
   return !book.ocrCompleted && page.blocks.isEmpty;
 }
@@ -730,7 +720,7 @@ Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
   final segmentedPages = <MokuroPage>[];
 
   for (final page in pages) {
-    if (!_pageNeedsWordSegmentation(page)) {
+    if (!pageNeedsWordSegmentation(page)) {
       segmentedPages.add(page);
       continue;
     }
@@ -746,23 +736,12 @@ Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
 }
 
 Future<MokuroPage> _segmentSinglePageForLookup(MokuroPage page) async {
-  final strippedPage = page.copyWith(
-    blocks: page.blocks
-        .map((block) => block.copyWith(words: const []))
-        .toList(),
-  );
-  final segmented = await MokuroWordSegmenter.segmentAllPages([strippedPage]);
+  // The worker attempts MeCab init once at startup; if that failed, return
+  // the page unchanged instead of re-attempting (and re-failing) the full
+  // init for every page. The reader's self-heal repairs missing words later.
+  if (!MecabService.instance.isInitialized) return page;
+  final segmented = await MokuroWordSegmenter.segmentAllPages([page]);
   return segmented.first;
-}
-
-bool _pageNeedsWordSegmentation(MokuroPage page) {
-  for (final block in page.blocks) {
-    if (block.lines.isNotEmpty && block.words.isEmpty) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 /// Write updated pages back to the cache file.
@@ -886,9 +865,9 @@ Future<OcrProgress> buildScheduledOcrProgress({
       if (pendingPageCount > 0) {
         completed = mokuroBook.pages.length - pendingPageCount;
         total = mokuroBook.pages.length;
-      } else if (_needsWordSegmentation(mokuroBook.pages)) {
+      } else if (pagesNeedWordSegmentation(mokuroBook.pages)) {
         final pagesNeedingSegmentation = mokuroBook.pages
-            .where(_pageNeedsWordSegmentation)
+            .where(pageNeedsWordSegmentation)
             .length;
         completed = mokuroBook.pages.length - pagesNeedingSegmentation;
         total = mokuroBook.pages.length;

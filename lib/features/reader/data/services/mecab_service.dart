@@ -199,6 +199,20 @@ class MecabService {
         });
   }
 
+  /// Like [init], but reports failure as `false` instead of throwing.
+  ///
+  /// Callers that degrade gracefully when MeCab is unavailable (e.g. word
+  /// segmentation, which would silently produce no words) use this to gate
+  /// their work.
+  Future<bool> ensureInitialized({bool upgradeToEnhanced = true}) async {
+    try {
+      await init(upgradeToEnhanced: upgradeToEnhanced);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _doInit({required bool upgradeToEnhanced}) async {
     if (_initialized) return;
 
@@ -407,10 +421,14 @@ class MecabService {
   /// markers and whitespace symbols). Used for segmenting definition text
   /// into individual tappable words.
   ///
-  /// Falls back to returning [text] as a single-element list if MeCab is
-  /// not initialized or the text is empty.
+  /// Returns an empty list when MeCab is not initialized — matching
+  /// [tokenizeForFurigana] and [identifyWordWithContext] — so callers can
+  /// never mistake the whole input for a single real token. Falls back to
+  /// returning [text] as a single-element list when the text is empty or
+  /// parsing yields no meaningful tokens.
   List<String> tokenize(String text) {
-    if (!_initialized || text.isEmpty) return [text];
+    if (!_initialized) return const [];
+    if (text.isEmpty) return [text];
 
     final allTokens = _tagger!.parse(text);
     final surfaces = allTokens

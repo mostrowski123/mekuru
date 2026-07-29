@@ -13,6 +13,18 @@ class MokuroWordSegmenter {
   static Future<List<MokuroPage>> segmentAllPages(
     List<MokuroPage> pages,
   ) async {
+    // Bring MeCab up before segmenting; without it we'd produce no words at
+    // all (or, before tokenize() stopped falling back to whole-line tokens,
+    // cache line-sized pseudo-words). If init fails, return the pages
+    // untouched so callers cache nothing new and the reader's self-heal
+    // path retries on a later load. Segmentation only needs IPADIC; the
+    // flag only decides anything in background isolates — on the main
+    // isolate the startup warmup has already fixed the dictionary policy.
+    final ready = await MecabService.instance.ensureInitialized(
+      upgradeToEnhanced: false,
+    );
+    if (!ready) return pages;
+
     final result = <MokuroPage>[];
     for (final page in pages) {
       if (page.blocks.isEmpty) {

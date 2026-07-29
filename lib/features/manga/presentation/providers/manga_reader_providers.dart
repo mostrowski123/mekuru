@@ -7,6 +7,7 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/manga_lookup_override_storage.dart';
 import 'package:mekuru/features/manga/data/services/manga_word_lookup_resolver.dart';
+import 'package:mekuru/features/manga/data/services/mokuro_segmentation_repair.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:path/path.dart' as p;
@@ -37,10 +38,17 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
   final json = jsonDecode(content) as Map<String, dynamic>;
   final mokuroBook = MokuroBook.fromJson(json);
 
-  // Self-heal legacy/partial OCR caches that have text blocks but missing
-  // word boxes, so overlays remain available after restarts.
-  if (_needsWordSegmentation(mokuroBook.pages)) {
-    final segmentedPages = await _segmentPagesForLookup(mokuroBook.pages);
+  // Self-heal caches with missing word boxes (legacy/partial OCR) or broken
+  // ones (segmented while MeCab was still initializing), so overlays remain
+  // available after restarts. Gated on MeCab being ready: segmenting without
+  // it would yield no words, and rewriting the cache from that would drop
+  // data. Default init policy on purpose — the reader session wants the
+  // user's preferred dictionary anyway.
+  if (pagesNeedWordSegmentation(mokuroBook.pages) &&
+      await ref.read(mecabServiceProvider).ensureInitialized()) {
+    final segmentedPages = await MokuroWordSegmenter.segmentAllPages(
+      mokuroBook.pages,
+    );
     final updated = MokuroBook(
       title: mokuroBook.title,
       imageDirPath: mokuroBook.imageDirPath,
@@ -51,36 +59,18 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
       ocrCompleted: mokuroBook.ocrCompleted,
       pages: segmentedPages,
     );
-    await writeStringAtomic(cacheFile, jsonEncode(updated.toJson()));
+    // Only rewrite the cache when re-segmentation actually changed it, so a
+    // block that trips the repair heuristic but re-segments identically can
+    // never cause a rewrite-on-every-open loop.
+    final updatedJson = jsonEncode(updated.toJson());
+    if (updatedJson != content) {
+      await writeStringAtomic(cacheFile, updatedJson);
+    }
     return updated;
   }
 
   return mokuroBook;
 });
-
-bool _needsWordSegmentation(List<MokuroPage> pages) {
-  for (final page in pages) {
-    for (final block in page.blocks) {
-      if (block.lines.isNotEmpty && block.words.isEmpty) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
-  final strippedPages = pages
-      .map(
-        (page) => page.copyWith(
-          blocks: page.blocks
-              .map((block) => block.copyWith(words: const []))
-              .toList(),
-        ),
-      )
-      .toList();
-  return MokuroWordSegmenter.segmentAllPages(strippedPages);
-}
 
 /// Current manga view mode.
 class MangaViewModeNotifier extends Notifier<MangaViewMode> {

@@ -470,9 +470,9 @@ class BookRepository {
 
   /// Re-run MeCab word segmentation on an existing manga book.
   ///
-  /// Reads the cached page data, strips existing words from all blocks,
-  /// runs [MokuroWordSegmenter.segmentAllPages] to re-segment, and
-  /// writes back the updated cache.
+  /// Reads the cached page data, runs [MokuroWordSegmenter.segmentAllPages]
+  /// to re-segment (it replaces each block's words wholesale), and writes
+  /// back the updated cache.
   Future<void> reprocessMangaOcr(Book book) async {
     if (book.bookType != 'manga') return;
 
@@ -485,19 +485,13 @@ class BookRepository {
     final json = jsonDecode(content) as Map<String, dynamic>;
     final mokuroBook = MokuroBook.fromJson(json);
 
-    // Strip existing words from all blocks
-    final strippedPages = mokuroBook.pages.map((page) {
-      return page.copyWith(
-        blocks: page.blocks.map((block) {
-          return block.copyWith(words: []);
-        }).toList(),
-      );
-    }).toList();
-
     // Re-run segmentation. Existing contentBounds (if any) are preserved by
-    // MokuroPage.copyWith through the segmentation pipeline.
+    // MokuroPage.copyWith through the segmentation pipeline. No need to
+    // strip existing words first: segmentation replaces them wholesale, and
+    // if MeCab is unavailable the pages come back untouched (keeping the
+    // current words is strictly better than wiping them).
     final resegmented = await MokuroWordSegmenter.segmentAllPages(
-      strippedPages,
+      mokuroBook.pages,
     );
 
     // Write back
