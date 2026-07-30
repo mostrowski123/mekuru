@@ -119,10 +119,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 ? null
                 : () {
                     AppHaptics.light();
-                    ref
-                        .read(backupNotifierProvider.notifier)
-                        .createBackup()
-                        .then((_) => ref.invalidate(backupHistoryProvider));
+                    ref.read(backupNotifierProvider.notifier).createBackup();
                   },
           ),
           ListTile(

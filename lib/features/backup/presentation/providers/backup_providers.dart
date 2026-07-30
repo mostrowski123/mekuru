@@ -156,6 +156,7 @@ class BackupNotifier extends Notifier<BackupState> {
       final fileManager = ref.read(backupFileManagerProvider);
       final manifest = await service.createBackup();
       await fileManager.createBackupFile(manifest);
+      ref.invalidate(backupHistoryProvider);
       Sentry.logger.info(
         'Manual backup created',
         attributes: {'category': SentryAttribute.string('backup')},
