@@ -153,6 +153,8 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
       endCfi: location.end ? location.end.cfi : location.start.cfi,
       progress: percent
     });
+    reportPageChars(location.start.cfi,
+      location.end ? location.end.cfi : location.start.cfi);
   });
 
   rendition.on('displayError', function (err) {
@@ -898,6 +900,22 @@ function getTextFromCfi(startCfi, endCfi) {
   }).catch(function () {
     callDart('pageText', { text: '', startCfi: startCfi, endCfi: endCfi });
   });
+}
+
+// Reports the approximate visible-character count of the current page for
+// reading stats. Whitespace is stripped; failures report nothing (Dart
+// treats a missing count as 0 for the session).
+function reportPageChars(startCfi, endCfi) {
+  if (!book) return;
+  try {
+    book.getRange(startCfi + ',' + endCfi).then(function (range) {
+      var text = range ? range.toString() : '';
+      callDart('pageChars', { count: text.replace(/\s+/g, '').length });
+    }).catch(function () { /* non-fatal: no count for this page */ });
+  } catch (e) {
+    // getRange throws synchronously on a malformed CFI; this runs inside the
+    // 'relocated' listener, so it must never escape.
+  }
 }
 
 // ── Link-at-point detection ───────────────────────────────────────────

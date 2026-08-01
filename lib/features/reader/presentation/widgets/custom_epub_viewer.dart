@@ -82,6 +82,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onWordTapped,
     this.onSentenceSelected,
     this.onLoadError,
+    this.onPageCharacters,
   });
 
   final CustomEpubController controller;
@@ -124,6 +125,10 @@ class CustomEpubViewer extends StatefulWidget {
   onWordTapped;
   final ValueChanged<EpubSelectionData>? onSentenceSelected;
   final void Function(String description)? onLoadError;
+
+  /// Approximate visible-character count of the page just displayed, reported
+  /// by the JS bridge on every `relocated` event. Used for reading stats.
+  final void Function(int count)? onPageCharacters;
 
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
@@ -267,6 +272,15 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         if (data.isEmpty) return;
         final map = Map<String, dynamic>.from(data[0] as Map);
         widget.onRelocated?.call(EpubLocation.fromJson(map));
+      },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'pageChars',
+      callback: (data) {
+        if (data.isEmpty) return;
+        final map = Map<String, dynamic>.from(data[0] as Map);
+        widget.onPageCharacters?.call((map['count'] as num?)?.toInt() ?? 0);
       },
     );
 
