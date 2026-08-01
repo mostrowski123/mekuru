@@ -13,6 +13,7 @@ import '../../features/dictionary/data/models/frequency.dart';
 import '../../features/reader/data/models/bookmark.dart';
 import '../../features/reader/data/models/highlight.dart';
 import '../../features/backup/data/models/pending_book_data.dart';
+import '../../features/stats/data/models/stats_tables.dart';
 
 part 'database_provider.g.dart';
 
@@ -27,6 +28,8 @@ part 'database_provider.g.dart';
     Bookmarks,
     Highlights,
     PendingBookDatas,
+    ReadingSessions,
+    WordEvents,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -50,7 +53,7 @@ class AppDatabase extends _$AppDatabase {
   };
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -144,6 +147,16 @@ class AppDatabase extends _$AppDatabase {
         if (!names.contains('furigana_mode')) {
           await migrator.addColumn(books, books.furiganaMode);
         }
+      }
+      if (from < 19) {
+        await migrator.createTable(readingSessions);
+        await migrator.createTable(wordEvents);
+        // Backfill vocab history so the growth chart isn't empty on upgrade.
+        // Original save context is unknown, hence source 'other'.
+        await customStatement(
+          "INSERT INTO word_events (kind, expression, source, created_at) "
+          "SELECT 'saved', expression, 'other', date_added FROM saved_words",
+        );
       }
       // v18 (search_text) has no migration block: the repair pass in
       // beforeOpen adds the column via _dictionaryEntriesRepairColumns,

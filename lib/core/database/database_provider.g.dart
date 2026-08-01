@@ -4432,6 +4432,909 @@ class PendingBookDatasCompanion extends UpdateCompanion<PendingBookData> {
   }
 }
 
+class $ReadingSessionsTable extends ReadingSessions
+    with TableInfo<$ReadingSessionsTable, ReadingSession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReadingSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<int> bookId = GeneratedColumn<int>(
+    'book_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bookFormatMeta = const VerificationMeta(
+    'bookFormat',
+  );
+  @override
+  late final GeneratedColumn<String> bookFormat = GeneratedColumn<String>(
+    'book_format',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _durationMsMeta = const VerificationMeta(
+    'durationMs',
+  );
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+    'duration_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pagesTurnedMeta = const VerificationMeta(
+    'pagesTurned',
+  );
+  @override
+  late final GeneratedColumn<int> pagesTurned = GeneratedColumn<int>(
+    'pages_turned',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _charactersReadMeta = const VerificationMeta(
+    'charactersRead',
+  );
+  @override
+  late final GeneratedColumn<int> charactersRead = GeneratedColumn<int>(
+    'characters_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lookupsMeta = const VerificationMeta(
+    'lookups',
+  );
+  @override
+  late final GeneratedColumn<int> lookups = GeneratedColumn<int>(
+    'lookups',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _wordsSavedMeta = const VerificationMeta(
+    'wordsSaved',
+  );
+  @override
+  late final GeneratedColumn<int> wordsSaved = GeneratedColumn<int>(
+    'words_saved',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bookId,
+    bookFormat,
+    startedAt,
+    durationMs,
+    pagesTurned,
+    charactersRead,
+    lookups,
+    wordsSaved,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reading_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReadingSession> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    }
+    if (data.containsKey('book_format')) {
+      context.handle(
+        _bookFormatMeta,
+        bookFormat.isAcceptableOrUnknown(data['book_format']!, _bookFormatMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookFormatMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+        _durationMsMeta,
+        durationMs.isAcceptableOrUnknown(data['duration_ms']!, _durationMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_durationMsMeta);
+    }
+    if (data.containsKey('pages_turned')) {
+      context.handle(
+        _pagesTurnedMeta,
+        pagesTurned.isAcceptableOrUnknown(
+          data['pages_turned']!,
+          _pagesTurnedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('characters_read')) {
+      context.handle(
+        _charactersReadMeta,
+        charactersRead.isAcceptableOrUnknown(
+          data['characters_read']!,
+          _charactersReadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('lookups')) {
+      context.handle(
+        _lookupsMeta,
+        lookups.isAcceptableOrUnknown(data['lookups']!, _lookupsMeta),
+      );
+    }
+    if (data.containsKey('words_saved')) {
+      context.handle(
+        _wordsSavedMeta,
+        wordsSaved.isAcceptableOrUnknown(data['words_saved']!, _wordsSavedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReadingSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReadingSession(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}book_id'],
+      ),
+      bookFormat: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_format'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      durationMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_ms'],
+      )!,
+      pagesTurned: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pages_turned'],
+      )!,
+      charactersRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}characters_read'],
+      )!,
+      lookups: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}lookups'],
+      )!,
+      wordsSaved: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}words_saved'],
+      )!,
+    );
+  }
+
+  @override
+  $ReadingSessionsTable createAlias(String alias) {
+    return $ReadingSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class ReadingSession extends DataClass implements Insertable<ReadingSession> {
+  final int id;
+  final int? bookId;
+  final String bookFormat;
+  final DateTime startedAt;
+  final int durationMs;
+  final int pagesTurned;
+  final int charactersRead;
+  final int lookups;
+  final int wordsSaved;
+  const ReadingSession({
+    required this.id,
+    this.bookId,
+    required this.bookFormat,
+    required this.startedAt,
+    required this.durationMs,
+    required this.pagesTurned,
+    required this.charactersRead,
+    required this.lookups,
+    required this.wordsSaved,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || bookId != null) {
+      map['book_id'] = Variable<int>(bookId);
+    }
+    map['book_format'] = Variable<String>(bookFormat);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['duration_ms'] = Variable<int>(durationMs);
+    map['pages_turned'] = Variable<int>(pagesTurned);
+    map['characters_read'] = Variable<int>(charactersRead);
+    map['lookups'] = Variable<int>(lookups);
+    map['words_saved'] = Variable<int>(wordsSaved);
+    return map;
+  }
+
+  ReadingSessionsCompanion toCompanion(bool nullToAbsent) {
+    return ReadingSessionsCompanion(
+      id: Value(id),
+      bookId: bookId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bookId),
+      bookFormat: Value(bookFormat),
+      startedAt: Value(startedAt),
+      durationMs: Value(durationMs),
+      pagesTurned: Value(pagesTurned),
+      charactersRead: Value(charactersRead),
+      lookups: Value(lookups),
+      wordsSaved: Value(wordsSaved),
+    );
+  }
+
+  factory ReadingSession.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReadingSession(
+      id: serializer.fromJson<int>(json['id']),
+      bookId: serializer.fromJson<int?>(json['bookId']),
+      bookFormat: serializer.fromJson<String>(json['bookFormat']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      durationMs: serializer.fromJson<int>(json['durationMs']),
+      pagesTurned: serializer.fromJson<int>(json['pagesTurned']),
+      charactersRead: serializer.fromJson<int>(json['charactersRead']),
+      lookups: serializer.fromJson<int>(json['lookups']),
+      wordsSaved: serializer.fromJson<int>(json['wordsSaved']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'bookId': serializer.toJson<int?>(bookId),
+      'bookFormat': serializer.toJson<String>(bookFormat),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'durationMs': serializer.toJson<int>(durationMs),
+      'pagesTurned': serializer.toJson<int>(pagesTurned),
+      'charactersRead': serializer.toJson<int>(charactersRead),
+      'lookups': serializer.toJson<int>(lookups),
+      'wordsSaved': serializer.toJson<int>(wordsSaved),
+    };
+  }
+
+  ReadingSession copyWith({
+    int? id,
+    Value<int?> bookId = const Value.absent(),
+    String? bookFormat,
+    DateTime? startedAt,
+    int? durationMs,
+    int? pagesTurned,
+    int? charactersRead,
+    int? lookups,
+    int? wordsSaved,
+  }) => ReadingSession(
+    id: id ?? this.id,
+    bookId: bookId.present ? bookId.value : this.bookId,
+    bookFormat: bookFormat ?? this.bookFormat,
+    startedAt: startedAt ?? this.startedAt,
+    durationMs: durationMs ?? this.durationMs,
+    pagesTurned: pagesTurned ?? this.pagesTurned,
+    charactersRead: charactersRead ?? this.charactersRead,
+    lookups: lookups ?? this.lookups,
+    wordsSaved: wordsSaved ?? this.wordsSaved,
+  );
+  ReadingSession copyWithCompanion(ReadingSessionsCompanion data) {
+    return ReadingSession(
+      id: data.id.present ? data.id.value : this.id,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      bookFormat: data.bookFormat.present
+          ? data.bookFormat.value
+          : this.bookFormat,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      durationMs: data.durationMs.present
+          ? data.durationMs.value
+          : this.durationMs,
+      pagesTurned: data.pagesTurned.present
+          ? data.pagesTurned.value
+          : this.pagesTurned,
+      charactersRead: data.charactersRead.present
+          ? data.charactersRead.value
+          : this.charactersRead,
+      lookups: data.lookups.present ? data.lookups.value : this.lookups,
+      wordsSaved: data.wordsSaved.present
+          ? data.wordsSaved.value
+          : this.wordsSaved,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadingSession(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('bookFormat: $bookFormat, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('pagesTurned: $pagesTurned, ')
+          ..write('charactersRead: $charactersRead, ')
+          ..write('lookups: $lookups, ')
+          ..write('wordsSaved: $wordsSaved')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bookId,
+    bookFormat,
+    startedAt,
+    durationMs,
+    pagesTurned,
+    charactersRead,
+    lookups,
+    wordsSaved,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReadingSession &&
+          other.id == this.id &&
+          other.bookId == this.bookId &&
+          other.bookFormat == this.bookFormat &&
+          other.startedAt == this.startedAt &&
+          other.durationMs == this.durationMs &&
+          other.pagesTurned == this.pagesTurned &&
+          other.charactersRead == this.charactersRead &&
+          other.lookups == this.lookups &&
+          other.wordsSaved == this.wordsSaved);
+}
+
+class ReadingSessionsCompanion extends UpdateCompanion<ReadingSession> {
+  final Value<int> id;
+  final Value<int?> bookId;
+  final Value<String> bookFormat;
+  final Value<DateTime> startedAt;
+  final Value<int> durationMs;
+  final Value<int> pagesTurned;
+  final Value<int> charactersRead;
+  final Value<int> lookups;
+  final Value<int> wordsSaved;
+  const ReadingSessionsCompanion({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.bookFormat = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.pagesTurned = const Value.absent(),
+    this.charactersRead = const Value.absent(),
+    this.lookups = const Value.absent(),
+    this.wordsSaved = const Value.absent(),
+  });
+  ReadingSessionsCompanion.insert({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    required String bookFormat,
+    required DateTime startedAt,
+    required int durationMs,
+    this.pagesTurned = const Value.absent(),
+    this.charactersRead = const Value.absent(),
+    this.lookups = const Value.absent(),
+    this.wordsSaved = const Value.absent(),
+  }) : bookFormat = Value(bookFormat),
+       startedAt = Value(startedAt),
+       durationMs = Value(durationMs);
+  static Insertable<ReadingSession> custom({
+    Expression<int>? id,
+    Expression<int>? bookId,
+    Expression<String>? bookFormat,
+    Expression<DateTime>? startedAt,
+    Expression<int>? durationMs,
+    Expression<int>? pagesTurned,
+    Expression<int>? charactersRead,
+    Expression<int>? lookups,
+    Expression<int>? wordsSaved,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookId != null) 'book_id': bookId,
+      if (bookFormat != null) 'book_format': bookFormat,
+      if (startedAt != null) 'started_at': startedAt,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (pagesTurned != null) 'pages_turned': pagesTurned,
+      if (charactersRead != null) 'characters_read': charactersRead,
+      if (lookups != null) 'lookups': lookups,
+      if (wordsSaved != null) 'words_saved': wordsSaved,
+    });
+  }
+
+  ReadingSessionsCompanion copyWith({
+    Value<int>? id,
+    Value<int?>? bookId,
+    Value<String>? bookFormat,
+    Value<DateTime>? startedAt,
+    Value<int>? durationMs,
+    Value<int>? pagesTurned,
+    Value<int>? charactersRead,
+    Value<int>? lookups,
+    Value<int>? wordsSaved,
+  }) {
+    return ReadingSessionsCompanion(
+      id: id ?? this.id,
+      bookId: bookId ?? this.bookId,
+      bookFormat: bookFormat ?? this.bookFormat,
+      startedAt: startedAt ?? this.startedAt,
+      durationMs: durationMs ?? this.durationMs,
+      pagesTurned: pagesTurned ?? this.pagesTurned,
+      charactersRead: charactersRead ?? this.charactersRead,
+      lookups: lookups ?? this.lookups,
+      wordsSaved: wordsSaved ?? this.wordsSaved,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<int>(bookId.value);
+    }
+    if (bookFormat.present) {
+      map['book_format'] = Variable<String>(bookFormat.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (pagesTurned.present) {
+      map['pages_turned'] = Variable<int>(pagesTurned.value);
+    }
+    if (charactersRead.present) {
+      map['characters_read'] = Variable<int>(charactersRead.value);
+    }
+    if (lookups.present) {
+      map['lookups'] = Variable<int>(lookups.value);
+    }
+    if (wordsSaved.present) {
+      map['words_saved'] = Variable<int>(wordsSaved.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadingSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('bookFormat: $bookFormat, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('pagesTurned: $pagesTurned, ')
+          ..write('charactersRead: $charactersRead, ')
+          ..write('lookups: $lookups, ')
+          ..write('wordsSaved: $wordsSaved')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WordEventsTable extends WordEvents
+    with TableInfo<$WordEventsTable, WordEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WordEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expressionMeta = const VerificationMeta(
+    'expression',
+  );
+  @override
+  late final GeneratedColumn<String> expression = GeneratedColumn<String>(
+    'expression',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('other'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    expression,
+    source,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'word_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WordEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('expression')) {
+      context.handle(
+        _expressionMeta,
+        expression.isAcceptableOrUnknown(data['expression']!, _expressionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expressionMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WordEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WordEvent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      expression: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}expression'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WordEventsTable createAlias(String alias) {
+    return $WordEventsTable(attachedDatabase, alias);
+  }
+}
+
+class WordEvent extends DataClass implements Insertable<WordEvent> {
+  final int id;
+  final String kind;
+  final String expression;
+  final String source;
+  final DateTime createdAt;
+  const WordEvent({
+    required this.id,
+    required this.kind,
+    required this.expression,
+    required this.source,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kind'] = Variable<String>(kind);
+    map['expression'] = Variable<String>(expression);
+    map['source'] = Variable<String>(source);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  WordEventsCompanion toCompanion(bool nullToAbsent) {
+    return WordEventsCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      expression: Value(expression),
+      source: Value(source),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory WordEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WordEvent(
+      id: serializer.fromJson<int>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      expression: serializer.fromJson<String>(json['expression']),
+      source: serializer.fromJson<String>(json['source']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kind': serializer.toJson<String>(kind),
+      'expression': serializer.toJson<String>(expression),
+      'source': serializer.toJson<String>(source),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  WordEvent copyWith({
+    int? id,
+    String? kind,
+    String? expression,
+    String? source,
+    DateTime? createdAt,
+  }) => WordEvent(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    expression: expression ?? this.expression,
+    source: source ?? this.source,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  WordEvent copyWithCompanion(WordEventsCompanion data) {
+    return WordEvent(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      expression: data.expression.present
+          ? data.expression.value
+          : this.expression,
+      source: data.source.present ? data.source.value : this.source,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WordEvent(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('expression: $expression, ')
+          ..write('source: $source, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, kind, expression, source, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WordEvent &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.expression == this.expression &&
+          other.source == this.source &&
+          other.createdAt == this.createdAt);
+}
+
+class WordEventsCompanion extends UpdateCompanion<WordEvent> {
+  final Value<int> id;
+  final Value<String> kind;
+  final Value<String> expression;
+  final Value<String> source;
+  final Value<DateTime> createdAt;
+  const WordEventsCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.expression = const Value.absent(),
+    this.source = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  WordEventsCompanion.insert({
+    this.id = const Value.absent(),
+    required String kind,
+    required String expression,
+    this.source = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : kind = Value(kind),
+       expression = Value(expression);
+  static Insertable<WordEvent> custom({
+    Expression<int>? id,
+    Expression<String>? kind,
+    Expression<String>? expression,
+    Expression<String>? source,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (expression != null) 'expression': expression,
+      if (source != null) 'source': source,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  WordEventsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? kind,
+    Value<String>? expression,
+    Value<String>? source,
+    Value<DateTime>? createdAt,
+  }) {
+    return WordEventsCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      expression: expression ?? this.expression,
+      source: source ?? this.source,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (expression.present) {
+      map['expression'] = Variable<String>(expression.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WordEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('expression: $expression, ')
+          ..write('source: $source, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4449,6 +5352,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PendingBookDatasTable pendingBookDatas = $PendingBookDatasTable(
     this,
   );
+  late final $ReadingSessionsTable readingSessions = $ReadingSessionsTable(
+    this,
+  );
+  late final $WordEventsTable wordEvents = $WordEventsTable(this);
   late final Index idxExpression = Index(
     'idx_expression',
     'CREATE INDEX idx_expression ON dictionary_entries (expression)',
@@ -4503,6 +5410,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     bookmarks,
     highlights,
     pendingBookDatas,
+    readingSessions,
+    wordEvents,
     idxExpression,
     idxReading,
     idxExprDictid,
@@ -7193,6 +8102,485 @@ typedef $$PendingBookDatasTableProcessedTableManager =
       PendingBookData,
       PrefetchHooks Function()
     >;
+typedef $$ReadingSessionsTableCreateCompanionBuilder =
+    ReadingSessionsCompanion Function({
+      Value<int> id,
+      Value<int?> bookId,
+      required String bookFormat,
+      required DateTime startedAt,
+      required int durationMs,
+      Value<int> pagesTurned,
+      Value<int> charactersRead,
+      Value<int> lookups,
+      Value<int> wordsSaved,
+    });
+typedef $$ReadingSessionsTableUpdateCompanionBuilder =
+    ReadingSessionsCompanion Function({
+      Value<int> id,
+      Value<int?> bookId,
+      Value<String> bookFormat,
+      Value<DateTime> startedAt,
+      Value<int> durationMs,
+      Value<int> pagesTurned,
+      Value<int> charactersRead,
+      Value<int> lookups,
+      Value<int> wordsSaved,
+    });
+
+class $$ReadingSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $ReadingSessionsTable> {
+  $$ReadingSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookFormat => $composableBuilder(
+    column: $table.bookFormat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pagesTurned => $composableBuilder(
+    column: $table.pagesTurned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get charactersRead => $composableBuilder(
+    column: $table.charactersRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lookups => $composableBuilder(
+    column: $table.lookups,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get wordsSaved => $composableBuilder(
+    column: $table.wordsSaved,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReadingSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReadingSessionsTable> {
+  $$ReadingSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookFormat => $composableBuilder(
+    column: $table.bookFormat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pagesTurned => $composableBuilder(
+    column: $table.pagesTurned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get charactersRead => $composableBuilder(
+    column: $table.charactersRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lookups => $composableBuilder(
+    column: $table.lookups,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get wordsSaved => $composableBuilder(
+    column: $table.wordsSaved,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReadingSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReadingSessionsTable> {
+  $$ReadingSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<String> get bookFormat => $composableBuilder(
+    column: $table.bookFormat,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get pagesTurned => $composableBuilder(
+    column: $table.pagesTurned,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get charactersRead => $composableBuilder(
+    column: $table.charactersRead,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lookups =>
+      $composableBuilder(column: $table.lookups, builder: (column) => column);
+
+  GeneratedColumn<int> get wordsSaved => $composableBuilder(
+    column: $table.wordsSaved,
+    builder: (column) => column,
+  );
+}
+
+class $$ReadingSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReadingSessionsTable,
+          ReadingSession,
+          $$ReadingSessionsTableFilterComposer,
+          $$ReadingSessionsTableOrderingComposer,
+          $$ReadingSessionsTableAnnotationComposer,
+          $$ReadingSessionsTableCreateCompanionBuilder,
+          $$ReadingSessionsTableUpdateCompanionBuilder,
+          (
+            ReadingSession,
+            BaseReferences<
+              _$AppDatabase,
+              $ReadingSessionsTable,
+              ReadingSession
+            >,
+          ),
+          ReadingSession,
+          PrefetchHooks Function()
+        > {
+  $$ReadingSessionsTableTableManager(
+    _$AppDatabase db,
+    $ReadingSessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReadingSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReadingSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReadingSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> bookId = const Value.absent(),
+                Value<String> bookFormat = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<int> durationMs = const Value.absent(),
+                Value<int> pagesTurned = const Value.absent(),
+                Value<int> charactersRead = const Value.absent(),
+                Value<int> lookups = const Value.absent(),
+                Value<int> wordsSaved = const Value.absent(),
+              }) => ReadingSessionsCompanion(
+                id: id,
+                bookId: bookId,
+                bookFormat: bookFormat,
+                startedAt: startedAt,
+                durationMs: durationMs,
+                pagesTurned: pagesTurned,
+                charactersRead: charactersRead,
+                lookups: lookups,
+                wordsSaved: wordsSaved,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> bookId = const Value.absent(),
+                required String bookFormat,
+                required DateTime startedAt,
+                required int durationMs,
+                Value<int> pagesTurned = const Value.absent(),
+                Value<int> charactersRead = const Value.absent(),
+                Value<int> lookups = const Value.absent(),
+                Value<int> wordsSaved = const Value.absent(),
+              }) => ReadingSessionsCompanion.insert(
+                id: id,
+                bookId: bookId,
+                bookFormat: bookFormat,
+                startedAt: startedAt,
+                durationMs: durationMs,
+                pagesTurned: pagesTurned,
+                charactersRead: charactersRead,
+                lookups: lookups,
+                wordsSaved: wordsSaved,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReadingSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReadingSessionsTable,
+      ReadingSession,
+      $$ReadingSessionsTableFilterComposer,
+      $$ReadingSessionsTableOrderingComposer,
+      $$ReadingSessionsTableAnnotationComposer,
+      $$ReadingSessionsTableCreateCompanionBuilder,
+      $$ReadingSessionsTableUpdateCompanionBuilder,
+      (
+        ReadingSession,
+        BaseReferences<_$AppDatabase, $ReadingSessionsTable, ReadingSession>,
+      ),
+      ReadingSession,
+      PrefetchHooks Function()
+    >;
+typedef $$WordEventsTableCreateCompanionBuilder =
+    WordEventsCompanion Function({
+      Value<int> id,
+      required String kind,
+      required String expression,
+      Value<String> source,
+      Value<DateTime> createdAt,
+    });
+typedef $$WordEventsTableUpdateCompanionBuilder =
+    WordEventsCompanion Function({
+      Value<int> id,
+      Value<String> kind,
+      Value<String> expression,
+      Value<String> source,
+      Value<DateTime> createdAt,
+    });
+
+class $$WordEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $WordEventsTable> {
+  $$WordEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WordEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WordEventsTable> {
+  $$WordEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WordEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WordEventsTable> {
+  $$WordEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get expression => $composableBuilder(
+    column: $table.expression,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$WordEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WordEventsTable,
+          WordEvent,
+          $$WordEventsTableFilterComposer,
+          $$WordEventsTableOrderingComposer,
+          $$WordEventsTableAnnotationComposer,
+          $$WordEventsTableCreateCompanionBuilder,
+          $$WordEventsTableUpdateCompanionBuilder,
+          (
+            WordEvent,
+            BaseReferences<_$AppDatabase, $WordEventsTable, WordEvent>,
+          ),
+          WordEvent,
+          PrefetchHooks Function()
+        > {
+  $$WordEventsTableTableManager(_$AppDatabase db, $WordEventsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WordEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WordEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WordEventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> expression = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => WordEventsCompanion(
+                id: id,
+                kind: kind,
+                expression: expression,
+                source: source,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String kind,
+                required String expression,
+                Value<String> source = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => WordEventsCompanion.insert(
+                id: id,
+                kind: kind,
+                expression: expression,
+                source: source,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WordEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WordEventsTable,
+      WordEvent,
+      $$WordEventsTableFilterComposer,
+      $$WordEventsTableOrderingComposer,
+      $$WordEventsTableAnnotationComposer,
+      $$WordEventsTableCreateCompanionBuilder,
+      $$WordEventsTableUpdateCompanionBuilder,
+      (WordEvent, BaseReferences<_$AppDatabase, $WordEventsTable, WordEvent>),
+      WordEvent,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7215,4 +8603,8 @@ class $AppDatabaseManager {
       $$HighlightsTableTableManager(_db, _db.highlights);
   $$PendingBookDatasTableTableManager get pendingBookDatas =>
       $$PendingBookDatasTableTableManager(_db, _db.pendingBookDatas);
+  $$ReadingSessionsTableTableManager get readingSessions =>
+      $$ReadingSessionsTableTableManager(_db, _db.readingSessions);
+  $$WordEventsTableTableManager get wordEvents =>
+      $$WordEventsTableTableManager(_db, _db.wordEvents);
 }
