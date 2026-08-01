@@ -2124,6 +2124,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statsStripThisWeek => 'This week';
 
   @override
+  String get statsStripEmpty => 'Reading stats';
+
+  @override
   String statsStripCharacters({required int count}) {
     final intl.NumberFormat countNumberFormat =
         intl.NumberFormat.decimalPattern(localeName);

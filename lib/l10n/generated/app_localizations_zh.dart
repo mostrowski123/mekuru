@@ -2014,6 +2014,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get statsStripThisWeek => 'This week';
 
   @override
+  String get statsStripEmpty => 'Reading stats';
+
+  @override
   String statsStripCharacters({required int count}) {
     final intl.NumberFormat countNumberFormat =
         intl.NumberFormat.decimalPattern(localeName);
@@ -3956,6 +3959,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get statsStripThisWeek => 'This week';
+
+  @override
+  String get statsStripEmpty => 'Reading stats';
 
   @override
   String statsStripCharacters({required int count}) {

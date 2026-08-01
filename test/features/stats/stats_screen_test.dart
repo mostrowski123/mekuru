@@ -122,6 +122,30 @@ void main() {
       expect(inHero('0'), findsNWidgets(2));
     });
 
+    testWidgets('survives every period with no data at all', (tester) async {
+      // The library strip now opens this screen before anything has been read,
+      // so the empty-data path is reachable in every period rather than only
+      // in whichever one happens to be selected first. The charts below the
+      // tiles have to cope with zero points, notably the vocabulary line under
+      // "All", whose window has no start date to anchor to.
+      await pumpScreen(tester, sessions: const [], events: const []);
+
+      for (final period in const ['Week', 'Month', 'Year', 'All']) {
+        await tester.tap(
+          find.descendant(
+            of: find.byType(SegmentedButton<StatsPeriod>),
+            matching: find.text(period),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull, reason: 'period $period');
+        expect(find.byType(HeroStatTile), findsNWidgets(3), reason: period);
+        expect(inHero('0m'), findsOneWidget, reason: period);
+        expect(inHero('0'), findsNWidgets(2), reason: period);
+      }
+    });
+
     testWidgets('shows a quiet message when the stats cannot be read', (
       tester,
     ) async {

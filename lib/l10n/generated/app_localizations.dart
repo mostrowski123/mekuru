@@ -3610,6 +3610,12 @@ abstract class AppLocalizations {
   /// **'This week'**
   String get statsStripThisWeek;
 
+  /// The whole content of the library stats strip before anything has been read, replacing the week's figures. A plain name for the destination, deliberately not a zero total and not an encouragement to start reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading stats'**
+  String get statsStripEmpty;
+
   /// Characters read in the trailing seven days, shown next to the reading time on the library stats strip.
   ///
   /// In en, this message translates to:
