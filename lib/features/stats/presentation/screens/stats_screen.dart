@@ -32,23 +32,34 @@ class StatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.statsTitle)),
-      body: ListView(
+      // Deliberately not a ListView: its sliver delegate disposes children
+      // scrolled past the cache extent, and neither TweenAnimationBuilder nor
+      // fl_chart keeps itself alive. Once the chart slots below are filled,
+      // scrolling the hero row off-screen and back would remount the tiles and
+      // replay the count-up, against the spec's "once per screen open". The
+      // page is a small fixed set of children, so building them all is cheaper
+      // than keep-alive plumbing on every entrance animation.
+      body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        children: [
-          // Hero numbers come before any chart: the spec's reward surface
-          // leads with typography, not with axes.
-          const _HeroStatsRow(),
-          const SizedBox(height: 20),
-          const _ControlRow(),
-          const SizedBox(height: 8),
-          // Chart cards land below, in spec order. Each slot is a separate
-          // builder so the chart tasks have an unambiguous insertion point.
-          _buildHeatmapCard(context, ref),
-          _buildReadingTimeCard(context, ref),
-          _buildVolumeCard(context, ref),
-          _buildLookupRateCard(context, ref),
-          _buildVocabGrowthCard(context, ref),
-        ],
+        child: Column(
+          // Matches the tight cross-axis constraints ListView handed down.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Hero numbers come before any chart: the spec's reward surface
+            // leads with typography, not with axes.
+            const _HeroStatsRow(),
+            const SizedBox(height: 20),
+            const _ControlRow(),
+            const SizedBox(height: 8),
+            // Chart cards land below, in spec order. Each slot is a separate
+            // builder so the chart tasks have an unambiguous insertion point.
+            _buildHeatmapCard(context, ref),
+            _buildReadingTimeCard(context, ref),
+            _buildVolumeCard(context, ref),
+            _buildLookupRateCard(context, ref),
+            _buildVocabGrowthCard(context, ref),
+          ],
+        ),
       ),
     );
   }
@@ -138,20 +149,14 @@ class _HeroStatsRow extends ConsumerWidget {
     );
   }
 
-  /// One third of the row. [FittedBox] scales the tile down rather than
-  /// clipping it: a six-figure character count in a headline face does not fit
-  /// a third of a phone screen, and the number is the point of the tile.
+  /// One third of the row. The tile scales its own number down to fit.
   Widget _heroTile({
     required String label,
     required int value,
     required String Function(int) formatter,
   }) {
     return Expanded(
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: AlignmentDirectional.centerStart,
-        child: HeroStatTile(label: label, value: value, formatter: formatter),
-      ),
+      child: HeroStatTile(label: label, value: value, formatter: formatter),
     );
   }
 }

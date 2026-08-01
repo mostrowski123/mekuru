@@ -124,6 +124,31 @@ void main() {
       expect(find.text('0'), findsNWidgets(2));
     });
 
+    testWidgets('shows a quiet message when the stats cannot be read', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sessionsProvider.overrideWith(
+              (ref) => Stream.error(Exception('database is gone')),
+            ),
+            wordEventsProvider.overrideWith((ref) => Stream.value(const [])),
+          ],
+          child: buildLocalizedTestApp(home: const StatsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Reading stats aren't available right now."),
+        findsOneWidget,
+      );
+      expect(find.byType(HeroStatTile), findsNothing);
+      // The selectors stay usable — only the numbers are missing.
+      expect(find.byType(SegmentedButton<StatsPeriod>), findsOneWidget);
+    });
+
     testWidgets('re-reads totals when the format filter changes', (
       tester,
     ) async {

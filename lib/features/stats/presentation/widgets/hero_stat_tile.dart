@@ -31,10 +31,17 @@ class HeroStatTile extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              formatter?.call(shown) ?? '$shown',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+            // Only the number scales: a six-figure count in a headline face
+            // does not fit a third of a phone screen, but the label must keep
+            // the user's text scale rather than shrink along with it.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                formatter?.call(shown) ?? '$shown',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             Text(label, style: theme.textTheme.bodySmall),
