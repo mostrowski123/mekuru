@@ -26,17 +26,14 @@ class LibraryStatsStrip extends ConsumerWidget {
 
     // Combined totals on purpose: the stats screen's format filter is that
     // screen's own state, and a strip that silently showed only manga would
-    // misreport the week.
-    var durationMs = 0;
-    var charactersRead = 0;
-    for (final bucket in bucketize(
-      sessions,
-      StatsPeriod.week,
-      DateTime.now(),
-    )) {
-      durationMs += bucket.durationMs;
-      charactersRead += bucket.charactersRead;
-    }
+    // misreport the week. No word events either — the strip has no room for a
+    // third figure, so `wordsAdded` is left at zero rather than computed.
+    final totals = periodTotals(
+      sessions: sessions,
+      events: const [],
+      period: StatsPeriod.week,
+      now: DateTime.now(),
+    );
 
     final theme = Theme.of(context);
     final l10n = context.l10n;
@@ -73,8 +70,8 @@ class LibraryStatsStrip extends ConsumerWidget {
                       Text(
                         // The dot is chrome between two independently
                         // localized figures, not translatable copy.
-                        '${formatDuration(durationMs)} · '
-                        '${l10n.statsStripCharacters(count: charactersRead)}',
+                        '${formatDuration(totals.durationMs)} · '
+                        '${l10n.statsStripCharacters(count: totals.charactersRead)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
