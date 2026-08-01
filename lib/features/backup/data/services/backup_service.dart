@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
+import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Reads the current app state (DB + SharedPreferences) and produces
@@ -56,6 +57,10 @@ class BackupService {
 
     final savedWords = await _db.select(_db.savedWords).get();
     final books = await _db.select(_db.books).get();
+
+    final statsRepository = StatsRepository(_db);
+    final readingSessions = await statsRepository.getAllSessions();
+    final wordEvents = await statsRepository.getAllWordEvents();
 
     final bookEntries = <BackupBookEntry>[];
     for (final book in books) {
@@ -137,6 +142,30 @@ class BackupService {
           )
           .toList(),
       books: bookEntries,
+      readingSessions: readingSessions
+          .map(
+            (s) => BackupReadingSessionEntry(
+              bookId: s.bookId,
+              bookFormat: s.bookFormat,
+              startedAt: s.startedAt,
+              durationMs: s.durationMs,
+              pagesTurned: s.pagesTurned,
+              charactersRead: s.charactersRead,
+              lookups: s.lookups,
+              wordsSaved: s.wordsSaved,
+            ),
+          )
+          .toList(),
+      wordEvents: wordEvents
+          .map(
+            (e) => BackupWordEventEntry(
+              kind: e.kind,
+              expression: e.expression,
+              source: e.source,
+              createdAt: e.createdAt,
+            ),
+          )
+          .toList(),
     );
   }
 
