@@ -70,7 +70,7 @@ class LibraryStatsStrip extends ConsumerWidget {
                       Text(
                         // The dot is chrome between two independently
                         // localized figures, not translatable copy.
-                        '${formatDuration(totals.durationMs)} · '
+                        '${formatDuration(l10n, totals.durationMs)} · '
                         '${l10n.statsStripCharacters(count: totals.charactersRead)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

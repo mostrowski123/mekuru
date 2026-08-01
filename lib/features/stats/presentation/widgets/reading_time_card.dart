@@ -157,19 +157,19 @@ class ReadingTimeCard extends StatelessWidget {
                       TextSpan(
                         text:
                             '${l10n.statsFormatEpub} '
-                            '${formatDuration(bar.epubMs)}\n',
+                            '${formatDuration(l10n, bar.epubMs)}\n',
                         style: valueStyle,
                       ),
                       TextSpan(
                         text:
                             '${l10n.statsFormatManga} '
-                            '${formatDuration(bar.mangaMs)}',
+                            '${formatDuration(l10n, bar.mangaMs)}',
                         style: valueStyle,
                       ),
                     ]
                   : [
                       TextSpan(
-                        text: formatDuration(bar.totalMs),
+                        text: formatDuration(l10n, bar.totalMs),
                         style: valueStyle,
                       ),
                     ],

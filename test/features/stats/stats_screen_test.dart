@@ -8,35 +8,56 @@ import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
 import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
 import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
+import 'package:mekuru/l10n/generated/app_localizations_en.dart';
+import 'package:mekuru/l10n/generated/app_localizations_zh.dart';
 
 import '../../test_app.dart';
 import 'stats_fixtures.dart';
 
 void main() {
   group('formatDuration', () {
+    // The per-locale classes gen_l10n emits need no widget tree, so these stay
+    // plain `test`s rather than pumping a MaterialApp for a string.
+    final en = AppLocalizationsEn();
+
     test('renders nothing-read as zero minutes', () {
-      expect(formatDuration(0), '0m');
+      expect(formatDuration(en, 0), '0m');
     });
 
     test('drops the hour part below an hour', () {
-      expect(formatDuration(42 * 60 * 1000), '42m');
+      expect(formatDuration(en, 42 * 60 * 1000), '42m');
     });
 
     test('renders hours and minutes together', () {
-      expect(formatDuration((3 * 60 + 20) * 60 * 1000), '3h 20m');
+      expect(formatDuration(en, (3 * 60 + 20) * 60 * 1000), '3h 20m');
     });
 
     test('keeps counting in hours past a day', () {
-      expect(formatDuration((30 * 60 + 5) * 60 * 1000), '30h 5m');
+      expect(formatDuration(en, (30 * 60 + 5) * 60 * 1000), '30h 5m');
     });
 
     test('floors sub-minute leftovers instead of rounding up', () {
-      expect(formatDuration(59 * 1000), '0m');
-      expect(formatDuration(119 * 1000), '1m');
+      expect(formatDuration(en, 59 * 1000), '0m');
+      expect(formatDuration(en, 119 * 1000), '1m');
     });
 
     test('clamps a negative duration rather than showing a minus sign', () {
-      expect(formatDuration(-5000), '0m');
+      expect(formatDuration(en, -5000), '0m');
+    });
+
+    test('reads its units off the locale rather than hardcoding h and m', () {
+      // Asserted against the l10n object's own message, not a literal: zh
+      // carries the English wording today, and the point is that whenever it
+      // is translated the formatter follows without a code change.
+      final zh = AppLocalizationsZh();
+      expect(
+        formatDuration(zh, (3 * 60 + 20) * 60 * 1000),
+        zh.statsDurationHoursMinutes(hours: 3, minutes: 20),
+      );
+      expect(
+        formatDuration(zh, 42 * 60 * 1000),
+        zh.statsDurationMinutes(minutes: 42),
+      );
     });
   });
 
