@@ -907,31 +907,40 @@ function getTextFromCfi(startCfi, endCfi) {
 // reading stats. Whitespace is stripped; failures report nothing (Dart
 // treats a missing count as 0 for the session).
 function reportPageChars(startCfi, endCfi) {
-  if (!book) return;
+  if (!rendition) return;
   try {
-    book.getRange(startCfi + ',' + endCfi).then(function (range) {
-      // Strip ruby annotations (<rt> readings, <rp> fallback parens) before
-      // counting: range.toString() would include injected furigana, so the
-      // count would jump when a user toggles furigana on/off. Keeping counts
-      // furigana-invariant stops the lookups-per-1,000-characters metric from
-      // shifting for a reason that has nothing to do with reading behaviour.
-      var text = '';
-      if (range) {
-        var frag = range.cloneContents();
-        var ruby = frag.querySelectorAll('rt, rp');
-        for (var i = 0; i < ruby.length; i++) {
-          ruby[i].parentNode.removeChild(ruby[i]);
-        }
-        text = frag.textContent || '';
-      }
-      callDart('pageChars', { count: text.replace(/\s+/g, '').length });
-    }).catch(function (e) {
-      // non-fatal: no count for this page
-      console.log('[EPUB_BRIDGE] pageChars failed:', e);
-    });
+    // Resolve each page boundary as its own point CFI against the document
+    // that is already rendered. Joining the two CFIs into one range CFI
+    // ("epubcfi(a),epubcfi(b)") does not work: EpubCFI.parse strips the
+    // leading "epubcfi(" and the trailing ")" of the whole string, so the
+    // join parses into garbage and silently yields no range.
+    var contents = rendition.getContents()[0];
+    if (!contents || !contents.document) return;
+    var doc = contents.document;
+    var r1 = new ePub.CFI(startCfi).toRange(doc);
+    var r2 = new ePub.CFI(endCfi).toRange(doc);
+    if (!r1 || !r2) {
+      console.log('[EPUB_BRIDGE] pageChars: CFI did not resolve in rendered doc');
+      return;
+    }
+    var range = doc.createRange();
+    range.setStart(r1.startContainer, r1.startOffset);
+    range.setEnd(r2.startContainer, r2.startOffset);
+    // Strip ruby annotations (<rt> readings, <rp> fallback parens) before
+    // counting: the raw text would include injected furigana, so the count
+    // would jump when a user toggles furigana on/off. Keeping counts
+    // furigana-invariant stops the lookups-per-1,000-characters metric from
+    // shifting for a reason that has nothing to do with reading behaviour.
+    var frag = range.cloneContents();
+    var ruby = frag.querySelectorAll('rt, rp');
+    for (var i = 0; i < ruby.length; i++) {
+      ruby[i].parentNode.removeChild(ruby[i]);
+    }
+    var text = frag.textContent || '';
+    callDart('pageChars', { count: text.replace(/\s+/g, '').length });
   } catch (e) {
-    // getRange throws synchronously on a malformed CFI; this runs inside the
-    // 'relocated' listener, so it must never escape.
+    // Malformed CFIs and out-of-order boundaries both throw synchronously;
+    // this runs inside the 'relocated' listener, so it must never escape.
     console.log('[EPUB_BRIDGE] pageChars failed:', e);
   }
 }
