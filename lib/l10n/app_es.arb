@@ -2399,5 +2399,17 @@
   "dictionaryPartOfSpeechGodanVerb": "Godan verb",
   "dictionaryPartOfSpeechZuruVerb": "Zuru verb",
   "dictionaryPartOfSpeechIntransitiveVerb": "Intransitive verb",
-  "dictionaryPartOfSpeechTransitiveVerb": "Transitive verb"
+  "dictionaryPartOfSpeechTransitiveVerb": "Transitive verb",
+  "statsTitle": "Reading Stats",
+  "statsHeroReadingTime": "Reading time",
+  "statsHeroCharactersRead": "Characters read",
+  "statsHeroWordsAdded": "Words added",
+  "statsFormatAll": "All",
+  "statsFormatEpub": "EPUB",
+  "statsFormatManga": "Manga",
+  "statsPeriodWeek": "Week",
+  "statsPeriodMonth": "Month",
+  "statsPeriodYear": "Year",
+  "statsPeriodAll": "All",
+  "statsUnavailable": "Reading stats aren't available right now."
 }

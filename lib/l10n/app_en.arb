@@ -2577,5 +2577,53 @@
   },
   "@dictionaryPartOfSpeechTransitiveVerb": {
     "description": "Part of speech label for transitive verbs."
+  },
+  "statsTitle": "Reading Stats",
+  "@statsTitle": {
+    "description": "Title of the reading statistics screen."
+  },
+  "statsHeroReadingTime": "Reading time",
+  "@statsHeroReadingTime": {
+    "description": "Label under the hero tile showing total time read in the selected period."
+  },
+  "statsHeroCharactersRead": "Characters read",
+  "@statsHeroCharactersRead": {
+    "description": "Label under the hero tile showing characters read in the selected period."
+  },
+  "statsHeroWordsAdded": "Words added",
+  "@statsHeroWordsAdded": {
+    "description": "Label under the hero tile showing distinct vocabulary words first saved in the selected period."
+  },
+  "statsFormatAll": "All",
+  "@statsFormatAll": {
+    "description": "Stats format filter option that includes both EPUB books and manga."
+  },
+  "statsFormatEpub": "EPUB",
+  "@statsFormatEpub": {
+    "description": "Stats format filter option limiting the charts to EPUB books."
+  },
+  "statsFormatManga": "Manga",
+  "@statsFormatManga": {
+    "description": "Stats format filter option limiting the charts to manga."
+  },
+  "statsPeriodWeek": "Week",
+  "@statsPeriodWeek": {
+    "description": "Stats period selector option covering the trailing seven days."
+  },
+  "statsPeriodMonth": "Month",
+  "@statsPeriodMonth": {
+    "description": "Stats period selector option covering the trailing thirty days."
+  },
+  "statsPeriodYear": "Year",
+  "@statsPeriodYear": {
+    "description": "Stats period selector option covering the trailing twelve months."
+  },
+  "statsPeriodAll": "All",
+  "@statsPeriodAll": {
+    "description": "Stats period selector option covering all recorded history."
+  },
+  "statsUnavailable": "Reading stats aren't available right now.",
+  "@statsUnavailable": {
+    "description": "Shown on the stats screen when the stored stats could not be read."
   }
 }
