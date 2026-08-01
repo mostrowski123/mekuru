@@ -40,13 +40,26 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('renders nothing before anything has been read', (
+    testWidgets('names itself before anything has been read', (tester) async {
+      await pumpStrip(tester, Stream.value(const []));
+
+      // The stats screen has no other entry point, so an empty database must
+      // not hide it. A plain label stands in for the week's figures: no zeros
+      // to misread, no encouragement to start reading.
+      expect(find.byType(Card), findsOneWidget);
+      expect(find.text('Reading stats'), findsOneWidget);
+      expect(find.text('This week'), findsNothing);
+    });
+
+    testWidgets('opens the stats screen when tapped before any reading', (
       tester,
     ) async {
       await pumpStrip(tester, Stream.value(const []));
 
-      expect(find.byType(Card), findsNothing);
-      expect(tester.getSize(find.byType(LibraryStatsStrip)), Size.zero);
+      await tester.tap(find.byType(LibraryStatsStrip));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(StatsScreen), findsOneWidget);
     });
 
     testWidgets('shows the trailing week totals', (tester) async {

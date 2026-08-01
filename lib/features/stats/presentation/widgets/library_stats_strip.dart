@@ -17,23 +17,28 @@ class LibraryStatsStrip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessions = ref.watch(sessionsProvider).value;
-    // Three cases collapse into one blank: nothing read yet (the spec's "no
-    // zero-state noise on first launch"), the stream still in flight, and the
-    // stream having failed. The library must never be blocked or made noisy
-    // by the stats database.
-    if (sessions == null || sessions.isEmpty) return const SizedBox.shrink();
+    final sessionsAsync = ref.watch(sessionsProvider);
+    // The stream still in flight and the stream having failed both collapse
+    // into one blank: the library must never be blocked or made noisy by the
+    // stats database. Having *no sessions yet* is not one of those cases —
+    // the strip is the only route to the stats screen, so it stays visible
+    // from first launch (post-QA user decision, 2026-08-02).
+    if (sessionsAsync.hasError) return const SizedBox.shrink();
+    final sessions = sessionsAsync.value;
+    if (sessions == null) return const SizedBox.shrink();
 
     // Combined totals on purpose: the stats screen's format filter is that
     // screen's own state, and a strip that silently showed only manga would
     // misreport the week. No word events either — the strip has no room for a
     // third figure, so `wordsAdded` is left at zero rather than computed.
-    final totals = periodTotals(
-      sessions: sessions,
-      events: const [],
-      period: StatsPeriod.week,
-      now: DateTime.now(),
-    );
+    final totals = sessions.isEmpty
+        ? null
+        : periodTotals(
+            sessions: sessions,
+            events: const [],
+            period: StatsPeriod.week,
+            now: DateTime.now(),
+          );
 
     final theme = Theme.of(context);
     final l10n = context.l10n;
@@ -55,31 +60,44 @@ class LibraryStatsStrip extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        l10n.statsStripThisWeek,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                  // Before anything has been read there is no week to name and
+                  // no figure worth printing, so the strip carries a single
+                  // neutral line naming its destination — not a row of zeros,
+                  // and not a nudge to start reading.
+                  child: totals == null
+                      ? Text(
+                          l10n.statsStripEmpty,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.statsStripThisWeek,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              // The dot is chrome between two independently
+                              // localized figures, not translatable copy.
+                              '${formatDuration(l10n, totals.durationMs)} · '
+                              '${l10n.statsStripCharacters(count: totals.charactersRead)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        // The dot is chrome between two independently
-                        // localized figures, not translatable copy.
-                        '${formatDuration(l10n, totals.durationMs)} · '
-                        '${l10n.statsStripCharacters(count: totals.charactersRead)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 const SizedBox(width: 4),
                 Icon(
