@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +12,7 @@ import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
+import 'package:mekuru/features/manga/data/services/page_char_counter.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
@@ -27,12 +27,10 @@ import 'package:mekuru/features/reader/presentation/providers/reader_providers.d
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
-import 'package:mekuru/features/stats/data/services/page_char_counter.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Manga reader screen — renders manga pages with word overlays.
@@ -152,27 +150,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     // Persist the session for the stats screen. Fire-and-forget: this also
     // runs from dispose(), where `ref` is already unusable — hence the
     // repository captured in initState.
-    final startedAt = DateTime.now().subtract(
-      Duration(milliseconds: summary['duration_ms'] as int),
+    unawaited(
+      _statsRepository.recordSessionSummary(
+        summary: summary,
+        bookId: widget.book.id,
+      ),
     );
-    unawaited(() async {
-      try {
-        await _statsRepository.insertSession(
-          ReadingSessionsCompanion.insert(
-            bookId: Value(widget.book.id),
-            bookFormat: 'manga',
-            startedAt: startedAt,
-            durationMs: summary['duration_ms'] as int,
-            pagesTurned: Value(summary['pages_turned'] as int),
-            charactersRead: Value(summary['characters_read'] as int),
-            lookups: Value(summary['lookups'] as int),
-            wordsSaved: Value(summary['words_saved'] as int),
-          ),
-        );
-      } catch (e, st) {
-        await Sentry.captureException(e, stackTrace: st);
-      }
-    }());
   }
 
   void _recordPageTurn({required bool forward}) {

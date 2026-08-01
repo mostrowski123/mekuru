@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
-import 'package:mekuru/features/stats/data/services/page_char_counter.dart';
+import 'package:mekuru/features/manga/data/services/page_char_counter.dart';
 
 MokuroTextBlock block(List<String> lines) => MokuroTextBlock(
   box: const [0, 0, 10, 10],

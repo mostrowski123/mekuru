@@ -7,13 +7,6 @@ import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
-/// Stroke width of the trend line.
-const double _lineWidth = 2;
-
-/// Radius of the dot under a finger. Ten logical pixels across, so the mark
-/// the tooltip refers to is never smaller than the thing that summoned it.
-const double _touchDotRadius = 5;
-
 /// Radius of a bucket that has no neighbour to draw a line to.
 const double _loneSpotRadius = 3;
 
@@ -83,53 +76,20 @@ class LookupRateCard extends StatelessWidget {
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(),
         rightTitles: const AxisTitles(),
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: chartLeftAxisWidth,
-            interval: interval,
-            getTitlesWidget: (value, meta) => value <= 0
-                ? const SizedBox.shrink()
-                : statsAxisLabel(context, meta, rateFormat.format(value)),
-          ),
-        ),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: chartBottomAxisHeight,
-            interval: step.toDouble(),
-            getTitlesWidget: (value, meta) {
-              final index = value.round();
-              if (index % step != 0 || index < 0 || index >= buckets.length) {
-                return const SizedBox.shrink();
-              }
-              return statsAxisLabel(
-                context,
-                meta,
-                bucketAxisLabel(buckets[index].start, period, locale),
-              );
-            },
-          ),
+        leftTitles: statsValueAxis(context, interval, rateFormat.format),
+        bottomTitles: statsBucketAxis(
+          context,
+          [for (final bucket in buckets) bucket.start],
+          step,
+          period,
+          locale,
+          interval: step.toDouble(),
         ),
       ),
       lineTouchData: LineTouchData(
         // The line is two pixels wide; the thing you have to hit is not.
         touchSpotThreshold: 24,
-        getTouchedSpotIndicator: (barData, indicators) => [
-          for (final _ in indicators)
-            TouchedSpotIndicatorData(
-              FlLine(color: colors.outlineVariant, strokeWidth: 1),
-              FlDotData(
-                getDotPainter: (spot, percent, bar, index) =>
-                    FlDotCirclePainter(
-                      radius: _touchDotRadius,
-                      color: seriesColor,
-                      strokeWidth: 2,
-                      strokeColor: statsCardColor(theme),
-                    ),
-              ),
-            ),
-        ],
+        getTouchedSpotIndicator: statsLineTouchIndicator(theme, seriesColor),
         touchTooltipData: statsLineTooltip(
           colors,
           getTooltipItems: (touchedSpots) => [
@@ -141,9 +101,9 @@ class LookupRateCard extends StatelessWidget {
       lineBarsData: [
         for (final run in runs)
           LineChartBarData(
-            spots: filled ? run : _collapsed(run),
+            spots: filled ? run : collapsedSpots(run),
             color: seriesColor,
-            barWidth: _lineWidth,
+            barWidth: statsLineWidth,
             isStrokeCapRound: true,
             isStrokeJoinRound: true,
             // A run of one has no line to draw, so it shows as its own point.
@@ -155,17 +115,7 @@ class LookupRateCard extends StatelessWidget {
                 strokeWidth: 0,
               ),
             ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  seriesColor.withValues(alpha: 0.26),
-                  seriesColor.withValues(alpha: 0),
-                ],
-              ),
-            ),
+            belowBarData: statsLineFill(seriesColor),
           ),
       ],
     );
@@ -211,8 +161,3 @@ List<List<FlSpot>> _contiguousRuns(List<double?> rates) {
   if (current.isNotEmpty) runs.add(current);
   return runs;
 }
-
-/// The entrance frame: every spot of a run stacked on its first one, so the
-/// line unrolls left to right as fl_chart interpolates them apart.
-List<FlSpot> _collapsed(List<FlSpot> run) =>
-    List<FlSpot>.filled(run.length, run.first);

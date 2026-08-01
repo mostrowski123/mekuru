@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -203,27 +202,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     // Persist the session for the stats screen. Fire-and-forget: this also
     // runs from dispose(), where `ref` is already unusable — hence the
     // repository captured in initState.
-    final startedAt = DateTime.now().subtract(
-      Duration(milliseconds: summary['duration_ms'] as int),
+    unawaited(
+      _statsRepository.recordSessionSummary(
+        summary: summary,
+        bookId: widget.book.id,
+      ),
     );
-    unawaited(() async {
-      try {
-        await _statsRepository.insertSession(
-          ReadingSessionsCompanion.insert(
-            bookId: Value(widget.book.id),
-            bookFormat: 'epub',
-            startedAt: startedAt,
-            durationMs: summary['duration_ms'] as int,
-            pagesTurned: Value(summary['pages_turned'] as int),
-            charactersRead: Value(summary['characters_read'] as int),
-            lookups: Value(summary['lookups'] as int),
-            wordsSaved: Value(summary['words_saved'] as int),
-          ),
-        );
-      } catch (e, st) {
-        await Sentry.captureException(e, stackTrace: st);
-      }
-    }());
   }
 
   void _recordLookupResolved(bool hit) {

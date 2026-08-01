@@ -5,9 +5,9 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
+import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
 import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
-import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
 
 import '../../test_app.dart';
 

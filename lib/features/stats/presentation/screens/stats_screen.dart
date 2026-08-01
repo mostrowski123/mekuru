@@ -4,13 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
+import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
 import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
 import 'package:mekuru/features/stats/presentation/widgets/lookup_rate_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/reading_time_card.dart';
-// `formatDuration` lives with the chart chrome the cards share, so the tiles,
-// the day sheet and the reading-time tooltips all read off one implementation.
-import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/vocab_growth_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/volume_card.dart';
 import 'package:mekuru/l10n/l10n.dart';

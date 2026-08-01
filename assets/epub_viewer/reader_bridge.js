@@ -148,13 +148,14 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
   rendition.on('relocated', function (location) {
     if (!location || !location.start) return;
     var percent = location.start.percentage;
+    // A single-page spread has no `end`; the page is then its own end.
+    var endCfi = location.end ? location.end.cfi : location.start.cfi;
     callDart('relocated', {
       startCfi: location.start.cfi,
-      endCfi: location.end ? location.end.cfi : location.start.cfi,
+      endCfi: endCfi,
       progress: percent
     });
-    reportPageChars(location.start.cfi,
-      location.end ? location.end.cfi : location.start.cfi);
+    reportPageChars(location.start.cfi, endCfi);
   });
 
   rendition.on('displayError', function (err) {

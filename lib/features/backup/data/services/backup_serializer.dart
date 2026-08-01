@@ -132,8 +132,10 @@ class BackupSerializer {
       ),
     );
 
-    final dictionaryPreferences = _decodeDictionaryPreferences(
+    final dictionaryPreferences = _decodeList(
       parsed['dictionaryPreferences'],
+      'dictionaryPreferences',
+      _decodeDictionaryPreference,
     );
 
     final savedWordsList = parsed['savedWords'];
@@ -286,16 +288,6 @@ class BackupSerializer {
           DateTime.tryParse(item['createdAt'] as String? ?? '') ??
           DateTime.now(),
     );
-  }
-
-  static List<BackupDictionaryPreference> _decodeDictionaryPreferences(
-    dynamic rawPreferences,
-  ) {
-    if (rawPreferences == null) return const [];
-    if (rawPreferences is! List) {
-      throw BackupFormatException('invalid "dictionaryPreferences" field');
-    }
-    return rawPreferences.map(_decodeDictionaryPreference).toList();
   }
 
   static BackupDictionaryPreference _decodeDictionaryPreference(dynamic item) {
