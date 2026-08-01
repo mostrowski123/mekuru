@@ -57,6 +57,30 @@ class BackupSerializer {
           )
           .toList(),
       'books': manifest.books.map(_encodeBookEntry).toList(),
+      'readingSessions': manifest.readingSessions
+          .map(
+            (s) => {
+              'bookId': s.bookId,
+              'bookFormat': s.bookFormat,
+              'startedAt': s.startedAt.toUtc().toIso8601String(),
+              'durationMs': s.durationMs,
+              'pagesTurned': s.pagesTurned,
+              'charactersRead': s.charactersRead,
+              'lookups': s.lookups,
+              'wordsSaved': s.wordsSaved,
+            },
+          )
+          .toList(),
+      'wordEvents': manifest.wordEvents
+          .map(
+            (e) => {
+              'kind': e.kind,
+              'expression': e.expression,
+              'source': e.source,
+              'createdAt': e.createdAt.toUtc().toIso8601String(),
+            },
+          )
+          .toList(),
     };
     return jsonEncode(map);
   }
@@ -131,6 +155,16 @@ class BackupSerializer {
       dictionaryPreferences: dictionaryPreferences,
       savedWords: savedWords,
       books: books,
+      readingSessions: _decodeList(
+        parsed['readingSessions'],
+        'readingSessions',
+        _decodeReadingSession,
+      ),
+      wordEvents: _decodeList(
+        parsed['wordEvents'],
+        'wordEvents',
+        _decodeWordEvent,
+      ),
     );
   }
 
@@ -204,6 +238,52 @@ class BackupSerializer {
       sentenceContext: item['sentenceContext'] as String? ?? '',
       dateAdded:
           DateTime.tryParse(item['dateAdded'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+
+  /// Decodes an optional top-level array; a missing key means "no rows".
+  /// Used for fields added after a backup version shipped.
+  static List<T> _decodeList<T>(
+    dynamic rawList,
+    String fieldName,
+    T Function(dynamic) decodeItem,
+  ) {
+    if (rawList == null) return const [];
+    if (rawList is! List) {
+      throw BackupFormatException('invalid "$fieldName" field');
+    }
+    return rawList.map(decodeItem).toList();
+  }
+
+  static BackupReadingSessionEntry _decodeReadingSession(dynamic item) {
+    if (item is! Map<String, dynamic>) {
+      throw BackupFormatException('invalid reading session entry');
+    }
+    return BackupReadingSessionEntry(
+      bookId: item['bookId'] as int?,
+      bookFormat: item['bookFormat'] as String? ?? 'epub',
+      startedAt:
+          DateTime.tryParse(item['startedAt'] as String? ?? '') ??
+          DateTime.now(),
+      durationMs: item['durationMs'] as int? ?? 0,
+      pagesTurned: item['pagesTurned'] as int? ?? 0,
+      charactersRead: item['charactersRead'] as int? ?? 0,
+      lookups: item['lookups'] as int? ?? 0,
+      wordsSaved: item['wordsSaved'] as int? ?? 0,
+    );
+  }
+
+  static BackupWordEventEntry _decodeWordEvent(dynamic item) {
+    if (item is! Map<String, dynamic>) {
+      throw BackupFormatException('invalid word event entry');
+    }
+    return BackupWordEventEntry(
+      kind: item['kind'] as String? ?? 'saved',
+      expression: item['expression'] as String? ?? '',
+      source: item['source'] as String? ?? 'other',
+      createdAt:
+          DateTime.tryParse(item['createdAt'] as String? ?? '') ??
           DateTime.now(),
     );
   }

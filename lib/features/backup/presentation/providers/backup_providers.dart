@@ -319,6 +319,9 @@ class RestoreNotifier extends Notifier<RestoreState> {
       // Restore saved words
       final wordsResult = await restoreService.restoreSavedWords(manifest);
 
+      // Restore reading stats (only into empty stats tables)
+      await restoreService.restoreStats(manifest);
+
       // Restore books
       final booksResult = await restoreService.restoreBooks(manifest);
 

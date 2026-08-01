@@ -121,6 +121,59 @@ class RestoreService {
     return RestoreWordResult(added: added, skipped: skipped);
   }
 
+  /// Restore reading statistics.
+  ///
+  /// The stats tables are append-only history with no natural key to merge on,
+  /// so each table is filled only when it is still empty locally. The two
+  /// tables are checked independently, and a repeated restore is a no-op.
+  /// `bookId` is written verbatim: it is display metadata and is never joined
+  /// against Books.
+  Future<void> restoreStats(BackupManifest manifest) async {
+    if (manifest.readingSessions.isNotEmpty) {
+      final existing = await (_db.select(_db.readingSessions)..limit(1)).get();
+      if (existing.isEmpty) {
+        await _db.batch((batch) {
+          batch.insertAll(
+            _db.readingSessions,
+            manifest.readingSessions.map(
+              (s) => ReadingSessionsCompanion.insert(
+                bookId: Value(s.bookId),
+                bookFormat: s.bookFormat,
+                startedAt: s.startedAt,
+                durationMs: s.durationMs,
+                pagesTurned: Value(s.pagesTurned),
+                charactersRead: Value(s.charactersRead),
+                lookups: Value(s.lookups),
+                wordsSaved: Value(s.wordsSaved),
+              ),
+            ),
+          );
+        });
+      }
+    }
+
+    if (manifest.wordEvents.isNotEmpty) {
+      final existing = await (_db.select(_db.wordEvents)..limit(1)).get();
+      if (existing.isEmpty) {
+        await _db.batch((batch) {
+          batch.insertAll(
+            _db.wordEvents,
+            manifest.wordEvents.map(
+              (e) => WordEventsCompanion.insert(
+                kind: e.kind,
+                expression: e.expression,
+                source: Value(e.source),
+                // Explicit: the column defaults to now(), which would
+                // rewrite every restored event to the restore time.
+                createdAt: Value(e.createdAt),
+              ),
+            ),
+          );
+        });
+      }
+    }
+  }
+
   /// Restore book data. Returns conflicts for the UI to resolve.
   Future<RestoreBookResult> restoreBooks(BackupManifest manifest) async {
     final existingBooks = await _db.select(_db.books).get();

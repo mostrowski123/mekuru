@@ -10,6 +10,11 @@ class BackupManifest {
   final List<BackupSavedWordEntry> savedWords;
   final List<BackupBookEntry> books;
 
+  /// Reading statistics. Additive within version 1: backups written before
+  /// the stats tables existed simply omit these keys.
+  final List<BackupReadingSessionEntry> readingSessions;
+  final List<BackupWordEventEntry> wordEvents;
+
   const BackupManifest({
     required this.version,
     required this.createdAt,
@@ -17,6 +22,8 @@ class BackupManifest {
     this.dictionaryPreferences = const [],
     required this.savedWords,
     required this.books,
+    this.readingSessions = const [],
+    this.wordEvents = const [],
   });
 }
 
@@ -52,6 +59,45 @@ class BackupSavedWordEntry {
     required this.glossaries,
     required this.sentenceContext,
     required this.dateAdded,
+  });
+}
+
+/// One row of the `ReadingSessions` table.
+class BackupReadingSessionEntry {
+  /// Informational only: never remapped or joined against Books on restore.
+  final int? bookId;
+  final String bookFormat;
+  final DateTime startedAt;
+  final int durationMs;
+  final int pagesTurned;
+  final int charactersRead;
+  final int lookups;
+  final int wordsSaved;
+
+  const BackupReadingSessionEntry({
+    this.bookId,
+    required this.bookFormat,
+    required this.startedAt,
+    required this.durationMs,
+    required this.pagesTurned,
+    required this.charactersRead,
+    required this.lookups,
+    required this.wordsSaved,
+  });
+}
+
+/// One row of the `WordEvents` table.
+class BackupWordEventEntry {
+  final String kind;
+  final String expression;
+  final String source;
+  final DateTime createdAt;
+
+  const BackupWordEventEntry({
+    required this.kind,
+    required this.expression,
+    required this.source,
+    required this.createdAt,
   });
 }
 
