@@ -27,6 +27,7 @@ import 'package:mekuru/features/reader/presentation/providers/reader_providers.d
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
+import 'package:mekuru/features/stats/data/services/page_char_counter.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
@@ -79,6 +80,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   bool _debugOverlay = false;
   bool _isComputingAutoCrop = false;
   bool _autoCropComputedThisSession = false;
+
+  /// Set once the characters on the initially displayed page(s) have been
+  /// counted, so rebuilds (and page-data reloads) don't count them again.
+  bool _initialPageCharsCounted = false;
 
   // View mode keys for cross-widget navigation
   final _scrollViewKey = GlobalKey<MangaScrollViewState>();
@@ -171,9 +176,53 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     );
   }
 
-  void _onPageChanged(int page, int totalPages) {
+  /// Adds the characters on [pageIndexes] to the session total.
+  ///
+  /// Callers must invoke this only on a genuine page-change or initial-display
+  /// transition — never per rebuild — since a page that becomes visible again
+  /// is intentionally counted again (the EPUB reader counts on every
+  /// relocation, so both formats measure "characters displayed").
+  void _recordPageCharacters(MokuroBook book, Iterable<int> pageIndexes) {
+    for (final index in pageIndexes) {
+      if (index < 0 || index >= book.pages.length) continue;
+      _sessionTracker.recordCharactersRead(charCountForPage(book.pages[index]));
+    }
+  }
+
+  /// The page indexes currently on screen.
+  ///
+  /// Two-page spread view shows both pages of the current spread. Single-page
+  /// and scroll view show one: in scroll view that is the page at the viewport
+  /// centre, so a page counts as displayed once it becomes the current page,
+  /// even though neighbouring pages may be partly visible too.
+  List<int> _visiblePageIndexes(
+    MangaViewMode viewMode,
+    List<PageSpread> spreads,
+  ) {
+    if (viewMode == MangaViewMode.twoPageSpread && spreads.isNotEmpty) {
+      return _spreadPageIndexes(
+        spreads[spreadIndexForPage(spreads, _currentPage)],
+      );
+    }
+    return [_currentPage];
+  }
+
+  List<int> _spreadPageIndexes(PageSpread spread) => [
+    if (spread.leftPageIndex != null) spread.leftPageIndex!,
+    if (spread.rightPageIndex != null) spread.rightPageIndex!,
+  ];
+
+  /// Handles a settled page change. [displayedPages] lists every page index
+  /// that just became visible — two in spread view; [page] alone by default.
+  void _onPageChanged(
+    int page,
+    int totalPages,
+    MokuroBook book, {
+    List<int>? displayedPages,
+  }) {
     if (page != _currentPage) {
       _recordPageTurn(forward: page > _currentPage);
+      _recordPageCharacters(book, displayedPages ?? [page]);
     }
     setState(() => _currentPage = page);
 
@@ -920,6 +969,17 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                 ? computeSpreads(totalPages, isRtl: isRtl)
                 : <PageSpread>[];
 
+            // Count the page(s) shown when the book first opens; every later
+            // page is counted as it becomes visible. One-shot, because build
+            // runs again on every setState and page-data re-emission.
+            if (!_initialPageCharsCounted) {
+              _initialPageCharsCounted = true;
+              _recordPageCharacters(
+                mokuroBook,
+                _visiblePageIndexes(viewMode, spreads),
+              );
+            }
+
             return Stack(
               children: [
                 // Page content with tap zones
@@ -1097,7 +1157,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               ? const NeverScrollableScrollPhysics()
               : const ClampingScrollPhysics(),
           itemCount: totalPages,
-          onPageChanged: (page) => _onPageChanged(page, totalPages),
+          onPageChanged: (page) => _onPageChanged(page, totalPages, mokuroBook),
           itemBuilder: (context, index) {
             final page = mokuroBook.pages[index];
             return MangaPageView(
@@ -1141,8 +1201,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           },
           onSpreadChanged: (spreadIdx) {
             if (spreadIdx >= 0 && spreadIdx < spreads.length) {
-              final page = spreads[spreadIdx].primaryPageIndex;
-              _onPageChanged(page, totalPages);
+              final spread = spreads[spreadIdx];
+              _onPageChanged(
+                spread.primaryPageIndex,
+                totalPages,
+                mokuroBook,
+                displayedPages: _spreadPageIndexes(spread),
+              );
             }
           },
         );
@@ -1161,6 +1226,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           highlightedPageIndex: _highlight?.pageIndex,
           onWordTapped: _onWordTapped,
           onPageEstimateChanged: (page) {
+            // Fires on every scroll tick, so count only when the page at the
+            // viewport centre actually changes.
+            if (page != _currentPage) {
+              _recordPageCharacters(mokuroBook, [page]);
+            }
             setState(() => _currentPage = page);
             // Progress is saved by MangaScrollView's debounced callback
           },
