@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/widgets/lookup_rate_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/reading_time_card.dart';
+import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/vocab_growth_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/volume_card.dart';
 
@@ -64,6 +65,12 @@ void main() {
       expect(find.text('Reading time'), findsOneWidget);
       final chart = tester.widget<BarChart>(find.byType(BarChart));
       expect(chart.data.barGroups, hasLength(3));
+      // The dark theme paints cards in the tooltip's own color, so the
+      // tooltip needs an edge to read as a popover rather than as nothing.
+      expect(
+        chart.data.barTouchData.touchTooltipData.tooltipBorder,
+        isNot(BorderSide.none),
+      );
       expect(tester.takeException(), isNull);
     });
 
@@ -113,6 +120,32 @@ void main() {
       expect(find.text('Manga'), findsNothing);
       final chart = tester.widget<BarChart>(find.byType(BarChart));
       expect(chart.data.barGroups.first.barRods.single.rodStackItems, isEmpty);
+    });
+
+    testWidgets('keeps manga on its own color when it is the only series', (
+      tester,
+    ) async {
+      // The format hues are pinned to the format: dropping EPUB out of the
+      // chart must not promote manga onto the EPUB color.
+      await _pump(
+        tester,
+        ReadingTimeCard(
+          epubBuckets: const [],
+          mangaBuckets: manga(),
+          period: StatsPeriod.week,
+        ),
+      );
+
+      final colors = Theme.of(
+        tester.element(find.byType(BarChart)),
+      ).colorScheme;
+      expect(mangaSeriesColor(colors), isNot(epubSeriesColor(colors)));
+
+      final chart = tester.widget<BarChart>(find.byType(BarChart));
+      expect(
+        chart.data.barGroups.map((g) => g.barRods.single.color),
+        everyElement(mangaSeriesColor(colors)),
+      );
     });
 
     testWidgets('annotates the best day when it falls inside the window', (
@@ -287,6 +320,10 @@ void main() {
       final chart = tester.widget<LineChart>(find.byType(LineChart));
       expect(chart.data.lineBarsData, hasLength(1));
       expect(chart.data.lineBarsData.single.spots.first.y, 12);
+      expect(
+        chart.data.lineTouchData.touchTooltipData.tooltipBorder,
+        isNot(BorderSide.none),
+      );
       expect(tester.takeException(), isNull);
     });
 

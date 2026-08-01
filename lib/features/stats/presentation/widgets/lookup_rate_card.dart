@@ -130,8 +130,8 @@ class LookupRateCard extends StatelessWidget {
               ),
             ),
         ],
-        touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (_) => statsTooltipColor(colors),
+        touchTooltipData: statsLineTooltip(
+          colors,
           getTooltipItems: (touchedSpots) => [
             for (final spot in touchedSpots)
               _tooltipItem(theme, locale, rateFormat, spot),

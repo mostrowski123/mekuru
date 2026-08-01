@@ -170,8 +170,8 @@ class VocabGrowthCard extends StatelessWidget {
               ),
             ),
         ],
-        touchTooltipData: LineTouchTooltipData(
-          getTooltipColor: (_) => statsTooltipColor(colors),
+        touchTooltipData: statsLineTooltip(
+          colors,
           getTooltipItems: (touchedSpots) => [
             for (final spot in touchedSpots)
               LineTooltipItem(

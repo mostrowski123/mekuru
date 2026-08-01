@@ -259,6 +259,37 @@ Widget statsAxisLabel(BuildContext context, TitleMeta meta, String text) {
 /// Background of a touch tooltip.
 Color statsTooltipColor(ColorScheme colors) => colors.surfaceContainerHighest;
 
+/// The edge that lifts a tooltip off whatever it is covering.
+///
+/// Not decoration: the dark theme repaints cards in `surfaceContainerHighest`
+/// as well, so an unbordered tooltip in the color above would be an invisible
+/// rectangle sitting on a card of the identical color. The outline is what
+/// makes it read as a popover in both themes.
+BorderSide statsTooltipBorder(ColorScheme colors) =>
+    BorderSide(color: colors.outlineVariant);
+
+/// A bar chart's touch tooltip, styled the way every stats chart's is.
+BarTouchTooltipData statsBarTooltip(
+  ColorScheme colors, {
+  required GetBarTooltipItem getTooltipItem,
+  double? maxContentWidth,
+}) => BarTouchTooltipData(
+  getTooltipColor: (_) => statsTooltipColor(colors),
+  tooltipBorder: statsTooltipBorder(colors),
+  maxContentWidth: maxContentWidth,
+  getTooltipItem: getTooltipItem,
+);
+
+/// A line chart's touch tooltip, styled the way every stats chart's is.
+LineTouchTooltipData statsLineTooltip(
+  ColorScheme colors, {
+  required GetLineTooltipItems getTooltipItems,
+}) => LineTouchTooltipData(
+  getTooltipColor: (_) => statsTooltipColor(colors),
+  tooltipBorder: statsTooltipBorder(colors),
+  getTooltipItems: getTooltipItems,
+);
+
 /// What a card is actually painted on, so a mark can cut a gap out of itself.
 ///
 /// The dark theme repaints cards in `surfaceContainerHighest`; the light theme

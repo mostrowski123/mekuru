@@ -125,8 +125,8 @@ class VolumeCard extends StatelessWidget {
       ),
       barTouchData: BarTouchData(
         touchExtraThreshold: const EdgeInsets.symmetric(horizontal: 10),
-        touchTooltipData: BarTouchTooltipData(
-          getTooltipColor: (_) => statsTooltipColor(colors),
+        touchTooltipData: statsBarTooltip(
+          colors,
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             if (groupIndex < 0 || groupIndex >= buckets.length) return null;
             final bucket = buckets[groupIndex];
