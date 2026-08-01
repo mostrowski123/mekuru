@@ -2,9 +2,17 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/reader/data/reader_session_tracker.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 
 AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
+
+class _FakeStopwatch extends Stopwatch {
+  int fakeElapsedMs = 0;
+
+  @override
+  int get elapsedMilliseconds => fakeElapsedMs;
+}
 
 void main() {
   late AppDatabase db;
@@ -71,6 +79,33 @@ void main() {
       expect(events.last.source, 'epub');
     },
   );
+
+  // Pins the key contract between ReaderSessionTracker.takeSummary and
+  // recordSessionSummary's untyped map reads.
+  test('recordSessionSummary persists a tracker summary verbatim', () async {
+    final stopwatch = _FakeStopwatch()..fakeElapsedMs = 90000;
+    final tracker = ReaderSessionTracker(
+      bookFormat: 'manga',
+      stopwatch: stopwatch,
+    );
+    tracker.recordPageTurn();
+    tracker.recordPageTurn();
+    tracker.recordLookup(hit: true);
+    tracker.recordCharactersRead(500);
+    tracker.recordWordSaved();
+
+    final summary = tracker.takeSummary(endReason: 'closed')!;
+    await repository.recordSessionSummary(summary: summary, bookId: 7);
+
+    final session = (await repository.getAllSessions()).single;
+    expect(session.bookFormat, 'manga');
+    expect(session.bookId, 7);
+    expect(session.durationMs, 90000);
+    expect(session.pagesTurned, 2);
+    expect(session.charactersRead, 500);
+    expect(session.lookups, 1);
+    expect(session.wordsSaved, 1);
+  });
 
   test('insertWordEvent defaults source to other', () async {
     await repository.insertWordEvent(kind: 'saved', expression: '本');

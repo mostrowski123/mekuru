@@ -60,11 +60,16 @@ class VocabularyRepository {
           ),
         );
 
-    await StatsRepository(_db).insertWordEvent(
-      kind: 'saved',
-      expression: entry.expression,
-      source: source,
-    );
+    // A stats failure must never break the word save.
+    try {
+      await StatsRepository(_db).insertWordEvent(
+        kind: 'saved',
+        expression: entry.expression,
+        source: source,
+      );
+    } catch (e, st) {
+      await Sentry.captureException(e, stackTrace: st);
+    }
 
     Sentry.metrics.count('vocabulary.word_saved', 1);
     AnalyticsService.instance.logEvent('word_saved');

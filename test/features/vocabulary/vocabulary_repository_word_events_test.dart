@@ -57,6 +57,18 @@ void main() {
     expect(events.single.source, 'manga');
   });
 
+  test('addWord still saves the word when the stats write fails', () async {
+    // Simulates installs whose stats tables never made it through migration.
+    await db.customStatement('DROP TABLE word_events');
+
+    final id = await repository.addWord(entry: buildEntry(expression: '鳥'));
+
+    final saved = await (db.select(
+      db.savedWords,
+    )..where((t) => t.id.equals(id))).getSingle();
+    expect(saved.expression, '鳥');
+  });
+
   test('restoreWord does not record a word event', () async {
     final id = await repository.addWord(entry: buildEntry());
     final saved = await (db.select(
