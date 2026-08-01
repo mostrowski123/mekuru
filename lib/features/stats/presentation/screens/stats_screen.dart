@@ -172,7 +172,10 @@ void _showDayDetail(BuildContext context, HeatmapDay day) {
             _detailRow(
               context,
               l10n.statsHeroReadingTime,
-              formatDuration(day.minutes * Duration.millisecondsPerMinute),
+              formatDuration(
+                l10n,
+                day.minutes * Duration.millisecondsPerMinute,
+              ),
             ),
             _detailRow(
               context,
@@ -231,7 +234,7 @@ class _HeroStatsRow extends StatelessWidget {
           _heroTile(
             label: l10n.statsHeroReadingTime,
             value: totals.durationMs,
-            formatter: formatDuration,
+            formatter: (ms) => formatDuration(l10n, ms),
           ),
           _heroTile(
             label: l10n.statsHeroCharactersRead,

@@ -3615,6 +3615,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one {{count} character} other {{count} characters}}'**
   String statsStripCharacters({required int count});
+
+  /// A reading duration of an hour or longer, shown on the stats hero tile, the heatmap's day detail sheet, the library strip and the reading-time chart's tooltips. Hours are never rolled up into days, so an all-time total reads 30h 5m. Whole hours keep the minute part (2h 0m) so the string does not change shape mid count-up. Languages that write durations differently should reorder or replace the unit markers freely.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String statsDurationHoursMinutes({required int hours, required int minutes});
+
+  /// A reading duration under an hour, shown on the stats hero tile, the heatmap's day detail sheet, the library strip and the reading-time chart's tooltips. Also carries the nothing-read case, which reads 0m.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String statsDurationMinutes({required int minutes});
 }
 
 class _AppLocalizationsDelegate

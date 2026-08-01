@@ -2027,6 +2027,16 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String statsDurationHoursMinutes({required int hours, required int minutes}) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String statsDurationMinutes({required int minutes}) {
+    return '${minutes}m';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3960,5 +3970,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       one: '$countString character',
     );
     return '$_temp0';
+  }
+
+  @override
+  String statsDurationHoursMinutes({required int hours, required int minutes}) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String statsDurationMinutes({required int minutes}) {
+    return '${minutes}m';
   }
 }

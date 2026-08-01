@@ -2423,5 +2423,7 @@
   "statsVocabGrowthTitle": "Vocabulary growth",
   "statsVocabWordCount": "{count, plural, one {{count} word} other {{count} words}}",
   "statsStripThisWeek": "This week",
-  "statsStripCharacters": "{count, plural, one {{count} character} other {{count} characters}}"
+  "statsStripCharacters": "{count, plural, one {{count} character} other {{count} characters}}",
+  "statsDurationHoursMinutes": "{hours}h {minutes}m",
+  "statsDurationMinutes": "{minutes}m"
 }
