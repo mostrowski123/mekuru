@@ -1962,6 +1962,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get statsUnavailable => 'Reading stats aren\'t available right now.';
+
+  @override
+  String get statsHeatmapTitle => 'Reading activity';
+
+  @override
+  String get statsHeatmapLegendLess => 'Less';
+
+  @override
+  String get statsHeatmapLegendMore => 'More';
+
+  @override
+  String get statsHeatmapLookups => 'Lookups';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3831,4 +3843,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get statsUnavailable => 'Reading stats aren\'t available right now.';
+
+  @override
+  String get statsHeatmapTitle => 'Reading activity';
+
+  @override
+  String get statsHeatmapLegendLess => 'Less';
+
+  @override
+  String get statsHeatmapLegendMore => 'More';
+
+  @override
+  String get statsHeatmapLookups => 'Lookups';
 }

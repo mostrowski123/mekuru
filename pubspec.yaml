@@ -75,9 +75,11 @@ dependencies:
   # Kanji stroke order
   flutter_svg: ^2.0.17
 
-  # Reading stats charts
+  # Reading stats charts. The activity heatmap is hand-painted rather than
+  # taken from heatmap_calendar_plus: that package fills every cell with a
+  # solid color and offers no border, so it cannot render empty days as an
+  # outline on the surface (see the reading-stats spec's Color section).
   fl_chart: ^1.2.0
-  heatmap_calendar_plus: ^2.3.0
 
   # AnkiDroid integration (Android only)
   ankidroid_for_flutter: ^1.0.3
