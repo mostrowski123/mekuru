@@ -85,6 +85,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   /// counted, so rebuilds (and page-data reloads) don't count them again.
   bool _initialPageCharsCounted = false;
 
+  /// Page the user is seeking to with the progress slider, while the seek is
+  /// still in flight. Pages swept past on the way there are displayed, but
+  /// were never read — see [_consumeSeekGate].
+  int? _pendingSeekTarget;
+  Timer? _seekGateTimeout;
+
   // View mode keys for cross-widget navigation
   final _scrollViewKey = GlobalKey<MangaScrollViewState>();
   final _spreadViewKey = GlobalKey<MangaSpreadViewState>();
@@ -115,6 +121,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _emitSessionSummary(endReason: 'closed');
+    _seekGateTimeout?.cancel();
     _pageController.dispose();
     unawaited(_setReaderSystemBarsVisible(true));
     // Release cached manga page bitmaps so memory is reclaimed immediately
@@ -176,12 +183,56 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     );
   }
 
+  /// Whether the page(s) at [pageIndexes], which just became visible, should
+  /// count toward the session total, and consumes the pending seek if so.
+  ///
+  /// A slider seek animates across the gap, and every page the animation
+  /// sweeps past reports a page change — a long drag would otherwise add a
+  /// large chunk of the volume to the session. While a seek is in flight only
+  /// the page the user actually asked for counts; reaching it ends the seek.
+  bool _consumeSeekGate(List<int> pageIndexes) {
+    final target = _pendingSeekTarget;
+    if (target == null) return true;
+    if (!pageIndexes.contains(target)) return false;
+    _pendingSeekTarget = null;
+    return true;
+  }
+
+  /// Records the slider's current destination, so the pages swept past on the
+  /// way there aren't counted.
+  ///
+  /// A seek to a page that is already on screen reports no page change at all,
+  /// so it is cleared immediately instead of being left pending. The timeout
+  /// is the backstop for the seeks that can't be resolved exactly — an
+  /// interrupted animation, or scroll view, whose page estimate is derived
+  /// from viewport heights and can settle a page short of its target.
+  void _setSeekTarget(
+    int page,
+    MangaViewMode viewMode,
+    List<PageSpread> spreads,
+  ) {
+    _seekGateTimeout?.cancel();
+    if (_visiblePageIndexes(viewMode, spreads).contains(page)) {
+      _pendingSeekTarget = null;
+      return;
+    }
+    _pendingSeekTarget = page;
+    _seekGateTimeout = Timer(
+      const Duration(seconds: 1),
+      () => _pendingSeekTarget = null,
+    );
+  }
+
   /// Adds the characters on [pageIndexes] to the session total.
   ///
   /// Callers must invoke this only on a genuine page-change or initial-display
   /// transition — never per rebuild — since a page that becomes visible again
   /// is intentionally counted again (the EPUB reader counts on every
   /// relocation, so both formats measure "characters displayed").
+  ///
+  /// Counting happens at display time, so a page shown before its OCR has
+  /// finished contributes the characters it had then — zero for a page with no
+  /// OCR text yet, permanently.
   void _recordPageCharacters(MokuroBook book, Iterable<int> pageIndexes) {
     for (final index in pageIndexes) {
       if (index < 0 || index >= book.pages.length) continue;
@@ -221,8 +272,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     List<int>? displayedPages,
   }) {
     if (page != _currentPage) {
+      // Page-turn telemetry deliberately still counts seek sweeps.
       _recordPageTurn(forward: page > _currentPage);
-      _recordPageCharacters(book, displayedPages ?? [page]);
+      final displayed = displayedPages ?? [page];
+      if (_consumeSeekGate(displayed)) {
+        _recordPageCharacters(book, displayed);
+      }
     }
     setState(() => _currentPage = page);
 
@@ -1091,6 +1146,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                                         : null,
                                     onChanged: (value) {
                                       final page = value.round();
+                                      _setSeekTarget(page, viewMode, spreads);
                                       switch (viewMode) {
                                         case MangaViewMode.singlePage:
                                           _goToPage(page, totalPages);
@@ -1106,6 +1162,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                                               ?.scrollToPage(page);
                                       }
                                     },
+                                    // The last division dragged over is the
+                                    // page the user meant; re-evaluating on
+                                    // release also clears the seek when the
+                                    // animation already arrived there.
+                                    onChangeEnd: (value) => _setSeekTarget(
+                                      value.round(),
+                                      viewMode,
+                                      spreads,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1227,8 +1292,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           onWordTapped: _onWordTapped,
           onPageEstimateChanged: (page) {
             // Fires on every scroll tick, so count only when the page at the
-            // viewport centre actually changes.
-            if (page != _currentPage) {
+            // viewport centre actually changes — and not while a slider seek
+            // is animating past it.
+            if (page != _currentPage && _consumeSeekGate([page])) {
               _recordPageCharacters(mokuroBook, [page]);
             }
             setState(() => _currentPage = page);
