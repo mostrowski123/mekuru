@@ -218,6 +218,7 @@ class VocabGrowthCard extends StatelessWidget {
 
 /// The curve to plot, plus the day its x axis is measured from.
 @immutable
+@visibleForTesting
 class VocabGrowthDomain {
   const VocabGrowthDomain({required this.start, required this.spots});
 
@@ -245,6 +246,7 @@ class VocabGrowthDomain {
 ///   just were not learned here. They are dropped from the curve but their
 ///   running total is carried into its first value, so the window opens at the
 ///   level the reader had already reached rather than at zero.
+@visibleForTesting
 VocabGrowthDomain vocabGrowthDomain(
   List<CumulativePoint> points,
   DateTime? windowStart,

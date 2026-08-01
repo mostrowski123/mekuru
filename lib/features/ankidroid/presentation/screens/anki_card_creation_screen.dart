@@ -220,9 +220,8 @@ class _AnkiCardCreationScreenState
 
     if (mounted) {
       if (noteId != null) {
-        // Success snackbar is shown by the caller (DictionaryEntryCard)
-        // via the global ScaffoldMessenger so it appears on top of the
-        // lookup sheet.
+        // Success snackbar is shown by the caller via the global
+        // ScaffoldMessenger so it appears on top of the lookup sheet.
         Navigator.pop(context, true);
       } else {
         final errorMsg = context.l10n.ankidroidFailedToAddNote;

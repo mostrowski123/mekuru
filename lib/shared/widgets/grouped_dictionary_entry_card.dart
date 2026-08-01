@@ -27,8 +27,7 @@ import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 /// (expression, reading) group.
 ///
 /// Multiple dictionaries' definitions are shown inside one card, each
-/// grouped under a subtle source label. This replaces rendering one
-/// [DictionaryEntryCard] per dictionary entry.
+/// grouped under a subtle source label, rather than one card per entry.
 class GroupedDictionaryEntryCard extends StatelessWidget {
   const GroupedDictionaryEntryCard({
     super.key,
