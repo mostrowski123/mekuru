@@ -909,12 +909,29 @@ function reportPageChars(startCfi, endCfi) {
   if (!book) return;
   try {
     book.getRange(startCfi + ',' + endCfi).then(function (range) {
-      var text = range ? range.toString() : '';
+      // Strip ruby annotations (<rt> readings, <rp> fallback parens) before
+      // counting: range.toString() would include injected furigana, so the
+      // count would jump when a user toggles furigana on/off. Keeping counts
+      // furigana-invariant stops the lookups-per-1,000-characters metric from
+      // shifting for a reason that has nothing to do with reading behaviour.
+      var text = '';
+      if (range) {
+        var frag = range.cloneContents();
+        var ruby = frag.querySelectorAll('rt, rp');
+        for (var i = 0; i < ruby.length; i++) {
+          ruby[i].parentNode.removeChild(ruby[i]);
+        }
+        text = frag.textContent || '';
+      }
       callDart('pageChars', { count: text.replace(/\s+/g, '').length });
-    }).catch(function () { /* non-fatal: no count for this page */ });
+    }).catch(function (e) {
+      // non-fatal: no count for this page
+      console.log('[EPUB_BRIDGE] pageChars failed:', e);
+    });
   } catch (e) {
     // getRange throws synchronously on a malformed CFI; this runs inside the
     // 'relocated' listener, so it must never escape.
+    console.log('[EPUB_BRIDGE] pageChars failed:', e);
   }
 }
 
