@@ -7,7 +7,9 @@ import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
+import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Screen for reviewing and sending a note to AnkiDroid.
 ///
@@ -192,6 +194,9 @@ class _AnkiCardCreationScreenState
         .toList();
 
     final service = ref.read(ankidroidServiceProvider);
+    // Read before the await so the provider is still reachable even if this
+    // screen is disposed while addNote is in flight.
+    final statsRepository = ref.read(statsRepositoryProvider);
     final noteId = await service.addNote(
       modelId: config.modelId!,
       deckId: _selectedDeckId!,
@@ -201,6 +206,14 @@ class _AnkiCardCreationScreenState
 
     if (noteId != null) {
       logUsage('anki.card_sent', attrs: {'result': 'ok'});
+      try {
+        await statsRepository.insertWordEvent(
+          kind: 'anki',
+          expression: widget.noteData.expression,
+        );
+      } catch (e, st) {
+        await Sentry.captureException(e, stackTrace: st);
+      }
     } else {
       logFailure('anki.card_sent', StateError('addNote returned null'));
     }

@@ -17,6 +17,7 @@ class LookupSheet extends ConsumerStatefulWidget {
     required this.selectedText,
     this.surfaceForm,
     this.sentenceContext,
+    this.saveSource = 'other',
     this.initialEditedText,
     this.showAtTop = false,
     this.editable = false,
@@ -35,6 +36,10 @@ class LookupSheet extends ConsumerStatefulWidget {
   final String? surfaceForm;
 
   final String? sentenceContext;
+
+  /// Surface this sheet was opened from, recorded on the word event when a
+  /// word is saved (`'epub'`, `'manga'`, or `'other'`).
+  final String saveSource;
 
   /// Optional persisted manual lookup text to restore when reopening the sheet.
   final String? initialEditedText;
@@ -407,6 +412,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
                 return GroupedDictionaryEntryCard(
                   entries: group,
                   sentenceContext: widget.sentenceContext,
+                  saveSource: widget.saveSource,
                   pitchAccents: groupPitchAccents,
                   fontSize: fontSize,
                   onWordTap: _navigateToWord,

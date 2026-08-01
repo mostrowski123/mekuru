@@ -33,6 +33,7 @@ class DictionaryEntryCard extends ConsumerStatefulWidget {
     this.fontSize = 16.0,
     this.frequencyRank,
     this.sentenceContext,
+    this.saveSource = 'other',
     this.onWordTap,
   });
 
@@ -53,6 +54,10 @@ class DictionaryEntryCard extends ConsumerStatefulWidget {
 
   /// Sentence context from the reader (used when saving to vocabulary).
   final String? sentenceContext;
+
+  /// Surface this card was opened from, recorded on the word event when a
+  /// word is saved (`'epub'`, `'manga'`, or `'other'`).
+  final String saveSource;
 
   /// Callback when a Japanese word or kanji character is tapped.
   /// When null, non-interactive FuriganaText and plain Text are used.
@@ -111,6 +116,7 @@ class _DictionaryEntryCardState extends ConsumerState<DictionaryEntryCard> {
     await repo.addWord(
       entry: widget.entry,
       sentenceContext: widget.sentenceContext ?? '',
+      source: widget.saveSource,
     );
     if (mounted) {
       final l10n = context.l10n;

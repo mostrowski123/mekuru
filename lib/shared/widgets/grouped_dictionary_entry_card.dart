@@ -36,6 +36,7 @@ class GroupedDictionaryEntryCard extends StatelessWidget {
     required this.pitchAccents,
     this.fontSize = 16.0,
     this.sentenceContext,
+    this.saveSource = 'other',
     this.onWordTap,
     this.onWordSaved,
   });
@@ -52,6 +53,10 @@ class GroupedDictionaryEntryCard extends StatelessWidget {
 
   /// Sentence context from the reader (used when saving to vocabulary).
   final String? sentenceContext;
+
+  /// Surface this card was opened from, recorded on the word event when a
+  /// word is saved (`'epub'`, `'manga'`, or `'other'`).
+  final String saveSource;
 
   /// Callback when a Japanese word or kanji character is tapped.
   final void Function(String word)? onWordTap;
@@ -70,6 +75,7 @@ class GroupedDictionaryEntryCard extends StatelessWidget {
           pitchAccents: pitchAccents,
           fontSize: fontSize,
           sentenceContext: sentenceContext,
+          saveSource: saveSource,
           onWordTap: onWordTap,
           onWordSaved: onWordSaved,
         ),
@@ -91,6 +97,7 @@ class GroupedDictionaryEntryHeader extends ConsumerStatefulWidget {
     required this.pitchAccents,
     this.fontSize = 16.0,
     this.sentenceContext,
+    this.saveSource = 'other',
     this.onWordTap,
     this.onWordSaved,
     this.padding = const EdgeInsets.fromLTRB(16, 14, 16, 10),
@@ -100,6 +107,10 @@ class GroupedDictionaryEntryHeader extends ConsumerStatefulWidget {
   final List<PitchAccentResult> pitchAccents;
   final double fontSize;
   final String? sentenceContext;
+
+  /// Surface this card was opened from, recorded on the word event when a
+  /// word is saved (`'epub'`, `'manga'`, or `'other'`).
+  final String saveSource;
   final void Function(String word)? onWordTap;
   final VoidCallback? onWordSaved;
   final EdgeInsetsGeometry padding;
@@ -200,6 +211,7 @@ class _GroupedDictionaryEntryHeaderState
     await repo.addWord(
       entry: _primaryEntry,
       sentenceContext: widget.sentenceContext ?? '',
+      source: widget.saveSource,
     );
     widget.onWordSaved?.call();
     if (mounted) {

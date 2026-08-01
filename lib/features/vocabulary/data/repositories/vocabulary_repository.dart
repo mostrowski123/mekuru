@@ -46,23 +46,8 @@ class VocabularyRepository {
   Future<int> addWord({
     required DictionaryEntry entry,
     String sentenceContext = '',
+    String source = 'other',
   }) async {
-    // DictionaryEntry glossaries are List<String>, but stored as JSON in DictionaryEntry table?
-    // Wait, let's check DictionaryEntry model. It usually stores glossaries as JSON string or List<String>
-    // depending on the converter. SavedWords.glossaries is TextColumn.
-    // We'll trust the input DictionaryEntry has the correct data, but we need to ensure
-    // we are saving it correctly.
-
-    // SavedWords.glossaries is a TextColumn.
-    // If DictionaryEntry.glossaries is List<String>, we need to encode it.
-    // But DictionaryEntry is a generated DataClass, its `glossaries` field type depends on type converter (if any).
-    // Let's assume we receive the raw data or we handle it.
-    // ACTUALLY, DictionaryEntry (drift generated) likely has `glossaries` as `List<String>` if a converter is used,
-    // or `String` if not.
-    // Let's check DictionaryEntry definition in schema.
-
-    // For now, I will assume we pass the raw strings.
-
     final id = await _db
         .into(_db.savedWords)
         .insert(
@@ -71,6 +56,16 @@ class VocabularyRepository {
             reading: Value(entry.reading),
             glossaries: entry.glossaries,
             sentenceContext: Value(sentenceContext),
+          ),
+        );
+
+    await _db
+        .into(_db.wordEvents)
+        .insert(
+          WordEventsCompanion.insert(
+            kind: 'saved',
+            expression: entry.expression,
+            source: Value(source),
           ),
         );
 
