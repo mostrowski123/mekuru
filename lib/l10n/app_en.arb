@@ -2675,5 +2675,19 @@
         "type": "int"
       }
     }
+  },
+  "statsStripThisWeek": "This week",
+  "@statsStripThisWeek": {
+    "description": "Label on the compact reading-stats strip above the library grid, naming the trailing seven days its figures cover."
+  },
+  "statsStripCharacters": "{count, plural, one {{count} character} other {{count} characters}}",
+  "@statsStripCharacters": {
+    "description": "Characters read in the trailing seven days, shown next to the reading time on the library stats strip.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
   }
 }

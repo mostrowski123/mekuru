@@ -3603,6 +3603,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one {{count} word} other {{count} words}}'**
   String statsVocabWordCount({required int count});
+
+  /// Label on the compact reading-stats strip above the library grid, naming the trailing seven days its figures cover.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get statsStripThisWeek;
+
+  /// Characters read in the trailing seven days, shown next to the reading time on the library stats strip.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} character} other {{count} characters}}'**
+  String statsStripCharacters({required int count});
 }
 
 class _AppLocalizationsDelegate
