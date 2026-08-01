@@ -6,23 +6,14 @@ import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
+import 'package:mekuru/features/stats/presentation/widgets/lookup_rate_card.dart';
+import 'package:mekuru/features/stats/presentation/widgets/reading_time_card.dart';
+// `formatDuration` lives with the chart chrome the cards share, so the tiles,
+// the day sheet and the reading-time tooltips all read off one implementation.
+import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
+import 'package:mekuru/features/stats/presentation/widgets/vocab_growth_card.dart';
+import 'package:mekuru/features/stats/presentation/widgets/volume_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
-
-/// Formats a duration in milliseconds the way the stats surfaces show it:
-/// `"0m"`, `"42m"`, `"3h 20m"`.
-///
-/// Shared with the Library summary strip, so the two never disagree. Hours are
-/// never rolled up into days — an all-time total reads `"30h 5m"`, which is the
-/// figure people expect on a reading tile. Whole hours keep the minute part
-/// (`"2h 0m"`) so the string does not change shape mid count-up. Negative input
-/// (a clock change that slipped past the aggregator's clamping) reads `"0m"`
-/// rather than a minus sign.
-String formatDuration(int ms) {
-  final totalMinutes = (ms < 0 ? 0 : ms) ~/ Duration.millisecondsPerMinute;
-  final hours = totalMinutes ~/ Duration.minutesPerHour;
-  final minutes = totalMinutes % Duration.minutesPerHour;
-  return hours == 0 ? '${minutes}m' : '${hours}h ${minutes}m';
-}
 
 /// Reading statistics: headline numbers first, then the filters, then the
 /// chart cards.
@@ -81,21 +72,83 @@ class StatsScreen extends ConsumerWidget {
     );
   }
 
-  /// PLACEHOLDER (Task 11): reading time per bucket, EPUB vs manga.
-  Widget _buildReadingTimeCard(BuildContext context, WidgetRef ref) =>
-      const SizedBox.shrink();
+  /// Time read per bucket, EPUB and manga stacked apart in the All view.
+  ///
+  /// Each format is bucketed on its own grid so the card can color the two
+  /// apart; the filter drops a series by handing the card nothing for it.
+  Widget _buildReadingTimeCard(BuildContext context, WidgetRef ref) {
+    final sessions = ref.watch(sessionsProvider).value;
+    if (sessions == null) return const SizedBox.shrink();
 
-  /// PLACEHOLDER (Task 11): characters read per bucket, pages as a figure.
-  Widget _buildVolumeCard(BuildContext context, WidgetRef ref) =>
-      const SizedBox.shrink();
+    final format = ref.watch(selectedStatsFormatProvider);
+    final period = ref.watch(selectedStatsPeriodProvider);
+    final now = DateTime.now();
+    return ReadingTimeCard(
+      epubBuckets: format == StatsFormat.manga
+          ? const []
+          : bucketize(filterSessions(sessions, StatsFormat.epub), period, now),
+      mangaBuckets: format == StatsFormat.epub
+          ? const []
+          : bucketize(filterSessions(sessions, StatsFormat.manga), period, now),
+      period: period,
+      // All-time, not window-limited: the card only annotates it when the day
+      // happens to fall inside the window on screen.
+      bestDay: bestDay(filterSessions(sessions, format), now),
+    );
+  }
 
-  /// PLACEHOLDER (Task 11): lookups per 1,000 characters, as a trend line.
-  Widget _buildLookupRateCard(BuildContext context, WidgetRef ref) =>
-      const SizedBox.shrink();
+  /// Characters read per bucket, with the period's pages as a header figure.
+  Widget _buildVolumeCard(BuildContext context, WidgetRef ref) {
+    final buckets = _selectedBuckets(ref);
+    if (buckets == null) return const SizedBox.shrink();
+    return VolumeCard(
+      buckets: buckets,
+      period: ref.watch(selectedStatsPeriodProvider),
+    );
+  }
 
-  /// PLACEHOLDER (Task 11): cumulative unique expressions over time.
-  Widget _buildVocabGrowthCard(BuildContext context, WidgetRef ref) =>
-      const SizedBox.shrink();
+  /// Lookups per 1,000 characters, as a trend line with gaps.
+  Widget _buildLookupRateCard(BuildContext context, WidgetRef ref) {
+    final buckets = _selectedBuckets(ref);
+    if (buckets == null) return const SizedBox.shrink();
+    return LookupRateCard(
+      buckets: buckets,
+      period: ref.watch(selectedStatsPeriodProvider),
+    );
+  }
+
+  /// Cumulative distinct expressions over the selected window.
+  Widget _buildVocabGrowthCard(BuildContext context, WidgetRef ref) {
+    final sessions = ref.watch(sessionsProvider).value;
+    final events = ref.watch(wordEventsProvider).value;
+    if (sessions == null || events == null) return const SizedBox.shrink();
+
+    final format = ref.watch(selectedStatsFormatProvider);
+    final period = ref.watch(selectedStatsPeriodProvider);
+    final now = DateTime.now();
+    return VocabGrowthCard(
+      points: cumulativeUniqueWords(filterWordEvents(events, format)),
+      // Read off the same bucket grid the other cards use, so the curve and
+      // the bars cover the same days.
+      windowStart: _windowStart(
+        bucketize(filterSessions(sessions, format), period, now),
+        period,
+      ),
+      windowEnd: now,
+    );
+  }
+
+  /// The buckets the period and format selectors currently ask for, or null
+  /// while the sessions stream is still in flight.
+  List<StatBucket>? _selectedBuckets(WidgetRef ref) {
+    final sessions = ref.watch(sessionsProvider).value;
+    if (sessions == null) return null;
+    return bucketize(
+      filterSessions(sessions, ref.watch(selectedStatsFormatProvider)),
+      ref.watch(selectedStatsPeriodProvider),
+      DateTime.now(),
+    );
+  }
 }
 
 /// Shows one heatmap day's exact figures.

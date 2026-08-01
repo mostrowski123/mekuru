@@ -3567,6 +3567,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lookups'**
   String get statsHeatmapLookups;
+
+  /// Annotation above the bar of the longest reading day ever recorded, on the reading time chart. Factual and backward-looking, not congratulatory.
+  ///
+  /// In en, this message translates to:
+  /// **'Best day'**
+  String get statsBestDayMarker;
+
+  /// Pages turned in the selected period, shown as a plain figure in the characters-read card's header rather than as a second chart axis.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} page} other {{count} pages}}'**
+  String statsVolumePageCount({required int count});
+
+  /// Title of the stats card charting how often the reader looked a word up while reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Lookup rate'**
+  String get statsLookupRateTitle;
+
+  /// Subtitle under the lookup rate card's title, explaining the unit and reading a falling line as progress. Encouraging, never scolding.
+  ///
+  /// In en, this message translates to:
+  /// **'Lookups per 1,000 characters — lower means more is sticking'**
+  String get statsLookupRateSubtitle;
+
+  /// Title of the stats card charting the running count of distinct expressions the reader has saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocabulary growth'**
+  String get statsVocabGrowthTitle;
+
+  /// Running total of distinct saved expressions, shown in the vocabulary growth chart's tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} word} other {{count} words}}'**
+  String statsVocabWordCount({required int count});
 }
 
 class _AppLocalizationsDelegate
