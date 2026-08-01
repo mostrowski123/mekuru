@@ -170,8 +170,8 @@ class ReadingTimeCard extends StatelessWidget {
       barTouchData: BarTouchData(
         // A finger is wider than a bar this thin, so the hit box is not.
         touchExtraThreshold: const EdgeInsets.symmetric(horizontal: 10),
-        touchTooltipData: BarTouchTooltipData(
-          getTooltipColor: (_) => statsTooltipColor(colors),
+        touchTooltipData: statsBarTooltip(
+          colors,
           maxContentWidth: 180,
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             if (groupIndex < 0 || groupIndex >= bars.length) return null;
