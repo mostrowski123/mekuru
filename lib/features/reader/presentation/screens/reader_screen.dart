@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -24,6 +25,8 @@ import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controll
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
+import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
@@ -51,6 +54,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   late final BrightnessNotifier _brightnessNotifier;
   late final ReaderProgressPersistence _progressPersistence;
   late final ReaderSessionTracker _sessionTracker;
+
+  // Captured in initState for the same reason as `_lastSettings` below: the
+  // session summary is emitted from dispose(), where `ref` is already
+  // unusable.
+  late final StatsRepository _statsRepository;
 
   // Latest settings snapshot, cached so the session summary emitted from
   // dispose() never has to reach back through `ref` while unmounting.
@@ -97,6 +105,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _sessionTracker = ReaderSessionTracker(bookFormat: 'epub');
 
     _brightnessNotifier = ref.read(brightnessProvider.notifier);
+    _statsRepository = ref.read(statsRepositoryProvider);
     // Capture the repository once so the persistence callback never reaches
     // back through `ref` after the widget begins unmounting (queued saves can
     // flush during dispose, when ConsumerStatefulElement disallows reads).
@@ -190,6 +199,31 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       summary['duration_ms'] as int,
       attrs: {'format': 'epub'},
     );
+
+    // Persist the session for the stats screen. Fire-and-forget: this also
+    // runs from dispose(), where `ref` is already unusable — hence the
+    // repository captured in initState.
+    final startedAt = DateTime.now().subtract(
+      Duration(milliseconds: summary['duration_ms'] as int),
+    );
+    unawaited(() async {
+      try {
+        await _statsRepository.insertSession(
+          ReadingSessionsCompanion.insert(
+            bookId: Value(widget.book.id),
+            bookFormat: 'epub',
+            startedAt: startedAt,
+            durationMs: summary['duration_ms'] as int,
+            pagesTurned: Value(summary['pages_turned'] as int),
+            charactersRead: Value(summary['characters_read'] as int),
+            lookups: Value(summary['lookups'] as int),
+            wordsSaved: Value(summary['words_saved'] as int),
+          ),
+        );
+      } catch (e, st) {
+        await Sentry.captureException(e, stackTrace: st);
+      }
+    }());
   }
 
   void _recordLookupResolved(bool hit) {

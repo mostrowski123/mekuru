@@ -12,6 +12,7 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
+import 'package:mekuru/main.dart';
 // ignore: depend_on_referenced_packages
 import 'package:wakelock_plus_platform_interface/wakelock_plus_platform_interface.dart';
 
@@ -119,6 +120,9 @@ void main() {
     final storage = _PendingReaderSettingsStorage();
     final container = ProviderContainer(
       overrides: [
+        // ReaderScreen captures the stats repository in initState, which
+        // resolves databaseProvider — keep it on the in-memory test database.
+        databaseProvider.overrideWithValue(db),
         readerSettingsStorageProvider.overrideWithValue(storage),
         readerBookRepositoryProvider.overrideWithValue(BookRepository(db)),
         brightnessProvider.overrideWith(_FakeBrightnessNotifier.new),
