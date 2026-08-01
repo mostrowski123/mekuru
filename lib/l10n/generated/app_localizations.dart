@@ -3471,6 +3471,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transitive verb'**
   String get dictionaryPartOfSpeechTransitiveVerb;
+
+  /// Title of the reading statistics screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Stats'**
+  String get statsTitle;
+
+  /// Label under the hero tile showing total time read in the selected period.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading time'**
+  String get statsHeroReadingTime;
+
+  /// Label under the hero tile showing characters read in the selected period.
+  ///
+  /// In en, this message translates to:
+  /// **'Characters read'**
+  String get statsHeroCharactersRead;
+
+  /// Label under the hero tile showing distinct vocabulary words first saved in the selected period.
+  ///
+  /// In en, this message translates to:
+  /// **'Words added'**
+  String get statsHeroWordsAdded;
+
+  /// Stats format filter option that includes both EPUB books and manga.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get statsFormatAll;
+
+  /// Stats format filter option limiting the charts to EPUB books.
+  ///
+  /// In en, this message translates to:
+  /// **'EPUB'**
+  String get statsFormatEpub;
+
+  /// Stats format filter option limiting the charts to manga.
+  ///
+  /// In en, this message translates to:
+  /// **'Manga'**
+  String get statsFormatManga;
+
+  /// Stats period selector option covering the trailing seven days.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get statsPeriodWeek;
+
+  /// Stats period selector option covering the trailing thirty days.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get statsPeriodMonth;
+
+  /// Stats period selector option covering the trailing twelve months.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get statsPeriodYear;
+
+  /// Stats period selector option covering all recorded history.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get statsPeriodAll;
+
+  /// Shown on the stats screen when the stored stats could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading stats aren\'t available right now.'**
+  String get statsUnavailable;
 }
 
 class _AppLocalizationsDelegate

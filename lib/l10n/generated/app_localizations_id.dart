@@ -2016,4 +2016,40 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
+
+  @override
+  String get statsTitle => 'Reading Stats';
+
+  @override
+  String get statsHeroReadingTime => 'Reading time';
+
+  @override
+  String get statsHeroCharactersRead => 'Characters read';
+
+  @override
+  String get statsHeroWordsAdded => 'Words added';
+
+  @override
+  String get statsFormatAll => 'All';
+
+  @override
+  String get statsFormatEpub => 'EPUB';
+
+  @override
+  String get statsFormatManga => 'Manga';
+
+  @override
+  String get statsPeriodWeek => 'Week';
+
+  @override
+  String get statsPeriodMonth => 'Month';
+
+  @override
+  String get statsPeriodYear => 'Year';
+
+  @override
+  String get statsPeriodAll => 'All';
+
+  @override
+  String get statsUnavailable => 'Reading stats aren\'t available right now.';
 }

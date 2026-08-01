@@ -75,6 +75,10 @@ dependencies:
   # Kanji stroke order
   flutter_svg: ^2.0.17
 
+  # Reading stats charts
+  fl_chart: ^1.2.0
+  heatmap_calendar_plus: ^2.3.0
+
   # AnkiDroid integration (Android only)
   ankidroid_for_flutter: ^1.0.3
 
