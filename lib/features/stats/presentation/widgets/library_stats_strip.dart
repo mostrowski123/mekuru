@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
-// `formatDuration` lives with the chart chrome the stats cards share, so the
-// strip reads the same "3h 20m" the hero tiles do.
-import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
+import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
 /// The trailing week's reading, as a compact tappable strip above the library

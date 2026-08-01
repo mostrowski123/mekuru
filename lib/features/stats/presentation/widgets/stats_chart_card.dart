@@ -20,23 +20,6 @@ const double chartLeftAxisWidth = 44;
 /// Room reserved for the category axis.
 const double chartBottomAxisHeight = 24;
 
-/// Formats a duration in milliseconds the way the stats surfaces show it:
-/// `"0m"`, `"42m"`, `"3h 20m"`.
-///
-/// Shared by the hero tiles, the heatmap's day sheet and the reading-time
-/// chart's tooltips, so the three never disagree. Hours are never rolled up
-/// into days — an all-time total reads `"30h 5m"`, which is the figure people
-/// expect on a reading tile. Whole hours keep the minute part (`"2h 0m"`) so
-/// the string does not change shape mid count-up. Negative input (a clock
-/// change that slipped past the aggregator's clamping) reads `"0m"` rather
-/// than a minus sign.
-String formatDuration(int ms) {
-  final totalMinutes = (ms < 0 ? 0 : ms) ~/ Duration.millisecondsPerMinute;
-  final hours = totalMinutes ~/ Duration.minutesPerHour;
-  final minutes = totalMinutes % Duration.minutesPerHour;
-  return hours == 0 ? '${minutes}m' : '${hours}h ${minutes}m';
-}
-
 /// The color EPUB reading is drawn in, on every stats chart, forever.
 ///
 /// Format identity is fixed to the hue: filtering to Manga does not promote
@@ -256,6 +239,58 @@ Widget statsAxisLabel(BuildContext context, TitleMeta meta, String text) {
   );
 }
 
+/// The value axis every stats chart draws on its left.
+///
+/// [label] renders one tick's value. Zero is never labelled: the axis meets the
+/// baseline there, and a "0" under it reads as data rather than as the origin.
+AxisTitles statsValueAxis(
+  BuildContext context,
+  double interval,
+  String Function(double value) label,
+) => AxisTitles(
+  sideTitles: SideTitles(
+    showTitles: true,
+    reservedSize: chartLeftAxisWidth,
+    interval: interval,
+    getTitlesWidget: (value, meta) => value <= 0
+        ? const SizedBox.shrink()
+        : statsAxisLabel(context, meta, label(value)),
+  ),
+);
+
+/// The category axis under a bucketed chart: one tick per bucket start, thinned
+/// to every [step]th so the labels never collide.
+///
+/// [interval] is fl_chart's own tick spacing and is deliberately separate from
+/// [step] — a chart whose x values are bucket indices needs both told to it,
+/// while one that lets fl_chart choose its own ticks passes null and relies on
+/// the modulo guard alone.
+AxisTitles statsBucketAxis(
+  BuildContext context,
+  List<DateTime> starts,
+  int step,
+  StatsPeriod period,
+  String locale, {
+  double? interval,
+}) => AxisTitles(
+  sideTitles: SideTitles(
+    showTitles: true,
+    reservedSize: chartBottomAxisHeight,
+    interval: interval,
+    getTitlesWidget: (value, meta) {
+      final index = value.round();
+      if (index % step != 0 || index < 0 || index >= starts.length) {
+        return const SizedBox.shrink();
+      }
+      return statsAxisLabel(
+        context,
+        meta,
+        bucketAxisLabel(starts[index], period, locale),
+      );
+    },
+  ),
+);
+
 /// Background of a touch tooltip.
 Color _statsTooltipColor(ColorScheme colors) => colors.surfaceContainerHighest;
 
@@ -308,6 +343,76 @@ TextStyle statsTooltipValueStyle(ThemeData theme) =>
     (theme.textTheme.bodyMedium ?? const TextStyle()).copyWith(
       color: theme.colorScheme.onSurface,
       fontWeight: FontWeight.w700,
+    );
+
+/// Stroke width of a trend line.
+const double statsLineWidth = 2;
+
+/// Radius of the dot under a finger. Ten logical pixels across, so the mark the
+/// tooltip refers to is never smaller than the thing that summoned it.
+const double _touchDotRadius = 5;
+
+/// The mark fl_chart paints on a touched spot: a hairline down to the axis and
+/// a dot in [seriesColor], ringed in the card's own color so it reads as
+/// sitting on top of the line rather than as a bead threaded onto it.
+GetTouchedSpotIndicator statsLineTouchIndicator(
+  ThemeData theme,
+  Color seriesColor,
+) =>
+    (barData, indicators) => [
+      for (final _ in indicators)
+        TouchedSpotIndicatorData(
+          FlLine(color: theme.colorScheme.outlineVariant, strokeWidth: 1),
+          FlDotData(
+            getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+              radius: _touchDotRadius,
+              color: seriesColor,
+              strokeWidth: 2,
+              strokeColor: statsCardColor(theme),
+            ),
+          ),
+        ),
+    ];
+
+/// The wash under a trend line: the series color fading out downward, so the
+/// curve reads as a level rather than as a bare stroke.
+BarAreaData statsLineFill(Color seriesColor) => BarAreaData(
+  show: true,
+  gradient: LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      seriesColor.withValues(alpha: 0.26),
+      seriesColor.withValues(alpha: 0),
+    ],
+  ),
+);
+
+/// The entrance frame of a line: every spot stacked on the first one, so the
+/// line unrolls left to right as fl_chart interpolates them apart.
+List<FlSpot> collapsedSpots(List<FlSpot> spots) =>
+    List<FlSpot>.filled(spots.length, spots.first);
+
+/// Corner rounding on the tip of a bar.
+const double _rodRadius = 4;
+
+/// The rounded tip every stats bar is drawn with.
+const BorderRadius statsRodTopRadius = BorderRadius.vertical(
+  top: Radius.circular(_rodRadius),
+);
+
+/// Share of a bucket's slot the bar itself fills.
+const double _rodWidthFactor = 0.55;
+
+/// How wide one bar is drawn, given the plot's full [chartWidth] and how many
+/// bars share it.
+///
+/// Clamped at both ends: a week of bars would otherwise be slabs, and a year of
+/// them would thin out below a visible line.
+double statsRodWidth(double chartWidth, int barCount) =>
+    ((chartWidth - chartLeftAxisWidth) / barCount * _rodWidthFactor).clamp(
+      2.0,
+      18.0,
     );
 
 /// A gridline step that lands on round numbers and gives roughly [lines]

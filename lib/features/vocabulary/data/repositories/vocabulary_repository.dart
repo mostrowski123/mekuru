@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
+import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -59,15 +60,11 @@ class VocabularyRepository {
           ),
         );
 
-    await _db
-        .into(_db.wordEvents)
-        .insert(
-          WordEventsCompanion.insert(
-            kind: 'saved',
-            expression: entry.expression,
-            source: Value(source),
-          ),
-        );
+    await StatsRepository(_db).insertWordEvent(
+      kind: 'saved',
+      expression: entry.expression,
+      source: source,
+    );
 
     Sentry.metrics.count('vocabulary.word_saved', 1);
     AnalyticsService.instance.logEvent('word_saved');

@@ -3,17 +3,12 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
+import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
 import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
 /// Gap cut between the two stacked segments of a bar, in logical pixels.
 const double _stackGap = 2;
-
-/// Corner rounding on the tip of a bar.
-const double _rodRadius = 4;
-
-/// Share of a bucket's slot the bar itself fills.
-const double _rodWidthFactor = 0.55;
 
 /// Time read per bucket, EPUB and manga stacked into one bar each.
 ///
@@ -121,11 +116,7 @@ class ReadingTimeCard extends StatelessWidget {
     final maxY = interval * (needsHeadroom ? 5 : 4);
 
     final step = axisLabelStep(bars.length);
-    final rodWidth =
-        ((width - chartLeftAxisWidth) / bars.length * _rodWidthFactor).clamp(
-          2.0,
-          18.0,
-        );
+    final rodWidth = statsRodWidth(width, bars.length);
     // A bar's segments are cut apart by a border in the card's own color, so
     // the gap reads as the card showing through rather than as an outline.
     final gap = BorderSide(color: statsCardColor(theme), width: _stackGap);
@@ -139,32 +130,13 @@ class ReadingTimeCard extends StatelessWidget {
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(),
         rightTitles: const AxisTitles(),
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: chartLeftAxisWidth,
-            interval: interval,
-            getTitlesWidget: (value, meta) => value <= 0
-                ? const SizedBox.shrink()
-                : statsAxisLabel(context, meta, _axisDuration(value)),
-          ),
-        ),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: chartBottomAxisHeight,
-            getTitlesWidget: (value, meta) {
-              final index = value.round();
-              if (index % step != 0 || index < 0 || index >= bars.length) {
-                return const SizedBox.shrink();
-              }
-              return statsAxisLabel(
-                context,
-                meta,
-                bucketAxisLabel(bars[index].start, period, locale),
-              );
-            },
-          ),
+        leftTitles: statsValueAxis(context, interval, _axisDuration),
+        bottomTitles: statsBucketAxis(
+          context,
+          [for (final bar in bars) bar.start],
+          step,
+          period,
+          locale,
         ),
       ),
       barTouchData: BarTouchData(
@@ -253,9 +225,7 @@ class ReadingTimeCard extends StatelessWidget {
       toY: total,
       width: width,
       color: stacked ? epubColor : soloColor,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(_rodRadius),
-      ),
+      borderRadius: statsRodTopRadius,
       label: label,
       rodStackItems: stacked
           ? [

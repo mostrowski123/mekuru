@@ -5,12 +5,6 @@ import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
-/// Stroke width of the curve.
-const double _lineWidth = 2;
-
-/// Radius of the dot under a finger.
-const double _touchDotRadius = 5;
-
 /// Gap between the end of the curve and its direct label.
 const double _endLabelGap = 6;
 
@@ -130,15 +124,10 @@ class VocabGrowthCard extends StatelessWidget {
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(),
         rightTitles: const AxisTitles(),
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: chartLeftAxisWidth,
-            interval: interval,
-            getTitlesWidget: (value, meta) => value <= 0
-                ? const SizedBox.shrink()
-                : statsAxisLabel(context, meta, counts.format(value.round())),
-          ),
+        leftTitles: statsValueAxis(
+          context,
+          interval,
+          (value) => counts.format(value.round()),
         ),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
@@ -155,21 +144,7 @@ class VocabGrowthCard extends StatelessWidget {
       ),
       lineTouchData: LineTouchData(
         touchSpotThreshold: 24,
-        getTouchedSpotIndicator: (barData, indicators) => [
-          for (final _ in indicators)
-            TouchedSpotIndicatorData(
-              FlLine(color: colors.outlineVariant, strokeWidth: 1),
-              FlDotData(
-                getDotPainter: (spot, percent, bar, index) =>
-                    FlDotCirclePainter(
-                      radius: _touchDotRadius,
-                      color: seriesColor,
-                      strokeWidth: 2,
-                      strokeColor: statsCardColor(theme),
-                    ),
-              ),
-            ),
-        ],
+        getTouchedSpotIndicator: statsLineTouchIndicator(theme, seriesColor),
         touchTooltipData: statsLineTooltip(
           colors,
           getTooltipItems: (touchedSpots) => [
@@ -191,25 +166,13 @@ class VocabGrowthCard extends StatelessWidget {
       ),
       lineBarsData: [
         LineChartBarData(
-          spots: filled
-              ? spots
-              : List<FlSpot>.filled(spots.length, spots.first),
+          spots: filled ? spots : collapsedSpots(spots),
           color: seriesColor,
-          barWidth: _lineWidth,
+          barWidth: statsLineWidth,
           isStrokeCapRound: true,
           isStrokeJoinRound: true,
           dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(
-            show: true,
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                seriesColor.withValues(alpha: 0.26),
-                seriesColor.withValues(alpha: 0),
-              ],
-            ),
-          ),
+          belowBarData: statsLineFill(seriesColor),
         ),
       ],
     );
