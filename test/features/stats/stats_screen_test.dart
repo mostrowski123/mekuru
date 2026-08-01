@@ -7,6 +7,7 @@ import 'package:mekuru/features/stats/presentation/providers/stats_providers.dar
 import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
 import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
+import 'package:mekuru/features/stats/presentation/widgets/stats_chart_card.dart';
 
 import '../../test_app.dart';
 
@@ -91,6 +92,14 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    // The chart cards below the tiles label their own axes with durations and
+    // counts, so a headline figure has to be looked for where it is claimed
+    // to be rather than anywhere on the screen.
+    Finder inHero(String text) => find.descendant(
+      of: find.byType(HeroStatTile),
+      matching: find.text(text),
+    );
+
     testWidgets('shows the hero tiles and both selectors', (tester) async {
       final now = DateTime.now();
       await pumpScreen(
@@ -107,10 +116,10 @@ void main() {
       );
 
       expect(find.byType(HeroStatTile), findsNWidgets(3));
-      expect(find.text('3h 20m'), findsOneWidget);
-      expect(find.text('Reading time'), findsOneWidget);
-      expect(find.text('Characters read'), findsOneWidget);
-      expect(find.text('Words added'), findsOneWidget);
+      expect(inHero('3h 20m'), findsOneWidget);
+      expect(inHero('Reading time'), findsOneWidget);
+      expect(inHero('Characters read'), findsOneWidget);
+      expect(inHero('Words added'), findsOneWidget);
 
       expect(find.byType(SegmentedButton<StatsFormat>), findsOneWidget);
       expect(find.byType(SegmentedButton<StatsPeriod>), findsOneWidget);
@@ -122,8 +131,8 @@ void main() {
       await pumpScreen(tester, sessions: const [], events: const []);
 
       expect(find.byType(HeroStatTile), findsNWidgets(3));
-      expect(find.text('0m'), findsOneWidget);
-      expect(find.text('0'), findsNWidgets(2));
+      expect(inHero('0m'), findsOneWidget);
+      expect(inHero('0'), findsNWidgets(2));
     });
 
     testWidgets('shows a quiet message when the stats cannot be read', (
@@ -173,12 +182,18 @@ void main() {
         ],
         events: const [],
       );
-      expect(find.text('1h 30m'), findsOneWidget);
+      expect(inHero('1h 30m'), findsOneWidget);
 
-      await tester.tap(find.text('Manga'));
+      // "Manga" also names a series in the reading-time card's legend now.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(SegmentedButton<StatsFormat>),
+          matching: find.text('Manga'),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text('30m'), findsOneWidget);
+      expect(inHero('30m'), findsOneWidget);
     });
 
     testWidgets('counts a word once, in the period it was first seen', (
@@ -198,14 +213,14 @@ void main() {
       );
 
       // Week: only 猫 is new.
-      expect(find.text('1'), findsOneWidget);
+      expect(inHero('1'), findsOneWidget);
 
       await tester.tap(find.text('All').last);
       await tester.pumpAndSettle();
 
       // All: both distinct expressions, including the one predating any
       // session.
-      expect(find.text('2'), findsOneWidget);
+      expect(inHero('2'), findsOneWidget);
     });
 
     testWidgets('opens a day detail sheet from a heatmap cell', (tester) async {

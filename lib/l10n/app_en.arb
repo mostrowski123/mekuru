@@ -2641,5 +2641,39 @@
   "statsHeatmapLookups": "Lookups",
   "@statsHeatmapLookups": {
     "description": "Label for the number of dictionary lookups made on a single day, in the activity heatmap's day detail sheet."
+  },
+  "statsBestDayMarker": "Best day",
+  "@statsBestDayMarker": {
+    "description": "Annotation above the bar of the longest reading day ever recorded, on the reading time chart. Factual and backward-looking, not congratulatory."
+  },
+  "statsVolumePageCount": "{count, plural, one {{count} page} other {{count} pages}}",
+  "@statsVolumePageCount": {
+    "description": "Pages turned in the selected period, shown as a plain figure in the characters-read card's header rather than as a second chart axis.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statsLookupRateTitle": "Lookup rate",
+  "@statsLookupRateTitle": {
+    "description": "Title of the stats card charting how often the reader looked a word up while reading."
+  },
+  "statsLookupRateSubtitle": "Lookups per 1,000 characters — lower means more is sticking",
+  "@statsLookupRateSubtitle": {
+    "description": "Subtitle under the lookup rate card's title, explaining the unit and reading a falling line as progress. Encouraging, never scolding."
+  },
+  "statsVocabGrowthTitle": "Vocabulary growth",
+  "@statsVocabGrowthTitle": {
+    "description": "Title of the stats card charting the running count of distinct expressions the reader has saved."
+  },
+  "statsVocabWordCount": "{count, plural, one {{count} word} other {{count} words}}",
+  "@statsVocabWordCount": {
+    "description": "Running total of distinct saved expressions, shown in the vocabulary growth chart's tooltip.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

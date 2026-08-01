@@ -2415,5 +2415,11 @@
   "statsHeatmapTitle": "Reading activity",
   "statsHeatmapLegendLess": "Less",
   "statsHeatmapLegendMore": "More",
-  "statsHeatmapLookups": "Lookups"
+  "statsHeatmapLookups": "Lookups",
+  "statsBestDayMarker": "Best day",
+  "statsVolumePageCount": "{count, plural, one {{count} page} other {{count} pages}}",
+  "statsLookupRateTitle": "Lookup rate",
+  "statsLookupRateSubtitle": "Lookups per 1,000 characters — lower means more is sticking",
+  "statsVocabGrowthTitle": "Vocabulary growth",
+  "statsVocabWordCount": "{count, plural, one {{count} word} other {{count} words}}"
 }

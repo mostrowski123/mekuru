@@ -2056,4 +2056,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statsHeatmapLookups => 'Lookups';
+
+  @override
+  String get statsBestDayMarker => 'Best day';
+
+  @override
+  String statsVolumePageCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pages',
+      one: '$count page',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statsLookupRateTitle => 'Lookup rate';
+
+  @override
+  String get statsLookupRateSubtitle =>
+      'Lookups per 1,000 characters — lower means more is sticking';
+
+  @override
+  String get statsVocabGrowthTitle => 'Vocabulary growth';
+
+  @override
+  String statsVocabWordCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count words',
+      one: '$count word',
+    );
+    return '$_temp0';
+  }
 }
