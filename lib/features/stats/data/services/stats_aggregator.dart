@@ -236,6 +236,78 @@ StatBucket? bestDay(List<ReadingSession> sessions, DateTime now) {
   return best.value.toBucket(best.key);
 }
 
+/// The numbers behind the three hero tiles.
+class PeriodTotals {
+  const PeriodTotals({
+    required this.durationMs,
+    required this.charactersRead,
+    required this.wordsAdded,
+  });
+
+  final int durationMs;
+  final int charactersRead;
+  final int wordsAdded;
+}
+
+/// The headline totals for one period-and-format selection.
+///
+/// Summed off the same bucket grid the charts are drawn from, so a tile and
+/// the chart under it can never disagree about what the window contains.
+PeriodTotals periodTotals({
+  required List<ReadingSession> sessions,
+  required List<WordEvent> events,
+  required StatsPeriod period,
+  required DateTime now,
+}) {
+  final buckets = bucketize(sessions, period, now);
+  var durationMs = 0;
+  var charactersRead = 0;
+  for (final bucket in buckets) {
+    durationMs += bucket.durationMs;
+    charactersRead += bucket.charactersRead;
+  }
+  return PeriodTotals(
+    durationMs: durationMs,
+    charactersRead: charactersRead,
+    wordsAdded: wordsAddedSince(events, windowStart(buckets, period)),
+  );
+}
+
+/// The first instant [period] covers, or null when it has no lower bound.
+///
+/// Read off the bucket grid rather than recomputed, so the tiles can never
+/// drift out of step with the aggregator's trailing-window arithmetic.
+/// [StatsPeriod.all] is the exception: its grid starts at the first *session*'s
+/// month, which would drop words saved outside a reader before any session
+/// existed — including every row the migration backfilled.
+DateTime? windowStart(List<StatBucket> buckets, StatsPeriod period) {
+  if (period == StatsPeriod.all || buckets.isEmpty) return null;
+  return buckets.first.start;
+}
+
+/// Distinct expressions first seen on or after [start] — all of them when
+/// [start] is null.
+///
+/// Derived from the cumulative curve rather than counted directly, so this tile
+/// and the vocab-growth chart agree to the word: both credit an expression once,
+/// on the day of its first event, whatever the event's kind.
+int wordsAddedSince(List<WordEvent> events, DateTime? start) {
+  final points = cumulativeUniqueWords(events);
+  if (points.isEmpty) return 0;
+
+  final total = points.last.total;
+  if (start == null) return total;
+
+  // Points ascend chronologically, so the last one before the window carries
+  // the running total the window started from.
+  var before = 0;
+  for (final point in points) {
+    if (!point.day.isBefore(start)) break;
+    before = point.total;
+  }
+  return total - before;
+}
+
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------

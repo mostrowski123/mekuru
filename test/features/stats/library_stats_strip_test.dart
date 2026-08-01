@@ -9,24 +9,7 @@ import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
 import 'package:mekuru/features/stats/presentation/widgets/library_stats_strip.dart';
 
 import '../../test_app.dart';
-
-ReadingSession _session({
-  required int id,
-  required DateTime startedAt,
-  int durationMs = 0,
-  int charactersRead = 0,
-}) {
-  return ReadingSession(
-    id: id,
-    bookFormat: 'epub',
-    startedAt: startedAt,
-    durationMs: durationMs,
-    pagesTurned: 0,
-    charactersRead: charactersRead,
-    lookups: 0,
-    wordsSaved: 0,
-  );
-}
+import 'stats_fixtures.dart';
 
 void main() {
   group('LibraryStatsStrip', () {
@@ -70,7 +53,7 @@ void main() {
       await pumpStrip(
         tester,
         Stream.value([
-          _session(
+          session(
             id: 1,
             startedAt: DateTime.now(),
             durationMs: (3 * 60 + 20) * 60 * 1000,
@@ -91,7 +74,7 @@ void main() {
       await pumpStrip(
         tester,
         Stream.value([
-          _session(
+          session(
             id: 1,
             startedAt: DateTime(now.year, now.month, now.day - 30),
             durationMs: 60 * 60 * 1000,
@@ -111,7 +94,7 @@ void main() {
       await pumpStrip(
         tester,
         Stream.value([
-          _session(
+          session(
             id: 1,
             startedAt: DateTime.now(),
             durationMs: 60 * 60 * 1000,

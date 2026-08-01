@@ -10,41 +10,7 @@ import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
 
 import '../../test_app.dart';
-
-ReadingSession _session({
-  required int id,
-  required DateTime startedAt,
-  String bookFormat = 'epub',
-  int durationMs = 0,
-  int charactersRead = 0,
-  int lookups = 0,
-}) {
-  return ReadingSession(
-    id: id,
-    bookFormat: bookFormat,
-    startedAt: startedAt,
-    durationMs: durationMs,
-    pagesTurned: 0,
-    charactersRead: charactersRead,
-    lookups: lookups,
-    wordsSaved: 0,
-  );
-}
-
-WordEvent _event({
-  required int id,
-  required String expression,
-  required DateTime createdAt,
-  String source = 'epub',
-}) {
-  return WordEvent(
-    id: id,
-    kind: 'saved',
-    expression: expression,
-    source: source,
-    createdAt: createdAt,
-  );
-}
+import 'stats_fixtures.dart';
 
 void main() {
   group('formatDuration', () {
@@ -105,14 +71,14 @@ void main() {
       await pumpScreen(
         tester,
         sessions: [
-          _session(
+          session(
             id: 1,
             startedAt: now,
             durationMs: (3 * 60 + 20) * 60 * 1000,
             charactersRead: 1200,
           ),
         ],
-        events: [_event(id: 1, expression: '本', createdAt: now)],
+        events: [wordEvent(id: 1, expression: '本', createdAt: now)],
       );
 
       expect(find.byType(HeroStatTile), findsNWidgets(3));
@@ -167,13 +133,13 @@ void main() {
       await pumpScreen(
         tester,
         sessions: [
-          _session(
+          session(
             id: 1,
             startedAt: now,
             bookFormat: 'epub',
             durationMs: 60 * 60 * 1000,
           ),
-          _session(
+          session(
             id: 2,
             startedAt: now,
             bookFormat: 'manga',
@@ -205,10 +171,10 @@ void main() {
         tester,
         sessions: const [],
         events: [
-          _event(id: 1, expression: '本', createdAt: lastYear),
+          wordEvent(id: 1, expression: '本', createdAt: lastYear),
           // Same expression again this week: already counted, not a new word.
-          _event(id: 2, expression: '本', createdAt: now),
-          _event(id: 3, expression: '猫', createdAt: now),
+          wordEvent(id: 2, expression: '本', createdAt: now),
+          wordEvent(id: 3, expression: '猫', createdAt: now),
         ],
       );
 
@@ -228,7 +194,7 @@ void main() {
       await pumpScreen(
         tester,
         sessions: [
-          _session(
+          session(
             id: 1,
             startedAt: now,
             durationMs: 60 * 60 * 1000,

@@ -1,45 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:path/path.dart' as p;
 
-// bookId and wordsSaved are fixed: the aggregator reads neither, so exposing
-// them as knobs would imply it cares about book identity or saved-word counts.
-ReadingSession _session({
-  int id = 0,
-  String bookFormat = 'epub',
-  required DateTime startedAt,
-  int durationMs = 0,
-  int pagesTurned = 0,
-  int charactersRead = 0,
-  int lookups = 0,
-}) => ReadingSession(
-  id: id,
-  bookId: null,
-  bookFormat: bookFormat,
-  startedAt: startedAt,
-  durationMs: durationMs,
-  pagesTurned: pagesTurned,
-  charactersRead: charactersRead,
-  lookups: lookups,
-  wordsSaved: 0,
-);
-
-WordEvent _event({
-  int id = 0,
-  String kind = 'saved',
-  required String expression,
-  String source = 'epub',
-  required DateTime createdAt,
-}) => WordEvent(
-  id: id,
-  kind: kind,
-  expression: expression,
-  source: source,
-  createdAt: createdAt,
-);
+import 'stats_fixtures.dart';
 
 void main() {
   // Fixed "now" so every window is deterministic: today is Sunday 2026-02-15.
@@ -162,9 +127,9 @@ void main() {
   });
 
   group('filterSessions', () {
-    final epub = _session(id: 1, bookFormat: 'epub', startedAt: now);
-    final manga = _session(id: 2, bookFormat: 'manga', startedAt: now);
-    final unknown = _session(id: 3, bookFormat: 'pdf', startedAt: now);
+    final epub = session(id: 1, bookFormat: 'epub', startedAt: now);
+    final manga = session(id: 2, bookFormat: 'manga', startedAt: now);
+    final unknown = session(id: 3, bookFormat: 'pdf', startedAt: now);
     final sessions = [epub, manga, unknown];
 
     test('all keeps every session, including unknown formats', () {
@@ -181,9 +146,9 @@ void main() {
 
     test('preserves input order', () {
       final ordered = [
-        _session(id: 1, startedAt: DateTime(2026, 2, 3)),
-        _session(id: 2, startedAt: DateTime(2026, 2, 1)),
-        _session(id: 3, startedAt: DateTime(2026, 2, 2)),
+        session(id: 1, startedAt: DateTime(2026, 2, 3)),
+        session(id: 2, startedAt: DateTime(2026, 2, 1)),
+        session(id: 3, startedAt: DateTime(2026, 2, 2)),
       ];
 
       expect(filterSessions(ordered, StatsFormat.epub).map((s) => s.id), [
@@ -201,14 +166,19 @@ void main() {
   });
 
   group('filterWordEvents', () {
-    final epub = _event(id: 1, expression: '猫', source: 'epub', createdAt: now);
-    final manga = _event(
+    final epub = wordEvent(
+      id: 1,
+      expression: '猫',
+      source: 'epub',
+      createdAt: now,
+    );
+    final manga = wordEvent(
       id: 2,
       expression: '犬',
       source: 'manga',
       createdAt: now,
     );
-    final other = _event(
+    final other = wordEvent(
       id: 3,
       expression: '鳥',
       source: 'other',
@@ -264,12 +234,12 @@ void main() {
     test('23:59 and 00:01 land in adjacent day buckets', () {
       final buckets = bucketize(
         [
-          _session(
+          session(
             id: 1,
             startedAt: DateTime(2026, 2, 10, 23, 59),
             durationMs: 1000,
           ),
-          _session(
+          session(
             id: 2,
             startedAt: DateTime(2026, 2, 11, 0, 1),
             durationMs: 2000,
@@ -288,8 +258,8 @@ void main() {
     test('day 7 is inside the window and day 8 is outside', () {
       final buckets = bucketize(
         [
-          _session(id: 1, startedAt: DateTime(2026, 2, 9), durationMs: 5000),
-          _session(
+          session(id: 1, startedAt: DateTime(2026, 2, 9), durationMs: 5000),
+          session(
             id: 2,
             startedAt: DateTime(2026, 2, 8, 23, 59),
             durationMs: 9000,
@@ -306,7 +276,7 @@ void main() {
     test('sessions dated after today are dropped', () {
       final buckets = bucketize(
         [
-          _session(
+          session(
             id: 1,
             startedAt: DateTime(2026, 2, 16, 0, 1),
             durationMs: 60000,
@@ -324,7 +294,7 @@ void main() {
     test('sums every metric of same-day sessions', () {
       final buckets = bucketize(
         [
-          _session(
+          session(
             id: 1,
             startedAt: DateTime(2026, 2, 12, 8),
             durationMs: 60000,
@@ -332,7 +302,7 @@ void main() {
             charactersRead: 900,
             lookups: 4,
           ),
-          _session(
+          session(
             id: 2,
             startedAt: DateTime(2026, 2, 12, 22),
             durationMs: 30000,
@@ -356,7 +326,7 @@ void main() {
     test('clamps negative counters to zero instead of dropping the row', () {
       final buckets = bucketize(
         [
-          _session(
+          session(
             id: 1,
             startedAt: DateTime(2026, 2, 12, 8),
             durationMs: -600000,
@@ -364,7 +334,7 @@ void main() {
             pagesTurned: -2,
             lookups: -1,
           ),
-          _session(
+          session(
             id: 2,
             startedAt: DateTime(2026, 2, 12, 9),
             durationMs: 60000,
@@ -387,7 +357,7 @@ void main() {
     test('ignores the book format (callers filter first)', () {
       final buckets = bucketize(
         [
-          _session(
+          session(
             id: 1,
             bookFormat: 'manga',
             startedAt: DateTime(2026, 2, 15, 9),
@@ -414,12 +384,8 @@ void main() {
     test('day 30 is inside the window and day 31 is outside', () {
       final buckets = bucketize(
         [
-          _session(
-            id: 1,
-            startedAt: DateTime(2026, 1, 17, 6),
-            durationMs: 4000,
-          ),
-          _session(
+          session(id: 1, startedAt: DateTime(2026, 1, 17, 6), durationMs: 4000),
+          session(
             id: 2,
             startedAt: DateTime(2026, 1, 16, 23, 59),
             durationMs: 8000,
@@ -446,13 +412,13 @@ void main() {
     test('buckets months across a year boundary', () {
       final buckets = bucketize(
         [
-          _session(
+          session(
             id: 1,
             startedAt: DateTime(2025, 12, 31, 23, 59),
             durationMs: 7000,
             charactersRead: 700,
           ),
-          _session(
+          session(
             id: 2,
             startedAt: DateTime(2026, 1, 1, 0, 1),
             durationMs: 3000,
@@ -474,9 +440,9 @@ void main() {
     test('aggregates every day of a month into one bucket', () {
       final buckets = bucketize(
         [
-          _session(id: 1, startedAt: DateTime(2025, 6, 1), durationMs: 1000),
-          _session(id: 2, startedAt: DateTime(2025, 6, 15), durationMs: 2000),
-          _session(
+          session(id: 1, startedAt: DateTime(2025, 6, 1), durationMs: 1000),
+          session(id: 2, startedAt: DateTime(2025, 6, 15), durationMs: 2000),
+          session(
             id: 3,
             startedAt: DateTime(2025, 6, 30, 23),
             durationMs: 3000,
@@ -493,7 +459,7 @@ void main() {
     test('drops months older than the 12-month window', () {
       final buckets = bucketize(
         [
-          _session(
+          session(
             id: 1,
             startedAt: DateTime(2025, 2, 28, 23, 59),
             durationMs: 9000,
@@ -508,7 +474,7 @@ void main() {
 
     test('empty months are present with zeros', () {
       final buckets = bucketize(
-        [_session(id: 1, startedAt: DateTime(2026, 2, 2), durationMs: 5000)],
+        [session(id: 1, startedAt: DateTime(2026, 2, 2), durationMs: 5000)],
         StatsPeriod.year,
         now,
       );
@@ -523,8 +489,8 @@ void main() {
     test('spans month buckets from the first session to the current month', () {
       final buckets = bucketize(
         [
-          _session(id: 1, startedAt: DateTime(2026, 1, 20), durationMs: 1000),
-          _session(id: 2, startedAt: DateTime(2026, 4, 2), durationMs: 4000),
+          session(id: 1, startedAt: DateTime(2026, 1, 20), durationMs: 1000),
+          session(id: 2, startedAt: DateTime(2026, 4, 2), durationMs: 4000),
         ],
         StatsPeriod.all,
         DateTime(2026, 4, 10, 8),
@@ -541,7 +507,7 @@ void main() {
 
     test('spans a year boundary', () {
       final buckets = bucketize(
-        [_session(id: 1, startedAt: DateTime(2025, 11, 30), durationMs: 1000)],
+        [session(id: 1, startedAt: DateTime(2025, 11, 30), durationMs: 1000)],
         StatsPeriod.all,
         now,
       );
@@ -564,7 +530,7 @@ void main() {
 
     test('ignores sessions in future months when picking the first month', () {
       final buckets = bucketize(
-        [_session(id: 1, startedAt: DateTime(2026, 6, 1), durationMs: 9000)],
+        [session(id: 1, startedAt: DateTime(2026, 6, 1), durationMs: 9000)],
         StatsPeriod.all,
         now,
       );
@@ -577,8 +543,8 @@ void main() {
     test('is not confused by unsorted input', () {
       final buckets = bucketize(
         [
-          _session(id: 1, startedAt: DateTime(2026, 2, 3), durationMs: 1000),
-          _session(id: 2, startedAt: DateTime(2025, 12, 3), durationMs: 2000),
+          session(id: 1, startedAt: DateTime(2026, 2, 3), durationMs: 1000),
+          session(id: 2, startedAt: DateTime(2025, 12, 3), durationMs: 2000),
         ],
         StatsPeriod.all,
         now,
@@ -609,14 +575,10 @@ void main() {
     test('floors summed milliseconds to whole minutes', () {
       final days = heatmapDays([
         // 90_000 + 60_000 = 150_000 ms = 2.5 minutes -> 2, not 3.
-        _session(id: 1, startedAt: DateTime(2026, 2, 14, 9), durationMs: 90000),
-        _session(
-          id: 2,
-          startedAt: DateTime(2026, 2, 14, 20),
-          durationMs: 60000,
-        ),
+        session(id: 1, startedAt: DateTime(2026, 2, 14, 9), durationMs: 90000),
+        session(id: 2, startedAt: DateTime(2026, 2, 14, 20), durationMs: 60000),
         // 45_000 ms = 0.75 minutes -> 0, not 1.
-        _session(id: 3, startedAt: DateTime(2026, 2, 13, 9), durationMs: 45000),
+        session(id: 3, startedAt: DateTime(2026, 2, 13, 9), durationMs: 45000),
       ], now);
 
       expect(days[363].day, DateTime(2026, 2, 14));
@@ -629,7 +591,7 @@ void main() {
       // Guards the documented contract that a day is "active" when any of
       // minutes/characters/lookups is non-zero, not minutes alone.
       final days = heatmapDays([
-        _session(
+        session(
           id: 1,
           startedAt: DateTime(2026, 2, 15, 9),
           durationMs: 20000,
@@ -645,13 +607,13 @@ void main() {
 
     test('sums characters and lookups per day', () {
       final days = heatmapDays([
-        _session(
+        session(
           id: 1,
           startedAt: DateTime(2026, 2, 15, 9),
           charactersRead: 400,
           lookups: 2,
         ),
-        _session(
+        session(
           id: 2,
           startedAt: DateTime(2026, 2, 15, 10),
           charactersRead: 600,
@@ -665,12 +627,12 @@ void main() {
 
     test('clamps negative durations to zero', () {
       final days = heatmapDays([
-        _session(
+        session(
           id: 1,
           startedAt: DateTime(2026, 2, 15, 9),
           durationMs: -600000,
         ),
-        _session(
+        session(
           id: 2,
           startedAt: DateTime(2026, 2, 15, 10),
           durationMs: 120000,
@@ -682,17 +644,17 @@ void main() {
 
     test('excludes days outside the trailing 365-day window', () {
       final days = heatmapDays([
-        _session(
+        session(
           id: 1,
           startedAt: DateTime(2025, 2, 16, 12),
           durationMs: 600000,
         ),
-        _session(
+        session(
           id: 2,
           startedAt: DateTime(2025, 2, 15, 12),
           durationMs: 600000,
         ),
-        _session(id: 3, startedAt: DateTime(2026, 2, 16), durationMs: 600000),
+        session(id: 3, startedAt: DateTime(2026, 2, 16), durationMs: 600000),
       ], now);
 
       expect(days.first.minutes, 10);
@@ -745,13 +707,13 @@ void main() {
 
     test('counts each expression once, at its first event', () {
       final points = cumulativeUniqueWords([
-        _event(
+        wordEvent(
           id: 1,
           kind: 'saved',
           expression: '猫',
           createdAt: DateTime(2026, 2, 10, 9),
         ),
-        _event(
+        wordEvent(
           id: 2,
           kind: 'anki',
           expression: '猫',
@@ -766,25 +728,25 @@ void main() {
 
     test('dedupes across mixed saved and anki kinds while accumulating', () {
       final points = cumulativeUniqueWords([
-        _event(
+        wordEvent(
           id: 1,
           kind: 'saved',
           expression: '猫',
           createdAt: DateTime(2026, 2, 10, 9),
         ),
-        _event(
+        wordEvent(
           id: 2,
           kind: 'anki',
           expression: '猫',
           createdAt: DateTime(2026, 2, 10, 10),
         ),
-        _event(
+        wordEvent(
           id: 3,
           kind: 'anki',
           expression: '犬',
           createdAt: DateTime(2026, 2, 11, 9),
         ),
-        _event(
+        wordEvent(
           id: 4,
           kind: 'saved',
           expression: '鳥',
@@ -801,9 +763,9 @@ void main() {
 
     test('emits one point per day, holding the end-of-day running total', () {
       final points = cumulativeUniqueWords([
-        _event(id: 1, expression: 'a', createdAt: DateTime(2026, 1, 1, 8)),
-        _event(id: 2, expression: 'b', createdAt: DateTime(2026, 1, 1, 20)),
-        _event(id: 3, expression: 'c', createdAt: DateTime(2026, 1, 5, 8)),
+        wordEvent(id: 1, expression: 'a', createdAt: DateTime(2026, 1, 1, 8)),
+        wordEvent(id: 2, expression: 'b', createdAt: DateTime(2026, 1, 1, 20)),
+        wordEvent(id: 3, expression: 'c', createdAt: DateTime(2026, 1, 5, 8)),
       ]);
 
       expect(points, hasLength(2));
@@ -815,9 +777,9 @@ void main() {
 
     test('omits days that only repeat known expressions', () {
       final points = cumulativeUniqueWords([
-        _event(id: 1, expression: 'a', createdAt: DateTime(2026, 1, 1, 8)),
-        _event(id: 2, expression: 'a', createdAt: DateTime(2026, 1, 2, 8)),
-        _event(id: 3, expression: 'b', createdAt: DateTime(2026, 1, 3, 8)),
+        wordEvent(id: 1, expression: 'a', createdAt: DateTime(2026, 1, 1, 8)),
+        wordEvent(id: 2, expression: 'a', createdAt: DateTime(2026, 1, 2, 8)),
+        wordEvent(id: 3, expression: 'b', createdAt: DateTime(2026, 1, 3, 8)),
       ]);
 
       expect(points.map((p) => p.day), [
@@ -829,8 +791,8 @@ void main() {
 
     test('sorts unordered events before deduping', () {
       final points = cumulativeUniqueWords([
-        _event(id: 2, expression: '猫', createdAt: DateTime(2026, 2, 12, 9)),
-        _event(id: 1, expression: '猫', createdAt: DateTime(2026, 2, 10, 9)),
+        wordEvent(id: 2, expression: '猫', createdAt: DateTime(2026, 2, 12, 9)),
+        wordEvent(id: 1, expression: '猫', createdAt: DateTime(2026, 2, 10, 9)),
       ]);
 
       expect(points, hasLength(1));
@@ -839,8 +801,8 @@ void main() {
 
     test('does not mutate the input list', () {
       final events = [
-        _event(id: 2, expression: 'b', createdAt: DateTime(2026, 2, 12)),
-        _event(id: 1, expression: 'a', createdAt: DateTime(2026, 2, 10)),
+        wordEvent(id: 2, expression: 'b', createdAt: DateTime(2026, 2, 12)),
+        wordEvent(id: 1, expression: 'a', createdAt: DateTime(2026, 2, 10)),
       ];
       final snapshot = [...events];
 
@@ -857,19 +819,19 @@ void main() {
 
     test('picks the day with the highest total duration', () {
       final best = bestDay([
-        _session(
+        session(
           id: 1,
           startedAt: DateTime(2026, 2, 10, 9),
           durationMs: 600000,
           charactersRead: 100,
         ),
-        _session(
+        session(
           id: 2,
           startedAt: DateTime(2026, 2, 10, 21),
           durationMs: 300000,
           charactersRead: 200,
         ),
-        _session(
+        session(
           id: 3,
           startedAt: DateTime(2026, 2, 12, 9),
           durationMs: 1000000,
@@ -884,7 +846,7 @@ void main() {
 
     test('aggregates the whole winning day', () {
       final best = bestDay([
-        _session(
+        session(
           id: 1,
           startedAt: DateTime(2026, 2, 10, 9),
           durationMs: 600000,
@@ -892,7 +854,7 @@ void main() {
           pagesTurned: 3,
           lookups: 2,
         ),
-        _session(
+        session(
           id: 2,
           startedAt: DateTime(2026, 2, 10, 21),
           durationMs: 300000,
@@ -900,7 +862,7 @@ void main() {
           pagesTurned: 4,
           lookups: 5,
         ),
-        _session(id: 3, startedAt: DateTime(2026, 2, 12, 9), durationMs: 10000),
+        session(id: 3, startedAt: DateTime(2026, 2, 12, 9), durationMs: 10000),
       ], now);
 
       expect(best!.start, DateTime(2026, 2, 10));
@@ -912,12 +874,8 @@ void main() {
 
     test('looks past the trailing windows, all the way back', () {
       final best = bestDay([
-        _session(
-          id: 1,
-          startedAt: DateTime(2021, 5, 4, 9),
-          durationMs: 9000000,
-        ),
-        _session(id: 2, startedAt: DateTime(2026, 2, 12, 9), durationMs: 10000),
+        session(id: 1, startedAt: DateTime(2021, 5, 4, 9), durationMs: 9000000),
+        session(id: 2, startedAt: DateTime(2026, 2, 12, 9), durationMs: 10000),
       ], now);
 
       expect(best!.start, DateTime(2021, 5, 4));
@@ -926,16 +884,8 @@ void main() {
 
     test('breaks ties in favour of the earliest day', () {
       final best = bestDay([
-        _session(
-          id: 1,
-          startedAt: DateTime(2026, 2, 12, 9),
-          durationMs: 600000,
-        ),
-        _session(
-          id: 2,
-          startedAt: DateTime(2026, 2, 10, 9),
-          durationMs: 600000,
-        ),
+        session(id: 1, startedAt: DateTime(2026, 2, 12, 9), durationMs: 600000),
+        session(id: 2, startedAt: DateTime(2026, 2, 10, 9), durationMs: 600000),
       ], now);
 
       expect(best!.start, DateTime(2026, 2, 10));
@@ -943,12 +893,12 @@ void main() {
 
     test('ignores sessions dated after today', () {
       final best = bestDay([
-        _session(
+        session(
           id: 1,
           startedAt: DateTime(2026, 2, 16, 9),
           durationMs: 9000000,
         ),
-        _session(id: 2, startedAt: DateTime(2026, 2, 12, 9), durationMs: 10000),
+        session(id: 2, startedAt: DateTime(2026, 2, 12, 9), durationMs: 10000),
       ], now);
 
       expect(best!.start, DateTime(2026, 2, 12));
@@ -957,7 +907,7 @@ void main() {
 
     test('is null when every session is dated after today', () {
       final best = bestDay([
-        _session(id: 1, startedAt: DateTime(2026, 2, 16, 9), durationMs: 10000),
+        session(id: 1, startedAt: DateTime(2026, 2, 16, 9), durationMs: 10000),
       ], now);
 
       expect(best, isNull);
@@ -965,16 +915,78 @@ void main() {
 
     test('clamps negative durations to zero', () {
       final best = bestDay([
-        _session(
+        session(
           id: 1,
           startedAt: DateTime(2026, 2, 10, 9),
           durationMs: -900000,
         ),
-        _session(id: 2, startedAt: DateTime(2026, 2, 12, 9), durationMs: 1000),
+        session(id: 2, startedAt: DateTime(2026, 2, 12, 9), durationMs: 1000),
       ], now);
 
       expect(best!.start, DateTime(2026, 2, 12));
       expect(best.durationMs, 1000);
+    });
+  });
+
+  group('windowStart', () {
+    test('is the first bucket start for a bounded period', () {
+      final buckets = bucketize(const [], StatsPeriod.week, now);
+
+      expect(windowStart(buckets, StatsPeriod.week), DateTime(2026, 2, 9));
+    });
+
+    test(
+      'is null for all-time, so words predating any session still count',
+      () {
+        final buckets = bucketize(
+          [session(id: 1, startedAt: DateTime(2025, 6, 1), durationMs: 1000)],
+          StatsPeriod.all,
+          now,
+        );
+
+        expect(buckets, isNotEmpty);
+        expect(windowStart(buckets, StatsPeriod.all), isNull);
+      },
+    );
+
+    test('is null when there are no buckets to read a start off', () {
+      expect(windowStart(const [], StatsPeriod.week), isNull);
+    });
+  });
+
+  group('wordsAddedSince', () {
+    final events = [
+      wordEvent(id: 1, expression: '本', createdAt: DateTime(2026, 1, 10)),
+      wordEvent(id: 2, expression: '猫', createdAt: DateTime(2026, 2, 12)),
+      wordEvent(id: 3, expression: '犬', createdAt: DateTime(2026, 2, 14)),
+    ];
+
+    test('counts every expression when the window is unbounded', () {
+      expect(wordsAddedSince(events, null), 3);
+    });
+
+    test('counts only the expressions first seen inside the window', () {
+      expect(wordsAddedSince(events, DateTime(2026, 2, 9)), 2);
+    });
+
+    test('credits an expression to its first event, not a later repeat', () {
+      final repeated = [
+        wordEvent(id: 1, expression: '本', createdAt: DateTime(2026, 1, 10)),
+        // Same word again inside the window: already known, so it adds nothing.
+        wordEvent(id: 2, expression: '本', createdAt: DateTime(2026, 2, 12)),
+      ];
+
+      expect(wordsAddedSince(repeated, DateTime(2026, 2, 9)), 0);
+      expect(wordsAddedSince(repeated, null), 1);
+    });
+
+    test('counts a word first seen exactly on the window start', () {
+      expect(wordsAddedSince(events, DateTime(2026, 2, 12)), 2);
+    });
+
+    test('is zero with no events at all', () {
+      expect(wordsAddedSince(const [], null), 0);
+      expect(wordsAddedSince(const [], DateTime(2026, 2, 9)), 0);
     });
   });
 }
