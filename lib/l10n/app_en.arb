@@ -2584,11 +2584,11 @@
   },
   "statsHeroReadingTime": "Reading time",
   "@statsHeroReadingTime": {
-    "description": "Label under the hero tile showing total time read in the selected period."
+    "description": "Label for time spent reading. Used under the hero tile for the selected period, and again in the activity heatmap's day detail sheet."
   },
   "statsHeroCharactersRead": "Characters read",
   "@statsHeroCharactersRead": {
-    "description": "Label under the hero tile showing characters read in the selected period."
+    "description": "Label for the number of characters read. Used under the hero tile for the selected period, and again in the activity heatmap's day detail sheet."
   },
   "statsHeroWordsAdded": "Words added",
   "@statsHeroWordsAdded": {
@@ -2625,5 +2625,21 @@
   "statsUnavailable": "Reading stats aren't available right now.",
   "@statsUnavailable": {
     "description": "Shown on the stats screen when the stored stats could not be read."
+  },
+  "statsHeatmapTitle": "Reading activity",
+  "@statsHeatmapTitle": {
+    "description": "Title of the stats card showing a grid of the last twelve months, one cell per day, shaded by how long that day was read for."
+  },
+  "statsHeatmapLegendLess": "Less",
+  "@statsHeatmapLegendLess": {
+    "description": "Label at the light end of the activity heatmap's color scale, meaning less time read."
+  },
+  "statsHeatmapLegendMore": "More",
+  "@statsHeatmapLegendMore": {
+    "description": "Label at the dark end of the activity heatmap's color scale, meaning more time read."
+  },
+  "statsHeatmapLookups": "Lookups",
+  "@statsHeatmapLookups": {
+    "description": "Label for the number of dictionary lookups made on a single day, in the activity heatmap's day detail sheet."
   }
 }

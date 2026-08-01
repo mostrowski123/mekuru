@@ -5,6 +5,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
+import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
 
 import '../../test_app.dart';
@@ -15,6 +16,7 @@ ReadingSession _session({
   String bookFormat = 'epub',
   int durationMs = 0,
   int charactersRead = 0,
+  int lookups = 0,
 }) {
   return ReadingSession(
     id: id,
@@ -23,7 +25,7 @@ ReadingSession _session({
     durationMs: durationMs,
     pagesTurned: 0,
     charactersRead: charactersRead,
-    lookups: 0,
+    lookups: lookups,
     wordsSaved: 0,
   );
 }
@@ -204,6 +206,44 @@ void main() {
       // All: both distinct expressions, including the one predating any
       // session.
       expect(find.text('2'), findsOneWidget);
+    });
+
+    testWidgets('opens a day detail sheet from a heatmap cell', (tester) async {
+      final now = DateTime.now();
+      await pumpScreen(
+        tester,
+        sessions: [
+          _session(
+            id: 1,
+            startedAt: now,
+            durationMs: 60 * 60 * 1000,
+            charactersRead: 1200,
+            lookups: 7,
+          ),
+        ],
+        events: const [],
+      );
+
+      await tester.ensureVisible(find.byType(ActivityHeatmapCard));
+      await tester.pumpAndSettle();
+
+      // Today's cell is the last one of the rightmost column, and the grid
+      // opens scrolled to that end.
+      final grid = tester.getRect(find.byKey(ActivityHeatmapCard.gridKey));
+      await tester.tapAt(
+        Offset(grid.right - 5.5, grid.top + now.weekday % 7 * 14.0 + 5.5),
+      );
+      await tester.pumpAndSettle();
+
+      Finder inSheet(String text) => find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text(text),
+      );
+      expect(inSheet('Reading time'), findsOneWidget);
+      expect(inSheet('1h 0m'), findsOneWidget);
+      expect(inSheet('1,200'), findsOneWidget);
+      expect(inSheet('Lookups'), findsOneWidget);
+      expect(inSheet('7'), findsOneWidget);
     });
   });
 }

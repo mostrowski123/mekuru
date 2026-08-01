@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
+import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
@@ -64,9 +65,21 @@ class StatsScreen extends ConsumerWidget {
     );
   }
 
-  /// PLACEHOLDER (Task 10): year activity heatmap.
-  Widget _buildHeatmapCard(BuildContext context, WidgetRef ref) =>
-      const SizedBox.shrink();
+  /// The trailing year of activity, one cell per day.
+  ///
+  /// Deliberately reads the format filter but not the period selector: the
+  /// heatmap is the year view, and shrinking it to the selected window would
+  /// leave the screen with two competing time axes.
+  Widget _buildHeatmapCard(BuildContext context, WidgetRef ref) {
+    final sessions = ref.watch(sessionsProvider).value;
+    if (sessions == null) return const SizedBox.shrink();
+
+    final format = ref.watch(selectedStatsFormatProvider);
+    return ActivityHeatmapCard(
+      days: heatmapDays(filterSessions(sessions, format), DateTime.now()),
+      onDayTap: (day) => _showDayDetail(context, day),
+    );
+  }
 
   /// PLACEHOLDER (Task 11): reading time per bucket, EPUB vs manga.
   Widget _buildReadingTimeCard(BuildContext context, WidgetRef ref) =>
@@ -83,6 +96,74 @@ class StatsScreen extends ConsumerWidget {
   /// PLACEHOLDER (Task 11): cumulative unique expressions over time.
   Widget _buildVocabGrowthCard(BuildContext context, WidgetRef ref) =>
       const SizedBox.shrink();
+}
+
+/// Shows one heatmap day's exact figures.
+///
+/// Reports what that day held and nothing else — no comparison to other days,
+/// no note about an empty one.
+void _showDayDetail(BuildContext context, HeatmapDay day) {
+  final l10n = context.l10n;
+  final locale = Localizations.localeOf(context).toLanguageTag();
+  final counts = NumberFormat.decimalPattern(locale);
+
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              DateFormat.yMMMMd(locale).format(day.day),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            // The heatmap stores whole minutes, so this reads the same "0m"
+            // the aggregator floored a short session down to.
+            _detailRow(
+              context,
+              l10n.statsHeroReadingTime,
+              formatDuration(day.minutes * Duration.millisecondsPerMinute),
+            ),
+            _detailRow(
+              context,
+              l10n.statsHeroCharactersRead,
+              counts.format(day.charactersRead),
+            ),
+            _detailRow(
+              context,
+              l10n.statsHeatmapLookups,
+              counts.format(day.lookups),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// One label/value line of the day detail sheet.
+Widget _detailRow(BuildContext context, String label, String value) {
+  final theme = Theme.of(context);
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: theme.textTheme.bodyMedium),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// The three headline figures for the current period and format selection.

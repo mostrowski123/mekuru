@@ -3478,13 +3478,13 @@ abstract class AppLocalizations {
   /// **'Reading Stats'**
   String get statsTitle;
 
-  /// Label under the hero tile showing total time read in the selected period.
+  /// Label for time spent reading. Used under the hero tile for the selected period, and again in the activity heatmap's day detail sheet.
   ///
   /// In en, this message translates to:
   /// **'Reading time'**
   String get statsHeroReadingTime;
 
-  /// Label under the hero tile showing characters read in the selected period.
+  /// Label for the number of characters read. Used under the hero tile for the selected period, and again in the activity heatmap's day detail sheet.
   ///
   /// In en, this message translates to:
   /// **'Characters read'**
@@ -3543,6 +3543,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reading stats aren\'t available right now.'**
   String get statsUnavailable;
+
+  /// Title of the stats card showing a grid of the last twelve months, one cell per day, shaded by how long that day was read for.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading activity'**
+  String get statsHeatmapTitle;
+
+  /// Label at the light end of the activity heatmap's color scale, meaning less time read.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get statsHeatmapLegendLess;
+
+  /// Label at the dark end of the activity heatmap's color scale, meaning more time read.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get statsHeatmapLegendMore;
+
+  /// Label for the number of dictionary lookups made on a single day, in the activity heatmap's day detail sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Lookups'**
+  String get statsHeatmapLookups;
 }
 
 class _AppLocalizationsDelegate

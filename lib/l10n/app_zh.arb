@@ -2411,5 +2411,9 @@
   "statsPeriodMonth": "Month",
   "statsPeriodYear": "Year",
   "statsPeriodAll": "All",
-  "statsUnavailable": "Reading stats aren't available right now."
+  "statsUnavailable": "Reading stats aren't available right now.",
+  "statsHeatmapTitle": "Reading activity",
+  "statsHeatmapLegendLess": "Less",
+  "statsHeatmapLegendMore": "More",
+  "statsHeatmapLookups": "Lookups"
 }
