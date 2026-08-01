@@ -23,6 +23,7 @@ class ReaderSessionTracker {
   int _lookupHits = 0;
   int _wordsSaved = 0;
   int _settingsChanged = 0;
+  int _charactersRead = 0;
 
   /// Sessions shorter than this with no activity are dropped as noise (e.g.
   /// dispose firing right after a backgrounded summary was already taken).
@@ -39,11 +40,18 @@ class ReaderSessionTracker {
 
   void recordSettingsChanged() => _settingsChanged++;
 
+  /// [count] is the approximate visible-character count of a displayed page;
+  /// non-positive values (failed counts) are ignored.
+  void recordCharactersRead(int count) {
+    if (count > 0) _charactersRead += count;
+  }
+
   bool get _hasActivity =>
       _pagesTurned > 0 ||
       _lookups > 0 ||
       _wordsSaved > 0 ||
-      _settingsChanged > 0;
+      _settingsChanged > 0 ||
+      _charactersRead > 0;
 
   /// Restarts the clock after a backgrounded summary was taken.
   void resume() {
@@ -66,6 +74,7 @@ class ReaderSessionTracker {
       'lookup_hits': _lookupHits,
       'words_saved': _wordsSaved,
       'settings_changed': _settingsChanged,
+      'characters_read': _charactersRead,
       'book_format': bookFormat,
       'end_reason': endReason,
     };
@@ -78,6 +87,7 @@ class ReaderSessionTracker {
     _lookupHits = 0;
     _wordsSaved = 0;
     _settingsChanged = 0;
+    _charactersRead = 0;
 
     return summary;
   }

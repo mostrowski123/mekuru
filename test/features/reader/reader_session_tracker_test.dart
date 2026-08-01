@@ -26,6 +26,7 @@ void main() {
     tracker.recordLookup(hit: true);
     tracker.recordWordSaved();
     tracker.recordSettingsChanged();
+    tracker.recordCharactersRead(420);
 
     final summary = tracker.takeSummary(endReason: 'closed');
 
@@ -36,9 +37,46 @@ void main() {
       'lookup_hits': 2,
       'words_saved': 1,
       'settings_changed': 1,
+      'characters_read': 420,
       'book_format': 'epub',
       'end_reason': 'closed',
     });
+  });
+
+  test('accumulates characters read across calls', () {
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordCharactersRead(300);
+    tracker.recordCharactersRead(120);
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 420);
+  });
+
+  test('ignores non-positive character counts', () {
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordCharactersRead(100);
+    tracker.recordCharactersRead(0);
+    tracker.recordCharactersRead(-50);
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 100);
+  });
+
+  test('keeps short sessions whose only activity is characters read', () {
+    stopwatch.fakeElapsedMs = 10;
+    tracker.recordCharactersRead(42);
+
+    final summary = tracker.takeSummary(endReason: 'closed');
+
+    expect(summary, isNotNull);
+    expect(summary!['characters_read'], 42);
+  });
+
+  test('resets characters read after a summary is taken', () {
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordCharactersRead(420);
+    expect(tracker.takeSummary(endReason: 'backgrounded'), isNotNull);
+
+    stopwatch.fakeElapsedMs = 5000;
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 0);
   });
 
   test('resets after a summary is taken', () {
