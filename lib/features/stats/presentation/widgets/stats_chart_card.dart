@@ -257,7 +257,7 @@ Widget statsAxisLabel(BuildContext context, TitleMeta meta, String text) {
 }
 
 /// Background of a touch tooltip.
-Color statsTooltipColor(ColorScheme colors) => colors.surfaceContainerHighest;
+Color _statsTooltipColor(ColorScheme colors) => colors.surfaceContainerHighest;
 
 /// The edge that lifts a tooltip off whatever it is covering.
 ///
@@ -265,7 +265,7 @@ Color statsTooltipColor(ColorScheme colors) => colors.surfaceContainerHighest;
 /// as well, so an unbordered tooltip in the color above would be an invisible
 /// rectangle sitting on a card of the identical color. The outline is what
 /// makes it read as a popover in both themes.
-BorderSide statsTooltipBorder(ColorScheme colors) =>
+BorderSide _statsTooltipBorder(ColorScheme colors) =>
     BorderSide(color: colors.outlineVariant);
 
 /// A bar chart's touch tooltip, styled the way every stats chart's is.
@@ -274,8 +274,8 @@ BarTouchTooltipData statsBarTooltip(
   required GetBarTooltipItem getTooltipItem,
   double? maxContentWidth,
 }) => BarTouchTooltipData(
-  getTooltipColor: (_) => statsTooltipColor(colors),
-  tooltipBorder: statsTooltipBorder(colors),
+  getTooltipColor: (_) => _statsTooltipColor(colors),
+  tooltipBorder: _statsTooltipBorder(colors),
   maxContentWidth: maxContentWidth,
   getTooltipItem: getTooltipItem,
 );
@@ -285,8 +285,8 @@ LineTouchTooltipData statsLineTooltip(
   ColorScheme colors, {
   required GetLineTooltipItems getTooltipItems,
 }) => LineTouchTooltipData(
-  getTooltipColor: (_) => statsTooltipColor(colors),
-  tooltipBorder: statsTooltipBorder(colors),
+  getTooltipColor: (_) => _statsTooltipColor(colors),
+  tooltipBorder: _statsTooltipBorder(colors),
   getTooltipItems: getTooltipItems,
 );
 

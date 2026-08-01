@@ -35,6 +35,7 @@ const double _waveWidth = 0.35;
 /// non-zero: [HeatmapDay.minutes] floors, so ninety seconds of reading is zero
 /// minutes but still a day the reader showed up. Those days clamp into the
 /// lowest step; from there up the ramp is keyed on minutes alone.
+@visibleForTesting
 int? heatmapIntensityStep(HeatmapDay day) {
   for (var step = _stepThresholds.length - 1; step >= 0; step--) {
     if (day.minutes >= _stepThresholds[step]) return step;
@@ -316,8 +317,10 @@ class _HeatmapPainter extends CustomPainter {
   /// looking at when the screen opens — and sweeps back through the year.
   double _cellProgress(int column, int row) {
     if (progress >= 1) return 1;
+    // At least 6: build() returns early on no days, so there is always a
+    // column, and the seven rows alone put the span past zero.
     final span = (columns - 1) + 6;
-    final distance = span == 0 ? 0.0 : ((columns - 1 - column) + row) / span;
+    final distance = ((columns - 1 - column) + row) / span;
     return ((progress * (1 + _waveWidth) - distance) / _waveWidth).clamp(0, 1);
   }
 
