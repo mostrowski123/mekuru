@@ -29,6 +29,7 @@ import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/features/stats/presentation/widgets/library_stats_strip.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
@@ -323,6 +324,9 @@ class LibraryScreen extends ConsumerWidget {
     final recent = mostRecentlyReadBook(books);
     return CustomScrollView(
       slivers: [
+        // Carries its own padding, because it renders nothing at all until
+        // there is reading history to summarise.
+        const SliverToBoxAdapter(child: LibraryStatsStrip()),
         if (recent != null)
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),

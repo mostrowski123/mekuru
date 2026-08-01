@@ -2009,6 +2009,24 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get statsStripThisWeek => 'This week';
+
+  @override
+  String statsStripCharacters({required int count}) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString characters',
+      one: '$countString character',
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3922,6 +3940,24 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       locale: localeName,
       other: '$count words',
       one: '$count word',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statsStripThisWeek => 'This week';
+
+  @override
+  String statsStripCharacters({required int count}) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString characters',
+      one: '$countString character',
     );
     return '$_temp0';
   }

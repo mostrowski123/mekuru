@@ -2421,5 +2421,7 @@
   "statsLookupRateTitle": "Lookup rate",
   "statsLookupRateSubtitle": "Lookups per 1,000 characters — lower means more is sticking",
   "statsVocabGrowthTitle": "Vocabulary growth",
-  "statsVocabWordCount": "{count, plural, one {{count} word} other {{count} words}}"
+  "statsVocabWordCount": "{count, plural, one {{count} word} other {{count} words}}",
+  "statsStripThisWeek": "This week",
+  "statsStripCharacters": "{count, plural, one {{count} character} other {{count} characters}}"
 }

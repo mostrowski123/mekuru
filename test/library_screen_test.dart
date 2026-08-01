@@ -4,6 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
+import 'package:mekuru/features/library/presentation/widgets/continue_reading_card.dart';
+import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
+import 'package:mekuru/features/stats/presentation/widgets/library_stats_strip.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -144,6 +147,44 @@ void main() {
       await pumpLibrary(tester, [makeBook(1, '坊っちゃん'), makeBook(2, '走れメロス')]);
 
       expect(find.text('Continue reading'), findsNothing);
+    });
+
+    testWidgets('sits below the reading stats strip', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            booksProvider.overrideWith(
+              (ref) => Stream.value([
+                makeBook(1, '吾輩は猫である', lastReadAt: DateTime(2026, 6, 10)),
+              ]),
+            ),
+            sessionsProvider.overrideWith(
+              (ref) => Stream.value([
+                ReadingSession(
+                  id: 1,
+                  bookFormat: 'epub',
+                  startedAt: DateTime.now(),
+                  durationMs: 60 * 60 * 1000,
+                  pagesTurned: 0,
+                  charactersRead: 1200,
+                  lookups: 0,
+                  wordsSaved: 0,
+                ),
+              ]),
+            ),
+          ],
+          child: buildLocalizedTestApp(home: const LibraryScreen()),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('This week'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byType(LibraryStatsStrip)).dy,
+        lessThan(tester.getTopLeft(find.byType(ContinueReadingCard)).dy),
+      );
     });
   });
 
