@@ -11,7 +11,7 @@ dart run build_runner watch --delete-conflicting-outputs   # codegen, watch mode
 flutter analyze                                            # static analysis
 flutter test                                               # unit tests (in-memory Drift)
 flutter test test/path/to/file_test.dart                   # single test
-dart format lib test
+dart format lib test integration_test
 flutter run                                                # device/emulator
 ```
 
