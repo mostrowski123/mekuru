@@ -1340,7 +1340,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get mangaViewModeTitle => 'Mode Tampilan';
 
   @override
-  String get settingsReadingTitle => 'Membaca';
+  String get mangaPageTurnAnimationTitle => 'Animasi Pergantian Halaman';
+
+  @override
+  String get mangaPageTurnAnimationSubtitle =>
+      'Nonaktifkan untuk layar e-reader';
+
+  @override
+  String get settingsReadingTitle => 'Pengaturan Pembaca';
+
+  @override
+  String get settingsSectionReading => 'Membaca';
 
   @override
   String get settingsReadingSubtitle =>

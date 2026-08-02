@@ -2326,11 +2326,29 @@ abstract class AppLocalizations {
   /// **'View Mode'**
   String get mangaViewModeTitle;
 
-  /// Title of the reading settings subpage and its entry tile on the main settings screen.
+  /// Toggle for animating manga page turns.
+  ///
+  /// In en, this message translates to:
+  /// **'Page Turn Animation'**
+  String get mangaPageTurnAnimationTitle;
+
+  /// Explains that disabling the manga page turn animation suits e-ink e-reader screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off for e-reader displays'**
+  String get mangaPageTurnAnimationSubtitle;
+
+  /// Title of the reader settings subpage and its entry tile on the main settings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Reader Settings'**
+  String get settingsReadingTitle;
+
+  /// Section header on the main settings screen above the reader settings entry tile.
   ///
   /// In en, this message translates to:
   /// **'Reading'**
-  String get settingsReadingTitle;
+  String get settingsSectionReading;
 
   /// Subtitle of the reading settings tile on the main settings screen.
   ///

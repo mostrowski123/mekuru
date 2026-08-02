@@ -65,7 +65,7 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
   }
 
   /// Scroll so that the given [page] is visible at the top of the viewport.
-  void scrollToPage(int page) {
+  void scrollToPage(int page, {bool animate = true}) {
     if (!_scrollController.hasClients) return;
     final totalPages = widget.mokuroBook.pages.length;
     final clamped = page.clamp(0, totalPages - 1);
@@ -76,8 +76,16 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
     // an AspectRatio wrapper, actual heights vary).
     final viewportHeight = _scrollController.position.viewportDimension;
     final targetOffset = clamped * viewportHeight;
+    final clampedOffset = targetOffset.clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    );
+    if (!animate) {
+      _scrollController.jumpTo(clampedOffset);
+      return;
+    }
     _scrollController.animateTo(
-      targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+      clampedOffset,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );

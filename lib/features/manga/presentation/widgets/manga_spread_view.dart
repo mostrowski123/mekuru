@@ -70,8 +70,12 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     super.dispose();
   }
 
-  void goToSpread(int spreadIndex) {
+  void goToSpread(int spreadIndex, {bool animate = true}) {
     final clamped = spreadIndex.clamp(0, widget.spreads.length - 1);
+    if (!animate) {
+      _pageController.jumpToPage(clamped);
+      return;
+    }
     _pageController.animateToPage(
       clamped,
       duration: const Duration(milliseconds: 300),

@@ -143,6 +143,10 @@ class ReaderSettings {
   /// Manga: whether the lookup sheet uses a transparent background.
   final bool mangaTransparentLookup;
 
+  /// Manga: whether programmatic page turns animate. Disable for e-reader
+  /// (e-ink) displays, where transitions ghost.
+  final bool mangaPageTurnAnimation;
+
   const ReaderSettings({
     this.fontSize = 18,
     this.verticalText = true,
@@ -163,6 +167,7 @@ class ReaderSettings {
     this.mangaReadingDirection = ReaderDirection.rtl,
     this.mangaAutoCrop = false,
     this.mangaTransparentLookup = true,
+    this.mangaPageTurnAnimation = true,
   });
 
   ReaderSettings copyWith({
@@ -185,6 +190,7 @@ class ReaderSettings {
     ReaderDirection? mangaReadingDirection,
     bool? mangaAutoCrop,
     bool? mangaTransparentLookup,
+    bool? mangaPageTurnAnimation,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -209,6 +215,8 @@ class ReaderSettings {
       mangaAutoCrop: mangaAutoCrop ?? this.mangaAutoCrop,
       mangaTransparentLookup:
           mangaTransparentLookup ?? this.mangaTransparentLookup,
+      mangaPageTurnAnimation:
+          mangaPageTurnAnimation ?? this.mangaPageTurnAnimation,
     );
   }
 }
