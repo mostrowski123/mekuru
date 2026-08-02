@@ -32,6 +32,7 @@ import 'package:mekuru/features/settings/presentation/screens/downloads_screen.d
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -434,39 +435,15 @@ class LibraryScreen extends ConsumerWidget {
   ) {
     final l10n = context.l10n;
 
-    showModalBottomSheet(
+    showSettingsOptionPickerSheet(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.librarySortBy,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            for (final order in LibrarySortOrder.values)
-              ListTile(
-                leading: Icon(_sortIcon(order)),
-                title: Text(librarySortLabel(l10n, order)),
-                trailing: order == currentOrder
-                    ? Icon(
-                        Icons.check,
-                        color: Theme.of(sheetContext).colorScheme.primary,
-                      )
-                    : null,
-                onTap: () {
-                  AppHaptics.medium();
-                  ref.read(librarySortProvider.notifier).setSortOrder(order);
-                  Navigator.of(sheetContext).pop();
-                },
-              ),
-          ],
-        ),
-      ),
+      title: l10n.librarySortBy,
+      values: LibrarySortOrder.values,
+      selected: currentOrder,
+      labelOf: (order) => librarySortLabel(l10n, order),
+      iconOf: _sortIcon,
+      onSelected: (order) =>
+          ref.read(librarySortProvider.notifier).setSortOrder(order),
     );
   }
 
