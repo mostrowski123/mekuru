@@ -34,6 +34,7 @@ import 'package:mekuru/features/stats/presentation/providers/stats_providers.dar
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/utils/reader_system_bars.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -47,14 +48,6 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 /// Supports RTL (default) and LTR reading directions. Center tap toggles
 /// controls; edge taps navigate pages. Pinch-to-zoom is handled by each
 /// [MangaPageView] via [InteractiveViewer].
-const SystemUiOverlayStyle _mangaReaderOverlayStyle = SystemUiOverlayStyle(
-  statusBarIconBrightness: Brightness.light,
-  statusBarBrightness: Brightness.dark,
-  systemNavigationBarIconBrightness: Brightness.light,
-  systemStatusBarContrastEnforced: false,
-  systemNavigationBarContrastEnforced: false,
-);
-
 class MangaReaderScreen extends ConsumerStatefulWidget {
   final Book book;
 
@@ -66,8 +59,6 @@ class MangaReaderScreen extends ConsumerStatefulWidget {
 
 class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     with WidgetsBindingObserver, ReadingSessionReviewPrompt<MangaReaderScreen> {
-  static const _systemUiChannel = MethodChannel('mekuru/android_system_ui');
-
   final ReaderSessionTracker _sessionTracker = ReaderSessionTracker(
     bookFormat: 'manga',
   );
@@ -126,7 +117,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       unawaited(_brightnessNotifier.applyForReaderOpen());
     });
 
-    unawaited(_setReaderSystemBarsVisible(false));
+    unawaited(setReaderSystemBarsVisible(false));
 
     // Dismiss the library's "OCR Complete" overlay after the user opens
     // this manga once.
@@ -141,7 +132,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _pageController.dispose();
     unawaited(_brightnessNotifier.resetBrightness());
     WakelockPlus.disable();
-    unawaited(_setReaderSystemBarsVisible(true));
+    unawaited(setReaderSystemBarsVisible(true));
     // Release cached manga page bitmaps so memory is reclaimed immediately
     // when returning to the library.
     PaintingBinding.instance.imageCache.clear();
@@ -343,20 +334,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   void _setControlsVisible(bool visible) {
     if (_showControls == visible) return;
     setState(() => _showControls = visible);
-    unawaited(_setReaderSystemBarsVisible(visible));
-  }
-
-  Future<void> _setReaderSystemBarsVisible(bool visible) async {
-    if (defaultTargetPlatform != TargetPlatform.android) return;
-
-    try {
-      await _systemUiChannel.invokeMethod<void>('setSystemBarsVisible', {
-        'visible': visible,
-      });
-    } catch (_) {
-      // Best effort only; the reader still works if the native host declines
-      // the request on a non-Android platform or older embedder.
-    }
+    unawaited(setReaderSystemBarsVisible(visible));
   }
 
   /// Whether programmatic page turns animate (off for e-reader displays).
@@ -746,13 +724,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   /// The manga reader hides the system bars; restore them for the settings
   /// screen and re-apply the reader state when returning.
   Future<void> _openAllSettingsFromReader() async {
-    await _setReaderSystemBarsVisible(true);
+    await setReaderSystemBarsVisible(true);
     if (!mounted) return;
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()));
     if (!mounted) return;
-    await _setReaderSystemBarsVisible(_showControls);
+    await setReaderSystemBarsVisible(_showControls);
   }
 
   void _recordSettingChanged(String setting, Object value) {
@@ -924,7 +902,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     final bottomSliderPadding = bottomControlPadding(MediaQuery.of(context));
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: _mangaReaderOverlayStyle,
+      value: readerSystemBarsOverlayStyle,
       child: Scaffold(
         backgroundColor: Colors.black,
         body: pagesAsync.when(
