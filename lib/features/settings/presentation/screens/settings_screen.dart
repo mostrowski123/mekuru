@@ -64,7 +64,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              _showAppLanguagePicker(context, ref, appLanguage);
+              _showAppLanguagePicker(appLanguage);
             },
           ),
           const Divider(),
@@ -78,7 +78,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              _showStartupScreenPicker(context, ref, startupScreen);
+              _showStartupScreenPicker(startupScreen);
             },
           ),
           const Divider(),
@@ -95,7 +95,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              _showThemeModePicker(context, ref, themeMode);
+              _showThemeModePicker(themeMode);
             },
           ),
           ListTile(
@@ -105,7 +105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              _showColorThemePicker(context, ref, colorTheme);
+              _showColorThemePicker(colorTheme);
             },
           ),
           const Divider(),
@@ -428,121 +428,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         AppColorTheme.blueGrey => l10n.settingsColorThemeBlueGrey,
       };
 
-  void _showThemeModePicker(
-    BuildContext context,
-    WidgetRef ref,
-    ThemeMode currentMode,
-  ) {
+  void _showThemeModePicker(ThemeMode currentMode) {
     final l10n = context.l10n;
 
-    showModalBottomSheet(
+    showSettingsOptionPickerSheet(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.settingsThemeTitle,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            _ThemeModeOption(
-              mode: ThemeMode.light,
-              icon: Icons.light_mode,
-              label: l10n.settingsThemeLight,
-              isSelected: currentMode == ThemeMode.light,
-              onTap: () {
-                AppHaptics.medium();
-                ref
-                    .read(appThemeModeProvider.notifier)
-                    .setThemeMode(ThemeMode.light);
-                Navigator.of(sheetContext).pop();
-              },
-            ),
-            _ThemeModeOption(
-              mode: ThemeMode.dark,
-              icon: Icons.dark_mode,
-              label: l10n.settingsThemeDark,
-              isSelected: currentMode == ThemeMode.dark,
-              onTap: () {
-                AppHaptics.medium();
-                ref
-                    .read(appThemeModeProvider.notifier)
-                    .setThemeMode(ThemeMode.dark);
-                Navigator.of(sheetContext).pop();
-              },
-            ),
-            _ThemeModeOption(
-              mode: ThemeMode.system,
-              icon: Icons.brightness_auto,
-              label: l10n.settingsThemeSystemDefault,
-              isSelected: currentMode == ThemeMode.system,
-              onTap: () {
-                AppHaptics.medium();
-                ref
-                    .read(appThemeModeProvider.notifier)
-                    .setThemeMode(ThemeMode.system);
-                Navigator.of(sheetContext).pop();
-              },
-            ),
-          ],
-        ),
-      ),
+      title: l10n.settingsThemeTitle,
+      values: const [ThemeMode.light, ThemeMode.dark, ThemeMode.system],
+      selected: currentMode,
+      labelOf: (mode) => _themeModeLabel(l10n, mode),
+      iconOf: _themeModeIcon,
+      onSelected: (mode) =>
+          ref.read(appThemeModeProvider.notifier).setThemeMode(mode),
     );
   }
 
-  void _showAppLanguagePicker(
-    BuildContext context,
-    WidgetRef ref,
-    AppLanguage currentLanguage,
-  ) {
+  void _showAppLanguagePicker(AppLanguage currentLanguage) {
     final l10n = context.l10n;
 
-    showModalBottomSheet(
+    showSettingsOptionPickerSheet(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.settingsAppLanguageTitle,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            for (final language in AppLanguage.values)
-              ListTile(
-                title: Text(_appLanguageLabel(l10n, language)),
-                trailing: currentLanguage == language
-                    ? Icon(
-                        Icons.check,
-                        color: Theme.of(context).colorScheme.primary,
-                      )
-                    : null,
-                onTap: () {
-                  AppHaptics.medium();
-                  ref
-                      .read(appLanguageProvider.notifier)
-                      .setAppLanguage(language);
-                  Navigator.of(sheetContext).pop();
-                },
-              ),
-          ],
-        ),
-      ),
+      title: l10n.settingsAppLanguageTitle,
+      values: AppLanguage.values,
+      selected: currentLanguage,
+      labelOf: (language) => _appLanguageLabel(l10n, language),
+      onSelected: (language) =>
+          ref.read(appLanguageProvider.notifier).setAppLanguage(language),
     );
   }
 
-  void _showColorThemePicker(
-    BuildContext context,
-    WidgetRef ref,
-    AppColorTheme currentTheme,
-  ) {
+  void _showColorThemePicker(AppColorTheme currentTheme) {
     final l10n = context.l10n;
 
     showModalBottomSheet(
@@ -597,48 +512,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showStartupScreenPicker(
-    BuildContext context,
-    WidgetRef ref,
-    StartupScreen current,
-  ) {
+  void _showStartupScreenPicker(StartupScreen current) {
     final l10n = context.l10n;
 
-    showModalBottomSheet(
+    showSettingsOptionPickerSheet(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.settingsStartupScreenTitle,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            for (final option in StartupScreen.values)
-              ListTile(
-                leading: Icon(_startupScreenIcon(option)),
-                title: Text(_startupScreenLabel(l10n, option)),
-                trailing: current == option
-                    ? Icon(
-                        Icons.check,
-                        color: Theme.of(context).colorScheme.primary,
-                      )
-                    : null,
-                onTap: () {
-                  AppHaptics.medium();
-                  ref
-                      .read(startupScreenProvider.notifier)
-                      .setStartupScreen(option);
-                  Navigator.of(sheetContext).pop();
-                },
-              ),
-          ],
-        ),
-      ),
+      title: l10n.settingsStartupScreenTitle,
+      values: StartupScreen.values,
+      selected: current,
+      labelOf: (option) => _startupScreenLabel(l10n, option),
+      iconOf: _startupScreenIcon,
+      onSelected: (option) =>
+          ref.read(startupScreenProvider.notifier).setStartupScreen(option),
     );
   }
 
@@ -647,34 +532,4 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     StartupScreen.dictionary => Icons.book_outlined,
     StartupScreen.lastRead => Icons.menu_book_outlined,
   };
-}
-
-// ── Private widgets ──
-
-class _ThemeModeOption extends StatelessWidget {
-  const _ThemeModeOption({
-    required this.mode,
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final ThemeMode mode;
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      trailing: isSelected
-          ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
-          : null,
-      onTap: onTap,
-    );
-  }
 }
