@@ -16,6 +16,7 @@ import 'package:mekuru/features/manga/data/services/page_char_counter.dart';
 import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_reader_settings_sheet.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_scroll_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_spread_view.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
@@ -25,6 +26,7 @@ import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provid
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
@@ -32,6 +34,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// Manga reader screen — renders manga pages with word overlays.
 ///
@@ -70,12 +73,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   // Captured in initState: the session summary is emitted from dispose(),
   // where `ref` is already unusable.
   late final StatsRepository _statsRepository;
+  late final ReaderBrightnessNotifier _brightnessNotifier;
 
   late PageController _pageController;
   int _currentPage = 0;
   bool _showControls = false;
   bool _isZoomed = false;
-  bool _debugOverlay = false;
   bool _isComputingAutoCrop = false;
   bool _autoCropComputedThisSession = false;
 
@@ -107,6 +110,19 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _pageController = PageController(initialPage: _currentPage);
     WidgetsBinding.instance.addObserver(this);
     _statsRepository = ref.read(statsRepositoryProvider);
+    // Captured here because dispose() calls it after `ref` is unusable.
+    _brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      // Idempotent — app startup usually hydrated these already.
+      await ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
+      if (!mounted) return;
+      if (ref.read(readerSettingsProvider).keepScreenOn) {
+        WakelockPlus.enable();
+      }
+      await _brightnessNotifier.applyForReaderOpen();
+    });
 
     unawaited(_setReaderSystemBarsVisible(false));
 
@@ -121,6 +137,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _emitSessionSummary(endReason: 'closed');
     _seekGateTimeout?.cancel();
     _pageController.dispose();
+    unawaited(_brightnessNotifier.resetBrightness());
+    WakelockPlus.disable();
     unawaited(_setReaderSystemBarsVisible(true));
     // Release cached manga page bitmaps so memory is reclaimed immediately
     // when returning to the library.
@@ -622,181 +640,27 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   }
 
   void _showSettingsSheet(MokuroBook mokuroBook) {
-    showModalBottomSheet<void>(
+    final hasComputedAutoCrop =
+        mokuroBook.autoCropVersion > 0 ||
+        mokuroBook.pages.any((page) => page.contentBounds != null);
+    showReaderSettingsSheet(
       context: context,
-      builder: (context) => Consumer(
-        builder: (context, ref, _) {
-          final readerSettings = ref.watch(readerSettingsProvider);
-          final readerNotifier = ref.read(readerSettingsProvider.notifier);
-          final viewMode = readerSettings.mangaViewMode;
-          final direction = readerSettings.mangaReadingDirection;
-          final transparent = readerSettings.mangaTransparentLookup;
-          final autoCrop = readerSettings.mangaAutoCrop;
-          final l10n = context.l10n;
-          final theme = Theme.of(context);
-          final hasComputedAutoCrop =
-              mokuroBook.autoCropVersion > 0 ||
-              mokuroBook.pages.any((page) => page.contentBounds != null);
-          final isProUnlocked = proUnlockedValue(
-            ref.watch(proUnlockedProvider),
-          );
-          final pageTurnEdgeZonePercent =
-              (readerSettings.mangaPageTurnEdgeZoneWidthFraction * 100).round();
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.mangaReaderSettingsTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  // View mode selector
-                  SegmentedButton<MangaViewMode>(
-                    segments: [
-                      ButtonSegment(
-                        value: MangaViewMode.singlePage,
-                        icon: const Icon(Icons.looks_one),
-                        label: Text(l10n.mangaViewModeSingle),
-                      ),
-                      ButtonSegment(
-                        value: MangaViewMode.twoPageSpread,
-                        icon: const Icon(Icons.looks_two),
-                        label: Text(l10n.mangaViewModeSpread),
-                      ),
-                      ButtonSegment(
-                        value: MangaViewMode.scroll,
-                        icon: const Icon(Icons.view_day),
-                        label: Text(l10n.mangaViewModeScroll),
-                      ),
-                    ],
-                    selected: {viewMode},
-                    onSelectionChanged: (value) {
-                      readerNotifier.setMangaViewMode(value.first);
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  // Reading direction
-                  ListTile(
-                    leading: const Icon(Icons.swap_horiz),
-                    title: Text(l10n.readerReadingDirectionTitle),
-                    subtitle: Text(
-                      direction == ReaderDirection.rtl
-                          ? l10n.readerReadingDirectionRtl
-                          : l10n.readerReadingDirectionLtr,
-                    ),
-                    onTap: () {
-                      readerNotifier.setMangaReadingDirection(
-                        direction == ReaderDirection.rtl
-                            ? ReaderDirection.ltr
-                            : ReaderDirection.rtl,
-                      );
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.touch_app),
-                            const SizedBox(width: 8),
-                            Text(l10n.mangaPageTurnEdgeZoneTitle),
-                            const Spacer(),
-                            Text(
-                              l10n.settingsPercentValue(
-                                percent: pageTurnEdgeZonePercent,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Slider(
-                          value:
-                              readerSettings.mangaPageTurnEdgeZoneWidthFraction,
-                          min: kMinMangaPageTurnEdgeZoneWidthFraction,
-                          max: kMaxMangaPageTurnEdgeZoneWidthFraction,
-                          divisions: 20,
-                          label: l10n.settingsPercentValue(
-                            percent: pageTurnEdgeZonePercent,
-                          ),
-                          onChanged: (value) {
-                            readerNotifier
-                                .setMangaPageTurnEdgeZoneWidthFraction(value);
-                          },
-                        ),
-                        Text(
-                          l10n.mangaPageTurnEdgeZoneSubtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                    ),
-                  ),
-                  // Auto-crop toggle
-                  if (isProUnlocked)
-                    SwitchListTile(
-                      secondary: const Icon(Icons.crop),
-                      title: Text(l10n.proFeatureAutoCropTitle),
-                      subtitle: Text(l10n.mangaAutoCropSubtitle),
-                      value: autoCrop,
-                      onChanged: (value) =>
-                          _handleAutoCropToggle(ref, mokuroBook, value),
-                    )
-                  else
-                    ListTile(
-                      enabled: false,
-                      leading: Icon(
-                        Icons.crop,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      title: Text(l10n.proFeatureAutoCropTitle),
-                      subtitle: Text(l10n.mangaAutoCropSubtitle),
-                      trailing: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          _openProUpgradeFromReader();
-                        },
-                        child: Text(l10n.commonUnlock),
-                      ),
-                    ),
-                  if (isProUnlocked && autoCrop && hasComputedAutoCrop)
-                    ListTile(
-                      leading: const Icon(Icons.refresh),
-                      title: Text(l10n.mangaAutoCropRerunTitle),
-                      subtitle: Text(l10n.mangaAutoCropRerunSubtitle),
-                      onTap: () => _handleAutoCropRerun(ref),
-                    ),
-                  // Transparent lookup toggle
-                  SwitchListTile(
-                    secondary: const Icon(Icons.opacity),
-                    title: Text(l10n.mangaTransparentLookupTitle),
-                    subtitle: Text(l10n.mangaTransparentLookupSubtitle),
-                    value: transparent,
-                    onChanged: readerNotifier.setMangaTransparentLookup,
-                  ),
-                  // Debug overlay toggle
-                  SwitchListTile(
-                    secondary: const Icon(Icons.grid_on),
-                    title: Text(l10n.mangaDebugWordOverlayTitle),
-                    subtitle: Text(l10n.mangaDebugWordOverlaySubtitle),
-                    value: _debugOverlay,
-                    onChanged: (value) {
-                      setState(() => _debugOverlay = value);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      builder: (context) => MangaReaderSettingsSheet(
+        hasComputedAutoCrop: hasComputedAutoCrop,
+        onAutoCropToggled: (value) =>
+            _handleAutoCropToggle(ref, mokuroBook, value),
+        onAutoCropRerun: () => _handleAutoCropRerun(ref),
+        onUnlockPro: _openProUpgradeFromReader,
+        onSettingChanged: _recordSettingChanged,
       ),
+    );
+  }
+
+  void _recordSettingChanged(String setting, Object value) {
+    _sessionTracker.recordSettingsChanged();
+    logUsage(
+      'reader.settings_changed',
+      attrs: {'setting': setting, 'value': value, 'format': 'manga'},
     );
   }
 
@@ -1189,6 +1053,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     bool autoCrop,
     bool enableWordOverlays,
   ) {
+    final debugOverlay = ref.watch(mangaDebugWordOverlayProvider);
     switch (viewMode) {
       case MangaViewMode.singlePage:
         // Sync page controller after a mode switch
@@ -1214,7 +1079,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               imageDirPath: mokuroBook.imageDirPath,
               safTreeUri: mokuroBook.safTreeUri,
               safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
-              debugOverlay: _debugOverlay,
+              debugOverlay: debugOverlay,
               autoCrop: autoCrop,
               enableWordOverlays: enableWordOverlays,
               highlightedRects: _highlight?.rects ?? const [],
@@ -1236,7 +1101,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           spreads: spreads,
           initialSpreadIndex: spreadIndexForPage(spreads, _currentPage),
           isRtl: isRtl,
-          debugOverlay: _debugOverlay,
+          debugOverlay: debugOverlay,
           autoCrop: autoCrop,
           enableWordOverlays: enableWordOverlays,
           highlightedRects: _highlight?.rects ?? const [],
@@ -1267,7 +1132,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           bookId: widget.book.id,
           initialScrollOffset:
               _currentPage * MediaQuery.of(context).size.height,
-          debugOverlay: _debugOverlay,
+          debugOverlay: debugOverlay,
           autoCrop: autoCrop,
           enableWordOverlays: enableWordOverlays,
           highlightedRects: _highlight?.rects ?? const [],

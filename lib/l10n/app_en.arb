@@ -1720,6 +1720,22 @@
   "@readerAllSettingsTooltip": {
     "description": "Tooltip for the button in the reader quick settings sheets that opens the full reading settings screen."
   },
+  "mangaSettingsSectionReading": "Reading",
+  "@mangaSettingsSectionReading": {
+    "description": "Section header in the manga quick settings sheet for reading behavior (direction, page-turn zones)."
+  },
+  "mangaSettingsSectionImage": "Image",
+  "@mangaSettingsSectionImage": {
+    "description": "Section header in the manga quick settings sheet for image processing settings (auto-crop)."
+  },
+  "mangaSettingsSectionLookup": "Lookup",
+  "@mangaSettingsSectionLookup": {
+    "description": "Section header in the manga quick settings sheet for dictionary lookup settings."
+  },
+  "mangaViewModeTitle": "View Mode",
+  "@mangaViewModeTitle": {
+    "description": "Label for the manga page layout control (single page, spread, or scroll)."
+  },
   "readerVerticalTextTitle": "Vertical Text",
   "@readerVerticalTextTitle": {
     "description": "Title for the per-book vertical text setting."

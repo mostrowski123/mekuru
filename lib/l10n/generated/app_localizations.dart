@@ -2320,6 +2320,30 @@ abstract class AppLocalizations {
   /// **'All settings'**
   String get readerAllSettingsTooltip;
 
+  /// Section header in the manga quick settings sheet for reading behavior (direction, page-turn zones).
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get mangaSettingsSectionReading;
+
+  /// Section header in the manga quick settings sheet for image processing settings (auto-crop).
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get mangaSettingsSectionImage;
+
+  /// Section header in the manga quick settings sheet for dictionary lookup settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Lookup'**
+  String get mangaSettingsSectionLookup;
+
+  /// Label for the manga page layout control (single page, spread, or scroll).
+  ///
+  /// In en, this message translates to:
+  /// **'View Mode'**
+  String get mangaViewModeTitle;
+
   /// Title for the per-book vertical text setting.
   ///
   /// In en, this message translates to:

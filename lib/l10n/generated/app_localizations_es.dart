@@ -1352,6 +1352,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerAllSettingsTooltip => 'All settings';
 
   @override
+  String get mangaSettingsSectionReading => 'Reading';
+
+  @override
+  String get mangaSettingsSectionImage => 'Image';
+
+  @override
+  String get mangaSettingsSectionLookup => 'Lookup';
+
+  @override
+  String get mangaViewModeTitle => 'View Mode';
+
+  @override
   String get readerVerticalTextTitle => 'Texto vertical';
 
   @override
