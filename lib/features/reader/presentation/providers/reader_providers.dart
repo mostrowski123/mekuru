@@ -78,11 +78,6 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _persistPerBookOverrides();
   }
 
-  void setPageTurnAnimationEnabled(bool enabled) {
-    state = state.copyWith(pageTurnAnimationEnabled: enabled);
-    _persistSettings();
-  }
-
   void setHorizontalPadding(int padding) {
     state = state.copyWith(horizontalPadding: padding);
     _persistSettings();

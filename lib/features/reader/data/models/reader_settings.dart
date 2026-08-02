@@ -79,7 +79,6 @@ class ReaderSettings {
   final bool splitVerticalText;
 
   final ReaderDirection readingDirection;
-  final bool pageTurnAnimationEnabled;
   final int horizontalPadding;
   final int verticalPadding;
 
@@ -117,7 +116,6 @@ class ReaderSettings {
     this.verticalText = true,
     this.splitVerticalText = false,
     this.readingDirection = ReaderDirection.rtl,
-    this.pageTurnAnimationEnabled = true,
     this.horizontalPadding = 28,
     this.verticalPadding = 28,
     this.swipeSensitivity = 0.05,
@@ -135,7 +133,6 @@ class ReaderSettings {
     bool? verticalText,
     bool? splitVerticalText,
     ReaderDirection? readingDirection,
-    bool? pageTurnAnimationEnabled,
     int? horizontalPadding,
     int? verticalPadding,
     double? swipeSensitivity,
@@ -151,8 +148,6 @@ class ReaderSettings {
       verticalText: verticalText ?? this.verticalText,
       splitVerticalText: splitVerticalText ?? this.splitVerticalText,
       readingDirection: readingDirection ?? this.readingDirection,
-      pageTurnAnimationEnabled:
-          pageTurnAnimationEnabled ?? this.pageTurnAnimationEnabled,
       horizontalPadding: horizontalPadding ?? this.horizontalPadding,
       verticalPadding: verticalPadding ?? this.verticalPadding,
       swipeSensitivity: swipeSensitivity ?? this.swipeSensitivity,
