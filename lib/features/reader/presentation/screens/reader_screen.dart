@@ -69,7 +69,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   Uint8List? _epubData;
   List<_FlattenedChapter> _chapters = const [];
   bool _isLoading = true;
-  bool _showControls = true;
+  // Opens immersive (controls and system bars hidden), same as the manga
+  // reader; a center tap or swipe down brings the controls up.
+  bool _showControls = false;
   bool _isEpubLoaded = false;
   bool _isRebuildingForDirection = false;
 
@@ -112,6 +114,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     Sentry.metrics.count('reader.book_opened', 1);
     AnalyticsService.instance.logEvent('book_opened');
     _sessionTracker = ReaderSessionTracker(bookFormat: 'epub');
+
+    unawaited(setReaderSystemBarsVisible(false));
 
     _brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
     // Captured for dispose(), where `ref` is already unusable.
