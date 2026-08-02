@@ -1322,11 +1322,11 @@
   "@backupScopeNoteTitle": {
     "description": "Title for the informational note explaining backup scope."
   },
-  "backupScopeNoteBody": "Backups include your settings, dictionary order and enabled states, and the data you created in Mekuru, like bookmarks, highlights, and vocabulary lists. They do not include the actual EPUB, manga, or dictionary files.",
+  "backupScopeNoteBody": "Backups include your settings, dictionary order and enabled states, and the data you created in Mekuru, like bookmarks, highlights, vocabulary lists, and reading stats. They do not include the actual EPUB, manga, or dictionary files.",
   "@backupScopeNoteBody": {
     "description": "Body text for the informational note explaining backup scope."
   },
-  "backupScopeNoteRestore": "After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Matching dictionary settings can be applied later from Dictionary Manager.",
+  "backupScopeNoteRestore": "After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Reading stats are only restored if this device has no stats yet. Matching dictionary settings can be applied later from Dictionary Manager.",
   "@backupScopeNoteRestore": {
     "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
@@ -1536,7 +1536,7 @@
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Your current settings will be overwritten.",
+  "backupRestoreDialogBody": "This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Reading stats are only restored if this device has no stats yet. Your current settings will be overwritten.",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {

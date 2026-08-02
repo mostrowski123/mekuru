@@ -1029,11 +1029,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupScopeNoteBody =>
-      'Cadangan mencakup pengaturan dan data yang Anda buat di Mekuru, seperti bookmark, sorotan, dan daftar kosakata. Cadangan tidak mencakup file EPUB atau manga yang sebenarnya.';
+      'Cadangan mencakup pengaturan Anda, urutan dan status aktif kamus, serta data yang Anda buat di Mekuru, seperti bookmark, sorotan, daftar kosakata, dan statistik membaca. Cadangan tidak mencakup file EPUB, manga, atau kamus yang sebenarnya.';
 
   @override
   String get backupScopeNoteRestore =>
-      'Setelah memulihkan, impor ulang konten EPUB atau manga yang sama. Jika kontennya sama persis, riwayat Anda akan kembali.';
+      'Setelah memulihkan, impor ulang konten EPUB atau manga yang sama. Jika kontennya sama persis, riwayat Anda akan kembali. Statistik membaca hanya dipulihkan jika perangkat ini belum memiliki statistik. Pengaturan kamus yang cocok dapat diterapkan nanti dari Pengelola Kamus.';
 
   @override
   String get backupSectionAutoBackup => 'Cadangan Otomatis';
@@ -1200,7 +1200,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'Ini akan memulihkan pengaturan dan data pengguna dari $fileName, seperti bookmark, sorotan, dan daftar kosakata. Ini tidak memulihkan file EPUB atau manga yang sebenarnya. Setelah memulihkan, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Pengaturan Anda saat ini akan ditimpa.';
+    return 'Ini akan memulihkan pengaturan dan data pengguna dari $fileName, seperti bookmark, sorotan, dan daftar kosakata. Ini tidak memulihkan file EPUB, manga, atau kamus yang sebenarnya. Setelah memulihkan, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Statistik membaca hanya dipulihkan jika perangkat ini belum memiliki statistik. Pengaturan Anda saat ini akan ditimpa.';
   }
 
   @override
@@ -1987,100 +1987,100 @@ class AppLocalizationsId extends AppLocalizations {
       'Rendering EPUB didukung oleh epub.js, pustaka pembaca EPUB JavaScript sumber terbuka.';
 
   @override
-  String get dictionaryPartOfSpeechNoun => 'Noun';
+  String get dictionaryPartOfSpeechNoun => 'Kata benda';
 
   @override
-  String get dictionaryPartOfSpeechPronoun => 'Pronoun';
+  String get dictionaryPartOfSpeechPronoun => 'Kata ganti';
 
   @override
-  String get dictionaryPartOfSpeechPrefix => 'Prefix';
+  String get dictionaryPartOfSpeechPrefix => 'Awalan';
 
   @override
-  String get dictionaryPartOfSpeechSuffix => 'Suffix';
+  String get dictionaryPartOfSpeechSuffix => 'Akhiran';
 
   @override
-  String get dictionaryPartOfSpeechCounter => 'Counter';
+  String get dictionaryPartOfSpeechCounter => 'Kata bantu bilangan';
 
   @override
-  String get dictionaryPartOfSpeechNumeric => 'Numeric';
+  String get dictionaryPartOfSpeechNumeric => 'Kata bilangan';
 
   @override
-  String get dictionaryPartOfSpeechExpression => 'Expression';
+  String get dictionaryPartOfSpeechExpression => 'Ungkapan';
 
   @override
-  String get dictionaryPartOfSpeechInterjection => 'Interjection';
+  String get dictionaryPartOfSpeechInterjection => 'Kata seru';
 
   @override
-  String get dictionaryPartOfSpeechConjunction => 'Conjunction';
+  String get dictionaryPartOfSpeechConjunction => 'Kata hubung';
 
   @override
-  String get dictionaryPartOfSpeechParticle => 'Particle';
+  String get dictionaryPartOfSpeechParticle => 'Partikel';
 
   @override
-  String get dictionaryPartOfSpeechCopula => 'Copula';
+  String get dictionaryPartOfSpeechCopula => 'Kopula';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliary => 'Auxiliary';
+  String get dictionaryPartOfSpeechAuxiliary => 'Kata bantu';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliaryVerb => 'Auxiliary verb';
+  String get dictionaryPartOfSpeechAuxiliaryVerb => 'Kata kerja bantu';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliaryAdjective => 'Auxiliary adjective';
+  String get dictionaryPartOfSpeechAuxiliaryAdjective => 'Kata sifat bantu';
 
   @override
-  String get dictionaryPartOfSpeechIAdjective => 'I-adjective';
+  String get dictionaryPartOfSpeechIAdjective => 'Kata sifat -i';
 
   @override
-  String get dictionaryPartOfSpeechNaAdjective => 'Na-adjective';
+  String get dictionaryPartOfSpeechNaAdjective => 'Kata sifat -na';
 
   @override
-  String get dictionaryPartOfSpeechNoAdjective => 'No-adjective';
+  String get dictionaryPartOfSpeechNoAdjective => 'Kata sifat -no';
 
   @override
-  String get dictionaryPartOfSpeechPreNounAdjectival => 'Pre-noun adjectival';
+  String get dictionaryPartOfSpeechPreNounAdjectival => 'Prenomina';
 
   @override
-  String get dictionaryPartOfSpeechAdverb => 'Adverb';
+  String get dictionaryPartOfSpeechAdverb => 'Kata keterangan';
 
   @override
-  String get dictionaryPartOfSpeechToAdverb => 'To-adverb';
+  String get dictionaryPartOfSpeechToAdverb => 'Kata keterangan -to';
 
   @override
-  String get dictionaryPartOfSpeechAdverbialNoun => 'Adverbial noun';
+  String get dictionaryPartOfSpeechAdverbialNoun => 'Kata benda adverbial';
 
   @override
-  String get dictionaryPartOfSpeechSuruVerb => 'Suru verb';
+  String get dictionaryPartOfSpeechSuruVerb => 'Kata kerja suru';
 
   @override
-  String get dictionaryPartOfSpeechKuruVerb => 'Kuru verb';
+  String get dictionaryPartOfSpeechKuruVerb => 'Kata kerja kuru';
 
   @override
-  String get dictionaryPartOfSpeechIchidanVerb => 'Ichidan verb';
+  String get dictionaryPartOfSpeechIchidanVerb => 'Kata kerja ichidan';
 
   @override
-  String get dictionaryPartOfSpeechGodanVerb => 'Godan verb';
+  String get dictionaryPartOfSpeechGodanVerb => 'Kata kerja godan';
 
   @override
-  String get dictionaryPartOfSpeechZuruVerb => 'Zuru verb';
+  String get dictionaryPartOfSpeechZuruVerb => 'Kata kerja zuru';
 
   @override
-  String get dictionaryPartOfSpeechIntransitiveVerb => 'Intransitive verb';
+  String get dictionaryPartOfSpeechIntransitiveVerb => 'Kata kerja intransitif';
 
   @override
-  String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
+  String get dictionaryPartOfSpeechTransitiveVerb => 'Kata kerja transitif';
 
   @override
-  String get statsHeroReadingTime => 'Reading time';
+  String get statsHeroReadingTime => 'Waktu membaca';
 
   @override
-  String get statsHeroCharactersRead => 'Characters read';
+  String get statsHeroCharactersRead => 'Karakter dibaca';
 
   @override
-  String get statsHeroWordsAdded => 'Words added';
+  String get statsHeroWordsAdded => 'Kata ditambahkan';
 
   @override
-  String get statsFormatAll => 'All';
+  String get statsFormatAll => 'Semua';
 
   @override
   String get statsFormatEpub => 'EPUB';
@@ -2089,74 +2089,74 @@ class AppLocalizationsId extends AppLocalizations {
   String get statsFormatManga => 'Manga';
 
   @override
-  String get statsPeriodWeek => 'Week';
+  String get statsPeriodWeek => 'Minggu';
 
   @override
-  String get statsPeriodMonth => 'Month';
+  String get statsPeriodMonth => 'Bulan';
 
   @override
-  String get statsPeriodYear => 'Year';
+  String get statsPeriodYear => 'Tahun';
 
   @override
-  String get statsPeriodAll => 'All';
+  String get statsPeriodAll => 'Semua';
 
   @override
-  String get statsUnavailable => 'Reading stats aren\'t available right now.';
+  String get statsUnavailable => 'Statistik membaca tidak tersedia saat ini.';
 
   @override
-  String get statsHeatmapTitle => 'Reading activity';
+  String get statsHeatmapTitle => 'Aktivitas membaca';
 
   @override
-  String get statsHeatmapLegendLess => 'Less';
+  String get statsHeatmapLegendLess => 'Lebih sedikit';
 
   @override
-  String get statsHeatmapLegendMore => 'More';
+  String get statsHeatmapLegendMore => 'Lebih banyak';
 
   @override
-  String get statsHeatmapLookups => 'Lookups';
+  String get statsHeatmapLookups => 'Penelusuran';
 
   @override
-  String get statsBestDayMarker => 'Best day';
+  String get statsBestDayMarker => 'Hari terbaik';
 
   @override
   String statsVolumePageCount({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages',
-      one: '$count page',
+      other: '$count halaman',
+      one: '$count halaman',
     );
     return '$_temp0';
   }
 
   @override
-  String get statsLookupRateTitle => 'Lookup rate';
+  String get statsLookupRateTitle => 'Frekuensi penelusuran';
 
   @override
-  String get statsLookupRateSubtitle => 'Lookups per 1,000 characters';
+  String get statsLookupRateSubtitle => 'Penelusuran per 1.000 karakter';
 
   @override
-  String get statsVocabGrowthTitle => 'Vocabulary growth';
+  String get statsVocabGrowthTitle => 'Pertumbuhan kosakata';
 
   @override
   String statsVocabWordCount({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count words',
-      one: '$count word',
+      other: '$count kata',
+      one: '$count kata',
     );
     return '$_temp0';
   }
 
   @override
   String statsDurationHoursMinutes({required int hours, required int minutes}) {
-    return '${hours}h ${minutes}m';
+    return '$hours jam $minutes mnt';
   }
 
   @override
   String statsDurationMinutes({required int minutes}) {
-    return '${minutes}m';
+    return '$minutes mnt';
   }
 
   @override
