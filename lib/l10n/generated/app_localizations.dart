@@ -3586,10 +3586,10 @@ abstract class AppLocalizations {
   /// **'Lookup rate'**
   String get statsLookupRateTitle;
 
-  /// Subtitle under the lookup rate card's title, explaining the unit and reading a falling line as progress. Encouraging, never scolding.
+  /// Subtitle under the lookup rate card's title, naming the unit the chart is plotted in.
   ///
   /// In en, this message translates to:
-  /// **'Lookups per 1,000 characters — lower means more is sticking'**
+  /// **'Lookups per 1,000 characters'**
   String get statsLookupRateSubtitle;
 
   /// Title of the stats card charting the running count of distinct expressions the reader has saved.
