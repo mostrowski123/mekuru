@@ -4,12 +4,10 @@ import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_brightness_row.dart';
+import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_setting_segments.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
-
-/// Section header padding matching the sheet's 24px content inset.
-const _sheetSectionPadding = EdgeInsets.fromLTRB(0, 16, 0, 8);
 
 /// Quick-settings sheet for the EPUB reader, grouped into "This book"
 /// (per-book overrides), "Display", and "Behavior" sections.
@@ -67,10 +65,7 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
       allSettingsTooltip: l10n.readerAllSettingsTooltip,
       children: [
         // ── This book ──
-        SettingsSectionHeader(
-          title: l10n.readerThisBook,
-          padding: _sheetSectionPadding,
-        ),
+        SettingsSectionHeader.sheet(title: l10n.readerThisBook),
         SettingsSwitchRow(
           icon: Icons.text_rotation_angledown,
           title: l10n.readerVerticalTextTitle,
@@ -111,16 +106,7 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
         const SizedBox(height: 8),
         SettingsSegmentedRow<ReaderDirection>(
           label: l10n.readerReadingDirectionTitle,
-          segments: [
-            ButtonSegment(
-              value: ReaderDirection.rtl,
-              label: Text(l10n.readerReadingDirectionRtl),
-            ),
-            ButtonSegment(
-              value: ReaderDirection.ltr,
-              label: Text(l10n.readerReadingDirectionLtr),
-            ),
-          ],
+          segments: readerDirectionSegments(l10n),
           selected: settings.readingDirection,
           onSelected: (direction) {
             notifier.setReadingDirection(direction);
@@ -158,10 +144,7 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
         ),
 
         // ── Display ──
-        SettingsSectionHeader(
-          title: l10n.readerSettingsSectionDisplay,
-          padding: _sheetSectionPadding,
-        ),
+        SettingsSectionHeader.sheet(title: l10n.readerSettingsSectionDisplay),
         SettingsSliderRow(
           icon: Icons.text_fields,
           label: l10n.settingsFontSizeTitle,
@@ -170,7 +153,6 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
           min: 12,
           max: 32,
           divisions: 20,
-          sliderLabel: '${settings.fontSize.round()}',
           onChanged: notifier.setFontSize,
           // onChangeEnd so a drag logs once, not per tick.
           onChangeEnd: (value) => onSettingChanged('font_size', value.round()),
@@ -178,23 +160,7 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
         ReaderBrightnessRow(onSettingChanged: onSettingChanged),
         const SizedBox(height: 8),
         SettingsSegmentedRow<ColorMode>(
-          segments: [
-            ButtonSegment(
-              value: ColorMode.normal,
-              label: Text(l10n.settingsColorModeNormal),
-              icon: const Icon(Icons.brightness_5),
-            ),
-            ButtonSegment(
-              value: ColorMode.sepia,
-              label: Text(l10n.settingsColorModeSepia),
-              icon: const Icon(Icons.filter_vintage),
-            ),
-            ButtonSegment(
-              value: ColorMode.dark,
-              label: Text(l10n.settingsColorModeDark),
-              icon: const Icon(Icons.dark_mode),
-            ),
-          ],
+          segments: colorModeSegments(l10n),
           selected: settings.colorMode,
           onSelected: (mode) {
             notifier.setColorMode(mode);
@@ -216,10 +182,7 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
         ],
 
         // ── Behavior ──
-        SettingsSectionHeader(
-          title: l10n.readerSettingsSectionBehavior,
-          padding: _sheetSectionPadding,
-        ),
+        SettingsSectionHeader.sheet(title: l10n.readerSettingsSectionBehavior),
         SettingsSwitchRow(
           icon: Icons.table_rows_outlined,
           title: l10n.readerSplitVerticalTextTitle,

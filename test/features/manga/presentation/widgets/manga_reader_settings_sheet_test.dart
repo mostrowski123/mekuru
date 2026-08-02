@@ -4,32 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_reader_settings_sheet.dart';
-import 'package:mekuru/features/reader/data/models/reader_brightness_state.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../shared/reader_settings_test_helpers.dart';
 import '../../../../test_app.dart';
-
-class _FakeBrightnessNotifier extends ReaderBrightnessNotifier {
-  @override
-  ReaderBrightnessState build() => const ReaderBrightnessState();
-
-  @override
-  Future<void> applyForReaderOpen() async {}
-
-  @override
-  Future<void> resetBrightness() async {}
-}
-
-class _FakeProUnlocked extends ProUnlockedNotifier {
-  _FakeProUnlocked(this._unlocked);
-  final bool _unlocked;
-
-  @override
-  Future<bool> build() async => _unlocked;
-}
 
 Future<ProviderContainer> _pumpSheet(
   WidgetTester tester, {
@@ -39,8 +20,10 @@ Future<ProviderContainer> _pumpSheet(
 }) async {
   final container = ProviderContainer(
     overrides: [
-      readerBrightnessProvider.overrideWith(_FakeBrightnessNotifier.new),
-      proUnlockedProvider.overrideWith(() => _FakeProUnlocked(proUnlocked)),
+      readerBrightnessProvider.overrideWith(FakeReaderBrightnessNotifier.new),
+      proUnlockedProvider.overrideWith(
+        () => FakeProUnlockedNotifier(proUnlocked),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -65,17 +48,6 @@ Future<ProviderContainer> _pumpSheet(
   return container;
 }
 
-/// The sheet's ListView builds rows lazily inside a half-height draggable
-/// sheet; scroll until [finder] is built and visible before interacting.
-Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(
-    finder,
-    100,
-    scrollable: find.byType(Scrollable).first,
-  );
-  await tester.pumpAndSettle();
-}
-
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -83,7 +55,10 @@ void main() {
 
   testWidgets('reading direction is a segmented control', (tester) async {
     final container = await _pumpSheet(tester);
-    await _scrollTo(tester, find.byType(SegmentedButton<ReaderDirection>));
+    await scrollSettingsTo(
+      tester,
+      find.byType(SegmentedButton<ReaderDirection>),
+    );
 
     await tester.tap(find.text('Left to Right'));
     await tester.pumpAndSettle();
@@ -102,7 +77,7 @@ void main() {
       SettingsSwitchRow,
       'Debug Word Overlay',
     );
-    await _scrollTo(tester, debugFinder);
+    await scrollSettingsTo(tester, debugFinder);
     await tester.tap(debugFinder);
     await tester.pumpAndSettle();
 
@@ -115,7 +90,7 @@ void main() {
     tester,
   ) async {
     await _pumpSheet(tester, proUnlocked: false);
-    await _scrollTo(tester, find.text('Unlock'));
+    await scrollSettingsTo(tester, find.text('Unlock'));
     expect(find.text('Unlock'), findsOneWidget);
     expect(find.widgetWithText(SettingsSwitchRow, 'Auto-Crop'), findsNothing);
   });
@@ -126,7 +101,7 @@ void main() {
       tester,
       onSettingChanged: (setting, value) => changes.add(setting),
     );
-    await _scrollTo(tester, find.byType(SegmentedButton<MangaViewMode>));
+    await scrollSettingsTo(tester, find.byType(SegmentedButton<MangaViewMode>));
     await tester.tap(find.text('Scroll'));
     await tester.pumpAndSettle();
     expect(changes, contains('view_mode'));

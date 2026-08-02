@@ -11,11 +11,6 @@ import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:path/path.dart' as p;
 
-// MangaViewMode lives with the other persisted reader settings; re-exported
-// here so manga UI code keeps a single import for manga reader state.
-export 'package:mekuru/features/reader/data/models/reader_settings.dart'
-    show MangaViewMode;
-
 /// Loads and caches the mokuro page data for a manga book.
 ///
 /// The [bookId] is used to look up the book's `filePath` (cache directory),

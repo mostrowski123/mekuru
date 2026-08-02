@@ -1,24 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mekuru/features/reader/data/models/reader_brightness_state.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub_reader_settings_sheet.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../shared/reader_settings_test_helpers.dart';
 import '../../../../test_app.dart';
-
-class _FakeBrightnessNotifier extends ReaderBrightnessNotifier {
-  @override
-  ReaderBrightnessState build() => const ReaderBrightnessState();
-
-  @override
-  Future<void> applyForReaderOpen() async {}
-
-  @override
-  Future<void> resetBrightness() async {}
-}
 
 Future<ProviderContainer> _pumpSheet(
   WidgetTester tester, {
@@ -27,7 +16,7 @@ Future<ProviderContainer> _pumpSheet(
 }) async {
   final container = ProviderContainer(
     overrides: [
-      readerBrightnessProvider.overrideWith(_FakeBrightnessNotifier.new),
+      readerBrightnessProvider.overrideWith(FakeReaderBrightnessNotifier.new),
     ],
   );
   addTearDown(container.dispose);
@@ -50,17 +39,6 @@ Future<ProviderContainer> _pumpSheet(
   return container;
 }
 
-/// The sheet's ListView builds rows lazily inside a half-height draggable
-/// sheet; scroll until [finder] is built and visible before interacting.
-Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(
-    finder,
-    100,
-    scrollable: find.byType(Scrollable).first,
-  );
-  await tester.pumpAndSettle();
-}
-
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -69,15 +47,15 @@ void main() {
   testWidgets('renders the three section headers', (tester) async {
     await _pumpSheet(tester);
     expect(find.text('This book'), findsOneWidget);
-    await _scrollTo(tester, find.text('Display'));
+    await scrollSettingsTo(tester, find.text('Display'));
     expect(find.text('Display'), findsOneWidget);
-    await _scrollTo(tester, find.text('Behavior'));
+    await scrollSettingsTo(tester, find.text('Behavior'));
     expect(find.text('Behavior'), findsOneWidget);
   });
 
   testWidgets('furigana labels come from localization', (tester) async {
     await _pumpSheet(tester);
-    await _scrollTo(tester, find.text('Furigana'));
+    await scrollSettingsTo(tester, find.text('Furigana'));
     expect(find.text('Furigana'), findsOneWidget);
     expect(find.text('Off'), findsOneWidget);
     expect(find.text('All kanji'), findsOneWidget);
@@ -104,7 +82,7 @@ void main() {
       SettingsSwitchRow,
       'Split Vertical Text',
     );
-    await _scrollTo(tester, splitFinder);
+    await scrollSettingsTo(tester, splitFinder);
     final splitRow = tester.widget<SettingsSwitchRow>(splitFinder);
     expect(splitRow.onChanged, isNull);
   });
@@ -125,7 +103,7 @@ void main() {
       ),
       matching: find.byType(Slider),
     );
-    await _scrollTo(tester, find.text('Font Size'));
+    await scrollSettingsTo(tester, find.text('Font Size'));
     await tester.drag(fontSizeSlider, const Offset(60, 0));
     await tester.pumpAndSettle();
     expect(changes, contains('font_size'));

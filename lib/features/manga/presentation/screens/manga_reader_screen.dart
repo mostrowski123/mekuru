@@ -123,7 +123,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       if (ref.read(readerSettingsProvider).keepScreenOn) {
         WakelockPlus.enable();
       }
-      await _brightnessNotifier.applyForReaderOpen();
+      unawaited(_brightnessNotifier.applyForReaderOpen());
     });
 
     unawaited(_setReaderSystemBarsVisible(false));
@@ -824,11 +824,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   @override
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
-    final readerSettings = ref.watch(readerSettingsProvider);
-    final direction = readerSettings.mangaReadingDirection;
+    // Select a record so unrelated settings churn (brightness, font size)
+    // can't rebuild the whole reader behind an open settings sheet.
+    final (viewMode, direction, mangaAutoCropEnabled) = ref.watch(
+      readerSettingsProvider.select(
+        (s) => (s.mangaViewMode, s.mangaReadingDirection, s.mangaAutoCrop),
+      ),
+    );
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
-    final autoCrop = isProUnlocked && readerSettings.mangaAutoCrop;
-    final viewMode = readerSettings.mangaViewMode;
+    final autoCrop = isProUnlocked && mangaAutoCropEnabled;
     final isOcrRunning = ref.watch(isOcrRunningProvider(widget.book.id));
     final enableWordOverlays = !isOcrRunning;
     final bottomSliderPadding = bottomControlPadding(MediaQuery.of(context));

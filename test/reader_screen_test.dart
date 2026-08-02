@@ -8,7 +8,6 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
-import 'package:mekuru/features/reader/data/models/reader_brightness_state.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
@@ -17,6 +16,7 @@ import 'package:mekuru/main.dart';
 // ignore: depend_on_referenced_packages
 import 'package:wakelock_plus_platform_interface/wakelock_plus_platform_interface.dart';
 
+import 'shared/reader_settings_test_helpers.dart';
 import 'test_app.dart';
 
 class _PendingReaderSettingsStorage implements ReaderSettingsStorage {
@@ -36,12 +36,9 @@ class _PendingReaderSettingsStorage implements ReaderSettingsStorage {
   }
 }
 
-class _FakeBrightnessNotifier extends ReaderBrightnessNotifier {
+class _FakeBrightnessNotifier extends FakeReaderBrightnessNotifier {
   int applyCalls = 0;
   int resetCalls = 0;
-
-  @override
-  ReaderBrightnessState build() => const ReaderBrightnessState();
 
   @override
   Future<void> applyForReaderOpen() async {

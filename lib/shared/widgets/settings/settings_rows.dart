@@ -9,6 +9,11 @@ class SettingsSectionHeader extends StatelessWidget {
     this.padding = const EdgeInsets.fromLTRB(16, 16, 16, 8),
   });
 
+  /// Variant for the reader quick-settings sheets, whose scaffold already
+  /// insets its content by 24px — no extra horizontal padding.
+  const SettingsSectionHeader.sheet({super.key, required this.title})
+    : padding = const EdgeInsets.fromLTRB(0, 16, 0, 8);
+
   final String title;
   final EdgeInsetsGeometry padding;
 
@@ -63,7 +68,8 @@ class SettingsSliderRow extends StatelessWidget {
   final double max;
   final int? divisions;
 
-  /// Label shown on the slider thumb while dragging.
+  /// Label shown on the slider thumb while dragging; defaults to
+  /// [valueLabel].
   final String? sliderLabel;
 
   /// Icons flanking the slider track (e.g. brightness low/high).
@@ -87,7 +93,7 @@ class SettingsSliderRow extends StatelessWidget {
       min: min,
       max: max,
       divisions: divisions,
-      label: sliderLabel,
+      label: sliderLabel ?? valueLabel,
       onChanged: (newValue) {
         AppHaptics.light();
         onChanged(newValue);
@@ -142,7 +148,6 @@ class SettingsSegmentedRow<T> extends StatelessWidget {
     required this.segments,
     required this.selected,
     required this.onSelected,
-    this.showSelectedIcon = false,
   });
 
   final String? label;
@@ -150,7 +155,6 @@ class SettingsSegmentedRow<T> extends StatelessWidget {
   final List<ButtonSegment<T>> segments;
   final T selected;
   final ValueChanged<T> onSelected;
-  final bool showSelectedIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +172,7 @@ class SettingsSegmentedRow<T> extends StatelessWidget {
           child: SegmentedButton<T>(
             segments: segments,
             selected: {selected},
-            showSelectedIcon: showSelectedIcon,
+            showSelectedIcon: false,
             onSelectionChanged: (selection) {
               AppHaptics.medium();
               onSelected(selection.first);

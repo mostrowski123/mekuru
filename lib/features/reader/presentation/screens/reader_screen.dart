@@ -148,7 +148,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (settings.keepScreenOn) {
         WakelockPlus.enable();
       }
-      await _brightnessNotifier.applyForReaderOpen();
+      // Fire-and-forget: brightness must not gate the EPUB load path.
+      unawaited(_brightnessNotifier.applyForReaderOpen());
 
       if (!mounted) return;
       await _loadEpubData();

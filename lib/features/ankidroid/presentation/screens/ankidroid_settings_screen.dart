@@ -5,6 +5,7 @@ import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 
 /// Settings screen for configuring AnkiDroid integration.
 ///
@@ -145,7 +146,7 @@ class _AnkidroidSettingsScreenState
     return ListView(
       children: [
         // ── Note Type ──
-        _SectionHeader(title: l10n.ankidroidSettingsNoteTypeSection),
+        SettingsSectionHeader(title: l10n.ankidroidSettingsNoteTypeSection),
         ListTile(
           leading: Icon(Icons.note_outlined, color: theme.colorScheme.primary),
           title: Text(l10n.ankidroidSettingsNoteTypeTitle),
@@ -156,7 +157,7 @@ class _AnkidroidSettingsScreenState
         const Divider(),
 
         // ── Default Deck ──
-        _SectionHeader(title: l10n.ankidroidSettingsDefaultDeckSection),
+        SettingsSectionHeader(title: l10n.ankidroidSettingsDefaultDeckSection),
         ListTile(
           leading: Icon(
             Icons.layers_outlined,
@@ -171,7 +172,9 @@ class _AnkidroidSettingsScreenState
 
         // ── Field Mapping ──
         if (config.modelId != null && _currentModelFields.isNotEmpty) ...[
-          _SectionHeader(title: l10n.ankidroidSettingsFieldMappingSection),
+          SettingsSectionHeader(
+            title: l10n.ankidroidSettingsFieldMappingSection,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
@@ -196,7 +199,7 @@ class _AnkidroidSettingsScreenState
         ],
 
         // ── Default Tags ──
-        _SectionHeader(title: l10n.ankidroidSettingsDefaultTagsSection),
+        SettingsSectionHeader(title: l10n.ankidroidSettingsDefaultTagsSection),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Text(
@@ -365,26 +368,6 @@ class _AnkidroidSettingsScreenState
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.w600,
         ),
       ),
     );

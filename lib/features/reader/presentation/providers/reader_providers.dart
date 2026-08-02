@@ -53,15 +53,28 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     }
   }
 
-  void setFontSize(double size) {
-    state = state.copyWith(fontSize: size);
+  /// Applies [next], persists it globally, and — this is the single place
+  /// the global vs. per-book split is enforced — writes per-book overrides
+  /// whenever one of the per-book fields (verticalText, readingDirection,
+  /// furiganaMode) changed while a book is open.
+  void _update(ReaderSettings next) {
+    final perBookFieldChanged =
+        next.verticalText != state.verticalText ||
+        next.readingDirection != state.readingDirection ||
+        next.furiganaMode != state.furiganaMode;
+    state = next;
     _persistSettings();
+    if (perBookFieldChanged) {
+      _persistPerBookOverrides();
+    }
+  }
+
+  void setFontSize(double size) {
+    _update(state.copyWith(fontSize: size));
   }
 
   void setVerticalText(bool enabled) {
-    state = state.copyWith(verticalText: enabled);
-    _persistSettings();
-    _persistPerBookOverrides();
+    _update(state.copyWith(verticalText: enabled));
   }
 
   void toggleVerticalText() {
@@ -69,93 +82,77 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   }
 
   void setSplitVerticalText(bool enabled) {
-    state = state.copyWith(splitVerticalText: enabled);
-    _persistSettings();
+    _update(state.copyWith(splitVerticalText: enabled));
   }
 
   void setReadingDirection(ReaderDirection direction) {
-    state = state.copyWith(readingDirection: direction);
-    _persistSettings();
-    _persistPerBookOverrides();
+    _update(state.copyWith(readingDirection: direction));
   }
 
   void setHorizontalPadding(int padding) {
-    state = state.copyWith(horizontalPadding: padding);
-    _persistSettings();
+    _update(state.copyWith(horizontalPadding: padding));
   }
 
   void setVerticalPadding(int padding) {
-    state = state.copyWith(verticalPadding: padding);
-    _persistSettings();
+    _update(state.copyWith(verticalPadding: padding));
   }
 
   void setSwipeSensitivity(double sensitivity) {
-    state = state.copyWith(swipeSensitivity: sensitivity);
-    _persistSettings();
+    _update(state.copyWith(swipeSensitivity: sensitivity));
   }
 
   void setMangaPageTurnEdgeZoneWidthFraction(double widthFraction) {
-    state = state.copyWith(
-      mangaPageTurnEdgeZoneWidthFraction:
-          clampMangaPageTurnEdgeZoneWidthFraction(widthFraction),
+    _update(
+      state.copyWith(
+        mangaPageTurnEdgeZoneWidthFraction:
+            clampMangaPageTurnEdgeZoneWidthFraction(widthFraction),
+      ),
     );
-    _persistSettings();
   }
 
   void setMangaViewMode(MangaViewMode mode) {
-    state = state.copyWith(mangaViewMode: mode);
-    _persistSettings();
+    _update(state.copyWith(mangaViewMode: mode));
   }
 
-  /// Manga reading direction is a global setting (unlike the per-book EPUB
-  /// [setReadingDirection]) — it must never write per-book overrides.
   void setMangaReadingDirection(ReaderDirection direction) {
-    state = state.copyWith(mangaReadingDirection: direction);
-    _persistSettings();
+    _update(state.copyWith(mangaReadingDirection: direction));
   }
 
   void setMangaAutoCrop(bool enabled) {
-    state = state.copyWith(mangaAutoCrop: enabled);
-    _persistSettings();
+    _update(state.copyWith(mangaAutoCrop: enabled));
   }
 
   void setMangaTransparentLookup(bool transparent) {
-    state = state.copyWith(mangaTransparentLookup: transparent);
-    _persistSettings();
+    _update(state.copyWith(mangaTransparentLookup: transparent));
   }
 
   void setColorMode(ColorMode mode) {
-    state = state.copyWith(colorMode: mode);
-    _persistSettings();
+    _update(state.copyWith(colorMode: mode));
   }
 
   void setKeepScreenOn(bool enabled) {
-    state = state.copyWith(keepScreenOn: enabled);
-    _persistSettings();
+    _update(state.copyWith(keepScreenOn: enabled));
   }
 
   void setSepiaIntensity(double intensity) {
-    state = state.copyWith(sepiaIntensity: intensity);
-    _persistSettings();
+    _update(state.copyWith(sepiaIntensity: intensity));
   }
 
   void setDisableLinks(bool disabled) {
-    state = state.copyWith(disableLinks: disabled);
-    _persistSettings();
+    _update(state.copyWith(disableLinks: disabled));
   }
 
   /// Sets the brightness override; `null` means follow the system brightness.
   void setBrightness(double? value) {
-    state = value == null
-        ? state.copyWith(clearBrightness: true)
-        : state.copyWith(brightness: value);
-    _persistSettings();
+    _update(
+      value == null
+          ? state.copyWith(clearBrightness: true)
+          : state.copyWith(brightness: value),
+    );
   }
 
   void setFuriganaMode(FuriganaMode mode) {
-    state = state.copyWith(furiganaMode: mode);
-    _persistSettings();
-    _persistPerBookOverrides();
+    _update(state.copyWith(furiganaMode: mode));
   }
 
   /// Apply book-specific defaults when opening a book.
@@ -164,8 +161,9 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   /// changed the display settings for this book. Otherwise falls back to
   /// defaults derived from the book's language and page-progression-direction.
   ///
-  /// Does NOT persist global settings — only sets the in-memory state and
-  /// tracks [bookId] for future per-book persistence.
+  /// Deliberately bypasses [_update]: it does NOT persist anything — only
+  /// sets the in-memory state and tracks [bookId] for future per-book
+  /// persistence.
   void applyBookDefaults({
     required int bookId,
     String? language,
@@ -276,6 +274,14 @@ class ReaderBrightnessNotifier extends Notifier<ReaderBrightnessState> {
     if (override != null) {
       await _setApplicationBrightness(override);
     }
+  }
+
+  /// Applies [value] to the screen and slider WITHOUT persisting — for live
+  /// slider drags, where persisting every tick would spam SharedPreferences.
+  /// Call [setBrightness] with the final value on drag end.
+  Future<void> previewBrightness(double value) async {
+    state = ReaderBrightnessState(override: value, systemLevel: _systemLevel);
+    await _setApplicationBrightness(value);
   }
 
   Future<void> setBrightness(double value) async {

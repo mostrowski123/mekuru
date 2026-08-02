@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
-import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_settings_rows.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_brightness_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
-
-/// Section header padding matching the sheet's 24px content inset.
-const _sheetSectionPadding = EdgeInsets.fromLTRB(0, 16, 0, 8);
 
 /// Quick-settings sheet for the manga reader, grouped into "Display",
 /// "Reading", "Image", and "Lookup" sections — mirroring the EPUB sheet's
@@ -49,11 +46,8 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final settings = ref.watch(readerSettingsProvider);
-    final notifier = ref.read(readerSettingsProvider.notifier);
     final debugOverlay = ref.watch(mangaDebugWordOverlayProvider);
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
-    final pageTurnEdgeZonePercent =
-        (settings.mangaPageTurnEdgeZoneWidthFraction * 100).round();
 
     return ReaderSettingsSheetScaffold(
       title: l10n.mangaReaderSettingsTitle,
@@ -61,86 +55,19 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
       allSettingsTooltip: l10n.readerAllSettingsTooltip,
       children: [
         // ── Display ──
-        SettingsSectionHeader(
-          title: l10n.readerSettingsSectionDisplay,
-          padding: _sheetSectionPadding,
-        ),
+        SettingsSectionHeader.sheet(title: l10n.readerSettingsSectionDisplay),
         ReaderBrightnessRow(onSettingChanged: onSettingChanged),
         const SizedBox(height: 8),
-        SettingsSegmentedRow<MangaViewMode>(
-          label: l10n.mangaViewModeTitle,
-          segments: [
-            ButtonSegment(
-              value: MangaViewMode.singlePage,
-              icon: const Icon(Icons.looks_one),
-              label: Text(l10n.mangaViewModeSingle),
-            ),
-            ButtonSegment(
-              value: MangaViewMode.twoPageSpread,
-              icon: const Icon(Icons.looks_two),
-              label: Text(l10n.mangaViewModeSpread),
-            ),
-            ButtonSegment(
-              value: MangaViewMode.scroll,
-              icon: const Icon(Icons.view_day),
-              label: Text(l10n.mangaViewModeScroll),
-            ),
-          ],
-          selected: settings.mangaViewMode,
-          onSelected: (mode) {
-            notifier.setMangaViewMode(mode);
-            onSettingChanged('view_mode', mode.name);
-          },
-        ),
+        MangaViewModeRow(onSettingChanged: onSettingChanged),
 
         // ── Reading ──
-        SettingsSectionHeader(
-          title: l10n.mangaSettingsSectionReading,
-          padding: _sheetSectionPadding,
-        ),
-        SettingsSegmentedRow<ReaderDirection>(
-          label: l10n.readerReadingDirectionTitle,
-          segments: [
-            ButtonSegment(
-              value: ReaderDirection.rtl,
-              label: Text(l10n.readerReadingDirectionRtl),
-            ),
-            ButtonSegment(
-              value: ReaderDirection.ltr,
-              label: Text(l10n.readerReadingDirectionLtr),
-            ),
-          ],
-          selected: settings.mangaReadingDirection,
-          onSelected: (direction) {
-            notifier.setMangaReadingDirection(direction);
-            onSettingChanged('direction', direction.name);
-          },
-        ),
+        SettingsSectionHeader.sheet(title: l10n.mangaSettingsSectionReading),
+        MangaReadingDirectionRow(onSettingChanged: onSettingChanged),
         const SizedBox(height: 16),
-        SettingsSliderRow(
-          icon: Icons.touch_app,
-          label: l10n.mangaPageTurnEdgeZoneTitle,
-          valueLabel: l10n.settingsPercentValue(
-            percent: pageTurnEdgeZonePercent,
-          ),
-          value: settings.mangaPageTurnEdgeZoneWidthFraction,
-          min: kMinMangaPageTurnEdgeZoneWidthFraction,
-          max: kMaxMangaPageTurnEdgeZoneWidthFraction,
-          divisions: 20,
-          sliderLabel: l10n.settingsPercentValue(
-            percent: pageTurnEdgeZonePercent,
-          ),
-          helperText: l10n.mangaPageTurnEdgeZoneSubtitle,
-          onChanged: notifier.setMangaPageTurnEdgeZoneWidthFraction,
-          onChangeEnd: (value) =>
-              onSettingChanged('edge_zone', (value * 100).round()),
-        ),
+        MangaEdgeZoneRow(onSettingChanged: onSettingChanged),
 
         // ── Image ──
-        SettingsSectionHeader(
-          title: l10n.mangaSettingsSectionImage,
-          padding: _sheetSectionPadding,
-        ),
+        SettingsSectionHeader.sheet(title: l10n.mangaSettingsSectionImage),
         if (isProUnlocked)
           SettingsSwitchRow(
             icon: Icons.crop,
@@ -181,20 +108,8 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
           ),
 
         // ── Lookup ──
-        SettingsSectionHeader(
-          title: l10n.mangaSettingsSectionLookup,
-          padding: _sheetSectionPadding,
-        ),
-        SettingsSwitchRow(
-          icon: Icons.opacity,
-          title: l10n.mangaTransparentLookupTitle,
-          subtitle: l10n.mangaTransparentLookupSubtitle,
-          value: settings.mangaTransparentLookup,
-          onChanged: (value) {
-            notifier.setMangaTransparentLookup(value);
-            onSettingChanged('transparent_lookup', value);
-          },
-        ),
+        SettingsSectionHeader.sheet(title: l10n.mangaSettingsSectionLookup),
+        MangaTransparentLookupRow(onSettingChanged: onSettingChanged),
         SettingsSwitchRow(
           icon: Icons.grid_on,
           title: l10n.mangaDebugWordOverlayTitle,
