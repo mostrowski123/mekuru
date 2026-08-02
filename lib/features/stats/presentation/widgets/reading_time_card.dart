@@ -130,7 +130,12 @@ class ReadingTimeCard extends StatelessWidget {
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(),
         rightTitles: const AxisTitles(),
-        leftTitles: statsValueAxis(context, interval, _axisDuration),
+        leftTitles: statsValueAxis(
+          context,
+          interval,
+          _axisDuration,
+          lines: needsHeadroom ? 5 : 4,
+        ),
         bottomTitles: statsBucketAxis(
           context,
           [for (final bar in bars) bar.start],

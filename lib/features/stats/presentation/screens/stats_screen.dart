@@ -241,7 +241,11 @@ class _HeroStatsRow extends StatelessWidget {
       Localizations.localeOf(context).toLanguageTag(),
     );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      // 32, not the page's 16: the bare numbers sit on the same ink line as
+      // the card titles below (card face at 16 + the cards' 16 content
+      // padding). At 16 they were the only text on the page at the container
+      // margin, which read as misaligned rather than as a deliberate edge.
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

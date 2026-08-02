@@ -111,8 +111,11 @@ class ActivityHeatmapCard extends StatelessWidget {
     final width = columns * _cellPitch - _cellGap;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      // Matches the chart cards and the hero row's 16: one page margin. The
+      // Card's own default 4dp margin is zeroed so its face sits on the line.
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
+        margin: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
