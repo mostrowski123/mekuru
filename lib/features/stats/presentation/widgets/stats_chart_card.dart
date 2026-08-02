@@ -1,4 +1,6 @@
 import 'dart:math' as math;
+// intl also exports a TextDirection; the painter below needs the ui one.
+import 'dart:ui' as ui show TextDirection;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +16,11 @@ const Duration chartAnimationDuration = Duration(milliseconds: 400);
 /// Height every card gives its plot area, axis labels included.
 const double chartPlotHeight = 172;
 
-/// Room reserved for the value axis. Wide enough for `"120K"` / `"1.5h"`.
+/// Estimate of the value axis' width, used only for bar-width arithmetic.
+///
+/// The width actually reserved is measured from the tick labels per chart in
+/// [statsValueAxis]; this stays a round upper bound so the bar-width clamp in
+/// [statsRodWidth] does not need the measurement threaded through to it.
 const double chartLeftAxisWidth = 44;
 
 /// Room reserved for the category axis.
@@ -127,8 +133,13 @@ class _StatsChartCardState extends State<StatsChartCard> {
     final duration = disableAnimations ? Duration.zero : chartAnimationDuration;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      // 16 horizontal, matching the hero row and control row above: the page
+      // keeps one left margin rather than staggering bare content and cards.
+      // The Card's own default 4dp margin is zeroed for the same reason — its
+      // face, not its box, is what has to sit on that line.
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
+        margin: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -239,24 +250,48 @@ Widget statsAxisLabel(BuildContext context, TitleMeta meta, String text) {
   );
 }
 
+/// Gap between a tick label and the plot: [SideTitleWidget]'s own 8px spacing
+/// plus a little air so the measured reservation never clips a glyph.
+const double _valueAxisGap = 12;
+
 /// The value axis every stats chart draws on its left.
 ///
 /// [label] renders one tick's value. Zero is never labelled: the axis meets the
 /// baseline there, and a "0" under it reads as data rather than as the origin.
+///
+/// The reserved width is measured from the tick labels themselves rather than
+/// fixed: a chart whose widest label is "25m" would otherwise hold a band of
+/// dead space between the card's edge and the plot. [lines] is how many ticks
+/// the chart draws — its maxY over [interval].
 AxisTitles statsValueAxis(
   BuildContext context,
   double interval,
-  String Function(double value) label,
-) => AxisTitles(
-  sideTitles: SideTitles(
-    showTitles: true,
-    reservedSize: chartLeftAxisWidth,
-    interval: interval,
-    getTitlesWidget: (value, meta) => value <= 0
-        ? const SizedBox.shrink()
-        : statsAxisLabel(context, meta, label(value)),
-  ),
-);
+  String Function(double value) label, {
+  int lines = 4,
+}) {
+  final style = Theme.of(context).textTheme.bodySmall;
+  final scaler = MediaQuery.textScalerOf(context);
+  var widest = 0.0;
+  for (var line = 1; line <= lines; line++) {
+    final painter = TextPainter(
+      text: TextSpan(text: label(interval * line), style: style),
+      textDirection: ui.TextDirection.ltr,
+      textScaler: scaler,
+    )..layout();
+    widest = math.max(widest, painter.width);
+    painter.dispose();
+  }
+  return AxisTitles(
+    sideTitles: SideTitles(
+      showTitles: true,
+      reservedSize: widest + _valueAxisGap,
+      interval: interval,
+      getTitlesWidget: (value, meta) => value <= 0
+          ? const SizedBox.shrink()
+          : statsAxisLabel(context, meta, label(value)),
+    ),
+  );
+}
 
 /// The category axis under a bucketed chart: one tick per bucket start, thinned
 /// to every [step]th so the labels never collide.

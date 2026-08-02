@@ -130,6 +130,27 @@ void main() {
       expect(find.text('Week'), findsOneWidget);
     });
 
+    testWidgets('lines the hero figures up with the cards below', (
+      tester,
+    ) async {
+      final now = DateTime.now();
+      await pumpScreen(
+        tester,
+        sessions: [
+          session(id: 1, startedAt: now, durationMs: 60000, charactersRead: 10),
+        ],
+        events: const [],
+      );
+
+      // One ink line for the whole page: the bare hero numbers start where
+      // the card titles below start (card face + its 16 content padding), so
+      // the headline block reads as part of the page rather than as the only
+      // text hanging out at the container margin.
+      final heroLeft = tester.getTopLeft(find.byType(HeroStatTile).first).dx;
+      final cardLeft = tester.getTopLeft(find.byType(Card).first).dx;
+      expect(heroLeft, cardLeft + 16);
+    });
+
     testWidgets('renders zeroed tiles with no data at all', (tester) async {
       await pumpScreen(tester, sessions: const [], events: const []);
 

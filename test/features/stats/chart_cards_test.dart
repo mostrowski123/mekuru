@@ -322,6 +322,36 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('reserves axis width from its labels, not a fixed gutter', (
+      tester,
+    ) async {
+      // The reservation is measured from the tick strings themselves — the
+      // old fixed 44px gutter left short labels like "10" floating in a band
+      // of dead space between the card's edge and the plot. Assert the
+      // behavior (narrow labels reserve less than wide ones) rather than a
+      // pixel count, because the test font renders every glyph an em wide.
+      Future<double> reservedFor(List<StatBucket> buckets) async {
+        await _pump(
+          tester,
+          LookupRateCard(buckets: buckets, period: StatsPeriod.week),
+        );
+        final chart = tester.widget<LineChart>(find.byType(LineChart));
+        return chart.data.titlesData.leftTitles.sideTitles.reservedSize;
+      }
+
+      final narrow = await reservedFor([
+        _bucket(_days()[0], charactersRead: 1000, lookups: 12),
+        _bucket(_days()[1], charactersRead: 2000, lookups: 10),
+      ]);
+      final wide = await reservedFor([
+        _bucket(_days()[0], charactersRead: 1000, lookups: 900),
+        _bucket(_days()[1], charactersRead: 2000, lookups: 10),
+      ]);
+
+      expect(narrow, greaterThan(10));
+      expect(narrow, lessThan(wide));
+    });
+
     testWidgets('breaks the line where a bucket has no characters', (
       tester,
     ) async {
