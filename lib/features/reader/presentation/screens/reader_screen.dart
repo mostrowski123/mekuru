@@ -72,6 +72,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   bool _showControls = true;
   bool _isEpubLoaded = false;
   bool _isRebuildingForDirection = false;
+
+  // Viewer rebuilds tear down and recreate the WebView, which never completes
+  // its load handshake while the reader is covered by an opaque route (e.g.
+  // the Reading settings screen). Suppress rebuilds while covered and run one
+  // deferred rebuild after returning.
+  bool _suppressViewerRebuilds = false;
+  bool _viewerRebuildDeferred = false;
   bool _hasActiveSelection = false;
   bool _locationsReady = false;
   EpubSelectionData? _selectionData;
@@ -256,7 +263,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           'vertical=${previous.verticalText} '
           'split=${previous.splitVerticalText})',
         );
-        unawaited(_rebuildViewerForDirectionChange());
+        if (_suppressViewerRebuilds) {
+          _viewerRebuildDeferred = true;
+        } else {
+          unawaited(_rebuildViewerForDirectionChange());
+        }
       }
 
       if (previous.fontSize != next.fontSize && _isEpubLoaded) {
@@ -579,6 +590,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           details: error.toString(),
         );
       });
+    }
+  }
+
+  Future<void> _openAllReaderSettings() async {
+    _suppressViewerRebuilds = true;
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()));
+    _suppressViewerRebuilds = false;
+    if (_viewerRebuildDeferred && mounted) {
+      _viewerRebuildDeferred = false;
+      unawaited(_rebuildViewerForDirectionChange());
     }
   }
 
@@ -1411,9 +1434,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         onOpenAllSettings: () {
           AppHaptics.light();
           Navigator.of(sheetContext).pop();
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()),
-          );
+          unawaited(_openAllReaderSettings());
         },
       ),
     );
