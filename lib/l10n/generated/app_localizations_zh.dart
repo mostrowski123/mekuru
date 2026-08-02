@@ -2066,6 +2066,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String statsDurationMinutes({required int minutes}) {
     return '${minutes}m';
   }
+
+  @override
+  String get mangaReaderFailedToLoad => '无法加载漫画';
+
+  @override
+  String get mangaReaderNoPages => '未找到页面';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -4039,4 +4045,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String statsDurationMinutes({required int minutes}) {
     return '${minutes}m';
   }
+
+  @override
+  String get mangaReaderFailedToLoad => '无法加载漫画';
+
+  @override
+  String get mangaReaderNoPages => '未找到页面';
 }

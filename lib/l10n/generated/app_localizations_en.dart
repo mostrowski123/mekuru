@@ -2149,4 +2149,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String statsDurationMinutes({required int minutes}) {
     return '${minutes}m';
   }
+
+  @override
+  String get mangaReaderFailedToLoad => 'Failed to load manga';
+
+  @override
+  String get mangaReaderNoPages => 'No pages found';
 }

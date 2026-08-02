@@ -612,7 +612,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Dismiss',
+      barrierLabel: context.l10n.readerDismiss,
       barrierColor: transparent ? Colors.black.withAlpha(30) : Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
@@ -916,7 +916,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Failed to load manga',
+                    context.l10n.mangaReaderFailedToLoad,
                     style: Theme.of(
                       context,
                     ).textTheme.titleMedium?.copyWith(color: Colors.white),
@@ -934,10 +934,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           data: (mokuroBook) {
             final totalPages = mokuroBook.pages.length;
             if (totalPages == 0) {
-              return const Center(
+              return Center(
                 child: Text(
-                  'No pages found',
-                  style: TextStyle(color: Colors.white),
+                  context.l10n.mangaReaderNoPages,
+                  style: const TextStyle(color: Colors.white),
                 ),
               );
             }
