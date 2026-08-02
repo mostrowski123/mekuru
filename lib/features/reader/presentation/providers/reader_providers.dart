@@ -203,6 +203,13 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     );
   }
 
+  /// Clears the book scoped by [applyBookDefaults] so later global settings
+  /// changes (e.g. from the settings screen) cannot write per-book overrides
+  /// to a book that is no longer open.
+  void clearCurrentBook() {
+    _currentBookId = null;
+  }
+
   void _persistSettings() {
     unawaited(ref.read(readerSettingsStorageProvider).save(state));
   }
