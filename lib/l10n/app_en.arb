@@ -2659,9 +2659,9 @@
   "@statsLookupRateTitle": {
     "description": "Title of the stats card charting how often the reader looked a word up while reading."
   },
-  "statsLookupRateSubtitle": "Lookups per 1,000 characters — lower means more is sticking",
+  "statsLookupRateSubtitle": "Lookups per 1,000 characters",
   "@statsLookupRateSubtitle": {
-    "description": "Subtitle under the lookup rate card's title, explaining the unit and reading a falling line as progress. Encouraging, never scolding."
+    "description": "Subtitle under the lookup rate card's title, naming the unit the chart is plotted in."
   },
   "statsVocabGrowthTitle": "Vocabulary growth",
   "@statsVocabGrowthTitle": {

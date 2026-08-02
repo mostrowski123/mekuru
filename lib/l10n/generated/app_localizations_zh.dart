@@ -1993,8 +1993,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get statsLookupRateTitle => 'Lookup rate';
 
   @override
-  String get statsLookupRateSubtitle =>
-      'Lookups per 1,000 characters — lower means more is sticking';
+  String get statsLookupRateSubtitle => 'Lookups per 1,000 characters';
 
   @override
   String get statsVocabGrowthTitle => 'Vocabulary growth';
@@ -3940,8 +3939,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get statsLookupRateTitle => 'Lookup rate';
 
   @override
-  String get statsLookupRateSubtitle =>
-      'Lookups per 1,000 characters — lower means more is sticking';
+  String get statsLookupRateSubtitle => 'Lookups per 1,000 characters';
 
   @override
   String get statsVocabGrowthTitle => 'Vocabulary growth';

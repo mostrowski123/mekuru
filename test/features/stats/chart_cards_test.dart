@@ -311,12 +311,7 @@ void main() {
       );
 
       expect(find.text('Lookup rate'), findsOneWidget);
-      expect(
-        find.text(
-          'Lookups per 1,000 characters — lower means more is sticking',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Lookups per 1,000 characters'), findsOneWidget);
       final chart = tester.widget<LineChart>(find.byType(LineChart));
       expect(chart.data.lineBarsData, hasLength(1));
       expect(chart.data.lineBarsData.single.spots.first.y, 12);
