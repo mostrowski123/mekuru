@@ -74,6 +74,33 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('centers its legend under the plot', (tester) async {
+      await _pump(
+        tester,
+        ReadingTimeCard(
+          epubBuckets: epub(),
+          mangaBuckets: manga(),
+          period: StatsPeriod.week,
+        ),
+      );
+
+      // Measured, not read off the widget: the legend's painted content —
+      // first dot through last label — is centered on the card.
+      final legend = find.byType(StatsChartLegend);
+      final dots = find.descendant(
+        of: legend,
+        matching: find.byType(Container),
+      );
+      final contentCenter =
+          (tester.getTopLeft(dots.first).dx +
+              tester.getBottomRight(find.text('Manga')).dx) /
+          2;
+      expect(
+        contentCenter,
+        moreOrLessEquals(tester.getCenter(find.byType(Card)).dx, epsilon: 1),
+      );
+    });
+
     testWidgets('stacks the two formats into one rod each', (tester) async {
       await _pump(
         tester,

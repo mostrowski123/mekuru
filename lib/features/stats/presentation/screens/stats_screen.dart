@@ -237,15 +237,9 @@ class _HeroStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final counts = NumberFormat.decimalPattern(
-      Localizations.localeOf(context).toLanguageTag(),
-    );
+    final locale = Localizations.localeOf(context).toLanguageTag();
     return Padding(
-      // 32, not the page's 16: the bare numbers sit on the same ink line as
-      // the card titles below (card face at 16 + the cards' 16 content
-      // padding). At 16 they were the only text on the page at the container
-      // margin, which read as misaligned rather than as a deliberate edge.
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -257,12 +251,12 @@ class _HeroStatsRow extends StatelessWidget {
           _heroTile(
             label: l10n.statsHeroCharactersRead,
             value: totals.charactersRead,
-            formatter: counts.format,
+            formatter: compactCountFormatter(locale, totals.charactersRead),
           ),
           _heroTile(
             label: l10n.statsHeroWordsAdded,
             value: totals.wordsAdded,
-            formatter: counts.format,
+            formatter: compactCountFormatter(locale, totals.wordsAdded),
           ),
         ],
       ),

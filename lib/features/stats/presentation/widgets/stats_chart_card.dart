@@ -205,20 +205,27 @@ class StatsChartLegend extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.labelMedium;
     return Row(
+      // Centered under the plot: the legend annotates the chart as a whole,
+      // not the axis corner it used to hang from.
+      mainAxisAlignment: MainAxisAlignment.center,
+      spacing: 16,
       children: [
-        for (final entry in entries) ...[
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: entry.color,
-              shape: BoxShape.circle,
-            ),
+        for (final entry in entries)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 6,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: entry.color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Text(entry.label, style: style),
+            ],
           ),
-          const SizedBox(width: 6),
-          Text(entry.label, style: style),
-          const SizedBox(width: 16),
-        ],
       ],
     );
   }

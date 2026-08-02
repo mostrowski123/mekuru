@@ -63,6 +63,30 @@ void main() {
     });
   });
 
+  group('formatCompactCount', () {
+    test('keeps small counts exact with grouping', () {
+      expect(formatCompactCount('en', 0), '0');
+      expect(formatCompactCount('en', 500), '500');
+      expect(formatCompactCount('en', 9999), '9,999');
+    });
+
+    test('condenses five digits and up with at most one decimal', () {
+      expect(formatCompactCount('en', 37862), '37.9K');
+      expect(formatCompactCount('en', 12000), '12K');
+      expect(formatCompactCount('en', 1234567), '1.2M');
+    });
+
+    test('count-up frames keep the final value\'s representation', () {
+      // The tile animates through intermediate values; the format is chosen
+      // from where the count will land, so the string never flips from
+      // "9,999" to "10K" mid-flight.
+      final format = compactCountFormatter('en', 37862);
+      expect(format(500), '500');
+      expect(format(9999), '10K');
+      expect(format(37862), '37.9K');
+    });
+  });
+
   group('StatsScreen', () {
     Future<void> pumpScreen(
       WidgetTester tester, {
@@ -130,25 +154,39 @@ void main() {
       expect(find.text('Week'), findsOneWidget);
     });
 
-    testWidgets('lines the hero figures up with the cards below', (
+    testWidgets('centers each hero figure over its label in even thirds', (
       tester,
     ) async {
       final now = DateTime.now();
       await pumpScreen(
         tester,
         sessions: [
-          session(id: 1, startedAt: now, durationMs: 60000, charactersRead: 10),
+          session(
+            id: 1,
+            startedAt: now,
+            durationMs: 60000,
+            charactersRead: 37862,
+          ),
         ],
         events: const [],
       );
 
-      // One ink line for the whole page: the bare hero numbers start where
-      // the card titles below start (card face + its 16 content padding), so
-      // the headline block reads as part of the page rather than as the only
-      // text hanging out at the container margin.
-      final heroLeft = tester.getTopLeft(find.byType(HeroStatTile).first).dx;
-      final cardLeft = tester.getTopLeft(find.byType(Card).first).dx;
-      expect(heroLeft, cardLeft + 16);
+      // A large count condenses instead of overflowing its third.
+      expect(find.text('37.9K'), findsOneWidget);
+
+      // Each figure sits centered above its label. The thirds themselves are
+      // Expanded, so their equal widths come from the framework.
+      final tiles = find.byType(HeroStatTile);
+      for (var i = 0; i < tiles.evaluate().length; i++) {
+        final texts = find.descendant(
+          of: tiles.at(i),
+          matching: find.byType(Text),
+        );
+        expect(
+          tester.getCenter(texts.first).dx,
+          moreOrLessEquals(tester.getCenter(texts.last).dx, epsilon: 1),
+        );
+      }
     });
 
     testWidgets('renders zeroed tiles with no data at all', (tester) async {
