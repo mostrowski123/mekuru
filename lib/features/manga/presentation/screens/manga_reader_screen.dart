@@ -383,18 +383,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       return;
     }
 
-    final gesture = classifyGesture(
+    final screenSize = MediaQuery.sizeOf(context);
+    final intent = resolveEreaderSwipeIntent(
       downX: downPosition.dx,
       upX: event.position.dx,
       downY: downPosition.dy,
       upY: event.position.dy,
-    );
-    if (gesture != GestureType.horizontalSwipe) return;
-
-    final intent = resolveSwipeIntent(
-      velocityX: event.position.dx - downPosition.dx,
+      screenWidth: screenSize.width,
+      screenHeight: screenSize.height,
       readingDirection: direction,
-      velocityThreshold: kSwipeDistanceThreshold,
     );
     switch (intent) {
       case ReaderNavigationIntent.goForward:

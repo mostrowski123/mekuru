@@ -59,14 +59,25 @@ ReaderNavigationIntent resolveSwipeIntent({
     return ReaderNavigationIntent.none;
   }
 
-  final isSwipeRight = velocityX > 0;
-  if (isSwipeRight) {
-    return readingDirection == ReaderDirection.rtl
+  return intentForHorizontalSwipe(
+    towardRight: velocityX > 0,
+    readingDirection: readingDirection,
+  );
+}
+
+/// Maps a horizontal swipe's direction to a navigation intent: swiping toward
+/// the right advances an RTL book and goes back in an LTR book.
+ReaderNavigationIntent intentForHorizontalSwipe({
+  required bool towardRight,
+  required ReaderDirection readingDirection,
+}) {
+  final rtl = readingDirection == ReaderDirection.rtl;
+  if (towardRight) {
+    return rtl
         ? ReaderNavigationIntent.goForward
         : ReaderNavigationIntent.goBackward;
   }
-
-  return readingDirection == ReaderDirection.rtl
+  return rtl
       ? ReaderNavigationIntent.goBackward
       : ReaderNavigationIntent.goForward;
 }
@@ -115,6 +126,42 @@ GestureType classifyGesture({
   }
 
   return GestureType.tap;
+}
+
+/// Resolves a raw-pixel e-reader-mode pointer gesture into a navigation
+/// intent.
+///
+/// [classifyGesture] and [resolveSwipeIntent]'s thresholds are fractions of a
+/// screen dimension, so the pixel deltas are normalized by [screenWidth] /
+/// [screenHeight] before classification. Anything that isn't a clean
+/// horizontal swipe resolves to [ReaderNavigationIntent.none].
+ReaderNavigationIntent resolveEreaderSwipeIntent({
+  required double downX,
+  required double upX,
+  required double downY,
+  required double upY,
+  required double screenWidth,
+  required double screenHeight,
+  required ReaderDirection readingDirection,
+}) {
+  if (screenWidth <= 0 || screenHeight <= 0) {
+    return ReaderNavigationIntent.none;
+  }
+
+  final gesture = classifyGesture(
+    downX: downX / screenWidth,
+    upX: upX / screenWidth,
+    downY: downY / screenHeight,
+    upY: upY / screenHeight,
+  );
+  if (gesture != GestureType.horizontalSwipe) {
+    return ReaderNavigationIntent.none;
+  }
+
+  return intentForHorizontalSwipe(
+    towardRight: upX > downX,
+    readingDirection: readingDirection,
+  );
 }
 
 // ── Section-aware navigation ────────────────────────────────────────
