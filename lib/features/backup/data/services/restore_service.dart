@@ -123,11 +123,17 @@ class RestoreService {
 
   /// Restore reading statistics.
   ///
-  /// The stats tables are append-only history with no natural key to merge on,
-  /// so each table is filled only when it is still empty locally. The two
-  /// tables are checked independently, and a repeated restore is a no-op.
-  /// `bookId` is written verbatim: it is display metadata and is never joined
-  /// against Books.
+  /// Reading sessions are filled only when the table is still empty locally:
+  /// interleaving two devices' session histories was judged riskier than
+  /// preserving whichever history the device already has, and no migration
+  /// ever backfills sessions, so the empty check is a faithful "this device
+  /// has no history yet" signal. Word events don't get that luxury — the v19
+  /// upgrade backfills them from saved_words, so the table is almost never
+  /// empty on an upgraded install — and they carry a usable identity
+  /// (kind + expression + source + createdAt), so they are merged instead:
+  /// backup events not already present locally are inserted. Both paths keep
+  /// a repeated restore a no-op. `bookId` is written verbatim: it is display
+  /// metadata and is never joined against Books.
   Future<void> restoreStats(BackupManifest manifest) async {
     await _fillIfEmpty(
       _db.readingSessions,
@@ -147,27 +153,52 @@ class RestoreService {
           .toList(),
     );
 
-    await _fillIfEmpty(
-      _db.wordEvents,
-      manifest.wordEvents
-          .map(
-            (e) => WordEventsCompanion.insert(
-              kind: e.kind,
-              expression: e.expression,
-              source: Value(e.source),
-              // Explicit: the column defaults to now(), which would
-              // rewrite every restored event to the restore time.
-              createdAt: Value(e.createdAt),
-            ),
-          )
-          .toList(),
-    );
+    await _mergeWordEvents(manifest.wordEvents);
+  }
+
+  /// Inserts the backup's word events that are not already present locally.
+  ///
+  /// Identity is (kind, expression, source, createdAt), compared on the epoch
+  /// instant — local rows come back from Drift in local time while backup
+  /// entries parse as UTC, and DateTime's == is zone-sensitive. Duplicate
+  /// counting is harmless to the charts (they dedupe by expression), but
+  /// skipping exact duplicates keeps repeated restores from growing the
+  /// table.
+  Future<void> _mergeWordEvents(List<BackupWordEventEntry> events) async {
+    if (events.isEmpty) return;
+
+    // One key builder for both row types keeps the two sides congruent.
+    (String, String, String, int) key(
+      String kind,
+      String expression,
+      String source,
+      DateTime createdAt,
+    ) => (kind, expression, source, createdAt.millisecondsSinceEpoch);
+
+    final seen = {
+      for (final e in await _db.select(_db.wordEvents).get())
+        key(e.kind, e.expression, e.source, e.createdAt),
+    };
+    final toInsert = [
+      for (final e in events)
+        if (seen.add(key(e.kind, e.expression, e.source, e.createdAt)))
+          WordEventsCompanion.insert(
+            kind: e.kind,
+            expression: e.expression,
+            source: Value(e.source),
+            // Explicit: the column defaults to now(), which would
+            // rewrite every restored event to the restore time.
+            createdAt: Value(e.createdAt),
+          ),
+    ];
+    if (toInsert.isEmpty) return;
+    await _db.batch((batch) => batch.insertAll(_db.wordEvents, toInsert));
   }
 
   /// Batch-inserts [rows] into [table], but only when the table is still
   /// untouched.
   ///
-  /// Stats are restored all-or-nothing per table: a device that has already
+  /// Reading sessions are restored all-or-nothing: a device that has already
   /// recorded sessions of its own keeps them, rather than ending up with a
   /// backup's history interleaved into it.
   Future<void> _fillIfEmpty<T extends Table, D>(
