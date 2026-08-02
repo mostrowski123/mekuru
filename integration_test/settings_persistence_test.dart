@@ -162,13 +162,28 @@ void main() {
 
     await tester.tap(find.text(l10n.settingsStartupScreenTitle));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(l10n.settingsStartupScreenDictionary));
+    // Scope to the sheet: the settings screen's "Dictionary" section header
+    // can be visible behind it and would make a bare text finder ambiguous.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text(l10n.settingsStartupScreenDictionary),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // The label-to-key mapping is owned by the storage; we just need the
     // saved value to round-trip (i.e. not stay null), and the UI to reflect
     // the new selection.
     expect(await storage.loadStartupScreen(), isNotNull);
-    expect(find.text(l10n.settingsStartupScreenDictionary), findsOneWidget);
+    // Scope to the startup tile: the "Dictionary" section header elsewhere
+    // on the screen also matches a bare text finder.
+    expect(
+      find.descendant(
+        of: find.widgetWithText(ListTile, l10n.settingsStartupScreenTitle),
+        matching: find.text(l10n.settingsStartupScreenDictionary),
+      ),
+      findsOneWidget,
+    );
   });
 }
