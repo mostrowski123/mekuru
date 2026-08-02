@@ -52,6 +52,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   final _epubFileResolver = EpubFileResolver();
 
   late final ReaderBrightnessNotifier _brightnessNotifier;
+  late final ReaderSettingsNotifier _readerSettingsNotifier;
   late final ReaderProgressPersistence _progressPersistence;
   late final ReaderSessionTracker _sessionTracker;
 
@@ -105,6 +106,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _sessionTracker = ReaderSessionTracker(bookFormat: 'epub');
 
     _brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
+    // Captured for dispose(), where `ref` is already unusable.
+    _readerSettingsNotifier = ref.read(readerSettingsProvider.notifier);
     _statsRepository = ref.read(statsRepositoryProvider);
     // Capture the repository once so the persistence callback never reaches
     // back through `ref` after the widget begins unmounting (queued saves can
@@ -159,6 +162,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _epubController.detach();
     unawaited(_progressPersistence.dispose());
     unawaited(_brightnessNotifier.resetBrightness());
+    _readerSettingsNotifier.clearCurrentBook();
     WakelockPlus.disable();
     super.dispose();
   }

@@ -448,6 +448,28 @@ void main() {
       expect(spyRepo.lastFuriganaMode.value, 'all');
     });
 
+    test('clearCurrentBook stops later per-book override writes', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final spyRepo = _SpyBookRepository(db);
+      final harness = _createHarness(bookRepo: spyRepo);
+      addTearDown(harness.dispose);
+      final container = harness.container;
+
+      final notifier = container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(bookId: 42, language: 'ja');
+      notifier.setVerticalText(false);
+      await Future<void>.delayed(Duration.zero);
+      expect(spyRepo.updateDisplayOverridesCalls, 1);
+
+      // Simulates closing the reader: global surfaces (like the settings
+      // screen) must no longer write to book 42.
+      notifier.clearCurrentBook();
+      notifier.setVerticalText(true);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spyRepo.updateDisplayOverridesCalls, 1);
+    });
+
     test('manga setters never write per-book overrides', () async {
       final db = AppDatabase(NativeDatabase.memory());
       final spyRepo = _SpyBookRepository(db);
