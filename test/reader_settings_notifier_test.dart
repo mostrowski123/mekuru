@@ -115,12 +115,23 @@ void main() {
       final notifier = container.read(readerSettingsProvider.notifier);
       notifier.setFontSize(20);
       notifier.setMangaPageTurnEdgeZoneWidthFraction(0.12);
+      notifier.setMangaViewMode(MangaViewMode.scroll);
+      notifier.setMangaReadingDirection(ReaderDirection.ltr);
+      notifier.setMangaAutoCrop(true);
+      notifier.setMangaTransparentLookup(false);
 
       await Future<void>.delayed(Duration.zero);
 
-      expect(fakeStorage.saveCalls, greaterThanOrEqualTo(2));
+      expect(fakeStorage.saveCalls, greaterThanOrEqualTo(6));
       expect(fakeStorage.savedSettings, isNotNull);
       expect(fakeStorage.savedSettings!.fontSize, 20);
+      expect(fakeStorage.savedSettings!.mangaViewMode, MangaViewMode.scroll);
+      expect(
+        fakeStorage.savedSettings!.mangaReadingDirection,
+        ReaderDirection.ltr,
+      );
+      expect(fakeStorage.savedSettings!.mangaAutoCrop, isTrue);
+      expect(fakeStorage.savedSettings!.mangaTransparentLookup, isFalse);
       expect(
         fakeStorage.savedSettings!.mangaPageTurnEdgeZoneWidthFraction,
         0.12,
@@ -435,6 +446,24 @@ void main() {
       expect(spyRepo.lastBookId, 42);
       expect(spyRepo.lastFuriganaMode.present, isTrue);
       expect(spyRepo.lastFuriganaMode.value, 'all');
+    });
+
+    test('manga setters never write per-book overrides', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final spyRepo = _SpyBookRepository(db);
+      final harness = _createHarness(bookRepo: spyRepo);
+      addTearDown(harness.dispose);
+      final container = harness.container;
+
+      final notifier = container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(bookId: 42, language: 'ja');
+      notifier.setMangaViewMode(MangaViewMode.scroll);
+      notifier.setMangaReadingDirection(ReaderDirection.ltr);
+      notifier.setMangaAutoCrop(true);
+      notifier.setMangaTransparentLookup(false);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spyRepo.updateDisplayOverridesCalls, 0);
     });
 
     test('per-book furigana override is remembered on reopen', () {

@@ -102,6 +102,28 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _persistSettings();
   }
 
+  void setMangaViewMode(MangaViewMode mode) {
+    state = state.copyWith(mangaViewMode: mode);
+    _persistSettings();
+  }
+
+  /// Manga reading direction is a global setting (unlike the per-book EPUB
+  /// [setReadingDirection]) — it must never write per-book overrides.
+  void setMangaReadingDirection(ReaderDirection direction) {
+    state = state.copyWith(mangaReadingDirection: direction);
+    _persistSettings();
+  }
+
+  void setMangaAutoCrop(bool enabled) {
+    state = state.copyWith(mangaAutoCrop: enabled);
+    _persistSettings();
+  }
+
+  void setMangaTransparentLookup(bool transparent) {
+    state = state.copyWith(mangaTransparentLookup: transparent);
+    _persistSettings();
+  }
+
   void setColorMode(ColorMode mode) {
     state = state.copyWith(colorMode: mode);
     _persistSettings();
