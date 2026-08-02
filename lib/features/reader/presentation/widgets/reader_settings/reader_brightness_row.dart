@@ -41,9 +41,12 @@ class ReaderBrightnessRow extends ConsumerWidget {
           onSettingChanged('brightness', 'system');
         },
       ),
-      onChanged: brightnessNotifier.setBrightness,
-      onChangeEnd: (value) =>
-          onSettingChanged('brightness', (value * 100).round()),
+      // Preview during the drag; persist once on release.
+      onChanged: brightnessNotifier.previewBrightness,
+      onChangeEnd: (value) {
+        brightnessNotifier.setBrightness(value);
+        onSettingChanged('brightness', (value * 100).round());
+      },
     );
   }
 }

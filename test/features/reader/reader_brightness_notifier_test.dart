@@ -45,6 +45,17 @@ void main() {
       expect(storage.savedSettings?.brightness, 0.3);
     });
 
+    test('previewBrightness updates the slider without persisting', () async {
+      final storage = _FakeReaderSettingsStorage();
+      final container = _createContainer(storage);
+      final notifier = container.read(readerBrightnessProvider.notifier);
+
+      await notifier.previewBrightness(0.3);
+
+      expect(container.read(readerBrightnessProvider).sliderValue, 0.3);
+      expect(storage.savedSettings, isNull);
+    });
+
     test('followSystemBrightness clears the override', () async {
       final storage = _FakeReaderSettingsStorage();
       final container = _createContainer(storage);

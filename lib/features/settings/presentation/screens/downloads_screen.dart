@@ -13,6 +13,7 @@ import 'package:mekuru/features/settings/presentation/providers/kanjidic_provide
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen listing all downloadable assets (dictionaries, kanji data, etc.).
@@ -142,7 +143,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               ),
             ),
           ),
-          _SectionHeader(title: l10n.downloadsSectionDictionaries),
+          SettingsSectionHeader(title: l10n.downloadsSectionDictionaries),
 
           // JMdict English
           _JmdictTile(state: jmdictState, theme: theme),
@@ -209,7 +210,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           const Divider(),
 
           // ── Assets ──
-          _SectionHeader(title: l10n.downloadsSectionAssets),
+          SettingsSectionHeader(title: l10n.downloadsSectionAssets),
 
           // KanjiVG
           _KanjiVgTile(state: kanjiVgState, theme: theme),
@@ -337,26 +338,6 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 }
 
 // ── Shared helper widgets ──
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
 
 class _DownloadProgress extends StatelessWidget {
   const _DownloadProgress({

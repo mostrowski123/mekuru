@@ -6,15 +6,8 @@ import 'package:mekuru/features/reader/presentation/providers/reader_providers.d
 import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../shared/reader_settings_test_helpers.dart';
 import '../../../../test_app.dart';
-
-class _FakeProUnlocked extends ProUnlockedNotifier {
-  _FakeProUnlocked(this._unlocked);
-  final bool _unlocked;
-
-  @override
-  Future<bool> build() async => _unlocked;
-}
 
 Future<ProviderContainer> _pumpScreen(
   WidgetTester tester, {
@@ -22,7 +15,9 @@ Future<ProviderContainer> _pumpScreen(
 }) async {
   final container = ProviderContainer(
     overrides: [
-      proUnlockedProvider.overrideWith(() => _FakeProUnlocked(proUnlocked)),
+      proUnlockedProvider.overrideWith(
+        () => FakeProUnlockedNotifier(proUnlocked),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -37,15 +32,6 @@ Future<ProviderContainer> _pumpScreen(
   return container;
 }
 
-Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(
-    finder,
-    150,
-    scrollable: find.byType(Scrollable).first,
-  );
-  await tester.pumpAndSettle();
-}
-
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -54,9 +40,9 @@ void main() {
   testWidgets('renders the three section headers', (tester) async {
     await _pumpScreen(tester);
     expect(find.text('All books'), findsOneWidget);
-    await _scrollTo(tester, find.text('EPUB'));
+    await scrollSettingsTo(tester, find.text('EPUB'));
     expect(find.text('EPUB'), findsOneWidget);
-    await _scrollTo(tester, find.text('Manga'));
+    await scrollSettingsTo(tester, find.text('Manga'));
     expect(find.text('Manga'), findsOneWidget);
   });
 
@@ -74,7 +60,7 @@ void main() {
 
   testWidgets('Pro manga tiles are hidden without Pro', (tester) async {
     await _pumpScreen(tester);
-    await _scrollTo(tester, find.text('Manga'));
+    await scrollSettingsTo(tester, find.text('Manga'));
     // Scroll to the very bottom to be sure the Pro tiles would have built.
     await tester.drag(
       find.byType(Scrollable).first,

@@ -3,13 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_settings_rows.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
-import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
-    as ocr_server_config;
+import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_setting_segments.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/widgets/ocr_server_url_dialog.dart';
-import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
@@ -68,11 +67,11 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
               color: theme.colorScheme.primary,
             ),
             title: Text(l10n.settingsColorModeTitle),
-            subtitle: Text(_colorModeLabel(l10n, settings.colorMode)),
+            subtitle: Text(colorModeLabel(l10n, settings.colorMode)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              _showColorModePicker(context, ref, settings.colorMode);
+              _showColorModePicker(settings.colorMode);
             },
           ),
           if (settings.colorMode == ColorMode.sepia)
@@ -135,9 +134,6 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
                   min: 0.01,
                   max: 0.20,
                   divisions: 19,
-                  sliderLabel: l10n.settingsPercentValue(
-                    percent: (settings.swipeSensitivity * 100).round(),
-                  ),
                   helperText: l10n.settingsSwipeSensitivityHint,
                   onChanged: notifier.setSwipeSensitivity,
                 ),
@@ -163,75 +159,21 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
 
           // ── Manga ──
           SettingsSectionHeader(title: l10n.settingsReadingSectionManga),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SettingsSegmentedRow<MangaViewMode>(
-                  label: l10n.mangaViewModeTitle,
-                  segments: [
-                    ButtonSegment(
-                      value: MangaViewMode.singlePage,
-                      icon: const Icon(Icons.looks_one),
-                      label: Text(l10n.mangaViewModeSingle),
-                    ),
-                    ButtonSegment(
-                      value: MangaViewMode.twoPageSpread,
-                      icon: const Icon(Icons.looks_two),
-                      label: Text(l10n.mangaViewModeSpread),
-                    ),
-                    ButtonSegment(
-                      value: MangaViewMode.scroll,
-                      icon: const Icon(Icons.view_day),
-                      label: Text(l10n.mangaViewModeScroll),
-                    ),
-                  ],
-                  selected: settings.mangaViewMode,
-                  onSelected: notifier.setMangaViewMode,
-                ),
-                const SizedBox(height: 16),
-                SettingsSegmentedRow<ReaderDirection>(
-                  label: l10n.readerReadingDirectionTitle,
-                  segments: [
-                    ButtonSegment(
-                      value: ReaderDirection.rtl,
-                      label: Text(l10n.readerReadingDirectionRtl),
-                    ),
-                    ButtonSegment(
-                      value: ReaderDirection.ltr,
-                      label: Text(l10n.readerReadingDirectionLtr),
-                    ),
-                  ],
-                  selected: settings.mangaReadingDirection,
-                  onSelected: notifier.setMangaReadingDirection,
-                ),
-                const SizedBox(height: 16),
-                SettingsSliderRow(
-                  icon: Icons.touch_app,
-                  label: l10n.mangaPageTurnEdgeZoneTitle,
-                  valueLabel: l10n.settingsPercentValue(
-                    percent: (settings.mangaPageTurnEdgeZoneWidthFraction * 100)
-                        .round(),
-                  ),
-                  value: settings.mangaPageTurnEdgeZoneWidthFraction,
-                  min: kMinMangaPageTurnEdgeZoneWidthFraction,
-                  max: kMaxMangaPageTurnEdgeZoneWidthFraction,
-                  divisions: 20,
-                  helperText: l10n.mangaPageTurnEdgeZoneSubtitle,
-                  onChanged: notifier.setMangaPageTurnEdgeZoneWidthFraction,
-                ),
-                const SizedBox(height: 8),
+                MangaViewModeRow(),
+                SizedBox(height: 16),
+                MangaReadingDirectionRow(),
+                SizedBox(height: 16),
+                MangaEdgeZoneRow(),
+                SizedBox(height: 8),
               ],
             ),
           ),
-          SettingsSwitchRow(
-            icon: Icons.opacity,
-            title: l10n.mangaTransparentLookupTitle,
-            subtitle: l10n.mangaTransparentLookupSubtitle,
-            value: settings.mangaTransparentLookup,
-            onChanged: notifier.setMangaTransparentLookup,
-          ),
+          const MangaTransparentLookupRow(),
           if (isProUnlocked) ...[
             ListTile(
               leading: Icon(Icons.tune, color: theme.colorScheme.primary),
@@ -296,7 +238,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       AppHaptics.light();
-                      _showOcrServerUrlDialog(context, ref);
+                      _showOcrServerUrlDialog();
                     },
                   );
                 },
@@ -308,24 +250,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
     );
   }
 
-  static String _colorModeLabel(AppLocalizations l10n, ColorMode mode) =>
-      switch (mode) {
-        ColorMode.normal => l10n.settingsColorModeNormal,
-        ColorMode.sepia => l10n.settingsColorModeSepia,
-        ColorMode.dark => l10n.settingsColorModeDark,
-      };
-
-  static IconData _colorModeIcon(ColorMode mode) => switch (mode) {
-    ColorMode.normal => Icons.brightness_5,
-    ColorMode.sepia => Icons.filter_vintage,
-    ColorMode.dark => Icons.dark_mode,
-  };
-
-  void _showColorModePicker(
-    BuildContext context,
-    WidgetRef ref,
-    ColorMode currentMode,
-  ) {
+  void _showColorModePicker(ColorMode currentMode) {
     final l10n = context.l10n;
 
     showModalBottomSheet(
@@ -344,8 +269,8 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             const Divider(height: 1),
             for (final mode in ColorMode.values)
               ListTile(
-                leading: Icon(_colorModeIcon(mode)),
-                title: Text(_colorModeLabel(l10n, mode)),
+                leading: Icon(colorModeIcon(mode)),
+                title: Text(colorModeLabel(l10n, mode)),
                 trailing: currentMode == mode
                     ? Icon(
                         Icons.check,
@@ -364,19 +289,15 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
     );
   }
 
-  Future<void> _showOcrServerUrlDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _showOcrServerUrlDialog() async {
     final savedCustomBearerKey =
         await _ocrAuthSecretStorage.loadCustomServerBearerKey() ?? '';
     final currentUrl = ref.read(ocrServerUrlProvider);
-    final initialUrl =
-        ocr_server_config.isUnsetOrBuiltInOcrServerUrl(currentUrl)
+    final initialUrl = isUnsetOrBuiltInOcrServerUrl(currentUrl)
         ? ''
         : currentUrl;
 
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     final result = await showDialog<({String url, String? bearerKey})>(
       context: context,

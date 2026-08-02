@@ -9,6 +9,7 @@ import 'package:mekuru/features/backup/presentation/widgets/restore_conflict_dia
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 
 class BackupSettingsScreen extends ConsumerStatefulWidget {
   const BackupSettingsScreen({super.key});
@@ -100,7 +101,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
               ),
             ),
           ),
-          _SectionHeader(title: l10n.backupSectionBackup),
+          SettingsSectionHeader(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            title: l10n.backupSectionBackup,
+          ),
           ListTile(
             leading: Icon(
               Icons.backup_outlined,
@@ -142,7 +146,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                   },
           ),
           const Divider(),
-          _SectionHeader(title: l10n.backupSectionAutoBackup),
+          SettingsSectionHeader(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            title: l10n.backupSectionAutoBackup,
+          ),
           ListTile(
             leading: Icon(
               Icons.schedule_outlined,
@@ -161,7 +168,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             },
           ),
           const Divider(),
-          _SectionHeader(title: l10n.backupSectionRestore),
+          SettingsSectionHeader(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            title: l10n.backupSectionRestore,
+          ),
           ListTile(
             leading: Icon(
               Icons.file_open_outlined,
@@ -178,7 +188,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                   },
           ),
           const Divider(),
-          _SectionHeader(title: l10n.backupSectionHistory),
+          SettingsSectionHeader(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            title: l10n.backupSectionHistory,
+          ),
           backupHistory.when(
             data: (backups) {
               if (backups.isEmpty) {
@@ -492,24 +505,6 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             child: Text(_backupIntervalLabel(l10n, interval)),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-        ),
       ),
     );
   }
