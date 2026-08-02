@@ -11,11 +11,10 @@ import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:path/path.dart' as p;
 
-/// Manga view modes.
-enum MangaViewMode { singlePage, twoPageSpread, scroll }
-
-/// Reading direction for manga pages.
-enum MangaReadingDirection { rtl, ltr }
+// MangaViewMode lives with the other persisted reader settings; re-exported
+// here so manga UI code keeps a single import for manga reader state.
+export 'package:mekuru/features/reader/data/models/reader_settings.dart'
+    show MangaViewMode;
 
 /// Loads and caches the mokuro page data for a manga book.
 ///
@@ -67,59 +66,18 @@ final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
   return mokuroBook;
 });
 
-/// Current manga view mode.
-class MangaViewModeNotifier extends Notifier<MangaViewMode> {
-  @override
-  MangaViewMode build() => MangaViewMode.singlePage;
-
-  void setMode(MangaViewMode mode) => state = mode;
-}
-
-final mangaViewModeProvider =
-    NotifierProvider<MangaViewModeNotifier, MangaViewMode>(
-      MangaViewModeNotifier.new,
-    );
-
-/// Whether auto-crop is enabled.
-class MangaAutoCropNotifier extends Notifier<bool> {
+/// Whether the debug word-overlay boxes are drawn in the manga reader.
+/// Session-only by design — resets on every app launch.
+class MangaDebugWordOverlayNotifier extends Notifier<bool> {
   @override
   bool build() => false;
-
-  void toggle() => state = !state;
 
   void setEnabled(bool value) => state = value;
 }
 
-final mangaAutoCropProvider = NotifierProvider<MangaAutoCropNotifier, bool>(
-  MangaAutoCropNotifier.new,
-);
-
-/// Reading direction for manga.
-class MangaReadingDirectionNotifier extends Notifier<MangaReadingDirection> {
-  @override
-  MangaReadingDirection build() => MangaReadingDirection.rtl;
-
-  void toggle() => state = state == MangaReadingDirection.rtl
-      ? MangaReadingDirection.ltr
-      : MangaReadingDirection.rtl;
-}
-
-final mangaReadingDirectionProvider =
-    NotifierProvider<MangaReadingDirectionNotifier, MangaReadingDirection>(
-      MangaReadingDirectionNotifier.new,
-    );
-
-/// Whether the manga lookup sheet uses a transparent background.
-class MangaLookupTransparencyNotifier extends Notifier<bool> {
-  @override
-  bool build() => true; // transparent by default
-
-  void toggle() => state = !state;
-}
-
-final mangaLookupTransparencyProvider =
-    NotifierProvider<MangaLookupTransparencyNotifier, bool>(
-      MangaLookupTransparencyNotifier.new,
+final mangaDebugWordOverlayProvider =
+    NotifierProvider<MangaDebugWordOverlayNotifier, bool>(
+      MangaDebugWordOverlayNotifier.new,
     );
 
 final mangaLookupOverrideStorageProvider = Provider<MangaLookupOverrideStorage>(

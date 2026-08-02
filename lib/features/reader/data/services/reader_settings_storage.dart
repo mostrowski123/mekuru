@@ -21,6 +21,10 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _furiganaModeKey = 'reader.furigana_mode';
   static const _splitVerticalTextKey = 'reader.split_vertical_text';
   static const _brightnessKey = 'reader.brightness';
+  static const _mangaViewModeKey = 'reader.manga_view_mode';
+  static const _mangaReadingDirectionKey = 'reader.manga_reading_direction';
+  static const _mangaAutoCropKey = 'reader.manga_auto_crop';
+  static const _mangaTransparentLookupKey = 'reader.manga_transparent_lookup';
 
   /// Every SharedPreferences key this storage reads or writes. The backup
   /// service derives its reader key list from this, so a key added here is
@@ -38,6 +42,10 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     _furiganaModeKey,
     _splitVerticalTextKey,
     _brightnessKey,
+    _mangaViewModeKey,
+    _mangaReadingDirectionKey,
+    _mangaAutoCropKey,
+    _mangaTransparentLookupKey,
   ];
 
   @override
@@ -68,6 +76,15 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       furiganaMode: furiganaModeFromString(prefs.getString(_furiganaModeKey)),
       splitVerticalText: prefs.getBool(_splitVerticalTextKey) ?? false,
       brightness: prefs.getDouble(_brightnessKey),
+      mangaViewMode: mangaViewModeFromString(
+        prefs.getString(_mangaViewModeKey),
+      ),
+      mangaReadingDirection: readerDirectionFromString(
+        prefs.getString(_mangaReadingDirectionKey),
+      ),
+      mangaAutoCrop: prefs.getBool(_mangaAutoCropKey) ?? false,
+      mangaTransparentLookup:
+          prefs.getBool(_mangaTransparentLookupKey) ?? true,
     );
   }
 
@@ -89,6 +106,19 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     await prefs.setBool(_disableLinksKey, settings.disableLinks);
     await prefs.setString(_furiganaModeKey, settings.furiganaMode.storageValue);
     await prefs.setBool(_splitVerticalTextKey, settings.splitVerticalText);
+    await prefs.setString(
+      _mangaViewModeKey,
+      settings.mangaViewMode.storageValue,
+    );
+    await prefs.setString(
+      _mangaReadingDirectionKey,
+      settings.mangaReadingDirection.storageValue,
+    );
+    await prefs.setBool(_mangaAutoCropKey, settings.mangaAutoCrop);
+    await prefs.setBool(
+      _mangaTransparentLookupKey,
+      settings.mangaTransparentLookup,
+    );
     // An absent key means "follow the system brightness".
     final brightness = settings.brightness;
     if (brightness == null) {

@@ -350,7 +350,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
 
   /// Navigate forward or backward by [delta] pages/spreads depending on mode.
   void _navigate(int delta, int totalPages, List<PageSpread> spreads) {
-    final viewMode = ref.read(mangaViewModeProvider);
+    final viewMode = ref.read(readerSettingsProvider).mangaViewMode;
     switch (viewMode) {
       case MangaViewMode.singlePage:
         _goToPage(_currentPage + delta, totalPages);
@@ -383,7 +383,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     final showAtTop = globalPosition.dy > screenHeight * 0.5;
 
     // Read transparency preference
-    final transparent = ref.read(mangaLookupTransparencyProvider);
+    final transparent = ref.read(readerSettingsProvider).mangaTransparentLookup;
 
     // Instant feedback: highlight the tapped word's box. Refined to the
     // resolved word's span once the lookup completes.
@@ -593,11 +593,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         .clamp(0.0, 1.0)
         .toDouble();
 
-    final direction = ref.read(mangaReadingDirectionProvider);
     final readerSettings = ref.read(readerSettingsProvider);
-    final readerDir = direction == MangaReadingDirection.rtl
-        ? ReaderDirection.rtl
-        : ReaderDirection.ltr;
+    final readerDir = readerSettings.mangaReadingDirection;
 
     final intent = resolveTapIntent(
       normalizedX: normalizedX,
@@ -629,12 +626,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       context: context,
       builder: (context) => Consumer(
         builder: (context, ref, _) {
-          final viewMode = ref.watch(mangaViewModeProvider);
-          final direction = ref.watch(mangaReadingDirectionProvider);
-          final transparent = ref.watch(mangaLookupTransparencyProvider);
-          final autoCrop = ref.watch(mangaAutoCropProvider);
           final readerSettings = ref.watch(readerSettingsProvider);
           final readerNotifier = ref.read(readerSettingsProvider.notifier);
+          final viewMode = readerSettings.mangaViewMode;
+          final direction = readerSettings.mangaReadingDirection;
+          final transparent = readerSettings.mangaTransparentLookup;
+          final autoCrop = readerSettings.mangaAutoCrop;
           final l10n = context.l10n;
           final theme = Theme.of(context);
           final hasComputedAutoCrop =
@@ -678,9 +675,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     ],
                     selected: {viewMode},
                     onSelectionChanged: (value) {
-                      ref
-                          .read(mangaViewModeProvider.notifier)
-                          .setMode(value.first);
+                      readerNotifier.setMangaViewMode(value.first);
                     },
                   ),
                   const SizedBox(height: 8),
@@ -689,12 +684,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     leading: const Icon(Icons.swap_horiz),
                     title: Text(l10n.readerReadingDirectionTitle),
                     subtitle: Text(
-                      direction == MangaReadingDirection.rtl
+                      direction == ReaderDirection.rtl
                           ? l10n.readerReadingDirectionRtl
                           : l10n.readerReadingDirectionLtr,
                     ),
                     onTap: () {
-                      ref.read(mangaReadingDirectionProvider.notifier).toggle();
+                      readerNotifier.setMangaReadingDirection(
+                        direction == ReaderDirection.rtl
+                            ? ReaderDirection.ltr
+                            : ReaderDirection.rtl,
+                      );
                     },
                   ),
                   Padding(
@@ -779,11 +778,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     title: Text(l10n.mangaTransparentLookupTitle),
                     subtitle: Text(l10n.mangaTransparentLookupSubtitle),
                     value: transparent,
-                    onChanged: (value) {
-                      ref
-                          .read(mangaLookupTransparencyProvider.notifier)
-                          .toggle();
-                    },
+                    onChanged: readerNotifier.setMangaTransparentLookup,
                   ),
                   // Debug overlay toggle
                   SwitchListTile(
@@ -816,7 +811,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     }
 
     if (!enable) {
-      ref.read(mangaAutoCropProvider.notifier).setEnabled(false);
+      ref.read(readerSettingsProvider.notifier).setMangaAutoCrop(false);
       return;
     }
 
@@ -834,7 +829,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
             MokuroBook.currentAutoCropVersion;
     if (alreadyAutoCropped) {
       _autoCropComputedThisSession = true;
-      ref.read(mangaAutoCropProvider.notifier).setEnabled(true);
+      ref.read(readerSettingsProvider.notifier).setMangaAutoCrop(true);
       return;
     }
 
@@ -845,7 +840,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     return _runAutoCropComputation(
       ref,
       force: true,
-      enableAfterCompute: ref.read(mangaAutoCropProvider),
+      enableAfterCompute: ref.read(readerSettingsProvider).mangaAutoCrop,
     );
   }
 
@@ -921,7 +916,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           );
       _autoCropComputedThisSession = true;
       ref.invalidate(mangaPagesProvider(widget.book.id));
-      ref.read(mangaAutoCropProvider.notifier).setEnabled(enableAfterCompute);
+      ref
+          .read(readerSettingsProvider.notifier)
+          .setMangaAutoCrop(enableAfterCompute);
       if (force && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.mangaAutoCropBoundsRefreshed)),
@@ -944,10 +941,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   @override
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
-    final direction = ref.watch(mangaReadingDirectionProvider);
+    final readerSettings = ref.watch(readerSettingsProvider);
+    final direction = readerSettings.mangaReadingDirection;
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
-    final autoCrop = isProUnlocked && ref.watch(mangaAutoCropProvider);
-    final viewMode = ref.watch(mangaViewModeProvider);
+    final autoCrop = isProUnlocked && readerSettings.mangaAutoCrop;
+    final viewMode = readerSettings.mangaViewMode;
     final isOcrRunning = ref.watch(isOcrRunningProvider(widget.book.id));
     final enableWordOverlays = !isOcrRunning;
     final bottomSliderPadding = bottomControlPadding(MediaQuery.of(context));
@@ -1004,7 +1002,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               if (mounted) _precacheAdjacentPages(_currentPage, totalPages);
             });
 
-            final isRtl = direction == MangaReadingDirection.rtl;
+            final isRtl = direction == ReaderDirection.rtl;
             final spreads = viewMode == MangaViewMode.twoPageSpread
                 ? computeSpreads(totalPages, isRtl: isRtl)
                 : <PageSpread>[];

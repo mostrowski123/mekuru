@@ -40,6 +40,21 @@ extension FuriganaModeStorage on FuriganaMode {
   String get storageValue => name;
 }
 
+/// Manga page layout modes.
+enum MangaViewMode { singlePage, twoPageSpread, scroll }
+
+MangaViewMode mangaViewModeFromString(String? value) {
+  return switch (value) {
+    'twoPageSpread' => MangaViewMode.twoPageSpread,
+    'scroll' => MangaViewMode.scroll,
+    _ => MangaViewMode.singlePage,
+  };
+}
+
+extension MangaViewModeStorage on MangaViewMode {
+  String get storageValue => name;
+}
+
 /// Default width fraction reserved for page-turn taps on each device edge in
 /// the manga reader.
 const double kDefaultMangaPageTurnEdgeZoneWidthFraction = 0.15;
@@ -115,6 +130,19 @@ class ReaderSettings {
   /// `null` means follow the system brightness.
   final double? brightness;
 
+  /// Manga: page layout mode (single page, two-page spread, or scroll).
+  final MangaViewMode mangaViewMode;
+
+  /// Manga: reading direction for page turns and spread ordering.
+  final ReaderDirection mangaReadingDirection;
+
+  /// Manga: whether pages are cropped to their detected content bounds
+  /// (Pro feature).
+  final bool mangaAutoCrop;
+
+  /// Manga: whether the lookup sheet uses a transparent background.
+  final bool mangaTransparentLookup;
+
   const ReaderSettings({
     this.fontSize = 18,
     this.verticalText = true,
@@ -131,6 +159,10 @@ class ReaderSettings {
     this.disableLinks = false,
     this.furiganaMode = FuriganaMode.off,
     this.brightness,
+    this.mangaViewMode = MangaViewMode.singlePage,
+    this.mangaReadingDirection = ReaderDirection.rtl,
+    this.mangaAutoCrop = false,
+    this.mangaTransparentLookup = true,
   });
 
   ReaderSettings copyWith({
@@ -149,6 +181,10 @@ class ReaderSettings {
     FuriganaMode? furiganaMode,
     double? brightness,
     bool clearBrightness = false,
+    MangaViewMode? mangaViewMode,
+    ReaderDirection? mangaReadingDirection,
+    bool? mangaAutoCrop,
+    bool? mangaTransparentLookup,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -167,6 +203,12 @@ class ReaderSettings {
       disableLinks: disableLinks ?? this.disableLinks,
       furiganaMode: furiganaMode ?? this.furiganaMode,
       brightness: clearBrightness ? null : (brightness ?? this.brightness),
+      mangaViewMode: mangaViewMode ?? this.mangaViewMode,
+      mangaReadingDirection:
+          mangaReadingDirection ?? this.mangaReadingDirection,
+      mangaAutoCrop: mangaAutoCrop ?? this.mangaAutoCrop,
+      mangaTransparentLookup:
+          mangaTransparentLookup ?? this.mangaTransparentLookup,
     );
   }
 }
