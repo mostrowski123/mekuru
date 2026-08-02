@@ -1030,7 +1030,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupScopeNoteRestore =>
-      'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Reading stats are only restored if this device has no stats yet. Matching dictionary settings can be applied later from Dictionary Manager.';
+      'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.';
 
   @override
   String get backupSectionAutoBackup => 'Auto-Backup';
@@ -1196,7 +1196,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'This will restore settings and user data from $fileName, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Reading stats are only restored if this device has no stats yet. Your current settings will be overwritten.';
+    return 'This will restore settings and user data from $fileName, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Your current settings will be overwritten.';
   }
 
   @override

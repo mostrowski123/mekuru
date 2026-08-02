@@ -1033,7 +1033,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupScopeNoteRestore =>
-      'Setelah memulihkan, impor ulang konten EPUB atau manga yang sama. Jika kontennya sama persis, riwayat Anda akan kembali. Statistik membaca hanya dipulihkan jika perangkat ini belum memiliki statistik. Pengaturan kamus yang cocok dapat diterapkan nanti dari Pengelola Kamus.';
+      'Setelah memulihkan, impor ulang konten EPUB atau manga yang sama. Jika kontennya sama persis, riwayat Anda akan kembali. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan kamus yang cocok dapat diterapkan nanti dari Pengelola Kamus.';
 
   @override
   String get backupSectionAutoBackup => 'Cadangan Otomatis';
@@ -1200,7 +1200,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'Ini akan memulihkan pengaturan dan data pengguna dari $fileName, seperti bookmark, sorotan, dan daftar kosakata. Ini tidak memulihkan file EPUB, manga, atau kamus yang sebenarnya. Setelah memulihkan, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Statistik membaca hanya dipulihkan jika perangkat ini belum memiliki statistik. Pengaturan Anda saat ini akan ditimpa.';
+    return 'Ini akan memulihkan pengaturan dan data pengguna dari $fileName, seperti bookmark, sorotan, dan daftar kosakata. Ini tidak memulihkan file EPUB, manga, atau kamus yang sebenarnya. Setelah memulihkan, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan Anda saat ini akan ditimpa.';
   }
 
   @override

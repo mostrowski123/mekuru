@@ -1318,7 +1318,7 @@
   "@backupScopeNoteBody": {
     "description": "Body text for the informational note explaining backup scope."
   },
-  "backupScopeNoteRestore": "Setelah memulihkan, impor ulang konten EPUB atau manga yang sama. Jika kontennya sama persis, riwayat Anda akan kembali. Statistik membaca hanya dipulihkan jika perangkat ini belum memiliki statistik. Pengaturan kamus yang cocok dapat diterapkan nanti dari Pengelola Kamus.",
+  "backupScopeNoteRestore": "Setelah memulihkan, impor ulang konten EPUB atau manga yang sama. Jika kontennya sama persis, riwayat Anda akan kembali. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan kamus yang cocok dapat diterapkan nanti dari Pengelola Kamus.",
   "@backupScopeNoteRestore": {
     "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
@@ -1528,7 +1528,7 @@
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "Ini akan memulihkan pengaturan dan data pengguna dari {fileName}, seperti bookmark, sorotan, dan daftar kosakata. Ini tidak memulihkan file EPUB, manga, atau kamus yang sebenarnya. Setelah memulihkan, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Statistik membaca hanya dipulihkan jika perangkat ini belum memiliki statistik. Pengaturan Anda saat ini akan ditimpa.",
+  "backupRestoreDialogBody": "Ini akan memulihkan pengaturan dan data pengguna dari {fileName}, seperti bookmark, sorotan, dan daftar kosakata. Ini tidak memulihkan file EPUB, manga, atau kamus yang sebenarnya. Setelah memulihkan, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan Anda saat ini akan ditimpa.",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {
