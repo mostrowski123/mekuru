@@ -15,9 +15,17 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 ///
 /// Pops with `true` on success, `null` on cancel.
 class AnkiCardCreationScreen extends ConsumerStatefulWidget {
-  const AnkiCardCreationScreen({super.key, required this.noteData});
+  const AnkiCardCreationScreen({
+    super.key,
+    required this.noteData,
+    this.saveSource = 'other',
+  });
 
   final AnkiNoteData noteData;
+
+  /// Surface the card was created from, recorded on the word event
+  /// (`'epub'`, `'manga'`, or `'other'` for non-reader surfaces).
+  final String saveSource;
 
   @override
   ConsumerState<AnkiCardCreationScreen> createState() =>
@@ -210,6 +218,7 @@ class _AnkiCardCreationScreenState
         await statsRepository.insertWordEvent(
           kind: 'anki',
           expression: widget.noteData.expression,
+          source: widget.saveSource,
         );
       } catch (e, st) {
         await Sentry.captureException(e, stackTrace: st);

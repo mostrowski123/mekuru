@@ -352,7 +352,10 @@ class _GroupedDictionaryEntryHeaderState
     Navigator.of(context)
         .push<bool>(
           MaterialPageRoute(
-            builder: (_) => AnkiCardCreationScreen(noteData: noteData),
+            builder: (_) => AnkiCardCreationScreen(
+              noteData: noteData,
+              saveSource: widget.saveSource,
+            ),
           ),
         )
         .then((result) {
