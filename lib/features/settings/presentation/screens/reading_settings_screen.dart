@@ -254,39 +254,15 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
   void _showColorModePicker(ColorMode currentMode) {
     final l10n = context.l10n;
 
-    showModalBottomSheet(
+    showSettingsOptionPickerSheet(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.settingsColorModeTitle,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            for (final mode in ColorMode.values)
-              ListTile(
-                leading: Icon(colorModeIcon(mode)),
-                title: Text(colorModeLabel(l10n, mode)),
-                trailing: currentMode == mode
-                    ? Icon(
-                        Icons.check,
-                        color: Theme.of(context).colorScheme.primary,
-                      )
-                    : null,
-                onTap: () {
-                  AppHaptics.medium();
-                  ref.read(readerSettingsProvider.notifier).setColorMode(mode);
-                  Navigator.of(sheetContext).pop();
-                },
-              ),
-          ],
-        ),
-      ),
+      title: l10n.settingsColorModeTitle,
+      values: ColorMode.values,
+      selected: currentMode,
+      labelOf: (mode) => colorModeLabel(l10n, mode),
+      iconOf: colorModeIcon,
+      onSelected: (mode) =>
+          ref.read(readerSettingsProvider.notifier).setColorMode(mode),
     );
   }
 
