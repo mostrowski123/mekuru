@@ -1042,11 +1042,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get backupScopeNoteBody =>
-      'Las copias de seguridad incluyen tu configuración y los datos que creaste en Mekuru, como marcadores, resaltados y listas de vocabulario. No incluyen los archivos EPUB o manga reales.';
+      'Las copias de seguridad incluyen tu configuración, el orden y el estado de activación de los diccionarios, y los datos que creaste en Mekuru, como marcadores, resaltados, listas de vocabulario y estadísticas de lectura. No incluyen los archivos reales de EPUB, manga o diccionarios.';
 
   @override
   String get backupScopeNoteRestore =>
-      'Después de restaurar, vuelve a importar el mismo contenido EPUB o manga. Si el contenido coincide exactamente, tu historial volverá.';
+      'Después de restaurar, vuelve a importar el mismo contenido EPUB o manga. Si el contenido coincide exactamente, tu historial volverá. Las estadísticas de lectura solo se restauran si este dispositivo aún no tiene estadísticas. La configuración de diccionarios coincidente se puede aplicar más tarde desde el Gestor de diccionarios.';
 
   @override
   String get backupSectionAutoBackup => 'Copia automática';
@@ -1214,7 +1214,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'Esto restaurará la configuración y los datos de usuario desde $fileName, como marcadores, resaltados y listas de vocabulario. No restaura los archivos EPUB o manga reales. Después de restaurar, vuelve a importar el mismo contenido EPUB o manga para recuperar su historial. Tu configuración actual será sobrescrita.';
+    return 'Esto restaurará la configuración y los datos de usuario desde $fileName, como marcadores, resaltados y listas de vocabulario. No restaura los archivos reales de EPUB, manga o diccionarios. Después de restaurar, vuelve a importar el mismo contenido EPUB o manga para recuperar su historial. Las estadísticas de lectura solo se restauran si este dispositivo aún no tiene estadísticas. Tu configuración actual será sobrescrita.';
   }
 
   @override
@@ -2006,100 +2006,100 @@ class AppLocalizationsEs extends AppLocalizations {
       'La visualización de EPUB funciona con epub.js, una biblioteca EPUB de JavaScript de código abierto.';
 
   @override
-  String get dictionaryPartOfSpeechNoun => 'Noun';
+  String get dictionaryPartOfSpeechNoun => 'Sustantivo';
 
   @override
-  String get dictionaryPartOfSpeechPronoun => 'Pronoun';
+  String get dictionaryPartOfSpeechPronoun => 'Pronombre';
 
   @override
-  String get dictionaryPartOfSpeechPrefix => 'Prefix';
+  String get dictionaryPartOfSpeechPrefix => 'Prefijo';
 
   @override
-  String get dictionaryPartOfSpeechSuffix => 'Suffix';
+  String get dictionaryPartOfSpeechSuffix => 'Sufijo';
 
   @override
-  String get dictionaryPartOfSpeechCounter => 'Counter';
+  String get dictionaryPartOfSpeechCounter => 'Contador';
 
   @override
-  String get dictionaryPartOfSpeechNumeric => 'Numeric';
+  String get dictionaryPartOfSpeechNumeric => 'Numeral';
 
   @override
-  String get dictionaryPartOfSpeechExpression => 'Expression';
+  String get dictionaryPartOfSpeechExpression => 'Expresión';
 
   @override
-  String get dictionaryPartOfSpeechInterjection => 'Interjection';
+  String get dictionaryPartOfSpeechInterjection => 'Interjección';
 
   @override
-  String get dictionaryPartOfSpeechConjunction => 'Conjunction';
+  String get dictionaryPartOfSpeechConjunction => 'Conjunción';
 
   @override
-  String get dictionaryPartOfSpeechParticle => 'Particle';
+  String get dictionaryPartOfSpeechParticle => 'Partícula';
 
   @override
-  String get dictionaryPartOfSpeechCopula => 'Copula';
+  String get dictionaryPartOfSpeechCopula => 'Cópula';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliary => 'Auxiliary';
+  String get dictionaryPartOfSpeechAuxiliary => 'Auxiliar';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliaryVerb => 'Auxiliary verb';
+  String get dictionaryPartOfSpeechAuxiliaryVerb => 'Verbo auxiliar';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliaryAdjective => 'Auxiliary adjective';
+  String get dictionaryPartOfSpeechAuxiliaryAdjective => 'Adjetivo auxiliar';
 
   @override
-  String get dictionaryPartOfSpeechIAdjective => 'I-adjective';
+  String get dictionaryPartOfSpeechIAdjective => 'Adjetivo -i';
 
   @override
-  String get dictionaryPartOfSpeechNaAdjective => 'Na-adjective';
+  String get dictionaryPartOfSpeechNaAdjective => 'Adjetivo -na';
 
   @override
-  String get dictionaryPartOfSpeechNoAdjective => 'No-adjective';
+  String get dictionaryPartOfSpeechNoAdjective => 'Adjetivo -no';
 
   @override
-  String get dictionaryPartOfSpeechPreNounAdjectival => 'Pre-noun adjectival';
+  String get dictionaryPartOfSpeechPreNounAdjectival => 'Adjetivo prenominal';
 
   @override
-  String get dictionaryPartOfSpeechAdverb => 'Adverb';
+  String get dictionaryPartOfSpeechAdverb => 'Adverbio';
 
   @override
-  String get dictionaryPartOfSpeechToAdverb => 'To-adverb';
+  String get dictionaryPartOfSpeechToAdverb => 'Adverbio -to';
 
   @override
-  String get dictionaryPartOfSpeechAdverbialNoun => 'Adverbial noun';
+  String get dictionaryPartOfSpeechAdverbialNoun => 'Sustantivo adverbial';
 
   @override
-  String get dictionaryPartOfSpeechSuruVerb => 'Suru verb';
+  String get dictionaryPartOfSpeechSuruVerb => 'Verbo suru';
 
   @override
-  String get dictionaryPartOfSpeechKuruVerb => 'Kuru verb';
+  String get dictionaryPartOfSpeechKuruVerb => 'Verbo kuru';
 
   @override
-  String get dictionaryPartOfSpeechIchidanVerb => 'Ichidan verb';
+  String get dictionaryPartOfSpeechIchidanVerb => 'Verbo ichidan';
 
   @override
-  String get dictionaryPartOfSpeechGodanVerb => 'Godan verb';
+  String get dictionaryPartOfSpeechGodanVerb => 'Verbo godan';
 
   @override
-  String get dictionaryPartOfSpeechZuruVerb => 'Zuru verb';
+  String get dictionaryPartOfSpeechZuruVerb => 'Verbo zuru';
 
   @override
-  String get dictionaryPartOfSpeechIntransitiveVerb => 'Intransitive verb';
+  String get dictionaryPartOfSpeechIntransitiveVerb => 'Verbo intransitivo';
 
   @override
-  String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
+  String get dictionaryPartOfSpeechTransitiveVerb => 'Verbo transitivo';
 
   @override
-  String get statsHeroReadingTime => 'Reading time';
+  String get statsHeroReadingTime => 'Tiempo de lectura';
 
   @override
-  String get statsHeroCharactersRead => 'Characters read';
+  String get statsHeroCharactersRead => 'Caracteres leídos';
 
   @override
-  String get statsHeroWordsAdded => 'Words added';
+  String get statsHeroWordsAdded => 'Palabras añadidas';
 
   @override
-  String get statsFormatAll => 'All';
+  String get statsFormatAll => 'Todos';
 
   @override
   String get statsFormatEpub => 'EPUB';
@@ -2108,74 +2108,75 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statsFormatManga => 'Manga';
 
   @override
-  String get statsPeriodWeek => 'Week';
+  String get statsPeriodWeek => 'Semana';
 
   @override
-  String get statsPeriodMonth => 'Month';
+  String get statsPeriodMonth => 'Mes';
 
   @override
-  String get statsPeriodYear => 'Year';
+  String get statsPeriodYear => 'Año';
 
   @override
-  String get statsPeriodAll => 'All';
+  String get statsPeriodAll => 'Todo';
 
   @override
-  String get statsUnavailable => 'Reading stats aren\'t available right now.';
+  String get statsUnavailable =>
+      'Las estadísticas de lectura no están disponibles en este momento.';
 
   @override
-  String get statsHeatmapTitle => 'Reading activity';
+  String get statsHeatmapTitle => 'Actividad de lectura';
 
   @override
-  String get statsHeatmapLegendLess => 'Less';
+  String get statsHeatmapLegendLess => 'Menos';
 
   @override
-  String get statsHeatmapLegendMore => 'More';
+  String get statsHeatmapLegendMore => 'Más';
 
   @override
-  String get statsHeatmapLookups => 'Lookups';
+  String get statsHeatmapLookups => 'Consultas';
 
   @override
-  String get statsBestDayMarker => 'Best day';
+  String get statsBestDayMarker => 'Mejor día';
 
   @override
   String statsVolumePageCount({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages',
-      one: '$count page',
+      other: '$count páginas',
+      one: '$count página',
     );
     return '$_temp0';
   }
 
   @override
-  String get statsLookupRateTitle => 'Lookup rate';
+  String get statsLookupRateTitle => 'Frecuencia de consultas';
 
   @override
-  String get statsLookupRateSubtitle => 'Lookups per 1,000 characters';
+  String get statsLookupRateSubtitle => 'Consultas por cada 1000 caracteres';
 
   @override
-  String get statsVocabGrowthTitle => 'Vocabulary growth';
+  String get statsVocabGrowthTitle => 'Crecimiento del vocabulario';
 
   @override
   String statsVocabWordCount({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count words',
-      one: '$count word',
+      other: '$count palabras',
+      one: '$count palabra',
     );
     return '$_temp0';
   }
 
   @override
   String statsDurationHoursMinutes({required int hours, required int minutes}) {
-    return '${hours}h ${minutes}m';
+    return '$hours h $minutes min';
   }
 
   @override
   String statsDurationMinutes({required int minutes}) {
-    return '${minutes}m';
+    return '$minutes min';
   }
 
   @override

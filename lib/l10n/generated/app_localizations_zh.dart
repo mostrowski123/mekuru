@@ -980,11 +980,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupScopeNoteBody =>
-      '备份会保存您在 Mekuru 中的设置和自己创建的数据，例如书签、高亮和词汇表。实际的 EPUB 或漫画文件不会包含在备份中。';
+      '备份会保存您的设置、词典的排序和启用状态，以及您在 Mekuru 中自己创建的数据，例如书签、高亮、词汇表和阅读统计。实际的 EPUB、漫画或词典文件不会包含在备份中。';
 
   @override
   String get backupScopeNoteRestore =>
-      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。';
+      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。只有当此设备还没有统计数据时，才会恢复阅读统计。匹配的词典设置可稍后在“词典管理”中应用。';
 
   @override
   String get backupSectionAutoBackup => '自动备份';
@@ -1145,7 +1145,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB 或漫画文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。您当前的设置将被覆盖。';
+    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB、漫画或词典文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。只有当此设备还没有统计数据时，才会恢复阅读统计。您当前的设置将被覆盖。';
   }
 
   @override
@@ -1895,176 +1895,176 @@ class AppLocalizationsZh extends AppLocalizations {
       'EPUB渲染由epub.js驱动，这是一款开源的JavaScript EPUB阅读库。';
 
   @override
-  String get dictionaryPartOfSpeechNoun => 'Noun';
+  String get dictionaryPartOfSpeechNoun => '名词';
 
   @override
-  String get dictionaryPartOfSpeechPronoun => 'Pronoun';
+  String get dictionaryPartOfSpeechPronoun => '代词';
 
   @override
-  String get dictionaryPartOfSpeechPrefix => 'Prefix';
+  String get dictionaryPartOfSpeechPrefix => '前缀';
 
   @override
-  String get dictionaryPartOfSpeechSuffix => 'Suffix';
+  String get dictionaryPartOfSpeechSuffix => '后缀';
 
   @override
-  String get dictionaryPartOfSpeechCounter => 'Counter';
+  String get dictionaryPartOfSpeechCounter => '量词';
 
   @override
-  String get dictionaryPartOfSpeechNumeric => 'Numeric';
+  String get dictionaryPartOfSpeechNumeric => '数词';
 
   @override
-  String get dictionaryPartOfSpeechExpression => 'Expression';
+  String get dictionaryPartOfSpeechExpression => '惯用语';
 
   @override
-  String get dictionaryPartOfSpeechInterjection => 'Interjection';
+  String get dictionaryPartOfSpeechInterjection => '感叹词';
 
   @override
-  String get dictionaryPartOfSpeechConjunction => 'Conjunction';
+  String get dictionaryPartOfSpeechConjunction => '连词';
 
   @override
-  String get dictionaryPartOfSpeechParticle => 'Particle';
+  String get dictionaryPartOfSpeechParticle => '助词';
 
   @override
-  String get dictionaryPartOfSpeechCopula => 'Copula';
+  String get dictionaryPartOfSpeechCopula => '系词';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliary => 'Auxiliary';
+  String get dictionaryPartOfSpeechAuxiliary => '辅助词';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliaryVerb => 'Auxiliary verb';
+  String get dictionaryPartOfSpeechAuxiliaryVerb => '助动词';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliaryAdjective => 'Auxiliary adjective';
+  String get dictionaryPartOfSpeechAuxiliaryAdjective => '补助形容词';
 
   @override
-  String get dictionaryPartOfSpeechIAdjective => 'I-adjective';
+  String get dictionaryPartOfSpeechIAdjective => 'い形容词';
 
   @override
-  String get dictionaryPartOfSpeechNaAdjective => 'Na-adjective';
+  String get dictionaryPartOfSpeechNaAdjective => 'な形容词';
 
   @override
-  String get dictionaryPartOfSpeechNoAdjective => 'No-adjective';
+  String get dictionaryPartOfSpeechNoAdjective => 'の形容词';
 
   @override
-  String get dictionaryPartOfSpeechPreNounAdjectival => 'Pre-noun adjectival';
+  String get dictionaryPartOfSpeechPreNounAdjectival => '连体词';
 
   @override
-  String get dictionaryPartOfSpeechAdverb => 'Adverb';
+  String get dictionaryPartOfSpeechAdverb => '副词';
 
   @override
-  String get dictionaryPartOfSpeechToAdverb => 'To-adverb';
+  String get dictionaryPartOfSpeechToAdverb => 'と副词';
 
   @override
-  String get dictionaryPartOfSpeechAdverbialNoun => 'Adverbial noun';
+  String get dictionaryPartOfSpeechAdverbialNoun => '副词性名词';
 
   @override
-  String get dictionaryPartOfSpeechSuruVerb => 'Suru verb';
+  String get dictionaryPartOfSpeechSuruVerb => 'サ变动词';
 
   @override
-  String get dictionaryPartOfSpeechKuruVerb => 'Kuru verb';
+  String get dictionaryPartOfSpeechKuruVerb => 'カ变动词';
 
   @override
-  String get dictionaryPartOfSpeechIchidanVerb => 'Ichidan verb';
+  String get dictionaryPartOfSpeechIchidanVerb => '一段动词';
 
   @override
-  String get dictionaryPartOfSpeechGodanVerb => 'Godan verb';
+  String get dictionaryPartOfSpeechGodanVerb => '五段动词';
 
   @override
-  String get dictionaryPartOfSpeechZuruVerb => 'Zuru verb';
+  String get dictionaryPartOfSpeechZuruVerb => 'ザ变动词';
 
   @override
-  String get dictionaryPartOfSpeechIntransitiveVerb => 'Intransitive verb';
+  String get dictionaryPartOfSpeechIntransitiveVerb => '自动词';
 
   @override
-  String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
+  String get dictionaryPartOfSpeechTransitiveVerb => '他动词';
 
   @override
-  String get statsHeroReadingTime => 'Reading time';
+  String get statsHeroReadingTime => '阅读时长';
 
   @override
-  String get statsHeroCharactersRead => 'Characters read';
+  String get statsHeroCharactersRead => '阅读字数';
 
   @override
-  String get statsHeroWordsAdded => 'Words added';
+  String get statsHeroWordsAdded => '新增单词';
 
   @override
-  String get statsFormatAll => 'All';
+  String get statsFormatAll => '全部';
 
   @override
   String get statsFormatEpub => 'EPUB';
 
   @override
-  String get statsFormatManga => 'Manga';
+  String get statsFormatManga => '漫画';
 
   @override
-  String get statsPeriodWeek => 'Week';
+  String get statsPeriodWeek => '周';
 
   @override
-  String get statsPeriodMonth => 'Month';
+  String get statsPeriodMonth => '月';
 
   @override
-  String get statsPeriodYear => 'Year';
+  String get statsPeriodYear => '年';
 
   @override
-  String get statsPeriodAll => 'All';
+  String get statsPeriodAll => '全部';
 
   @override
-  String get statsUnavailable => 'Reading stats aren\'t available right now.';
+  String get statsUnavailable => '阅读统计目前不可用。';
 
   @override
-  String get statsHeatmapTitle => 'Reading activity';
+  String get statsHeatmapTitle => '阅读活动';
 
   @override
-  String get statsHeatmapLegendLess => 'Less';
+  String get statsHeatmapLegendLess => '少';
 
   @override
-  String get statsHeatmapLegendMore => 'More';
+  String get statsHeatmapLegendMore => '多';
 
   @override
-  String get statsHeatmapLookups => 'Lookups';
+  String get statsHeatmapLookups => '查词次数';
 
   @override
-  String get statsBestDayMarker => 'Best day';
+  String get statsBestDayMarker => '最佳日';
 
   @override
   String statsVolumePageCount({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages',
-      one: '$count page',
+      other: '$count 页',
+      one: '$count 页',
     );
     return '$_temp0';
   }
 
   @override
-  String get statsLookupRateTitle => 'Lookup rate';
+  String get statsLookupRateTitle => '查词频率';
 
   @override
-  String get statsLookupRateSubtitle => 'Lookups per 1,000 characters';
+  String get statsLookupRateSubtitle => '每 1000 字的查词次数';
 
   @override
-  String get statsVocabGrowthTitle => 'Vocabulary growth';
+  String get statsVocabGrowthTitle => '词汇增长';
 
   @override
   String statsVocabWordCount({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count words',
-      one: '$count word',
+      other: '$count 个单词',
+      one: '$count 个单词',
     );
     return '$_temp0';
   }
 
   @override
   String statsDurationHoursMinutes({required int hours, required int minutes}) {
-    return '${hours}h ${minutes}m';
+    return '$hours 小时 $minutes 分钟';
   }
 
   @override
   String statsDurationMinutes({required int minutes}) {
-    return '${minutes}m';
+    return '$minutes 分钟';
   }
 
   @override
@@ -3043,11 +3043,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupScopeNoteBody =>
-      '备份会保存您在 Mekuru 中的设置和自己创建的数据，例如书签、高亮和词汇表。实际的 EPUB 或漫画文件不会包含在备份中。';
+      '备份会保存您的设置、词典的排序和启用状态，以及您在 Mekuru 中自己创建的数据，例如书签、高亮、词汇表和阅读统计。实际的 EPUB、漫画或词典文件不会包含在备份中。';
 
   @override
   String get backupScopeNoteRestore =>
-      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。';
+      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。只有当此设备还没有统计数据时，才会恢复阅读统计。匹配的词典设置可稍后在“词典管理”中应用。';
 
   @override
   String get backupSectionAutoBackup => '自动备份';
@@ -3208,7 +3208,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB 或漫画文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。您当前的设置将被覆盖。';
+    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB、漫画或词典文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。只有当此设备还没有统计数据时，才会恢复阅读统计。您当前的设置将被覆盖。';
   }
 
   @override
@@ -3874,176 +3874,176 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       'EPUB渲染由epub.js驱动，这是一款开源的JavaScript EPUB阅读库。';
 
   @override
-  String get dictionaryPartOfSpeechNoun => 'Noun';
+  String get dictionaryPartOfSpeechNoun => '名词';
 
   @override
-  String get dictionaryPartOfSpeechPronoun => 'Pronoun';
+  String get dictionaryPartOfSpeechPronoun => '代词';
 
   @override
-  String get dictionaryPartOfSpeechPrefix => 'Prefix';
+  String get dictionaryPartOfSpeechPrefix => '前缀';
 
   @override
-  String get dictionaryPartOfSpeechSuffix => 'Suffix';
+  String get dictionaryPartOfSpeechSuffix => '后缀';
 
   @override
-  String get dictionaryPartOfSpeechCounter => 'Counter';
+  String get dictionaryPartOfSpeechCounter => '量词';
 
   @override
-  String get dictionaryPartOfSpeechNumeric => 'Numeric';
+  String get dictionaryPartOfSpeechNumeric => '数词';
 
   @override
-  String get dictionaryPartOfSpeechExpression => 'Expression';
+  String get dictionaryPartOfSpeechExpression => '惯用语';
 
   @override
-  String get dictionaryPartOfSpeechInterjection => 'Interjection';
+  String get dictionaryPartOfSpeechInterjection => '感叹词';
 
   @override
-  String get dictionaryPartOfSpeechConjunction => 'Conjunction';
+  String get dictionaryPartOfSpeechConjunction => '连词';
 
   @override
-  String get dictionaryPartOfSpeechParticle => 'Particle';
+  String get dictionaryPartOfSpeechParticle => '助词';
 
   @override
-  String get dictionaryPartOfSpeechCopula => 'Copula';
+  String get dictionaryPartOfSpeechCopula => '系词';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliary => 'Auxiliary';
+  String get dictionaryPartOfSpeechAuxiliary => '辅助词';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliaryVerb => 'Auxiliary verb';
+  String get dictionaryPartOfSpeechAuxiliaryVerb => '助动词';
 
   @override
-  String get dictionaryPartOfSpeechAuxiliaryAdjective => 'Auxiliary adjective';
+  String get dictionaryPartOfSpeechAuxiliaryAdjective => '补助形容词';
 
   @override
-  String get dictionaryPartOfSpeechIAdjective => 'I-adjective';
+  String get dictionaryPartOfSpeechIAdjective => 'い形容词';
 
   @override
-  String get dictionaryPartOfSpeechNaAdjective => 'Na-adjective';
+  String get dictionaryPartOfSpeechNaAdjective => 'な形容词';
 
   @override
-  String get dictionaryPartOfSpeechNoAdjective => 'No-adjective';
+  String get dictionaryPartOfSpeechNoAdjective => 'の形容词';
 
   @override
-  String get dictionaryPartOfSpeechPreNounAdjectival => 'Pre-noun adjectival';
+  String get dictionaryPartOfSpeechPreNounAdjectival => '连体词';
 
   @override
-  String get dictionaryPartOfSpeechAdverb => 'Adverb';
+  String get dictionaryPartOfSpeechAdverb => '副词';
 
   @override
-  String get dictionaryPartOfSpeechToAdverb => 'To-adverb';
+  String get dictionaryPartOfSpeechToAdverb => 'と副词';
 
   @override
-  String get dictionaryPartOfSpeechAdverbialNoun => 'Adverbial noun';
+  String get dictionaryPartOfSpeechAdverbialNoun => '副词性名词';
 
   @override
-  String get dictionaryPartOfSpeechSuruVerb => 'Suru verb';
+  String get dictionaryPartOfSpeechSuruVerb => 'サ变动词';
 
   @override
-  String get dictionaryPartOfSpeechKuruVerb => 'Kuru verb';
+  String get dictionaryPartOfSpeechKuruVerb => 'カ变动词';
 
   @override
-  String get dictionaryPartOfSpeechIchidanVerb => 'Ichidan verb';
+  String get dictionaryPartOfSpeechIchidanVerb => '一段动词';
 
   @override
-  String get dictionaryPartOfSpeechGodanVerb => 'Godan verb';
+  String get dictionaryPartOfSpeechGodanVerb => '五段动词';
 
   @override
-  String get dictionaryPartOfSpeechZuruVerb => 'Zuru verb';
+  String get dictionaryPartOfSpeechZuruVerb => 'ザ变动词';
 
   @override
-  String get dictionaryPartOfSpeechIntransitiveVerb => 'Intransitive verb';
+  String get dictionaryPartOfSpeechIntransitiveVerb => '自动词';
 
   @override
-  String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
+  String get dictionaryPartOfSpeechTransitiveVerb => '他动词';
 
   @override
-  String get statsHeroReadingTime => 'Reading time';
+  String get statsHeroReadingTime => '阅读时长';
 
   @override
-  String get statsHeroCharactersRead => 'Characters read';
+  String get statsHeroCharactersRead => '阅读字数';
 
   @override
-  String get statsHeroWordsAdded => 'Words added';
+  String get statsHeroWordsAdded => '新增单词';
 
   @override
-  String get statsFormatAll => 'All';
+  String get statsFormatAll => '全部';
 
   @override
   String get statsFormatEpub => 'EPUB';
 
   @override
-  String get statsFormatManga => 'Manga';
+  String get statsFormatManga => '漫画';
 
   @override
-  String get statsPeriodWeek => 'Week';
+  String get statsPeriodWeek => '周';
 
   @override
-  String get statsPeriodMonth => 'Month';
+  String get statsPeriodMonth => '月';
 
   @override
-  String get statsPeriodYear => 'Year';
+  String get statsPeriodYear => '年';
 
   @override
-  String get statsPeriodAll => 'All';
+  String get statsPeriodAll => '全部';
 
   @override
-  String get statsUnavailable => 'Reading stats aren\'t available right now.';
+  String get statsUnavailable => '阅读统计目前不可用。';
 
   @override
-  String get statsHeatmapTitle => 'Reading activity';
+  String get statsHeatmapTitle => '阅读活动';
 
   @override
-  String get statsHeatmapLegendLess => 'Less';
+  String get statsHeatmapLegendLess => '少';
 
   @override
-  String get statsHeatmapLegendMore => 'More';
+  String get statsHeatmapLegendMore => '多';
 
   @override
-  String get statsHeatmapLookups => 'Lookups';
+  String get statsHeatmapLookups => '查词次数';
 
   @override
-  String get statsBestDayMarker => 'Best day';
+  String get statsBestDayMarker => '最佳日';
 
   @override
   String statsVolumePageCount({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count pages',
-      one: '$count page',
+      other: '$count 页',
+      one: '$count 页',
     );
     return '$_temp0';
   }
 
   @override
-  String get statsLookupRateTitle => 'Lookup rate';
+  String get statsLookupRateTitle => '查词频率';
 
   @override
-  String get statsLookupRateSubtitle => 'Lookups per 1,000 characters';
+  String get statsLookupRateSubtitle => '每 1000 字的查词次数';
 
   @override
-  String get statsVocabGrowthTitle => 'Vocabulary growth';
+  String get statsVocabGrowthTitle => '词汇增长';
 
   @override
   String statsVocabWordCount({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count words',
-      one: '$count word',
+      other: '$count 个单词',
+      one: '$count 个单词',
     );
     return '$_temp0';
   }
 
   @override
   String statsDurationHoursMinutes({required int hours, required int minutes}) {
-    return '${hours}h ${minutes}m';
+    return '$hours 小时 $minutes 分钟';
   }
 
   @override
   String statsDurationMinutes({required int minutes}) {
-    return '${minutes}m';
+    return '$minutes 分钟';
   }
 
   @override
