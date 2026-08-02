@@ -434,7 +434,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showSettingsOptionPickerSheet(
       context: context,
       title: l10n.settingsThemeTitle,
-      values: const [ThemeMode.light, ThemeMode.dark, ThemeMode.system],
+      values: ThemeMode.values,
       selected: currentMode,
       labelOf: (mode) => _themeModeLabel(l10n, mode),
       iconOf: _themeModeIcon,
