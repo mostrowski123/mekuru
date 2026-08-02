@@ -915,10 +915,6 @@
   "@settingsSectionAppearance": {
     "description": "Settings section header for appearance preferences."
   },
-  "settingsSectionReadingDefaults": "Reading Defaults",
-  "@settingsSectionReadingDefaults": {
-    "description": "Settings section header for default reader settings."
-  },
   "settingsSectionDictionary": "Dictionary",
   "@settingsSectionDictionary": {
     "description": "Settings section header for dictionary settings."
@@ -930,14 +926,6 @@
   "settingsSectionPro": "Pro",
   "@settingsSectionPro": {
     "description": "Settings section header for Pro settings."
-  },
-  "settingsSectionMangaAutoCrop": "Manga Auto-Crop",
-  "@settingsSectionMangaAutoCrop": {
-    "description": "Settings section header for manga auto-crop preferences."
-  },
-  "settingsSectionMangaOcr": "Manga OCR",
-  "@settingsSectionMangaOcr": {
-    "description": "Settings section header for manga OCR preferences."
   },
   "settingsSectionDownloads": "Downloads",
   "@settingsSectionDownloads": {

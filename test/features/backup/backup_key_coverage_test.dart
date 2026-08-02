@@ -36,7 +36,10 @@ void main() {
         BackupService.readerKeys.toSet().length,
         BackupService.readerKeys.length,
       );
-      expect(BackupService.appKeys.toSet().length, BackupService.appKeys.length);
+      expect(
+        BackupService.appKeys.toSet().length,
+        BackupService.appKeys.length,
+      );
     });
   });
 }

@@ -101,10 +101,7 @@ class SettingsSliderRow extends StatelessWidget {
         if (label != null)
           Row(
             children: [
-              if (icon != null) ...[
-                Icon(icon),
-                const SizedBox(width: 8),
-              ],
+              if (icon != null) ...[Icon(icon), const SizedBox(width: 8)],
               Text(label!),
               const Spacer(),
               if (valueLabel != null) Text(valueLabel!),

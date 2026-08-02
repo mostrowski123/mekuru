@@ -725,10 +725,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsSectionAppearance => 'Apariencia';
 
   @override
-  String get settingsSectionReadingDefaults =>
-      'Opciones de lectura predeterminadas';
-
-  @override
   String get settingsSectionDictionary => 'Diccionario';
 
   @override
@@ -736,12 +732,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsSectionPro => 'Pro';
-
-  @override
-  String get settingsSectionMangaAutoCrop => 'Recorte automático de manga';
-
-  @override
-  String get settingsSectionMangaOcr => 'OCR de manga';
 
   @override
   String get settingsSectionDownloads => 'Descargas';
@@ -1328,50 +1318,50 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerQuickSettings => 'Ajustes rápidos';
 
   @override
-  String get readerBrightnessFollowSystem => 'Follow system brightness';
+  String get readerBrightnessFollowSystem => 'Seguir el brillo del sistema';
 
   @override
-  String get readerBrightnessTitle => 'Brightness';
+  String get readerBrightnessTitle => 'Brillo';
 
   @override
-  String get readerSettingsSectionDisplay => 'Display';
+  String get readerSettingsSectionDisplay => 'Pantalla';
 
   @override
-  String get readerSettingsSectionBehavior => 'Behavior';
+  String get readerSettingsSectionBehavior => 'Comportamiento';
 
   @override
   String get readerFuriganaTitle => 'Furigana';
 
   @override
-  String get readerFuriganaOff => 'Off';
+  String get readerFuriganaOff => 'Desactivado';
 
   @override
-  String get readerFuriganaAllKanji => 'All kanji';
+  String get readerFuriganaAllKanji => 'Todos los kanji';
 
   @override
-  String get readerAllSettingsTooltip => 'All settings';
+  String get readerAllSettingsTooltip => 'Todos los ajustes';
 
   @override
-  String get mangaSettingsSectionReading => 'Reading';
+  String get mangaSettingsSectionReading => 'Lectura';
 
   @override
-  String get mangaSettingsSectionImage => 'Image';
+  String get mangaSettingsSectionImage => 'Imagen';
 
   @override
-  String get mangaSettingsSectionLookup => 'Lookup';
+  String get mangaSettingsSectionLookup => 'Búsqueda';
 
   @override
-  String get mangaViewModeTitle => 'View Mode';
+  String get mangaViewModeTitle => 'Modo de visualización';
 
   @override
-  String get settingsReadingTitle => 'Reading';
+  String get settingsReadingTitle => 'Lectura';
 
   @override
   String get settingsReadingSubtitle =>
-      'Text size, colors, margins, and manga defaults';
+      'Tamaño del texto, colores, márgenes y ajustes predeterminados de manga';
 
   @override
-  String get settingsReadingSectionShared => 'All books';
+  String get settingsReadingSectionShared => 'Todos los libros';
 
   @override
   String get settingsReadingSectionEpub => 'EPUB';

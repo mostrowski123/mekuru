@@ -713,9 +713,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSectionAppearance => 'Appearance';
 
   @override
-  String get settingsSectionReadingDefaults => 'Reading Defaults';
-
-  @override
   String get settingsSectionDictionary => 'Dictionary';
 
   @override
@@ -723,12 +720,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSectionPro => 'Pro';
-
-  @override
-  String get settingsSectionMangaAutoCrop => 'Manga Auto-Crop';
-
-  @override
-  String get settingsSectionMangaOcr => 'Manga OCR';
 
   @override
   String get settingsSectionDownloads => 'Downloads';

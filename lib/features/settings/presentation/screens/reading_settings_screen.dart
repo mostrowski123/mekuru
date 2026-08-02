@@ -211,9 +211,8 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
                   icon: Icons.touch_app,
                   label: l10n.mangaPageTurnEdgeZoneTitle,
                   valueLabel: l10n.settingsPercentValue(
-                    percent:
-                        (settings.mangaPageTurnEdgeZoneWidthFraction * 100)
-                            .round(),
+                    percent: (settings.mangaPageTurnEdgeZoneWidthFraction * 100)
+                        .round(),
                   ),
                   value: settings.mangaPageTurnEdgeZoneWidthFraction,
                   min: kMinMangaPageTurnEdgeZoneWidthFraction,
@@ -372,9 +371,8 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
     final savedCustomBearerKey =
         await _ocrAuthSecretStorage.loadCustomServerBearerKey() ?? '';
     final currentUrl = ref.read(ocrServerUrlProvider);
-    final initialUrl = ocr_server_config.isUnsetOrBuiltInOcrServerUrl(
-          currentUrl,
-        )
+    final initialUrl =
+        ocr_server_config.isUnsetOrBuiltInOcrServerUrl(currentUrl)
         ? ''
         : currentUrl;
 

@@ -647,11 +647,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     StartupScreen.dictionary => Icons.book_outlined,
     StartupScreen.lastRead => Icons.menu_book_outlined,
   };
-
 }
 
 // ── Private widgets ──
-
 
 class _ThemeModeOption extends StatelessWidget {
   const _ThemeModeOption({

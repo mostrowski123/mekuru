@@ -5,7 +5,6 @@ import 'package:mekuru/features/settings/data/services/ocr_server_health_client.
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 class OcrServerUrlDialog extends StatefulWidget {
   const OcrServerUrlDialog({
     super.key,

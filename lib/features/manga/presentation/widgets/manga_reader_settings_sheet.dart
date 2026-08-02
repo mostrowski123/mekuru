@@ -155,7 +155,10 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
         else
           ListTile(
             enabled: false,
-            leading: Icon(Icons.crop, color: theme.colorScheme.onSurfaceVariant),
+            leading: Icon(
+              Icons.crop,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
             title: Text(l10n.proFeatureAutoCropTitle),
             subtitle: Text(l10n.mangaAutoCropSubtitle),
             trailing: TextButton(

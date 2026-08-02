@@ -9,7 +9,9 @@ Widget _wrap(Widget child) {
 void main() {
   group('SettingsSectionHeader', () {
     testWidgets('renders its title', (tester) async {
-      await tester.pumpWidget(_wrap(const SettingsSectionHeader(title: 'EPUB')));
+      await tester.pumpWidget(
+        _wrap(const SettingsSectionHeader(title: 'EPUB')),
+      );
       expect(find.text('EPUB'), findsOneWidget);
     });
   });
@@ -118,10 +120,7 @@ void main() {
     testWidgets('renders disabled when onChanged is null', (tester) async {
       await tester.pumpWidget(
         _wrap(
-          const SettingsSwitchRow(
-            title: 'Split vertical text',
-            value: false,
-          ),
+          const SettingsSwitchRow(title: 'Split vertical text', value: false),
         ),
       );
       final tile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));

@@ -1300,12 +1300,6 @@ abstract class AppLocalizations {
   /// **'Appearance'**
   String get settingsSectionAppearance;
 
-  /// Settings section header for default reader settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Reading Defaults'**
-  String get settingsSectionReadingDefaults;
-
   /// Settings section header for dictionary settings.
   ///
   /// In en, this message translates to:
@@ -1323,18 +1317,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pro'**
   String get settingsSectionPro;
-
-  /// Settings section header for manga auto-crop preferences.
-  ///
-  /// In en, this message translates to:
-  /// **'Manga Auto-Crop'**
-  String get settingsSectionMangaAutoCrop;
-
-  /// Settings section header for manga OCR preferences.
-  ///
-  /// In en, this message translates to:
-  /// **'Manga OCR'**
-  String get settingsSectionMangaOcr;
 
   /// Settings section header for downloads.
   ///

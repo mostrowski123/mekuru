@@ -269,7 +269,10 @@ class ReaderBrightnessNotifier extends Notifier<ReaderBrightnessState> {
       }
     }
     final override = state.override;
-    state = ReaderBrightnessState(override: override, systemLevel: _systemLevel);
+    state = ReaderBrightnessState(
+      override: override,
+      systemLevel: _systemLevel,
+    );
     if (override != null) {
       await _setApplicationBrightness(override);
     }
