@@ -21,7 +21,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navVocabulary => '生词本';
 
   @override
-  String get navSettings => '设置';
+  String get navYou => '我的';
 
   @override
   String get commonHelp => '帮助';
@@ -1928,9 +1928,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
 
   @override
-  String get statsTitle => 'Reading Stats';
-
-  @override
   String get statsHeroReadingTime => 'Reading time';
 
   @override
@@ -2010,27 +2007,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get statsStripThisWeek => 'This week';
-
-  @override
-  String get statsStripEmpty => 'Reading stats';
-
-  @override
-  String statsStripCharacters({required int count}) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
-    final String countString = countNumberFormat.format(count);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$countString characters',
-      one: '$countString character',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String statsDurationHoursMinutes({required int hours, required int minutes}) {
     return '${hours}h ${minutes}m';
   }
@@ -2058,7 +2034,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get navVocabulary => '生词本';
 
   @override
-  String get navSettings => '设置';
+  String get navYou => '我的';
 
   @override
   String get commonHelp => '帮助';
@@ -3874,9 +3850,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
 
   @override
-  String get statsTitle => 'Reading Stats';
-
-  @override
   String get statsHeroReadingTime => 'Reading time';
 
   @override
@@ -3951,27 +3924,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       locale: localeName,
       other: '$count words',
       one: '$count word',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get statsStripThisWeek => 'This week';
-
-  @override
-  String get statsStripEmpty => 'Reading stats';
-
-  @override
-  String statsStripCharacters({required int count}) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
-    final String countString = countNumberFormat.format(count);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$countString characters',
-      one: '$countString character',
     );
     return '$_temp0';
   }

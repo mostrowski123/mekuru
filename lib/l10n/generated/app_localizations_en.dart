@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navVocabulary => 'Vocabulary';
 
   @override
-  String get navSettings => 'Settings';
+  String get navYou => 'You';
 
   @override
   String get commonHelp => 'Help';
@@ -2010,9 +2010,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dictionaryPartOfSpeechTransitiveVerb => 'Transitive verb';
 
   @override
-  String get statsTitle => 'Reading Stats';
-
-  @override
   String get statsHeroReadingTime => 'Reading time';
 
   @override
@@ -2087,27 +2084,6 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: '$count words',
       one: '$count word',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get statsStripThisWeek => 'This week';
-
-  @override
-  String get statsStripEmpty => 'Reading stats';
-
-  @override
-  String statsStripCharacters({required int count}) {
-    final intl.NumberFormat countNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
-    final String countString = countNumberFormat.format(count);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$countString characters',
-      one: '$countString character',
     );
     return '$_temp0';
   }

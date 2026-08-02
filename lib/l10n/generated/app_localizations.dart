@@ -127,11 +127,11 @@ abstract class AppLocalizations {
   /// **'Vocabulary'**
   String get navVocabulary;
 
-  /// Bottom navigation label for the settings tab.
+  /// Bottom navigation label and title of the You tab: the reading stats dashboard, with the entry to settings in its corner.
   ///
   /// In en, this message translates to:
-  /// **'Settings'**
-  String get navSettings;
+  /// **'You'**
+  String get navYou;
 
   /// Tooltip or button label for help.
   ///
@@ -3472,12 +3472,6 @@ abstract class AppLocalizations {
   /// **'Transitive verb'**
   String get dictionaryPartOfSpeechTransitiveVerb;
 
-  /// Title of the reading statistics screen.
-  ///
-  /// In en, this message translates to:
-  /// **'Reading Stats'**
-  String get statsTitle;
-
   /// Label for time spent reading. Used under the hero tile for the selected period, and again in the activity heatmap's day detail sheet.
   ///
   /// In en, this message translates to:
@@ -3604,31 +3598,13 @@ abstract class AppLocalizations {
   /// **'{count, plural, one {{count} word} other {{count} words}}'**
   String statsVocabWordCount({required int count});
 
-  /// Label on the compact reading-stats strip above the library grid, naming the trailing seven days its figures cover.
-  ///
-  /// In en, this message translates to:
-  /// **'This week'**
-  String get statsStripThisWeek;
-
-  /// The whole content of the library stats strip before anything has been read, replacing the week's figures. A plain name for the destination, deliberately not a zero total and not an encouragement to start reading.
-  ///
-  /// In en, this message translates to:
-  /// **'Reading stats'**
-  String get statsStripEmpty;
-
-  /// Characters read in the trailing seven days, shown next to the reading time on the library stats strip.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one {{count} character} other {{count} characters}}'**
-  String statsStripCharacters({required int count});
-
-  /// A reading duration of an hour or longer, shown on the stats hero tile, the heatmap's day detail sheet, the library strip and the reading-time chart's tooltips. Hours are never rolled up into days, so an all-time total reads 30h 5m. Whole hours keep the minute part (2h 0m) so the string does not change shape mid count-up. Languages that write durations differently should reorder or replace the unit markers freely.
+  /// A reading duration of an hour or longer, shown on the stats hero tile, the heatmap's day detail sheet and the reading-time chart's tooltips. Hours are never rolled up into days, so an all-time total reads 30h 5m. Whole hours keep the minute part (2h 0m) so the string does not change shape mid count-up. Languages that write durations differently should reorder or replace the unit markers freely.
   ///
   /// In en, this message translates to:
   /// **'{hours}h {minutes}m'**
   String statsDurationHoursMinutes({required int hours, required int minutes});
 
-  /// A reading duration under an hour, shown on the stats hero tile, the heatmap's day detail sheet, the library strip and the reading-time chart's tooltips. Also carries the nothing-read case, which reads 0m.
+  /// A reading duration under an hour, shown on the stats hero tile, the heatmap's day detail sheet and the reading-time chart's tooltips. Also carries the nothing-read case, which reads 0m.
   ///
   /// In en, this message translates to:
   /// **'{minutes}m'**

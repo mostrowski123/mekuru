@@ -1241,7 +1241,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             ),
             IconButton(
               icon: const Icon(Icons.settings, color: Colors.white),
-              tooltip: l10n.navSettings,
+              tooltip: l10n.settingsTitle,
               onPressed: () {
                 AppHaptics.light();
                 _showSettingsSheet(context);

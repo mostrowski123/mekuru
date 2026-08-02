@@ -16,9 +16,9 @@
   "@navVocabulary": {
     "description": "Bottom navigation label for the vocabulary tab."
   },
-  "navSettings": "Configuración",
-  "@navSettings": {
-    "description": "Bottom navigation label for the settings tab."
+  "navYou": "Tú",
+  "@navYou": {
+    "description": "Bottom navigation label and title of the You tab: the reading stats dashboard, with the entry to settings in its corner."
   },
   "commonHelp": "Ayuda",
   "@commonHelp": {
@@ -2400,7 +2400,6 @@
   "dictionaryPartOfSpeechZuruVerb": "Zuru verb",
   "dictionaryPartOfSpeechIntransitiveVerb": "Intransitive verb",
   "dictionaryPartOfSpeechTransitiveVerb": "Transitive verb",
-  "statsTitle": "Reading Stats",
   "statsHeroReadingTime": "Reading time",
   "statsHeroCharactersRead": "Characters read",
   "statsHeroWordsAdded": "Words added",
@@ -2422,9 +2421,6 @@
   "statsLookupRateSubtitle": "Lookups per 1,000 characters",
   "statsVocabGrowthTitle": "Vocabulary growth",
   "statsVocabWordCount": "{count, plural, one {{count} word} other {{count} words}}",
-  "statsStripThisWeek": "This week",
-  "statsStripEmpty": "Reading stats",
-  "statsStripCharacters": "{count, plural, one {{count} character} other {{count} characters}}",
   "statsDurationHoursMinutes": "{hours}h {minutes}m",
   "statsDurationMinutes": "{minutes}m"
 }

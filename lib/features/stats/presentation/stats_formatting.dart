@@ -22,8 +22,8 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 /// Formats a duration in milliseconds the way the stats surfaces show it:
 /// `"0m"`, `"42m"`, `"3h 20m"` in English.
 ///
-/// Shared by the hero tiles, the heatmap's day sheet, the library strip and the
-/// reading-time chart's tooltips, so they never disagree. Below an hour the
+/// Shared by the hero tiles, the heatmap's day sheet and the reading-time
+/// chart's tooltips, so they never disagree. Below an hour the
 /// minutes-only string carries it, zero included; at an hour and above the
 /// hour part joins, and whole hours keep the minute part (`"2h 0m"`) so the
 /// string does not change shape mid count-up.
