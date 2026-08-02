@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
+import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_brightness_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
 import 'package:mekuru/l10n/l10n.dart';
-import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 
 /// Section header padding matching the sheet's 24px content inset.
@@ -56,8 +56,6 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
     final theme = Theme.of(context);
     final settings = ref.watch(readerSettingsProvider);
     final notifier = ref.read(readerSettingsProvider.notifier);
-    final brightness = ref.watch(readerBrightnessProvider);
-    final brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
     final supportsVerticalText = bookSupportsVerticalText(bookLanguage);
 
     return ReaderSettingsSheetScaffold(
@@ -174,32 +172,7 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
           // onChangeEnd so a drag logs once, not per tick.
           onChangeEnd: (value) => onSettingChanged('font_size', value.round()),
         ),
-        SettingsSliderRow(
-          icon: Icons.brightness_6_outlined,
-          label: l10n.readerBrightnessTitle,
-          value: brightness.sliderValue,
-          min: 0.0,
-          max: 1.0,
-          leadingSliderIcon: Icons.brightness_low,
-          trailingSliderIcon: Icons.brightness_high,
-          trailing: IconButton(
-            tooltip: l10n.readerBrightnessFollowSystem,
-            icon: Icon(
-              Icons.brightness_auto,
-              color: brightness.followsSystem
-                  ? theme.colorScheme.primary
-                  : null,
-            ),
-            onPressed: () {
-              AppHaptics.light();
-              brightnessNotifier.followSystemBrightness();
-              onSettingChanged('brightness', 'system');
-            },
-          ),
-          onChanged: brightnessNotifier.setBrightness,
-          onChangeEnd: (value) =>
-              onSettingChanged('brightness', (value * 100).round()),
-        ),
+        ReaderBrightnessRow(onSettingChanged: onSettingChanged),
         const SizedBox(height: 8),
         SettingsSegmentedRow<ColorMode>(
           segments: [

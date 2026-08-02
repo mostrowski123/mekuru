@@ -223,7 +223,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _sessionTracker.recordSettingsChanged();
     logUsage(
       'reader.settings_changed',
-      attrs: {'setting': setting, 'value': value},
+      attrs: {'setting': setting, 'value': value, 'format': 'epub'},
     );
   }
 
