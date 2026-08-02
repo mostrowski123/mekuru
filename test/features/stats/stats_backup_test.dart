@@ -263,7 +263,7 @@ void main() {
       },
     );
 
-    test('skips word events when the local table already has rows', () async {
+    test('merges word events into existing local history', () async {
       await db
           .into(db.wordEvents)
           .insert(
@@ -282,11 +282,69 @@ void main() {
       );
 
       final events = await db.select(db.wordEvents).get();
-      expect(events, hasLength(1), reason: 'existing history is preserved');
-      expect(events.single.expression, '本');
+      expect(events, hasLength(2), reason: 'local and backup history merge');
+      expect(events.map((e) => e.expression), containsAll(['本', '食べる']));
 
       // Reading sessions are checked independently, so they still restore.
       expect(await db.select(db.readingSessions).get(), hasLength(1));
+    });
+
+    test('restores real word events over the v19 migration backfill', () async {
+      // An upgrading user: the v19 migration synthesized word events from
+      // saved_words (kind 'saved', source 'other'), so the table is not
+      // empty when the restore runs.
+      await db
+          .into(db.wordEvents)
+          .insert(
+            WordEventsCompanion.insert(
+              kind: 'saved',
+              expression: '食べる',
+              createdAt: Value(DateTime.utc(2025, 6, 1)),
+            ),
+          );
+
+      await restoreService.restoreStats(
+        buildManifest(
+          wordEvents: [
+            sampleWordEvent,
+            BackupWordEventEntry(
+              kind: 'anki',
+              expression: '食べる',
+              source: 'epub',
+              createdAt: DateTime.utc(2026, 3, 6, 10),
+            ),
+          ],
+        ),
+      );
+
+      final events = await db.select(db.wordEvents).get();
+      expect(events, hasLength(3));
+      // The backup's real reader-sourced history is queryable: the format
+      // filter on the stats screen matches on source.
+      final epubSourced = events.where((e) => e.source == 'epub');
+      expect(epubSourced, hasLength(2));
+      expect(events.where((e) => e.kind == 'anki'), hasLength(1));
+    });
+
+    test('merging skips events already present locally', () async {
+      // The same event on both sides (e.g. a backup taken from this device):
+      // identity is kind + expression + source + createdAt.
+      await db
+          .into(db.wordEvents)
+          .insert(
+            WordEventsCompanion.insert(
+              kind: sampleWordEvent.kind,
+              expression: sampleWordEvent.expression,
+              source: Value(sampleWordEvent.source),
+              createdAt: Value(sampleWordEvent.createdAt),
+            ),
+          );
+
+      await restoreService.restoreStats(
+        buildManifest(wordEvents: [sampleWordEvent]),
+      );
+
+      expect(await db.select(db.wordEvents).get(), hasLength(1));
     });
 
     test('a repeated restore does not duplicate rows', () async {
