@@ -211,6 +211,25 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
   static const _ocrServerUrlKey = 'app.ocr_server_url';
 
+  /// Every SharedPreferences key this storage reads or writes. The backup
+  /// service derives its app key list from this, so a key added here is
+  /// automatically included in backups.
+  static const List<String> allKeys = [
+    _appLanguageKey,
+    _themeModeKey,
+    _sortOrderKey,
+    _lookupFontSizeKey,
+    _searchHistoryKey,
+    _filterRomanLettersKey,
+    _ankidroidConfigKey,
+    _startupScreenKey,
+    _autoFocusSearchKey,
+    _colorThemeKey,
+    _autoCropWhiteThresholdKey,
+    _ocrServerUrlKey,
+    EnhancedFuriganaDictDownloadService.enabledPreferenceKey,
+  ];
+
   @override
   Future<AppLanguage?> loadAppLanguage() async {
     final prefs = await SharedPreferences.getInstance();

@@ -5,13 +5,13 @@ enum BackupInterval { off, daily, weekly }
 
 /// Checks if auto-backup is due at app startup.
 class BackupScheduler {
-  static const _intervalKey = 'backup.auto_interval';
+  static const intervalKey = 'backup.auto_interval';
   static const _lastAutoKey = 'backup.last_auto_at';
 
   /// Check if auto-backup is due based on configured interval and last backup.
   Future<bool> isBackupDue() async {
     final prefs = await SharedPreferences.getInstance();
-    final interval = getIntervalFromString(prefs.getString(_intervalKey));
+    final interval = getIntervalFromString(prefs.getString(intervalKey));
     if (interval == BackupInterval.off) return false;
 
     final lastAutoStr = prefs.getString(_lastAutoKey);
@@ -40,13 +40,13 @@ class BackupScheduler {
   /// Get the currently configured interval.
   Future<BackupInterval> getInterval() async {
     final prefs = await SharedPreferences.getInstance();
-    return getIntervalFromString(prefs.getString(_intervalKey));
+    return getIntervalFromString(prefs.getString(intervalKey));
   }
 
   /// Set the auto-backup interval.
   Future<void> setInterval(BackupInterval interval) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_intervalKey, interval.name);
+    await prefs.setString(intervalKey, interval.name);
   }
 
   /// Get the timestamp of the last auto-backup, or null if never performed.

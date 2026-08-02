@@ -1,7 +1,11 @@
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
+import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
+import 'package:mekuru/features/manga/data/services/manga_lookup_override_storage.dart';
+import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
+import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,41 +17,24 @@ class BackupService {
 
   BackupService(this._db, this._bookMatchService);
 
-  /// All app.* SharedPreferences keys to include in backup.
-  static const _appKeys = [
-    'app.theme_mode',
-    'app.library_sort_order',
-    'app.lookup_font_size',
-    'app.dictionary_search_history',
-    'app.filter_roman_letters',
-    'app.ankidroid_config',
-    'app.startup_screen',
-    'app.auto_focus_search',
-    'app.color_theme',
-    'app.auto_crop_white_threshold',
-    'app.ocr_server_url',
-    'app.manga_lookup_overrides',
-    'backup.auto_interval',
+  /// All app-level SharedPreferences keys to include in backup, derived from
+  /// the storage classes that own them so new settings are picked up
+  /// automatically.
+  static const List<String> appKeys = [
+    ...SharedPreferencesAppSettingsStorage.allKeys,
+    MangaLookupOverrideStorage.prefsKey,
+    BackupScheduler.intervalKey,
   ];
 
   /// All reader.* SharedPreferences keys to include in backup.
-  static const _readerKeys = [
-    'reader.font_size',
-    'reader.horizontal_padding',
-    'reader.vertical_padding',
-    'reader.swipe_sensitivity',
-    'reader.manga_page_turn_edge_zone_width',
-    'reader.color_mode',
-    'reader.keep_screen_on',
-    'reader.sepia_intensity',
-    'reader.disable_links',
-  ];
+  static const List<String> readerKeys =
+      SharedPreferencesReaderSettingsStorage.allKeys;
 
   Future<BackupManifest> createBackup() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final appSettings = _readPrefsMap(prefs, _appKeys);
-    final readerSettings = _readPrefsMap(prefs, _readerKeys);
+    final appSettings = _readPrefsMap(prefs, appKeys);
+    final readerSettings = _readPrefsMap(prefs, readerKeys);
     final dictionaryPreferences =
         await (_db.select(_db.dictionaryMetas)
               ..where((t) => t.isHidden.equals(false))
