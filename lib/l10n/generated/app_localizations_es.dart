@@ -1046,7 +1046,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get backupScopeNoteRestore =>
-      'Después de restaurar, vuelve a importar el mismo contenido EPUB o manga. Si el contenido coincide exactamente, tu historial volverá. Las estadísticas de lectura solo se restauran si este dispositivo aún no tiene estadísticas. La configuración de diccionarios coincidente se puede aplicar más tarde desde el Gestor de diccionarios.';
+      'Después de restaurar, vuelve a importar el mismo contenido EPUB o manga. Si el contenido coincide exactamente, tu historial volverá. El historial de tiempo de lectura solo se restaura si este dispositivo aún no tiene ninguno; las estadísticas de vocabulario se fusionan con las existentes. La configuración de diccionarios coincidente se puede aplicar más tarde desde el Gestor de diccionarios.';
 
   @override
   String get backupSectionAutoBackup => 'Copia automática';
@@ -1214,7 +1214,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'Esto restaurará la configuración y los datos de usuario desde $fileName, como marcadores, resaltados y listas de vocabulario. No restaura los archivos reales de EPUB, manga o diccionarios. Después de restaurar, vuelve a importar el mismo contenido EPUB o manga para recuperar su historial. Las estadísticas de lectura solo se restauran si este dispositivo aún no tiene estadísticas. Tu configuración actual será sobrescrita.';
+    return 'Esto restaurará la configuración y los datos de usuario desde $fileName, como marcadores, resaltados y listas de vocabulario. No restaura los archivos reales de EPUB, manga o diccionarios. Después de restaurar, vuelve a importar el mismo contenido EPUB o manga para recuperar su historial. El historial de tiempo de lectura solo se restaura si este dispositivo aún no tiene ninguno; las estadísticas de vocabulario se fusionan con las existentes. Tu configuración actual será sobrescrita.';
   }
 
   @override

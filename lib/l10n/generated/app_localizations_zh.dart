@@ -984,7 +984,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupScopeNoteRestore =>
-      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。只有当此设备还没有统计数据时，才会恢复阅读统计。匹配的词典设置可稍后在“词典管理”中应用。';
+      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。匹配的词典设置可稍后在“词典管理”中应用。';
 
   @override
   String get backupSectionAutoBackup => '自动备份';
@@ -1145,7 +1145,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB、漫画或词典文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。只有当此设备还没有统计数据时，才会恢复阅读统计。您当前的设置将被覆盖。';
+    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB、漫画或词典文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。您当前的设置将被覆盖。';
   }
 
   @override
@@ -3047,7 +3047,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupScopeNoteRestore =>
-      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。只有当此设备还没有统计数据时，才会恢复阅读统计。匹配的词典设置可稍后在“词典管理”中应用。';
+      '恢复后，请重新导入相同的 EPUB 或漫画内容。如果内容完全一致，您的阅读记录会恢复。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。匹配的词典设置可稍后在“词典管理”中应用。';
 
   @override
   String get backupSectionAutoBackup => '自动备份';
@@ -3208,7 +3208,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB、漫画或词典文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。只有当此设备还没有统计数据时，才会恢复阅读统计。您当前的设置将被覆盖。';
+    return '这将从 $fileName 恢复设置和用户数据，例如书签、高亮和词汇表。它不会恢复实际的 EPUB、漫画或词典文件。恢复后，请重新导入相同的 EPUB 或漫画内容以找回记录。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。您当前的设置将被覆盖。';
   }
 
   @override

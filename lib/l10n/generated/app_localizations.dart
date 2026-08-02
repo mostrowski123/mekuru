@@ -1867,7 +1867,7 @@ abstract class AppLocalizations {
   /// Follow-up text for the informational note explaining how restored history is reapplied.
   ///
   /// In en, this message translates to:
-  /// **'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Reading stats are only restored if this device has no stats yet. Matching dictionary settings can be applied later from Dictionary Manager.'**
+  /// **'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.'**
   String get backupScopeNoteRestore;
 
   /// Section header for auto-backup settings.
@@ -2086,7 +2086,7 @@ abstract class AppLocalizations {
   /// Body for the restore backup confirmation dialog.
   ///
   /// In en, this message translates to:
-  /// **'This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Reading stats are only restored if this device has no stats yet. Your current settings will be overwritten.'**
+  /// **'This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Your current settings will be overwritten.'**
   String backupRestoreDialogBody({required String fileName});
 
   /// Checkbox label for queueing dictionary order and enabled states from a restored backup.
