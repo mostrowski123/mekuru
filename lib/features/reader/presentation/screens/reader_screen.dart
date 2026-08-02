@@ -25,6 +25,7 @@ import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
 import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -1402,10 +1403,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   void _showSettingsSheet(BuildContext context) {
     showReaderSettingsSheet(
       context: context,
-      builder: (context) => EpubReaderSettingsSheet(
+      builder: (sheetContext) => EpubReaderSettingsSheet(
         bookLanguage: _bookLanguage,
         pageProgressionDirection: widget.book.pageProgressionDirection,
         onSettingChanged: _recordSettingChanged,
+        onOpenAllSettings: () {
+          AppHaptics.light();
+          Navigator.of(sheetContext).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const ReadingSettingsScreen(),
+            ),
+          );
+        },
       ),
     );
   }

@@ -3,7 +3,7 @@ import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
-import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
 import '../../data/services/ocr_billing_client.dart';
@@ -120,9 +120,10 @@ class OcrPurchaseFlow {
       return _openSettingsScreenOverride(context);
     }
 
+    // The custom OCR server tile lives on the Reading settings subpage.
     return Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+    ).push(MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()));
   }
 
   Future<_ServerSetupDialogAction?> _showCustomServerRequiredDialog(

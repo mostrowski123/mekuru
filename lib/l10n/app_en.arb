@@ -1736,6 +1736,26 @@
   "@mangaViewModeTitle": {
     "description": "Label for the manga page layout control (single page, spread, or scroll)."
   },
+  "settingsReadingTitle": "Reading",
+  "@settingsReadingTitle": {
+    "description": "Title of the reading settings subpage and its entry tile on the main settings screen."
+  },
+  "settingsReadingSubtitle": "Text size, colors, margins, and manga defaults",
+  "@settingsReadingSubtitle": {
+    "description": "Subtitle of the reading settings tile on the main settings screen."
+  },
+  "settingsReadingSectionShared": "All books",
+  "@settingsReadingSectionShared": {
+    "description": "Section header on the reading settings screen for settings shared by both EPUB and manga readers."
+  },
+  "settingsReadingSectionEpub": "EPUB",
+  "@settingsReadingSectionEpub": {
+    "description": "Section header on the reading settings screen for EPUB-only settings."
+  },
+  "settingsReadingSectionManga": "Manga",
+  "@settingsReadingSectionManga": {
+    "description": "Section header on the reading settings screen for manga-only settings."
+  },
   "readerVerticalTextTitle": "Vertical Text",
   "@readerVerticalTextTitle": {
     "description": "Title for the per-book vertical text setting."

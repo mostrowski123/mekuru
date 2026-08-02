@@ -116,6 +116,36 @@ void main() {
     },
   );
 
+  testWidgets('reading subpage font size change persists to reader storage', (
+    tester,
+  ) async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final readerStorage = InMemoryReaderSettingsStorage();
+
+    await tester.pumpWidget(
+      buildIntegrationTestApp(
+        db: db,
+        home: const SettingsScreen(),
+        readerSettingsStorage: readerStorage,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Drill into the Reading subpage from the main settings screen.
+    await tester.tap(find.text(l10n.settingsReadingSubtitle));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.settingsReadingSectionShared), findsOneWidget);
+
+    // Drag the font size slider (the first slider on the subpage).
+    await tester.drag(find.byType(Slider).first, const Offset(80, 0));
+    await tester.pumpAndSettle();
+
+    final saved = await readerStorage.load();
+    expect(saved, isNotNull);
+    expect(saved!.fontSize, isNot(18.0));
+  });
+
   testWidgets('startup screen change persists to storage', (tester) async {
     final db = createTestDatabase();
     addTearDown(db.close);

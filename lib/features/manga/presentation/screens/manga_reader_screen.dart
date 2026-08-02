@@ -28,10 +28,12 @@ import 'package:mekuru/features/reader/presentation/providers/reader_providers.d
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
+import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -645,15 +647,32 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         mokuroBook.pages.any((page) => page.contentBounds != null);
     showReaderSettingsSheet(
       context: context,
-      builder: (context) => MangaReaderSettingsSheet(
+      builder: (sheetContext) => MangaReaderSettingsSheet(
         hasComputedAutoCrop: hasComputedAutoCrop,
         onAutoCropToggled: (value) =>
             _handleAutoCropToggle(ref, mokuroBook, value),
         onAutoCropRerun: () => _handleAutoCropRerun(ref),
         onUnlockPro: _openProUpgradeFromReader,
         onSettingChanged: _recordSettingChanged,
+        onOpenAllSettings: () {
+          AppHaptics.light();
+          Navigator.of(sheetContext).pop();
+          unawaited(_openAllSettingsFromReader());
+        },
       ),
     );
+  }
+
+  /// The manga reader hides the system bars; restore them for the settings
+  /// screen and re-apply the reader state when returning.
+  Future<void> _openAllSettingsFromReader() async {
+    await _setReaderSystemBarsVisible(true);
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()),
+    );
+    if (!mounted) return;
+    await _setReaderSystemBarsVisible(_showControls);
   }
 
   void _recordSettingChanged(String setting, Object value) {
