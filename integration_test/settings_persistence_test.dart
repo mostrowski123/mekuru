@@ -26,10 +26,7 @@ void main() {
     addTearDown(db.close);
 
     await tester.pumpWidget(
-      buildIntegrationTestApp(
-        db: db,
-        home: const SettingsScreen(),
-      ),
+      buildIntegrationTestApp(db: db, home: const SettingsScreen()),
     );
     await tester.pumpAndSettle();
 
@@ -54,10 +51,7 @@ void main() {
     addTearDown(db.close);
 
     await tester.pumpWidget(
-      buildIntegrationTestApp(
-        db: db,
-        home: const SettingsScreen(),
-      ),
+      buildIntegrationTestApp(db: db, home: const SettingsScreen()),
     );
     await tester.pumpAndSettle();
 

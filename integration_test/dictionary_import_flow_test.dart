@@ -14,16 +14,34 @@ import 'shared/test_infrastructure.dart';
 // [expression, reading, definitionTags, rules, score, glossary, sequence, termTags]
 const _entries = <List<Object>>[
   [
-    '食べる', 'たべる', 'v1', 'vt', 0,
-    ['to eat'], 1, '',
+    '食べる',
+    'たべる',
+    'v1',
+    'vt',
+    0,
+    ['to eat'],
+    1,
+    '',
   ],
   [
-    '飲む', 'のむ', 'v5m', 'vt', 0,
-    ['to drink'], 2, '',
+    '飲む',
+    'のむ',
+    'v5m',
+    'vt',
+    0,
+    ['to drink'],
+    2,
+    '',
   ],
   [
-    '走る', 'はしる', 'v5r', 'vi', 0,
-    ['to run'], 3, '',
+    '走る',
+    'はしる',
+    'v5r',
+    'vi',
+    0,
+    ['to run'],
+    3,
+    '',
   ],
 ];
 
@@ -33,9 +51,7 @@ Future<String> _writeFixtureZip(Directory dir, {required String title}) async {
   final indexBytes = utf8.encode(
     jsonEncode({'title': title, 'format': 3, 'revision': '1.0'}),
   );
-  archive.addFile(
-    ArchiveFile('index.json', indexBytes.length, indexBytes),
-  );
+  archive.addFile(ArchiveFile('index.json', indexBytes.length, indexBytes));
 
   final termBankBytes = utf8.encode(jsonEncode(_entries));
   archive.addFile(

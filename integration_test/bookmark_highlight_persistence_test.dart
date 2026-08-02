@@ -11,10 +11,9 @@ import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dar
 import 'shared/test_infrastructure.dart';
 import 'test_helpers.dart';
 
-Future<int> _insertBook(AppDatabase db, String title) =>
-    db.into(db.books).insert(
-      BooksCompanion.insert(title: title, filePath: '/fake/$title.epub'),
-    );
+Future<int> _insertBook(AppDatabase db, String title) => db
+    .into(db.books)
+    .insert(BooksCompanion.insert(title: title, filePath: '/fake/$title.epub'));
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -133,8 +132,16 @@ void main() {
       final book1 = await _insertBook(db, 'Book 1');
       final book2 = await _insertBook(db, 'Book 2');
 
-      await repo.addHighlight(bookId: book1, cfiRange: 'c1', selectedText: 't1');
-      await repo.addHighlight(bookId: book2, cfiRange: 'c2', selectedText: 't2');
+      await repo.addHighlight(
+        bookId: book1,
+        cfiRange: 'c1',
+        selectedText: 't1',
+      );
+      await repo.addHighlight(
+        bookId: book2,
+        cfiRange: 'c2',
+        selectedText: 't2',
+      );
 
       await repo.deleteHighlightsForBook(book1);
 
@@ -178,44 +185,40 @@ void main() {
   });
 
   group('HighlightsSheet widget', () {
-    testWidgets(
-      'renders seeded highlights and swipe-to-delete removes them',
-      (tester) async {
-        final db = createTestDatabase();
-        addTearDown(db.close);
+    testWidgets('renders seeded highlights and swipe-to-delete removes them', (
+      tester,
+    ) async {
+      final db = createTestDatabase();
+      addTearDown(db.close);
 
-        final bookId = await _insertBook(db, 'Test');
-        final repo = HighlightRepository(db);
-        await repo.addHighlight(
-          bookId: bookId,
-          cfiRange: 'epubcfi(/6/4,/1:0,/1:10)',
-          selectedText: 'highlighted passage',
-        );
+      final bookId = await _insertBook(db, 'Test');
+      final repo = HighlightRepository(db);
+      await repo.addHighlight(
+        bookId: bookId,
+        cfiRange: 'epubcfi(/6/4,/1:0,/1:10)',
+        selectedText: 'highlighted passage',
+      );
 
-        await tester.pumpWidget(
-          buildIntegrationTestApp(
-            db: db,
-            home: Scaffold(
-              body: HighlightsSheet(
-                bookId: bookId,
-                onRemoveHighlight: (_) {},
-              ),
-            ),
+      await tester.pumpWidget(
+        buildIntegrationTestApp(
+          db: db,
+          home: Scaffold(
+            body: HighlightsSheet(bookId: bookId, onRemoveHighlight: (_) {}),
           ),
-        );
+        ),
+      );
 
-        await pumpUntilVisible(tester, find.text('highlighted passage'));
+      await pumpUntilVisible(tester, find.text('highlighted passage'));
 
-        await tester.fling(
-          find.text('highlighted passage'),
-          const Offset(-500, 0),
-          1500,
-        );
-        await tester.pumpAndSettle();
+      await tester.fling(
+        find.text('highlighted passage'),
+        const Offset(-500, 0),
+        1500,
+      );
+      await tester.pumpAndSettle();
 
-        expect(find.text('highlighted passage'), findsNothing);
-        expect(await repo.getAllHighlightsForBook(bookId), isEmpty);
-      },
-    );
+      expect(find.text('highlighted passage'), findsNothing);
+      expect(await repo.getAllHighlightsForBook(bookId), isEmpty);
+    });
   });
 }

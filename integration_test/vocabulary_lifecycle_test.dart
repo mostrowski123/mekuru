@@ -22,10 +22,7 @@ void main() {
     await seedVocabulary(db, count: 5);
 
     await tester.pumpWidget(
-      buildIntegrationTestApp(
-        db: db,
-        home: const VocabularyScreen(),
-      ),
+      buildIntegrationTestApp(db: db, home: const VocabularyScreen()),
     );
 
     // Wait for the reactive stream to deliver data.
@@ -49,10 +46,7 @@ void main() {
     await seedVocabulary(db, count: 5);
 
     await tester.pumpWidget(
-      buildIntegrationTestApp(
-        db: db,
-        home: const VocabularyScreen(),
-      ),
+      buildIntegrationTestApp(db: db, home: const VocabularyScreen()),
     );
 
     await pumpUntilVisible(
@@ -82,10 +76,7 @@ void main() {
     await seedVocabulary(db, count: 3);
 
     await tester.pumpWidget(
-      buildIntegrationTestApp(
-        db: db,
-        home: const VocabularyScreen(),
-      ),
+      buildIntegrationTestApp(db: db, home: const VocabularyScreen()),
     );
 
     await pumpUntilVisible(
