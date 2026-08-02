@@ -9,7 +9,6 @@ abstract class ReaderSettingsStorage {
 
 class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _fontSizeKey = 'reader.font_size';
-  static const _pageTurnAnimationKey = 'reader.page_turn_animation';
   static const _horizontalPaddingKey = 'reader.horizontal_padding';
   static const _verticalPaddingKey = 'reader.vertical_padding';
   static const _swipeSensitivityKey = 'reader.swipe_sensitivity';
@@ -27,7 +26,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     final prefs = await SharedPreferences.getInstance();
     final hasSavedSettings =
         prefs.containsKey(_fontSizeKey) ||
-        prefs.containsKey(_pageTurnAnimationKey) ||
         prefs.containsKey(_horizontalPaddingKey) ||
         prefs.containsKey(_verticalPaddingKey) ||
         prefs.containsKey(_swipeSensitivityKey) ||
@@ -47,7 +45,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       fontSize: prefs.getDouble(_fontSizeKey) ?? 18,
       // verticalText and readingDirection are per-book settings stored in the
       // Books table — not loaded from global preferences. Use class defaults.
-      pageTurnAnimationEnabled: prefs.getBool(_pageTurnAnimationKey) ?? true,
       horizontalPadding: prefs.getInt(_horizontalPaddingKey) ?? 28,
       verticalPadding: prefs.getInt(_verticalPaddingKey) ?? 28,
       swipeSensitivity: prefs.getDouble(_swipeSensitivityKey) ?? 0.05,
@@ -70,10 +67,6 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_fontSizeKey, settings.fontSize);
     // verticalText and readingDirection are per-book — not saved globally.
-    await prefs.setBool(
-      _pageTurnAnimationKey,
-      settings.pageTurnAnimationEnabled,
-    );
     await prefs.setInt(_horizontalPaddingKey, settings.horizontalPadding);
     await prefs.setInt(_verticalPaddingKey, settings.verticalPadding);
     await prefs.setDouble(_swipeSensitivityKey, settings.swipeSensitivity);

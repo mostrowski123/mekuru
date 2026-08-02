@@ -33,7 +33,6 @@ class BackupService {
   /// All reader.* SharedPreferences keys to include in backup.
   static const _readerKeys = [
     'reader.font_size',
-    'reader.page_turn_animation',
     'reader.horizontal_padding',
     'reader.vertical_padding',
     'reader.swipe_sensitivity',
