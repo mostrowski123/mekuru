@@ -93,6 +93,32 @@ class MangaEdgeZoneRow extends ConsumerWidget {
   }
 }
 
+class MangaPageTurnAnimationRow extends ConsumerWidget {
+  const MangaPageTurnAnimationRow({super.key, this.onSettingChanged});
+
+  final void Function(String setting, Object value)? onSettingChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final animationEnabled = ref.watch(
+      readerSettingsProvider.select((s) => s.mangaPageTurnAnimation),
+    );
+    return SettingsSwitchRow(
+      icon: Icons.animation,
+      title: l10n.mangaPageTurnAnimationTitle,
+      subtitle: l10n.mangaPageTurnAnimationSubtitle,
+      value: animationEnabled,
+      onChanged: (value) {
+        ref
+            .read(readerSettingsProvider.notifier)
+            .setMangaPageTurnAnimation(value);
+        onSettingChanged?.call('page_turn_animation', value);
+      },
+    );
+  }
+}
+
 class MangaTransparentLookupRow extends ConsumerWidget {
   const MangaTransparentLookupRow({super.key, this.onSettingChanged});
 

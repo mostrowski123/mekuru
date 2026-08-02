@@ -111,7 +111,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Reading ──
-          SettingsSectionHeader(title: l10n.settingsReadingTitle),
+          SettingsSectionHeader(title: l10n.settingsSectionReading),
           ListTile(
             leading: Icon(
               Icons.menu_book_outlined,

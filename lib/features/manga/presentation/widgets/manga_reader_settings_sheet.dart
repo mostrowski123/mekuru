@@ -65,6 +65,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
         MangaReadingDirectionRow(onSettingChanged: onSettingChanged),
         const SizedBox(height: 16),
         MangaEdgeZoneRow(onSettingChanged: onSettingChanged),
+        MangaPageTurnAnimationRow(onSettingChanged: onSettingChanged),
 
         // ── Image ──
         SettingsSectionHeader.sheet(title: l10n.mangaSettingsSectionImage),

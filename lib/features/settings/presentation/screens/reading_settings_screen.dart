@@ -43,6 +43,17 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
         children: [
           // ── All books ──
           SettingsSectionHeader(title: l10n.settingsReadingSectionShared),
+          SettingsSwitchRow(
+            icon: Icons.lightbulb_outline,
+            title: l10n.settingsKeepScreenOnTitle,
+            subtitle: l10n.settingsKeepScreenOnSubtitle,
+            value: settings.keepScreenOn,
+            onChanged: notifier.setKeepScreenOn,
+          ),
+          const Divider(),
+
+          // ── EPUB ──
+          SettingsSectionHeader(title: l10n.settingsReadingSectionEpub),
           ListTile(
             leading: Icon(Icons.text_fields, color: theme.colorScheme.primary),
             title: Text(l10n.settingsFontSizeTitle),
@@ -86,17 +97,6 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
                 onChanged: notifier.setSepiaIntensity,
               ),
             ),
-          SettingsSwitchRow(
-            icon: Icons.lightbulb_outline,
-            title: l10n.settingsKeepScreenOnTitle,
-            subtitle: l10n.settingsKeepScreenOnSubtitle,
-            value: settings.keepScreenOn,
-            onChanged: notifier.setKeepScreenOn,
-          ),
-          const Divider(),
-
-          // ── EPUB ──
-          SettingsSectionHeader(title: l10n.settingsReadingSectionEpub),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -173,6 +173,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
               ],
             ),
           ),
+          const MangaPageTurnAnimationRow(),
           const MangaTransparentLookupRow(),
           if (isProUnlocked) ...[
             ListTile(

@@ -359,8 +359,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     }
   }
 
+  /// Whether programmatic page turns animate (off for e-reader displays).
+  bool get _animatePageTurns =>
+      ref.read(readerSettingsProvider).mangaPageTurnAnimation;
+
   void _goToPage(int page, int totalPages) {
     final clamped = page.clamp(0, totalPages - 1);
+    if (!_animatePageTurns) {
+      _pageController.jumpToPage(clamped);
+      return;
+    }
     _pageController.animateToPage(
       clamped,
       duration: const Duration(milliseconds: 300),
@@ -377,11 +385,17 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       case MangaViewMode.twoPageSpread:
         if (spreads.isNotEmpty) {
           final si = spreadIndexForPage(spreads, _currentPage);
-          _spreadViewKey.currentState?.goToSpread(si + delta);
+          _spreadViewKey.currentState?.goToSpread(
+            si + delta,
+            animate: _animatePageTurns,
+          );
         }
       case MangaViewMode.scroll:
         _recordPageTurn(forward: delta > 0);
-        _scrollViewKey.currentState?.scrollToPage(_currentPage + delta);
+        _scrollViewKey.currentState?.scrollToPage(
+          _currentPage + delta,
+          animate: _animatePageTurns,
+        );
     }
   }
 
@@ -1026,10 +1040,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                                             page,
                                           );
                                           _spreadViewKey.currentState
-                                              ?.goToSpread(si);
+                                              ?.goToSpread(
+                                                si,
+                                                animate: _animatePageTurns,
+                                              );
                                         case MangaViewMode.scroll:
                                           _scrollViewKey.currentState
-                                              ?.scrollToPage(page);
+                                              ?.scrollToPage(
+                                                page,
+                                                animate: _animatePageTurns,
+                                              );
                                       }
                                     },
                                     // The last division dragged over is the

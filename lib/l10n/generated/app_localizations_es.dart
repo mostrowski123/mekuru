@@ -1354,7 +1354,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mangaViewModeTitle => 'Modo de visualización';
 
   @override
-  String get settingsReadingTitle => 'Lectura';
+  String get mangaPageTurnAnimationTitle => 'Animación al pasar página';
+
+  @override
+  String get mangaPageTurnAnimationSubtitle =>
+      'Desactívala en pantallas de tinta electrónica';
+
+  @override
+  String get settingsReadingTitle => 'Ajustes del lector';
+
+  @override
+  String get settingsSectionReading => 'Lectura';
 
   @override
   String get settingsReadingSubtitle =>

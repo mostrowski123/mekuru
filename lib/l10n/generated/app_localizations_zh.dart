@@ -1283,7 +1283,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mangaViewModeTitle => '浏览模式';
 
   @override
-  String get settingsReadingTitle => '阅读';
+  String get mangaPageTurnAnimationTitle => '翻页动画';
+
+  @override
+  String get mangaPageTurnAnimationSubtitle => '电子墨水屏建议关闭';
+
+  @override
+  String get settingsReadingTitle => '阅读器设置';
+
+  @override
+  String get settingsSectionReading => '阅读';
 
   @override
   String get settingsReadingSubtitle => '字号、颜色、页边距及漫画默认设置';
@@ -3303,7 +3312,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get mangaViewModeTitle => '浏览模式';
 
   @override
-  String get settingsReadingTitle => '阅读';
+  String get mangaPageTurnAnimationTitle => '翻页动画';
+
+  @override
+  String get mangaPageTurnAnimationSubtitle => '电子墨水屏建议关闭';
+
+  @override
+  String get settingsReadingTitle => '阅读器设置';
+
+  @override
+  String get settingsSectionReading => '阅读';
 
   @override
   String get settingsReadingSubtitle => '字号、颜色、页边距及漫画默认设置';

@@ -126,6 +126,10 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(mangaTransparentLookup: transparent));
   }
 
+  void setMangaPageTurnAnimation(bool enabled) {
+    _update(state.copyWith(mangaPageTurnAnimation: enabled));
+  }
+
   void setColorMode(ColorMode mode) {
     _update(state.copyWith(colorMode: mode));
   }

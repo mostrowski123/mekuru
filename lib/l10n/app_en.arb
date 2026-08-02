@@ -1724,9 +1724,21 @@
   "@mangaViewModeTitle": {
     "description": "Label for the manga page layout control (single page, spread, or scroll)."
   },
-  "settingsReadingTitle": "Reading",
+  "mangaPageTurnAnimationTitle": "Page Turn Animation",
+  "@mangaPageTurnAnimationTitle": {
+    "description": "Toggle for animating manga page turns."
+  },
+  "mangaPageTurnAnimationSubtitle": "Turn off for e-reader displays",
+  "@mangaPageTurnAnimationSubtitle": {
+    "description": "Explains that disabling the manga page turn animation suits e-ink e-reader screens."
+  },
+  "settingsReadingTitle": "Reader Settings",
   "@settingsReadingTitle": {
-    "description": "Title of the reading settings subpage and its entry tile on the main settings screen."
+    "description": "Title of the reader settings subpage and its entry tile on the main settings screen."
+  },
+  "settingsSectionReading": "Reading",
+  "@settingsSectionReading": {
+    "description": "Section header on the main settings screen above the reader settings entry tile."
   },
   "settingsReadingSubtitle": "Text size, colors, margins, and manga defaults",
   "@settingsReadingSubtitle": {
