@@ -111,6 +111,10 @@ class ReaderSettings {
   ///   filter. Currently behaves like [FuriganaMode.all].
   final FuriganaMode furiganaMode;
 
+  /// Screen brightness override (0.0–1.0) applied while a reader is open.
+  /// `null` means follow the system brightness.
+  final double? brightness;
+
   const ReaderSettings({
     this.fontSize = 18,
     this.verticalText = true,
@@ -126,6 +130,7 @@ class ReaderSettings {
     this.sepiaIntensity = 0.5,
     this.disableLinks = false,
     this.furiganaMode = FuriganaMode.off,
+    this.brightness,
   });
 
   ReaderSettings copyWith({
@@ -142,6 +147,8 @@ class ReaderSettings {
     double? sepiaIntensity,
     bool? disableLinks,
     FuriganaMode? furiganaMode,
+    double? brightness,
+    bool clearBrightness = false,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -159,6 +166,7 @@ class ReaderSettings {
       sepiaIntensity: sepiaIntensity ?? this.sepiaIntensity,
       disableLinks: disableLinks ?? this.disableLinks,
       furiganaMode: furiganaMode ?? this.furiganaMode,
+      brightness: clearBrightness ? null : (brightness ?? this.brightness),
     );
   }
 }

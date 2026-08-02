@@ -50,7 +50,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   final _epubController = CustomEpubController();
   final _epubFileResolver = EpubFileResolver();
 
-  late final BrightnessNotifier _brightnessNotifier;
+  late final ReaderBrightnessNotifier _brightnessNotifier;
   late final ReaderProgressPersistence _progressPersistence;
   late final ReaderSessionTracker _sessionTracker;
 
@@ -103,7 +103,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     AnalyticsService.instance.logEvent('book_opened');
     _sessionTracker = ReaderSessionTracker(bookFormat: 'epub');
 
-    _brightnessNotifier = ref.read(brightnessProvider.notifier);
+    _brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
     _statsRepository = ref.read(statsRepositoryProvider);
     // Capture the repository once so the persistence callback never reaches
     // back through `ref` after the widget begins unmounting (queued saves can
@@ -143,7 +143,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (settings.keepScreenOn) {
         WakelockPlus.enable();
       }
-      await _brightnessNotifier.initialize();
+      await _brightnessNotifier.applyForReaderOpen();
 
       if (!mounted) return;
       await _loadEpubData();
@@ -1421,8 +1421,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           final l10n = context.l10n;
           final settings = ref.watch(readerSettingsProvider);
           final notifier = ref.read(readerSettingsProvider.notifier);
-          final brightness = ref.watch(brightnessProvider);
-          final brightnessNotifier = ref.read(brightnessProvider.notifier);
+          final brightness = ref.watch(readerBrightnessProvider);
+          final brightnessNotifier = ref.read(
+            readerBrightnessProvider.notifier,
+          );
 
           return DraggableScrollableSheet(
             expand: false,
@@ -1471,7 +1473,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       const Icon(Icons.brightness_low),
                       Expanded(
                         child: Slider(
-                          value: brightness ?? 0.5,
+                          value: brightness.sliderValue,
                           min: 0.0,
                           max: 1.0,
                           onChanged: (value) {
@@ -1485,6 +1487,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         ),
                       ),
                       const Icon(Icons.brightness_high),
+                      IconButton(
+                        tooltip: l10n.readerBrightnessFollowSystem,
+                        icon: Icon(
+                          Icons.brightness_auto,
+                          color: brightness.followsSystem
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                        ),
+                        onPressed: () {
+                          AppHaptics.light();
+                          brightnessNotifier.followSystemBrightness();
+                          _recordSettingChanged('brightness', 'system');
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),

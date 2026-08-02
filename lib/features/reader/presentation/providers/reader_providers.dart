@@ -7,6 +7,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/reader/data/models/book_reading_config.dart';
+import 'package:mekuru/features/reader/data/models/reader_brightness_state.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/compound_word_resolver.dart';
 import 'package:mekuru/features/reader/data/repositories/bookmark_repository.dart';
@@ -121,6 +122,14 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _persistSettings();
   }
 
+  /// Sets the brightness override; `null` means follow the system brightness.
+  void setBrightness(double? value) {
+    state = value == null
+        ? state.copyWith(clearBrightness: true)
+        : state.copyWith(brightness: value);
+    _persistSettings();
+  }
+
   void setFuriganaMode(FuriganaMode mode) {
     state = state.copyWith(furiganaMode: mode);
     _persistSettings();
@@ -201,38 +210,55 @@ final readerSettingsProvider =
       ReaderSettingsNotifier.new,
     );
 
-/// Ephemeral brightness level for the current reading session.
-/// Initialized from the system brightness when first read.
-class BrightnessNotifier extends Notifier<double?> {
-  @override
-  double? build() => null;
+/// Applies the persisted brightness override while a reader is open and
+/// restores the system brightness when it closes.
+class ReaderBrightnessNotifier extends Notifier<ReaderBrightnessState> {
+  /// Last device brightness read; survives [build] re-runs because Riverpod
+  /// retains the notifier instance.
+  double _systemLevel = 0.5;
 
-  Future<void> initialize() async {
-    if (state != null) return;
+  @override
+  ReaderBrightnessState build() {
+    final override = ref.watch(
+      readerSettingsProvider.select((settings) => settings.brightness),
+    );
+    return ReaderBrightnessState(override: override, systemLevel: _systemLevel);
+  }
+
+  /// Reads the device brightness (for slider positioning) and applies the
+  /// persisted override, if any. Call from a reader screen's initState.
+  Future<void> applyForReaderOpen() async {
     try {
-      final brightness = await ScreenBrightness.instance.application;
-      state = brightness;
+      _systemLevel = await ScreenBrightness.instance.system;
     } catch (e) {
-      debugPrint('[Brightness] failed to read current brightness: $e');
+      debugPrint('[Brightness] failed to read system brightness: $e');
       try {
-        final brightness = await ScreenBrightness.instance.system;
-        state = brightness;
+        _systemLevel = await ScreenBrightness.instance.application;
       } catch (e) {
-        debugPrint('[Brightness] failed to read system brightness: $e');
-        state = 0.5;
+        debugPrint('[Brightness] failed to read current brightness: $e');
+        _systemLevel = 0.5;
       }
+    }
+    final override = state.override;
+    state = ReaderBrightnessState(override: override, systemLevel: _systemLevel);
+    if (override != null) {
+      await _setApplicationBrightness(override);
     }
   }
 
   Future<void> setBrightness(double value) async {
-    state = value;
-    try {
-      await ScreenBrightness.instance.setApplicationScreenBrightness(value);
-    } catch (e) {
-      debugPrint('[Brightness] failed to set brightness: $e');
-    }
+    ref.read(readerSettingsProvider.notifier).setBrightness(value);
+    await _setApplicationBrightness(value);
   }
 
+  /// Clears the override and returns control to the system brightness.
+  Future<void> followSystemBrightness() async {
+    ref.read(readerSettingsProvider.notifier).setBrightness(null);
+    await resetBrightness();
+  }
+
+  /// Restores the system brightness without clearing the persisted override.
+  /// Call from a reader screen's dispose.
   Future<void> resetBrightness() async {
     try {
       await ScreenBrightness.instance.resetApplicationScreenBrightness();
@@ -240,11 +266,20 @@ class BrightnessNotifier extends Notifier<double?> {
       debugPrint('[Brightness] failed to reset brightness: $e');
     }
   }
+
+  Future<void> _setApplicationBrightness(double value) async {
+    try {
+      await ScreenBrightness.instance.setApplicationScreenBrightness(value);
+    } catch (e) {
+      debugPrint('[Brightness] failed to set brightness: $e');
+    }
+  }
 }
 
-final brightnessProvider = NotifierProvider<BrightnessNotifier, double?>(
-  BrightnessNotifier.new,
-);
+final readerBrightnessProvider =
+    NotifierProvider<ReaderBrightnessNotifier, ReaderBrightnessState>(
+      ReaderBrightnessNotifier.new,
+    );
 
 /// Provider for the MeCab morphological analysis service.
 final mecabServiceProvider = Provider<MecabService>((ref) {
