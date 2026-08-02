@@ -414,7 +414,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             );
                           }
                         },
-                        onPageCharacters: _sessionTracker.recordCharactersRead,
+                        onPageCharacters: (count, pageKey) => _sessionTracker
+                            .recordCharactersRead(count, pageKey: pageKey),
                         onSelection: (selection) {
                           _hasActiveSelection = true;
                           if (selection.text.isNotEmpty &&
