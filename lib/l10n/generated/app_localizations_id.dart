@@ -1316,6 +1316,27 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerBrightnessFollowSystem => 'Follow system brightness';
 
   @override
+  String get readerBrightnessTitle => 'Brightness';
+
+  @override
+  String get readerSettingsSectionDisplay => 'Display';
+
+  @override
+  String get readerSettingsSectionBehavior => 'Behavior';
+
+  @override
+  String get readerFuriganaTitle => 'Furigana';
+
+  @override
+  String get readerFuriganaOff => 'Off';
+
+  @override
+  String get readerFuriganaAllKanji => 'All kanji';
+
+  @override
+  String get readerAllSettingsTooltip => 'All settings';
+
+  @override
   String get readerVerticalTextTitle => 'Teks Vertikal';
 
   @override

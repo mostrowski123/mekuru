@@ -2278,6 +2278,48 @@ abstract class AppLocalizations {
   /// **'Follow system brightness'**
   String get readerBrightnessFollowSystem;
 
+  /// Label for the screen brightness slider in the reader quick settings sheets.
+  ///
+  /// In en, this message translates to:
+  /// **'Brightness'**
+  String get readerBrightnessTitle;
+
+  /// Section header in the reader quick settings sheets for visual settings (font size, brightness, colors).
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get readerSettingsSectionDisplay;
+
+  /// Section header in the EPUB quick settings sheet for behavioral settings (text splitting, links).
+  ///
+  /// In en, this message translates to:
+  /// **'Behavior'**
+  String get readerSettingsSectionBehavior;
+
+  /// Label for the furigana display mode control in the EPUB quick settings sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Furigana'**
+  String get readerFuriganaTitle;
+
+  /// Furigana mode option that hides all furigana.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get readerFuriganaOff;
+
+  /// Furigana mode option that shows furigana above every kanji.
+  ///
+  /// In en, this message translates to:
+  /// **'All kanji'**
+  String get readerFuriganaAllKanji;
+
+  /// Tooltip for the button in the reader quick settings sheets that opens the full reading settings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'All settings'**
+  String get readerAllSettingsTooltip;
+
   /// Title for the per-book vertical text setting.
   ///
   /// In en, this message translates to:
