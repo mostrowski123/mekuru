@@ -221,8 +221,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   ///
   /// Callers must invoke this only on a genuine page-change or initial-display
   /// transition — never per rebuild — since a page that becomes visible again
-  /// is intentionally counted again (the EPUB reader counts on every
-  /// relocation, so both formats measure "characters displayed").
+  /// is intentionally counted again (the EPUB reader counts on
+  /// navigation-caused relocations, so both formats measure "characters
+  /// displayed").
   ///
   /// Counting happens at display time, so a page shown before its OCR has
   /// finished contributes the characters it had then — zero for a page with no

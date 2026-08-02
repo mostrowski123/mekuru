@@ -14,6 +14,11 @@ var _currentWordHighlightCfi = null; // CFI of current word highlight
 var _disableLinks = false;           // When true, links trigger dictionary instead of navigating
 var _furiganaMode = 'off';           // 'off' | 'all' | 'aboveLevel'
 var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processed
+// Armed by navigation (initial display, page turns, TOC/CFI/progress jumps)
+// and consumed by the next 'relocated' event. Re-layout relocations (font
+// size, margins, rotation → resize + re-display of the same page) never arm
+// it, so they cannot inflate the reading-stats character count.
+var _pendingNavChars = false;
 // When true, epub.js patches in epub.js will override the detected
 // writing-mode to horizontal-tb, forcing horizontal pagination.
 // Set as a window global so epub.js code can read it.
@@ -102,6 +107,7 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
   // infinite loading spinner, when displaying from the start (no CFI) we
   // wait for the book to be ready, then check whether the default first
   // section has a valid href and skip to the first one that does.
+  _pendingNavChars = true; // the initial display counts as a navigation
   if (cfi) {
     displayed = rendition.display(cfi);
   } else {
@@ -155,7 +161,10 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
       endCfi: endCfi,
       progress: percent
     });
-    reportPageChars(location.start.cfi, endCfi);
+    if (_pendingNavChars) {
+      _pendingNavChars = false;
+      reportPageChars(location.start.cfi, endCfi);
+    }
   });
 
   rendition.on('displayError', function (err) {
@@ -384,6 +393,7 @@ function next() {
   if (currentPage < totalPages) {
     // More pages within this section — epub.js scroll-within-section works fine
     console.log('[EPUB_BRIDGE] next() scrolling within section');
+    _pendingNavChars = true;
     rendition.next();
   } else {
     // At last page of section — directly navigate to next spine item
@@ -394,6 +404,7 @@ function next() {
       if (nextItem) {
         console.log('[EPUB_BRIDGE] next() jumping to section index=' +
           nextItem.index + ' href=' + nextItem.href);
+        _pendingNavChars = true;
         rendition.display(nextItem.href);
       } else {
         console.log('[EPUB_BRIDGE] next() already at last section');
@@ -421,6 +432,7 @@ function previous() {
   if (currentPage > 1) {
     // More pages before this one in the section — scroll backwards within section
     console.log('[EPUB_BRIDGE] previous() scrolling within section');
+    _pendingNavChars = true;
     rendition.prev();
   } else {
     // At first page of section — navigate to LAST page of previous spine item
@@ -435,6 +447,7 @@ function previous() {
         // determines whether pagination is horizontal or vertical.
         // For vertical Japanese text (writing-mode: vertical-rl), the axis
         // is "vertical" and pages scroll top-to-bottom.
+        _pendingNavChars = true;
         rendition.display(prevItem.href).then(function () {
           // Wait for a rAF + microtask so the browser has a chance to
           // finish layout (especially for sections containing images
@@ -456,6 +469,7 @@ function previous() {
 
 function toCfi(cfi) {
   if (!rendition) return;
+  _pendingNavChars = true;
   rendition.display(cfi).then(function () {
     requestAnimationFrame(function () {
       setTimeout(function () {
@@ -471,6 +485,7 @@ function toProgress(progress) {
   if (book && book.locations) {
     var cfi = book.locations.cfiFromPercentage(progress);
     if (rendition) {
+      _pendingNavChars = true;
       rendition.display(cfi).then(function () {
         requestAnimationFrame(function () {
           setTimeout(function () {
@@ -538,6 +553,7 @@ function setFontSize(size) {
     rendition.manager._stageSize = undefined;
     var cfi = rendition.location && rendition.location.start
         ? rendition.location.start.cfi : null;
+    _pendingNavChars = false; // re-layout of the same page, not a navigation
     rendition.resize();
     if (cfi) rendition.display(cfi);
   }
@@ -796,6 +812,7 @@ function setMargins(horizontal, vertical) {
     var cfi = rendition.location && rendition.location.start
         ? rendition.location.start.cfi : null;
     console.log('[EPUB_BRIDGE] setMargins resizing, will restore cfi=' + cfi);
+    _pendingNavChars = false; // re-layout of the same page, not a navigation
     rendition.resize();
     // Restore position after re-layout
     if (cfi) rendition.display(cfi);
@@ -937,7 +954,13 @@ function reportPageChars(startCfi, endCfi) {
       ruby[i].parentNode.removeChild(ruby[i]);
     }
     var text = frag.textContent || '';
-    callDart('pageChars', { count: text.replace(/\s+/g, '').length });
+    // pageKey lets the Dart session tracker drop duplicate reports for the
+    // page that is already displayed (defense in depth on top of the
+    // _pendingNavChars gate).
+    callDart('pageChars', {
+      count: text.replace(/\s+/g, '').length,
+      pageKey: startCfi
+    });
   } catch (e) {
     // Malformed CFIs and out-of-order boundaries both throw synchronously;
     // this runs inside the 'relocated' listener, so it must never escape.

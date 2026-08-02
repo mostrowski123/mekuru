@@ -127,8 +127,11 @@ class CustomEpubViewer extends StatefulWidget {
   final void Function(String description)? onLoadError;
 
   /// Approximate visible-character count of the page just displayed, reported
-  /// by the JS bridge on every `relocated` event. Used for reading stats.
-  final void Function(int count)? onPageCharacters;
+  /// by the JS bridge on navigation-caused `relocated` events. [pageKey] is
+  /// the page's start CFI, letting the session tracker drop duplicate reports
+  /// for the page already on screen; a null key disables that dedup so the
+  /// page still counts. Used for reading stats.
+  final void Function(int count, String? pageKey)? onPageCharacters;
 
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
@@ -280,7 +283,10 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       callback: (data) {
         if (data.isEmpty) return;
         final map = Map<String, dynamic>.from(data[0] as Map);
-        widget.onPageCharacters?.call((map['count'] as num?)?.toInt() ?? 0);
+        widget.onPageCharacters?.call(
+          (map['count'] as num?)?.toInt() ?? 0,
+          map['pageKey'] as String?,
+        );
       },
     );
 

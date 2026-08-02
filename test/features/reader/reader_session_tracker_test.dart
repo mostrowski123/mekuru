@@ -70,6 +70,59 @@ void main() {
     expect(summary!['characters_read'], 42);
   });
 
+  test('counts each distinct page once even when re-reported', () {
+    stopwatch.fakeElapsedMs = 5000;
+    // A re-layout (font size, margins, rotation) re-reports the same page.
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    tracker.recordCharactersRead(580, pageKey: 'epubcfi(/6/4!/4/2)');
+    tracker.recordCharactersRead(590, pageKey: 'epubcfi(/6/4!/4/2)');
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 600);
+  });
+
+  test('counts pages with distinct keys separately', () {
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    tracker.recordCharactersRead(500, pageKey: 'epubcfi(/6/4!/4/8)');
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 1100);
+  });
+
+  test('counts a revisited page again after leaving it', () {
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    tracker.recordCharactersRead(500, pageKey: 'epubcfi(/6/4!/4/8)');
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 1700);
+  });
+
+  test(
+    'ignores non-positive keyed character counts without consuming the key',
+    () {
+      stopwatch.fakeElapsedMs = 5000;
+      tracker.recordCharactersRead(0, pageKey: 'epubcfi(/6/4!/4/2)');
+      tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+
+      expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 600);
+    },
+  );
+
+  test('taking a summary clears the last page key', () {
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    expect(tracker.takeSummary(endReason: 'backgrounded'), isNotNull);
+
+    // The same page re-reports after resume (e.g. the webview redisplays);
+    // the new session slice must count it, or a backgrounded round trip
+    // would lose the page entirely.
+    tracker.resume();
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 600);
+  });
+
   test('resets characters read after a summary is taken', () {
     stopwatch.fakeElapsedMs = 5000;
     tracker.recordCharactersRead(420);

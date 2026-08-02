@@ -24,6 +24,7 @@ class ReaderSessionTracker {
   int _wordsSaved = 0;
   int _settingsChanged = 0;
   int _charactersRead = 0;
+  String? _lastPageKey;
 
   /// Sessions shorter than this with no activity are dropped as noise (e.g.
   /// dispose firing right after a backgrounded summary was already taken).
@@ -42,8 +43,20 @@ class ReaderSessionTracker {
 
   /// [count] is the approximate visible-character count of a displayed page;
   /// non-positive values (failed counts) are ignored.
-  void recordCharactersRead(int count) {
-    if (count > 0) _charactersRead += count;
+  ///
+  /// A non-null [pageKey] (the page's identity, e.g. its start CFI) drops
+  /// consecutive reports for the same page: re-layouts (font size, margins,
+  /// rotation) re-report the page that is already displayed, and those must
+  /// not inflate the count. A page revisited after leaving it counts again.
+  /// Pass null when the caller already reports once per displayed page (the
+  /// manga reader gates on genuine page changes itself).
+  void recordCharactersRead(int count, {String? pageKey}) {
+    if (count <= 0) return;
+    if (pageKey != null) {
+      if (pageKey == _lastPageKey) return;
+      _lastPageKey = pageKey;
+    }
+    _charactersRead += count;
   }
 
   bool get _hasActivity =>
@@ -88,6 +101,7 @@ class ReaderSessionTracker {
     _wordsSaved = 0;
     _settingsChanged = 0;
     _charactersRead = 0;
+    _lastPageKey = null;
 
     return summary;
   }
