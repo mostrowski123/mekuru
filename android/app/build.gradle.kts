@@ -45,6 +45,24 @@ val mecabHookLibcxxAliases = mapOf(
     "armv7a-linux-androideabi" to "arm-linux-androideabi",
 )
 
+// `flutter run` builds one ABI and names it in -Ptarget-platform (comma-
+// separated when more than one); a fat `flutter build` passes no property.
+// The MeCab dart_build hook only leaves outputs for the ABIs actually built,
+// so the bundling task below must scope its demands to this set — requiring
+// all three unconditionally breaks every device-targeted release run.
+val flutterTargetPlatformToAbi = mapOf(
+    "android-arm" to "armeabi-v7a",
+    "android-arm64" to "arm64-v8a",
+    "android-x64" to "x86_64",
+)
+
+val requestedMecabAbis = (project.findProperty("target-platform") as? String)
+    ?.split(",")
+    ?.mapNotNull { flutterTargetPlatformToAbi[it.trim()] }
+    ?.toSet()
+    ?.takeUnless { it.isEmpty() }
+    ?: mecabHookArchToAbi.values.toSet()
+
 val flutterNativeAssetsJniLibsDir =
     rootProject.projectDir.parentFile.resolve("build/native_assets/android/jniLibs/lib")
 
@@ -200,9 +218,10 @@ val ensureBundledLibCppShared by tasks.registering {
 
 val ensureBundledMecabNativeAssets by tasks.registering {
     inputs.property("mecabHookArchToAbi", mecabHookArchToAbi)
+    inputs.property("requestedMecabAbis", requestedMecabAbis.sorted())
     inputs.dir(mecabHooksRunnerDir)
     outputs.files(
-        mecabHookArchToAbi.values.map { abi ->
+        requestedMecabAbis.map { abi ->
             flutterNativeAssetsJniLibsDir.resolve(abi).resolve("libmecab_dart.so")
         }
     )
@@ -266,14 +285,14 @@ val ensureBundledMecabNativeAssets by tasks.registering {
                 }
             }
 
-        val missingAbis = mecabHookArchToAbi.values.filterNot(latestAssetByAbi::containsKey)
+        val missingAbis = requestedMecabAbis.filterNot(latestAssetByAbi::containsKey)
         if (missingAbis.isNotEmpty()) {
             throw org.gradle.api.GradleException(
                 "Could not locate MeCab native hook outputs for ${missingAbis.joinToString(", ")} under $mecabHooksRunnerDir",
             )
         }
 
-        latestAssetByAbi.forEach { (abi, asset) ->
+        latestAssetByAbi.filterKeys(requestedMecabAbis::contains).forEach { (abi, asset) ->
             val destinationDir = flutterNativeAssetsJniLibsDir.resolve(abi).apply { mkdirs() }
             asset.second.copyTo(destinationDir.resolve("libmecab_dart.so"), overwrite = true)
         }
