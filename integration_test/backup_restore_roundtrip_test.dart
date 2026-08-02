@@ -35,75 +35,89 @@ void main() {
 
       // Commas, quotes, and Japanese punctuation in context exercise JSON
       // escaping in the encoded backup.
-      await sourceDb.into(sourceDb.savedWords).insert(
-        SavedWordsCompanion.insert(
-          expression: '食べる',
-          reading: const Value('たべる'),
-          glossaries: jsonEncode(['to eat', 'to consume']),
-          sentenceContext: const Value('彼は、毎日「ご飯」を食べる。'),
-          dateAdded: Value(DateTime.utc(2026, 4, 1, 9)),
-        ),
-      );
-      await sourceDb.into(sourceDb.savedWords).insert(
-        SavedWordsCompanion.insert(
-          expression: '走る',
-          reading: const Value('はしる'),
-          glossaries: jsonEncode(['to run', 'to dash']),
-          dateAdded: Value(DateTime.utc(2026, 4, 2, 10)),
-        ),
-      );
+      await sourceDb
+          .into(sourceDb.savedWords)
+          .insert(
+            SavedWordsCompanion.insert(
+              expression: '食べる',
+              reading: const Value('たべる'),
+              glossaries: jsonEncode(['to eat', 'to consume']),
+              sentenceContext: const Value('彼は、毎日「ご飯」を食べる。'),
+              dateAdded: Value(DateTime.utc(2026, 4, 1, 9)),
+            ),
+          );
+      await sourceDb
+          .into(sourceDb.savedWords)
+          .insert(
+            SavedWordsCompanion.insert(
+              expression: '走る',
+              reading: const Value('はしる'),
+              glossaries: jsonEncode(['to run', 'to dash']),
+              dateAdded: Value(DateTime.utc(2026, 4, 2, 10)),
+            ),
+          );
 
       // One book with rich per-book settings + bookmarks + highlights,
       // one plain to ensure minimal books also round-trip.
-      final melosId = await sourceDb.into(sourceDb.books).insert(
-        BooksCompanion.insert(
-          title: '走れメロス',
-          filePath: '/fake/melos.epub',
-          language: const Value('ja'),
-          readProgress: const Value(0.42),
-          lastReadCfi: const Value('epubcfi(/6/4!/4/2/2)'),
-          lastReadAt: Value(DateTime.utc(2026, 5, 10, 14, 30)),
-          overrideVerticalText: const Value(true),
-          overrideReadingDirection: const Value('rtl'),
-          primaryWritingMode: const Value('vertical-rl'),
-          pageProgressionDirection: const Value('rtl'),
-        ),
-      );
-      await sourceDb.into(sourceDb.books).insert(
-        BooksCompanion.insert(
-          title: 'こころ',
-          filePath: '/fake/kokoro.epub',
-          language: const Value('ja'),
-        ),
-      );
+      final melosId = await sourceDb
+          .into(sourceDb.books)
+          .insert(
+            BooksCompanion.insert(
+              title: '走れメロス',
+              filePath: '/fake/melos.epub',
+              language: const Value('ja'),
+              readProgress: const Value(0.42),
+              lastReadCfi: const Value('epubcfi(/6/4!/4/2/2)'),
+              lastReadAt: Value(DateTime.utc(2026, 5, 10, 14, 30)),
+              overrideVerticalText: const Value(true),
+              overrideReadingDirection: const Value('rtl'),
+              primaryWritingMode: const Value('vertical-rl'),
+              pageProgressionDirection: const Value('rtl'),
+            ),
+          );
+      await sourceDb
+          .into(sourceDb.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'こころ',
+              filePath: '/fake/kokoro.epub',
+              language: const Value('ja'),
+            ),
+          );
 
-      await sourceDb.into(sourceDb.bookmarks).insert(
-        BookmarksCompanion.insert(
-          bookId: melosId,
-          cfi: 'epubcfi(/6/4!/4)',
-          progress: const Value(0.10),
-          chapterTitle: const Value('第一章'),
-          userNote: const Value('面白い'),
-          dateAdded: Value(DateTime.utc(2026, 5, 1, 8)),
-        ),
-      );
-      await sourceDb.into(sourceDb.bookmarks).insert(
-        BookmarksCompanion.insert(
-          bookId: melosId,
-          cfi: 'epubcfi(/6/8!/4)',
-          dateAdded: Value(DateTime.utc(2026, 5, 2, 8)),
-        ),
-      );
-      await sourceDb.into(sourceDb.highlights).insert(
-        HighlightsCompanion.insert(
-          bookId: melosId,
-          cfiRange: 'epubcfi(/6/4,/1:0,/1:10)',
-          selectedText: 'メロスは激怒した',
-          color: const Value('yellow'),
-          userNote: const Value('印象的'),
-          dateAdded: Value(DateTime.utc(2026, 5, 3, 8)),
-        ),
-      );
+      await sourceDb
+          .into(sourceDb.bookmarks)
+          .insert(
+            BookmarksCompanion.insert(
+              bookId: melosId,
+              cfi: 'epubcfi(/6/4!/4)',
+              progress: const Value(0.10),
+              chapterTitle: const Value('第一章'),
+              userNote: const Value('面白い'),
+              dateAdded: Value(DateTime.utc(2026, 5, 1, 8)),
+            ),
+          );
+      await sourceDb
+          .into(sourceDb.bookmarks)
+          .insert(
+            BookmarksCompanion.insert(
+              bookId: melosId,
+              cfi: 'epubcfi(/6/8!/4)',
+              dateAdded: Value(DateTime.utc(2026, 5, 2, 8)),
+            ),
+          );
+      await sourceDb
+          .into(sourceDb.highlights)
+          .insert(
+            HighlightsCompanion.insert(
+              bookId: melosId,
+              cfiRange: 'epubcfi(/6/4,/1:0,/1:10)',
+              selectedText: 'メロスは激怒した',
+              color: const Value('yellow'),
+              userNote: const Value('印象的'),
+              dateAdded: Value(DateTime.utc(2026, 5, 3, 8)),
+            ),
+          );
 
       // The JSON encode/decode hop catches serializer asymmetries that
       // unit-level encode-only or decode-only tests can miss.
@@ -121,12 +135,16 @@ void main() {
       final targetDb = createTestDatabase();
       addTearDown(targetDb.close);
 
-      await targetDb.into(targetDb.books).insert(
-        BooksCompanion.insert(title: '走れメロス', filePath: '/fake/melos.epub'),
-      );
-      await targetDb.into(targetDb.books).insert(
-        BooksCompanion.insert(title: 'こころ', filePath: '/fake/kokoro.epub'),
-      );
+      await targetDb
+          .into(targetDb.books)
+          .insert(
+            BooksCompanion.insert(title: '走れメロス', filePath: '/fake/melos.epub'),
+          );
+      await targetDb
+          .into(targetDb.books)
+          .insert(
+            BooksCompanion.insert(title: 'こころ', filePath: '/fake/kokoro.epub'),
+          );
 
       final restoreService = RestoreService(
         targetDb,
@@ -204,23 +222,29 @@ void main() {
       final sourceDb = createTestDatabase();
       addTearDown(sourceDb.close);
 
-      await sourceDb.into(sourceDb.savedWords).insert(
-        SavedWordsCompanion.insert(
-          expression: '読む',
-          reading: const Value('よむ'),
-          glossaries: jsonEncode(['to read']),
-        ),
-      );
-      final bookId = await sourceDb.into(sourceDb.books).insert(
-        BooksCompanion.insert(
-          title: 'Test Book',
-          filePath: '/fake/test.epub',
-          readProgress: const Value(0.5),
-        ),
-      );
-      await sourceDb.into(sourceDb.bookmarks).insert(
-        BookmarksCompanion.insert(bookId: bookId, cfi: 'epubcfi(/6/4)'),
-      );
+      await sourceDb
+          .into(sourceDb.savedWords)
+          .insert(
+            SavedWordsCompanion.insert(
+              expression: '読む',
+              reading: const Value('よむ'),
+              glossaries: jsonEncode(['to read']),
+            ),
+          );
+      final bookId = await sourceDb
+          .into(sourceDb.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'Test Book',
+              filePath: '/fake/test.epub',
+              readProgress: const Value(0.5),
+            ),
+          );
+      await sourceDb
+          .into(sourceDb.bookmarks)
+          .insert(
+            BookmarksCompanion.insert(bookId: bookId, cfi: 'epubcfi(/6/4)'),
+          );
 
       final manifest = await BackupService(
         sourceDb,
@@ -231,9 +255,14 @@ void main() {
       // restore can apply cleanly without triggering a conflict.
       final targetDb = createTestDatabase();
       addTearDown(targetDb.close);
-      await targetDb.into(targetDb.books).insert(
-        BooksCompanion.insert(title: 'Test Book', filePath: '/fake/test.epub'),
-      );
+      await targetDb
+          .into(targetDb.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'Test Book',
+              filePath: '/fake/test.epub',
+            ),
+          );
 
       final restoreService = RestoreService(
         targetDb,

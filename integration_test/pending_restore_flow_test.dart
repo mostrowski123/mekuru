@@ -27,21 +27,25 @@ void main() {
       final sourceDb = createTestDatabase();
       addTearDown(sourceDb.close);
 
-      final sourceBookId = await sourceDb.into(sourceDb.books).insert(
-        BooksCompanion.insert(
-          title: 'Pending Book',
-          filePath: '/fake/pending.epub',
-          readProgress: const Value(0.75),
-          lastReadCfi: const Value('epubcfi(/6/12!/4)'),
-        ),
-      );
-      await sourceDb.into(sourceDb.bookmarks).insert(
-        BookmarksCompanion.insert(
-          bookId: sourceBookId,
-          cfi: 'epubcfi(/6/4)',
-          chapterTitle: const Value('Pending chapter'),
-        ),
-      );
+      final sourceBookId = await sourceDb
+          .into(sourceDb.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'Pending Book',
+              filePath: '/fake/pending.epub',
+              readProgress: const Value(0.75),
+              lastReadCfi: const Value('epubcfi(/6/12!/4)'),
+            ),
+          );
+      await sourceDb
+          .into(sourceDb.bookmarks)
+          .insert(
+            BookmarksCompanion.insert(
+              bookId: sourceBookId,
+              cfi: 'epubcfi(/6/4)',
+              chapterTitle: const Value('Pending chapter'),
+            ),
+          );
 
       final manifest = await BackupService(
         sourceDb,
@@ -68,12 +72,14 @@ void main() {
       // providers/library_providers.dart `_applyPendingDataIfExists`) is
       // replicated here verbatim — it is private but is the contract being
       // verified.
-      final newBookId = await targetDb.into(targetDb.books).insert(
-        BooksCompanion.insert(
-          title: 'Pending Book',
-          filePath: '/fake/pending.epub',
-        ),
-      );
+      final newBookId = await targetDb
+          .into(targetDb.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'Pending Book',
+              filePath: '/fake/pending.epub',
+            ),
+          );
 
       final matchService = BookMatchService();
       final key = await matchService.generatePreferredKey(
@@ -130,24 +136,30 @@ void main() {
       addTearDown(db.close);
       final dictRepo = DictionaryRepository(db);
 
-      await db.into(db.dictionaryMetas).insert(
-        DictionaryMetasCompanion.insert(
-          name: 'Dict A',
-          sortOrder: const Value(0),
-        ),
-      );
-      await db.into(db.dictionaryMetas).insert(
-        DictionaryMetasCompanion.insert(
-          name: 'Dict B',
-          sortOrder: const Value(1),
-        ),
-      );
-      await db.into(db.dictionaryMetas).insert(
-        DictionaryMetasCompanion.insert(
-          name: 'Dict C',
-          sortOrder: const Value(2),
-        ),
-      );
+      await db
+          .into(db.dictionaryMetas)
+          .insert(
+            DictionaryMetasCompanion.insert(
+              name: 'Dict A',
+              sortOrder: const Value(0),
+            ),
+          );
+      await db
+          .into(db.dictionaryMetas)
+          .insert(
+            DictionaryMetasCompanion.insert(
+              name: 'Dict B',
+              sortOrder: const Value(1),
+            ),
+          );
+      await db
+          .into(db.dictionaryMetas)
+          .insert(
+            DictionaryMetasCompanion.insert(
+              name: 'Dict C',
+              sortOrder: const Value(2),
+            ),
+          );
 
       final service = PendingDictionaryRestoreService();
       final queueResult = await service.queueFromBackup(
@@ -184,7 +196,11 @@ void main() {
       final all = await dictRepo.getAllDictionaries();
       final visible = all.where((d) => !d.isHidden).toList()
         ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-      expect(visible.map((d) => d.name).toList(), ['Dict B', 'Dict A', 'Dict C']);
+      expect(visible.map((d) => d.name).toList(), [
+        'Dict B',
+        'Dict A',
+        'Dict C',
+      ]);
       expect(visible.firstWhere((d) => d.name == 'Dict B').isEnabled, isFalse);
       expect(visible.firstWhere((d) => d.name == 'Dict A').isEnabled, isTrue);
 

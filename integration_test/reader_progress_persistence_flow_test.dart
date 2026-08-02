@@ -12,13 +12,15 @@ Future<int> _insertBook(
   String title, {
   String filePath = '/fake/book.epub',
   String bookType = 'epub',
-}) => db.into(db.books).insert(
-  BooksCompanion.insert(
-    title: title,
-    filePath: filePath,
-    bookType: Value(bookType),
-  ),
-);
+}) => db
+    .into(db.books)
+    .insert(
+      BooksCompanion.insert(
+        title: title,
+        filePath: filePath,
+        bookType: Value(bookType),
+      ),
+    );
 
 ReaderProgressPersistence _makePersistence(BookRepository repo, int bookId) =>
     ReaderProgressPersistence(

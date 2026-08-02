@@ -129,15 +129,22 @@ AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
 /// Seeds the database with 2 dictionaries and sample entries.
 Future<void> seedDictionaries(AppDatabase db) async {
   // Insert dictionary metas.
-  await db.into(db.dictionaryMetas).insert(
-    DictionaryMetasCompanion.insert(name: 'JMdict', sortOrder: const Value(0)),
-  );
-  await db.into(db.dictionaryMetas).insert(
-    DictionaryMetasCompanion.insert(
-      name: 'Example Dictionary',
-      sortOrder: const Value(1),
-    ),
-  );
+  await db
+      .into(db.dictionaryMetas)
+      .insert(
+        DictionaryMetasCompanion.insert(
+          name: 'JMdict',
+          sortOrder: const Value(0),
+        ),
+      );
+  await db
+      .into(db.dictionaryMetas)
+      .insert(
+        DictionaryMetasCompanion.insert(
+          name: 'Example Dictionary',
+          sortOrder: const Value(1),
+        ),
+      );
 
   // Sample Japanese words with glossaries.
   final words = <(String expression, String reading, List<String> glossaries)>[
@@ -165,52 +172,65 @@ Future<void> seedDictionaries(AppDatabase db) async {
 
   for (final (expression, reading, glossaries) in words) {
     // Insert into JMdict (id=1).
-    await db.into(db.dictionaryEntries).insert(
-      DictionaryEntriesCompanion.insert(
-        expression: expression,
-        reading: Value(reading),
-        glossaries: jsonEncode(glossaries),
-        dictionaryId: 1,
-        definitionTags: const Value('v1'),
-        termTags: const Value('P'),
-      ),
-    );
+    await db
+        .into(db.dictionaryEntries)
+        .insert(
+          DictionaryEntriesCompanion.insert(
+            expression: expression,
+            reading: Value(reading),
+            glossaries: jsonEncode(glossaries),
+            dictionaryId: 1,
+            definitionTags: const Value('v1'),
+            termTags: const Value('P'),
+          ),
+        );
     // Insert into Example Dictionary (id=2) with alternate glossary.
-    await db.into(db.dictionaryEntries).insert(
-      DictionaryEntriesCompanion.insert(
-        expression: expression,
-        reading: Value(reading),
-        glossaries: jsonEncode(['${glossaries.first} (alt)']),
-        dictionaryId: 2,
-      ),
-    );
+    await db
+        .into(db.dictionaryEntries)
+        .insert(
+          DictionaryEntriesCompanion.insert(
+            expression: expression,
+            reading: Value(reading),
+            glossaries: jsonEncode(['${glossaries.first} (alt)']),
+            dictionaryId: 2,
+          ),
+        );
   }
 }
 
 /// Seeds the database with vocabulary (saved words).
 Future<void> seedVocabulary(AppDatabase db, {int count = 5}) async {
-  final words = <(String expression, String reading, List<String> glossaries,
-      String context)>[
-    ('食べる', 'たべる', ['to eat'], '毎日ご飯を食べる。'),
-    ('飲む', 'のむ', ['to drink'], '水を飲む。'),
-    ('走る', 'はしる', ['to run'], '公園で走る。'),
-    ('食べ物', 'たべもの', ['food'], '美味しい食べ物が好きです。'),
-    ('大きい', 'おおきい', ['big', 'large'], 'あの建物は大きい。'),
-    ('読む', 'よむ', ['to read'], '本を読む。'),
-    ('書く', 'かく', ['to write'], '手紙を書く。'),
-    ('見る', 'みる', ['to see', 'to watch'], '映画を見る。'),
-  ];
+  final words =
+      <
+        (
+          String expression,
+          String reading,
+          List<String> glossaries,
+          String context,
+        )
+      >[
+        ('食べる', 'たべる', ['to eat'], '毎日ご飯を食べる。'),
+        ('飲む', 'のむ', ['to drink'], '水を飲む。'),
+        ('走る', 'はしる', ['to run'], '公園で走る。'),
+        ('食べ物', 'たべもの', ['food'], '美味しい食べ物が好きです。'),
+        ('大きい', 'おおきい', ['big', 'large'], 'あの建物は大きい。'),
+        ('読む', 'よむ', ['to read'], '本を読む。'),
+        ('書く', 'かく', ['to write'], '手紙を書く。'),
+        ('見る', 'みる', ['to see', 'to watch'], '映画を見る。'),
+      ];
 
   for (var i = 0; i < count && i < words.length; i++) {
     final (expression, reading, glossaries, context) = words[i];
-    await db.into(db.savedWords).insert(
-      SavedWordsCompanion.insert(
-        expression: expression,
-        reading: Value(reading),
-        glossaries: jsonEncode(glossaries),
-        sentenceContext: Value(context),
-      ),
-    );
+    await db
+        .into(db.savedWords)
+        .insert(
+          SavedWordsCompanion.insert(
+            expression: expression,
+            reading: Value(reading),
+            glossaries: jsonEncode(glossaries),
+            sentenceContext: Value(context),
+          ),
+        );
   }
 }
 
@@ -226,9 +246,9 @@ Future<void> seedBooks(AppDatabase db, {int count = 3}) async {
 
   for (var i = 0; i < count && i < books.length; i++) {
     final (title, filePath) = books[i];
-    await db.into(db.books).insert(
-      BooksCompanion.insert(title: title, filePath: filePath),
-    );
+    await db
+        .into(db.books)
+        .insert(BooksCompanion.insert(title: title, filePath: filePath));
   }
 }
 

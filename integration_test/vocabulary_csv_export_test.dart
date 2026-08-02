@@ -15,14 +15,16 @@ Future<int> _insertWord(
   String reading = '',
   required List<String> glossaries,
   String sentenceContext = '',
-}) => db.into(db.savedWords).insert(
-  SavedWordsCompanion.insert(
-    expression: expression,
-    reading: Value(reading),
-    glossaries: jsonEncode(glossaries),
-    sentenceContext: Value(sentenceContext),
-  ),
-);
+}) => db
+    .into(db.savedWords)
+    .insert(
+      SavedWordsCompanion.insert(
+        expression: expression,
+        reading: Value(reading),
+        glossaries: jsonEncode(glossaries),
+        sentenceContext: Value(sentenceContext),
+      ),
+    );
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -91,7 +93,13 @@ void main() {
 
         // The header matches what users paste into the Anki import dialog;
         // renaming a column here would silently break their saved templates.
-        expect(rows.first, ['Word', 'Reading', 'Meaning', 'Furigana', 'Context']);
+        expect(rows.first, [
+          'Word',
+          'Reading',
+          'Meaning',
+          'Furigana',
+          'Context',
+        ]);
 
         final byExpression = {
           for (final row in rows.skip(1)) row[0] as String: row,

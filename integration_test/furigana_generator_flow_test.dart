@@ -86,9 +86,7 @@ void main() {
       for (final kanjiInput in const ['食べた', '日本語', '走る']) {
         final entry = results.firstWhere((r) => r['source'] == kanjiInput);
         final segments = entry['segments'] as List;
-        final hasFurigana = segments
-            .cast<Map>()
-            .any((s) => s['f'] != null);
+        final hasFurigana = segments.cast<Map>().any((s) => s['f'] != null);
         expect(
           hasFurigana,
           isTrue,
@@ -112,8 +110,7 @@ void main() {
       for (final entry in expectations.entries) {
         final word = entry.key;
         final reading = entry.value;
-        final segments = generator
-            .generate([word]).first['segments'] as List;
+        final segments = generator.generate([word]).first['segments'] as List;
         expect(
           segments,
           hasLength(1),
@@ -138,9 +135,7 @@ void main() {
       // convert it to hiragana before emitting the segment.
       final results = generator.generate(const ['食べた']);
       final segments = results.first['segments'] as List;
-      final furiganaSegs = segments
-          .cast<Map>()
-          .where((s) => s['f'] != null);
+      final furiganaSegs = segments.cast<Map>().where((s) => s['f'] != null);
       expect(furiganaSegs, isNotEmpty);
       for (final seg in furiganaSegs) {
         final f = seg['f'] as String;
@@ -149,7 +144,8 @@ void main() {
           expect(
             rune < 0x30A1 || rune > 0x30F6,
             isTrue,
-            reason: 'furigana "$f" contains katakana character U+'
+            reason:
+                'furigana "$f" contains katakana character U+'
                 '${rune.toRadixString(16)}',
           );
         }
@@ -157,4 +153,3 @@ void main() {
     });
   });
 }
-

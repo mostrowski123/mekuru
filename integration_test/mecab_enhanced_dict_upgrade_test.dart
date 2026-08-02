@@ -105,96 +105,86 @@ void main() {
     await MecabService.instance.resetForTest();
   });
 
-  test(
-    'enabled + installed: init returns on IPADIC first, then swaps in the '
-    'enhanced dictionary off the main isolate',
-    () async {
-      await MecabService.instance.init();
+  test('enabled + installed: init returns on IPADIC first, then swaps in the '
+      'enhanced dictionary off the main isolate', () async {
+    await MecabService.instance.init();
 
-      // Contract 1: init must return with the lightweight IPADIC ready — NOT
-      // blocked on, and NOT switched directly to, the heavy enhanced dict.
-      expect(MecabService.instance.isInitialized, isTrue);
-      expect(MecabService.instance.initError, isNull);
-      expect(
-        MecabService.instance.layout,
-        MecabFeatureLayout.ipadic,
-        reason: 'init() must come up on IPADIC first, never blocking on or '
-            'switching straight to the enhanced dictionary',
-      );
+    // Contract 1: init must return with the lightweight IPADIC ready — NOT
+    // blocked on, and NOT switched directly to, the heavy enhanced dict.
+    expect(MecabService.instance.isInitialized, isTrue);
+    expect(MecabService.instance.initError, isNull);
+    expect(
+      MecabService.instance.layout,
+      MecabFeatureLayout.ipadic,
+      reason:
+          'init() must come up on IPADIC first, never blocking on or '
+          'switching straight to the enhanced dictionary',
+    );
 
-      // Taps work immediately, before any background upgrade finishes.
-      expect(
-        MecabService.instance.identifyWord('日本語', 0),
-        isNotNull,
-        reason: 'word taps must work as soon as init() returns',
-      );
+    // Taps work immediately, before any background upgrade finishes.
+    expect(
+      MecabService.instance.identifyWord('日本語', 0),
+      isNotNull,
+      reason: 'word taps must work as soon as init() returns',
+    );
 
-      // Contract 2: the enhanced dictionary is swapped in afterwards.
-      final swapped = await _waitUntil(
-        () => MecabService.instance.layout == MecabFeatureLayout.unidicLite,
-      );
-      expect(
-        swapped,
-        isTrue,
-        reason: 'the background upgrade should swap in the enhanced dictionary',
-      );
+    // Contract 2: the enhanced dictionary is swapped in afterwards.
+    final swapped = await _waitUntil(
+      () => MecabService.instance.layout == MecabFeatureLayout.unidicLite,
+    );
+    expect(
+      swapped,
+      isTrue,
+      reason: 'the background upgrade should swap in the enhanced dictionary',
+    );
 
-      // The swapped-in tagger is still functional for tokenization.
-      expect(MecabService.instance.tokenize('日本語'), isNotEmpty);
-    },
-  );
+    // The swapped-in tagger is still functional for tokenization.
+    expect(MecabService.instance.tokenize('日本語'), isNotEmpty);
+  });
 
-  test(
-    'expectedLayout predicts the enhanced dictionary and settledLayout '
-    'waits for the swap',
-    () async {
-      await MecabService.instance.init();
+  test('expectedLayout predicts the enhanced dictionary and settledLayout '
+      'waits for the swap', () async {
+    await MecabService.instance.init();
 
-      // Immediately after init the swap may or may not have landed, but the
-      // session is already expected to settle on the enhanced dictionary —
-      // this is what lets manga self-heal checks skip waiting for the load.
-      expect(
-        MecabService.instance.expectedLayout,
-        MecabFeatureLayout.unidicLite,
-      );
+    // Immediately after init the swap may or may not have landed, but the
+    // session is already expected to settle on the enhanced dictionary —
+    // this is what lets manga self-heal checks skip waiting for the load.
+    expect(MecabService.instance.expectedLayout, MecabFeatureLayout.unidicLite);
 
-      // settledLayout must block until the upgrade finished and report the
-      // dictionary tap-time lookups will actually use.
-      final settled = await MecabService.instance.settledLayout();
-      expect(settled, MecabFeatureLayout.unidicLite);
-      expect(MecabService.instance.layout, MecabFeatureLayout.unidicLite);
-    },
-  );
+    // settledLayout must block until the upgrade finished and report the
+    // dictionary tap-time lookups will actually use.
+    final settled = await MecabService.instance.settledLayout();
+    expect(settled, MecabFeatureLayout.unidicLite);
+    expect(MecabService.instance.layout, MecabFeatureLayout.unidicLite);
+  });
 
-  test(
-    'upgradeToEnhanced: false stays on IPADIC even when the enhanced '
-    'dictionary is enabled + installed (OCR-worker path)',
-    () async {
-      await MecabService.instance.init(upgradeToEnhanced: false);
+  test('upgradeToEnhanced: false stays on IPADIC even when the enhanced '
+      'dictionary is enabled + installed (OCR-worker path)', () async {
+    await MecabService.instance.init(upgradeToEnhanced: false);
 
-      expect(MecabService.instance.isInitialized, isTrue);
-      expect(MecabService.instance.layout, MecabFeatureLayout.ipadic);
-      expect(MecabService.instance.identifyWord('日本語', 0), isNotNull);
+    expect(MecabService.instance.isInitialized, isTrue);
+    expect(MecabService.instance.layout, MecabFeatureLayout.ipadic);
+    expect(MecabService.instance.identifyWord('日本語', 0), isNotNull);
 
-      // With no upgrade in flight, both accessors report IPADIC without
-      // waiting — the OCR worker records this as segmentation provenance.
-      expect(MecabService.instance.expectedLayout, MecabFeatureLayout.ipadic);
-      expect(
-        await MecabService.instance.settledLayout(),
-        MecabFeatureLayout.ipadic,
-      );
+    // With no upgrade in flight, both accessors report IPADIC without
+    // waiting — the OCR worker records this as segmentation provenance.
+    expect(MecabService.instance.expectedLayout, MecabFeatureLayout.ipadic);
+    expect(
+      await MecabService.instance.settledLayout(),
+      MecabFeatureLayout.ipadic,
+    );
 
-      // No upgrade must fire: the layout stays IPADIC for the whole window.
-      final swapped = await _waitUntil(
-        () => MecabService.instance.layout == MecabFeatureLayout.unidicLite,
-        timeout: const Duration(seconds: 4),
-      );
-      expect(
-        swapped,
-        isFalse,
-        reason: 'background isolates opting out must never load the heavy '
-            'enhanced dictionary',
-      );
-    },
-  );
+    // No upgrade must fire: the layout stays IPADIC for the whole window.
+    final swapped = await _waitUntil(
+      () => MecabService.instance.layout == MecabFeatureLayout.unidicLite,
+      timeout: const Duration(seconds: 4),
+    );
+    expect(
+      swapped,
+      isFalse,
+      reason:
+          'background isolates opting out must never load the heavy '
+          'enhanced dictionary',
+    );
+  });
 }

@@ -22,10 +22,7 @@ void main() {
     await seedDictionaries(db);
 
     await tester.pumpWidget(
-      buildIntegrationTestApp(
-        db: db,
-        home: const DictionarySearchScreen(),
-      ),
+      buildIntegrationTestApp(db: db, home: const DictionarySearchScreen()),
     );
     await tester.pumpAndSettle();
 
@@ -52,10 +49,7 @@ void main() {
     await seedDictionaries(db);
 
     await tester.pumpWidget(
-      buildIntegrationTestApp(
-        db: db,
-        home: const DictionarySearchScreen(),
-      ),
+      buildIntegrationTestApp(db: db, home: const DictionarySearchScreen()),
     );
     await tester.pumpAndSettle();
 
@@ -78,10 +72,7 @@ void main() {
     await seedDictionaries(db);
 
     await tester.pumpWidget(
-      buildIntegrationTestApp(
-        db: db,
-        home: const DictionarySearchScreen(),
-      ),
+      buildIntegrationTestApp(db: db, home: const DictionarySearchScreen()),
     );
     await tester.pumpAndSettle();
 
