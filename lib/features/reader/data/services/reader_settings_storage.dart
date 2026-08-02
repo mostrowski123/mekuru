@@ -21,21 +21,27 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _furiganaModeKey = 'reader.furigana_mode';
   static const _splitVerticalTextKey = 'reader.split_vertical_text';
 
+  /// Every SharedPreferences key this storage reads or writes. The backup
+  /// service derives its reader key list from this, so a key added here is
+  /// automatically included in backups.
+  static const List<String> allKeys = [
+    _fontSizeKey,
+    _horizontalPaddingKey,
+    _verticalPaddingKey,
+    _swipeSensitivityKey,
+    _mangaPageTurnEdgeZoneWidthKey,
+    _colorModeKey,
+    _keepScreenOnKey,
+    _sepiaIntensityKey,
+    _disableLinksKey,
+    _furiganaModeKey,
+    _splitVerticalTextKey,
+  ];
+
   @override
   Future<ReaderSettings?> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final hasSavedSettings =
-        prefs.containsKey(_fontSizeKey) ||
-        prefs.containsKey(_horizontalPaddingKey) ||
-        prefs.containsKey(_verticalPaddingKey) ||
-        prefs.containsKey(_swipeSensitivityKey) ||
-        prefs.containsKey(_mangaPageTurnEdgeZoneWidthKey) ||
-        prefs.containsKey(_colorModeKey) ||
-        prefs.containsKey(_keepScreenOnKey) ||
-        prefs.containsKey(_sepiaIntensityKey) ||
-        prefs.containsKey(_disableLinksKey) ||
-        prefs.containsKey(_furiganaModeKey) ||
-        prefs.containsKey(_splitVerticalTextKey);
+    final hasSavedSettings = allKeys.any(prefs.containsKey);
 
     if (!hasSavedSettings) {
       return null;
