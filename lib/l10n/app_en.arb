@@ -2760,5 +2760,13 @@
         "type": "int"
       }
     }
+  },
+  "mangaReaderFailedToLoad": "Failed to load manga",
+  "@mangaReaderFailedToLoad": {
+    "description": "Error state title shown when a manga book fails to load; the exception details are shown below it."
+  },
+  "mangaReaderNoPages": "No pages found",
+  "@mangaReaderNoPages": {
+    "description": "Empty state message shown when a loaded manga book contains no pages."
   }
 }

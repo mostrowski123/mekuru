@@ -2490,5 +2490,7 @@
   "statsVocabGrowthTitle": "Vocabulary growth",
   "statsVocabWordCount": "{count, plural, one {{count} word} other {{count} words}}",
   "statsDurationHoursMinutes": "{hours}h {minutes}m",
-  "statsDurationMinutes": "{minutes}m"
+  "statsDurationMinutes": "{minutes}m",
+  "mangaReaderFailedToLoad": "Gagal memuat manga",
+  "mangaReaderNoPages": "Tidak ada halaman yang ditemukan"
 }

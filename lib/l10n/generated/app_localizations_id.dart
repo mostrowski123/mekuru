@@ -2158,4 +2158,10 @@ class AppLocalizationsId extends AppLocalizations {
   String statsDurationMinutes({required int minutes}) {
     return '${minutes}m';
   }
+
+  @override
+  String get mangaReaderFailedToLoad => 'Gagal memuat manga';
+
+  @override
+  String get mangaReaderNoPages => 'Tidak ada halaman yang ditemukan';
 }

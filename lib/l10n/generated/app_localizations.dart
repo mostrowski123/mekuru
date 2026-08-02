@@ -3711,6 +3711,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{minutes}m'**
   String statsDurationMinutes({required int minutes});
+
+  /// Error state title shown when a manga book fails to load; the exception details are shown below it.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load manga'**
+  String get mangaReaderFailedToLoad;
+
+  /// Empty state message shown when a loaded manga book contains no pages.
+  ///
+  /// In en, this message translates to:
+  /// **'No pages found'**
+  String get mangaReaderNoPages;
 }
 
 class _AppLocalizationsDelegate
