@@ -2344,6 +2344,36 @@ abstract class AppLocalizations {
   /// **'View Mode'**
   String get mangaViewModeTitle;
 
+  /// Title of the reading settings subpage and its entry tile on the main settings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get settingsReadingTitle;
+
+  /// Subtitle of the reading settings tile on the main settings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size, colors, margins, and manga defaults'**
+  String get settingsReadingSubtitle;
+
+  /// Section header on the reading settings screen for settings shared by both EPUB and manga readers.
+  ///
+  /// In en, this message translates to:
+  /// **'All books'**
+  String get settingsReadingSectionShared;
+
+  /// Section header on the reading settings screen for EPUB-only settings.
+  ///
+  /// In en, this message translates to:
+  /// **'EPUB'**
+  String get settingsReadingSectionEpub;
+
+  /// Section header on the reading settings screen for manga-only settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Manga'**
+  String get settingsReadingSectionManga;
+
   /// Title for the per-book vertical text setting.
   ///
   /// In en, this message translates to:

@@ -1292,6 +1292,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mangaViewModeTitle => 'View Mode';
 
   @override
+  String get settingsReadingTitle => 'Reading';
+
+  @override
+  String get settingsReadingSubtitle =>
+      'Text size, colors, margins, and manga defaults';
+
+  @override
+  String get settingsReadingSectionShared => 'All books';
+
+  @override
+  String get settingsReadingSectionEpub => 'EPUB';
+
+  @override
+  String get settingsReadingSectionManga => 'Manga';
+
+  @override
   String get readerVerticalTextTitle => '竖排文本';
 
   @override
