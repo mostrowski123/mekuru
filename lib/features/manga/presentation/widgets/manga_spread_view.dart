@@ -7,7 +7,6 @@ import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.d
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_highlight_overlay.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
-import 'package:path/path.dart' as p;
 
 /// Two-page spread view for manga reading.
 ///
@@ -102,6 +101,9 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     return PageView.builder(
       controller: _pageController,
       reverse: widget.isRtl,
+      // Keep the adjacent spreads built and decoded so instant
+      // (no-animation) jumps have pixels ready on the jump frame.
+      allowImplicitScrolling: true,
       physics: _isZoomed || !widget.animatePageTurns
           ? const NeverScrollableScrollPhysics()
           : const ClampingScrollPhysics(),
@@ -225,14 +227,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
 
     final page = pages[pageIndex];
     final imagePath = '${widget.mokuroBook.imageDirPath}/${page.imageFileName}';
-    final safImageRelPath =
-        widget.mokuroBook.safTreeUri != null &&
-            widget.mokuroBook.safImageDirRelativePath != null
-        ? p.posix.join(
-            widget.mokuroBook.safImageDirRelativePath!,
-            page.imageFileName,
-          )
-        : null;
+    final safImageRelPath = widget.mokuroBook.safImagePathFor(page);
     final imgW = page.imgWidth.toDouble();
     final imgH = page.imgHeight.toDouble();
 
