@@ -617,4 +617,103 @@ void main() {
       );
     });
   });
+
+  // ── resolveEreaderSwipeIntent ───────────────────────────────────────
+
+  group('resolveEreaderSwipeIntent', () {
+    // A 1080x2400 phone in logical pixels.
+    const width = 1080.0;
+    const height = 2400.0;
+
+    ReaderNavigationIntent resolve({
+      required double downX,
+      required double upX,
+      required double downY,
+      required double upY,
+      ReaderDirection direction = ReaderDirection.rtl,
+    }) {
+      return resolveEreaderSwipeIntent(
+        downX: downX,
+        upX: upX,
+        downY: downY,
+        upY: upY,
+        screenWidth: width,
+        screenHeight: height,
+        readingDirection: direction,
+      );
+    }
+
+    test('a tap with a few pixels of jitter does not turn the page', () {
+      expect(
+        resolve(downX: 540, upX: 543, downY: 900, upY: 901),
+        ReaderNavigationIntent.none,
+      );
+    });
+
+    test('drift just under 10% of screen width stays a tap', () {
+      expect(
+        resolve(downX: 540, upX: 540 + width * 0.09, downY: 900, upY: 900),
+        ReaderNavigationIntent.none,
+      );
+    });
+
+    test('a rightward swipe past 10% of width goes forward in RTL', () {
+      expect(
+        resolve(downX: 300, upX: 300 + width * 0.2, downY: 900, upY: 910),
+        ReaderNavigationIntent.goForward,
+      );
+    });
+
+    test('a leftward swipe past 10% of width goes backward in RTL', () {
+      expect(
+        resolve(downX: 700, upX: 700 - width * 0.2, downY: 900, upY: 910),
+        ReaderNavigationIntent.goBackward,
+      );
+    });
+
+    test('direction flips for LTR reading: leftward swipe goes forward', () {
+      expect(
+        resolve(
+          downX: 700,
+          upX: 700 - width * 0.2,
+          downY: 900,
+          upY: 910,
+          direction: ReaderDirection.ltr,
+        ),
+        ReaderNavigationIntent.goForward,
+      );
+      expect(
+        resolve(
+          downX: 300,
+          upX: 300 + width * 0.2,
+          downY: 900,
+          upY: 910,
+          direction: ReaderDirection.ltr,
+        ),
+        ReaderNavigationIntent.goBackward,
+      );
+    });
+
+    test('a mostly-vertical drag is not a page turn', () {
+      expect(
+        resolve(downX: 540, upX: 700, downY: 600, upY: 1600),
+        ReaderNavigationIntent.none,
+      );
+    });
+
+    test('a degenerate screen size yields no intent', () {
+      expect(
+        resolveEreaderSwipeIntent(
+          downX: 100,
+          upX: 400,
+          downY: 100,
+          upY: 100,
+          screenWidth: 0,
+          screenHeight: 0,
+          readingDirection: ReaderDirection.rtl,
+        ),
+        ReaderNavigationIntent.none,
+      );
+    });
+  });
 }
