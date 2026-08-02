@@ -682,9 +682,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSectionAppearance => '外观';
 
   @override
-  String get settingsSectionReadingDefaults => '阅读默认';
-
-  @override
   String get settingsSectionDictionary => '词典';
 
   @override
@@ -692,12 +689,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsSectionPro => '专业版';
-
-  @override
-  String get settingsSectionMangaAutoCrop => '漫画自动裁边';
-
-  @override
-  String get settingsSectionMangaOcr => '漫画OCR';
 
   @override
   String get settingsSectionDownloads => '下载';
@@ -1256,56 +1247,55 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerQuickSettings => '快速设置';
 
   @override
-  String get readerBrightnessFollowSystem => 'Follow system brightness';
+  String get readerBrightnessFollowSystem => '跟随系统亮度';
 
   @override
-  String get readerBrightnessTitle => 'Brightness';
+  String get readerBrightnessTitle => '亮度';
 
   @override
-  String get readerSettingsSectionDisplay => 'Display';
+  String get readerSettingsSectionDisplay => '显示';
 
   @override
-  String get readerSettingsSectionBehavior => 'Behavior';
+  String get readerSettingsSectionBehavior => '行为';
 
   @override
-  String get readerFuriganaTitle => 'Furigana';
+  String get readerFuriganaTitle => '振假名';
 
   @override
-  String get readerFuriganaOff => 'Off';
+  String get readerFuriganaOff => '关闭';
 
   @override
-  String get readerFuriganaAllKanji => 'All kanji';
+  String get readerFuriganaAllKanji => '所有汉字';
 
   @override
-  String get readerAllSettingsTooltip => 'All settings';
+  String get readerAllSettingsTooltip => '所有设置';
 
   @override
-  String get mangaSettingsSectionReading => 'Reading';
+  String get mangaSettingsSectionReading => '阅读';
 
   @override
-  String get mangaSettingsSectionImage => 'Image';
+  String get mangaSettingsSectionImage => '图像';
 
   @override
-  String get mangaSettingsSectionLookup => 'Lookup';
+  String get mangaSettingsSectionLookup => '查词';
 
   @override
-  String get mangaViewModeTitle => 'View Mode';
+  String get mangaViewModeTitle => '浏览模式';
 
   @override
-  String get settingsReadingTitle => 'Reading';
+  String get settingsReadingTitle => '阅读';
 
   @override
-  String get settingsReadingSubtitle =>
-      'Text size, colors, margins, and manga defaults';
+  String get settingsReadingSubtitle => '字号、颜色、页边距及漫画默认设置';
 
   @override
-  String get settingsReadingSectionShared => 'All books';
+  String get settingsReadingSectionShared => '所有书籍';
 
   @override
   String get settingsReadingSectionEpub => 'EPUB';
 
   @override
-  String get settingsReadingSectionManga => 'Manga';
+  String get settingsReadingSectionManga => '漫画';
 
   @override
   String get readerVerticalTextTitle => '竖排文本';
@@ -2740,9 +2730,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get settingsSectionAppearance => '外观';
 
   @override
-  String get settingsSectionReadingDefaults => '阅读默认';
-
-  @override
   String get settingsSectionDictionary => '词典';
 
   @override
@@ -2750,12 +2737,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settingsSectionPro => '专业版';
-
-  @override
-  String get settingsSectionMangaAutoCrop => '漫画自动裁边';
-
-  @override
-  String get settingsSectionMangaOcr => '漫画OCR';
 
   @override
   String get settingsSectionDownloads => '下载';
@@ -3284,6 +3265,57 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerQuickSettings => '快速设置';
+
+  @override
+  String get readerBrightnessFollowSystem => '跟随系统亮度';
+
+  @override
+  String get readerBrightnessTitle => '亮度';
+
+  @override
+  String get readerSettingsSectionDisplay => '显示';
+
+  @override
+  String get readerSettingsSectionBehavior => '行为';
+
+  @override
+  String get readerFuriganaTitle => '振假名';
+
+  @override
+  String get readerFuriganaOff => '关闭';
+
+  @override
+  String get readerFuriganaAllKanji => '所有汉字';
+
+  @override
+  String get readerAllSettingsTooltip => '所有设置';
+
+  @override
+  String get mangaSettingsSectionReading => '阅读';
+
+  @override
+  String get mangaSettingsSectionImage => '图像';
+
+  @override
+  String get mangaSettingsSectionLookup => '查词';
+
+  @override
+  String get mangaViewModeTitle => '浏览模式';
+
+  @override
+  String get settingsReadingTitle => '阅读';
+
+  @override
+  String get settingsReadingSubtitle => '字号、颜色、页边距及漫画默认设置';
+
+  @override
+  String get settingsReadingSectionShared => '所有书籍';
+
+  @override
+  String get settingsReadingSectionEpub => 'EPUB';
+
+  @override
+  String get settingsReadingSectionManga => '漫画';
 
   @override
   String get readerVerticalTextTitle => '竖排文本';

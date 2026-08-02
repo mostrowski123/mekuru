@@ -51,17 +51,20 @@ void main() {
       expect(loaded.mangaTransparentLookup, isFalse);
     });
 
-    test('upgrading from legacy prefs yields the old in-memory defaults', () async {
-      // Before these settings were persisted they lived in bare in-memory
-      // notifiers with these defaults; upgrading users must see no change.
-      SharedPreferences.setMockInitialValues({'reader.font_size': 24.0});
-      final storage = SharedPreferencesReaderSettingsStorage();
-      final loaded = await storage.load();
-      expect(loaded, isNotNull);
-      expect(loaded!.mangaViewMode, MangaViewMode.singlePage);
-      expect(loaded.mangaReadingDirection, ReaderDirection.rtl);
-      expect(loaded.mangaAutoCrop, isFalse);
-      expect(loaded.mangaTransparentLookup, isTrue);
-    });
+    test(
+      'upgrading from legacy prefs yields the old in-memory defaults',
+      () async {
+        // Before these settings were persisted they lived in bare in-memory
+        // notifiers with these defaults; upgrading users must see no change.
+        SharedPreferences.setMockInitialValues({'reader.font_size': 24.0});
+        final storage = SharedPreferencesReaderSettingsStorage();
+        final loaded = await storage.load();
+        expect(loaded, isNotNull);
+        expect(loaded!.mangaViewMode, MangaViewMode.singlePage);
+        expect(loaded.mangaReadingDirection, ReaderDirection.rtl);
+        expect(loaded.mangaAutoCrop, isFalse);
+        expect(loaded.mangaTransparentLookup, isTrue);
+      },
+    );
   });
 }

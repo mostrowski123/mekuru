@@ -907,10 +907,6 @@
   "@settingsSectionAppearance": {
     "description": "Settings section header for appearance preferences."
   },
-  "settingsSectionReadingDefaults": "阅读默认",
-  "@settingsSectionReadingDefaults": {
-    "description": "Settings section header for default reader settings."
-  },
   "settingsSectionDictionary": "词典",
   "@settingsSectionDictionary": {
     "description": "Settings section header for dictionary settings."
@@ -922,14 +918,6 @@
   "settingsSectionPro": "专业版",
   "@settingsSectionPro": {
     "description": "Settings section header for Pro settings."
-  },
-  "settingsSectionMangaAutoCrop": "漫画自动裁边",
-  "@settingsSectionMangaAutoCrop": {
-    "description": "Settings section header for manga auto-crop preferences."
-  },
-  "settingsSectionMangaOcr": "漫画OCR",
-  "@settingsSectionMangaOcr": {
-    "description": "Settings section header for manga OCR preferences."
   },
   "settingsSectionDownloads": "下载",
   "@settingsSectionDownloads": {
@@ -1647,6 +1635,74 @@
   "readerQuickSettings": "快速设置",
   "@readerQuickSettings": {
     "description": "Title for the reader quick settings sheet."
+  },
+  "readerBrightnessFollowSystem": "跟随系统亮度",
+  "@readerBrightnessFollowSystem": {
+    "description": "Tooltip for the button that clears the manual brightness override so the reader follows the device's system brightness again."
+  },
+  "readerBrightnessTitle": "亮度",
+  "@readerBrightnessTitle": {
+    "description": "Label for the screen brightness slider in the reader quick settings sheets."
+  },
+  "readerSettingsSectionDisplay": "显示",
+  "@readerSettingsSectionDisplay": {
+    "description": "Section header in the reader quick settings sheets for visual settings (font size, brightness, colors)."
+  },
+  "readerSettingsSectionBehavior": "行为",
+  "@readerSettingsSectionBehavior": {
+    "description": "Section header in the EPUB quick settings sheet for behavioral settings (text splitting, links)."
+  },
+  "readerFuriganaTitle": "振假名",
+  "@readerFuriganaTitle": {
+    "description": "Label for the furigana display mode control in the EPUB quick settings sheet."
+  },
+  "readerFuriganaOff": "关闭",
+  "@readerFuriganaOff": {
+    "description": "Furigana mode option that hides all furigana."
+  },
+  "readerFuriganaAllKanji": "所有汉字",
+  "@readerFuriganaAllKanji": {
+    "description": "Furigana mode option that shows furigana above every kanji."
+  },
+  "readerAllSettingsTooltip": "所有设置",
+  "@readerAllSettingsTooltip": {
+    "description": "Tooltip for the button in the reader quick settings sheets that opens the full reading settings screen."
+  },
+  "mangaSettingsSectionReading": "阅读",
+  "@mangaSettingsSectionReading": {
+    "description": "Section header in the manga quick settings sheet for reading behavior (direction, page-turn zones)."
+  },
+  "mangaSettingsSectionImage": "图像",
+  "@mangaSettingsSectionImage": {
+    "description": "Section header in the manga quick settings sheet for image processing settings (auto-crop)."
+  },
+  "mangaSettingsSectionLookup": "查词",
+  "@mangaSettingsSectionLookup": {
+    "description": "Section header in the manga quick settings sheet for dictionary lookup settings."
+  },
+  "mangaViewModeTitle": "浏览模式",
+  "@mangaViewModeTitle": {
+    "description": "Label for the manga page layout control (single page, spread, or scroll)."
+  },
+  "settingsReadingTitle": "阅读",
+  "@settingsReadingTitle": {
+    "description": "Title of the reading settings subpage and its entry tile on the main settings screen."
+  },
+  "settingsReadingSubtitle": "字号、颜色、页边距及漫画默认设置",
+  "@settingsReadingSubtitle": {
+    "description": "Subtitle of the reading settings tile on the main settings screen."
+  },
+  "settingsReadingSectionShared": "所有书籍",
+  "@settingsReadingSectionShared": {
+    "description": "Section header on the reading settings screen for settings shared by both EPUB and manga readers."
+  },
+  "settingsReadingSectionEpub": "EPUB",
+  "@settingsReadingSectionEpub": {
+    "description": "Section header on the reading settings screen for EPUB-only settings."
+  },
+  "settingsReadingSectionManga": "漫画",
+  "@settingsReadingSectionManga": {
+    "description": "Section header on the reading settings screen for manga-only settings."
   },
   "readerVerticalTextTitle": "竖排文本",
   "@readerVerticalTextTitle": {

@@ -83,8 +83,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
         prefs.getString(_mangaReadingDirectionKey),
       ),
       mangaAutoCrop: prefs.getBool(_mangaAutoCropKey) ?? false,
-      mangaTransparentLookup:
-          prefs.getBool(_mangaTransparentLookupKey) ?? true,
+      mangaTransparentLookup: prefs.getBool(_mangaTransparentLookupKey) ?? true,
     );
   }
 

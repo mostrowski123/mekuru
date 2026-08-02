@@ -49,13 +49,16 @@ void main() {
       expect(loaded!.brightness, isNull);
     });
 
-    test('load returns settings when only the brightness key is present', () async {
-      SharedPreferences.setMockInitialValues({'reader.brightness': 0.3});
-      final storage = SharedPreferencesReaderSettingsStorage();
-      final loaded = await storage.load();
-      expect(loaded, isNotNull);
-      expect(loaded!.brightness, 0.3);
-    });
+    test(
+      'load returns settings when only the brightness key is present',
+      () async {
+        SharedPreferences.setMockInitialValues({'reader.brightness': 0.3});
+        final storage = SharedPreferencesReaderSettingsStorage();
+        final loaded = await storage.load();
+        expect(loaded, isNotNull);
+        expect(loaded!.brightness, 0.3);
+      },
+    );
 
     test('follows system (null) when only legacy keys are present', () async {
       // Simulate a user upgrading from a version without the brightness key.

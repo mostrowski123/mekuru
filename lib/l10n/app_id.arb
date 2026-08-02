@@ -907,10 +907,6 @@
   "@settingsSectionAppearance": {
     "description": "Settings section header for appearance preferences."
   },
-  "settingsSectionReadingDefaults": "Pengaturan Baca Default",
-  "@settingsSectionReadingDefaults": {
-    "description": "Settings section header for default reader settings."
-  },
   "settingsSectionDictionary": "Kamus",
   "@settingsSectionDictionary": {
     "description": "Settings section header for dictionary settings."
@@ -922,14 +918,6 @@
   "settingsSectionPro": "Pro",
   "@settingsSectionPro": {
     "description": "Settings section header for Pro settings."
-  },
-  "settingsSectionMangaAutoCrop": "Otomatis Pangkas Manga",
-  "@settingsSectionMangaAutoCrop": {
-    "description": "Settings section header for manga auto-crop preferences."
-  },
-  "settingsSectionMangaOcr": "OCR Manga",
-  "@settingsSectionMangaOcr": {
-    "description": "Settings section header for manga OCR preferences."
   },
   "settingsSectionDownloads": "Unduhan",
   "@settingsSectionDownloads": {
@@ -1647,6 +1635,74 @@
   "readerQuickSettings": "Pengaturan Cepat",
   "@readerQuickSettings": {
     "description": "Title for the reader quick settings sheet."
+  },
+  "readerBrightnessFollowSystem": "Ikuti kecerahan sistem",
+  "@readerBrightnessFollowSystem": {
+    "description": "Tooltip for the button that clears the manual brightness override so the reader follows the device's system brightness again."
+  },
+  "readerBrightnessTitle": "Kecerahan",
+  "@readerBrightnessTitle": {
+    "description": "Label for the screen brightness slider in the reader quick settings sheets."
+  },
+  "readerSettingsSectionDisplay": "Tampilan",
+  "@readerSettingsSectionDisplay": {
+    "description": "Section header in the reader quick settings sheets for visual settings (font size, brightness, colors)."
+  },
+  "readerSettingsSectionBehavior": "Perilaku",
+  "@readerSettingsSectionBehavior": {
+    "description": "Section header in the EPUB quick settings sheet for behavioral settings (text splitting, links)."
+  },
+  "readerFuriganaTitle": "Furigana",
+  "@readerFuriganaTitle": {
+    "description": "Label for the furigana display mode control in the EPUB quick settings sheet."
+  },
+  "readerFuriganaOff": "Nonaktif",
+  "@readerFuriganaOff": {
+    "description": "Furigana mode option that hides all furigana."
+  },
+  "readerFuriganaAllKanji": "Semua kanji",
+  "@readerFuriganaAllKanji": {
+    "description": "Furigana mode option that shows furigana above every kanji."
+  },
+  "readerAllSettingsTooltip": "Semua pengaturan",
+  "@readerAllSettingsTooltip": {
+    "description": "Tooltip for the button in the reader quick settings sheets that opens the full reading settings screen."
+  },
+  "mangaSettingsSectionReading": "Membaca",
+  "@mangaSettingsSectionReading": {
+    "description": "Section header in the manga quick settings sheet for reading behavior (direction, page-turn zones)."
+  },
+  "mangaSettingsSectionImage": "Gambar",
+  "@mangaSettingsSectionImage": {
+    "description": "Section header in the manga quick settings sheet for image processing settings (auto-crop)."
+  },
+  "mangaSettingsSectionLookup": "Pencarian",
+  "@mangaSettingsSectionLookup": {
+    "description": "Section header in the manga quick settings sheet for dictionary lookup settings."
+  },
+  "mangaViewModeTitle": "Mode Tampilan",
+  "@mangaViewModeTitle": {
+    "description": "Label for the manga page layout control (single page, spread, or scroll)."
+  },
+  "settingsReadingTitle": "Membaca",
+  "@settingsReadingTitle": {
+    "description": "Title of the reading settings subpage and its entry tile on the main settings screen."
+  },
+  "settingsReadingSubtitle": "Ukuran teks, warna, margin, dan pengaturan default manga",
+  "@settingsReadingSubtitle": {
+    "description": "Subtitle of the reading settings tile on the main settings screen."
+  },
+  "settingsReadingSectionShared": "Semua buku",
+  "@settingsReadingSectionShared": {
+    "description": "Section header on the reading settings screen for settings shared by both EPUB and manga readers."
+  },
+  "settingsReadingSectionEpub": "EPUB",
+  "@settingsReadingSectionEpub": {
+    "description": "Section header on the reading settings screen for EPUB-only settings."
+  },
+  "settingsReadingSectionManga": "Manga",
+  "@settingsReadingSectionManga": {
+    "description": "Section header on the reading settings screen for manga-only settings."
   },
   "readerVerticalTextTitle": "Teks Vertikal",
   "@readerVerticalTextTitle": {

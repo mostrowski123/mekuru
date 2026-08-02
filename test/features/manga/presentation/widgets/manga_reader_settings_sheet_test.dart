@@ -117,10 +117,7 @@ void main() {
     await _pumpSheet(tester, proUnlocked: false);
     await _scrollTo(tester, find.text('Unlock'));
     expect(find.text('Unlock'), findsOneWidget);
-    expect(
-      find.widgetWithText(SettingsSwitchRow, 'Auto-Crop'),
-      findsNothing,
-    );
+    expect(find.widgetWithText(SettingsSwitchRow, 'Auto-Crop'), findsNothing);
   });
 
   testWidgets('view mode change fires telemetry', (tester) async {

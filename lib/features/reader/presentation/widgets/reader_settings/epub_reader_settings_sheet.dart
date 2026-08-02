@@ -42,7 +42,10 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
     return settings.verticalText != nativeVertical;
   }
 
-  String _nonNativeDisplayWarning(BuildContext context, ReaderSettings settings) {
+  String _nonNativeDisplayWarning(
+    BuildContext context,
+    ReaderSettings settings,
+  ) {
     final l10n = context.l10n;
     if (settings.verticalText) {
       return l10n.readerVerticalTextNonNativeWarning;

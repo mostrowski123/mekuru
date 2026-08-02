@@ -1411,9 +1411,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           AppHaptics.light();
           Navigator.of(sheetContext).pop();
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const ReadingSettingsScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()),
           );
         },
       ),

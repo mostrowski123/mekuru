@@ -89,19 +89,22 @@ void main() {
       expect(state.sliderValue, 0.3);
     });
 
-    test('applyForReaderOpen keeps the override when platform calls fail', () async {
-      // No screen_brightness plugin in unit tests: every platform call
-      // throws and is swallowed; the state must stay consistent.
-      final storage = _FakeReaderSettingsStorage();
-      final container = _createContainer(storage);
-      final notifier = container.read(readerBrightnessProvider.notifier);
+    test(
+      'applyForReaderOpen keeps the override when platform calls fail',
+      () async {
+        // No screen_brightness plugin in unit tests: every platform call
+        // throws and is swallowed; the state must stay consistent.
+        final storage = _FakeReaderSettingsStorage();
+        final container = _createContainer(storage);
+        final notifier = container.read(readerBrightnessProvider.notifier);
 
-      await notifier.setBrightness(0.3);
-      await notifier.applyForReaderOpen();
+        await notifier.setBrightness(0.3);
+        await notifier.applyForReaderOpen();
 
-      final state = container.read(readerBrightnessProvider);
-      expect(state.override, 0.3);
-      expect(state.systemLevel, 0.5);
-    });
+        final state = container.read(readerBrightnessProvider);
+        expect(state.override, 0.3);
+        expect(state.systemLevel, 0.5);
+      },
+    );
   });
 }
