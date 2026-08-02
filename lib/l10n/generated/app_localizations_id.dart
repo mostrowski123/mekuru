@@ -1313,6 +1313,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerQuickSettings => 'Pengaturan Cepat';
 
   @override
+  String get readerBrightnessFollowSystem => 'Follow system brightness';
+
+  @override
   String get readerVerticalTextTitle => 'Teks Vertikal';
 
   @override

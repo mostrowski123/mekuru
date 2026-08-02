@@ -1688,6 +1688,10 @@
   "@readerQuickSettings": {
     "description": "Title for the reader quick settings sheet."
   },
+  "readerBrightnessFollowSystem": "Follow system brightness",
+  "@readerBrightnessFollowSystem": {
+    "description": "Tooltip for the button that clears the manual brightness override so the reader follows the device's system brightness again."
+  },
   "readerVerticalTextTitle": "Vertical Text",
   "@readerVerticalTextTitle": {
     "description": "Title for the per-book vertical text setting."

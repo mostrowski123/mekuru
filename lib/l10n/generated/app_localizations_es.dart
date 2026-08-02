@@ -1328,6 +1328,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerQuickSettings => 'Ajustes rápidos';
 
   @override
+  String get readerBrightnessFollowSystem => 'Follow system brightness';
+
+  @override
   String get readerVerticalTextTitle => 'Texto vertical';
 
   @override

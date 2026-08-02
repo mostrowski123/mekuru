@@ -1256,6 +1256,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerQuickSettings => '快速设置';
 
   @override
+  String get readerBrightnessFollowSystem => 'Follow system brightness';
+
+  @override
   String get readerVerticalTextTitle => '竖排文本';
 
   @override

@@ -20,6 +20,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _disableLinksKey = 'reader.disable_links';
   static const _furiganaModeKey = 'reader.furigana_mode';
   static const _splitVerticalTextKey = 'reader.split_vertical_text';
+  static const _brightnessKey = 'reader.brightness';
 
   /// Every SharedPreferences key this storage reads or writes. The backup
   /// service derives its reader key list from this, so a key added here is
@@ -36,6 +37,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     _disableLinksKey,
     _furiganaModeKey,
     _splitVerticalTextKey,
+    _brightnessKey,
   ];
 
   @override
@@ -65,6 +67,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       disableLinks: prefs.getBool(_disableLinksKey) ?? false,
       furiganaMode: furiganaModeFromString(prefs.getString(_furiganaModeKey)),
       splitVerticalText: prefs.getBool(_splitVerticalTextKey) ?? false,
+      brightness: prefs.getDouble(_brightnessKey),
     );
   }
 
@@ -86,5 +89,12 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     await prefs.setBool(_disableLinksKey, settings.disableLinks);
     await prefs.setString(_furiganaModeKey, settings.furiganaMode.storageValue);
     await prefs.setBool(_splitVerticalTextKey, settings.splitVerticalText);
+    // An absent key means "follow the system brightness".
+    final brightness = settings.brightness;
+    if (brightness == null) {
+      await prefs.remove(_brightnessKey);
+    } else {
+      await prefs.setDouble(_brightnessKey, brightness);
+    }
   }
 }

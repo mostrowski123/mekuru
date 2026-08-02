@@ -2272,6 +2272,12 @@ abstract class AppLocalizations {
   /// **'Quick Settings'**
   String get readerQuickSettings;
 
+  /// Tooltip for the button that clears the manual brightness override so the reader follows the device's system brightness again.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow system brightness'**
+  String get readerBrightnessFollowSystem;
+
   /// Title for the per-book vertical text setting.
   ///
   /// In en, this message translates to:

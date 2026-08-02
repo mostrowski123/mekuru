@@ -1309,6 +1309,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerQuickSettings => 'Quick Settings';
 
   @override
+  String get readerBrightnessFollowSystem => 'Follow system brightness';
+
+  @override
   String get readerVerticalTextTitle => 'Vertical Text';
 
   @override

@@ -8,6 +8,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
+import 'package:mekuru/features/reader/data/models/reader_brightness_state.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
@@ -35,16 +36,16 @@ class _PendingReaderSettingsStorage implements ReaderSettingsStorage {
   }
 }
 
-class _FakeBrightnessNotifier extends BrightnessNotifier {
-  int initializeCalls = 0;
+class _FakeBrightnessNotifier extends ReaderBrightnessNotifier {
+  int applyCalls = 0;
   int resetCalls = 0;
 
   @override
-  double? build() => 0.5;
+  ReaderBrightnessState build() => const ReaderBrightnessState();
 
   @override
-  Future<void> initialize() async {
-    initializeCalls += 1;
+  Future<void> applyForReaderOpen() async {
+    applyCalls += 1;
   }
 
   @override
@@ -125,7 +126,7 @@ void main() {
         databaseProvider.overrideWithValue(db),
         readerSettingsStorageProvider.overrideWithValue(storage),
         readerBookRepositoryProvider.overrideWithValue(BookRepository(db)),
-        brightnessProvider.overrideWith(_FakeBrightnessNotifier.new),
+        readerBrightnessProvider.overrideWith(_FakeBrightnessNotifier.new),
         ocrBillingClientProvider.overrideWithValue(_FakeBillingClient()),
       ],
     );
@@ -141,7 +142,8 @@ void main() {
     );
 
     final brightnessNotifier =
-        container.read(brightnessProvider.notifier) as _FakeBrightnessNotifier;
+        container.read(readerBrightnessProvider.notifier)
+            as _FakeBrightnessNotifier;
 
     await tester.pumpWidget(const SizedBox.shrink());
     expect(tester.takeException(), isNull);
@@ -151,7 +153,7 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
-    expect(brightnessNotifier.initializeCalls, 0);
+    expect(brightnessNotifier.applyCalls, 0);
     expect(fakeWakelockPlatform.toggleCalls, 1);
     expect(fakeWakelockPlatform.isEnabled, isFalse);
   });
