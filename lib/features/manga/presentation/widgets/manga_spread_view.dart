@@ -20,6 +20,10 @@ class MangaSpreadView extends StatefulWidget {
   final List<PageSpread> spreads;
   final int initialSpreadIndex;
   final bool isRtl;
+
+  /// When false (e-reader mode) swipe paging is disabled and programmatic
+  /// turns jump instantly.
+  final bool animatePageTurns;
   final bool debugOverlay;
   final bool autoCrop;
   final bool enableWordOverlays;
@@ -35,6 +39,7 @@ class MangaSpreadView extends StatefulWidget {
     required this.spreads,
     this.initialSpreadIndex = 0,
     this.isRtl = true,
+    this.animatePageTurns = true,
     this.debugOverlay = false,
     this.autoCrop = false,
     this.enableWordOverlays = true,
@@ -97,7 +102,7 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     return PageView.builder(
       controller: _pageController,
       reverse: widget.isRtl,
-      physics: _isZoomed
+      physics: _isZoomed || !widget.animatePageTurns
           ? const NeverScrollableScrollPhysics()
           : const ClampingScrollPhysics(),
       itemCount: widget.spreads.length,
