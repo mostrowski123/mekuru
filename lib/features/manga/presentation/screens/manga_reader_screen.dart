@@ -36,6 +36,7 @@ import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
+import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -287,6 +288,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
 
   /// Precache the next few pages so they display instantly when swiped to.
   void _precacheAdjacentPages(int currentPage, int totalPages) {
+    // While a slider seek is animating past pages, every swept page reports a
+    // change; precaching each would fire reads for pages never shown.
+    if (_pendingSeekTarget != null) return;
+
+    // Spread pages decode at half-screen width, so full-width precache
+    // entries would never be hit; the PageView's implicit scrolling already
+    // preloads the adjacent spreads at the width they render at.
+    final viewMode = ref.read(readerSettingsProvider).mangaViewMode;
+    if (viewMode == MangaViewMode.twoPageSpread) return;
+
     final asyncBook = ref.read(mangaPagesProvider(widget.book.id));
     final mokuroBook = switch (asyncBook) {
       AsyncData<MokuroBook>(:final value) => value,
@@ -294,26 +305,33 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     };
     if (mokuroBook == null || !mounted) return;
 
-    const pagesToPrecache = 5;
+    // Forward pages first (the common reading direction), then one backward
+    // so instant (no-animation) back-taps also have pixels ready. Kept small:
+    // decoded pages are large relative to the image cache budget.
+    const offsets = [1, 2, 3, -1];
     final screenWidth = MediaQuery.sizeOf(context).width;
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final cacheWidth = (screenWidth * dpr).toInt();
 
-    for (var i = 1; i <= pagesToPrecache; i++) {
-      final idx = currentPage + i;
-      if (idx >= totalPages) break;
+    for (final offset in offsets) {
+      final idx = currentPage + offset;
+      if (idx < 0 || idx >= totalPages) continue;
 
       final page = mokuroBook.pages[idx];
+      final safImagePath = mokuroBook.safImagePathFor(page);
+      final provider = safImagePath != null
+          ? AndroidSafImageProvider(
+              treeUri: mokuroBook.safTreeUri,
+              relativePath: safImagePath,
+            )
+          : FileImage(File('${mokuroBook.imageDirPath}/${page.imageFileName}'))
+                as ImageProvider;
 
-      // SAF images are loaded via platform channel in AndroidSafImage,
-      // so we can only precache file-backed images here.
-      if (mokuroBook.safTreeUri != null) continue;
-
-      final path = '${mokuroBook.imageDirPath}/${page.imageFileName}';
-      final file = File(path);
-      if (!file.existsSync()) continue;
-
-      precacheImage(ResizeImage(FileImage(file), width: cacheWidth), context);
+      precacheImage(
+        ResizeImage(provider, width: cacheWidth),
+        context,
+        onError: (_, _) {}, // missing/unreadable page images fail on display
+      );
     }
   }
 
@@ -1179,6 +1197,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         return PageView.builder(
           controller: _pageController,
           reverse: isRtl,
+          // Keep the adjacent pages built and decoded so instant
+          // (no-animation) jumps have pixels ready on the jump frame.
+          allowImplicitScrolling: true,
           // E-reader mode: no swipe-drag at all — swipes are handled from
           // raw pointers in build() and jump instantly.
           physics: _isZoomed || !animatePageTurns

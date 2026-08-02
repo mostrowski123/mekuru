@@ -1,5 +1,7 @@
 import 'dart:ui' show Rect;
 
+import 'package:path/path.dart' as p;
+
 /// Manifest for a single mokuro book discovered in a directory.
 /// Contains paths but no parsed page data yet.
 class MokuroBookManifest {
@@ -47,6 +49,14 @@ class MokuroBook {
   });
 
   static const Object _unset = Object();
+
+  /// SAF tree-relative path of [page]'s image, or `null` when this book is
+  /// not SAF-backed (read it from `imageDirPath` instead).
+  String? safImagePathFor(MokuroPage page) {
+    final imageDirRel = safImageDirRelativePath;
+    if (safTreeUri == null || imageDirRel == null) return null;
+    return p.posix.join(imageDirRel, page.imageFileName);
+  }
 
   /// `ocrSource` accepts an explicit `null` to clear the value; omitting the
   /// argument keeps the current one (hence the `Object?` sentinel default).
