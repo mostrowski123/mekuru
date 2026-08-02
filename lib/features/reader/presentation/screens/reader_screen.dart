@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
@@ -31,6 +30,7 @@ import 'package:mekuru/features/stats/presentation/providers/stats_providers.dar
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/utils/reader_system_bars.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -172,6 +172,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     unawaited(_progressPersistence.dispose());
     unawaited(_brightnessNotifier.resetBrightness());
     _readerSettingsNotifier.clearCurrentBook();
+    unawaited(setReaderSystemBarsVisible(true));
     WakelockPlus.disable();
     super.dispose();
   }
@@ -238,6 +239,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       'reader.settings_changed',
       attrs: {'setting': setting, 'value': value, 'format': 'epub'},
     );
+  }
+
+  /// Shows/hides the overlay controls; the Android system bars follow.
+  void _setControlsVisible(bool visible) {
+    if (_showControls == visible) return;
+    setState(() => _showControls = visible);
+    unawaited(setReaderSystemBarsVisible(visible));
   }
 
   @override
@@ -308,202 +316,207 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     final readerTheme = buildReaderTheme(settings: settings);
 
-    return Scaffold(
-      backgroundColor: readerTheme.backgroundColor,
-      body: _errorMessage != null
-          ? _buildErrorState(context)
-          : Stack(
-              children: [
-                if (_epubData != null)
-                  Positioned.fill(
-                    child: CustomEpubViewer(
-                      key: ValueKey('reader-${widget.book.id}-$_viewerEpoch'),
-                      controller: _epubController,
-                      epubData: _epubData!,
-                      initialCfi: _initialCfi,
-                      // epub.js uses direction to determine its pagination axis:
-                      // 'rtl' → vertical axis (for vertical Japanese text),
-                      // 'ltr' → horizontal axis.
-                      // When vertical text is disabled, we MUST pass 'ltr' so
-                      // epub.js paginates horizontally, regardless of the
-                      // user's reading direction (which only affects tap zones
-                      // and swipe interpretation in Dart).
-                      direction:
-                          settings.verticalText &&
-                              settings.readingDirection == ReaderDirection.rtl
-                          ? 'rtl'
-                          : 'ltr',
-                      fontSize: settings.fontSize.round(),
-                      foregroundColor: readerTheme.foregroundColor,
-                      backgroundColor: readerTheme.backgroundColor,
-                      customCss: readerTheme.customCss,
-                      horizontalMargin: settings.horizontalPadding,
-                      verticalMargin: settings.verticalPadding,
-                      // When vertical text is disabled, epub.js still reads
-                      // the section's original writing-mode CSS and sets axis
-                      // to vertical. This flag tells the JS bridge to force
-                      // the axis back to horizontal after each section loads.
-                      forceHorizontalAxis: !settings.verticalText,
-                      verticalTextBlocks: settings.splitVerticalText ? 2 : 1,
-                      furiganaMode: settings.furiganaMode,
-                      onLoaded: () {
-                        if (!mounted) return;
-                        _loadWatchdog?.cancel();
-                        setState(() {
-                          _isLoading = false;
-                          _isEpubLoaded = true;
-                        });
-                        _restoreHighlights();
-                        // Sync disableLinks setting to the JS bridge
-                        final s = ref.read(readerSettingsProvider);
-                        _epubController.setDisableLinks(s.disableLinks);
-                      },
-                      onChaptersLoaded: (chapters) {
-                        if (!mounted) return;
-                        debugPrint(
-                          '[READER] onChaptersLoaded: ${chapters.length} '
-                          'chapters received',
-                        );
-                        setState(() {
-                          _chapters = _flattenChapters(chapters);
-                        });
-                        debugPrint(
-                          '[READER] TOC flattened to ${_chapters.length} '
-                          'entries',
-                        );
-                      },
-                      onLocationsReady: () {
-                        if (!mounted) return;
-                        _locationsReady = true;
-                      },
-                      onRelocated: (location) {
-                        if (!mounted) return;
-
-                        final normalizedProgress = location.progress.clamp(
-                          0.0,
-                          1.0,
-                        );
-
-                        // Only trust progress values after epub.js has
-                        // generated locations; before that, percentage is 0.
-                        if (_locationsReady) {
-                          setState(() => _progress = normalizedProgress);
-                        }
-
-                        final cfi = location.startCfi.trim();
-                        if (_isEpubCfi(cfi)) {
-                          _currentCfi = cfi;
-                          _checkBookmarkState();
-                          _progressPersistence.queueSave(
-                            cfi,
-                            _locationsReady ? normalizedProgress : _progress,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: readerSystemBarsOverlayStyle,
+      child: Scaffold(
+        backgroundColor: readerTheme.backgroundColor,
+        body: _errorMessage != null
+            ? _buildErrorState(context)
+            : Stack(
+                children: [
+                  if (_epubData != null)
+                    Positioned.fill(
+                      child: CustomEpubViewer(
+                        key: ValueKey('reader-${widget.book.id}-$_viewerEpoch'),
+                        controller: _epubController,
+                        epubData: _epubData!,
+                        initialCfi: _initialCfi,
+                        // epub.js uses direction to determine its pagination axis:
+                        // 'rtl' → vertical axis (for vertical Japanese text),
+                        // 'ltr' → horizontal axis.
+                        // When vertical text is disabled, we MUST pass 'ltr' so
+                        // epub.js paginates horizontally, regardless of the
+                        // user's reading direction (which only affects tap zones
+                        // and swipe interpretation in Dart).
+                        direction:
+                            settings.verticalText &&
+                                settings.readingDirection == ReaderDirection.rtl
+                            ? 'rtl'
+                            : 'ltr',
+                        fontSize: settings.fontSize.round(),
+                        foregroundColor: readerTheme.foregroundColor,
+                        backgroundColor: readerTheme.backgroundColor,
+                        customCss: readerTheme.customCss,
+                        horizontalMargin: settings.horizontalPadding,
+                        verticalMargin: settings.verticalPadding,
+                        // When vertical text is disabled, epub.js still reads
+                        // the section's original writing-mode CSS and sets axis
+                        // to vertical. This flag tells the JS bridge to force
+                        // the axis back to horizontal after each section loads.
+                        forceHorizontalAxis: !settings.verticalText,
+                        verticalTextBlocks: settings.splitVerticalText ? 2 : 1,
+                        furiganaMode: settings.furiganaMode,
+                        onLoaded: () {
+                          if (!mounted) return;
+                          _loadWatchdog?.cancel();
+                          setState(() {
+                            _isLoading = false;
+                            _isEpubLoaded = true;
+                          });
+                          _restoreHighlights();
+                          // Sync disableLinks setting to the JS bridge
+                          final s = ref.read(readerSettingsProvider);
+                          _epubController.setDisableLinks(s.disableLinks);
+                        },
+                        onChaptersLoaded: (chapters) {
+                          if (!mounted) return;
+                          debugPrint(
+                            '[READER] onChaptersLoaded: ${chapters.length} '
+                            'chapters received',
                           );
-                        }
-                      },
-                      onPageCharacters: _sessionTracker.recordCharactersRead,
-                      onSelection: (selection) {
-                        _hasActiveSelection = true;
-                        if (selection.text.isNotEmpty &&
-                            selection.cfi.isNotEmpty) {
+                          setState(() {
+                            _chapters = _flattenChapters(chapters);
+                          });
+                          debugPrint(
+                            '[READER] TOC flattened to ${_chapters.length} '
+                            'entries',
+                          );
+                        },
+                        onLocationsReady: () {
+                          if (!mounted) return;
+                          _locationsReady = true;
+                        },
+                        onRelocated: (location) {
+                          if (!mounted) return;
+
+                          final normalizedProgress = location.progress.clamp(
+                            0.0,
+                            1.0,
+                          );
+
+                          // Only trust progress values after epub.js has
+                          // generated locations; before that, percentage is 0.
+                          if (_locationsReady) {
+                            setState(() => _progress = normalizedProgress);
+                          }
+
+                          final cfi = location.startCfi.trim();
+                          if (_isEpubCfi(cfi)) {
+                            _currentCfi = cfi;
+                            _checkBookmarkState();
+                            _progressPersistence.queueSave(
+                              cfi,
+                              _locationsReady ? normalizedProgress : _progress,
+                            );
+                          }
+                        },
+                        onPageCharacters: _sessionTracker.recordCharactersRead,
+                        onSelection: (selection) {
+                          _hasActiveSelection = true;
+                          if (selection.text.isNotEmpty &&
+                              selection.cfi.isNotEmpty) {
+                            setState(() {
+                              _selectionData = selection;
+                            });
+                          }
+                        },
+                        onSelectionCleared: () {
+                          _hasActiveSelection = false;
+                          setState(() {
+                            _selectionData = null;
+                          });
+                        },
+                        onTouchDown: (x, y) {
+                          _touchDownX = x.clamp(0.0, 1.0);
+                          _touchDownY = y.clamp(0.0, 1.0);
+                          debugPrint(
+                            '[READER] touchDown stored '
+                            'x=${x.toStringAsFixed(3)} '
+                            'y=${y.toStringAsFixed(3)}',
+                          );
+                        },
+                        onTouchUp: (x, y) {
+                          _handleTouchUp(
+                            x,
+                            y,
+                            settings.readingDirection,
+                            settings.swipeSensitivity,
+                          );
+                        },
+                        onSentenceSelected: (selection) {
+                          if (!mounted) return;
+                          _hasActiveSelection = true;
                           setState(() {
                             _selectionData = selection;
                           });
-                        }
-                      },
-                      onSelectionCleared: () {
-                        _hasActiveSelection = false;
-                        setState(() {
-                          _selectionData = null;
-                        });
-                      },
-                      onTouchDown: (x, y) {
-                        _touchDownX = x.clamp(0.0, 1.0);
-                        _touchDownY = y.clamp(0.0, 1.0);
-                        debugPrint(
-                          '[READER] touchDown stored '
-                          'x=${x.toStringAsFixed(3)} '
-                          'y=${y.toStringAsFixed(3)}',
-                        );
-                      },
-                      onTouchUp: (x, y) {
-                        _handleTouchUp(
-                          x,
-                          y,
-                          settings.readingDirection,
-                          settings.swipeSensitivity,
-                        );
-                      },
-                      onSentenceSelected: (selection) {
-                        if (!mounted) return;
-                        _hasActiveSelection = true;
-                        setState(() {
-                          _selectionData = selection;
-                        });
-                        AppHaptics.medium();
-                      },
-                      onWordTapped:
-                          (
-                            surroundingText,
-                            charOffset,
-                            blockCharOffset,
-                            tappedChar,
-                            x,
-                            y,
-                          ) {
-                            _handleWordTapped(
+                          AppHaptics.medium();
+                        },
+                        onWordTapped:
+                            (
                               surroundingText,
                               charOffset,
                               blockCharOffset,
                               tappedChar,
                               x,
                               y,
-                              settings.readingDirection,
-                              settings.swipeSensitivity,
-                            );
-                          },
-                      onLoadError: (description) {
-                        if (!mounted) return;
-                        setState(() {
-                          _errorMessage = context.l10n
-                              .readerFailedToLoadContent(details: description);
-                        });
+                            ) {
+                              _handleWordTapped(
+                                surroundingText,
+                                charOffset,
+                                blockCharOffset,
+                                tappedChar,
+                                x,
+                                y,
+                                settings.readingDirection,
+                                settings.swipeSensitivity,
+                              );
+                            },
+                        onLoadError: (description) {
+                          if (!mounted) return;
+                          setState(() {
+                            _errorMessage = context.l10n
+                                .readerFailedToLoadContent(
+                                  details: description,
+                                );
+                          });
+                        },
+                      ),
+                    ),
+                  if (_isLoading) _buildLoadingOverlay(context),
+                  if (_showControls && !_isLoading)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: _buildTopBar(isProUnlocked),
+                    ),
+                  if (_showControls && !_isLoading)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: _buildBottomBar(settings),
+                    ),
+                  // Highlight speed-dial FAB — appears when text is selected
+                  if (_selectionData != null)
+                    _HighlightSpeedDial(
+                      isLocked: !isProUnlocked,
+                      onColorSelected: (color) => _createHighlight(
+                        _selectionData!.cfi,
+                        _selectionData!.text,
+                        color,
+                      ),
+                      onLockedTap: () => unawaited(
+                        _openProUpgradeFromReader(feature: 'create_highlight'),
+                      ),
+                      onExpandToSentence: () {
+                        _epubController.expandToSentence();
+                        AppHaptics.medium();
                       },
                     ),
-                  ),
-                if (_isLoading) _buildLoadingOverlay(context),
-                if (_showControls && !_isLoading)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: _buildTopBar(isProUnlocked),
-                  ),
-                if (_showControls && !_isLoading)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: _buildBottomBar(settings),
-                  ),
-                // Highlight speed-dial FAB — appears when text is selected
-                if (_selectionData != null)
-                  _HighlightSpeedDial(
-                    isLocked: !isProUnlocked,
-                    onColorSelected: (color) => _createHighlight(
-                      _selectionData!.cfi,
-                      _selectionData!.text,
-                      color,
-                    ),
-                    onLockedTap: () => unawaited(
-                      _openProUpgradeFromReader(feature: 'create_highlight'),
-                    ),
-                    onExpandToSentence: () {
-                      _epubController.expandToSentence();
-                      AppHaptics.medium();
-                    },
-                  ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 
@@ -595,11 +608,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   Future<void> _openAllReaderSettings() async {
     _suppressViewerRebuilds = true;
+    await setReaderSystemBarsVisible(true);
+    if (!mounted) return;
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()));
     _suppressViewerRebuilds = false;
-    if (_viewerRebuildDeferred && mounted) {
+    if (!mounted) return;
+    unawaited(setReaderSystemBarsVisible(_showControls));
+    if (_viewerRebuildDeferred) {
       _viewerRebuildDeferred = false;
       unawaited(_rebuildViewerForDirectionChange());
     }
@@ -688,15 +705,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (gesture == GestureType.verticalSwipeDown) {
       // Swipe down — show controls.
       debugPrint('[READER] SWIPE DOWN detected — showing controls');
-      if (!_showControls) {
-        setState(() => _showControls = true);
-      }
+      _setControlsVisible(true);
       return;
     } else if (gesture == GestureType.verticalSwipeUp) {
       // Swipe up — dismiss controls only if they are showing.
       if (_showControls) {
         debugPrint('[READER] SWIPE UP detected — hiding controls');
-        setState(() => _showControls = false);
+        _setControlsVisible(false);
       }
       return;
     } else if (gesture == GestureType.horizontalSwipe) {
@@ -755,9 +770,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         debugPrint(
           '[READER] wordTapped was actually a SWIPE DOWN — showing controls',
         );
-        if (!_showControls) {
-          setState(() => _showControls = true);
-        }
+        _setControlsVisible(true);
         return;
       }
       if (gesture == GestureType.verticalSwipeUp) {
@@ -765,7 +778,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           debugPrint(
             '[READER] wordTapped was actually a SWIPE UP — hiding controls',
           );
-          setState(() => _showControls = false);
+          _setControlsVisible(false);
         }
         return;
       }
@@ -847,9 +860,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   void _showLookupSheet(WordLookupResult result, double normalizedY) {
-    if (_showControls) {
-      setState(() => _showControls = false);
-    }
+    _setControlsVisible(false);
 
     final showAtTop = normalizedY > 0.5;
 
@@ -917,7 +928,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       case ReaderNavigationIntent.none:
         return;
       case ReaderNavigationIntent.toggleControls:
-        setState(() => _showControls = !_showControls);
+        _setControlsVisible(!_showControls);
         return;
       case ReaderNavigationIntent.goForward:
         _goForward();
