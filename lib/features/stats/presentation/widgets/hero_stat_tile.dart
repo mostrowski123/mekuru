@@ -29,14 +29,13 @@ class HeroStatTile extends StatelessWidget {
       builder: (context, t, _) {
         final shown = (value * t).round();
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Only the number scales: a six-figure count in a headline face
-            // does not fit a third of a phone screen, but the label must keep
-            // the user's text scale rather than shrink along with it.
+            // Only the number scales: counts condense before they get long,
+            // but a long duration ("120h 45m") or a large text scale can
+            // still outgrow a third of a phone screen — the label, though,
+            // must keep the user's text scale rather than shrink with it.
             FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: AlignmentDirectional.centerStart,
               child: Text(
                 formatter?.call(shown) ?? '$shown',
                 style: theme.textTheme.headlineMedium?.copyWith(
@@ -44,7 +43,11 @@ class HeroStatTile extends StatelessWidget {
                 ),
               ),
             ),
-            Text(label, style: theme.textTheme.bodySmall),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall,
+            ),
           ],
         );
       },
