@@ -22,8 +22,9 @@ void main() {
     l10n = await AppLocalizations.delegate.load(const Locale('en'));
   });
 
-  testWidgets('tab switching preserves dictionary search state',
-      (tester) async {
+  testWidgets('tab switching preserves dictionary search state', (
+    tester,
+  ) async {
     final db = createTestDatabase();
     addTearDown(db.close);
     await seedDictionaries(db);
@@ -129,8 +130,15 @@ void main() {
     );
     expect(find.text('飲む'), findsOneWidget);
 
-    // Settings tab: verify it renders.
-    await tester.tap(find.text(l10n.navSettings));
+    // You tab: verify the stats screen renders, then reach settings through
+    // the gear in its app bar.
+    await tester.tap(find.text(l10n.navYou));
+    await pumpUntilVisible(
+      tester,
+      find.byIcon(Icons.settings_outlined),
+      timeout: const Duration(seconds: 10),
+    );
+    await tester.tap(find.byIcon(Icons.settings_outlined));
     await pumpUntilVisible(
       tester,
       find.text(l10n.settingsTitle),

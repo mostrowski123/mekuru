@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
@@ -124,7 +125,20 @@ class StatsScreen extends ConsumerWidget {
 
   /// The page shell, identical whether or not the data has landed.
   Widget _page(BuildContext context, List<Widget> children) => Scaffold(
-    appBar: AppBar(title: Text(context.l10n.statsTitle)),
+    appBar: AppBar(
+      title: Text(context.l10n.navYou),
+      actions: [
+        // Settings lost its navigation-bar slot to this tab; this gear is its
+        // app-level entry (a few flows, like OCR setup, still deep-link to it).
+        IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          tooltip: context.l10n.settingsTitle,
+          onPressed: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+        ),
+      ],
+    ),
     // Deliberately not a ListView: its sliver delegate disposes children
     // scrolled past the cache extent, and neither TweenAnimationBuilder nor
     // fl_chart keeps itself alive. Once the chart slots below are filled,

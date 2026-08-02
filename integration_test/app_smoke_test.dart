@@ -41,7 +41,7 @@ void main() {
     );
     await pumpUntilVisible(tester, _bottomNavLabel(l10n.navDictionary));
     await pumpUntilVisible(tester, _bottomNavLabel(l10n.navVocabulary));
-    await pumpUntilVisible(tester, _bottomNavLabel(l10n.navSettings));
+    await pumpUntilVisible(tester, _bottomNavLabel(l10n.navYou));
 
     await tester.tap(_bottomNavLabel(l10n.navDictionary));
     await pumpUntilVisible(tester, _appBarTitle(l10n.navDictionary));
@@ -54,7 +54,13 @@ void main() {
     await pumpUntilVisible(tester, _appBarTitle(l10n.navVocabulary));
     await pumpUntilVisible(tester, find.text(l10n.vocabularyEmptyTitle));
 
-    await tester.tap(_bottomNavLabel(l10n.navSettings));
+    await tester.tap(_bottomNavLabel(l10n.navYou));
+    await pumpUntilVisible(tester, _appBarTitle(l10n.navYou));
+
+    // Settings has no navigation-bar slot of its own; it opens from the gear
+    // in the You tab's app bar.
+    await pumpUntilVisible(tester, find.byIcon(Icons.settings_outlined));
+    await tester.tap(find.byIcon(Icons.settings_outlined));
     await pumpUntilVisible(tester, _appBarTitle(l10n.settingsTitle));
     await pumpUntilVisible(tester, find.text(l10n.settingsSectionGeneral));
   });

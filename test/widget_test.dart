@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/app.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
+import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
+import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
@@ -21,6 +23,66 @@ void main() {
     expect(find.text('Dictionary'), findsOneWidget);
     expect(find.text('Vocabulary'), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
+  });
+
+  testWidgets('You tab replaces Settings and holds the stats screen', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionsProvider.overrideWith((ref) => Stream.value(const [])),
+          wordEventsProvider.overrideWith((ref) => Stream.value(const [])),
+        ],
+        child: const MekuruApp(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Settings'), findsNothing);
+
+    await tester.tap(find.text('You'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(StatsScreen), findsOneWidget);
+    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+  });
+
+  testWidgets('leaving the You tab unmounts the stats screen', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionsProvider.overrideWith((ref) => Stream.value(const [])),
+          wordEventsProvider.overrideWith((ref) => Stream.value(const [])),
+        ],
+        child: const MekuruApp(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('You'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(StatsScreen, skipOffstage: false), findsOneWidget);
+
+    // The stats screen re-aggregates on every session or word write; the
+    // IndexedStack must not keep it doing that invisibly after the user
+    // switches away.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Library'),
+      ),
+    );
+    await tester.pump();
+    expect(find.byType(StatsScreen, skipOffstage: false), findsNothing);
   });
 
   testWidgets('Spanish locale resolves localized navigation labels', (

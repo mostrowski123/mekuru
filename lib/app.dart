@@ -18,7 +18,7 @@ import 'features/reader/presentation/providers/reader_providers.dart';
 import 'features/reader/presentation/screens/reader_screen.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
-import 'features/settings/presentation/screens/settings_screen.dart';
+import 'features/stats/presentation/screens/stats_screen.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/l10n.dart';
@@ -154,7 +154,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
       0 => const LibraryScreen(),
       1 => DictionarySearchScreen(key: _dictionaryKey),
       2 => const VocabularyScreen(),
-      3 => const SettingsScreen(),
+      3 => const StatsScreen(),
       _ => throw ArgumentError.value(index, 'index', 'Unknown main screen'),
     };
   }
@@ -174,6 +174,14 @@ class _MainShellState extends ConsumerState<_MainShell> {
   void _setCurrentIndex(int index) {
     if (_currentIndex == 1 && index != 1) {
       _dictionaryKey.currentState?.commitHistoryIfNeeded();
+    }
+    if (_currentIndex == 3 && index != 3) {
+      // The stats screen watches unwindowed session and word-event streams and
+      // re-aggregates on every write, and the IndexedStack would keep a hidden
+      // child doing that forever. Evicting it closes the subscriptions; its
+      // entrance animations are specified as once per screen open, so a fresh
+      // mount on return is the intended behavior anyway.
+      _loadedScreens.remove(3);
     }
     _hasAppliedStartup = true;
     setState(() => _currentIndex = index);
@@ -239,9 +247,9 @@ class _MainShellState extends ConsumerState<_MainShell> {
             label: l10n.navVocabulary,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
-            label: l10n.navSettings,
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: l10n.navYou,
           ),
         ],
       ),
