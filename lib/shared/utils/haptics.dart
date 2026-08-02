@@ -2,8 +2,9 @@ import 'package:flutter/services.dart';
 
 /// Centralised haptic feedback helpers.
 ///
-/// Used in library and settings interactions — intentionally **not** used in
-/// the reader (page turns, word taps, swipes).
+/// Used in library and settings interactions (including the reader settings
+/// sheets) — intentionally **not** used for reading gestures themselves
+/// (page turns, word taps, swipes).
 class AppHaptics {
   static Future<void> light() => HapticFeedback.lightImpact();
   static Future<void> medium() => HapticFeedback.mediumImpact();

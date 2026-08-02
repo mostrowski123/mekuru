@@ -24,6 +24,7 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// General app settings screen.
@@ -62,7 +63,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         children: [
           // ── General ──
-          _SectionHeader(title: l10n.settingsSectionGeneral),
+          SettingsSectionHeader(title: l10n.settingsSectionGeneral),
           ListTile(
             leading: Icon(
               Icons.translate_outlined,
@@ -95,7 +96,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Appearance ──
-          _SectionHeader(title: l10n.settingsSectionAppearance),
+          SettingsSectionHeader(title: l10n.settingsSectionAppearance),
           ListTile(
             leading: Icon(
               _themeModeIcon(themeMode),
@@ -122,7 +123,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Reading Defaults ──
-          _SectionHeader(title: l10n.settingsSectionReadingDefaults),
+          SettingsSectionHeader(title: l10n.settingsSectionReadingDefaults),
           ListTile(
             leading: Icon(Icons.text_fields, color: theme.colorScheme.primary),
             title: Text(l10n.settingsFontSizeTitle),
@@ -282,7 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Dictionary ──
-          _SectionHeader(title: l10n.settingsSectionDictionary),
+          SettingsSectionHeader(title: l10n.settingsSectionDictionary),
           ListTile(
             leading: Icon(
               Icons.book_outlined,
@@ -348,7 +349,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ── Vocabulary & Export ──
           if (defaultTargetPlatform == TargetPlatform.android) ...[
-            _SectionHeader(title: l10n.settingsSectionVocabularyExport),
+            SettingsSectionHeader(title: l10n.settingsSectionVocabularyExport),
             ListTile(
               leading: Icon(
                 Icons.electric_bolt_outlined,
@@ -370,7 +371,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           // ── Manga OCR ──
-          _SectionHeader(title: l10n.settingsSectionPro),
+          SettingsSectionHeader(title: l10n.settingsSectionPro),
           if (!hasFirebaseApp)
             ListTile(
               enabled: false,
@@ -398,7 +399,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           const Divider(),
           if (isProUnlocked) ...[
-            _SectionHeader(title: l10n.settingsSectionMangaAutoCrop),
+            SettingsSectionHeader(title: l10n.settingsSectionMangaAutoCrop),
             ListTile(
               leading: Icon(Icons.tune, color: theme.colorScheme.primary),
               title: Text(l10n.settingsWhiteThresholdTitle),
@@ -426,7 +427,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const Divider(),
-            _SectionHeader(title: l10n.settingsSectionMangaOcr),
+            SettingsSectionHeader(title: l10n.settingsSectionMangaOcr),
             if (!hasFirebaseApp)
               ListTile(
                 enabled: false,
@@ -473,7 +474,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
 
           // ── Downloads ──
-          _SectionHeader(title: l10n.settingsSectionDownloads),
+          SettingsSectionHeader(title: l10n.settingsSectionDownloads),
           ListTile(
             leading: Icon(
               Icons.download_outlined,
@@ -492,7 +493,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Backup & Restore ──
-          _SectionHeader(title: l10n.settingsSectionBackupRestore),
+          SettingsSectionHeader(title: l10n.settingsSectionBackupRestore),
           ListTile(
             leading: Icon(
               Icons.backup_outlined,
@@ -511,7 +512,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Feedback & About ──
-          _SectionHeader(title: l10n.settingsSectionAboutFeedback),
+          SettingsSectionHeader(title: l10n.settingsSectionAboutFeedback),
           ListTile(
             leading: Icon(
               Icons.feedback_outlined,
@@ -1239,25 +1240,6 @@ class _OcrServerUrlDialogState extends State<_OcrServerUrlDialog> {
 
 // ── Private widgets ──
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
 
 class _ThemeModeOption extends StatelessWidget {
   const _ThemeModeOption({
