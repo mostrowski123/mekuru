@@ -1288,12 +1288,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerHighlightsTooltip => 'Highlights';
 
   @override
-  String get readerNextPageTooltip => 'Next Page';
-
-  @override
-  String get readerPreviousPageTooltip => 'Previous Page';
-
-  @override
   String get readerUnknownError => 'Unknown reader error.';
 
   @override

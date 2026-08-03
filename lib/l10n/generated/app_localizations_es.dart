@@ -1306,12 +1306,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerHighlightsTooltip => 'Destacados';
 
   @override
-  String get readerNextPageTooltip => 'Página siguiente';
-
-  @override
-  String get readerPreviousPageTooltip => 'Página anterior';
-
-  @override
   String get readerUnknownError => 'Error de lector desconocido.';
 
   @override

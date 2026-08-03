@@ -1660,14 +1660,6 @@
   "@readerHighlightsTooltip": {
     "description": "Tooltip for opening the highlights sheet."
   },
-  "readerNextPageTooltip": "Next Page",
-  "@readerNextPageTooltip": {
-    "description": "Tooltip for moving to the next page."
-  },
-  "readerPreviousPageTooltip": "Previous Page",
-  "@readerPreviousPageTooltip": {
-    "description": "Tooltip for moving to the previous page."
-  },
   "readerUnknownError": "Unknown reader error.",
   "@readerUnknownError": {
     "description": "Fallback error shown in the reader when no specific error is available."

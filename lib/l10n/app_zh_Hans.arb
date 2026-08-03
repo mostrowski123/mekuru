@@ -1620,14 +1620,6 @@
   "@readerHighlightsTooltip": {
     "description": "Tooltip for opening the highlights sheet."
   },
-  "readerNextPageTooltip": "下一页",
-  "@readerNextPageTooltip": {
-    "description": "Tooltip for moving to the next page."
-  },
-  "readerPreviousPageTooltip": "上一页",
-  "@readerPreviousPageTooltip": {
-    "description": "Tooltip for moving to the previous page."
-  },
   "readerUnknownError": "未知阅读器错误。",
   "@readerUnknownError": {
     "description": "Fallback error shown in the reader when no specific error is available."

@@ -32,7 +32,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
-import 'package:mekuru/shared/utils/system_gesture_padding.dart';
+import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -86,6 +86,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   bool _locationsReady = false;
   EpubSelectionData? _selectionData;
   double _progress = 0.0;
+
+  // Live page preview while scrubbing the slider: at most one bridge
+  // navigation is in flight at a time; the latest drag target is held in
+  // [_pendingSeek] and sent when the current one settles. A fast drag thumbs
+  // through as many pages as epub.js can render instead of queueing a
+  // display call per slider tick (which froze the slider entirely).
+  bool _seekInFlight = false;
+  double? _pendingSeek;
+  Timer? _seekSettleFallback;
+  static const _kSeekSettleTimeout = Duration(milliseconds: 400);
   String _currentCfi = '';
   bool _isCurrentPageBookmarked = false;
   int _bookmarkCheckGeneration = 0;
@@ -174,6 +184,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _emitSessionSummary('closed');
     WidgetsBinding.instance.removeObserver(this);
     _loadWatchdog?.cancel();
+    _seekSettleFallback?.cancel();
     _epubController.detach();
     unawaited(_progressPersistence.dispose());
     unawaited(_brightnessNotifier.resetBrightness());
@@ -395,6 +406,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         onRelocated: (location) {
                           if (!mounted) return;
 
+                          _onSeekSettled();
+
                           final normalizedProgress = location.progress.clamp(
                             0.0,
                             1.0,
@@ -409,7 +422,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                           final cfi = location.startCfi.trim();
                           if (_isEpubCfi(cfi)) {
                             _currentCfi = cfi;
-                            _checkBookmarkState();
+                            // Mid-scrub relocations (another seek already in
+                            // flight) skip the bookmark lookup; the final one
+                            // runs it.
+                            if (!_seekInFlight) _checkBookmarkState();
                             _progressPersistence.queueSave(
                               cfi,
                               _locationsReady ? normalizedProgress : _progress,
@@ -990,12 +1006,29 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _epubController.prev();
   }
 
-  void _jumpToProgress(double value) {
+  void _seekToProgress(double value) {
     if (!_isEpubLoaded) return;
 
-    final clampedValue = value.clamp(0.0, 1.0);
-    setState(() => _progress = clampedValue);
-    _epubController.toProgressPercentage(clampedValue);
+    final target = value.clamp(0.0, 1.0);
+    if (_seekInFlight) {
+      _pendingSeek = target;
+      return;
+    }
+    _seekInFlight = true;
+    _seekSettleFallback = Timer(_kSeekSettleTimeout, _onSeekSettled);
+    _epubController.toProgressPercentage(target);
+  }
+
+  /// Called when a seek navigation settles (its relocation arrived, or the
+  /// fallback timeout fired for a display that never relocated). Sends the
+  /// latest held target, if any.
+  void _onSeekSettled() {
+    if (!_seekInFlight) return;
+    _seekSettleFallback?.cancel();
+    _seekInFlight = false;
+    final pending = _pendingSeek;
+    _pendingSeek = null;
+    if (pending != null) _seekToProgress(pending);
   }
 
   List<_FlattenedChapter> _flattenChapters(
@@ -1294,72 +1327,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   Widget _buildBottomBar(ReaderSettings settings) {
-    final isRtl = settings.readingDirection == ReaderDirection.rtl;
-    final bottomPadding = bottomControlPadding(MediaQuery.of(context));
-    final l10n = context.l10n;
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    '${(_progress * 100).toInt()}%',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  Expanded(
-                    child: Slider(
-                      value: _progress.clamp(0.0, 1.0),
-                      onChanged: _isEpubLoaded ? _jumpToProgress : null,
-                      activeColor: Colors.white,
-                      inactiveColor: Colors.white24,
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.navigate_before,
-                      color: Colors.white,
-                    ),
-                    tooltip: isRtl
-                        ? l10n.readerNextPageTooltip
-                        : l10n.readerPreviousPageTooltip,
-                    onPressed: _isEpubLoaded
-                        ? (isRtl ? _goForward : _goBackward)
-                        : null,
-                  ),
-                  const SizedBox(width: 32),
-                  IconButton(
-                    icon: const Icon(Icons.navigate_next, color: Colors.white),
-                    tooltip: isRtl
-                        ? l10n.readerPreviousPageTooltip
-                        : l10n.readerNextPageTooltip,
-                    onPressed: _isEpubLoaded
-                        ? (isRtl ? _goBackward : _goForward)
-                        : null,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    return ReaderSeekBar(
+      value: _progress.clamp(0.0, 1.0),
+      isRtl: settings.readingDirection == ReaderDirection.rtl,
+      leadingLabel: (value) => '${(value * 100).toInt()}%',
+      // Live page preview while scrubbing; [_seekToProgress] coalesces the
+      // bridge traffic.
+      onChanged: _isEpubLoaded ? _seekToProgress : null,
+      // The last onChanged already navigated to this position; just commit
+      // it so the thumb doesn't snap back while the relocation is en route.
+      onChangeEnd: _isEpubLoaded
+          ? (value) => setState(() => _progress = value)
+          : null,
     );
   }
 

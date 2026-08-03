@@ -1620,14 +1620,6 @@
   "@readerHighlightsTooltip": {
     "description": "Tooltip for opening the highlights sheet."
   },
-  "readerNextPageTooltip": "Halaman Berikutnya",
-  "@readerNextPageTooltip": {
-    "description": "Tooltip for moving to the next page."
-  },
-  "readerPreviousPageTooltip": "Halaman Sebelumnya",
-  "@readerPreviousPageTooltip": {
-    "description": "Tooltip for moving to the previous page."
-  },
   "readerUnknownError": "Kesalahan pembaca tidak diketahui.",
   "@readerUnknownError": {
     "description": "Fallback error shown in the reader when no specific error is available."

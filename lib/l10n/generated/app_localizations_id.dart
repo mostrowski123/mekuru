@@ -1292,12 +1292,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerHighlightsTooltip => 'Sorotan';
 
   @override
-  String get readerNextPageTooltip => 'Halaman Berikutnya';
-
-  @override
-  String get readerPreviousPageTooltip => 'Halaman Sebelumnya';
-
-  @override
   String get readerUnknownError => 'Kesalahan pembaca tidak diketahui.';
 
   @override

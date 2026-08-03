@@ -2230,18 +2230,6 @@ abstract class AppLocalizations {
   /// **'Highlights'**
   String get readerHighlightsTooltip;
 
-  /// Tooltip for moving to the next page.
-  ///
-  /// In en, this message translates to:
-  /// **'Next Page'**
-  String get readerNextPageTooltip;
-
-  /// Tooltip for moving to the previous page.
-  ///
-  /// In en, this message translates to:
-  /// **'Previous Page'**
-  String get readerPreviousPageTooltip;
-
   /// Fallback error shown in the reader when no specific error is available.
   ///
   /// In en, this message translates to:

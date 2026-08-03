@@ -1235,12 +1235,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerHighlightsTooltip => '高亮';
 
   @override
-  String get readerNextPageTooltip => '下一页';
-
-  @override
-  String get readerPreviousPageTooltip => '上一页';
-
-  @override
   String get readerUnknownError => '未知阅读器错误。';
 
   @override
@@ -3271,12 +3265,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerHighlightsTooltip => '高亮';
-
-  @override
-  String get readerNextPageTooltip => '下一页';
-
-  @override
-  String get readerPreviousPageTooltip => '上一页';
 
   @override
   String get readerUnknownError => '未知阅读器错误。';

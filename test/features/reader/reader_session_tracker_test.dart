@@ -4,6 +4,8 @@ import 'package:mekuru/features/reader/data/reader_session_tracker.dart';
 class _FakeStopwatch extends Stopwatch {
   int fakeElapsedMs = 0;
 
+  void advance(int ms) => fakeElapsedMs += ms;
+
   @override
   int get elapsedMilliseconds => fakeElapsedMs;
 }
@@ -71,56 +73,125 @@ void main() {
   });
 
   test('counts each distinct page once even when re-reported', () {
-    stopwatch.fakeElapsedMs = 5000;
     // A re-layout (font size, margins, rotation) re-reports the same page.
     tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
     tracker.recordCharactersRead(580, pageKey: 'epubcfi(/6/4!/4/2)');
     tracker.recordCharactersRead(590, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(5000);
 
     expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 600);
   });
 
   test('counts pages with distinct keys separately', () {
-    stopwatch.fakeElapsedMs = 5000;
     tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(5000);
     tracker.recordCharactersRead(500, pageKey: 'epubcfi(/6/4!/4/8)');
+    stopwatch.advance(5000);
 
     expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 1100);
   });
 
+  test('counts a manga spread reported as one combined keyed call', () {
+    // The manga reader reports a two-page spread as a single call with the
+    // combined count ('3+4') — the tracker holds only one pending page, so
+    // the spread's halves reported separately would evict each other.
+    tracker.recordCharactersRead(700, pageKey: '3+4');
+    stopwatch.advance(5000);
+    tracker.recordCharactersRead(250, pageKey: '5+6');
+    stopwatch.advance(5000);
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 950);
+  });
+
   test('counts a revisited page again after leaving it', () {
-    stopwatch.fakeElapsedMs = 5000;
     tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(5000);
     tracker.recordCharactersRead(500, pageKey: 'epubcfi(/6/4!/4/8)');
+    stopwatch.advance(5000);
     tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(5000);
 
     expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 1700);
   });
 
-  test(
-    'ignores non-positive keyed character counts without consuming the key',
-    () {
-      stopwatch.fakeElapsedMs = 5000;
-      tracker.recordCharactersRead(0, pageKey: 'epubcfi(/6/4!/4/2)');
-      tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
-
-      expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 600);
-    },
-  );
-
-  test('taking a summary clears the last page key', () {
-    stopwatch.fakeElapsedMs = 5000;
+  test('drops pages skimmed past before the dwell threshold', () {
+    // A slider seek sweeps over a page for a moment; it was never read.
     tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
-    expect(tracker.takeSummary(endReason: 'backgrounded'), isNotNull);
+    stopwatch.advance(ReaderSessionTracker.pageDwellMs - 1);
+    tracker.recordCharactersRead(500, pageKey: 'epubcfi(/6/4!/4/8)');
+    stopwatch.advance(5000);
 
-    // The same page re-reports after resume (e.g. the webview redisplays);
-    // the new session slice must count it, or a backgrounded round trip
-    // would lose the page entirely.
-    tracker.resume();
-    stopwatch.fakeElapsedMs = 5000;
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 500);
+  });
+
+  test('commits a page that dwelled exactly the threshold', () {
     tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(ReaderSessionTracker.pageDwellMs);
+    tracker.recordCharactersRead(500, pageKey: 'epubcfi(/6/4!/4/8)');
+
+    // The second page is taken away again immediately, so only the first
+    // one counts.
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 600);
+  });
+
+  test('a same-page re-report keeps the original dwell start', () {
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(ReaderSessionTracker.pageDwellMs - 100);
+    tracker.recordCharactersRead(580, pageKey: 'epubcfi(/6/4!/4/2)');
+    // Only 200ms pass after the re-report; the page still counts because
+    // its dwell started at the first report.
+    stopwatch.advance(200);
 
     expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 600);
+  });
+
+  test('a zero-count page still ends the previous page\'s dwell', () {
+    // Reading page A briefly, then an image-only page (0 chars), then C:
+    // A must not be credited with the time spent on the image page.
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(1000);
+    tracker.recordCharactersRead(0, pageKey: 'epubcfi(/6/4!/4/4)');
+    stopwatch.advance(9000);
+    tracker.recordCharactersRead(500, pageKey: 'epubcfi(/6/4!/4/8)');
+    stopwatch.advance(4000);
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 500);
+  });
+
+  test('a re-report can fill in a count that previously failed', () {
+    tracker.recordCharactersRead(0, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(100);
+    tracker.recordCharactersRead(590, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(3900);
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 590);
+  });
+
+  test('taking a summary commits a dwelled pending page', () {
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(5000);
+    expect(
+      tracker.takeSummary(endReason: 'backgrounded')!['characters_read'],
+      600,
+    );
+
+    // The same page re-reports after resume (e.g. the webview redisplays);
+    // the new session slice must count it once it dwells again, or a
+    // backgrounded round trip would lose the page entirely.
+    tracker.resume();
+    stopwatch.fakeElapsedMs = 0;
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(5000);
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 600);
+  });
+
+  test('taking a summary drops a pending page that had not dwelled', () {
+    tracker.recordCharactersRead(600, pageKey: 'epubcfi(/6/4!/4/2)');
+    stopwatch.advance(ReaderSessionTracker.pageDwellMs - 1);
+    tracker.recordPageTurn();
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 0);
   });
 
   test('resets characters read after a summary is taken', () {

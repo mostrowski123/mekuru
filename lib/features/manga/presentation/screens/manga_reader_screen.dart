@@ -35,8 +35,8 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
-import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
+import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -80,11 +80,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   /// counted, so rebuilds (and page-data reloads) don't count them again.
   bool _initialPageCharsCounted = false;
 
-  /// Page the user is seeking to with the progress slider, while the seek is
-  /// still in flight. Pages swept past on the way there are displayed, but
-  /// were never read — see [_consumeSeekGate].
-  int? _pendingSeekTarget;
-  Timer? _seekGateTimeout;
+  /// Non-null while precaching is paused for a slider seek; see
+  /// [_holdPrecacheDuringSeek].
+  Timer? _seekPrecacheHoldTimer;
+
+  bool get _seekPrecacheHold => _seekPrecacheHoldTimer != null;
 
   // View mode keys for cross-widget navigation
   final _scrollViewKey = GlobalKey<MangaScrollViewState>();
@@ -129,7 +129,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _emitSessionSummary(endReason: 'closed');
-    _seekGateTimeout?.cancel();
+    _seekPrecacheHoldTimer?.cancel();
     _pageController.dispose();
     unawaited(_brightnessNotifier.resetBrightness());
     WakelockPlus.disable();
@@ -178,62 +178,41 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     );
   }
 
-  /// Whether the page(s) at [pageIndexes], which just became visible, should
-  /// count toward the session total, and consumes the pending seek if so.
-  ///
-  /// A slider seek animates across the gap, and every page the animation
-  /// sweeps past reports a page change — a long drag would otherwise add a
-  /// large chunk of the volume to the session. While a seek is in flight only
-  /// the page the user actually asked for counts; reaching it ends the seek.
-  bool _consumeSeekGate(List<int> pageIndexes) {
-    final target = _pendingSeekTarget;
-    if (target == null) return true;
-    if (!pageIndexes.contains(target)) return false;
-    _pendingSeekTarget = null;
-    return true;
+  /// Pauses adjacent-page precaching while a slider seek is in flight: every
+  /// page the seek animation sweeps past reports a page change, and
+  /// precaching each would fire image reads for pages never shown. The timer
+  /// is re-armed on every slider tick, so the hold outlives the last one by
+  /// enough to cover its page-turn animation, then precaches around wherever
+  /// the seek landed. (The swept pages' *characters* need no such gate — the
+  /// session tracker's dwell requirement drops them.)
+  void _holdPrecacheDuringSeek() {
+    _seekPrecacheHoldTimer?.cancel();
+    _seekPrecacheHoldTimer = Timer(const Duration(seconds: 1), () {
+      _seekPrecacheHoldTimer = null;
+      if (mounted) _precacheAdjacentPages();
+    });
   }
 
-  /// Records the slider's current destination, so the pages swept past on the
-  /// way there aren't counted.
-  ///
-  /// A seek to a page that is already on screen reports no page change at all,
-  /// so it is cleared immediately instead of being left pending. The timeout
-  /// is the backstop for the seeks that can't be resolved exactly — an
-  /// interrupted animation, or scroll view, whose page estimate is derived
-  /// from viewport heights and can settle a page short of its target.
-  void _setSeekTarget(
-    int page,
-    MangaViewMode viewMode,
-    List<PageSpread> spreads,
-  ) {
-    _seekGateTimeout?.cancel();
-    if (_visiblePageIndexes(viewMode, spreads).contains(page)) {
-      _pendingSeekTarget = null;
-      return;
-    }
-    _pendingSeekTarget = page;
-    _seekGateTimeout = Timer(
-      const Duration(seconds: 1),
-      () => _pendingSeekTarget = null,
-    );
-  }
-
-  /// Adds the characters on [pageIndexes] to the session total.
-  ///
-  /// Callers must invoke this only on a genuine page-change or initial-display
-  /// transition — never per rebuild — since a page that becomes visible again
-  /// is intentionally counted again (the EPUB reader counts on
-  /// navigation-caused relocations, so both formats measure "characters
-  /// displayed").
+  /// Reports the page(s) at [pageIndexes], which just became visible, to the
+  /// session tracker as one keyed page — key '12' for a single page, '3+4'
+  /// with the combined character count for a two-page spread. A spread must
+  /// be a single call: the tracker holds only one pending page, so reporting
+  /// its halves separately would evict the first before it could dwell. The
+  /// key buys the same dwell gate the EPUB reader gets from its start CFI —
+  /// see [ReaderSessionTracker.recordCharactersRead].
   ///
   /// Counting happens at display time, so a page shown before its OCR has
   /// finished contributes the characters it had then — zero for a page with no
   /// OCR text yet, permanently.
   void _recordPageCharacters(MokuroBook book, Iterable<int> pageIndexes) {
-    for (final index in pageIndexes) {
-      if (index < 0 || index >= book.pages.length) continue;
-      _sessionTracker.recordCharactersRead(charCountForPage(book.pages[index]));
-    }
+    final valid = pageIndexes
+        .where((index) => index >= 0 && index < book.pages.length)
+        .toList();
+    if (valid.isEmpty) return;
+    _sessionTracker.recordCharactersRead(
+      valid.fold(0, (sum, index) => sum + charCountForPage(book.pages[index])),
+      pageKey: valid.join('+'),
+    );
   }
 
   /// The page indexes currently on screen.
@@ -268,12 +247,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     List<int>? displayedPages,
   }) {
     if (page != _currentPage) {
-      // Page-turn telemetry deliberately still counts seek sweeps.
+      // Page-turn telemetry deliberately still counts seek sweeps; the
+      // characters report is keyed, so the tracker's dwell gate drops them.
       _recordPageTurn(forward: page > _currentPage);
-      final displayed = displayedPages ?? [page];
-      if (_consumeSeekGate(displayed)) {
-        _recordPageCharacters(book, displayed);
-      }
+      _recordPageCharacters(book, displayedPages ?? [page]);
     }
     setState(() => _currentPage = page);
 
@@ -283,14 +260,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         .read(bookRepositoryProvider)
         .updateProgress(widget.book.id, page.toString(), progress: progress);
 
-    _precacheAdjacentPages(page, totalPages);
+    _precacheAdjacentPages();
   }
 
   /// Precache the next few pages so they display instantly when swiped to.
-  void _precacheAdjacentPages(int currentPage, int totalPages) {
-    // While a slider seek is animating past pages, every swept page reports a
-    // change; precaching each would fire reads for pages never shown.
-    if (_pendingSeekTarget != null) return;
+  void _precacheAdjacentPages() {
+    if (_seekPrecacheHold) return;
 
     // Spread pages decode at half-screen width, so full-width precache
     // entries would never be hit; the PageView's implicit scrolling already
@@ -314,8 +289,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     final cacheWidth = (screenWidth * dpr).toInt();
 
     for (final offset in offsets) {
-      final idx = currentPage + offset;
-      if (idx < 0 || idx >= totalPages) continue;
+      final idx = _currentPage + offset;
+      if (idx < 0 || idx >= mokuroBook.pages.length) continue;
 
       final page = mokuroBook.pages[idx];
       final safImagePath = mokuroBook.safImagePathFor(page);
@@ -915,7 +890,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     final autoCrop = isProUnlocked && mangaAutoCropEnabled;
     final isOcrRunning = ref.watch(isOcrRunningProvider(widget.book.id));
     final enableWordOverlays = !isOcrRunning;
-    final bottomSliderPadding = bottomControlPadding(MediaQuery.of(context));
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: readerSystemBarsOverlayStyle,
@@ -966,7 +940,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
             // Precache adjacent pages on first data load and after rebuilds.
             // precacheImage is a no-op for already-cached images.
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) _precacheAdjacentPages(_currentPage, totalPages);
+              if (mounted) _precacheAdjacentPages();
             });
 
             final isRtl = direction == ReaderDirection.rtl;
@@ -1077,91 +1051,32 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [Colors.black87, Colors.transparent],
-                        ),
-                      ),
-                      child: SafeArea(
-                        top: false,
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            16,
-                            0,
-                            16,
-                            bottomSliderPadding,
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                '${_currentPage + 1}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Expanded(
-                                child: Directionality(
-                                  textDirection: isRtl
-                                      ? TextDirection.rtl
-                                      : TextDirection.ltr,
-                                  child: Slider(
-                                    value: _currentPage.toDouble(),
-                                    min: 0,
-                                    max: (totalPages - 1).toDouble(),
-                                    divisions: totalPages > 1
-                                        ? totalPages - 1
-                                        : null,
-                                    onChanged: (value) {
-                                      final page = value.round();
-                                      _setSeekTarget(page, viewMode, spreads);
-                                      switch (viewMode) {
-                                        case MangaViewMode.singlePage:
-                                          _goToPage(page, totalPages);
-                                        case MangaViewMode.twoPageSpread:
-                                          final si = spreadIndexForPage(
-                                            spreads,
-                                            page,
-                                          );
-                                          _spreadViewKey.currentState
-                                              ?.goToSpread(
-                                                si,
-                                                animate: _animatePageTurns,
-                                              );
-                                        case MangaViewMode.scroll:
-                                          _scrollViewKey.currentState
-                                              ?.scrollToPage(
-                                                page,
-                                                animate: _animatePageTurns,
-                                              );
-                                      }
-                                    },
-                                    // The last division dragged over is the
-                                    // page the user meant; re-evaluating on
-                                    // release also clears the seek when the
-                                    // animation already arrived there.
-                                    onChangeEnd: (value) => _setSeekTarget(
-                                      value.round(),
-                                      viewMode,
-                                      spreads,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                '$totalPages',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    child: ReaderSeekBar(
+                      value: _currentPage.toDouble(),
+                      isRtl: isRtl,
+                      max: (totalPages - 1).toDouble(),
+                      divisions: totalPages > 1 ? totalPages - 1 : null,
+                      leadingLabel: (value) => '${value.round() + 1}',
+                      trailingLabel: '$totalPages',
+                      onChanged: (value) {
+                        final page = value.round();
+                        _holdPrecacheDuringSeek();
+                        switch (viewMode) {
+                          case MangaViewMode.singlePage:
+                            _goToPage(page, totalPages);
+                          case MangaViewMode.twoPageSpread:
+                            final si = spreadIndexForPage(spreads, page);
+                            _spreadViewKey.currentState?.goToSpread(
+                              si,
+                              animate: _animatePageTurns,
+                            );
+                          case MangaViewMode.scroll:
+                            _scrollViewKey.currentState?.scrollToPage(
+                              page,
+                              animate: _animatePageTurns,
+                            );
+                        }
+                      },
                     ),
                   ),
               ],
@@ -1276,10 +1191,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           highlightedPageIndex: _highlight?.pageIndex,
           onWordTapped: _onWordTapped,
           onPageEstimateChanged: (page) {
-            // Fires on every scroll tick, so count only when the page at the
-            // viewport centre actually changes — and not while a slider seek
-            // is animating past it.
-            if (page != _currentPage && _consumeSeekGate([page])) {
+            // Fires on every scroll tick, so report only when the page at
+            // the viewport centre actually changes; pages a slider seek
+            // scrolls past are dropped by the tracker's dwell gate.
+            if (page != _currentPage) {
               _recordPageCharacters(mokuroBook, [page]);
             }
             setState(() => _currentPage = page);
