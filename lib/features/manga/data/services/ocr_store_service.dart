@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 
 import 'ocr_billing_client.dart';
 
@@ -55,7 +57,16 @@ class OcrStoreService {
 
     if (!Platform.isAndroid) return;
 
-    final isAvailable = await _inAppPurchase.isAvailable();
+    bool isAvailable;
+    try {
+      isAvailable = await _inAppPurchase.isAvailable();
+    } on PlatformException catch (e) {
+      // Billing being unreachable (emulators, non-Play installs) surfaces as
+      // a pigeon channel error; treat it as unavailable rather than letting
+      // the startup warmup report an app failure (MEKURU-18).
+      logUsage('billing.unavailable', attrs: {'code': e.code});
+      isAvailable = false;
+    }
     _log('initialize', {'isAvailable': isAvailable});
     if (!isAvailable) {
       return;
