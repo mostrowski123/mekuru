@@ -40,6 +40,37 @@ void main() {
       const input = 'Dictionary imported with 1234 entries';
       expect(scrubPaths(input), input);
     });
+
+    test('replaces SAF pseudo-paths with colons in segments', () {
+      final out = scrubPaths(
+        "Cannot open file, path = "
+        "'/document/primary:Download/MyFolder/backup_2026.mekuru' "
+        '(OS Error: 2)',
+      );
+      expect(out, isNot(contains('MyFolder')));
+      expect(out, contains('Cannot open file'));
+      expect(out, contains('(OS Error: 2)'));
+    });
+
+    test('replaces Windows paths', () {
+      final out = scrubPaths(r'Cannot open C:\Users\matt\diary.txt');
+      expect(out, isNot(contains('diary')));
+      expect(out, isNot(contains('Users')));
+    });
+
+    test('replaces URIs but keeps surrounding prose', () {
+      final out = scrubPaths(
+        'HTTP 403, uri = https://api.github.com/repos/foo/bar',
+      );
+      expect(out, isNot(contains('github')));
+      expect(out, contains('HTTP 403'));
+    });
+
+    test('replaces bare filenames with book-ish extensions', () {
+      final out = scrubPaths('Could not parse 秘密の本 volume 1.cbz');
+      expect(out, isNot(contains('volume 1')));
+      expect(out, contains('Could not parse'));
+    });
   });
 
   group('scrubEvent', () {
@@ -77,6 +108,28 @@ void main() {
         attributes: {},
       );
       expect(scrubLog(log).body, 'import failed for <path>');
+    });
+
+    test('scrubs string attributes so no attr can leak a path', () {
+      final log = SentryLog(
+        timestamp: DateTime.utc(2026, 1, 1),
+        level: SentryLogLevel.warn,
+        body: 'book.import_failed',
+        attributes: {
+          'error_message': SentryAttribute.string(
+            'Cannot open /storage/emulated/0/secret.epub',
+          ),
+          'count': SentryAttribute.int(3),
+        },
+      );
+
+      final scrubbed = scrubLog(log);
+
+      expect(
+        scrubbed.attributes['error_message']?.value,
+        isNot(contains('secret')),
+      );
+      expect(scrubbed.attributes['count']?.value, 3);
     });
   });
 }

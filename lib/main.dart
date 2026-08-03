@@ -16,6 +16,7 @@ import 'core/database/database_provider.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/firebase_runtime.dart';
 import 'core/services/pii_scrubber.dart';
+import 'core/services/usage_telemetry.dart';
 import 'core/services/synthetic_client.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
@@ -202,6 +203,9 @@ Future<void> _runStartupWarmup({
       attributes: {
         'category': SentryAttribute.string('app.init'),
         'error_type': SentryAttribute.string(error.runtimeType.toString()),
+        'error_message': SentryAttribute.string(
+          sanitizeErrorText(error.toString()),
+        ),
       },
     );
     await Sentry.captureException(error, stackTrace: stackTrace);

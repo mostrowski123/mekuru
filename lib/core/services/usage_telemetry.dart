@@ -13,6 +13,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import '../database/database_provider.dart';
 import '../database/row_count.dart';
 import 'analytics_service.dart';
+import 'pii_scrubber.dart';
 
 typedef UsageLogSink =
     void Function(
@@ -46,15 +47,31 @@ void logUsage(String event, {Map<String, Object>? attrs}) {
 }
 
 /// Logs a failure event. The message stays the constant [event] name; the
-/// error is reduced to its runtime type so no exception text (which can embed
-/// file paths) leaves the device.
+/// error contributes its runtime type plus its text run through
+/// [sanitizeErrorText], so failures are diagnosable without file paths or
+/// document content leaving the device.
 void logFailure(String event, Object error, {Map<String, Object>? attrs}) {
   _guarded(() {
     _emitLog(event, {
       ...?attrs,
       'error_type': error.runtimeType.toString(),
+      'error_message': sanitizeErrorText(error.toString()),
     }, isWarning: true);
   });
+}
+
+/// Formats exception text for a telemetry attribute: keeps only the first
+/// line (Dart parse errors append source snippets on later lines), redacts
+/// user-identifying content via the shared [scrubPaths] battery, and caps at
+/// 100 chars — Firebase Analytics truncates string parameters beyond that.
+String sanitizeErrorText(String text) {
+  final newline = text.indexOf('\n');
+  var s = newline == -1 ? text : text.substring(0, newline);
+  // Clamp before the regex passes: the input length is data-controlled and
+  // only the first 100 chars survive anyway.
+  if (s.length > 1000) s = s.substring(0, 1000);
+  s = scrubPaths(s);
+  return s.length > 100 ? '${s.substring(0, 99)}…' : s;
 }
 
 /// Increments a Sentry counter metric. Metrics-only (no Analytics fan-out) —

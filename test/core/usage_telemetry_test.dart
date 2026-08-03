@@ -113,6 +113,83 @@ void main() {
       // The error text (which could hold a path) must not reach the sink.
       expect(loggedMessage, isNot(contains('secret')));
     });
+
+    test('attaches a sanitized error_message alongside error_type', () {
+      Map<String, SentryAttribute>? loggedAttributes;
+      usageLogSinkOverride = (message, attributes, {required isWarning}) {
+        loggedAttributes = attributes;
+      };
+      usageAnalyticsSinkOverride = (name, parameters) {};
+
+      logFailure(
+        'book.import_failed',
+        StateError('/storage/emulated/0/secret.epub'),
+      );
+
+      expect(loggedAttributes!['error_type']?.value, 'StateError');
+      final message = loggedAttributes!['error_message']?.value as String?;
+      expect(message, isNotNull);
+      expect(message, contains('Bad state'));
+      expect(message, isNot(contains('secret')));
+    });
+  });
+
+  group('sanitizeErrorText', () {
+    test('redacts absolute POSIX paths', () {
+      final out = sanitizeErrorText(
+        'Bad state: /storage/emulated/0/secret.epub',
+      );
+      expect(out, isNot(contains('secret')));
+      expect(out, contains('Bad state:'));
+    });
+
+    test('redacts SAF pseudo-paths with colons in segments', () {
+      final out = sanitizeErrorText(
+        "PathNotFoundException: Cannot open file, path = "
+        "'/document/primary:Download/MyFolder/manual_backup_2026.mekuru' "
+        '(OS Error: No such file or directory, errno = 2)',
+      );
+      expect(out, isNot(contains('MyFolder')));
+      expect(out, isNot(contains('manual_backup')));
+      expect(out, contains('Cannot open file'));
+      expect(out, contains('No such file'));
+    });
+
+    test('redacts Windows paths', () {
+      final out = sanitizeErrorText(r'Cannot open C:\Users\matt\diary.txt');
+      expect(out, isNot(contains('diary')));
+      expect(out, isNot(contains('Users')));
+    });
+
+    test('redacts URIs but keeps the HTTP status readable', () {
+      final out = sanitizeErrorText(
+        'HttpException: Failed to download dictionary: HTTP 403, '
+        'uri = https://api.github.com/repos/foo/bar/releases/latest',
+      );
+      expect(out, isNot(contains('github')));
+      expect(out, contains('HTTP 403'));
+    });
+
+    test('redacts bare filenames with book-ish extensions', () {
+      final out = sanitizeErrorText('Could not parse 秘密の本 volume 1.cbz');
+      expect(out, isNot(contains('volume 1')));
+      expect(out, contains('Could not parse'));
+    });
+
+    test('keeps only the first line so parse snippets stay on-device', () {
+      final out = sanitizeErrorText(
+        'FormatException: Unexpected character (at character 3)\n'
+        '{"data": "secret words from a dictionary"}\n'
+        '  ^',
+      );
+      expect(out, isNot(contains('secret words')));
+      expect(out, contains('Unexpected character (at character 3)'));
+    });
+
+    test('caps at 100 chars so Firebase Analytics keeps the value intact', () {
+      final out = sanitizeErrorText('x${'y' * 500}');
+      expect(out.length, lessThanOrEqualTo(100));
+    });
   });
 
   group('emitInstallGauges', () {
