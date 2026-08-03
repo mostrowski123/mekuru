@@ -244,12 +244,19 @@ void main() {
       expect(book!.language, isNull);
 
       // Backfill
-      await repo.backfillLanguage(id, 'ja', 'rtl', 'vertical-rl');
+      await repo.backfillLanguage(
+        id,
+        language: 'ja',
+        pageProgressionDirection: 'rtl',
+        primaryWritingMode: 'vertical-rl',
+        hasVerticalCss: true,
+      );
 
       book = await repo.getBookById(id);
       expect(book!.language, 'ja');
       expect(book.pageProgressionDirection, 'rtl');
       expect(book.primaryWritingMode, 'vertical-rl');
+      expect(book.hasVerticalCss, isTrue);
     });
 
     test('backfillLanguage can set null values', () async {
@@ -263,13 +270,38 @@ void main() {
             ),
           );
 
-      await repo.backfillLanguage(id, null, null, null);
+      await repo.backfillLanguage(
+        id,
+        language: null,
+        pageProgressionDirection: null,
+        primaryWritingMode: null,
+        hasVerticalCss: null,
+      );
 
       final book = await repo.getBookById(id);
       expect(book!.language, isNull);
       expect(book.pageProgressionDirection, isNull);
       expect(book.primaryWritingMode, isNull);
+      expect(book.hasVerticalCss, isNull);
     });
+
+    test(
+      'hasVerticalCss defaults to null for directly-inserted rows',
+      () async {
+        // Books imported before CSS sniffing existed have no sniff result;
+        // null must survive so the legacy vertical-text heuristic applies.
+        final id = await db
+            .into(db.books)
+            .insert(
+              BooksCompanion.insert(title: 'Legacy', filePath: '/legacy/path'),
+            );
+
+        final book = await (db.select(
+          db.books,
+        )..where((t) => t.id.equals(id))).getSingle();
+        expect(book.hasVerticalCss, isNull);
+      },
+    );
   });
 
   group('BookRepository auto-crop cache', () {

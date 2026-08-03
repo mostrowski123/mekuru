@@ -29,7 +29,6 @@ Future<ProviderContainer> _pumpSheet(
         home: Scaffold(
           body: EpubReaderSettingsSheet(
             bookLanguage: bookLanguage,
-            pageProgressionDirection: null,
             onSettingChanged: onSettingChanged ?? (_, _) {},
           ),
         ),

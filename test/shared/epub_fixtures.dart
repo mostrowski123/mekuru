@@ -16,6 +16,8 @@ Future<String> createTestEpub({
   bool includeCover = true,
   bool includeContainerXml = true,
   String? customOpfContent,
+  String? stylesheetContent,
+  String? chapterBodyStyle,
   String fileName = 'test.epub',
 }) async {
   final archive = Archive();
@@ -52,6 +54,7 @@ Future<String> createTestEpub({
   </metadata>
   <manifest>
     ${includeCover ? '<item id="cover-img" href="images/cover.jpg" media-type="image/jpeg"/>' : ''}
+    ${stylesheetContent != null ? '<item id="css-main" href="styles/main.css" media-type="text/css"/>' : ''}
     <item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine${pageProgressionDirection != null ? ' page-progression-direction="$pageProgressionDirection"' : ''}>
@@ -73,11 +76,22 @@ Future<String> createTestEpub({
     );
   }
 
+  // Stylesheet
+  if (stylesheetContent != null) {
+    final cssBytes = utf8.encode(stylesheetContent);
+    archive.addFile(
+      ArchiveFile('OEBPS/styles/main.css', cssBytes.length, cssBytes),
+    );
+  }
+
   // Chapter content
+  final bodyTag = chapterBodyStyle != null
+      ? '<body style="$chapterBodyStyle">'
+      : '<body>';
   final chapterContent = utf8.encode('''<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head><title>Chapter 1</title></head>
-<body><p>これはテストです。</p></body>
+$bodyTag<p>これはテストです。</p></body>
 </html>''');
   archive.addFile(
     ArchiveFile('OEBPS/chapter1.xhtml', chapterContent.length, chapterContent),

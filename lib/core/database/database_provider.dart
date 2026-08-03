@@ -52,8 +52,20 @@ class AppDatabase extends _$AppDatabase {
         "ALTER TABLE dictionary_entries ADD COLUMN search_text TEXT NOT NULL DEFAULT ''",
   };
 
+  /// primary_writing_mode (schema 9 era) was added to the table definition
+  /// without a migration, so databases created before then never got the
+  /// column; has_vertical_css (schema 20) relies on this pass by design,
+  /// like v18's search_text above.
+  static const Map<String, String> _booksRepairColumns = {
+    'primary_writing_mode':
+        'ALTER TABLE books ADD COLUMN primary_writing_mode TEXT NULL',
+    'has_vertical_css':
+        'ALTER TABLE books ADD COLUMN has_vertical_css INTEGER NULL '
+        'CHECK (has_vertical_css IN (0, 1))',
+  };
+
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -139,11 +151,7 @@ class AppDatabase extends _$AppDatabase {
         );
       }
       if (from < 17) {
-        final cols = await customSelect("PRAGMA table_info('books')").get();
-        final names = cols
-            .map((r) => r.data['name']?.toString())
-            .whereType<String>()
-            .toSet();
+        final names = await _tableColumnNames('books');
         if (!names.contains('furigana_mode')) {
           await migrator.addColumn(books, books.furiganaMode);
         }
@@ -158,31 +166,40 @@ class AppDatabase extends _$AppDatabase {
           "SELECT 'saved', expression, 'other', date_added FROM saved_words",
         );
       }
-      // v18 (search_text) has no migration block: the repair pass in
-      // beforeOpen adds the column via _dictionaryEntriesRepairColumns,
-      // which also covers databases that missed migrations entirely.
+      // v18 (search_text) and v20 (has_vertical_css) have no migration
+      // blocks: the repair pass in beforeOpen adds the columns via the
+      // repair-column maps, which also covers databases that missed
+      // migrations entirely.
     },
     beforeOpen: (details) async {
-      await _repairDictionaryEntriesSchemaIfNeeded();
+      await _repairMissingColumns(
+        'dictionary_entries',
+        _dictionaryEntriesRepairColumns,
+      );
+      await _repairMissingColumns('books', _booksRepairColumns);
       await _ensureGlossaryFtsIfNeeded();
     },
   );
 
-  Future<void> _repairDictionaryEntriesSchemaIfNeeded() async {
-    final tableRows = await customSelect(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'dictionary_entries'",
-    ).get();
-    if (tableRows.isEmpty) return;
-
-    final pragmaRows = await customSelect(
-      "PRAGMA table_info('dictionary_entries')",
-    ).get();
-    final existingColumns = pragmaRows
+  Future<Set<String>> _tableColumnNames(String table) async {
+    final pragmaRows = await customSelect("PRAGMA table_info('$table')").get();
+    return pragmaRows
         .map((row) => row.data['name']?.toString())
         .whereType<String>()
         .toSet();
+  }
 
-    for (final entry in _dictionaryEntriesRepairColumns.entries) {
+  Future<void> _repairMissingColumns(
+    String table,
+    Map<String, String> repairColumns,
+  ) async {
+    final tableRows = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = '$table'",
+    ).get();
+    if (tableRows.isEmpty) return;
+
+    final existingColumns = await _tableColumnNames(table);
+    for (final entry in repairColumns.entries) {
       if (!existingColumns.contains(entry.key)) {
         await customStatement(entry.value);
       }

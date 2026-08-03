@@ -452,4 +452,99 @@ void main() {
       expect(metadata.primaryWritingMode, 'vertical-rl');
     });
   });
+
+  group('EpubParser — vertical writing-mode CSS sniff', () {
+    test('detects writing-mode: vertical-rl in a stylesheet', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        stylesheetContent: 'html { writing-mode: vertical-rl; }',
+      );
+      trackTempFile(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.hasVerticalCss, isTrue);
+    });
+
+    test('detects vendor-prefixed -epub-writing-mode declaration', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        stylesheetContent:
+            'body { -epub-writing-mode:vertical-rl; -webkit-writing-mode:vertical-rl; }',
+      );
+      trackTempFile(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.hasVerticalCss, isTrue);
+    });
+
+    test('detects legacy tb-rl writing-mode value', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        stylesheetContent: 'html { writing-mode: tb-rl; }',
+      );
+      trackTempFile(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.hasVerticalCss, isTrue);
+    });
+
+    test('detects inline writing-mode style on body', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        chapterBodyStyle: 'writing-mode: vertical-rl',
+      );
+      trackTempFile(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.hasVerticalCss, isTrue);
+    });
+
+    test('reports false for horizontal-only stylesheet', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        stylesheetContent: 'html { writing-mode: horizontal-tb; }',
+      );
+      trackTempFile(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.hasVerticalCss, isFalse);
+    });
+
+    test('reports false when no stylesheet exists (Calibre-style)', () async {
+      final epubPath = await createTestEpub(language: 'ja');
+      trackTempFile(epubPath);
+
+      final metadata = await EpubParser.parseMetadataOnly(epubPath);
+      expect(metadata.hasVerticalCss, isFalse);
+    });
+
+    test('sniffs CSS via full extraction too', () async {
+      final epubPath = await createTestEpub(
+        language: 'ja',
+        stylesheetContent: '.main { -epub-writing-mode: vertical-rl }',
+      );
+      trackTempFile(epubPath);
+
+      final extractDir = await Directory.systemTemp.createTemp(
+        'epub_extract_css_',
+      );
+      trackTempDir(extractDir.path);
+
+      final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
+      expect(metadata.hasVerticalCss, isTrue);
+    });
+
+    test('full extraction reports false without vertical CSS', () async {
+      final epubPath = await createTestEpub(language: 'ja');
+      trackTempFile(epubPath);
+
+      final extractDir = await Directory.systemTemp.createTemp(
+        'epub_extract_nocss_',
+      );
+      trackTempDir(extractDir.path);
+
+      final metadata = await EpubParser.parseEpub(epubPath, extractDir.path);
+      expect(metadata.hasVerticalCss, isFalse);
+    });
+  });
 }

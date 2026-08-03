@@ -238,6 +238,41 @@ void main() {
       expect(settings.verticalText, isTrue);
     });
 
+    test(
+      'horizontal default for Japanese book with sniffed non-vertical CSS',
+      () {
+        final harness = _createHarness();
+        addTearDown(harness.dispose);
+        final container = harness.container;
+
+        final notifier = container.read(readerSettingsProvider.notifier);
+        notifier.applyBookDefaults(
+          bookId: 1,
+          language: 'ja',
+          hasVerticalCss: false,
+        );
+
+        final settings = container.read(readerSettingsProvider);
+        expect(settings.verticalText, isFalse);
+      },
+    );
+
+    test('vertical default for Japanese book with sniffed vertical CSS', () {
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
+
+      final notifier = container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(
+        bookId: 1,
+        language: 'ja',
+        hasVerticalCss: true,
+      );
+
+      final settings = container.read(readerSettingsProvider);
+      expect(settings.verticalText, isTrue);
+    });
+
     test('sets LTR and horizontal for English book', () {
       final harness = _createHarness();
       addTearDown(harness.dispose);

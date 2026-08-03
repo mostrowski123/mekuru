@@ -22,6 +22,12 @@ class Books extends Table {
   /// `horizontal-tb`). Used to determine whether content is vertical text.
   TextColumn get primaryWritingMode => text().nullable()();
 
+  /// Whether the EPUB's stylesheets/content declare a vertical
+  /// `writing-mode` (sniffed at import). Fallback vertical-text signal when
+  /// [primaryWritingMode] is absent. `null` means the book was imported
+  /// before sniffing existed — the legacy language/ppd heuristic applies.
+  BoolColumn get hasVerticalCss => boolean().nullable()();
+
   /// User's per-book override for vertical text display.
   /// `null` means "use the book's default" (based on language/ppd).
   BoolColumn get overrideVerticalText => boolean().nullable()();

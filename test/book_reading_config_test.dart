@@ -210,5 +210,79 @@ void main() {
         );
       });
     });
+
+    group('hasVerticalCss sniff (no primary-writing-mode meta)', () {
+      test(
+        'Japanese book with no ppd and no vertical CSS defaults to false',
+        () {
+          // The Calibre-conversion case: horizontally-authored ja EPUB with
+          // no page-progression-direction and no vertical stylesheet.
+          expect(
+            defaultVerticalText(language: 'ja', hasVerticalCss: false),
+            isFalse,
+          );
+        },
+      );
+
+      test('Japanese book with vertical CSS defaults to true', () {
+        expect(
+          defaultVerticalText(language: 'ja', hasVerticalCss: true),
+          isTrue,
+        );
+      });
+
+      test(
+        'explicit rtl ppd keeps vertical default despite no vertical CSS',
+        () {
+          expect(
+            defaultVerticalText(
+              language: 'ja',
+              pageProgressionDirection: 'rtl',
+              hasVerticalCss: false,
+            ),
+            isTrue,
+          );
+        },
+      );
+
+      test('unknown sniff keeps legacy vertical default for Japanese', () {
+        expect(
+          defaultVerticalText(language: 'ja', hasVerticalCss: null),
+          isTrue,
+        );
+      });
+
+      test('primaryWritingMode wins over sniff result', () {
+        expect(
+          defaultVerticalText(
+            language: 'ja',
+            primaryWritingMode: 'horizontal-tb',
+            hasVerticalCss: true,
+          ),
+          isFalse,
+        );
+      });
+
+      test('vertical CSS ignored for non-CJK language', () {
+        expect(
+          defaultVerticalText(language: 'en', hasVerticalCss: true),
+          isFalse,
+        );
+      });
+
+      test('vertical CSS enables vertical for Chinese with no ppd', () {
+        expect(
+          defaultVerticalText(language: 'zh', hasVerticalCss: true),
+          isTrue,
+        );
+      });
+
+      test('null language with no vertical CSS defaults to false', () {
+        // A freshly-imported book always has a sniff result; even when the
+        // OPF lacks dc:language, a sniffed "no vertical CSS" wins over the
+        // assumed-Japanese fallback.
+        expect(defaultVerticalText(hasVerticalCss: false), isFalse);
+      });
+    });
   });
 }

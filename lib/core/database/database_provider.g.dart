@@ -155,6 +155,20 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _hasVerticalCssMeta = const VerificationMeta(
+    'hasVerticalCss',
+  );
+  @override
+  late final GeneratedColumn<bool> hasVerticalCss = GeneratedColumn<bool>(
+    'has_vertical_css',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_vertical_css" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _overrideVerticalTextMeta =
       const VerificationMeta('overrideVerticalText');
   @override
@@ -205,6 +219,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     language,
     pageProgressionDirection,
     primaryWritingMode,
+    hasVerticalCss,
     overrideVerticalText,
     overrideReadingDirection,
     furiganaMode,
@@ -318,6 +333,15 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('has_vertical_css')) {
+      context.handle(
+        _hasVerticalCssMeta,
+        hasVerticalCss.isAcceptableOrUnknown(
+          data['has_vertical_css']!,
+          _hasVerticalCssMeta,
+        ),
+      );
+    }
     if (data.containsKey('override_vertical_text')) {
       context.handle(
         _overrideVerticalTextMeta,
@@ -406,6 +430,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.string,
         data['${effectivePrefix}primary_writing_mode'],
       ),
+      hasVerticalCss: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_vertical_css'],
+      ),
       overrideVerticalText: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}override_vertical_text'],
@@ -447,6 +475,12 @@ class Book extends DataClass implements Insertable<Book> {
   /// `horizontal-tb`). Used to determine whether content is vertical text.
   final String? primaryWritingMode;
 
+  /// Whether the EPUB's stylesheets/content declare a vertical
+  /// `writing-mode` (sniffed at import). Fallback vertical-text signal when
+  /// [primaryWritingMode] is absent. `null` means the book was imported
+  /// before sniffing existed — the legacy language/ppd heuristic applies.
+  final bool? hasVerticalCss;
+
   /// User's per-book override for vertical text display.
   /// `null` means "use the book's default" (based on language/ppd).
   final bool? overrideVerticalText;
@@ -473,6 +507,7 @@ class Book extends DataClass implements Insertable<Book> {
     this.language,
     this.pageProgressionDirection,
     this.primaryWritingMode,
+    this.hasVerticalCss,
     this.overrideVerticalText,
     this.overrideReadingDirection,
     this.furiganaMode,
@@ -506,6 +541,9 @@ class Book extends DataClass implements Insertable<Book> {
     }
     if (!nullToAbsent || primaryWritingMode != null) {
       map['primary_writing_mode'] = Variable<String>(primaryWritingMode);
+    }
+    if (!nullToAbsent || hasVerticalCss != null) {
+      map['has_vertical_css'] = Variable<bool>(hasVerticalCss);
     }
     if (!nullToAbsent || overrideVerticalText != null) {
       map['override_vertical_text'] = Variable<bool>(overrideVerticalText);
@@ -548,6 +586,9 @@ class Book extends DataClass implements Insertable<Book> {
       primaryWritingMode: primaryWritingMode == null && nullToAbsent
           ? const Value.absent()
           : Value(primaryWritingMode),
+      hasVerticalCss: hasVerticalCss == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hasVerticalCss),
       overrideVerticalText: overrideVerticalText == null && nullToAbsent
           ? const Value.absent()
           : Value(overrideVerticalText),
@@ -583,6 +624,7 @@ class Book extends DataClass implements Insertable<Book> {
       primaryWritingMode: serializer.fromJson<String?>(
         json['primaryWritingMode'],
       ),
+      hasVerticalCss: serializer.fromJson<bool?>(json['hasVerticalCss']),
       overrideVerticalText: serializer.fromJson<bool?>(
         json['overrideVerticalText'],
       ),
@@ -611,6 +653,7 @@ class Book extends DataClass implements Insertable<Book> {
         pageProgressionDirection,
       ),
       'primaryWritingMode': serializer.toJson<String?>(primaryWritingMode),
+      'hasVerticalCss': serializer.toJson<bool?>(hasVerticalCss),
       'overrideVerticalText': serializer.toJson<bool?>(overrideVerticalText),
       'overrideReadingDirection': serializer.toJson<String?>(
         overrideReadingDirection,
@@ -633,6 +676,7 @@ class Book extends DataClass implements Insertable<Book> {
     Value<String?> language = const Value.absent(),
     Value<String?> pageProgressionDirection = const Value.absent(),
     Value<String?> primaryWritingMode = const Value.absent(),
+    Value<bool?> hasVerticalCss = const Value.absent(),
     Value<bool?> overrideVerticalText = const Value.absent(),
     Value<String?> overrideReadingDirection = const Value.absent(),
     Value<String?> furiganaMode = const Value.absent(),
@@ -656,6 +700,9 @@ class Book extends DataClass implements Insertable<Book> {
     primaryWritingMode: primaryWritingMode.present
         ? primaryWritingMode.value
         : this.primaryWritingMode,
+    hasVerticalCss: hasVerticalCss.present
+        ? hasVerticalCss.value
+        : this.hasVerticalCss,
     overrideVerticalText: overrideVerticalText.present
         ? overrideVerticalText.value
         : this.overrideVerticalText,
@@ -693,6 +740,9 @@ class Book extends DataClass implements Insertable<Book> {
       primaryWritingMode: data.primaryWritingMode.present
           ? data.primaryWritingMode.value
           : this.primaryWritingMode,
+      hasVerticalCss: data.hasVerticalCss.present
+          ? data.hasVerticalCss.value
+          : this.hasVerticalCss,
       overrideVerticalText: data.overrideVerticalText.present
           ? data.overrideVerticalText.value
           : this.overrideVerticalText,
@@ -721,6 +771,7 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('language: $language, ')
           ..write('pageProgressionDirection: $pageProgressionDirection, ')
           ..write('primaryWritingMode: $primaryWritingMode, ')
+          ..write('hasVerticalCss: $hasVerticalCss, ')
           ..write('overrideVerticalText: $overrideVerticalText, ')
           ..write('overrideReadingDirection: $overrideReadingDirection, ')
           ..write('furiganaMode: $furiganaMode')
@@ -743,6 +794,7 @@ class Book extends DataClass implements Insertable<Book> {
     language,
     pageProgressionDirection,
     primaryWritingMode,
+    hasVerticalCss,
     overrideVerticalText,
     overrideReadingDirection,
     furiganaMode,
@@ -764,6 +816,7 @@ class Book extends DataClass implements Insertable<Book> {
           other.language == this.language &&
           other.pageProgressionDirection == this.pageProgressionDirection &&
           other.primaryWritingMode == this.primaryWritingMode &&
+          other.hasVerticalCss == this.hasVerticalCss &&
           other.overrideVerticalText == this.overrideVerticalText &&
           other.overrideReadingDirection == this.overrideReadingDirection &&
           other.furiganaMode == this.furiganaMode);
@@ -783,6 +836,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<String?> language;
   final Value<String?> pageProgressionDirection;
   final Value<String?> primaryWritingMode;
+  final Value<bool?> hasVerticalCss;
   final Value<bool?> overrideVerticalText;
   final Value<String?> overrideReadingDirection;
   final Value<String?> furiganaMode;
@@ -800,6 +854,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.language = const Value.absent(),
     this.pageProgressionDirection = const Value.absent(),
     this.primaryWritingMode = const Value.absent(),
+    this.hasVerticalCss = const Value.absent(),
     this.overrideVerticalText = const Value.absent(),
     this.overrideReadingDirection = const Value.absent(),
     this.furiganaMode = const Value.absent(),
@@ -818,6 +873,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.language = const Value.absent(),
     this.pageProgressionDirection = const Value.absent(),
     this.primaryWritingMode = const Value.absent(),
+    this.hasVerticalCss = const Value.absent(),
     this.overrideVerticalText = const Value.absent(),
     this.overrideReadingDirection = const Value.absent(),
     this.furiganaMode = const Value.absent(),
@@ -837,6 +893,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<String>? language,
     Expression<String>? pageProgressionDirection,
     Expression<String>? primaryWritingMode,
+    Expression<bool>? hasVerticalCss,
     Expression<bool>? overrideVerticalText,
     Expression<String>? overrideReadingDirection,
     Expression<String>? furiganaMode,
@@ -857,6 +914,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
         'page_progression_direction': pageProgressionDirection,
       if (primaryWritingMode != null)
         'primary_writing_mode': primaryWritingMode,
+      if (hasVerticalCss != null) 'has_vertical_css': hasVerticalCss,
       if (overrideVerticalText != null)
         'override_vertical_text': overrideVerticalText,
       if (overrideReadingDirection != null)
@@ -879,6 +937,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<String?>? language,
     Value<String?>? pageProgressionDirection,
     Value<String?>? primaryWritingMode,
+    Value<bool?>? hasVerticalCss,
     Value<bool?>? overrideVerticalText,
     Value<String?>? overrideReadingDirection,
     Value<String?>? furiganaMode,
@@ -898,6 +957,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       pageProgressionDirection:
           pageProgressionDirection ?? this.pageProgressionDirection,
       primaryWritingMode: primaryWritingMode ?? this.primaryWritingMode,
+      hasVerticalCss: hasVerticalCss ?? this.hasVerticalCss,
       overrideVerticalText: overrideVerticalText ?? this.overrideVerticalText,
       overrideReadingDirection:
           overrideReadingDirection ?? this.overrideReadingDirection,
@@ -949,6 +1009,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (primaryWritingMode.present) {
       map['primary_writing_mode'] = Variable<String>(primaryWritingMode.value);
     }
+    if (hasVerticalCss.present) {
+      map['has_vertical_css'] = Variable<bool>(hasVerticalCss.value);
+    }
     if (overrideVerticalText.present) {
       map['override_vertical_text'] = Variable<bool>(
         overrideVerticalText.value,
@@ -981,6 +1044,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('language: $language, ')
           ..write('pageProgressionDirection: $pageProgressionDirection, ')
           ..write('primaryWritingMode: $primaryWritingMode, ')
+          ..write('hasVerticalCss: $hasVerticalCss, ')
           ..write('overrideVerticalText: $overrideVerticalText, ')
           ..write('overrideReadingDirection: $overrideReadingDirection, ')
           ..write('furiganaMode: $furiganaMode')
@@ -5440,6 +5504,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<String?> language,
       Value<String?> pageProgressionDirection,
       Value<String?> primaryWritingMode,
+      Value<bool?> hasVerticalCss,
       Value<bool?> overrideVerticalText,
       Value<String?> overrideReadingDirection,
       Value<String?> furiganaMode,
@@ -5459,6 +5524,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<String?> language,
       Value<String?> pageProgressionDirection,
       Value<String?> primaryWritingMode,
+      Value<bool?> hasVerticalCss,
       Value<bool?> overrideVerticalText,
       Value<String?> overrideReadingDirection,
       Value<String?> furiganaMode,
@@ -5575,6 +5641,11 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<String> get primaryWritingMode => $composableBuilder(
     column: $table.primaryWritingMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasVerticalCss => $composableBuilder(
+    column: $table.hasVerticalCss,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5718,6 +5789,11 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hasVerticalCss => $composableBuilder(
+    column: $table.hasVerticalCss,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get overrideVerticalText => $composableBuilder(
     column: $table.overrideVerticalText,
     builder: (column) => ColumnOrderings(column),
@@ -5793,6 +5869,11 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<String> get primaryWritingMode => $composableBuilder(
     column: $table.primaryWritingMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasVerticalCss => $composableBuilder(
+    column: $table.hasVerticalCss,
     builder: (column) => column,
   );
 
@@ -5903,6 +5984,7 @@ class $$BooksTableTableManager
                 Value<String?> language = const Value.absent(),
                 Value<String?> pageProgressionDirection = const Value.absent(),
                 Value<String?> primaryWritingMode = const Value.absent(),
+                Value<bool?> hasVerticalCss = const Value.absent(),
                 Value<bool?> overrideVerticalText = const Value.absent(),
                 Value<String?> overrideReadingDirection = const Value.absent(),
                 Value<String?> furiganaMode = const Value.absent(),
@@ -5920,6 +6002,7 @@ class $$BooksTableTableManager
                 language: language,
                 pageProgressionDirection: pageProgressionDirection,
                 primaryWritingMode: primaryWritingMode,
+                hasVerticalCss: hasVerticalCss,
                 overrideVerticalText: overrideVerticalText,
                 overrideReadingDirection: overrideReadingDirection,
                 furiganaMode: furiganaMode,
@@ -5939,6 +6022,7 @@ class $$BooksTableTableManager
                 Value<String?> language = const Value.absent(),
                 Value<String?> pageProgressionDirection = const Value.absent(),
                 Value<String?> primaryWritingMode = const Value.absent(),
+                Value<bool?> hasVerticalCss = const Value.absent(),
                 Value<bool?> overrideVerticalText = const Value.absent(),
                 Value<String?> overrideReadingDirection = const Value.absent(),
                 Value<String?> furiganaMode = const Value.absent(),
@@ -5956,6 +6040,7 @@ class $$BooksTableTableManager
                 language: language,
                 pageProgressionDirection: pageProgressionDirection,
                 primaryWritingMode: primaryWritingMode,
+                hasVerticalCss: hasVerticalCss,
                 overrideVerticalText: overrideVerticalText,
                 overrideReadingDirection: overrideReadingDirection,
                 furiganaMode: furiganaMode,

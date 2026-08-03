@@ -44,14 +44,21 @@ ReaderDirection defaultReaderDirection({
 /// `page-progression-direction` — an RTL page progression does not
 /// necessarily mean vertical text.
 ///
-/// Fallback when `primaryWritingMode` is absent: vertical text is enabled
-/// for CJK languages when `page-progression-direction` is RTL (or defaults
-/// to RTL via language heuristic). This preserves behavior for EPUBs that
-/// lack the metadata.
+/// When that metadata is absent, [hasVerticalCss] — whether any of the
+/// EPUB's stylesheets declare a vertical `writing-mode` (sniffed at import)
+/// — decides instead: true forces vertical, false defaults to horizontal
+/// unless the spine explicitly declares `page-progression-direction="rtl"`.
+/// True vertical books (Aozora-style) always declare vertical-rl in CSS, so
+/// this keeps their vertical default while fixing horizontally-authored
+/// EPUBs (e.g. Calibre conversions) that used to open forced-vertical.
+///
+/// `null` [hasVerticalCss] means the book was imported before CSS sniffing
+/// existed; the legacy heuristic (vertical when naturally RTL) applies.
 bool defaultVerticalText({
   String? language,
   String? pageProgressionDirection,
   String? primaryWritingMode,
+  bool? hasVerticalCss,
 }) {
   if (!bookSupportsVerticalText(language)) return false;
 
@@ -60,7 +67,13 @@ bool defaultVerticalText({
     return primaryWritingMode.contains('vertical');
   }
 
-  // Fallback: use the old heuristic for EPUBs without the metadata.
+  // Sniffed stylesheets decide next; when none declare vertical writing,
+  // only an explicit rtl spine keeps the vertical default.
+  if (hasVerticalCss != null) {
+    return hasVerticalCss || pageProgressionDirection == 'rtl';
+  }
+
+  // Sniff result unknown: use the old heuristic.
   return bookIsNaturallyRtl(
     language: language,
     pageProgressionDirection: pageProgressionDirection,

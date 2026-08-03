@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -150,6 +151,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             language: widget.book.language,
             pageProgressionDirection: widget.book.pageProgressionDirection,
             primaryWritingMode: widget.book.primaryWritingMode,
+            hasVerticalCss: widget.book.hasVerticalCss,
             overrideVerticalText: widget.book.overrideVerticalText,
             overrideReadingDirection: widget.book.overrideReadingDirection,
             overrideFuriganaMode: widget.book.furiganaMode,
@@ -550,9 +552,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       final initialCfi = _extractInitialCfi(savedProgress);
 
       // Re-parse legacy books without language metadata to detect language.
-      if (widget.book.language == null) {
+      // hasVerticalCss doubles as the "parsed by this app version" marker:
+      // language can legitimately stay null (OPF without dc:language), so
+      // without it these books would re-parse on every open.
+      if (widget.book.language == null && widget.book.hasVerticalCss == null) {
         try {
-          final metadata = await EpubParser.parseMetadataOnly(epubPath);
+          // compute(): the parse inflates stylesheet/content entries for the
+          // vertical-CSS sniff — keep that off the UI isolate.
+          final metadata = await compute(
+            EpubParser.parseMetadataOnly,
+            epubPath,
+          );
           if (!mounted) return;
           _bookLanguage = metadata.language;
           // Backfill the database so subsequent opens skip re-parsing.
@@ -561,9 +571,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 .read(readerBookRepositoryProvider)
                 .backfillLanguage(
                   widget.book.id,
-                  metadata.language,
-                  metadata.pageProgressionDirection,
-                  metadata.primaryWritingMode,
+                  language: metadata.language,
+                  pageProgressionDirection: metadata.pageProgressionDirection,
+                  primaryWritingMode: metadata.primaryWritingMode,
+                  hasVerticalCss: metadata.hasVerticalCss,
                 ),
           );
           // Re-apply book defaults with detected language.
@@ -575,6 +586,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 language: metadata.language,
                 pageProgressionDirection: metadata.pageProgressionDirection,
                 primaryWritingMode: metadata.primaryWritingMode,
+                hasVerticalCss: metadata.hasVerticalCss,
               );
         } catch (_) {
           // Best effort — continue with null language (assumes Japanese).
@@ -1445,7 +1457,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       context: context,
       builder: (sheetContext) => EpubReaderSettingsSheet(
         bookLanguage: _bookLanguage,
-        pageProgressionDirection: widget.book.pageProgressionDirection,
         onSettingChanged: _recordSettingChanged,
         onOpenAllSettings: () {
           AppHaptics.light();

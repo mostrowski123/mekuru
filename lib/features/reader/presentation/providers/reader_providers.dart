@@ -36,6 +36,14 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   /// verticalText or readingDirection.
   int? _currentBookId;
 
+  /// The current book's native vertical-text default as computed by
+  /// [applyBookDefaults] (ignoring any per-book override). `null` when no
+  /// book is open. Lets UI (e.g. the quick-settings sheet) flag non-native
+  /// display modes without re-deriving the default from book metadata.
+  bool? _nativeVerticalText;
+
+  bool? get nativeVerticalTextForCurrentBook => _nativeVerticalText;
+
   @override
   ReaderSettings build() => const ReaderSettings();
 
@@ -173,19 +181,21 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     String? language,
     String? pageProgressionDirection,
     String? primaryWritingMode,
+    bool? hasVerticalCss,
     bool? overrideVerticalText,
     String? overrideReadingDirection,
     String? overrideFuriganaMode,
   }) {
     _currentBookId = bookId;
 
-    final effectiveVerticalText =
-        overrideVerticalText ??
-        defaultVerticalText(
-          language: language,
-          pageProgressionDirection: pageProgressionDirection,
-          primaryWritingMode: primaryWritingMode,
-        );
+    final nativeVerticalText = defaultVerticalText(
+      language: language,
+      pageProgressionDirection: pageProgressionDirection,
+      primaryWritingMode: primaryWritingMode,
+      hasVerticalCss: hasVerticalCss,
+    );
+    _nativeVerticalText = nativeVerticalText;
+    final effectiveVerticalText = overrideVerticalText ?? nativeVerticalText;
 
     final effectiveDirection = overrideReadingDirection != null
         ? readerDirectionFromString(overrideReadingDirection)
@@ -210,6 +220,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   /// to a book that is no longer open.
   void clearCurrentBook() {
     _currentBookId = null;
+    _nativeVerticalText = null;
   }
 
   void _persistSettings() {

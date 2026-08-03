@@ -102,7 +102,7 @@ void main() {
       expect(entries.single.definitionTags, isEmpty);
       expect(entries.single.rules, isEmpty);
       expect(entries.single.termTags, isEmpty);
-      expect(migratedDb.schemaVersion, 19);
+      expect(migratedDb.schemaVersion, 20);
     },
   );
 
@@ -244,7 +244,7 @@ void main() {
           .toSet();
 
       expect(indexNames, contains('idx_pitch_expr_dictid'));
-      expect(migratedDb.schemaVersion, 19);
+      expect(migratedDb.schemaVersion, 20);
     },
   );
 
@@ -314,7 +314,63 @@ void main() {
           .getSingle();
       expect(sessionCount.data['c'], 0);
 
-      expect(migratedDb.schemaVersion, 19);
+      expect(migratedDb.schemaVersion, 20);
+    },
+  );
+
+  test(
+    'adds has_vertical_css and repairs primary_writing_mode at schema 20',
+    () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'mekuru_vertical_css_',
+      );
+      addTearDown(() async {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final dbFile = File('${tempDir.path}/mekuru.sqlite');
+
+      final seedDb = AppDatabase(NativeDatabase(dbFile));
+      await seedDb
+          .into(seedDb.books)
+          .insert(
+            BooksCompanion.insert(title: '吾輩は猫である', filePath: '/books/neko'),
+          );
+      await seedDb.close();
+
+      // Rewind to v19 and also drop primary_writing_mode to simulate a
+      // database that predates the (migration-less) schema-9-era column.
+      // Both columns come back via the beforeOpen repair pass
+      // (_booksRepairColumns), not a versioned migration block.
+      final legacyDb = sqlite.sqlite3.open(dbFile.path);
+      legacyDb.execute('PRAGMA user_version = 19;');
+      legacyDb.execute('ALTER TABLE books DROP COLUMN has_vertical_css;');
+      legacyDb.execute('ALTER TABLE books DROP COLUMN primary_writing_mode;');
+      legacyDb.close();
+
+      final migratedDb = AppDatabase(NativeDatabase(dbFile));
+      addTearDown(migratedDb.close);
+
+      final book = await migratedDb.select(migratedDb.books).getSingle();
+      expect(book.title, '吾輩は猫である');
+      expect(book.hasVerticalCss, null);
+      expect(book.primaryWritingMode, null);
+
+      // Both columns must be insertable after the migration.
+      await migratedDb
+          .into(migratedDb.books)
+          .insert(
+            BooksCompanion.insert(
+              title: '坊っちゃん',
+              filePath: '/books/botchan',
+              primaryWritingMode: const Value('vertical-rl'),
+              hasVerticalCss: const Value(true),
+            ),
+          );
+
+      expect(migratedDb.schemaVersion, 20);
     },
   );
 }

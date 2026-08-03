@@ -118,6 +118,7 @@ class BookRepository {
             primaryWritingMode: metadata.primaryWritingMode != null
                 ? Value(metadata.primaryWritingMode)
                 : const Value.absent(),
+            hasVerticalCss: Value(metadata.hasVerticalCss),
           ),
         );
 
@@ -433,15 +434,17 @@ class BookRepository {
 
   /// Backfill language metadata for a legacy book (imported before v8).
   Future<void> backfillLanguage(
-    int bookId,
-    String? language,
-    String? pageProgressionDirection,
-    String? primaryWritingMode,
-  ) => (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+    int bookId, {
+    required String? language,
+    required String? pageProgressionDirection,
+    required String? primaryWritingMode,
+    required bool? hasVerticalCss,
+  }) => (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
     BooksCompanion(
       language: Value(language),
       pageProgressionDirection: Value(pageProgressionDirection),
       primaryWritingMode: Value(primaryWritingMode),
+      hasVerticalCss: Value(hasVerticalCss),
     ),
   );
 

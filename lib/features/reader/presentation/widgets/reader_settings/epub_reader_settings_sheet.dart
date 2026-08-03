@@ -15,7 +15,6 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
   const EpubReaderSettingsSheet({
     super.key,
     required this.bookLanguage,
-    required this.pageProgressionDirection,
     required this.onSettingChanged,
     this.onOpenAllSettings,
   });
@@ -23,22 +22,15 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
   /// The current book's language, used to gate vertical-text support.
   final String? bookLanguage;
 
-  /// The current book's spine page-progression-direction, used to detect
-  /// non-native display modes.
-  final String? pageProgressionDirection;
-
   /// Telemetry callback fired once per completed setting change.
   final void Function(String setting, Object value) onSettingChanged;
 
   final VoidCallback? onOpenAllSettings;
 
-  bool _isNonNativeDisplayMode(ReaderSettings settings) {
-    final nativeVertical = defaultVerticalText(
-      language: bookLanguage,
-      pageProgressionDirection: pageProgressionDirection,
-    );
-    return settings.verticalText != nativeVertical;
-  }
+  /// Whether the current display diverges from the book's native default,
+  /// as computed by `applyBookDefaults` when the book was opened.
+  bool _isNonNativeDisplayMode(ReaderSettings settings, bool? nativeVertical) =>
+      nativeVertical != null && settings.verticalText != nativeVertical;
 
   String _nonNativeDisplayWarning(
     BuildContext context,
@@ -80,7 +72,10 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
                 }
               : null,
         ),
-        if (_isNonNativeDisplayMode(settings))
+        if (_isNonNativeDisplayMode(
+          settings,
+          notifier.nativeVerticalTextForCurrentBook,
+        ))
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(

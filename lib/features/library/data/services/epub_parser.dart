@@ -18,6 +18,12 @@ class EpubMetadata {
   /// independently of page-progression-direction.
   final String? primaryWritingMode;
 
+  /// Whether any stylesheet or content document declares a vertical
+  /// `writing-mode`. Fallback vertical-text signal for EPUBs whose OPF
+  /// lacks `primary-writing-mode` (true vertical books always declare
+  /// `writing-mode: vertical-rl` in CSS).
+  final bool hasVerticalCss;
+
   const EpubMetadata({
     required this.title,
     this.author,
@@ -25,11 +31,35 @@ class EpubMetadata {
     this.language,
     this.pageProgressionDirection,
     this.primaryWritingMode,
+    required this.hasVerticalCss,
   });
 }
 
 /// Maximum EPUB file size allowed for import (200 MB).
 const _maxEpubBytes = 200 * 1024 * 1024;
+
+/// Matches a vertical `writing-mode` CSS declaration, including the
+/// `-epub-`/`-webkit-` vendor prefixes and the legacy `tb-rl`/`tb-lr` values.
+final _verticalWritingModeCss = RegExp(
+  r'writing-mode\s*:\s*(?:vertical|tb-rl|tb-lr)',
+  caseSensitive: false,
+);
+
+const _stylesheetExtension = '.css';
+
+/// Content documents can carry the declaration in inline styles or
+/// `<style>` blocks.
+const _contentDocExtensions = {'.xhtml', '.html', '.htm'};
+
+/// Archive entry names worth sniffing for a vertical writing-mode
+/// declaration.
+bool _isSniffableEntry(String name) {
+  final ext = p.extension(name).toLowerCase();
+  return ext == _stylesheetExtension || _contentDocExtensions.contains(ext);
+}
+
+bool _declaresVerticalWritingMode(List<int> bytes) =>
+    _verticalWritingModeCss.hasMatch(utf8.decode(bytes, allowMalformed: true));
 
 /// Parses EPUB files to extract metadata and cover images.
 class EpubParser {
@@ -62,6 +92,7 @@ class EpubParser {
     }
 
     // Stream-decode the EPUB ZIP to avoid loading the entire file into memory.
+    var hasVerticalCss = false;
     final input = InputFileStream(epubPath);
     try {
       final Archive archive;
@@ -77,12 +108,17 @@ class EpubParser {
         );
       }
 
-      // Extract all files
+      // Extract all files, sniffing stylesheets/content for vertical
+      // writing-mode along the way (the bytes are already in memory here).
       for (final entry in archive.files) {
         if (entry.isFile) {
+          final bytes = entry.content as List<int>;
           final outFile = File(p.join(extractDir, entry.name));
           await outFile.parent.create(recursive: true);
-          await outFile.writeAsBytes(entry.content as List<int>);
+          await outFile.writeAsBytes(bytes);
+          if (!hasVerticalCss && _isSniffableEntry(entry.name)) {
+            hasVerticalCss = _declaresVerticalWritingMode(bytes);
+          }
         }
       }
     } finally {
@@ -92,7 +128,10 @@ class EpubParser {
     // 1. Parse META-INF/container.xml to find the OPF file path
     final opfPath = await _findOpfPath(extractDir);
     if (opfPath == null) {
-      return EpubMetadata(title: _fallbackTitleFor(epubPath));
+      return EpubMetadata(
+        title: _fallbackTitleFor(epubPath),
+        hasVerticalCss: hasVerticalCss,
+      );
     }
 
     // 2. Parse the OPF file for title, author, cover
@@ -100,6 +139,7 @@ class EpubParser {
       extractDir,
       opfPath,
       fallbackTitle: _fallbackTitleFor(epubPath),
+      hasVerticalCss: hasVerticalCss,
     );
   }
 
@@ -119,8 +159,9 @@ class EpubParser {
       );
     }
 
-    // Stream-decode to extract only the 2 small XML files we need,
-    // avoiding loading the entire EPUB into memory.
+    // Stream-decode the archive: the OPF metadata needs only 2 small XML
+    // files; the vertical-CSS sniff additionally inflates stylesheet and
+    // content entries (CSS first, so vertical books stop early).
     final fallbackTitle = _fallbackTitleFor(epubPath);
     final input = InputFileStream(epubPath);
     try {
@@ -134,10 +175,14 @@ class EpubParser {
         );
       }
 
+      final hasVerticalCss = _sniffVerticalCss(archive);
+      EpubMetadata fallback() =>
+          EpubMetadata(title: fallbackTitle, hasVerticalCss: hasVerticalCss);
+
       // Find container.xml in the archive
       final containerFile = archive.findFile('META-INF/container.xml');
       if (containerFile == null) {
-        return EpubMetadata(title: fallbackTitle);
+        return fallback();
       }
 
       final containerXml = XmlDocument.parse(
@@ -145,13 +190,13 @@ class EpubParser {
       );
       final opfPath = _extractOpfPathFromXml(containerXml);
       if (opfPath == null) {
-        return EpubMetadata(title: fallbackTitle);
+        return fallback();
       }
 
       // Find the OPF file in the archive
       final opfFile = archive.findFile(opfPath);
       if (opfFile == null) {
-        return EpubMetadata(title: fallbackTitle);
+        return fallback();
       }
 
       final opfXml = XmlDocument.parse(
@@ -163,10 +208,38 @@ class EpubParser {
         opfXml,
         opfDir,
         fallbackTitle: fallbackTitle,
+        hasVerticalCss: hasVerticalCss,
       );
     } finally {
       input.close();
     }
+  }
+
+  /// Whether any stylesheet or content document in [archive] declares a
+  /// vertical writing-mode.
+  ///
+  /// Stylesheets nearly always carry the declaration and are tiny next to
+  /// content documents, so they are scanned first — vertical books
+  /// short-circuit before every chapter is inflated.
+  static bool _sniffVerticalCss(Archive archive) =>
+      _anyEntryDeclaresVertical(
+        archive,
+        (ext) => ext == _stylesheetExtension,
+      ) ||
+      _anyEntryDeclaresVertical(archive, _contentDocExtensions.contains);
+
+  static bool _anyEntryDeclaresVertical(
+    Archive archive,
+    bool Function(String extension) wanted,
+  ) {
+    for (final entry in archive.files) {
+      if (!entry.isFile) continue;
+      if (!wanted(p.extension(entry.name).toLowerCase())) continue;
+      if (_declaresVerticalWritingMode(entry.content as List<int>)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Find the OPF file path from META-INF/container.xml.
@@ -193,10 +266,11 @@ class EpubParser {
     String extractDir,
     String opfPath, {
     required String fallbackTitle,
+    required bool hasVerticalCss,
   }) async {
     final opfFile = File(p.join(extractDir, opfPath));
     if (!await opfFile.exists()) {
-      return EpubMetadata(title: fallbackTitle);
+      return EpubMetadata(title: fallbackTitle, hasVerticalCss: hasVerticalCss);
     }
 
     final opfXml = XmlDocument.parse(await opfFile.readAsString());
@@ -206,6 +280,7 @@ class EpubParser {
       opfXml,
       opfDir,
       fallbackTitle: fallbackTitle,
+      hasVerticalCss: hasVerticalCss,
     );
   }
 
@@ -214,6 +289,7 @@ class EpubParser {
     XmlDocument opfXml,
     String opfDir, {
     required String fallbackTitle,
+    required bool hasVerticalCss,
   }) {
     // Extract title from <dc:title>, falling back to <title> without the
     // namespace prefix, then to the EPUB's own filename.
@@ -335,6 +411,7 @@ class EpubParser {
       language: language,
       pageProgressionDirection: pageProgressionDirection,
       primaryWritingMode: primaryWritingMode,
+      hasVerticalCss: hasVerticalCss,
     );
   }
 }
