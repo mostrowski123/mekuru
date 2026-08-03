@@ -690,6 +690,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         _isLoading = true;
         _isEpubLoaded = false;
         _hasRestoredHighlights = false;
+        // The fresh viewer must regenerate locations; until then its
+        // relocations report progress 0, which a stale true here would let
+        // overwrite (and persist over) the real progress.
+        _locationsReady = false;
         _viewerEpoch += 1;
       });
     } finally {
