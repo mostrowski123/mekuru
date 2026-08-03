@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
@@ -80,8 +79,7 @@ class YomitanDictDownloadService {
   /// Fetch the latest release, download the ZIP, and import it.
   ///
   /// [onProgress] is called with a value between 0.0 and 1.0:
-  /// - 0.0–0.05: resolving latest release tag
-  /// - 0.05–0.70: downloading ZIP
+  /// - 0.0–0.70: downloading ZIP
   /// - 0.70–0.95: importing into database
   /// - 0.95–1.0: finalising
   static Future<void> downloadAndImport({
@@ -121,25 +119,19 @@ class YomitanDictDownloadService {
   }) async {
     onProgress?.call(0.0);
 
-    // Phase 1: Download ZIP straight to disk to avoid buffering large
+    // Download the ZIP straight to disk to avoid buffering large
     // dictionaries in memory.
     final tempDir = await getTemporaryDirectory();
-    final tempFile = File(p.join(tempDir.path, '${type.name}_download.zip'));
-    await _downloadZipToFile(
+    await withDownloadedFile(
       assetUrl(type),
-      tempFile.path,
+      p.join(tempDir.path, '${type.name}_download.zip'),
       onProgress: (p) => onProgress?.call(p * 0.7),
+      use: (path) async {
+        onProgress?.call(0.75);
+        await importer.importFromFile(path);
+        onProgress?.call(0.95);
+      },
     );
-
-    try {
-      onProgress?.call(0.75);
-      await importer.importFromFile(tempFile.path);
-      onProgress?.call(0.95);
-    } finally {
-      if (await tempFile.exists()) {
-        await tempFile.delete();
-      }
-    }
 
     onProgress?.call(1.0);
   }
@@ -153,84 +145,6 @@ class YomitanDictDownloadService {
     if (meta != null) {
       await repository.deleteDictionary(meta.id);
       logUsage('download.uninstalled', attrs: {'asset': 'yomitan_collection'});
-    }
-  }
-
-  /// Download a ZIP archive from [url] directly into [destinationPath].
-  static Future<void> _downloadZipToFile(
-    String url,
-    String destinationPath, {
-    void Function(double progress)? onProgress,
-    int redirectCount = 0,
-  }) async {
-    if (redirectCount > 5) {
-      throw const HttpException(
-        'Too many redirects while downloading dictionary',
-      );
-    }
-
-    final client = HttpClient();
-    try {
-      final request = await client.getUrl(Uri.parse(url));
-      final response = await request.close();
-
-      // Follow redirects manually if needed (GitHub releases redirect)
-      if (_isRedirectStatus(response.statusCode)) {
-        final redirectUrl = response.headers.value('location');
-        if (redirectUrl != null) {
-          await response.drain<void>();
-          return _downloadZipToFile(
-            redirectUrl,
-            destinationPath,
-            onProgress: onProgress,
-            redirectCount: redirectCount + 1,
-          );
-        }
-      }
-
-      if (response.statusCode != 200) {
-        await response.drain<void>();
-        throw HttpException(
-          'Failed to download dictionary: HTTP ${response.statusCode}',
-        );
-      }
-
-      await _writeResponseToFile(
-        response,
-        destinationPath: destinationPath,
-        onProgress: onProgress,
-      );
-    } finally {
-      client.close();
-    }
-  }
-
-  static bool _isRedirectStatus(int statusCode) =>
-      statusCode == HttpStatus.movedPermanently ||
-      statusCode == HttpStatus.found ||
-      statusCode == HttpStatus.seeOther ||
-      statusCode == HttpStatus.temporaryRedirect ||
-      statusCode == HttpStatus.permanentRedirect;
-
-  static Future<void> _writeResponseToFile(
-    HttpClientResponse response, {
-    required String destinationPath,
-    void Function(double progress)? onProgress,
-  }) async {
-    final contentLength = response.contentLength;
-    var received = 0;
-    final sink = File(destinationPath).openWrite();
-
-    try {
-      await for (final chunk in response) {
-        sink.add(chunk);
-        received += chunk.length;
-        if (contentLength > 0) {
-          onProgress?.call(received / contentLength);
-        }
-      }
-    } finally {
-      await sink.close();
     }
   }
 }

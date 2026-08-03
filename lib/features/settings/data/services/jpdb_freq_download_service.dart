@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
@@ -67,29 +66,24 @@ class JpdbFreqDownloadService {
     onProgress?.call(0.0);
 
     final tempDir = await getTemporaryDirectory();
-    final tempFile = File(p.join(tempDir.path, 'jpdb_freq_download.zip'));
-    await _downloadZipToFile(
-      tempFile.path,
+    await withDownloadedFile(
+      downloadUrl,
+      p.join(tempDir.path, 'jpdb_freq_download.zip'),
       onProgress: (p) => onProgress?.call(p * 0.7),
+      use: (path) async {
+        // Import via standard importer
+        onProgress?.call(0.8);
+        await importer.importFromFile(path);
+
+        // Mark as hidden and disabled
+        onProgress?.call(0.95);
+        final meta = await repository.getDictionaryByName(dictionaryName);
+        if (meta != null) {
+          await repository.toggleDictionary(meta.id, isEnabled: false);
+          await repository.setHidden(meta.id, isHidden: true);
+        }
+      },
     );
-
-    try {
-      // Phase 3: Import via standard importer
-      onProgress?.call(0.8);
-      await importer.importFromFile(tempFile.path);
-
-      // Phase 4: Mark as hidden and disabled
-      onProgress?.call(0.95);
-      final meta = await repository.getDictionaryByName(dictionaryName);
-      if (meta != null) {
-        await repository.toggleDictionary(meta.id, isEnabled: false);
-        await repository.setHidden(meta.id, isHidden: true);
-      }
-    } finally {
-      if (await tempFile.exists()) {
-        await tempFile.delete();
-      }
-    }
 
     onProgress?.call(1.0);
   }
@@ -100,85 +94,6 @@ class JpdbFreqDownloadService {
     if (meta != null) {
       await repository.deleteDictionary(meta.id);
       logUsage('download.uninstalled', attrs: {'asset': 'jpdb_freq'});
-    }
-  }
-
-  /// Download the ZIP archive directly to disk.
-  static Future<void> _downloadZipToFile(
-    String destinationPath, {
-    void Function(double progress)? onProgress,
-    String url = downloadUrl,
-    int redirectCount = 0,
-  }) async {
-    if (redirectCount > 5) {
-      throw const HttpException(
-        'Too many redirects while downloading JPDB frequency dictionary',
-      );
-    }
-
-    final client = HttpClient();
-    try {
-      final uri = Uri.parse(url);
-      final request = await client.getUrl(uri);
-      final response = await request.close();
-
-      // Follow redirects manually if needed
-      if (_isRedirectStatus(response.statusCode)) {
-        final redirectUrl = response.headers.value('location');
-        if (redirectUrl != null) {
-          await response.drain<void>();
-          return _downloadZipToFile(
-            destinationPath,
-            onProgress: onProgress,
-            url: redirectUrl,
-            redirectCount: redirectCount + 1,
-          );
-        }
-      }
-
-      if (response.statusCode != 200) {
-        await response.drain<void>();
-        throw HttpException(
-          'Failed to download JPDB frequency dictionary: HTTP ${response.statusCode}',
-        );
-      }
-
-      await _writeResponseToFile(
-        response,
-        destinationPath: destinationPath,
-        onProgress: onProgress,
-      );
-    } finally {
-      client.close();
-    }
-  }
-
-  static bool _isRedirectStatus(int statusCode) =>
-      statusCode == HttpStatus.movedPermanently ||
-      statusCode == HttpStatus.found ||
-      statusCode == HttpStatus.seeOther ||
-      statusCode == HttpStatus.temporaryRedirect ||
-      statusCode == HttpStatus.permanentRedirect;
-
-  static Future<void> _writeResponseToFile(
-    HttpClientResponse response, {
-    required String destinationPath,
-    void Function(double progress)? onProgress,
-  }) async {
-    final contentLength = response.contentLength;
-    var received = 0;
-    final sink = File(destinationPath).openWrite();
-
-    try {
-      await for (final chunk in response) {
-        sink.add(chunk);
-        received += chunk.length;
-        if (contentLength > 0) {
-          onProgress?.call(received / contentLength);
-        }
-      }
-    } finally {
-      await sink.close();
     }
   }
 }

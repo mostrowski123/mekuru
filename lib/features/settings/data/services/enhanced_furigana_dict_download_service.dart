@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -125,25 +125,27 @@ class EnhancedFuriganaDictDownloadService {
     }
     await outputDir.create(recursive: true);
 
-    final bytes = await _downloadBytes(
-      onProgress: (p) => onProgress?.call(p * 0.85),
-    );
-
-    final actualHash = sha256.convert(bytes).toString();
-    if (actualHash != expectedSha256) {
-      await outputDir.delete(recursive: true);
-      throw FormatException(
-        'Downloaded unidic-lite hash mismatch: expected '
-        '$expectedSha256, got $actualHash',
+    final tempDir = await getTemporaryDirectory();
+    try {
+      await withDownloadedFile(
+        downloadUrl,
+        p.join(tempDir.path, 'unidic_lite_download.tar.gz'),
+        onProgress: (p) => onProgress?.call(p * 0.85),
+        use: (archivePath) async {
+          onProgress?.call(0.85);
+          await compute(verifyAndExtractTarGz, (
+            archivePath: archivePath,
+            outputDir: dir,
+            expectedSha256: expectedSha256,
+          ));
+        },
       );
+    } on FormatException {
+      // Hash mismatch or corrupt archive: don't leave a half-installed
+      // directory behind.
+      await outputDir.delete(recursive: true);
+      rethrow;
     }
-
-    onProgress?.call(0.85);
-
-    await compute(
-      _extractTarGz,
-      _ExtractPayload(archiveBytes: bytes, outputDir: dir),
-    );
 
     await File(p.join(dir, _markerFileName)).writeAsString(
       jsonEncode({
@@ -155,62 +157,25 @@ class EnhancedFuriganaDictDownloadService {
     onProgress?.call(1.0);
   }
 
-  static Future<Uint8List> _downloadBytes({
-    void Function(double progress)? onProgress,
-  }) async {
-    final client = HttpClient();
-    try {
-      var uri = Uri.parse(downloadUrl);
-      HttpClientResponse response;
-      for (var redirects = 0; redirects < 5; redirects++) {
-        final request = await client.getUrl(uri);
-        response = await request.close();
-        if (response.statusCode == 301 ||
-            response.statusCode == 302 ||
-            response.statusCode == 307 ||
-            response.statusCode == 308) {
-          final location = response.headers.value('location');
-          if (location == null) {
-            throw HttpException('redirect without location from $uri');
-          }
-          uri = Uri.parse(location);
-          await response.drain<void>();
-          continue;
-        }
-        if (response.statusCode != 200) {
-          throw HttpException(
-            'failed to download enhanced furigana dict: HTTP '
-            '${response.statusCode}',
-          );
-        }
-        return _readResponse(response, onProgress: onProgress);
-      }
-      throw HttpException('too many redirects fetching $downloadUrl');
-    } finally {
-      client.close();
+  /// Runs on a background isolate via [compute]: reads the archive from
+  /// disk, verifies its SHA-256, and extracts it — keeping the hashing and
+  /// decompression work off the UI isolate.
+  ///
+  /// Throws a [FormatException] when the hash doesn't match.
+  @visibleForTesting
+  static void verifyAndExtractTarGz(
+    ({String archivePath, String outputDir, String expectedSha256}) payload,
+  ) {
+    final archiveBytes = File(payload.archivePath).readAsBytesSync();
+    final actualHash = sha256.convert(archiveBytes).toString();
+    if (actualHash != payload.expectedSha256) {
+      throw FormatException(
+        'Downloaded unidic-lite hash mismatch: expected '
+        '${payload.expectedSha256}, got $actualHash',
+      );
     }
-  }
 
-  static Future<Uint8List> _readResponse(
-    HttpClientResponse response, {
-    void Function(double progress)? onProgress,
-  }) async {
-    final contentLength = response.contentLength;
-    final builder = BytesBuilder(copy: false);
-    var received = 0;
-    await for (final chunk in response) {
-      builder.add(chunk);
-      received += chunk.length;
-      if (contentLength > 0) {
-        onProgress?.call(received / contentLength);
-      }
-    }
-    return builder.toBytes();
-  }
-
-  /// Runs on a background isolate via [compute].
-  static void _extractTarGz(_ExtractPayload payload) {
-    final decompressed = GZipDecoder().decodeBytes(payload.archiveBytes);
+    final decompressed = GZipDecoder().decodeBytes(archiveBytes);
     final archive = TarDecoder().decodeBytes(decompressed);
 
     for (final entry in archive) {
@@ -224,11 +189,4 @@ class EnhancedFuriganaDictDownloadService {
       file.writeAsBytesSync(entry.content as List<int>);
     }
   }
-}
-
-class _ExtractPayload {
-  final Uint8List archiveBytes;
-  final String outputDir;
-
-  const _ExtractPayload({required this.archiveBytes, required this.outputDir});
 }

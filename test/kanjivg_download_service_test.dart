@@ -2,12 +2,14 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/settings/data/services/kanjivg_download_service.dart';
 import 'package:path/path.dart' as p;
 
 /// Tests for KanjiVG download service logic.
 ///
-/// Network-dependent tests are excluded; we test archive extraction,
-/// file path resolution, and status detection using temp directories.
+/// Archive extraction runs through the service's real isolate entry point;
+/// the HTTP path is covered by `test/core/download_to_file_test.dart`. Path
+/// resolution and status detection are tested against temp directories.
 void main() {
   late Directory tempDir;
 
@@ -172,21 +174,19 @@ String _hexFileName(String char) {
   return '$hex.svg';
 }
 
-/// Extract SVG files from a ZIP archive (same logic as service's isolate fn).
+/// Write [zipBytes] to disk and run the service's real isolate entry point.
 int _extractSvgsFromArchive(List<int> zipBytes, String outputDir) {
-  final archive = ZipDecoder().decodeBytes(zipBytes);
-  var count = 0;
-
-  for (final file in archive) {
-    if (file.isFile && file.name.endsWith('.svg')) {
-      final fileName = p.basename(file.name);
-      final outputPath = p.join(outputDir, fileName);
-      File(outputPath).writeAsBytesSync(file.content as List<int>);
-      count++;
-    }
+  final zipDir = Directory.systemTemp.createTempSync('kanjivg_zip_');
+  final zipPath = p.join(zipDir.path, 'archive.zip');
+  File(zipPath).writeAsBytesSync(zipBytes);
+  try {
+    return KanjiVgDownloadService.extractSvgsFromArchive((
+      zipPath: zipPath,
+      outputDir: outputDir,
+    ));
+  } finally {
+    zipDir.deleteSync(recursive: true);
   }
-
-  return count;
 }
 
 /// Check if marker file exists (same logic as service).

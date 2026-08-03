@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -98,17 +99,21 @@ class KanjiVgDownloadService {
       await outputDir.create(recursive: true);
     }
 
-    // Phase 1: Download ZIP
+    // Phase 1: Download ZIP straight to disk
     onProgress?.call(0.0);
-    final zipBytes = await _downloadZip(
+    final tempDir = await getTemporaryDirectory();
+    final count = await withDownloadedFile(
+      downloadUrl,
+      p.join(tempDir.path, 'kanjivg_download.zip'),
       onProgress: (p) => onProgress?.call(p * 0.9), // 0–90% for download
-    );
-
-    // Phase 2: Extract SVGs (runs on isolate to avoid blocking UI)
-    onProgress?.call(0.9);
-    final count = await compute(
-      _extractSvgsFromArchive,
-      _ExtractPayload(zipBytes: zipBytes, outputDir: dir),
+      use: (zipPath) {
+        // Phase 2: Extract SVGs (runs on isolate to avoid blocking UI)
+        onProgress?.call(0.9);
+        return compute(extractSvgsFromArchive, (
+          zipPath: zipPath,
+          outputDir: dir,
+        ));
+      },
     );
 
     // Write completion marker
@@ -131,82 +136,32 @@ class KanjiVgDownloadService {
     }
   }
 
-  /// Download the ZIP archive, returning raw bytes.
-  static Future<List<int>> _downloadZip({
-    void Function(double progress)? onProgress,
-  }) async {
-    final client = HttpClient();
+  /// Extract SVG files from the KanjiVG ZIP archive.
+  /// Runs on an isolate via [compute]; stream-decodes the ZIP from disk so
+  /// the archive is never fully buffered in memory.
+  @visibleForTesting
+  static int extractSvgsFromArchive(
+    ({String zipPath, String outputDir}) payload,
+  ) {
+    final input = InputFileStream(payload.zipPath);
     try {
-      final uri = Uri.parse(downloadUrl);
-      final request = await client.getUrl(uri);
-      final response = await request.close();
+      final archive = ZipDecoder().decodeStream(input);
+      var count = 0;
 
-      // Follow redirects manually if needed
-      if (response.statusCode == 301 || response.statusCode == 302) {
-        final redirectUrl = response.headers.value('location');
-        if (redirectUrl != null) {
-          final redirectRequest = await client.getUrl(Uri.parse(redirectUrl));
-          final redirectResponse = await redirectRequest.close();
-          return _readResponse(redirectResponse, onProgress: onProgress);
+      for (final file in archive.files) {
+        if (file.isFile && file.name.endsWith('.svg')) {
+          // The archive contains paths like "kanjivg-kanjivg-20220427/kanji/04e00.svg"
+          // We extract just the filename.
+          final fileName = p.basename(file.name);
+          final outputPath = p.join(payload.outputDir, fileName);
+          File(outputPath).writeAsBytesSync(file.content as List<int>);
+          count++;
         }
       }
 
-      if (response.statusCode != 200) {
-        throw HttpException(
-          'Failed to download KanjiVG: HTTP ${response.statusCode}',
-        );
-      }
-
-      return _readResponse(response, onProgress: onProgress);
+      return count;
     } finally {
-      client.close();
+      input.close();
     }
   }
-
-  static Future<List<int>> _readResponse(
-    HttpClientResponse response, {
-    void Function(double progress)? onProgress,
-  }) async {
-    final contentLength = response.contentLength;
-    final bytes = <int>[];
-    var received = 0;
-
-    await for (final chunk in response) {
-      bytes.addAll(chunk);
-      received += chunk.length;
-      if (contentLength > 0) {
-        onProgress?.call(received / contentLength);
-      }
-    }
-
-    return bytes;
-  }
-
-  /// Extract SVG files from the KanjiVG ZIP archive.
-  /// Runs on an isolate via [compute].
-  static int _extractSvgsFromArchive(_ExtractPayload payload) {
-    final archive = ZipDecoder().decodeBytes(payload.zipBytes);
-    var count = 0;
-
-    for (final file in archive) {
-      if (file.isFile && file.name.endsWith('.svg')) {
-        // The archive contains paths like "kanjivg-kanjivg-20220427/kanji/04e00.svg"
-        // We extract just the filename.
-        final fileName = p.basename(file.name);
-        final outputPath = p.join(payload.outputDir, fileName);
-        File(outputPath).writeAsBytesSync(file.content as List<int>);
-        count++;
-      }
-    }
-
-    return count;
-  }
-}
-
-/// Payload for the isolate extraction function.
-class _ExtractPayload {
-  final List<int> zipBytes;
-  final String outputDir;
-
-  const _ExtractPayload({required this.zipBytes, required this.outputDir});
 }

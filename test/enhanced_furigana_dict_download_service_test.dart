@@ -2,16 +2,15 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:path/path.dart' as p;
 
-/// Tests the local-extraction side of the enhanced-furigana-dict downloader.
-/// The HTTP and SHA-256 paths require network access and a real release
-/// artifact, so they're covered by a manual smoke test on device rather
-/// than by these unit tests.
-///
-/// Mirrors the private `_extractTarGz` logic in the service so we can
-/// exercise it against synthetic archives.
+/// Tests the verify-and-extract side of the enhanced-furigana-dict
+/// downloader through the service's real isolate entry point, using
+/// synthetic archives. The HTTP path is covered by
+/// `test/core/download_to_file_test.dart`.
 void main() {
   late Directory tempDir;
 
@@ -54,6 +53,21 @@ void main() {
       _extractTarGz(_encodeTarGz(Archive()), tempDir.path);
       expect(Directory(tempDir.path).listSync(), isEmpty);
     });
+
+    test('rejects an archive whose hash does not match', () {
+      final archive = Archive()
+        ..addFile(_file('unidic-lite-2.1.2/dicrc', 'foo'.codeUnits));
+
+      expect(
+        () => _verifyAndExtract(
+          _encodeTarGz(archive),
+          tempDir.path,
+          expectedSha256: 'not-the-real-hash',
+        ),
+        throwsFormatException,
+      );
+      expect(Directory(tempDir.path).listSync(), isEmpty);
+    });
   });
 }
 
@@ -66,18 +80,31 @@ Uint8List _encodeTarGz(Archive archive) {
   return Uint8List.fromList(gzipped);
 }
 
-/// Mirrors the service's private `_extractTarGz` so the same logic is
-/// exercised under test.
+/// Write [archiveBytes] to disk and run the service's real isolate entry
+/// point with a matching SHA-256, so extraction is exercised end to end.
 void _extractTarGz(Uint8List archiveBytes, String outputDir) {
-  final decompressed = GZipDecoder().decodeBytes(archiveBytes);
-  final archive = TarDecoder().decodeBytes(decompressed);
-  for (final entry in archive) {
-    if (!entry.isFile) continue;
-    final fileName = p.basename(entry.name);
-    if (fileName.isEmpty || fileName.startsWith('.')) continue;
-    final outputPath = p.join(outputDir, fileName);
-    final file = File(outputPath);
-    file.parent.createSync(recursive: true);
-    file.writeAsBytesSync(entry.content as List<int>);
+  _verifyAndExtract(
+    archiveBytes,
+    outputDir,
+    expectedSha256: sha256.convert(archiveBytes).toString(),
+  );
+}
+
+void _verifyAndExtract(
+  Uint8List archiveBytes,
+  String outputDir, {
+  required String expectedSha256,
+}) {
+  final archiveDir = Directory.systemTemp.createTempSync('unidic_archive_');
+  final archivePath = p.join(archiveDir.path, 'archive.tar.gz');
+  File(archivePath).writeAsBytesSync(archiveBytes);
+  try {
+    EnhancedFuriganaDictDownloadService.verifyAndExtractTarGz((
+      archivePath: archivePath,
+      outputDir: outputDir,
+      expectedSha256: expectedSha256,
+    ));
+  } finally {
+    archiveDir.deleteSync(recursive: true);
   }
 }
