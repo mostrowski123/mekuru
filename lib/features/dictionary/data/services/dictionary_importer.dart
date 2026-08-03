@@ -26,6 +26,30 @@ class CollectionImportResult {
   });
 }
 
+/// A failure inside a dictionary parse isolate.
+///
+/// Isolates can only ship strings across the boundary, so the worker sends
+/// the original error's text and runtime type and the main isolate rethrows
+/// them as this exception. Telemetry only ever reports runtime types and
+/// sanitized text, which makes [causeType] the one clue distinguishing a
+/// malformed file from a parser bug.
+class DictionaryParseException implements Exception {
+  DictionaryParseException(this.message, {required this.causeType});
+
+  /// Decodes the `['error', message, causeType]` isolate message.
+  factory DictionaryParseException.fromIsolateMessage(List<dynamic> message) =>
+      DictionaryParseException(
+        message[1] as String,
+        causeType: message[2] as String,
+      );
+
+  final String message;
+  final String causeType;
+
+  @override
+  String toString() => 'DictionaryParseException($causeType): $message';
+}
+
 // Isolate message protocol for collection parsing.
 // We use simple types (String, List, Map) that can cross isolate boundaries.
 //
@@ -35,7 +59,7 @@ class CollectionImportResult {
 //   ['pitch_batch', List<Map<String, dynamic>>]  — a batch of parsed pitch accents
 //   ['freq_batch', List<Map<String, dynamic>>]   — a batch of parsed frequencies
 //   ['done']                                    — parsing complete
-//   ['error', String]                           — parsing failed
+//   ['error', String message, String causeType] — parsing failed
 
 /// Service responsible for importing Yomitan dictionary files.
 class DictionaryImporter {
@@ -256,7 +280,7 @@ class DictionaryImporter {
           }
 
           if (type == 'error') {
-            throw FormatException(msg[1] as String);
+            throw DictionaryParseException.fromIsolateMessage(msg);
           }
         }
 
@@ -316,7 +340,6 @@ class DictionaryImporter {
 
     try {
       // Listen for batches from the isolate
-      String? errorMessage;
       await for (final message in receivePort) {
         final msg = message as List;
         final type = msg[0] as String;
@@ -345,13 +368,9 @@ class DictionaryImporter {
         } else if (type == 'done') {
           break;
         } else if (type == 'error') {
-          errorMessage = msg[1] as String;
-          break;
+          // The try/finally below closes the port and kills the isolate.
+          throw DictionaryParseException.fromIsolateMessage(msg);
         }
-      }
-
-      if (errorMessage != null) {
-        throw FormatException(errorMessage);
       }
 
       // Insert each dictionary into the DB
@@ -970,7 +989,7 @@ class DictionaryImporter {
 
       sendPort.send(['done']);
     } catch (e) {
-      sendPort.send(['error', e.toString()]);
+      sendPort.send(['error', e.toString(), e.runtimeType.toString()]);
     }
   }
 
@@ -1198,7 +1217,7 @@ class DictionaryImporter {
 
       sendPort.send(['done']);
     } catch (e) {
-      sendPort.send(['error', e.toString()]);
+      sendPort.send(['error', e.toString(), e.runtimeType.toString()]);
     } finally {
       await input?.close();
     }

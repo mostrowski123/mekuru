@@ -1100,15 +1100,25 @@ void main() {
         '(isolate cleanup on error path)', () async {
       // Write a syntactically invalid JSON file. The isolate's stream
       // parser will send an 'error' message; the await-for loop breaks
-      // and rethrows as FormatException. The try/finally must close the
-      // ReceivePort and kill the isolate so subsequent imports work.
+      // and rethrows as DictionaryParseException carrying the original
+      // error's type. The try/finally must close the ReceivePort and kill
+      // the isolate so subsequent imports work.
       final badPath = await writeCollectionFile('{ not valid json ');
 
       await expectLater(
         importer
             .importCollectionFromFile(badPath)
             .timeout(const Duration(seconds: 10)),
-        throwsA(isA<FormatException>()),
+        throwsA(
+          // The isolate can only ship strings across the boundary, but the
+          // original error's runtime type must survive so telemetry can tell
+          // a malformed file apart from a parser bug.
+          isA<DictionaryParseException>().having(
+            (e) => e.causeType,
+            'causeType',
+            isNotEmpty,
+          ),
+        ),
       );
 
       // After the error path, the importer must still work — proves no
