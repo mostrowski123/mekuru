@@ -702,6 +702,7 @@ function processSectionForFurigana(doc) {
 
   var BATCH = 50;
   var batchPromises = [];
+  var tokenizerUnavailable = false;
   for (var start = 0; start < uncachedNodes.length; start += BATCH) {
     var sliceNodes = uncachedNodes.slice(start, start + BATCH);
     var sliceInputs = uncachedInputs.slice(start, start + BATCH);
@@ -710,7 +711,9 @@ function processSectionForFurigana(doc) {
         .then((function (nodesRef, inputsRef) {
           return function (annotations) {
             if (!Array.isArray(annotations)) {
-              console.warn('[EPUB_BRIDGE] generateFurigana returned non-array');
+              // null = tokenizer unavailable (MeCab could not come up).
+              // Cache nothing so these texts are re-requested later.
+              tokenizerUnavailable = true;
               return;
             }
             for (var j = 0; j < nodesRef.length && j < annotations.length; j++) {
@@ -719,14 +722,30 @@ function processSectionForFurigana(doc) {
               _applyFuriganaAnnotation(doc, nodesRef[j], ann);
             }
           };
-        })(sliceNodes, sliceInputs))
-        .catch(function (e) {
+        })(sliceNodes, sliceInputs), function (e) {
+          // Rejection of the bridge call itself; the batch produced nothing,
+          // so treat it like an unavailable tokenizer and retry later.
+          tokenizerUnavailable = true;
           console.error('[EPUB_BRIDGE] generateFurigana failed:', e);
+        })
+        .catch(function (e) {
+          // Error while applying delivered annotations; they are cached, so
+          // there is nothing to retry — log only.
+          console.error('[EPUB_BRIDGE] furigana apply failed:', e);
         })
     );
   }
-  // Fire-and-forget; ruby fills in progressively as batches resolve.
-  Promise.all(batchPromises);
+  // Ruby fills in progressively as batches resolve. When any batch came back
+  // without a tokenizer, un-mark the doc once after all batches settle — not
+  // per batch, which would let a concurrent trigger (mode toggle, re-render)
+  // re-walk the section mid-flight — so a later pass retries instead of the
+  // section staying furigana-less for the whole webview session.
+  Promise.all(batchPromises).then(function () {
+    if (tokenizerUnavailable) {
+      _furiganaProcessedDocs.delete(doc);
+      console.warn('[EPUB_BRIDGE] furigana tokenizer unavailable; section left for retry');
+    }
+  });
 }
 
 function _cacheFurigana(text, ann) {

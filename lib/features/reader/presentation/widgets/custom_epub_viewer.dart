@@ -461,6 +461,8 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         // bridge serializes the batch.
         final raw = data.isNotEmpty && data[0] is List ? data[0] as List : data;
         final inputs = raw.map((e) => e?.toString() ?? '').toList();
+        // The webview plugin awaits this future before resolving the JS
+        // promise, so the reply blocks until MeCab is ready (or null).
         return _furiganaGenerator.generate(inputs);
       },
     );

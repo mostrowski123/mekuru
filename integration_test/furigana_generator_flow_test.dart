@@ -24,9 +24,9 @@ void main() {
       generator = const FuriganaGenerator(MecabFuriganaTokenizer());
     });
 
-    test('emits per-kanji ruby segments for mixed kanji/kana sentence', () {
+    test('emits per-kanji ruby segments for mixed kanji/kana sentence', () async {
       // Use a representative Japanese sentence with multiple kanji words.
-      final results = generator.generate(const ['今日は晴れだ']);
+      final results = (await generator.generate(const ['今日は晴れだ']))!;
       expect(results, hasLength(1));
 
       final segments = results.first['segments'] as List;
@@ -57,8 +57,8 @@ void main() {
       }
     });
 
-    test('kana-only input emits no furigana', () {
-      final results = generator.generate(const ['ひらがなだけです']);
+    test('kana-only input emits no furigana', () async {
+      final results = (await generator.generate(const ['ひらがなだけです']))!;
       final segments = results.first['segments'] as List;
       for (final seg in segments.cast<Map>()) {
         expect(seg['f'], isNull, reason: 'kana-only input should have no ruby');
@@ -69,9 +69,9 @@ void main() {
       expect(reconstructed, 'ひらがなだけです');
     });
 
-    test('processes a batch of varied inputs in order', () {
+    test('processes a batch of varied inputs in order', () async {
       const inputs = ['食べた', '日本語', 'カタカナ', '走る'];
-      final results = generator.generate(inputs);
+      final results = (await generator.generate(inputs))!;
       expect(results, hasLength(inputs.length));
       for (var i = 0; i < inputs.length; i++) {
         expect(results[i]['source'], inputs[i]);
@@ -95,7 +95,7 @@ void main() {
       }
     });
 
-    test('gikun compounds use the bundled user-dictionary reading', () {
+    test('gikun compounds use the bundled user-dictionary reading', () async {
       // IPADIC alone mistokenizes these compounds (二人 → に+にん, 今日 → こん+
       // にち, etc). The bundled user.dic supplies the correct gikun reading
       // and MeCab prefers it via the -u flag set up in MecabService.init().
@@ -110,7 +110,8 @@ void main() {
       for (final entry in expectations.entries) {
         final word = entry.key;
         final reading = entry.value;
-        final segments = generator.generate([word]).first['segments'] as List;
+        final segments =
+            (await generator.generate([word]))!.first['segments'] as List;
         expect(
           segments,
           hasLength(1),
@@ -130,10 +131,10 @@ void main() {
       }
     });
 
-    test('readings are hiragana, not katakana', () {
+    test('readings are hiragana, not katakana', () async {
       // MeCab's raw reading field is katakana; FuriganaGenerator must
       // convert it to hiragana before emitting the segment.
-      final results = generator.generate(const ['食べた']);
+      final results = (await generator.generate(const ['食べた']))!;
       final segments = results.first['segments'] as List;
       final furiganaSegs = segments.cast<Map>().where((s) => s['f'] != null);
       expect(furiganaSegs, isNotEmpty);

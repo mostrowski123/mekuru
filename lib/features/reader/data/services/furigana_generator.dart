@@ -4,11 +4,29 @@ import 'package:mekuru/shared/widgets/furigana_text.dart';
 
 /// Abstraction over MeCab so the generator can be unit-tested with a fake.
 abstract class FuriganaTokenizer {
+  /// Brings the tokenizer up if needed; `false` when it cannot come up.
+  Future<bool> ensureReady();
+
   List<TokenInfo> tokenize(String text);
 }
 
 class MecabFuriganaTokenizer implements FuriganaTokenizer {
   const MecabFuriganaTokenizer();
+
+  @override
+  Future<bool> ensureReady() async {
+    // Furigana readings only need IPADIC (see [MecabService.init] on the
+    // flag).
+    final ready = await MecabService.instance.ensureInitialized(
+      upgradeToEnhanced: false,
+    );
+    if (!ready) return false;
+    // Wait out any in-flight UniDic-lite upgrade: the JS bridge caches
+    // annotations for the whole webview session, so generating mid-swap
+    // would pin pre-upgrade readings past the swap.
+    await MecabService.instance.settledLayout();
+    return true;
+  }
 
   @override
   List<TokenInfo> tokenize(String text) =>
@@ -26,8 +44,15 @@ class FuriganaGenerator {
 
   const FuriganaGenerator(this._tokenizer);
 
-  List<Map<String, Object?>> generate(List<String> inputs) =>
-      inputs.map(_generateOne).toList(growable: false);
+  /// Returns null when the tokenizer cannot be brought up, so the JS bridge
+  /// can tell "tokenizer unavailable" apart from "no readings found" and skip
+  /// caching. Without this gate, annotations generated while MeCab was still
+  /// initializing (plain text, no readings) would be cached as successes for
+  /// the rest of the webview session.
+  Future<List<Map<String, Object?>>?> generate(List<String> inputs) async {
+    if (!await _tokenizer.ensureReady()) return null;
+    return inputs.map(_generateOne).toList(growable: false);
+  }
 
   Map<String, Object?> _generateOne(String input) {
     if (input.isEmpty) {
