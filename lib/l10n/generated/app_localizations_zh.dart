@@ -606,11 +606,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get downloadsEnhancedFuriganaUseSubtitle =>
-      'Turn this off if tapping words stops working. The download is kept, and you can re-enable it anytime. Restart the app to apply.';
+      'This only affects reading accuracy — it does not show or hide furigana. Turn it off if tapping words stops working; the download is kept and you can re-enable it anytime. Restart the app to apply.';
 
   @override
   String get downloadsEnhancedFuriganaDescription =>
-      '为约 10,000 个额外词条提供更准确的振假名。下载 45 MB，占用 250 MB 存储空间。';
+      '提高生成振假名和查词的读音准确度（约 10,000 个额外词条）。不会开启或关闭振假名显示。下载 45 MB，占用 250 MB 存储空间。';
 
   @override
   String get downloadsEnhancedFuriganaRemoveTooltip => '移除增强词典';
@@ -1263,6 +1263,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get readerFuriganaOff => '关闭';
+
+  @override
+  String get readerFuriganaBook => '原书';
 
   @override
   String get readerFuriganaAllKanji => '所有汉字';
@@ -2673,7 +2676,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadsEnhancedFuriganaDescription =>
-      '为约 10,000 个额外词条提供更准确的振假名。下载 45 MB，占用 250 MB 存储空间。';
+      '提高生成振假名和查词的读音准确度（约 10,000 个额外词条）。不会开启或关闭振假名显示。下载 45 MB，占用 250 MB 存储空间。';
 
   @override
   String get downloadsEnhancedFuriganaRemoveTooltip => '移除增强词典';
@@ -3298,6 +3301,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerFuriganaOff => '关闭';
+
+  @override
+  String get readerFuriganaBook => '原书';
 
   @override
   String get readerFuriganaAllKanji => '所有汉字';

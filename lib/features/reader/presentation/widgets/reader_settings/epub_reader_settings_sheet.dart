@@ -116,18 +116,7 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
         const SizedBox(height: 16),
         SettingsSegmentedRow<FuriganaMode>(
           label: l10n.readerFuriganaTitle,
-          segments: [
-            ButtonSegment(
-              value: FuriganaMode.off,
-              label: Text(l10n.readerFuriganaOff),
-              icon: const Icon(Icons.visibility_off),
-            ),
-            ButtonSegment(
-              value: FuriganaMode.all,
-              label: Text(l10n.readerFuriganaAllKanji),
-              icon: const Icon(Icons.visibility),
-            ),
-          ],
+          segments: furiganaModeSegments(l10n),
           selected: settings.furiganaMode == FuriganaMode.aboveLevel
               ? FuriganaMode.all
               : settings.furiganaMode,

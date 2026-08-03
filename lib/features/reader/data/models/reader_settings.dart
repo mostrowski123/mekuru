@@ -26,13 +26,19 @@ extension ColorModeStorage on ColorMode {
   String get storageValue => name;
 }
 
-enum FuriganaMode { off, all, aboveLevel }
+enum FuriganaMode { hide, book, all, aboveLevel }
 
 FuriganaMode furiganaModeFromString(String? value) {
   return switch (value) {
+    'hide' => FuriganaMode.hide,
     'all' => FuriganaMode.all,
     'aboveLevel' => FuriganaMode.aboveLevel,
-    _ => FuriganaMode.off,
+    // Deliberately no 'off' case: versions <= 1.25.x persisted 'off' (both
+    // the global preference and per-book Books.furigana_mode overrides) as a
+    // hide-everything default most users never chose. Letting 'off' fall
+    // through to `book` retroactively converts those installs with no
+    // migration. Do not add an 'off' case.
+    _ => FuriganaMode.book,
   };
 }
 
@@ -119,7 +125,8 @@ class ReaderSettings {
 
   /// Controls whether and how furigana is rendered above kanji in the reader.
   ///
-  /// - [FuriganaMode.off]: hide all furigana, including EPUB-authored ruby.
+  /// - [FuriganaMode.hide]: hide all furigana, including EPUB-authored ruby.
+  /// - [FuriganaMode.book]: show EPUB-authored ruby only; never generate.
   /// - [FuriganaMode.all]: show EPUB-authored ruby and generate ruby (via
   ///   MeCab) for kanji that lack it.
   /// - [FuriganaMode.aboveLevel]: reserved for a future difficulty-aware
@@ -161,7 +168,7 @@ class ReaderSettings {
     this.keepScreenOn = false,
     this.sepiaIntensity = 0.5,
     this.disableLinks = false,
-    this.furiganaMode = FuriganaMode.off,
+    this.furiganaMode = FuriganaMode.book,
     this.brightness,
     this.mangaViewMode = MangaViewMode.singlePage,
     this.mangaReadingDirection = ReaderDirection.rtl,

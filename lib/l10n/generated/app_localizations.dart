@@ -1165,13 +1165,13 @@ abstract class AppLocalizations {
   /// Help text under the enhanced furigana dictionary enable/disable toggle.
   ///
   /// In en, this message translates to:
-  /// **'Turn this off if tapping words stops working. The download is kept, and you can re-enable it anytime. Restart the app to apply.'**
+  /// **'This only affects reading accuracy — it does not show or hide furigana. Turn it off if tapping words stops working; the download is kept and you can re-enable it anytime. Restart the app to apply.'**
   String get downloadsEnhancedFuriganaUseSubtitle;
 
   /// Subtitle shown before the enhanced furigana dictionary is downloaded.
   ///
   /// In en, this message translates to:
-  /// **'Improves furigana for ~10,000 additional words. 45 MB download, 250 MB on disk.'**
+  /// **'Improves reading accuracy for generated furigana and word lookups (~10,000 additional words). It does not turn furigana on or off. 45 MB download, 250 MB on disk.'**
   String get downloadsEnhancedFuriganaDescription;
 
   /// Tooltip for removing the enhanced furigana dictionary.
@@ -2284,11 +2284,17 @@ abstract class AppLocalizations {
   /// **'Furigana'**
   String get readerFuriganaTitle;
 
-  /// Furigana mode option that hides all furigana.
+  /// Furigana mode option that hides all furigana, including furigana included in the book.
   ///
   /// In en, this message translates to:
   /// **'Off'**
   String get readerFuriganaOff;
+
+  /// Furigana mode option that shows only the furigana included in the book, without generating any.
+  ///
+  /// In en, this message translates to:
+  /// **'Book'**
+  String get readerFuriganaBook;
 
   /// Furigana mode option that shows furigana above every kanji.
   ///

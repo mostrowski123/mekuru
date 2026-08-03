@@ -12,7 +12,7 @@ var _lastTappedBlock = null;       // block element from last getTextAtPoint
 var _lastTappedDoc = null;         // document from last getTextAtPoint
 var _currentWordHighlightCfi = null; // CFI of current word highlight
 var _disableLinks = false;           // When true, links trigger dictionary instead of navigating
-var _furiganaMode = 'off';           // 'off' | 'all' | 'aboveLevel'
+var _furiganaMode = 'book';          // 'hide' | 'book' | 'all' | 'aboveLevel'
 var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processed
 // Armed by navigation (initial display, page turns, TOC/CFI/progress jumps)
 // and consumed by the next 'relocated' event. Re-layout relocations (font
@@ -238,9 +238,7 @@ function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, c
 
     // Furigana: inject visibility style and (lazily) generate ruby for kanji.
     applyFuriganaStyleToDoc(doc);
-    if (_furiganaMode !== 'off') {
-      processSectionForFurigana(doc);
-    }
+    processSectionForFurigana(doc);
 
     doc.addEventListener('selectionchange', function () {
       var sel = contents.window.getSelection();
@@ -621,6 +619,30 @@ function _renderedIframeDocs() {
   return docs;
 }
 
+// What each furigana mode does. 'hide' and 'book' never generate; they only
+// differ in which ruby the injected CSS hides. In 'book' the class selector
+// matters after an all -> book switch mid-session: generated ruby already
+// sits in the DOM and is never torn down, so CSS is what separates it from
+// the publisher's own ruby. Unknown mode strings fall back to 'book',
+// matching furiganaModeFromString on the Dart side.
+var FURIGANA_MODES = {
+  hide: {
+    generate: false,
+    css: 'ruby > rt, ruby > rp { display: none !important; }'
+  },
+  book: {
+    generate: false,
+    css: 'ruby.mekuru-furigana > rt, ruby.mekuru-furigana > rp ' +
+         '{ display: none !important; }'
+  },
+  all: { generate: true, css: '' },
+  aboveLevel: { generate: true, css: '' }
+};
+
+function _furiganaBehavior() {
+  return FURIGANA_MODES[_furiganaMode] || FURIGANA_MODES.book;
+}
+
 function applyFuriganaStyleToDoc(doc) {
   if (!doc || !doc.head) return;
   var styleEl = doc.getElementById('__mekuruFuriganaStyle');
@@ -629,25 +651,22 @@ function applyFuriganaStyleToDoc(doc) {
     styleEl.id = '__mekuruFuriganaStyle';
     doc.head.appendChild(styleEl);
   }
-  styleEl.textContent =
-    _furiganaMode === 'off' ? 'ruby > rt, ruby > rp { display: none !important; }' : '';
+  styleEl.textContent = _furiganaBehavior().css;
 }
 
 function setFuriganaMode(mode) {
-  _furiganaMode = (typeof mode === 'string') ? mode : 'off';
+  _furiganaMode = (typeof mode === 'string') ? mode : 'book';
   console.log('[EPUB_BRIDGE] setFuriganaMode: ' + _furiganaMode);
   var docs = _renderedIframeDocs();
   for (var i = 0; i < docs.length; i++) {
     applyFuriganaStyleToDoc(docs[i]);
-    if (_furiganaMode !== 'off' && !_furiganaProcessedDocs.has(docs[i])) {
-      processSectionForFurigana(docs[i]);
-    }
+    processSectionForFurigana(docs[i]);
   }
 }
 
 function processSectionForFurigana(doc) {
   if (!doc || !doc.body) return;
-  if (_furiganaMode === 'off') return;
+  if (!_furiganaBehavior().generate) return;
   if (_furiganaProcessedDocs.has(doc)) return;
   _furiganaProcessedDocs.add(doc);
 
@@ -778,6 +797,9 @@ function _applyFuriganaAnnotation(doc, node, ann) {
       // Put the base text directly inside <ruby>; the existing tap-redirect
       // code (getTextAtPoint) expects a text-node child, not <rb>.
       var ruby = doc.createElement('ruby');
+      // Tag generated ruby so 'book' mode CSS can hide it without touching
+      // the publisher's own ruby.
+      ruby.setAttribute('class', 'mekuru-furigana');
       ruby.appendChild(doc.createTextNode(seg.t));
       var rt = doc.createElement('rt');
       rt.textContent = seg.f;

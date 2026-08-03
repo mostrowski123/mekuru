@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub_reader_settings_sheet.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
@@ -58,7 +59,62 @@ void main() {
     await scrollSettingsTo(tester, find.text('Furigana'));
     expect(find.text('Furigana'), findsOneWidget);
     expect(find.text('Off'), findsOneWidget);
+    expect(find.text('Book'), findsOneWidget);
     expect(find.text('All kanji'), findsOneWidget);
+  });
+
+  testWidgets('furigana defaults to the book segment', (tester) async {
+    await _pumpSheet(tester);
+    await scrollSettingsTo(tester, find.text('Furigana'));
+    final row = tester.widget<SettingsSegmentedRow<FuriganaMode>>(
+      find.byType(SettingsSegmentedRow<FuriganaMode>),
+    );
+    expect(row.selected, FuriganaMode.book);
+    expect(row.segments.map((s) => s.value).toList(), [
+      FuriganaMode.hide,
+      FuriganaMode.book,
+      FuriganaMode.all,
+    ]);
+  });
+
+  testWidgets('a stored aboveLevel displays as the all segment', (
+    tester,
+  ) async {
+    final container = await _pumpSheet(tester);
+    container
+        .read(readerSettingsProvider.notifier)
+        .setFuriganaMode(FuriganaMode.aboveLevel);
+    await tester.pumpAndSettle();
+
+    await scrollSettingsTo(tester, find.text('Furigana'));
+    final row = tester.widget<SettingsSegmentedRow<FuriganaMode>>(
+      find.byType(SettingsSegmentedRow<FuriganaMode>),
+    );
+    expect(row.selected, FuriganaMode.all);
+  });
+
+  testWidgets('tapping all while aboveLevel is stored is a no-op', (
+    tester,
+  ) async {
+    final changes = <String>[];
+    final container = await _pumpSheet(
+      tester,
+      onSettingChanged: (setting, value) => changes.add(setting),
+    );
+    container
+        .read(readerSettingsProvider.notifier)
+        .setFuriganaMode(FuriganaMode.aboveLevel);
+    await tester.pumpAndSettle();
+
+    await scrollSettingsTo(tester, find.text('All kanji'));
+    await tester.tap(find.text('All kanji'));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(readerSettingsProvider).furiganaMode,
+      FuriganaMode.aboveLevel,
+    );
+    expect(changes, isNot(contains('furigana_mode')));
   });
 
   testWidgets('vertical text switch is disabled for non-CJK books', (

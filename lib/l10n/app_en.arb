@@ -813,11 +813,11 @@
   "@downloadsEnhancedFuriganaUseTitle": {
     "description": "Title of the toggle that enables or disables the installed enhanced furigana dictionary."
   },
-  "downloadsEnhancedFuriganaUseSubtitle": "Turn this off if tapping words stops working. The download is kept, and you can re-enable it anytime. Restart the app to apply.",
+  "downloadsEnhancedFuriganaUseSubtitle": "This only affects reading accuracy — it does not show or hide furigana. Turn it off if tapping words stops working; the download is kept and you can re-enable it anytime. Restart the app to apply.",
   "@downloadsEnhancedFuriganaUseSubtitle": {
     "description": "Help text under the enhanced furigana dictionary enable/disable toggle."
   },
-  "downloadsEnhancedFuriganaDescription": "Improves furigana for ~10,000 additional words. 45 MB download, 250 MB on disk.",
+  "downloadsEnhancedFuriganaDescription": "Improves reading accuracy for generated furigana and word lookups (~10,000 additional words). It does not turn furigana on or off. 45 MB download, 250 MB on disk.",
   "@downloadsEnhancedFuriganaDescription": {
     "description": "Subtitle shown before the enhanced furigana dictionary is downloaded."
   },
@@ -1698,7 +1698,11 @@
   },
   "readerFuriganaOff": "Off",
   "@readerFuriganaOff": {
-    "description": "Furigana mode option that hides all furigana."
+    "description": "Furigana mode option that hides all furigana, including furigana included in the book."
+  },
+  "readerFuriganaBook": "Book",
+  "@readerFuriganaBook": {
+    "description": "Furigana mode option that shows only the furigana included in the book, without generating any."
   },
   "readerFuriganaAllKanji": "All kanji",
   "@readerFuriganaAllKanji": {

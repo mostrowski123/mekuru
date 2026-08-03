@@ -634,11 +634,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadsEnhancedFuriganaUseSubtitle =>
-      'Turn this off if tapping words stops working. The download is kept, and you can re-enable it anytime. Restart the app to apply.';
+      'This only affects reading accuracy — it does not show or hide furigana. Turn it off if tapping words stops working; the download is kept and you can re-enable it anytime. Restart the app to apply.';
 
   @override
   String get downloadsEnhancedFuriganaDescription =>
-      'Improves furigana for ~10,000 additional words. 45 MB download, 250 MB on disk.';
+      'Improves reading accuracy for generated furigana and word lookups (~10,000 additional words). It does not turn furigana on or off. 45 MB download, 250 MB on disk.';
 
   @override
   String get downloadsEnhancedFuriganaRemoveTooltip =>
@@ -1316,6 +1316,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readerFuriganaOff => 'Off';
+
+  @override
+  String get readerFuriganaBook => 'Book';
 
   @override
   String get readerFuriganaAllKanji => 'All kanji';

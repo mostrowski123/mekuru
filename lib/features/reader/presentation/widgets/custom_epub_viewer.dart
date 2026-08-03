@@ -70,7 +70,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.verticalMargin = 28,
     this.forceHorizontalAxis = false,
     this.verticalTextBlocks = 1,
-    this.furiganaMode = FuriganaMode.off,
+    required this.furiganaMode,
     this.onLoaded,
     this.onChaptersLoaded,
     this.onRelocated,

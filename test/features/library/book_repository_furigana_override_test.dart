@@ -98,13 +98,13 @@ void main() {
         bId,
         verticalText: null,
         readingDirection: null,
-        furiganaMode: const Value('off'),
+        furiganaMode: const Value('hide'),
       );
 
       final a = (await repo.getBookById(aId))!;
       final b = (await repo.getBookById(bId))!;
       expect(a.furiganaMode, 'all');
-      expect(b.furiganaMode, 'off');
+      expect(b.furiganaMode, 'hide');
     });
   });
 }

@@ -20,6 +20,28 @@ List<ButtonSegment<ReaderDirection>> readerDirectionSegments(
   ];
 }
 
+/// Deliberately excludes [FuriganaMode.aboveLevel]: it is a reserved value
+/// that surfaces render as [FuriganaMode.all].
+List<ButtonSegment<FuriganaMode>> furiganaModeSegments(AppLocalizations l10n) {
+  return [
+    ButtonSegment(
+      value: FuriganaMode.hide,
+      label: Text(l10n.readerFuriganaOff),
+      icon: const Icon(Icons.visibility_off),
+    ),
+    ButtonSegment(
+      value: FuriganaMode.book,
+      label: Text(l10n.readerFuriganaBook),
+      icon: const Icon(Icons.menu_book),
+    ),
+    ButtonSegment(
+      value: FuriganaMode.all,
+      label: Text(l10n.readerFuriganaAllKanji),
+      icon: const Icon(Icons.visibility),
+    ),
+  ];
+}
+
 List<ButtonSegment<MangaViewMode>> mangaViewModeSegments(
   AppLocalizations l10n,
 ) {

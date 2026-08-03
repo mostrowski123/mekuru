@@ -446,6 +446,30 @@ void main() {
       expect(spyRepo.lastBookId, 42);
       expect(spyRepo.lastFuriganaMode.present, isTrue);
       expect(spyRepo.lastFuriganaMode.value, 'all');
+
+      // hide must persist as its own storage string, not legacy 'off'.
+      notifier.setFuriganaMode(FuriganaMode.hide);
+      await Future<void>.delayed(Duration.zero);
+      expect(spyRepo.updateDisplayOverridesCalls, 2);
+      expect(spyRepo.lastFuriganaMode.value, 'hide');
+    });
+
+    test('re-selecting the default book mode writes no override', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final spyRepo = _SpyBookRepository(db);
+      final harness = _createHarness(bookRepo: spyRepo);
+      addTearDown(() async {
+        await harness.dispose();
+        await db.close();
+      });
+
+      final notifier = harness.container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(bookId: 42, language: 'ja');
+      notifier.setFuriganaMode(FuriganaMode.book);
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spyRepo.updateDisplayOverridesCalls, 0);
     });
 
     test('clearCurrentBook stops later per-book override writes', () async {
@@ -503,6 +527,24 @@ void main() {
       expect(
         container.read(readerSettingsProvider).furiganaMode,
         FuriganaMode.all,
+      );
+    });
+
+    test('a legacy off per-book override resolves to book', () {
+      final harness = _createHarness();
+      addTearDown(harness.dispose);
+      final container = harness.container;
+
+      final notifier = container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(
+        bookId: 42,
+        language: 'ja',
+        overrideFuriganaMode: 'off',
+      );
+
+      expect(
+        container.read(readerSettingsProvider).furiganaMode,
+        FuriganaMode.book,
       );
     });
 
