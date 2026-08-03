@@ -24,38 +24,41 @@ void main() {
       generator = const FuriganaGenerator(MecabFuriganaTokenizer());
     });
 
-    test('emits per-kanji ruby segments for mixed kanji/kana sentence', () async {
-      // Use a representative Japanese sentence with multiple kanji words.
-      final results = (await generator.generate(const ['今日は晴れだ']))!;
-      expect(results, hasLength(1));
+    test(
+      'emits per-kanji ruby segments for mixed kanji/kana sentence',
+      () async {
+        // Use a representative Japanese sentence with multiple kanji words.
+        final results = (await generator.generate(const ['今日は晴れだ']))!;
+        expect(results, hasLength(1));
 
-      final segments = results.first['segments'] as List;
-      expect(segments, isNotEmpty);
+        final segments = results.first['segments'] as List;
+        expect(segments, isNotEmpty);
 
-      // Concatenating all segment text must reproduce the input exactly.
-      final reconstructed = segments
-          .map((s) => (s as Map)['t'] as String)
-          .join();
-      expect(reconstructed, '今日は晴れだ');
+        // Concatenating all segment text must reproduce the input exactly.
+        final reconstructed = segments
+            .map((s) => (s as Map)['t'] as String)
+            .join();
+        expect(reconstructed, '今日は晴れだ');
 
-      // At least one segment must carry furigana, and every furigana-bearing
-      // segment must contain at least one kanji character.
-      final withFurigana = segments
-          .cast<Map>()
-          .where((s) => s['f'] != null)
-          .toList();
-      expect(
-        withFurigana,
-        isNotEmpty,
-        reason: 'expected at least one ruby segment for kanji in "今日は晴れだ"',
-      );
-      final kanjiRegex = RegExp(r'[㐀-䶿一-鿿々〆ヵヶ]');
-      for (final seg in withFurigana) {
-        expect(kanjiRegex.hasMatch(seg['t'] as String), isTrue);
-        expect(seg['f'], isA<String>());
-        expect((seg['f'] as String).isNotEmpty, isTrue);
-      }
-    });
+        // At least one segment must carry furigana, and every furigana-bearing
+        // segment must contain at least one kanji character.
+        final withFurigana = segments
+            .cast<Map>()
+            .where((s) => s['f'] != null)
+            .toList();
+        expect(
+          withFurigana,
+          isNotEmpty,
+          reason: 'expected at least one ruby segment for kanji in "今日は晴れだ"',
+        );
+        final kanjiRegex = RegExp(r'[㐀-䶿一-鿿々〆ヵヶ]');
+        for (final seg in withFurigana) {
+          expect(kanjiRegex.hasMatch(seg['t'] as String), isTrue);
+          expect(seg['f'], isA<String>());
+          expect((seg['f'] as String).isNotEmpty, isTrue);
+        }
+      },
+    );
 
     test('kana-only input emits no furigana', () async {
       final results = (await generator.generate(const ['ひらがなだけです']))!;
