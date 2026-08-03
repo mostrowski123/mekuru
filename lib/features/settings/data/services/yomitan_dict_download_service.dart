@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:mekuru/core/database/database_provider.dart';
@@ -22,8 +21,14 @@ enum YomitanDictType {
 /// JMdict and KANJIDIC are licensed under CC BY-SA 4.0.
 /// Distribution: https://github.com/yomidevs/jmdict-yomitan
 class YomitanDictDownloadService {
-  static const _releasesApiUrl =
-      'https://api.github.com/repos/yomidevs/jmdict-yomitan/releases/latest';
+  /// URL of a release asset, via the `releases/latest/download` redirect.
+  ///
+  /// Deliberately not the GitHub API: `api.github.com` allows only 60
+  /// unauthenticated requests per hour per IP, which users on shared (CGNAT)
+  /// IPs exhaust, while this form has no API rate limit.
+  static String assetUrl(YomitanDictType type) =>
+      'https://github.com/yomidevs/jmdict-yomitan/releases/latest/download/'
+      '${_assetFilename(type)}';
 
   /// Name prefixes used to detect whether a dictionary type is already
   /// imported. The actual title comes from the ZIP's index.json and may vary
@@ -116,21 +121,14 @@ class YomitanDictDownloadService {
   }) async {
     onProgress?.call(0.0);
 
-    // Phase 1: Resolve latest release tag
-    final tag = await _fetchLatestTag();
-    onProgress?.call(0.05);
-
-    // Phase 2: Download ZIP straight to disk to avoid buffering large
+    // Phase 1: Download ZIP straight to disk to avoid buffering large
     // dictionaries in memory.
-    final url =
-        'https://github.com/yomidevs/jmdict-yomitan/releases/download/'
-        '$tag/${_assetFilename(type)}';
     final tempDir = await getTemporaryDirectory();
     final tempFile = File(p.join(tempDir.path, '${type.name}_download.zip'));
     await _downloadZipToFile(
-      url,
+      assetUrl(type),
       tempFile.path,
-      onProgress: (p) => onProgress?.call(0.05 + p * 0.65),
+      onProgress: (p) => onProgress?.call(p * 0.7),
     );
 
     try {
@@ -155,34 +153,6 @@ class YomitanDictDownloadService {
     if (meta != null) {
       await repository.deleteDictionary(meta.id);
       logUsage('download.uninstalled', attrs: {'asset': 'yomitan_collection'});
-    }
-  }
-
-  /// Fetch the latest release tag from the GitHub API.
-  static Future<String> _fetchLatestTag() async {
-    final client = HttpClient();
-    try {
-      final request = await client.getUrl(Uri.parse(_releasesApiUrl));
-      request.headers.set('Accept', 'application/vnd.github.v3+json');
-      final response = await request.close();
-
-      if (response.statusCode != 200) {
-        // Drain the response to free resources
-        await response.drain<void>();
-        throw HttpException(
-          'Failed to fetch latest release: HTTP ${response.statusCode}',
-        );
-      }
-
-      final body = await response.transform(utf8.decoder).join();
-      final json = jsonDecode(body) as Map<String, dynamic>;
-      final tag = json['tag_name'] as String?;
-      if (tag == null || tag.isEmpty) {
-        throw Exception('No tag_name found in GitHub release response');
-      }
-      return tag;
-    } finally {
-      client.close();
     }
   }
 
