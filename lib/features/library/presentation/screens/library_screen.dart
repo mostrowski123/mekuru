@@ -569,10 +569,10 @@ class LibraryScreen extends ConsumerWidget {
   Future<List<String>> _pickFilePaths(List<String> extensions) async {
     final FilePickerResult? result;
     try {
+      // allowMultiple defaults to true (and is deprecated as a parameter).
       result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: extensions,
-        allowMultiple: true,
       );
     } on PlatformException catch (e) {
       if (e.code == 'already_active') return const [];
@@ -1337,13 +1337,10 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   Future<void> _changeCover(BuildContext context) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-    );
+    final picked = await FilePicker.pickFile(type: FileType.image);
 
-    if (result == null || result.files.isEmpty) return;
-    final pickedPath = result.files.single.path;
+    if (picked == null) return;
+    final pickedPath = picked.path;
     if (pickedPath == null) return;
 
     try {

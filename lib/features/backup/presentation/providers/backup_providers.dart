@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
@@ -242,22 +241,8 @@ class RestoreNotifier extends Notifier<RestoreState> {
   /// Restore from an external file (via file picker).
   Future<void> restoreFromFilePicker() async {
     try {
-      // Try FileType.custom first — on stock Android this greys out
-      // non-.mekuru files. If it fails (some OEMs don't support custom
-      // extension filtering), fall back to FileType.any.
-      PlatformFile? picked;
-      try {
-        final result = await FilePicker.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['mekuru'],
-        );
-        if (result == null || result.files.isEmpty) return;
-        picked = result.files.single;
-      } catch (_) {
-        final result = await FilePicker.pickFiles(type: FileType.any);
-        if (result == null || result.files.isEmpty) return;
-        picked = result.files.single;
-      }
+      final picked = await BackupFileManager.pickBackupFile();
+      if (picked == null) return;
 
       final filePath = picked.path;
       if (filePath == null) return;

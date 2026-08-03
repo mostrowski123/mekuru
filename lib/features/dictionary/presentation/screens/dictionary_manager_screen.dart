@@ -572,15 +572,14 @@ class _DictionaryManagerScreenState
   }
 
   Future<void> _importDictionary(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.pickFiles(
+    final picked = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['zip', 'json'],
-      allowMultiple: false,
     );
 
-    if (result == null || result.files.isEmpty) return;
+    if (picked == null) return;
 
-    final filePath = result.files.single.path;
+    final filePath = picked.path;
     if (filePath == null) return;
 
     ref.read(dictionaryImportProvider.notifier).importDictionary(filePath);

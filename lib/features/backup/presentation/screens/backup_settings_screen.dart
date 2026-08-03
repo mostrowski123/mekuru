@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
@@ -366,19 +365,8 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     final l10n = context.l10n;
 
     try {
-      PlatformFile? picked;
-      try {
-        final result = await FilePicker.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['mekuru'],
-        );
-        if (result == null || result.files.isEmpty) return;
-        picked = result.files.single;
-      } catch (_) {
-        final result = await FilePicker.pickFiles(type: FileType.any);
-        if (result == null || result.files.isEmpty) return;
-        picked = result.files.single;
-      }
+      final picked = await BackupFileManager.pickBackupFile();
+      if (picked == null) return;
 
       if (!context.mounted) return;
 

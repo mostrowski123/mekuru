@@ -98,6 +98,23 @@ class BackupFileManager {
 
   /// Exports a backup file by letting the user choose a save location.
   /// Returns `true` if the file was saved, `false` if cancelled.
+  /// Opens the system file picker for selecting a backup file to restore.
+  ///
+  /// Tries [FileType.custom] first — on stock Android this greys out
+  /// non-.mekuru files. If it fails (some OEMs don't support custom
+  /// extension filtering), falls back to [FileType.any]. Returns null when
+  /// the user cancels.
+  static Future<PlatformFile?> pickBackupFile() async {
+    try {
+      return await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['mekuru'],
+      );
+    } catch (_) {
+      return FilePicker.pickFile(type: FileType.any);
+    }
+  }
+
   Future<bool> exportBackupFile(
     String filePath, {
     required String dialogTitle,
