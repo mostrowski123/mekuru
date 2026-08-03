@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:convert/convert.dart' show AccumulatorSink;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
@@ -157,17 +158,20 @@ class EnhancedFuriganaDictDownloadService {
     onProgress?.call(1.0);
   }
 
-  /// Runs on a background isolate via [compute]: reads the archive from
-  /// disk, verifies its SHA-256, and extracts it — keeping the hashing and
-  /// decompression work off the UI isolate.
+  /// Runs on a background isolate via [compute]: verifies the archive's
+  /// SHA-256, decompresses it to a temporary tar file next to the archive,
+  /// and streams the tar entries into `outputDir` — keeping the hashing and
+  /// decompression work off the UI isolate. Every step works in chunks so
+  /// neither the archive, the ~250 MB decompressed tar, nor any single
+  /// dictionary file is ever fully buffered in memory; the trade-off is the
+  /// tar's transient disk usage, which is cleaned up before returning.
   ///
   /// Throws a [FormatException] when the hash doesn't match.
   @visibleForTesting
   static void verifyAndExtractTarGz(
     ({String archivePath, String outputDir, String expectedSha256}) payload,
   ) {
-    final archiveBytes = File(payload.archivePath).readAsBytesSync();
-    final actualHash = sha256.convert(archiveBytes).toString();
+    final actualHash = _sha256OfFile(payload.archivePath);
     if (actualHash != payload.expectedSha256) {
       throw FormatException(
         'Downloaded unidic-lite hash mismatch: expected '
@@ -175,18 +179,96 @@ class EnhancedFuriganaDictDownloadService {
       );
     }
 
-    final decompressed = GZipDecoder().decodeBytes(archiveBytes);
-    final archive = TarDecoder().decodeBytes(decompressed);
-
-    for (final entry in archive) {
-      if (!entry.isFile) continue;
-      final relPath = entry.name;
-      final fileName = p.basename(relPath);
-      if (fileName.isEmpty || fileName.startsWith('.')) continue;
-      final outputPath = p.join(payload.outputDir, fileName);
-      final file = File(outputPath);
-      file.parent.createSync(recursive: true);
-      file.writeAsBytesSync(entry.content as List<int>);
+    final tarFile = File('${payload.archivePath}.tar');
+    try {
+      _gunzipToFile(payload.archivePath, tarFile.path);
+      _extractTarFlattened(tarFile.path, payload.outputDir);
+    } finally {
+      if (tarFile.existsSync()) {
+        tarFile.deleteSync();
+      }
     }
   }
+
+  /// Reads the file at [path] into [sink] in 1 MB chunks and closes the
+  /// sink, keeping memory use independent of the file size.
+  static void _pumpFile(String path, Sink<List<int>> sink) {
+    final file = File(path).openSync();
+    try {
+      while (true) {
+        final chunk = file.readSync(1024 * 1024);
+        if (chunk.isEmpty) break;
+        sink.add(chunk);
+      }
+    } finally {
+      file.closeSync();
+    }
+    sink.close();
+  }
+
+  /// SHA-256 of the file at [path], computed in chunks.
+  static String _sha256OfFile(String path) {
+    final digest = AccumulatorSink<Digest>();
+    _pumpFile(path, sha256.startChunkedConversion(digest));
+    return digest.events.single.toString();
+  }
+
+  /// Decompresses the gzip file at [gzPath] into a plain tar at [tarPath].
+  ///
+  /// Drives dart:io's [gzip] decoder by hand instead of calling archive's
+  /// `GZipDecoder.decodeStream`: that method collects the entire
+  /// decompressed payload (~250 MB here) in a `ChunkedConversionSink
+  /// .withCallback` before writing any of it — the exact memory peak this
+  /// streaming path exists to avoid.
+  static void _gunzipToFile(String gzPath, String tarPath) {
+    final tarFile = File(tarPath).openSync(mode: FileMode.write);
+    try {
+      _pumpFile(
+        gzPath,
+        gzip.decoder.startChunkedConversion(_FileWriteSink(tarFile)),
+      );
+    } finally {
+      tarFile.closeSync();
+    }
+  }
+
+  /// Streams every regular, non-hidden entry of the tar at [tarPath] into
+  /// [outputDir], flattened to its basename.
+  static void _extractTarFlattened(String tarPath, String outputDir) {
+    Directory(outputDir).createSync(recursive: true);
+    final input = InputFileStream(tarPath);
+    try {
+      for (final entry in TarDecoder().decodeStream(input)) {
+        if (!entry.isFile) continue;
+        final fileName = p.basename(entry.name);
+        if (fileName.isEmpty || fileName.startsWith('.')) continue;
+        final output = OutputFileStream(
+          p.join(outputDir, fileName),
+          bufferSize: 64 * 1024,
+        );
+        try {
+          entry.writeContent(output);
+        } finally {
+          output.closeSync();
+        }
+      }
+    } finally {
+      input.closeSync();
+    }
+  }
+}
+
+/// Forwards each decompressed chunk straight to [_file]. Deliberately a
+/// plain [Sink] rather than `ByteConversionSink.withCallback`, which would
+/// buffer every chunk until close.
+class _FileWriteSink implements Sink<List<int>> {
+  _FileWriteSink(this._file);
+
+  final RandomAccessFile _file;
+
+  @override
+  void add(List<int> data) => _file.writeFromSync(data);
+
+  @override
+  void close() {}
 }

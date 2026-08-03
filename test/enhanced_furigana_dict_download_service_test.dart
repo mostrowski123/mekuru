@@ -54,6 +54,25 @@ void main() {
       expect(Directory(tempDir.path).listSync(), isEmpty);
     });
 
+    test('streams entries larger than the extraction buffer intact', () {
+      // 3 MB exceeds the 1 MB chunk size used by the streaming extraction
+      // path, so this exercises multi-chunk writes end to end.
+      final bigContent = Uint8List(3 * 1024 * 1024);
+      for (var i = 0; i < bigContent.length; i++) {
+        bigContent[i] = i & 0xff;
+      }
+      final archive = Archive()
+        ..addFile(_file('unidic-lite-2.1.2/sys.dic', bigContent))
+        ..addFile(_file('unidic-lite-2.1.2/dicrc', 'foo'.codeUnits));
+
+      _extractTarGz(_encodeTarGz(archive), tempDir.path);
+
+      final extracted = File(p.join(tempDir.path, 'sys.dic')).readAsBytesSync();
+      expect(extracted.length, bigContent.length);
+      expect(sha256.convert(extracted), sha256.convert(bigContent));
+      expect(File(p.join(tempDir.path, 'dicrc')).readAsStringSync(), 'foo');
+    });
+
     test('rejects an archive whose hash does not match', () {
       final archive = Archive()
         ..addFile(_file('unidic-lite-2.1.2/dicrc', 'foo'.codeUnits));
@@ -96,15 +115,19 @@ void _verifyAndExtract(
   required String expectedSha256,
 }) {
   final archiveDir = Directory.systemTemp.createTempSync('unidic_archive_');
+  addTearDown(() => archiveDir.deleteSync(recursive: true));
   final archivePath = p.join(archiveDir.path, 'archive.tar.gz');
   File(archivePath).writeAsBytesSync(archiveBytes);
-  try {
-    EnhancedFuriganaDictDownloadService.verifyAndExtractTarGz((
-      archivePath: archivePath,
-      outputDir: outputDir,
-      expectedSha256: expectedSha256,
-    ));
-  } finally {
-    archiveDir.deleteSync(recursive: true);
-  }
+
+  EnhancedFuriganaDictDownloadService.verifyAndExtractTarGz((
+    archivePath: archivePath,
+    outputDir: outputDir,
+    expectedSha256: expectedSha256,
+  ));
+
+  expect(
+    archiveDir.listSync().map((entity) => p.basename(entity.path)).toList(),
+    ['archive.tar.gz'],
+    reason: 'extraction must not leave temp files next to the archive',
+  );
 }
