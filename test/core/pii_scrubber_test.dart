@@ -110,6 +110,45 @@ void main() {
       expect(scrubLog(log).body, 'import failed for <path>');
     });
 
+    test('leaves sentry.-prefixed SDK attributes untouched', () {
+      final log = SentryLog(
+        timestamp: DateTime.utc(2026, 1, 1),
+        level: SentryLogLevel.warn,
+        body: 'download.failed',
+        attributes: {
+          'sentry.release': SentryAttribute.string(
+            'moe.matthew.mekuru@1.28.0+2026030810',
+          ),
+          'sentry.environment': SentryAttribute.string('play-store'),
+          // Not metadata: `sentry.message.*` carries caller-supplied content
+          // (populated by the SDK's templated logger API) and must stay
+          // scrubbed even though it sits in the `sentry.` namespace.
+          'sentry.message.template': SentryAttribute.string(
+            'opened /storage/emulated/0/secret.epub',
+          ),
+          'error_message': SentryAttribute.string(
+            'Cannot open /storage/emulated/0/secret.epub',
+          ),
+        },
+      );
+
+      final scrubbed = scrubLog(log);
+
+      expect(
+        scrubbed.attributes['sentry.release']?.value,
+        'moe.matthew.mekuru@1.28.0+2026030810',
+      );
+      expect(scrubbed.attributes['sentry.environment']?.value, 'play-store');
+      expect(
+        scrubbed.attributes['sentry.message.template']?.value,
+        isNot(contains('secret')),
+      );
+      expect(
+        scrubbed.attributes['error_message']?.value,
+        isNot(contains('secret')),
+      );
+    });
+
     test('scrubs string attributes so no attr can leak a path', () {
       final log = SentryLog(
         timestamp: DateTime.utc(2026, 1, 1),

@@ -236,16 +236,17 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
           logUsage('pro.purchase_completed');
         }
         return snapshot;
-      } on OcrBillingException catch (e) {
-        if (e.code == 'purchase_cancelled') {
-          logUsage('pro.purchase_cancelled');
-        } else if (e.code != 'purchase_pending') {
+      } catch (e) {
+        final cancellationStage = userCancellationStage(e);
+        if (cancellationStage != null) {
+          logUsage(
+            'pro.purchase_cancelled',
+            attrs: {'stage': cancellationStage},
+          );
+        } else if (e is! OcrBillingException || e.code != 'purchase_pending') {
           // Pending purchases resolve later via the late-delivery callback.
           logFailure('pro.purchase_failed', e);
         }
-        rethrow;
-      } catch (e) {
-        logFailure('pro.purchase_failed', e);
         rethrow;
       }
     });
@@ -257,8 +258,13 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         final snapshot = await (widget.restoreUpgrade ?? _restoreDefault)();
         logUsage('pro.restore', attrs: {'result': 'ok'});
         return snapshot;
-      } catch (_) {
-        logUsage('pro.restore', attrs: {'result': 'error'});
+      } catch (e) {
+        logUsage(
+          'pro.restore',
+          attrs: {
+            'result': userCancellationStage(e) == null ? 'error' : 'cancelled',
+          },
+        );
         rethrow;
       }
     });

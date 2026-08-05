@@ -79,6 +79,19 @@ SentryEvent scrubEvent(SentryEvent event, Hint hint) {
   return event;
 }
 
+/// SDK-attached metadata whose values the app did not author. Only these
+/// exact keys are exempt from scrubbing — without the exemption the
+/// bare-filename battery mangles `sentry.release`
+/// (`moe.matthew.mekuru@…` → `<file>@…`). The rest of the `sentry.`
+/// namespace stays covered: `sentry.message.template` and
+/// `sentry.message.parameter.*` carry caller-supplied content.
+const Set<String> _sdkMetadataKeys = {
+  'sentry.release',
+  'sentry.environment',
+  'sentry.sdk.name',
+  'sentry.sdk.version',
+};
+
 /// `beforeSendLog` hook: scrubs paths from the log body and every string
 /// attribute, so no caller can leak a path through an attribute value.
 /// Never throws and never drops the log.
@@ -86,6 +99,7 @@ SentryLog scrubLog(SentryLog log) {
   try {
     log.body = scrubPaths(log.body);
     for (final entry in log.attributes.entries.toList()) {
+      if (_sdkMetadataKeys.contains(entry.key)) continue;
       final value = entry.value.value;
       if (value is String) {
         log.attributes[entry.key] = SentryAttribute.string(scrubPaths(value));

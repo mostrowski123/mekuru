@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../core/services/firebase_runtime.dart';
 import '../../../../firebase_options.dart';
+import 'ocr_account_link_service.dart';
 
 const _androidPackageName = 'moe.matthew.mekuru';
 const _billingFunctionsRegion = 'us-central1';
@@ -167,9 +168,25 @@ class OcrBillingException implements Exception {
   String toString() => 'OcrBillingException($statusCode, $code): $message';
 }
 
+/// Names the surface the user backed out of: `'signin'` for the Google
+/// sign-in sheet, `'billing'` for the Play purchase sheet, or null when
+/// [error] is not a voluntary cancellation. Telemetry must never count a
+/// cancellation as a failure.
+String? userCancellationStage(Object error) {
+  if (error is AccountLinkCancelledException) return 'signin';
+  if (error is OcrBillingException && error.code == 'purchase_cancelled') {
+    return 'billing';
+  }
+  return null;
+}
+
 String describeOcrError(Object error) {
   if (error is OcrBillingException) {
     return error.message;
+  }
+
+  if (error is AccountLinkCancelledException) {
+    return 'Google sign-in was cancelled.';
   }
 
   if (error is FirebaseAuthException) {

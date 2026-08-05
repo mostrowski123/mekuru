@@ -13,6 +13,13 @@ class OcrLinkedAccountResult {
   });
 }
 
+/// Thrown when the user backs out of the Google sign-in sheet. A voluntary
+/// cancellation, not a failure — `userCancellationStage` classifies it for
+/// telemetry and `describeOcrError` owns the user-facing message.
+class AccountLinkCancelledException implements Exception {
+  const AccountLinkCancelledException();
+}
+
 class OcrAccountLinkService {
   static bool _googleSignInInitialized = false;
 
@@ -44,7 +51,7 @@ class OcrAccountLinkService {
       account = await GoogleSignIn.instance.authenticate();
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) {
-        throw StateError('Google sign-in was cancelled.');
+        throw const AccountLinkCancelledException();
       }
       rethrow;
     }
