@@ -1403,6 +1403,26 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryFolderEmpty => '这里还没有图书。长按书库中的图书，然后选择“添加到收藏集”。';
 
   @override
+  String get librarySelectTooltip => 'Select';
+
+  @override
+  String librarySelectedCount({required int count}) {
+    return '$count selected';
+  }
+
+  @override
+  String get librarySelectAllTooltip => 'Select all';
+
+  @override
+  String get libraryDeselectAllTooltip => 'Deselect all';
+
+  @override
+  String get libraryRemoveFromFolderAction => 'Remove from this folder';
+
+  @override
+  String get commonAdd => 'Add';
+
+  @override
   String get libraryAddToCollectionAction => '添加到收藏集';
 
   @override
@@ -3519,6 +3539,26 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryFolderEmpty => '这里还没有图书。长按书库中的图书，然后选择“添加到收藏集”。';
+
+  @override
+  String get librarySelectTooltip => 'Select';
+
+  @override
+  String librarySelectedCount({required int count}) {
+    return '$count selected';
+  }
+
+  @override
+  String get librarySelectAllTooltip => 'Select all';
+
+  @override
+  String get libraryDeselectAllTooltip => 'Deselect all';
+
+  @override
+  String get libraryRemoveFromFolderAction => 'Remove from this folder';
+
+  @override
+  String get commonAdd => 'Add';
 
   @override
   String get libraryAddToCollectionAction => '添加到收藏集';

@@ -2572,6 +2572,42 @@ abstract class AppLocalizations {
   /// **'No books here yet. Long-press a book in your library and choose \"Add to collection\".'**
   String get libraryFolderEmpty;
 
+  /// Tooltip for the app bar action that enters multi-select mode on the library and folder screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get librarySelectTooltip;
+
+  /// App bar title showing how many books are selected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String librarySelectedCount({required int count});
+
+  /// Tooltip for selecting every book in the current grid.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get librarySelectAllTooltip;
+
+  /// Tooltip for clearing the current book selection.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get libraryDeselectAllTooltip;
+
+  /// Action removing the selected books from the open collection; the books stay in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from this folder'**
+  String get libraryRemoveFromFolderAction;
+
+  /// Confirm button that commits an additive choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get commonAdd;
+
   /// Book menu action that opens the collection assignment sheet.
   ///
   /// In en, this message translates to:

@@ -1893,6 +1893,35 @@
   "@libraryFolderEmpty": {
     "description": "Placeholder shown inside an empty collection folder."
   },
+  "librarySelectTooltip": "Select",
+  "@librarySelectTooltip": {
+    "description": "Tooltip for the app bar action that enters multi-select mode on the library and folder screens."
+  },
+  "librarySelectedCount": "{count} selected",
+  "@librarySelectedCount": {
+    "description": "App bar title showing how many books are selected.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "librarySelectAllTooltip": "Select all",
+  "@librarySelectAllTooltip": {
+    "description": "Tooltip for selecting every book in the current grid."
+  },
+  "libraryDeselectAllTooltip": "Deselect all",
+  "@libraryDeselectAllTooltip": {
+    "description": "Tooltip for clearing the current book selection."
+  },
+  "libraryRemoveFromFolderAction": "Remove from this folder",
+  "@libraryRemoveFromFolderAction": {
+    "description": "Action removing the selected books from the open collection; the books stay in the library."
+  },
+  "commonAdd": "Add",
+  "@commonAdd": {
+    "description": "Confirm button that commits an additive choice."
+  },
   "libraryAddToCollectionAction": "Add to collection",
   "@libraryAddToCollectionAction": {
     "description": "Book menu action that opens the collection assignment sheet."

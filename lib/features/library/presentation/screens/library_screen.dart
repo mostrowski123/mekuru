@@ -899,7 +899,14 @@ String mangaOcrPrimaryActionTitle({
 
 /// Individual book tile for the grid.
 class _BookTile extends ConsumerStatefulWidget {
-  const _BookTile({super.key, required this.book, this.coverHeroTag});
+  const _BookTile({
+    super.key,
+    required this.book,
+    this.coverHeroTag,
+    this.isSelectionMode = false,
+    this.isSelected = false,
+    this.onToggleSelection,
+  });
 
   final Book book;
 
@@ -907,6 +914,12 @@ class _BookTile extends ConsumerStatefulWidget {
   /// Only the covers a folder's face shows get one; see
   /// [folderCoverHeroTag].
   final String? coverHeroTag;
+
+  /// While true, tap toggles selection instead of opening the reader and
+  /// the long-press options sheet is suppressed.
+  final bool isSelectionMode;
+  final bool isSelected;
+  final VoidCallback? onToggleSelection;
 
   @override
   ConsumerState<_BookTile> createState() => _BookTileState();
@@ -953,6 +966,9 @@ class _BookTileState extends ConsumerState<_BookTile>
   void _handlePointerDown(PointerDownEvent e) {
     _pointerDownPosition = e.localPosition;
     _longPressFired = false;
+    // Selection mode owns the tile: no press-scale, no options sheet —
+    // long-press belongs to the reorder drag there.
+    if (widget.isSelectionMode) return;
     _onPressDown();
 
     _longPressTimer?.cancel();
@@ -971,9 +987,16 @@ class _BookTileState extends ConsumerState<_BookTile>
     if (_longPressFired) return;
 
     final downPos = _pointerDownPosition;
-    if (downPos != null) {
-      final distance = (e.localPosition - downPos).distance;
-      if (distance < 20) _openBookReader(context, book);
+    if (downPos == null) return;
+    // The Listener is not a gesture-arena participant, so it also sees the
+    // pointer while a reorder drag owns it — the travel threshold is what
+    // keeps a drag from counting as a tap.
+    if ((e.localPosition - downPos).distance >= 20) return;
+    if (widget.isSelectionMode) {
+      AppHaptics.light();
+      widget.onToggleSelection?.call();
+    } else {
+      _openBookReader(context, book);
     }
   }
 
@@ -1073,6 +1096,21 @@ class _BookTileState extends ConsumerState<_BookTile>
                             ),
                           if (book.bookType == 'manga')
                             OcrProgressOverlay(bookId: book.id),
+                          if (widget.isSelectionMode)
+                            Positioned(
+                              // top/right is taken by the manga badge.
+                              top: 4,
+                              left: 4,
+                              child: Icon(
+                                widget.isSelected
+                                    ? Icons.check_circle
+                                    : Icons.circle_outlined,
+                                size: 22,
+                                color: widget.isSelected
+                                    ? theme.colorScheme.primary
+                                    : Colors.white70,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -2087,6 +2125,15 @@ class _CollectionFolderScreenState
   final _scrollController = ScrollController();
   final _gridKey = GlobalKey();
 
+  // Edit mode: tap selects, long-press-drag reorders. Vocabulary-screen
+  // pattern.
+  bool _isSelectionMode = false;
+  final Set<int> _selectedIds = {};
+
+  /// Order shown while a reorder write is in flight, mirroring
+  /// dictionary_manager_screen's optimistic override.
+  List<Book>? _localOrder;
+
   int get collectionId => widget.collectionId;
 
   @override
@@ -2095,23 +2142,104 @@ class _CollectionFolderScreenState
     super.dispose();
   }
 
+  void _enterSelectionMode() {
+    AppHaptics.light();
+    setState(() {
+      _isSelectionMode = true;
+      _selectedIds.clear();
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedIds.clear();
+      _localOrder = null;
+    });
+  }
+
+  void _toggleSelection(int bookId) {
+    setState(() {
+      _selectedIds.contains(bookId)
+          ? _selectedIds.remove(bookId)
+          : _selectedIds.add(bookId);
+    });
+  }
+
+  void _handleReorder(ReorderedListFunction<Book> reorder, List<Book> current) {
+    final next = reorder(current);
+    setState(() => _localOrder = next);
+    ref
+        .read(collectionRepositoryProvider)
+        .reorderCollectionBooks(collectionId, [for (final b in next) b.id])
+        // ponytail: clears on write completion, not on the stream echo — a
+        // one-frame flash is possible if drift re-emits late. Same ceiling
+        // the dictionary manager ships with.
+        .then((_) {
+          if (mounted) setState(() => _localOrder = null);
+        });
+  }
+
+  Future<void> _removeSelectedFromFolder() async {
+    await ref.read(collectionRepositoryProvider).removeBooksFromCollection(
+      collectionId,
+      {..._selectedIds},
+    );
+    if (mounted) _exitSelectionMode();
+  }
+
   Widget _tile(List<Book> members, int index, Animation<double> route) {
     // ReorderableBuilder asserts a ValueKey on every direct child, so the
     // key must sit on the outermost widget returned here.
     final key = ValueKey('book-tile-${members[index].id}');
-    if (index < _FolderPreview.previewCount) {
+    final tile = _BookTile(
+      key: index < _FolderPreview.previewCount ? key : null,
+      book: members[index],
       // Covers the face showed have a hero partner to fly from.
-      return _BookTile(
-        key: key,
-        book: members[index],
-        coverHeroTag: folderCoverHeroTag(collectionId, members[index].id),
-      );
-    }
+      coverHeroTag: index < _FolderPreview.previewCount
+          ? folderCoverHeroTag(collectionId, members[index].id)
+          : null,
+      isSelectionMode: _isSelectionMode,
+      isSelected: _selectedIds.contains(members[index].id),
+      onToggleSelection: () => _toggleSelection(members[index].id),
+    );
+    if (index < _FolderPreview.previewCount) return tile;
     return _StaggeredEntrance(
       key: key,
       animation: route,
       index: index - _FolderPreview.previewCount,
-      child: _BookTile(book: members[index]),
+      child: tile,
+    );
+  }
+
+  AppBar _buildSelectionAppBar(List<Book> members) {
+    final l10n = context.l10n;
+    final allSelected =
+        members.isNotEmpty && members.every((b) => _selectedIds.contains(b.id));
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _exitSelectionMode,
+      ),
+      title: Text(l10n.librarySelectedCount(count: _selectedIds.length)),
+      actions: [
+        IconButton(
+          icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
+          tooltip: allSelected
+              ? l10n.libraryDeselectAllTooltip
+              : l10n.librarySelectAllTooltip,
+          onPressed: () => setState(() {
+            allSelected
+                ? _selectedIds.clear()
+                : _selectedIds.addAll(members.map((b) => b.id));
+          }),
+        ),
+        IconButton(
+          icon: const Icon(Icons.playlist_remove),
+          tooltip: l10n.libraryRemoveFromFolderAction,
+          onPressed: _selectedIds.isEmpty ? null : _removeSelectedFromFolder,
+        ),
+      ],
     );
   }
 
@@ -2138,29 +2266,42 @@ class _CollectionFolderScreenState
     final books = ref.watch(booksProvider).value ?? const <Book>[];
     final memberships =
         ref.watch(bookCollectionsProvider).value ?? const <BookCollection>[];
-    final members = booksInCollectionOrder(
+    final streamMembers = booksInCollectionOrder(
       collectionId: collectionId,
       books: books,
       memberships: memberships,
     );
+    // Optimistic drag order until the write lands; discarded if membership
+    // changed underneath.
+    final local = _localOrder;
+    final members = (local != null && local.length == streamMembers.length)
+        ? local
+        : streamMembers;
 
     final theme = Theme.of(context);
     final routeAnimation =
         ModalRoute.of(context)?.animation ?? kAlwaysCompleteAnimation;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(managed.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              AppHaptics.light();
-              showCollectionManageSheet(context, managed);
-            },
-          ),
-        ],
-      ),
+      appBar: _isSelectionMode
+          ? _buildSelectionAppBar(members)
+          : AppBar(
+              title: Text(managed.name),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.checklist),
+                  tooltip: context.l10n.librarySelectTooltip,
+                  onPressed: _enterSelectionMode,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () {
+                    AppHaptics.light();
+                    showCollectionManageSheet(context, managed);
+                  },
+                ),
+              ],
+            ),
       body: members.isEmpty
           ? Center(
               child: Padding(
@@ -2178,9 +2319,10 @@ class _CollectionFolderScreenState
               key: const Key('folder-reorderable'),
               scrollController: _scrollController,
               itemCount: members.length,
-              // ponytail: drag arrives with edit mode in a later step;
-              // until then this is a plain grid.
-              enableDraggable: false,
+              // One edit mode = select + drag; outside it this is a plain
+              // grid and all existing gestures apply.
+              enableDraggable: _isSelectionMode,
+              onReorder: (reorderFn) => _handleReorder(reorderFn, members),
               childBuilder: (itemBuilder) => GridView.builder(
                 key: _gridKey,
                 controller: _scrollController,
