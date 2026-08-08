@@ -2309,9 +2309,15 @@ class _CollectionFolderScreenState
     final next = reorder(current);
     setState(() => _localOrder = next);
     // _localOrder retires in build once the stream echoes this order.
-    ref.read(collectionRepositoryProvider).reorderCollectionBooks(
-      collectionId,
-      [for (final b in next) b.id],
+    unawaited(
+      ref
+          .read(collectionRepositoryProvider)
+          .reorderCollectionBooks(collectionId, [for (final b in next) b.id])
+          .catchError((Object _) {
+            // Write failed: the stream will never echo this order, so drop the
+            // optimistic one and let the grid fall back to the DB order.
+            if (mounted) setState(() => _localOrder = null);
+          }),
     );
   }
 
