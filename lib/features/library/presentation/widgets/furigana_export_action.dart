@@ -29,6 +29,7 @@ Future<void> runFuriganaExport(
     initialLevel: ref.read(readerSettingsProvider).furiganaJlptLevel,
   );
   if (choice == null || !context.mounted) return;
+  final (exportMode, exportLevel) = choice;
 
   // Non-dismissible spinner while the worker isolate rebuilds the book.
   // Progress is indeterminate: Isolate.run has no channel to stream through.
@@ -55,10 +56,12 @@ Future<void> runFuriganaExport(
     final epubPath = await EpubFileResolver().resolveLocalEpubPath(
       book.filePath,
     );
-    final mode = choice.mode;
-    final level = choice.jlptLevel;
     bytes = await MecabService.instance.runOffIsolate(
-      () => buildFuriganaEpubForMode(epubPath, mode: mode, jlptLevel: level),
+      () => buildFuriganaEpubForMode(
+        epubPath,
+        mode: exportMode,
+        jlptLevel: exportLevel,
+      ),
     );
   } catch (e, st) {
     Sentry.captureException(e, stackTrace: st);
@@ -99,21 +102,14 @@ Future<void> runFuriganaExport(
   }
 }
 
-class _ExportChoice {
-  const _ExportChoice(this.mode, this.jlptLevel);
-
-  final FuriganaMode mode;
-  final int jlptLevel;
-}
-
-Future<_ExportChoice?> _showCoverageDialog(
+Future<(FuriganaMode, int)?> _showCoverageDialog(
   BuildContext context, {
   required int initialLevel,
 }) {
   final l10n = context.l10n;
   var mode = FuriganaMode.all;
   var level = initialLevel;
-  return showDialog<_ExportChoice>(
+  return showDialog<(FuriganaMode, int)>(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) {
@@ -161,8 +157,7 @@ Future<_ExportChoice?> _showCoverageDialog(
               child: Text(l10n.commonCancel),
             ),
             TextButton(
-              onPressed: () =>
-                  Navigator.of(ctx).pop(_ExportChoice(mode, level)),
+              onPressed: () => Navigator.of(ctx).pop((mode, level)),
               child: Text(l10n.libraryExportFuriganaAction),
             ),
           ],

@@ -188,7 +188,7 @@ class EpubParser {
       final containerXml = XmlDocument.parse(
         utf8.decode(containerFile.content as List<int>),
       );
-      final opfPath = _extractOpfPathFromXml(containerXml);
+      final opfPath = extractOpfPathFromXml(containerXml);
       if (opfPath == null) {
         return fallback();
       }
@@ -249,11 +249,11 @@ class EpubParser {
     if (!await containerFile.exists()) return null;
 
     final containerXml = XmlDocument.parse(await containerFile.readAsString());
-    return _extractOpfPathFromXml(containerXml);
+    return extractOpfPathFromXml(containerXml);
   }
 
   /// Extract the OPF path from a parsed container.xml document.
-  static String? _extractOpfPathFromXml(XmlDocument containerXml) {
+  static String? extractOpfPathFromXml(XmlDocument containerXml) {
     // <rootfile full-path="OEBPS/content.opf" .../>
     final rootfiles = containerXml.findAllElements('rootfile');
     if (rootfiles.isEmpty) return null;

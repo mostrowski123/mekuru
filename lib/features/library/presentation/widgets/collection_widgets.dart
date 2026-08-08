@@ -42,11 +42,9 @@ class CollectionFilterRow extends ConsumerWidget {
                 child: ChoiceChip(
                   label: Text(collection.name),
                   selected: selected == collection.id,
-                  onSelected: (_) {
+                  onSelected: (isSelected) {
                     AppHaptics.light();
-                    notifier.select(
-                      selected == collection.id ? null : collection.id,
-                    );
+                    notifier.select(isSelected ? collection.id : null);
                   },
                 ),
               ),
@@ -108,9 +106,11 @@ class CollectionAssignSheet extends ConsumerWidget {
                     onChanged: (checked) {
                       AppHaptics.light();
                       final next = {...memberIds};
-                      checked == true
-                          ? next.add(collection.id)
-                          : next.remove(collection.id);
+                      if (checked ?? false) {
+                        next.add(collection.id);
+                      } else {
+                        next.remove(collection.id);
+                      }
                       ref
                           .read(collectionRepositoryProvider)
                           .setBookCollections(book.id, next);
@@ -119,13 +119,18 @@ class CollectionAssignSheet extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.add),
                   title: Text(context.l10n.libraryNewCollectionAction),
-                  onTap: () {
+                  onTap: () async {
                     AppHaptics.light();
-                    _createCollection(
+                    final name = await _promptName(
                       context,
-                      ref,
-                      assignTo: (book, memberIds),
+                      title: context.l10n.libraryNewCollectionAction,
                     );
+                    if (name == null || name.isEmpty) return;
+                    final repo = ref.read(collectionRepositoryProvider);
+                    final id = await repo.createCollection(name);
+                    // The new collection also gets this book — that is what
+                    // the user came here to do.
+                    await repo.setBookCollections(book.id, {...memberIds, id});
                   },
                 ),
               ],
@@ -137,18 +142,18 @@ class CollectionAssignSheet extends ConsumerWidget {
   }
 }
 
-/// Name dialog → create; when [assignTo] is given, the new collection is
-/// also assigned to that book on top of its current memberships.
-Future<void> _createCollection(
-  BuildContext context,
-  WidgetRef ref, {
-  (Book, Set<int>)? assignTo,
+/// Name-entry dialog shared by create and rename. Pops the trimmed name,
+/// or null when cancelled.
+Future<String?> _promptName(
+  BuildContext context, {
+  required String title,
+  String initial = '',
 }) {
-  final controller = TextEditingController();
-  return showDialog(
+  final controller = TextEditingController(text: initial);
+  return showDialog<String>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(context.l10n.libraryNewCollectionAction),
+      title: Text(title),
       content: TextField(
         controller: controller,
         autofocus: true,
@@ -164,17 +169,7 @@ Future<void> _createCollection(
           child: Text(context.l10n.commonCancel),
         ),
         TextButton(
-          onPressed: () async {
-            final name = controller.text.trim();
-            Navigator.of(ctx).pop();
-            if (name.isEmpty) return;
-            final repo = ref.read(collectionRepositoryProvider);
-            final id = await repo.createCollection(name);
-            if (assignTo != null) {
-              final (book, memberIds) = assignTo;
-              await repo.setBookCollections(book.id, {...memberIds, id});
-            }
-          },
+          onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
           child: Text(context.l10n.commonSave),
         ),
       ],
@@ -215,7 +210,7 @@ class CollectionManageSheet extends ConsumerWidget {
             title: Text(context.l10n.commonRename),
             onTap: () {
               AppHaptics.light();
-              _showRenameDialog(context, ref);
+              _rename(context, ref);
             },
           ),
           ListTile(
@@ -234,42 +229,19 @@ class CollectionManageSheet extends ConsumerWidget {
     );
   }
 
-  void _showRenameDialog(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController(text: collection.name);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.libraryRenameCollectionTitle),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: context.l10n.libraryCollectionNameLabel,
-            border: const OutlineInputBorder(),
-          ),
-          textCapitalization: TextCapitalization.words,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(context.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              final name = controller.text.trim();
-              if (name.isNotEmpty && name != collection.name) {
-                ref
-                    .read(collectionRepositoryProvider)
-                    .renameCollection(collection.id, name);
-              }
-              Navigator.of(ctx).pop();
-              Navigator.of(context).maybePop();
-            },
-            child: Text(context.l10n.commonSave),
-          ),
-        ],
-      ),
+  Future<void> _rename(BuildContext context, WidgetRef ref) async {
+    final name = await _promptName(
+      context,
+      title: context.l10n.libraryRenameCollectionTitle,
+      initial: collection.name,
     );
+    if (name == null) return; // Cancelled: keep the sheet open.
+    if (name.isNotEmpty && name != collection.name) {
+      await ref
+          .read(collectionRepositoryProvider)
+          .renameCollection(collection.id, name);
+    }
+    if (context.mounted) Navigator.of(context).maybePop();
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref) {
@@ -289,9 +261,8 @@ class CollectionManageSheet extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              final notifier = ref.read(selectedCollectionProvider.notifier);
               if (ref.read(selectedCollectionProvider) == collection.id) {
-                notifier.select(null);
+                ref.read(selectedCollectionProvider.notifier).select(null);
               }
               ref
                   .read(collectionRepositoryProvider)

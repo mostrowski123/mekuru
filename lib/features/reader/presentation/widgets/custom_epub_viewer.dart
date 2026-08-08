@@ -7,8 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
-import 'package:mekuru/core/utils/jlpt_kanji_levels.dart';
-
 import '../../data/models/epub_models.dart';
 import '../../data/models/reader_settings.dart';
 import '../../data/services/furigana_generator.dart';
@@ -147,8 +145,6 @@ class CustomEpubViewer extends StatefulWidget {
 class _CustomEpubViewerState extends State<CustomEpubViewer> {
   InAppWebViewController? _webViewController;
   bool _loadBookInvoked = false;
-
-  static const _furiganaGenerator = FuriganaGenerator(MecabFuriganaTokenizer());
 
   final _settings = InAppWebViewSettings(
     isInspectable: kDebugMode,
@@ -470,18 +466,11 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         final inputs = raw.map((e) => e?.toString() ?? '').toList();
         // The webview plugin awaits this future before resolving the JS
         // promise, so the reply blocks until MeCab is ready (or null).
-        // aboveLevel builds a filtered generator per call: the JLPT
-        // threshold can change mid-session and the closure must capture
-        // the current value.
-        if (widget.furiganaMode == FuriganaMode.aboveLevel) {
-          final level = widget.furiganaJlptLevel;
-          return FuriganaGenerator(
-            const MecabFuriganaTokenizer(),
-            skipToken: (token) =>
-                !wordNeedsFuriganaAboveLevel(token.surface, level),
-          ).generate(inputs);
-        }
-        return _furiganaGenerator.generate(inputs);
+        // Built per call: mode and JLPT level can change mid-session.
+        return furiganaGeneratorFor(
+          widget.furiganaMode,
+          widget.furiganaJlptLevel,
+        ).generate(inputs);
       },
     );
 

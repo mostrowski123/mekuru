@@ -47,6 +47,13 @@ class BackupService {
     final allCollections = await _db.select(_db.collections).get();
     final memberships = await _db.select(_db.bookCollections).get();
     final collectionNameById = {for (final c in allCollections) c.id: c.name};
+    final collectionNamesByBook = <int, List<String>>{};
+    for (final m in memberships) {
+      final name = collectionNameById[m.collectionId];
+      if (name != null) {
+        collectionNamesByBook.putIfAbsent(m.bookId, () => []).add(name);
+      }
+    }
 
     final statsRepository = StatsRepository(_db);
     final readingSessions = await statsRepository.getAllSessions();
@@ -81,11 +88,7 @@ class BackupService {
           lastReadAt: book.lastReadAt,
           overrideVerticalText: book.overrideVerticalText,
           overrideReadingDirection: book.overrideReadingDirection,
-          collections: memberships
-              .where((m) => m.bookId == book.id)
-              .map((m) => collectionNameById[m.collectionId])
-              .whereType<String>()
-              .toList(),
+          collections: collectionNamesByBook[book.id] ?? const [],
           bookmarks: bookmarks
               .map(
                 (bm) => BackupBookmarkEntry(

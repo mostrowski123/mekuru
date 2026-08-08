@@ -50,13 +50,12 @@ class CollectionRepository {
       await (_db.delete(
         _db.bookCollections,
       )..where((t) => t.bookId.equals(bookId))).go();
-      for (final id in collectionIds) {
-        await _db
-            .into(_db.bookCollections)
-            .insert(
-              BookCollectionsCompanion.insert(bookId: bookId, collectionId: id),
-            );
-      }
+      await _db.batch(
+        (batch) => batch.insertAll(_db.bookCollections, [
+          for (final id in collectionIds)
+            BookCollectionsCompanion.insert(bookId: bookId, collectionId: id),
+        ]),
+      );
     });
   }
 }

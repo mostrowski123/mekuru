@@ -655,20 +655,19 @@ function applyFuriganaStyleToDoc(doc) {
 }
 
 // Unwraps every generated <ruby class="mekuru-furigana"> back to its base
-// text. normalize() merges the fragments back into whole text nodes so a
-// re-walk sees the original run (and cache keys line up again).
+// text node (generated ruby is always [text, <rt>], built in
+// _applyFuriganaAnnotation). normalize() merges the fragments back into
+// whole text nodes so a re-walk sees the original run and cache keys line
+// up again.
 function _removeGeneratedFurigana(doc) {
   if (!doc || !doc.body) return;
   var rubies = doc.body.querySelectorAll('ruby.mekuru-furigana');
+  if (!rubies.length) return;
   for (var i = 0; i < rubies.length; i++) {
     var ruby = rubies[i];
-    var base = '';
-    for (var c = ruby.firstChild; c; c = c.nextSibling) {
-      if (c.nodeType === 3) base += c.nodeValue;
-    }
-    ruby.parentNode.replaceChild(doc.createTextNode(base), ruby);
+    ruby.parentNode.replaceChild(ruby.firstChild, ruby);
   }
-  if (rubies.length > 0) doc.body.normalize();
+  doc.body.normalize();
 }
 
 function setFuriganaMode(mode) {

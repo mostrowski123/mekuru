@@ -1,6 +1,21 @@
 import 'package:mekuru/core/utils/japanese_text.dart';
+import 'package:mekuru/core/utils/jlpt_kanji_levels.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
+
+/// The real-MeCab generator preconfigured for [mode]:
+/// [FuriganaMode.aboveLevel] skips words with no kanji above the JLPT
+/// threshold, every other generating mode annotates everything. Shared by
+/// the reader's webview handler and the EPUB exporter.
+FuriganaGenerator furiganaGeneratorFor(FuriganaMode mode, int jlptLevel) {
+  return FuriganaGenerator(
+    const MecabFuriganaTokenizer(),
+    skipToken: mode == FuriganaMode.aboveLevel
+        ? (token) => !wordNeedsFuriganaAboveLevel(token.surface, jlptLevel)
+        : null,
+  );
+}
 
 /// Abstraction over MeCab so the generator can be unit-tested with a fake.
 abstract class FuriganaTokenizer {

@@ -168,26 +168,19 @@ class LibraryScreen extends ConsumerWidget {
               data: (books) {
                 if (books.isEmpty) return _buildEmptyState(context, ref);
                 final selected = ref.watch(selectedCollectionProvider);
-                var visible = books;
-                if (selected != null) {
-                  final memberIds =
-                      ref
-                          .watch(bookCollectionsProvider)
-                          .value
-                          ?.where((m) => m.collectionId == selected)
-                          .map((m) => m.bookId)
-                          .toSet() ??
-                      const <int>{};
-                  visible = books
-                      .where((b) => memberIds.contains(b.id))
-                      .toList();
-                }
-                return _buildBookGrid(
-                  context,
-                  ref,
-                  visible,
-                  showContinueCard: selected == null,
-                );
+                final memberIds = selected == null
+                    ? null
+                    : ref
+                              .watch(bookCollectionsProvider)
+                              .value
+                              ?.where((m) => m.collectionId == selected)
+                              .map((m) => m.bookId)
+                              .toSet() ??
+                          const <int>{};
+                final visible = memberIds == null
+                    ? books
+                    : books.where((b) => memberIds.contains(b.id)).toList();
+                return _buildBookGrid(context, ref, visible);
               },
             ),
           ),
@@ -343,13 +336,12 @@ class LibraryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBookGrid(
-    BuildContext context,
-    WidgetRef ref,
-    List<Book> books, {
-    bool showContinueCard = true,
-  }) {
-    final recent = showContinueCard ? mostRecentlyReadBook(books) : null;
+  Widget _buildBookGrid(BuildContext context, WidgetRef ref, List<Book> books) {
+    // The continue-reading hero is hidden while a collection filter is
+    // active — the chips filter the grid, not the hero.
+    final recent = ref.watch(selectedCollectionProvider) == null
+        ? mostRecentlyReadBook(books)
+        : null;
     return CustomScrollView(
       slivers: [
         if (recent != null)

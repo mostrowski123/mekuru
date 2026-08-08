@@ -14,33 +14,35 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:mekuru/core/utils/japanese_text.dart';
-import 'package:mekuru/core/utils/jlpt_kanji_levels.dart';
+import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/furigana_generator.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
 
-/// Thrown internally when the tokenizer cannot come up; surfaces as a null
-/// return from [buildFuriganaEpub] so callers can show "furigana
-/// unavailable" instead of silently exporting an unannotated book.
-class _TokenizerUnavailable implements Exception {
-  const _TokenizerUnavailable();
-}
-
-const _skippedAncestors = {'ruby', 'rt', 'rp', 'script', 'style', 'head'};
+const _skippedSubtrees = {'ruby', 'rt', 'rp', 'script', 'style', 'head'};
 
 /// Text nodes eligible for furigana: outside ruby/script/style/head subtrees
 /// and containing at least one kanji. Mirrors the reader's TreeWalker filter
-/// in reader_bridge.js so export and on-screen furigana agree.
+/// in reader_bridge.js (which prunes the same subtrees) so export and
+/// on-screen furigana agree.
 List<XmlText> furiganaTargets(XmlDocument doc) {
   final targets = <XmlText>[];
-  for (final node in doc.descendants.whereType<XmlText>()) {
-    if (!node.value.runes.any(isKanjiForFurigana)) continue;
-    final blocked = node.ancestorElements.any(
-      (element) => _skippedAncestors.contains(element.name.local.toLowerCase()),
-    );
-    if (!blocked) targets.add(node);
+  void visit(XmlNode node) {
+    for (final child in node.children) {
+      if (child is XmlElement) {
+        if (_skippedSubtrees.contains(child.name.local.toLowerCase())) {
+          continue;
+        }
+        visit(child);
+      } else if (child is XmlText &&
+          child.value.runes.any(isKanjiForFurigana)) {
+        targets.add(child);
+      }
+    }
   }
+
+  visit(doc);
   return targets;
 }
 
@@ -49,13 +51,11 @@ List<XmlText> furiganaTargets(XmlDocument doc) {
 /// `<ruby>t<rt>f</rt></ruby>` for annotated ones. The ruby element gets no
 /// xmlns attribute — an unprefixed name inherits the XHTML default
 /// namespace declared on `<html>`.
-void spliceRuby(XmlText node, List<dynamic> segments) {
-  final parent = node.parent;
-  if (parent == null) return;
+void spliceRuby(XmlText node, List<Map<String, Object?>> segments) {
+  final parent = node.parent!;
 
   final replacements = <XmlNode>[];
   for (final segment in segments) {
-    if (segment is! Map) continue;
     final text = segment['t'];
     if (text is! String) continue;
     final furigana = segment['f'];
@@ -123,8 +123,9 @@ String? stripRubyXhtml(String xhtml) {
 }
 
 /// [xhtml] with generated ruby spliced in. Null when the document does not
-/// parse or nothing was annotated (caller keeps the original entry). Throws
-/// [_TokenizerUnavailable] when the generator reports MeCab down.
+/// parse, nothing was annotated, or the tokenizer went away (the caller
+/// keeps the original entry — [buildFuriganaEpub] probes tokenizer
+/// availability up front so that last case cannot silently skip a book).
 Future<String?> annotateXhtml(String xhtml, FuriganaGenerator generator) async {
   final doc = _parseXhtml(xhtml);
   if (doc == null) return null;
@@ -137,14 +138,13 @@ Future<String?> annotateXhtml(String xhtml, FuriganaGenerator generator) async {
   final annotations = await generator.generate([
     for (final target in targets) target.value,
   ]);
-  if (annotations == null) throw const _TokenizerUnavailable();
+  if (annotations == null) return null;
 
   var changed = false;
   for (var i = 0; i < targets.length && i < annotations.length; i++) {
-    final segments = annotations[i]['segments'];
-    if (segments is! List) continue;
-    final hasRuby = segments.any((s) => s is Map && s['f'] != null);
-    if (!hasRuby) continue;
+    final segments = (annotations[i]['segments']! as List)
+        .cast<Map<String, Object?>>();
+    if (!segments.any((s) => s['f'] != null)) continue;
     spliceRuby(targets[i], segments);
     changed = true;
   }
@@ -159,25 +159,15 @@ Future<String?> annotateXhtml(String xhtml, FuriganaGenerator generator) async {
 Set<String> _contentDocumentNames(Archive archive) {
   final container = archive.findFile('META-INF/container.xml');
   if (container == null) return const {};
-  final XmlDocument containerXml;
-  try {
-    containerXml = XmlDocument.parse(utf8.decode(container.readBytes()!));
-  } on XmlException {
-    return const {};
-  }
-  final rootfiles = containerXml.findAllElements('rootfile');
-  if (rootfiles.isEmpty) return const {};
-  final opfPath = rootfiles.first.getAttribute('full-path');
+  final containerXml = _parseXhtml(utf8.decode(container.readBytes()!));
+  if (containerXml == null) return const {};
+  final opfPath = EpubParser.extractOpfPathFromXml(containerXml);
   if (opfPath == null) return const {};
 
   final opfEntry = archive.findFile(opfPath);
   if (opfEntry == null) return const {};
-  final XmlDocument opfXml;
-  try {
-    opfXml = XmlDocument.parse(utf8.decode(opfEntry.readBytes()!));
-  } on XmlException {
-    return const {};
-  }
+  final opfXml = _parseXhtml(utf8.decode(opfEntry.readBytes()!));
+  if (opfXml == null) return const {};
 
   final opfDir = p.posix.dirname(opfPath);
   final names = <String>{};
@@ -185,12 +175,7 @@ Set<String> _contentDocumentNames(Archive archive) {
     if (item.getAttribute('media-type') != 'application/xhtml+xml') continue;
     final href = item.getAttribute('href');
     if (href == null) continue;
-    final decoded = Uri.decodeFull(href);
-    names.add(
-      p.posix.normalize(
-        opfDir == '.' ? decoded : p.posix.join(opfDir, decoded),
-      ),
-    );
+    names.add(p.posix.normalize(p.posix.join(opfDir, Uri.decodeFull(href))));
   }
   return names;
 }
@@ -207,48 +192,45 @@ Future<Uint8List?> buildFuriganaEpub(
   if (mode == FuriganaMode.book) return original;
 
   final archive = ZipDecoder().decodeBytes(original);
-  final contentDocs = _contentDocumentNames(archive);
 
-  final out = Archive();
-  try {
-    for (final entry in archive.files) {
-      if (!entry.isFile || !contentDocs.contains(entry.name)) {
-        // Untouched entries are re-added as decoded objects, which the zip
-        // encoder passes through without re-compressing — images keep their
-        // bytes and `mimetype` stays STORED.
-        out.addFile(entry);
-        continue;
-      }
-      // Once readBytes() has consumed a decoder entry it must not be
-      // re-added for pass-through — re-encoding it corrupts the data. Keep
-      // the bytes we already read instead.
-      final originalBytes = entry.readBytes()!;
-      final xhtml = utf8.decode(originalBytes, allowMalformed: true);
-      final rewritten = mode == FuriganaMode.hide
-          ? stripRubyXhtml(xhtml)
-          : await annotateXhtml(xhtml, generator!);
-      out.addFile(
-        ArchiveFile.bytes(
-          entry.name,
-          rewritten == null ? originalBytes : utf8.encode(rewritten),
-        ),
-      );
-    }
-  } on _TokenizerUnavailable {
+  // One upfront availability probe; after it succeeds the per-chapter code
+  // can treat the generator as infallible. Null is the load-bearing "MeCab
+  // could not come up" signal — never silently export unannotated.
+  if (mode != FuriganaMode.hide &&
+      await generator!.generate(const []) == null) {
     return null;
   }
 
-  // A valid EPUB has `mimetype` first and uncompressed; repair if the
-  // source was sloppy.
-  if (out.files.isEmpty || out.files.first.name != 'mimetype') {
-    out.files.removeWhere((f) => f.name == 'mimetype');
-    const mimetype = 'application/epub+zip';
-    out.files.insert(
-      0,
-      ArchiveFile.noCompress(
-        'mimetype',
-        mimetype.length,
-        utf8.encode(mimetype),
+  final contentDocs = _contentDocumentNames(archive);
+  final out = Archive();
+  // A valid EPUB has `mimetype` first and uncompressed. Always rebuild it:
+  // one code path, and no reliance on the encoder's pass-through keeping
+  // the source entry's STORED flag.
+  const mimetype = 'application/epub+zip';
+  out.addFile(
+    ArchiveFile.noCompress('mimetype', mimetype.length, utf8.encode(mimetype)),
+  );
+  for (final entry in archive.files) {
+    if (entry.name == 'mimetype') continue;
+    if (!entry.isFile || !contentDocs.contains(entry.name)) {
+      // Untouched entries are re-added as decoded objects, which the zip
+      // encoder passes through without re-compressing — images keep their
+      // bytes.
+      out.addFile(entry);
+      continue;
+    }
+    // Once readBytes() has consumed a decoder entry it must not be
+    // re-added for pass-through — re-encoding it corrupts the data. Keep
+    // the bytes we already read instead.
+    final originalBytes = entry.readBytes()!;
+    final xhtml = utf8.decode(originalBytes, allowMalformed: true);
+    final rewritten = mode == FuriganaMode.hide
+        ? stripRubyXhtml(xhtml)
+        : await annotateXhtml(xhtml, generator!);
+    out.addFile(
+      ArchiveFile.bytes(
+        entry.name,
+        rewritten == null ? originalBytes : utf8.encode(rewritten),
       ),
     );
   }
@@ -264,14 +246,10 @@ Future<Uint8List?> buildFuriganaEpubForMode(
   required FuriganaMode mode,
   required int jlptLevel,
 }) {
-  final generator = switch (mode) {
-    FuriganaMode.all => const FuriganaGenerator(MecabFuriganaTokenizer()),
-    FuriganaMode.aboveLevel => FuriganaGenerator(
-      const MecabFuriganaTokenizer(),
-      skipToken: (token) =>
-          !wordNeedsFuriganaAboveLevel(token.surface, jlptLevel),
-    ),
-    _ => null,
-  };
-  return buildFuriganaEpub(epubPath, mode: mode, generator: generator);
+  final generates = mode == FuriganaMode.all || mode == FuriganaMode.aboveLevel;
+  return buildFuriganaEpub(
+    epubPath,
+    mode: mode,
+    generator: generates ? furiganaGeneratorFor(mode, jlptLevel) : null,
+  );
 }
