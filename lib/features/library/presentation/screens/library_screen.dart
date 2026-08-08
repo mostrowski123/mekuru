@@ -2086,9 +2086,27 @@ List<Book> booksInCollectionOrder({
 String folderCoverHeroTag(int collectionId, int bookId) =>
     'folder-$collectionId-cover-$bookId';
 
+/// Flies the SOURCE hero's child instead of the default (the destination's
+/// child). The destination side of a cover flight is an Image whose
+/// decode starts only when its screen is first built — on push the
+/// default shuttle therefore renders blank for most of the flight,
+/// blanking all four covers at once and reading as a full-screen flash.
+/// The source side is by definition already decoded and on screen
+/// (verified frame-by-frame from a screen recording).
+Widget _coverFlightShuttle(
+  BuildContext flightContext,
+  Animation<double> animation,
+  HeroFlightDirection flightDirection,
+  BuildContext fromHeroContext,
+  BuildContext toHeroContext,
+) {
+  return (fromHeroContext.widget as Hero).child;
+}
+
 /// Wraps [child] in a Hero when [tag] is set.
-Widget _maybeHero(String? tag, Widget child) =>
-    tag == null ? child : Hero(tag: tag, child: child);
+Widget _maybeHero(String? tag, Widget child) => tag == null
+    ? child
+    : Hero(tag: tag, flightShuttleBuilder: _coverFlightShuttle, child: child);
 
 /// Fades the folder screen in while the covers fly to their places. The
 /// default route slides the page, which fights the flights.
@@ -2151,6 +2169,7 @@ class _FolderPreview extends StatelessWidget {
                 for (final book in books.take(previewCount))
                   Hero(
                     tag: folderCoverHeroTag(collectionId, book.id),
+                    flightShuttleBuilder: _coverFlightShuttle,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: BookCoverImage(book: book),
