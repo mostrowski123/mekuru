@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
+import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 
 AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
 
@@ -149,6 +150,45 @@ void main() {
 
     expect((await positionsIn(shelf)).keys.toSet(), {b});
     expect((await positionsIn(other)).keys.toSet(), {a});
+  });
+
+  group('booksInCollectionOrder', () {
+    Book makeBook(int id) => Book(
+      id: id,
+      title: 'Book $id',
+      filePath: '/books/$id',
+      bookType: 'epub',
+      totalPages: 0,
+      readProgress: 0.0,
+      dateAdded: DateTime(2026, 1, 1),
+    );
+
+    BookCollection member(int bookId, int collectionId, int position) =>
+        BookCollection(
+          bookId: bookId,
+          collectionId: collectionId,
+          position: position,
+        );
+
+    test('orders members by position and excludes non-members', () {
+      final books = [makeBook(1), makeBook(2), makeBook(3)];
+      final result = booksInCollectionOrder(
+        collectionId: 7,
+        books: books,
+        memberships: [member(1, 7, 2), member(3, 7, 0), member(2, 99, 0)],
+      );
+      expect(result.map((b) => b.id), [3, 1]);
+    });
+
+    test('all-zero positions fall back to the incoming (library) order', () {
+      final books = [makeBook(5), makeBook(2), makeBook(9)];
+      final result = booksInCollectionOrder(
+        collectionId: 7,
+        books: books,
+        memberships: [member(9, 7, 0), member(5, 7, 0), member(2, 7, 0)],
+      );
+      expect(result.map((b) => b.id), [5, 2, 9]);
+    });
   });
 
   test('deleteBook removes its memberships', () async {

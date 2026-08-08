@@ -176,26 +176,20 @@ class LibraryScreen extends ConsumerWidget {
                 final memberships =
                     ref.watch(bookCollectionsProvider).value ??
                     const <BookCollection>[];
-                final memberIdsByCollection = <int, Set<int>>{};
-                for (final m in memberships) {
-                  memberIdsByCollection
-                      .putIfAbsent(m.collectionId, () => {})
-                      .add(m.bookId);
-                }
                 final inAnyFolder = {for (final m in memberships) m.bookId};
                 return _buildBookGrid(
                   context,
                   ref,
                   collections: collections,
+                  // Membership order, so the face shows the user's first
+                  // four — dragging inside the folder curates the face.
                   folderBooks: {
                     for (final c in collections)
-                      c.id: books
-                          .where(
-                            (b) =>
-                                memberIdsByCollection[c.id]?.contains(b.id) ??
-                                false,
-                          )
-                          .toList(),
+                      c.id: booksInCollectionOrder(
+                        collectionId: c.id,
+                        books: books,
+                        memberships: memberships,
+                      ),
                   },
                   looseBooks: books
                       .where((b) => !inAnyFolder.contains(b.id))
@@ -1927,6 +1921,31 @@ class _CollectionFolderTile extends StatelessWidget {
 /// Corner radius of a folder's face.
 const double _folderCornerRadius = 12;
 
+/// [books] filtered to [collectionId]'s members, in membership order.
+/// Position first; ties (every row predating v22 sits at 0) fall back to
+/// the order [books] already has, i.e. the library sort. The rank map is
+/// the tie-break carrier because Dart's sort is not stable.
+List<Book> booksInCollectionOrder({
+  required int collectionId,
+  required List<Book> books,
+  required List<BookCollection> memberships,
+}) {
+  final position = {
+    for (final m in memberships)
+      if (m.collectionId == collectionId) m.bookId: m.position,
+  };
+  final members = [
+    for (final b in books)
+      if (position.containsKey(b.id)) b,
+  ];
+  final rank = {for (var i = 0; i < members.length; i++) members[i].id: i};
+  members.sort((a, b) {
+    final byPosition = position[a.id]!.compareTo(position[b.id]!);
+    return byPosition != 0 ? byPosition : rank[a.id]!.compareTo(rank[b.id]!);
+  });
+  return members;
+}
+
 /// Hero tag for one cover shown on a folder's face. Scoped to the
 /// collection so a book filed in two folders gets a distinct tag per
 /// folder — two heroes sharing a tag on one screen is a crash.
@@ -2029,15 +2048,13 @@ class CollectionFolderScreen extends ConsumerWidget {
     final managed = collection;
 
     final books = ref.watch(booksProvider).value ?? const <Book>[];
-    final memberIds =
-        ref
-            .watch(bookCollectionsProvider)
-            .value
-            ?.where((m) => m.collectionId == collectionId)
-            .map((m) => m.bookId)
-            .toSet() ??
-        const <int>{};
-    final members = books.where((b) => memberIds.contains(b.id)).toList();
+    final memberships =
+        ref.watch(bookCollectionsProvider).value ?? const <BookCollection>[];
+    final members = booksInCollectionOrder(
+      collectionId: collectionId,
+      books: books,
+      memberships: memberships,
+    );
 
     final theme = Theme.of(context);
 
