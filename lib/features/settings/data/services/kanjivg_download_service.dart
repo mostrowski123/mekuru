@@ -161,7 +161,11 @@ class KanjiVgDownloadService {
 
       return count;
     } finally {
-      input.close();
+      // closeSync, not close(): close() returns a Future this sync isolate
+      // entry point can't await, so the OS handle would be released at GC
+      // timing — on Windows that races any deleteSync of the zip's parent
+      // directory into a sharing violation.
+      input.closeSync();
     }
   }
 }
