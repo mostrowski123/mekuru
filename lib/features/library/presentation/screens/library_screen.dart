@@ -1096,7 +1096,14 @@ class _BookTileState extends ConsumerState<_BookTile>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final enableSensorTilt = Platform.isAndroid || Platform.isIOS;
+    // Only the top route's tiles listen to the tilt sensors. The folder
+    // route is non-opaque, so covered library tiles would otherwise keep
+    // their gyroscope subscriptions (and per-event rebuilds) running for
+    // as long as a folder — or a reader — is open. ModalRoute.of registers
+    // a dependency, so tiles rebuild and re-enable when uncovered.
+    final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+    final enableSensorTilt =
+        (Platform.isAndroid || Platform.isIOS) && routeIsCurrent;
     return Listener(
       onPointerDown: _handlePointerDown,
       onPointerUp: _handlePointerUp,
