@@ -161,6 +161,50 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('non-hero folder tiles stagger in instead of popping', (
+    tester,
+  ) async {
+    final ids = <int>[];
+    for (var i = 0; i < 6; i++) {
+      ids.add(await insertBook(tester, 'Book $i'));
+    }
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.addBooksToCollection(shelf, ids.toSet());
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+    await tester.tap(find.text('Shelf'));
+
+    // Mid-flight (route is 320ms). The page-level route fade dims every
+    // tile equally, so the discriminating fact is that two non-hero tiles
+    // have DIFFERENT nearest-fade opacities — only a per-tile stagger
+    // produces that.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 160));
+    // The stagger wrapper carries the tile key, so its own fade is the
+    // first FadeTransition among the key's descendants.
+    double nearestFadeOpacity(int bookId) {
+      final fades = find.descendant(
+        of: find.byKey(ValueKey('book-tile-$bookId')),
+        matching: find.byType(FadeTransition),
+      );
+      expect(fades, findsWidgets);
+      return tester.widget<FadeTransition>(fades.first).opacity.value;
+    }
+
+    final fifth = nearestFadeOpacity(ids[4]);
+    final sixth = nearestFadeOpacity(ids[5]);
+    expect(sixth, lessThan(1.0));
+    expect(fifth, isNot(equals(sixth)));
+
+    // Settled: fully visible.
+    await tester.pumpAndSettle();
+    expect(nearestFadeOpacity(ids[5]), 1.0);
+
+    await unmount(tester);
+  });
+
   testWidgets('continue reading surfaces a book inside a folder', (
     tester,
   ) async {

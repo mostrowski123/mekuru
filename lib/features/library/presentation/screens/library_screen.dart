@@ -2021,6 +2021,53 @@ class _FolderPreview extends StatelessWidget {
   }
 }
 
+/// Fades, lifts and grows a folder tile in on a slice of the route's own
+/// animation, so books without a hero partner enter deliberately instead
+/// of popping in with the page.
+///
+/// Driven by the route rather than a per-tile AnimationController on
+/// purpose: the grid's builder delegate disposes children scrolled past
+/// the cache extent, so a controller would replay the entrance on
+/// scroll-back (the trap stats_screen.dart documents). The route animation
+/// sits at 1.0 forever once the push settles, so a remounted tile builds
+/// static; on pop it runs 1→0 and the tiles stagger back out.
+class _StaggeredEntrance extends StatelessWidget {
+  const _StaggeredEntrance({
+    super.key,
+    required this.animation,
+    required this.index,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+
+  /// 0 for the first tile that has no hero to fly in on.
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = (0.25 + 0.06 * index).clamp(0.0, 0.7);
+    // .drive rather than CurvedAnimation: a CurvedAnimation built in
+    // build() is never disposed.
+    final t = animation.drive(
+      CurveTween(curve: Interval(start, 1, curve: Curves.easeOutCubic)),
+    );
+    return FadeTransition(
+      opacity: t,
+      child: SlideTransition(
+        position: t.drive(
+          Tween(begin: const Offset(0, 0.06), end: Offset.zero),
+        ),
+        child: ScaleTransition(
+          scale: t.drive(Tween(begin: 0.94, end: 1.0)),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 /// One collection's books in the same grid the library uses. Rename/delete
 /// live behind the app-bar action; deleting pops back to the library.
 class CollectionFolderScreen extends ConsumerStatefulWidget {
@@ -2048,15 +2095,23 @@ class _CollectionFolderScreenState
     super.dispose();
   }
 
-  Widget _tile(List<Book> members, int index) {
-    return _BookTile(
-      key: ValueKey('book-tile-${members[index].id}'),
-      book: members[index],
-      // Only the covers the face showed have a partner to fly from; the
-      // rest just fade in with the page.
-      coverHeroTag: index < _FolderPreview.previewCount
-          ? folderCoverHeroTag(collectionId, members[index].id)
-          : null,
+  Widget _tile(List<Book> members, int index, Animation<double> route) {
+    // ReorderableBuilder asserts a ValueKey on every direct child, so the
+    // key must sit on the outermost widget returned here.
+    final key = ValueKey('book-tile-${members[index].id}');
+    if (index < _FolderPreview.previewCount) {
+      // Covers the face showed have a hero partner to fly from.
+      return _BookTile(
+        key: key,
+        book: members[index],
+        coverHeroTag: folderCoverHeroTag(collectionId, members[index].id),
+      );
+    }
+    return _StaggeredEntrance(
+      key: key,
+      animation: route,
+      index: index - _FolderPreview.previewCount,
+      child: _BookTile(book: members[index]),
     );
   }
 
@@ -2090,6 +2145,8 @@ class _CollectionFolderScreenState
     );
 
     final theme = Theme.of(context);
+    final routeAnimation =
+        ModalRoute.of(context)?.animation ?? kAlwaysCompleteAnimation;
 
     return Scaffold(
       appBar: AppBar(
@@ -2136,7 +2193,7 @@ class _CollectionFolderScreenState
                 ),
                 itemCount: members.length,
                 itemBuilder: (context, index) =>
-                    itemBuilder(_tile(members, index), index),
+                    itemBuilder(_tile(members, index, routeAnimation), index),
               ),
             ),
     );
