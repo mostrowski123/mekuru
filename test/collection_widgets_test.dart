@@ -75,8 +75,7 @@ void main() {
 
     await pumpWithDb(tester, const LibraryScreen());
 
-    // The folder tile is present; the member book has no full-size tile of
-    // its own (its title may still show inside the folder's mini covers).
+    // The folder tile is present; the member book has no tile of its own.
     expect(find.text('Shelf'), findsOneWidget);
     expect(find.byKey(ValueKey('book-tile-$inShelf')), findsNothing);
     expect(find.text('吾輩は猫である'), findsWidgets);
@@ -84,22 +83,32 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('tapping a folder opens its book grid', (tester) async {
+  testWidgets('tapping a folder opens its book grid and flies the hero', (
+    tester,
+  ) async {
     final inShelf = await insertBook(tester, '坊っちゃん');
     await insertBook(tester, '吾輩は猫である');
-    await tester.runAsync(() async {
+    final shelfId = await tester.runAsync(() async {
       final shelf = await repo.createCollection('Shelf');
       await repo.setBookCollections(inShelf, {shelf});
+      return shelf;
     });
 
     await pumpWithDb(tester, const LibraryScreen());
 
+    // Both routes must carry the same tag or the flight silently no-ops.
+    final heroFinder = find.byWidgetPredicate(
+      (w) => w is Hero && w.tag == collectionHeroTag(shelfId!),
+    );
+    expect(heroFinder, findsOneWidget);
+
     await tester.tap(find.text('Shelf'));
     await tester.pumpAndSettle();
 
-    // Folder screen: app bar title + only the member book.
+    // Folder screen: app bar title + thumbnail hero + only the member book.
     expect(find.text('Shelf'), findsOneWidget);
-    expect(find.text('坊っちゃん'), findsWidgets);
+    expect(heroFinder, findsOneWidget);
+    expect(find.byKey(ValueKey('book-tile-$inShelf')), findsOneWidget);
     expect(find.text('吾輩は猫である'), findsNothing);
 
     await unmount(tester);

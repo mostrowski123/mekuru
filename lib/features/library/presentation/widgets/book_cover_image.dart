@@ -86,32 +86,48 @@ class BookCoverImage extends StatelessWidget {
   Widget _buildPlaceholder(ThemeData theme) {
     return Container(
       color: theme.colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.menu_book,
-              size: 32,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                book.title,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelSmall?.copyWith(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Icon + title need a grid tile's worth of height. Folder
+          // previews and the folder app-bar thumbnail render covers far
+          // smaller, where the title would overflow — drop it and scale
+          // the icon there. Full-size tiles are unaffected.
+          final showTitle = constraints.maxHeight >= 96;
+          final iconSize = showTitle
+              ? 32.0
+              : (constraints.maxHeight * 0.4).clamp(10.0, 32.0);
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.menu_book,
+                  size: iconSize,
                   color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.7,
+                    alpha: 0.5,
                   ),
                 ),
-              ),
+                if (showTitle) ...[
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      book.title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

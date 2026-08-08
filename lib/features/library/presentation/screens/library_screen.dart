@@ -1895,35 +1895,9 @@ class _CollectionFolderTile extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: books.isEmpty
-                  ? Center(
-                      child: Icon(
-                        Icons.collections_bookmark_outlined,
-                        size: 32,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    )
-                  : GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
-                      childAspectRatio: 0.65,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        for (final book in books.take(4))
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: BookCoverImage(book: book),
-                          ),
-                      ],
-                    ),
+            child: Hero(
+              tag: collectionHeroTag(collection.id),
+              child: _FolderPreview(books: books),
             ),
           ),
           const SizedBox(height: 8),
@@ -1938,6 +1912,55 @@ class _CollectionFolderTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Hero tag shared by a folder's grid tile and the thumbnail in its
+/// folder screen, so the tile flies into the app bar when opened.
+String collectionHeroTag(int collectionId) => 'collection-$collectionId';
+
+/// The rounded folder face: up to four member covers in a 2x2, or a
+/// placeholder icon while empty. Shared by the grid tile and the folder
+/// screen's app bar so the hero flight morphs one into the other.
+class _FolderPreview extends StatelessWidget {
+  const _FolderPreview({required this.books, this.padding = 8});
+
+  final List<Book> books;
+  final double padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(padding),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: books.isEmpty
+          ? Center(
+              child: Icon(
+                Icons.collections_bookmark_outlined,
+                size: 32,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            )
+          : GridView.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: padding * 0.75,
+              crossAxisSpacing: padding * 0.75,
+              childAspectRatio: 0.65,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                for (final book in books.take(4))
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: BookCoverImage(book: book),
+                  ),
+              ],
+            ),
     );
   }
 }
@@ -1982,7 +2005,23 @@ class CollectionFolderScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(managed.name),
+        title: Row(
+          children: [
+            // Hero destination: the grid tile's folder face shrinks into
+            // this thumbnail as the screen opens.
+            SizedBox.square(
+              dimension: 36,
+              child: Hero(
+                tag: collectionHeroTag(collectionId),
+                child: _FolderPreview(books: members, padding: 3),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(managed.name, overflow: TextOverflow.ellipsis),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),
