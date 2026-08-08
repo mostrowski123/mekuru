@@ -14,6 +14,7 @@ import 'package:mekuru/features/settings/presentation/providers/kanjidic_provide
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/utils/pending_drag_order.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen for managing imported Yomitan dictionaries.
@@ -27,8 +28,8 @@ class DictionaryManagerScreen extends ConsumerStatefulWidget {
 
 class _DictionaryManagerScreenState
     extends ConsumerState<DictionaryManagerScreen> {
-  /// Holds the reordered list while the async DB write is in flight.
-  /// When null, the reactive stream data is used directly.
+  /// Optimistic order while a reorder's stream echo is in flight.
+  /// See [pendingDragOrder].
   List<dynamic>? _localOrder;
   bool _isApplyingPendingRestore = false;
 
@@ -93,6 +94,12 @@ class _DictionaryManagerScreenState
                   _localOrder = null;
                   return _buildEmptyState();
                 }
+                // Same content once retired, so no setState needed here.
+                _localOrder = pendingDragOrder(
+                  _localOrder,
+                  dictionaries,
+                  (d) => d.id as int,
+                );
                 final displayList = _localOrder ?? dictionaries;
                 return ReorderableListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -102,16 +109,13 @@ class _DictionaryManagerScreenState
                     final item = reordered.removeAt(oldIndex);
                     reordered.insert(newIndex, item);
                     setState(() => _localOrder = reordered);
+                    // _localOrder retires in build once the stream echoes
+                    // this order.
                     ref
                         .read(dictionaryRepositoryProvider)
                         .reorderDictionaries(
                           reordered.map((d) => d.id as int).toList(),
-                        )
-                        .then((_) {
-                          if (mounted) {
-                            setState(() => _localOrder = null);
-                          }
-                        });
+                        );
                   },
                   itemBuilder: (context, index) => _buildDictionaryTile(
                     context,

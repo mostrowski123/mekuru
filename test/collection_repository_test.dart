@@ -4,6 +4,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
+import 'package:mekuru/shared/utils/pending_drag_order.dart';
 
 AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
 
@@ -152,17 +153,17 @@ void main() {
     expect((await positionsIn(other)).keys.toSet(), {a});
   });
 
-  group('booksInCollectionOrder', () {
-    Book makeBook(int id) => Book(
-      id: id,
-      title: 'Book $id',
-      filePath: '/books/$id',
-      bookType: 'epub',
-      totalPages: 0,
-      readProgress: 0.0,
-      dateAdded: DateTime(2026, 1, 1),
-    );
+  Book makeBook(int id) => Book(
+    id: id,
+    title: 'Book $id',
+    filePath: '/books/$id',
+    bookType: 'epub',
+    totalPages: 0,
+    readProgress: 0.0,
+    dateAdded: DateTime(2026, 1, 1),
+  );
 
+  group('booksInCollectionOrder', () {
     BookCollection member(int bookId, int collectionId, int position) =>
         BookCollection(
           bookId: bookId,
@@ -188,6 +189,30 @@ void main() {
         memberships: [member(9, 7, 0), member(5, 7, 0), member(2, 7, 0)],
       );
       expect(result.map((b) => b.id), [5, 2, 9]);
+    });
+  });
+
+  group('pendingDragOrder', () {
+    List<Book> books(List<int> ids) => [for (final id in ids) makeBook(id)];
+    List<Book>? pending(List<Book>? local, List<Book> stream) =>
+        pendingDragOrder(local, stream, (b) => b.id);
+
+    test('holds while the stream still shows the pre-drag order', () {
+      final local = books([2, 1, 3]);
+      expect(pending(local, books([1, 2, 3])), same(local));
+    });
+
+    test('retires once the stream echoes the dragged order', () {
+      expect(pending(books([2, 1, 3]), books([2, 1, 3])), isNull);
+    });
+
+    test('retires when membership changed underneath', () {
+      expect(pending(books([2, 1, 3]), books([1, 2])), isNull);
+      expect(pending(books([2, 1, 3]), books([1, 2, 4])), isNull);
+    });
+
+    test('no drag in flight stays null', () {
+      expect(pending(null, books([1, 2])), isNull);
     });
   });
 

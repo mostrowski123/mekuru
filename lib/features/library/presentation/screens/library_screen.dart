@@ -35,6 +35,7 @@ import 'package:mekuru/features/settings/presentation/screens/downloads_screen.d
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/utils/pending_drag_order.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
@@ -2252,8 +2253,8 @@ class _CollectionFolderScreenState
   bool _isSelectionMode = false;
   final Set<int> _selectedIds = {};
 
-  /// Order shown while a reorder write is in flight, mirroring
-  /// dictionary_manager_screen's optimistic override.
+  /// Optimistic order while a reorder's stream echo is in flight.
+  /// See [pendingDragOrder].
   List<Book>? _localOrder;
 
   int get collectionId => widget.collectionId;
@@ -2276,7 +2277,6 @@ class _CollectionFolderScreenState
     setState(() {
       _isSelectionMode = false;
       _selectedIds.clear();
-      _localOrder = null;
     });
   }
 
@@ -2291,15 +2291,11 @@ class _CollectionFolderScreenState
   void _handleReorder(ReorderedListFunction<Book> reorder, List<Book> current) {
     final next = reorder(current);
     setState(() => _localOrder = next);
-    ref
-        .read(collectionRepositoryProvider)
-        .reorderCollectionBooks(collectionId, [for (final b in next) b.id])
-        // ponytail: clears on write completion, not on the stream echo — a
-        // one-frame flash is possible if drift re-emits late. Same ceiling
-        // the dictionary manager ships with.
-        .then((_) {
-          if (mounted) setState(() => _localOrder = null);
-        });
+    // _localOrder retires in build once the stream echoes this order.
+    ref.read(collectionRepositoryProvider).reorderCollectionBooks(
+      collectionId,
+      [for (final b in next) b.id],
+    );
   }
 
   Future<void> _removeSelectedFromFolder() async {
@@ -2393,12 +2389,9 @@ class _CollectionFolderScreenState
       books: books,
       memberships: memberships,
     );
-    // Optimistic drag order until the write lands; discarded if membership
-    // changed underneath.
-    final local = _localOrder;
-    final members = (local != null && local.length == streamMembers.length)
-        ? local
-        : streamMembers;
+    // Same content once retired, so no setState needed here.
+    _localOrder = pendingDragOrder(_localOrder, streamMembers, (b) => b.id);
+    final members = _localOrder ?? streamMembers;
 
     final theme = Theme.of(context);
     final routeAnimation =
