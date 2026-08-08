@@ -1268,7 +1268,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerFuriganaAboveLevel => 'JLPT';
 
   @override
-  String get readerFuriganaJlptLevelTitle => 'Furigana for kanji above';
+  String get readerFuriganaJlptLevelTitle => '为高于此等级的汉字注音';
 
   @override
   String get readerAllSettingsTooltip => '所有设置';
@@ -1375,58 +1375,56 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryChangeCoverAction => '更换封面';
 
   @override
-  String get libraryExportFuriganaTitle => 'Export as EPUB';
+  String get libraryExportFuriganaTitle => '导出为 EPUB';
 
   @override
-  String get libraryExportFuriganaDialogTitle => 'Furigana in exported book';
+  String get libraryExportFuriganaDialogTitle => '导出图书中的振假名';
 
   @override
-  String get libraryExportFuriganaMatchBook => 'As published';
+  String get libraryExportFuriganaMatchBook => '与原书一致';
 
   @override
-  String get libraryExportFuriganaAboveLevel => 'Kanji above JLPT level';
+  String get libraryExportFuriganaAboveLevel => '高于 JLPT 等级的汉字';
 
   @override
-  String get libraryExportFuriganaNone => 'None (remove existing)';
+  String get libraryExportFuriganaNone => '不添加（并移除原有）';
 
   @override
-  String get libraryExportFuriganaAction => 'Export';
+  String get libraryExportFuriganaAction => '导出';
 
   @override
-  String get libraryExportFuriganaProgress => 'Preparing EPUB…';
+  String get libraryExportFuriganaProgress => '正在准备 EPUB…';
 
   @override
-  String get libraryExportFuriganaSaveTitle => 'Save EPUB';
+  String get libraryExportFuriganaSaveTitle => '保存 EPUB';
 
   @override
-  String get libraryExportFuriganaDone => 'EPUB exported';
+  String get libraryExportFuriganaDone => '已导出 EPUB';
 
   @override
-  String get libraryExportFuriganaUnavailable =>
-      'Furigana engine is unavailable — try again in a moment';
+  String get libraryExportFuriganaUnavailable => '振假名引擎不可用，请稍后再试';
 
   @override
-  String get libraryFolderEmpty =>
-      'No books here yet. Long-press a book in your library and choose \"Add to collection\".';
+  String get libraryFolderEmpty => '这里还没有图书。长按书库中的图书，然后选择“添加到收藏集”。';
 
   @override
-  String get libraryAddToCollectionAction => 'Add to collection';
+  String get libraryAddToCollectionAction => '添加到收藏集';
 
   @override
-  String get libraryNewCollectionAction => 'New collection';
+  String get libraryNewCollectionAction => '新建收藏集';
 
   @override
-  String get libraryCollectionNameLabel => 'Name';
+  String get libraryCollectionNameLabel => '名称';
 
   @override
-  String get libraryRenameCollectionTitle => 'Rename collection';
+  String get libraryRenameCollectionTitle => '重命名收藏集';
 
   @override
-  String get libraryDeleteCollectionConfirmTitle => 'Delete collection?';
+  String get libraryDeleteCollectionConfirmTitle => '删除收藏集？';
 
   @override
   String libraryDeleteCollectionConfirmBody({required String name}) {
-    return '\"$name\" will be deleted. Books stay in your library.';
+    return '将删除“$name”。图书仍会保留在书库中。';
   }
 
   @override
@@ -3361,7 +3359,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get readerFuriganaAboveLevel => 'JLPT';
 
   @override
-  String get readerFuriganaJlptLevelTitle => 'Furigana for kanji above';
+  String get readerFuriganaJlptLevelTitle => '为高于此等级的汉字注音';
 
   @override
   String get readerAllSettingsTooltip => '所有设置';
@@ -3468,58 +3466,56 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get libraryChangeCoverAction => '更换封面';
 
   @override
-  String get libraryExportFuriganaTitle => 'Export as EPUB';
+  String get libraryExportFuriganaTitle => '导出为 EPUB';
 
   @override
-  String get libraryExportFuriganaDialogTitle => 'Furigana in exported book';
+  String get libraryExportFuriganaDialogTitle => '导出图书中的振假名';
 
   @override
-  String get libraryExportFuriganaMatchBook => 'As published';
+  String get libraryExportFuriganaMatchBook => '与原书一致';
 
   @override
-  String get libraryExportFuriganaAboveLevel => 'Kanji above JLPT level';
+  String get libraryExportFuriganaAboveLevel => '高于 JLPT 等级的汉字';
 
   @override
-  String get libraryExportFuriganaNone => 'None (remove existing)';
+  String get libraryExportFuriganaNone => '不添加（并移除原有）';
 
   @override
-  String get libraryExportFuriganaAction => 'Export';
+  String get libraryExportFuriganaAction => '导出';
 
   @override
-  String get libraryExportFuriganaProgress => 'Preparing EPUB…';
+  String get libraryExportFuriganaProgress => '正在准备 EPUB…';
 
   @override
-  String get libraryExportFuriganaSaveTitle => 'Save EPUB';
+  String get libraryExportFuriganaSaveTitle => '保存 EPUB';
 
   @override
-  String get libraryExportFuriganaDone => 'EPUB exported';
+  String get libraryExportFuriganaDone => '已导出 EPUB';
 
   @override
-  String get libraryExportFuriganaUnavailable =>
-      'Furigana engine is unavailable — try again in a moment';
+  String get libraryExportFuriganaUnavailable => '振假名引擎不可用，请稍后再试';
 
   @override
-  String get libraryFolderEmpty =>
-      'No books here yet. Long-press a book in your library and choose \"Add to collection\".';
+  String get libraryFolderEmpty => '这里还没有图书。长按书库中的图书，然后选择“添加到收藏集”。';
 
   @override
-  String get libraryAddToCollectionAction => 'Add to collection';
+  String get libraryAddToCollectionAction => '添加到收藏集';
 
   @override
-  String get libraryNewCollectionAction => 'New collection';
+  String get libraryNewCollectionAction => '新建收藏集';
 
   @override
-  String get libraryCollectionNameLabel => 'Name';
+  String get libraryCollectionNameLabel => '名称';
 
   @override
-  String get libraryRenameCollectionTitle => 'Rename collection';
+  String get libraryRenameCollectionTitle => '重命名收藏集';
 
   @override
-  String get libraryDeleteCollectionConfirmTitle => 'Delete collection?';
+  String get libraryDeleteCollectionConfirmTitle => '删除收藏集？';
 
   @override
   String libraryDeleteCollectionConfirmBody({required String name}) {
-    return '\"$name\" will be deleted. Books stay in your library.';
+    return '将删除“$name”。图书仍会保留在书库中。';
   }
 
   @override

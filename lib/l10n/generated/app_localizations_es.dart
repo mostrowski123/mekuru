@@ -1339,7 +1339,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerFuriganaAboveLevel => 'JLPT';
 
   @override
-  String get readerFuriganaJlptLevelTitle => 'Furigana for kanji above';
+  String get readerFuriganaJlptLevelTitle => 'Furigana para kanji superiores a';
 
   @override
   String get readerAllSettingsTooltip => 'Todos los ajustes';
@@ -1451,58 +1451,60 @@ class AppLocalizationsEs extends AppLocalizations {
   String get libraryChangeCoverAction => 'Cambiar portada';
 
   @override
-  String get libraryExportFuriganaTitle => 'Export as EPUB';
+  String get libraryExportFuriganaTitle => 'Exportar como EPUB';
 
   @override
-  String get libraryExportFuriganaDialogTitle => 'Furigana in exported book';
+  String get libraryExportFuriganaDialogTitle =>
+      'Furigana en el libro exportado';
 
   @override
-  String get libraryExportFuriganaMatchBook => 'As published';
+  String get libraryExportFuriganaMatchBook => 'Como en el original';
 
   @override
-  String get libraryExportFuriganaAboveLevel => 'Kanji above JLPT level';
+  String get libraryExportFuriganaAboveLevel =>
+      'Kanji por encima del nivel JLPT';
 
   @override
-  String get libraryExportFuriganaNone => 'None (remove existing)';
+  String get libraryExportFuriganaNone => 'Ninguno (eliminar el existente)';
 
   @override
-  String get libraryExportFuriganaAction => 'Export';
+  String get libraryExportFuriganaAction => 'Exportar';
 
   @override
-  String get libraryExportFuriganaProgress => 'Preparing EPUB…';
+  String get libraryExportFuriganaProgress => 'Preparando EPUB…';
 
   @override
-  String get libraryExportFuriganaSaveTitle => 'Save EPUB';
+  String get libraryExportFuriganaSaveTitle => 'Guardar EPUB';
 
   @override
-  String get libraryExportFuriganaDone => 'EPUB exported';
+  String get libraryExportFuriganaDone => 'EPUB exportado';
 
   @override
   String get libraryExportFuriganaUnavailable =>
-      'Furigana engine is unavailable — try again in a moment';
+      'El motor de furigana no está disponible: inténtalo de nuevo en un momento';
 
   @override
   String get libraryFolderEmpty =>
-      'No books here yet. Long-press a book in your library and choose \"Add to collection\".';
+      'Aún no hay libros aquí. Mantén pulsado un libro de tu biblioteca y elige \"Añadir a colección\".';
 
   @override
-  String get libraryAddToCollectionAction => 'Add to collection';
+  String get libraryAddToCollectionAction => 'Añadir a colección';
 
   @override
-  String get libraryNewCollectionAction => 'New collection';
+  String get libraryNewCollectionAction => 'Nueva colección';
 
   @override
-  String get libraryCollectionNameLabel => 'Name';
+  String get libraryCollectionNameLabel => 'Nombre';
 
   @override
-  String get libraryRenameCollectionTitle => 'Rename collection';
+  String get libraryRenameCollectionTitle => 'Renombrar colección';
 
   @override
-  String get libraryDeleteCollectionConfirmTitle => 'Delete collection?';
+  String get libraryDeleteCollectionConfirmTitle => '¿Eliminar colección?';
 
   @override
   String libraryDeleteCollectionConfirmBody({required String name}) {
-    return '\"$name\" will be deleted. Books stay in your library.';
+    return 'Se eliminará \"$name\". Los libros permanecerán en tu biblioteca.';
   }
 
   @override

@@ -1325,7 +1325,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerFuriganaAboveLevel => 'JLPT';
 
   @override
-  String get readerFuriganaJlptLevelTitle => 'Furigana for kanji above';
+  String get readerFuriganaJlptLevelTitle => 'Furigana untuk kanji di atas';
 
   @override
   String get readerAllSettingsTooltip => 'Semua pengaturan';
@@ -1437,58 +1437,59 @@ class AppLocalizationsId extends AppLocalizations {
   String get libraryChangeCoverAction => 'Ubah Sampul';
 
   @override
-  String get libraryExportFuriganaTitle => 'Export as EPUB';
+  String get libraryExportFuriganaTitle => 'Ekspor sebagai EPUB';
 
   @override
-  String get libraryExportFuriganaDialogTitle => 'Furigana in exported book';
+  String get libraryExportFuriganaDialogTitle =>
+      'Furigana pada buku hasil ekspor';
 
   @override
-  String get libraryExportFuriganaMatchBook => 'As published';
+  String get libraryExportFuriganaMatchBook => 'Sesuai buku asli';
 
   @override
-  String get libraryExportFuriganaAboveLevel => 'Kanji above JLPT level';
+  String get libraryExportFuriganaAboveLevel => 'Kanji di atas level JLPT';
 
   @override
-  String get libraryExportFuriganaNone => 'None (remove existing)';
+  String get libraryExportFuriganaNone => 'Tidak ada (hapus yang sudah ada)';
 
   @override
-  String get libraryExportFuriganaAction => 'Export';
+  String get libraryExportFuriganaAction => 'Ekspor';
 
   @override
-  String get libraryExportFuriganaProgress => 'Preparing EPUB…';
+  String get libraryExportFuriganaProgress => 'Menyiapkan EPUB…';
 
   @override
-  String get libraryExportFuriganaSaveTitle => 'Save EPUB';
+  String get libraryExportFuriganaSaveTitle => 'Simpan EPUB';
 
   @override
-  String get libraryExportFuriganaDone => 'EPUB exported';
+  String get libraryExportFuriganaDone => 'EPUB diekspor';
 
   @override
   String get libraryExportFuriganaUnavailable =>
-      'Furigana engine is unavailable — try again in a moment';
+      'Mesin furigana tidak tersedia — coba lagi sebentar';
 
   @override
   String get libraryFolderEmpty =>
-      'No books here yet. Long-press a book in your library and choose \"Add to collection\".';
+      'Belum ada buku di sini. Tekan lama sebuah buku di pustaka Anda lalu pilih \"Tambahkan ke koleksi\".';
 
   @override
-  String get libraryAddToCollectionAction => 'Add to collection';
+  String get libraryAddToCollectionAction => 'Tambahkan ke koleksi';
 
   @override
-  String get libraryNewCollectionAction => 'New collection';
+  String get libraryNewCollectionAction => 'Koleksi baru';
 
   @override
-  String get libraryCollectionNameLabel => 'Name';
+  String get libraryCollectionNameLabel => 'Nama';
 
   @override
-  String get libraryRenameCollectionTitle => 'Rename collection';
+  String get libraryRenameCollectionTitle => 'Ganti nama koleksi';
 
   @override
-  String get libraryDeleteCollectionConfirmTitle => 'Delete collection?';
+  String get libraryDeleteCollectionConfirmTitle => 'Hapus koleksi?';
 
   @override
   String libraryDeleteCollectionConfirmBody({required String name}) {
-    return '\"$name\" will be deleted. Books stay in your library.';
+    return '\"$name\" akan dihapus. Buku tetap ada di pustaka Anda.';
   }
 
   @override
