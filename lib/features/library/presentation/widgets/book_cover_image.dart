@@ -6,6 +6,20 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 
+/// Decode width in device pixels for a cover laid out at [logicalWidth].
+///
+/// `cacheWidth` is part of the image cache key, so a value tracking the
+/// laid-out width exactly makes every distinct size a cache miss — and any
+/// animation that resizes a cover (the folder hero flight) re-decodes it
+/// every frame, which reads as flashing. Snapping to 128px buckets keeps
+/// the key stable while a cover is resized, at a few percent of extra
+/// decoded pixels.
+int coverDecodeWidth(double logicalWidth, double devicePixelRatio) {
+  const bucket = 128;
+  final pixels = (logicalWidth * devicePixelRatio).ceil();
+  return ((pixels / bucket).ceil() * bucket).clamp(bucket, 4096);
+}
+
 /// A book's cover image with a blurred background fill, falling back to a
 /// titled placeholder when the cover is missing or fails to decode.
 ///
@@ -25,10 +39,10 @@ class BookCoverImage extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final dpr = MediaQuery.devicePixelRatioOf(context);
-        final tileCacheWidth = (constraints.maxWidth * dpr).toInt();
+        final tileCacheWidth = coverDecodeWidth(constraints.maxWidth, dpr);
         // Blurred background can decode at half resolution — blur hides
         // detail loss and saves ~75% memory per blurred image.
-        final blurCacheWidth = (tileCacheWidth * 0.5).toInt();
+        final blurCacheWidth = tileCacheWidth ~/ 2;
 
         if (AndroidSafService.isContentUri(coverPath)) {
           return Stack(
@@ -40,6 +54,7 @@ class BookCoverImage extends StatelessWidget {
                   uri: coverPath,
                   fit: BoxFit.cover,
                   cacheWidth: blurCacheWidth,
+                  gaplessPlayback: true,
                   errorBuilder: (_, _, _) => _buildPlaceholder(theme),
                 ),
               ),
@@ -47,6 +62,7 @@ class BookCoverImage extends StatelessWidget {
                 uri: coverPath,
                 fit: BoxFit.fitHeight,
                 cacheWidth: tileCacheWidth,
+                gaplessPlayback: true,
                 errorBuilder: (_, _, _) => _buildPlaceholder(theme),
               ),
             ],
@@ -65,6 +81,7 @@ class BookCoverImage extends StatelessWidget {
                   coverFile,
                   fit: BoxFit.cover,
                   cacheWidth: blurCacheWidth,
+                  gaplessPlayback: true,
                 ),
               ),
               // Actual cover, fit by height first
@@ -72,6 +89,9 @@ class BookCoverImage extends StatelessWidget {
                 coverFile,
                 fit: BoxFit.fitHeight,
                 cacheWidth: tileCacheWidth,
+                // Keep the previous frame while a new decode size resolves
+                // instead of blanking; see [coverDecodeWidth].
+                gaplessPlayback: true,
                 errorBuilder: (_, _, _) => _buildPlaceholder(theme),
               ),
             ],

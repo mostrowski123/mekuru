@@ -90,6 +90,10 @@ class AndroidSafImage extends StatelessWidget {
   final int? cacheWidth;
   final int? cacheHeight;
 
+  /// Keep showing the previous frame while a new one decodes, instead of
+  /// blanking. Matters when [cacheWidth] changes as the image is resized.
+  final bool gaplessPlayback;
+
   const AndroidSafImage({
     super.key,
     this.uri,
@@ -101,6 +105,7 @@ class AndroidSafImage extends StatelessWidget {
     this.errorBuilder,
     this.cacheWidth,
     this.cacheHeight,
+    this.gaplessPlayback = false,
   }) : assert(
          (uri != null) || (treeUri != null && relativePath != null),
          'Provide either uri or (treeUri + relativePath)',
@@ -121,6 +126,7 @@ class AndroidSafImage extends StatelessWidget {
       fit: fit,
       filterQuality: filterQuality,
       alignment: alignment,
+      gaplessPlayback: gaplessPlayback,
       errorBuilder:
           errorBuilder ??
           (context, error, stackTrace) => const SizedBox.shrink(),
