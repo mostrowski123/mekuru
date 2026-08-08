@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:animations/animations.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
@@ -1879,65 +1880,58 @@ class _CollectionFolderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: () {
-        AppHaptics.light();
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => CollectionFolderScreen(collectionId: collection.id),
-          ),
-        );
-      },
-      onLongPress: () {
-        AppHaptics.heavy();
-        showCollectionManageSheet(context, collection);
-      },
-      child: Column(
-        children: [
-          Expanded(
-            child: Hero(
-              tag: collectionHeroTag(collection.id),
-              flightShuttleBuilder: _folderFlightShuttle(books),
-              child: _FolderPreview(books: books),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            collection.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+    // Container transform rather than a Hero: it cross-fades the closed
+    // tile into the opened screen and clips to the growing bounds, so
+    // neither end is re-laid-out at the other's size. Hand-rolled Hero
+    // flights had to pick between showing the wrong layout mid-flight and
+    // snapping at each end.
+    return OpenContainer(
+      tappable: false,
+      transitionType: ContainerTransitionType.fade,
+      transitionDuration: const Duration(milliseconds: 350),
+      closedElevation: 0,
+      openElevation: 0,
+      // The face paints its own surface; keeping the container transparent
+      // leaves the title on the page background as before.
+      closedColor: Colors.transparent,
+      openColor: theme.colorScheme.surface,
+      middleColor: theme.colorScheme.surface,
+      closedShape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(_folderCornerRadius)),
       ),
+      closedBuilder: (context, openFolder) => GestureDetector(
+        onTap: () {
+          AppHaptics.light();
+          openFolder();
+        },
+        onLongPress: () {
+          AppHaptics.heavy();
+          showCollectionManageSheet(context, collection);
+        },
+        child: Column(
+          children: [
+            Expanded(child: _FolderPreview(books: books)),
+            const SizedBox(height: 8),
+            Text(
+              collection.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+      openBuilder: (context, _) =>
+          CollectionFolderScreen(collectionId: collection.id),
     );
   }
 }
 
-/// Hero tag shared by a folder's grid tile and the panel its folder screen
-/// opens into, so the tile expands to fill the screen iOS-style.
-String collectionHeroTag(int collectionId) => 'collection-$collectionId';
-
-/// The folder's surface, shared by the grid tile, the opened panel and the
-/// in-flight stand-in so the shape stays continuous through the flight.
-BoxDecoration _folderSurfaceDecoration(ThemeData theme) => BoxDecoration(
-  color: theme.colorScheme.surfaceContainerHigh,
-  borderRadius: BorderRadius.circular(12),
-);
-
-/// What a folder hero renders while in flight: its own face, so the covers
-/// stay on screen and scale up as the folder opens.
-///
-/// The default shuttle is the destination's child — a scroll view of full
-/// book tiles (tilt, progress bars, blurred cover backdrops) relaid out
-/// every frame, which is what made the flight stutter. The face is four
-/// covers in a fixed 2x2, so it stays cheap.
-HeroFlightShuttleBuilder _folderFlightShuttle(List<Book> books) {
-  return (_, _, _, _, _) => _FolderPreview(books: books);
-}
+/// Corner radius shared by the folder face and the transform that opens it.
+const double _folderCornerRadius = 12;
 
 /// The rounded folder face: up to four member covers in a 2x2, or a
 /// placeholder icon while empty. Shared by the grid tile and the folder
@@ -1953,7 +1947,10 @@ class _FolderPreview extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(8),
-      decoration: _folderSurfaceDecoration(theme),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(_folderCornerRadius),
+      ),
       child: books.isEmpty
           ? Center(
               child: Icon(
@@ -2033,53 +2030,42 @@ class CollectionFolderScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Hero(
-          tag: collectionHeroTag(collectionId),
-          flightShuttleBuilder: _folderFlightShuttle(members),
-          child: Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: _folderSurfaceDecoration(theme),
-            child: members.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Text(
-                        context.l10n.libraryFolderEmpty,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  )
-                : CustomScrollView(
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.all(12),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                childAspectRatio: 0.65,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 16,
-                              ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) => _BookTile(
-                              key: ValueKey('book-tile-${members[index].id}'),
-                              book: members[index],
-                            ),
-                            childCount: members.length,
-                          ),
-                        ),
-                      ),
-                    ],
+      body: members.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(
+                  context.l10n.libraryFolderEmpty,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-          ),
-        ),
-      ),
+                ),
+              ),
+            )
+          : CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 0.65,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 16,
+                        ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => _BookTile(
+                        key: ValueKey('book-tile-${members[index].id}'),
+                        book: members[index],
+                      ),
+                      childCount: members.length,
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
