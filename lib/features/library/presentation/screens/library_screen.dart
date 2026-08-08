@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_reorderable_grid_view/entities/reorderable_animation_config.dart';
 import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -2432,6 +2433,14 @@ class _CollectionFolderScreenState
             )
           : ReorderableBuilder<Book>.builder(
               key: const Key('folder-reorderable'),
+              // No new-child fade-in: on the screen's first build every tile
+              // is "new", and the default 500ms fade outlives the 320ms
+              // route transition — the hero shuttle would land on a
+              // still-fading tile and the cover flashed bright -> dim.
+              // Entrances are the route fade + _StaggeredEntrance's job.
+              animationConfig: const ReorderableAnimationConfig(
+                fadeInDuration: Duration.zero,
+              ),
               scrollController: _scrollController,
               itemCount: members.length,
               // One edit mode = select + drag; outside it this is a plain

@@ -217,6 +217,36 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('hero tiles are fully opaque the moment the open transition '
+      'ends', (tester) async {
+    // The hero shuttle flies at full opacity above the route. If any fade
+    // on the landed tile is still running when the shuttle is removed
+    // (route transition end, 320ms), the cover snaps bright -> dim and
+    // fades back up: the folder-open flash. The reorderable grid's
+    // new-child fade-in (500ms default) was exactly that.
+    final id = await insertBook(tester, '坊っちゃん');
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.setBookCollections(id, {shelf});
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+    await tester.tap(find.text('Shelf'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 320));
+    await tester.pump(const Duration(milliseconds: 1));
+
+    final fades = find.ancestor(
+      of: find.byKey(ValueKey('book-tile-$id')),
+      matching: find.byType(FadeTransition),
+    );
+    for (final fade in tester.widgetList<FadeTransition>(fades)) {
+      expect(fade.opacity.value, 1.0);
+    }
+
+    await unmount(tester);
+  });
+
   testWidgets('folder edit mode selects on tap and removes selected', (
     tester,
   ) async {
