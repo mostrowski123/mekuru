@@ -88,6 +88,7 @@ class BackupService {
           lastReadAt: book.lastReadAt,
           overrideVerticalText: book.overrideVerticalText,
           overrideReadingDirection: book.overrideReadingDirection,
+          furiganaMode: book.furiganaMode,
           collections: collectionNamesByBook[book.id] ?? const [],
           bookmarks: bookmarks
               .map(

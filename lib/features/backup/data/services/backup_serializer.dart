@@ -202,6 +202,7 @@ class BackupSerializer {
       'lastReadAt': entry.lastReadAt?.toUtc().toIso8601String(),
       'overrideVerticalText': entry.overrideVerticalText,
       'overrideReadingDirection': entry.overrideReadingDirection,
+      'furiganaMode': entry.furiganaMode,
       'collections': entry.collections,
       'bookmarks': entry.bookmarks
           .map(
@@ -328,6 +329,7 @@ class BackupSerializer {
           : null,
       overrideVerticalText: item['overrideVerticalText'] as bool?,
       overrideReadingDirection: item['overrideReadingDirection'] as String?,
+      furiganaMode: item['furiganaMode'] as String?,
       collections: List<String>.from(item['collections'] as List? ?? const []),
       bookmarks: bookmarksList.map(_decodeBookmark).toList(),
       highlights: highlightsList.map(_decodeHighlight).toList(),

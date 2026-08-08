@@ -299,6 +299,7 @@ class RestoreService {
         lastReadAt: Value(entry.lastReadAt),
         overrideVerticalText: Value(entry.overrideVerticalText),
         overrideReadingDirection: Value(entry.overrideReadingDirection),
+        furiganaMode: Value(entry.furiganaMode),
       ),
     );
 

@@ -120,6 +120,10 @@ class BackupBookEntry {
   final DateTime? lastReadAt;
   final bool? overrideVerticalText;
   final String? overrideReadingDirection;
+
+  /// Per-book furigana mode override (FuriganaMode storage value), null =
+  /// follow the global setting.
+  final String? furiganaMode;
   final List<BackupBookmarkEntry> bookmarks;
   final List<BackupHighlightEntry> highlights;
 
@@ -139,6 +143,7 @@ class BackupBookEntry {
     this.lastReadAt,
     this.overrideVerticalText,
     this.overrideReadingDirection,
+    this.furiganaMode,
     required this.bookmarks,
     required this.highlights,
     this.collections = const [],
