@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
@@ -2022,13 +2023,45 @@ class _FolderPreview extends StatelessWidget {
 
 /// One collection's books in the same grid the library uses. Rename/delete
 /// live behind the app-bar action; deleting pops back to the library.
-class CollectionFolderScreen extends ConsumerWidget {
+class CollectionFolderScreen extends ConsumerStatefulWidget {
   const CollectionFolderScreen({super.key, required this.collectionId});
 
   final int collectionId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CollectionFolderScreen> createState() =>
+      _CollectionFolderScreenState();
+}
+
+class _CollectionFolderScreenState
+    extends ConsumerState<CollectionFolderScreen> {
+  // ReorderableBuilder measures grid children through the GridView's key
+  // and needs to share its scroll controller.
+  final _scrollController = ScrollController();
+  final _gridKey = GlobalKey();
+
+  int get collectionId => widget.collectionId;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Widget _tile(List<Book> members, int index) {
+    return _BookTile(
+      key: ValueKey('book-tile-${members[index].id}'),
+      book: members[index],
+      // Only the covers the face showed have a partner to fly from; the
+      // rest just fade in with the page.
+      coverHeroTag: index < _FolderPreview.previewCount
+          ? folderCoverHeroTag(collectionId, members[index].id)
+          : null,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final collections =
         ref.watch(collectionsProvider).value ?? const <Collection>[];
     Collection? collection;
@@ -2084,36 +2117,27 @@ class CollectionFolderScreen extends ConsumerWidget {
                 ),
               ),
             )
-          : CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.all(16),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 0.65,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 16,
-                        ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _BookTile(
-                        key: ValueKey('book-tile-${members[index].id}'),
-                        book: members[index],
-                        // Only the covers the face showed have a partner
-                        // to fly from; the rest just fade in with the page.
-                        coverHeroTag: index < _FolderPreview.previewCount
-                            ? folderCoverHeroTag(
-                                collectionId,
-                                members[index].id,
-                              )
-                            : null,
-                      ),
-                      childCount: members.length,
-                    ),
-                  ),
+          : ReorderableBuilder<Book>.builder(
+              key: const Key('folder-reorderable'),
+              scrollController: _scrollController,
+              itemCount: members.length,
+              // ponytail: drag arrives with edit mode in a later step;
+              // until then this is a plain grid.
+              enableDraggable: false,
+              childBuilder: (itemBuilder) => GridView.builder(
+                key: _gridKey,
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.65,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 16,
                 ),
-              ],
+                itemCount: members.length,
+                itemBuilder: (context, index) =>
+                    itemBuilder(_tile(members, index), index),
+              ),
             ),
     );
   }
