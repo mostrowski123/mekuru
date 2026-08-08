@@ -63,20 +63,11 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
-  testWidgets('no chip row when no collections exist', (tester) async {
-    await insertBook(tester, '坊っちゃん');
-    await pumpWithDb(tester, const LibraryScreen());
-
-    expect(find.text('All'), findsNothing);
-
-    await unmount(tester);
-  });
-
-  testWidgets('collection chip filters the grid and hides continue-reading', (
+  testWidgets('books inside folders are hidden from the root grid', (
     tester,
   ) async {
     final inShelf = await insertBook(tester, '坊っちゃん');
-    await insertBook(tester, '吾輩は猫である', lastReadAt: DateTime(2026, 6, 10));
+    await insertBook(tester, '吾輩は猫である');
     await tester.runAsync(() async {
       final shelf = await repo.createCollection('Shelf');
       await repo.setBookCollections(inShelf, {shelf});
@@ -84,25 +75,53 @@ void main() {
 
     await pumpWithDb(tester, const LibraryScreen());
 
-    // Unfiltered: both books and the continue-reading card. Titles can
-    // appear twice per tile (cover placeholder + caption), so presence is
-    // asserted loosely and absence strictly.
-    expect(find.text('坊っちゃん'), findsWidgets);
-    expect(find.text('Continue reading'), findsOneWidget);
+    // The folder tile is present; the member book has no full-size tile of
+    // its own (its title may still show inside the folder's mini covers).
+    expect(find.text('Shelf'), findsOneWidget);
+    expect(find.byKey(ValueKey('book-tile-$inShelf')), findsNothing);
+    expect(find.text('吾輩は猫である'), findsWidgets);
+
+    await unmount(tester);
+  });
+
+  testWidgets('tapping a folder opens its book grid', (tester) async {
+    final inShelf = await insertBook(tester, '坊っちゃん');
+    await insertBook(tester, '吾輩は猫である');
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.setBookCollections(inShelf, {shelf});
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
 
     await tester.tap(find.text('Shelf'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
+    // Folder screen: app bar title + only the member book.
+    expect(find.text('Shelf'), findsOneWidget);
     expect(find.text('坊っちゃん'), findsWidgets);
     expect(find.text('吾輩は猫である'), findsNothing);
-    expect(find.text('Continue reading'), findsNothing);
 
-    // Tapping All shows everything again.
-    await tester.tap(find.text('All'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('吾輩は猫である'), findsWidgets);
+    await unmount(tester);
+  });
+
+  testWidgets('continue reading surfaces a book inside a folder', (
+    tester,
+  ) async {
+    final inShelf = await insertBook(
+      tester,
+      '坊っちゃん',
+      lastReadAt: DateTime(2026, 6, 10),
+    );
+    await insertBook(tester, '吾輩は猫である');
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.setBookCollections(inShelf, {shelf});
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+
+    expect(find.text('Continue reading'), findsOneWidget);
 
     await unmount(tester);
   });

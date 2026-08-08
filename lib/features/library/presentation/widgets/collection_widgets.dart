@@ -5,56 +5,6 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 
-/// Horizontal chip row filtering the library grid by collection.
-/// Renders nothing while no collections exist.
-class CollectionFilterRow extends ConsumerWidget {
-  const CollectionFilterRow({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final collections = ref.watch(collectionsProvider).value ?? const [];
-    if (collections.isEmpty) return const SizedBox.shrink();
-
-    final selected = ref.watch(selectedCollectionProvider);
-    final notifier = ref.read(selectedCollectionProvider.notifier);
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Row(
-        children: [
-          ChoiceChip(
-            label: Text(context.l10n.libraryCollectionsAll),
-            selected: selected == null,
-            onSelected: (_) {
-              AppHaptics.light();
-              notifier.select(null);
-            },
-          ),
-          for (final collection in collections)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: GestureDetector(
-                onLongPress: () {
-                  AppHaptics.medium();
-                  showCollectionManageSheet(context, collection);
-                },
-                child: ChoiceChip(
-                  label: Text(collection.name),
-                  selected: selected == collection.id,
-                  onSelected: (isSelected) {
-                    AppHaptics.light();
-                    notifier.select(isSelected ? collection.id : null);
-                  },
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Opens the membership sheet for [book].
 Future<void> showCollectionAssignSheet(BuildContext context, Book book) {
   return showModalBottomSheet(
@@ -261,9 +211,6 @@ class CollectionManageSheet extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              if (ref.read(selectedCollectionProvider) == collection.id) {
-                ref.read(selectedCollectionProvider.notifier).select(null);
-              }
               ref
                   .read(collectionRepositoryProvider)
                   .deleteCollection(collection.id);

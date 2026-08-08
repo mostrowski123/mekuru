@@ -76,19 +76,6 @@ final bookCollectionsProvider = StreamProvider<List<BookCollection>>((ref) {
   return ref.watch(collectionRepositoryProvider).watchMemberships();
 });
 
-/// Currently selected collection filter (null = all books). Session-only.
-class SelectedCollectionNotifier extends Notifier<int?> {
-  @override
-  int? build() => null;
-
-  void select(int? collectionId) => state = collectionId;
-}
-
-final selectedCollectionProvider =
-    NotifierProvider<SelectedCollectionNotifier, int?>(
-      SelectedCollectionNotifier.new,
-    );
-
 // ──────────────── Books ────────────────
 
 /// Provider for the book repository.

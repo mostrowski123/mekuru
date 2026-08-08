@@ -1463,7 +1463,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Furigana engine is unavailable — try again in a moment';
 
   @override
-  String get libraryCollectionsAll => 'All';
+  String get libraryFolderEmpty =>
+      'No books here yet. Long-press a book in your library and choose \"Add to collection\".';
 
   @override
   String get libraryAddToCollectionAction => 'Add to collection';

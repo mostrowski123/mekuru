@@ -2566,11 +2566,11 @@ abstract class AppLocalizations {
   /// **'Furigana engine is unavailable — try again in a moment'**
   String get libraryExportFuriganaUnavailable;
 
-  /// Filter chip that shows every book regardless of collection.
+  /// Placeholder shown inside an empty collection folder.
   ///
   /// In en, this message translates to:
-  /// **'All'**
-  String get libraryCollectionsAll;
+  /// **'No books here yet. Long-press a book in your library and choose \"Add to collection\".'**
+  String get libraryFolderEmpty;
 
   /// Book menu action that opens the collection assignment sheet.
   ///

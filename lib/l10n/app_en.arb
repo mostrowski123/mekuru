@@ -1889,9 +1889,9 @@
   "@libraryExportFuriganaUnavailable": {
     "description": "Snackbar shown when the export cannot generate furigana because the Japanese analyzer failed to start."
   },
-  "libraryCollectionsAll": "All",
-  "@libraryCollectionsAll": {
-    "description": "Filter chip that shows every book regardless of collection."
+  "libraryFolderEmpty": "No books here yet. Long-press a book in your library and choose \"Add to collection\".",
+  "@libraryFolderEmpty": {
+    "description": "Placeholder shown inside an empty collection folder."
   },
   "libraryAddToCollectionAction": "Add to collection",
   "@libraryAddToCollectionAction": {
