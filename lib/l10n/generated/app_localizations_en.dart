@@ -1432,6 +1432,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryChangeCoverAction => 'Change Cover';
 
   @override
+  String get libraryExportFuriganaTitle => 'Export as EPUB';
+
+  @override
+  String get libraryExportFuriganaDialogTitle => 'Furigana in exported book';
+
+  @override
+  String get libraryExportFuriganaMatchBook => 'As published';
+
+  @override
+  String get libraryExportFuriganaAboveLevel => 'Kanji above JLPT level';
+
+  @override
+  String get libraryExportFuriganaNone => 'None (remove existing)';
+
+  @override
+  String get libraryExportFuriganaAction => 'Export';
+
+  @override
+  String get libraryExportFuriganaProgress => 'Preparing EPUB…';
+
+  @override
+  String get libraryExportFuriganaSaveTitle => 'Save EPUB';
+
+  @override
+  String get libraryExportFuriganaDone => 'EPUB exported';
+
+  @override
+  String get libraryExportFuriganaUnavailable =>
+      'Furigana engine is unavailable — try again in a moment';
+
+  @override
   String get libraryCollectionsAll => 'All';
 
   @override

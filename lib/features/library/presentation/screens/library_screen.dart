@@ -14,6 +14,7 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/book_cover_image.dart';
 import 'package:mekuru/features/library/presentation/widgets/collection_widgets.dart';
+import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/library/presentation/widgets/continue_reading_card.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
@@ -1122,6 +1123,15 @@ class _BookTileState extends ConsumerState<_BookTile>
                           }
                         : null,
                   );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.ios_share_outlined),
+                title: Text(context.l10n.libraryExportFuriganaTitle),
+                onTap: () {
+                  AppHaptics.light();
+                  Navigator.of(sheetContext).pop();
+                  runFuriganaExport(context, ref, book);
                 },
               ),
             ],

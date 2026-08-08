@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/library/data/services/epub_furigana_export.dart';
+import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/furigana_generator.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
@@ -101,6 +102,15 @@ void main() {
     await file.writeAsBytes(bytes);
     return file.path;
   }
+
+  group('exportFileName', () {
+    test('sanitizes hostile characters and appends the suffix', () {
+      expect(exportFileName('吾輩は猫である'), '吾輩は猫である (furigana).epub');
+      expect(exportFileName('a/b:c?'), 'a_b_c_ (furigana).epub');
+      expect(exportFileName(''), 'book (furigana).epub');
+      expect(exportFileName('あ' * 200).length, lessThan(100));
+    });
+  });
 
   group('furiganaTargets', () {
     test('skips ruby/script/style/head subtrees and kana-only nodes', () {

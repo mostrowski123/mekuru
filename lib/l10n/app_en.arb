@@ -1849,6 +1849,46 @@
   "@libraryChangeCoverAction": {
     "description": "Action label to change a book cover image."
   },
+  "libraryExportFuriganaTitle": "Export as EPUB",
+  "@libraryExportFuriganaTitle": {
+    "description": "Book menu action that exports the book as an EPUB file with configurable furigana."
+  },
+  "libraryExportFuriganaDialogTitle": "Furigana in exported book",
+  "@libraryExportFuriganaDialogTitle": {
+    "description": "Title of the dialog choosing how much furigana the exported EPUB gets."
+  },
+  "libraryExportFuriganaMatchBook": "As published",
+  "@libraryExportFuriganaMatchBook": {
+    "description": "Export option: keep the book exactly as published, adding no furigana."
+  },
+  "libraryExportFuriganaAboveLevel": "Kanji above JLPT level",
+  "@libraryExportFuriganaAboveLevel": {
+    "description": "Export option: furigana only for words containing kanji above the selected JLPT level."
+  },
+  "libraryExportFuriganaNone": "None (remove existing)",
+  "@libraryExportFuriganaNone": {
+    "description": "Export option: strip all furigana, including furigana included by the publisher."
+  },
+  "libraryExportFuriganaAction": "Export",
+  "@libraryExportFuriganaAction": {
+    "description": "Confirm button of the furigana export dialog."
+  },
+  "libraryExportFuriganaProgress": "Preparing EPUB…",
+  "@libraryExportFuriganaProgress": {
+    "description": "Progress dialog text while the exported EPUB is being generated."
+  },
+  "libraryExportFuriganaSaveTitle": "Save EPUB",
+  "@libraryExportFuriganaSaveTitle": {
+    "description": "Title of the system save-file dialog for the exported EPUB."
+  },
+  "libraryExportFuriganaDone": "EPUB exported",
+  "@libraryExportFuriganaDone": {
+    "description": "Snackbar shown after the exported EPUB was saved."
+  },
+  "libraryExportFuriganaUnavailable": "Furigana engine is unavailable — try again in a moment",
+  "@libraryExportFuriganaUnavailable": {
+    "description": "Snackbar shown when the export cannot generate furigana because the Japanese analyzer failed to start."
+  },
   "libraryCollectionsAll": "All",
   "@libraryCollectionsAll": {
     "description": "Filter chip that shows every book regardless of collection."

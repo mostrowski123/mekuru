@@ -2506,6 +2506,66 @@ abstract class AppLocalizations {
   /// **'Change Cover'**
   String get libraryChangeCoverAction;
 
+  /// Book menu action that exports the book as an EPUB file with configurable furigana.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as EPUB'**
+  String get libraryExportFuriganaTitle;
+
+  /// Title of the dialog choosing how much furigana the exported EPUB gets.
+  ///
+  /// In en, this message translates to:
+  /// **'Furigana in exported book'**
+  String get libraryExportFuriganaDialogTitle;
+
+  /// Export option: keep the book exactly as published, adding no furigana.
+  ///
+  /// In en, this message translates to:
+  /// **'As published'**
+  String get libraryExportFuriganaMatchBook;
+
+  /// Export option: furigana only for words containing kanji above the selected JLPT level.
+  ///
+  /// In en, this message translates to:
+  /// **'Kanji above JLPT level'**
+  String get libraryExportFuriganaAboveLevel;
+
+  /// Export option: strip all furigana, including furigana included by the publisher.
+  ///
+  /// In en, this message translates to:
+  /// **'None (remove existing)'**
+  String get libraryExportFuriganaNone;
+
+  /// Confirm button of the furigana export dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get libraryExportFuriganaAction;
+
+  /// Progress dialog text while the exported EPUB is being generated.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing EPUB…'**
+  String get libraryExportFuriganaProgress;
+
+  /// Title of the system save-file dialog for the exported EPUB.
+  ///
+  /// In en, this message translates to:
+  /// **'Save EPUB'**
+  String get libraryExportFuriganaSaveTitle;
+
+  /// Snackbar shown after the exported EPUB was saved.
+  ///
+  /// In en, this message translates to:
+  /// **'EPUB exported'**
+  String get libraryExportFuriganaDone;
+
+  /// Snackbar shown when the export cannot generate furigana because the Japanese analyzer failed to start.
+  ///
+  /// In en, this message translates to:
+  /// **'Furigana engine is unavailable — try again in a moment'**
+  String get libraryExportFuriganaUnavailable;
+
   /// Filter chip that shows every book regardless of collection.
   ///
   /// In en, this message translates to:
