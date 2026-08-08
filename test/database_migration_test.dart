@@ -102,7 +102,7 @@ void main() {
       expect(entries.single.definitionTags, isEmpty);
       expect(entries.single.rules, isEmpty);
       expect(entries.single.termTags, isEmpty);
-      expect(migratedDb.schemaVersion, 20);
+      expect(migratedDb.schemaVersion, 21);
     },
   );
 
@@ -244,7 +244,7 @@ void main() {
           .toSet();
 
       expect(indexNames, contains('idx_pitch_expr_dictid'));
-      expect(migratedDb.schemaVersion, 20);
+      expect(migratedDb.schemaVersion, 21);
     },
   );
 
@@ -314,7 +314,7 @@ void main() {
           .getSingle();
       expect(sessionCount.data['c'], 0);
 
-      expect(migratedDb.schemaVersion, 20);
+      expect(migratedDb.schemaVersion, 21);
     },
   );
 
@@ -370,7 +370,51 @@ void main() {
             ),
           );
 
-      expect(migratedDb.schemaVersion, 20);
+      expect(migratedDb.schemaVersion, 21);
     },
   );
+
+  test('creates collections tables when migrating to schema 21', () async {
+    final tempDir = await Directory.systemTemp.createTemp(
+      'mekuru_collections_',
+    );
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final dbFile = File('${tempDir.path}/mekuru.sqlite');
+
+    final seedDb = AppDatabase(NativeDatabase(dbFile));
+    await seedDb
+        .into(seedDb.books)
+        .insert(
+          BooksCompanion.insert(title: '吾輩は猫である', filePath: '/books/neko'),
+        );
+    await seedDb.close();
+
+    // Rewind to v20: drop the collections tables (no-ops on a database that
+    // predates them).
+    final legacyDb = sqlite.sqlite3.open(dbFile.path);
+    legacyDb.execute('PRAGMA user_version = 20;');
+    legacyDb.execute('DROP TABLE IF EXISTS book_collections;');
+    legacyDb.execute('DROP TABLE IF EXISTS collections;');
+    legacyDb.close();
+
+    final migratedDb = AppDatabase(NativeDatabase(dbFile));
+    addTearDown(migratedDb.close);
+
+    await migratedDb.customStatement(
+      "INSERT INTO collections (name) VALUES ('Novels')",
+    );
+    await migratedDb.customStatement(
+      'INSERT INTO book_collections (book_id, collection_id) VALUES (1, 1)',
+    );
+    final memberCount = await migratedDb
+        .customSelect('SELECT COUNT(*) AS c FROM book_collections')
+        .getSingle();
+    expect(memberCount.data['c'], 1);
+    expect(migratedDb.schemaVersion, 21);
+  });
 }

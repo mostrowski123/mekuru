@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 
 import '../../features/library/data/models/book.dart';
+import '../../features/library/data/models/collection.dart';
 import '../../features/vocabulary/data/models/saved_word.dart';
 import '../../features/dictionary/data/models/dictionary_meta.dart';
 import '../../features/dictionary/data/models/dictionary_entry.dart';
@@ -30,6 +31,8 @@ part 'database_provider.g.dart';
     PendingBookDatas,
     ReadingSessions,
     WordEvents,
+    Collections,
+    BookCollections,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -65,7 +68,7 @@ class AppDatabase extends _$AppDatabase {
   };
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -165,6 +168,10 @@ class AppDatabase extends _$AppDatabase {
           "INSERT INTO word_events (kind, expression, source, created_at) "
           "SELECT 'saved', expression, 'other', date_added FROM saved_words",
         );
+      }
+      if (from < 21) {
+        await migrator.createTable(collections);
+        await migrator.createTable(bookCollections);
       }
       // v18 (search_text) and v20 (has_vertical_css) have no migration
       // blocks: the repair pass in beforeOpen adds the columns via the
