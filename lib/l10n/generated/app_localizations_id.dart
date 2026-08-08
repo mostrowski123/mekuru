@@ -1515,15 +1515,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String libraryRemoveFromFolderConfirmTitle({required int count}) {
-    return 'Remove $count books from this folder?';
+    return 'Keluarkan $count buku dari koleksi ini?';
   }
 
   @override
   String get libraryRemoveFromFolderConfirmBody =>
-      'The books stay in your library.';
+      'Buku tetap ada di pustaka Anda.';
 
   @override
-  String get commonRemove => 'Remove';
+  String get commonRemove => 'Keluarkan';
 
   @override
   String get libraryRenameBookTitle => 'Ganti Nama Buku';
