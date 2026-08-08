@@ -1071,6 +1071,11 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   void _handlePointerUp(PointerUpEvent e) {
+    // The raw Listener never joins the gesture arena, so up/cancel are
+    // delivered along the pointer-down-time hit-test path even after this
+    // tile is disposed mid-gesture (e.g. by a reorder drag's rebuild).
+    // Every terminal-event handler here must guard on mounted.
+    if (!mounted) return;
     _longPressTimer?.cancel();
     _onPressUp();
 
@@ -1091,6 +1096,8 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   void _handlePointerCancel(PointerCancelEvent e) {
+    if (!mounted) return; // see _handlePointerUp
+
     _longPressTimer?.cancel();
     _onPressUp();
   }
