@@ -127,9 +127,9 @@ class BackupBookEntry {
   final List<BackupBookmarkEntry> bookmarks;
   final List<BackupHighlightEntry> highlights;
 
-  /// Names of the collections this book belongs to. Matched/created by
-  /// name on restore.
-  final List<String> collections;
+  /// Memberships of this book. Matched/created by collection name on
+  /// restore; [BackupCollectionRef.position] preserves the manual order.
+  final List<BackupCollectionRef> collections;
 
   const BackupBookEntry({
     required this.bookKey,
@@ -148,6 +148,16 @@ class BackupBookEntry {
     required this.highlights,
     this.collections = const [],
   });
+}
+
+/// One collection membership in a backup. Encoded as {"name":…,
+/// "position":…}; a bare string decodes to position 0 (the shape every
+/// backup written before schema v22 uses).
+class BackupCollectionRef {
+  final String name;
+  final int position;
+
+  const BackupCollectionRef({required this.name, this.position = 0});
 }
 
 class BackupBookmarkEntry {

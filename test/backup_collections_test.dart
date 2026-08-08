@@ -44,7 +44,7 @@ void main() {
       ).createBackup();
 
       expect(manifest.collections.toSet(), {'Shelf', 'Empty'});
-      expect(manifest.books.single.collections, ['Shelf']);
+      expect(manifest.books.single.collections.map((c) => c.name), ['Shelf']);
     },
   );
 
@@ -62,7 +62,10 @@ void main() {
           readProgress: 0.0,
           bookmarks: [],
           highlights: [],
-          collections: ['Shelf', 'Novels'],
+          collections: [
+            BackupCollectionRef(name: 'Shelf', position: 2),
+            BackupCollectionRef(name: 'Novels'),
+          ],
         ),
       ],
       collections: const ['Shelf', 'Novels', 'Empty'],
@@ -71,7 +74,11 @@ void main() {
     final decoded = BackupSerializer.decode(BackupSerializer.encode(manifest));
 
     expect(decoded.collections, ['Shelf', 'Novels', 'Empty']);
-    expect(decoded.books.single.collections, ['Shelf', 'Novels']);
+    expect(decoded.books.single.collections.map((c) => c.name), [
+      'Shelf',
+      'Novels',
+    ]);
+    expect(decoded.books.single.collections.first.position, 2);
   });
 
   test(
@@ -90,7 +97,7 @@ void main() {
         readProgress: 0.5,
         bookmarks: [],
         highlights: [],
-        collections: ['Shelf'],
+        collections: [BackupCollectionRef(name: 'Shelf')],
       );
 
       await restore.applyBookData(bookId, entry);
@@ -103,6 +110,50 @@ void main() {
       expect(memberships.single.collectionId, all.single.id);
     },
   );
+
+  test('membership positions survive backup, serialize, restore', () async {
+    final a = await insertBook('猫');
+    final b = await insertBook('犬');
+    final shelf = await collections.createCollection('Shelf');
+    await collections.addBooksToCollection(shelf, {a, b});
+    await collections.reorderCollectionBooks(shelf, [b, a]);
+
+    final manifest = await BackupService(db, BookMatchService()).createBackup();
+    final decoded = BackupSerializer.decode(BackupSerializer.encode(manifest));
+
+    final entryA = decoded.books.firstWhere((e) => e.title == '猫');
+    expect(entryA.collections.single.name, 'Shelf');
+    expect(entryA.collections.single.position, 1); // b took 0
+
+    // Restore onto a fresh book: position written back.
+    final target = await insertBook('猫2');
+    final restore = RestoreService(
+      db,
+      BookMatchService(),
+      PendingBookDataRepository(db),
+    );
+    await restore.applyBookData(target, entryA);
+    final row = (await db.select(db.bookCollections).get()).firstWhere(
+      (m) => m.bookId == target,
+    );
+    expect(row.position, 1);
+  });
+
+  test('decoder accepts legacy plain-string collections', () {
+    // Every backup written before v22 stores membership as bare names.
+    final json =
+        '{"version":1,"appName":"mekuru","createdAt":"2026-03-05T00:00:00.000Z",'
+        '"settings":{"app":{},"reader":{}},"dictionaryPreferences":[],'
+        '"savedWords":[],"books":[{"bookKey":"k","title":"T","bookType":"epub",'
+        '"readProgress":0.0,"bookmarks":[],"highlights":[],'
+        '"collections":["Shelf"]}]}';
+
+    final decoded = BackupSerializer.decode(json);
+
+    final ref = decoded.books.single.collections.single;
+    expect(ref.name, 'Shelf');
+    expect(ref.position, 0);
+  });
 
   test(
     'restoreBooks creates manifest-level collections without duplicates',

@@ -47,11 +47,13 @@ class BackupService {
     final allCollections = await _db.select(_db.collections).get();
     final memberships = await _db.select(_db.bookCollections).get();
     final collectionNameById = {for (final c in allCollections) c.id: c.name};
-    final collectionNamesByBook = <int, List<String>>{};
+    final collectionRefsByBook = <int, List<BackupCollectionRef>>{};
     for (final m in memberships) {
       final name = collectionNameById[m.collectionId];
       if (name != null) {
-        collectionNamesByBook.putIfAbsent(m.bookId, () => []).add(name);
+        collectionRefsByBook
+            .putIfAbsent(m.bookId, () => [])
+            .add(BackupCollectionRef(name: name, position: m.position));
       }
     }
 
@@ -89,7 +91,7 @@ class BackupService {
           overrideVerticalText: book.overrideVerticalText,
           overrideReadingDirection: book.overrideReadingDirection,
           furiganaMode: book.furiganaMode,
-          collections: collectionNamesByBook[book.id] ?? const [],
+          collections: collectionRefsByBook[book.id] ?? const [],
           bookmarks: bookmarks
               .map(
                 (bm) => BackupBookmarkEntry(

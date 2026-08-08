@@ -203,7 +203,9 @@ class BackupSerializer {
       'overrideVerticalText': entry.overrideVerticalText,
       'overrideReadingDirection': entry.overrideReadingDirection,
       'furiganaMode': entry.furiganaMode,
-      'collections': entry.collections,
+      'collections': entry.collections
+          .map((c) => {'name': c.name, 'position': c.position})
+          .toList(),
       'bookmarks': entry.bookmarks
           .map(
             (b) => {
@@ -307,6 +309,19 @@ class BackupSerializer {
     );
   }
 
+  /// Accepts both membership shapes: pre-v22 backups store bare names,
+  /// current ones {"name":…,"position":…}.
+  static BackupCollectionRef _decodeCollectionRef(dynamic item) {
+    if (item is String) return BackupCollectionRef(name: item);
+    if (item is Map<String, dynamic>) {
+      return BackupCollectionRef(
+        name: item['name'] as String? ?? '',
+        position: item['position'] as int? ?? 0,
+      );
+    }
+    throw BackupFormatException('invalid collection membership');
+  }
+
   static BackupBookEntry _decodeBookEntry(dynamic item) {
     if (item is! Map<String, dynamic>) {
       throw BackupFormatException('invalid book entry');
@@ -330,7 +345,10 @@ class BackupSerializer {
       overrideVerticalText: item['overrideVerticalText'] as bool?,
       overrideReadingDirection: item['overrideReadingDirection'] as String?,
       furiganaMode: item['furiganaMode'] as String?,
-      collections: List<String>.from(item['collections'] as List? ?? const []),
+      collections: [
+        for (final c in item['collections'] as List? ?? const [])
+          _decodeCollectionRef(c),
+      ],
       bookmarks: bookmarksList.map(_decodeBookmark).toList(),
       highlights: highlightsList.map(_decodeHighlight).toList(),
     );

@@ -278,14 +278,15 @@ class RestoreService {
 
   /// Apply backup data to a specific book. Used for conflicts and pending data.
   Future<void> applyBookData(int bookId, BackupBookEntry entry) async {
-    for (final name in entry.collections) {
-      final collectionId = await _ensureCollection(name);
+    for (final membership in entry.collections) {
+      final collectionId = await _ensureCollection(membership.name);
       await _db
           .into(_db.bookCollections)
           .insert(
             BookCollectionsCompanion.insert(
               bookId: bookId,
               collectionId: collectionId,
+              position: Value(membership.position),
             ),
             mode: InsertMode.insertOrIgnore,
           );
