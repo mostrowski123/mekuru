@@ -13,6 +13,7 @@ import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/book_cover_image.dart';
+import 'package:mekuru/features/library/presentation/widgets/collection_widgets.dart';
 import 'package:mekuru/features/library/presentation/widgets/continue_reading_card.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
@@ -154,6 +155,7 @@ class LibraryScreen extends ConsumerWidget {
               onDismiss: () =>
                   ref.read(bookImportProvider.notifier).clearState(),
             ),
+          const CollectionFilterRow(),
           Expanded(
             child: booksAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -164,7 +166,27 @@ class LibraryScreen extends ConsumerWidget {
               ),
               data: (books) {
                 if (books.isEmpty) return _buildEmptyState(context, ref);
-                return _buildBookGrid(context, ref, books);
+                final selected = ref.watch(selectedCollectionProvider);
+                var visible = books;
+                if (selected != null) {
+                  final memberIds =
+                      ref
+                          .watch(bookCollectionsProvider)
+                          .value
+                          ?.where((m) => m.collectionId == selected)
+                          .map((m) => m.bookId)
+                          .toSet() ??
+                      const <int>{};
+                  visible = books
+                      .where((b) => memberIds.contains(b.id))
+                      .toList();
+                }
+                return _buildBookGrid(
+                  context,
+                  ref,
+                  visible,
+                  showContinueCard: selected == null,
+                );
               },
             ),
           ),
@@ -320,8 +342,13 @@ class LibraryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBookGrid(BuildContext context, WidgetRef ref, List<Book> books) {
-    final recent = mostRecentlyReadBook(books);
+  Widget _buildBookGrid(
+    BuildContext context,
+    WidgetRef ref,
+    List<Book> books, {
+    bool showContinueCard = true,
+  }) {
+    final recent = showContinueCard ? mostRecentlyReadBook(books) : null;
     return CustomScrollView(
       slivers: [
         if (recent != null)
@@ -1234,6 +1261,15 @@ class _BookTileState extends ConsumerState<_BookTile>
               ),
             ],
             const Divider(),
+            ListTile(
+              leading: const Icon(Icons.collections_bookmark_outlined),
+              title: Text(context.l10n.libraryAddToCollectionAction),
+              onTap: () {
+                AppHaptics.light();
+                Navigator.of(sheetContext).pop();
+                showCollectionAssignSheet(context, book);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.edit_outlined),
               title: Text(context.l10n.commonRename),

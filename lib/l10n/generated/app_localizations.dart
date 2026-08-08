@@ -2494,6 +2494,48 @@ abstract class AppLocalizations {
   /// **'Change Cover'**
   String get libraryChangeCoverAction;
 
+  /// Filter chip that shows every book regardless of collection.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get libraryCollectionsAll;
+
+  /// Book menu action that opens the collection assignment sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to collection'**
+  String get libraryAddToCollectionAction;
+
+  /// Action that creates a new collection, also used as the creation dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'New collection'**
+  String get libraryNewCollectionAction;
+
+  /// Text field label for a collection's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get libraryCollectionNameLabel;
+
+  /// Dialog title for renaming a collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename collection'**
+  String get libraryRenameCollectionTitle;
+
+  /// Confirmation dialog title before deleting a collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection?'**
+  String get libraryDeleteCollectionConfirmTitle;
+
+  /// Confirmation dialog body before deleting a collection.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" will be deleted. Books stay in your library.'**
+  String libraryDeleteCollectionConfirmBody({required String name});
+
   /// Title for the rename book dialog.
   ///
   /// In en, this message translates to:

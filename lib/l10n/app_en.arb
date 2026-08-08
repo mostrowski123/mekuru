@@ -1841,6 +1841,39 @@
   "@libraryChangeCoverAction": {
     "description": "Action label to change a book cover image."
   },
+  "libraryCollectionsAll": "All",
+  "@libraryCollectionsAll": {
+    "description": "Filter chip that shows every book regardless of collection."
+  },
+  "libraryAddToCollectionAction": "Add to collection",
+  "@libraryAddToCollectionAction": {
+    "description": "Book menu action that opens the collection assignment sheet."
+  },
+  "libraryNewCollectionAction": "New collection",
+  "@libraryNewCollectionAction": {
+    "description": "Action that creates a new collection, also used as the creation dialog title."
+  },
+  "libraryCollectionNameLabel": "Name",
+  "@libraryCollectionNameLabel": {
+    "description": "Text field label for a collection's name."
+  },
+  "libraryRenameCollectionTitle": "Rename collection",
+  "@libraryRenameCollectionTitle": {
+    "description": "Dialog title for renaming a collection."
+  },
+  "libraryDeleteCollectionConfirmTitle": "Delete collection?",
+  "@libraryDeleteCollectionConfirmTitle": {
+    "description": "Confirmation dialog title before deleting a collection."
+  },
+  "libraryDeleteCollectionConfirmBody": "\"{name}\" will be deleted. Books stay in your library.",
+  "@libraryDeleteCollectionConfirmBody": {
+    "description": "Confirmation dialog body before deleting a collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "libraryRenameBookTitle": "Rename Book",
   "@libraryRenameBookTitle": {
     "description": "Title for the rename book dialog."

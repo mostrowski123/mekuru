@@ -1431,6 +1431,29 @@ class AppLocalizationsId extends AppLocalizations {
   String get libraryChangeCoverAction => 'Ubah Sampul';
 
   @override
+  String get libraryCollectionsAll => 'All';
+
+  @override
+  String get libraryAddToCollectionAction => 'Add to collection';
+
+  @override
+  String get libraryNewCollectionAction => 'New collection';
+
+  @override
+  String get libraryCollectionNameLabel => 'Name';
+
+  @override
+  String get libraryRenameCollectionTitle => 'Rename collection';
+
+  @override
+  String get libraryDeleteCollectionConfirmTitle => 'Delete collection?';
+
+  @override
+  String libraryDeleteCollectionConfirmBody({required String name}) {
+    return '\"$name\" will be deleted. Books stay in your library.';
+  }
+
+  @override
   String get libraryRenameBookTitle => 'Ganti Nama Buku';
 
   @override
