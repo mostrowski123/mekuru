@@ -205,6 +205,109 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('folder edit mode selects on tap and removes selected', (
+    tester,
+  ) async {
+    final ids = <int>[];
+    for (var i = 0; i < 3; i++) {
+      ids.add(await insertBook(tester, 'Book $i'));
+    }
+    final shelfId = await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.addBooksToCollection(shelf, ids.toSet());
+      return shelf;
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+    await tester.tap(find.text('Shelf'));
+    await tester.pumpAndSettle();
+
+    // Enter edit mode from the app bar.
+    await tester.tap(find.byIcon(Icons.checklist));
+    await tester.pump();
+    expect(find.text('0 selected'), findsOneWidget);
+
+    // Tap selects instead of opening the reader.
+    await tester.tap(find.byKey(ValueKey('book-tile-${ids[0]}')));
+    await tester.pump();
+    expect(find.text('1 selected'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+    // Remove the selection from the folder.
+    await tester.tap(find.byIcon(Icons.playlist_remove));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    final memberships = await tester.runAsync(
+      () => db.select(db.bookCollections).get(),
+    );
+    expect(
+      memberships!.where((m) => m.collectionId == shelfId).map((m) => m.bookId),
+      isNot(contains(ids[0])),
+    );
+    // Mode exited: normal app bar is back.
+    expect(find.byIcon(Icons.checklist), findsOneWidget);
+
+    await unmount(tester);
+  });
+
+  testWidgets('a drag movement in edit mode does not toggle selection', (
+    tester,
+  ) async {
+    final ids = <int>[];
+    for (var i = 0; i < 3; i++) {
+      ids.add(await insertBook(tester, 'Book $i'));
+    }
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.addBooksToCollection(shelf, ids.toSet());
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+    await tester.tap(find.text('Shelf'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.checklist));
+    await tester.pump();
+
+    // The tile's Listener is not an arena participant, so it sees the
+    // drag's pointer events too — the 20px travel threshold is what keeps
+    // a drag from selecting.
+    await tester.drag(
+      find.byKey(ValueKey('book-tile-${ids[0]}')),
+      const Offset(0, 120),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('0 selected'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle), findsNothing);
+
+    await unmount(tester);
+  });
+
+  testWidgets('folder grid renders in membership position order', (
+    tester,
+  ) async {
+    final ids = <int>[];
+    for (var i = 0; i < 3; i++) {
+      ids.add(await insertBook(tester, 'Book $i'));
+    }
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.addBooksToCollection(shelf, ids.toSet());
+      await repo.reorderCollectionBooks(shelf, ids.reversed.toList());
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+    await tester.tap(find.text('Shelf'));
+    await tester.pumpAndSettle();
+
+    double x(int id) =>
+        tester.getTopLeft(find.byKey(ValueKey('book-tile-$id'))).dx;
+    // Reversed order: the last-inserted book renders first.
+    expect(x(ids[2]), lessThan(x(ids[1])));
+    expect(x(ids[1]), lessThan(x(ids[0])));
+
+    await unmount(tester);
+  });
+
   testWidgets('continue reading surfaces a book inside a folder', (
     tester,
   ) async {
@@ -222,6 +325,71 @@ void main() {
     await pumpWithDb(tester, const LibraryScreen());
 
     expect(find.text('Continue reading'), findsOneWidget);
+
+    await unmount(tester);
+  });
+
+  testWidgets('library select-all counts loose books only', (tester) async {
+    final inShelf = await insertBook(tester, '坊っちゃん');
+    await insertBook(tester, 'Loose A');
+    await insertBook(tester, 'Loose B');
+    await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.addBooksToCollection(shelf, {inShelf});
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+
+    await tester.tap(find.byIcon(Icons.checklist));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.select_all));
+    await tester.pump();
+
+    // The foldered book is not part of the root selection.
+    expect(find.text('2 selected'), findsOneWidget);
+
+    await unmount(tester);
+  });
+
+  testWidgets('pick sheet adds the selection to chosen collections', (
+    tester,
+  ) async {
+    final a = await insertBook(tester, 'Loose A');
+    final b = await insertBook(tester, 'Loose B');
+    final shelfId = await tester.runAsync(() => repo.createCollection('Shelf'));
+
+    await pumpWithDb(tester, const LibraryScreen());
+
+    await tester.tap(find.byIcon(Icons.checklist));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.select_all));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.create_new_folder_outlined));
+    await tester.pumpAndSettle();
+
+    // Check the collection (scoped: the folder tile behind the sheet also
+    // says 'Shelf'), then confirm.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(CollectionPickSheet),
+        matching: find.text('Shelf'),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Add'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final memberships = await tester.runAsync(
+      () => db.select(db.bookCollections).get(),
+    );
+    expect(
+      memberships!
+          .where((m) => m.collectionId == shelfId)
+          .map((m) => m.bookId)
+          .toSet(),
+      {a, b},
+    );
 
     await unmount(tester);
   });

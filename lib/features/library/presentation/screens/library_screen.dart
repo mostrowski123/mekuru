@@ -66,11 +66,81 @@ Book? mostRecentlyReadBook(List<Book> books) {
 }
 
 /// Library screen displaying imported books in a grid view.
-class LibraryScreen extends ConsumerWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+  // Multi-select mode over loose books (foldered books are selected inside
+  // their folder). Vocabulary-screen pattern.
+  bool _isSelectionMode = false;
+  final Set<int> _selectedIds = {};
+
+  void _enterSelectionMode() {
+    AppHaptics.light();
+    setState(() {
+      _isSelectionMode = true;
+      _selectedIds.clear();
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleSelection(int bookId) {
+    setState(() {
+      _selectedIds.contains(bookId)
+          ? _selectedIds.remove(bookId)
+          : _selectedIds.add(bookId);
+    });
+  }
+
+  Future<void> _addSelectedToCollection() async {
+    await showCollectionPickSheet(context, {..._selectedIds});
+    if (mounted) _exitSelectionMode();
+  }
+
+  AppBar _buildSelectionAppBar(List<Book> looseBooks) {
+    final l10n = context.l10n;
+    final allSelected =
+        looseBooks.isNotEmpty &&
+        looseBooks.every((b) => _selectedIds.contains(b.id));
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _exitSelectionMode,
+      ),
+      title: Text(l10n.librarySelectedCount(count: _selectedIds.length)),
+      actions: [
+        IconButton(
+          icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
+          tooltip: allSelected
+              ? l10n.libraryDeselectAllTooltip
+              : l10n.librarySelectAllTooltip,
+          onPressed: () => setState(() {
+            allSelected
+                ? _selectedIds.clear()
+                : _selectedIds.addAll(looseBooks.map((b) => b.id));
+          }),
+        ),
+        IconButton(
+          icon: const Icon(Icons.create_new_folder_outlined),
+          tooltip: l10n.libraryAddToCollectionAction,
+          onPressed: _selectedIds.isEmpty ? null : _addSelectedToCollection,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
 
     // Load persisted sort order on first build.
@@ -80,34 +150,55 @@ class LibraryScreen extends ConsumerWidget {
     final importState = ref.watch(bookImportProvider);
     final sortOrder = ref.watch(librarySortProvider);
 
+    // Hoisted out of the async branch so the selection app bar can see
+    // them. looseBooks is inherently folder-free, which is exactly what
+    // select-all must cover.
+    final books = booksAsync.value ?? const <Book>[];
+    final memberships =
+        ref.watch(bookCollectionsProvider).value ?? const <BookCollection>[];
+    final inAnyFolder = {for (final m in memberships) m.bookId};
+    final looseBooks = [
+      for (final b in books)
+        if (!inAnyFolder.contains(b.id)) b,
+    ];
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.navLibrary),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            tooltip: l10n.commonHelp,
-            onPressed: () => _showHelpDialog(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            tooltip: l10n.librarySortTooltip(
-              label: librarySortLabel(l10n, sortOrder),
+      appBar: _isSelectionMode
+          ? _buildSelectionAppBar(looseBooks)
+          : AppBar(
+              title: Text(l10n.navLibrary),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.help_outline),
+                  tooltip: l10n.commonHelp,
+                  onPressed: () => _showHelpDialog(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.checklist),
+                  tooltip: l10n.librarySelectTooltip,
+                  onPressed: _enterSelectionMode,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.sort),
+                  tooltip: l10n.librarySortTooltip(
+                    label: librarySortLabel(l10n, sortOrder),
+                  ),
+                  onPressed: () {
+                    AppHaptics.light();
+                    _showSortPicker(context, ref, sortOrder);
+                  },
+                ),
+              ],
             ),
-            onPressed: () {
-              AppHaptics.light();
-              _showSortPicker(context, ref, sortOrder);
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: importState.isImporting
-            ? null
-            : () => _showImportChoice(context, ref),
-        tooltip: l10n.commonImport,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _isSelectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: importState.isImporting
+                  ? null
+                  : () => _showImportChoice(context, ref),
+              tooltip: l10n.commonImport,
+              child: const Icon(Icons.add),
+            ),
       body: Column(
         children: [
           if (importState.isImporting) ...[
@@ -165,19 +256,15 @@ class LibraryScreen extends ConsumerWidget {
                   l10n.commonErrorWithDetails(details: err.toString()),
                 ),
               ),
-              data: (books) {
+              data: (dataBooks) {
                 final collections =
                     ref.watch(collectionsProvider).value ??
                     const <Collection>[];
-                if (books.isEmpty && collections.isEmpty) {
+                if (dataBooks.isEmpty && collections.isEmpty) {
                   return _buildEmptyState(context, ref);
                 }
                 // iOS-folder model: a book living in one or more folders
                 // appears inside those folders, not on the root grid.
-                final memberships =
-                    ref.watch(bookCollectionsProvider).value ??
-                    const <BookCollection>[];
-                final inAnyFolder = {for (final m in memberships) m.bookId};
                 return _buildBookGrid(
                   context,
                   ref,
@@ -188,15 +275,13 @@ class LibraryScreen extends ConsumerWidget {
                     for (final c in collections)
                       c.id: booksInCollectionOrder(
                         collectionId: c.id,
-                        books: books,
+                        books: dataBooks,
                         memberships: memberships,
                       ),
                   },
-                  looseBooks: books
-                      .where((b) => !inAnyFolder.contains(b.id))
-                      .toList(),
+                  looseBooks: looseBooks,
                   // The hero considers every book, foldered or not.
-                  recent: mostRecentlyReadBook(books),
+                  recent: mostRecentlyReadBook(dataBooks),
                 );
               },
             ),
@@ -395,6 +480,9 @@ class LibraryScreen extends ConsumerWidget {
               return _BookTile(
                 key: ValueKey('book-tile-${book.id}'),
                 book: book,
+                isSelectionMode: _isSelectionMode,
+                isSelected: _selectedIds.contains(book.id),
+                onToggleSelection: () => _toggleSelection(book.id),
               );
             }, childCount: collections.length + looseBooks.length),
           ),

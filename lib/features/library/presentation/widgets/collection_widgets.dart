@@ -92,6 +92,100 @@ class CollectionAssignSheet extends ConsumerWidget {
   }
 }
 
+/// Picks collections to add [bookIds] to. Additive only — nothing is ever
+/// removed here, unlike the single-book [CollectionAssignSheet] which
+/// mirrors membership per toggle.
+Future<void> showCollectionPickSheet(BuildContext context, Set<int> bookIds) {
+  return showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (_) => CollectionPickSheet(bookIds: bookIds),
+  );
+}
+
+/// Checkbox list of collections with a deferred confirm: nothing is
+/// written until the add button commits every chosen collection.
+class CollectionPickSheet extends ConsumerStatefulWidget {
+  const CollectionPickSheet({super.key, required this.bookIds});
+
+  final Set<int> bookIds;
+
+  @override
+  ConsumerState<CollectionPickSheet> createState() =>
+      _CollectionPickSheetState();
+}
+
+class _CollectionPickSheetState extends ConsumerState<CollectionPickSheet> {
+  final Set<int> _chosen = {};
+
+  Future<void> _confirm() async {
+    final repo = ref.read(collectionRepositoryProvider);
+    for (final id in _chosen) {
+      await repo.addBooksToCollection(id, widget.bookIds);
+    }
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final collections = ref.watch(collectionsProvider).value ?? const [];
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(title: Text(context.l10n.libraryAddToCollectionAction)),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final collection in collections)
+                  CheckboxListTile(
+                    value: _chosen.contains(collection.id),
+                    title: Text(collection.name),
+                    onChanged: (checked) => setState(() {
+                      if (checked ?? false) {
+                        _chosen.add(collection.id);
+                      } else {
+                        _chosen.remove(collection.id);
+                      }
+                    }),
+                  ),
+                ListTile(
+                  leading: const Icon(Icons.add),
+                  title: Text(context.l10n.libraryNewCollectionAction),
+                  onTap: () async {
+                    AppHaptics.light();
+                    final name = await _promptName(
+                      context,
+                      title: context.l10n.libraryNewCollectionAction,
+                    );
+                    if (name == null || name.isEmpty) return;
+                    final id = await ref
+                        .read(collectionRepositoryProvider)
+                        .createCollection(name);
+                    if (mounted) setState(() => _chosen.add(id));
+                  },
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _chosen.isEmpty ? null : _confirm,
+                child: Text(context.l10n.commonAdd),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Name-entry dialog shared by create and rename. Pops the trimmed name,
 /// or null when cancelled.
 Future<String?> _promptName(
