@@ -1887,7 +1887,13 @@ class _CollectionFolderTile extends StatelessWidget {
     // snapping at each end.
     return OpenContainer(
       tappable: false,
-      transitionType: ContainerTransitionType.fade,
+      // fadeThrough, not fade: with fade the closed child holds opacity 1
+      // for the whole transition while the open child fades in over it, so
+      // both are drawn at once — and the covers sit at the top of the face
+      // but below an app bar on the screen, which looks like them jumping.
+      // fadeThrough retires the face first, so they are never in two
+      // places at the same time.
+      transitionType: ContainerTransitionType.fadeThrough,
       transitionDuration: const Duration(milliseconds: 350),
       closedElevation: 0,
       openElevation: 0,
