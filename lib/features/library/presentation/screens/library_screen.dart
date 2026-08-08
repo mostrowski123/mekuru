@@ -1098,14 +1098,6 @@ class _BookTileState extends ConsumerState<_BookTile>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Only the top route's tiles listen to the tilt sensors. Route opacity
-    // doesn't cancel streams, so covered library tiles would otherwise keep
-    // their gyroscope subscriptions (and per-event rebuilds) running for
-    // as long as a folder — or a reader — is open. ModalRoute.of registers
-    // a dependency, so tiles rebuild and re-enable when uncovered.
-    final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
-    final enableSensorTilt =
-        (Platform.isAndroid || Platform.isIOS) && routeIsCurrent;
     return Listener(
       onPointerDown: _handlePointerDown,
       onPointerUp: _handlePointerUp,
@@ -1116,32 +1108,7 @@ class _BookTileState extends ConsumerState<_BookTile>
           Expanded(
             child: ScaleTransition(
               scale: _scaleAnimation,
-              child: Tilt.base(
-                fps: 60,
-                tiltConfig: TiltConfig(
-                  angle: 15.0,
-                  enableReverse: true,
-                  enableGestureTouch: false,
-                  enableGestureHover: false,
-                  enableGestureSensors: enableSensorTilt,
-                  sensorFactor: 5.0,
-                  enableSensorRevert: false,
-                ),
-                lightConfig: const LightConfig(
-                  minIntensity: 0.0,
-                  maxIntensity: 0.14,
-                ),
-                shadowConfig: ShadowBaseConfig(
-                  offsetInitial: const Offset(0, 2),
-                  offsetFactor: 0.08,
-                  minIntensity: 0.05,
-                  maxIntensity: 0.4,
-                  spreadInitial: 0,
-                  spreadFactor: 0,
-                  minBlurRadius: 6,
-                  maxBlurRadius: 16,
-                  color: Colors.black.withValues(alpha: 0.5),
-                ),
+              child: _CoverTilt(
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(6),
@@ -2007,6 +1974,53 @@ class _BookTileState extends ConsumerState<_BookTile>
 /// A collection rendered like an iOS app folder: a rounded tile holding a
 /// 2x2 preview of member covers, titled like a book tile. Tap opens the
 /// folder, long-press manages it.
+/// The gyroscope-driven 3D tilt shared by book covers and folder faces.
+class _CoverTilt extends StatelessWidget {
+  const _CoverTilt({this.borderRadius, required this.child});
+
+  /// Clips the light and shadow layers; null leaves them unclipped.
+  final BorderRadiusGeometry? borderRadius;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // Only the top route's tiles listen to the tilt sensors. Route opacity
+    // doesn't cancel streams, so covered library tiles would otherwise keep
+    // their gyroscope subscriptions (and per-event rebuilds) running for
+    // as long as a folder — or a reader — is open. ModalRoute.of registers
+    // a dependency, so tiles rebuild and re-enable when uncovered.
+    final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+    final enableSensorTilt =
+        (Platform.isAndroid || Platform.isIOS) && routeIsCurrent;
+    return Tilt.base(
+      fps: 60,
+      borderRadius: borderRadius,
+      tiltConfig: TiltConfig(
+        angle: 15.0,
+        enableReverse: true,
+        enableGestureTouch: false,
+        enableGestureHover: false,
+        enableGestureSensors: enableSensorTilt,
+        sensorFactor: 5.0,
+        enableSensorRevert: false,
+      ),
+      lightConfig: const LightConfig(minIntensity: 0.0, maxIntensity: 0.14),
+      shadowConfig: ShadowBaseConfig(
+        offsetInitial: const Offset(0, 2),
+        offsetFactor: 0.08,
+        minIntensity: 0.05,
+        maxIntensity: 0.4,
+        spreadInitial: 0,
+        spreadFactor: 0,
+        minBlurRadius: 6,
+        maxBlurRadius: 16,
+        color: Colors.black.withValues(alpha: 0.5),
+      ),
+      child: child,
+    );
+  }
+}
+
 class _CollectionFolderTile extends StatelessWidget {
   const _CollectionFolderTile({
     super.key,
@@ -2036,7 +2050,10 @@ class _CollectionFolderTile extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: _FolderPreview(books: books, collectionId: collection.id),
+            child: _CoverTilt(
+              borderRadius: BorderRadius.circular(_folderCornerRadius),
+              child: _FolderPreview(books: books, collectionId: collection.id),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
