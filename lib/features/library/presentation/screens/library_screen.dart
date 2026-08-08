@@ -1897,7 +1897,7 @@ class _CollectionFolderTile extends StatelessWidget {
           Expanded(
             child: Hero(
               tag: collectionHeroTag(collection.id),
-              flightShuttleBuilder: _folderFlightShuttle,
+              flightShuttleBuilder: _folderFlightShuttle(books),
               child: _FolderPreview(books: books),
             ),
           ),
@@ -1928,21 +1928,15 @@ BoxDecoration _folderSurfaceDecoration(ThemeData theme) => BoxDecoration(
   borderRadius: BorderRadius.circular(12),
 );
 
-/// Cheap stand-in rendered while a folder hero is in flight. The default
-/// shuttle is the destination's child — here a scroll view full of blurred
-/// cover images, relaid out every frame, which is what made the flight
-/// stutter. Only the growing surface is animated; contents fade in on
-/// arrival, like an iOS folder.
-Widget _folderFlightShuttle(
-  BuildContext flightContext,
-  Animation<double> animation,
-  HeroFlightDirection direction,
-  BuildContext fromContext,
-  BuildContext toContext,
-) {
-  return DecoratedBox(
-    decoration: _folderSurfaceDecoration(Theme.of(flightContext)),
-  );
+/// What a folder hero renders while in flight: its own face, so the covers
+/// stay on screen and scale up as the folder opens.
+///
+/// The default shuttle is the destination's child — a scroll view of full
+/// book tiles (tilt, progress bars, blurred cover backdrops) relaid out
+/// every frame, which is what made the flight stutter. The face is four
+/// covers in a fixed 2x2, so it stays cheap.
+HeroFlightShuttleBuilder _folderFlightShuttle(List<Book> books) {
+  return (_, _, _, _, _) => _FolderPreview(books: books);
 }
 
 /// The rounded folder face: up to four member covers in a 2x2, or a
@@ -2025,10 +2019,6 @@ class CollectionFolderScreen extends ConsumerWidget {
     final members = books.where((b) => memberIds.contains(b.id)).toList();
 
     final theme = Theme.of(context);
-    // Contents fade in as the folder opens rather than riding the flight —
-    // see [_folderFlightShuttle].
-    final openAnimation =
-        ModalRoute.of(context)?.animation ?? kAlwaysCompleteAnimation;
 
     return Scaffold(
       appBar: AppBar(
@@ -2047,49 +2037,46 @@ class CollectionFolderScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(12),
         child: Hero(
           tag: collectionHeroTag(collectionId),
-          flightShuttleBuilder: _folderFlightShuttle,
+          flightShuttleBuilder: _folderFlightShuttle(members),
           child: Container(
             clipBehavior: Clip.antiAlias,
             decoration: _folderSurfaceDecoration(theme),
-            child: FadeTransition(
-              opacity: openAnimation,
-              child: members.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Text(
-                          context.l10n.libraryFolderEmpty,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+            child: members.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(
+                        context.l10n.libraryFolderEmpty,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  )
+                : CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.all(12),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                childAspectRatio: 0.65,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 16,
+                              ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => _BookTile(
+                              key: ValueKey('book-tile-${members[index].id}'),
+                              book: members[index],
+                            ),
+                            childCount: members.length,
                           ),
                         ),
                       ),
-                    )
-                  : CustomScrollView(
-                      slivers: [
-                        SliverPadding(
-                          padding: const EdgeInsets.all(12),
-                          sliver: SliverGrid(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  childAspectRatio: 0.65,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 16,
-                                ),
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) => _BookTile(
-                                key: ValueKey('book-tile-${members[index].id}'),
-                                book: members[index],
-                              ),
-                              childCount: members.length,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+                    ],
+                  ),
           ),
         ),
       ),
