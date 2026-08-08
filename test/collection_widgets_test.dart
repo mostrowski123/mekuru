@@ -63,6 +63,14 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
+  /// Scopes [finder] to the folder screen. The folder route is non-opaque
+  /// (see _folderRoute), so the library stays live underneath and unscoped
+  /// finders would match both screens.
+  Finder inFolder(Finder finder) => find.descendant(
+    of: find.byType(CollectionFolderScreen),
+    matching: finder,
+  );
+
   testWidgets('books inside folders are hidden from the root grid', (
     tester,
   ) async {
@@ -98,9 +106,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Folder screen: app bar title and only the member book.
-    expect(find.text('Shelf'), findsOneWidget);
+    expect(inFolder(find.text('Shelf')), findsOneWidget);
     expect(find.byKey(ValueKey('book-tile-$inShelf')), findsOneWidget);
-    expect(find.text('吾輩は猫である'), findsNothing);
+    expect(inFolder(find.text('吾輩は猫である')), findsNothing);
 
     await unmount(tester);
   });
@@ -150,10 +158,14 @@ void main() {
     await tester.tap(find.text('Shelf'));
     await tester.pumpAndSettle();
 
-    // Same tag on both routes, or the cover has nothing to fly to.
+    // Same tag on both routes, or the cover has nothing to fly to. The
+    // library's face hero stays live below the non-opaque route, so scope
+    // to the folder screen.
     expect(
-      find.byWidgetPredicate(
-        (w) => w is Hero && w.tag == folderCoverHeroTag(shelfId!, first),
+      inFolder(
+        find.byWidgetPredicate(
+          (w) => w is Hero && w.tag == folderCoverHeroTag(shelfId!, first),
+        ),
       ),
       findsOneWidget,
     );
@@ -222,8 +234,9 @@ void main() {
     await tester.tap(find.text('Shelf'));
     await tester.pumpAndSettle();
 
-    // Enter edit mode from the app bar.
-    await tester.tap(find.byIcon(Icons.checklist));
+    // Enter edit mode from the app bar (scoped: the library's own
+    // checklist action stays live below the non-opaque route).
+    await tester.tap(inFolder(find.byIcon(Icons.checklist)));
     await tester.pump();
     expect(find.text('0 selected'), findsOneWidget);
 
@@ -244,8 +257,8 @@ void main() {
       memberships!.where((m) => m.collectionId == shelfId).map((m) => m.bookId),
       isNot(contains(ids[0])),
     );
-    // Mode exited: normal app bar is back.
-    expect(find.byIcon(Icons.checklist), findsOneWidget);
+    // Mode exited: the folder's normal app bar is back.
+    expect(inFolder(find.byIcon(Icons.checklist)), findsOneWidget);
 
     await unmount(tester);
   });
@@ -265,7 +278,7 @@ void main() {
     await pumpWithDb(tester, const LibraryScreen());
     await tester.tap(find.text('Shelf'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.checklist));
+    await tester.tap(inFolder(find.byIcon(Icons.checklist)));
     await tester.pump();
 
     // The tile's Listener is not an arena participant, so it sees the
