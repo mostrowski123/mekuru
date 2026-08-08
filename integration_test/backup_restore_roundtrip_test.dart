@@ -10,6 +10,7 @@ import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
+import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -75,7 +76,7 @@ void main() {
               pageProgressionDirection: const Value('rtl'),
             ),
           );
-      await sourceDb
+      final kokoroId = await sourceDb
           .into(sourceDb.books)
           .insert(
             BooksCompanion.insert(
@@ -84,6 +85,21 @@ void main() {
               language: const Value('ja'),
             ),
           );
+
+      // One populated collection with a manually reversed order (proves
+      // positions round-trip, not just membership) and one empty collection
+      // (only survives via the manifest-level name list).
+      final sourceCollections = CollectionRepository(sourceDb);
+      final bungakuId = await sourceCollections.createCollection('文学');
+      await sourceCollections.addBooksToCollection(bungakuId, {
+        melosId,
+        kokoroId,
+      });
+      await sourceCollections.reorderCollectionBooks(bungakuId, [
+        kokoroId,
+        melosId,
+      ]);
+      await sourceCollections.createCollection('積読');
 
       await sourceDb
           .into(sourceDb.bookmarks)
@@ -208,6 +224,29 @@ void main() {
       expect(highlights[0].color, 'yellow');
       expect(highlights[0].userNote, '印象的');
       expect(highlights[0].dateAdded.toUtc(), DateTime.utc(2026, 5, 3, 8));
+
+      // Collections: both names recreated (the empty one only exists in the
+      // manifest-level list), memberships rejoined by name, positions kept.
+      final restoredCollections = await targetDb
+          .select(targetDb.collections)
+          .get();
+      expect(restoredCollections.map((c) => c.name).toSet(), {'文学', '積読'});
+      final bungaku = restoredCollections.firstWhere((c) => c.name == '文学');
+      final tsundoku = restoredCollections.firstWhere((c) => c.name == '積読');
+
+      final kokoroBook = await (targetDb.select(
+        targetDb.books,
+      )..where((t) => t.title.equals('こころ'))).getSingle();
+      final memberships = await targetDb.select(targetDb.bookCollections).get();
+      final bungakuRows =
+          memberships.where((m) => m.collectionId == bungaku.id).toList()
+            ..sort((a, b) => a.position.compareTo(b.position));
+      expect(bungakuRows.map((m) => m.bookId).toList(), [
+        kokoroBook.id,
+        melosBook.id,
+      ]);
+      expect(bungakuRows.map((m) => m.position).toList(), [0, 1]);
+      expect(memberships.where((m) => m.collectionId == tsundoku.id), isEmpty);
     },
   );
 
@@ -245,6 +284,9 @@ void main() {
           .insert(
             BookmarksCompanion.insert(bookId: bookId, cfi: 'epubcfi(/6/4)'),
           );
+      final sourceCollections = CollectionRepository(sourceDb);
+      final favId = await sourceCollections.createCollection('お気に入り');
+      await sourceCollections.addBooksToCollection(favId, {bookId});
 
       final manifest = await BackupService(
         sourceDb,
@@ -285,6 +327,12 @@ void main() {
 
       expect(await targetDb.select(targetDb.savedWords).get(), hasLength(1));
       expect(await targetDb.select(targetDb.bookmarks).get(), hasLength(1));
+      // Collections and memberships are not duplicated either.
+      expect(await targetDb.select(targetDb.collections).get(), hasLength(1));
+      expect(
+        await targetDb.select(targetDb.bookCollections).get(),
+        hasLength(1),
+      );
     },
   );
 }

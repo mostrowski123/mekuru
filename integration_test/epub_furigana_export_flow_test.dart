@@ -3,11 +3,18 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/services/epub_furigana_export.dart';
+import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
+
+import 'shared/test_infrastructure.dart';
+import 'test_helpers.dart';
 
 /// Integration test for the furigana EPUB export pipeline.
 ///
@@ -113,4 +120,188 @@ void main() {
     expect(xhtml, isNot(contains('<ruby>今日')));
     expect(xhtml, contains('今日'));
   });
+
+  // UI-level coverage of runFuriganaExport: long-press → options sheet →
+  // coverage dialog → spinner → save. The SAF save dialog is the one thing
+  // that cannot run headless, so the platform side of FilePicker is swapped
+  // for a capturing fake; everything up to it is the real code path.
+  //
+  // Never pumpAndSettle while book tiles are mounted — _CoverTilt's sensor
+  // stream rebuilds at 60fps on device and the frame never settles.
+  group('export UI', () {
+    late _CapturingFilePicker picker;
+    late FilePickerPlatform originalPicker;
+
+    setUp(() {
+      originalPicker = FilePickerPlatform.instance;
+      picker = _CapturingFilePicker();
+      FilePickerPlatform.instance = picker;
+    });
+
+    tearDown(() {
+      FilePickerPlatform.instance = originalPicker;
+    });
+
+    Future<AppDatabase> dbWithBook(String body, {required String title}) async {
+      final db = createTestDatabase();
+      addTearDown(db.close);
+      final path = await writeEpub(body);
+      await db
+          .into(db.books)
+          .insert(BooksCompanion.insert(title: title, filePath: path));
+      return db;
+    }
+
+    testWidgets(
+      'long-press → Export as EPUB → All kanji saves a ruby-annotated EPUB',
+      (tester) async {
+        final db = await dbWithBook('<p>吾輩は猫である。</p>', title: '吾輩は猫である');
+        await tester.pumpWidget(
+          buildIntegrationTestApp(db: db, home: const LibraryScreen()),
+        );
+        final bookId = (await db.select(db.books).get()).single.id;
+        final tile = find.byKey(ValueKey('book-tile-$bookId'));
+        await pumpUntilVisible(tester, tile);
+
+        await longPressTile(tester, tile);
+        expect(find.text('Export as EPUB'), findsOneWidget);
+        await tapSheetItem(tester, 'Export as EPUB');
+
+        // Coverage dialog: all four modes; the level picker only appears
+        // for the JLPT mode.
+        expect(find.text('Furigana in exported book'), findsOneWidget);
+        expect(find.byType(RadioListTile<FuriganaMode>), findsNWidgets(4));
+        expect(find.text('All kanji'), findsOneWidget);
+        expect(find.text('Kanji above JLPT level'), findsOneWidget);
+        expect(find.text('As published'), findsOneWidget);
+        expect(find.text('None (remove existing)'), findsOneWidget);
+        expect(find.byType(SegmentedButton<int>), findsNothing);
+
+        // Cancel is a no-op: no spinner, nothing saved.
+        await tester.tap(find.text('Cancel'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(find.text('Furigana in exported book'), findsNothing);
+        expect(find.text('Preparing EPUB…'), findsNothing);
+        expect(picker.calls, 0);
+
+        // Export with the default mode (all kanji).
+        await longPressTile(tester, tile);
+        await tapSheetItem(tester, 'Export as EPUB');
+        await tester.tap(find.text('Export'));
+        await pumpUntilVisible(
+          tester,
+          find.text('EPUB exported'),
+          timeout: const Duration(seconds: 90),
+        );
+        // The snackbar shows while the spinner's pop animation may still be
+        // running; wait for the route to actually leave the tree.
+        await pumpUntilGone(tester, find.text('Preparing EPUB…'));
+
+        expect(picker.calls, 1);
+        expect(picker.fileName, '吾輩は猫である (furigana).epub');
+        expect(picker.dialogTitle, 'Save EPUB');
+        final xhtml = chapterOut(picker.bytes!);
+        expect(xhtml, contains('<ruby>猫<rt>ねこ</rt></ruby>'));
+      },
+    );
+
+    testWidgets('JLPT level picker and None mode reach the pipeline', (
+      tester,
+    ) async {
+      // 今日 = N5, 憂鬱 = N1, 薔薇 = non-joyo (harder than N1), plus
+      // publisher ruby. At threshold N1 only 薔薇 gains ruby — which a
+      // level-agnostic fixture could never prove reached the pipeline.
+      final db = await dbWithBook(
+        '<p>今日は憂鬱な薔薇だ。</p><p><ruby>漢字<rt>かんじ</rt></ruby></p>',
+        title: 'JLPTの本',
+      );
+      await tester.pumpWidget(
+        buildIntegrationTestApp(db: db, home: const LibraryScreen()),
+      );
+      final bookId = (await db.select(db.books).get()).single.id;
+      final tile = find.byKey(ValueKey('book-tile-$bookId'));
+      await pumpUntilVisible(tester, tile);
+
+      await longPressTile(tester, tile);
+      await tapSheetItem(tester, 'Export as EPUB');
+      await tester.tap(find.text('Kanji above JLPT level'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.byType(SegmentedButton<int>), findsOneWidget);
+      for (final label in ['N5', 'N4', 'N3', 'N2', 'N1']) {
+        expect(find.text(label), findsOneWidget);
+      }
+      await tester.tap(find.text('N1'));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('Export'));
+      await pumpUntilVisible(
+        tester,
+        find.text('EPUB exported'),
+        timeout: const Duration(seconds: 90),
+      );
+
+      expect(picker.calls, 1);
+      var xhtml = chapterOut(picker.bytes!);
+      // Reading-agnostic on 薔薇 so a MeCab dictionary swap can't break it.
+      expect(
+        RegExp(r'<ruby>薔薇<rt>[ぁ-ん]+</rt></ruby>').hasMatch(xhtml),
+        isTrue,
+        reason: 'non-joyo word should be annotated at every threshold',
+      );
+      expect(xhtml, isNot(contains('<ruby>憂鬱')));
+      expect(xhtml, isNot(contains('<ruby>今日')));
+      expect(xhtml, contains('<rt>かんじ</rt>')); // publisher ruby kept
+
+      // Let the snackbar clear so the next export waits on a fresh one.
+      await pumpUntilGone(tester, find.text('EPUB exported'));
+
+      // None (remove existing) strips ALL ruby, publisher's included.
+      await longPressTile(tester, tile);
+      await tapSheetItem(tester, 'Export as EPUB');
+      await tester.tap(find.text('None (remove existing)'));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('Export'));
+      await pumpUntilVisible(
+        tester,
+        find.text('EPUB exported'),
+        timeout: const Duration(seconds: 60),
+      );
+
+      expect(picker.calls, 2);
+      xhtml = chapterOut(picker.bytes!);
+      expect(xhtml, isNot(contains('<ruby')));
+      expect(xhtml, isNot(contains('<rt>')));
+      expect(xhtml, contains('憂鬱'));
+      expect(xhtml, contains('漢字'));
+    });
+  });
+}
+
+/// Captures what runFuriganaExport hands to the platform save dialog.
+/// Extending FilePickerPlatform inherits the real verification token, so the
+/// instance setter accepts it without any mock machinery.
+class _CapturingFilePicker extends FilePickerPlatform {
+  int calls = 0;
+  Uint8List? bytes;
+  String? fileName;
+  String? dialogTitle;
+
+  @override
+  Future<String?> saveFile({
+    String? dialogTitle,
+    required String fileName,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    required Uint8List bytes,
+    Function(FilePickerStatus)? onFileLoading,
+    bool lockParentWindow = false,
+  }) async {
+    calls++;
+    this.bytes = bytes;
+    this.fileName = fileName;
+    this.dialogTitle = dialogTitle;
+    return '/fake/exported.epub';
+  }
 }
