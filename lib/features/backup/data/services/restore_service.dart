@@ -213,6 +213,12 @@ class RestoreService {
 
   /// Restore book data. Returns conflicts for the UI to resolve.
   Future<RestoreBookResult> restoreBooks(BackupManifest manifest) async {
+    // Recreate every collection up front so empty ones survive too;
+    // memberships are applied per book in [applyBookData].
+    for (final name in manifest.collections) {
+      await _ensureCollection(name);
+    }
+
     final existingBooks = await _db.select(_db.books).get();
     final hasHashKeys = manifest.books.any(
       (entry) => _bookMatchService.isHashKey(entry.bookKey),
@@ -256,8 +262,35 @@ class RestoreService {
     );
   }
 
+  /// Existing collection with [name], or a newly created one. Matching is
+  /// by name: backups carry no collection ids.
+  Future<int> _ensureCollection(String name) async {
+    final existing =
+        await (_db.select(_db.collections)
+              ..where((t) => t.name.equals(name))
+              ..limit(1))
+            .getSingleOrNull();
+    if (existing != null) return existing.id;
+    return _db
+        .into(_db.collections)
+        .insert(CollectionsCompanion.insert(name: name));
+  }
+
   /// Apply backup data to a specific book. Used for conflicts and pending data.
   Future<void> applyBookData(int bookId, BackupBookEntry entry) async {
+    for (final name in entry.collections) {
+      final collectionId = await _ensureCollection(name);
+      await _db
+          .into(_db.bookCollections)
+          .insert(
+            BookCollectionsCompanion.insert(
+              bookId: bookId,
+              collectionId: collectionId,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    }
+
     // Update reading progress and overrides
     await (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
       BooksCompanion(

@@ -15,6 +15,12 @@ class BackupManifest {
   final List<BackupReadingSessionEntry> readingSessions;
   final List<BackupWordEventEntry> wordEvents;
 
+  /// Every collection name, including empty collections. Additive within
+  /// version 1: older backups simply omit the key. Membership itself is
+  /// stored per book in [BackupBookEntry.collections] so it travels through
+  /// the pending-book-data path when a book is imported after the restore.
+  final List<String> collections;
+
   const BackupManifest({
     required this.version,
     required this.createdAt,
@@ -24,6 +30,7 @@ class BackupManifest {
     required this.books,
     this.readingSessions = const [],
     this.wordEvents = const [],
+    this.collections = const [],
   });
 }
 
@@ -116,6 +123,10 @@ class BackupBookEntry {
   final List<BackupBookmarkEntry> bookmarks;
   final List<BackupHighlightEntry> highlights;
 
+  /// Names of the collections this book belongs to. Matched/created by
+  /// name on restore.
+  final List<String> collections;
+
   const BackupBookEntry({
     required this.bookKey,
     required this.title,
@@ -130,6 +141,7 @@ class BackupBookEntry {
     this.overrideReadingDirection,
     required this.bookmarks,
     required this.highlights,
+    this.collections = const [],
   });
 }
 

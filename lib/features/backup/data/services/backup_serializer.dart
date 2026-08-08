@@ -57,6 +57,7 @@ class BackupSerializer {
           )
           .toList(),
       'books': manifest.books.map(_encodeBookEntry).toList(),
+      'collections': manifest.collections,
       'readingSessions': manifest.readingSessions
           .map(
             (s) => {
@@ -167,6 +168,9 @@ class BackupSerializer {
         'wordEvents',
         _decodeWordEvent,
       ),
+      collections: List<String>.from(
+        parsed['collections'] as List? ?? const [],
+      ),
     );
   }
 
@@ -198,6 +202,7 @@ class BackupSerializer {
       'lastReadAt': entry.lastReadAt?.toUtc().toIso8601String(),
       'overrideVerticalText': entry.overrideVerticalText,
       'overrideReadingDirection': entry.overrideReadingDirection,
+      'collections': entry.collections,
       'bookmarks': entry.bookmarks
           .map(
             (b) => {
@@ -323,6 +328,7 @@ class BackupSerializer {
           : null,
       overrideVerticalText: item['overrideVerticalText'] as bool?,
       overrideReadingDirection: item['overrideReadingDirection'] as String?,
+      collections: List<String>.from(item['collections'] as List? ?? const []),
       bookmarks: bookmarksList.map(_decodeBookmark).toList(),
       highlights: highlightsList.map(_decodeHighlight).toList(),
     );

@@ -44,6 +44,10 @@ class BackupService {
     final savedWords = await _db.select(_db.savedWords).get();
     final books = await _db.select(_db.books).get();
 
+    final allCollections = await _db.select(_db.collections).get();
+    final memberships = await _db.select(_db.bookCollections).get();
+    final collectionNameById = {for (final c in allCollections) c.id: c.name};
+
     final statsRepository = StatsRepository(_db);
     final readingSessions = await statsRepository.getAllSessions();
     final wordEvents = await statsRepository.getAllWordEvents();
@@ -77,6 +81,11 @@ class BackupService {
           lastReadAt: book.lastReadAt,
           overrideVerticalText: book.overrideVerticalText,
           overrideReadingDirection: book.overrideReadingDirection,
+          collections: memberships
+              .where((m) => m.bookId == book.id)
+              .map((m) => collectionNameById[m.collectionId])
+              .whereType<String>()
+              .toList(),
           bookmarks: bookmarks
               .map(
                 (bm) => BackupBookmarkEntry(
@@ -128,6 +137,7 @@ class BackupService {
           )
           .toList(),
       books: bookEntries,
+      collections: allCollections.map((c) => c.name).toList(),
       readingSessions: readingSessions
           .map(
             (s) => BackupReadingSessionEntry(
