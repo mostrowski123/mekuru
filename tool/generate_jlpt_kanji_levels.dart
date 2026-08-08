@@ -102,8 +102,9 @@ void main(List<String> args) {
   buf
     ..writeln(' (total ${levels.length},')
     ..writeln('// of which $joyoFallbacks unlisted-joyo N1 fallbacks).')
-    ..writeln()
-    ..writeln("import 'japanese_text.dart';")
+    ..writeln('//')
+    ..writeln('// Data only — the lookup that reads it is')
+    ..writeln('// wordNeedsFuriganaAboveLevel in japanese_text.dart.')
     ..writeln()
     ..writeln('/// JLPT level per kanji rune: N5 = 5 (easiest) … N1 = 1')
     ..writeln('/// (hardest). Kanji absent from the map are non-joyo and')
@@ -115,30 +116,7 @@ void main(List<String> args) {
       '  0x${entry.key.toRadixString(16).toUpperCase()}: ${entry.value}, // $char',
     );
   }
-  buf
-    ..writeln('};')
-    ..writeln()
-    ..writeln('/// Whether [surface] contains a kanji harder than JLPT')
-    ..writeln('/// [level] (5 = N5 … 1 = N1). Non-joyo kanji count as the')
-    ..writeln('/// hardest (0), and the repetition mark 々 inherits the')
-    ..writeln('/// preceding kanji. The whole word qualifies when ANY of its')
-    ..writeln('/// kanji is above the threshold, so mixed-level words keep')
-    ..writeln('/// their furigana readable end to end.')
-    ..writeln('bool wordNeedsFuriganaAboveLevel(String surface, int level) {')
-    ..writeln('  int? previousLevel;')
-    ..writeln('  for (final rune in surface.runes) {')
-    ..writeln('    if (!isKanjiForFurigana(rune)) {')
-    ..writeln('      previousLevel = null;')
-    ..writeln('      continue;')
-    ..writeln('    }')
-    ..writeln('    final runeLevel = rune == 0x3005')
-    ..writeln('        ? (previousLevel ?? 0)')
-    ..writeln('        : (jlptKanjiLevel[rune] ?? 0);')
-    ..writeln('    previousLevel = runeLevel;')
-    ..writeln('    if (runeLevel < level) return true;')
-    ..writeln('  }')
-    ..writeln('  return false;')
-    ..writeln('}');
+  buf.writeln('};');
 
   File(outPath).writeAsStringSync(buf.toString());
   stdout.writeln(

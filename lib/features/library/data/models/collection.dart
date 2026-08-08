@@ -7,7 +7,6 @@ import 'book.dart';
 class Collections extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 /// Book ↔ collection membership. The references are documentation only:

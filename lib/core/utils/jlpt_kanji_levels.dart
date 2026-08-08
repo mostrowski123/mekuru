@@ -10,8 +10,9 @@
 //
 // Entries per level: N5=81 N4=168 N3=387 N2=367 N1=1380 (total 2383,
 // of which 172 unlisted-joyo N1 fallbacks).
-
-import 'japanese_text.dart';
+//
+// Data only — the lookup that reads it is
+// wordNeedsFuriganaAboveLevel in japanese_text.dart.
 
 /// JLPT level per kanji rune: N5 = 5 (easiest) … N1 = 1
 /// (hardest). Kanji absent from the map are non-joyo and
@@ -2401,25 +2402,3 @@ const Map<int, int> jlptKanjiLevel = {
   0x9F3B: 2, // 鼻
   0x9F62: 2, // 齢
 };
-
-/// Whether [surface] contains a kanji harder than JLPT
-/// [level] (5 = N5 … 1 = N1). Non-joyo kanji count as the
-/// hardest (0), and the repetition mark 々 inherits the
-/// preceding kanji. The whole word qualifies when ANY of its
-/// kanji is above the threshold, so mixed-level words keep
-/// their furigana readable end to end.
-bool wordNeedsFuriganaAboveLevel(String surface, int level) {
-  int? previousLevel;
-  for (final rune in surface.runes) {
-    if (!isKanjiForFurigana(rune)) {
-      previousLevel = null;
-      continue;
-    }
-    final runeLevel = rune == 0x3005
-        ? (previousLevel ?? 0)
-        : (jlptKanjiLevel[rune] ?? 0);
-    previousLevel = runeLevel;
-    if (runeLevel < level) return true;
-  }
-  return false;
-}

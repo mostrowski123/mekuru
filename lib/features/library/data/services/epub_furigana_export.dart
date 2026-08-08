@@ -246,10 +246,11 @@ Future<Uint8List?> buildFuriganaEpubForMode(
   required FuriganaMode mode,
   required int jlptLevel,
 }) {
-  final generates = mode == FuriganaMode.all || mode == FuriganaMode.aboveLevel;
+  // The generator is unused by the book/hide modes, so it is built
+  // unconditionally rather than branching on the mode.
   return buildFuriganaEpub(
     epubPath,
     mode: mode,
-    generator: generates ? furiganaGeneratorFor(mode, jlptLevel) : null,
+    generator: furiganaGeneratorFor(mode, jlptLevel),
   );
 }

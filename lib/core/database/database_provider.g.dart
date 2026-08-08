@@ -5427,20 +5427,8 @@ class $CollectionsTable extends Collections
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
   @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  List<GeneratedColumn> get $columns => [id, name];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5464,12 +5452,6 @@ class $CollectionsTable extends Collections
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
     return context;
   }
 
@@ -5487,10 +5469,6 @@ class $CollectionsTable extends Collections
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
     );
   }
 
@@ -5503,27 +5481,17 @@ class $CollectionsTable extends Collections
 class Collection extends DataClass implements Insertable<Collection> {
   final int id;
   final String name;
-  final DateTime createdAt;
-  const Collection({
-    required this.id,
-    required this.name,
-    required this.createdAt,
-  });
+  const Collection({required this.id, required this.name});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
-    map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
 
   CollectionsCompanion toCompanion(bool nullToAbsent) {
-    return CollectionsCompanion(
-      id: Value(id),
-      name: Value(name),
-      createdAt: Value(createdAt),
-    );
+    return CollectionsCompanion(id: Value(id), name: Value(name));
   }
 
   factory Collection.fromJson(
@@ -5534,7 +5502,6 @@ class Collection extends DataClass implements Insertable<Collection> {
     return Collection(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
   @override
@@ -5543,21 +5510,15 @@ class Collection extends DataClass implements Insertable<Collection> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  Collection copyWith({int? id, String? name, DateTime? createdAt}) =>
-      Collection(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        createdAt: createdAt ?? this.createdAt,
-      );
+  Collection copyWith({int? id, String? name}) =>
+      Collection(id: id ?? this.id, name: name ?? this.name);
   Collection copyWithCompanion(CollectionsCompanion data) {
     return Collection(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
 
@@ -5565,59 +5526,42 @@ class Collection extends DataClass implements Insertable<Collection> {
   String toString() {
     return (StringBuffer('Collection(')
           ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('createdAt: $createdAt')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt);
+  int get hashCode => Object.hash(id, name);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Collection &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.createdAt == this.createdAt);
+      (other is Collection && other.id == this.id && other.name == this.name);
 }
 
 class CollectionsCompanion extends UpdateCompanion<Collection> {
   final Value<int> id;
   final Value<String> name;
-  final Value<DateTime> createdAt;
   const CollectionsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
-    this.createdAt = const Value.absent(),
   });
   CollectionsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
-    this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Collection> custom({
     Expression<int>? id,
     Expression<String>? name,
-    Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
-      if (createdAt != null) 'created_at': createdAt,
     });
   }
 
-  CollectionsCompanion copyWith({
-    Value<int>? id,
-    Value<String>? name,
-    Value<DateTime>? createdAt,
-  }) {
-    return CollectionsCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      createdAt: createdAt ?? this.createdAt,
-    );
+  CollectionsCompanion copyWith({Value<int>? id, Value<String>? name}) {
+    return CollectionsCompanion(id: id ?? this.id, name: name ?? this.name);
   }
 
   @override
@@ -5629,9 +5573,6 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
     return map;
   }
 
@@ -5639,8 +5580,7 @@ class CollectionsCompanion extends UpdateCompanion<Collection> {
   String toString() {
     return (StringBuffer('CollectionsCompanion(')
           ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('createdAt: $createdAt')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
@@ -9250,17 +9190,9 @@ typedef $$WordEventsTableProcessedTableManager =
       PrefetchHooks Function()
     >;
 typedef $$CollectionsTableCreateCompanionBuilder =
-    CollectionsCompanion Function({
-      Value<int> id,
-      required String name,
-      Value<DateTime> createdAt,
-    });
+    CollectionsCompanion Function({Value<int> id, required String name});
 typedef $$CollectionsTableUpdateCompanionBuilder =
-    CollectionsCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<DateTime> createdAt,
-    });
+    CollectionsCompanion Function({Value<int> id, Value<String> name});
 
 final class $$CollectionsTableReferences
     extends BaseReferences<_$AppDatabase, $CollectionsTable, Collection> {
@@ -9309,11 +9241,6 @@ class $$CollectionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
   Expression<bool> bookCollectionsRefs(
     Expression<bool> Function($$BookCollectionsTableFilterComposer f) f,
   ) {
@@ -9358,11 +9285,6 @@ class $$CollectionsTableOrderingComposer
     column: $table.name,
     builder: (column) => ColumnOrderings(column),
   );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
 }
 
 class $$CollectionsTableAnnotationComposer
@@ -9379,9 +9301,6 @@ class $$CollectionsTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
   Expression<T> bookCollectionsRefs<T extends Object>(
     Expression<T> Function($$BookCollectionsTableAnnotationComposer a) f,
@@ -9439,22 +9358,10 @@ class $$CollectionsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => CollectionsCompanion(
-                id: id,
-                name: name,
-                createdAt: createdAt,
-              ),
+              }) => CollectionsCompanion(id: id, name: name),
           createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String name,
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => CollectionsCompanion.insert(
-                id: id,
-                name: name,
-                createdAt: createdAt,
-              ),
+              ({Value<int> id = const Value.absent(), required String name}) =>
+                  CollectionsCompanion.insert(id: id, name: name),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (

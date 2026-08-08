@@ -7,6 +7,8 @@
 /// widening an existing one.
 library;
 
+import 'jlpt_kanji_levels.dart';
+
 /// Kanji in the strict sense: CJK Unified Ideographs (U+4E00–U+9FFF) and
 /// Extension A (U+3400–U+4DBF). Marks like 々 are excluded.
 bool isKanji(int rune) =>
@@ -67,3 +69,24 @@ final RegExp japaneseRunPattern = RegExp(
 /// unknown tokens even with MeCab up, so segmentation-repair heuristics
 /// must not treat them as evidence of healthy Japanese output.
 final RegExp mecabAnnotatedCharPattern = RegExp(r'[々〆ぁ-ゖァ-ヺ㐀-䶿一-鿿]');
+
+/// Whether [surface] contains a kanji harder than JLPT [level] (5 = N5 …
+/// 1 = N1). Kanji absent from [jlptKanjiLevel] are non-joyo and count as
+/// the hardest (0); the repetition mark 々 inherits the preceding kanji.
+/// The whole word qualifies when ANY of its kanji is above the threshold,
+/// so mixed-level words keep their furigana readable end to end.
+bool wordNeedsFuriganaAboveLevel(String surface, int level) {
+  int? previousLevel;
+  for (final rune in surface.runes) {
+    if (!isKanjiForFurigana(rune)) {
+      previousLevel = null;
+      continue;
+    }
+    final runeLevel = rune == 0x3005
+        ? (previousLevel ?? 0)
+        : (jlptKanjiLevel[rune] ?? 0);
+    previousLevel = runeLevel;
+    if (runeLevel < level) return true;
+  }
+  return false;
+}

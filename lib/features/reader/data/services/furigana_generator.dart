@@ -1,5 +1,4 @@
 import 'package:mekuru/core/utils/japanese_text.dart';
-import 'package:mekuru/core/utils/jlpt_kanji_levels.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';

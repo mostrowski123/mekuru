@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/core/utils/jlpt_kanji_levels.dart';
 
 void main() {
