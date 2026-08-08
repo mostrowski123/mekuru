@@ -676,7 +676,10 @@ class BookRepository {
       }
     }
 
-    // Clean up bookmarks and highlights for this book
+    // Clean up bookmarks, highlights and collection memberships for this book
+    await (_db.delete(
+      _db.bookCollections,
+    )..where((t) => t.bookId.equals(bookId))).go();
     await (_db.delete(
       _db.bookmarks,
     )..where((t) => t.bookId.equals(bookId))).go();

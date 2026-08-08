@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
@@ -56,6 +57,36 @@ class LibrarySortNotifier extends Notifier<LibrarySortOrder> {
 final librarySortProvider =
     NotifierProvider<LibrarySortNotifier, LibrarySortOrder>(
       LibrarySortNotifier.new,
+    );
+
+// ──────────────── Collections ────────────────
+
+/// Provider for the collection repository.
+final collectionRepositoryProvider = Provider<CollectionRepository>((ref) {
+  return CollectionRepository(ref.watch(databaseProvider));
+});
+
+/// Reactive stream of all collections, ordered by name.
+final collectionsProvider = StreamProvider<List<Collection>>((ref) {
+  return ref.watch(collectionRepositoryProvider).watchCollections();
+});
+
+/// Reactive stream of all book ↔ collection memberships.
+final bookCollectionsProvider = StreamProvider<List<BookCollection>>((ref) {
+  return ref.watch(collectionRepositoryProvider).watchMemberships();
+});
+
+/// Currently selected collection filter (null = all books). Session-only.
+class SelectedCollectionNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void select(int? collectionId) => state = collectionId;
+}
+
+final selectedCollectionProvider =
+    NotifierProvider<SelectedCollectionNotifier, int?>(
+      SelectedCollectionNotifier.new,
     );
 
 // ──────────────── Books ────────────────
