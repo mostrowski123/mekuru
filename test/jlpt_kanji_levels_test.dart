@@ -27,8 +27,27 @@ void main() {
     expect(wordNeedsFuriganaAboveLevel('憂一', 3), isTrue);
   });
 
-  test('off-list kanji count as hardest', () {
+  test('2010 joyo additions with common vocab use their word level', () {
+    // 誰 (だれ, N5 word) and 頃 (〜頃, N5 grammar) predate no JLPT kanji
+    // list — the lists predate the 2010 joyo reform — so without overrides
+    // they would count as hardest and get furigana at every threshold.
+    expect(wordNeedsFuriganaAboveLevel('誰', 1), isFalse);
+    expect(wordNeedsFuriganaAboveLevel('誰', 5), isFalse);
+    expect(wordNeedsFuriganaAboveLevel('頃', 4), isFalse);
+    expect(wordNeedsFuriganaAboveLevel('喉', 3), isFalse);
+  });
+
+  test('joyo kanji missing from the lists count as N1, not hardest', () {
+    // 鬱 is a 2010 joyo addition with no beginner vocabulary: bare at
+    // "above N1", annotated below.
+    expect(wordNeedsFuriganaAboveLevel('鬱', 1), isFalse);
+    expect(wordNeedsFuriganaAboveLevel('鬱', 2), isTrue);
+  });
+
+  test('non-joyo kanji count as hardest', () {
     expect(wordNeedsFuriganaAboveLevel('龘', 5), isTrue);
+    // Annotated even at the strictest threshold.
+    expect(wordNeedsFuriganaAboveLevel('龘', 1), isTrue);
   });
 
   test('repetition mark inherits the preceding kanji level', () {
