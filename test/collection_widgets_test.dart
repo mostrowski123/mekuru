@@ -280,6 +280,61 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('removing multiple books asks for confirmation first', (
+    tester,
+  ) async {
+    final ids = <int>[];
+    for (var i = 0; i < 3; i++) {
+      ids.add(await insertBook(tester, 'Book $i'));
+    }
+    final shelfId = await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.addBooksToCollection(shelf, ids.toSet());
+      return shelf;
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+    await tester.tap(find.text('Shelf'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.checklist));
+    await tester.pump();
+    await tester.tap(find.byKey(ValueKey('book-tile-${ids[0]}')));
+    await tester.pump();
+    await tester.tap(find.byKey(ValueKey('book-tile-${ids[1]}')));
+    await tester.pump();
+    expect(find.text('2 selected'), findsOneWidget);
+
+    // Cancel leaves membership and the selection untouched.
+    await tester.tap(find.byIcon(Icons.playlist_remove));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove 2 books from this folder?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    var memberships = await tester.runAsync(
+      () => db.select(db.bookCollections).get(),
+    );
+    expect(memberships!.where((m) => m.collectionId == shelfId), hasLength(3));
+    expect(find.text('2 selected'), findsOneWidget);
+
+    // Confirming removes both and exits edit mode.
+    await tester.tap(find.byIcon(Icons.playlist_remove));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    memberships = await tester.runAsync(
+      () => db.select(db.bookCollections).get(),
+    );
+    expect(
+      memberships!.where((m) => m.collectionId == shelfId).map((m) => m.bookId),
+      [ids[2]],
+    );
+    expect(find.byIcon(Icons.checklist), findsOneWidget);
+
+    await unmount(tester);
+  });
+
   testWidgets('a drag movement in edit mode does not toggle selection', (
     tester,
   ) async {

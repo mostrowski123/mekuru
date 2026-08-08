@@ -1951,6 +1951,23 @@
       }
     }
   },
+  "libraryRemoveFromFolderConfirmTitle": "Remove {count} books from this folder?",
+  "@libraryRemoveFromFolderConfirmTitle": {
+    "description": "Confirmation dialog title before removing the selected books from a collection; only shown when two or more are selected.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryRemoveFromFolderConfirmBody": "The books stay in your library.",
+  "@libraryRemoveFromFolderConfirmBody": {
+    "description": "Confirmation dialog body before removing the selected books from a collection; reassures nothing is deleted."
+  },
+  "commonRemove": "Remove",
+  "@commonRemove": {
+    "description": "Generic remove action; the item leaves a container but is not deleted."
+  },
   "libraryRenameBookTitle": "Rename Book",
   "@libraryRenameBookTitle": {
     "description": "Title for the rename book dialog."

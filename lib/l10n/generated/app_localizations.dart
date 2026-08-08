@@ -2644,6 +2644,24 @@ abstract class AppLocalizations {
   /// **'\"{name}\" will be deleted. Books stay in your library.'**
   String libraryDeleteCollectionConfirmBody({required String name});
 
+  /// Confirmation dialog title before removing the selected books from a collection; only shown when two or more are selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {count} books from this folder?'**
+  String libraryRemoveFromFolderConfirmTitle({required int count});
+
+  /// Confirmation dialog body before removing the selected books from a collection; reassures nothing is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'The books stay in your library.'**
+  String get libraryRemoveFromFolderConfirmBody;
+
+  /// Generic remove action; the item leaves a container but is not deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get commonRemove;
+
   /// Title for the rename book dialog.
   ///
   /// In en, this message translates to:

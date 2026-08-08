@@ -2292,6 +2292,30 @@ class _CollectionFolderScreenState
   }
 
   Future<void> _removeSelectedFromFolder() async {
+    if (_selectedIds.length > 1) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(
+            context.l10n.libraryRemoveFromFolderConfirmTitle(
+              count: _selectedIds.length,
+            ),
+          ),
+          content: Text(context.l10n.libraryRemoveFromFolderConfirmBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(context.l10n.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(context.l10n.commonRemove),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
     await ref.read(collectionRepositoryProvider).removeBooksFromCollection(
       collectionId,
       {..._selectedIds},

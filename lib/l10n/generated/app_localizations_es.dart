@@ -1528,6 +1528,18 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String libraryRemoveFromFolderConfirmTitle({required int count}) {
+    return 'Remove $count books from this folder?';
+  }
+
+  @override
+  String get libraryRemoveFromFolderConfirmBody =>
+      'The books stay in your library.';
+
+  @override
+  String get commonRemove => 'Remove';
+
+  @override
   String get libraryRenameBookTitle => 'Renombrar libro';
 
   @override

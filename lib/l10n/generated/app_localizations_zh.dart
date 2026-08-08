@@ -1443,6 +1443,18 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String libraryRemoveFromFolderConfirmTitle({required int count}) {
+    return 'Remove $count books from this folder?';
+  }
+
+  @override
+  String get libraryRemoveFromFolderConfirmBody =>
+      'The books stay in your library.';
+
+  @override
+  String get commonRemove => 'Remove';
+
+  @override
   String get libraryRenameBookTitle => '重命名图书';
 
   @override
@@ -3579,6 +3591,18 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String libraryDeleteCollectionConfirmBody({required String name}) {
     return '将删除“$name”。图书仍会保留在书库中。';
   }
+
+  @override
+  String libraryRemoveFromFolderConfirmTitle({required int count}) {
+    return 'Remove $count books from this folder?';
+  }
+
+  @override
+  String get libraryRemoveFromFolderConfirmBody =>
+      'The books stay in your library.';
+
+  @override
+  String get commonRemove => 'Remove';
 
   @override
   String get libraryRenameBookTitle => '重命名图书';
