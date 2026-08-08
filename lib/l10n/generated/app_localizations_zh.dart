@@ -3357,6 +3357,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get readerFuriganaAllKanji => '所有汉字';
 
   @override
+  String get readerFuriganaAboveLevel => 'JLPT';
+
+  @override
+  String get readerFuriganaJlptLevelTitle => 'Furigana for kanji above';
+
+  @override
   String get readerAllSettingsTooltip => '所有设置';
 
   @override
@@ -3459,6 +3465,60 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryChangeCoverAction => '更换封面';
+
+  @override
+  String get libraryExportFuriganaTitle => 'Export as EPUB';
+
+  @override
+  String get libraryExportFuriganaDialogTitle => 'Furigana in exported book';
+
+  @override
+  String get libraryExportFuriganaMatchBook => 'As published';
+
+  @override
+  String get libraryExportFuriganaAboveLevel => 'Kanji above JLPT level';
+
+  @override
+  String get libraryExportFuriganaNone => 'None (remove existing)';
+
+  @override
+  String get libraryExportFuriganaAction => 'Export';
+
+  @override
+  String get libraryExportFuriganaProgress => 'Preparing EPUB…';
+
+  @override
+  String get libraryExportFuriganaSaveTitle => 'Save EPUB';
+
+  @override
+  String get libraryExportFuriganaDone => 'EPUB exported';
+
+  @override
+  String get libraryExportFuriganaUnavailable =>
+      'Furigana engine is unavailable — try again in a moment';
+
+  @override
+  String get libraryCollectionsAll => 'All';
+
+  @override
+  String get libraryAddToCollectionAction => 'Add to collection';
+
+  @override
+  String get libraryNewCollectionAction => 'New collection';
+
+  @override
+  String get libraryCollectionNameLabel => 'Name';
+
+  @override
+  String get libraryRenameCollectionTitle => 'Rename collection';
+
+  @override
+  String get libraryDeleteCollectionConfirmTitle => 'Delete collection?';
+
+  @override
+  String libraryDeleteCollectionConfirmBody({required String name}) {
+    return '\"$name\" will be deleted. Books stay in your library.';
+  }
 
   @override
   String get libraryRenameBookTitle => '重命名图书';

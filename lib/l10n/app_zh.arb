@@ -1657,6 +1657,8 @@
     "description": "Furigana mode option that shows only the furigana included in the book, without generating any."
   },
   "readerFuriganaAllKanji": "所有汉字",
+  "readerFuriganaAboveLevel": "JLPT",
+  "readerFuriganaJlptLevelTitle": "Furigana for kanji above",
   "@readerFuriganaAllKanji": {
     "description": "Furigana mode option that shows furigana above every kanji."
   },
@@ -1798,6 +1800,23 @@
     "description": "Title for the book bookmarks action in library options."
   },
   "libraryChangeCoverAction": "更换封面",
+  "libraryCollectionsAll": "All",
+  "libraryAddToCollectionAction": "Add to collection",
+  "libraryNewCollectionAction": "New collection",
+  "libraryCollectionNameLabel": "Name",
+  "libraryRenameCollectionTitle": "Rename collection",
+  "libraryDeleteCollectionConfirmTitle": "Delete collection?",
+  "libraryDeleteCollectionConfirmBody": "\"{name}\" will be deleted. Books stay in your library.",
+  "libraryExportFuriganaTitle": "Export as EPUB",
+  "libraryExportFuriganaDialogTitle": "Furigana in exported book",
+  "libraryExportFuriganaMatchBook": "As published",
+  "libraryExportFuriganaAboveLevel": "Kanji above JLPT level",
+  "libraryExportFuriganaNone": "None (remove existing)",
+  "libraryExportFuriganaAction": "Export",
+  "libraryExportFuriganaProgress": "Preparing EPUB…",
+  "libraryExportFuriganaSaveTitle": "Save EPUB",
+  "libraryExportFuriganaDone": "EPUB exported",
+  "libraryExportFuriganaUnavailable": "Furigana engine is unavailable — try again in a moment",
   "@libraryChangeCoverAction": {
     "description": "Action label to change a book cover image."
   },
