@@ -602,11 +602,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadsEnhancedFuriganaInstalled => '已启用。如果更改尚未生效，请重启应用。';
 
   @override
-  String get downloadsEnhancedFuriganaUseTitle => 'Use enhanced dictionary';
+  String get downloadsEnhancedFuriganaUseTitle => '使用增强词典';
 
   @override
   String get downloadsEnhancedFuriganaUseSubtitle =>
-      'This only affects reading accuracy — it does not show or hide furigana. Turn it off if tapping words stops working; the download is kept and you can re-enable it anytime. Restart the app to apply.';
+      '这只影响读音的准确度，不会显示或隐藏振假名。如果点按单词失效，请将其关闭；下载的词典会保留，可随时重新启用。重启应用后生效。';
 
   @override
   String get downloadsEnhancedFuriganaDescription =>
@@ -1149,24 +1149,21 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get backupQueueDictionaryPreferencesTitle =>
-      'Queue dictionary settings from this backup';
+  String get backupQueueDictionaryPreferencesTitle => '将此备份中的词典设置加入队列';
 
   @override
-  String get backupQueueDictionaryPreferencesBody =>
-      'You can apply matching dictionary order and enabled states later from Dictionary Manager.';
+  String get backupQueueDictionaryPreferencesBody => '之后可在词典管理中应用匹配词典的排序和启用状态。';
 
   @override
   String backupRestoreSummaryDictionaryPreferencesQueued({
     required int matching,
     required int missing,
   }) {
-    return 'Dictionary settings queued: $matching ready to apply, $missing missing and will be skipped';
+    return '词典设置已加入队列：$matching 项可应用，$missing 项缺失并将跳过';
   }
 
   @override
-  String get backupRestoreSummaryDictionaryPreferencesSkipped =>
-      'Dictionary settings were not queued';
+  String get backupRestoreSummaryDictionaryPreferencesSkipped => '词典设置未加入队列';
 
   @override
   String get backupDeleteDialogTitle => '删除备份？';
@@ -1209,12 +1206,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerBookmarkRemoved => '书签已移除';
 
   @override
-  String get readerDictionaryLoading =>
-      'Dictionary is still loading — try again in a moment.';
+  String get readerDictionaryLoading => '词典仍在加载中，请稍后再试。';
 
   @override
-  String get readerDictionaryUnavailable =>
-      'Dictionary failed to load. Restart the app to try again.';
+  String get readerDictionaryUnavailable => '词典加载失败。请重启应用后重试。';
 
   @override
   String get readerPageBookmarked => '已添加书签';
@@ -1483,21 +1478,20 @@ class AppLocalizationsZh extends AppLocalizations {
       '使用左侧的拖动柄拖动词典进行排序。这里的顺序决定你阅读时点击单词时词典释义的显示顺序。';
 
   @override
-  String get dictionaryManagerPendingBackupTitle =>
-      'Backup dictionary settings ready';
+  String get dictionaryManagerPendingBackupTitle => '备份的词典设置已就绪';
 
   @override
   String get dictionaryManagerPendingBackupBody =>
-      'Apply the dictionary order and enabled states saved in your restored backup. Missing dictionaries will be skipped.';
+      '应用已恢复备份中保存的词典排序和启用状态。缺失的词典将被跳过。';
 
   @override
   String dictionaryManagerPendingBackupMatching({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count matching dictionaries installed',
-      one: '1 matching dictionary installed',
-      zero: '0 matching dictionaries installed',
+      other: '已安装 $count 个匹配的词典',
+      one: '已安装 1 个匹配的词典',
+      zero: '已安装 0 个匹配的词典',
     );
     return '$_temp0';
   }
@@ -1507,35 +1501,33 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count dictionaries missing and will be skipped',
-      one: '1 dictionary missing and will be skipped',
-      zero: '0 dictionaries missing',
+      other: '缺失 $count 个词典，将被跳过',
+      one: '缺失 1 个词典，将被跳过',
+      zero: '缺失 0 个词典',
     );
     return '$_temp0';
   }
 
   @override
   String get dictionaryManagerPendingBackupNoMatches =>
-      'Install at least one matching dictionary to apply these backup settings.';
+      '请至少安装一个匹配的词典，才能应用这些备份设置。';
 
   @override
-  String get dictionaryManagerPendingBackupApplyButton =>
-      'Apply Backup Settings';
+  String get dictionaryManagerPendingBackupApplyButton => '应用备份设置';
 
   @override
-  String get dictionaryManagerPendingBackupWarningTitle =>
-      'Overwrite current dictionary settings?';
+  String get dictionaryManagerPendingBackupWarningTitle => '覆盖当前的词典设置？';
 
   @override
   String get dictionaryManagerPendingBackupWarningBody =>
-      'This will overwrite the current order and enabled or disabled state for matching dictionaries. Missing dictionaries will be skipped.';
+      '这将覆盖匹配词典当前的排序及启用或禁用状态。缺失的词典将被跳过。';
 
   @override
   String dictionaryManagerPendingBackupApplied({
     required int applied,
     required int missing,
   }) {
-    return 'Applied backup settings to $applied dictionaries. Skipped $missing missing dictionaries.';
+    return '已将备份设置应用到 $applied 个词典，跳过 $missing 个缺失的词典。';
   }
 
   @override
@@ -2728,6 +2720,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get downloadsEnhancedFuriganaInstalled => '已启用。如果更改尚未生效，请重启应用。';
 
   @override
+  String get downloadsEnhancedFuriganaUseTitle => '使用增强词典';
+
+  @override
+  String get downloadsEnhancedFuriganaUseSubtitle =>
+      '这只影响读音的准确度，不会显示或隐藏振假名。如果点按单词失效，请将其关闭；下载的词典会保留，可随时重新启用。重启应用后生效。';
+
+  @override
   String get downloadsEnhancedFuriganaDescription =>
       '提高生成振假名和查词的读音准确度（约 10,000 个额外词条）。不会开启或关闭振假名显示。下载 45 MB，占用 250 MB 存储空间。';
 
@@ -3268,6 +3267,23 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
+  String get backupQueueDictionaryPreferencesTitle => '将此备份中的词典设置加入队列';
+
+  @override
+  String get backupQueueDictionaryPreferencesBody => '之后可在词典管理中应用匹配词典的排序和启用状态。';
+
+  @override
+  String backupRestoreSummaryDictionaryPreferencesQueued({
+    required int matching,
+    required int missing,
+  }) {
+    return '词典设置已加入队列：$matching 项可应用，$missing 项缺失并将跳过';
+  }
+
+  @override
+  String get backupRestoreSummaryDictionaryPreferencesSkipped => '词典设置未加入队列';
+
+  @override
   String get backupDeleteDialogTitle => '删除备份？';
 
   @override
@@ -3306,6 +3322,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerBookmarkRemoved => '书签已移除';
+
+  @override
+  String get readerDictionaryLoading => '词典仍在加载中，请稍后再试。';
+
+  @override
+  String get readerDictionaryUnavailable => '词典加载失败。请重启应用后重试。';
 
   @override
   String get readerPageBookmarked => '已添加书签';
@@ -3572,6 +3594,59 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get dictionaryManagerOrderBody =>
       '使用左侧的拖动柄拖动词典进行排序。这里的顺序决定你阅读时点击单词时词典释义的显示顺序。';
+
+  @override
+  String get dictionaryManagerPendingBackupTitle => '备份的词典设置已就绪';
+
+  @override
+  String get dictionaryManagerPendingBackupBody =>
+      '应用已恢复备份中保存的词典排序和启用状态。缺失的词典将被跳过。';
+
+  @override
+  String dictionaryManagerPendingBackupMatching({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已安装 $count 个匹配的词典',
+      one: '已安装 1 个匹配的词典',
+      zero: '已安装 0 个匹配的词典',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dictionaryManagerPendingBackupMissing({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '缺失 $count 个词典，将被跳过',
+      one: '缺失 1 个词典，将被跳过',
+      zero: '缺失 0 个词典',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dictionaryManagerPendingBackupNoMatches =>
+      '请至少安装一个匹配的词典，才能应用这些备份设置。';
+
+  @override
+  String get dictionaryManagerPendingBackupApplyButton => '应用备份设置';
+
+  @override
+  String get dictionaryManagerPendingBackupWarningTitle => '覆盖当前的词典设置？';
+
+  @override
+  String get dictionaryManagerPendingBackupWarningBody =>
+      '这将覆盖匹配词典当前的排序及启用或禁用状态。缺失的词典将被跳过。';
+
+  @override
+  String dictionaryManagerPendingBackupApplied({
+    required int applied,
+    required int missing,
+  }) {
+    return '已将备份设置应用到 $applied 个词典，跳过 $missing 个缺失的词典。';
+  }
 
   @override
   String get dictionaryManagerEnablingTitle => '启用与禁用';

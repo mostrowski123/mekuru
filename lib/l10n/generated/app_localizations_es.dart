@@ -642,11 +642,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Activo. Reinicia la aplicación si los cambios no aparecen.';
 
   @override
-  String get downloadsEnhancedFuriganaUseTitle => 'Use enhanced dictionary';
+  String get downloadsEnhancedFuriganaUseTitle => 'Usar diccionario mejorado';
 
   @override
   String get downloadsEnhancedFuriganaUseSubtitle =>
-      'This only affects reading accuracy — it does not show or hide furigana. Turn it off if tapping words stops working; the download is kept and you can re-enable it anytime. Restart the app to apply.';
+      'Esto solo afecta a la precisión de las lecturas: no muestra ni oculta el furigana. Desactívalo si dejan de funcionar los toques en las palabras; la descarga se conserva y puedes volver a activarlo cuando quieras. Reinicia la aplicación para aplicarlo.';
 
   @override
   String get downloadsEnhancedFuriganaDescription =>
@@ -1219,23 +1219,23 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get backupQueueDictionaryPreferencesTitle =>
-      'Queue dictionary settings from this backup';
+      'Poner en cola los ajustes de diccionarios de esta copia';
 
   @override
   String get backupQueueDictionaryPreferencesBody =>
-      'You can apply matching dictionary order and enabled states later from Dictionary Manager.';
+      'Podrás aplicar más tarde el orden y el estado de activación de los diccionarios coincidentes desde el Gestor de diccionarios.';
 
   @override
   String backupRestoreSummaryDictionaryPreferencesQueued({
     required int matching,
     required int missing,
   }) {
-    return 'Dictionary settings queued: $matching ready to apply, $missing missing and will be skipped';
+    return 'Ajustes de diccionarios en cola: $matching listos para aplicar, $missing no encontrados y se omitirán';
   }
 
   @override
   String get backupRestoreSummaryDictionaryPreferencesSkipped =>
-      'Dictionary settings were not queued';
+      'Los ajustes de diccionarios no se pusieron en cola';
 
   @override
   String get backupDeleteDialogTitle => '¿Eliminar copia de seguridad?';
@@ -1281,11 +1281,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get readerDictionaryLoading =>
-      'Dictionary is still loading — try again in a moment.';
+      'El diccionario aún se está cargando: inténtalo de nuevo en un momento.';
 
   @override
   String get readerDictionaryUnavailable =>
-      'Dictionary failed to load. Restart the app to try again.';
+      'No se pudo cargar el diccionario. Reinicia la aplicación para volver a intentarlo.';
 
   @override
   String get readerPageBookmarked => 'Página marcada';
@@ -1565,20 +1565,20 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get dictionaryManagerPendingBackupTitle =>
-      'Backup dictionary settings ready';
+      'Ajustes de diccionarios de la copia listos';
 
   @override
   String get dictionaryManagerPendingBackupBody =>
-      'Apply the dictionary order and enabled states saved in your restored backup. Missing dictionaries will be skipped.';
+      'Aplica el orden y el estado de activación de los diccionarios guardados en la copia restaurada. Los diccionarios que falten se omitirán.';
 
   @override
   String dictionaryManagerPendingBackupMatching({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count matching dictionaries installed',
-      one: '1 matching dictionary installed',
-      zero: '0 matching dictionaries installed',
+      other: '$count diccionarios coincidentes instalados',
+      one: '1 diccionario coincidente instalado',
+      zero: '0 diccionarios coincidentes instalados',
     );
     return '$_temp0';
   }
@@ -1588,35 +1588,35 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count dictionaries missing and will be skipped',
-      one: '1 dictionary missing and will be skipped',
-      zero: '0 dictionaries missing',
+      other: '$count diccionarios no encontrados y se omitirán',
+      one: '1 diccionario no encontrado y se omitirá',
+      zero: '0 diccionarios no encontrados',
     );
     return '$_temp0';
   }
 
   @override
   String get dictionaryManagerPendingBackupNoMatches =>
-      'Install at least one matching dictionary to apply these backup settings.';
+      'Instala al menos un diccionario coincidente para aplicar estos ajustes de la copia.';
 
   @override
   String get dictionaryManagerPendingBackupApplyButton =>
-      'Apply Backup Settings';
+      'Aplicar ajustes de la copia';
 
   @override
   String get dictionaryManagerPendingBackupWarningTitle =>
-      'Overwrite current dictionary settings?';
+      '¿Sobrescribir los ajustes actuales de diccionarios?';
 
   @override
   String get dictionaryManagerPendingBackupWarningBody =>
-      'This will overwrite the current order and enabled or disabled state for matching dictionaries. Missing dictionaries will be skipped.';
+      'Esto sobrescribirá el orden actual y el estado activado o desactivado de los diccionarios coincidentes. Los diccionarios que falten se omitirán.';
 
   @override
   String dictionaryManagerPendingBackupApplied({
     required int applied,
     required int missing,
   }) {
-    return 'Applied backup settings to $applied dictionaries. Skipped $missing missing dictionaries.';
+    return 'Se aplicaron los ajustes de la copia a $applied diccionarios. Se omitieron $missing diccionarios no encontrados.';
   }
 
   @override

@@ -2507,5 +2507,22 @@
   "statsDurationHoursMinutes": "{hours} jam {minutes} mnt",
   "statsDurationMinutes": "{minutes} mnt",
   "mangaReaderFailedToLoad": "Gagal memuat manga",
-  "mangaReaderNoPages": "Tidak ada halaman yang ditemukan"
+  "mangaReaderNoPages": "Tidak ada halaman yang ditemukan",
+  "downloadsEnhancedFuriganaUseTitle": "Gunakan kamus yang ditingkatkan",
+  "downloadsEnhancedFuriganaUseSubtitle": "Ini hanya memengaruhi akurasi cara baca — bukan menampilkan atau menyembunyikan furigana. Nonaktifkan jika ketukan pada kata berhenti bekerja; unduhan tetap disimpan dan Anda dapat mengaktifkannya lagi kapan saja. Mulai ulang aplikasi untuk menerapkan.",
+  "backupQueueDictionaryPreferencesTitle": "Antrekan pengaturan kamus dari cadangan ini",
+  "backupQueueDictionaryPreferencesBody": "Anda dapat menerapkan urutan kamus dan status aktifnya nanti dari Pengelola Kamus.",
+  "backupRestoreSummaryDictionaryPreferencesQueued": "Pengaturan kamus diantrekan: {matching} siap diterapkan, {missing} tidak ditemukan dan akan dilewati",
+  "backupRestoreSummaryDictionaryPreferencesSkipped": "Pengaturan kamus tidak diantrekan",
+  "readerDictionaryLoading": "Kamus masih dimuat — coba lagi sebentar.",
+  "readerDictionaryUnavailable": "Kamus gagal dimuat. Mulai ulang aplikasi untuk mencoba lagi.",
+  "dictionaryManagerPendingBackupTitle": "Pengaturan kamus dari cadangan siap",
+  "dictionaryManagerPendingBackupBody": "Terapkan urutan kamus dan status aktif yang tersimpan di cadangan yang Anda pulihkan. Kamus yang tidak ada akan dilewati.",
+  "dictionaryManagerPendingBackupMatching": "{count, plural, =0 {0 kamus yang cocok terpasang} =1 {1 kamus yang cocok terpasang} other {{count} kamus yang cocok terpasang}}",
+  "dictionaryManagerPendingBackupMissing": "{count, plural, =0 {0 kamus tidak ditemukan} =1 {1 kamus tidak ditemukan dan akan dilewati} other {{count} kamus tidak ditemukan dan akan dilewati}}",
+  "dictionaryManagerPendingBackupNoMatches": "Pasang setidaknya satu kamus yang cocok untuk menerapkan pengaturan cadangan ini.",
+  "dictionaryManagerPendingBackupApplyButton": "Terapkan Pengaturan Cadangan",
+  "dictionaryManagerPendingBackupWarningTitle": "Timpa pengaturan kamus saat ini?",
+  "dictionaryManagerPendingBackupWarningBody": "Ini akan menimpa urutan saat ini serta status aktif atau nonaktif untuk kamus yang cocok. Kamus yang tidak ada akan dilewati.",
+  "dictionaryManagerPendingBackupApplied": "Menerapkan pengaturan cadangan ke {applied} kamus. Melewati {missing} kamus yang tidak ditemukan."
 }

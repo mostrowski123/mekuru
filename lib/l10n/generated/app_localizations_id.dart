@@ -633,11 +633,12 @@ class AppLocalizationsId extends AppLocalizations {
       'Aktif. Mulai ulang aplikasi jika perubahan belum muncul.';
 
   @override
-  String get downloadsEnhancedFuriganaUseTitle => 'Use enhanced dictionary';
+  String get downloadsEnhancedFuriganaUseTitle =>
+      'Gunakan kamus yang ditingkatkan';
 
   @override
   String get downloadsEnhancedFuriganaUseSubtitle =>
-      'This only affects reading accuracy — it does not show or hide furigana. Turn it off if tapping words stops working; the download is kept and you can re-enable it anytime. Restart the app to apply.';
+      'Ini hanya memengaruhi akurasi cara baca — bukan menampilkan atau menyembunyikan furigana. Nonaktifkan jika ketukan pada kata berhenti bekerja; unduhan tetap disimpan dan Anda dapat mengaktifkannya lagi kapan saja. Mulai ulang aplikasi untuk menerapkan.';
 
   @override
   String get downloadsEnhancedFuriganaDescription =>
@@ -1205,23 +1206,23 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupQueueDictionaryPreferencesTitle =>
-      'Queue dictionary settings from this backup';
+      'Antrekan pengaturan kamus dari cadangan ini';
 
   @override
   String get backupQueueDictionaryPreferencesBody =>
-      'You can apply matching dictionary order and enabled states later from Dictionary Manager.';
+      'Anda dapat menerapkan urutan kamus dan status aktifnya nanti dari Pengelola Kamus.';
 
   @override
   String backupRestoreSummaryDictionaryPreferencesQueued({
     required int matching,
     required int missing,
   }) {
-    return 'Dictionary settings queued: $matching ready to apply, $missing missing and will be skipped';
+    return 'Pengaturan kamus diantrekan: $matching siap diterapkan, $missing tidak ditemukan dan akan dilewati';
   }
 
   @override
   String get backupRestoreSummaryDictionaryPreferencesSkipped =>
-      'Dictionary settings were not queued';
+      'Pengaturan kamus tidak diantrekan';
 
   @override
   String get backupDeleteDialogTitle => 'Hapus Cadangan?';
@@ -1267,11 +1268,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readerDictionaryLoading =>
-      'Dictionary is still loading — try again in a moment.';
+      'Kamus masih dimuat — coba lagi sebentar.';
 
   @override
   String get readerDictionaryUnavailable =>
-      'Dictionary failed to load. Restart the app to try again.';
+      'Kamus gagal dimuat. Mulai ulang aplikasi untuk mencoba lagi.';
 
   @override
   String get readerPageBookmarked => 'Halaman ditandai';
@@ -1550,20 +1551,20 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get dictionaryManagerPendingBackupTitle =>
-      'Backup dictionary settings ready';
+      'Pengaturan kamus dari cadangan siap';
 
   @override
   String get dictionaryManagerPendingBackupBody =>
-      'Apply the dictionary order and enabled states saved in your restored backup. Missing dictionaries will be skipped.';
+      'Terapkan urutan kamus dan status aktif yang tersimpan di cadangan yang Anda pulihkan. Kamus yang tidak ada akan dilewati.';
 
   @override
   String dictionaryManagerPendingBackupMatching({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count matching dictionaries installed',
-      one: '1 matching dictionary installed',
-      zero: '0 matching dictionaries installed',
+      other: '$count kamus yang cocok terpasang',
+      one: '1 kamus yang cocok terpasang',
+      zero: '0 kamus yang cocok terpasang',
     );
     return '$_temp0';
   }
@@ -1573,35 +1574,35 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count dictionaries missing and will be skipped',
-      one: '1 dictionary missing and will be skipped',
-      zero: '0 dictionaries missing',
+      other: '$count kamus tidak ditemukan dan akan dilewati',
+      one: '1 kamus tidak ditemukan dan akan dilewati',
+      zero: '0 kamus tidak ditemukan',
     );
     return '$_temp0';
   }
 
   @override
   String get dictionaryManagerPendingBackupNoMatches =>
-      'Install at least one matching dictionary to apply these backup settings.';
+      'Pasang setidaknya satu kamus yang cocok untuk menerapkan pengaturan cadangan ini.';
 
   @override
   String get dictionaryManagerPendingBackupApplyButton =>
-      'Apply Backup Settings';
+      'Terapkan Pengaturan Cadangan';
 
   @override
   String get dictionaryManagerPendingBackupWarningTitle =>
-      'Overwrite current dictionary settings?';
+      'Timpa pengaturan kamus saat ini?';
 
   @override
   String get dictionaryManagerPendingBackupWarningBody =>
-      'This will overwrite the current order and enabled or disabled state for matching dictionaries. Missing dictionaries will be skipped.';
+      'Ini akan menimpa urutan saat ini serta status aktif atau nonaktif untuk kamus yang cocok. Kamus yang tidak ada akan dilewati.';
 
   @override
   String dictionaryManagerPendingBackupApplied({
     required int applied,
     required int missing,
   }) {
-    return 'Applied backup settings to $applied dictionaries. Skipped $missing missing dictionaries.';
+    return 'Menerapkan pengaturan cadangan ke $applied kamus. Melewati $missing kamus yang tidak ditemukan.';
   }
 
   @override

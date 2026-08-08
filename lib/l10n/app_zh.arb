@@ -2507,5 +2507,22 @@
   "statsDurationHoursMinutes": "{hours} 小时 {minutes} 分钟",
   "statsDurationMinutes": "{minutes} 分钟",
   "mangaReaderFailedToLoad": "无法加载漫画",
-  "mangaReaderNoPages": "未找到页面"
+  "mangaReaderNoPages": "未找到页面",
+  "downloadsEnhancedFuriganaUseTitle": "使用增强词典",
+  "downloadsEnhancedFuriganaUseSubtitle": "这只影响读音的准确度，不会显示或隐藏振假名。如果点按单词失效，请将其关闭；下载的词典会保留，可随时重新启用。重启应用后生效。",
+  "backupQueueDictionaryPreferencesTitle": "将此备份中的词典设置加入队列",
+  "backupQueueDictionaryPreferencesBody": "之后可在词典管理中应用匹配词典的排序和启用状态。",
+  "backupRestoreSummaryDictionaryPreferencesQueued": "词典设置已加入队列：{matching} 项可应用，{missing} 项缺失并将跳过",
+  "backupRestoreSummaryDictionaryPreferencesSkipped": "词典设置未加入队列",
+  "readerDictionaryLoading": "词典仍在加载中，请稍后再试。",
+  "readerDictionaryUnavailable": "词典加载失败。请重启应用后重试。",
+  "dictionaryManagerPendingBackupTitle": "备份的词典设置已就绪",
+  "dictionaryManagerPendingBackupBody": "应用已恢复备份中保存的词典排序和启用状态。缺失的词典将被跳过。",
+  "dictionaryManagerPendingBackupMatching": "{count, plural, =0 {已安装 0 个匹配的词典} =1 {已安装 1 个匹配的词典} other {已安装 {count} 个匹配的词典}}",
+  "dictionaryManagerPendingBackupMissing": "{count, plural, =0 {缺失 0 个词典} =1 {缺失 1 个词典，将被跳过} other {缺失 {count} 个词典，将被跳过}}",
+  "dictionaryManagerPendingBackupNoMatches": "请至少安装一个匹配的词典，才能应用这些备份设置。",
+  "dictionaryManagerPendingBackupApplyButton": "应用备份设置",
+  "dictionaryManagerPendingBackupWarningTitle": "覆盖当前的词典设置？",
+  "dictionaryManagerPendingBackupWarningBody": "这将覆盖匹配词典当前的排序及启用或禁用状态。缺失的词典将被跳过。",
+  "dictionaryManagerPendingBackupApplied": "已将备份设置应用到 {applied} 个词典，跳过 {missing} 个缺失的词典。"
 }

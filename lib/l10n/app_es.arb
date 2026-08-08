@@ -2507,5 +2507,22 @@
   "statsDurationHoursMinutes": "{hours} h {minutes} min",
   "statsDurationMinutes": "{minutes} min",
   "mangaReaderFailedToLoad": "No se pudo cargar el manga",
-  "mangaReaderNoPages": "No se encontraron páginas"
+  "mangaReaderNoPages": "No se encontraron páginas",
+  "downloadsEnhancedFuriganaUseTitle": "Usar diccionario mejorado",
+  "downloadsEnhancedFuriganaUseSubtitle": "Esto solo afecta a la precisión de las lecturas: no muestra ni oculta el furigana. Desactívalo si dejan de funcionar los toques en las palabras; la descarga se conserva y puedes volver a activarlo cuando quieras. Reinicia la aplicación para aplicarlo.",
+  "backupQueueDictionaryPreferencesTitle": "Poner en cola los ajustes de diccionarios de esta copia",
+  "backupQueueDictionaryPreferencesBody": "Podrás aplicar más tarde el orden y el estado de activación de los diccionarios coincidentes desde el Gestor de diccionarios.",
+  "backupRestoreSummaryDictionaryPreferencesQueued": "Ajustes de diccionarios en cola: {matching} listos para aplicar, {missing} no encontrados y se omitirán",
+  "backupRestoreSummaryDictionaryPreferencesSkipped": "Los ajustes de diccionarios no se pusieron en cola",
+  "readerDictionaryLoading": "El diccionario aún se está cargando: inténtalo de nuevo en un momento.",
+  "readerDictionaryUnavailable": "No se pudo cargar el diccionario. Reinicia la aplicación para volver a intentarlo.",
+  "dictionaryManagerPendingBackupTitle": "Ajustes de diccionarios de la copia listos",
+  "dictionaryManagerPendingBackupBody": "Aplica el orden y el estado de activación de los diccionarios guardados en la copia restaurada. Los diccionarios que falten se omitirán.",
+  "dictionaryManagerPendingBackupMatching": "{count, plural, =0 {0 diccionarios coincidentes instalados} =1 {1 diccionario coincidente instalado} other {{count} diccionarios coincidentes instalados}}",
+  "dictionaryManagerPendingBackupMissing": "{count, plural, =0 {0 diccionarios no encontrados} =1 {1 diccionario no encontrado y se omitirá} other {{count} diccionarios no encontrados y se omitirán}}",
+  "dictionaryManagerPendingBackupNoMatches": "Instala al menos un diccionario coincidente para aplicar estos ajustes de la copia.",
+  "dictionaryManagerPendingBackupApplyButton": "Aplicar ajustes de la copia",
+  "dictionaryManagerPendingBackupWarningTitle": "¿Sobrescribir los ajustes actuales de diccionarios?",
+  "dictionaryManagerPendingBackupWarningBody": "Esto sobrescribirá el orden actual y el estado activado o desactivado de los diccionarios coincidentes. Los diccionarios que falten se omitirán.",
+  "dictionaryManagerPendingBackupApplied": "Se aplicaron los ajustes de la copia a {applied} diccionarios. Se omitieron {missing} diccionarios no encontrados."
 }
