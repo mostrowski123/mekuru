@@ -42,7 +42,12 @@ class MecabFuriganaTokenizer implements FuriganaTokenizer {
 class FuriganaGenerator {
   final FuriganaTokenizer _tokenizer;
 
-  const FuriganaGenerator(this._tokenizer);
+  /// When set and returning true for a token, that token is emitted as bare
+  /// text with no reading — the hook for coverage filters like
+  /// "only kanji above the reader's JLPT level".
+  final bool Function(TokenInfo token)? skipToken;
+
+  const FuriganaGenerator(this._tokenizer, {this.skipToken});
 
   /// Returns null when the tokenizer cannot be brought up, so the JS bridge
   /// can tell "tokenizer unavailable" apart from "no readings found" and skip
@@ -77,7 +82,7 @@ class FuriganaGenerator {
         segments.add({'t': input.substring(cursor, token.startInText)});
       }
 
-      if (token.reading.isEmpty) {
+      if (token.reading.isEmpty || (skipToken?.call(token) ?? false)) {
         segments.add({'t': token.surface});
       } else {
         final hira = katakanaToHiragana(token.reading);

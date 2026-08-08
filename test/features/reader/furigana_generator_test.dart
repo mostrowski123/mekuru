@@ -119,6 +119,25 @@ void main() {
       expect((result[1]['segments'] as List).first, {'t': 'なし'});
     });
 
+    test('skipToken emits skipped tokens as bare text', () async {
+      final generator = FuriganaGenerator(
+        _FakeTokenizer({
+          '憂鬱な日': [
+            _tok('憂鬱', 'ユウウツ', 0),
+            _tok('な', '', 2),
+            _tok('日', 'ヒ', 3),
+          ],
+        }),
+        skipToken: (t) => t.surface == '日',
+      );
+      final result = (await generator.generate(['憂鬱な日']))!.first;
+      expect(result['segments'], [
+        {'t': '憂鬱', 'f': 'ゆううつ'},
+        {'t': 'な'},
+        {'t': '日'},
+      ]);
+    });
+
     test('empty input produces empty segments', () async {
       final result = await _generateOne({}, '');
       expect(result, {
