@@ -1488,24 +1488,24 @@ class AppLocalizationsEs extends AppLocalizations {
       'Aún no hay libros aquí. Mantén pulsado un libro de tu biblioteca y elige \"Añadir a colección\".';
 
   @override
-  String get librarySelectTooltip => 'Select';
+  String get librarySelectTooltip => 'Seleccionar';
 
   @override
   String librarySelectedCount({required int count}) {
-    return '$count selected';
+    return '$count seleccionados';
   }
 
   @override
-  String get librarySelectAllTooltip => 'Select all';
+  String get librarySelectAllTooltip => 'Seleccionar todos';
 
   @override
-  String get libraryDeselectAllTooltip => 'Deselect all';
+  String get libraryDeselectAllTooltip => 'Deseleccionar todos';
 
   @override
-  String get libraryRemoveFromFolderAction => 'Remove from this folder';
+  String get libraryRemoveFromFolderAction => 'Quitar de esta colección';
 
   @override
-  String get commonAdd => 'Add';
+  String get commonAdd => 'Añadir';
 
   @override
   String get libraryAddToCollectionAction => 'Añadir a colección';

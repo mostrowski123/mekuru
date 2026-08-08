@@ -1403,24 +1403,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryFolderEmpty => '这里还没有图书。长按书库中的图书，然后选择“添加到收藏集”。';
 
   @override
-  String get librarySelectTooltip => 'Select';
+  String get librarySelectTooltip => '选择';
 
   @override
   String librarySelectedCount({required int count}) {
-    return '$count selected';
+    return '已选 $count 本';
   }
 
   @override
-  String get librarySelectAllTooltip => 'Select all';
+  String get librarySelectAllTooltip => '全选';
 
   @override
-  String get libraryDeselectAllTooltip => 'Deselect all';
+  String get libraryDeselectAllTooltip => '取消全选';
 
   @override
-  String get libraryRemoveFromFolderAction => 'Remove from this folder';
+  String get libraryRemoveFromFolderAction => '从此收藏集中移除';
 
   @override
-  String get commonAdd => 'Add';
+  String get commonAdd => '添加';
 
   @override
   String get libraryAddToCollectionAction => '添加到收藏集';
@@ -3541,24 +3541,24 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get libraryFolderEmpty => '这里还没有图书。长按书库中的图书，然后选择“添加到收藏集”。';
 
   @override
-  String get librarySelectTooltip => 'Select';
+  String get librarySelectTooltip => '选择';
 
   @override
   String librarySelectedCount({required int count}) {
-    return '$count selected';
+    return '已选 $count 本';
   }
 
   @override
-  String get librarySelectAllTooltip => 'Select all';
+  String get librarySelectAllTooltip => '全选';
 
   @override
-  String get libraryDeselectAllTooltip => 'Deselect all';
+  String get libraryDeselectAllTooltip => '取消全选';
 
   @override
-  String get libraryRemoveFromFolderAction => 'Remove from this folder';
+  String get libraryRemoveFromFolderAction => '从此收藏集中移除';
 
   @override
-  String get commonAdd => 'Add';
+  String get commonAdd => '添加';
 
   @override
   String get libraryAddToCollectionAction => '添加到收藏集';

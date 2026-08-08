@@ -1474,24 +1474,24 @@ class AppLocalizationsId extends AppLocalizations {
       'Belum ada buku di sini. Tekan lama sebuah buku di pustaka Anda lalu pilih \"Tambahkan ke koleksi\".';
 
   @override
-  String get librarySelectTooltip => 'Select';
+  String get librarySelectTooltip => 'Pilih';
 
   @override
   String librarySelectedCount({required int count}) {
-    return '$count selected';
+    return '$count dipilih';
   }
 
   @override
-  String get librarySelectAllTooltip => 'Select all';
+  String get librarySelectAllTooltip => 'Pilih semua';
 
   @override
-  String get libraryDeselectAllTooltip => 'Deselect all';
+  String get libraryDeselectAllTooltip => 'Batal pilih semua';
 
   @override
-  String get libraryRemoveFromFolderAction => 'Remove from this folder';
+  String get libraryRemoveFromFolderAction => 'Keluarkan dari koleksi ini';
 
   @override
-  String get commonAdd => 'Add';
+  String get commonAdd => 'Tambah';
 
   @override
   String get libraryAddToCollectionAction => 'Tambahkan ke koleksi';
