@@ -5618,8 +5618,20 @@ class $BookCollectionsTable extends BookCollections
       'REFERENCES collections (id)',
     ),
   );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
   @override
-  List<GeneratedColumn> get $columns => [bookId, collectionId];
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [bookId, collectionId, position];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -5651,6 +5663,12 @@ class $BookCollectionsTable extends BookCollections
     } else if (isInserting) {
       context.missing(_collectionIdMeta);
     }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    }
     return context;
   }
 
@@ -5668,6 +5686,10 @@ class $BookCollectionsTable extends BookCollections
         DriftSqlType.int,
         data['${effectivePrefix}collection_id'],
       )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
     );
   }
 
@@ -5680,12 +5702,22 @@ class $BookCollectionsTable extends BookCollections
 class BookCollection extends DataClass implements Insertable<BookCollection> {
   final int bookId;
   final int collectionId;
-  const BookCollection({required this.bookId, required this.collectionId});
+
+  /// Manual order within one collection. Rows written before v22 all sit
+  /// at 0; the folder grid tie-breaks those by the library sort, so an
+  /// un-reordered collection looks exactly as it did.
+  final int position;
+  const BookCollection({
+    required this.bookId,
+    required this.collectionId,
+    required this.position,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['book_id'] = Variable<int>(bookId);
     map['collection_id'] = Variable<int>(collectionId);
+    map['position'] = Variable<int>(position);
     return map;
   }
 
@@ -5693,6 +5725,7 @@ class BookCollection extends DataClass implements Insertable<BookCollection> {
     return BookCollectionsCompanion(
       bookId: Value(bookId),
       collectionId: Value(collectionId),
+      position: Value(position),
     );
   }
 
@@ -5704,6 +5737,7 @@ class BookCollection extends DataClass implements Insertable<BookCollection> {
     return BookCollection(
       bookId: serializer.fromJson<int>(json['bookId']),
       collectionId: serializer.fromJson<int>(json['collectionId']),
+      position: serializer.fromJson<int>(json['position']),
     );
   }
   @override
@@ -5712,19 +5746,23 @@ class BookCollection extends DataClass implements Insertable<BookCollection> {
     return <String, dynamic>{
       'bookId': serializer.toJson<int>(bookId),
       'collectionId': serializer.toJson<int>(collectionId),
+      'position': serializer.toJson<int>(position),
     };
   }
 
-  BookCollection copyWith({int? bookId, int? collectionId}) => BookCollection(
-    bookId: bookId ?? this.bookId,
-    collectionId: collectionId ?? this.collectionId,
-  );
+  BookCollection copyWith({int? bookId, int? collectionId, int? position}) =>
+      BookCollection(
+        bookId: bookId ?? this.bookId,
+        collectionId: collectionId ?? this.collectionId,
+        position: position ?? this.position,
+      );
   BookCollection copyWithCompanion(BookCollectionsCompanion data) {
     return BookCollection(
       bookId: data.bookId.present ? data.bookId.value : this.bookId,
       collectionId: data.collectionId.present
           ? data.collectionId.value
           : this.collectionId,
+      position: data.position.present ? data.position.value : this.position,
     );
   }
 
@@ -5732,44 +5770,51 @@ class BookCollection extends DataClass implements Insertable<BookCollection> {
   String toString() {
     return (StringBuffer('BookCollection(')
           ..write('bookId: $bookId, ')
-          ..write('collectionId: $collectionId')
+          ..write('collectionId: $collectionId, ')
+          ..write('position: $position')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(bookId, collectionId);
+  int get hashCode => Object.hash(bookId, collectionId, position);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is BookCollection &&
           other.bookId == this.bookId &&
-          other.collectionId == this.collectionId);
+          other.collectionId == this.collectionId &&
+          other.position == this.position);
 }
 
 class BookCollectionsCompanion extends UpdateCompanion<BookCollection> {
   final Value<int> bookId;
   final Value<int> collectionId;
+  final Value<int> position;
   final Value<int> rowid;
   const BookCollectionsCompanion({
     this.bookId = const Value.absent(),
     this.collectionId = const Value.absent(),
+    this.position = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BookCollectionsCompanion.insert({
     required int bookId,
     required int collectionId,
+    this.position = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : bookId = Value(bookId),
        collectionId = Value(collectionId);
   static Insertable<BookCollection> custom({
     Expression<int>? bookId,
     Expression<int>? collectionId,
+    Expression<int>? position,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (bookId != null) 'book_id': bookId,
       if (collectionId != null) 'collection_id': collectionId,
+      if (position != null) 'position': position,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5777,11 +5822,13 @@ class BookCollectionsCompanion extends UpdateCompanion<BookCollection> {
   BookCollectionsCompanion copyWith({
     Value<int>? bookId,
     Value<int>? collectionId,
+    Value<int>? position,
     Value<int>? rowid,
   }) {
     return BookCollectionsCompanion(
       bookId: bookId ?? this.bookId,
       collectionId: collectionId ?? this.collectionId,
+      position: position ?? this.position,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5795,6 +5842,9 @@ class BookCollectionsCompanion extends UpdateCompanion<BookCollection> {
     if (collectionId.present) {
       map['collection_id'] = Variable<int>(collectionId.value);
     }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5806,6 +5856,7 @@ class BookCollectionsCompanion extends UpdateCompanion<BookCollection> {
     return (StringBuffer('BookCollectionsCompanion(')
           ..write('bookId: $bookId, ')
           ..write('collectionId: $collectionId, ')
+          ..write('position: $position, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9426,12 +9477,14 @@ typedef $$BookCollectionsTableCreateCompanionBuilder =
     BookCollectionsCompanion Function({
       required int bookId,
       required int collectionId,
+      Value<int> position,
       Value<int> rowid,
     });
 typedef $$BookCollectionsTableUpdateCompanionBuilder =
     BookCollectionsCompanion Function({
       Value<int> bookId,
       Value<int> collectionId,
+      Value<int> position,
       Value<int> rowid,
     });
 
@@ -9494,6 +9547,11 @@ class $$BookCollectionsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$BooksTableFilterComposer get bookId {
     final $$BooksTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -9550,6 +9608,11 @@ class $$BookCollectionsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$BooksTableOrderingComposer get bookId {
     final $$BooksTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -9606,6 +9669,9 @@ class $$BookCollectionsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
   $$BooksTableAnnotationComposer get bookId {
     final $$BooksTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -9685,20 +9751,24 @@ class $$BookCollectionsTableTableManager
               ({
                 Value<int> bookId = const Value.absent(),
                 Value<int> collectionId = const Value.absent(),
+                Value<int> position = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BookCollectionsCompanion(
                 bookId: bookId,
                 collectionId: collectionId,
+                position: position,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required int bookId,
                 required int collectionId,
+                Value<int> position = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BookCollectionsCompanion.insert(
                 bookId: bookId,
                 collectionId: collectionId,
+                position: position,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

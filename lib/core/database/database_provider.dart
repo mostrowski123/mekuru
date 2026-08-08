@@ -68,7 +68,7 @@ class AppDatabase extends _$AppDatabase {
   };
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -172,6 +172,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 21) {
         await migrator.createTable(collections);
         await migrator.createTable(bookCollections);
+      }
+      if (from >= 21 && from < 22) {
+        // Only v21 installs need the ALTER: for anything older, the v21
+        // createTable above already produced the current shape including
+        // position.
+        await migrator.addColumn(bookCollections, bookCollections.position);
       }
       // v18 (search_text) and v20 (has_vertical_css) have no migration
       // blocks: the repair pass in beforeOpen adds the columns via the

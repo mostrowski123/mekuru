@@ -16,6 +16,11 @@ class BookCollections extends Table {
   IntColumn get bookId => integer().references(Books, #id)();
   IntColumn get collectionId => integer().references(Collections, #id)();
 
+  /// Manual order within one collection. Rows written before v22 all sit
+  /// at 0; the folder grid tie-breaks those by the library sort, so an
+  /// un-reordered collection looks exactly as it did.
+  IntColumn get position => integer().withDefault(const Constant(0))();
+
   @override
   Set<Column> get primaryKey => {bookId, collectionId};
 }

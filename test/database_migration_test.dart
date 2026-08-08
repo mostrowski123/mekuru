@@ -102,7 +102,7 @@ void main() {
       expect(entries.single.definitionTags, isEmpty);
       expect(entries.single.rules, isEmpty);
       expect(entries.single.termTags, isEmpty);
-      expect(migratedDb.schemaVersion, 21);
+      expect(migratedDb.schemaVersion, 22);
     },
   );
 
@@ -244,7 +244,7 @@ void main() {
           .toSet();
 
       expect(indexNames, contains('idx_pitch_expr_dictid'));
-      expect(migratedDb.schemaVersion, 21);
+      expect(migratedDb.schemaVersion, 22);
     },
   );
 
@@ -314,7 +314,7 @@ void main() {
           .getSingle();
       expect(sessionCount.data['c'], 0);
 
-      expect(migratedDb.schemaVersion, 21);
+      expect(migratedDb.schemaVersion, 22);
     },
   );
 
@@ -370,7 +370,7 @@ void main() {
             ),
           );
 
-      expect(migratedDb.schemaVersion, 21);
+      expect(migratedDb.schemaVersion, 22);
     },
   );
 
@@ -415,6 +415,53 @@ void main() {
         .customSelect('SELECT COUNT(*) AS c FROM book_collections')
         .getSingle();
     expect(memberCount.data['c'], 1);
-    expect(migratedDb.schemaVersion, 21);
+    expect(migratedDb.schemaVersion, 22);
+  });
+
+  test('adds book_collections.position when migrating to schema 22', () async {
+    final tempDir = await Directory.systemTemp.createTemp('mekuru_position_');
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final dbFile = File('${tempDir.path}/mekuru.sqlite');
+
+    final seedDb = AppDatabase(NativeDatabase(dbFile));
+    await seedDb
+        .into(seedDb.books)
+        .insert(
+          BooksCompanion.insert(title: '吾輩は猫である', filePath: '/books/neko'),
+        );
+    await seedDb.close();
+
+    // Rewind to v21: recreate book_collections without the position column,
+    // exactly as a v21 install (the parallel test build) has it.
+    final legacyDb = sqlite.sqlite3.open(dbFile.path);
+    legacyDb.execute('PRAGMA user_version = 21;');
+    legacyDb.execute('DROP TABLE book_collections;');
+    legacyDb.execute('''
+      CREATE TABLE book_collections (
+        book_id INTEGER NOT NULL,
+        collection_id INTEGER NOT NULL,
+        PRIMARY KEY (book_id, collection_id)
+      );
+    ''');
+    legacyDb.execute("INSERT INTO collections (name) VALUES ('Novels');");
+    legacyDb.execute(
+      'INSERT INTO book_collections (book_id, collection_id) VALUES (1, 1);',
+    );
+    legacyDb.close();
+
+    final migratedDb = AppDatabase(NativeDatabase(dbFile));
+    addTearDown(migratedDb.close);
+
+    // The pre-existing membership survives and reads position 0.
+    final row = await migratedDb
+        .customSelect('SELECT position FROM book_collections')
+        .getSingle();
+    expect(row.data['position'], 0);
+    expect(migratedDb.schemaVersion, 22);
   });
 }
