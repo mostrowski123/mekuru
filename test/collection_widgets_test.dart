@@ -105,6 +105,62 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('a book filed in two folders gets one hero tag per folder', (
+    tester,
+  ) async {
+    // Two heroes sharing a tag in one subtree throws, so the same book on
+    // two folder faces must not produce the same tag.
+    final bookId = await insertBook(tester, '坊っちゃん');
+    final ids = await tester.runAsync(() async {
+      final a = await repo.createCollection('A');
+      final b = await repo.createCollection('B');
+      await repo.setBookCollections(bookId, {a, b});
+      return (a, b);
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+
+    expect(tester.takeException(), isNull);
+    final (a, b) = ids!;
+    expect(folderCoverHeroTag(a, bookId), isNot(folderCoverHeroTag(b, bookId)));
+    for (final tag in [
+      folderCoverHeroTag(a, bookId),
+      folderCoverHeroTag(b, bookId),
+    ]) {
+      expect(
+        find.byWidgetPredicate((w) => w is Hero && w.tag == tag),
+        findsOneWidget,
+      );
+    }
+
+    await unmount(tester);
+  });
+
+  testWidgets('folder screen pairs a hero for each cover the face showed', (
+    tester,
+  ) async {
+    final first = await insertBook(tester, '坊っちゃん');
+    final shelfId = await tester.runAsync(() async {
+      final shelf = await repo.createCollection('Shelf');
+      await repo.setBookCollections(first, {shelf});
+      return shelf;
+    });
+
+    await pumpWithDb(tester, const LibraryScreen());
+    await tester.tap(find.text('Shelf'));
+    await tester.pumpAndSettle();
+
+    // Same tag on both routes, or the cover has nothing to fly to.
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Hero && w.tag == folderCoverHeroTag(shelfId!, first),
+      ),
+      findsOneWidget,
+    );
+
+    await unmount(tester);
+  });
+
   testWidgets('continue reading surfaces a book inside a folder', (
     tester,
   ) async {

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:animations/animations.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
@@ -905,9 +904,14 @@ String mangaOcrPrimaryActionTitle({
 
 /// Individual book tile for the grid.
 class _BookTile extends ConsumerStatefulWidget {
-  const _BookTile({super.key, required this.book});
+  const _BookTile({super.key, required this.book, this.coverHeroTag});
 
   final Book book;
+
+  /// When set, the cover flies under this tag as a folder opens or closes.
+  /// Only the covers a folder's face shows get one; see
+  /// [folderCoverHeroTag].
+  final String? coverHeroTag;
 
   @override
   ConsumerState<_BookTile> createState() => _BookTileState();
@@ -1027,49 +1031,55 @@ class _BookTileState extends ConsumerState<_BookTile>
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        BookCoverImage(book: book),
-                        if (book.bookType == 'manga')
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Icon(
-                                Icons.photo_library,
-                                color: Colors.white,
-                                size: 12,
-                              ),
-                            ),
-                          ),
-                        if (book.readProgress > 0)
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              height: 3,
-                              color: Colors.black.withValues(alpha: 0.3),
-                              child: FractionallySizedBox(
-                                alignment: Alignment.centerLeft,
-                                widthFactor: book.readProgress.clamp(0.0, 1.0),
-                                child: Container(
-                                  color: theme.colorScheme.primary,
+                  child: _maybeHero(
+                    widget.coverHeroTag,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          BookCoverImage(book: book),
+                          if (book.bookType == 'manga')
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Icon(
+                                  Icons.photo_library,
+                                  color: Colors.white,
+                                  size: 12,
                                 ),
                               ),
                             ),
-                          ),
-                        if (book.bookType == 'manga')
-                          OcrProgressOverlay(bookId: book.id),
-                      ],
+                          if (book.readProgress > 0)
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                height: 3,
+                                color: Colors.black.withValues(alpha: 0.3),
+                                child: FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: book.readProgress.clamp(
+                                    0.0,
+                                    1.0,
+                                  ),
+                                  child: Container(
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (book.bookType == 'manga')
+                            OcrProgressOverlay(bookId: book.id),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1880,72 +1890,77 @@ class _CollectionFolderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Container transform rather than a Hero: it cross-fades the closed
-    // tile into the opened screen and clips to the growing bounds, so
-    // neither end is re-laid-out at the other's size. Hand-rolled Hero
-    // flights had to pick between showing the wrong layout mid-flight and
-    // snapping at each end.
-    return OpenContainer(
-      tappable: false,
-      // fadeThrough, not fade: with fade the closed child holds opacity 1
-      // for the whole transition while the open child fades in over it, so
-      // both are drawn at once — and the covers sit at the top of the face
-      // but below an app bar on the screen, which looks like them jumping.
-      // fadeThrough retires the face first, so they are never in two
-      // places at the same time.
-      transitionType: ContainerTransitionType.fadeThrough,
-      transitionDuration: const Duration(milliseconds: 350),
-      closedElevation: 0,
-      openElevation: 0,
-      // The face paints its own surface; keeping the container transparent
-      // leaves the title on the page background as before.
-      closedColor: Colors.transparent,
-      openColor: theme.colorScheme.surface,
-      middleColor: theme.colorScheme.surface,
-      closedShape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(_folderCornerRadius)),
-      ),
-      closedBuilder: (context, openFolder) => GestureDetector(
-        onTap: () {
-          AppHaptics.light();
-          openFolder();
-        },
-        onLongPress: () {
-          AppHaptics.heavy();
-          showCollectionManageSheet(context, collection);
-        },
-        child: Column(
-          children: [
-            Expanded(child: _FolderPreview(books: books)),
-            const SizedBox(height: 8),
-            Text(
-              collection.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
+    // Each cover on the face flies to its own place in the opened grid,
+    // the way an iOS folder's icons do. Morphing the face into the grid
+    // as one unit can't help jumping, because the two are different
+    // layouts with no item-to-item correspondence.
+    return GestureDetector(
+      onTap: () {
+        AppHaptics.light();
+        Navigator.of(context).push(_folderRoute(collection.id));
+      },
+      onLongPress: () {
+        AppHaptics.heavy();
+        showCollectionManageSheet(context, collection);
+      },
+      child: Column(
+        children: [
+          Expanded(
+            child: _FolderPreview(books: books, collectionId: collection.id),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            collection.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
-      openBuilder: (context, _) =>
-          CollectionFolderScreen(collectionId: collection.id),
     );
   }
 }
 
-/// Corner radius shared by the folder face and the transform that opens it.
+/// Corner radius of a folder's face.
 const double _folderCornerRadius = 12;
+
+/// Hero tag for one cover shown on a folder's face. Scoped to the
+/// collection so a book filed in two folders gets a distinct tag per
+/// folder — two heroes sharing a tag on one screen is a crash.
+String folderCoverHeroTag(int collectionId, int bookId) =>
+    'folder-$collectionId-cover-$bookId';
+
+/// Wraps [child] in a Hero when [tag] is set.
+Widget _maybeHero(String? tag, Widget child) =>
+    tag == null ? child : Hero(tag: tag, child: child);
+
+/// Fades the folder screen in while the covers fly to their places. The
+/// default route slides the page, which fights the flights.
+Route<void> _folderRoute(int collectionId) {
+  return PageRouteBuilder<void>(
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 320),
+    pageBuilder: (_, _, _) =>
+        CollectionFolderScreen(collectionId: collectionId),
+    transitionsBuilder: (_, animation, _, child) =>
+        FadeTransition(opacity: animation, child: child),
+  );
+}
 
 /// The rounded folder face: up to four member covers in a 2x2, or a
 /// placeholder icon while empty. Shared by the grid tile and the folder
 /// screen's app bar so the hero flight morphs one into the other.
 class _FolderPreview extends StatelessWidget {
-  const _FolderPreview({required this.books});
+  const _FolderPreview({required this.books, required this.collectionId});
 
   final List<Book> books;
+  final int collectionId;
+
+  /// How many covers the face shows — and so how many fly when it opens.
+  static const int previewCount = 4;
 
   @override
   Widget build(BuildContext context) {
@@ -1972,10 +1987,13 @@ class _FolderPreview extends StatelessWidget {
               childAspectRatio: 0.65,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                for (final book in books.take(4))
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: BookCoverImage(book: book),
+                for (final book in books.take(previewCount))
+                  Hero(
+                    tag: folderCoverHeroTag(collectionId, book.id),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: BookCoverImage(book: book),
+                    ),
                   ),
               ],
             ),
@@ -2065,6 +2083,14 @@ class CollectionFolderScreen extends ConsumerWidget {
                       (context, index) => _BookTile(
                         key: ValueKey('book-tile-${members[index].id}'),
                         book: members[index],
+                        // Only the covers the face showed have a partner
+                        // to fly from; the rest just fade in with the page.
+                        coverHeroTag: index < _FolderPreview.previewCount
+                            ? folderCoverHeroTag(
+                                collectionId,
+                                members[index].id,
+                              )
+                            : null,
                       ),
                       childCount: members.length,
                     ),
