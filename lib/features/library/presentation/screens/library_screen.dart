@@ -1098,8 +1098,8 @@ class _BookTileState extends ConsumerState<_BookTile>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Only the top route's tiles listen to the tilt sensors. The folder
-    // route is non-opaque, so covered library tiles would otherwise keep
+    // Only the top route's tiles listen to the tilt sensors. Route opacity
+    // doesn't cancel streams, so covered library tiles would otherwise keep
     // their gyroscope subscriptions (and per-event rebuilds) running for
     // as long as a folder — or a reader — is open. ModalRoute.of registers
     // a dependency, so tiles rebuild and re-enable when uncovered.
@@ -2114,14 +2114,6 @@ Widget _maybeHero(String? tag, Widget child) => tag == null
 /// default route slides the page, which fights the flights.
 Route<void> _folderRoute(int collectionId) {
   return PageRouteBuilder<void>(
-    // Non-opaque on purpose: an opaque route stops painting the library
-    // the instant the push transition completes, and that layer-tree
-    // teardown is visible as a one-frame full-screen blink at the end of
-    // the open animation. (Pop never had the blink because the library is
-    // painted throughout the reverse transition.) Keeping the route
-    // transparent means the library below just stays painted; its static
-    // grid sits in cached raster layers, so the overdraw is cheap.
-    opaque: false,
     transitionDuration: const Duration(milliseconds: 320),
     reverseTransitionDuration: const Duration(milliseconds: 320),
     pageBuilder: (_, _, _) =>
