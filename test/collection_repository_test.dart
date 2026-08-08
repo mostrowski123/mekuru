@@ -71,6 +71,86 @@ void main() {
     expect(await db.select(db.books).get(), hasLength(1));
   });
 
+  Future<Map<int, int>> positionsIn(int collectionId) async {
+    final rows = await db.select(db.bookCollections).get();
+    return {
+      for (final m in rows)
+        if (m.collectionId == collectionId) m.bookId: m.position,
+    };
+  }
+
+  test(
+    'setBookCollections preserves positions of retained memberships',
+    () async {
+      final a = await insertBook('猫');
+      final b = await insertBook('犬');
+      final shelf = await repo.createCollection('Shelf');
+      final other = await repo.createCollection('Other');
+      await repo.addBooksToCollection(shelf, {a, b});
+      await repo.reorderCollectionBooks(shelf, [b, a]); // a now at position 1
+
+      // Toggling an unrelated collection on must not touch the Shelf row.
+      await repo.setBookCollections(a, {shelf, other});
+
+      expect((await positionsIn(shelf))[a], 1);
+    },
+  );
+
+  test('setBookCollections appends new memberships at the end', () async {
+    final a = await insertBook('猫');
+    final b = await insertBook('犬');
+    final shelf = await repo.createCollection('Shelf');
+    await repo.addBooksToCollection(shelf, {a});
+    await repo.reorderCollectionBooks(shelf, [a]); // a at 0
+
+    await repo.setBookCollections(b, {shelf});
+
+    final positions = await positionsIn(shelf);
+    expect(positions[b], greaterThan(positions[a]!));
+  });
+
+  test('reorderCollectionBooks writes dense 0..n-1', () async {
+    final a = await insertBook('猫');
+    final b = await insertBook('犬');
+    final c = await insertBook('鳥');
+    final shelf = await repo.createCollection('Shelf');
+    await repo.addBooksToCollection(shelf, {a, b, c});
+
+    await repo.reorderCollectionBooks(shelf, [c, a, b]);
+
+    expect(await positionsIn(shelf), {c: 0, a: 1, b: 2});
+  });
+
+  test('addBooksToCollection appends and is idempotent', () async {
+    final a = await insertBook('猫');
+    final b = await insertBook('犬');
+    final shelf = await repo.createCollection('Shelf');
+    await repo.addBooksToCollection(shelf, {a});
+    await repo.reorderCollectionBooks(shelf, [a]);
+
+    await repo.addBooksToCollection(shelf, {a, b});
+    await repo.addBooksToCollection(shelf, {a, b});
+
+    final positions = await positionsIn(shelf);
+    expect(positions.keys.toSet(), {a, b});
+    expect(positions[a], 0); // untouched by the re-add
+    expect(positions[b], greaterThan(0));
+  });
+
+  test('removeBooksFromCollection deletes only the named pairs', () async {
+    final a = await insertBook('猫');
+    final b = await insertBook('犬');
+    final shelf = await repo.createCollection('Shelf');
+    final other = await repo.createCollection('Other');
+    await repo.addBooksToCollection(shelf, {a, b});
+    await repo.addBooksToCollection(other, {a});
+
+    await repo.removeBooksFromCollection(shelf, {a});
+
+    expect((await positionsIn(shelf)).keys.toSet(), {b});
+    expect((await positionsIn(other)).keys.toSet(), {a});
+  });
+
   test('deleteBook removes its memberships', () async {
     final bookRepo = BookRepository(db);
     final bookId = await insertBook('猫');
