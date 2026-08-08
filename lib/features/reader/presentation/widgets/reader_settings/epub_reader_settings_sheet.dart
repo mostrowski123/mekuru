@@ -112,20 +112,24 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
         SettingsSegmentedRow<FuriganaMode>(
           label: l10n.readerFuriganaTitle,
           segments: furiganaModeSegments(l10n),
-          selected: settings.furiganaMode == FuriganaMode.aboveLevel
-              ? FuriganaMode.all
-              : settings.furiganaMode,
+          selected: settings.furiganaMode,
           onSelected: (chosen) {
-            // Don't clobber a stored `aboveLevel` (which the UI displays as
-            // `all`) when the user taps the already-active segment.
-            if (chosen == FuriganaMode.all &&
-                settings.furiganaMode == FuriganaMode.aboveLevel) {
-              return;
-            }
             notifier.setFuriganaMode(chosen);
             onSettingChanged('furigana_mode', chosen.name);
           },
         ),
+        if (settings.furiganaMode == FuriganaMode.aboveLevel) ...[
+          const SizedBox(height: 8),
+          SettingsSegmentedRow<int>(
+            label: l10n.readerFuriganaJlptLevelTitle,
+            segments: furiganaJlptLevelSegments(),
+            selected: settings.furiganaJlptLevel,
+            onSelected: (level) {
+              notifier.setFuriganaJlptLevel(level);
+              onSettingChanged('furigana_jlpt_level', level);
+            },
+          ),
+        ],
 
         // ── Display ──
         SettingsSectionHeader.sheet(title: l10n.readerSettingsSectionDisplay),

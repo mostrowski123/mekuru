@@ -1318,6 +1318,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerFuriganaAllKanji => 'All kanji';
 
   @override
+  String get readerFuriganaAboveLevel => 'JLPT';
+
+  @override
+  String get readerFuriganaJlptLevelTitle => 'Furigana for kanji above';
+
+  @override
   String get readerAllSettingsTooltip => 'All settings';
 
   @override

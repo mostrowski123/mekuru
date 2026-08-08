@@ -19,6 +19,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _sepiaIntensityKey = 'reader.sepia_intensity';
   static const _disableLinksKey = 'reader.disable_links';
   static const _furiganaModeKey = 'reader.furigana_mode';
+  static const _furiganaJlptLevelKey = 'reader.furigana_jlpt_level';
   static const _splitVerticalTextKey = 'reader.split_vertical_text';
   static const _brightnessKey = 'reader.brightness';
   static const _mangaViewModeKey = 'reader.manga_view_mode';
@@ -41,6 +42,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     _sepiaIntensityKey,
     _disableLinksKey,
     _furiganaModeKey,
+    _furiganaJlptLevelKey,
     _splitVerticalTextKey,
     _brightnessKey,
     _mangaViewModeKey,
@@ -76,6 +78,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       sepiaIntensity: prefs.getDouble(_sepiaIntensityKey) ?? 0.5,
       disableLinks: prefs.getBool(_disableLinksKey) ?? false,
       furiganaMode: furiganaModeFromString(prefs.getString(_furiganaModeKey)),
+      furiganaJlptLevel: (prefs.getInt(_furiganaJlptLevelKey) ?? 3).clamp(1, 5),
       splitVerticalText: prefs.getBool(_splitVerticalTextKey) ?? false,
       brightness: prefs.getDouble(_brightnessKey),
       mangaViewMode: mangaViewModeFromString(
@@ -107,6 +110,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     await prefs.setDouble(_sepiaIntensityKey, settings.sepiaIntensity);
     await prefs.setBool(_disableLinksKey, settings.disableLinks);
     await prefs.setString(_furiganaModeKey, settings.furiganaMode.storageValue);
+    await prefs.setInt(_furiganaJlptLevelKey, settings.furiganaJlptLevel);
     await prefs.setBool(_splitVerticalTextKey, settings.splitVerticalText);
     await prefs.setString(
       _mangaViewModeKey,

@@ -129,9 +129,15 @@ class ReaderSettings {
   /// - [FuriganaMode.book]: show EPUB-authored ruby only; never generate.
   /// - [FuriganaMode.all]: show EPUB-authored ruby and generate ruby (via
   ///   MeCab) for kanji that lack it.
-  /// - [FuriganaMode.aboveLevel]: reserved for a future difficulty-aware
-  ///   filter. Currently behaves like [FuriganaMode.all].
+  /// - [FuriganaMode.aboveLevel]: like [FuriganaMode.all], but only words
+  ///   containing at least one kanji harder than [furiganaJlptLevel] are
+  ///   annotated.
   final FuriganaMode furiganaMode;
+
+  /// JLPT threshold for [FuriganaMode.aboveLevel]: 5 (N5) … 1 (N1). Words
+  /// whose kanji are all at or below this level render without generated
+  /// furigana. Global — not per book.
+  final int furiganaJlptLevel;
 
   /// Screen brightness override (0.0–1.0) applied while a reader is open.
   /// `null` means follow the system brightness.
@@ -169,6 +175,7 @@ class ReaderSettings {
     this.sepiaIntensity = 0.5,
     this.disableLinks = false,
     this.furiganaMode = FuriganaMode.book,
+    this.furiganaJlptLevel = 3,
     this.brightness,
     this.mangaViewMode = MangaViewMode.singlePage,
     this.mangaReadingDirection = ReaderDirection.rtl,
@@ -191,6 +198,7 @@ class ReaderSettings {
     double? sepiaIntensity,
     bool? disableLinks,
     FuriganaMode? furiganaMode,
+    int? furiganaJlptLevel,
     double? brightness,
     bool clearBrightness = false,
     MangaViewMode? mangaViewMode,
@@ -215,6 +223,7 @@ class ReaderSettings {
       sepiaIntensity: sepiaIntensity ?? this.sepiaIntensity,
       disableLinks: disableLinks ?? this.disableLinks,
       furiganaMode: furiganaMode ?? this.furiganaMode,
+      furiganaJlptLevel: furiganaJlptLevel ?? this.furiganaJlptLevel,
       brightness: clearBrightness ? null : (brightness ?? this.brightness),
       mangaViewMode: mangaViewMode ?? this.mangaViewMode,
       mangaReadingDirection:

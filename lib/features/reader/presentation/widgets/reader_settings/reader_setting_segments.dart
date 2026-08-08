@@ -20,8 +20,6 @@ List<ButtonSegment<ReaderDirection>> readerDirectionSegments(
   ];
 }
 
-/// Deliberately excludes [FuriganaMode.aboveLevel]: it is a reserved value
-/// that surfaces render as [FuriganaMode.all].
 List<ButtonSegment<FuriganaMode>> furiganaModeSegments(AppLocalizations l10n) {
   return [
     ButtonSegment(
@@ -39,6 +37,20 @@ List<ButtonSegment<FuriganaMode>> furiganaModeSegments(AppLocalizations l10n) {
       label: Text(l10n.readerFuriganaAllKanji),
       icon: const Icon(Icons.visibility),
     ),
+    ButtonSegment(
+      value: FuriganaMode.aboveLevel,
+      label: Text(l10n.readerFuriganaAboveLevel),
+      icon: const Icon(Icons.school_outlined),
+    ),
+  ];
+}
+
+/// N5 (easiest) → N1 (hardest); values are the numeric JLPT level used by
+/// [ReaderSettings.furiganaJlptLevel].
+List<ButtonSegment<int>> furiganaJlptLevelSegments() {
+  return [
+    for (var level = 5; level >= 1; level--)
+      ButtonSegment(value: level, label: Text('N$level')),
   ];
 }
 

@@ -73,26 +73,11 @@ void main() {
       FuriganaMode.hide,
       FuriganaMode.book,
       FuriganaMode.all,
+      FuriganaMode.aboveLevel,
     ]);
   });
 
-  testWidgets('a stored aboveLevel displays as the all segment', (
-    tester,
-  ) async {
-    final container = await _pumpSheet(tester);
-    container
-        .read(readerSettingsProvider.notifier)
-        .setFuriganaMode(FuriganaMode.aboveLevel);
-    await tester.pumpAndSettle();
-
-    await scrollSettingsTo(tester, find.text('Furigana'));
-    final row = tester.widget<SettingsSegmentedRow<FuriganaMode>>(
-      find.byType(SettingsSegmentedRow<FuriganaMode>),
-    );
-    expect(row.selected, FuriganaMode.all);
-  });
-
-  testWidgets('tapping all while aboveLevel is stored is a no-op', (
+  testWidgets('JLPT mode reveals the level picker and sets the level', (
     tester,
   ) async {
     final changes = <String>[];
@@ -100,20 +85,21 @@ void main() {
       tester,
       onSettingChanged: (setting, value) => changes.add(setting),
     );
+
+    await scrollSettingsTo(tester, find.text('Furigana'));
+    expect(find.text('Furigana for kanji above'), findsNothing);
+
     container
         .read(readerSettingsProvider.notifier)
         .setFuriganaMode(FuriganaMode.aboveLevel);
     await tester.pumpAndSettle();
 
-    await scrollSettingsTo(tester, find.text('All kanji'));
-    await tester.tap(find.text('All kanji'));
+    await scrollSettingsTo(tester, find.text('Furigana for kanji above'));
+    await tester.tap(find.text('N2'));
     await tester.pumpAndSettle();
 
-    expect(
-      container.read(readerSettingsProvider).furiganaMode,
-      FuriganaMode.aboveLevel,
-    );
-    expect(changes, isNot(contains('furigana_mode')));
+    expect(container.read(readerSettingsProvider).furiganaJlptLevel, 2);
+    expect(changes, contains('furigana_jlpt_level'));
   });
 
   testWidgets('vertical text switch is disabled for non-CJK books', (

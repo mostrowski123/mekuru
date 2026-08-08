@@ -1265,6 +1265,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerFuriganaAllKanji => '所有汉字';
 
   @override
+  String get readerFuriganaAboveLevel => 'JLPT';
+
+  @override
+  String get readerFuriganaJlptLevelTitle => 'Furigana for kanji above';
+
+  @override
   String get readerAllSettingsTooltip => '所有设置';
 
   @override

@@ -313,7 +313,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         _epubController.setDisableLinks(next.disableLinks);
       }
 
-      if (previous.furiganaMode != next.furiganaMode && _isEpubLoaded) {
+      // A JLPT-level change while in aboveLevel re-pushes the mode: the JS
+      // side clears its annotation cache and re-processes on that call.
+      final furiganaChanged =
+          previous.furiganaMode != next.furiganaMode ||
+          (next.furiganaMode == FuriganaMode.aboveLevel &&
+              previous.furiganaJlptLevel != next.furiganaJlptLevel);
+      if (furiganaChanged && _isEpubLoaded) {
         _epubController.setFuriganaMode(next.furiganaMode.storageValue);
       }
 
@@ -373,6 +379,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         forceHorizontalAxis: !settings.verticalText,
                         verticalTextBlocks: settings.splitVerticalText ? 2 : 1,
                         furiganaMode: settings.furiganaMode,
+                        furiganaJlptLevel: settings.furiganaJlptLevel,
                         onLoaded: () {
                           if (!mounted) return;
                           _loadWatchdog?.cancel();

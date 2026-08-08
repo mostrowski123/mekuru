@@ -2290,6 +2290,18 @@ abstract class AppLocalizations {
   /// **'All kanji'**
   String get readerFuriganaAllKanji;
 
+  /// Furigana mode segment: annotate only words with kanji above the chosen JLPT level.
+  ///
+  /// In en, this message translates to:
+  /// **'JLPT'**
+  String get readerFuriganaAboveLevel;
+
+  /// Label for the JLPT level picker shown when the JLPT furigana mode is active.
+  ///
+  /// In en, this message translates to:
+  /// **'Furigana for kanji above'**
+  String get readerFuriganaJlptLevelTitle;
+
   /// Tooltip for the button in the reader quick settings sheets that opens the full reading settings screen.
   ///
   /// In en, this message translates to:

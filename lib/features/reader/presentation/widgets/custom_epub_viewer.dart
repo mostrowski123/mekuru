@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+import 'package:mekuru/core/utils/jlpt_kanji_levels.dart';
+
 import '../../data/models/epub_models.dart';
 import '../../data/models/reader_settings.dart';
 import '../../data/services/furigana_generator.dart';
@@ -71,6 +73,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.forceHorizontalAxis = false,
     this.verticalTextBlocks = 1,
     required this.furiganaMode,
+    this.furiganaJlptLevel = 3,
     this.onLoaded,
     this.onChaptersLoaded,
     this.onRelocated,
@@ -105,6 +108,10 @@ class CustomEpubViewer extends StatefulWidget {
   /// Initial furigana mode. Passed to the JS viewer so the first rendered
   /// section applies the mode immediately.
   final FuriganaMode furiganaMode;
+
+  /// JLPT threshold used while [furiganaMode] is [FuriganaMode.aboveLevel].
+  /// Read at generateFurigana time, so rebuilds keep it current.
+  final int furiganaJlptLevel;
 
   final VoidCallback? onLoaded;
   final ValueChanged<List<EpubChapter>>? onChaptersLoaded;
@@ -463,6 +470,17 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         final inputs = raw.map((e) => e?.toString() ?? '').toList();
         // The webview plugin awaits this future before resolving the JS
         // promise, so the reply blocks until MeCab is ready (or null).
+        // aboveLevel builds a filtered generator per call: the JLPT
+        // threshold can change mid-session and the closure must capture
+        // the current value.
+        if (widget.furiganaMode == FuriganaMode.aboveLevel) {
+          final level = widget.furiganaJlptLevel;
+          return FuriganaGenerator(
+            const MecabFuriganaTokenizer(),
+            skipToken: (token) =>
+                !wordNeedsFuriganaAboveLevel(token.surface, level),
+          ).generate(inputs);
+        }
         return _furiganaGenerator.generate(inputs);
       },
     );

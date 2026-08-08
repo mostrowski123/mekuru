@@ -122,11 +122,7 @@ void main() {
     test('skipToken emits skipped tokens as bare text', () async {
       final generator = FuriganaGenerator(
         _FakeTokenizer({
-          '憂鬱な日': [
-            _tok('憂鬱', 'ユウウツ', 0),
-            _tok('な', '', 2),
-            _tok('日', 'ヒ', 3),
-          ],
+          '憂鬱な日': [_tok('憂鬱', 'ユウウツ', 0), _tok('な', '', 2), _tok('日', 'ヒ', 3)],
         }),
         skipToken: (t) => t.surface == '日',
       );

@@ -1700,6 +1700,14 @@
   "@readerFuriganaAllKanji": {
     "description": "Furigana mode option that shows furigana above every kanji."
   },
+  "readerFuriganaAboveLevel": "JLPT",
+  "@readerFuriganaAboveLevel": {
+    "description": "Furigana mode segment: annotate only words with kanji above the chosen JLPT level."
+  },
+  "readerFuriganaJlptLevelTitle": "Furigana for kanji above",
+  "@readerFuriganaJlptLevelTitle": {
+    "description": "Label for the JLPT level picker shown when the JLPT furigana mode is active."
+  },
   "readerAllSettingsTooltip": "All settings",
   "@readerAllSettingsTooltip": {
     "description": "Tooltip for the button in the reader quick settings sheets that opens the full reading settings screen."
