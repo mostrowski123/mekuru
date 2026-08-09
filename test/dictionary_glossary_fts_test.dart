@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
@@ -9,15 +8,12 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_query_servic
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 
 import 'dictionary_fts_test_support.dart';
+import 'shared/test_database.dart';
 
 /// English glossary lookup runs on an FTS5 index (dictionary_entries_fts)
 /// instead of a full-table LIKE scan. These tests pin the index lifecycle
 /// (created on open, kept in sync by triggers, rebuildable) and the
 /// word-boundary + relevance semantics that FTS provides.
-AppDatabase createTestDatabase() {
-  return AppDatabase(NativeDatabase.memory());
-}
-
 /// Yomitan structured-content shape used by recent JMdict releases:
 /// the gloss text sits inside nested content/tag markup.
 String structured(List<String> glosses) {

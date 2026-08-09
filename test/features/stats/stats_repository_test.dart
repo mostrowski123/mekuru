@@ -1,11 +1,10 @@
 import 'package:drift/drift.dart' hide isNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/reader/data/reader_session_tracker.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 
-AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
+import '../../shared/test_database.dart';
 
 class _FakeStopwatch extends Stopwatch {
   int fakeElapsedMs = 0;

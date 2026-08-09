@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
@@ -9,7 +8,7 @@ import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
-AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
+import 'shared/test_database.dart';
 
 void main() {
   late AppDatabase db;

@@ -1,4 +1,3 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
@@ -6,7 +5,7 @@ import 'package:mekuru/features/backup/data/services/pending_dictionary_restore_
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
+import 'shared/test_database.dart';
 
 void main() {
   late AppDatabase db;

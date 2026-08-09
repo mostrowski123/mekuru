@@ -1,4 +1,3 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -7,7 +6,7 @@ import 'package:mekuru/features/library/data/repositories/collection_repository.
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
 
-AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
+import 'shared/test_database.dart';
 
 void main() {
   late AppDatabase db;

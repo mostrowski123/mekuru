@@ -1,4 +1,3 @@
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,9 +9,8 @@ import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_provi
 import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
 import 'package:mekuru/main.dart';
 
+import '../../../../shared/test_database.dart';
 import '../../../../test_app.dart';
-
-AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
 
 /// Fake AnkiDroid backend: connected, two decks, and a duplicate that only
 /// exists in the "Mining" deck (id 2).

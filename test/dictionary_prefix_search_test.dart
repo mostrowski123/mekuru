@@ -1,21 +1,18 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+
+import 'shared/test_database.dart';
 
 /// Characterization tests for prefix search behavior. These pin the
 /// observable contract of [DictionaryQueryService.prefixSearchWithSource]
 /// (and the candidate fetch used by fuzzy search, which shares the same
 /// matching condition) so the LIKE → indexed-range-scan swap can't silently
 /// change results.
-AppDatabase createTestDatabase() {
-  return AppDatabase(NativeDatabase.memory());
-}
-
 void main() {
   setUpAll(() {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
@@ -11,11 +10,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dar
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 
 import 'dictionary_fts_test_support.dart';
-
-/// Creates an in-memory Drift database for testing.
-AppDatabase createTestDatabase() {
-  return AppDatabase(NativeDatabase.memory());
-}
+import 'shared/test_database.dart';
 
 class _ThrowingDictionaryRepository extends DictionaryRepository {
   _ThrowingDictionaryRepository(super.db, {this.throwOnPitchInsert = false});

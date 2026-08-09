@@ -1,21 +1,18 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
+
+import 'shared/test_database.dart';
 
 /// Katakana loanwords must be findable from every input family the search
 /// screen accepts, like on jisho.org: romaji ("kaado", "ka-do"), hiragana
 /// (かーど, かあど), and katakana (カード). Yomitan dictionaries store
 /// loanwords with katakana expression AND reading, so hiragana/romaji input
 /// needs katakana variant terms to reach them.
-AppDatabase createTestDatabase() {
-  return AppDatabase(NativeDatabase.memory());
-}
-
 void main() {
   setUpAll(() {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;

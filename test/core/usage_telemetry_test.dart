@@ -1,11 +1,10 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
+import '../shared/test_database.dart';
 
 void main() {
   tearDown(() {

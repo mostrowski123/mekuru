@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:ui' show Rect;
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
@@ -11,10 +10,7 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:path/path.dart' as p;
 
-/// In-memory database for testing.
-AppDatabase createTestDatabase() {
-  return AppDatabase(NativeDatabase.memory());
-}
+import 'shared/test_database.dart';
 
 void main() {
   late AppDatabase db;

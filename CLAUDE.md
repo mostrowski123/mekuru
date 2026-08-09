@@ -30,7 +30,7 @@ Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_con
 
 - **Commits**: conventional prefix — `feat(scope): …`, `fix(scope): …`, `chore: …`, `refactor(scope): …`. CI / release tooling depends on it.
 - **Layout**: feature-first under `lib/features/<feature>/{data,presentation}/`. `data/` has `models|repositories|services`; `presentation/` has `providers|screens|widgets`. Shared infra in `lib/core/`.
-- **State**: Riverpod with codegen. The global `databaseProvider` is created once in `lib/main.dart` — **never instantiate `AppDatabase` elsewhere** in app code. Tests declare a local `createTestDatabase()` helper returning `AppDatabase(NativeDatabase.memory())` (one line, per file — there is no shared import).
+- **State**: Riverpod with codegen. The global `databaseProvider` is created once in `lib/main.dart` — **never instantiate `AppDatabase` elsewhere** in app code. Tests use the shared `createTestDatabase()` helper from `test/shared/test_database.dart`, which returns `AppDatabase(NativeDatabase.memory())`.
 - **Pure-logic files** (e.g. `reader_interaction_logic.dart`, `compound_word_resolver.dart`) must stay free of Flutter UI/widget imports so they remain unit-testable (`flutter/foundation.dart` for `debugPrint` is the accepted ceiling).
 - **Telemetry**: `lib/core/services/usage_telemetry.dart` (Sentry-backed, fire-and-forget). **Never** put book titles, file names, user text, or looked-up words in telemetry messages or attributes.
 
@@ -75,8 +75,8 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 
 ## Testing conventions
 
-- Declare the local `createTestDatabase()` helper — returns `AppDatabase(NativeDatabase.memory())`. Always `await db.close()` in `tearDown`.
-- Build DB seed rows inline with `Companion.insert(...)` — no DB fixture files. (EPUB/SAF byte fixtures live in `test/utils/`.)
+- Import `createTestDatabase()` from `test/shared/test_database.dart` — returns `AppDatabase(NativeDatabase.memory())`. Always `await db.close()` in `tearDown`. (Integration tests have their own copy in `integration_test/shared/test_infrastructure.dart`.)
+- Build DB seed rows inline with `Companion.insert(...)` — no DB fixture files. (EPUB/SAF byte fixtures live in `test/shared/`.)
 - MeCab needs device assets — cannot run in unit tests. For compound-word tests, construct `WordIdentification` objects directly.
 - Integration tests live in `integration_test/` and run on a real emulator via `.github/workflows/integration-android.yml`. Keep them out of `test/`.
 

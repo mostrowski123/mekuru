@@ -1,15 +1,12 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 
-AppDatabase createTestDatabase() {
-  return AppDatabase(NativeDatabase.memory());
-}
+import 'shared/test_database.dart';
 
 void main() {
   setUpAll(() {

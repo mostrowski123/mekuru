@@ -1,10 +1,9 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/vocabulary/data/repositories/vocabulary_repository.dart';
 
-AppDatabase createTestDatabase() => AppDatabase(NativeDatabase.memory());
+import '../../shared/test_database.dart';
 
 DictionaryEntry buildEntry({String expression = '猫'}) => DictionaryEntry(
   id: 1,
