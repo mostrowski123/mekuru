@@ -297,6 +297,25 @@ void main() {
       expect(chapterOut, contains('<ruby>憂鬱<rt>ゆううつ</rt></ruby>'));
     });
 
+    test('container.xml and OPF survive export byte-identical', () async {
+      final path = await writeEpub(buildTestEpub(chapter('<p>今日</p>')));
+
+      final out = await buildFuriganaEpub(path, mode: FuriganaMode.hide);
+
+      // The exporter reads both files to find the manifest; consumed decoder
+      // entries get corrupted (double-deflated) if passed through to the
+      // encoder — which made exported books unimportable.
+      final decoded = ZipDecoder().decodeBytes(out!);
+      expect(
+        utf8.decode(decoded.findFile('META-INF/container.xml')!.readBytes()!),
+        _containerXml,
+      );
+      expect(
+        utf8.decode(decoded.findFile('OEBPS/content.opf')!.readBytes()!),
+        _contentOpf,
+      );
+    });
+
     test('returns null when the tokenizer cannot come up', () async {
       final path = await writeEpub(buildTestEpub(chapter('<p>今日</p>')));
       final generator = FuriganaGenerator(

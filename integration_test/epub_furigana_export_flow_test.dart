@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/services/epub_furigana_export.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
@@ -31,7 +32,11 @@ const _containerXml =
 const _contentOpf =
     '<?xml version="1.0" encoding="UTF-8"?>'
     '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" '
-    'unique-identifier="id"><metadata/>'
+    'unique-identifier="id">'
+    '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+    '<dc:title>再輸入の本</dc:title>'
+    '<dc:language>ja</dc:language>'
+    '</metadata>'
     '<manifest>'
     '<item id="c1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>'
     '</manifest>'
@@ -119,6 +124,43 @@ void main() {
     expect(xhtml, contains('<ruby>憂鬱<rt>ゆううつ</rt></ruby>'));
     expect(xhtml, isNot(contains('<ruby>今日')));
     expect(xhtml, contains('今日'));
+  });
+
+  // Regression: JLPT-mode exports used to corrupt META-INF/container.xml and
+  // the OPF (the exporter read them to find the manifest, then passed the
+  // consumed zip entries through to the encoder, which double-deflated
+  // them), so the exported book could never be imported again.
+  test('JLPT export reimports cleanly with metadata and ruby intact', () async {
+    final path = await writeEpub('<p>今日は憂鬱だ。</p>');
+
+    final bytes = await MecabService.instance.runOffIsolate(
+      () => buildFuriganaEpubForMode(
+        path,
+        mode: FuriganaMode.aboveLevel,
+        jlptLevel: 3,
+      ),
+    );
+    expect(bytes, isNotNull);
+
+    // writeEpub's temp dir already has a recursive-delete teardown; the
+    // exported copy can live next to the source.
+    addTearDown(cleanupAppBooksDir);
+    final exportedPath = '${File(path).parent.path}/exported (furigana).epub';
+    await File(exportedPath).writeAsBytes(bytes!);
+
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final imported = await BookRepository(db).importEpub(exportedPath);
+
+    // Title and language only survive if the OPF round-tripped intact.
+    expect(imported.title, '再輸入の本');
+    expect(imported.language, 'ja');
+
+    // And the annotated chapter must be what the reader actually loads.
+    final chapter = await File(
+      '${imported.filePath}/OEBPS/chapter1.xhtml',
+    ).readAsString();
+    expect(chapter, contains('<ruby>憂鬱<rt>ゆううつ</rt></ruby>'));
   });
 
   // UI-level coverage of runFuriganaExport: long-press → options sheet →

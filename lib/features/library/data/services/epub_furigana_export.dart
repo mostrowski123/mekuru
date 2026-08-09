@@ -269,17 +269,26 @@ Future<Uint8List?> buildFuriganaEpub(
   );
   for (final entry in archive.files) {
     if (entry.name == 'mimetype') continue;
-    if (!entry.isFile || !contentDocs.contains(entry.name)) {
-      // Untouched entries are re-added as decoded objects, which the zip
-      // encoder passes through without re-compressing — images keep their
-      // bytes.
+    final isContentDoc = contentDocs.contains(entry.name);
+    // Never-consumed compressed entries (and directories) pass through: the
+    // encoder reuses their raw deflate stream, so images keep their bytes.
+    if (!entry.isFile || (!isContentDoc && entry.isCompressed)) {
       out.addFile(entry);
       continue;
     }
-    // Once readBytes() has consumed a decoder entry it must not be
-    // re-added for pass-through — re-encoding it corrupts the data. Keep
-    // the bytes we already read instead.
+    // Everything else is rebuilt from decompressed bytes. Once readBytes()
+    // has consumed a decoder entry (container.xml and the OPF, read during
+    // manifest discovery) the encoder corrupts it on pass-through — it
+    // deflates the raw stream a second time while keeping the original
+    // sizes. Carrying `compression` over keeps STORED entries stored.
     final originalBytes = entry.readBytes()!;
+    if (!isContentDoc) {
+      out.addFile(
+        ArchiveFile.bytes(entry.name, originalBytes)
+          ..compression = entry.compression,
+      );
+      continue;
+    }
     final xhtml = utf8.decode(originalBytes, allowMalformed: true);
     final rewritten = mode == FuriganaMode.hide
         ? stripRubyXhtml(xhtml)
