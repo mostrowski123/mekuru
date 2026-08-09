@@ -51,7 +51,8 @@ These files exist but are deliberately **not** in the CI script. Run them locall
   first WebView instance per process reliably receives taps, so each scenario is
   its own file; behavior verified on API 36, unverified on CI's API 34
   `google_atd`). Five extra per-file app launches would also eat most of the
-  remaining 30-minute test-step budget (~21 min used as of Aug 2026).
+  remaining 30-minute test-step budget (the 18-file suite already takes ~25 min,
+  measured Aug 2026, run 31295011131).
 
 Except for `reader_resume_reopen_test.dart` (tried and reverted in Aug 2026,
 see above), none of these were ever removed from CI — the script has only ever
