@@ -252,10 +252,13 @@ void main() {
       tester,
     ) async {
       // 今日 = N5, 憂鬱 = N1, 薔薇 = non-joyo (harder than N1), plus
-      // publisher ruby. At threshold N1 only 薔薇 gains ruby — which a
-      // level-agnostic fixture could never prove reached the pipeline.
+      // publisher ruby on both sides of the threshold: 漢字 is all joyo
+      // (below N1), 檎 in 林檎 is non-joyo (above). At threshold N1 only
+      // 薔薇 gains ruby — which a level-agnostic fixture could never prove
+      // reached the pipeline.
       final db = await dbWithBook(
-        '<p>今日は憂鬱な薔薇だ。</p><p><ruby>漢字<rt>かんじ</rt></ruby></p>',
+        '<p>今日は憂鬱な薔薇だ。</p>'
+        '<p><ruby>漢字<rt>かんじ</rt></ruby>と<ruby>林檎<rt>りんご</rt></ruby></p>',
         title: 'JLPTの本',
       );
       await tester.pumpWidget(
@@ -293,7 +296,12 @@ void main() {
       );
       expect(xhtml, isNot(contains('<ruby>憂鬱')));
       expect(xhtml, isNot(contains('<ruby>今日')));
-      expect(xhtml, contains('<rt>かんじ</rt>')); // publisher ruby kept
+      // The JLPT filter wins over the publisher: below-level authored ruby
+      // is unwrapped (not re-annotated), above-level authored ruby is kept
+      // verbatim.
+      expect(xhtml, isNot(contains('<ruby>漢字')));
+      expect(xhtml, contains('漢字'));
+      expect(xhtml, contains('<ruby>林檎<rt>りんご</rt></ruby>'));
 
       // Let the snackbar clear so the next export waits on a fresh one.
       await pumpUntilGone(tester, find.text('EPUB exported'));
