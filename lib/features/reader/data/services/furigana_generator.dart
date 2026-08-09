@@ -16,6 +16,18 @@ FuriganaGenerator furiganaGeneratorFor(FuriganaMode mode, int jlptLevel) {
   );
 }
 
+/// The authored-ruby policy paired with [furiganaGeneratorFor]:
+/// [FuriganaMode.aboveLevel] strips publisher ruby whose base has no kanji
+/// above the JLPT threshold, every other mode leaves it alone (null).
+/// Kept beside the generator factory so the two halves of the aboveLevel
+/// filter cannot be derived from different mode/level pairs.
+bool Function(String baseText)? authoredRubyStripFor(
+  FuriganaMode mode,
+  int jlptLevel,
+) => mode == FuriganaMode.aboveLevel
+    ? ((base) => !wordNeedsFuriganaAboveLevel(base, jlptLevel))
+    : null;
+
 /// Abstraction over MeCab so the generator can be unit-tested with a fake.
 abstract class FuriganaTokenizer {
   /// Brings the tokenizer up if needed; `false` when it cannot come up.

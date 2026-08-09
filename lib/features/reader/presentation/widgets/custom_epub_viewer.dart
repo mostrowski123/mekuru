@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 
 import '../../data/models/epub_models.dart';
 import '../../data/models/reader_settings.dart';
@@ -471,6 +472,22 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
           widget.furiganaMode,
           widget.furiganaJlptLevel,
         ).generate(inputs);
+      },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'needsFuriganaAboveLevel',
+      callback: (data) {
+        final raw = data.isNotEmpty && data[0] is List ? data[0] as List : data;
+        // Pure character-level check — no MeCab, so it answers immediately.
+        // The level is read per call, keeping mid-session changes current.
+        return [
+          for (final e in raw)
+            wordNeedsFuriganaAboveLevel(
+              e?.toString() ?? '',
+              widget.furiganaJlptLevel,
+            ),
+        ];
       },
     );
 

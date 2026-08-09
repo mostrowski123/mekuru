@@ -146,6 +146,11 @@ void registerWordTapScenario(
   String description, {
   required FuriganaMode furiganaMode,
   bool verticalWithRuby = false,
+  // In aboveLevel mode the bridge must classify publisher-authored ruby
+  // against the JLPT threshold and log the result. The fixture's ruby words
+  // (学校, 日本語) are all N5 kanji, so at the default N3 threshold every
+  // authored ruby must be classified below-level (hidden).
+  bool expectAuthoredRubyClassification = false,
 }) {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -247,5 +252,38 @@ void registerWordTapScenario(
           '(furiganaMode=$furiganaMode). '
           'Diagnostic logs above show where the tap died.',
     );
+
+    if (expectAuthoredRubyClassification) {
+      // The classification call is async (bridge round-trip), so poll for
+      // its log line rather than asserting immediately.
+      final pattern = RegExp(
+        r'aboveLevel authored ruby: (\d+) of (\d+) below level',
+      );
+      RegExpMatch? match;
+      for (var tick = 0; tick < 40 && match == null; tick++) {
+        match = capturedLogs
+            .map(pattern.firstMatch)
+            .where((m) => m != null)
+            .firstOrNull;
+        if (match == null) await tester.pump(const Duration(milliseconds: 250));
+      }
+      expect(
+        match,
+        isNotNull,
+        reason:
+            'Bridge never logged authored-ruby classification in '
+            'aboveLevel mode.',
+      );
+      final below = int.parse(match!.group(1)!);
+      final total = int.parse(match.group(2)!);
+      expect(total, greaterThan(0), reason: 'fixture has authored ruby');
+      expect(
+        below,
+        total,
+        reason:
+            'All fixture ruby words are N5 kanji, so every authored ruby '
+            'must classify below the default N3 threshold.',
+      );
+    }
   });
 }

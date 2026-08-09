@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/library/data/services/epub_furigana_export.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
@@ -180,6 +181,23 @@ void main() {
       final generator = FuriganaGenerator(_FakeTokenizer(const {}));
       expect(await annotateXhtml('<p>今日<broken', generator), isNull);
     });
+
+    test('stripRubyWhere unwraps matching authored ruby, keeps the rest', () async {
+      final generator = FuriganaGenerator(_FakeTokenizer(const {}));
+      final result = await annotateXhtml(
+        chapter(
+          '<p><ruby>今日<rt>きょう</rt></ruby>は'
+          '<ruby>鬱<rt>うつ</rt></ruby>だ</p>',
+        ),
+        generator,
+        stripRubyWhere: authoredRubyStripFor(FuriganaMode.aboveLevel, 3),
+      );
+      // Strip-only change (no annotations) must still rewrite the entry.
+      expect(result, isNotNull);
+      expect(result, contains('今日は'));
+      expect(result, isNot(contains('<rt>きょう</rt>')));
+      expect(result, contains('<ruby>鬱<rt>うつ</rt></ruby>'));
+    });
   });
 
   group('buildFuriganaEpub', () {
@@ -236,6 +254,47 @@ void main() {
       );
       expect(chapterOut, isNot(contains('<rt>')));
       expect(chapterOut, contains('既存と今日'));
+    });
+
+    test('aboveLevel strips known authored ruby, annotates hard bare '
+        'kanji, keeps hard authored ruby', () async {
+      final path = await writeEpub(
+        buildTestEpub(
+          chapter(
+            '<p><ruby>今日<rt>きょう</rt></ruby>の'
+            '<ruby>鬱<rt>うつ</rt></ruby>と憂鬱</p>',
+          ),
+        ),
+      );
+      const level = 3;
+      final generator = FuriganaGenerator(
+        _FakeTokenizer({
+          '今日': [_tok('今日', 'キョウ', 0)],
+          'と憂鬱': [_tok('と', 'ト', 0), _tok('憂鬱', 'ユウウツ', 1)],
+        }),
+        skipToken: (t) => !wordNeedsFuriganaAboveLevel(t.surface, level),
+      );
+
+      final out = await buildFuriganaEpub(
+        path,
+        mode: FuriganaMode.aboveLevel,
+        generator: generator,
+        stripRubyWhere: authoredRubyStripFor(FuriganaMode.aboveLevel, level),
+      );
+
+      final chapterOut = utf8.decode(
+        ZipDecoder()
+            .decodeBytes(out!)
+            .findFile('OEBPS/chapter1.xhtml')!
+            .readBytes()!,
+      );
+      // N5 authored ruby unwrapped and not re-annotated.
+      expect(chapterOut, isNot(contains('<rt>きょう</rt>')));
+      expect(chapterOut, contains('今日の'));
+      // N1 authored ruby untouched (its reading wins over MeCab's).
+      expect(chapterOut, contains('<ruby>鬱<rt>うつ</rt></ruby>'));
+      // N1 bare text still gets generated ruby.
+      expect(chapterOut, contains('<ruby>憂鬱<rt>ゆううつ</rt></ruby>'));
     });
 
     test('returns null when the tokenizer cannot come up', () async {

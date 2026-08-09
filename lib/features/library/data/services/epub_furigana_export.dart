@@ -5,8 +5,10 @@
 // Mode semantics mirror the reader's FuriganaMode:
 // - book: the original file, byte for byte.
 // - hide: all existing ruby stripped, nothing generated.
-// - all / aboveLevel: ruby generated for kanji words (the JLPT filter lives
-//   in the generator's skipToken).
+// - all: ruby generated for kanji words; authored ruby kept.
+// - aboveLevel: like all, but the JLPT filter (the generator's skipToken)
+//   also wins over the publisher: authored ruby whose base is entirely at
+//   or below the level is stripped (stripRubyWhere).
 
 import 'dart:convert';
 import 'dart:io';
@@ -101,37 +103,89 @@ String? stripRubyXhtml(String xhtml) {
   if (rubies.isEmpty) return null;
 
   for (final ruby in rubies) {
-    final parent = ruby.parent;
-    if (parent == null) continue;
-    final base = <XmlNode>[];
-    for (final child in ruby.children) {
-      if (child is XmlElement) {
-        final tag = child.name.local.toLowerCase();
-        if (tag == 'rt' || tag == 'rp') continue;
-        if (tag == 'rb') {
-          base.addAll(child.children.map((n) => n.copy()));
-          continue;
-        }
-      }
-      base.add(child.copy());
-    }
-    final index = parent.children.indexOf(ruby);
-    parent.children.removeAt(index);
-    parent.children.insertAll(index, base);
+    if (ruby.parent == null) continue;
+    _unwrapRuby(ruby, _rubyBaseNodes(ruby));
   }
   return doc.toXmlString();
 }
 
+/// Text of [ruby]'s base content (children minus rt/rp), without copying.
+String _rubyBaseText(XmlElement ruby) {
+  final buffer = StringBuffer();
+  for (final child in ruby.children) {
+    if (child is XmlElement) {
+      final tag = child.name.local.toLowerCase();
+      if (tag == 'rt' || tag == 'rp') continue;
+      buffer.write(child.innerText);
+    } else {
+      // value covers text/CDATA leaves (innerText is descendants-only and
+      // empty for them).
+      buffer.write(child.value ?? child.innerText);
+    }
+  }
+  return buffer.toString();
+}
+
+/// Copies of [ruby]'s base content: children minus rt/rp, with rb unwrapped.
+List<XmlNode> _rubyBaseNodes(XmlElement ruby) {
+  final base = <XmlNode>[];
+  for (final child in ruby.children) {
+    if (child is XmlElement) {
+      final tag = child.name.local.toLowerCase();
+      if (tag == 'rt' || tag == 'rp') continue;
+      if (tag == 'rb') {
+        base.addAll(child.children.map((n) => n.copy()));
+        continue;
+      }
+    }
+    base.add(child.copy());
+  }
+  return base;
+}
+
+/// Replaces [ruby] with [base] in its parent's child list.
+void _unwrapRuby(XmlElement ruby, List<XmlNode> base) {
+  final parent = ruby.parent!;
+  final index = parent.children.indexOf(ruby);
+  parent.children.removeAt(index);
+  parent.children.insertAll(index, base);
+}
+
 /// [xhtml] with generated ruby spliced in. Null when the document does not
-/// parse, nothing was annotated, or the tokenizer went away (the caller
+/// parse, nothing changed, or the tokenizer went away (the caller
 /// keeps the original entry — [buildFuriganaEpub] probes tokenizer
 /// availability up front so that last case cannot silently skip a book).
-Future<String?> annotateXhtml(String xhtml, FuriganaGenerator generator) async {
+///
+/// [stripRubyWhere] (aboveLevel mode) unwraps authored ruby whose base text
+/// matches, before annotation, so the JLPT filter also wins over the
+/// publisher's own ruby.
+Future<String?> annotateXhtml(
+  String xhtml,
+  FuriganaGenerator generator, {
+  bool Function(String baseText)? stripRubyWhere,
+}) async {
   final doc = _parseXhtml(xhtml);
   if (doc == null) return null;
 
-  final targets = furiganaTargets(doc);
-  if (targets.isEmpty) return null;
+  // Unwrapped base nodes are excluded from annotation below: the predicate
+  // already proved they contain nothing above the level, so tokenizing them
+  // would be a guaranteed no-op per stripped ruby.
+  final strippedBases = <XmlNode>{};
+  if (stripRubyWhere != null) {
+    for (final ruby in doc.findAllElements('ruby').toList()) {
+      if (ruby.parent == null) continue;
+      if (!stripRubyWhere(_rubyBaseText(ruby))) continue;
+      final base = _rubyBaseNodes(ruby);
+      _unwrapRuby(ruby, base);
+      strippedBases.addAll(base);
+    }
+  }
+  final stripped = strippedBases.isNotEmpty;
+
+  final targets = furiganaTargets(
+    doc,
+  ).where((t) => !strippedBases.contains(t)).toList();
+  if (targets.isEmpty) return stripped ? doc.toXmlString() : null;
 
   // One batch per document: the reader's batch-of-50 exists only to bound
   // webview bridge payloads, which don't apply in-process.
@@ -148,7 +202,7 @@ Future<String?> annotateXhtml(String xhtml, FuriganaGenerator generator) async {
     spliceRuby(targets[i], segments);
     changed = true;
   }
-  if (!changed) return null;
+  if (!changed && !stripped) return null;
 
   // No pretty-printing: it would inject whitespace into Japanese text runs
   // and around inline ruby.
@@ -181,12 +235,15 @@ Set<String> _contentDocumentNames(Archive archive) {
 }
 
 /// The EPUB at [epubPath] rebuilt according to [mode]. [generator] is
-/// required for the annotating modes. Returns null iff MeCab cannot come
-/// up; throws on unreadable/corrupt input.
+/// required for the annotating modes; [stripRubyWhere] carries aboveLevel's
+/// authored-ruby policy (see [authoredRubyStripFor]) and must be derived
+/// from the same mode/level as [generator]. Returns null iff MeCab cannot
+/// come up; throws on unreadable/corrupt input.
 Future<Uint8List?> buildFuriganaEpub(
   String epubPath, {
   required FuriganaMode mode,
   FuriganaGenerator? generator,
+  bool Function(String baseText)? stripRubyWhere,
 }) async {
   final original = await File(epubPath).readAsBytes();
   if (mode == FuriganaMode.book) return original;
@@ -226,7 +283,11 @@ Future<Uint8List?> buildFuriganaEpub(
     final xhtml = utf8.decode(originalBytes, allowMalformed: true);
     final rewritten = mode == FuriganaMode.hide
         ? stripRubyXhtml(xhtml)
-        : await annotateXhtml(xhtml, generator!);
+        : await annotateXhtml(
+            xhtml,
+            generator!,
+            stripRubyWhere: stripRubyWhere,
+          );
     out.addFile(
       ArchiveFile.bytes(
         entry.name,
@@ -252,5 +313,6 @@ Future<Uint8List?> buildFuriganaEpubForMode(
     epubPath,
     mode: mode,
     generator: furiganaGeneratorFor(mode, jlptLevel),
+    stripRubyWhere: authoredRubyStripFor(mode, jlptLevel),
   );
 }
