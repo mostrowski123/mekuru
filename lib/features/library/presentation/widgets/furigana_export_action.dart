@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/sentry_helpers.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/services/epub_furigana_export.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/epub_file_resolver.dart';
@@ -50,18 +52,28 @@ Future<void> runFuriganaExport(
     ),
   );
 
+  final exportAttrs = <String, Object>{
+    'mode': exportMode.name,
+    'jlpt_level': exportLevel,
+  };
   Object? failure;
   Uint8List? bytes;
   try {
-    final epubPath = await EpubFileResolver().resolveLocalEpubPath(
-      book.filePath,
-    );
-    bytes = await MecabService.instance.runOffIsolate(
-      () => buildFuriganaEpubForMode(
-        epubPath,
-        mode: exportMode,
-        jlptLevel: exportLevel,
-      ),
+    bytes = await tracedOperation(
+      'furigana_export.build_duration_ms',
+      attributes: exportAttrs,
+      action: () async {
+        final epubPath = await EpubFileResolver().resolveLocalEpubPath(
+          book.filePath,
+        );
+        return MecabService.instance.runOffIsolate(
+          () => buildFuriganaEpubForMode(
+            epubPath,
+            mode: exportMode,
+            jlptLevel: exportLevel,
+          ),
+        );
+      },
     );
   } catch (e, st) {
     Sentry.captureException(e, stackTrace: st);
@@ -82,6 +94,7 @@ Future<void> runFuriganaExport(
   if (bytes == null) {
     // Null is the load-bearing "MeCab could not come up" signal — never
     // silently save an unannotated book.
+    logUsage('furigana_export.unavailable');
     messenger.showSnackBar(
       SnackBar(content: Text(l10n.libraryExportFuriganaUnavailable)),
     );
@@ -96,6 +109,7 @@ Future<void> runFuriganaExport(
     bytes: bytes,
   );
   if (savedPath != null) {
+    logUsage('furigana_export.completed', attrs: exportAttrs);
     messenger.showSnackBar(
       SnackBar(content: Text(l10n.libraryExportFuriganaDone)),
     );

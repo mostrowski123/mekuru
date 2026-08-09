@@ -112,15 +112,18 @@ Future<void> emitInstallGauges(AppDatabase db, {required bool isPro}) async {
       where: db.dictionaryMetas.isEnabled.equals(true),
     );
     final savedWords = await countRows(db, db.savedWords);
+    final collections = await countRows(db, db.collections);
 
     Sentry.metrics.gauge('install.library_books', books);
     Sentry.metrics.gauge('install.dicts_enabled', enabledDicts);
     Sentry.metrics.gauge('install.saved_words', savedWords);
+    Sentry.metrics.gauge('install.collections', collections);
     Sentry.metrics.gauge('install.is_pro', isPro ? 1 : 0);
     AnalyticsService.instance.logEvent('install_state', {
       'library_books': books,
       'dicts_enabled': enabledDicts,
       'saved_words': savedWords,
+      'collections': collections,
       'is_pro': isPro ? 1 : 0,
     });
   } catch (error) {

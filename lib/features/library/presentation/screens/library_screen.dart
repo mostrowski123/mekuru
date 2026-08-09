@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
@@ -2137,6 +2138,7 @@ Widget _maybeHero(String? tag, Widget child) => tag == null
 /// Fades the folder screen in while the covers fly to their places. The
 /// default route slides the page, which fights the flights.
 Route<void> _folderRoute(int collectionId) {
+  countUsage('collection.opened');
   return PageRouteBuilder<void>(
     transitionDuration: const Duration(milliseconds: 320),
     reverseTransitionDuration: const Duration(milliseconds: 320),

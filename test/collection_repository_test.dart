@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
@@ -151,6 +152,77 @@ void main() {
 
     expect((await positionsIn(shelf)).keys.toSet(), {b});
     expect((await positionsIn(other)).keys.toSet(), {a});
+  });
+
+  group('telemetry', () {
+    final logs = <String>[];
+    final counts = <(String, int)>[];
+
+    setUp(() {
+      logs.clear();
+      counts.clear();
+      usageLogSinkOverride = (message, attributes, {required isWarning}) =>
+          logs.add(message);
+      usageCountSinkOverride = (name, value, attributes) =>
+          counts.add((name, value));
+      usageAnalyticsSinkOverride = (name, parameters) {};
+    });
+
+    tearDown(() {
+      usageLogSinkOverride = null;
+      usageCountSinkOverride = null;
+      usageAnalyticsSinkOverride = null;
+    });
+
+    test('create/delete log; membership writes count actual rows', () async {
+      final a = await insertBook('猫');
+      final b = await insertBook('犬');
+      final shelf = await repo.createCollection('Shelf');
+      expect(logs, ['collection.created']);
+
+      await repo.addBooksToCollection(shelf, {a, b});
+      expect(counts, [('collection.books_added', 2)]);
+
+      counts.clear();
+      await repo.addBooksToCollection(shelf, {a, b}); // already filed
+      expect(counts, isEmpty);
+
+      await repo.reorderCollectionBooks(shelf, [b, a]);
+      expect(counts, [('collection.reordered', 1)]);
+
+      counts.clear();
+      await repo.removeBooksFromCollection(shelf, {a, 999}); // 999: non-member
+      expect(counts, [('collection.books_removed', 1)]);
+
+      logs.clear();
+      await repo.deleteCollection(shelf);
+      expect(logs, ['collection.deleted']);
+    });
+
+    test('setBookCollections counts the diff, not the full set', () async {
+      final book = await insertBook('猫');
+      final a = await repo.createCollection('A');
+      final b = await repo.createCollection('B');
+      counts.clear();
+
+      await repo.setBookCollections(book, {a, b});
+      expect(counts, [('collection.books_added', 2)]);
+
+      counts.clear();
+      await repo.setBookCollections(book, {b});
+      expect(counts, [('collection.books_removed', 1)]);
+
+      counts.clear();
+      await repo.setBookCollections(book, {b}); // no-op toggle
+      expect(counts, isEmpty);
+    });
+
+    test('nothing is counted when the write throws', () async {
+      await db.customStatement('DROP TABLE book_collections');
+
+      await expectLater(repo.reorderCollectionBooks(1, [1]), throwsA(anything));
+      expect(counts, isEmpty);
+    });
   });
 
   Book makeBook(int id) => Book(
