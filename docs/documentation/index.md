@@ -14,19 +14,19 @@ Install Mekuru from [Google Play](https://play.google.com/store/apps/details?id=
 
 From the **Library** tab, tap **+** and choose one of the supported import flows:
 
-- **EPUB** - import a single `.epub` file
-- **Manga (Mokuro)** - select a folder, then choose a `.mokuro` or `.html` manifest
-- **Manga (CBZ)** - import a single `.cbz` archive
+- **Import EPUB** - import a single `.epub` file
+- **Import Manga > Mokuro folder** - select the folder that contains a `.mokuro` or `.html` manifest alongside the images
+- **Import Manga > CBZ archive** - import a single `.cbz` archive
 
 See [Importing Books (EPUB)](getting-started/importing-books.md) and [Importing Manga](getting-started/importing-manga.md).
 
 **2. Add dictionaries**
 
-Go to the **Dictionary** tab to import a Yomitan-compatible dictionary, import a Yomitan collection backup, or use **Settings > Downloads** for built-in packs such as JMdict and KANJIDIC. See [Setting Up Dictionaries](getting-started/dictionaries.md).
+Go to the **Dictionary** tab to import a Yomitan-compatible dictionary, import a Yomitan collection backup, or use **Settings > Downloads** for built-in packs such as JMdict and KANJIDIC. Settings lives behind the gear icon on the **You** tab. See [Setting Up Dictionaries](getting-started/dictionaries.md).
 
 **3. Start reading**
 
-Tap a library item to open it. Long-press a library item to open management actions such as rename, bookmarks, highlights, OCR controls, or delete. See [Navigation & Gestures](reading/navigation.md).
+Tap a library item to open it. Long-press a library item to open management actions such as rename, add to collection, export as EPUB, bookmarks, highlights, OCR controls, or delete. See [Navigation & Gestures](reading/navigation.md) and [Collections & Folders](library/collections.md).
 
 **4. Look up and save words**
 
@@ -35,6 +35,10 @@ Tap a word in EPUB text, Mokuro word overlays, or OCR-generated manga overlays t
 **5. Export to Anki**
 
 Export selected vocabulary entries to CSV, or send cards directly to AnkiDroid on Android from dictionary lookup cards. See [Exporting to Anki](vocabulary/anki-export.md).
+
+**6. Track your progress**
+
+The **You** tab shows your reading time, an activity heatmap, lookup rate, and vocabulary growth. See [Reading Stats](stats/reading-stats.md).
 
 ## Feature Overview
 
@@ -45,7 +49,12 @@ Export selected vocabulary entries to CSV, or send cards directly to AnkiDroid o
 | EPUB Reader | Vertical and horizontal reading, RTL or LTR page flow, and automatic progress restore |
 | Manga Reader | Mokuro and CBZ support with single-page, spread, and scroll modes |
 | Offline Dictionaries | Import Yomitan `.zip` files, collection `.json` backups, or built-in download packs |
-| Built-in Downloads | JMdict, JMdict with examples, KANJIDIC, KanjiVG, and JPDB frequency data |
+| Built-in Downloads | JMdict, JMdict with examples, KANJIDIC, KanjiVG, JPDB frequency data, and the Enhanced Furigana Dictionary |
+| Collections | Organize books into iOS-style folder tiles with drag-to-reorder and multi-select batch actions |
+| Furigana Display | Per-book furigana modes: off, book default, all kanji, or only kanji above a chosen JLPT level |
+| Furigana EPUB Export | Export a copy of any EPUB with generated furigana baked in |
+| Reading Stats | Reading time, activity heatmap, lookup rate, and vocabulary growth on the You tab |
+| Backup & Restore | Local backup of settings, vocabulary, bookmarks, collections, and reading history |
 | Smart Word Detection | Accurate Japanese word boundary detection for tap-to-lookup |
 | Compound Words | Greedy multi-token matching for longer dictionary hits |
 | Kanji Stroke Order | KanjiVG diagrams for single-kanji searches and compatible lookups |

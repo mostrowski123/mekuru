@@ -19,6 +19,14 @@ These downloads are imported automatically and appear in the Dictionary Manager 
 | **KanjiVG** | Stroke order diagrams in compatible dictionary results and single-kanji searches |
 | **JPDB Frequency** | Word frequency ranks shown in dictionary results |
 
+## Furigana & Word Analysis
+
+| Download | What it adds |
+|-|-|
+| **Enhanced Furigana Dictionary** | Improves reading accuracy for generated furigana and word lookups (roughly 10,000 additional words). 45 MB download, about 250 MB on disk. |
+
+This pack does not turn furigana on or off — it only improves the accuracy of the readings Mekuru generates. It has its own **Use enhanced dictionary** toggle on the Downloads screen; if tapping words ever stops working, turn the toggle off (the download is kept) and restart the app. See [Furigana](../reading/furigana.md) for the display modes themselves.
+
 ## Sources
 
 - **JMdict / KANJIDIC** - from the EDRDG projects, distributed through Yomitan releases

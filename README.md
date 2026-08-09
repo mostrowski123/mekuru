@@ -48,6 +48,10 @@ Every GitHub release also includes a second installable APK, `app-parallel-relea
 - **Offline Dictionaries**: Import Yomitan ZIPs, Yomitan collection JSON backups, or download built-in packs such as JMdict, KANJIDIC, KanjiVG, and JPDB frequency data
 - **Smart Japanese Lookups**: MeCab-powered tokenization, compound-word matching, pitch accents, stroke-order diagrams, and frequency data
 - **Vocabulary Workflow**: Save words with sentence context, browse saved terms, export CSV for Anki, or send cards directly to AnkiDroid on Android
+- **Furigana**: Per-book display modes — off, book default, all kanji, or only kanji above a chosen JLPT level (applies to publisher-authored ruby too) — plus EPUB export with generated furigana baked in
+- **Library Collections**: iOS-style folder tiles with drag-to-reorder, folder edit mode, and multi-select batch add
+- **Reading Stats**: A "You" tab with activity heatmap, reading time, lookup rate, and vocabulary growth
+- **Backup & Restore**: Local backup covering library metadata, vocabulary, collections, and per-book settings
 - **Reader Customization**: Themes, color modes, margins, swipe sensitivity, and other reader controls
 - **Optional Pro Upgrade**: Unlocks book highlights, manga auto-crop, and custom-server OCR support for remote manga OCR
 
@@ -106,6 +110,8 @@ flutter test
 dart run build_runner watch --delete-conflicting-outputs
 ```
 
+Emulator-based integration tests live in `integration_test/` and run in CI on every relevant change — see [docs/integration-testing.md](docs/integration-testing.md) for local commands.
+
 ### Localization Workflow
 
 Runtime localization uses Flutter's native `gen_l10n` pipeline with ARB files in `lib/l10n/`.
@@ -143,8 +149,10 @@ firebase deploy --only functions,firestore:rules
 lib/
 |-- app.dart
 |-- main.dart
+|-- firebase_options.dart
 |-- config/
 |-- core/
+|-- l10n/
 |-- features/
 |   |-- ankidroid/
 |   |-- backup/
@@ -153,6 +161,7 @@ lib/
 |   |-- manga/
 |   |-- reader/
 |   |-- settings/
+|   |-- stats/
 |   `-- vocabulary/
 `-- shared/
 

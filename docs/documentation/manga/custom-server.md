@@ -22,11 +22,12 @@ Custom OCR servers use a shared `AUTH_API_KEY`.
 
 ## Configuring the App
 
-1. Open **Settings**.
-2. Open **Custom OCR Server**.
-3. Enter the server URL.
-4. Enter the matching shared key.
-5. Save the settings.
+1. Open **Settings** from the gear icon on the **You** tab.
+2. Open **Reader Settings** and scroll to the **Manga** section.
+3. Tap **Custom OCR Server**.
+4. Enter the server URL.
+5. Enter the matching shared key.
+6. Save the settings.
 
 ## Compatibility
 

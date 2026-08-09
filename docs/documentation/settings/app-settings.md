@@ -1,10 +1,14 @@
 # App Settings
 
-Mekuru's **Settings** screen mixes app-wide preferences, reading defaults, OCR controls, downloads, and support links.
+Mekuru's **Settings** screen collects app-wide preferences, reader defaults, downloads, backup, and support links. Open it from the gear icon in the top corner of the **You** tab.
 
 Many reader behaviors are split between global defaults here and per-book quick settings inside the reader. See [Display Settings](../reading/display-settings.md).
 
 ## General
+
+### App Language
+
+Override the app's interface language, or follow the system language.
 
 ### Startup Screen
 
@@ -24,18 +28,11 @@ Choose **Light**, **Dark**, or **System default** for the app theme.
 
 Pick the app's accent color theme. This changes the Material color seed used throughout the app.
 
-## Reading Defaults
+## Reading
 
-The **Reading Defaults** section controls the shared EPUB defaults:
+The **Reader Settings** entry opens a dedicated screen with the shared reader defaults — text size, colors, margins, and manga defaults — grouped into **All books**, **EPUB**, and **Manga** sections. The Manga section also holds **White Threshold** (auto-crop tuning) and the **Custom OCR Server** configuration.
 
-- Font size
-- Color mode
-- Sepia intensity
-- Keep screen on
-- Horizontal and vertical margins
-- Swipe sensitivity
-
-Per-book reader controls such as **Vertical Text**, **Reading Direction**, and **Disable Links** are changed inside the reader instead of here.
+See [Display Settings](../reading/display-settings.md) for the full list of controls.
 
 ## Dictionary
 
@@ -46,7 +43,7 @@ The Dictionary section includes:
 - **Filter Roman Letter Entries** - hide entries whose headword uses English letters
 - **Auto-Focus Search** - open the keyboard automatically when the Dictionary tab is selected
 
-### AnkiDroid Integration
+## Vocabulary & Export
 
 On Android, **AnkiDroid Integration** opens the field-mapping setup used for direct card creation. See [Exporting to Anki](../vocabulary/anki-export.md).
 
@@ -59,16 +56,6 @@ The **Pro** section handles Mekuru's one-time paid upgrade.
 - The Pro screen shows whether Pro is locked or unlocked.
 - Pro unlocks **Auto-Crop**, **Book Highlights**, and **Custom OCR Server**.
 
-## Manga OCR (Custom OCR Server)
-
-The **Custom OCR Server** setting controls the remote OCR endpoint used for CBZ manga processing.
-
-- Add your own server URL
-- Add the matching shared `AUTH_API_KEY`
-- Mekuru sends the key as a bearer token to your server
-
-See [Custom OCR Server](../manga/custom-server.md) for server setup and the API contract.
-
 ## Downloads
 
 The **Downloads** screen installs and removes built-in resources:
@@ -78,8 +65,13 @@ The **Downloads** screen installs and removes built-in resources:
 - KANJIDIC
 - KanjiVG
 - JPDB frequency data
+- Enhanced Furigana Dictionary
 
 See [Downloads](../getting-started/downloadable-data.md) for details.
+
+## Backup & Restore
+
+Create a local backup of your settings and user data, or restore one from a file. Backups cover bookmarks, highlights, vocabulary, collections, per-book reader settings, and reading history. See [Backup & Restore](backup-restore.md).
 
 ## About & Feedback
 

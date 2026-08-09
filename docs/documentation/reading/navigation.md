@@ -33,6 +33,7 @@ Mekuru saves your reading position automatically. When you reopen a book, it res
 
 Some reader options are configured inside the reader for the current book only:
 
+- **Furigana** - Off, Book, All kanji, or JLPT-level furigana for that book; see [Furigana](furigana.md)
 - **Vertical Text** - only when the book supports it
 - **Reading Direction** - RTL or LTR for that book
 - **Disable Links** - tap linked text for lookups instead of navigation

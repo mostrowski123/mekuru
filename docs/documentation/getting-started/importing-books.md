@@ -30,8 +30,11 @@ EPUB files up to **200 MB** are supported.
 - **Sort the library** - choose **Date imported**, **Recently read**, or **Alphabetical**
 - **Rename** - available from the long-press actions
 - **Change Cover** - available from the long-press actions
+- **Add to Collection** - group books into folder tiles; see [Collections & Folders](../library/collections.md)
+- **Export as EPUB** - save a copy with furigana baked in; see [Furigana EPUB Export](../library/furigana-export.md)
 - **Delete Book** - available from the long-press actions
 - **Bookmarks and Highlights** - EPUB entries expose these from the long-press actions
+- **Select multiple** - tap the checklist icon in the app bar to select several books and batch-add them to a collection
 
 ## Reading Features
 

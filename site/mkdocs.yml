@@ -52,9 +52,13 @@ nav:
       - Importing Manga: getting-started/importing-manga.md
       - Setting Up Dictionaries: getting-started/dictionaries.md
       - Downloads: getting-started/downloadable-data.md
+  - Library:
+      - Collections & Folders: library/collections.md
+      - Furigana EPUB Export: library/furigana-export.md
   - Reading:
       - Navigation & Gestures: reading/navigation.md
       - Display Settings: reading/display-settings.md
+      - Furigana: reading/furigana.md
       - Bookmarks & Highlights: reading/bookmarks-highlights.md
   - Dictionary & Lookups:
       - Looking Up Words: dictionary/lookups.md
@@ -66,5 +70,8 @@ nav:
       - Reading Manga: manga/cbz-reading.md
       - Pro (Remote OCR): manga/cloud-ocr.md
       - Custom OCR Server: manga/custom-server.md
+  - Progress & Stats:
+      - Reading Stats: stats/reading-stats.md
   - Settings:
       - App Settings: settings/app-settings.md
+      - Backup & Restore: settings/backup-restore.md
