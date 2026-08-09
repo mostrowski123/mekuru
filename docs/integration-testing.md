@@ -6,7 +6,7 @@ Emulator-based integration tests live in `integration_test/` and run in CI via t
 ## What Runs in CI
 
 The workflow boots a real Android emulator (API 34 `google_atd` x86_64, `pixel_6`
-profile, cached AVD) and runs these 19 test files in a single invocation:
+profile, cached AVD) and runs these 18 test files in a single invocation:
 
 - `app_smoke_test.dart` — startup, bottom nav (Library / Dictionary / Vocabulary / You), Settings via the You-tab gear
 - `dictionary_search_flow_test.dart`
@@ -26,7 +26,6 @@ profile, cached AVD) and runs these 19 test files in a single invocation:
 - `furigana_generator_flow_test.dart` — real MeCab tokenization → furigana
 - `manga_word_segmentation_test.dart` — real MeCab, one parse per mokuro line
 - `reader_indesign_vertical_epub_test.dart` — real WebView, vertical pagination
-- `reader_resume_reopen_test.dart` — real WebView, spinner-hang regression
 
 Shared plumbing: `integration_test/test_helpers.dart`,
 `integration_test/shared/test_infrastructure.dart`,
@@ -38,6 +37,11 @@ Shared plumbing: `integration_test/test_helpers.dart`,
 These files exist but are deliberately **not** in the CI script. Run them locally
 (emulator, never a personal device) when touching those areas:
 
+- `reader_resume_reopen_test.dart` — fails on the CI image (Aug 2026, run
+  31293734539): `tester.pageBack()` finds no `CupertinoNavigationBarBackButton`
+  after the second reader open, and the failed WebView test then hangs teardown
+  until the step's 30-minute timeout kills the whole run — so a failure costs
+  the full budget, not one red test. Passes on local emulators.
 - `dictionary_scroll_benchmark_test.dart` — informational only: no pass/fail
   thresholds, it just prints frame timings, which are meaningless noise on a
   shared CI runner.
@@ -49,8 +53,9 @@ These files exist but are deliberately **not** in the CI script. Run them locall
   `google_atd`). Five extra per-file app launches would also eat most of the
   remaining 30-minute test-step budget (~21 min used as of Aug 2026).
 
-Neither set was ever removed from CI for flakiness — the script has only ever
-grown; these were simply never added.
+Except for `reader_resume_reopen_test.dart` (tried and reverted in Aug 2026,
+see above), none of these were ever removed from CI — the script has only ever
+grown; they were simply never added.
 
 ## Local Commands
 
@@ -63,7 +68,7 @@ flutter test integration_test/app_smoke_test.dart \
   -r expanded
 ```
 
-To reproduce the full CI suite, pass the same 19 files listed above to one
+To reproduce the full CI suite, pass the same 18 files listed above to one
 `flutter test` invocation with the same flags (see the `script:` line in
 `integration-android.yml` for the exact command).
 
