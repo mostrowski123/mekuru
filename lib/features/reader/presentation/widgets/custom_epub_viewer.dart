@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -39,6 +40,22 @@ Set<Factory<OneSequenceGestureRecognizer>> buildEpubGestureRecognizers() {
     ),
     Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
   };
+}
+
+/// Yields [bytes] as base64 chunks for transfer to the JS bridge.
+///
+/// [chunkSize] must be a multiple of 3 so every chunk encodes without
+/// padding and the independently decoded chunks concatenate back into the
+/// original bytes.
+Iterable<String> epubBase64Chunks(
+  Uint8List bytes, {
+  int chunkSize = 3 * 1024 * 1024,
+}) sync* {
+  assert(chunkSize > 0 && chunkSize % 3 == 0);
+  for (var i = 0; i < bytes.length; i += chunkSize) {
+    final end = math.min(i + chunkSize, bytes.length);
+    yield base64Encode(Uint8List.sublistView(bytes, i, end));
+  }
 }
 
 /// Selection data reported by the JS bridge.
@@ -505,18 +522,20 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     return mounted && identical(_webViewController, controller);
   }
 
-  Future<void> _runJavascript(String source) async {
+  Future<bool> _runJavascript(String source) async {
     final controller = _webViewController;
-    if (controller == null) return;
+    if (controller == null) return false;
 
     try {
       await controller.evaluateJavascript(source: source);
+      return true;
     } on MissingPluginException catch (error) {
       debugPrint('[EPUB_DART] skipping JS on disposed web view: $error');
       if (identical(_webViewController, controller)) {
         _webViewController = null;
       }
       widget.controller.detach(controller);
+      return false;
     }
   }
 
@@ -547,9 +566,21 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
 
     final furiganaParam = jsonEncode(widget.furiganaMode.storageValue);
 
+    // Ship the book to the WebView in bounded base64 chunks — inlining the
+    // bytes as a JS array literal builds strings ~15x the book size and
+    // OOMs on large EPUBs (MEKURU-1B). Bail out if the WebView goes away
+    // mid-transfer (e.g. the user backs out of a large book).
+    if (!await _runJavascript(
+      'beginEpubTransfer(${widget.epubData.length})',
+    )) {
+      return;
+    }
+    for (final chunk in epubBase64Chunks(widget.epubData)) {
+      if (!await _runJavascript("appendEpubChunk('$chunk')")) return;
+    }
+
     await _runJavascript(
       'loadBook('
-      '[${widget.epubData.join(',')}], '
       '$cfiParam, '
       '"${widget.direction}", '
       '"paginated", '

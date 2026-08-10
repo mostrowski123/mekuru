@@ -51,9 +51,27 @@ function callDartAsync(name) {
 
 // ── Book loading ──────────────────────────────────────────────────────
 
-function loadBook(data, cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks) {
+// The book bytes arrive from Dart in bounded base64 chunks (a single
+// evaluateJavascript call with the whole book inlined OOMs on large
+// EPUBs): beginEpubTransfer(totalBytes) preallocates the buffer,
+// appendEpubChunk() decodes into it, then loadBook() consumes it.
+var _epubBuf = null;
+var _epubOffset = 0;
+
+function beginEpubTransfer(totalBytes) {
+  _epubBuf = new Uint8Array(totalBytes);
+  _epubOffset = 0;
+}
+
+function appendEpubChunk(base64) {
+  var bin = atob(base64);
+  for (var i = 0; i < bin.length; i++) _epubBuf[_epubOffset++] = bin.charCodeAt(i);
+}
+
+function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks) {
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
-  var uint8 = new Uint8Array(data);
+  var uint8 = _epubBuf;
+  _epubBuf = null;
   book.open(uint8);
 
   // When vertical text is disabled via CSS override, epub.js patches read
