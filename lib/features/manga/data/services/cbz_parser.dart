@@ -151,65 +151,75 @@ class CbzParser {
     final imageDir = Directory(p.join(outputDir, 'images'));
     await imageDir.create(recursive: true);
 
-    // Read and decode the ZIP archive
-    final bytes = await File(cbzPath).readAsBytes();
-    final archive = await compute(_decodeArchive, bytes);
-
-    // Pre-filter to image files so we can report accurate progress.
-    final imageFiles = archive
-        .where(
-          (f) =>
-              f.isFile &&
-              !p.basename(f.name).startsWith('.') &&
-              _isImageFile(p.basename(f.name)),
-        )
-        .toList();
-    final total = imageFiles.length;
-
     final imageFileNames = <String>[];
-    final usedOutputNames = <String>{};
     final imageDimensions = <String, ImageDimensions>{};
-    var written = 0;
 
-    for (final file in imageFiles) {
-      final fileName = p.basename(file.name);
+    // Stream-decode from disk: entries stay file-backed windows instead of
+    // one whole-archive Uint8List.
+    final input = InputFileStream(cbzPath);
+    try {
+      final archive = ZipDecoder().decodeStream(input);
 
-      // Handle duplicate filenames from nested dirs by prefixing
-      var outputName = fileName;
-      if (usedOutputNames.contains(outputName)) {
-        final parentDir = p.basename(p.dirname(file.name));
-        final stem = p.basenameWithoutExtension(fileName);
-        final ext = p.extension(fileName);
-        final prefix = (parentDir.isNotEmpty && parentDir != '.')
-            ? '${parentDir}_'
-            : '';
-        final baseName = '$prefix$stem';
-        outputName = '$baseName$ext';
+      // Pre-filter to image files so we can report accurate progress.
+      final imageFiles = archive
+          .where(
+            (f) =>
+                f.isFile &&
+                !p.basename(f.name).startsWith('.') &&
+                _isImageFile(p.basename(f.name)),
+          )
+          .toList();
+      final total = imageFiles.length;
+      final usedOutputNames = <String>{};
+      var written = 0;
 
-        var suffix = 2;
-        while (usedOutputNames.contains(outputName)) {
-          outputName = '${baseName}_$suffix$ext';
-          suffix++;
+      for (final file in imageFiles) {
+        final fileName = p.basename(file.name);
+
+        // Handle duplicate filenames from nested dirs by prefixing
+        var outputName = fileName;
+        if (usedOutputNames.contains(outputName)) {
+          final parentDir = p.basename(p.dirname(file.name));
+          final stem = p.basenameWithoutExtension(fileName);
+          final ext = p.extension(fileName);
+          final prefix = (parentDir.isNotEmpty && parentDir != '.')
+              ? '${parentDir}_'
+              : '';
+          final baseName = '$prefix$stem';
+          outputName = '$baseName$ext';
+
+          var suffix = 2;
+          while (usedOutputNames.contains(outputName)) {
+            outputName = '${baseName}_$suffix$ext';
+            suffix++;
+          }
         }
+
+        final outputPath = p.join(imageDir.path, outputName);
+        final data = file.content;
+        await File(outputPath).writeAsBytes(data);
+        imageFileNames.add(outputName);
+        usedOutputNames.add(outputName);
+
+        // The decompressed bytes are already in hand, so take the page size
+        // now rather than reading every page back off disk after extraction.
+        // Must happen before clear() drops them.
+        final dimensions = readImageDimensionsFromBytes(data);
+        if (dimensions != null) {
+          imageDimensions[outputName] = dimensions;
+        }
+
+        // clear(), never close(): every entry shares the one file handle
+        // owned by `input` — closing an entry would truncate all later ones.
+        file.clear();
+
+        written++;
+        onProgress?.call(total > 0 ? written / total : 1.0);
       }
-
-      final outputPath = p.join(imageDir.path, outputName);
-      final data = file.content as List<int>;
-      await File(outputPath).writeAsBytes(data);
-      imageFileNames.add(outputName);
-      usedOutputNames.add(outputName);
-
-      // The decompressed bytes are already in hand, so take the page size now
-      // rather than reading every page back off disk after extraction.
-      final dimensions = readImageDimensionsFromBytes(
-        data is Uint8List ? data : Uint8List.fromList(data),
-      );
-      if (dimensions != null) {
-        imageDimensions[outputName] = dimensions;
-      }
-
-      written++;
-      onProgress?.call(total > 0 ? written / total : 1.0);
+    } finally {
+      // Awaited: an unawaited close races file deletion on Windows
+      // (sharing violation) — same reason as kanjivg_download_service.
+      await input.close();
     }
 
     // Natural sort (same algorithm as MokuroParser)
@@ -234,10 +244,6 @@ class CbzParser {
   }
 
   // ── Private helpers ──
-
-  static Archive _decodeArchive(Uint8List bytes) {
-    return ZipDecoder().decodeBytes(bytes);
-  }
 
   static bool _isImageFile(String fileName) =>
       _imageExtensions.contains(p.extension(fileName).toLowerCase());

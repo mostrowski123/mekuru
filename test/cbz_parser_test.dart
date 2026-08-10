@@ -39,6 +39,17 @@ void main() {
       return cbzPath;
     }
 
+    test('releases the archive file handle after extracting', () async {
+      final cbzPath = await createCbz('handle', {'page.jpg': fakeJpegBytes});
+
+      await CbzParser.extract(cbzPath, '${tmpDir.path}/output');
+
+      // Windows-only canary: deleting throws a sharing violation there if
+      // the InputFileStream leaked. POSIX allows unlinking an open file, so
+      // this cannot fail on Linux CI — it protects local Windows runs.
+      File(cbzPath).deleteSync();
+    });
+
     test('extracts images and returns sorted filenames', () async {
       final cbzPath = await createCbz('test_manga', {
         'page_003.jpg': fakeJpegBytes,
