@@ -159,7 +159,9 @@ Future<void> _runDeferredStartupWarmups() async {
     ),
     _runStartupWarmup(
       logMessage: 'OcrStoreService init failed',
-      action: OcrStoreService.instance.initialize,
+      // Also converges the local Play entitlement (grants it to legacy
+      // buyers, revokes it after a refund).
+      action: OcrStoreService.instance.syncOwnedPurchases,
     ),
     _runStartupWarmup(
       logMessage: 'WorkManager init failed',

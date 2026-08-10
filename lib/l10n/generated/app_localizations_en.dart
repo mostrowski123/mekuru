@@ -486,6 +486,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get proAlreadyUnlocked => 'Already Unlocked';
 
   @override
+  String get proActiveTitle => 'You have Mekuru Pro';
+
+  @override
+  String get proActiveSubtitle =>
+      'Your purchase is active on this device. All Pro features are unlocked.';
+
+  @override
   String get proUnlock => 'Unlock Pro';
 
   @override

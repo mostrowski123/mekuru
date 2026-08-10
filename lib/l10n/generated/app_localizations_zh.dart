@@ -468,6 +468,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get proAlreadyUnlocked => '已解锁';
 
   @override
+  String get proActiveTitle => '您已拥有 Mekuru Pro';
+
+  @override
+  String get proActiveSubtitle => '您的购买已在此设备上生效，所有 Pro 功能均已解锁。';
+
+  @override
   String get proUnlock => '解锁 Pro 版';
 
   @override
@@ -2615,6 +2621,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get proAlreadyUnlocked => '已解锁';
+
+  @override
+  String get proActiveTitle => '您已拥有 Mekuru Pro';
+
+  @override
+  String get proActiveSubtitle => '您的购买已在此设备上生效，所有 Pro 功能均已解锁。';
 
   @override
   String get proUnlock => '解锁 Pro 版';

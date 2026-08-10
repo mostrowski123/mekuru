@@ -179,6 +179,44 @@ void main() {
     expect(storage.values, isEmpty);
   });
 
+  test('play entitlement alone yields an unlocked snapshot', () async {
+    final storage = _FakeStatusStorage();
+    final client = OcrBillingClient(statusStorage: storage);
+
+    await client.setPlayEntitlement(true);
+    final status = await client.readLastKnownStatus();
+
+    expect(status, isNotNull);
+    expect(status!.ocrUnlocked, isTrue);
+    expect(status.creditBalance, 0);
+    expect(await client.hasPlayEntitlement(), isTrue);
+    expect(PreloadedProEntitlement.isInitiallyUnlocked, isTrue);
+  });
+
+  test(
+    'auth_required clears the server snapshot but not the play entitlement',
+    () async {
+      final storage = _FakeStatusStorage();
+      final client = OcrBillingClient(
+        statusStorage: storage,
+        readCurrentUid: () => 'user-1',
+      );
+      await client.setPlayEntitlement(true);
+      await client.cacheStatusForTesting(
+        const OcrBillingStatus(ocrUnlocked: true, creditBalance: 500),
+      );
+
+      await client.applyErrorStatusHintForTesting(
+        const OcrBillingException(401, 'Sign in first.', code: 'auth_required'),
+      );
+
+      final status = await client.readLastKnownStatus();
+      expect(status?.ocrUnlocked, isTrue);
+      expect(await client.hasPlayEntitlement(), isTrue);
+      expect(PreloadedProEntitlement.isInitiallyUnlocked, isTrue);
+    },
+  );
+
   test('describeOcrError maps App Check rate limiting to retry guidance', () {
     final error = FirebaseException(
       plugin: 'firebase_app_check',

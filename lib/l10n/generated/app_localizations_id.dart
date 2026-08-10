@@ -486,6 +486,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get proAlreadyUnlocked => 'Sudah Dibuka';
 
   @override
+  String get proActiveTitle => 'Anda memiliki Mekuru Pro';
+
+  @override
+  String get proActiveSubtitle =>
+      'Pembelian Anda aktif di perangkat ini. Semua fitur Pro telah terbuka.';
+
+  @override
   String get proUnlock => 'Buka Pro';
 
   @override

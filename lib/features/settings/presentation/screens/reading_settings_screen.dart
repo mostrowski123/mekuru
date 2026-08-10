@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_settings_rows.dart';
@@ -33,7 +32,6 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
     final notifier = ref.read(readerSettingsProvider.notifier);
     final autoCropWhiteThreshold = ref.watch(autoCropWhiteThresholdProvider);
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
-    final hasFirebaseApp = FirebaseRuntime.instance.hasFirebaseApp;
     final theme = Theme.of(context);
     final l10n = context.l10n;
 
@@ -202,48 +200,37 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
                 },
               ),
             ),
-            if (!hasFirebaseApp)
-              ListTile(
-                enabled: false,
-                leading: Icon(
-                  Icons.document_scanner_outlined,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                title: Text(l10n.settingsCustomOcrServerTitle),
-                subtitle: Text(l10n.settingsCustomOcrServerUnavailableSubtitle),
-              )
-            else
-              Builder(
-                builder: (context) {
-                  final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
-                  final usesBuiltInServer = isUnsetOrBuiltInOcrServerUrl(
-                    currentOcrServerUrl,
-                  );
-                  final subtitle = usesBuiltInServer
-                      ? l10n.settingsCustomOcrServerNotConfigured
-                      : l10n.settingsCustomOcrServerConfigured(
-                          url: currentOcrServerUrl,
-                        );
+            Builder(
+              builder: (context) {
+                final currentOcrServerUrl = ref.watch(ocrServerUrlProvider);
+                final usesBuiltInServer = isUnsetOrBuiltInOcrServerUrl(
+                  currentOcrServerUrl,
+                );
+                final subtitle = usesBuiltInServer
+                    ? l10n.settingsCustomOcrServerNotConfigured
+                    : l10n.settingsCustomOcrServerConfigured(
+                        url: currentOcrServerUrl,
+                      );
 
-                  return ListTile(
-                    leading: Icon(
-                      Icons.document_scanner_outlined,
-                      color: theme.colorScheme.primary,
-                    ),
-                    title: Text(l10n.settingsCustomOcrServerTitle),
-                    subtitle: Text(
-                      subtitle,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      AppHaptics.light();
-                      _showOcrServerUrlDialog();
-                    },
-                  );
-                },
-              ),
+                return ListTile(
+                  leading: Icon(
+                    Icons.document_scanner_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: Text(l10n.settingsCustomOcrServerTitle),
+                  subtitle: Text(
+                    subtitle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    AppHaptics.light();
+                    _showOcrServerUrlDialog();
+                  },
+                );
+              },
+            ),
           ],
           const SizedBox(height: 16),
         ],

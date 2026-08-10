@@ -41,6 +41,7 @@ class ProUnlockedNotifier extends AsyncNotifier<bool> {
         state = AsyncData(currentValue);
         return;
       }
+      // Already composed with the play entitlement by the billing client.
       state = AsyncData(status.ocrUnlocked);
     } catch (_) {
       state = AsyncData(currentValue);

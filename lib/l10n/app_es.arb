@@ -626,6 +626,14 @@
   "@proAlreadyUnlocked": {
     "description": "Button label when Pro is already unlocked."
   },
+  "proActiveTitle": "Tienes Mekuru Pro",
+  "@proActiveTitle": {
+    "description": "Headline of the banner shown when Pro is already owned."
+  },
+  "proActiveSubtitle": "Tu compra está activa en este dispositivo. Todas las funciones Pro están desbloqueadas.",
+  "@proActiveSubtitle": {
+    "description": "Supporting line of the banner shown when Pro is already owned."
+  },
   "proUnlock": "Desbloquear Pro",
   "@proUnlock": {
     "description": "Button label to unlock Pro."

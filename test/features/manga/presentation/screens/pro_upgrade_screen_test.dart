@@ -97,7 +97,9 @@ void main() {
     expect(find.textContaining('subscription'), findsNothing);
   });
 
-  testWidgets('unlocked state shows already unlocked', (tester) async {
+  testWidgets('unlocked state shows the Pro-active banner and no buy button', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         child: buildLocalizedTestApp(
@@ -113,10 +115,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView), const Offset(0, -600));
-    await tester.pumpAndSettle();
 
-    expect(find.text('Already Unlocked'), findsOneWidget);
+    expect(find.text('You have Mekuru Pro'), findsOneWidget);
+    expect(find.byType(FilledButton), findsNothing);
     expect(find.text('Locked'), findsNothing);
     expect(find.text('Unlocked'), findsOneWidget);
   });

@@ -63,7 +63,7 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 
 - **`libc++_shared.so` workaround**: `mecab_for_flutter`'s native_assets hook fails on GitHub-hosted runners, so we bundle the lib manually via a `jniLibs` source set in `android/app/build.gradle.kts` (search `bundledLibCppSharedJniLibsDir`). **Do not remove** without verifying CI Android builds still link.
 - **Firebase**: `lib/firebase_options.dart` is committed. `android/app/google-services.json` is required for local Android builds and is in the repo.
-- **OCR billing / Pro**: validated server-side by the `billingApiV2` Cloud Function. Never bypass token validation or treat the client-side `proUnlockedProvider` as ground truth — round-trip the server.
+- **OCR billing / Pro**: the Pro unlock's ground truth is Google Play ownership of `pro_unlock_v1`, recorded client-side in the secure-storage key `ocr.play_entitlement` (purchase/restore need no Google sign-in). That key is cleared ONLY by a successful Play owned-purchases query that omits the SKU — never on errors; for signed-out buyers that query is the only refund-revocation channel (the backend RTDN handler no-ops on tokens it never saw). The `billingApiV2` Cloud Function remains ground truth for cloud OCR and credits (dormant) — never bypass its token validation, and never acknowledge a credit consumable without the server grant.
 - **AnkiDroid integration** is Android-intent-based; do not call from non-Android code paths.
 
 ## CI / release workflows

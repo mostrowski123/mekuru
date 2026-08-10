@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
@@ -11,7 +10,6 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../data/services/ocr_account_link_service.dart';
 import '../../data/services/ocr_billing_client.dart';
 import '../../data/services/ocr_store_service.dart';
 import '../providers/pro_access_provider.dart';
@@ -58,7 +56,6 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
 class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   static const _confettiShownKey = 'pro_confetti_shown';
 
-  final OcrAccountLinkService _accountLinkService = OcrAccountLinkService();
   final OcrBillingClient _billingClient = OcrBillingClient();
   final OcrStoreService _storeService = OcrStoreService.instance;
   late final ConfettiController _confettiController;
@@ -133,20 +130,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   }
 
   Future<ProUpgradeSnapshot> _loadSnapshotDefault() async {
-    final servicesAvailable =
-        widget.forceServicesAvailable ??
-        FirebaseRuntime.instance.hasFirebaseApp;
-    if (!servicesAvailable) {
-      return const ProUpgradeSnapshot(
-        isUnlocked: false,
-        servicesAvailable: false,
-        errorMessage: 'Mekuru services are temporarily unavailable.',
-      );
-    }
-
+    final unavailableMessage = context.l10n.settingsProUnavailableSubtitle;
     String? errorMessage;
     String? priceLabel;
-    var unlocked = false;
 
     try {
       await _storeService.initialize();
@@ -154,33 +140,41 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       errorMessage ??= 'Failed to initialize Google Play billing: $e';
     }
 
+    final servicesAvailable =
+        widget.forceServicesAvailable ?? _storeService.isStoreAvailable;
+
     final localStatus = await _billingClient.readLastKnownStatus();
-    unlocked = localStatus?.ocrUnlocked ?? false;
+    var unlocked = localStatus?.ocrUnlocked ?? false;
 
-    try {
-      final shouldForceRefresh = localStatus == null || !unlocked;
-      final status = await _billingClient.refreshStatusIfAuthenticated(
-        forceRefresh: shouldForceRefresh,
-      );
-      unlocked = status?.ocrUnlocked ?? unlocked;
-    } catch (e) {
-      if (!unlocked) {
-        errorMessage ??= 'Failed to load your Pro access: $e';
+    if (servicesAvailable) {
+      try {
+        final status = await _billingClient.refreshStatusIfAuthenticated(
+          forceRefresh: localStatus == null || !unlocked,
+        );
+        unlocked = status?.ocrUnlocked ?? unlocked;
+      } catch (e) {
+        if (!unlocked) {
+          errorMessage ??= 'Failed to load your Pro access: $e';
+        }
       }
-    }
 
-    try {
-      final products = await _storeService.queryProducts(ocrVisibleProductIds);
-      priceLabel = products[proUnlockProductId]?.price;
-    } catch (e) {
-      errorMessage ??= 'Failed to load Google Play pricing: $e';
+      try {
+        final products = await _storeService.queryProducts(
+          ocrVisibleProductIds,
+        );
+        priceLabel = products[proUnlockProductId]?.price;
+      } catch (e) {
+        errorMessage ??= 'Failed to load Google Play pricing: $e';
+      }
+    } else if (!unlocked) {
+      errorMessage = unavailableMessage;
     }
 
     return ProUpgradeSnapshot(
       isUnlocked: unlocked,
       priceLabel: priceLabel,
       errorMessage: errorMessage,
-      servicesAvailable: true,
+      servicesAvailable: servicesAvailable,
     );
   }
 
@@ -279,7 +273,6 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   }
 
   Future<ProUpgradeSnapshot> _purchaseDefault() async {
-    await _accountLinkService.ensureLinkedAccount();
     final result = await _storeService.purchaseProduct(proUnlockProductId);
     return ProUpgradeSnapshot(
       isUnlocked: result.ocrUnlocked,
@@ -289,7 +282,6 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   }
 
   Future<ProUpgradeSnapshot> _restoreDefault() async {
-    await _accountLinkService.ensureLinkedAccount();
     final result = await _storeService.restorePurchases();
     return ProUpgradeSnapshot(
       isUnlocked: result.ocrUnlocked,
@@ -314,9 +306,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final buttonLabel = _snapshot.isUnlocked
-        ? l10n.proAlreadyUnlocked
-        : _snapshot.priceLabel == null
+    final buttonLabel = _snapshot.priceLabel == null
         ? l10n.proUnlock
         : l10n.proUnlockWithPrice(price: _snapshot.priceLabel!);
 
@@ -329,6 +319,36 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    if (_snapshot.isUnlocked) ...[
+                      Card(
+                        color: theme.colorScheme.primaryContainer,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          leading: Icon(
+                            Icons.verified,
+                            size: 40,
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                          title: Text(
+                            l10n.proActiveTitle,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                          subtitle: Text(
+                            l10n.proActiveSubtitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
@@ -410,27 +430,26 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                         label: Text(l10n.proServerRepo),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed:
-                            !_snapshot.servicesAvailable ||
-                                _isBusy ||
-                                _snapshot.isUnlocked
-                            ? null
-                            : () => _handlePurchase(),
-                        child: _isBusy
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(buttonLabel),
+                    if (!_snapshot.isUnlocked) ...[
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: !_snapshot.servicesAvailable || _isBusy
+                              ? null
+                              : () => _handlePurchase(),
+                          child: _isBusy
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(buttonLabel),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
           Align(

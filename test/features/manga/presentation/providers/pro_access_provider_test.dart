@@ -11,12 +11,18 @@ class _FakeBillingClient extends OcrBillingClient {
   final OcrBillingStatus? refreshedStatus;
   final bool refreshDue;
   Object? refreshError;
+  bool playEntitlement = false;
 
   int refreshCalls = 0;
 
   @override
   Future<OcrBillingStatus?> readLastKnownStatus() async {
     return localStatus;
+  }
+
+  @override
+  Future<bool> hasPlayEntitlement() async {
+    return playEntitlement;
   }
 
   @override
@@ -32,7 +38,14 @@ class _FakeBillingClient extends OcrBillingClient {
     if (refreshError != null) {
       throw refreshError!;
     }
-    return refreshedStatus ?? localStatus;
+    // Mirrors the real client contract: returned statuses are composed with
+    // the play entitlement.
+    final status = refreshedStatus ?? localStatus;
+    if (status == null) return null;
+    return OcrBillingStatus(
+      ocrUnlocked: status.ocrUnlocked || playEntitlement,
+      creditBalance: status.creditBalance,
+    );
   }
 
   @override
@@ -93,6 +106,29 @@ void main() {
     expect(container.read(proUnlockedProvider).requireValue, isTrue);
     expect(billingClient.refreshCalls, 1);
   });
+
+  test(
+    'a server result of locked cannot override the local Play entitlement',
+    () async {
+      PreloadedProEntitlement.setInitialSnapshot(
+        const OcrBillingCacheSnapshot(ocrUnlocked: true, creditBalance: 0),
+      );
+      final billingClient = _FakeBillingClient(
+        refreshedStatus: const OcrBillingStatus(
+          ocrUnlocked: false,
+          creditBalance: 0,
+        ),
+      )..playEntitlement = true;
+      final container = ProviderContainer(
+        overrides: [ocrBillingClientProvider.overrideWithValue(billingClient)],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(proUnlockedProvider.notifier).refreshIfDue();
+
+      expect(container.read(proUnlockedProvider).requireValue, isTrue);
+    },
+  );
 
   test(
     'refreshIfDue skips network refresh when the cached snapshot is fresh',

@@ -493,6 +493,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get proAlreadyUnlocked => 'Ya desbloqueado';
 
   @override
+  String get proActiveTitle => 'Tienes Mekuru Pro';
+
+  @override
+  String get proActiveSubtitle =>
+      'Tu compra está activa en este dispositivo. Todas las funciones Pro están desbloqueadas.';
+
+  @override
   String get proUnlock => 'Desbloquear Pro';
 
   @override

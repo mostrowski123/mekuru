@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 
@@ -28,6 +29,34 @@ const Set<String> ocrAllProductIds = {
 };
 const Set<String> ocrVisibleProductIds = proUnlockProductIds;
 
+/// True when Google Play reports this purchase as actually paid.
+///
+/// [PurchaseDetails.status] is not trustworthy for this: the plugin's restore
+/// path rewrites it to `restored` even for pending slow-payment purchases.
+/// Granting or acknowledging a pending purchase would hand out Pro (and eat
+/// the purchase) before the money arrives, so gate on the raw Play state.
+bool isOwnedPlayPurchase(PurchaseDetails details) {
+  return details is GooglePlayPurchaseDetails &&
+      details.billingClientPurchase.purchaseState ==
+          PurchaseStateWrapper.purchased;
+}
+
+/// Whether the Play account owns the Pro unlock according to an
+/// owned-purchases query. Returns null when the query failed — callers must
+/// leave the stored entitlement untouched in that case, never clear it.
+bool? proOwnershipFrom(QueryPurchaseDetailsResponse response) {
+  if (response.error != null) {
+    return null;
+  }
+  return response.pastPurchases.any(
+    (details) =>
+        details.productID == proUnlockProductId && isOwnedPlayPurchase(details),
+  );
+}
+
+// ponytail: no DI seams on this singleton — the risky decisions are the pure
+// functions above (unit-tested); add injectable InAppPurchase wrappers only if
+// a second consumer appears.
 class OcrStoreService {
   OcrStoreService._();
 
@@ -44,17 +73,28 @@ class OcrStoreService {
   void Function(PurchaseGrantResult result)? onLateDelivery;
 
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
-  bool _isInitialized = false;
+  Future<void>? _initializing;
+  bool _storeAvailable = false;
+
+  /// Whether Google Play billing responded as available on the most recent
+  /// [initialize] probe. The Pro screen keys its buttons off this.
+  bool get isStoreAvailable => _storeAvailable;
 
   void _log(String message, [Map<String, Object?> details = const {}]) {
     final suffix = details.isEmpty ? '' : ' $details';
     debugPrint('[OcrStoreService] $message$suffix');
   }
 
-  Future<void> initialize() async {
-    if (_isInitialized) return;
-    _isInitialized = true;
+  Future<void> initialize() {
+    if (_storeAvailable) return Future.value();
+    // Re-probing after an unavailable result is allowed, but concurrent
+    // callers must share one attempt so the stream is subscribed only once.
+    return _initializing ??= _doInitialize().whenComplete(
+      () => _initializing = null,
+    );
+  }
 
+  Future<void> _doInitialize() async {
     if (!Platform.isAndroid) return;
 
     bool isAvailable;
@@ -68,6 +108,7 @@ class OcrStoreService {
       isAvailable = false;
     }
     _log('initialize', {'isAvailable': isAvailable});
+    _storeAvailable = isAvailable;
     if (!isAvailable) {
       return;
     }
@@ -144,19 +185,21 @@ class OcrStoreService {
     }
 
     await _syncOwnedPurchases(reason: 'pre_purchase:$productId');
-    final statusAfterSync = await _billingClient.fetchStatus(
-      forceRefresh: true,
-    );
-    if (productId == proUnlockProductId && statusAfterSync.ocrUnlocked) {
-      _log('purchase short-circuited by existing unlock', {
-        'productId': productId,
-        'creditBalance': statusAfterSync.creditBalance,
-      });
-      return PurchaseGrantResult(
-        ocrUnlocked: true,
-        creditBalance: statusAfterSync.creditBalance,
-        grantedCredits: 0,
-      );
+    if (productId == proUnlockProductId) {
+      // The sync above just refreshed the local Play entitlement, so this
+      // also self-heals installs stuck with an unverified old purchase.
+      final localStatus = await _billingClient.readLastKnownStatus();
+      if (localStatus?.ocrUnlocked ?? false) {
+        _log('purchase short-circuited by existing unlock', {
+          'productId': productId,
+          'creditBalance': localStatus!.creditBalance,
+        });
+        return PurchaseGrantResult(
+          ocrUnlocked: true,
+          creditBalance: localStatus.creditBalance,
+          grantedCredits: 0,
+        );
+      }
     }
 
     final products = await queryProducts({productId});
@@ -212,16 +255,36 @@ class OcrStoreService {
     await initialize();
     if (Platform.isAndroid) {
       _log('restorePurchases start');
-      await _inAppPurchase.restorePurchases();
-      await Future<void>.delayed(const Duration(seconds: 2));
       await _syncOwnedPurchases(reason: 'restore', isRestore: true);
     }
-    final status = await _billingClient.fetchStatus(forceRefresh: true);
+    // Best-effort server refresh for signed-in users (null no-op otherwise);
+    // the composed local read below already reflects both it and the sync.
+    try {
+      await _billingClient.refreshStatusIfAuthenticated(forceRefresh: true);
+    } catch (e) {
+      _log('restore server refresh failed', {'error': e.toString()});
+    }
+    final status =
+        await _billingClient.readLastKnownStatus() ??
+        const OcrBillingStatus(ocrUnlocked: false, creditBalance: 0);
     _log('restorePurchases complete', {
       'ocrUnlocked': status.ocrUnlocked,
       'creditBalance': status.creditBalance,
     });
     return status;
+  }
+
+  /// Fire-and-forget convergence of the local Play entitlement with the
+  /// owned-purchases list (startup warmup). Never throws; a failed query
+  /// leaves the stored entitlement untouched.
+  Future<void> syncOwnedPurchases() async {
+    try {
+      await initialize();
+      if (!_storeAvailable) return;
+      await _syncOwnedPurchases(reason: 'startup');
+    } catch (e) {
+      _log('owned purchase sync failed', {'error': e.toString()});
+    }
   }
 
   Future<void> _handlePurchaseUpdates(List<PurchaseDetails> detailsList) async {
@@ -232,6 +295,10 @@ class OcrStoreService {
         'pendingCompletePurchase': details.pendingCompletePurchase,
         'purchaseId': details.purchaseID,
       });
+
+      if (!ocrAllProductIds.contains(details.productID)) {
+        continue;
+      }
 
       if (details.status == PurchaseStatus.pending) {
         _log('purchase pending – payment is being processed', {
@@ -260,9 +327,7 @@ class OcrStoreService {
             code: 'payment_declined',
           ),
         );
-        if (details.pendingCompletePurchase) {
-          await _inAppPurchase.completePurchase(details);
-        }
+        await _completeIfPending(details, 'stream_error');
         continue;
       }
 
@@ -275,9 +340,7 @@ class OcrStoreService {
             code: 'purchase_cancelled',
           ),
         );
-        if (details.pendingCompletePurchase) {
-          await _inAppPurchase.completePurchase(details);
-        }
+        await _completeIfPending(details, 'stream_cancelled');
         continue;
       }
 
@@ -321,12 +384,26 @@ class OcrStoreService {
       if (!ocrAllProductIds.contains(details.productID)) {
         continue;
       }
-      await _deliverPurchase(
-        details,
-        source: 'query_past:$reason',
-        completeWaiterOnSuccess: false,
-        isRestoreOverride: isRestore ? true : null,
-      );
+      try {
+        await _deliverPurchase(
+          details,
+          source: 'query_past:$reason',
+          completeWaiterOnSuccess: false,
+          isRestoreOverride: isRestore ? true : null,
+        );
+      } catch (e) {
+        // One bad item must not starve the others (Play returns purchases in
+        // unspecified order).
+        _log('owned purchase delivery failed', {
+          'productId': details.productID,
+          'error': e.toString(),
+        });
+      }
+    }
+
+    final ownsPro = proOwnershipFrom(response);
+    if (ownsPro != null) {
+      await _billingClient.setPlayEntitlement(ownsPro);
     }
   }
 
@@ -335,7 +412,111 @@ class OcrStoreService {
     required String source,
     required bool completeWaiterOnSuccess,
     bool? isRestoreOverride,
+  }) => details.productID == proUnlockProductId
+      ? _deliverProUnlock(
+          details,
+          source: source,
+          completeWaiterOnSuccess: completeWaiterOnSuccess,
+          isRestoreOverride: isRestoreOverride,
+        )
+      : _deliverCreditPurchase(
+          details,
+          source: source,
+          completeWaiterOnSuccess: completeWaiterOnSuccess,
+          isRestoreOverride: isRestoreOverride,
+        );
+
+  Future<void> _completeIfPending(
+    PurchaseDetails details,
+    String source,
+  ) async {
+    if (details.pendingCompletePurchase) {
+      _log('completing purchase', {
+        'source': source,
+        'productId': details.productID,
+      });
+      await _inAppPurchase.completePurchase(details);
+    }
+  }
+
+  /// The Pro unlock is granted from Play ownership alone — no account, no
+  /// server round-trip. Order is structural, not conditional: grant, then
+  /// acknowledge, then best-effort server bookkeeping last, so no failure
+  /// can leave a paid purchase unacknowledged (Google auto-refunds those
+  /// after ~3 days).
+  Future<void> _deliverProUnlock(
+    PurchaseDetails details, {
+    required String source,
+    required bool completeWaiterOnSuccess,
+    bool? isRestoreOverride,
   }) async {
+    if (!isOwnedPlayPurchase(details)) {
+      // Pending slow payment: no grant, no acknowledge. The purchase stream
+      // delivers it again once Play confirms the money arrived.
+      _log('pro purchase not yet owned – skipping', {
+        'source': source,
+        'status': details.status.name,
+      });
+      return;
+    }
+
+    await _billingClient.setPlayEntitlement(true);
+    await _completeIfPending(details, source);
+
+    final cached = await _billingClient.readLastKnownStatus();
+    if (completeWaiterOnSuccess) {
+      _completeWaiter(
+        details.productID,
+        PurchaseGrantResult(
+          ocrUnlocked: true,
+          creditBalance: cached?.creditBalance ?? 0,
+          grantedCredits: 0,
+        ),
+      );
+    }
+
+    // Keep the server ledger fresh for already-signed-in users (existing
+    // buyers) — but only on live purchases and explicit restores, not the
+    // passive startup sync, which would otherwise re-verify on every launch.
+    // Failures are non-fatal: Play ownership is the ground truth here.
+    final shouldVerify =
+        _billingClient.hasAuthenticatedUser &&
+        (completeWaiterOnSuccess || isRestoreOverride == true);
+    if (shouldVerify) {
+      try {
+        await _billingClient.verifyAndroidPurchase(
+          productId: details.productID,
+          purchaseToken: _extractPurchaseToken(details),
+          orderId: details.purchaseID,
+          isRestore:
+              isRestoreOverride ?? details.status == PurchaseStatus.restored,
+        );
+      } catch (e) {
+        _log('server verify failed (non-fatal)', {
+          'source': source,
+          'error': e.toString(),
+        });
+      }
+    }
+  }
+
+  /// Credit consumables (dormant — no purchase UI) keep the original
+  /// verify-then-acknowledge order: acknowledging a consumable without the
+  /// server grant would eat the purchase.
+  Future<void> _deliverCreditPurchase(
+    PurchaseDetails details, {
+    required String source,
+    required bool completeWaiterOnSuccess,
+    bool? isRestoreOverride,
+  }) async {
+    if (!_billingClient.hasAuthenticatedUser) {
+      _log('skipping credit purchase without signed-in user', {
+        'source': source,
+        'productId': details.productID,
+      });
+      return;
+    }
+
     var verified = false;
     try {
       final purchaseToken = _extractPurchaseToken(details);
@@ -386,12 +567,8 @@ class OcrStoreService {
         rethrow;
       }
     } finally {
-      if (verified && details.pendingCompletePurchase) {
-        _log('completing purchase', {
-          'source': source,
-          'productId': details.productID,
-        });
-        await _inAppPurchase.completePurchase(details);
+      if (verified) {
+        await _completeIfPending(details, source);
       }
     }
   }
@@ -463,6 +640,6 @@ class OcrStoreService {
   Future<void> dispose() async {
     await _purchaseSubscription?.cancel();
     _purchaseSubscription = null;
-    _isInitialized = false;
+    _storeAvailable = false;
   }
 }

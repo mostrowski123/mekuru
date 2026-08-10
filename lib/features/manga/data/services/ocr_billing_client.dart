@@ -219,6 +219,13 @@ String describeOcrError(Object error) {
 
 class OcrBillingClient {
   static const _cachedStatusKey = 'ocr.billing.status';
+
+  /// Records that Google Play reported ownership of the Pro unlock for the
+  /// device's Play account. This is the client-side ground truth for the Pro
+  /// unlock; the uid-scoped [_cachedStatusKey] snapshot remains ground truth
+  /// for cloud OCR credits. Cleared ONLY by a successful owned-purchases
+  /// query that no longer contains the SKU (refund) — never on errors.
+  static const _playEntitlementKey = 'ocr.play_entitlement';
   static const OcrBillingException _networkUnavailableError =
       OcrBillingException(
         0,
@@ -248,24 +255,61 @@ class OcrBillingClient {
        _ensureFirebaseApp =
            ensureFirebaseApp ?? FirebaseRuntime.instance.ensureFirebaseApp,
        _readCurrentUid =
-           readCurrentUid ?? (() => FirebaseAuth.instance.currentUser?.uid);
+           readCurrentUid ??
+           (() => FirebaseRuntime.instance.hasFirebaseApp
+               ? FirebaseAuth.instance.currentUser?.uid
+               : null);
 
   void _log(String message, [Map<String, Object?> details = const {}]) {
     final suffix = details.isEmpty ? '' : ' $details';
     debugPrint('[OcrBillingClient] $message$suffix');
   }
 
+  /// Whether a Firebase user is available for server-side billing calls.
+  bool get hasAuthenticatedUser => _readCurrentUid() != null;
+
+  Future<bool> hasPlayEntitlement() async {
+    try {
+      return await _statusStorage.read(key: _playEntitlementKey) == '1';
+    } catch (e) {
+      _log('failed to read play entitlement', {'error': e.toString()});
+      return false;
+    }
+  }
+
+  Future<void> setPlayEntitlement(bool owned) async {
+    if (await hasPlayEntitlement() == owned) return;
+    try {
+      if (owned) {
+        await _statusStorage.write(key: _playEntitlementKey, value: '1');
+      } else {
+        await _statusStorage.delete(key: _playEntitlementKey);
+      }
+      _log('play entitlement updated', {'owned': owned});
+    } catch (e) {
+      _log('failed to write play entitlement', {'error': e.toString()});
+    }
+    PreloadedProEntitlement.setInitialSnapshot(await readLastKnownSnapshot());
+  }
+
+  static const _playOnlySnapshot = OcrBillingCacheSnapshot(
+    ocrUnlocked: true,
+    creditBalance: 0,
+  );
+
   Future<OcrBillingCacheSnapshot?> readLastKnownSnapshot() async {
+    final playUnlocked = await hasPlayEntitlement();
+    final fallback = playUnlocked ? _playOnlySnapshot : null;
     try {
       final raw = await _statusStorage.read(key: _cachedStatusKey);
       if (raw == null || raw.isEmpty) {
-        return null;
+        return fallback;
       }
 
       final decoded = json.decode(raw) as Map<String, dynamic>;
       final snapshot = OcrBillingCacheSnapshot(
         uid: decoded['uid'] as String?,
-        ocrUnlocked: decoded['ocrUnlocked'] as bool? ?? false,
+        ocrUnlocked: (decoded['ocrUnlocked'] as bool? ?? false) || playUnlocked,
         creditBalance: decoded['creditBalance'] as int? ?? 0,
         cachedAt: _parseCachedAt(decoded['cachedAt'] as String?),
       );
@@ -278,7 +322,7 @@ class OcrBillingClient {
       return snapshot;
     } catch (e) {
       _log('failed to read cached status', {'error': e.toString()});
-      return null;
+      return fallback;
     }
   }
 
@@ -309,7 +353,8 @@ class OcrBillingClient {
         'cachedUid': snapshot.uid,
         'currentUid': currentUid,
       });
-      return null;
+      // A play entitlement is device-scoped, not uid-scoped — keep it.
+      return (await readLastKnownSnapshot())?.status;
     }
 
     return snapshot.status;
@@ -335,7 +380,15 @@ class OcrBillingClient {
         ocrUnlocked: response['ocrUnlocked'] as bool? ?? false,
         creditBalance: response['creditBalance'] as int? ?? 0,
       );
+      // The cache stays a pure server mirror; the RETURNED value is composed
+      // with the play entitlement so no caller ever needs its own OR.
       await _writeCachedStatus(status);
+      if (!status.ocrUnlocked && await hasPlayEntitlement()) {
+        return OcrBillingStatus(
+          ocrUnlocked: true,
+          creditBalance: status.creditBalance,
+        );
+      }
       return status;
     } on OcrBillingException catch (e) {
       await _applyErrorStatusHint(e);
@@ -399,18 +452,19 @@ class OcrBillingClient {
           },
         ),
       );
-      final result = PurchaseGrantResult(
-        ocrUnlocked: response['ocrUnlocked'] as bool? ?? false,
-        creditBalance: response['creditBalance'] as int? ?? 0,
-        grantedCredits: response['grantedCredits'] as int? ?? 0,
-      );
+      final serverUnlocked = response['ocrUnlocked'] as bool? ?? false;
+      final creditBalance = response['creditBalance'] as int? ?? 0;
       await _writeCachedStatus(
         OcrBillingStatus(
-          ocrUnlocked: result.ocrUnlocked,
-          creditBalance: result.creditBalance,
+          ocrUnlocked: serverUnlocked,
+          creditBalance: creditBalance,
         ),
       );
-      return result;
+      return PurchaseGrantResult(
+        ocrUnlocked: serverUnlocked || await hasPlayEntitlement(),
+        creditBalance: creditBalance,
+        grantedCredits: response['grantedCredits'] as int? ?? 0,
+      );
     } on OcrBillingException catch (e) {
       await _applyErrorStatusHint(e);
       rethrow;
@@ -690,7 +744,9 @@ class OcrBillingClient {
           'cachedAt': snapshot.cachedAt?.toIso8601String(),
         }),
       );
-      PreloadedProEntitlement.setInitialSnapshot(snapshot);
+      // Recompute rather than assigning `snapshot` directly so the play
+      // entitlement flag stays OR-ed into the preloaded state.
+      PreloadedProEntitlement.setInitialSnapshot(await readLastKnownSnapshot());
       _log('cached status updated', {
         'ocrUnlocked': status.ocrUnlocked,
         'creditBalance': status.creditBalance,
@@ -703,7 +759,9 @@ class OcrBillingClient {
   Future<void> _clearCachedStatus() async {
     try {
       await _statusStorage.delete(key: _cachedStatusKey);
-      PreloadedProEntitlement.setInitialSnapshot(null);
+      // A play-entitled user keeps their unlock even when the uid-scoped
+      // server cache is wiped (e.g. auth_required).
+      PreloadedProEntitlement.setInitialSnapshot(await readLastKnownSnapshot());
       _log('cached status cleared');
     } catch (e) {
       _log('failed to clear cached status', {'error': e.toString()});

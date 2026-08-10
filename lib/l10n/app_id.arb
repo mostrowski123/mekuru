@@ -626,6 +626,14 @@
   "@proAlreadyUnlocked": {
     "description": "Button label when Pro is already unlocked."
   },
+  "proActiveTitle": "Anda memiliki Mekuru Pro",
+  "@proActiveTitle": {
+    "description": "Headline of the banner shown when Pro is already owned."
+  },
+  "proActiveSubtitle": "Pembelian Anda aktif di perangkat ini. Semua fitur Pro telah terbuka.",
+  "@proActiveSubtitle": {
+    "description": "Supporting line of the banner shown when Pro is already owned."
+  },
   "proUnlock": "Buka Pro",
   "@proUnlock": {
     "description": "Button label to unlock Pro."

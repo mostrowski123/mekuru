@@ -904,6 +904,18 @@ abstract class AppLocalizations {
   /// **'Already Unlocked'**
   String get proAlreadyUnlocked;
 
+  /// Headline of the banner shown when Pro is already owned.
+  ///
+  /// In en, this message translates to:
+  /// **'You have Mekuru Pro'**
+  String get proActiveTitle;
+
+  /// Supporting line of the banner shown when Pro is already owned.
+  ///
+  /// In en, this message translates to:
+  /// **'Your purchase is active on this device. All Pro features are unlocked.'**
+  String get proActiveSubtitle;
+
   /// Button label to unlock Pro.
   ///
   /// In en, this message translates to:

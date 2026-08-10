@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/config/app_links.dart';
-import 'package:mekuru/core/services/firebase_runtime.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
@@ -41,7 +40,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colorTheme = ref.watch(appColorThemeProvider);
     final startupScreen = ref.watch(startupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
-    final hasFirebaseApp = FirebaseRuntime.instance.hasFirebaseApp;
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final resolvedLocale = Localizations.localeOf(context);
@@ -221,31 +219,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ── Manga OCR ──
           SettingsSectionHeader(title: l10n.settingsSectionPro),
-          if (!hasFirebaseApp)
-            ListTile(
-              enabled: false,
-              leading: Icon(
-                Icons.shopping_bag_outlined,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              title: Text(l10n.proTitle),
-              subtitle: Text(l10n.settingsProUnavailableSubtitle),
-              trailing: const Icon(Icons.chevron_right),
-            )
-          else
-            ListTile(
-              leading: Icon(
-                Icons.shopping_bag_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              title: Text(l10n.proTitle),
-              subtitle: Text(l10n.settingsProSubtitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                AppHaptics.light();
-                _openProUpgrade();
-              },
+          ListTile(
+            leading: Icon(
+              Icons.shopping_bag_outlined,
+              color: theme.colorScheme.primary,
             ),
+            title: Text(l10n.proTitle),
+            subtitle: Text(l10n.settingsProSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              _openProUpgrade();
+            },
+          ),
           const Divider(),
 
           // ── Downloads ──
