@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -67,7 +66,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // dispose() never has to reach back through `ref` while unmounting.
   ReaderSettings? _lastSettings;
 
-  Uint8List? _epubData;
+  String? _epubPath;
   List<_FlattenedChapter> _chapters = const [];
   bool _isLoading = true;
   // Opens immersive (controls and system bars hidden), same as the manga
@@ -347,12 +346,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             ? _buildErrorState(context)
             : Stack(
                 children: [
-                  if (_epubData != null)
+                  if (_epubPath != null)
                     Positioned.fill(
                       child: CustomEpubViewer(
                         key: ValueKey('reader-${widget.book.id}-$_viewerEpoch'),
                         controller: _epubController,
-                        epubData: _epubData!,
+                        epubPath: _epubPath!,
                         initialCfi: _initialCfi,
                         // epub.js uses direction to determine its pagination axis:
                         // 'rtl' → vertical axis (for vertical Japanese text),
@@ -503,7 +502,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             },
                         onLoadError: (description) {
                           if (!mounted) return;
+                          // Terminal outcome: without this the load watchdog
+                          // stays armed and overwrites the real error with a
+                          // bogus timeout message.
+                          _loadWatchdog?.cancel();
                           setState(() {
+                            _isLoading = false;
                             _errorMessage = context.l10n
                                 .readerFailedToLoadContent(
                                   details: description,
@@ -616,11 +620,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         }
       }
 
-      final bytes = await File(epubPath).readAsBytes();
       if (!mounted) return;
 
+      // The viewer streams the book from disk itself; only the path is kept.
       setState(() {
-        _epubData = bytes;
+        _epubPath = epubPath;
         _initialCfi = initialCfi;
         _progress = latestBook?.readProgress ?? widget.book.readProgress;
         _viewerEpoch += 1;
@@ -663,7 +667,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   Future<void> _rebuildViewerForDirectionChange() async {
-    if (_isRebuildingForDirection || !_isEpubLoaded || _epubData == null) {
+    if (_isRebuildingForDirection || !_isEpubLoaded || _epubPath == null) {
       return;
     }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
+import 'dart:io';
+import 'dart:typed_data' show BytesBuilder;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -42,20 +43,31 @@ Set<Factory<OneSequenceGestureRecognizer>> buildEpubGestureRecognizers() {
   };
 }
 
-/// Yields [bytes] as base64 chunks for transfer to the JS bridge.
+/// Re-chunks [bytes] into base64 chunks for transfer to the JS bridge.
 ///
 /// [chunkSize] must be a multiple of 3 so every chunk encodes without
 /// padding and the independently decoded chunks concatenate back into the
-/// original bytes.
-Iterable<String> epubBase64Chunks(
-  Uint8List bytes, {
+/// original bytes. Stream event boundaries are arbitrary (e.g. the 64 KiB
+/// blocks of `File.openRead`); every yielded chunk except the last holds
+/// exactly [chunkSize] bytes. Each `yield` suspends the source stream, so
+/// only about one chunk is ever resident at a time.
+Stream<String> epubBase64Chunks(
+  Stream<List<int>> bytes, {
   int chunkSize = 3 * 1024 * 1024,
-}) sync* {
+}) async* {
   assert(chunkSize > 0 && chunkSize % 3 == 0);
-  for (var i = 0; i < bytes.length; i += chunkSize) {
-    final end = math.min(i + chunkSize, bytes.length);
-    yield base64Encode(Uint8List.sublistView(bytes, i, end));
+  final buffer = BytesBuilder(copy: false);
+  await for (final data in bytes) {
+    buffer.add(data);
+    while (buffer.length >= chunkSize) {
+      final buffered = buffer.takeBytes();
+      yield base64Encode(Uint8List.sublistView(buffered, 0, chunkSize));
+      // sublist (not sublistView): a view would pin the whole chunk-sized
+      // backing array for the life of the small tail.
+      buffer.add(buffered.sublist(chunkSize));
+    }
   }
+  if (buffer.isNotEmpty) yield base64Encode(buffer.takeBytes());
 }
 
 /// Selection data reported by the JS bridge.
@@ -77,7 +89,7 @@ class CustomEpubViewer extends StatefulWidget {
   const CustomEpubViewer({
     super.key,
     required this.controller,
-    required this.epubData,
+    required this.epubPath,
     this.initialCfi,
     this.direction = 'ltr',
     this.fontSize = 16,
@@ -105,7 +117,7 @@ class CustomEpubViewer extends StatefulWidget {
   });
 
   final CustomEpubController controller;
-  final Uint8List epubData;
+  final String epubPath;
   final String? initialCfi;
   final String direction;
   final int fontSize;
@@ -566,17 +578,23 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
 
     final furiganaParam = jsonEncode(widget.furiganaMode.storageValue);
 
-    // Ship the book to the WebView in bounded base64 chunks — inlining the
-    // bytes as a JS array literal builds strings ~15x the book size and
-    // OOMs on large EPUBs (MEKURU-1B). Bail out if the WebView goes away
-    // mid-transfer (e.g. the user backs out of a large book).
-    if (!await _runJavascript(
-      'beginEpubTransfer(${widget.epubData.length})',
-    )) {
+    // Ship the book to the WebView in bounded base64 chunks streamed from
+    // disk — an unbounded transfer OOMs on large EPUBs (MEKURU-1B). Bail out
+    // if the WebView goes away mid-transfer (e.g. the user backs out of a
+    // large book).
+    try {
+      final file = File(widget.epubPath);
+      if (!await _runJavascript(
+        'beginEpubTransfer(${await file.length()})',
+      )) {
+        return;
+      }
+      await for (final chunk in epubBase64Chunks(file.openRead())) {
+        if (!await _runJavascript("appendEpubChunk('$chunk')")) return;
+      }
+    } on IOException catch (error) {
+      widget.onLoadError?.call('$error');
       return;
-    }
-    for (final chunk in epubBase64Chunks(widget.epubData)) {
-      if (!await _runJavascript("appendEpubChunk('$chunk')")) return;
     }
 
     await _runJavascript(
