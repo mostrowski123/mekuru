@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/common.dart' show CommonDatabase;
 
 import '../../features/library/data/models/book.dart';
 import '../../features/library/data/models/collection.dart';
@@ -401,11 +402,24 @@ class AppDatabase extends _$AppDatabase {
   @visibleForTesting
   Future<void> ensureGlossaryFtsForTesting() => _ensureGlossaryFtsIfNeeded();
 
+  /// Applied to every native sqlite connection the app opens.
+  ///
+  /// A transient lock from another connection otherwise fails statements
+  /// instantly with `SqliteException(5): database is locked` — including the
+  /// `PRAGMA user_version` read during the very first open, whose failure
+  /// drift caches for the rest of the session (MEKURU-1C). Waiting up to 5s
+  /// absorbs transient contention.
+  @visibleForTesting
+  static void setupNativeConnection(CommonDatabase database) {
+    database.execute('PRAGMA busy_timeout = 5000;');
+  }
+
   static QueryExecutor _openConnection() {
     return driftDatabase(
       name: 'mekuru_db',
       native: DriftNativeOptions(
         databaseDirectory: getApplicationSupportDirectory,
+        setup: setupNativeConnection,
       ),
     );
   }
