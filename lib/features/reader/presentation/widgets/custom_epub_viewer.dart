@@ -584,9 +584,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     // large book).
     try {
       final file = File(widget.epubPath);
-      if (!await _runJavascript(
-        'beginEpubTransfer(${await file.length()})',
-      )) {
+      if (!await _runJavascript('beginEpubTransfer(${await file.length()})')) {
         return;
       }
       await for (final chunk in epubBase64Chunks(file.openRead())) {

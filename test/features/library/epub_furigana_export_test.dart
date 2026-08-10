@@ -182,22 +182,25 @@ void main() {
       expect(await annotateXhtml('<p>今日<broken', generator), isNull);
     });
 
-    test('stripRubyWhere unwraps matching authored ruby, keeps the rest', () async {
-      final generator = FuriganaGenerator(_FakeTokenizer(const {}));
-      final result = await annotateXhtml(
-        chapter(
-          '<p><ruby>今日<rt>きょう</rt></ruby>は'
-          '<ruby>鬱<rt>うつ</rt></ruby>だ</p>',
-        ),
-        generator,
-        stripRubyWhere: authoredRubyStripFor(FuriganaMode.aboveLevel, 3),
-      );
-      // Strip-only change (no annotations) must still rewrite the entry.
-      expect(result, isNotNull);
-      expect(result, contains('今日は'));
-      expect(result, isNot(contains('<rt>きょう</rt>')));
-      expect(result, contains('<ruby>鬱<rt>うつ</rt></ruby>'));
-    });
+    test(
+      'stripRubyWhere unwraps matching authored ruby, keeps the rest',
+      () async {
+        final generator = FuriganaGenerator(_FakeTokenizer(const {}));
+        final result = await annotateXhtml(
+          chapter(
+            '<p><ruby>今日<rt>きょう</rt></ruby>は'
+            '<ruby>鬱<rt>うつ</rt></ruby>だ</p>',
+          ),
+          generator,
+          stripRubyWhere: authoredRubyStripFor(FuriganaMode.aboveLevel, 3),
+        );
+        // Strip-only change (no annotations) must still rewrite the entry.
+        expect(result, isNotNull);
+        expect(result, contains('今日は'));
+        expect(result, isNot(contains('<rt>きょう</rt>')));
+        expect(result, contains('<ruby>鬱<rt>うつ</rt></ruby>'));
+      },
+    );
   });
 
   group('buildFuriganaEpub', () {
