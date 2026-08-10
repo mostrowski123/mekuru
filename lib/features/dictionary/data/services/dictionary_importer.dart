@@ -1227,17 +1227,18 @@ class DictionaryImporter {
     final indexFile = archive.findFile('index.json');
     if (indexFile == null) return 'Unknown Dictionary';
 
-    final indexBytes = indexFile.readBytes();
-    if (indexBytes == null) return 'Unknown Dictionary';
+    final indexJson = _decodeZipEntryJson(indexFile) as Map<String, dynamic>?;
+    if (indexJson == null) return 'Unknown Dictionary';
 
-    final indexJson =
-        jsonDecode(utf8.decode(indexBytes)) as Map<String, dynamic>;
     return (indexJson['title'] as String?) ?? 'Unknown Dictionary';
   }
 
   /// Counts importable rows for the progress total without paying for a
   /// full parse (glossary JSON encode + search-text extraction); the emit
   /// loop then parses each row exactly once.
+  ///
+  /// Every bank is decoded again by the emit loop, so this pass must leave the
+  /// entries re-readable — see [_decodeZipEntryJson].
   static int _countImportableZipRows(
     List<ArchiveFile> files,
     bool Function(dynamic row) isImportable,
@@ -1253,15 +1254,29 @@ class DictionaryImporter {
     return count;
   }
 
-  static List<dynamic> _decodeZipListFile(ArchiveFile file) {
-    final bytes = file.readBytes();
-    if (bytes == null) return const [];
+  /// Decodes the JSON held by [file] without letting package:archive retain
+  /// the entry's decompressed bytes.
+  ///
+  /// `ArchiveFile.readBytes()` caches what it inflates on the entry and never
+  /// frees it, so walking every bank left the whole decompressed dictionary
+  /// resident in this isolate — hundreds of MB for a JMdict-class zip. Reading
+  /// the raw, still file-backed content instead keeps only the bank currently
+  /// being decoded in memory.
+  ///
+  /// `ArchiveFile.clear()` is not an alternative here: it nulls the raw
+  /// content as well as the cache, so the emit pass would see empty files.
+  /// `ZipFile.getStream()` restores the read position and caches nothing,
+  /// which is what makes both passes safe over the same entry.
+  static Object? _decodeZipEntryJson(ArchiveFile file) {
+    final rawContent = file.rawContent;
+    if (rawContent == null) return null;
 
-    final decoded = jsonDecode(utf8.decode(bytes));
-    if (decoded is List<dynamic>) {
-      return decoded;
-    }
-    return const [];
+    return jsonDecode(utf8.decode(rawContent.getStream().toUint8List()));
+  }
+
+  static List<dynamic> _decodeZipListFile(ArchiveFile file) {
+    final decoded = _decodeZipEntryJson(file);
+    return decoded is List<dynamic> ? decoded : const [];
   }
 
   /// [_parseZipTermRow] returns null iff this returns false. Keep the two

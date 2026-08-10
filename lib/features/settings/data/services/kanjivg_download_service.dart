@@ -155,6 +155,11 @@ class KanjiVgDownloadService {
           final fileName = p.basename(file.name);
           final outputPath = p.join(payload.outputDir, fileName);
           File(outputPath).writeAsBytesSync(file.content as List<int>);
+          // ArchiveFile caches what it inflates and never frees it, so without
+          // this the isolate would hold all ~11k decompressed SVGs at once.
+          // clear(), never close(): every entry shares the InputFileStream's
+          // single file handle, and closing one would empty all the rest.
+          file.clear();
           count++;
         }
       }
