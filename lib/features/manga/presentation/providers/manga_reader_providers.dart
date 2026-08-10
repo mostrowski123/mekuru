@@ -15,7 +15,11 @@ import 'package:path/path.dart' as p;
 ///
 /// The [bookId] is used to look up the book's `filePath` (cache directory),
 /// then reads `pages_cache.json` to get all page/block/word data.
-final mangaPagesProvider = FutureProvider.family<MokuroBook, int>((
+///
+/// autoDispose: the reader's build keeps it alive while open; closing the
+/// reader releases the parsed book graph instead of retaining every opened
+/// manga for the app's lifetime. Reopening re-reads pages_cache.json.
+final mangaPagesProvider = FutureProvider.autoDispose.family<MokuroBook, int>((
   ref,
   bookId,
 ) async {
