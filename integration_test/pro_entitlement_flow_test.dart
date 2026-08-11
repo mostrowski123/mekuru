@@ -57,6 +57,14 @@ void main() {
     await pumpProScreen(tester);
     await pumpUntilVisible(tester, find.text(l10n.proActiveTitle));
     expect(find.text(l10n.proStatusUnlocked), findsOneWidget);
+    // Scroll to the list's end (the self-host repo link sits below the
+    // purchase-button slot) so "no purchase button" means absent, not
+    // merely unbuilt on a short screen.
+    await tester.scrollUntilVisible(
+      find.text(l10n.proServerRepo),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.byType(FilledButton), findsNothing);
 
     // Clearing the entitlement (what a refund convergence does) locks the
@@ -66,6 +74,13 @@ void main() {
     await pumpProScreen(tester);
     await pumpUntilVisible(tester, find.text(l10n.proStatusLocked));
     expect(find.text(l10n.proActiveTitle), findsNothing);
+    // The purchase button is the ListView's last child — on short screens
+    // (the CI emulator) it is not built until scrolled into view.
+    await tester.scrollUntilVisible(
+      find.byType(FilledButton),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.byType(FilledButton), findsOneWidget);
   });
 }
