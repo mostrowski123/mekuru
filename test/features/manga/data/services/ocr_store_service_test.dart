@@ -658,6 +658,35 @@ void main() {
         expect(status.ocrUnlocked, isFalse);
         expect(h.hasEntitlement, isFalse);
       });
+
+      test('converges a refund: restoring on a refunded install relocks and '
+          'clears the entitlement', () async {
+        h.storage.values[_playEntitlementKey] = '1';
+
+        final status = await h.service.restorePurchases();
+
+        expect(status.ocrUnlocked, isFalse);
+        expect(h.hasEntitlement, isFalse);
+      });
+
+      test('surfaces restore_query_failed and keeps the entitlement when the '
+          'owned-purchases query fails', () async {
+        h.storage.values[_playEntitlementKey] = '1';
+        h.playQueryFails();
+
+        await expectLater(
+          h.service.restorePurchases(),
+          throwsA(
+            isA<OcrBillingException>().having(
+              (e) => e.code,
+              'code',
+              'restore_query_failed',
+            ),
+          ),
+        );
+        // A failed query must never be treated as a refund.
+        expect(h.hasEntitlement, isTrue);
+      });
     });
 
     group('syncOwnedPurchases (startup warmup)', () {
