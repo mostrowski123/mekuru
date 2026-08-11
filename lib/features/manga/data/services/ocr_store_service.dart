@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -54,16 +53,31 @@ bool? proOwnershipFrom(QueryPurchaseDetailsResponse response) {
   );
 }
 
-// ponytail: no DI seams on this singleton — the risky decisions are the pure
-// functions above (unit-tested); add injectable InAppPurchase wrappers only if
-// a second consumer appears.
+// ponytail: DI is test-only (forTesting) — app code always goes through the
+// plain singleton on InAppPurchase.instance.
 class OcrStoreService {
-  OcrStoreService._();
+  OcrStoreService._()
+    : _inAppPurchase = InAppPurchase.instance,
+      _billingClient = OcrBillingClient();
+
+  /// The purchase orchestration (grant→acknowledge→verify order, refund
+  /// convergence, waiter semantics) is only reachable with fakes behind
+  /// these seams.
+  @visibleForTesting
+  OcrStoreService.forTesting({
+    required InAppPurchase inAppPurchase,
+    required OcrBillingClient billingClient,
+  }) : _inAppPurchase = inAppPurchase,
+       _billingClient = billingClient;
 
   static final OcrStoreService instance = OcrStoreService._();
 
-  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
-  final OcrBillingClient _billingClient = OcrBillingClient();
+  final InAppPurchase _inAppPurchase;
+  final OcrBillingClient _billingClient;
+
+  // defaultTargetPlatform (not dart:io Platform) so host unit tests, which
+  // flutter_test runs as android, exercise the real code paths.
+  static bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
   final Map<String, ProductDetails> _productCache = {};
   final Map<String, List<Completer<PurchaseGrantResult>>> _pendingWaiters = {};
 
@@ -95,7 +109,7 @@ class OcrStoreService {
   }
 
   Future<void> _doInitialize() async {
-    if (!Platform.isAndroid) return;
+    if (!_isAndroid) return;
 
     bool isAvailable;
     try {
@@ -135,7 +149,7 @@ class OcrStoreService {
     Set<String> productIds,
   ) async {
     await initialize();
-    if (!Platform.isAndroid) {
+    if (!_isAndroid) {
       throw const OcrBillingException(
         422,
         'OCR purchases are only available on Android right now.',
@@ -176,7 +190,7 @@ class OcrStoreService {
 
   Future<PurchaseGrantResult> purchaseProduct(String productId) async {
     await initialize();
-    if (!Platform.isAndroid) {
+    if (!_isAndroid) {
       throw const OcrBillingException(
         422,
         'OCR purchases are only available on Android right now.',
@@ -253,7 +267,7 @@ class OcrStoreService {
 
   Future<OcrBillingStatus> restorePurchases() async {
     await initialize();
-    if (Platform.isAndroid) {
+    if (_isAndroid) {
       _log('restorePurchases start');
       await _syncOwnedPurchases(reason: 'restore', isRestore: true);
     }
@@ -346,13 +360,33 @@ class OcrStoreService {
 
       if (details.status == PurchaseStatus.purchased ||
           details.status == PurchaseStatus.restored) {
-        await _deliverPurchase(
-          details,
-          source: details.status == PurchaseStatus.restored
-              ? 'purchase_stream_restored'
-              : 'purchase_stream_purchased',
-          completeWaiterOnSuccess: true,
-        );
+        try {
+          await _deliverPurchase(
+            details,
+            source: details.status == PurchaseStatus.restored
+                ? 'purchase_stream_restored'
+                : 'purchase_stream_purchased',
+            completeWaiterOnSuccess: true,
+          );
+        } catch (e) {
+          // Same invariant as the owned-purchases loop: one bad item must
+          // not starve the others — and a live buyer must get an answer,
+          // never a hanging spinner.
+          _log('purchase delivery failed', {
+            'productId': details.productID,
+            'error': e.toString(),
+          });
+          _completeWaiterWithError(
+            details.productID,
+            e is OcrBillingException
+                ? e
+                : OcrBillingException(
+                    500,
+                    'Failed to deliver the purchase: $e',
+                    code: 'purchase_delivery_failed',
+                  ),
+          );
+        }
       }
     }
   }
@@ -361,7 +395,7 @@ class OcrStoreService {
     required String reason,
     bool isRestore = false,
   }) async {
-    if (!Platform.isAndroid) return;
+    if (!_isAndroid) return;
 
     final addition = _inAppPurchase
         .getPlatformAddition<InAppPurchaseAndroidPlatformAddition>();
@@ -430,12 +464,23 @@ class OcrStoreService {
     PurchaseDetails details,
     String source,
   ) async {
-    if (details.pendingCompletePurchase) {
-      _log('completing purchase', {
+    if (!details.pendingCompletePurchase) return;
+    _log('completing purchase', {
+      'source': source,
+      'productId': details.productID,
+    });
+    try {
+      await _inAppPurchase.completePurchase(details);
+    } catch (e) {
+      // Never fatal: by this point the purchase outcome is already decided
+      // (pro flag set / credits granted / waiter errored). Play redelivers
+      // unacknowledged purchases on the next owned-purchases sync, so the
+      // acknowledge retries then instead of failing the whole delivery.
+      _log('completePurchase failed (will retry on next sync)', {
         'source': source,
         'productId': details.productID,
+        'error': e.toString(),
       });
-      await _inAppPurchase.completePurchase(details);
     }
   }
 

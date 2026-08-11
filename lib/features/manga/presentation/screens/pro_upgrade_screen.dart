@@ -129,8 +129,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     });
   }
 
+  // Runs synchronously from initState, so it must stay context-free; the
+  // store-unavailable message is localized in build() instead.
   Future<ProUpgradeSnapshot> _loadSnapshotDefault() async {
-    final unavailableMessage = context.l10n.settingsProUnavailableSubtitle;
     String? errorMessage;
     String? priceLabel;
 
@@ -166,8 +167,6 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       } catch (e) {
         errorMessage ??= 'Failed to load Google Play pricing: $e';
       }
-    } else if (!unlocked) {
-      errorMessage = unavailableMessage;
     }
 
     return ProUpgradeSnapshot(
@@ -309,6 +308,11 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     final buttonLabel = _snapshot.priceLabel == null
         ? l10n.proUnlock
         : l10n.proUnlockWithPrice(price: _snapshot.priceLabel!);
+    // Mirrors the pre-existing precedence: on a locked install without Play
+    // billing, the unavailable notice wins over any load error.
+    final errorMessage = !_snapshot.servicesAvailable && !_snapshot.isUnlocked
+        ? l10n.settingsProUnavailableSubtitle
+        : _snapshot.errorMessage;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.proTitle)),
@@ -398,10 +402,10 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                         ),
                       ),
                     ),
-                    if (_snapshot.errorMessage != null) ...[
+                    if (errorMessage != null) ...[
                       const SizedBox(height: 12),
                       Text(
-                        _snapshot.errorMessage!,
+                        errorMessage,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.error,
                         ),
