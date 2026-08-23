@@ -246,6 +246,10 @@ void main() {
         '${extractDir.path}/${metadata.coverImageRelativePath}',
       );
       expect(await coverFile.exists(), isTrue);
+
+      // The extracted bytes must be the intact fixture JPEG — a cleared or
+      // truncated archive entry would write empty/partial content.
+      expect(await coverFile.readAsBytes(), testCoverJpegBytes);
     });
   });
 

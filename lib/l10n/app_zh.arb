@@ -223,6 +223,9 @@
   "@libraryImportEpubSubtitle": {
     "description": "Subtitle describing EPUB import."
   },
+  "libraryLargeImportWarnTitle": "书籍较大",
+  "libraryLargeImportWarnBody": "所选的最大书籍为 {sizeMb} MB。此设备内存有限，过大的书籍可能无法在阅读器中打开。仍要导入吗？",
+  "libraryLargeImportWarnAction": "仍然导入",
   "libraryImportMangaSubtitle": "选择CBZ压缩包或Mokuro文件夹",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."

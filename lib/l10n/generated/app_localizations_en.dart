@@ -175,6 +175,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryImportEpubSubtitle => 'Import an EPUB file';
 
   @override
+  String get libraryLargeImportWarnTitle => 'Large Book';
+
+  @override
+  String libraryLargeImportWarnBody({required int sizeMb}) {
+    return 'The largest selected book is $sizeMb MB. This device has limited memory, so very large books may fail to open in the reader. Import anyway?';
+  }
+
+  @override
+  String get libraryLargeImportWarnAction => 'Import Anyway';
+
+  @override
   String get libraryImportMangaSubtitle =>
       'Choose a CBZ archive or Mokuro folder';
 

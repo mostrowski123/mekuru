@@ -15,6 +15,10 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+/// compute() entry point: (epubPath, extractDir) → parsed metadata.
+Future<EpubMetadata> _parseEpubForImport((String, String) args) =>
+    EpubParser.parseEpub(args.$1, args.$2);
+
 /// Repository for book CRUD operations and EPUB import.
 class BookRepository {
   final AppDatabase _db;
@@ -70,6 +74,10 @@ class BookRepository {
   ///
   /// Returns the created [Book].
   Future<Book> importEpub(String sourcePath) async {
+    // Reject over-cap files before the copy below — a rejected import must
+    // not strand a full-size copy in app storage (Sentry MEKURU-1D).
+    await EpubParser.ensureWithinSizeCap(File(sourcePath));
+
     final appDir = await getApplicationSupportDirectory();
     final booksDir = Directory(p.join(appDir.path, 'books'));
 
@@ -87,8 +95,12 @@ class BookRepository {
     final extractDir = p.join(bookDir.path, 'content');
     await Directory(extractDir).create(recursive: true);
 
-    // Parse EPUB metadata
-    final metadata = await EpubParser.parseEpub(storedEpubPath, extractDir);
+    // Parse EPUB metadata — extraction inflates up to the whole book, so
+    // keep it off the UI isolate.
+    final metadata = await compute(_parseEpubForImport, (
+      storedEpubPath,
+      extractDir,
+    ));
 
     // Resolve cover image path
     String? coverImagePath;

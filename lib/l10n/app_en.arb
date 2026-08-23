@@ -223,6 +223,23 @@
   "@libraryImportEpubSubtitle": {
     "description": "Subtitle describing EPUB import."
   },
+  "libraryLargeImportWarnTitle": "Large Book",
+  "@libraryLargeImportWarnTitle": {
+    "description": "Dialog title warning that an EPUB selected for import is very large for this device's memory."
+  },
+  "libraryLargeImportWarnBody": "The largest selected book is {sizeMb} MB. This device has limited memory, so very large books may fail to open in the reader. Import anyway?",
+  "@libraryLargeImportWarnBody": {
+    "description": "Dialog body warning that a large EPUB may fail to open on a low-memory device.",
+    "placeholders": {
+      "sizeMb": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryLargeImportWarnAction": "Import Anyway",
+  "@libraryLargeImportWarnAction": {
+    "description": "Dialog button confirming import of a large EPUB despite the low-memory warning."
+  },
   "libraryImportMangaSubtitle": "Choose a CBZ archive or Mokuro folder",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."

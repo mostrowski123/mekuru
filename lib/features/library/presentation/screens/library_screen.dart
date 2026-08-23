@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reorderable_grid_view/entities/reorderable_animation_config.dart';
@@ -14,6 +15,7 @@ import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/book_cover_image.dart';
 import 'package:mekuru/features/library/presentation/widgets/collection_widgets.dart';
@@ -395,7 +397,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   FilledButton.icon(
                     onPressed: () {
                       AppHaptics.light();
-                      _importEpub(ref);
+                      _importEpub(context, ref);
                     },
                     icon: const Icon(Icons.book),
                     label: Text(l10n.libraryImportEpub),
@@ -617,7 +619,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               subtitle: Text(l10n.libraryImportEpubSubtitle),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                _importEpub(ref);
+                _importEpub(context, ref);
               },
             ),
             ListTile(
@@ -724,13 +726,71 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     return result.files.map((f) => f.path).nonNulls.toList();
   }
 
-  Future<void> _importEpub(WidgetRef ref) async {
+  Future<void> _importEpub(BuildContext context, WidgetRef ref) async {
     final filePaths = await _pickFilePaths(const ['epub']);
-    if (filePaths.isEmpty) return;
+    if (filePaths.isEmpty || !context.mounted) return;
+
+    if (!await _confirmLargeImportOnLowRamDevice(context, filePaths)) return;
 
     ref
         .read(bookImportProvider.notifier)
         .importFiles(filePaths, format: 'epub');
+  }
+
+  /// True to proceed with the import. Warns once when a selected EPUB
+  /// exceeds [largeEpubWarnBytes] on a device whose RAM makes the reader's
+  /// whole-file JS-heap load likely to fail.
+  Future<bool> _confirmLargeImportOnLowRamDevice(
+    BuildContext context,
+    List<String> filePaths,
+  ) async {
+    var largestBytes = 0;
+    for (final path in filePaths) {
+      try {
+        final len = await File(path).length();
+        if (len > largestBytes) largestBytes = len;
+      } catch (_) {
+        // Unreadable file: let the import flow surface the real error.
+      }
+    }
+    if (largestBytes <= largeEpubWarnBytes || !await _isLowMemoryDevice()) {
+      return true;
+    }
+
+    if (!context.mounted) return false;
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.l10n.libraryLargeImportWarnTitle),
+        content: Text(
+          context.l10n.libraryLargeImportWarnBody(
+            sizeMb: largestBytes ~/ (1024 * 1024),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(context.l10n.commonCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(context.l10n.libraryLargeImportWarnAction),
+          ),
+        ],
+      ),
+    );
+    return proceed == true;
+  }
+
+  static Future<bool> _isLowMemoryDevice() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      final info = await DeviceInfoPlugin().androidInfo;
+      return info.isLowRamDevice ||
+          info.physicalRamSize < lowRamDeviceThresholdMb;
+    } catch (_) {
+      return false; // no device info → don't nag
+    }
   }
 
   Future<void> _importCbz(BuildContext context, WidgetRef ref) async {

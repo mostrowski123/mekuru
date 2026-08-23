@@ -403,6 +403,24 @@ abstract class AppLocalizations {
   /// **'Import an EPUB file'**
   String get libraryImportEpubSubtitle;
 
+  /// Dialog title warning that an EPUB selected for import is very large for this device's memory.
+  ///
+  /// In en, this message translates to:
+  /// **'Large Book'**
+  String get libraryLargeImportWarnTitle;
+
+  /// Dialog body warning that a large EPUB may fail to open on a low-memory device.
+  ///
+  /// In en, this message translates to:
+  /// **'The largest selected book is {sizeMb} MB. This device has limited memory, so very large books may fail to open in the reader. Import anyway?'**
+  String libraryLargeImportWarnBody({required int sizeMb});
+
+  /// Dialog button confirming import of a large EPUB despite the low-memory warning.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Anyway'**
+  String get libraryLargeImportWarnAction;
+
   /// Subtitle describing manga import.
   ///
   /// In en, this message translates to:

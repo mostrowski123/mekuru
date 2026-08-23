@@ -173,6 +173,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryImportEpubSubtitle => '导入EPUB文件';
 
   @override
+  String get libraryLargeImportWarnTitle => '书籍较大';
+
+  @override
+  String libraryLargeImportWarnBody({required int sizeMb}) {
+    return '所选的最大书籍为 $sizeMb MB。此设备内存有限，过大的书籍可能无法在阅读器中打开。仍要导入吗？';
+  }
+
+  @override
+  String get libraryLargeImportWarnAction => '仍然导入';
+
+  @override
   String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';
 
   @override
@@ -2326,6 +2337,17 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryImportEpubSubtitle => '导入EPUB文件';
+
+  @override
+  String get libraryLargeImportWarnTitle => '书籍较大';
+
+  @override
+  String libraryLargeImportWarnBody({required int sizeMb}) {
+    return '所选的最大书籍为 $sizeMb MB。此设备内存有限，过大的书籍可能无法在阅读器中打开。仍要导入吗？';
+  }
+
+  @override
+  String get libraryLargeImportWarnAction => '仍然导入';
 
   @override
   String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';

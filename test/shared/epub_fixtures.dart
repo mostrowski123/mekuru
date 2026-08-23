@@ -3,6 +3,12 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 
+/// Minimal valid JPEG (1x1 pixel) used as the fixture cover image.
+const testCoverJpegBytes = [
+  0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, //
+  0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9,
+];
+
 /// Creates a minimal valid EPUB zip file for testing.
 ///
 /// Returns the path to the written file; the caller owns cleanup of the
@@ -66,13 +72,12 @@ Future<String> createTestEpub({
 
   // Cover image (tiny 1x1 JPEG placeholder)
   if (includeCover) {
-    // Minimal valid JPEG (1x1 pixel)
-    final jpegBytes = [
-      0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, //
-      0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9,
-    ];
     archive.addFile(
-      ArchiveFile('OEBPS/images/cover.jpg', jpegBytes.length, jpegBytes),
+      ArchiveFile(
+        'OEBPS/images/cover.jpg',
+        testCoverJpegBytes.length,
+        testCoverJpegBytes,
+      ),
     );
   }
 

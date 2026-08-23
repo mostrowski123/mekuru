@@ -223,6 +223,9 @@
   "@libraryImportEpubSubtitle": {
     "description": "Subtitle describing EPUB import."
   },
+  "libraryLargeImportWarnTitle": "Libro grande",
+  "libraryLargeImportWarnBody": "El libro seleccionado más grande ocupa {sizeMb} MB. Este dispositivo tiene memoria limitada, por lo que los libros muy grandes podrían no abrirse en el lector. ¿Importar de todos modos?",
+  "libraryLargeImportWarnAction": "Importar de todos modos",
   "libraryImportMangaSubtitle": "Elegir un archivo CBZ o una carpeta Mokuro",
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."

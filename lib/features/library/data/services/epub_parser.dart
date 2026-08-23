@@ -35,8 +35,19 @@ class EpubMetadata {
   });
 }
 
-/// Maximum EPUB file size allowed for import (200 MB).
-const _maxEpubBytes = 200 * 1024 * 1024;
+/// Maximum EPUB import size. The bound is the reader, not import (which
+/// works entry-at-a-time): the WebView JS heap must hold the whole file
+/// (`_epubBuf` in reader_bridge.js) plus epub.js's parsed book.
+const _maxEpubBytes = 400 * 1024 * 1024;
+
+/// Files above this trigger the low-memory import warning: the old import
+/// cap, below which months of installs produced no reader OOM reports.
+const largeEpubWarnBytes = 200 * 1024 * 1024;
+
+/// Total-RAM floor for that warning — the reader holds the whole file in the
+/// WebView JS heap, so low-RAM devices are the likely first casualty.
+/// ponytail: heuristic cutoff, revisit if Sentry shows renderer OOMs.
+const lowRamDeviceThresholdMb = 4096;
 
 /// Matches a vertical `writing-mode` CSS declaration, including the
 /// `-epub-`/`-webkit-` vendor prefixes and the legacy `tb-rl`/`tb-lr` values.
@@ -51,13 +62,6 @@ const _stylesheetExtension = '.css';
 /// `<style>` blocks.
 const _contentDocExtensions = {'.xhtml', '.html', '.htm'};
 
-/// Archive entry names worth sniffing for a vertical writing-mode
-/// declaration.
-bool _isSniffableEntry(String name) {
-  final ext = p.extension(name).toLowerCase();
-  return ext == _stylesheetExtension || _contentDocExtensions.contains(ext);
-}
-
 bool _declaresVerticalWritingMode(List<int> bytes) =>
     _verticalWritingModeCss.hasMatch(utf8.decode(bytes, allowMalformed: true));
 
@@ -68,6 +72,37 @@ class EpubParser {
   /// "Unknown Title".
   static String _fallbackTitleFor(String epubPath) =>
       p.basenameWithoutExtension(epubPath);
+
+  /// Throws when [file] exceeds the import size cap.
+  ///
+  /// Public so import can reject the source file *before* copying it into
+  /// app storage — a rejected import must not strand a full-size copy.
+  static Future<void> ensureWithinSizeCap(File file) async {
+    final fileSize = await file.length();
+    if (fileSize > _maxEpubBytes) {
+      // ceil() so a barely-over file never reads back as equal to the cap
+      // (Sentry MEKURU-1D).
+      throw FileSystemException(
+        'EPUB file is too large (${(fileSize / 1024 / 1024).ceil()} MB). '
+        'Maximum supported size is ${_maxEpubBytes ~/ 1024 ~/ 1024} MB.',
+        file.path,
+      );
+    }
+  }
+
+  /// archive throws ArgumentError/RangeError on truncated streams and
+  /// FormatException on bad signatures; surface either as a clean
+  /// "corrupt EPUB" rather than a raw RangeError to the import flow.
+  static Archive _decodeOrThrow(InputFileStream input, String epubPath) {
+    try {
+      return ZipDecoder().decodeStream(input);
+    } catch (e) {
+      throw FileSystemException(
+        'EPUB file is corrupt or not a valid archive',
+        epubPath,
+      );
+    }
+  }
 
   /// Parse an EPUB file and extract its metadata + cover image.
   ///
@@ -82,44 +117,30 @@ class EpubParser {
     if (!await file.exists()) {
       throw FileSystemException('EPUB file not found', epubPath);
     }
-    final fileSize = await file.length();
-    if (fileSize > _maxEpubBytes) {
-      throw FileSystemException(
-        'EPUB file is too large (${(fileSize / 1024 / 1024).toStringAsFixed(0)} MB). '
-        'Maximum supported size is ${_maxEpubBytes ~/ 1024 ~/ 1024} MB.',
-        epubPath,
-      );
-    }
+    await ensureWithinSizeCap(file);
 
     // Stream-decode the EPUB ZIP to avoid loading the entire file into memory.
     var hasVerticalCss = false;
     final input = InputFileStream(epubPath);
     try {
-      final Archive archive;
-      try {
-        archive = ZipDecoder().decodeStream(input);
-      } catch (e) {
-        // archive throws ArgumentError/RangeError on truncated streams and
-        // FormatException on bad signatures; surface either as a clean
-        // "corrupt EPUB" rather than a raw RangeError to the import flow.
-        throw FileSystemException(
-          'EPUB file is corrupt or not a valid archive',
-          epubPath,
-        );
-      }
+      final archive = _decodeOrThrow(input, epubPath);
 
-      // Extract all files, sniffing stylesheets/content for vertical
-      // writing-mode along the way (the bytes are already in memory here).
+      hasVerticalCss = _sniffVerticalCss(archive);
+
+      // Extract entry-by-entry, clearing each one — ArchiveFile.content
+      // caches decompressed bytes forever, so without clear() the whole
+      // decompressed EPUB accumulates in the Dart heap (Sentry MEKURU-1D).
+      final createdDirs = <String>{};
       for (final entry in archive.files) {
-        if (entry.isFile) {
-          final bytes = entry.content as List<int>;
-          final outFile = File(p.join(extractDir, entry.name));
+        if (!entry.isFile) continue;
+        final outFile = File(p.join(extractDir, entry.name));
+        if (createdDirs.add(outFile.parent.path)) {
           await outFile.parent.create(recursive: true);
-          await outFile.writeAsBytes(bytes);
-          if (!hasVerticalCss && _isSniffableEntry(entry.name)) {
-            hasVerticalCss = _declaresVerticalWritingMode(bytes);
-          }
         }
+        await outFile.writeAsBytes(entry.content as List<int>);
+        // clear(), never close(): every entry shares the InputFileStream's
+        // single file handle — closing one empties all later entries.
+        entry.clear();
       }
     } finally {
       input.close();
@@ -150,14 +171,7 @@ class EpubParser {
     if (!await file.exists()) {
       throw FileSystemException('EPUB file not found', epubPath);
     }
-    final fileSize = await file.length();
-    if (fileSize > _maxEpubBytes) {
-      throw FileSystemException(
-        'EPUB file is too large (${(fileSize / 1024 / 1024).toStringAsFixed(0)} MB). '
-        'Maximum supported size is ${_maxEpubBytes ~/ 1024 ~/ 1024} MB.',
-        epubPath,
-      );
-    }
+    await ensureWithinSizeCap(file);
 
     // Stream-decode the archive: the OPF metadata needs only 2 small XML
     // files; the vertical-CSS sniff additionally inflates stylesheet and
@@ -165,15 +179,7 @@ class EpubParser {
     final fallbackTitle = _fallbackTitleFor(epubPath);
     final input = InputFileStream(epubPath);
     try {
-      final Archive archive;
-      try {
-        archive = ZipDecoder().decodeStream(input);
-      } catch (e) {
-        throw FileSystemException(
-          'EPUB file is corrupt or not a valid archive',
-          epubPath,
-        );
-      }
+      final archive = _decodeOrThrow(input, epubPath);
 
       final hasVerticalCss = _sniffVerticalCss(archive);
       EpubMetadata fallback() =>
@@ -235,7 +241,11 @@ class EpubParser {
     for (final entry in archive.files) {
       if (!entry.isFile) continue;
       if (!wanted(p.extension(entry.name).toLowerCase())) continue;
-      if (_declaresVerticalWritingMode(entry.content as List<int>)) {
+      // rawContent.getStream() inflates without caching — `.content` would
+      // pin every sniffed chapter in memory at once for horizontal books.
+      final raw = entry.rawContent;
+      if (raw != null &&
+          _declaresVerticalWritingMode(raw.getStream().toUint8List())) {
         return true;
       }
     }
