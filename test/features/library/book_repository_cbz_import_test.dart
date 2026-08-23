@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
@@ -11,6 +10,9 @@ import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:path/path.dart' as p;
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
+import '../../shared/epub_fixtures.dart';
+import '../../shared/test_database.dart';
 
 class _FakePathProviderPlatform extends PathProviderPlatform {
   _FakePathProviderPlatform(this.root);
@@ -31,7 +33,7 @@ void main() {
   late Directory tempDir;
 
   setUp(() {
-    db = AppDatabase(NativeDatabase.memory());
+    db = createTestDatabase();
     repo = BookRepository(db);
     tempDir = Directory.systemTemp.createTempSync('cbz_import_test_');
     PathProviderPlatform.instance = _FakePathProviderPlatform(tempDir.path);
@@ -181,6 +183,46 @@ void main() {
 
       expect(cache.ocrCompleted, isFalse);
       expect(cache.pages.single.blocks, isEmpty);
+    });
+  });
+
+  group('BookRepository import failure cleanup', () {
+    List<Directory> leftoverBookDirs() {
+      final booksDir = Directory(p.join(tempDir.path, 'books'));
+      if (!booksDir.existsSync()) return const [];
+      return booksDir.listSync().whereType<Directory>().toList();
+    }
+
+    Future<void> expectNothingStranded() async {
+      expect(
+        leftoverBookDirs(),
+        isEmpty,
+        reason: 'a failed import must not strand its directory in app storage',
+      );
+      expect(await repo.getAllBooks(), isEmpty);
+    }
+
+    test('importEpub deletes the book directory when import fails', () async {
+      final corruptPath = p.join(tempDir.path, 'corrupt.epub');
+      await File(corruptPath).writeAsBytes(corruptZipBytes);
+
+      await expectLater(
+        repo.importEpub(corruptPath),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      await expectNothingStranded();
+    });
+
+    test('importCbz deletes the cache directory when import fails', () async {
+      // The cache directory is created before the source is opened, so a
+      // missing source file exercises the cleanup path.
+      await expectLater(
+        repo.importCbz(p.join(tempDir.path, 'missing.cbz')),
+        throwsA(anything),
+      );
+
+      await expectNothingStranded();
     });
   });
 }

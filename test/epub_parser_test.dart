@@ -162,37 +162,10 @@ void main() {
     });
 
     test('throws FileSystemException for truncated/corrupt archive', () async {
-      // Hand-crafted: a CDFH that claims a 255-byte filename, followed by an
-      // EOCD that points back to byte 0. The decoder reads the CDFH header,
-      // then tries to read the filename, runs past EOF, and throws — the same
-      // RangeError path that crashed in production.
       final tempDir = await Directory.systemTemp.createTemp('epub_corrupt_');
       trackTempDir(tempDir.path);
       final corruptPath = '${tempDir.path}/corrupt.epub';
-      await File(corruptPath).writeAsBytes([
-        // Central Directory File Header (46 bytes)
-        0x50, 0x4B, 0x01, 0x02, // signature
-        0x1F, 0x00, 0x0A, 0x00, // versions
-        0x00, 0x00, 0x00, 0x00, // flags, compression
-        0x00, 0x00, 0x00, 0x00, // mod time/date
-        0x00, 0x00, 0x00, 0x00, // crc
-        0x00, 0x00, 0x00, 0x00, // compressed size
-        0x00, 0x00, 0x00, 0x00, // uncompressed size
-        0xFF, 0x00, // filename length = 255 (no bytes follow)
-        0x00, 0x00, // extra length
-        0x00, 0x00, // comment length
-        0x00, 0x00, // disk number
-        0x00, 0x00, // internal attrs
-        0x00, 0x00, 0x00, 0x00, // external attrs
-        0x00, 0x00, 0x00, 0x00, // local header offset
-        // End of Central Directory Record (22 bytes)
-        0x50, 0x4B, 0x05, 0x06, // signature
-        0x00, 0x00, 0x00, 0x00, // disk numbers
-        0x01, 0x00, 0x01, 0x00, // entries
-        0x2E, 0x00, 0x00, 0x00, // CD size = 46
-        0x00, 0x00, 0x00, 0x00, // CD offset = 0
-        0x00, 0x00, // comment length
-      ]);
+      await File(corruptPath).writeAsBytes(corruptZipBytes);
 
       final extractDir = await Directory.systemTemp.createTemp(
         'epub_corrupt_extract_',

@@ -65,6 +65,30 @@ class BookRepository {
 
   // ──────────────── Import ────────────────
 
+  /// Creates a fresh import directory under app storage, runs [body] in it,
+  /// and deletes the directory (recursive, best-effort) if [body] throws, so
+  /// a failed import never strands a partial copy/extraction in app storage.
+  Future<T> _inNewImportDir<T>(
+    String prefix,
+    Future<T> Function(Directory dir) body,
+  ) async {
+    final appDir = await getApplicationSupportDirectory();
+    final dir = Directory(
+      p.join(appDir.path, 'books', uniqueImportDirName(prefix)),
+    );
+    await dir.create(recursive: true);
+    try {
+      return await body(dir);
+    } catch (_) {
+      try {
+        await dir.delete(recursive: true);
+      } catch (_) {
+        // Best-effort only — the OS may still hold file locks (Windows).
+      }
+      rethrow;
+    }
+  }
+
   /// Import an EPUB file into the library.
   ///
   /// 1. Copies the EPUB to app storage
@@ -78,63 +102,58 @@ class BookRepository {
     // not strand a full-size copy in app storage (Sentry MEKURU-1D).
     await EpubParser.ensureWithinSizeCap(File(sourcePath));
 
-    final appDir = await getApplicationSupportDirectory();
-    final booksDir = Directory(p.join(appDir.path, 'books'));
+    return _inNewImportDir('book', (bookDir) async {
+      // Copy EPUB to app storage
+      final epubFileName = p.basename(sourcePath);
+      final storedEpubPath = p.join(bookDir.path, epubFileName);
+      await File(sourcePath).copy(storedEpubPath);
 
-    final bookDir = Directory(
-      p.join(booksDir.path, uniqueImportDirName('book')),
-    );
-    await bookDir.create(recursive: true);
+      // Unzip to a subdirectory
+      final extractDir = p.join(bookDir.path, 'content');
+      await Directory(extractDir).create(recursive: true);
 
-    // Copy EPUB to app storage
-    final epubFileName = p.basename(sourcePath);
-    final storedEpubPath = p.join(bookDir.path, epubFileName);
-    await File(sourcePath).copy(storedEpubPath);
+      // Parse EPUB metadata — extraction inflates up to the whole book, so
+      // keep it off the UI isolate.
+      final metadata = await compute(_parseEpubForImport, (
+        storedEpubPath,
+        extractDir,
+      ));
 
-    // Unzip to a subdirectory
-    final extractDir = p.join(bookDir.path, 'content');
-    await Directory(extractDir).create(recursive: true);
-
-    // Parse EPUB metadata — extraction inflates up to the whole book, so
-    // keep it off the UI isolate.
-    final metadata = await compute(_parseEpubForImport, (
-      storedEpubPath,
-      extractDir,
-    ));
-
-    // Resolve cover image path
-    String? coverImagePath;
-    if (metadata.coverImageRelativePath != null) {
-      final coverPath = p.join(extractDir, metadata.coverImageRelativePath!);
-      if (await File(coverPath).exists()) {
-        coverImagePath = coverPath;
+      // Resolve cover image path
+      String? coverImagePath;
+      if (metadata.coverImageRelativePath != null) {
+        final coverPath = p.join(extractDir, metadata.coverImageRelativePath!);
+        if (await File(coverPath).exists()) {
+          coverImagePath = coverPath;
+        }
       }
-    }
 
-    // Insert into database
-    final bookId = await _db
-        .into(_db.books)
-        .insert(
-          BooksCompanion.insert(
-            title: metadata.title,
-            filePath: extractDir,
-            coverImagePath: coverImagePath != null
-                ? Value(coverImagePath)
-                : const Value.absent(),
-            language: metadata.language != null
-                ? Value(metadata.language)
-                : const Value.absent(),
-            pageProgressionDirection: metadata.pageProgressionDirection != null
-                ? Value(metadata.pageProgressionDirection)
-                : const Value.absent(),
-            primaryWritingMode: metadata.primaryWritingMode != null
-                ? Value(metadata.primaryWritingMode)
-                : const Value.absent(),
-            hasVerticalCss: Value(metadata.hasVerticalCss),
-          ),
-        );
+      // Insert into database
+      final bookId = await _db
+          .into(_db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: metadata.title,
+              filePath: extractDir,
+              coverImagePath: coverImagePath != null
+                  ? Value(coverImagePath)
+                  : const Value.absent(),
+              language: metadata.language != null
+                  ? Value(metadata.language)
+                  : const Value.absent(),
+              pageProgressionDirection:
+                  metadata.pageProgressionDirection != null
+                  ? Value(metadata.pageProgressionDirection)
+                  : const Value.absent(),
+              primaryWritingMode: metadata.primaryWritingMode != null
+                  ? Value(metadata.primaryWritingMode)
+                  : const Value.absent(),
+              hasVerticalCss: Value(metadata.hasVerticalCss),
+            ),
+          );
 
-    return (await getBookById(bookId))!;
+      return (await getBookById(bookId))!;
+    });
   }
 
   /// Import a manga book from a `.mokuro` or `.html` file.
@@ -244,64 +263,59 @@ class BookRepository {
     String sourcePath, {
     void Function(double progress)? onProgress,
   }) async {
-    final appDir = await getApplicationSupportDirectory();
-    final booksDir = Directory(p.join(appDir.path, 'books'));
-    final cacheDir = Directory(
-      p.join(booksDir.path, uniqueImportDirName('manga')),
-    );
-    await cacheDir.create(recursive: true);
+    return _inNewImportDir('manga', (cacheDir) async {
+      // Extract the archive, which also reports each page's dimensions from
+      // the bytes it already holds — no second pass over the extracted files.
+      final cbzMeta = await CbzParser.extract(
+        sourcePath,
+        cacheDir.path,
+        onProgress: onProgress,
+      );
 
-    // Extract the archive, which also reports each page's dimensions from the
-    // bytes it already holds — no second pass over the extracted files.
-    final cbzMeta = await CbzParser.extract(
-      sourcePath,
-      cacheDir.path,
-      onProgress: onProgress,
-    );
-
-    // Build MokuroPages with empty blocks (no OCR yet).
-    final fileNames = cbzMeta.imageFileNames;
-    final pages = <MokuroPage>[
-      for (var i = 0; i < fileNames.length; i++)
-        MokuroPage(
-          pageIndex: i,
-          imageFileName: fileNames[i],
-          imgWidth: cbzMeta.dimensionsOf(fileNames[i])?.width ?? 0,
-          imgHeight: cbzMeta.dimensionsOf(fileNames[i])?.height ?? 0,
-          blocks: const [],
-        ),
-    ];
-
-    // Build and save pages_cache.json
-    final mokuroBook = MokuroBook(
-      title: cbzMeta.title,
-      imageDirPath: cbzMeta.imageDirPath,
-      ocrCompleted: false,
-      pages: pages,
-    );
-    final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
-    await writeStringAtomic(cacheFile, jsonEncode(mokuroBook.toJson()));
-
-    debugPrint(
-      '[CbzImport] Cached ${pages.length} pages for "${cbzMeta.title}"',
-    );
-
-    // Insert into database
-    final bookId = await _db
-        .into(_db.books)
-        .insert(
-          BooksCompanion.insert(
-            title: cbzMeta.title,
-            filePath: cacheDir.path,
-            bookType: const Value('manga'),
-            coverImagePath: cbzMeta.coverImagePath != null
-                ? Value(cbzMeta.coverImagePath)
-                : const Value.absent(),
-            totalPages: Value(pages.length),
+      // Build MokuroPages with empty blocks (no OCR yet).
+      final fileNames = cbzMeta.imageFileNames;
+      final pages = <MokuroPage>[
+        for (var i = 0; i < fileNames.length; i++)
+          MokuroPage(
+            pageIndex: i,
+            imageFileName: fileNames[i],
+            imgWidth: cbzMeta.dimensionsOf(fileNames[i])?.width ?? 0,
+            imgHeight: cbzMeta.dimensionsOf(fileNames[i])?.height ?? 0,
+            blocks: const [],
           ),
-        );
+      ];
 
-    return (await getBookById(bookId))!;
+      // Build and save pages_cache.json
+      final mokuroBook = MokuroBook(
+        title: cbzMeta.title,
+        imageDirPath: cbzMeta.imageDirPath,
+        ocrCompleted: false,
+        pages: pages,
+      );
+      final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+      await writeStringAtomic(cacheFile, jsonEncode(mokuroBook.toJson()));
+
+      debugPrint(
+        '[CbzImport] Cached ${pages.length} pages for "${cbzMeta.title}"',
+      );
+
+      // Insert into database
+      final bookId = await _db
+          .into(_db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: cbzMeta.title,
+              filePath: cacheDir.path,
+              bookType: const Value('manga'),
+              coverImagePath: cbzMeta.coverImagePath != null
+                  ? Value(cbzMeta.coverImagePath)
+                  : const Value.absent(),
+              totalPages: Value(pages.length),
+            ),
+          );
+
+      return (await getBookById(bookId))!;
+    });
   }
 
   /// Shared import logic: segment words, save cache, insert into DB.
@@ -309,113 +323,109 @@ class BookRepository {
     MokuroBookManifest manifest,
     List<MokuroPage> rawPages,
   ) async {
-    final appDir = await getApplicationSupportDirectory();
-    final booksDir = Directory(p.join(appDir.path, 'books'));
+    return _inNewImportDir('manga', (cacheDir) async {
+      // Segment words using MeCab, off the UI isolate — imports can be large.
+      // The worker also encodes the pages_cache.json content, keeping that
+      // multi-MB string build off the UI isolate too.
+      // Auto-crop bounds are computed lazily the first time the user enables
+      // auto-crop for this manga. Import stores segmented OCR only.
+      final segmented = await MokuroWordSegmenter.segmentBookInBackground(
+        MokuroBook(
+          title: manifest.title,
+          imageDirPath: manifest.imageDirPath,
+          safTreeUri: manifest.safTreeUri,
+          safImageDirRelativePath: manifest.safImageDirRelativePath,
+          ocrSource: 'mokuro',
+          ocrCompleted: true,
+          pages: rawPages,
+        ),
+      );
+      final mokuroBook = segmented.book;
+      // A null cacheJson means MeCab was unavailable and nothing was
+      // segmented; the import must still write a cache, so encode here.
+      final cacheJson = segmented.cacheJson ?? jsonEncode(mokuroBook.toJson());
 
-    final cacheDir = Directory(
-      p.join(booksDir.path, uniqueImportDirName('manga')),
-    );
-    await cacheDir.create(recursive: true);
+      // Save pages_cache.json and its original-OCR backup. Encode the
+      // multi-MB string once and share the bytes between both writes.
+      final cacheBytes = utf8.encode(cacheJson);
+      final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+      await writeBytesAtomic(cacheFile, cacheBytes);
+      final originalBackupFile = File(
+        p.join(cacheDir.path, originalMokuroOcrBackupFileName),
+      );
+      await writeBytesAtomic(originalBackupFile, cacheBytes);
 
-    // Segment words using MeCab, off the UI isolate — imports can be large.
-    // The worker also encodes the pages_cache.json content, keeping that
-    // multi-MB string build off the UI isolate too.
-    // Auto-crop bounds are computed lazily the first time the user enables
-    // auto-crop for this manga. Import stores segmented OCR only.
-    final segmented = await MokuroWordSegmenter.segmentBookInBackground(
-      MokuroBook(
-        title: manifest.title,
-        imageDirPath: manifest.imageDirPath,
-        safTreeUri: manifest.safTreeUri,
-        safImageDirRelativePath: manifest.safImageDirRelativePath,
-        ocrSource: 'mokuro',
-        ocrCompleted: true,
-        pages: rawPages,
-      ),
-    );
-    final mokuroBook = segmented.book;
-    // A null cacheJson means MeCab was unavailable and nothing was
-    // segmented; the import must still write a cache, so encode here.
-    final cacheJson = segmented.cacheJson ?? jsonEncode(mokuroBook.toJson());
+      debugPrint(
+        '[MangaImport] Cached ${mokuroBook.pages.length} pages '
+        'for "${manifest.title}"',
+      );
 
-    // Save pages_cache.json
-    final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
-    await writeStringAtomic(cacheFile, cacheJson);
-    final originalBackupFile = File(
-      p.join(cacheDir.path, originalMokuroOcrBackupFileName),
-    );
-    await writeStringAtomic(originalBackupFile, cacheJson);
+      // Cover = alphabetically first image file (ASCII sort).
+      // The mokuro page order doesn't always start with the cover —
+      // filenames like _01.jpg or 000.jpg may precede numbered pages.
+      String? coverImagePath;
+      if (manifest.imageFileNames.isNotEmpty) {
+        const imageExtensions = {
+          '.jpg',
+          '.jpeg',
+          '.png',
+          '.gif',
+          '.webp',
+          '.bmp',
+          '.tiff',
+          '.tif',
+        };
+        final sorted = [...manifest.imageFileNames]..sort();
+        for (final fileName in sorted) {
+          final ext = p.extension(fileName).toLowerCase();
+          if (!imageExtensions.contains(ext)) continue;
+          if (manifest.safTreeUri != null &&
+              manifest.safImageDirRelativePath != null) {
+            final relPath = p.posix.join(
+              manifest.safImageDirRelativePath!,
+              fileName,
+            );
+            final exists = await AndroidSafService.existsInTreePath(
+              manifest.safTreeUri!,
+              relPath,
+            );
+            if (!exists) continue;
 
-    debugPrint(
-      '[MangaImport] Cached ${mokuroBook.pages.length} pages '
-      'for "${manifest.title}"',
-    );
-
-    // Cover = alphabetically first image file (ASCII sort).
-    // The mokuro page order doesn't always start with the cover —
-    // filenames like _01.jpg or 000.jpg may precede numbered pages.
-    String? coverImagePath;
-    if (manifest.imageFileNames.isNotEmpty) {
-      const imageExtensions = {
-        '.jpg',
-        '.jpeg',
-        '.png',
-        '.gif',
-        '.webp',
-        '.bmp',
-        '.tiff',
-        '.tif',
-      };
-      final sorted = [...manifest.imageFileNames]..sort();
-      for (final fileName in sorted) {
-        final ext = p.extension(fileName).toLowerCase();
-        if (!imageExtensions.contains(ext)) continue;
-        if (manifest.safTreeUri != null &&
-            manifest.safImageDirRelativePath != null) {
-          final relPath = p.posix.join(
-            manifest.safImageDirRelativePath!,
-            fileName,
-          );
-          final exists = await AndroidSafService.existsInTreePath(
-            manifest.safTreeUri!,
-            relPath,
-          );
-          if (!exists) continue;
-
-          final uri = await AndroidSafService.getDocumentUriInTree(
-            manifest.safTreeUri!,
-            relPath,
-          );
-          if (uri != null) {
-            coverImagePath = uri;
-            break;
-          }
-        } else {
-          final candidatePath = p.join(manifest.imageDirPath, fileName);
-          if (await File(candidatePath).exists()) {
-            coverImagePath = candidatePath;
-            break;
+            final uri = await AndroidSafService.getDocumentUriInTree(
+              manifest.safTreeUri!,
+              relPath,
+            );
+            if (uri != null) {
+              coverImagePath = uri;
+              break;
+            }
+          } else {
+            final candidatePath = p.join(manifest.imageDirPath, fileName);
+            if (await File(candidatePath).exists()) {
+              coverImagePath = candidatePath;
+              break;
+            }
           }
         }
       }
-    }
 
-    // Insert into database
-    final bookId = await _db
-        .into(_db.books)
-        .insert(
-          BooksCompanion.insert(
-            title: manifest.title,
-            filePath: cacheDir.path,
-            bookType: const Value('manga'),
-            coverImagePath: coverImagePath != null
-                ? Value(coverImagePath)
-                : const Value.absent(),
-            totalPages: Value(mokuroBook.pages.length),
-          ),
-        );
+      // Insert into database
+      final bookId = await _db
+          .into(_db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: manifest.title,
+              filePath: cacheDir.path,
+              bookType: const Value('manga'),
+              coverImagePath: coverImagePath != null
+                  ? Value(coverImagePath)
+                  : const Value.absent(),
+              totalPages: Value(mokuroBook.pages.length),
+            ),
+          );
 
-    return (await getBookById(bookId))!;
+      return (await getBookById(bookId))!;
+    });
   }
 
   // ──────────────── Update ────────────────
