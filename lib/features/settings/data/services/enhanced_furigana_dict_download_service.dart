@@ -58,7 +58,7 @@ class EnhancedFuriganaDictDownloadService {
       final prefs = await SharedPreferences.getInstance();
       final enabled = prefs.getBool(enabledPreferenceKey) ?? false;
       if (!enabled) return false;
-      return isInstalled();
+      return await isInstalled();
     } catch (e) {
       debugPrint('[EnhancedFurigana] shouldUse check failed: $e');
       return false;

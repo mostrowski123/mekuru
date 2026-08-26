@@ -1021,7 +1021,7 @@ class MokuroParser {
   }) async {
     try {
       final bytes = await File(imagePath).readAsBytes();
-      return computeImageContentBoundsFromBytes(
+      return await computeImageContentBoundsFromBytes(
         bytes,
         padding: padding,
         whiteThreshold: whiteThreshold,

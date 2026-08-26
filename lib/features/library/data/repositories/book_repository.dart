@@ -237,7 +237,7 @@ class BookRepository {
         );
       }
 
-      return _importManifestWithPages(parsed.$1, parsed.$2);
+      return await _importManifestWithPages(parsed.$1, parsed.$2);
     } finally {
       if (tempReadPath != null) {
         try {

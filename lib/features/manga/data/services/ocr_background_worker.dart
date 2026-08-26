@@ -518,7 +518,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         consecutiveFailures++;
         if (!anyPageSucceeded ||
             consecutiveFailures >= _maxConsecutiveFailures) {
-          return failWithError(
+          return await failWithError(
             _describeMissingPageImage(
               mokuroBook: mokuroBook,
               page: page,
@@ -571,7 +571,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           return true;
         }
         if (e.statusCode == 401) {
-          return failWithError(
+          return await failWithError(
             'Authentication failed. '
             'Check your server bearer key.',
             e,
@@ -580,7 +580,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         consecutiveFailures++;
         if (!anyPageSucceeded ||
             consecutiveFailures >= _maxConsecutiveFailures) {
-          return failWithError(_describeOcrError(e), e);
+          return await failWithError(_describeOcrError(e), e);
         }
         completed++;
         await saveRunningProgress();
@@ -594,7 +594,7 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
         consecutiveFailures++;
         if (!anyPageSucceeded ||
             consecutiveFailures >= _maxConsecutiveFailures) {
-          return failWithError(_describeOcrError(e), e);
+          return await failWithError(_describeOcrError(e), e);
         }
         completed++;
         await saveRunningProgress();

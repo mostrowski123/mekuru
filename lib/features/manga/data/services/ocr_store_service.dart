@@ -245,7 +245,7 @@ class OcrStoreService {
         );
       }
 
-      return waiter.future.timeout(
+      return await waiter.future.timeout(
         const Duration(minutes: 3),
         onTimeout: () {
           throw const OcrBillingException(
