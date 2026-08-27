@@ -2,6 +2,9 @@ import 'dart:ui' show Rect;
 
 import 'package:path/path.dart' as p;
 
+/// File name of the cached page/OCR data inside a manga book's directory.
+const String mangaPagesCacheFileName = 'pages_cache.json';
+
 /// Manifest for a single mokuro book discovered in a directory.
 /// Contains paths but no parsed page data yet.
 class MokuroBookManifest {

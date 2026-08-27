@@ -114,6 +114,18 @@ ImageDimensions? _pngDimensions(Uint8List b) {
   return width > 0 && height > 0 ? ImageDimensions(width, height) : null;
 }
 
+/// Reads image dimensions from the first 64 KB of the file at [path] —
+/// enough for the JPEG SOF and PNG IHDR headers above without pulling whole
+/// pages into memory.
+Future<ImageDimensions?> readImageDimensionsFromFile(String path) async {
+  final raf = await File(path).open();
+  try {
+    return readImageDimensionsFromBytes(await raf.read(65536));
+  } finally {
+    await raf.close();
+  }
+}
+
 ImageDimensions? _fallbackDimensions(Uint8List bytes) {
   final info = img.findDecoderForData(bytes)?.startDecode(bytes);
   if (info == null || info.width <= 0 || info.height <= 0) return null;
@@ -126,7 +138,7 @@ ImageDimensions? _fallbackDimensions(Uint8List bytes) {
 /// This parser extracts the images, sorts them naturally by filename, and
 /// provides metadata compatible with the manga reader.
 class CbzParser {
-  static const Set<String> _imageExtensions = {
+  static const Set<String> imageExtensions = {
     '.jpg',
     '.jpeg',
     '.png',
@@ -136,6 +148,14 @@ class CbzParser {
     '.tiff',
     '.tif',
   };
+
+  /// Canonical file name for page [oneBasedIndex] in a converted or exported
+  /// manga book: zero-padded index plus [sourceName]'s lowercased extension,
+  /// so natural and lexicographic sorts agree on the page order.
+  // ponytail: pads to 4 digits — a >9999-page volume would sort wrong.
+  static String pageFileName(int oneBasedIndex, String sourceName) =>
+      '${oneBasedIndex.toString().padLeft(4, '0')}'
+      '${p.extension(sourceName).toLowerCase()}';
 
   /// Extract a CBZ archive to [outputDir] and return metadata.
   ///
@@ -246,7 +266,7 @@ class CbzParser {
   // ── Private helpers ──
 
   static bool _isImageFile(String fileName) =>
-      _imageExtensions.contains(p.extension(fileName).toLowerCase());
+      imageExtensions.contains(p.extension(fileName).toLowerCase());
 
   /// Natural string comparison that handles embedded numbers.
   /// Matches the algorithm in MokuroParser for consistency.

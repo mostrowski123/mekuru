@@ -78,7 +78,7 @@ void spliceRuby(XmlText node, List<Map<String, Object?>> segments) {
   parent.children.insertAll(index, replacements);
 }
 
-XmlDocument? _parseXhtml(String xhtml) {
+XmlDocument? parseXhtml(String xhtml) {
   try {
     // The html5 entity mapping is mandatory: the default XML mapping leaves
     // named entities like &nbsp; undecoded, and re-encoding then turns them
@@ -96,7 +96,7 @@ XmlDocument? _parseXhtml(String xhtml) {
 /// rb unwrapped). Null when the document has no ruby or does not parse —
 /// the caller keeps the original entry.
 String? stripRubyXhtml(String xhtml) {
-  final doc = _parseXhtml(xhtml);
+  final doc = parseXhtml(xhtml);
   if (doc == null) return null;
 
   final rubies = doc.findAllElements('ruby').toList();
@@ -164,7 +164,7 @@ Future<String?> annotateXhtml(
   FuriganaGenerator generator, {
   bool Function(String baseText)? stripRubyWhere,
 }) async {
-  final doc = _parseXhtml(xhtml);
+  final doc = parseXhtml(xhtml);
   if (doc == null) return null;
 
   // Unwrapped base nodes are excluded from annotation below: the predicate
@@ -213,14 +213,14 @@ Future<String?> annotateXhtml(
 Set<String> _contentDocumentNames(Archive archive) {
   final container = archive.findFile('META-INF/container.xml');
   if (container == null) return const {};
-  final containerXml = _parseXhtml(utf8.decode(container.readBytes()!));
+  final containerXml = parseXhtml(utf8.decode(container.readBytes()!));
   if (containerXml == null) return const {};
   final opfPath = EpubParser.extractOpfPathFromXml(containerXml);
   if (opfPath == null) return const {};
 
   final opfEntry = archive.findFile(opfPath);
   if (opfEntry == null) return const {};
-  final opfXml = _parseXhtml(utf8.decode(opfEntry.readBytes()!));
+  final opfXml = parseXhtml(utf8.decode(opfEntry.readBytes()!));
   if (opfXml == null) return const {};
 
   final opfDir = p.posix.dirname(opfPath);

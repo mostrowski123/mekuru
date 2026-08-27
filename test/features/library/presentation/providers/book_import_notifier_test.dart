@@ -12,17 +12,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../../../../shared/epub_fixtures.dart';
-
-class _FakePathProviderPlatform extends PathProviderPlatform {
-  _FakePathProviderPlatform(this.root);
-  final String root;
-
-  @override
-  Future<String?> getApplicationSupportPath() async => root;
-
-  @override
-  Future<String?> getApplicationDocumentsPath() async => root;
-}
+import '../../../../shared/fake_path_provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +24,7 @@ void main() {
 
   setUp(() {
     tempDir = Directory.systemTemp.createTempSync('book_import_test_');
-    PathProviderPlatform.instance = _FakePathProviderPlatform(tempDir.path);
+    PathProviderPlatform.instance = FakePathProviderPlatform(tempDir.path);
     db = AppDatabase(NativeDatabase.memory());
     container = ProviderContainer(
       overrides: [databaseProvider.overrideWithValue(db)],

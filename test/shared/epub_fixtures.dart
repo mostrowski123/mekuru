@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:image/image.dart' as img;
 
 /// Minimal valid JPEG (1x1 pixel) used as the fixture cover image.
 const testCoverJpegBytes = [
@@ -134,6 +135,120 @@ $bodyTag<p>これはテストです。</p></body>
   // Write to temp file
   final tempDir = await Directory.systemTemp.createTemp('epub_test_');
   final epubPath = '${tempDir.path}/$fileName';
+  await File(epubPath).writeAsBytes(ZipEncoder().encode(archive));
+
+  return epubPath;
+}
+
+/// Creates a fixed-layout (image-per-page) manga EPUB for testing.
+///
+/// Page `i` (0-based, spine order) is a PNG sized `(10 + i) x (100 + i)`, so
+/// tests can tell which source image landed on which converted page purely by
+/// its dimensions. Every XHTML doc contains `&nbsp;` to require the HTML5
+/// entity mapping when parsed.
+///
+/// Returns the path to the written file; the caller owns cleanup of the
+/// containing temp directory (the file's parent).
+Future<String> createFixedLayoutMangaEpub({
+  int pageCount = 5,
+  List<String>? imageNames,
+  bool svgWrapped = false,
+  int textOnlyPages = 0,
+  bool nestedImageDir = false,
+  bool urlEncodedHrefs = false,
+  bool coverPageReusesFirstImage = false,
+}) async {
+  final names = imageNames ?? [for (var i = 0; i < pageCount; i++) 'p$i.png'];
+  final archive = Archive();
+
+  void addEntry(String path, List<int> bytes) {
+    archive.addFile(ArchiveFile(path, bytes.length, bytes));
+  }
+
+  void addText(String path, String content) =>
+      addEntry(path, utf8.encode(content));
+
+  addText('META-INF/container.xml', '''<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>''');
+
+  final docDir = nestedImageDir ? 'text/' : '';
+  String imageRef(String name) {
+    final encoded = urlEncodedHrefs ? Uri.encodeComponent(name) : name;
+    return nestedImageDir ? '../images/$encoded' : 'images/$encoded';
+  }
+
+  String pageDoc(String name) {
+    final body = svgWrapped
+        ? '<svg xmlns="http://www.w3.org/2000/svg" '
+              'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10">'
+              '<image xlink:href="${imageRef(name)}" width="10" height="10"/></svg>'
+        : '<img src="${imageRef(name)}" alt=""/>';
+    return '''<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>&nbsp;</title></head>
+<body>$body</body>
+</html>''';
+  }
+
+  final manifestItems = <String>[];
+  final spineRefs = <String>[];
+
+  if (coverPageReusesFirstImage) {
+    addText('OEBPS/${docDir}cover.xhtml', pageDoc(names.first));
+    manifestItems.add(
+      '<item id="coverpage" href="${docDir}cover.xhtml" media-type="application/xhtml+xml"/>',
+    );
+    spineRefs.add('<itemref idref="coverpage"/>');
+  }
+
+  for (var i = 0; i < names.length; i++) {
+    addEntry(
+      'OEBPS/images/${names[i]}',
+      img.encodePng(img.Image(width: 10 + i, height: 100 + i)),
+    );
+    addText('OEBPS/${docDir}page_$i.xhtml', pageDoc(names[i]));
+    manifestItems
+      ..add(
+        '<item id="img$i" href="images/${names[i]}" media-type="image/png"/>',
+      )
+      ..add(
+        '<item id="page$i" href="${docDir}page_$i.xhtml" media-type="application/xhtml+xml"/>',
+      );
+    spineRefs.add('<itemref idref="page$i"/>');
+  }
+
+  for (var i = 0; i < textOnlyPages; i++) {
+    addText('OEBPS/text_$i.xhtml', '''<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>Text</title></head>
+<body><p>あとがき&nbsp;$i</p></body>
+</html>''');
+    manifestItems.add(
+      '<item id="txt$i" href="text_$i.xhtml" media-type="application/xhtml+xml"/>',
+    );
+    spineRefs.add('<itemref idref="txt$i"/>');
+  }
+
+  addText('OEBPS/content.opf', '''<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>漫画テスト</dc:title>
+    <dc:language>ja</dc:language>
+  </metadata>
+  <manifest>
+    ${manifestItems.join('\n    ')}
+  </manifest>
+  <spine page-progression-direction="rtl">
+    ${spineRefs.join('\n    ')}
+  </spine>
+</package>''');
+
+  final tempDir = await Directory.systemTemp.createTemp('epub_manga_test_');
+  final epubPath = '${tempDir.path}/manga.epub';
   await File(epubPath).writeAsBytes(ZipEncoder().encode(archive));
 
   return epubPath;

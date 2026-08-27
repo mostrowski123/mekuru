@@ -12,18 +12,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import '../../shared/epub_fixtures.dart';
+import '../../shared/fake_path_provider.dart';
 import '../../shared/test_database.dart';
-
-class _FakePathProviderPlatform extends PathProviderPlatform {
-  _FakePathProviderPlatform(this.root);
-  final String root;
-
-  @override
-  Future<String?> getApplicationSupportPath() async => root;
-
-  @override
-  Future<String?> getApplicationDocumentsPath() async => root;
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +26,7 @@ void main() {
     db = createTestDatabase();
     repo = BookRepository(db);
     tempDir = Directory.systemTemp.createTempSync('cbz_import_test_');
-    PathProviderPlatform.instance = _FakePathProviderPlatform(tempDir.path);
+    PathProviderPlatform.instance = FakePathProviderPlatform(tempDir.path);
   });
 
   tearDown(() async {

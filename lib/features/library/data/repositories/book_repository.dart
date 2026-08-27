@@ -6,9 +6,11 @@ import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
+import 'package:mekuru/features/library/data/services/epub_manga_converter.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
+import 'package:mekuru/features/manga/data/services/manga_cbz_export.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_parser.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
 import 'package:path/path.dart' as p;
@@ -18,6 +20,10 @@ import 'package:uuid/uuid.dart';
 /// compute() entry point: (epubPath, extractDir) → parsed metadata.
 Future<EpubMetadata> _parseEpubForImport((String, String) args) =>
     EpubParser.parseEpub(args.$1, args.$2);
+
+/// compute() entry point: (cacheDir, outPath) → written page count.
+Future<int> _writeCbzForExport((String, String) args) =>
+    writeCbz(args.$1, args.$2);
 
 /// Repository for book CRUD operations and EPUB import.
 class BookRepository {
@@ -292,7 +298,7 @@ class BookRepository {
         ocrCompleted: false,
         pages: pages,
       );
-      final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+      final cacheFile = File(p.join(cacheDir.path, mangaPagesCacheFileName));
       await writeStringAtomic(cacheFile, jsonEncode(mokuroBook.toJson()));
 
       debugPrint(
@@ -316,6 +322,90 @@ class BookRepository {
 
       return (await getBookById(bookId))!;
     });
+  }
+
+  /// Convert an imported image-only (fixed-layout) EPUB into a manga book,
+  /// in place on the same Books row.
+  Future<Book> convertEpubToManga(Book book) async {
+    if (book.bookType != 'epub') {
+      throw ArgumentError('Only EPUB books can be converted, got $book');
+    }
+    final contentDir = book.filePath;
+    if (!await Directory(contentDir).exists()) {
+      throw FileSystemException(
+        'EPUB content is missing — re-import the book',
+        contentDir,
+      );
+    }
+    final bookDir = p.dirname(contentDir);
+
+    // Spine scanning and the image moves touch every page file — keep them
+    // off the UI isolate. Throws EpubNotMangaException for non-manga EPUBs.
+    final pages = await compute(applyEpubMangaConversion, (
+      contentDir,
+      bookDir,
+    ));
+
+    final imageDirPath = p.join(bookDir, 'images');
+    final mokuroBook = MokuroBook(
+      title: book.title,
+      imageDirPath: imageDirPath,
+      ocrCompleted: false,
+      pages: pages,
+    );
+    await writeStringAtomic(
+      File(p.join(bookDir, mangaPagesCacheFileName)),
+      jsonEncode(mokuroBook.toJson()),
+    );
+
+    // Only after the manga payload is fully on disk does the row flip; the
+    // stale epub reading position is meaningless for a page-based book.
+    await (_db.update(_db.books)..where((t) => t.id.equals(book.id))).write(
+      BooksCompanion(
+        bookType: const Value('manga'),
+        filePath: Value(bookDir),
+        coverImagePath: Value(p.join(imageDirPath, pages.first.imageFileName)),
+        totalPages: Value(pages.length),
+        lastReadCfi: const Value(null),
+        readProgress: const Value(0.0),
+      ),
+    );
+
+    // Best-effort cleanup of the now-unused EPUB payload; a failure here
+    // leaves dead bytes that deleteBook removes later, never a broken book.
+    try {
+      await Directory(contentDir).delete(recursive: true);
+    } catch (_) {}
+    try {
+      await for (final entry in Directory(bookDir).list()) {
+        if (entry is File && p.extension(entry.path).toLowerCase() == '.epub') {
+          await entry.delete();
+        }
+      }
+    } catch (_) {}
+
+    return (await getBookById(book.id))!;
+  }
+
+  /// Build a CBZ of [book]'s pages in a temp file named [fileName].
+  ///
+  /// Returns the temp file path and the number of pages written. The caller
+  /// owns sharing and deleting the file. Throws [EmptyMangaExportException]
+  /// or [SafMangaExportUnsupportedException] for books that cannot export.
+  Future<(String, int)> exportMangaCbz(
+    Book book, {
+    required String fileName,
+  }) async {
+    if (book.bookType != 'manga') {
+      throw ArgumentError('Only manga books can be exported, got $book');
+    }
+    final outPath = p.join((await getTemporaryDirectory()).path, fileName);
+    // The zip streams every page file — keep it off the UI isolate.
+    final pageCount = await compute(_writeCbzForExport, (
+      book.filePath,
+      outPath,
+    ));
+    return (outPath, pageCount);
   }
 
   /// Shared import logic: segment words, save cache, insert into DB.
@@ -348,7 +438,7 @@ class BookRepository {
       // Save pages_cache.json and its original-OCR backup. Encode the
       // multi-MB string once and share the bytes between both writes.
       final cacheBytes = utf8.encode(cacheJson);
-      final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+      final cacheFile = File(p.join(cacheDir.path, mangaPagesCacheFileName));
       await writeBytesAtomic(cacheFile, cacheBytes);
       final originalBackupFile = File(
         p.join(cacheDir.path, originalMokuroOcrBackupFileName),
@@ -365,20 +455,10 @@ class BookRepository {
       // filenames like _01.jpg or 000.jpg may precede numbered pages.
       String? coverImagePath;
       if (manifest.imageFileNames.isNotEmpty) {
-        const imageExtensions = {
-          '.jpg',
-          '.jpeg',
-          '.png',
-          '.gif',
-          '.webp',
-          '.bmp',
-          '.tiff',
-          '.tif',
-        };
         final sorted = [...manifest.imageFileNames]..sort();
         for (final fileName in sorted) {
           final ext = p.extension(fileName).toLowerCase();
-          if (!imageExtensions.contains(ext)) continue;
+          if (!CbzParser.imageExtensions.contains(ext)) continue;
           if (manifest.safTreeUri != null &&
               manifest.safImageDirRelativePath != null) {
             final relPath = p.posix.join(
@@ -507,7 +587,7 @@ class BookRepository {
   Future<void> reprocessMangaOcr(Book book) async {
     if (book.bookType != 'manga') return;
 
-    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
       throw Exception('Pages cache not found. Try re-importing this manga.');
     }
@@ -542,7 +622,7 @@ class BookRepository {
   Future<void> backupOriginalMokuroOcrIfNeeded(Book book) async {
     if (book.bookType != 'manga') return;
 
-    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
       throw Exception('Pages cache not found. Try re-importing this manga.');
     }
@@ -568,7 +648,7 @@ class BookRepository {
   Future<bool> restoreOriginalMokuroOcr(Book book) async {
     if (book.bookType != 'manga') return false;
 
-    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
       throw Exception('Pages cache not found. Try re-importing this manga.');
     }
@@ -596,7 +676,7 @@ class BookRepository {
   Future<void> clearMangaOcr(Book book) async {
     if (book.bookType != 'manga') return;
 
-    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
       throw Exception('Pages cache not found. Try re-importing this manga.');
     }
@@ -630,7 +710,7 @@ class BookRepository {
   }) async {
     if (book.bookType != 'manga') return false;
 
-    final cacheFile = File(p.join(book.filePath, 'pages_cache.json'));
+    final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
     if (!await cacheFile.exists()) {
       throw Exception('Pages cache not found. Try re-importing this manga.');
     }

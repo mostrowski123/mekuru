@@ -147,7 +147,7 @@ class EpubParser {
     }
 
     // 1. Parse META-INF/container.xml to find the OPF file path
-    final opfPath = await _findOpfPath(extractDir);
+    final opfPath = await findOpfPath(extractDir);
     if (opfPath == null) {
       return EpubMetadata(
         title: _fallbackTitleFor(epubPath),
@@ -253,7 +253,7 @@ class EpubParser {
   }
 
   /// Find the OPF file path from META-INF/container.xml.
-  static Future<String?> _findOpfPath(String extractDir) async {
+  static Future<String?> findOpfPath(String extractDir) async {
     final containerPath = p.join(extractDir, 'META-INF', 'container.xml');
     final containerFile = File(containerPath);
     if (!await containerFile.exists()) return null;
