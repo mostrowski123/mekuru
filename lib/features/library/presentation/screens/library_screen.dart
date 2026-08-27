@@ -19,7 +19,9 @@ import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/book_cover_image.dart';
 import 'package:mekuru/features/library/presentation/widgets/collection_widgets.dart';
+import 'package:mekuru/features/library/presentation/widgets/epub_manga_convert_action.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
+import 'package:mekuru/features/library/presentation/widgets/manga_cbz_export_action.dart';
 import 'package:mekuru/features/library/presentation/widgets/continue_reading_card.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
@@ -1340,6 +1342,16 @@ class _BookTileState extends ConsumerState<_BookTile>
                     runFuriganaExport(context, ref, book);
                   },
                 ),
+                ListTile(
+                  leading: const Icon(Icons.auto_stories_outlined),
+                  title: Text(context.l10n.libraryConvertToMangaTitle),
+                  subtitle: Text(context.l10n.libraryConvertToMangaSubtitle),
+                  onTap: () {
+                    AppHaptics.light();
+                    Navigator.of(sheetContext).pop();
+                    runEpubMangaConversion(context, ref, book);
+                  },
+                ),
               ],
               // Manga-only features
               if (book.bookType == 'manga') ...[
@@ -1478,6 +1490,16 @@ class _BookTileState extends ConsumerState<_BookTile>
                           ),
                       ],
                     );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.folder_zip_outlined),
+                  title: Text(context.l10n.libraryExportCbzTitle),
+                  subtitle: Text(context.l10n.libraryExportCbzSubtitle),
+                  onTap: () {
+                    AppHaptics.light();
+                    Navigator.of(sheetContext).pop();
+                    runMangaCbzExport(context, ref, book);
                   },
                 ),
               ],

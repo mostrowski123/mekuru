@@ -1914,6 +1914,62 @@
   "@libraryExportFuriganaUnavailable": {
     "description": "Snackbar shown when the export cannot generate furigana because the Japanese analyzer failed to start."
   },
+  "libraryConvertToMangaTitle": "Convert to manga",
+  "@libraryConvertToMangaTitle": {
+    "description": "Book menu action that converts an image-only EPUB into a manga book."
+  },
+  "libraryConvertToMangaSubtitle": "For manga EPUBs where every page is an image",
+  "@libraryConvertToMangaSubtitle": {
+    "description": "Subtitle under the convert-to-manga book menu action."
+  },
+  "libraryConvertToMangaConfirmTitle": "Convert to manga?",
+  "@libraryConvertToMangaConfirmTitle": {
+    "description": "Title of the dialog confirming the EPUB-to-manga conversion."
+  },
+  "libraryConvertToMangaConfirmBody": "The book opens in the manga reader afterwards, so OCR and tap lookup can work on its pages. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.",
+  "@libraryConvertToMangaConfirmBody": {
+    "description": "Body of the dialog confirming the EPUB-to-manga conversion."
+  },
+  "libraryConvertToMangaAction": "Convert",
+  "@libraryConvertToMangaAction": {
+    "description": "Confirm button of the convert-to-manga dialog."
+  },
+  "libraryConvertToMangaProgress": "Converting…",
+  "@libraryConvertToMangaProgress": {
+    "description": "Progress dialog text while the EPUB is converted to a manga book."
+  },
+  "libraryConvertToMangaDone": "Converted to manga",
+  "@libraryConvertToMangaDone": {
+    "description": "Snackbar shown after a successful EPUB-to-manga conversion."
+  },
+  "libraryConvertToMangaNotEligible": "This EPUB doesn't look like a manga — its pages aren't single images",
+  "@libraryConvertToMangaNotEligible": {
+    "description": "Snackbar shown when the EPUB has text pages and cannot be converted to a manga book."
+  },
+  "libraryExportCbzTitle": "Export as CBZ",
+  "@libraryExportCbzTitle": {
+    "description": "Book menu action that exports a manga book's pages as a CBZ archive."
+  },
+  "libraryExportCbzSubtitle": "Share the page images as a comic archive",
+  "@libraryExportCbzSubtitle": {
+    "description": "Subtitle under the export-as-CBZ book menu action."
+  },
+  "libraryExportCbzProgress": "Preparing CBZ…",
+  "@libraryExportCbzProgress": {
+    "description": "Progress dialog text while the CBZ archive is being generated."
+  },
+  "libraryExportCbzDone": "CBZ exported",
+  "@libraryExportCbzDone": {
+    "description": "Snackbar shown after the CBZ was shared successfully."
+  },
+  "libraryExportCbzEmpty": "No pages to export",
+  "@libraryExportCbzEmpty": {
+    "description": "Snackbar shown when a manga book has no page images on disk to export."
+  },
+  "libraryExportCbzSafUnsupported": "This book's images are stored outside the app, so it can't be exported",
+  "@libraryExportCbzSafUnsupported": {
+    "description": "Snackbar shown when a manga book's images live in a SAF folder and cannot be exported."
+  },
   "libraryFolderEmpty": "No books here yet. Long-press a book in your library and choose \"Add to collection\".",
   "@libraryFolderEmpty": {
     "description": "Placeholder shown inside an empty collection folder."

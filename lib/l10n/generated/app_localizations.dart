@@ -2596,6 +2596,90 @@ abstract class AppLocalizations {
   /// **'Furigana engine is unavailable — try again in a moment'**
   String get libraryExportFuriganaUnavailable;
 
+  /// Book menu action that converts an image-only EPUB into a manga book.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to manga'**
+  String get libraryConvertToMangaTitle;
+
+  /// Subtitle under the convert-to-manga book menu action.
+  ///
+  /// In en, this message translates to:
+  /// **'For manga EPUBs where every page is an image'**
+  String get libraryConvertToMangaSubtitle;
+
+  /// Title of the dialog confirming the EPUB-to-manga conversion.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to manga?'**
+  String get libraryConvertToMangaConfirmTitle;
+
+  /// Body of the dialog confirming the EPUB-to-manga conversion.
+  ///
+  /// In en, this message translates to:
+  /// **'The book opens in the manga reader afterwards, so OCR and tap lookup can work on its pages. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.'**
+  String get libraryConvertToMangaConfirmBody;
+
+  /// Confirm button of the convert-to-manga dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert'**
+  String get libraryConvertToMangaAction;
+
+  /// Progress dialog text while the EPUB is converted to a manga book.
+  ///
+  /// In en, this message translates to:
+  /// **'Converting…'**
+  String get libraryConvertToMangaProgress;
+
+  /// Snackbar shown after a successful EPUB-to-manga conversion.
+  ///
+  /// In en, this message translates to:
+  /// **'Converted to manga'**
+  String get libraryConvertToMangaDone;
+
+  /// Snackbar shown when the EPUB has text pages and cannot be converted to a manga book.
+  ///
+  /// In en, this message translates to:
+  /// **'This EPUB doesn\'t look like a manga — its pages aren\'t single images'**
+  String get libraryConvertToMangaNotEligible;
+
+  /// Book menu action that exports a manga book's pages as a CBZ archive.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as CBZ'**
+  String get libraryExportCbzTitle;
+
+  /// Subtitle under the export-as-CBZ book menu action.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the page images as a comic archive'**
+  String get libraryExportCbzSubtitle;
+
+  /// Progress dialog text while the CBZ archive is being generated.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing CBZ…'**
+  String get libraryExportCbzProgress;
+
+  /// Snackbar shown after the CBZ was shared successfully.
+  ///
+  /// In en, this message translates to:
+  /// **'CBZ exported'**
+  String get libraryExportCbzDone;
+
+  /// Snackbar shown when a manga book has no page images on disk to export.
+  ///
+  /// In en, this message translates to:
+  /// **'No pages to export'**
+  String get libraryExportCbzEmpty;
+
+  /// Snackbar shown when a manga book's images live in a SAF folder and cannot be exported.
+  ///
+  /// In en, this message translates to:
+  /// **'This book\'s images are stored outside the app, so it can\'t be exported'**
+  String get libraryExportCbzSafUnsupported;
+
   /// Placeholder shown inside an empty collection folder.
   ///
   /// In en, this message translates to:

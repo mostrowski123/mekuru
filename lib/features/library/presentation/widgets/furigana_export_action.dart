@@ -13,6 +13,7 @@ import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_setting_segments.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/blocking_progress_dialog.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Coverage dialog → progress dialog → off-isolate rebuild → SAF save-as.
@@ -33,24 +34,7 @@ Future<void> runFuriganaExport(
   if (choice == null || !context.mounted) return;
   final (exportMode, exportLevel) = choice;
 
-  // Non-dismissible spinner while the worker isolate rebuilds the book.
-  // Progress is indeterminate: Isolate.run has no channel to stream through.
-  showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => PopScope(
-      canPop: false,
-      child: AlertDialog(
-        content: Row(
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(width: 20),
-            Expanded(child: Text(l10n.libraryExportFuriganaProgress)),
-          ],
-        ),
-      ),
-    ),
-  );
+  showBlockingProgressDialog(context, l10n.libraryExportFuriganaProgress);
 
   final exportAttrs = <String, Object>{
     'mode': exportMode.name,
@@ -181,11 +165,15 @@ Future<(FuriganaMode, int)?> _showCoverageDialog(
   );
 }
 
-/// Suggested save-dialog name: the title with filesystem-hostile characters
-/// replaced, truncated to a sane length.
-String exportFileName(String title) {
+/// A book title with filesystem-hostile characters replaced, truncated to a
+/// sane length — the base name for any exported file.
+String sanitizedExportBaseName(String title) {
   var sanitized = title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
   if (sanitized.length > 80) sanitized = sanitized.substring(0, 80).trim();
   if (sanitized.isEmpty) sanitized = 'book';
-  return '$sanitized (furigana).epub';
+  return sanitized;
 }
+
+/// Suggested save-dialog name for the furigana EPUB export.
+String exportFileName(String title) =>
+    '${sanitizedExportBaseName(title)} (furigana).epub';
