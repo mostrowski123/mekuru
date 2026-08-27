@@ -49,4 +49,49 @@ void main() {
       expect(result.$2.first.imageFileName, '0001.jpg');
     },
   );
+
+  test('background-image URLs with malformed percent-escapes fall back to the '
+      'raw name instead of failing extraction', () async {
+    final root = await Directory.systemTemp.createTemp('mokuro_parser_test_');
+    addTearDown(() async {
+      if (await root.exists()) {
+        await root.delete(recursive: true);
+      }
+    });
+
+    final parentDir = Directory(p.join(root.path, 'library'));
+    await Directory(p.join(parentDir.path, 'BookName')).create(recursive: true);
+    await Directory(
+      p.join(parentDir.path, '_ocr', 'BookName'),
+    ).create(recursive: true);
+
+    final htmlPath = p.join(root.path, 'BookName.html');
+    await File(htmlPath).writeAsString('''
+<html>
+  <head><title>Book Name | mokuro</title></head>
+  <body>
+    <div style="background-image:url(&quot;BookName/0001.jpg&quot;)"></div>
+    <div style="background-image:url(&quot;BookName/100%.jpg&quot;)"></div>
+    <div style="background-image:url(&quot;BookName/%FF.jpg&quot;)"></div>
+    <div style="background-image:url(&quot;BookName/0004.jpg&quot;)"></div>
+  </body>
+</html>
+''');
+
+    final result = await MokuroParser.parseSingleHtmlFile(
+      htmlPath,
+      originalDirPath: parentDir.path,
+      safSelectedFileRelativePath: 'BookName.html',
+    );
+
+    // '100%.jpg' throws ArgumentError from Uri.decodeFull, '%FF.jpg'
+    // throws FormatException; both must keep their raw names and must
+    // not take the surrounding pages down with them.
+    expect(result.$1.imageFileNames, [
+      '0001.jpg',
+      '100%.jpg',
+      '%FF.jpg',
+      '0004.jpg',
+    ]);
+  });
 }

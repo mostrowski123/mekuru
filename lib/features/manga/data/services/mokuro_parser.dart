@@ -642,8 +642,18 @@ class MokuroParser {
       final imageFiles = <String>[];
       for (final match in regex.allMatches(content)) {
         final fullPath = match.group(1)!;
-        // URL-decode the path and take just the filename
-        final decoded = Uri.decodeFull(fullPath);
+        // URL-decode the path and take just the filename. A malformed
+        // escape (stray '%' or non-UTF-8 bytes) means the HTML carries the
+        // literal on-disk name, so fall back to the raw text rather than
+        // dropping the page.
+        String decoded;
+        try {
+          decoded = Uri.decodeFull(fullPath);
+        } on ArgumentError {
+          decoded = fullPath;
+        } on FormatException {
+          decoded = fullPath;
+        }
         final fileName = p.basename(decoded);
         imageFiles.add(fileName);
       }
