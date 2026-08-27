@@ -65,6 +65,25 @@ const _contentDocExtensions = {'.xhtml', '.html', '.htm'};
 bool _declaresVerticalWritingMode(List<int> bytes) =>
     _verticalWritingModeCss.hasMatch(utf8.decode(bytes, allowMalformed: true));
 
+/// Resolves an EPUB-internal href [ref] against [baseDir] (both root-relative
+/// POSIX paths inside the EPUB), returning null for refs that are unusable —
+/// empty, scheme'd (http:, data:), or carrying malformed percent-escapes —
+/// or that escape the EPUB root.
+String? resolveEpubHref(String baseDir, String ref) {
+  final bare = ref.split('#').first.split('?').first;
+  if (bare.isEmpty || bare.startsWith('data:')) return null;
+  if (Uri.tryParse(bare)?.hasScheme ?? false) return null;
+  final String decoded;
+  try {
+    decoded = Uri.decodeFull(bare);
+  } on ArgumentError {
+    return null;
+  }
+  final resolved = p.posix.normalize(p.posix.join(baseDir, decoded));
+  if (resolved.startsWith('..')) return null;
+  return resolved;
+}
+
 /// Parses EPUB files to extract metadata and cover images.
 class EpubParser {
   /// Title used when the EPUB metadata has no usable title: the file's own

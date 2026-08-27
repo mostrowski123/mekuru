@@ -53,7 +53,11 @@ const _contentOpf =
 
 final _imageBytes = Uint8List.fromList(List.generate(64, (i) => i * 3 % 251));
 
-Uint8List buildTestEpub(String chapterXhtml, {bool withMimetype = true}) {
+Uint8List buildTestEpub(
+  String chapterXhtml, {
+  bool withMimetype = true,
+  String opf = _contentOpf,
+}) {
   final archive = Archive();
   if (withMimetype) {
     archive.addFile(
@@ -67,9 +71,7 @@ Uint8List buildTestEpub(String chapterXhtml, {bool withMimetype = true}) {
   archive.addFile(
     ArchiveFile.bytes('META-INF/container.xml', utf8.encode(_containerXml)),
   );
-  archive.addFile(
-    ArchiveFile.bytes('OEBPS/content.opf', utf8.encode(_contentOpf)),
-  );
+  archive.addFile(ArchiveFile.bytes('OEBPS/content.opf', utf8.encode(opf)));
   archive.addFile(
     ArchiveFile.bytes('OEBPS/chapter1.xhtml', utf8.encode(chapterXhtml)),
   );
@@ -103,6 +105,13 @@ void main() {
     await file.writeAsBytes(bytes);
     return file.path;
   }
+
+  String chapterOf(Uint8List out) => utf8.decode(
+    ZipDecoder()
+        .decodeBytes(out)
+        .findFile('OEBPS/chapter1.xhtml')!
+        .readBytes()!,
+  );
 
   group('exportFileName', () {
     test('sanitizes hostile characters and appends the suffix', () {
@@ -249,12 +258,7 @@ void main() {
 
       final out = await buildFuriganaEpub(path, mode: FuriganaMode.hide);
 
-      final chapterOut = utf8.decode(
-        ZipDecoder()
-            .decodeBytes(out!)
-            .findFile('OEBPS/chapter1.xhtml')!
-            .readBytes()!,
-      );
+      final chapterOut = chapterOf(out!);
       expect(chapterOut, isNot(contains('<rt>')));
       expect(chapterOut, contains('既存と今日'));
     });
@@ -285,12 +289,7 @@ void main() {
         stripRubyWhere: authoredRubyStripFor(FuriganaMode.aboveLevel, level),
       );
 
-      final chapterOut = utf8.decode(
-        ZipDecoder()
-            .decodeBytes(out!)
-            .findFile('OEBPS/chapter1.xhtml')!
-            .readBytes()!,
-      );
+      final chapterOut = chapterOf(out!);
       // N5 authored ruby unwrapped and not re-annotated.
       expect(chapterOut, isNot(contains('<rt>きょう</rt>')));
       expect(chapterOut, contains('今日の'));
@@ -336,6 +335,28 @@ void main() {
     });
 
     test(
+      'malformed percent-escape manifest href is skipped, not fatal',
+      () async {
+        final opf = _contentOpf.replaceFirst(
+          '<manifest>',
+          '<manifest><item id="bad" href="bad%zzz.xhtml" '
+              'media-type="application/xhtml+xml"/>',
+        );
+        final path = await writeEpub(
+          buildTestEpub(
+            chapter('<p><ruby>既存<rt>きそん</rt></ruby></p>'),
+            opf: opf,
+          ),
+        );
+
+        final out = await buildFuriganaEpub(path, mode: FuriganaMode.hide);
+
+        // The good sibling must still be recognized and rewritten.
+        expect(chapterOf(out!), isNot(contains('<rt>')));
+      },
+    );
+
+    test(
       'malformed chapter is copied unmodified and export continues',
       () async {
         final path = await writeEpub(buildTestEpub('<p>今日<broken'));
@@ -352,13 +373,7 @@ void main() {
         );
 
         expect(out, isNotNull);
-        final chapterOut = utf8.decode(
-          ZipDecoder()
-              .decodeBytes(out!)
-              .findFile('OEBPS/chapter1.xhtml')!
-              .readBytes()!,
-        );
-        expect(chapterOut, '<p>今日<broken');
+        expect(chapterOf(out!), '<p>今日<broken');
       },
     );
   });

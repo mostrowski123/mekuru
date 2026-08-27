@@ -55,7 +55,7 @@ Future<List<String>?> _planConversion(String contentDir) async {
   for (final itemref in itemrefs) {
     final href = manifestHrefById[itemref.getAttribute('idref')];
     if (href == null) continue;
-    final docPath = _resolveRelative(opfDir, href);
+    final docPath = resolveEpubHref(opfDir, href);
     if (docPath == null) continue;
 
     final image = await _singleImageOf(contentDir, docPath);
@@ -69,23 +69,6 @@ Future<List<String>?> _planConversion(String contentDir) async {
   final eligible =
       sourceImagePaths.length >= 3 && imageDocCount / itemrefs.length >= 0.9;
   return eligible ? sourceImagePaths : null;
-}
-
-/// Resolves [ref] against [baseDir] (both root-relative POSIX paths inside
-/// the EPUB), returning null for refs that are unusable or escape the root.
-String? _resolveRelative(String baseDir, String ref) {
-  final bare = ref.split('#').first.split('?').first;
-  if (bare.isEmpty || bare.startsWith('data:')) return null;
-  if (Uri.tryParse(bare)?.hasScheme ?? false) return null;
-  final String decoded;
-  try {
-    decoded = Uri.decodeFull(bare);
-  } on ArgumentError {
-    return null;
-  }
-  final resolved = p.posix.normalize(p.posix.join(baseDir, decoded));
-  if (resolved.startsWith('..')) return null;
-  return resolved;
 }
 
 /// Returns the root-relative path of the single page image referenced by the
@@ -113,7 +96,7 @@ Future<String?> _singleImageOf(String contentDir, String docPath) async {
 
   final resolved = <String>{};
   for (final ref in refs) {
-    final rel = _resolveRelative(docDir, ref);
+    final rel = resolveEpubHref(docDir, ref);
     if (rel == null) continue;
     if (!CbzParser.imageExtensions.contains(p.extension(rel).toLowerCase())) {
       continue;

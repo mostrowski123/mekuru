@@ -229,7 +229,8 @@ Set<String> _contentDocumentNames(Archive archive) {
     if (item.getAttribute('media-type') != 'application/xhtml+xml') continue;
     final href = item.getAttribute('href');
     if (href == null) continue;
-    names.add(p.posix.normalize(p.posix.join(opfDir, Uri.decodeFull(href))));
+    final name = resolveEpubHref(opfDir, href);
+    if (name != null) names.add(name);
   }
   return names;
 }
