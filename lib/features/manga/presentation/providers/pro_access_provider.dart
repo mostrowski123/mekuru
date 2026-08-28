@@ -22,6 +22,9 @@ class ProUnlockedNotifier extends AsyncNotifier<bool> {
     if (!await billingClient.isRefreshDue()) {
       return;
     }
+    if (!ref.mounted) {
+      return;
+    }
     await _refresh(forceRefresh: false);
   }
 
@@ -37,6 +40,9 @@ class ProUnlockedNotifier extends AsyncNotifier<bool> {
       final status = await billingClient.refreshStatusIfAuthenticated(
         forceRefresh: forceRefresh,
       );
+      if (!ref.mounted) {
+        return;
+      }
       if (status == null) {
         state = AsyncData(currentValue);
         return;
@@ -44,6 +50,9 @@ class ProUnlockedNotifier extends AsyncNotifier<bool> {
       // Already composed with the play entitlement by the billing client.
       state = AsyncData(status.ocrUnlocked);
     } catch (_) {
+      if (!ref.mounted) {
+        return;
+      }
       state = AsyncData(currentValue);
     }
   }
