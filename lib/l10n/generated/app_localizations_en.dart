@@ -1492,7 +1492,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryConvertToMangaConfirmBody =>
-      'The book opens in the manga reader afterwards, so OCR and tap lookup can work on its pages. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.';
+      'The book opens in the manga reader afterwards, but tap lookup won\'t work until its pages have OCR — run OCR from the book menu with Mekuru Pro\'s hosted server, or export the book as CBZ and process it with mokuro. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.';
 
   @override
   String get libraryConvertToMangaAction => 'Convert';
