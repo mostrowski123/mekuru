@@ -163,7 +163,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              _showIntervalPicker(context, ref);
+              _showIntervalPicker(context);
             },
           ),
           const Divider(),
@@ -221,7 +221,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                             ? null
                             : () {
                                 AppHaptics.light();
-                                _confirmDelete(context, ref, info);
+                                _confirmDelete(context, info);
                               },
                       ),
                     )
@@ -392,6 +392,8 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     required String fileName,
   }) {
     final l10n = context.l10n;
+    // Resolved before the dialog opens: the screen can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     var queueDictionaryPreferences = true;
 
     showDialog(
@@ -426,7 +428,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             FilledButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
-                ref
+                container
                     .read(restoreNotifierProvider.notifier)
                     .restoreFromPath(
                       filePath,
@@ -441,12 +443,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     );
   }
 
-  void _confirmDelete(
-    BuildContext context,
-    WidgetRef ref,
-    BackupFileInfo info,
-  ) {
+  void _confirmDelete(BuildContext context, BackupFileInfo info) {
     final l10n = context.l10n;
+    // Resolved before the dialog opens: the screen can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
 
     showDialog(
       context: context,
@@ -460,14 +460,14 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () async {
               Navigator.of(ctx).pop();
-              await ref
+              await container
                   .read(backupFileManagerProvider)
                   .deleteBackupFile(info.filePath);
-              ref.invalidate(backupHistoryProvider);
+              container.invalidate(backupHistoryProvider);
             },
             child: Text(l10n.commonDelete),
           ),
@@ -476,8 +476,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     );
   }
 
-  void _showIntervalPicker(BuildContext context, WidgetRef ref) {
+  void _showIntervalPicker(BuildContext context) {
     final l10n = context.l10n;
+    // Resolved before the dialog opens: the screen can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
 
     showDialog(
       context: context,
@@ -487,8 +489,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
           return SimpleDialogOption(
             onPressed: () async {
               Navigator.of(ctx).pop();
-              await ref.read(backupSchedulerProvider).setInterval(interval);
-              ref.invalidate(autoBackupIntervalProvider);
+              await container
+                  .read(backupSchedulerProvider)
+                  .setInterval(interval);
+              container.invalidate(autoBackupIntervalProvider);
             },
             child: Text(_backupIntervalLabel(l10n, interval)),
           );

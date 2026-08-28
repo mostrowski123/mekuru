@@ -71,12 +71,18 @@ class CollectionAssignSheet extends ConsumerWidget {
                   title: Text(context.l10n.libraryNewCollectionAction),
                   onTap: () async {
                     AppHaptics.light();
+                    // Resolved before the prompt: the sheet can unmount
+                    // while it's up.
+                    final container = ProviderScope.containerOf(
+                      context,
+                      listen: false,
+                    );
                     final name = await _promptName(
                       context,
                       title: context.l10n.libraryNewCollectionAction,
                     );
                     if (name == null || name.isEmpty) return;
-                    final repo = ref.read(collectionRepositoryProvider);
+                    final repo = container.read(collectionRepositoryProvider);
                     final id = await repo.createCollection(name);
                     // The new collection also gets this book — that is what
                     // the user came here to do.
@@ -156,12 +162,18 @@ class _CollectionPickSheetState extends ConsumerState<CollectionPickSheet> {
                   title: Text(context.l10n.libraryNewCollectionAction),
                   onTap: () async {
                     AppHaptics.light();
+                    // Resolved before the prompt: the sheet can unmount
+                    // while it's up.
+                    final container = ProviderScope.containerOf(
+                      context,
+                      listen: false,
+                    );
                     final name = await _promptName(
                       context,
                       title: context.l10n.libraryNewCollectionAction,
                     );
                     if (name == null || name.isEmpty) return;
-                    final id = await ref
+                    final id = await container
                         .read(collectionRepositoryProvider)
                         .createCollection(name);
                     if (mounted) setState(() => _chosen.add(id));
@@ -254,7 +266,7 @@ class CollectionManageSheet extends ConsumerWidget {
             title: Text(context.l10n.commonRename),
             onTap: () {
               AppHaptics.light();
-              _rename(context, ref);
+              _rename(context);
             },
           ),
           ListTile(
@@ -265,7 +277,7 @@ class CollectionManageSheet extends ConsumerWidget {
             ),
             onTap: () {
               AppHaptics.light();
-              _confirmDelete(context, ref);
+              _confirmDelete(context);
             },
           ),
         ],
@@ -273,7 +285,9 @@ class CollectionManageSheet extends ConsumerWidget {
     );
   }
 
-  Future<void> _rename(BuildContext context, WidgetRef ref) async {
+  Future<void> _rename(BuildContext context) async {
+    // Resolved before the prompt: the sheet can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     final name = await _promptName(
       context,
       title: context.l10n.libraryRenameCollectionTitle,
@@ -281,38 +295,38 @@ class CollectionManageSheet extends ConsumerWidget {
     );
     if (name == null) return; // Cancelled: keep the sheet open.
     if (name.isNotEmpty && name != collection.name) {
-      await ref
+      await container
           .read(collectionRepositoryProvider)
           .renameCollection(collection.id, name);
     }
     if (context.mounted) Navigator.of(context).maybePop();
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
+  void _confirmDelete(BuildContext context) {
+    // Resolved before the dialog opens: the sheet can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.libraryDeleteCollectionConfirmTitle),
+        title: Text(ctx.l10n.libraryDeleteCollectionConfirmTitle),
         content: Text(
-          context.l10n.libraryDeleteCollectionConfirmBody(
-            name: collection.name,
-          ),
+          ctx.l10n.libraryDeleteCollectionConfirmBody(name: collection.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(context.l10n.commonCancel),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
-              ref
+              container
                   .read(collectionRepositoryProvider)
                   .deleteCollection(collection.id);
               Navigator.of(ctx).pop();
-              Navigator.of(context).maybePop();
+              if (context.mounted) Navigator.of(context).maybePop();
             },
             child: Text(
-              context.l10n.commonDelete,
+              ctx.l10n.commonDelete,
               style: const TextStyle(color: Colors.red),
             ),
           ),

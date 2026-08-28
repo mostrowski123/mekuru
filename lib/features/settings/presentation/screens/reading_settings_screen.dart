@@ -254,9 +254,11 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
   }
 
   Future<void> _showOcrServerUrlDialog() async {
+    // Resolved before the awaits: the screen can unmount while they run.
+    final container = ProviderScope.containerOf(context, listen: false);
     final savedCustomBearerKey =
         await _ocrAuthSecretStorage.loadCustomServerBearerKey() ?? '';
-    final currentUrl = ref.read(ocrServerUrlProvider);
+    final currentUrl = container.read(ocrServerUrlProvider);
     final initialUrl = isUnsetOrBuiltInOcrServerUrl(currentUrl)
         ? ''
         : currentUrl;
@@ -273,7 +275,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
 
     if (result != null) {
       await _ocrAuthSecretStorage.saveCustomServerBearerKey(result.bearerKey!);
-      ref.read(ocrServerUrlProvider.notifier).setUrl(result.url);
+      container.read(ocrServerUrlProvider.notifier).setUrl(result.url);
     }
   }
 }

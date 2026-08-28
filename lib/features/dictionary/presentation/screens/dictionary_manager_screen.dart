@@ -384,7 +384,9 @@ class _DictionaryManagerScreenState
   }
 
   Future<void> _applyPendingRestore() async {
-    if (_isApplyingPendingRestore) return;
+    if (!mounted || _isApplyingPendingRestore) return;
+    // Resolved while still mounted: the screen can unmount during the awaits.
+    final container = ProviderScope.containerOf(context, listen: false);
 
     setState(() {
       _isApplyingPendingRestore = true;
@@ -392,11 +394,11 @@ class _DictionaryManagerScreenState
     });
 
     try {
-      final result = await ref
+      final result = await container
           .read(pendingDictionaryRestoreServiceProvider)
-          .applyPendingRestore(ref.read(dictionaryRepositoryProvider));
+          .applyPendingRestore(container.read(dictionaryRepositoryProvider));
 
-      ref.invalidate(pendingDictionaryRestorePreviewProvider);
+      container.invalidate(pendingDictionaryRestorePreviewProvider);
 
       if (!mounted) return;
 

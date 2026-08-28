@@ -1269,6 +1269,8 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   void _showBookOptions(BuildContext context, WidgetRef ref) {
+    // Resolved before the sheet opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     final ocrSummaryFuture = book.bookType == 'manga'
         ? _loadMangaOcrSummary()
         : null;
@@ -1454,23 +1456,23 @@ class _BookTileState extends ConsumerState<_BookTile>
                               : () {
                                   Navigator.of(sheetContext).pop();
                                   if (isRunning) {
-                                    _pauseOcr(context, ref);
+                                    _pauseOcr(context, container);
                                     return;
                                   }
                                   if (isMokuroComplete) {
-                                    _replaceOcrForMokuro(context, ref);
+                                    _replaceOcrForMokuro(context, container);
                                     return;
                                   }
                                   if (hasCompleteOcr) {
                                     _removeOcr(
                                       context,
-                                      ref,
+                                      container,
                                       restoreOriginalMokuro:
                                           summary.canRestoreOriginalMokuroOcr,
                                     );
                                     return;
                                   }
-                                  _startOcr(context, ref);
+                                  _startOcr(context, container);
                                 },
                         ),
                         if (showDeleteOcrOption)
@@ -1482,7 +1484,7 @@ class _BookTileState extends ConsumerState<_BookTile>
                               Navigator.of(sheetContext).pop();
                               _removeOcr(
                                 context,
-                                ref,
+                                container,
                                 restoreOriginalMokuro:
                                     summary.canRestoreOriginalMokuroOcr,
                               );
@@ -1654,7 +1656,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     await openProUpgrade(context, ref);
   }
 
-  void _startOcr(BuildContext context, WidgetRef ref) async {
+  void _startOcr(BuildContext context, ProviderContainer container) async {
     final cacheFilePath = p.join(book.filePath, 'pages_cache.json');
     final cacheFile = File(cacheFilePath);
 
@@ -1707,25 +1709,25 @@ class _BookTileState extends ConsumerState<_BookTile>
       builder: (ctx) => AlertDialog(
         title: Text(
           isWordOnlyPass
-              ? context.l10n.ocrBuildWordOverlaysTitle
-              : context.l10n.ocrRunActionTitle,
+              ? ctx.l10n.ocrBuildWordOverlaysTitle
+              : ctx.l10n.ocrRunActionTitle,
         ),
         content: Text(
           isWordOnlyPass
-              ? context.l10n.ocrBuildWordOverlaysBody
-              : context.l10n.ocrProcessPagesBody(count: emptyCount),
+              ? ctx.l10n.ocrBuildWordOverlaysBody
+              : ctx.l10n.ocrProcessPagesBody(count: emptyCount),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(context.l10n.commonCancel),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(
               isWordOnlyPass
-                  ? context.l10n.ocrProcessAction
-                  : context.l10n.ocrStartAction,
+                  ? ctx.l10n.ocrProcessAction
+                  : ctx.l10n.ocrStartAction,
             ),
           ),
         ],
@@ -1739,7 +1741,7 @@ class _BookTileState extends ConsumerState<_BookTile>
       try {
         final ready = await OcrPurchaseFlow.instance.ensureProAndCustomOcrReady(
           context,
-          getServerUrl: () => ref.read(ocrServerUrlProvider),
+          getServerUrl: () => container.read(ocrServerUrlProvider),
         );
         if (!ready) return;
       } catch (e) {
@@ -1770,7 +1772,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     }
 
     // Invalidate the progress provider so it starts polling
-    ref.invalidate(ocrProgressProvider(book.id));
+    container.invalidate(ocrProgressProvider(book.id));
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1785,21 +1787,24 @@ class _BookTileState extends ConsumerState<_BookTile>
     }
   }
 
-  void _replaceOcrForMokuro(BuildContext context, WidgetRef ref) async {
+  void _replaceOcrForMokuro(
+    BuildContext context,
+    ProviderContainer container,
+  ) async {
     if (!context.mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.ocrReplaceActionTitle),
-        content: Text(context.l10n.ocrReplaceMokuroBody),
+        title: Text(ctx.l10n.ocrReplaceActionTitle),
+        content: Text(ctx.l10n.ocrReplaceMokuroBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(context.l10n.commonCancel),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(context.l10n.ocrReplaceActionTitle),
+            child: Text(ctx.l10n.ocrReplaceActionTitle),
           ),
         ],
       ),
@@ -1811,7 +1816,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     try {
       final ready = await OcrPurchaseFlow.instance.ensureProAndCustomOcrReady(
         context,
-        getServerUrl: () => ref.read(ocrServerUrlProvider),
+        getServerUrl: () => container.read(ocrServerUrlProvider),
       );
       if (!ready) return;
     } catch (e) {
@@ -1836,7 +1841,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     }
 
     try {
-      await ref
+      await container
           .read(bookRepositoryProvider)
           .backupOriginalMokuroOcrIfNeeded(book);
 
@@ -1861,8 +1866,8 @@ class _BookTileState extends ConsumerState<_BookTile>
         imageDir: imageDirPath,
       );
 
-      ref.invalidate(ocrProgressProvider(book.id));
-      ref.invalidate(mangaPagesProvider(book.id));
+      container.invalidate(ocrProgressProvider(book.id));
+      container.invalidate(mangaPagesProvider(book.id));
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1878,12 +1883,12 @@ class _BookTileState extends ConsumerState<_BookTile>
     }
   }
 
-  void _pauseOcr(BuildContext context, WidgetRef ref) async {
+  void _pauseOcr(BuildContext context, ProviderContainer container) async {
     await cancelOcrTask(book.id);
 
     // Invalidate to pick up the cancelled status
-    ref.invalidate(ocrProgressProvider(book.id));
-    ref.invalidate(mangaPagesProvider(book.id));
+    container.invalidate(ocrProgressProvider(book.id));
+    container.invalidate(mangaPagesProvider(book.id));
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1894,27 +1899,27 @@ class _BookTileState extends ConsumerState<_BookTile>
 
   void _removeOcr(
     BuildContext context,
-    WidgetRef ref, {
+    ProviderContainer container, {
     bool restoreOriginalMokuro = false,
   }) async {
     if (!context.mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(context.l10n.ocrRemoveActionTitle),
+        title: Text(dialogContext.l10n.ocrRemoveActionTitle),
         content: Text(
           restoreOriginalMokuro
-              ? context.l10n.ocrRestoreOriginalMokuroBody
-              : context.l10n.ocrRemoveBody,
+              ? dialogContext.l10n.ocrRestoreOriginalMokuroBody
+              : dialogContext.l10n.ocrRemoveBody,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(context.l10n.commonCancel),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(context.l10n.ocrRemoveActionTitle),
+            child: Text(dialogContext.l10n.ocrRemoveActionTitle),
           ),
         ],
       ),
@@ -1923,15 +1928,15 @@ class _BookTileState extends ConsumerState<_BookTile>
 
     try {
       await clearOcrTaskState(book.id);
-      final repo = ref.read(bookRepositoryProvider);
+      final repo = container.read(bookRepositoryProvider);
       final restored = restoreOriginalMokuro
           ? await repo.restoreOriginalMokuroOcr(book)
           : false;
       if (!restored) {
         await repo.clearMangaOcr(book);
       }
-      ref.invalidate(mangaPagesProvider(book.id));
-      ref.invalidate(ocrProgressProvider(book.id));
+      container.invalidate(mangaPagesProvider(book.id));
+      container.invalidate(ocrProgressProvider(book.id));
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2411,34 +2416,35 @@ class _CollectionFolderScreenState
   }
 
   Future<void> _removeSelectedFromFolder() async {
+    // Resolved before the dialog opens: the screen can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     if (_selectedIds.length > 1) {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(
-            context.l10n.libraryRemoveFromFolderConfirmTitle(
+            ctx.l10n.libraryRemoveFromFolderConfirmTitle(
               count: _selectedIds.length,
             ),
           ),
-          content: Text(context.l10n.libraryRemoveFromFolderConfirmBody),
+          content: Text(ctx.l10n.libraryRemoveFromFolderConfirmBody),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(context.l10n.commonCancel),
+              child: Text(ctx.l10n.commonCancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(context.l10n.commonRemove),
+              child: Text(ctx.l10n.commonRemove),
             ),
           ],
         ),
       );
       if (confirmed != true) return;
     }
-    await ref.read(collectionRepositoryProvider).removeBooksFromCollection(
-      collectionId,
-      {..._selectedIds},
-    );
+    await container
+        .read(collectionRepositoryProvider)
+        .removeBooksFromCollection(collectionId, {..._selectedIds});
     if (mounted) _exitSelectionMode();
   }
 

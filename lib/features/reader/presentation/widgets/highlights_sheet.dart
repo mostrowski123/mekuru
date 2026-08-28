@@ -67,8 +67,7 @@ class HighlightsSheet extends ConsumerWidget {
                         }
                       },
                       onDelete: () => _deleteHighlight(ref, highlight),
-                      onEditNote: () =>
-                          _editHighlightNote(context, ref, highlight),
+                      onEditNote: () => _editHighlightNote(context, highlight),
                     );
                   },
                 );
@@ -89,11 +88,9 @@ class HighlightsSheet extends ConsumerWidget {
     onRemoveHighlight?.call(highlight.cfiRange);
   }
 
-  void _editHighlightNote(
-    BuildContext context,
-    WidgetRef ref,
-    Highlight highlight,
-  ) {
+  void _editHighlightNote(BuildContext context, Highlight highlight) {
+    // Resolved before the dialog opens: the sheet can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     final controller = TextEditingController(text: highlight.userNote);
     showDialog(
       context: context,
@@ -115,7 +112,7 @@ class HighlightsSheet extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () {
-              ref
+              container
                   .read(highlightRepositoryProvider)
                   .updateHighlightNote(highlight.id, controller.text);
               Navigator.pop(context);

@@ -518,7 +518,7 @@ class _KanjiVgTile extends ConsumerWidget {
           color: Theme.of(context).colorScheme.error,
         ),
         tooltip: context.l10n.downloadsDeleteKanjiDataTooltip,
-        onPressed: () => _confirmDelete(context, ref),
+        onPressed: () => _confirmDelete(context),
       );
     }
 
@@ -531,7 +531,9 @@ class _KanjiVgTile extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
+  void _confirmDelete(BuildContext context) {
+    // Resolved before the dialog opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -545,7 +547,7 @@ class _KanjiVgTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              ref.read(kanjiVgProvider.notifier).delete();
+              container.read(kanjiVgProvider.notifier).delete();
             },
             child: Text(
               ctx.l10n.commonDelete,
@@ -595,7 +597,7 @@ class _JpdbFreqTile extends ConsumerWidget {
           color: Theme.of(context).colorScheme.error,
         ),
         tooltip: context.l10n.downloadsDeleteFrequencyDataTooltip,
-        onPressed: () => _confirmDelete(context, ref),
+        onPressed: () => _confirmDelete(context),
       );
     }
 
@@ -608,7 +610,9 @@ class _JpdbFreqTile extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
+  void _confirmDelete(BuildContext context) {
+    // Resolved before the dialog opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -622,7 +626,7 @@ class _JpdbFreqTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              ref.read(jpdbFreqProvider.notifier).delete();
+              container.read(jpdbFreqProvider.notifier).delete();
             },
             child: Text(
               ctx.l10n.commonDelete,
@@ -672,20 +676,22 @@ class _JmdictTile extends ConsumerWidget {
           color: Theme.of(context).colorScheme.error,
         ),
         tooltip: context.l10n.downloadsDeleteJmdictTooltip,
-        onPressed: () => _confirmDelete(context, ref),
+        onPressed: () => _confirmDelete(context),
       );
     }
 
     return FilledButton.tonal(
       onPressed: () {
         AppHaptics.light();
-        _showVariantPicker(context, ref);
+        _showVariantPicker(context);
       },
       child: Text(context.l10n.commonDownload),
     );
   }
 
-  void _showVariantPicker(BuildContext context, WidgetRef ref) {
+  void _showVariantPicker(BuildContext context) {
+    // Resolved before the sheet opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -707,7 +713,7 @@ class _JmdictTile extends ConsumerWidget {
               onTap: () {
                 Navigator.of(ctx).pop();
                 AppHaptics.light();
-                ref
+                container
                     .read(jmdictProvider.notifier)
                     .download(YomitanDictType.jmdictEnglish);
               },
@@ -719,7 +725,7 @@ class _JmdictTile extends ConsumerWidget {
               onTap: () {
                 Navigator.of(ctx).pop();
                 AppHaptics.light();
-                ref
+                container
                     .read(jmdictProvider.notifier)
                     .download(YomitanDictType.jmdictEnglishWithExamples);
               },
@@ -730,7 +736,9 @@ class _JmdictTile extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
+  void _confirmDelete(BuildContext context) {
+    // Resolved before the dialog opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -744,7 +752,7 @@ class _JmdictTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              ref.read(jmdictProvider.notifier).delete();
+              container.read(jmdictProvider.notifier).delete();
             },
             child: Text(
               ctx.l10n.commonDelete,
@@ -797,7 +805,7 @@ class _KanjidicTile extends ConsumerWidget {
           color: Theme.of(context).colorScheme.error,
         ),
         tooltip: context.l10n.downloadsDeleteKanjidicTooltip,
-        onPressed: () => _confirmDelete(context, ref),
+        onPressed: () => _confirmDelete(context),
       );
     }
 
@@ -810,7 +818,9 @@ class _KanjidicTile extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
+  void _confirmDelete(BuildContext context) {
+    // Resolved before the dialog opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -824,7 +834,7 @@ class _KanjidicTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              ref.read(kanjidicProvider.notifier).delete();
+              container.read(kanjidicProvider.notifier).delete();
             },
             child: Text(
               ctx.l10n.commonDelete,
