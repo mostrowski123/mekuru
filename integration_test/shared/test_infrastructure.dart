@@ -1,10 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/app.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
@@ -279,4 +283,79 @@ Widget buildIntegrationTestApp({
     ],
     child: buildLocalizedTestApp(home: home),
   );
+}
+
+/// Like [buildIntegrationTestApp], but boots the real [MekuruApp] root —
+/// including its startup post-frame hooks — instead of wrapping a single
+/// screen. MekuruApp is its own MaterialApp, so it must not be nested in
+/// [buildLocalizedTestApp].
+Widget buildIntegrationTestRealApp({required AppDatabase db}) {
+  return ProviderScope(
+    overrides: [
+      databaseProvider.overrideWithValue(db),
+      appSettingsStorageProvider.overrideWithValue(
+        InMemoryAppSettingsStorage(),
+      ),
+      readerSettingsStorageProvider.overrideWithValue(
+        InMemoryReaderSettingsStorage(),
+      ),
+      proUnlockedProvider.overrideWithBuild((ref, notifier) => false),
+      autoBackupCheckerProvider.overrideWith((ref) async {}),
+    ],
+    child: const MekuruApp(),
+  );
+}
+
+// ──────────────── Fixture EPUB ────────────────
+
+/// Writes a minimal single-chapter Japanese EPUB into [dir] and returns
+/// its path. Shared by every flow test that needs a real import.
+Future<String> writeFixtureEpub(Directory dir, {required String title}) async {
+  final archive = Archive();
+
+  final containerXml =
+      '<?xml version="1.0" encoding="UTF-8"?>'
+      '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+      '<rootfiles>'
+      '<rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>'
+      '</rootfiles>'
+      '</container>';
+  final containerBytes = utf8.encode(containerXml);
+  archive.addFile(
+    ArchiveFile(
+      'META-INF/container.xml',
+      containerBytes.length,
+      containerBytes,
+    ),
+  );
+
+  final opfXml =
+      '<?xml version="1.0" encoding="UTF-8"?>'
+      '<package xmlns="http://www.idpf.org/2007/opf" version="3.0">'
+      '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+      '<dc:title>$title</dc:title>'
+      '<dc:language>ja</dc:language>'
+      '</metadata>'
+      '<manifest>'
+      '<item id="chapter1" href="chapter1.xhtml" media-type="application/xhtml+xml"/>'
+      '</manifest>'
+      '<spine><itemref idref="chapter1"/></spine>'
+      '</package>';
+  final opfBytes = utf8.encode(opfXml);
+  archive.addFile(ArchiveFile('OEBPS/content.opf', opfBytes.length, opfBytes));
+
+  final chapterBytes = utf8.encode(
+    '<?xml version="1.0" encoding="UTF-8"?>'
+    '<html xmlns="http://www.w3.org/1999/xhtml">'
+    '<head><title>Chapter 1</title></head>'
+    '<body><p>テスト。</p></body>'
+    '</html>',
+  );
+  archive.addFile(
+    ArchiveFile('OEBPS/chapter1.xhtml', chapterBytes.length, chapterBytes),
+  );
+
+  final epubPath = p.join(dir.path, 'fixture.epub');
+  await File(epubPath).writeAsBytes(ZipEncoder().encode(archive));
+  return epubPath;
 }

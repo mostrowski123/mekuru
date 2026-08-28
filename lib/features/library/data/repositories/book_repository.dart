@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:mekuru/features/library/data/services/epub_manga_converter.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
@@ -44,6 +45,43 @@ class BookRepository {
     return '${prefix}_${timestamp}_$suffix';
   }
 
+  /// Dir names currently being populated by an import. The orphan sweep must
+  /// never touch these, regardless of any other signal — the name-timestamp
+  /// age gate alone would miss an import that straddles a forward clock jump
+  /// (e.g. an NTP sync), and must stay safe if [sweepOrphanImportDirs] is
+  /// ever called with a smaller `minAge`.
+  @visibleForTesting
+  static final inFlightImportDirNames = <String>{};
+
+  /// Matches every naming era of import dirs — `<prefix>_<ms>` with an
+  /// optional `_<uuid8>` suffix (added later for batch-import collisions) —
+  /// capturing the creation timestamp in group 1.
+  @visibleForTesting
+  static final importDirName = RegExp(
+    r'^(?:book|manga)_(\d+)(?:_[0-9a-f]{8})?$',
+  );
+
+  static const _booksSegment = 'books';
+
+  /// The single root every import dir lives under. Keep [_booksSegment] and
+  /// this helper the only spellings of the layout — [claimedDirNames] must
+  /// always look for the same segment the writer creates.
+  static Future<Directory> _booksRootDir() async {
+    final appDir = await getApplicationSupportDirectory();
+    return Directory(p.join(appDir.path, _booksSegment));
+  }
+
+  /// Dir names under a `books` path segment that [path] claims — every
+  /// occurrence, never the absolute prefix, because stored paths go stale
+  /// when Android restores the app into a different data directory.
+  @visibleForTesting
+  static Iterable<String> claimedDirNames(String path) sync* {
+    final parts = p.split(p.normalize(path));
+    for (var i = 0; i < parts.length - 1; i++) {
+      if (parts[i] == _booksSegment) yield parts[i + 1];
+    }
+  }
+
   // ──────────────── Queries ────────────────
 
   /// Get all books ordered by date added (newest first).
@@ -78,12 +116,11 @@ class BookRepository {
     String prefix,
     Future<T> Function(Directory dir) body,
   ) async {
-    final appDir = await getApplicationSupportDirectory();
-    final dir = Directory(
-      p.join(appDir.path, 'books', uniqueImportDirName(prefix)),
-    );
-    await dir.create(recursive: true);
+    final name = uniqueImportDirName(prefix);
+    final dir = Directory(p.join((await _booksRootDir()).path, name));
+    inFlightImportDirNames.add(name);
     try {
+      await dir.create(recursive: true);
       return await body(dir);
     } catch (_) {
       try {
@@ -92,6 +129,8 @@ class BookRepository {
         // Best-effort only — the OS may still hold file locks (Windows).
       }
       rethrow;
+    } finally {
+      inFlightImportDirNames.remove(name);
     }
   }
 
@@ -762,19 +801,16 @@ class BookRepository {
   Future<void> deleteBook(int bookId) async {
     final book = await getBookById(bookId);
     if (book != null) {
-      if (book.bookType == 'manga') {
-        // filePath IS the cache directory — delete it directly.
-        final cacheDir = Directory(book.filePath);
-        if (await cacheDir.exists()) {
-          await cacheDir.delete(recursive: true);
-        }
-      } else {
-        // EPUB: filePath is the content dir, parent is the book dir.
-        final contentDir = Directory(book.filePath);
-        if (await contentDir.exists()) {
-          final bookDir = contentDir.parent;
-          await bookDir.delete(recursive: true);
-        }
+      // Manga rows store the import dir itself; EPUB rows store its
+      // `content/` subdir. The name guard makes it impossible for a
+      // malformed row to resolve to the books root — and deletes the
+      // wrapper even when `content/` is already gone (stale installs
+      // used to strand it with the full copied .epub inside).
+      final dir = Directory(
+        book.bookType == 'manga' ? book.filePath : p.dirname(book.filePath),
+      );
+      if (importDirName.hasMatch(p.basename(dir.path)) && await dir.exists()) {
+        await dir.delete(recursive: true);
       }
     }
 
@@ -790,5 +826,122 @@ class BookRepository {
     )..where((t) => t.bookId.equals(bookId))).go();
 
     await (_db.delete(_db.books)..where((t) => t.id.equals(bookId))).go();
+  }
+
+  // ──────────────── Orphan sweep ────────────────
+
+  static const _trashDirName = '.trash';
+  static const _trashRetention = Duration(days: 14);
+
+  /// Quarantines import directories under `books/` that no book row
+  /// references — leftovers of failed or process-killed imports — and
+  /// hard-deletes previously quarantined entries after [_trashRetention].
+  ///
+  /// Deliberately paranoid: it aborts outright whenever the database cannot
+  /// be trusted to enumerate every live book (empty table, or any row whose
+  /// path yields no `books/<dir>` segment), skips anything younger than
+  /// [minAge] (age comes from the timestamp embedded in every import dir
+  /// name), and skips dirs registered in [inFlightImportDirNames].
+  /// Never throws. Returns the number of directories quarantined.
+  Future<int> sweepOrphanImportDirs({
+    Duration minAge = const Duration(days: 7),
+  }) async {
+    try {
+      final booksRoot = await _booksRootDir();
+      if (!await booksRoot.exists()) return 0;
+
+      // An empty table alongside existing files can mean the database was
+      // lost (e.g. a partial restore) while the books survived — never
+      // treat that as "everything is an orphan".
+      final books = await getAllBooks();
+      if (books.isEmpty) return 0;
+
+      final referenced = <String>{};
+      for (final book in books) {
+        final own = claimedDirNames(book.filePath).toList();
+        if (own.isEmpty) {
+          // Parsing that can't see a live book can't be trusted to clear
+          // anything — abort, and make the permanently dead sweep visible.
+          logUsage(
+            'library.orphan_cleanup_aborted',
+            attrs: {'reason': 'unparseable_file_path'},
+          );
+          return 0;
+        }
+        referenced.addAll(own);
+        final cover = book.coverImagePath;
+        // Covers are best-effort: they may legitimately live outside
+        // books/ or be a content:// URI, which yields no segments.
+        if (cover != null) referenced.addAll(claimedDirNames(cover));
+      }
+
+      final trashDir = Directory(p.join(booksRoot.path, _trashDirName));
+      final trashDeleted = await _emptyExpiredTrash(trashDir);
+
+      final now = DateTime.now();
+      var quarantined = 0;
+      await for (final entity in booksRoot.list(followLinks: false)) {
+        if (entity is! Directory) continue;
+        final name = p.basename(entity.path);
+        final match = importDirName.firstMatch(name);
+        if (match == null) continue;
+        if (inFlightImportDirNames.contains(name)) continue;
+        if (referenced.contains(name)) continue;
+        final createdMs = int.tryParse(match.group(1)!);
+        if (createdMs == null) continue;
+        final created = DateTime.fromMillisecondsSinceEpoch(createdMs);
+        // Also skips future timestamps (negative difference).
+        if (now.difference(created) < minAge) continue;
+        try {
+          await trashDir.create(recursive: true);
+          await entity.rename(
+            p.join(trashDir.path, '${now.millisecondsSinceEpoch}_$name'),
+          );
+          quarantined++;
+        } catch (_) {
+          // Best-effort per entry.
+        }
+      }
+
+      // ponytail: no restore UI — recovery within the retention window is
+      // manual (adb / support); add UI only if a detection bug ever fires.
+      if (quarantined > 0 || trashDeleted > 0) {
+        logUsage(
+          'library.orphan_cleanup',
+          attrs: {'quarantined': quarantined, 'trash_deleted': trashDeleted},
+        );
+      }
+      return quarantined;
+    } catch (e) {
+      logFailure('library.orphan_cleanup', e);
+      return 0;
+    }
+  }
+
+  /// Deletes `.trash` entries older than [_trashRetention]. An entry must
+  /// be `<ms>_<name>` where `<name>` satisfies [importDirName] — the same
+  /// predicate every other deletion decision consults; anything else is
+  /// never deleted.
+  static Future<int> _emptyExpiredTrash(Directory trashDir) async {
+    if (!await trashDir.exists()) return 0;
+    final now = DateTime.now();
+    var deleted = 0;
+    await for (final entity in trashDir.list(followLinks: false)) {
+      final name = p.basename(entity.path);
+      final sep = name.indexOf('_');
+      if (sep <= 0) continue;
+      final quarantinedMs = int.tryParse(name.substring(0, sep));
+      if (quarantinedMs == null) continue;
+      if (!importDirName.hasMatch(name.substring(sep + 1))) continue;
+      final quarantinedAt = DateTime.fromMillisecondsSinceEpoch(quarantinedMs);
+      if (now.difference(quarantinedAt) < _trashRetention) continue;
+      try {
+        await entity.delete(recursive: true);
+        deleted++;
+      } catch (_) {
+        // Best-effort per entry.
+      }
+    }
+    return deleted;
   }
 }

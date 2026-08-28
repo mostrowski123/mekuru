@@ -96,9 +96,14 @@ Future<void> tapSheetItem(WidgetTester tester, String label) async {
 
 /// Deletes the app-support `books/` directory so imported fixture EPUBs from
 /// a previous test run don't leak into the current one.
-Future<void> cleanupAppBooksDir() async {
+/// The real on-device `books/` root that imports write into.
+Future<Directory> appBooksDir() async {
   final appDir = await getApplicationSupportDirectory();
-  final booksDir = Directory(p.join(appDir.path, 'books'));
+  return Directory(p.join(appDir.path, 'books'));
+}
+
+Future<void> cleanupAppBooksDir() async {
+  final booksDir = await appBooksDir();
   if (await booksDir.exists()) {
     await booksDir.delete(recursive: true);
   }
