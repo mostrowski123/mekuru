@@ -1417,51 +1417,47 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryExportFuriganaUnavailable => '振假名引擎不可用，请稍后再试';
 
   @override
-  String get libraryConvertToMangaTitle => 'Convert to manga';
+  String get libraryConvertToMangaTitle => '转换为漫画';
 
   @override
-  String get libraryConvertToMangaSubtitle =>
-      'For manga EPUBs where every page is an image';
+  String get libraryConvertToMangaSubtitle => '适用于每页都是一张图片的漫画 EPUB';
 
   @override
-  String get libraryConvertToMangaConfirmTitle => 'Convert to manga?';
+  String get libraryConvertToMangaConfirmTitle => '转换为漫画？';
 
   @override
   String get libraryConvertToMangaConfirmBody =>
-      'The book opens in the manga reader afterwards, but tap lookup won\'t work until its pages have OCR — run OCR from the book menu with Mekuru Pro\'s hosted server, or export the book as CBZ and process it with mokuro. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.';
+      '转换后书籍会在漫画阅读器中打开，但在页面获得 OCR 数据之前，点按查词无法使用——可使用 Mekuru Pro 的自托管服务器从书籍菜单运行 OCR，或将书籍导出为 CBZ 并用 mokuro 处理。应用中存储的 EPUB 副本会被删除，阅读位置会重置。如需撤销，请重新导入原始文件。';
 
   @override
-  String get libraryConvertToMangaAction => 'Convert';
+  String get libraryConvertToMangaAction => '转换';
 
   @override
-  String get libraryConvertToMangaProgress => 'Converting…';
+  String get libraryConvertToMangaProgress => '正在转换…';
 
   @override
-  String get libraryConvertToMangaDone => 'Converted to manga';
+  String get libraryConvertToMangaDone => '已转换为漫画';
 
   @override
-  String get libraryConvertToMangaNotEligible =>
-      'This EPUB doesn\'t look like a manga — its pages aren\'t single images';
+  String get libraryConvertToMangaNotEligible => '这个 EPUB 看起来不是漫画——它的页面不是单张图片';
 
   @override
-  String get libraryExportCbzTitle => 'Export as CBZ';
+  String get libraryExportCbzTitle => '导出为 CBZ';
 
   @override
-  String get libraryExportCbzSubtitle =>
-      'Share the page images as a comic archive';
+  String get libraryExportCbzSubtitle => '将页面图片分享为漫画压缩包';
 
   @override
-  String get libraryExportCbzProgress => 'Preparing CBZ…';
+  String get libraryExportCbzProgress => '正在准备 CBZ…';
 
   @override
-  String get libraryExportCbzDone => 'CBZ exported';
+  String get libraryExportCbzDone => 'CBZ 已导出';
 
   @override
-  String get libraryExportCbzEmpty => 'No pages to export';
+  String get libraryExportCbzEmpty => '没有可导出的页面';
 
   @override
-  String get libraryExportCbzSafUnsupported =>
-      'This book\'s images are stored outside the app, so it can\'t be exported';
+  String get libraryExportCbzSafUnsupported => '这本书的图片存储在应用之外，因此无法导出';
 
   @override
   String get libraryFolderEmpty => '这里还没有图书。长按书库中的图书，然后选择“添加到收藏集”。';
@@ -3630,51 +3626,47 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get libraryExportFuriganaUnavailable => '振假名引擎不可用，请稍后再试';
 
   @override
-  String get libraryConvertToMangaTitle => 'Convert to manga';
+  String get libraryConvertToMangaTitle => '转换为漫画';
 
   @override
-  String get libraryConvertToMangaSubtitle =>
-      'For manga EPUBs where every page is an image';
+  String get libraryConvertToMangaSubtitle => '适用于每页都是一张图片的漫画 EPUB';
 
   @override
-  String get libraryConvertToMangaConfirmTitle => 'Convert to manga?';
+  String get libraryConvertToMangaConfirmTitle => '转换为漫画？';
 
   @override
   String get libraryConvertToMangaConfirmBody =>
-      'The book opens in the manga reader afterwards, but tap lookup won\'t work until its pages have OCR — run OCR from the book menu with Mekuru Pro\'s hosted server, or export the book as CBZ and process it with mokuro. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.';
+      '转换后书籍会在漫画阅读器中打开，但在页面获得 OCR 数据之前，点按查词无法使用——可使用 Mekuru Pro 的自托管服务器从书籍菜单运行 OCR，或将书籍导出为 CBZ 并用 mokuro 处理。应用中存储的 EPUB 副本会被删除，阅读位置会重置。如需撤销，请重新导入原始文件。';
 
   @override
-  String get libraryConvertToMangaAction => 'Convert';
+  String get libraryConvertToMangaAction => '转换';
 
   @override
-  String get libraryConvertToMangaProgress => 'Converting…';
+  String get libraryConvertToMangaProgress => '正在转换…';
 
   @override
-  String get libraryConvertToMangaDone => 'Converted to manga';
+  String get libraryConvertToMangaDone => '已转换为漫画';
 
   @override
-  String get libraryConvertToMangaNotEligible =>
-      'This EPUB doesn\'t look like a manga — its pages aren\'t single images';
+  String get libraryConvertToMangaNotEligible => '这个 EPUB 看起来不是漫画——它的页面不是单张图片';
 
   @override
-  String get libraryExportCbzTitle => 'Export as CBZ';
+  String get libraryExportCbzTitle => '导出为 CBZ';
 
   @override
-  String get libraryExportCbzSubtitle =>
-      'Share the page images as a comic archive';
+  String get libraryExportCbzSubtitle => '将页面图片分享为漫画压缩包';
 
   @override
-  String get libraryExportCbzProgress => 'Preparing CBZ…';
+  String get libraryExportCbzProgress => '正在准备 CBZ…';
 
   @override
-  String get libraryExportCbzDone => 'CBZ exported';
+  String get libraryExportCbzDone => 'CBZ 已导出';
 
   @override
-  String get libraryExportCbzEmpty => 'No pages to export';
+  String get libraryExportCbzEmpty => '没有可导出的页面';
 
   @override
-  String get libraryExportCbzSafUnsupported =>
-      'This book\'s images are stored outside the app, so it can\'t be exported';
+  String get libraryExportCbzSafUnsupported => '这本书的图片存储在应用之外，因此无法导出';
 
   @override
   String get libraryFolderEmpty => '这里还没有图书。长按书库中的图书，然后选择“添加到收藏集”。';

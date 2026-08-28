@@ -1502,51 +1502,51 @@ class AppLocalizationsEs extends AppLocalizations {
       'El motor de furigana no está disponible: inténtalo de nuevo en un momento';
 
   @override
-  String get libraryConvertToMangaTitle => 'Convert to manga';
+  String get libraryConvertToMangaTitle => 'Convertir a manga';
 
   @override
   String get libraryConvertToMangaSubtitle =>
-      'For manga EPUBs where every page is an image';
+      'Para EPUB de manga donde cada página es una imagen';
 
   @override
-  String get libraryConvertToMangaConfirmTitle => 'Convert to manga?';
+  String get libraryConvertToMangaConfirmTitle => '¿Convertir a manga?';
 
   @override
   String get libraryConvertToMangaConfirmBody =>
-      'The book opens in the manga reader afterwards, but tap lookup won\'t work until its pages have OCR — run OCR from the book menu with Mekuru Pro\'s hosted server, or export the book as CBZ and process it with mokuro. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.';
+      'Después, el libro se abre en el lector de manga, pero las consultas al tocar no funcionarán hasta que sus páginas tengan OCR: ejecuta el OCR desde el menú del libro con el servidor autoalojado de Mekuru Pro, o exporta el libro como CBZ y procésalo con mokuro. La copia EPUB guardada en la app se elimina y la posición de lectura se restablece. Para deshacerlo, vuelve a importar el archivo original.';
 
   @override
-  String get libraryConvertToMangaAction => 'Convert';
+  String get libraryConvertToMangaAction => 'Convertir';
 
   @override
-  String get libraryConvertToMangaProgress => 'Converting…';
+  String get libraryConvertToMangaProgress => 'Convirtiendo…';
 
   @override
-  String get libraryConvertToMangaDone => 'Converted to manga';
+  String get libraryConvertToMangaDone => 'Convertido a manga';
 
   @override
   String get libraryConvertToMangaNotEligible =>
-      'This EPUB doesn\'t look like a manga — its pages aren\'t single images';
+      'Este EPUB no parece un manga: sus páginas no son imágenes individuales';
 
   @override
-  String get libraryExportCbzTitle => 'Export as CBZ';
+  String get libraryExportCbzTitle => 'Exportar como CBZ';
 
   @override
   String get libraryExportCbzSubtitle =>
-      'Share the page images as a comic archive';
+      'Comparte las imágenes de las páginas como un archivo de cómic';
 
   @override
-  String get libraryExportCbzProgress => 'Preparing CBZ…';
+  String get libraryExportCbzProgress => 'Preparando CBZ…';
 
   @override
-  String get libraryExportCbzDone => 'CBZ exported';
+  String get libraryExportCbzDone => 'CBZ exportado';
 
   @override
-  String get libraryExportCbzEmpty => 'No pages to export';
+  String get libraryExportCbzEmpty => 'No hay páginas que exportar';
 
   @override
   String get libraryExportCbzSafUnsupported =>
-      'This book\'s images are stored outside the app, so it can\'t be exported';
+      'Las imágenes de este libro están guardadas fuera de la app, así que no se puede exportar';
 
   @override
   String get libraryFolderEmpty =>

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -8,6 +9,7 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/blocking_progress_dialog.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Confirm dialog → progress dialog → off-isolate conversion → SnackBar.
 /// A non-manga EPUB gets its own message; other failures end in the generic
@@ -24,7 +26,7 @@ Future<void> runEpubMangaConversion(
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text(l10n.libraryConvertToMangaConfirmTitle),
-      content: Text(l10n.libraryConvertToMangaConfirmBody),
+      content: _confirmBodyWithMokuroLink(ctx),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
@@ -79,4 +81,33 @@ Future<void> runEpubMangaConversion(
         ),
       );
   }
+}
+
+/// Dialog body with the word "mokuro" linking to the mokuro project.
+/// Falls back to plain text if a translation drops the word.
+Widget _confirmBodyWithMokuroLink(BuildContext context) {
+  final body = context.l10n.libraryConvertToMangaConfirmBody;
+  const word = 'mokuro';
+  final index = body.indexOf(word);
+  if (index < 0) return Text(body);
+  return Text.rich(
+    TextSpan(
+      children: [
+        TextSpan(text: body.substring(0, index)),
+        TextSpan(
+          text: word,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
+            decoration: TextDecoration.underline,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () => launchUrl(
+              Uri.parse('https://github.com/kha-white/mokuro'),
+              mode: LaunchMode.externalApplication,
+            ),
+        ),
+        TextSpan(text: body.substring(index + word.length)),
+      ],
+    ),
+  );
 }

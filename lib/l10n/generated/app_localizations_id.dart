@@ -265,7 +265,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get dictionaryEnableDictionaries => 'Aktifkan kamus';
 
   @override
-  String get dictionaryStarterPack => 'Starter pack';
+  String get dictionaryStarterPack => 'Paket pemula';
 
   @override
   String get dictionaryNoResultsFound => 'Tidak ada hasil.';
@@ -783,10 +783,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsColorThemeMekuruRed => 'Mekuru Merah';
 
   @override
-  String get settingsColorThemeIndigo => 'Indigo';
+  String get settingsColorThemeIndigo => 'Nila';
 
   @override
-  String get settingsColorThemeTeal => 'Teal';
+  String get settingsColorThemeTeal => 'Toska';
 
   @override
   String get settingsColorThemeDeepPurple => 'Ungu Tua';
@@ -1488,51 +1488,51 @@ class AppLocalizationsId extends AppLocalizations {
       'Mesin furigana tidak tersedia — coba lagi sebentar';
 
   @override
-  String get libraryConvertToMangaTitle => 'Convert to manga';
+  String get libraryConvertToMangaTitle => 'Konversi ke manga';
 
   @override
   String get libraryConvertToMangaSubtitle =>
-      'For manga EPUBs where every page is an image';
+      'Untuk EPUB manga yang setiap halamannya berupa gambar';
 
   @override
-  String get libraryConvertToMangaConfirmTitle => 'Convert to manga?';
+  String get libraryConvertToMangaConfirmTitle => 'Konversi ke manga?';
 
   @override
   String get libraryConvertToMangaConfirmBody =>
-      'The book opens in the manga reader afterwards, but tap lookup won\'t work until its pages have OCR — run OCR from the book menu with Mekuru Pro\'s hosted server, or export the book as CBZ and process it with mokuro. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.';
+      'Setelah itu buku terbuka di pembaca manga, tetapi penelusuran ketuk tidak akan berfungsi sampai halamannya memiliki OCR — jalankan OCR dari menu buku dengan server hosting mandiri Mekuru Pro, atau ekspor buku sebagai CBZ dan proses dengan mokuro. Salinan EPUB yang tersimpan di aplikasi akan dihapus dan posisi baca direset. Untuk membatalkan, impor ulang file aslinya.';
 
   @override
-  String get libraryConvertToMangaAction => 'Convert';
+  String get libraryConvertToMangaAction => 'Konversi';
 
   @override
-  String get libraryConvertToMangaProgress => 'Converting…';
+  String get libraryConvertToMangaProgress => 'Mengonversi…';
 
   @override
-  String get libraryConvertToMangaDone => 'Converted to manga';
+  String get libraryConvertToMangaDone => 'Dikonversi ke manga';
 
   @override
   String get libraryConvertToMangaNotEligible =>
-      'This EPUB doesn\'t look like a manga — its pages aren\'t single images';
+      'EPUB ini sepertinya bukan manga — halamannya bukan gambar tunggal';
 
   @override
-  String get libraryExportCbzTitle => 'Export as CBZ';
+  String get libraryExportCbzTitle => 'Ekspor sebagai CBZ';
 
   @override
   String get libraryExportCbzSubtitle =>
-      'Share the page images as a comic archive';
+      'Bagikan gambar halaman sebagai arsip komik';
 
   @override
-  String get libraryExportCbzProgress => 'Preparing CBZ…';
+  String get libraryExportCbzProgress => 'Menyiapkan CBZ…';
 
   @override
-  String get libraryExportCbzDone => 'CBZ exported';
+  String get libraryExportCbzDone => 'CBZ diekspor';
 
   @override
-  String get libraryExportCbzEmpty => 'No pages to export';
+  String get libraryExportCbzEmpty => 'Tidak ada halaman untuk diekspor';
 
   @override
   String get libraryExportCbzSafUnsupported =>
-      'This book\'s images are stored outside the app, so it can\'t be exported';
+      'Gambar buku ini tersimpan di luar aplikasi, jadi tidak bisa diekspor';
 
   @override
   String get libraryFolderEmpty =>

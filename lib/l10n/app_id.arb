@@ -315,7 +315,7 @@
   "@dictionaryEnableDictionaries": {
     "description": "Button label to enable dictionaries."
   },
-  "dictionaryStarterPack": "Starter pack",
+  "dictionaryStarterPack": "Paket pemula",
   "@dictionaryStarterPack": {
     "description": "Button label for the starter pack."
   },
@@ -982,11 +982,11 @@
   "@settingsColorThemeMekuruRed": {
     "description": "Color theme label for Mekuru Red."
   },
-  "settingsColorThemeIndigo": "Indigo",
+  "settingsColorThemeIndigo": "Nila",
   "@settingsColorThemeIndigo": {
     "description": "Color theme label for Indigo."
   },
-  "settingsColorThemeTeal": "Teal",
+  "settingsColorThemeTeal": "Toska",
   "@settingsColorThemeTeal": {
     "description": "Color theme label for Teal."
   },
@@ -1837,20 +1837,20 @@
   "libraryExportFuriganaSaveTitle": "Simpan EPUB",
   "libraryExportFuriganaDone": "EPUB diekspor",
   "libraryExportFuriganaUnavailable": "Mesin furigana tidak tersedia — coba lagi sebentar",
-  "libraryConvertToMangaTitle": "Convert to manga",
-  "libraryConvertToMangaSubtitle": "For manga EPUBs where every page is an image",
-  "libraryConvertToMangaConfirmTitle": "Convert to manga?",
-  "libraryConvertToMangaConfirmBody": "The book opens in the manga reader afterwards, but tap lookup won't work until its pages have OCR — run OCR from the book menu with Mekuru Pro's hosted server, or export the book as CBZ and process it with mokuro. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.",
-  "libraryConvertToMangaAction": "Convert",
-  "libraryConvertToMangaProgress": "Converting…",
-  "libraryConvertToMangaDone": "Converted to manga",
-  "libraryConvertToMangaNotEligible": "This EPUB doesn't look like a manga — its pages aren't single images",
-  "libraryExportCbzTitle": "Export as CBZ",
-  "libraryExportCbzSubtitle": "Share the page images as a comic archive",
-  "libraryExportCbzProgress": "Preparing CBZ…",
-  "libraryExportCbzDone": "CBZ exported",
-  "libraryExportCbzEmpty": "No pages to export",
-  "libraryExportCbzSafUnsupported": "This book's images are stored outside the app, so it can't be exported",
+  "libraryConvertToMangaTitle": "Konversi ke manga",
+  "libraryConvertToMangaSubtitle": "Untuk EPUB manga yang setiap halamannya berupa gambar",
+  "libraryConvertToMangaConfirmTitle": "Konversi ke manga?",
+  "libraryConvertToMangaConfirmBody": "Setelah itu buku terbuka di pembaca manga, tetapi penelusuran ketuk tidak akan berfungsi sampai halamannya memiliki OCR — jalankan OCR dari menu buku dengan server hosting mandiri Mekuru Pro, atau ekspor buku sebagai CBZ dan proses dengan mokuro. Salinan EPUB yang tersimpan di aplikasi akan dihapus dan posisi baca direset. Untuk membatalkan, impor ulang file aslinya.",
+  "libraryConvertToMangaAction": "Konversi",
+  "libraryConvertToMangaProgress": "Mengonversi…",
+  "libraryConvertToMangaDone": "Dikonversi ke manga",
+  "libraryConvertToMangaNotEligible": "EPUB ini sepertinya bukan manga — halamannya bukan gambar tunggal",
+  "libraryExportCbzTitle": "Ekspor sebagai CBZ",
+  "libraryExportCbzSubtitle": "Bagikan gambar halaman sebagai arsip komik",
+  "libraryExportCbzProgress": "Menyiapkan CBZ…",
+  "libraryExportCbzDone": "CBZ diekspor",
+  "libraryExportCbzEmpty": "Tidak ada halaman untuk diekspor",
+  "libraryExportCbzSafUnsupported": "Gambar buku ini tersimpan di luar aplikasi, jadi tidak bisa diekspor",
   "@libraryChangeCoverAction": {
     "description": "Action label to change a book cover image."
   },

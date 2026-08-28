@@ -2617,7 +2617,7 @@ abstract class AppLocalizations {
   /// Body of the dialog confirming the EPUB-to-manga conversion.
   ///
   /// In en, this message translates to:
-  /// **'The book opens in the manga reader afterwards, but tap lookup won\'t work until its pages have OCR — run OCR from the book menu with Mekuru Pro\'s hosted server, or export the book as CBZ and process it with mokuro. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.'**
+  /// **'The book opens in the manga reader afterwards, but tap lookup won\'t work until its pages have OCR — run OCR from the book menu with Mekuru Pro\'s self-hosted server, or export the book as CBZ and process it with mokuro. The EPUB copy stored in the app is removed and the reading position is reset. To undo, re-import the original file.'**
   String get libraryConvertToMangaConfirmBody;
 
   /// Confirm button of the convert-to-manga dialog.
