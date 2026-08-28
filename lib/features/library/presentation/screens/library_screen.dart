@@ -1582,16 +1582,18 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   void _showRenameDialog(BuildContext context) {
+    // Resolved before the dialog opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     final controller = TextEditingController(text: book.title);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.libraryRenameBookTitle),
+        title: Text(ctx.l10n.libraryRenameBookTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(
-            labelText: context.l10n.commonTitleLabel,
+            labelText: ctx.l10n.commonTitleLabel,
             border: OutlineInputBorder(),
           ),
           textCapitalization: TextCapitalization.words,
@@ -1599,17 +1601,19 @@ class _BookTileState extends ConsumerState<_BookTile>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(context.l10n.commonCancel),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               final newTitle = controller.text.trim();
               if (newTitle.isNotEmpty && newTitle != book.title) {
-                ref.read(bookRepositoryProvider).updateTitle(book.id, newTitle);
+                container
+                    .read(bookRepositoryProvider)
+                    .updateTitle(book.id, newTitle);
               }
               Navigator.of(ctx).pop();
             },
-            child: Text(context.l10n.commonRename),
+            child: Text(ctx.l10n.commonRename),
           ),
         ],
       ),
@@ -2034,24 +2038,25 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   void _confirmDelete(BuildContext context) {
+    // Resolved before the dialog opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.libraryDeleteBookTitle),
-        content: Text(context.l10n.libraryDeleteBookBody(title: book.title)),
+        title: Text(ctx.l10n.libraryDeleteBookTitle),
+        content: Text(ctx.l10n.libraryDeleteBookBody(title: book.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(context.l10n.commonCancel),
+            child: Text(ctx.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              final container = ProviderScope.containerOf(context);
               container.read(bookImportProvider.notifier).deleteBook(book.id);
             },
             child: Text(
-              context.l10n.commonDelete,
+              ctx.l10n.commonDelete,
               style: const TextStyle(color: Colors.red),
             ),
           ),

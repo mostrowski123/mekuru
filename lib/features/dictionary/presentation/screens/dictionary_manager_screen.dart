@@ -490,8 +490,7 @@ class _DictionaryManagerScreenState
             else
               IconButton(
                 icon: const Icon(Icons.delete_outline),
-                onPressed: () =>
-                    _confirmDelete(context, ref, dict.id, dict.name),
+                onPressed: () => _confirmDelete(context, dict.id, dict.name),
               ),
           ],
         ),
@@ -589,28 +588,25 @@ class _DictionaryManagerScreenState
     ref.read(dictionaryImportProvider.notifier).importDictionary(filePath);
   }
 
-  Future<void> _confirmDelete(
-    BuildContext context,
-    WidgetRef ref,
-    int id,
-    String name,
-  ) async {
+  Future<void> _confirmDelete(BuildContext context, int id, String name) async {
     final l10n = context.l10n;
+    // Resolved before the dialog opens: the screen can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: Text(l10n.dictionaryManagerDeleteTitle),
         content: Text(l10n.dictionaryManagerDeleteBody(name: name)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(l10n.commonCancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             child: Text(l10n.commonDelete),
           ),
@@ -621,11 +617,11 @@ class _DictionaryManagerScreenState
     if (confirmed == true) {
       if (mounted) setState(() => _deleting.add(id));
       try {
-        await ref.read(dictionaryRepositoryProvider).deleteDictionary(id);
+        await container.read(dictionaryRepositoryProvider).deleteDictionary(id);
         // Refresh download status so the downloads page reflects the deletion.
-        ref.read(jmdictProvider.notifier).checkStatus();
-        ref.read(kanjidicProvider.notifier).checkStatus();
-        ref.read(jpdbFreqProvider.notifier).checkStatus();
+        container.read(jmdictProvider.notifier).checkStatus();
+        container.read(kanjidicProvider.notifier).checkStatus();
+        container.read(jpdbFreqProvider.notifier).checkStatus();
       } finally {
         if (mounted) setState(() => _deleting.remove(id));
       }

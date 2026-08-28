@@ -877,20 +877,22 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
           color: Theme.of(context).colorScheme.error,
         ),
         tooltip: context.l10n.downloadsEnhancedFuriganaRemoveTooltip,
-        onPressed: () => _confirmRemove(context, ref),
+        onPressed: () => _confirmRemove(context),
       );
     }
 
     return FilledButton.tonal(
       onPressed: () {
         AppHaptics.light();
-        _confirmDownload(context, ref);
+        _confirmDownload(context);
       },
       child: Text(context.l10n.commonDownload),
     );
   }
 
-  void _confirmDownload(BuildContext context, WidgetRef ref) {
+  void _confirmDownload(BuildContext context) {
+    // Resolved before the dialog opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -904,7 +906,7 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              ref.read(enhancedFuriganaDictProvider.notifier).download();
+              container.read(enhancedFuriganaDictProvider.notifier).download();
             },
             child: Text(ctx.l10n.commonDownload),
           ),
@@ -913,7 +915,9 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
     );
   }
 
-  void _confirmRemove(BuildContext context, WidgetRef ref) {
+  void _confirmRemove(BuildContext context) {
+    // Resolved before the dialog opens: the tile can unmount while it's up.
+    final container = ProviderScope.containerOf(context, listen: false);
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -927,7 +931,7 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              ref.read(enhancedFuriganaDictProvider.notifier).uninstall();
+              container.read(enhancedFuriganaDictProvider.notifier).uninstall();
             },
             child: Text(
               ctx.l10n.commonDelete,
