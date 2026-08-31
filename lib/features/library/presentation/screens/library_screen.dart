@@ -720,7 +720,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         allowedExtensions: extensions,
       );
     } on PlatformException catch (e) {
-      if (e.code == 'already_active') return const [];
+      // unknown_activity: plugin's Android activity was detached (app
+      // backgrounded mid-tap) — nothing to show the picker from, so no-op.
+      if (e.code == 'already_active' || e.code == 'unknown_activity') {
+        return const [];
+      }
       rethrow;
     }
 
