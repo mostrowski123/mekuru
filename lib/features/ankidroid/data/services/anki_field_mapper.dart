@@ -110,15 +110,15 @@ String? resolveAnkiFirstFieldValue({
 }) {
   if (!config.isConfigured || config.fieldMapping.isEmpty) return null;
 
-  final orderedFieldNames = config.fieldMapping.keys.toList(growable: false);
-  final resolvedFields = AnkiFieldMapper.resolveFields(
-    ankiFieldNames: orderedFieldNames,
-    fieldMapping: config.fieldMapping,
-    noteData: noteData,
-  );
-  if (resolvedFields.isEmpty) return null;
-
-  final firstFieldValue = resolvedFields.first.trim();
+  // Prefer the field order cached from Anki (see AnkidroidConfig
+  // .ankiFieldNames); an unmapped first field resolves blank → null.
+  final firstFieldName = config.ankiFieldNames.isNotEmpty
+      ? config.ankiFieldNames.first
+      : config.fieldMapping.keys.first;
+  final firstFieldValue = AnkiFieldMapper._resolveValue(
+    config.fieldMapping[firstFieldName] ?? 'empty',
+    noteData,
+  ).trim();
   return firstFieldValue.isEmpty ? null : firstFieldValue;
 }
 

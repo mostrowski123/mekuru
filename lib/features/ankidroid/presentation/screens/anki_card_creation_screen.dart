@@ -133,6 +133,9 @@ class _AnkiCardCreationScreenState
     }
 
     _fieldNames = fields;
+    ref
+        .read(ankidroidConfigProvider.notifier)
+        .setAnkiFieldNames(config.modelId!, fields);
     _decks = decks;
     _selectedDeckId = decks.containsKey(config.deckId) ? config.deckId : null;
     _tagsController.text = config.tags.join(', ');

@@ -55,8 +55,21 @@ class AnkidroidConfigNotifier extends Notifier<AnkidroidConfig> {
         modelId: modelId,
         modelName: modelName,
         fieldMapping: mapping,
+        ankiFieldNames: fields,
       ),
     );
+  }
+
+  /// Refresh the cached field order after a successful getFieldList. Anki is
+  /// the source of truth for field order; lists fetched for a model other
+  /// than the configured one (e.g. browsed in the picker) are ignored.
+  void setAnkiFieldNames(int modelId, List<String> fields) {
+    if (modelId != state.modelId ||
+        fields.isEmpty ||
+        listEquals(fields, state.ankiFieldNames)) {
+      return;
+    }
+    setConfig(state.copyWith(ankiFieldNames: fields));
   }
 
   /// Update the default deck.

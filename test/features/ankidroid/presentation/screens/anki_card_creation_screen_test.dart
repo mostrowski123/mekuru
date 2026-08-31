@@ -87,6 +87,21 @@ void main() {
     expect(fakeService.duplicateChecks.first.firstFieldValue, '食べる');
   });
 
+  testWidgets('a successful field fetch refreshes the cached field order', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      setUpService: (s) => s.fieldList = ['Word', 'Meaning'],
+    );
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(AnkiCardCreationScreen)),
+    );
+    final cached = container.read(ankidroidConfigProvider).ankiFieldNames;
+    expect(cached, ['Word', 'Meaning']);
+  });
+
   testWidgets('switching to a deck with the note shows a warning, '
       'send stays enabled', (tester) async {
     await pumpScreen(tester);

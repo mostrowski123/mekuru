@@ -16,6 +16,13 @@ class AnkidroidConfig {
   /// 'empty'.
   final Map<String, String> fieldMapping;
 
+  /// The note type's field names in Anki's order, cached from the last
+  /// successful getFieldList. [fieldMapping] key order goes stale when the
+  /// user renames or reorders fields in AnkiDroid (repairs append at the
+  /// end), so first-field derivation must use this instead. Empty on
+  /// configs saved before this field existed.
+  final List<String> ankiFieldNames;
+
   /// Default tags to apply to every exported note.
   final List<String> tags;
 
@@ -25,6 +32,7 @@ class AnkidroidConfig {
     this.deckId,
     this.deckName,
     this.fieldMapping = const {},
+    this.ankiFieldNames = const [],
     this.tags = const ['mekuru'],
   });
 
@@ -36,6 +44,7 @@ class AnkidroidConfig {
     int? deckId,
     String? deckName,
     Map<String, String>? fieldMapping,
+    List<String>? ankiFieldNames,
     List<String>? tags,
   }) {
     return AnkidroidConfig(
@@ -44,6 +53,7 @@ class AnkidroidConfig {
       deckId: deckId ?? this.deckId,
       deckName: deckName ?? this.deckName,
       fieldMapping: fieldMapping ?? this.fieldMapping,
+      ankiFieldNames: ankiFieldNames ?? this.ankiFieldNames,
       tags: tags ?? this.tags,
     );
   }
@@ -54,6 +64,7 @@ class AnkidroidConfig {
     'deckId': deckId,
     'deckName': deckName,
     'fieldMapping': fieldMapping,
+    'ankiFieldNames': ankiFieldNames,
     'tags': tags,
   };
 
@@ -68,6 +79,9 @@ class AnkidroidConfig {
             (k, v) => MapEntry(k, v as String),
           ) ??
           {},
+      ankiFieldNames:
+          (json['ankiFieldNames'] as List<dynamic>?)?.cast<String>() ??
+          const [],
       tags:
           (json['tags'] as List<dynamic>?)?.cast<String>() ?? const ['mekuru'],
     );

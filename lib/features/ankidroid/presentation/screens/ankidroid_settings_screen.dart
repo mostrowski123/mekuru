@@ -95,6 +95,11 @@ class _AnkidroidSettingsScreenState
     }
 
     _currentModelFields = fields;
+    if (modelId != null) {
+      ref
+          .read(ankidroidConfigProvider.notifier)
+          .setAnkiFieldNames(modelId, fields);
+    }
     if (mounted) {
       setState(() {
         _isLoading = false;
