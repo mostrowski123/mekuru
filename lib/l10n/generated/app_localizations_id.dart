@@ -1812,7 +1812,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'Pengaturan AnkiDroid';
+  String get ankidroidCardSettingsTooltip => 'Pengaturan AnkiDroid di Mekuru';
 
   @override
   String get ankidroidCardDeckTitle => 'Dek';
@@ -1822,6 +1822,30 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get ankidroidCardAddToAnki => 'Tambah ke Anki';
+
+  @override
+  String get ankidroidNoteTypeMissing =>
+      'Tipe catatan yang dikonfigurasi sudah tidak ada di Anki. Pilih yang baru di pengaturan AnkiDroid Mekuru.';
+
+  @override
+  String ankidroidStaleMappingBanner({required String fields}) {
+    return 'Beberapa kolom yang dipetakan sudah tidak ada di Anki: $fields. Ketuk untuk memperbaiki pemetaan kolom.';
+  }
+
+  @override
+  String ankidroidMissingInAnki({required String name}) {
+    return '$name — sudah tidak ada di Anki';
+  }
+
+  @override
+  String ankidroidStaleFieldSubtitle({required String source}) {
+    return 'Sudah tidak ada di Anki — dipetakan ke $source';
+  }
+
+  @override
+  String ankidroidReassignFieldTo({required String source}) {
+    return 'Pindahkan \"$source\" ke:';
+  }
 
   @override
   String get mangaReaderSettingsTitle => 'Pengaturan Pembaca';

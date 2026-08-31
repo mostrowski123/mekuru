@@ -2067,7 +2067,7 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "Pengaturan AnkiDroid",
+  "ankidroidCardSettingsTooltip": "Pengaturan AnkiDroid di Mekuru",
   "@ankidroidCardSettingsTooltip": {
     "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
   },
@@ -2082,6 +2082,46 @@
   "ankidroidCardAddToAnki": "Tambah ke Anki",
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
+  },
+  "ankidroidNoteTypeMissing": "Tipe catatan yang dikonfigurasi sudah tidak ada di Anki. Pilih yang baru di pengaturan AnkiDroid Mekuru.",
+  "@ankidroidNoteTypeMissing": {
+    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid."
+  },
+  "ankidroidStaleMappingBanner": "Beberapa kolom yang dipetakan sudah tidak ada di Anki: {fields}. Ketuk untuk memperbaiki pemetaan kolom.",
+  "@ankidroidStaleMappingBanner": {
+    "description": "Warning banner in the create-card flow listing mapped fields that were renamed or deleted in AnkiDroid.",
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidMissingInAnki": "{name} — sudah tidak ada di Anki",
+  "@ankidroidMissingInAnki": {
+    "description": "Subtitle for a configured note type or deck that has been deleted in AnkiDroid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidStaleFieldSubtitle": "Sudah tidak ada di Anki — dipetakan ke {source}",
+  "@ankidroidStaleFieldSubtitle": {
+    "description": "Subtitle for a mapped field that has been renamed or deleted in AnkiDroid.",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidReassignFieldTo": "Pindahkan \"{source}\" ke:",
+  "@ankidroidReassignFieldTo": {
+    "description": "Title of the picker that moves an orphaned data source to an existing Anki field.",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
   },
   "mangaReaderSettingsTitle": "Pengaturan Pembaca",
   "@mangaReaderSettingsTitle": {

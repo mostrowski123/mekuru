@@ -3118,7 +3118,7 @@ abstract class AppLocalizations {
   /// Tooltip for opening AnkiDroid settings from the create-card flow.
   ///
   /// In en, this message translates to:
-  /// **'AnkiDroid Settings'**
+  /// **'Mekuru\'s AnkiDroid Settings'**
   String get ankidroidCardSettingsTooltip;
 
   /// Label for the selected Anki deck in the create-card flow.
@@ -3138,6 +3138,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to Anki'**
   String get ankidroidCardAddToAnki;
+
+  /// Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid.
+  ///
+  /// In en, this message translates to:
+  /// **'The configured note type no longer exists in Anki. Choose a new one in Mekuru\'s AnkiDroid settings.'**
+  String get ankidroidNoteTypeMissing;
+
+  /// Warning banner in the create-card flow listing mapped fields that were renamed or deleted in AnkiDroid.
+  ///
+  /// In en, this message translates to:
+  /// **'Some mapped fields no longer exist in Anki: {fields}. Tap to fix the field mapping.'**
+  String ankidroidStaleMappingBanner({required String fields});
+
+  /// Subtitle for a configured note type or deck that has been deleted in AnkiDroid.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} — no longer exists in Anki'**
+  String ankidroidMissingInAnki({required String name});
+
+  /// Subtitle for a mapped field that has been renamed or deleted in AnkiDroid.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer exists in Anki — mapped to {source}'**
+  String ankidroidStaleFieldSubtitle({required String source});
+
+  /// Title of the picker that moves an orphaned data source to an existing Anki field.
+  ///
+  /// In en, this message translates to:
+  /// **'Move \"{source}\" to:'**
+  String ankidroidReassignFieldTo({required String source});
 
   /// Title for the manga reader settings sheet.
   ///

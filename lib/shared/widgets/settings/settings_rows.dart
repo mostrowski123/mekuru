@@ -237,8 +237,9 @@ Future<void> showSettingsOptionPickerSheet<T>({
   required BuildContext context,
   required String title,
   required List<T> values,
-  required T selected,
+  T? selected,
   required String Function(T value) labelOf,
+  String Function(T value)? subtitleOf,
   IconData Function(T value)? iconOf,
   required ValueChanged<T> onSelected,
 }) {
@@ -263,6 +264,9 @@ Future<void> showSettingsOptionPickerSheet<T>({
                     ListTile(
                       leading: iconOf != null ? Icon(iconOf(value)) : null,
                       title: Text(labelOf(value)),
+                      subtitle: subtitleOf != null
+                          ? Text(subtitleOf(value))
+                          : null,
                       trailing: value == selected
                           ? Icon(Icons.check, color: theme.colorScheme.primary)
                           : null,

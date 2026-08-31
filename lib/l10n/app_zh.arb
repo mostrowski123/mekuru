@@ -2067,7 +2067,7 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "AnkiDroid 设置",
+  "ankidroidCardSettingsTooltip": "Mekuru 的 AnkiDroid 设置",
   "@ankidroidCardSettingsTooltip": {
     "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
   },
@@ -2082,6 +2082,46 @@
   "ankidroidCardAddToAnki": "添加到 Anki",
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
+  },
+  "ankidroidNoteTypeMissing": "配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 AnkiDroid 设置中重新选择。",
+  "@ankidroidNoteTypeMissing": {
+    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid."
+  },
+  "ankidroidStaleMappingBanner": "部分已映射的字段在 Anki 中已不存在：{fields}。点按以修复字段映射。",
+  "@ankidroidStaleMappingBanner": {
+    "description": "Warning banner in the create-card flow listing mapped fields that were renamed or deleted in AnkiDroid.",
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidMissingInAnki": "{name} — 在 Anki 中已不存在",
+  "@ankidroidMissingInAnki": {
+    "description": "Subtitle for a configured note type or deck that has been deleted in AnkiDroid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidStaleFieldSubtitle": "在 Anki 中已不存在 — 映射到 {source}",
+  "@ankidroidStaleFieldSubtitle": {
+    "description": "Subtitle for a mapped field that has been renamed or deleted in AnkiDroid.",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidReassignFieldTo": "将“{source}”移至：",
+  "@ankidroidReassignFieldTo": {
+    "description": "Title of the picker that moves an orphaned data source to an existing Anki field.",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
   },
   "mangaReaderSettingsTitle": "阅读器设置",
   "@mangaReaderSettingsTitle": {

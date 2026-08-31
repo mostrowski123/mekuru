@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
+import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
@@ -42,8 +43,9 @@ class _AnkiCardCreationScreenState
   String? _error;
 
   int? _selectedDeckId;
-  String? _selectedDeckName;
   Map<int, String> _decks = {};
+
+  String? get _selectedDeckName => _decks[_selectedDeckId];
 
   bool _duplicateInDeck = false;
   int _duplicateCheckGeneration = 0;
@@ -82,53 +84,58 @@ class _AnkiCardCreationScreenState
       return;
     }
 
-    _fieldNames = await service.getFieldList(config.modelId!);
-    _decks = await service.getDeckList();
-    _selectedDeckId = config.deckId;
-    _selectedDeckName = config.deckName;
-
-    final values = AnkiFieldMapper.resolveFields(
-      ankiFieldNames: _fieldNames,
-      fieldMapping: config.fieldMapping,
-      noteData: widget.noteData,
-    );
-
-    for (final value in values) {
-      _controllers.add(TextEditingController(text: value));
-    }
-
-    unawaited(_checkDuplicateInDeck());
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+    final (fields, decks) = await (
+      service.getFieldList(config.modelId!),
+      service.getDeckList(),
+    ).wait;
+    _applyAnkiState(config, fields, decks);
   }
 
   /// Reload fields after returning from settings (model or mapping may have
   /// changed).
   Future<void> _reloadFields() async {
-    final config = ref.read(ankidroidConfigProvider);
-    if (config.modelId == null) return;
+    if (ref.read(ankidroidConfigProvider).modelId == null) return;
 
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
-    final service = ref.read(ankidroidServiceProvider);
-    final fields = await service.getFieldList(config.modelId!);
-    final decks = await service.getDeckList();
+    await _loadFields();
+  }
 
-    // Dispose old controllers
+  /// Applies freshly fetched Anki state. Anki is the source of truth — but
+  /// only a successful query can prove something is gone: null [fields] or
+  /// [decks] mean the query failed and must not present as a deletion. An
+  /// empty field list means the configured note type no longer exists, and a
+  /// configured deck missing from [decks] is deselected.
+  void _applyAnkiState(
+    AnkidroidConfig config,
+    List<String>? fields,
+    Map<int, String>? decks,
+  ) {
     for (final c in _controllers) {
       c.dispose();
     }
     _controllers.clear();
+    _fieldNames = [];
+
+    if (fields == null || decks == null || fields.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = fields == null || decks == null
+              ? context.l10n.ankidroidCouldNotConnectShort
+              : context.l10n.ankidroidNoteTypeMissing;
+        });
+      }
+      return;
+    }
 
     _fieldNames = fields;
     _decks = decks;
-    _selectedDeckId = config.deckId;
-    _selectedDeckName = config.deckName;
+    _selectedDeckId = decks.containsKey(config.deckId) ? config.deckId : null;
+    _tagsController.text = config.tags.join(', ');
 
     final values = AnkiFieldMapper.resolveFields(
       ankiFieldNames: _fieldNames,
@@ -139,9 +146,6 @@ class _AnkiCardCreationScreenState
     for (final value in values) {
       _controllers.add(TextEditingController(text: value));
     }
-
-    // Update tags from config
-    _tagsController.text = config.tags.join(', ');
 
     unawaited(_checkDuplicateInDeck());
 
@@ -205,12 +209,18 @@ class _AnkiCardCreationScreenState
     // Read before the await so the provider is still reachable even if this
     // screen is disposed while addNote is in flight.
     final statsRepository = ref.read(statsRepositoryProvider);
-    final noteId = await service.addNote(
-      modelId: config.modelId!,
-      deckId: _selectedDeckId!,
-      fields: fields,
-      tags: tags,
-    );
+    int? noteId;
+    Object? sendError;
+    try {
+      noteId = await service.addNote(
+        modelId: config.modelId!,
+        deckId: _selectedDeckId!,
+        fields: fields,
+        tags: tags,
+      );
+    } catch (e) {
+      sendError = e;
+    }
 
     if (noteId != null) {
       logUsage('anki.card_sent', attrs: {'result': 'ok'});
@@ -224,7 +234,10 @@ class _AnkiCardCreationScreenState
         await Sentry.captureException(e, stackTrace: st);
       }
     } else {
-      logFailure('anki.card_sent', StateError('addNote returned null'));
+      logFailure(
+        'anki.card_sent',
+        sendError ?? StateError('addNote returned null'),
+      );
     }
 
     if (mounted) {
@@ -261,14 +274,7 @@ class _AnkiCardCreationScreenState
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: l10n.ankidroidCardSettingsTooltip,
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const AnkidroidSettingsScreen(),
-                ),
-              );
-              if (mounted) _reloadFields();
-            },
+            onPressed: _openSettings,
           ),
         ],
       ),
@@ -276,8 +282,21 @@ class _AnkiCardCreationScreenState
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _controllers.isEmpty
           ? _buildErrorState(theme)
-          : _buildForm(theme),
+          : _buildForm(
+              theme,
+              AnkiFieldMapper.staleMappedFields(
+                ankiFieldNames: _fieldNames,
+                fieldMapping: ref.watch(ankidroidConfigProvider).fieldMapping,
+              ),
+            ),
     );
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AnkidroidSettingsScreen()));
+    if (mounted) _reloadFields();
   }
 
   Widget _buildErrorState(ThemeData theme) {
@@ -290,13 +309,53 @@ class _AnkiCardCreationScreenState
             Icon(Icons.warning_amber, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(_error!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: _openSettings,
+              child: Text(context.l10n.ankidroidCardSettingsTooltip),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildForm(ThemeData theme) {
+  /// Shared shape for the inline notices (stale mapping, duplicate note).
+  Widget _inlineBanner({
+    required IconData icon,
+    required Color background,
+    required Color foreground,
+    required String message,
+    VoidCallback? onTap,
+  }) {
+    return Material(
+      color: background,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: foreground),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: foreground),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm(ThemeData theme, List<String> staleMappedFields) {
     final l10n = context.l10n;
 
     return Column(
@@ -330,6 +389,21 @@ class _AnkiCardCreationScreenState
                       color: theme.colorScheme.error,
                       fontSize: 13,
                     ),
+                  ),
+                ),
+
+              // Mapped fields that were renamed or deleted in Anki.
+              if (staleMappedFields.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _inlineBanner(
+                    icon: Icons.warning_amber,
+                    background: theme.colorScheme.errorContainer,
+                    foreground: theme.colorScheme.onErrorContainer,
+                    message: l10n.ankidroidStaleMappingBanner(
+                      fields: staleMappedFields.map((f) => '"$f"').join(', '),
+                    ),
+                    onTap: _openSettings,
                   ),
                 ),
 
@@ -371,34 +445,12 @@ class _AnkiCardCreationScreenState
         if (_duplicateInDeck)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Material(
-              color: theme.colorScheme.tertiaryContainer,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 18,
-                      color: theme.colorScheme.onTertiaryContainer,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        l10n.ankidroidAlreadyInDeck(
-                          deck: _selectedDeckName ?? '',
-                        ),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onTertiaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            child: _inlineBanner(
+              icon: Icons.info_outline,
+              background: theme.colorScheme.tertiaryContainer,
+              foreground: theme.colorScheme.onTertiaryContainer,
+              message: l10n.ankidroidAlreadyInDeck(
+                deck: _selectedDeckName ?? '',
               ),
             ),
           ),
@@ -408,7 +460,9 @@ class _AnkiCardCreationScreenState
           child: SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: _isSending ? null : _sendNote,
+              onPressed: _isSending || _selectedDeckId == null
+                  ? null
+                  : _sendNote,
               child: _isSending
                   ? const SizedBox(
                       width: 20,
@@ -451,10 +505,7 @@ class _AnkiCardCreationScreenState
                           )
                         : null,
                     onTap: () {
-                      setState(() {
-                        _selectedDeckId = entry.key;
-                        _selectedDeckName = entry.value;
-                      });
+                      setState(() => _selectedDeckId = entry.key);
                       unawaited(_checkDuplicateInDeck());
                       Navigator.pop(sheetContext);
                     },

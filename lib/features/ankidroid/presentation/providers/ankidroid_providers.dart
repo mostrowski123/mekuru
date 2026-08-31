@@ -71,6 +71,13 @@ class AnkidroidConfigNotifier extends Notifier<AnkidroidConfig> {
     setConfig(state.copyWith(fieldMapping: updated));
   }
 
+  /// Drop the mapping for a field that no longer exists in Anki.
+  void removeFieldMapping(String ankiField) {
+    final updated = Map<String, String>.from(state.fieldMapping)
+      ..remove(ankiField);
+    setConfig(state.copyWith(fieldMapping: updated));
+  }
+
   /// Update the default tags.
   void setTags(List<String> tags) {
     setConfig(state.copyWith(tags: tags));

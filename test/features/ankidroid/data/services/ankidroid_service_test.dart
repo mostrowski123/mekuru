@@ -117,7 +117,7 @@ void main() {
       expect(await service.getFieldList(42), ['Front', 'Back']);
     });
 
-    test('returns empty list when native side returns null', () async {
+    test('returns empty list when the model no longer exists', () async {
       mockNativeChannel((call) async {
         if (call.method == 'isApiAvailable') return true;
         return null;
@@ -125,6 +125,25 @@ void main() {
       final service = await initializedService();
 
       expect(await service.getFieldList(42), isEmpty);
+    });
+
+    test('returns null when uninitialized', () async {
+      mockNativeChannel(
+        (call) async => fail('must not touch the channel uninitialized'),
+      );
+
+      expect(await AnkidroidService().getFieldList(42), isNull);
+    });
+
+    test('returns null on platform error so callers cannot mistake a '
+        'failed query for a deleted model', () async {
+      mockNativeChannel((call) async {
+        if (call.method == 'isApiAvailable') return true;
+        throw PlatformException(code: 'saf_io_error');
+      });
+      final service = await initializedService();
+
+      expect(await service.getFieldList(42), isNull);
     });
   });
 
@@ -138,6 +157,24 @@ void main() {
       final service = await initializedService();
 
       expect(await service.getDeckList(), {1: 'Default', 1607392319500: '日本語'});
+    });
+
+    test('returns null on platform error', () async {
+      mockNativeChannel((call) async {
+        if (call.method == 'isApiAvailable') return true;
+        throw PlatformException(code: 'saf_io_error');
+      });
+      final service = await initializedService();
+
+      expect(await service.getDeckList(), isNull);
+    });
+
+    test('returns null when uninitialized', () async {
+      mockNativeChannel(
+        (call) async => fail('must not touch the channel uninitialized'),
+      );
+
+      expect(await AnkidroidService().getDeckList(), isNull);
     });
   });
 
@@ -179,20 +216,17 @@ void main() {
       expect(noteId, isNull);
     });
 
-    test('returns null on platform error', () async {
+    test('rethrows platform errors so callers can report the cause', () async {
       mockNativeChannel((call) async {
         if (call.method == 'isApiAvailable') return true;
-        throw PlatformException(code: 'saf_io_error');
+        throw PlatformException(code: 'saf_io_error', message: 'boom');
       });
       final service = await initializedService();
 
-      final noteId = await service.addNote(
-        modelId: 7,
-        deckId: 9,
-        fields: ['言葉'],
+      await expectLater(
+        service.addNote(modelId: 7, deckId: 9, fields: ['言葉']),
+        throwsA(isA<PlatformException>()),
       );
-
-      expect(noteId, isNull);
     });
   });
 

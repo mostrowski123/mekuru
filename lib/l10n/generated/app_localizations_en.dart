@@ -1804,7 +1804,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'AnkiDroid Settings';
+  String get ankidroidCardSettingsTooltip => 'Mekuru\'s AnkiDroid Settings';
 
   @override
   String get ankidroidCardDeckTitle => 'Deck';
@@ -1814,6 +1814,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ankidroidCardAddToAnki => 'Add to Anki';
+
+  @override
+  String get ankidroidNoteTypeMissing =>
+      'The configured note type no longer exists in Anki. Choose a new one in Mekuru\'s AnkiDroid settings.';
+
+  @override
+  String ankidroidStaleMappingBanner({required String fields}) {
+    return 'Some mapped fields no longer exist in Anki: $fields. Tap to fix the field mapping.';
+  }
+
+  @override
+  String ankidroidMissingInAnki({required String name}) {
+    return '$name — no longer exists in Anki';
+  }
+
+  @override
+  String ankidroidStaleFieldSubtitle({required String source}) {
+    return 'No longer exists in Anki — mapped to $source';
+  }
+
+  @override
+  String ankidroidReassignFieldTo({required String source}) {
+    return 'Move \"$source\" to:';
+  }
 
   @override
   String get mangaReaderSettingsTitle => 'Reader Settings';

@@ -57,6 +57,22 @@ class AnkiFieldMapper {
     }).toList();
   }
 
+  /// Mapped fields that no longer exist in the note type's current field
+  /// list. Anki is the source of truth: entries here mean the user renamed
+  /// or deleted the field in Anki and needs to fix the mapping in the app.
+  /// Fields mapped to `empty` carry no data and are not reported.
+  static List<String> staleMappedFields({
+    required List<String> ankiFieldNames,
+    required Map<String, String> fieldMapping,
+  }) {
+    return [
+      for (final entry in fieldMapping.entries)
+        if (entry.value != AppDataSource.empty.key &&
+            !ankiFieldNames.contains(entry.key))
+          entry.key,
+    ];
+  }
+
   static String _resolveValue(String sourceKey, AnkiNoteData noteData) {
     return switch (sourceKey) {
       'expression' => noteData.expression,

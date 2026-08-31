@@ -10,7 +10,8 @@ import 'package:flutter/services.dart';
 /// The `ankidroid_for_flutter` plugin is only used for the permission
 /// prompt, which never touches the provider.
 ///
-/// Methods return null/empty on failure to allow graceful degradation.
+/// Read methods return null/empty on failure to allow graceful degradation;
+/// [addNote] rethrows so send failures stay diagnosable.
 class AnkidroidService {
   static const MethodChannel _nativeChannel = MethodChannel(
     'mekuru/ankidroid_native',
@@ -57,30 +58,32 @@ class AnkidroidService {
     }
   }
 
-  /// Get field names for a given model ID.
-  Future<List<String>> getFieldList(int modelId) async {
-    if (!_initialized) return [];
+  /// Get field names for a given model ID. Returns an empty list when the
+  /// model no longer exists in AnkiDroid, or null when the query itself
+  /// failed — callers must not present a failed query as a deleted model.
+  Future<List<String>?> getFieldList(int modelId) async {
+    if (!_initialized) return null;
     try {
       final result = await _nativeChannel.invokeListMethod<String>(
         'getFieldList',
         {'modelId': modelId},
       );
+      // The native AddContentApi returns null for an unknown model.
       return result ?? [];
     } catch (_) {
-      return [];
+      return null;
     }
   }
 
-  /// Get list of decks. Returns map of {deckId: deckName}.
-  Future<Map<int, String>> getDeckList() async {
-    if (!_initialized) return {};
+  /// Get list of decks as {deckId: deckName}, or null when the query
+  /// failed. AnkiDroid always has at least one deck, so a native null is a
+  /// failure, never an empty collection.
+  Future<Map<int, String>?> getDeckList() async {
+    if (!_initialized) return null;
     try {
-      final result = await _nativeChannel.invokeMapMethod<int, String>(
-        'getDeckList',
-      );
-      return result ?? {};
+      return await _nativeChannel.invokeMapMethod<int, String>('getDeckList');
     } catch (_) {
-      return {};
+      return null;
     }
   }
 
@@ -110,7 +113,10 @@ class AnkidroidService {
     }
   }
 
-  /// Add a note to AnkiDroid. Returns the new note ID, or null on failure.
+  /// Add a note to AnkiDroid. Returns the new note ID, or null when
+  /// AnkiDroid rejects the insert without an error. Unlike the read methods,
+  /// this rethrows channel errors so callers can report the actual cause of
+  /// a failed send.
   Future<int?> addNote({
     required int modelId,
     required int deckId,
@@ -118,16 +124,12 @@ class AnkidroidService {
     List<String> tags = const ['mekuru'],
   }) async {
     if (!_initialized) return null;
-    try {
-      return await _nativeChannel.invokeMethod<int>('addNote', {
-        'modelId': modelId,
-        'deckId': deckId,
-        'fields': fields,
-        'tags': tags,
-      });
-    } catch (_) {
-      return null;
-    }
+    return _nativeChannel.invokeMethod<int>('addNote', {
+      'modelId': modelId,
+      'deckId': deckId,
+      'fields': fields,
+      'tags': tags,
+    });
   }
 
   /// Reset initialization state.

@@ -2067,7 +2067,7 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "Ajustes de AnkiDroid",
+  "ankidroidCardSettingsTooltip": "Ajustes de AnkiDroid en Mekuru",
   "@ankidroidCardSettingsTooltip": {
     "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
   },
@@ -2082,6 +2082,46 @@
   "ankidroidCardAddToAnki": "Añadir a Anki",
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
+  },
+  "ankidroidNoteTypeMissing": "El tipo de nota configurado ya no existe en Anki. Elige uno nuevo en los ajustes de AnkiDroid de Mekuru.",
+  "@ankidroidNoteTypeMissing": {
+    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid."
+  },
+  "ankidroidStaleMappingBanner": "Algunos campos asignados ya no existen en Anki: {fields}. Toca para corregir la asignación de campos.",
+  "@ankidroidStaleMappingBanner": {
+    "description": "Warning banner in the create-card flow listing mapped fields that were renamed or deleted in AnkiDroid.",
+    "placeholders": {
+      "fields": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidMissingInAnki": "{name} — ya no existe en Anki",
+  "@ankidroidMissingInAnki": {
+    "description": "Subtitle for a configured note type or deck that has been deleted in AnkiDroid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidStaleFieldSubtitle": "Ya no existe en Anki — asignado a {source}",
+  "@ankidroidStaleFieldSubtitle": {
+    "description": "Subtitle for a mapped field that has been renamed or deleted in AnkiDroid.",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidReassignFieldTo": "Mover \"{source}\" a:",
+  "@ankidroidReassignFieldTo": {
+    "description": "Title of the picker that moves an orphaned data source to an existing Anki field.",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
   },
   "mangaReaderSettingsTitle": "Ajustes del lector",
   "@mangaReaderSettingsTitle": {

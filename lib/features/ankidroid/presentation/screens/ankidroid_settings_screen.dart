@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
@@ -69,14 +71,30 @@ class _AnkidroidSettingsScreenState
       return;
     }
 
-    final models = await service.getModelList();
-    final decks = await service.getDeckList();
+    final modelId = ref.read(ankidroidConfigProvider).modelId;
+    final (models, decks, fields) = await (
+      service.getModelList(),
+      service.getDeckList(),
+      // No configured model: nothing to fetch, and an empty list must not
+      // read as "the note type was deleted in Anki".
+      modelId != null
+          ? service.getFieldList(modelId)
+          : Future<List<String>?>.value([]),
+    ).wait;
 
-    final config = ref.read(ankidroidConfigProvider);
-    if (config.modelId != null) {
-      _currentModelFields = await service.getFieldList(config.modelId!);
+    // Null means the query failed — show the connect error rather than
+    // letting a hiccup masquerade as a deleted note type or deck.
+    if (decks == null || fields == null) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = context.l10n.ankidroidCouldNotConnectLong;
+        });
+      }
+      return;
     }
 
+    _currentModelFields = fields;
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -140,6 +158,18 @@ class _AnkidroidSettingsScreenState
     );
   }
 
+  /// Subtitle for the note-type / deck tiles: the configured name, painted
+  /// as an error when the item no longer exists in Anki.
+  Widget _missingAwareSubtitle(String? name, {required bool missing}) {
+    final l10n = context.l10n;
+    return missing
+        ? Text(
+            l10n.ankidroidMissingInAnki(name: name ?? ''),
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          )
+        : Text(name ?? l10n.commonNotSelected);
+  }
+
   Widget _buildSettings(ThemeData theme, AnkidroidConfig config) {
     final l10n = context.l10n;
 
@@ -150,7 +180,10 @@ class _AnkidroidSettingsScreenState
         ListTile(
           leading: Icon(Icons.note_outlined, color: theme.colorScheme.primary),
           title: Text(l10n.ankidroidSettingsNoteTypeTitle),
-          subtitle: Text(config.modelName ?? l10n.commonNotSelected),
+          subtitle: _missingAwareSubtitle(
+            config.modelName,
+            missing: config.modelId != null && _currentModelFields.isEmpty,
+          ),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showModelPicker(context),
         ),
@@ -164,7 +197,11 @@ class _AnkidroidSettingsScreenState
             color: theme.colorScheme.primary,
           ),
           title: Text(l10n.ankidroidSettingsTargetDeckTitle),
-          subtitle: Text(config.deckName ?? l10n.commonNotSelected),
+          subtitle: _missingAwareSubtitle(
+            config.deckName,
+            missing:
+                config.deckId != null && !_decks.containsKey(config.deckId),
+          ),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showDeckPicker(context),
         ),
@@ -193,6 +230,40 @@ class _AnkidroidSettingsScreenState
               trailing: const Icon(Icons.chevron_right),
               onTap: () =>
                   _showFieldMappingPicker(context, fieldName, currentMapping),
+            );
+          }),
+          // Mapped fields that were renamed or deleted in Anki. Anki is the
+          // source of truth: tap to move the data source to a current field,
+          // or remove the orphaned mapping.
+          ...AnkiFieldMapper.staleMappedFields(
+            ankiFieldNames: _currentModelFields,
+            fieldMapping: config.fieldMapping,
+          ).map((fieldName) {
+            final source = AppDataSource.fromKey(
+              config.fieldMapping[fieldName]!,
+            );
+            return ListTile(
+              leading: Icon(
+                Icons.warning_amber,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(
+                fieldName,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+              subtitle: Text(
+                l10n.ankidroidStaleFieldSubtitle(
+                  source: source.localizedLabel(l10n),
+                ),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: l10n.commonRemove,
+                onPressed: () => ref
+                    .read(ankidroidConfigProvider.notifier)
+                    .removeFieldMapping(fieldName),
+              ),
+              onTap: () => _showReassignPicker(context, fieldName, source),
             );
           }),
           const Divider(),
@@ -260,6 +331,9 @@ class _AnkidroidSettingsScreenState
                       final fields = await ref
                           .read(ankidroidServiceProvider)
                           .getFieldList(entry.key);
+                      // Failed query: keep the previous selection rather
+                      // than resetting the mapping to nothing.
+                      if (fields == null) return;
                       ref
                           .read(ankidroidConfigProvider.notifier)
                           .setModel(entry.key, entry.value, fields);
@@ -320,6 +394,32 @@ class _AnkidroidSettingsScreenState
           ],
         ),
       ),
+    );
+  }
+
+  /// Moves the data source of a stale mapping onto one of the note type's
+  /// current fields, then drops the stale entry.
+  void _showReassignPicker(
+    BuildContext context,
+    String staleFieldName,
+    AppDataSource source,
+  ) {
+    final l10n = context.l10n;
+    final mapping = ref.read(ankidroidConfigProvider).fieldMapping;
+    showSettingsOptionPickerSheet<String>(
+      context: context,
+      title: l10n.ankidroidReassignFieldTo(source: source.localizedLabel(l10n)),
+      values: _currentModelFields,
+      labelOf: (fieldName) => fieldName,
+      subtitleOf: (fieldName) => AppDataSource.fromKey(
+        mapping[fieldName] ?? AppDataSource.empty.key,
+      ).localizedLabel(l10n),
+      onSelected: (fieldName) {
+        final notifier = ref.read(ankidroidConfigProvider.notifier);
+        notifier
+          ..setFieldMapping(fieldName, source.key)
+          ..removeFieldMapping(staleFieldName);
+      },
     );
   }
 

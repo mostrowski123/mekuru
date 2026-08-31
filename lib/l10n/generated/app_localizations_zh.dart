@@ -1725,7 +1725,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'AnkiDroid 设置';
+  String get ankidroidCardSettingsTooltip => 'Mekuru 的 AnkiDroid 设置';
 
   @override
   String get ankidroidCardDeckTitle => '牌组';
@@ -1735,6 +1735,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ankidroidCardAddToAnki => '添加到 Anki';
+
+  @override
+  String get ankidroidNoteTypeMissing =>
+      '配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 AnkiDroid 设置中重新选择。';
+
+  @override
+  String ankidroidStaleMappingBanner({required String fields}) {
+    return '部分已映射的字段在 Anki 中已不存在：$fields。点按以修复字段映射。';
+  }
+
+  @override
+  String ankidroidMissingInAnki({required String name}) {
+    return '$name — 在 Anki 中已不存在';
+  }
+
+  @override
+  String ankidroidStaleFieldSubtitle({required String source}) {
+    return '在 Anki 中已不存在 — 映射到 $source';
+  }
+
+  @override
+  String ankidroidReassignFieldTo({required String source}) {
+    return '将“$source”移至：';
+  }
 
   @override
   String get mangaReaderSettingsTitle => '阅读器设置';
@@ -3934,7 +3958,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'AnkiDroid 设置';
+  String get ankidroidCardSettingsTooltip => 'Mekuru 的 AnkiDroid 设置';
 
   @override
   String get ankidroidCardDeckTitle => '牌组';
@@ -3944,6 +3968,30 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ankidroidCardAddToAnki => '添加到 Anki';
+
+  @override
+  String get ankidroidNoteTypeMissing =>
+      '配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 AnkiDroid 设置中重新选择。';
+
+  @override
+  String ankidroidStaleMappingBanner({required String fields}) {
+    return '部分已映射的字段在 Anki 中已不存在：$fields。点按以修复字段映射。';
+  }
+
+  @override
+  String ankidroidMissingInAnki({required String name}) {
+    return '$name — 在 Anki 中已不存在';
+  }
+
+  @override
+  String ankidroidStaleFieldSubtitle({required String source}) {
+    return '在 Anki 中已不存在 — 映射到 $source';
+  }
+
+  @override
+  String ankidroidReassignFieldTo({required String source}) {
+    return '将“$source”移至：';
+  }
 
   @override
   String get mangaReaderSettingsTitle => '阅读器设置';
