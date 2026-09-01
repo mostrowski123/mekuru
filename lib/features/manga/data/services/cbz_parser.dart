@@ -23,12 +23,17 @@ class CbzMetadata {
   /// during extraction. Pages whose header could not be parsed are absent.
   final Map<String, ImageDimensions> imageDimensions;
 
+  /// Path to an embedded `.mokuro` OCR manifest extracted from the archive,
+  /// or null when the archive carries none.
+  final String? mokuroJsonPath;
+
   const CbzMetadata({
     required this.title,
     required this.imageDirPath,
     required this.imageFileNames,
     this.coverImagePath,
     this.imageDimensions = const {},
+    this.mokuroJsonPath,
   });
 
   /// Dimensions for [imageFileName], or null if its header was unreadable.
@@ -157,6 +162,10 @@ class CbzParser {
       '${oneBasedIndex.toString().padLeft(4, '0')}'
       '${p.extension(sourceName).toLowerCase()}';
 
+  /// File name an embedded `.mokuro` manifest is extracted to (in the book
+  /// dir, beside `images/`).
+  static const String embeddedMokuroFileName = 'embedded.mokuro';
+
   /// Extract a CBZ archive to [outputDir] and return metadata.
   ///
   /// Images are extracted to `[outputDir]/images/`. Files nested in
@@ -173,12 +182,28 @@ class CbzParser {
 
     final imageFileNames = <String>[];
     final imageDimensions = <String, ImageDimensions>{};
+    String? mokuroJsonPath;
 
     // Stream-decode from disk: entries stay file-backed windows instead of
     // one whole-archive Uint8List.
     final input = InputFileStream(cbzPath);
     try {
       final archive = ZipDecoder().decodeStream(input);
+
+      // An embedded mokuro OCR manifest (images + .mokuro zipped together)
+      // travels with the archive; extract it beside images/ if present so
+      // the importer can restore tap-to-lookup without re-running OCR.
+      for (final file in archive) {
+        if (!file.isFile) continue;
+        final baseName = p.basename(file.name);
+        if (baseName.startsWith('.')) continue;
+        if (p.extension(baseName).toLowerCase() != '.mokuro') continue;
+        final outPath = p.join(outputDir, embeddedMokuroFileName);
+        await File(outPath).writeAsBytes(file.content);
+        file.clear();
+        mokuroJsonPath = outPath;
+        break;
+      }
 
       // Pre-filter to image files so we can report accurate progress.
       final imageFiles = archive
@@ -260,6 +285,7 @@ class CbzParser {
       imageFileNames: imageFileNames,
       coverImagePath: coverImagePath,
       imageDimensions: imageDimensions,
+      mokuroJsonPath: mokuroJsonPath,
     );
   }
 

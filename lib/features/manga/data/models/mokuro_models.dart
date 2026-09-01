@@ -267,6 +267,18 @@ class MokuroTextBlock {
         [],
   );
 
+  /// Encode this block in mokuro OCR JSON shape — the inverse of
+  /// [MokuroTextBlock.fromOcrJson]. Word segmentation is device-derived and
+  /// deliberately excluded; importers recompute it with their own MeCab
+  /// dictionary.
+  Map<String, dynamic> toOcrJson() => {
+    'box': box,
+    'vertical': vertical,
+    'font_size': fontSize,
+    'lines_coords': linesCoords,
+    'lines': lines,
+  };
+
   /// Parse a mokuro OCR JSON block into a [MokuroTextBlock].
   factory MokuroTextBlock.fromOcrJson(Map<String, dynamic> json) {
     final box = json['box'];

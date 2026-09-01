@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
 
 import 'shared/test_database.dart';
@@ -182,6 +183,100 @@ void main() {
       expect(emissions.last.first.title, '新しい本');
 
       await subscription.cancel();
+    });
+  });
+
+  group('BookRepository.pagesFromEmbeddedMokuro', () {
+    Future<CbzMetadata> metaWithManifest(
+      String json,
+      List<String> images,
+    ) async {
+      final path = p.join(tempDir.path, 'embedded.mokuro');
+      await File(path).writeAsString(json);
+      return CbzMetadata(
+        title: 'vol',
+        imageDirPath: p.join(tempDir.path, 'images'),
+        imageFileNames: images,
+        mokuroJsonPath: path,
+      );
+    }
+
+    test('pairs manifest pages and blocks with extracted images', () async {
+      final meta = await metaWithManifest(
+        jsonEncode({
+          'title': 'vol',
+          'pages': [
+            {
+              'img_path': 'vol/0002.jpg',
+              'img_width': 800,
+              'img_height': 1200,
+              'blocks': [
+                {
+                  'box': [1, 2, 3, 4],
+                  'vertical': true,
+                  'font_size': 20,
+                  'lines_coords': [
+                    [
+                      [1, 2],
+                      [3, 2],
+                      [3, 4],
+                      [1, 4],
+                    ],
+                  ],
+                  'lines': ['はい'],
+                },
+              ],
+            },
+            {
+              'img_path': '0001.jpg',
+              'img_width': 800,
+              'img_height': 1200,
+              'blocks': [],
+            },
+          ],
+        }),
+        ['0001.jpg', '0002.jpg'],
+      );
+
+      final pages = await BookRepository.pagesFromEmbeddedMokuro(meta);
+
+      expect(pages, isNotNull);
+      expect(pages, hasLength(2));
+      // Manifest order defines page order; img_path dirs are stripped.
+      expect(pages![0].imageFileName, '0002.jpg');
+      expect(pages[0].pageIndex, 0);
+      expect(pages[0].blocks, hasLength(1));
+      expect(pages[0].blocks.single.lines, ['はい']);
+      expect(pages[0].blocks.single.fontSize, 20.0);
+      expect(pages[1].imageFileName, '0001.jpg');
+      expect(pages[1].blocks, isEmpty);
+    });
+
+    test('returns null when a referenced image is missing', () async {
+      final meta = await metaWithManifest(
+        jsonEncode({
+          'pages': [
+            {'img_path': 'gone.jpg', 'img_width': 1, 'img_height': 1},
+          ],
+        }),
+        ['0001.jpg'],
+      );
+
+      expect(await BookRepository.pagesFromEmbeddedMokuro(meta), isNull);
+    });
+
+    test('returns null for malformed manifest JSON', () async {
+      final meta = await metaWithManifest('not json{', ['0001.jpg']);
+
+      expect(await BookRepository.pagesFromEmbeddedMokuro(meta), isNull);
+    });
+
+    test('returns null for a manifest with no pages', () async {
+      final meta = await metaWithManifest(jsonEncode({'pages': []}), [
+        '0001.jpg',
+      ]);
+
+      expect(await BookRepository.pagesFromEmbeddedMokuro(meta), isNull);
     });
   });
 

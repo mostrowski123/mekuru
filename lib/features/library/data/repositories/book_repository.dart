@@ -300,8 +300,10 @@ class BookRepository {
   /// Import a CBZ (Comic Book ZIP) archive into the library.
   ///
   /// Extracts images from the archive, reads dimensions for each page,
-  /// and creates a manga book with empty text blocks (no OCR data yet).
-  /// OCR can be run later as a separate step.
+  /// and creates a manga book. When the archive embeds a `.mokuro` OCR
+  /// manifest (e.g. one of our own exports, or images zipped together with
+  /// mokuro output), its text blocks are imported so tap-to-lookup works
+  /// immediately; otherwise pages get empty blocks and OCR can be run later.
   ///
   /// Returns the created [Book].
   Future<Book> importCbz(
@@ -317,28 +319,57 @@ class BookRepository {
         onProgress: onProgress,
       );
 
-      // Build MokuroPages with empty blocks (no OCR yet).
+      // An embedded .mokuro manifest carries OCR data: pair its pages with
+      // the extracted images so tap-to-lookup works without re-running OCR.
+      // Any mismatch or parse failure falls back to the plain no-OCR import.
       final fileNames = cbzMeta.imageFileNames;
-      final pages = <MokuroPage>[
-        for (var i = 0; i < fileNames.length; i++)
-          MokuroPage(
-            pageIndex: i,
-            imageFileName: fileNames[i],
-            imgWidth: cbzMeta.dimensionsOf(fileNames[i])?.width ?? 0,
-            imgHeight: cbzMeta.dimensionsOf(fileNames[i])?.height ?? 0,
-            blocks: const [],
-          ),
-      ];
+      final ocrPages = cbzMeta.mokuroJsonPath != null
+          ? await pagesFromEmbeddedMokuro(cbzMeta)
+          : null;
+
+      final pages =
+          ocrPages ??
+          <MokuroPage>[
+            for (var i = 0; i < fileNames.length; i++)
+              MokuroPage(
+                pageIndex: i,
+                imageFileName: fileNames[i],
+                imgWidth: cbzMeta.dimensionsOf(fileNames[i])?.width ?? 0,
+                imgHeight: cbzMeta.dimensionsOf(fileNames[i])?.height ?? 0,
+                blocks: const [],
+              ),
+          ];
 
       // Build and save pages_cache.json
-      final mokuroBook = MokuroBook(
+      var mokuroBook = MokuroBook(
         title: cbzMeta.title,
         imageDirPath: cbzMeta.imageDirPath,
-        ocrCompleted: false,
+        ocrSource: ocrPages != null ? 'mokuro' : null,
+        ocrCompleted: ocrPages != null,
         pages: pages,
       );
+      String? cacheJson;
+      if (ocrPages != null) {
+        // Segment words with MeCab off the UI isolate, exactly as the
+        // mokuro folder import does.
+        final segmented = await MokuroWordSegmenter.segmentBookInBackground(
+          mokuroBook,
+        );
+        mokuroBook = segmented.book;
+        cacheJson = segmented.cacheJson;
+      }
+      cacheJson ??= jsonEncode(mokuroBook.toJson());
+
+      final cacheBytes = utf8.encode(cacheJson);
       final cacheFile = File(p.join(cacheDir.path, mangaPagesCacheFileName));
-      await writeStringAtomic(cacheFile, jsonEncode(mokuroBook.toJson()));
+      await writeBytesAtomic(cacheFile, cacheBytes);
+      if (ocrPages != null) {
+        // Keep the original-OCR backup, matching the mokuro import path.
+        await writeBytesAtomic(
+          File(p.join(cacheDir.path, originalMokuroOcrBackupFileName)),
+          cacheBytes,
+        );
+      }
 
       debugPrint(
         '[CbzImport] Cached ${pages.length} pages for "${cbzMeta.title}"',
@@ -361,6 +392,62 @@ class BookRepository {
 
       return (await getBookById(bookId))!;
     });
+  }
+
+  /// Build OCR-backed pages from an embedded `.mokuro` manifest, pairing
+  /// each page's `img_path` basename with an extracted image. Returns null —
+  /// falling back to the no-OCR import — when the manifest is unreadable,
+  /// empty, or references an image the archive did not contain (a stale or
+  /// mismatched manifest must never silently drop pages).
+  @visibleForTesting
+  static Future<List<MokuroPage>?> pagesFromEmbeddedMokuro(
+    CbzMetadata cbzMeta,
+  ) async {
+    try {
+      final json =
+          jsonDecode(await File(cbzMeta.mokuroJsonPath!).readAsString())
+              as Map<String, dynamic>;
+      final pagesJson = json['pages'];
+      if (pagesJson is! List || pagesJson.isEmpty) return null;
+
+      final extracted = cbzMeta.imageFileNames.toSet();
+      final pages = <MokuroPage>[];
+      for (final pageJson in pagesJson) {
+        if (pageJson is! Map<String, dynamic>) continue;
+        final imgPath = pageJson['img_path'];
+        if (imgPath is! String) continue;
+        final imageFileName = p.basename(imgPath);
+        if (!extracted.contains(imageFileName)) return null;
+        final imgWidth = pageJson['img_width'];
+        final imgHeight = pageJson['img_height'];
+        final dimensions = cbzMeta.dimensionsOf(imageFileName);
+        final rawBlocks = pageJson['blocks'];
+        pages.add(
+          MokuroPage(
+            pageIndex: pages.length,
+            imageFileName: imageFileName,
+            imgWidth: imgWidth is num
+                ? imgWidth.toInt()
+                : dimensions?.width ?? 0,
+            imgHeight: imgHeight is num
+                ? imgHeight.toInt()
+                : dimensions?.height ?? 0,
+            blocks: rawBlocks is List
+                ? rawBlocks
+                      .whereType<Map<String, dynamic>>()
+                      .map(MokuroTextBlock.fromOcrJson)
+                      .toList()
+                : const <MokuroTextBlock>[],
+          ),
+        );
+      }
+      return pages.isEmpty ? null : pages;
+    } catch (e) {
+      debugPrint(
+        '[CbzImport] Embedded .mokuro unusable, importing without OCR: $e',
+      );
+      return null;
+    }
   }
 
   /// Convert an imported image-only (fixed-layout) EPUB into a manga book,

@@ -36,6 +36,7 @@ Future<int> writeCbz(String cacheDirPath, String outPath) async {
   }
 
   var written = 0;
+  final mokuroPages = <Map<String, dynamic>>[];
   final encoder = ZipFileEncoder()..create(outPath);
   try {
     for (final page in book.pages) {
@@ -43,12 +44,36 @@ Future<int> writeCbz(String cacheDirPath, String outPath) async {
       if (!await File(imagePath).exists()) continue;
       written++;
       final name = CbzParser.pageFileName(written, page.imageFileName);
+      mokuroPages.add({
+        'img_path': name,
+        'img_width': page.imgWidth,
+        'img_height': page.imgHeight,
+        'blocks': [for (final block in page.blocks) block.toOcrJson()],
+      });
       // Stored, not deflated: pages are already-compressed JPEG/PNG, and the
       // stored path streams straight to the output file. add() closes the
       // InputFileStream itself.
       encoder.addArchiveFile(
         ArchiveFile.stream(name, InputFileStream(imagePath))
           ..compression = CompressionType.none,
+      );
+    }
+    // Embed the OCR data as a standard .mokuro entry so importing this CBZ
+    // (on any device, or after a round-trip through a Komga/Kavita server)
+    // restores tap-to-lookup without re-running OCR. Books with no OCR data
+    // export images-only, as before.
+    if (book.pages.any((page) => page.blocks.isNotEmpty)) {
+      final mokuroJson = jsonEncode({
+        'version': '0.2.1',
+        'title': book.title,
+        'volume': book.title,
+        'pages': mokuroPages,
+      });
+      encoder.addArchiveFile(
+        ArchiveFile.string(
+          '${p.basenameWithoutExtension(outPath)}.mokuro',
+          mokuroJson,
+        ),
       );
     }
     await encoder.close();

@@ -50,6 +50,40 @@ void main() {
       File(cbzPath).deleteSync();
     });
 
+    test('extracts an embedded .mokuro manifest beside images', () async {
+      const mokuroJson = '{"title":"vol1","pages":[]}';
+      final cbzPath = await createCbz('with_ocr', {
+        'page_001.jpg': fakeJpegBytes,
+        'vol1.mokuro': mokuroJson.codeUnits,
+      });
+
+      final outputDir = '${tmpDir.path}/output';
+      final meta = await CbzParser.extract(cbzPath, outputDir);
+
+      expect(
+        meta.mokuroJsonPath,
+        '$outputDir/${CbzParser.embeddedMokuroFileName}',
+      );
+      expect(await File(meta.mokuroJsonPath!).readAsString(), mokuroJson);
+      // The manifest is not an image page.
+      expect(meta.imageFileNames, ['page_001.jpg']);
+    });
+
+    test(
+      'mokuroJsonPath is null without a manifest, ignoring dot junk',
+      () async {
+        final cbzPath = await createCbz('plain', {
+          'page_001.jpg': fakeJpegBytes,
+          // macOS zip junk must not count as a manifest.
+          '__MACOSX/._vol1.mokuro': [0x00],
+        });
+
+        final meta = await CbzParser.extract(cbzPath, '${tmpDir.path}/output');
+
+        expect(meta.mokuroJsonPath, isNull);
+      },
+    );
+
     test('extracts images and returns sorted filenames', () async {
       final cbzPath = await createCbz('test_manga', {
         'page_003.jpg': fakeJpegBytes,
