@@ -16,12 +16,14 @@ import 'dart:io';
 Future<void> downloadToFile(
   String url,
   String destinationPath, {
+  Map<String, String>? headers,
   void Function(double progress)? onProgress,
 }) async {
   final client = HttpClient();
   try {
     final uri = Uri.parse(url);
     final request = await client.getUrl(uri);
+    headers?.forEach(request.headers.set);
     final response = await request.close();
 
     if (response.statusCode != HttpStatus.ok) {
