@@ -191,6 +191,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Elegir un archivo CBZ o una carpeta Mokuro';
 
   @override
+  String libraryImportFromServer({required String serverName}) {
+    return 'Download from $serverName';
+  }
+
+  @override
   String get libraryImportMangaTitle => 'Importar Manga';
 
   @override

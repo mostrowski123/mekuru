@@ -230,6 +230,7 @@
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."
   },
+  "libraryImportFromServer": "Download from {serverName}",
   "libraryImportMangaTitle": "导入漫画",
   "@libraryImportMangaTitle": {
     "description": "Title for the manga import type picker."

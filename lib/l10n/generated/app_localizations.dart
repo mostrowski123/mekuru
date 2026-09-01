@@ -427,6 +427,12 @@ abstract class AppLocalizations {
   /// **'Choose a CBZ archive or Mokuro folder'**
   String get libraryImportMangaSubtitle;
 
+  /// Import sheet row that opens a configured Komga/Kavita server for browsing and downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Download from {serverName}'**
+  String libraryImportFromServer({required String serverName});
+
   /// Title for the manga import type picker.
   ///
   /// In en, this message translates to:

@@ -244,6 +244,15 @@
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."
   },
+  "libraryImportFromServer": "Download from {serverName}",
+  "@libraryImportFromServer": {
+    "description": "Import sheet row that opens a configured Komga/Kavita server for browsing and downloading.",
+    "placeholders": {
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
   "libraryImportMangaTitle": "Import Manga",
   "@libraryImportMangaTitle": {
     "description": "Title for the manga import type picker."

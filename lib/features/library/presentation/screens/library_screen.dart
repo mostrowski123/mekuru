@@ -38,6 +38,8 @@ import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
+import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
@@ -598,6 +600,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     LibrarySortOrder.alphabetical => Icons.sort_by_alpha,
   };
 
+  /// Browse a book server from the import sheet. Only the server type goes
+  /// to telemetry: names and URLs are user data.
+  void _openServer(BuildContext context, ServerConnection server) {
+    logUsage(
+      'library.server_browse_opened',
+      attrs: {'server_type': server.serverType},
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ServerBrowseScreen(connection: server),
+      ),
+    );
+  }
+
   void _showImportChoice(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
 
@@ -635,6 +651,39 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     _showMangaImportTypeChoice(context, ref);
                   }
                 });
+              },
+            ),
+            // One row per enabled Komga/Kavita server. Servers are a source
+            // of books, so they live under "+" rather than as library chrome.
+            Consumer(
+              builder: (_, sheetRef, _) {
+                final servers =
+                    sheetRef
+                        .watch(serverConnectionsProvider)
+                        .value
+                        ?.where((c) => c.enabled) ??
+                    const <ServerConnection>[];
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final server in servers)
+                      ListTile(
+                        leading: const Icon(Icons.dns_outlined),
+                        title: Text(
+                          l10n.libraryImportFromServer(serverName: server.name),
+                        ),
+                        subtitle: Text(
+                          server.baseUrl,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          _openServer(context, server);
+                        },
+                      ),
+                  ],
+                );
               },
             ),
           ],

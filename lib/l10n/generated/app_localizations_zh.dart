@@ -187,6 +187,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';
 
   @override
+  String libraryImportFromServer({required String serverName}) {
+    return 'Download from $serverName';
+  }
+
+  @override
   String get libraryImportMangaTitle => '导入漫画';
 
   @override
@@ -2428,6 +2433,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';
+
+  @override
+  String libraryImportFromServer({required String serverName}) {
+    return 'Download from $serverName';
+  }
 
   @override
   String get libraryImportMangaTitle => '导入漫画';
