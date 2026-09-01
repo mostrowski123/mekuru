@@ -53,8 +53,7 @@ class ServerSettingsScreen extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.playlist_add_check),
                         tooltip: 'Link existing books',
-                        onPressed: () =>
-                            _linkExisting(context, ref, connection),
+                        onPressed: () => _linkExisting(context, connection),
                       ),
                     IconButton(
                       icon: const Icon(Icons.edit),
@@ -106,19 +105,29 @@ class ServerSettingsScreen extends ConsumerWidget {
   /// newer server state).
   Future<void> _linkExisting(
     BuildContext context,
-    WidgetRef ref,
     ServerConnection connection,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
       const SnackBar(content: Text('Matching your library…')),
     );
+    // Container, not ref: this keeps working if the user backs out mid-link.
+    final container = ProviderScope.containerOf(context, listen: false);
+    // serverClientProvider is autoDispose. A bare read has no listener, so
+    // the provider is disposed while still building and the client would be
+    // closed under us. Hold a subscription until the work is done.
+    final keepAlive = container.listen(
+      serverClientProvider(connection.id),
+      (_, _) {},
+    );
     try {
-      final client = await ref.read(serverClientProvider(connection.id).future);
-      final result = await ref
+      final client = await container.read(
+        serverClientProvider(connection.id).future,
+      );
+      final result = await container
           .read(bookLinkServiceProvider)
           .linkExistingBooks(connection, client);
-      final sync = ref.read(progressSyncServiceProvider);
+      final sync = container.read(progressSyncServiceProvider);
       for (final bookId in result.linkedBookIds) {
         await sync.syncBookById(bookId);
       }
@@ -137,6 +146,8 @@ class ServerSettingsScreen extends ConsumerWidget {
     } catch (e) {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(SnackBar(content: Text('Linking failed: $e')));
+    } finally {
+      keepAlive.close();
     }
   }
 
