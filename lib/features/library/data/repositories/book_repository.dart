@@ -636,17 +636,35 @@ class BookRepository {
 
   // ──────────────── Update ────────────────
 
+  /// Process-wide hook fired after every progress write, wired by the sync
+  /// feature to push linked books' progress to their server. Static because
+  /// more than one BookRepository instance exists (library + reader).
+  static void Function(int bookId)? onProgressWritten;
+
   /// Update reading progress (CFI / scroll position and percentage).
-  Future<void> updateProgress(int bookId, String cfi, {double? progress}) =>
-      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
-        BooksCompanion(
-          lastReadCfi: Value(cfi),
-          readProgress: progress != null
-              ? Value(progress)
-              : const Value.absent(),
-          lastReadAt: Value(DateTime.now()),
-        ),
-      );
+  ///
+  /// [href]/[hrefProgression] are the EPUB reader's current spine item and
+  /// position within it (0..1) — the locator server progress APIs speak.
+  Future<void> updateProgress(
+    int bookId,
+    String cfi, {
+    double? progress,
+    String? href,
+    double? hrefProgression,
+  }) async {
+    await (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+      BooksCompanion(
+        lastReadCfi: Value(cfi),
+        readProgress: progress != null ? Value(progress) : const Value.absent(),
+        lastReadHref: href != null ? Value(href) : const Value.absent(),
+        lastReadProgression: hrefProgression != null
+            ? Value(hrefProgression)
+            : const Value.absent(),
+        lastReadAt: Value(DateTime.now()),
+      ),
+    );
+    onProgressWritten?.call(bookId);
+  }
 
   /// Update total pages count.
   Future<void> updateTotalPages(int bookId, int totalPages) =>

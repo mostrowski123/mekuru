@@ -32,6 +32,7 @@ import 'package:mekuru/features/settings/presentation/screens/reading_settings_s
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
@@ -116,6 +117,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         WakelockPlus.enable();
       }
       unawaited(_brightnessNotifier.applyForReaderOpen());
+      unawaited(_syncRemoteProgress());
     });
 
     unawaited(setReaderSystemBarsVisible(false));
@@ -395,6 +397,28 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       case ReaderNavigationIntent.toggleControls:
       case ReaderNavigationIntent.none:
         break;
+    }
+  }
+
+  /// Pull server progress for a linked book; when the server is ahead,
+  /// move there (the DB row was already updated by the sync service).
+  Future<void> _syncRemoteProgress() async {
+    final remote = await ref
+        .read(progressSyncServiceProvider)
+        .syncOnOpen(widget.book);
+    final page = remote?.page;
+    if (!mounted || page == null || page == _currentPage) return;
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(page);
+    } else {
+      // The PageView hasn't built yet (pages still loading) — swap in a
+      // controller that starts at the remote page.
+      final previous = _pageController;
+      setState(() {
+        _currentPage = page;
+        _pageController = PageController(initialPage: page);
+      });
+      previous.dispose();
     }
   }
 

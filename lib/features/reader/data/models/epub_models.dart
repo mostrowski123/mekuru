@@ -4,10 +4,17 @@ class EpubLocation {
   final String endCfi;
   final double progress;
 
+  /// Current spine item href and position within it (0..1), when the
+  /// bridge could determine them. Used for server progress sync locators.
+  final String? href;
+  final double? hrefProgression;
+
   const EpubLocation({
     required this.startCfi,
     required this.endCfi,
     required this.progress,
+    this.href,
+    this.hrefProgression,
   });
 
   factory EpubLocation.fromJson(Map<String, dynamic> json) {
@@ -15,6 +22,8 @@ class EpubLocation {
       startCfi: json['startCfi'] as String? ?? '',
       endCfi: json['endCfi'] as String? ?? '',
       progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
+      href: json['href'] as String?,
+      hrefProgression: (json['hrefProgression'] as num?)?.toDouble(),
     );
   }
 }

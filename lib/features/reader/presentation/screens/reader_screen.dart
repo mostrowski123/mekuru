@@ -28,6 +28,8 @@ import 'package:mekuru/features/settings/presentation/screens/reading_settings_s
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/features/sync/data/models/remote_models.dart';
+import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
@@ -83,6 +85,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   bool _viewerRebuildDeferred = false;
   bool _hasActiveSelection = false;
   bool _locationsReady = false;
+
+  /// Newer server progress waiting for epub.js locations to exist before
+  /// the reader can jump to it.
+  RemoteProgress? _pendingRemoteProgress;
   EpubSelectionData? _selectionData;
   double _progress = 0.0;
 
@@ -136,17 +142,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     // flush during dispose, when ConsumerStatefulElement disallows reads).
     final bookRepository = ref.read(readerBookRepositoryProvider);
     _progressPersistence = ReaderProgressPersistence(
-      saveProgress: (cfi, progress) {
+      saveProgress: (cfi, progress, {href, hrefProgression}) {
         return bookRepository.updateProgress(
           widget.book.id,
           cfi,
           progress: progress,
+          href: href,
+          hrefProgression: hrefProgression,
         );
       },
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      unawaited(_syncRemoteProgress());
       await ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
       if (!mounted) return;
 
@@ -176,6 +185,26 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (!mounted) return;
       await _loadEpubData();
     });
+  }
+
+  /// Pull server progress for a linked book; a strictly-newer remote state
+  /// was already persisted by the sync service — this just moves the view.
+  Future<void> _syncRemoteProgress() async {
+    final remote = await ref
+        .read(progressSyncServiceProvider)
+        .syncOnOpen(widget.book);
+    if (!mounted || remote == null) return;
+    _pendingRemoteProgress = remote;
+    _maybeApplyRemoteProgress();
+  }
+
+  /// Progress percentages mean nothing before epub.js generates locations,
+  /// so the jump waits for [_locationsReady].
+  void _maybeApplyRemoteProgress() {
+    final total = _pendingRemoteProgress?.totalProgression;
+    if (total == null || !_locationsReady) return;
+    _pendingRemoteProgress = null;
+    _epubController.toProgressPercentage(total.clamp(0.0, 1.0));
   }
 
   @override
@@ -408,6 +437,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         onLocationsReady: () {
                           if (!mounted) return;
                           _locationsReady = true;
+                          _maybeApplyRemoteProgress();
                         },
                         onRelocated: (location) {
                           if (!mounted) return;
@@ -435,6 +465,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             _progressPersistence.queueSave(
                               cfi,
                               _locationsReady ? normalizedProgress : _progress,
+                              href: location.href,
+                              hrefProgression: location.hrefProgression,
                             );
                           }
                         },

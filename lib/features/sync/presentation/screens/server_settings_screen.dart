@@ -16,7 +16,16 @@ class ServerSettingsScreen extends ConsumerWidget {
     final connections = ref.watch(serverConnectionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Book servers')),
+      appBar: AppBar(
+        title: const Text('Book servers'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Sync now',
+            onPressed: () => _syncNow(context, ref),
+          ),
+        ],
+      ),
       body: connections.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('$error')),
@@ -72,6 +81,24 @@ class ServerSettingsScreen extends ConsumerWidget {
               onTap: () => _showConnectionDialog(context, ref),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _syncNow(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(const SnackBar(content: Text('Syncing…')));
+    final result = await ref.read(progressSyncServiceProvider).syncAll();
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          result.failed > 0
+              ? 'Synced ${result.pushed} books, ${result.failed} failed'
+              : result.pushed > 0
+              ? 'Synced ${result.pushed} books'
+              : 'Everything already in sync',
         ),
       ),
     );

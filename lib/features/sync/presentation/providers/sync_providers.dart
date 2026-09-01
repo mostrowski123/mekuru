@@ -8,7 +8,9 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/kavita_client.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/sync/data/services/komga_client.dart';
+import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:mekuru/main.dart';
@@ -87,6 +89,31 @@ final serverClientProvider = FutureProvider.autoDispose
       ref.onDispose(client.dispose);
       return client;
     });
+
+/// Progress sync engine. Reading a book instantiates this (both reader
+/// screens call syncOnOpen), which also wires the process-wide
+/// progress-write hook so local reading pushes to linked servers.
+final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
+  final service = ProgressSyncService(
+    db: ref.watch(databaseProvider),
+    connections: ref.watch(serverConnectionRepositoryProvider),
+    clientFactory: (connection) async {
+      final secret =
+          await ref.read(serverSecretStorageProvider).load(connection.id) ?? '';
+      return buildServerClient(
+        type: ServerType.fromStorage(connection.serverType),
+        baseUrl: connection.baseUrl,
+        getSecret: () => secret,
+      );
+    },
+  );
+  BookRepository.onProgressWritten = service.schedulePush;
+  ref.onDispose(() {
+    BookRepository.onProgressWritten = null;
+    service.dispose();
+  });
+  return service;
+});
 
 /// Download-and-import state: progress (0..1) per in-flight book, keyed by
 /// primary remote id.

@@ -9,7 +9,7 @@ void main() {
         final savedEntries = <(String, double)>[];
         final persistence = ReaderProgressPersistence(
           debounceDuration: const Duration(milliseconds: 60),
-          saveProgress: (cfi, progress) async {
+          saveProgress: (cfi, progress, {href, hrefProgression}) async {
             savedEntries.add((cfi, progress));
           },
         );
@@ -30,7 +30,7 @@ void main() {
       final savedEntries = <(String, double)>[];
       final persistence = ReaderProgressPersistence(
         debounceDuration: const Duration(milliseconds: 40),
-        saveProgress: (cfi, progress) async {
+        saveProgress: (cfi, progress, {href, hrefProgression}) async {
           savedEntries.add((cfi, progress));
         },
       );
@@ -49,7 +49,7 @@ void main() {
       final savedEntries = <(String, double)>[];
       final persistence = ReaderProgressPersistence(
         debounceDuration: const Duration(seconds: 5),
-        saveProgress: (cfi, progress) async {
+        saveProgress: (cfi, progress, {href, hrefProgression}) async {
           savedEntries.add((cfi, progress));
         },
       );

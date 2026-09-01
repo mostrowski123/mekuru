@@ -1,6 +1,12 @@
 import 'dart:async';
 
-typedef SaveReaderProgress = Future<void> Function(String cfi, double progress);
+typedef SaveReaderProgress =
+    Future<void> Function(
+      String cfi,
+      double progress, {
+      String? href,
+      double? hrefProgression,
+    });
 
 class ReaderProgressPersistence {
   ReaderProgressPersistence({
@@ -14,10 +20,17 @@ class ReaderProgressPersistence {
   Timer? _saveTimer;
   String? _queuedCfi;
   double _queuedProgress = 0.0;
+  String? _queuedHref;
+  double? _queuedHrefProgression;
   String? _lastSavedCfi;
   double? _lastSavedProgress;
 
-  void queueSave(String cfi, double progress) {
+  void queueSave(
+    String cfi,
+    double progress, {
+    String? href,
+    double? hrefProgression,
+  }) {
     if (cfi.isEmpty ||
         (cfi == _lastSavedCfi && progress == _lastSavedProgress)) {
       return;
@@ -25,6 +38,8 @@ class ReaderProgressPersistence {
 
     _queuedCfi = cfi;
     _queuedProgress = progress;
+    _queuedHref = href;
+    _queuedHrefProgression = hrefProgression;
     _saveTimer?.cancel();
     _saveTimer = Timer(debounceDuration, _flushQueuedSave);
   }
@@ -46,7 +61,12 @@ class ReaderProgressPersistence {
 
     final progressToSave = _queuedProgress;
     _queuedCfi = null;
-    await _saveProgress(cfiToSave, progressToSave);
+    await _saveProgress(
+      cfiToSave,
+      progressToSave,
+      href: _queuedHref,
+      hrefProgression: _queuedHrefProgression,
+    );
     _lastSavedCfi = cfiToSave;
     _lastSavedProgress = progressToSave;
   }
