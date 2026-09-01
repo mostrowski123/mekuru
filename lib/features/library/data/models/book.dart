@@ -40,4 +40,22 @@ class Books extends Table {
   /// [FuriganaModeStorage.storageValue]). `null` means "use the global
   /// default from ReaderSettings".
   TextColumn get furiganaMode => text().nullable()();
+
+  /// ServerConnections row this book is linked to for sync; null for purely
+  /// local books. FK enforcement is off app-wide — cleanup is manual in the
+  /// repositories.
+  IntColumn get serverConnectionId => integer().nullable()();
+
+  /// Per-server remote id bundle as raw JSON (Komga: {bookId, seriesId};
+  /// Kavita: {chapterId, volumeId, seriesId, libraryId}). Parse on read.
+  TextColumn get remoteIds => text().nullable()();
+
+  /// Last time progress was successfully synced with the linked server.
+  DateTimeColumn get lastSyncedAt => dateTime().nullable()();
+
+  /// EPUB locator extras beside [lastReadCfi]: current spine item href and
+  /// progression within it (0..1), for server progress APIs that speak
+  /// href+progression rather than CFI.
+  TextColumn get lastReadHref => text().nullable()();
+  RealColumn get lastReadProgression => real().nullable()();
 }

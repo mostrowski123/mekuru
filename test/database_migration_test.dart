@@ -102,7 +102,7 @@ void main() {
       expect(entries.single.definitionTags, isEmpty);
       expect(entries.single.rules, isEmpty);
       expect(entries.single.termTags, isEmpty);
-      expect(migratedDb.schemaVersion, 22);
+      expect(migratedDb.schemaVersion, 23);
     },
   );
 
@@ -244,7 +244,7 @@ void main() {
           .toSet();
 
       expect(indexNames, contains('idx_pitch_expr_dictid'));
-      expect(migratedDb.schemaVersion, 22);
+      expect(migratedDb.schemaVersion, 23);
     },
   );
 
@@ -314,7 +314,7 @@ void main() {
           .getSingle();
       expect(sessionCount.data['c'], 0);
 
-      expect(migratedDb.schemaVersion, 22);
+      expect(migratedDb.schemaVersion, 23);
     },
   );
 
@@ -370,7 +370,7 @@ void main() {
             ),
           );
 
-      expect(migratedDb.schemaVersion, 22);
+      expect(migratedDb.schemaVersion, 23);
     },
   );
 
@@ -415,7 +415,7 @@ void main() {
         .customSelect('SELECT COUNT(*) AS c FROM book_collections')
         .getSingle();
     expect(memberCount.data['c'], 1);
-    expect(migratedDb.schemaVersion, 22);
+    expect(migratedDb.schemaVersion, 23);
   });
 
   test('adds book_collections.position when migrating to schema 22', () async {
@@ -462,6 +462,65 @@ void main() {
         .customSelect('SELECT position FROM book_collections')
         .getSingle();
     expect(row.data['position'], 0);
-    expect(migratedDb.schemaVersion, 22);
+    expect(migratedDb.schemaVersion, 23);
+  });
+
+  test('adds server sync table and book link columns at schema 23', () async {
+    final tempDir = await Directory.systemTemp.createTemp('mekuru_sync_');
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final dbFile = File('${tempDir.path}/mekuru.sqlite');
+
+    final seedDb = AppDatabase(NativeDatabase(dbFile));
+    await seedDb
+        .into(seedDb.books)
+        .insert(
+          BooksCompanion.insert(
+            title: '坊っちゃん',
+            filePath: '/books/botchan',
+            lastReadCfi: const Value('epubcfi(/6/4!/4/2/1:0)'),
+            readProgress: const Value(0.42),
+          ),
+        );
+    await seedDb.close();
+
+    // Rewind to v22: drop the sync table and the five link columns.
+    final legacyDb = sqlite.sqlite3.open(dbFile.path);
+    legacyDb.execute('PRAGMA user_version = 22;');
+    legacyDb.execute('DROP TABLE server_connections;');
+    for (final column in [
+      'server_connection_id',
+      'remote_ids',
+      'last_synced_at',
+      'last_read_href',
+      'last_read_progression',
+    ]) {
+      legacyDb.execute('ALTER TABLE books DROP COLUMN $column;');
+    }
+    legacyDb.close();
+
+    final migratedDb = AppDatabase(NativeDatabase(dbFile));
+    addTearDown(migratedDb.close);
+
+    // Existing row survives with all data; new link columns read as null.
+    final book = await migratedDb.select(migratedDb.books).getSingle();
+    expect(book.title, '坊っちゃん');
+    expect(book.lastReadCfi, 'epubcfi(/6/4!/4/2/1:0)');
+    expect(book.readProgress, 0.42);
+    expect(book.serverConnectionId, null);
+    expect(book.remoteIds, null);
+    expect(book.lastSyncedAt, null);
+    expect(book.lastReadHref, null);
+    expect(book.lastReadProgression, null);
+
+    final connections = await migratedDb
+        .select(migratedDb.serverConnections)
+        .get();
+    expect(connections, isEmpty);
+    expect(migratedDb.schemaVersion, 23);
   });
 }

@@ -16,6 +16,7 @@ import '../../features/reader/data/models/bookmark.dart';
 import '../../features/reader/data/models/highlight.dart';
 import '../../features/backup/data/models/pending_book_data.dart';
 import '../../features/stats/data/models/stats_tables.dart';
+import '../../features/sync/data/models/server_connection.dart';
 
 part 'database_provider.g.dart';
 
@@ -34,6 +35,7 @@ part 'database_provider.g.dart';
     WordEvents,
     Collections,
     BookCollections,
+    ServerConnections,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -69,7 +71,7 @@ class AppDatabase extends _$AppDatabase {
   };
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -179,6 +181,26 @@ class AppDatabase extends _$AppDatabase {
         // createTable above already produced the current shape including
         // position.
         await migrator.addColumn(bookCollections, bookCollections.position);
+      }
+      if (from < 23) {
+        await migrator.createTable(serverConnections);
+        // Guarded like v17: tolerate columns that already exist.
+        final names = await _tableColumnNames('books');
+        if (!names.contains('server_connection_id')) {
+          await migrator.addColumn(books, books.serverConnectionId);
+        }
+        if (!names.contains('remote_ids')) {
+          await migrator.addColumn(books, books.remoteIds);
+        }
+        if (!names.contains('last_synced_at')) {
+          await migrator.addColumn(books, books.lastSyncedAt);
+        }
+        if (!names.contains('last_read_href')) {
+          await migrator.addColumn(books, books.lastReadHref);
+        }
+        if (!names.contains('last_read_progression')) {
+          await migrator.addColumn(books, books.lastReadProgression);
+        }
       }
       // v18 (search_text) and v20 (has_vertical_css) have no migration
       // blocks: the repair pass in beforeOpen adds the columns via the

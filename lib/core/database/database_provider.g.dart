@@ -204,6 +204,60 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _serverConnectionIdMeta =
+      const VerificationMeta('serverConnectionId');
+  @override
+  late final GeneratedColumn<int> serverConnectionId = GeneratedColumn<int>(
+    'server_connection_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _remoteIdsMeta = const VerificationMeta(
+    'remoteIds',
+  );
+  @override
+  late final GeneratedColumn<String> remoteIds = GeneratedColumn<String>(
+    'remote_ids',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastReadHrefMeta = const VerificationMeta(
+    'lastReadHref',
+  );
+  @override
+  late final GeneratedColumn<String> lastReadHref = GeneratedColumn<String>(
+    'last_read_href',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastReadProgressionMeta =
+      const VerificationMeta('lastReadProgression');
+  @override
+  late final GeneratedColumn<double> lastReadProgression =
+      GeneratedColumn<double>(
+        'last_read_progression',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -223,6 +277,11 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     overrideVerticalText,
     overrideReadingDirection,
     furiganaMode,
+    serverConnectionId,
+    remoteIds,
+    lastSyncedAt,
+    lastReadHref,
+    lastReadProgression,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -369,6 +428,48 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('server_connection_id')) {
+      context.handle(
+        _serverConnectionIdMeta,
+        serverConnectionId.isAcceptableOrUnknown(
+          data['server_connection_id']!,
+          _serverConnectionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('remote_ids')) {
+      context.handle(
+        _remoteIdsMeta,
+        remoteIds.isAcceptableOrUnknown(data['remote_ids']!, _remoteIdsMeta),
+      );
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_read_href')) {
+      context.handle(
+        _lastReadHrefMeta,
+        lastReadHref.isAcceptableOrUnknown(
+          data['last_read_href']!,
+          _lastReadHrefMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_read_progression')) {
+      context.handle(
+        _lastReadProgressionMeta,
+        lastReadProgression.isAcceptableOrUnknown(
+          data['last_read_progression']!,
+          _lastReadProgressionMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -446,6 +547,26 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.string,
         data['${effectivePrefix}furigana_mode'],
       ),
+      serverConnectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_connection_id'],
+      ),
+      remoteIds: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_ids'],
+      ),
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced_at'],
+      ),
+      lastReadHref: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_read_href'],
+      ),
+      lastReadProgression: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}last_read_progression'],
+      ),
     );
   }
 
@@ -493,6 +614,24 @@ class Book extends DataClass implements Insertable<Book> {
   /// [FuriganaModeStorage.storageValue]). `null` means "use the global
   /// default from ReaderSettings".
   final String? furiganaMode;
+
+  /// ServerConnections row this book is linked to for sync; null for purely
+  /// local books. FK enforcement is off app-wide — cleanup is manual in the
+  /// repositories.
+  final int? serverConnectionId;
+
+  /// Per-server remote id bundle as raw JSON (Komga: {bookId, seriesId};
+  /// Kavita: {chapterId, volumeId, seriesId, libraryId}). Parse on read.
+  final String? remoteIds;
+
+  /// Last time progress was successfully synced with the linked server.
+  final DateTime? lastSyncedAt;
+
+  /// EPUB locator extras beside [lastReadCfi]: current spine item href and
+  /// progression within it (0..1), for server progress APIs that speak
+  /// href+progression rather than CFI.
+  final String? lastReadHref;
+  final double? lastReadProgression;
   const Book({
     required this.id,
     required this.title,
@@ -511,6 +650,11 @@ class Book extends DataClass implements Insertable<Book> {
     this.overrideVerticalText,
     this.overrideReadingDirection,
     this.furiganaMode,
+    this.serverConnectionId,
+    this.remoteIds,
+    this.lastSyncedAt,
+    this.lastReadHref,
+    this.lastReadProgression,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -556,6 +700,21 @@ class Book extends DataClass implements Insertable<Book> {
     if (!nullToAbsent || furiganaMode != null) {
       map['furigana_mode'] = Variable<String>(furiganaMode);
     }
+    if (!nullToAbsent || serverConnectionId != null) {
+      map['server_connection_id'] = Variable<int>(serverConnectionId);
+    }
+    if (!nullToAbsent || remoteIds != null) {
+      map['remote_ids'] = Variable<String>(remoteIds);
+    }
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    if (!nullToAbsent || lastReadHref != null) {
+      map['last_read_href'] = Variable<String>(lastReadHref);
+    }
+    if (!nullToAbsent || lastReadProgression != null) {
+      map['last_read_progression'] = Variable<double>(lastReadProgression);
+    }
     return map;
   }
 
@@ -598,6 +757,21 @@ class Book extends DataClass implements Insertable<Book> {
       furiganaMode: furiganaMode == null && nullToAbsent
           ? const Value.absent()
           : Value(furiganaMode),
+      serverConnectionId: serverConnectionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverConnectionId),
+      remoteIds: remoteIds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteIds),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+      lastReadHref: lastReadHref == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReadHref),
+      lastReadProgression: lastReadProgression == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReadProgression),
     );
   }
 
@@ -632,6 +806,13 @@ class Book extends DataClass implements Insertable<Book> {
         json['overrideReadingDirection'],
       ),
       furiganaMode: serializer.fromJson<String?>(json['furiganaMode']),
+      serverConnectionId: serializer.fromJson<int?>(json['serverConnectionId']),
+      remoteIds: serializer.fromJson<String?>(json['remoteIds']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+      lastReadHref: serializer.fromJson<String?>(json['lastReadHref']),
+      lastReadProgression: serializer.fromJson<double?>(
+        json['lastReadProgression'],
+      ),
     );
   }
   @override
@@ -659,6 +840,11 @@ class Book extends DataClass implements Insertable<Book> {
         overrideReadingDirection,
       ),
       'furiganaMode': serializer.toJson<String?>(furiganaMode),
+      'serverConnectionId': serializer.toJson<int?>(serverConnectionId),
+      'remoteIds': serializer.toJson<String?>(remoteIds),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+      'lastReadHref': serializer.toJson<String?>(lastReadHref),
+      'lastReadProgression': serializer.toJson<double?>(lastReadProgression),
     };
   }
 
@@ -680,6 +866,11 @@ class Book extends DataClass implements Insertable<Book> {
     Value<bool?> overrideVerticalText = const Value.absent(),
     Value<String?> overrideReadingDirection = const Value.absent(),
     Value<String?> furiganaMode = const Value.absent(),
+    Value<int?> serverConnectionId = const Value.absent(),
+    Value<String?> remoteIds = const Value.absent(),
+    Value<DateTime?> lastSyncedAt = const Value.absent(),
+    Value<String?> lastReadHref = const Value.absent(),
+    Value<double?> lastReadProgression = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -710,6 +901,15 @@ class Book extends DataClass implements Insertable<Book> {
         ? overrideReadingDirection.value
         : this.overrideReadingDirection,
     furiganaMode: furiganaMode.present ? furiganaMode.value : this.furiganaMode,
+    serverConnectionId: serverConnectionId.present
+        ? serverConnectionId.value
+        : this.serverConnectionId,
+    remoteIds: remoteIds.present ? remoteIds.value : this.remoteIds,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+    lastReadHref: lastReadHref.present ? lastReadHref.value : this.lastReadHref,
+    lastReadProgression: lastReadProgression.present
+        ? lastReadProgression.value
+        : this.lastReadProgression,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -752,6 +952,19 @@ class Book extends DataClass implements Insertable<Book> {
       furiganaMode: data.furiganaMode.present
           ? data.furiganaMode.value
           : this.furiganaMode,
+      serverConnectionId: data.serverConnectionId.present
+          ? data.serverConnectionId.value
+          : this.serverConnectionId,
+      remoteIds: data.remoteIds.present ? data.remoteIds.value : this.remoteIds,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+      lastReadHref: data.lastReadHref.present
+          ? data.lastReadHref.value
+          : this.lastReadHref,
+      lastReadProgression: data.lastReadProgression.present
+          ? data.lastReadProgression.value
+          : this.lastReadProgression,
     );
   }
 
@@ -774,13 +987,18 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('hasVerticalCss: $hasVerticalCss, ')
           ..write('overrideVerticalText: $overrideVerticalText, ')
           ..write('overrideReadingDirection: $overrideReadingDirection, ')
-          ..write('furiganaMode: $furiganaMode')
+          ..write('furiganaMode: $furiganaMode, ')
+          ..write('serverConnectionId: $serverConnectionId, ')
+          ..write('remoteIds: $remoteIds, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('lastReadHref: $lastReadHref, ')
+          ..write('lastReadProgression: $lastReadProgression')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     title,
     filePath,
@@ -798,7 +1016,12 @@ class Book extends DataClass implements Insertable<Book> {
     overrideVerticalText,
     overrideReadingDirection,
     furiganaMode,
-  );
+    serverConnectionId,
+    remoteIds,
+    lastSyncedAt,
+    lastReadHref,
+    lastReadProgression,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -819,7 +1042,12 @@ class Book extends DataClass implements Insertable<Book> {
           other.hasVerticalCss == this.hasVerticalCss &&
           other.overrideVerticalText == this.overrideVerticalText &&
           other.overrideReadingDirection == this.overrideReadingDirection &&
-          other.furiganaMode == this.furiganaMode);
+          other.furiganaMode == this.furiganaMode &&
+          other.serverConnectionId == this.serverConnectionId &&
+          other.remoteIds == this.remoteIds &&
+          other.lastSyncedAt == this.lastSyncedAt &&
+          other.lastReadHref == this.lastReadHref &&
+          other.lastReadProgression == this.lastReadProgression);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -840,6 +1068,11 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<bool?> overrideVerticalText;
   final Value<String?> overrideReadingDirection;
   final Value<String?> furiganaMode;
+  final Value<int?> serverConnectionId;
+  final Value<String?> remoteIds;
+  final Value<DateTime?> lastSyncedAt;
+  final Value<String?> lastReadHref;
+  final Value<double?> lastReadProgression;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -858,6 +1091,11 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.overrideVerticalText = const Value.absent(),
     this.overrideReadingDirection = const Value.absent(),
     this.furiganaMode = const Value.absent(),
+    this.serverConnectionId = const Value.absent(),
+    this.remoteIds = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.lastReadHref = const Value.absent(),
+    this.lastReadProgression = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -877,6 +1115,11 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.overrideVerticalText = const Value.absent(),
     this.overrideReadingDirection = const Value.absent(),
     this.furiganaMode = const Value.absent(),
+    this.serverConnectionId = const Value.absent(),
+    this.remoteIds = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.lastReadHref = const Value.absent(),
+    this.lastReadProgression = const Value.absent(),
   }) : title = Value(title),
        filePath = Value(filePath);
   static Insertable<Book> custom({
@@ -897,6 +1140,11 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<bool>? overrideVerticalText,
     Expression<String>? overrideReadingDirection,
     Expression<String>? furiganaMode,
+    Expression<int>? serverConnectionId,
+    Expression<String>? remoteIds,
+    Expression<DateTime>? lastSyncedAt,
+    Expression<String>? lastReadHref,
+    Expression<double>? lastReadProgression,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -920,6 +1168,13 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (overrideReadingDirection != null)
         'override_reading_direction': overrideReadingDirection,
       if (furiganaMode != null) 'furigana_mode': furiganaMode,
+      if (serverConnectionId != null)
+        'server_connection_id': serverConnectionId,
+      if (remoteIds != null) 'remote_ids': remoteIds,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (lastReadHref != null) 'last_read_href': lastReadHref,
+      if (lastReadProgression != null)
+        'last_read_progression': lastReadProgression,
     });
   }
 
@@ -941,6 +1196,11 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<bool?>? overrideVerticalText,
     Value<String?>? overrideReadingDirection,
     Value<String?>? furiganaMode,
+    Value<int?>? serverConnectionId,
+    Value<String?>? remoteIds,
+    Value<DateTime?>? lastSyncedAt,
+    Value<String?>? lastReadHref,
+    Value<double?>? lastReadProgression,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -962,6 +1222,11 @@ class BooksCompanion extends UpdateCompanion<Book> {
       overrideReadingDirection:
           overrideReadingDirection ?? this.overrideReadingDirection,
       furiganaMode: furiganaMode ?? this.furiganaMode,
+      serverConnectionId: serverConnectionId ?? this.serverConnectionId,
+      remoteIds: remoteIds ?? this.remoteIds,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      lastReadHref: lastReadHref ?? this.lastReadHref,
+      lastReadProgression: lastReadProgression ?? this.lastReadProgression,
     );
   }
 
@@ -1025,6 +1290,23 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (furiganaMode.present) {
       map['furigana_mode'] = Variable<String>(furiganaMode.value);
     }
+    if (serverConnectionId.present) {
+      map['server_connection_id'] = Variable<int>(serverConnectionId.value);
+    }
+    if (remoteIds.present) {
+      map['remote_ids'] = Variable<String>(remoteIds.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    if (lastReadHref.present) {
+      map['last_read_href'] = Variable<String>(lastReadHref.value);
+    }
+    if (lastReadProgression.present) {
+      map['last_read_progression'] = Variable<double>(
+        lastReadProgression.value,
+      );
+    }
     return map;
   }
 
@@ -1047,7 +1329,12 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('hasVerticalCss: $hasVerticalCss, ')
           ..write('overrideVerticalText: $overrideVerticalText, ')
           ..write('overrideReadingDirection: $overrideReadingDirection, ')
-          ..write('furiganaMode: $furiganaMode')
+          ..write('furiganaMode: $furiganaMode, ')
+          ..write('serverConnectionId: $serverConnectionId, ')
+          ..write('remoteIds: $remoteIds, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('lastReadHref: $lastReadHref, ')
+          ..write('lastReadProgression: $lastReadProgression')
           ..write(')'))
         .toString();
   }
@@ -5863,6 +6150,411 @@ class BookCollectionsCompanion extends UpdateCompanion<BookCollection> {
   }
 }
 
+class $ServerConnectionsTable extends ServerConnections
+    with TableInfo<$ServerConnectionsTable, ServerConnection> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ServerConnectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _serverTypeMeta = const VerificationMeta(
+    'serverType',
+  );
+  @override
+  late final GeneratedColumn<String> serverType = GeneratedColumn<String>(
+    'server_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _baseUrlMeta = const VerificationMeta(
+    'baseUrl',
+  );
+  @override
+  late final GeneratedColumn<String> baseUrl = GeneratedColumn<String>(
+    'base_url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    serverType,
+    name,
+    baseUrl,
+    enabled,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'server_connections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ServerConnection> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('server_type')) {
+      context.handle(
+        _serverTypeMeta,
+        serverType.isAcceptableOrUnknown(data['server_type']!, _serverTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serverTypeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('base_url')) {
+      context.handle(
+        _baseUrlMeta,
+        baseUrl.isAcceptableOrUnknown(data['base_url']!, _baseUrlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_baseUrlMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ServerConnection map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ServerConnection(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      serverType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_type'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      baseUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_url'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ServerConnectionsTable createAlias(String alias) {
+    return $ServerConnectionsTable(attachedDatabase, alias);
+  }
+}
+
+class ServerConnection extends DataClass
+    implements Insertable<ServerConnection> {
+  final int id;
+
+  /// 'komga' or 'kavita'.
+  final String serverType;
+  final String name;
+  final String baseUrl;
+
+  /// Disabled connections (e.g. restored from backup before credentials are
+  /// re-entered) are skipped by sync and browse.
+  final bool enabled;
+  final DateTime createdAt;
+  const ServerConnection({
+    required this.id,
+    required this.serverType,
+    required this.name,
+    required this.baseUrl,
+    required this.enabled,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['server_type'] = Variable<String>(serverType);
+    map['name'] = Variable<String>(name);
+    map['base_url'] = Variable<String>(baseUrl);
+    map['enabled'] = Variable<bool>(enabled);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ServerConnectionsCompanion toCompanion(bool nullToAbsent) {
+    return ServerConnectionsCompanion(
+      id: Value(id),
+      serverType: Value(serverType),
+      name: Value(name),
+      baseUrl: Value(baseUrl),
+      enabled: Value(enabled),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ServerConnection.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ServerConnection(
+      id: serializer.fromJson<int>(json['id']),
+      serverType: serializer.fromJson<String>(json['serverType']),
+      name: serializer.fromJson<String>(json['name']),
+      baseUrl: serializer.fromJson<String>(json['baseUrl']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'serverType': serializer.toJson<String>(serverType),
+      'name': serializer.toJson<String>(name),
+      'baseUrl': serializer.toJson<String>(baseUrl),
+      'enabled': serializer.toJson<bool>(enabled),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ServerConnection copyWith({
+    int? id,
+    String? serverType,
+    String? name,
+    String? baseUrl,
+    bool? enabled,
+    DateTime? createdAt,
+  }) => ServerConnection(
+    id: id ?? this.id,
+    serverType: serverType ?? this.serverType,
+    name: name ?? this.name,
+    baseUrl: baseUrl ?? this.baseUrl,
+    enabled: enabled ?? this.enabled,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ServerConnection copyWithCompanion(ServerConnectionsCompanion data) {
+    return ServerConnection(
+      id: data.id.present ? data.id.value : this.id,
+      serverType: data.serverType.present
+          ? data.serverType.value
+          : this.serverType,
+      name: data.name.present ? data.name.value : this.name,
+      baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ServerConnection(')
+          ..write('id: $id, ')
+          ..write('serverType: $serverType, ')
+          ..write('name: $name, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('enabled: $enabled, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, serverType, name, baseUrl, enabled, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ServerConnection &&
+          other.id == this.id &&
+          other.serverType == this.serverType &&
+          other.name == this.name &&
+          other.baseUrl == this.baseUrl &&
+          other.enabled == this.enabled &&
+          other.createdAt == this.createdAt);
+}
+
+class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
+  final Value<int> id;
+  final Value<String> serverType;
+  final Value<String> name;
+  final Value<String> baseUrl;
+  final Value<bool> enabled;
+  final Value<DateTime> createdAt;
+  const ServerConnectionsCompanion({
+    this.id = const Value.absent(),
+    this.serverType = const Value.absent(),
+    this.name = const Value.absent(),
+    this.baseUrl = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ServerConnectionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String serverType,
+    required String name,
+    required String baseUrl,
+    this.enabled = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : serverType = Value(serverType),
+       name = Value(name),
+       baseUrl = Value(baseUrl);
+  static Insertable<ServerConnection> custom({
+    Expression<int>? id,
+    Expression<String>? serverType,
+    Expression<String>? name,
+    Expression<String>? baseUrl,
+    Expression<bool>? enabled,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (serverType != null) 'server_type': serverType,
+      if (name != null) 'name': name,
+      if (baseUrl != null) 'base_url': baseUrl,
+      if (enabled != null) 'enabled': enabled,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ServerConnectionsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? serverType,
+    Value<String>? name,
+    Value<String>? baseUrl,
+    Value<bool>? enabled,
+    Value<DateTime>? createdAt,
+  }) {
+    return ServerConnectionsCompanion(
+      id: id ?? this.id,
+      serverType: serverType ?? this.serverType,
+      name: name ?? this.name,
+      baseUrl: baseUrl ?? this.baseUrl,
+      enabled: enabled ?? this.enabled,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (serverType.present) {
+      map['server_type'] = Variable<String>(serverType.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (baseUrl.present) {
+      map['base_url'] = Variable<String>(baseUrl.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ServerConnectionsCompanion(')
+          ..write('id: $id, ')
+          ..write('serverType: $serverType, ')
+          ..write('name: $name, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('enabled: $enabled, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5888,6 +6580,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BookCollectionsTable bookCollections = $BookCollectionsTable(
     this,
   );
+  late final $ServerConnectionsTable serverConnections =
+      $ServerConnectionsTable(this);
   late final Index idxExpression = Index(
     'idx_expression',
     'CREATE INDEX idx_expression ON dictionary_entries (expression)',
@@ -5946,6 +6640,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     wordEvents,
     collections,
     bookCollections,
+    serverConnections,
     idxExpression,
     idxReading,
     idxExprDictid,
@@ -5978,6 +6673,11 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<bool?> overrideVerticalText,
       Value<String?> overrideReadingDirection,
       Value<String?> furiganaMode,
+      Value<int?> serverConnectionId,
+      Value<String?> remoteIds,
+      Value<DateTime?> lastSyncedAt,
+      Value<String?> lastReadHref,
+      Value<double?> lastReadProgression,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -5998,6 +6698,11 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<bool?> overrideVerticalText,
       Value<String?> overrideReadingDirection,
       Value<String?> furiganaMode,
+      Value<int?> serverConnectionId,
+      Value<String?> remoteIds,
+      Value<DateTime?> lastSyncedAt,
+      Value<String?> lastReadHref,
+      Value<double?> lastReadProgression,
     });
 
 final class $$BooksTableReferences
@@ -6151,6 +6856,31 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<String> get furiganaMode => $composableBuilder(
     column: $table.furiganaMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverConnectionId => $composableBuilder(
+    column: $table.serverConnectionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteIds => $composableBuilder(
+    column: $table.remoteIds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastReadHref => $composableBuilder(
+    column: $table.lastReadHref,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lastReadProgression => $composableBuilder(
+    column: $table.lastReadProgression,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6323,6 +7053,31 @@ class $$BooksTableOrderingComposer
     column: $table.furiganaMode,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get serverConnectionId => $composableBuilder(
+    column: $table.serverConnectionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteIds => $composableBuilder(
+    column: $table.remoteIds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastReadHref => $composableBuilder(
+    column: $table.lastReadHref,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lastReadProgression => $composableBuilder(
+    column: $table.lastReadProgression,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -6404,6 +7159,29 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<String> get furiganaMode => $composableBuilder(
     column: $table.furiganaMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverConnectionId => $composableBuilder(
+    column: $table.serverConnectionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get remoteIds =>
+      $composableBuilder(column: $table.remoteIds, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastReadHref => $composableBuilder(
+    column: $table.lastReadHref,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get lastReadProgression => $composableBuilder(
+    column: $table.lastReadProgression,
     builder: (column) => column,
   );
 
@@ -6532,6 +7310,11 @@ class $$BooksTableTableManager
                 Value<bool?> overrideVerticalText = const Value.absent(),
                 Value<String?> overrideReadingDirection = const Value.absent(),
                 Value<String?> furiganaMode = const Value.absent(),
+                Value<int?> serverConnectionId = const Value.absent(),
+                Value<String?> remoteIds = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<String?> lastReadHref = const Value.absent(),
+                Value<double?> lastReadProgression = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 title: title,
@@ -6550,6 +7333,11 @@ class $$BooksTableTableManager
                 overrideVerticalText: overrideVerticalText,
                 overrideReadingDirection: overrideReadingDirection,
                 furiganaMode: furiganaMode,
+                serverConnectionId: serverConnectionId,
+                remoteIds: remoteIds,
+                lastSyncedAt: lastSyncedAt,
+                lastReadHref: lastReadHref,
+                lastReadProgression: lastReadProgression,
               ),
           createCompanionCallback:
               ({
@@ -6570,6 +7358,11 @@ class $$BooksTableTableManager
                 Value<bool?> overrideVerticalText = const Value.absent(),
                 Value<String?> overrideReadingDirection = const Value.absent(),
                 Value<String?> furiganaMode = const Value.absent(),
+                Value<int?> serverConnectionId = const Value.absent(),
+                Value<String?> remoteIds = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<String?> lastReadHref = const Value.absent(),
+                Value<double?> lastReadProgression = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 title: title,
@@ -6588,6 +7381,11 @@ class $$BooksTableTableManager
                 overrideVerticalText: overrideVerticalText,
                 overrideReadingDirection: overrideReadingDirection,
                 furiganaMode: furiganaMode,
+                serverConnectionId: serverConnectionId,
+                remoteIds: remoteIds,
+                lastSyncedAt: lastSyncedAt,
+                lastReadHref: lastReadHref,
+                lastReadProgression: lastReadProgression,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -9855,6 +10653,234 @@ typedef $$BookCollectionsTableProcessedTableManager =
       BookCollection,
       PrefetchHooks Function({bool bookId, bool collectionId})
     >;
+typedef $$ServerConnectionsTableCreateCompanionBuilder =
+    ServerConnectionsCompanion Function({
+      Value<int> id,
+      required String serverType,
+      required String name,
+      required String baseUrl,
+      Value<bool> enabled,
+      Value<DateTime> createdAt,
+    });
+typedef $$ServerConnectionsTableUpdateCompanionBuilder =
+    ServerConnectionsCompanion Function({
+      Value<int> id,
+      Value<String> serverType,
+      Value<String> name,
+      Value<String> baseUrl,
+      Value<bool> enabled,
+      Value<DateTime> createdAt,
+    });
+
+class $$ServerConnectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $ServerConnectionsTable> {
+  $$ServerConnectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serverType => $composableBuilder(
+    column: $table.serverType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get baseUrl => $composableBuilder(
+    column: $table.baseUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ServerConnectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ServerConnectionsTable> {
+  $$ServerConnectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serverType => $composableBuilder(
+    column: $table.serverType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get baseUrl => $composableBuilder(
+    column: $table.baseUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ServerConnectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ServerConnectionsTable> {
+  $$ServerConnectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get serverType => $composableBuilder(
+    column: $table.serverType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get baseUrl =>
+      $composableBuilder(column: $table.baseUrl, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$ServerConnectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ServerConnectionsTable,
+          ServerConnection,
+          $$ServerConnectionsTableFilterComposer,
+          $$ServerConnectionsTableOrderingComposer,
+          $$ServerConnectionsTableAnnotationComposer,
+          $$ServerConnectionsTableCreateCompanionBuilder,
+          $$ServerConnectionsTableUpdateCompanionBuilder,
+          (
+            ServerConnection,
+            BaseReferences<
+              _$AppDatabase,
+              $ServerConnectionsTable,
+              ServerConnection
+            >,
+          ),
+          ServerConnection,
+          PrefetchHooks Function()
+        > {
+  $$ServerConnectionsTableTableManager(
+    _$AppDatabase db,
+    $ServerConnectionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ServerConnectionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ServerConnectionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ServerConnectionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> serverType = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> baseUrl = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ServerConnectionsCompanion(
+                id: id,
+                serverType: serverType,
+                name: name,
+                baseUrl: baseUrl,
+                enabled: enabled,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String serverType,
+                required String name,
+                required String baseUrl,
+                Value<bool> enabled = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ServerConnectionsCompanion.insert(
+                id: id,
+                serverType: serverType,
+                name: name,
+                baseUrl: baseUrl,
+                enabled: enabled,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ServerConnectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ServerConnectionsTable,
+      ServerConnection,
+      $$ServerConnectionsTableFilterComposer,
+      $$ServerConnectionsTableOrderingComposer,
+      $$ServerConnectionsTableAnnotationComposer,
+      $$ServerConnectionsTableCreateCompanionBuilder,
+      $$ServerConnectionsTableUpdateCompanionBuilder,
+      (
+        ServerConnection,
+        BaseReferences<
+          _$AppDatabase,
+          $ServerConnectionsTable,
+          ServerConnection
+        >,
+      ),
+      ServerConnection,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9885,4 +10911,6 @@ class $AppDatabaseManager {
       $$CollectionsTableTableManager(_db, _db.collections);
   $$BookCollectionsTableTableManager get bookCollections =>
       $$BookCollectionsTableTableManager(_db, _db.bookCollections);
+  $$ServerConnectionsTableTableManager get serverConnections =>
+      $$ServerConnectionsTableTableManager(_db, _db.serverConnections);
 }
