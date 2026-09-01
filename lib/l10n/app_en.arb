@@ -948,6 +948,18 @@
   "@settingsSectionVocabularyExport": {
     "description": "Settings section header for vocabulary export settings."
   },
+  "settingsSectionServerSync": "Server sync",
+  "@settingsSectionServerSync": {
+    "description": "Settings section header for self-hosted server sync."
+  },
+  "settingsServerSyncTitle": "Book servers",
+  "@settingsServerSyncTitle": {
+    "description": "Settings entry for managing Komga/Kavita server connections."
+  },
+  "settingsServerSyncSubtitle": "Browse and sync with Komga or Kavita",
+  "@settingsServerSyncSubtitle": {
+    "description": "Subtitle for the book servers settings entry."
+  },
   "settingsSectionPro": "Pro",
   "@settingsSectionPro": {
     "description": "Settings section header for Pro settings."

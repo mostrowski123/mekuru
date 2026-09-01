@@ -1342,6 +1342,24 @@ abstract class AppLocalizations {
   /// **'Vocabulary & Export'**
   String get settingsSectionVocabularyExport;
 
+  /// Settings section header for self-hosted server sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Server sync'**
+  String get settingsSectionServerSync;
+
+  /// Settings entry for managing Komga/Kavita server connections.
+  ///
+  /// In en, this message translates to:
+  /// **'Book servers'**
+  String get settingsServerSyncTitle;
+
+  /// Subtitle for the book servers settings entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse and sync with Komga or Kavita'**
+  String get settingsServerSyncSubtitle;
+
   /// Settings section header for Pro settings.
   ///
   /// In en, this message translates to:

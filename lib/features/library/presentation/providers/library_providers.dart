@@ -219,7 +219,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
           : repo.importEpub(filePath),
       attributes: {'format': format},
     );
-    await _applyPendingDataIfExists(book);
+    await applyPendingBackupData(book);
     Sentry.logger.info(
       'Book imported',
       attributes: {
@@ -251,7 +251,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
         ),
         attributes: {'format': 'manga'},
       );
-      await _applyPendingDataIfExists(book);
+      await applyPendingBackupData(book);
       Sentry.logger.info(
         'Book imported',
         attributes: {
@@ -294,7 +294,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
         ),
         attributes: {'format': 'manga_saf'},
       );
-      await _applyPendingDataIfExists(book);
+      await applyPendingBackupData(book);
       Sentry.logger.info(
         'Book imported',
         attributes: {
@@ -320,7 +320,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
   }
 
   /// Check for pending backup data matching this book and apply it.
-  Future<void> _applyPendingDataIfExists(Book book) async {
+  Future<void> applyPendingBackupData(Book book) async {
     try {
       final pendingRepo = ref.read(pendingBookDataRepositoryProvider);
       final matchService = ref.read(bookMatchServiceProvider);

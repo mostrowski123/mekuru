@@ -8,6 +8,7 @@ import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manag
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/sync/presentation/screens/server_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
@@ -216,6 +217,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const Divider(),
           ],
+
+          // ── Server sync ──
+          SettingsSectionHeader(title: l10n.settingsSectionServerSync),
+          ListTile(
+            leading: Icon(Icons.dns_outlined, color: theme.colorScheme.primary),
+            title: Text(l10n.settingsServerSyncTitle),
+            subtitle: Text(l10n.settingsServerSyncSubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ServerSettingsScreen()),
+              );
+            },
+          ),
+          const Divider(),
 
           // ── Manga OCR ──
           SettingsSectionHeader(title: l10n.settingsSectionPro),

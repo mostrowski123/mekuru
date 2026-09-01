@@ -749,6 +749,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsSectionVocabularyExport => 'Vocabulario y exportación';
 
   @override
+  String get settingsSectionServerSync => 'Server sync';
+
+  @override
+  String get settingsServerSyncTitle => 'Book servers';
+
+  @override
+  String get settingsServerSyncSubtitle =>
+      'Browse and sync with Komga or Kavita';
+
+  @override
   String get settingsSectionPro => 'Pro';
 
   @override

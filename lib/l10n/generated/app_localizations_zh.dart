@@ -705,6 +705,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSectionVocabularyExport => '词汇与导出';
 
   @override
+  String get settingsSectionServerSync => 'Server sync';
+
+  @override
+  String get settingsServerSyncTitle => 'Book servers';
+
+  @override
+  String get settingsServerSyncSubtitle =>
+      'Browse and sync with Komga or Kavita';
+
+  @override
   String get settingsSectionPro => '专业版';
 
   @override
