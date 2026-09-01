@@ -523,4 +523,77 @@ void main() {
     expect(connections, isEmpty);
     expect(migratedDb.schemaVersion, 23);
   });
+
+  test(
+    'heals a schema 23 database that never ran the server sync DDL',
+    () async {
+      // Another branch also claimed schema 23, so a database can sit at
+      // user_version 23 without this table and these columns; onUpgrade
+      // will never run for it, so the beforeOpen repair pass must.
+      final tempDir = await Directory.systemTemp.createTemp('mekuru_sync23_');
+      addTearDown(() async {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final dbFile = File('${tempDir.path}/mekuru.sqlite');
+
+      final seedDb = AppDatabase(NativeDatabase(dbFile));
+      await seedDb
+          .into(seedDb.books)
+          .insert(
+            BooksCompanion.insert(title: '坊っちゃん', filePath: '/books/botchan'),
+          );
+      await seedDb.close();
+
+      final strippedDb = sqlite.sqlite3.open(dbFile.path);
+      strippedDb.execute('DROP TABLE server_connections;');
+      for (final column in [
+        'server_connection_id',
+        'remote_ids',
+        'last_synced_at',
+        'last_read_href',
+        'last_read_progression',
+      ]) {
+        strippedDb.execute('ALTER TABLE books DROP COLUMN $column;');
+      }
+      expect(strippedDb.userVersion, 23);
+      strippedDb.close();
+
+      final healedDb = AppDatabase(NativeDatabase(dbFile));
+      addTearDown(healedDb.close);
+
+      expect(await healedDb.select(healedDb.serverConnections).get(), isEmpty);
+
+      // A missing nullable column silently reads as null, so prove the link
+      // columns exist by writing through them.
+      final connectionId = await healedDb
+          .into(healedDb.serverConnections)
+          .insert(
+            ServerConnectionsCompanion.insert(
+              serverType: 'komga',
+              name: 'Home',
+              baseUrl: 'http://komga.local',
+            ),
+          );
+      final book = await healedDb.select(healedDb.books).getSingle();
+      await (healedDb.update(
+        healedDb.books,
+      )..where((t) => t.id.equals(book.id))).write(
+        BooksCompanion(
+          serverConnectionId: Value(connectionId),
+          remoteIds: const Value('{"bookId":"abc"}'),
+          lastSyncedAt: Value(DateTime.utc(2026, 9, 2)),
+          lastReadHref: const Value('ch1.xhtml'),
+          lastReadProgression: const Value(0.5),
+        ),
+      );
+      final linked = await healedDb.select(healedDb.books).getSingle();
+      expect(linked.serverConnectionId, connectionId);
+      expect(linked.remoteIds, '{"bookId":"abc"}');
+      expect(linked.lastReadHref, 'ch1.xhtml');
+      expect(linked.lastReadProgression, 0.5);
+    },
+  );
 }

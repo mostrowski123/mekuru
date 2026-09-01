@@ -68,6 +68,17 @@ class AppDatabase extends _$AppDatabase {
     'has_vertical_css':
         'ALTER TABLE books ADD COLUMN has_vertical_css INTEGER NULL '
         'CHECK (has_vertical_css IN (0, 1))',
+    // Server sync link columns (schema 23). Repair-only on purpose: the
+    // AniList branch also claimed schema 23, so a database can already be
+    // at user_version 23 without these — onUpgrade would never add them.
+    'server_connection_id':
+        'ALTER TABLE books ADD COLUMN server_connection_id INTEGER NULL',
+    'remote_ids': 'ALTER TABLE books ADD COLUMN remote_ids TEXT NULL',
+    'last_synced_at':
+        'ALTER TABLE books ADD COLUMN last_synced_at INTEGER NULL',
+    'last_read_href': 'ALTER TABLE books ADD COLUMN last_read_href TEXT NULL',
+    'last_read_progression':
+        'ALTER TABLE books ADD COLUMN last_read_progression REAL NULL',
   };
 
   @override
@@ -182,30 +193,10 @@ class AppDatabase extends _$AppDatabase {
         // position.
         await migrator.addColumn(bookCollections, bookCollections.position);
       }
-      if (from < 23) {
-        await migrator.createTable(serverConnections);
-        // Guarded like v17: tolerate columns that already exist.
-        final names = await _tableColumnNames('books');
-        if (!names.contains('server_connection_id')) {
-          await migrator.addColumn(books, books.serverConnectionId);
-        }
-        if (!names.contains('remote_ids')) {
-          await migrator.addColumn(books, books.remoteIds);
-        }
-        if (!names.contains('last_synced_at')) {
-          await migrator.addColumn(books, books.lastSyncedAt);
-        }
-        if (!names.contains('last_read_href')) {
-          await migrator.addColumn(books, books.lastReadHref);
-        }
-        if (!names.contains('last_read_progression')) {
-          await migrator.addColumn(books, books.lastReadProgression);
-        }
-      }
-      // v18 (search_text) and v20 (has_vertical_css) have no migration
-      // blocks: the repair pass in beforeOpen adds the columns via the
-      // repair-column maps, which also covers databases that missed
-      // migrations entirely.
+      // v18 (search_text), v20 (has_vertical_css) and v23 (server sync)
+      // have no migration blocks: the repair pass in beforeOpen adds the
+      // columns via the repair-column maps and creates server_connections,
+      // which also covers databases that missed migrations entirely.
     },
     beforeOpen: (details) async {
       await _repairMissingColumns(
@@ -213,6 +204,8 @@ class AppDatabase extends _$AppDatabase {
         _dictionaryEntriesRepairColumns,
       );
       await _repairMissingColumns('books', _booksRepairColumns);
+      // CREATE TABLE IF NOT EXISTS — see the schema 23 note above.
+      await createMigrator().createTable(serverConnections);
       await _ensureGlossaryFtsIfNeeded();
     },
   );
