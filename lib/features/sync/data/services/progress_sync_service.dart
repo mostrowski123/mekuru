@@ -133,6 +133,14 @@ class ProgressSyncService {
     }
   }
 
+  /// [syncOnOpen] by book id — for callers that only hold an id (e.g. the
+  /// bulk link flow's one-time sync of freshly linked books).
+  Future<RemoteProgress?> syncBookById(int bookId) async {
+    final book = await _bookById(bookId);
+    if (book == null) return null;
+    return syncOnOpen(book);
+  }
+
   /// Push every linked book of every enabled connection whose local state
   /// is newer than its last sync. Returns (pushed, failed) counts.
   Future<({int pushed, int failed})> syncAll() async {

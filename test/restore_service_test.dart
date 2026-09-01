@@ -648,4 +648,103 @@ void main() {
       },
     );
   });
+
+  group('restoreBooks — server connections', () {
+    BackupManifest manifestWithLink({required String bookKey}) =>
+        BackupManifest(
+          version: 1,
+          createdAt: DateTime.utc(2026, 9, 1),
+          settings: const BackupSettings(app: {}, reader: {}),
+          savedWords: const [],
+          serverConnections: const [
+            BackupServerConnection(
+              id: 7,
+              serverType: 'komga',
+              name: 'NAS',
+              baseUrl: 'http://nas:25600',
+            ),
+          ],
+          books: [
+            BackupBookEntry(
+              bookKey: bookKey,
+              title: '坊っちゃん',
+              bookType: 'epub',
+              lastReadCfi: 'epubcfi(/6/4)',
+              readProgress: 0.4,
+              bookmarks: const [],
+              highlights: const [],
+              serverLink: const BackupServerLink(
+                connectionId: 7,
+                remoteIds: '{"bookId":"b9","seriesId":"s2"}',
+              ),
+            ),
+          ],
+        );
+
+    test('recreates connections disabled and relinks a matched book', () async {
+      final bookId = await db
+          .into(db.books)
+          .insert(BooksCompanion.insert(title: '坊っちゃん', filePath: '/nope'));
+
+      final result = await restoreService.restoreBooks(
+        manifestWithLink(bookKey: 'epub::坊っちゃん'),
+      );
+      expect(result.applied, 1);
+
+      final connections = await db.select(db.serverConnections).get();
+      expect(connections, hasLength(1));
+      expect(connections.single.enabled, isFalse);
+      expect(connections.single.baseUrl, 'http://nas:25600');
+
+      final book = await (db.select(
+        db.books,
+      )..where((t) => t.id.equals(bookId))).getSingle();
+      expect(book.serverConnectionId, connections.single.id);
+      expect(book.remoteIds, '{"bookId":"b9","seriesId":"s2"}');
+      expect(book.lastSyncedAt, null);
+    });
+
+    test('reuses an existing connection with the same server URL', () async {
+      final existingId = await db
+          .into(db.serverConnections)
+          .insert(
+            ServerConnectionsCompanion.insert(
+              serverType: 'komga',
+              name: 'Mine',
+              baseUrl: 'http://NAS:25600',
+            ),
+          );
+      await db
+          .into(db.books)
+          .insert(BooksCompanion.insert(title: '坊っちゃん', filePath: '/n'));
+
+      await restoreService.restoreBooks(
+        manifestWithLink(bookKey: 'epub::坊っちゃん'),
+      );
+
+      final connections = await db.select(db.serverConnections).get();
+      expect(connections, hasLength(1), reason: 'no duplicate created');
+      expect(connections.single.enabled, isTrue, reason: 'left untouched');
+      final book = await (db.select(
+        db.books,
+      )..where((t) => t.title.equals('坊っちゃん'))).getSingle();
+      expect(book.serverConnectionId, existingId);
+    });
+
+    test('pending book data carries the remapped connection id', () async {
+      // No local book matches — the entry goes to PendingBookDatas.
+      await restoreService.restoreBooks(
+        manifestWithLink(bookKey: 'epub::坊っちゃん'),
+      );
+
+      final connections = await db.select(db.serverConnections).get();
+      final pendingRows = await db.select(db.pendingBookDatas).get();
+      expect(pendingRows, hasLength(1));
+      final entry = BackupSerializer.decodeBookEntry(
+        pendingRows.single.dataJson,
+      );
+      expect(entry.serverLink, isNotNull);
+      expect(entry.serverLink!.connectionId, connections.single.id);
+    });
+  });
 }

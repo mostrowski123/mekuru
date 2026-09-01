@@ -313,5 +313,84 @@ void main() {
       expect(decoded.bookType, 'manga');
       expect(decoded.readProgress, 0.75);
     });
+
+    test('round-trips server connections and per-book links', () {
+      final manifest = BackupManifest(
+        version: 1,
+        createdAt: DateTime.utc(2026, 9, 1),
+        settings: const BackupSettings(app: {}, reader: {}),
+        savedWords: const [],
+        serverConnections: const [
+          BackupServerConnection(
+            id: 3,
+            serverType: 'komga',
+            name: 'NAS',
+            baseUrl: 'http://nas:25600',
+          ),
+        ],
+        books: const [
+          BackupBookEntry(
+            bookKey: 'manga::よつばと',
+            title: 'よつばと',
+            bookType: 'manga',
+            readProgress: 0.5,
+            bookmarks: [],
+            highlights: [],
+            serverLink: BackupServerLink(
+              connectionId: 3,
+              remoteIds: '{"bookId":"b1","seriesId":"s1"}',
+            ),
+          ),
+          BackupBookEntry(
+            bookKey: 'epub::local',
+            title: 'local',
+            bookType: 'epub',
+            readProgress: 0.0,
+            bookmarks: [],
+            highlights: [],
+          ),
+        ],
+      );
+
+      final decoded = BackupSerializer.decode(
+        BackupSerializer.encode(manifest),
+      );
+
+      expect(decoded.serverConnections, hasLength(1));
+      final connection = decoded.serverConnections.single;
+      expect(connection.id, 3);
+      expect(connection.serverType, 'komga');
+      expect(connection.baseUrl, 'http://nas:25600');
+      final linked = decoded.books[0].serverLink;
+      expect(linked, isNotNull);
+      expect(linked!.connectionId, 3);
+      expect(linked.remoteIds, '{"bookId":"b1","seriesId":"s1"}');
+      expect(decoded.books[1].serverLink, isNull);
+    });
+
+    test('pre-sync v1 backups decode with empty server fields', () {
+      final manifest = buildManifest(
+        books: [
+          const BackupBookEntry(
+            bookKey: 'epub::old',
+            title: 'old',
+            bookType: 'epub',
+            readProgress: 0.1,
+            bookmarks: [],
+            highlights: [],
+          ),
+        ],
+      );
+      // Strip the new keys, as a backup written before this feature has.
+      final map =
+          jsonDecode(BackupSerializer.encode(manifest)) as Map<String, dynamic>;
+      map.remove('serverConnections');
+      ((map['books'] as List)[0] as Map<String, dynamic>).remove('serverLink');
+
+      final decoded = BackupSerializer.decode(jsonEncode(map));
+
+      expect(decoded.serverConnections, isEmpty);
+      expect(decoded.books.single.serverLink, isNull);
+    });
   });
 }

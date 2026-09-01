@@ -43,6 +43,7 @@ class BackupService {
 
     final savedWords = await _db.select(_db.savedWords).get();
     final books = await _db.select(_db.books).get();
+    final serverConnections = await _db.select(_db.serverConnections).get();
 
     final allCollections = await _db.select(_db.collections).get();
     final memberships = await _db.select(_db.bookCollections).get();
@@ -92,6 +93,12 @@ class BackupService {
           overrideReadingDirection: book.overrideReadingDirection,
           furiganaMode: book.furiganaMode,
           collections: collectionRefsByBook[book.id] ?? const [],
+          serverLink: book.serverConnectionId != null && book.remoteIds != null
+              ? BackupServerLink(
+                  connectionId: book.serverConnectionId!,
+                  remoteIds: book.remoteIds!,
+                )
+              : null,
           bookmarks: bookmarks
               .map(
                 (bm) => BackupBookmarkEntry(
@@ -144,6 +151,16 @@ class BackupService {
           .toList(),
       books: bookEntries,
       collections: allCollections.map((c) => c.name).toList(),
+      serverConnections: serverConnections
+          .map(
+            (c) => BackupServerConnection(
+              id: c.id,
+              serverType: c.serverType,
+              name: c.name,
+              baseUrl: c.baseUrl,
+            ),
+          )
+          .toList(),
       readingSessions: readingSessions
           .map(
             (s) => BackupReadingSessionEntry(

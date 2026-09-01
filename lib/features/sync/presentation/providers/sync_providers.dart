@@ -9,6 +9,7 @@ import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/kavita_client.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/sync/data/services/book_link_service.dart';
 import 'package:mekuru/features/sync/data/services/komga_client.dart';
 import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
@@ -89,6 +90,13 @@ final serverClientProvider = FutureProvider.autoDispose
       ref.onDispose(client.dispose);
       return client;
     });
+
+final bookLinkServiceProvider = Provider<BookLinkService>(
+  (ref) => BookLinkService(
+    ref.watch(databaseProvider),
+    ref.watch(serverConnectionRepositoryProvider),
+  ),
+);
 
 /// Progress sync engine. Reading a book instantiates this (both reader
 /// screens call syncOnOpen), which also wires the process-wide

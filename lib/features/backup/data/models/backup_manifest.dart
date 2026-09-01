@@ -21,6 +21,10 @@ class BackupManifest {
   /// the pending-book-data path when a book is imported after the restore.
   final List<String> collections;
 
+  /// Komga/Kavita connections (sans credentials). Additive within version
+  /// 1: older backups simply omit the key.
+  final List<BackupServerConnection> serverConnections;
+
   const BackupManifest({
     required this.version,
     required this.createdAt,
@@ -31,7 +35,37 @@ class BackupManifest {
     this.readingSessions = const [],
     this.wordEvents = const [],
     this.collections = const [],
+    this.serverConnections = const [],
   });
+}
+
+/// A Komga/Kavita server connection in a backup. [id] is the connection's
+/// row id at backup time — restore remaps it. Credentials are never
+/// included: restored connections come back disabled until the user
+/// re-enters them.
+class BackupServerConnection {
+  final int id;
+  final String serverType;
+  final String name;
+  final String baseUrl;
+
+  const BackupServerConnection({
+    required this.id,
+    required this.serverType,
+    required this.name,
+    required this.baseUrl,
+  });
+}
+
+/// A book's link to a server book. [connectionId] refers to the
+/// [BackupServerConnection.id] in the same backup.
+class BackupServerLink {
+  final int connectionId;
+
+  /// Raw `Books.remoteIds` JSON string.
+  final String remoteIds;
+
+  const BackupServerLink({required this.connectionId, required this.remoteIds});
 }
 
 class BackupDictionaryPreference {
@@ -131,6 +165,9 @@ class BackupBookEntry {
   /// restore; [BackupCollectionRef.position] preserves the manual order.
   final List<BackupCollectionRef> collections;
 
+  /// Server link, when this book was linked to a Komga/Kavita book.
+  final BackupServerLink? serverLink;
+
   const BackupBookEntry({
     required this.bookKey,
     required this.title,
@@ -147,7 +184,30 @@ class BackupBookEntry {
     required this.bookmarks,
     required this.highlights,
     this.collections = const [],
+    this.serverLink,
   });
+
+  /// Copy with [serverLink] replaced — restore uses this to remap backup
+  /// connection ids onto this device's connection rows.
+  BackupBookEntry copyWithServerLink(BackupServerLink? serverLink) =>
+      BackupBookEntry(
+        bookKey: bookKey,
+        title: title,
+        bookType: bookType,
+        language: language,
+        pageProgressionDirection: pageProgressionDirection,
+        primaryWritingMode: primaryWritingMode,
+        lastReadCfi: lastReadCfi,
+        readProgress: readProgress,
+        lastReadAt: lastReadAt,
+        overrideVerticalText: overrideVerticalText,
+        overrideReadingDirection: overrideReadingDirection,
+        furiganaMode: furiganaMode,
+        bookmarks: bookmarks,
+        highlights: highlights,
+        collections: collections,
+        serverLink: serverLink,
+      );
 }
 
 /// One collection membership in a backup. Encoded as {"name":…,

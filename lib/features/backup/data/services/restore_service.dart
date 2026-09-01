@@ -219,6 +219,36 @@ class RestoreService {
       await _ensureCollection(name);
     }
 
+    // Recreate server connections and remap each book's link to this
+    // device's connection ids, so links survive the pending-data path too.
+    final connectionIdMap = await _restoreServerConnections(manifest);
+    final books = [
+      for (final entry in manifest.books)
+        entry.serverLink == null
+            ? entry
+            : entry.copyWithServerLink(
+                connectionIdMap.containsKey(entry.serverLink!.connectionId)
+                    ? BackupServerLink(
+                        connectionId:
+                            connectionIdMap[entry.serverLink!.connectionId]!,
+                        remoteIds: entry.serverLink!.remoteIds,
+                      )
+                    : null,
+              ),
+    ];
+    manifest = BackupManifest(
+      version: manifest.version,
+      createdAt: manifest.createdAt,
+      settings: manifest.settings,
+      dictionaryPreferences: manifest.dictionaryPreferences,
+      savedWords: manifest.savedWords,
+      books: books,
+      readingSessions: manifest.readingSessions,
+      wordEvents: manifest.wordEvents,
+      collections: manifest.collections,
+      serverConnections: manifest.serverConnections,
+    );
+
     final existingBooks = await _db.select(_db.books).get();
     final hasHashKeys = manifest.books.any(
       (entry) => _bookMatchService.isHashKey(entry.bookKey),
@@ -262,6 +292,43 @@ class RestoreService {
     );
   }
 
+  /// Recreate the backup's server connections on this device and return the
+  /// backup-id → local-id map. A connection matching an existing one (same
+  /// type + base URL, case-insensitive) is reused as-is; new ones are
+  /// created **disabled** — credentials never travel in backups and must be
+  /// re-entered before sync resumes.
+  Future<Map<int, int>> _restoreServerConnections(
+    BackupManifest manifest,
+  ) async {
+    if (manifest.serverConnections.isEmpty) return const {};
+    final existing = await _db.select(_db.serverConnections).get();
+    final map = <int, int>{};
+    for (final backup in manifest.serverConnections) {
+      final match = existing
+          .where(
+            (c) =>
+                c.serverType == backup.serverType &&
+                c.baseUrl.toLowerCase() == backup.baseUrl.toLowerCase(),
+          )
+          .firstOrNull;
+      if (match != null) {
+        map[backup.id] = match.id;
+        continue;
+      }
+      map[backup.id] = await _db
+          .into(_db.serverConnections)
+          .insert(
+            ServerConnectionsCompanion.insert(
+              serverType: backup.serverType,
+              name: backup.name,
+              baseUrl: backup.baseUrl,
+              enabled: const Value(false),
+            ),
+          );
+    }
+    return map;
+  }
+
   /// Existing collection with [name], or a newly created one. Matching is
   /// by name: backups carry no collection ids.
   Future<int> _ensureCollection(String name) async {
@@ -292,7 +359,9 @@ class RestoreService {
           );
     }
 
-    // Update reading progress and overrides
+    // Update reading progress and overrides. The server link (already
+    // remapped to this device's connection ids) rides along; lastSyncedAt
+    // stays null so the first open does a fresh push/pull.
     await (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
       BooksCompanion(
         lastReadCfi: Value(entry.lastReadCfi),
@@ -301,6 +370,12 @@ class RestoreService {
         overrideVerticalText: Value(entry.overrideVerticalText),
         overrideReadingDirection: Value(entry.overrideReadingDirection),
         furiganaMode: Value(entry.furiganaMode),
+        serverConnectionId: entry.serverLink != null
+            ? Value(entry.serverLink!.connectionId)
+            : const Value.absent(),
+        remoteIds: entry.serverLink != null
+            ? Value(entry.serverLink!.remoteIds)
+            : const Value.absent(),
       ),
     );
 

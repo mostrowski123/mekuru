@@ -46,11 +46,26 @@ class ServerSettingsScreen extends ConsumerWidget {
                   '${connection.enabled ? '' : ' · disabled'}',
                   maxLines: 2,
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  tooltip: 'Edit',
-                  onPressed: () =>
-                      _showConnectionDialog(context, ref, existing: connection),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (connection.enabled)
+                      IconButton(
+                        icon: const Icon(Icons.playlist_add_check),
+                        tooltip: 'Link existing books',
+                        onPressed: () =>
+                            _linkExisting(context, ref, connection),
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      tooltip: 'Edit',
+                      onPressed: () => _showConnectionDialog(
+                        context,
+                        ref,
+                        existing: connection,
+                      ),
+                    ),
+                  ],
                 ),
                 onTap: connection.enabled
                     ? () => Navigator.of(context).push(
@@ -84,6 +99,45 @@ class ServerSettingsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Bulk-match unlinked local books against the server by title, link the
+  /// unique matches, and run a first sync on each (push local, adopt a
+  /// newer server state).
+  Future<void> _linkExisting(
+    BuildContext context,
+    WidgetRef ref,
+    ServerConnection connection,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Matching your library…')),
+    );
+    try {
+      final client = await ref.read(serverClientProvider(connection.id).future);
+      final result = await ref
+          .read(bookLinkServiceProvider)
+          .linkExistingBooks(connection, client);
+      final sync = ref.read(progressSyncServiceProvider);
+      for (final bookId in result.linkedBookIds) {
+        await sync.syncBookById(bookId);
+      }
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            result.linkedBookIds.isEmpty
+                ? 'No new matches found — books can also be linked from the '
+                      'server browser'
+                : 'Linked ${result.linkedBookIds.length} books and synced '
+                      'their progress',
+          ),
+        ),
+      );
+    } catch (e) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(SnackBar(content: Text('Linking failed: $e')));
+    }
   }
 
   Future<void> _syncNow(BuildContext context, WidgetRef ref) async {

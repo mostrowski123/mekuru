@@ -82,6 +82,16 @@ class BackupSerializer {
             },
           )
           .toList(),
+      'serverConnections': manifest.serverConnections
+          .map(
+            (c) => {
+              'id': c.id,
+              'serverType': c.serverType,
+              'name': c.name,
+              'baseUrl': c.baseUrl,
+            },
+          )
+          .toList(),
     };
     return jsonEncode(map);
   }
@@ -171,6 +181,23 @@ class BackupSerializer {
       collections: List<String>.from(
         parsed['collections'] as List? ?? const [],
       ),
+      serverConnections: _decodeList(
+        parsed['serverConnections'],
+        'serverConnections',
+        _decodeServerConnection,
+      ),
+    );
+  }
+
+  static BackupServerConnection _decodeServerConnection(dynamic item) {
+    if (item is! Map<String, dynamic>) {
+      throw BackupFormatException('invalid server connection entry');
+    }
+    return BackupServerConnection(
+      id: item['id'] as int? ?? 0,
+      serverType: item['serverType'] as String? ?? 'komga',
+      name: item['name'] as String? ?? '',
+      baseUrl: item['baseUrl'] as String? ?? '',
     );
   }
 
@@ -206,6 +233,11 @@ class BackupSerializer {
       'collections': entry.collections
           .map((c) => {'name': c.name, 'position': c.position})
           .toList(),
+      if (entry.serverLink != null)
+        'serverLink': {
+          'connectionId': entry.serverLink!.connectionId,
+          'remoteIds': entry.serverLink!.remoteIds,
+        },
       'bookmarks': entry.bookmarks
           .map(
             (b) => {
@@ -349,9 +381,18 @@ class BackupSerializer {
         for (final c in item['collections'] as List? ?? const [])
           _decodeCollectionRef(c),
       ],
+      serverLink: _decodeServerLink(item['serverLink']),
       bookmarks: bookmarksList.map(_decodeBookmark).toList(),
       highlights: highlightsList.map(_decodeHighlight).toList(),
     );
+  }
+
+  static BackupServerLink? _decodeServerLink(dynamic item) {
+    if (item is! Map<String, dynamic>) return null;
+    final connectionId = item['connectionId'] as int?;
+    final remoteIds = item['remoteIds'] as String?;
+    if (connectionId == null || remoteIds == null) return null;
+    return BackupServerLink(connectionId: connectionId, remoteIds: remoteIds);
   }
 
   static BackupBookmarkEntry _decodeBookmark(dynamic item) {
