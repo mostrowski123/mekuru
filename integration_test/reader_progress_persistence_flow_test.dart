@@ -25,8 +25,14 @@ Future<int> _insertBook(
 ReaderProgressPersistence _makePersistence(BookRepository repo, int bookId) =>
     ReaderProgressPersistence(
       debounceDuration: const Duration(milliseconds: 10),
-      saveProgress: (cfi, progress) =>
-          repo.updateProgress(bookId, cfi, progress: progress),
+      saveProgress: (cfi, progress, {href, hrefProgression}) =>
+          repo.updateProgress(
+            bookId,
+            cfi,
+            progress: progress,
+            href: href,
+            hrefProgression: hrefProgression,
+          ),
     );
 
 void main() {
