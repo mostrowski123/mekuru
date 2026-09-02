@@ -4,12 +4,12 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/book_link_service.dart';
-import 'package:mekuru/features/sync/data/services/server_client.dart';
 
+import 'shared/fake_server_client.dart';
 import 'shared/test_database.dart';
 
 /// Serves a fixed catalog of one library / one series with [books].
-class CatalogFakeClient implements ServerClient {
+class CatalogFakeClient extends StubServerClient {
   final List<RemoteBook> books;
 
   CatalogFakeClient(this.books);
@@ -27,31 +27,6 @@ class CatalogFakeClient implements ServerClient {
 
   @override
   Future<List<RemoteBook>> listBooks(RemoteSeries series) async => books;
-
-  @override
-  Future<void> testConnection() async {}
-
-  @override
-  Future<void> downloadBook(
-    RemoteBook book,
-    String destPath, {
-    void Function(double progress)? onProgress,
-  }) => throw UnimplementedError();
-
-  @override
-  Future<List<int>?> fetchSeriesCover(RemoteSeries series) async => null;
-
-  @override
-  Future<RemoteProgress?> pullProgress(Map<String, String> ids) async => null;
-
-  @override
-  Future<void> pushProgress(
-    Map<String, String> ids,
-    RemoteProgress progress,
-  ) async {}
-
-  @override
-  void dispose() {}
 }
 
 void main() {

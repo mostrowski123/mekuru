@@ -18,6 +18,20 @@ enum ServerType {
     (t) => t.storageValue == value,
     orElse: () => throw ArgumentError('Unknown server type: $value'),
   );
+
+  String get displayName => switch (this) {
+    ServerType.komga => 'Komga',
+    ServerType.kavita => 'Kavita',
+  };
+
+  /// [displayName] for a stored value; the raw value for a type this build
+  /// doesn't know (a connection restored from a newer version's backup).
+  static String displayNameOf(String value) =>
+      ServerType.values
+          .where((t) => t.storageValue == value)
+          .firstOrNull
+          ?.displayName ??
+      value;
 }
 
 class RemoteLibrary {

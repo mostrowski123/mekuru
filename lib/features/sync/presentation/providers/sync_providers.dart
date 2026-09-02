@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
+import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/kavita_client.dart';
@@ -71,6 +72,24 @@ ServerClient buildServerClient({
   ),
 };
 
+/// Authenticated client for [connection], secret loaded from secure storage.
+Future<ServerClient> _clientFor(Ref ref, ServerConnection connection) async {
+  final secret =
+      await ref.read(serverSecretStorageProvider).load(connection.id) ?? '';
+  return buildServerClient(
+    type: ServerType.fromStorage(connection.serverType),
+    baseUrl: connection.baseUrl,
+    getSecret: () => secret,
+  );
+}
+
+/// Builds a throwaway client outside the widget tree — for work that must
+/// outlive a screen (the sync engine, bulk linking). Callers dispose it.
+final serverClientFactoryProvider = Provider<ServerClientFactory>(
+  (ref) =>
+      (connection) => _clientFor(ref, connection),
+);
+
 /// Authenticated client for a stored connection; disposes with the provider.
 final serverClientProvider = FutureProvider.autoDispose
     .family<ServerClient, int>((ref, connectionId) async {
@@ -80,13 +99,7 @@ final serverClientProvider = FutureProvider.autoDispose
       if (connection == null) {
         throw StateError('Server connection no longer exists');
       }
-      final secret =
-          await ref.watch(serverSecretStorageProvider).load(connectionId) ?? '';
-      final client = buildServerClient(
-        type: ServerType.fromStorage(connection.serverType),
-        baseUrl: connection.baseUrl,
-        getSecret: () => secret,
-      );
+      final client = await _clientFor(ref, connection);
       ref.onDispose(client.dispose);
       return client;
     });
@@ -105,15 +118,7 @@ final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
   final service = ProgressSyncService(
     db: ref.watch(databaseProvider),
     connections: ref.watch(serverConnectionRepositoryProvider),
-    clientFactory: (connection) async {
-      final secret =
-          await ref.read(serverSecretStorageProvider).load(connection.id) ?? '';
-      return buildServerClient(
-        type: ServerType.fromStorage(connection.serverType),
-        baseUrl: connection.baseUrl,
-        getSecret: () => secret,
-      );
-    },
+    clientFactory: ref.watch(serverClientFactoryProvider),
   );
   BookRepository.onProgressWritten = service.schedulePush;
   ref.onDispose(() {
@@ -150,7 +155,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
           'server_dl_${DateTime.now().microsecondsSinceEpoch}',
         ),
       ).create(recursive: true);
-      final fileName = _sanitizeFileName(book.title) + book.fileExtension;
+      final fileName = sanitizedExportBaseName(book.title) + book.fileExtension;
       final destPath = p.join(tempDir.path, fileName);
 
       await client.downloadBook(
@@ -188,11 +193,6 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         }
       }
     }
-  }
-
-  static String _sanitizeFileName(String title) {
-    final cleaned = title.replaceAll(RegExp(r'[/\\:*?"<>|]'), '_').trim();
-    return cleaned.isEmpty ? 'book' : cleaned;
   }
 }
 

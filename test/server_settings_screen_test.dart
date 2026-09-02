@@ -21,7 +21,7 @@ class _SlowFakeSecrets extends ServerSecretStorage {
 }
 
 void main() {
-  testWidgets('link existing books holds the autoDispose client provider', (
+  testWidgets('link existing books survives an async secret load', (
     tester,
   ) async {
     final db = createTestDatabase();
@@ -50,8 +50,9 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.playlist_add_check));
     // flutter_test answers every HTTP request with 400, so a healthy run
-    // fails at the network layer. The regression failed earlier, inside the
-    // provider build, because nothing held the autoDispose provider alive.
+    // fails at the network layer. The regression failed earlier, while the
+    // client was still being built: the flow once read the autoDispose
+    // client provider without a listener, so it was disposed mid-build.
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 200));
     }

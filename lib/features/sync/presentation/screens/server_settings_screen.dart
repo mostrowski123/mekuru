@@ -41,7 +41,7 @@ class ServerSettingsScreen extends ConsumerWidget {
                 ),
                 title: Text(connection.name),
                 subtitle: Text(
-                  '${connection.serverType == 'komga' ? 'Komga' : 'Kavita'}'
+                  '${ServerType.displayNameOf(connection.serverType)}'
                   ' · ${connection.baseUrl}'
                   '${connection.enabled ? '' : ' · disabled'}',
                   maxLines: 2,
@@ -53,7 +53,8 @@ class ServerSettingsScreen extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.playlist_add_check),
                         tooltip: 'Link existing books',
-                        onPressed: () => _linkExisting(context, connection),
+                        onPressed: () =>
+                            _linkExisting(context, ref, connection),
                       ),
                     IconButton(
                       icon: const Icon(Icons.edit),
@@ -105,49 +106,44 @@ class ServerSettingsScreen extends ConsumerWidget {
   /// newer server state).
   Future<void> _linkExisting(
     BuildContext context,
+    WidgetRef ref,
     ServerConnection connection,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
       const SnackBar(content: Text('Matching your library…')),
     );
-    // Container, not ref: this keeps working if the user backs out mid-link.
-    final container = ProviderScope.containerOf(context, listen: false);
-    // serverClientProvider is autoDispose. A bare read has no listener, so
-    // the provider is disposed while still building and the client would be
-    // closed under us. Hold a subscription until the work is done.
-    final keepAlive = container.listen(
-      serverClientProvider(connection.id),
-      (_, _) {},
-    );
+    // Everything is read before the first await so the work keeps going if
+    // the user backs out of this screen; a throwaway client sidesteps the
+    // autoDispose client provider entirely.
+    final clientFactory = ref.read(serverClientFactoryProvider);
+    final linker = ref.read(bookLinkServiceProvider);
+    final sync = ref.read(progressSyncServiceProvider);
     try {
-      final client = await container.read(
-        serverClientProvider(connection.id).future,
-      );
-      final result = await container
-          .read(bookLinkServiceProvider)
-          .linkExistingBooks(connection, client);
-      final sync = container.read(progressSyncServiceProvider);
-      for (final bookId in result.linkedBookIds) {
-        await sync.syncBookById(bookId);
-      }
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            result.linkedBookIds.isEmpty
-                ? 'No new matches found — books can also be linked from the '
-                      'server browser'
-                : 'Linked ${result.linkedBookIds.length} books and synced '
-                      'their progress',
+      final client = await clientFactory(connection);
+      try {
+        final result = await linker.linkExistingBooks(connection, client);
+        for (final bookId in result.linkedBookIds) {
+          await sync.syncBookById(bookId);
+        }
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              result.linkedBookIds.isEmpty
+                  ? 'No new matches found — books can also be linked from the '
+                        'server browser'
+                  : 'Linked ${result.linkedBookIds.length} books and synced '
+                        'their progress',
+            ),
           ),
-        ),
-      );
+        );
+      } finally {
+        client.dispose();
+      }
     } catch (e) {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(SnackBar(content: Text('Linking failed: $e')));
-    } finally {
-      keepAlive.close();
     }
   }
 
@@ -225,13 +221,17 @@ class _ServerConnectionDialogState
     super.dispose();
   }
 
-  Future<void> _test() async {
+  /// The normalized server URL, or null after surfacing its validation error.
+  String? _validatedUrl() {
     final url = server_url.normalizeOcrServerUrl(_urlController.text);
-    final urlError = server_url.validateOcrServerUrl(url);
-    if (urlError != null) {
-      setState(() => _urlError = urlError);
-      return;
-    }
+    final error = server_url.validateOcrServerUrl(url);
+    if (error != null) setState(() => _urlError = error);
+    return error == null ? url : null;
+  }
+
+  Future<void> _test() async {
+    final url = _validatedUrl();
+    if (url == null) return;
     var secret = _secretController.text.trim();
     if (secret.isEmpty && widget.existing != null) {
       secret =
@@ -262,12 +262,8 @@ class _ServerConnectionDialogState
   }
 
   Future<void> _save() async {
-    final url = server_url.normalizeOcrServerUrl(_urlController.text);
-    final urlError = server_url.validateOcrServerUrl(url);
-    if (urlError != null) {
-      setState(() => _urlError = urlError);
-      return;
-    }
+    final url = _validatedUrl();
+    if (url == null) return;
     setState(() {
       _urlError = null;
       _saving = true;
@@ -275,7 +271,7 @@ class _ServerConnectionDialogState
     final repo = ref.read(serverConnectionRepositoryProvider);
     final secrets = ref.read(serverSecretStorageProvider);
     final name = _nameController.text.trim().isEmpty
-        ? (_type == ServerType.komga ? 'Komga' : 'Kavita')
+        ? _type.displayName
         : _nameController.text.trim();
     final secret = _secretController.text.trim();
     try {

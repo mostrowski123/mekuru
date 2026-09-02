@@ -121,9 +121,9 @@ class ProgressSyncService {
                   (syncedAt == null || remoteAt.isAfter(syncedAt))));
       if (!remoteNewer) {
         // Local wins; push it if it has changed since the last sync.
-        final localNewer =
-            localAt != null && (syncedAt == null || localAt.isAfter(syncedAt));
-        final progress = localNewer ? _localProgress(book) : null;
+        final progress = _hasUnsyncedReading(book)
+            ? _localProgress(book)
+            : null;
         if (progress != null) {
           await link.client.pushProgress(link.ids, progress);
           await _markSynced(book.id);
@@ -165,11 +165,7 @@ class ProgressSyncService {
     for (final connection in connections.where((c) => c.enabled)) {
       final books = await _connections.booksLinkedTo(connection.id);
       for (final book in books) {
-        final upToDate =
-            book.lastReadAt == null ||
-            (book.lastSyncedAt != null &&
-                !book.lastReadAt!.isAfter(book.lastSyncedAt!));
-        if (upToDate) continue;
+        if (!_hasUnsyncedReading(book)) continue;
         try {
           await pushBook(book.id);
           pushed++;
@@ -186,6 +182,13 @@ class ProgressSyncService {
 
   Future<Book?> _bookById(int id) =>
       (_db.select(_db.books)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  /// Local reading newer than the last sync — the push condition.
+  static bool _hasUnsyncedReading(Book book) {
+    final readAt = book.lastReadAt;
+    final syncedAt = book.lastSyncedAt;
+    return readAt != null && (syncedAt == null || readAt.isAfter(syncedAt));
+  }
 
   Future<({ServerClient client, Map<String, String> ids})?> _linkFor(
     Book book,

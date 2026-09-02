@@ -236,21 +236,9 @@ class RestoreService {
                     : null,
               ),
     ];
-    manifest = BackupManifest(
-      version: manifest.version,
-      createdAt: manifest.createdAt,
-      settings: manifest.settings,
-      dictionaryPreferences: manifest.dictionaryPreferences,
-      savedWords: manifest.savedWords,
-      books: books,
-      readingSessions: manifest.readingSessions,
-      wordEvents: manifest.wordEvents,
-      collections: manifest.collections,
-      serverConnections: manifest.serverConnections,
-    );
 
     final existingBooks = await _db.select(_db.books).get();
-    final hasHashKeys = manifest.books.any(
+    final hasHashKeys = books.any(
       (entry) => _bookMatchService.isHashKey(entry.bookKey),
     );
     final hashIndex = hasHashKeys
@@ -261,7 +249,7 @@ class RestoreService {
     int applied = 0;
     int pending = 0;
 
-    for (final entry in manifest.books) {
+    for (final entry in books) {
       final match = _bookMatchService.isHashKey(entry.bookKey)
           ? hashIndex[entry.bookKey]
           : _bookMatchService.findLegacyMatch(entry.bookKey, existingBooks);

@@ -7,9 +7,10 @@ import 'package:mekuru/features/sync/data/repositories/server_connection_reposit
 import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 
+import 'shared/fake_server_client.dart';
 import 'shared/test_database.dart';
 
-class FakeServerClient implements ServerClient {
+class FakeServerClient extends StubServerClient {
   RemoteProgress? pullResult;
   SyncException? failure;
   final List<(Map<String, String>, RemoteProgress)> pushes = [];
@@ -30,33 +31,6 @@ class FakeServerClient implements ServerClient {
     if (failure != null) throw failure!;
     pushes.add((ids, progress));
   }
-
-  @override
-  Future<void> testConnection() async {}
-
-  @override
-  Future<List<RemoteLibrary>> listLibraries() => throw UnimplementedError();
-
-  @override
-  Future<List<RemoteSeries>> listSeries(String libraryId, {String? search}) =>
-      throw UnimplementedError();
-
-  @override
-  Future<List<RemoteBook>> listBooks(RemoteSeries series) =>
-      throw UnimplementedError();
-
-  @override
-  Future<void> downloadBook(
-    RemoteBook book,
-    String destPath, {
-    void Function(double progress)? onProgress,
-  }) => throw UnimplementedError();
-
-  @override
-  Future<List<int>?> fetchSeriesCover(RemoteSeries series) async => null;
-
-  @override
-  void dispose() {}
 }
 
 void main() {
