@@ -6,6 +6,7 @@ import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 /// Manage Komga/Kavita server connections: add, edit, test, delete.
 class ServerSettingsScreen extends ConsumerWidget {
@@ -13,15 +14,16 @@ class ServerSettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final connections = ref.watch(serverConnectionsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book servers'),
+        title: Text(l10n.settingsServerSyncTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.sync),
-            tooltip: 'Sync now',
+            tooltip: l10n.serverSettingsSyncNow,
             onPressed: () => _syncNow(context, ref),
           ),
         ],
@@ -41,9 +43,15 @@ class ServerSettingsScreen extends ConsumerWidget {
                 ),
                 title: Text(connection.name),
                 subtitle: Text(
-                  '${ServerType.displayNameOf(connection.serverType)}'
-                  ' · ${connection.baseUrl}'
-                  '${connection.enabled ? '' : ' · disabled'}',
+                  l10n.serverSettingsConnectionSubtitle(
+                        serverType: ServerType.displayNameOf(
+                          connection.serverType,
+                        ),
+                        baseUrl: connection.baseUrl,
+                      ) +
+                      (connection.enabled
+                          ? ''
+                          : ' · ${l10n.serverSettingsDisabled}'),
                   maxLines: 2,
                 ),
                 trailing: Row(
@@ -52,13 +60,13 @@ class ServerSettingsScreen extends ConsumerWidget {
                     if (connection.enabled)
                       IconButton(
                         icon: const Icon(Icons.playlist_add_check),
-                        tooltip: 'Link existing books',
+                        tooltip: l10n.serverSettingsLinkExisting,
                         onPressed: () =>
                             _linkExisting(context, ref, connection),
                       ),
                     IconButton(
                       icon: const Icon(Icons.edit),
-                      tooltip: 'Edit',
+                      tooltip: l10n.serverSettingsEdit,
                       onPressed: () => _showConnectionDialog(
                         context,
                         ref,
@@ -81,18 +89,16 @@ class ServerSettingsScreen extends ConsumerWidget {
                       ),
               ),
             if (list.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24),
+              Padding(
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Connect a self-hosted Komga or Kavita server to browse '
-                  'and download its books, and keep reading progress in '
-                  'sync.',
+                  l10n.serverSettingsEmptyHint,
                   textAlign: TextAlign.center,
                 ),
               ),
             ListTile(
               leading: const Icon(Icons.add),
-              title: const Text('Add server'),
+              title: Text(l10n.serverSettingsAddServer),
               onTap: () => _showConnectionDialog(context, ref),
             ),
           ],
@@ -109,9 +115,10 @@ class ServerSettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     ServerConnection connection,
   ) async {
+    final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
-      const SnackBar(content: Text('Matching your library…')),
+      SnackBar(content: Text(l10n.serverSettingsMatching)),
     );
     // Everything is read before the first await so the work keeps going if
     // the user backs out of this screen; a throwaway client sidesteps the
@@ -131,10 +138,10 @@ class ServerSettingsScreen extends ConsumerWidget {
           SnackBar(
             content: Text(
               result.linkedBookIds.isEmpty
-                  ? 'No new matches found — books can also be linked from the '
-                        'server browser'
-                  : 'Linked ${result.linkedBookIds.length} books and synced '
-                        'their progress',
+                  ? l10n.serverSettingsNoMatches
+                  : l10n.serverSettingsLinkedCount(
+                      count: result.linkedBookIds.length,
+                    ),
             ),
           ),
         );
@@ -143,23 +150,29 @@ class ServerSettingsScreen extends ConsumerWidget {
       }
     } catch (e) {
       messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(SnackBar(content: Text('Linking failed: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.serverSettingsLinkFailed(error: '$e'))),
+      );
     }
   }
 
   Future<void> _syncNow(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(const SnackBar(content: Text('Syncing…')));
+    messenger.showSnackBar(SnackBar(content: Text(l10n.serverSettingsSyncing)));
     final result = await ref.read(progressSyncServiceProvider).syncAll();
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
         content: Text(
           result.failed > 0
-              ? 'Synced ${result.pushed} books, ${result.failed} failed'
+              ? l10n.serverSettingsSyncedWithFailures(
+                  pushed: result.pushed,
+                  failed: result.failed,
+                )
               : result.pushed > 0
-              ? 'Synced ${result.pushed} books'
-              : 'Everything already in sync',
+              ? l10n.serverSettingsSynced(count: result.pushed)
+              : l10n.serverSettingsAlreadyInSync,
         ),
       ),
     );
@@ -196,6 +209,7 @@ class _ServerConnectionDialogState
   late bool _enabled;
   String? _urlError;
   String? _testResult;
+  bool _testOk = false;
   bool _testing = false;
   bool _saving = false;
 
@@ -230,6 +244,7 @@ class _ServerConnectionDialogState
   }
 
   Future<void> _test() async {
+    final l10n = context.l10n;
     final url = _validatedUrl();
     if (url == null) return;
     var secret = _secretController.text.trim();
@@ -252,9 +267,19 @@ class _ServerConnectionDialogState
     );
     try {
       await client.testConnection();
-      if (mounted) setState(() => _testResult = 'Connection OK');
+      if (mounted) {
+        setState(() {
+          _testOk = true;
+          _testResult = l10n.serverDialogConnectionOk;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() => _testResult = 'Failed: $e');
+      if (mounted) {
+        setState(() {
+          _testOk = false;
+          _testResult = l10n.serverDialogConnectionFailed(error: '$e');
+        });
+      }
     } finally {
       client.dispose();
       if (mounted) setState(() => _testing = false);
@@ -301,22 +326,20 @@ class _ServerConnectionDialogState
   }
 
   Future<void> _delete() async {
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove server?'),
-        content: const Text(
-          'Downloaded books and reading progress stay on this device — '
-          'only the server link is removed.',
-        ),
+        title: Text(l10n.serverDialogRemoveTitle),
+        content: Text(l10n.serverDialogRemoveBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Remove'),
+            child: Text(l10n.commonRemove),
           ),
         ],
       ),
@@ -330,8 +353,11 @@ class _ServerConnectionDialogState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AlertDialog(
-      title: Text(_isNew ? 'Add server' : 'Edit server'),
+      title: Text(
+        _isNew ? l10n.serverSettingsAddServer : l10n.serverDialogEditTitle,
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -349,9 +375,9 @@ class _ServerConnectionDialogState
             const SizedBox(height: 16),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                hintText: 'My server',
+              decoration: InputDecoration(
+                labelText: l10n.serverDialogNameLabel,
+                hintText: l10n.serverDialogNameHint,
               ),
             ),
             const SizedBox(height: 12),
@@ -359,8 +385,8 @@ class _ServerConnectionDialogState
               controller: _urlController,
               keyboardType: TextInputType.url,
               decoration: InputDecoration(
-                labelText: 'Server URL',
-                hintText: 'https://server:port',
+                labelText: l10n.serverDialogUrlLabel,
+                hintText: l10n.serverDialogUrlHint,
                 errorText: _urlError,
               ),
             ),
@@ -370,16 +396,16 @@ class _ServerConnectionDialogState
               obscureText: true,
               decoration: InputDecoration(
                 labelText: _type == ServerType.komga
-                    ? 'API key (or user:password)'
-                    : 'API key',
-                hintText: _isNew ? null : 'Leave blank to keep current',
+                    ? l10n.serverDialogSecretLabelKomga
+                    : l10n.serverDialogSecretLabel,
+                hintText: _isNew ? null : l10n.serverDialogSecretKeepHint,
               ),
             ),
             if (!_isNew) ...[
               const SizedBox(height: 4),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Enabled'),
+                title: Text(l10n.serverDialogEnabled),
                 value: _enabled,
                 onChanged: (value) => setState(() => _enabled = value),
               ),
@@ -389,7 +415,7 @@ class _ServerConnectionDialogState
               Text(
                 _testResult!,
                 style: TextStyle(
-                  color: _testResult == 'Connection OK'
+                  color: _testOk
                       ? Colors.green
                       : Theme.of(context).colorScheme.error,
                 ),
@@ -403,7 +429,7 @@ class _ServerConnectionDialogState
           TextButton(
             onPressed: _saving ? null : _delete,
             child: Text(
-              'Remove',
+              l10n.commonRemove,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
@@ -415,15 +441,15 @@ class _ServerConnectionDialogState
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Test'),
+              : Text(l10n.serverDialogTest),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l10n.commonCancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,
-          child: const Text('Save'),
+          child: Text(l10n.commonSave),
         ),
       ],
     );

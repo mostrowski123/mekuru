@@ -8,6 +8,7 @@ import 'package:mekuru/features/sync/presentation/screens/server_settings_screen
 import 'package:mekuru/main.dart';
 
 import 'shared/test_database.dart';
+import 'test_app.dart';
 
 /// Real secure storage is a platform channel, so the client provider's build
 /// spans a real async gap. Mirror that, or the build completes in microtasks
@@ -42,7 +43,7 @@ void main() {
           databaseProvider.overrideWithValue(db),
           serverSecretStorageProvider.overrideWithValue(_SlowFakeSecrets()),
         ],
-        child: const MaterialApp(home: ServerSettingsScreen()),
+        child: buildLocalizedTestApp(home: const ServerSettingsScreen()),
       ),
     );
     await tester.pump();

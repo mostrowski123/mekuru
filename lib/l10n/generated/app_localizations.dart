@@ -4053,6 +4053,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No pages found'**
   String get mangaReaderNoPages;
+
+  /// Tooltip of the app bar button on the Book servers screen that pushes unsynced reading progress to every server.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get serverSettingsSyncNow;
+
+  /// Subtitle of a server row on the Book servers screen: the server type (Komga or Kavita) and its base URL.
+  ///
+  /// In en, this message translates to:
+  /// **'{serverType} · {baseUrl}'**
+  String serverSettingsConnectionSubtitle({
+    required String serverType,
+    required String baseUrl,
+  });
+
+  /// Appended to a server row subtitle when the connection is switched off.
+  ///
+  /// In en, this message translates to:
+  /// **'disabled'**
+  String get serverSettingsDisabled;
+
+  /// Tooltip of the server row button that matches books already on the device against the server by title and links them.
+  ///
+  /// In en, this message translates to:
+  /// **'Link existing books'**
+  String get serverSettingsLinkExisting;
+
+  /// Tooltip of the server row button that opens the edit dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get serverSettingsEdit;
+
+  /// Explanation shown on the Book servers screen when no server has been added yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a self-hosted Komga or Kavita server to browse and download its books, and keep reading progress in sync.'**
+  String get serverSettingsEmptyHint;
+
+  /// Row that opens the add-server dialog, and that dialog's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add server'**
+  String get serverSettingsAddServer;
+
+  /// Snackbar shown while existing books are being matched against the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Matching your library…'**
+  String get serverSettingsMatching;
+
+  /// Snackbar shown when matching existing books against the server linked nothing new.
+  ///
+  /// In en, this message translates to:
+  /// **'No new matches found — books can also be linked from the server browser'**
+  String get serverSettingsNoMatches;
+
+  /// Snackbar shown after matching existing books against the server; count is the number of books linked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {Linked 1 book and synced its progress} other {Linked {count} books and synced their progress}}'**
+  String serverSettingsLinkedCount({required int count});
+
+  /// Snackbar shown when matching existing books against the server threw; error is the exception text.
+  ///
+  /// In en, this message translates to:
+  /// **'Linking failed: {error}'**
+  String serverSettingsLinkFailed({required String error});
+
+  /// Snackbar shown while Sync now pushes reading progress to every server.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get serverSettingsSyncing;
+
+  /// Sync now result when some pushes failed; pushed and failed are book counts.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced {pushed} books, {failed} failed'**
+  String serverSettingsSyncedWithFailures({
+    required int pushed,
+    required int failed,
+  });
+
+  /// Sync now result when every push succeeded; count is the number of books pushed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {Synced 1 book} other {Synced {count} books}}'**
+  String serverSettingsSynced({required int count});
+
+  /// Sync now result when no book had unsynced reading progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything already in sync'**
+  String get serverSettingsAlreadyInSync;
+
+  /// Title of the server connection dialog when editing an existing server.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit server'**
+  String get serverDialogEditTitle;
+
+  /// Label of the server connection dialog's name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get serverDialogNameLabel;
+
+  /// Placeholder of the server connection dialog's name field.
+  ///
+  /// In en, this message translates to:
+  /// **'My server'**
+  String get serverDialogNameHint;
+
+  /// Label of the server connection dialog's URL field.
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL'**
+  String get serverDialogUrlLabel;
+
+  /// Placeholder of the server connection dialog's URL field, showing the expected shape of the address.
+  ///
+  /// In en, this message translates to:
+  /// **'https://server:port'**
+  String get serverDialogUrlHint;
+
+  /// Label of the server connection dialog's credential field for Kavita, which only accepts an API key.
+  ///
+  /// In en, this message translates to:
+  /// **'API key'**
+  String get serverDialogSecretLabel;
+
+  /// Label of the server connection dialog's credential field for Komga, which accepts an API key or a username and password separated by a colon.
+  ///
+  /// In en, this message translates to:
+  /// **'API key (or user:password)'**
+  String get serverDialogSecretLabelKomga;
+
+  /// Placeholder of the credential field when editing an existing server: an empty field keeps the stored credential.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to keep current'**
+  String get serverDialogSecretKeepHint;
+
+  /// Label of the switch in the server connection dialog that turns the connection on or off.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get serverDialogEnabled;
+
+  /// Result shown in the server connection dialog after a successful connection test.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection OK'**
+  String get serverDialogConnectionOk;
+
+  /// Result shown in the server connection dialog after a failed connection test; error is the exception text.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed: {error}'**
+  String serverDialogConnectionFailed({required String error});
+
+  /// Button in the server connection dialog that tests the connection with the entered URL and credential.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get serverDialogTest;
+
+  /// Title of the confirmation dialog for removing a server connection.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove server?'**
+  String get serverDialogRemoveTitle;
+
+  /// Body of the confirmation dialog for removing a server connection, reassuring that local data is kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded books and reading progress stay on this device — only the server link is removed.'**
+  String get serverDialogRemoveBody;
+
+  /// Empty state when a server reports no libraries.
+  ///
+  /// In en, this message translates to:
+  /// **'No libraries on this server'**
+  String get serverBrowseNoLibraries;
+
+  /// Placeholder of the series search field when browsing a server library.
+  ///
+  /// In en, this message translates to:
+  /// **'Search this server'**
+  String get serverBrowseSearchHint;
+
+  /// Empty state when a server library (or a search in it) has no series.
+  ///
+  /// In en, this message translates to:
+  /// **'No series found'**
+  String get serverBrowseNoSeries;
+
+  /// Subtitle of a series row when browsing a server: how many books the series holds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} book} other {{count} books}}'**
+  String serverBrowseBookCount({required int count});
+
+  /// Title of the dialog shown when a server book to download has the same title as an unlinked book on the device.
+  ///
+  /// In en, this message translates to:
+  /// **'This book is already on your device'**
+  String get serverBrowseAlreadyInLibraryTitle;
+
+  /// Body of the same-title dialog, offering to link the local copy instead of downloading; title is the local book's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Link \"{title}\" to sync its reading progress with the server, or download a separate copy.'**
+  String serverBrowseAlreadyInLibraryBody({required String title});
+
+  /// Same-title dialog button that downloads a separate copy from the server.
+  ///
+  /// In en, this message translates to:
+  /// **'Download anyway'**
+  String get serverBrowseDownloadAnyway;
+
+  /// Same-title dialog button that links the local book to the server book instead of downloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Link existing copy'**
+  String get serverBrowseLinkExistingCopy;
+
+  /// Snackbar shown after linking a local book to a server book; title is the book title.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked \"{title}\"'**
+  String serverBrowseLinked({required String title});
+
+  /// Snackbar shown after a server book was downloaded and imported; title is the book title.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" added to library!'**
+  String serverBrowseAddedToLibrary({required String title});
+
+  /// Snackbar shown when downloading a server book threw; error is the exception text.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed: {error}'**
+  String serverBrowseDownloadFailed({required String error});
+
+  /// Snackbar shown when tapping a server book marked as downloaded whose local copy has since been deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Book is no longer on this device'**
+  String get serverBrowseBookGone;
+
+  /// Empty state when a server series has no books.
+  ///
+  /// In en, this message translates to:
+  /// **'No books in this series'**
+  String get serverBrowseNoBooks;
+
+  /// Subtitle of an image-archive book row when browsing a server: its page count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} page} other {{count} pages}}'**
+  String serverBrowsePageCount({required int count});
 }
 
 class _AppLocalizationsDelegate

@@ -9,6 +9,7 @@ import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
+import 'package:mekuru/l10n/l10n.dart';
 
 void _openBookReader(BuildContext context, Book book) {
   Navigator.of(context).push(
@@ -28,6 +29,7 @@ class ServerBrowseScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final client = ref.watch(serverClientProvider(connection.id));
 
     return Scaffold(
@@ -53,7 +55,7 @@ class ServerBrowseScreen extends ConsumerWidget {
             }
             final libraries = snapshot.data!;
             if (libraries.isEmpty) {
-              return const Center(child: Text('No libraries on this server'));
+              return Center(child: Text(l10n.serverBrowseNoLibraries));
             }
             return ListView(
               children: [
@@ -133,6 +135,7 @@ class _SeriesListScreenState extends State<_SeriesListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(title: Text(widget.library.name)),
       body: Column(
@@ -142,7 +145,7 @@ class _SeriesListScreenState extends State<_SeriesListScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search this server',
+                hintText: l10n.serverBrowseSearchHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.clear),
@@ -173,7 +176,7 @@ class _SeriesListScreenState extends State<_SeriesListScreen> {
                 }
                 final series = snapshot.data!;
                 if (series.isEmpty) {
-                  return const Center(child: Text('No series found'));
+                  return Center(child: Text(l10n.serverBrowseNoSeries));
                 }
                 return ListView.builder(
                   itemCount: series.length,
@@ -196,7 +199,9 @@ class _SeriesListScreenState extends State<_SeriesListScreen> {
                       ),
                       title: Text(item.title),
                       subtitle: item.bookCount > 0
-                          ? Text('${item.bookCount} books')
+                          ? Text(
+                              l10n.serverBrowseBookCount(count: item.bookCount),
+                            )
                           : null,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
@@ -244,6 +249,7 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
   }
 
   Future<void> _startDownload(RemoteBook book) async {
+    final l10n = context.l10n;
     final repo = ref.read(serverConnectionRepositoryProvider);
 
     // An unlinked local copy with the same title: offer link-instead.
@@ -254,24 +260,22 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
       final choice = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Already in your library?'),
+          title: Text(l10n.serverBrowseAlreadyInLibraryTitle),
           content: Text(
-            '"${titleMatch.title}" is already on this device. Link the '
-            'existing copy to sync its progress with the server, or '
-            'download a separate copy.',
+            l10n.serverBrowseAlreadyInLibraryBody(title: titleMatch.title),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(null),
-              child: const Text('Cancel'),
+              child: Text(l10n.commonCancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop('download'),
-              child: const Text('Download anyway'),
+              child: Text(l10n.serverBrowseDownloadAnyway),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop('link'),
-              child: const Text('Link existing copy'),
+              child: Text(l10n.serverBrowseLinkExistingCopy),
             ),
           ],
         ),
@@ -281,7 +285,9 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
         await repo.linkBook(titleMatch.id, widget.connection.id, book.ids);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Linked "${titleMatch.title}"')),
+            SnackBar(
+              content: Text(l10n.serverBrowseLinked(title: titleMatch.title)),
+            ),
           );
         }
         return;
@@ -298,14 +304,18 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
           );
       if (mounted && imported != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('"${imported.title}" added to library!')),
+          SnackBar(
+            content: Text(
+              l10n.serverBrowseAddedToLibrary(title: imported.title),
+            ),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.serverBrowseDownloadFailed(error: '$e'))),
+        );
       }
     }
   }
@@ -317,7 +327,7 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
     if (!mounted) return;
     if (linked == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Book is no longer on this device')),
+        SnackBar(content: Text(context.l10n.serverBrowseBookGone)),
       );
       return;
     }
@@ -326,6 +336,7 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final downloads = ref.watch(serverDownloadProvider);
     final linkedIds = ref
         .watch(linkedRemoteIdsProvider(widget.connection.id))
@@ -350,7 +361,7 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
           }
           final books = snapshot.data!;
           if (books.isEmpty) {
-            return const Center(child: Text('No books in this series'));
+            return Center(child: Text(l10n.serverBrowseNoBooks));
           }
           return ListView.builder(
             itemCount: books.length,
@@ -386,7 +397,7 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
                 subtitle: Text(
                   book.format == RemoteBookFormat.epub
                       ? 'EPUB'
-                      : '${book.pageCount} pages',
+                      : l10n.serverBrowsePageCount(count: book.pageCount),
                 ),
                 trailing: trailing,
                 onTap: progress != null
@@ -419,7 +430,10 @@ class _ErrorRetry extends StatelessWidget {
           children: [
             Text('$error', textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+            FilledButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.commonRetry),
+            ),
           ],
         ),
       ),

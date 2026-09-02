@@ -190,7 +190,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String libraryImportFromServer({required String serverName}) {
-    return 'Download from $serverName';
+    return 'Unduh dari $serverName';
   }
 
   @override
@@ -746,14 +746,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsSectionVocabularyExport => 'Kosakata & Ekspor';
 
   @override
-  String get settingsSectionServerSync => 'Server sync';
+  String get settingsSectionServerSync => 'Sinkronisasi Server';
 
   @override
-  String get settingsServerSyncTitle => 'Book servers';
+  String get settingsServerSyncTitle => 'Server Buku';
 
   @override
   String get settingsServerSyncSubtitle =>
-      'Browse and sync with Komga or Kavita';
+      'Jelajahi dan sinkronkan dengan Komga atau Kavita';
 
   @override
   String get settingsSectionPro => 'Pro';
@@ -2360,4 +2360,194 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get mangaReaderNoPages => 'Tidak ada halaman yang ditemukan';
+
+  @override
+  String get serverSettingsSyncNow => 'Sinkronkan sekarang';
+
+  @override
+  String serverSettingsConnectionSubtitle({
+    required String serverType,
+    required String baseUrl,
+  }) {
+    return '$serverType · $baseUrl';
+  }
+
+  @override
+  String get serverSettingsDisabled => 'nonaktif';
+
+  @override
+  String get serverSettingsLinkExisting => 'Tautkan buku yang ada';
+
+  @override
+  String get serverSettingsEdit => 'Edit';
+
+  @override
+  String get serverSettingsEmptyHint =>
+      'Hubungkan server Komga atau Kavita yang Anda host sendiri untuk menjelajahi dan mengunduh bukunya, serta menjaga kemajuan membaca tetap sinkron.';
+
+  @override
+  String get serverSettingsAddServer => 'Tambah server';
+
+  @override
+  String get serverSettingsMatching => 'Mencocokkan perpustakaan Anda…';
+
+  @override
+  String get serverSettingsNoMatches =>
+      'Tidak ada kecocokan baru; buku juga dapat ditautkan dari penjelajah server';
+
+  @override
+  String serverSettingsLinkedCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Menautkan $count buku dan menyinkronkan kemajuannya',
+      one: 'Menautkan $count buku dan menyinkronkan kemajuannya',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String serverSettingsLinkFailed({required String error}) {
+    return 'Gagal menautkan: $error';
+  }
+
+  @override
+  String get serverSettingsSyncing => 'Menyinkronkan…';
+
+  @override
+  String serverSettingsSyncedWithFailures({
+    required int pushed,
+    required int failed,
+  }) {
+    return '$pushed buku disinkronkan, $failed gagal';
+  }
+
+  @override
+  String serverSettingsSynced({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count buku disinkronkan',
+      one: '$count buku disinkronkan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverSettingsAlreadyInSync => 'Semuanya sudah sinkron';
+
+  @override
+  String get serverDialogEditTitle => 'Edit server';
+
+  @override
+  String get serverDialogNameLabel => 'Nama';
+
+  @override
+  String get serverDialogNameHint => 'Server saya';
+
+  @override
+  String get serverDialogUrlLabel => 'URL Server';
+
+  @override
+  String get serverDialogUrlHint => 'https://server:port';
+
+  @override
+  String get serverDialogSecretLabel => 'Kunci API';
+
+  @override
+  String get serverDialogSecretLabelKomga =>
+      'Kunci API (atau pengguna:kata sandi)';
+
+  @override
+  String get serverDialogSecretKeepHint =>
+      'Kosongkan untuk mempertahankan yang sekarang';
+
+  @override
+  String get serverDialogEnabled => 'Aktif';
+
+  @override
+  String get serverDialogConnectionOk => 'Koneksi berhasil';
+
+  @override
+  String serverDialogConnectionFailed({required String error}) {
+    return 'Gagal: $error';
+  }
+
+  @override
+  String get serverDialogTest => 'Uji';
+
+  @override
+  String get serverDialogRemoveTitle => 'Keluarkan server?';
+
+  @override
+  String get serverDialogRemoveBody =>
+      'Buku yang diunduh dan kemajuan membaca tetap ada di perangkat ini; hanya tautan ke server yang dihapus.';
+
+  @override
+  String get serverBrowseNoLibraries => 'Tidak ada perpustakaan di server ini';
+
+  @override
+  String get serverBrowseSearchHint => 'Cari di server ini';
+
+  @override
+  String get serverBrowseNoSeries => 'Tidak ada seri yang ditemukan';
+
+  @override
+  String serverBrowseBookCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count buku',
+      one: '$count buku',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverBrowseAlreadyInLibraryTitle =>
+      'Buku ini sudah ada di perangkat Anda';
+
+  @override
+  String serverBrowseAlreadyInLibraryBody({required String title}) {
+    return 'Tautkan \"$title\" untuk menyinkronkan kemajuan membacanya dengan server, atau unduh salinan terpisah.';
+  }
+
+  @override
+  String get serverBrowseDownloadAnyway => 'Tetap unduh';
+
+  @override
+  String get serverBrowseLinkExistingCopy => 'Tautkan salinan yang ada';
+
+  @override
+  String serverBrowseLinked({required String title}) {
+    return '\"$title\" ditautkan';
+  }
+
+  @override
+  String serverBrowseAddedToLibrary({required String title}) {
+    return '\"$title\" ditambahkan ke perpustakaan!';
+  }
+
+  @override
+  String serverBrowseDownloadFailed({required String error}) {
+    return 'Gagal mengunduh: $error';
+  }
+
+  @override
+  String get serverBrowseBookGone =>
+      'Buku ini sudah tidak ada di perangkat ini';
+
+  @override
+  String get serverBrowseNoBooks => 'Tidak ada buku dalam seri ini';
+
+  @override
+  String serverBrowsePageCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count halaman',
+      one: '$count halaman',
+    );
+    return '$_temp0';
+  }
 }

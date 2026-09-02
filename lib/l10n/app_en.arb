@@ -3033,5 +3033,243 @@
   "mangaReaderNoPages": "No pages found",
   "@mangaReaderNoPages": {
     "description": "Empty state message shown when a loaded manga book contains no pages."
+  },
+  "serverSettingsSyncNow": "Sync now",
+  "@serverSettingsSyncNow": {
+    "description": "Tooltip of the app bar button on the Book servers screen that pushes unsynced reading progress to every server."
+  },
+  "serverSettingsConnectionSubtitle": "{serverType} · {baseUrl}",
+  "@serverSettingsConnectionSubtitle": {
+    "description": "Subtitle of a server row on the Book servers screen: the server type (Komga or Kavita) and its base URL.",
+    "placeholders": {
+      "serverType": {
+        "type": "String"
+      },
+      "baseUrl": {
+        "type": "String"
+      }
+    }
+  },
+  "serverSettingsDisabled": "disabled",
+  "@serverSettingsDisabled": {
+    "description": "Appended to a server row subtitle when the connection is switched off."
+  },
+  "serverSettingsLinkExisting": "Link existing books",
+  "@serverSettingsLinkExisting": {
+    "description": "Tooltip of the server row button that matches books already on the device against the server by title and links them."
+  },
+  "serverSettingsEdit": "Edit",
+  "@serverSettingsEdit": {
+    "description": "Tooltip of the server row button that opens the edit dialog."
+  },
+  "serverSettingsEmptyHint": "Connect a self-hosted Komga or Kavita server to browse and download its books, and keep reading progress in sync.",
+  "@serverSettingsEmptyHint": {
+    "description": "Explanation shown on the Book servers screen when no server has been added yet."
+  },
+  "serverSettingsAddServer": "Add server",
+  "@serverSettingsAddServer": {
+    "description": "Row that opens the add-server dialog, and that dialog's title."
+  },
+  "serverSettingsMatching": "Matching your library…",
+  "@serverSettingsMatching": {
+    "description": "Snackbar shown while existing books are being matched against the server."
+  },
+  "serverSettingsNoMatches": "No new matches found — books can also be linked from the server browser",
+  "@serverSettingsNoMatches": {
+    "description": "Snackbar shown when matching existing books against the server linked nothing new."
+  },
+  "serverSettingsLinkedCount": "{count, plural, one {Linked 1 book and synced its progress} other {Linked {count} books and synced their progress}}",
+  "@serverSettingsLinkedCount": {
+    "description": "Snackbar shown after matching existing books against the server; count is the number of books linked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "serverSettingsLinkFailed": "Linking failed: {error}",
+  "@serverSettingsLinkFailed": {
+    "description": "Snackbar shown when matching existing books against the server threw; error is the exception text.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "serverSettingsSyncing": "Syncing…",
+  "@serverSettingsSyncing": {
+    "description": "Snackbar shown while Sync now pushes reading progress to every server."
+  },
+  "serverSettingsSyncedWithFailures": "Synced {pushed} books, {failed} failed",
+  "@serverSettingsSyncedWithFailures": {
+    "description": "Sync now result when some pushes failed; pushed and failed are book counts.",
+    "placeholders": {
+      "pushed": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "serverSettingsSynced": "{count, plural, one {Synced 1 book} other {Synced {count} books}}",
+  "@serverSettingsSynced": {
+    "description": "Sync now result when every push succeeded; count is the number of books pushed.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "serverSettingsAlreadyInSync": "Everything already in sync",
+  "@serverSettingsAlreadyInSync": {
+    "description": "Sync now result when no book had unsynced reading progress."
+  },
+  "serverDialogEditTitle": "Edit server",
+  "@serverDialogEditTitle": {
+    "description": "Title of the server connection dialog when editing an existing server."
+  },
+  "serverDialogNameLabel": "Name",
+  "@serverDialogNameLabel": {
+    "description": "Label of the server connection dialog's name field."
+  },
+  "serverDialogNameHint": "My server",
+  "@serverDialogNameHint": {
+    "description": "Placeholder of the server connection dialog's name field."
+  },
+  "serverDialogUrlLabel": "Server URL",
+  "@serverDialogUrlLabel": {
+    "description": "Label of the server connection dialog's URL field."
+  },
+  "serverDialogUrlHint": "https://server:port",
+  "@serverDialogUrlHint": {
+    "description": "Placeholder of the server connection dialog's URL field, showing the expected shape of the address."
+  },
+  "serverDialogSecretLabel": "API key",
+  "@serverDialogSecretLabel": {
+    "description": "Label of the server connection dialog's credential field for Kavita, which only accepts an API key."
+  },
+  "serverDialogSecretLabelKomga": "API key (or user:password)",
+  "@serverDialogSecretLabelKomga": {
+    "description": "Label of the server connection dialog's credential field for Komga, which accepts an API key or a username and password separated by a colon."
+  },
+  "serverDialogSecretKeepHint": "Leave blank to keep current",
+  "@serverDialogSecretKeepHint": {
+    "description": "Placeholder of the credential field when editing an existing server: an empty field keeps the stored credential."
+  },
+  "serverDialogEnabled": "Enabled",
+  "@serverDialogEnabled": {
+    "description": "Label of the switch in the server connection dialog that turns the connection on or off."
+  },
+  "serverDialogConnectionOk": "Connection OK",
+  "@serverDialogConnectionOk": {
+    "description": "Result shown in the server connection dialog after a successful connection test."
+  },
+  "serverDialogConnectionFailed": "Failed: {error}",
+  "@serverDialogConnectionFailed": {
+    "description": "Result shown in the server connection dialog after a failed connection test; error is the exception text.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "serverDialogTest": "Test",
+  "@serverDialogTest": {
+    "description": "Button in the server connection dialog that tests the connection with the entered URL and credential."
+  },
+  "serverDialogRemoveTitle": "Remove server?",
+  "@serverDialogRemoveTitle": {
+    "description": "Title of the confirmation dialog for removing a server connection."
+  },
+  "serverDialogRemoveBody": "Downloaded books and reading progress stay on this device — only the server link is removed.",
+  "@serverDialogRemoveBody": {
+    "description": "Body of the confirmation dialog for removing a server connection, reassuring that local data is kept."
+  },
+  "serverBrowseNoLibraries": "No libraries on this server",
+  "@serverBrowseNoLibraries": {
+    "description": "Empty state when a server reports no libraries."
+  },
+  "serverBrowseSearchHint": "Search this server",
+  "@serverBrowseSearchHint": {
+    "description": "Placeholder of the series search field when browsing a server library."
+  },
+  "serverBrowseNoSeries": "No series found",
+  "@serverBrowseNoSeries": {
+    "description": "Empty state when a server library (or a search in it) has no series."
+  },
+  "serverBrowseBookCount": "{count, plural, one {{count} book} other {{count} books}}",
+  "@serverBrowseBookCount": {
+    "description": "Subtitle of a series row when browsing a server: how many books the series holds.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "serverBrowseAlreadyInLibraryTitle": "This book is already on your device",
+  "@serverBrowseAlreadyInLibraryTitle": {
+    "description": "Title of the dialog shown when a server book to download has the same title as an unlinked book on the device."
+  },
+  "serverBrowseAlreadyInLibraryBody": "Link \"{title}\" to sync its reading progress with the server, or download a separate copy.",
+  "@serverBrowseAlreadyInLibraryBody": {
+    "description": "Body of the same-title dialog, offering to link the local copy instead of downloading; title is the local book's title.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "serverBrowseDownloadAnyway": "Download anyway",
+  "@serverBrowseDownloadAnyway": {
+    "description": "Same-title dialog button that downloads a separate copy from the server."
+  },
+  "serverBrowseLinkExistingCopy": "Link existing copy",
+  "@serverBrowseLinkExistingCopy": {
+    "description": "Same-title dialog button that links the local book to the server book instead of downloading."
+  },
+  "serverBrowseLinked": "Linked \"{title}\"",
+  "@serverBrowseLinked": {
+    "description": "Snackbar shown after linking a local book to a server book; title is the book title.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "serverBrowseAddedToLibrary": "\"{title}\" added to library!",
+  "@serverBrowseAddedToLibrary": {
+    "description": "Snackbar shown after a server book was downloaded and imported; title is the book title.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "serverBrowseDownloadFailed": "Download failed: {error}",
+  "@serverBrowseDownloadFailed": {
+    "description": "Snackbar shown when downloading a server book threw; error is the exception text.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "serverBrowseBookGone": "Book is no longer on this device",
+  "@serverBrowseBookGone": {
+    "description": "Snackbar shown when tapping a server book marked as downloaded whose local copy has since been deleted."
+  },
+  "serverBrowseNoBooks": "No books in this series",
+  "@serverBrowseNoBooks": {
+    "description": "Empty state when a server series has no books."
+  },
+  "serverBrowsePageCount": "{count, plural, one {{count} page} other {{count} pages}}",
+  "@serverBrowsePageCount": {
+    "description": "Subtitle of an image-archive book row when browsing a server: its page count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

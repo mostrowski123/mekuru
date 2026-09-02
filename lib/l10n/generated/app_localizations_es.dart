@@ -192,7 +192,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String libraryImportFromServer({required String serverName}) {
-    return 'Download from $serverName';
+    return 'Descargar de $serverName';
   }
 
   @override
@@ -754,14 +754,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsSectionVocabularyExport => 'Vocabulario y exportación';
 
   @override
-  String get settingsSectionServerSync => 'Server sync';
+  String get settingsSectionServerSync => 'Sincronización con servidores';
 
   @override
-  String get settingsServerSyncTitle => 'Book servers';
+  String get settingsServerSyncTitle => 'Servidores de libros';
 
   @override
   String get settingsServerSyncSubtitle =>
-      'Browse and sync with Komga or Kavita';
+      'Explora y sincroniza con Komga o Kavita';
 
   @override
   String get settingsSectionPro => 'Pro';
@@ -2380,4 +2380,194 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get mangaReaderNoPages => 'No se encontraron páginas';
+
+  @override
+  String get serverSettingsSyncNow => 'Sincronizar ahora';
+
+  @override
+  String serverSettingsConnectionSubtitle({
+    required String serverType,
+    required String baseUrl,
+  }) {
+    return '$serverType · $baseUrl';
+  }
+
+  @override
+  String get serverSettingsDisabled => 'desactivado';
+
+  @override
+  String get serverSettingsLinkExisting => 'Vincular libros existentes';
+
+  @override
+  String get serverSettingsEdit => 'Editar';
+
+  @override
+  String get serverSettingsEmptyHint =>
+      'Conecta un servidor Komga o Kavita autoalojado para explorar y descargar sus libros y mantener el progreso de lectura sincronizado.';
+
+  @override
+  String get serverSettingsAddServer => 'Añadir servidor';
+
+  @override
+  String get serverSettingsMatching =>
+      'Buscando coincidencias en tu biblioteca…';
+
+  @override
+  String get serverSettingsNoMatches =>
+      'No se encontraron coincidencias nuevas; los libros también se pueden vincular desde el explorador del servidor';
+
+  @override
+  String serverSettingsLinkedCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Se vincularon $count libros y se sincronizó su progreso',
+      one: 'Se vinculó 1 libro y se sincronizó su progreso',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String serverSettingsLinkFailed({required String error}) {
+    return 'Error al vincular: $error';
+  }
+
+  @override
+  String get serverSettingsSyncing => 'Sincronizando…';
+
+  @override
+  String serverSettingsSyncedWithFailures({
+    required int pushed,
+    required int failed,
+  }) {
+    return 'Se sincronizaron $pushed libros, $failed fallaron';
+  }
+
+  @override
+  String serverSettingsSynced({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Se sincronizaron $count libros',
+      one: 'Se sincronizó 1 libro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverSettingsAlreadyInSync => 'Todo ya está sincronizado';
+
+  @override
+  String get serverDialogEditTitle => 'Editar servidor';
+
+  @override
+  String get serverDialogNameLabel => 'Nombre';
+
+  @override
+  String get serverDialogNameHint => 'Mi servidor';
+
+  @override
+  String get serverDialogUrlLabel => 'URL del servidor';
+
+  @override
+  String get serverDialogUrlHint => 'https://servidor:puerto';
+
+  @override
+  String get serverDialogSecretLabel => 'Clave de API';
+
+  @override
+  String get serverDialogSecretLabelKomga =>
+      'Clave de API (o usuario:contraseña)';
+
+  @override
+  String get serverDialogSecretKeepHint =>
+      'Déjalo en blanco para conservar la actual';
+
+  @override
+  String get serverDialogEnabled => 'Activado';
+
+  @override
+  String get serverDialogConnectionOk => 'Conexión correcta';
+
+  @override
+  String serverDialogConnectionFailed({required String error}) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get serverDialogTest => 'Probar';
+
+  @override
+  String get serverDialogRemoveTitle => '¿Quitar el servidor?';
+
+  @override
+  String get serverDialogRemoveBody =>
+      'Los libros descargados y el progreso de lectura se conservan en este dispositivo; solo se elimina el vínculo con el servidor.';
+
+  @override
+  String get serverBrowseNoLibraries => 'Este servidor no tiene bibliotecas';
+
+  @override
+  String get serverBrowseSearchHint => 'Buscar en este servidor';
+
+  @override
+  String get serverBrowseNoSeries => 'No se encontraron series';
+
+  @override
+  String serverBrowseBookCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count libros',
+      one: '$count libro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverBrowseAlreadyInLibraryTitle =>
+      'Este libro ya está en tu dispositivo';
+
+  @override
+  String serverBrowseAlreadyInLibraryBody({required String title}) {
+    return 'Vincula \"$title\" para sincronizar su progreso de lectura con el servidor, o descarga una copia aparte.';
+  }
+
+  @override
+  String get serverBrowseDownloadAnyway => 'Descargar de todos modos';
+
+  @override
+  String get serverBrowseLinkExistingCopy => 'Vincular copia existente';
+
+  @override
+  String serverBrowseLinked({required String title}) {
+    return 'Se vinculó \"$title\"';
+  }
+
+  @override
+  String serverBrowseAddedToLibrary({required String title}) {
+    return '\"$title\" se añadió a la biblioteca';
+  }
+
+  @override
+  String serverBrowseDownloadFailed({required String error}) {
+    return 'Error al descargar: $error';
+  }
+
+  @override
+  String get serverBrowseBookGone => 'El libro ya no está en este dispositivo';
+
+  @override
+  String get serverBrowseNoBooks => 'Esta serie no tiene libros';
+
+  @override
+  String serverBrowsePageCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count páginas',
+      one: '$count página',
+    );
+    return '$_temp0';
+  }
 }

@@ -2349,4 +2349,191 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mangaReaderNoPages => 'No pages found';
+
+  @override
+  String get serverSettingsSyncNow => 'Sync now';
+
+  @override
+  String serverSettingsConnectionSubtitle({
+    required String serverType,
+    required String baseUrl,
+  }) {
+    return '$serverType · $baseUrl';
+  }
+
+  @override
+  String get serverSettingsDisabled => 'disabled';
+
+  @override
+  String get serverSettingsLinkExisting => 'Link existing books';
+
+  @override
+  String get serverSettingsEdit => 'Edit';
+
+  @override
+  String get serverSettingsEmptyHint =>
+      'Connect a self-hosted Komga or Kavita server to browse and download its books, and keep reading progress in sync.';
+
+  @override
+  String get serverSettingsAddServer => 'Add server';
+
+  @override
+  String get serverSettingsMatching => 'Matching your library…';
+
+  @override
+  String get serverSettingsNoMatches =>
+      'No new matches found — books can also be linked from the server browser';
+
+  @override
+  String serverSettingsLinkedCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Linked $count books and synced their progress',
+      one: 'Linked 1 book and synced its progress',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String serverSettingsLinkFailed({required String error}) {
+    return 'Linking failed: $error';
+  }
+
+  @override
+  String get serverSettingsSyncing => 'Syncing…';
+
+  @override
+  String serverSettingsSyncedWithFailures({
+    required int pushed,
+    required int failed,
+  }) {
+    return 'Synced $pushed books, $failed failed';
+  }
+
+  @override
+  String serverSettingsSynced({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Synced $count books',
+      one: 'Synced 1 book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverSettingsAlreadyInSync => 'Everything already in sync';
+
+  @override
+  String get serverDialogEditTitle => 'Edit server';
+
+  @override
+  String get serverDialogNameLabel => 'Name';
+
+  @override
+  String get serverDialogNameHint => 'My server';
+
+  @override
+  String get serverDialogUrlLabel => 'Server URL';
+
+  @override
+  String get serverDialogUrlHint => 'https://server:port';
+
+  @override
+  String get serverDialogSecretLabel => 'API key';
+
+  @override
+  String get serverDialogSecretLabelKomga => 'API key (or user:password)';
+
+  @override
+  String get serverDialogSecretKeepHint => 'Leave blank to keep current';
+
+  @override
+  String get serverDialogEnabled => 'Enabled';
+
+  @override
+  String get serverDialogConnectionOk => 'Connection OK';
+
+  @override
+  String serverDialogConnectionFailed({required String error}) {
+    return 'Failed: $error';
+  }
+
+  @override
+  String get serverDialogTest => 'Test';
+
+  @override
+  String get serverDialogRemoveTitle => 'Remove server?';
+
+  @override
+  String get serverDialogRemoveBody =>
+      'Downloaded books and reading progress stay on this device — only the server link is removed.';
+
+  @override
+  String get serverBrowseNoLibraries => 'No libraries on this server';
+
+  @override
+  String get serverBrowseSearchHint => 'Search this server';
+
+  @override
+  String get serverBrowseNoSeries => 'No series found';
+
+  @override
+  String serverBrowseBookCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count books',
+      one: '$count book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverBrowseAlreadyInLibraryTitle =>
+      'This book is already on your device';
+
+  @override
+  String serverBrowseAlreadyInLibraryBody({required String title}) {
+    return 'Link \"$title\" to sync its reading progress with the server, or download a separate copy.';
+  }
+
+  @override
+  String get serverBrowseDownloadAnyway => 'Download anyway';
+
+  @override
+  String get serverBrowseLinkExistingCopy => 'Link existing copy';
+
+  @override
+  String serverBrowseLinked({required String title}) {
+    return 'Linked \"$title\"';
+  }
+
+  @override
+  String serverBrowseAddedToLibrary({required String title}) {
+    return '\"$title\" added to library!';
+  }
+
+  @override
+  String serverBrowseDownloadFailed({required String error}) {
+    return 'Download failed: $error';
+  }
+
+  @override
+  String get serverBrowseBookGone => 'Book is no longer on this device';
+
+  @override
+  String get serverBrowseNoBooks => 'No books in this series';
+
+  @override
+  String serverBrowsePageCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pages',
+      one: '$count page',
+    );
+    return '$_temp0';
+  }
 }

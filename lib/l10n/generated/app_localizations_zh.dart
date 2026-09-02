@@ -188,7 +188,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String libraryImportFromServer({required String serverName}) {
-    return 'Download from $serverName';
+    return '从 $serverName 下载';
   }
 
   @override
@@ -710,14 +710,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSectionVocabularyExport => '词汇与导出';
 
   @override
-  String get settingsSectionServerSync => 'Server sync';
+  String get settingsSectionServerSync => '服务器同步';
 
   @override
-  String get settingsServerSyncTitle => 'Book servers';
+  String get settingsServerSyncTitle => '图书服务器';
 
   @override
-  String get settingsServerSyncSubtitle =>
-      'Browse and sync with Komga or Kavita';
+  String get settingsServerSyncSubtitle => '浏览并同步 Komga 或 Kavita';
 
   @override
   String get settingsSectionPro => '专业版';
@@ -2250,6 +2249,190 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mangaReaderNoPages => '未找到页面';
+
+  @override
+  String get serverSettingsSyncNow => '立即同步';
+
+  @override
+  String serverSettingsConnectionSubtitle({
+    required String serverType,
+    required String baseUrl,
+  }) {
+    return '$serverType · $baseUrl';
+  }
+
+  @override
+  String get serverSettingsDisabled => '已禁用';
+
+  @override
+  String get serverSettingsLinkExisting => '关联已有图书';
+
+  @override
+  String get serverSettingsEdit => '编辑';
+
+  @override
+  String get serverSettingsEmptyHint =>
+      '连接自托管的 Komga 或 Kavita 服务器，即可浏览并下载其中的图书，并保持阅读进度同步。';
+
+  @override
+  String get serverSettingsAddServer => '添加服务器';
+
+  @override
+  String get serverSettingsMatching => '正在匹配你的书库…';
+
+  @override
+  String get serverSettingsNoMatches => '未找到新的匹配项；也可以在服务器浏览器中关联图书';
+
+  @override
+  String serverSettingsLinkedCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已关联 $count 本书并同步了阅读进度',
+      one: '已关联 $count 本书并同步了阅读进度',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String serverSettingsLinkFailed({required String error}) {
+    return '关联失败：$error';
+  }
+
+  @override
+  String get serverSettingsSyncing => '正在同步…';
+
+  @override
+  String serverSettingsSyncedWithFailures({
+    required int pushed,
+    required int failed,
+  }) {
+    return '已同步 $pushed 本书，$failed 本失败';
+  }
+
+  @override
+  String serverSettingsSynced({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已同步 $count 本书',
+      one: '已同步 $count 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverSettingsAlreadyInSync => '所有内容均已同步';
+
+  @override
+  String get serverDialogEditTitle => '编辑服务器';
+
+  @override
+  String get serverDialogNameLabel => '名称';
+
+  @override
+  String get serverDialogNameHint => '我的服务器';
+
+  @override
+  String get serverDialogUrlLabel => '服务器 URL';
+
+  @override
+  String get serverDialogUrlHint => 'https://server:port';
+
+  @override
+  String get serverDialogSecretLabel => 'API 密钥';
+
+  @override
+  String get serverDialogSecretLabelKomga => 'API 密钥（或 用户名:密码）';
+
+  @override
+  String get serverDialogSecretKeepHint => '留空则保留当前密钥';
+
+  @override
+  String get serverDialogEnabled => '已启用';
+
+  @override
+  String get serverDialogConnectionOk => '连接正常';
+
+  @override
+  String serverDialogConnectionFailed({required String error}) {
+    return '失败：$error';
+  }
+
+  @override
+  String get serverDialogTest => '测试';
+
+  @override
+  String get serverDialogRemoveTitle => '移除服务器？';
+
+  @override
+  String get serverDialogRemoveBody => '已下载的图书和阅读进度会保留在此设备上，只会移除与服务器的关联。';
+
+  @override
+  String get serverBrowseNoLibraries => '此服务器上没有书库';
+
+  @override
+  String get serverBrowseSearchHint => '搜索此服务器';
+
+  @override
+  String get serverBrowseNoSeries => '未找到系列';
+
+  @override
+  String serverBrowseBookCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 本书',
+      one: '$count 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverBrowseAlreadyInLibraryTitle => '此设备上已有这本书';
+
+  @override
+  String serverBrowseAlreadyInLibraryBody({required String title}) {
+    return '关联“$title”以便与服务器同步阅读进度，或另外下载一份副本。';
+  }
+
+  @override
+  String get serverBrowseDownloadAnyway => '仍然下载';
+
+  @override
+  String get serverBrowseLinkExistingCopy => '关联已有副本';
+
+  @override
+  String serverBrowseLinked({required String title}) {
+    return '已关联“$title”';
+  }
+
+  @override
+  String serverBrowseAddedToLibrary({required String title}) {
+    return '“$title”已添加到书库！';
+  }
+
+  @override
+  String serverBrowseDownloadFailed({required String error}) {
+    return '下载失败：$error';
+  }
+
+  @override
+  String get serverBrowseBookGone => '这本书已不在此设备上';
+
+  @override
+  String get serverBrowseNoBooks => '此系列中没有图书';
+
+  @override
+  String serverBrowsePageCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 页',
+      one: '$count 页',
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -2436,7 +2619,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String libraryImportFromServer({required String serverName}) {
-    return 'Download from $serverName';
+    return '从 $serverName 下载';
   }
 
   @override
@@ -2956,6 +3139,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settingsSectionVocabularyExport => '词汇与导出';
+
+  @override
+  String get settingsSectionServerSync => '服务器同步';
+
+  @override
+  String get settingsServerSyncTitle => '图书服务器';
+
+  @override
+  String get settingsServerSyncSubtitle => '浏览并同步 Komga 或 Kavita';
 
   @override
   String get settingsSectionPro => '专业版';
@@ -4488,4 +4680,188 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get mangaReaderNoPages => '未找到页面';
+
+  @override
+  String get serverSettingsSyncNow => '立即同步';
+
+  @override
+  String serverSettingsConnectionSubtitle({
+    required String serverType,
+    required String baseUrl,
+  }) {
+    return '$serverType · $baseUrl';
+  }
+
+  @override
+  String get serverSettingsDisabled => '已禁用';
+
+  @override
+  String get serverSettingsLinkExisting => '关联已有图书';
+
+  @override
+  String get serverSettingsEdit => '编辑';
+
+  @override
+  String get serverSettingsEmptyHint =>
+      '连接自托管的 Komga 或 Kavita 服务器，即可浏览并下载其中的图书，并保持阅读进度同步。';
+
+  @override
+  String get serverSettingsAddServer => '添加服务器';
+
+  @override
+  String get serverSettingsMatching => '正在匹配你的书库…';
+
+  @override
+  String get serverSettingsNoMatches => '未找到新的匹配项；也可以在服务器浏览器中关联图书';
+
+  @override
+  String serverSettingsLinkedCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已关联 $count 本书并同步了阅读进度',
+      one: '已关联 $count 本书并同步了阅读进度',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String serverSettingsLinkFailed({required String error}) {
+    return '关联失败：$error';
+  }
+
+  @override
+  String get serverSettingsSyncing => '正在同步…';
+
+  @override
+  String serverSettingsSyncedWithFailures({
+    required int pushed,
+    required int failed,
+  }) {
+    return '已同步 $pushed 本书，$failed 本失败';
+  }
+
+  @override
+  String serverSettingsSynced({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已同步 $count 本书',
+      one: '已同步 $count 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverSettingsAlreadyInSync => '所有内容均已同步';
+
+  @override
+  String get serverDialogEditTitle => '编辑服务器';
+
+  @override
+  String get serverDialogNameLabel => '名称';
+
+  @override
+  String get serverDialogNameHint => '我的服务器';
+
+  @override
+  String get serverDialogUrlLabel => '服务器 URL';
+
+  @override
+  String get serverDialogUrlHint => 'https://server:port';
+
+  @override
+  String get serverDialogSecretLabel => 'API 密钥';
+
+  @override
+  String get serverDialogSecretLabelKomga => 'API 密钥（或 用户名:密码）';
+
+  @override
+  String get serverDialogSecretKeepHint => '留空则保留当前密钥';
+
+  @override
+  String get serverDialogEnabled => '已启用';
+
+  @override
+  String get serverDialogConnectionOk => '连接正常';
+
+  @override
+  String serverDialogConnectionFailed({required String error}) {
+    return '失败：$error';
+  }
+
+  @override
+  String get serverDialogTest => '测试';
+
+  @override
+  String get serverDialogRemoveTitle => '移除服务器？';
+
+  @override
+  String get serverDialogRemoveBody => '已下载的图书和阅读进度会保留在此设备上，只会移除与服务器的关联。';
+
+  @override
+  String get serverBrowseNoLibraries => '此服务器上没有书库';
+
+  @override
+  String get serverBrowseSearchHint => '搜索此服务器';
+
+  @override
+  String get serverBrowseNoSeries => '未找到系列';
+
+  @override
+  String serverBrowseBookCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 本书',
+      one: '$count 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get serverBrowseAlreadyInLibraryTitle => '此设备上已有这本书';
+
+  @override
+  String serverBrowseAlreadyInLibraryBody({required String title}) {
+    return '关联“$title”以便与服务器同步阅读进度，或另外下载一份副本。';
+  }
+
+  @override
+  String get serverBrowseDownloadAnyway => '仍然下载';
+
+  @override
+  String get serverBrowseLinkExistingCopy => '关联已有副本';
+
+  @override
+  String serverBrowseLinked({required String title}) {
+    return '已关联“$title”';
+  }
+
+  @override
+  String serverBrowseAddedToLibrary({required String title}) {
+    return '“$title”已添加到书库！';
+  }
+
+  @override
+  String serverBrowseDownloadFailed({required String error}) {
+    return '下载失败：$error';
+  }
+
+  @override
+  String get serverBrowseBookGone => '这本书已不在此设备上';
+
+  @override
+  String get serverBrowseNoBooks => '此系列中没有图书';
+
+  @override
+  String serverBrowsePageCount({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 页',
+      one: '$count 页',
+    );
+    return '$_temp0';
+  }
 }
