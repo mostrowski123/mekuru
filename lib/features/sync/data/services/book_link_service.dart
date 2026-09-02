@@ -1,4 +1,5 @@
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 
 import '../models/remote_models.dart';
 import '../repositories/server_connection_repository.dart';
@@ -17,6 +18,9 @@ class BookLinkService {
   final AppDatabase _db;
   final ServerConnectionRepository _connections;
 
+  /// Series whose books are listed concurrently per round trip.
+  static const _batchSize = 4;
+
   BookLinkService(this._db, this._connections);
 
   Future<({List<int> linkedBookIds, int unmatched})> linkExistingBooks(
@@ -26,16 +30,24 @@ class BookLinkService {
     // Index the server catalog. A key claimed by two different remote books
     // becomes null — ambiguous, skip.
     final remoteByKey = <String, RemoteBook?>{};
+    void index(RemoteBook book) {
+      final keys = {
+        BookMatchService.normalizeTitle(book.title),
+        BookMatchService.normalizeTitle('${book.seriesTitle} ${book.title}'),
+      }..remove('');
+      for (final key in keys) {
+        remoteByKey[key] = remoteByKey.containsKey(key) ? null : book;
+      }
+    }
+
     for (final library in await client.listLibraries()) {
-      for (final series in await client.listSeries(library.id)) {
-        for (final book in await client.listBooks(series)) {
-          final keys = {
-            _normalize(book.title),
-            _normalize('${book.seriesTitle} ${book.title}'),
-          }..remove('');
-          for (final key in keys) {
-            remoteByKey[key] = remoteByKey.containsKey(key) ? null : book;
-          }
+      final seriesList = await client.listSeries(library.id);
+      // ponytail: fixed-size batches, not a pool — one slow series holds its
+      // batch; switch to a real pool if link time still matters.
+      for (var i = 0; i < seriesList.length; i += _batchSize) {
+        final batch = seriesList.skip(i).take(_batchSize);
+        for (final books in await Future.wait(batch.map(client.listBooks))) {
+          books.forEach(index);
         }
       }
     }
@@ -57,7 +69,8 @@ class BookLinkService {
     final linkedBookIds = <int>[];
     var unmatched = 0;
     for (final book in unlinked) {
-      final candidate = remoteByKey[_normalize(book.title)];
+      final candidate =
+          remoteByKey[BookMatchService.normalizeTitle(book.title)];
       final primary = candidate == null
           ? null
           : ServerConnectionRepository.primaryRemoteId(candidate.ids);
@@ -77,6 +90,4 @@ class BookLinkService {
     }
     return (linkedBookIds: linkedBookIds, unmatched: unmatched);
   }
-
-  static String _normalize(String title) => title.trim().toLowerCase();
 }

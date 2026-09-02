@@ -176,6 +176,35 @@ void main() {
     expect(await client.pullProgress({'bookId': 'b1'}), isNull);
   });
 
+  test(
+    'pullProgress derives an EPUB fraction from page-only progress',
+    () async {
+      final client = clientWith((request) async {
+        if (request.url.path.endsWith('/progression')) {
+          return http.Response('', 404);
+        }
+        return ok({
+          'id': 'b2',
+          'media': {'pagesCount': 200},
+          'readProgress': {
+            'page': 50,
+            'completed': false,
+            'lastModified': '2026-09-01T09:00:00Z',
+          },
+        });
+      });
+
+      final progress = await client.pullProgress({
+        'bookId': 'b2',
+        'seriesId': 's1',
+        'epub': 'true',
+      });
+
+      expect(progress!.page, 49);
+      expect(progress.totalProgression, closeTo(0.25, 0.001));
+    },
+  );
+
   test('pushProgress PATCHes 1-based page for manga', () async {
     late http.Request seen;
     final client = clientWith((request) async {

@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
+import 'package:path/path.dart' as p;
 
 /// Minimal bytes that won't decode as a real image but pass filename filtering.
 List<int> get fakeJpegBytes => [0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0];
@@ -60,9 +61,10 @@ void main() {
       final outputDir = '${tmpDir.path}/output';
       final meta = await CbzParser.extract(cbzPath, outputDir);
 
+      // p.join, not '/': the parser joins with the platform separator.
       expect(
         meta.mokuroJsonPath,
-        '$outputDir/${CbzParser.embeddedMokuroFileName}',
+        p.join(outputDir, CbzParser.embeddedMokuroFileName),
       );
       expect(await File(meta.mokuroJsonPath!).readAsString(), mokuroJson);
       // The manifest is not an image page.

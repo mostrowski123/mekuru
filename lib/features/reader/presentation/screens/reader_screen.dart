@@ -462,12 +462,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             // flight) skip the bookmark lookup; the final one
                             // runs it.
                             if (!_seekInFlight) _checkBookmarkState();
-                            _progressPersistence.queueSave(
-                              cfi,
-                              _locationsReady ? normalizedProgress : _progress,
-                              href: location.href,
-                              hrefProgression: location.hrefProgression,
-                            );
+                            // A newer server position is about to be jumped
+                            // to; saving this (restore) location would write
+                            // stale progress over the applied remote state.
+                            if (_pendingRemoteProgress == null) {
+                              _progressPersistence.queueSave(
+                                cfi,
+                                _locationsReady
+                                    ? normalizedProgress
+                                    : _progress,
+                                href: location.href,
+                                hrefProgression: location.hrefProgression,
+                              );
+                            }
                           }
                         },
                         onPageCharacters: (count, pageKey) => _sessionTracker

@@ -306,4 +306,42 @@ void main() {
     expect(result.failed, 0);
     expect(client.pushes, hasLength(1));
   });
+
+  test('syncOnOpen ignores the record this device itself pushed', () async {
+    // Pushed (lastSyncedAt) after the last local read; the server echoes
+    // that push back stamped in between the two.
+    final book = await insertLinkedManga(
+      lastReadAt: readAt,
+      lastSyncedAt: after,
+    );
+    client.pullResult = RemoteProgress(
+      page: 12,
+      lastModified: readAt.add(const Duration(minutes: 30)),
+    );
+
+    expect(await service.syncOnOpen(book), isNull);
+    expect((await reload(book.id)).lastReadCfi, '5');
+  });
+
+  test(
+    'an epub remote with no whole-book fraction is not marked synced',
+    () async {
+      final id = await db
+          .into(db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: '小説',
+              filePath: '/e',
+              bookType: const Value('epub'),
+              lastReadAt: Value(readAt),
+              serverConnectionId: Value(connectionId),
+              remoteIds: const Value('{"bookId":"b2","epub":"true"}'),
+            ),
+          );
+      client.pullResult = RemoteProgress(page: 40, lastModified: after);
+
+      expect(await service.syncOnOpen(await reload(id)), isNull);
+      expect((await reload(id)).lastSyncedAt, isNull);
+    },
+  );
 }

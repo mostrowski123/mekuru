@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 
 /// CRUD for server connections plus the book-link columns.
 ///
@@ -97,10 +98,10 @@ class ServerConnectionRepository {
     return null;
   }
 
-  /// An unlinked local book of [bookType] whose title matches [title]
-  /// (trim+lowercase, same normalization as backup matching), or null.
+  /// An unlinked local book of [bookType] whose title matches [title] under
+  /// [BookMatchService.normalizeTitle], or null.
   Future<Book?> findUnlinkedTitleMatch(String title, String bookType) async {
-    final normalized = title.trim().toLowerCase();
+    final normalized = BookMatchService.normalizeTitle(title);
     if (normalized.isEmpty) return null;
     final candidates =
         await (_db.select(_db.books)..where(
@@ -109,7 +110,9 @@ class ServerConnectionRepository {
             ))
             .get();
     for (final book in candidates) {
-      if (book.title.trim().toLowerCase() == normalized) return book;
+      if (BookMatchService.normalizeTitle(book.title) == normalized) {
+        return book;
+      }
     }
     return null;
   }

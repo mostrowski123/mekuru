@@ -174,8 +174,8 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     var percent = location.start.percentage;
     // A single-page spread has no `end`; the page is then its own end.
     var endCfi = location.end ? location.end.cfi : location.start.cfi;
-    // displayed.page/total gives the position within the current spine
-    // item — server progress APIs (Readium locators) want exactly that.
+    // displayed.page (1-based) / total locates the page within the current
+    // spine item; Readium locators want that as a 0-based fraction.
     var displayed = location.start.displayed;
     callDart('relocated', {
       startCfi: location.start.cfi,
@@ -183,7 +183,7 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
       progress: percent,
       href: location.start.href || null,
       hrefProgression: (displayed && displayed.total > 0)
-        ? (displayed.page / displayed.total)
+        ? ((displayed.page - 1) / displayed.total)
         : null
     });
     if (_pendingNavChars) {

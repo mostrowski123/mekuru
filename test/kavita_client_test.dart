@@ -241,4 +241,27 @@ void main() {
       ),
     );
   });
+
+  test('pullProgress reads a zone-less lastModifiedUtc as UTC', () async {
+    final client = clientWith((request) async {
+      if (request.url.path == '/api/Plugin/authenticate') {
+        return authOk();
+      }
+      // ASP.NET serializes an Unspecified-kind DateTime without a Z.
+      return ok({
+        'pageNum': 5,
+        'lastModifiedUtc': '2026-08-30T12:00:00.1234567',
+      });
+    });
+
+    final progress = await client.pullProgress({
+      'chapterId': '101',
+      'pages': '210',
+    });
+
+    expect(
+      progress!.lastModified,
+      DateTime.utc(2026, 8, 30, 12, 0, 0, 123, 456),
+    );
+  });
 }

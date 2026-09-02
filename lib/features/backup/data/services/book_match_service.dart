@@ -14,10 +14,12 @@ class BookMatchService {
   ///
   /// Format: `{bookType}::{normalizedTitle}`
   /// Distinguishes an EPUB and a manga with the same title.
-  String generateKey(String title, String bookType) {
-    final normalizedTitle = title.trim().toLowerCase();
-    return '$bookType::$normalizedTitle';
-  }
+  String generateKey(String title, String bookType) =>
+      '$bookType::${normalizeTitle(title)}';
+
+  /// The title normalization every title-based match shares (backup
+  /// matching, server linking): trim + lowercase.
+  static String normalizeTitle(String title) => title.trim().toLowerCase();
 
   /// Returns whether [bookKey] is a hash-based key.
   bool isHashKey(String bookKey) {

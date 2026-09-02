@@ -406,8 +406,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     final remote = await ref
         .read(progressSyncServiceProvider)
         .syncOnOpen(widget.book);
-    final page = remote?.page;
-    if (!mounted || page == null || page == _currentPage) return;
+    var page = remote?.page;
+    if (!mounted || page == null) return;
+    // Kavita reports a completed chapter as pageNum == pages, one past the
+    // last index; clamp like every other navigation path does.
+    final total = widget.book.totalPages;
+    if (total > 0) page = page.clamp(0, total - 1);
+    if (page == _currentPage) return;
     if (_pageController.hasClients) {
       _pageController.jumpToPage(page);
     } else {
@@ -415,7 +420,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       // controller that starts at the remote page.
       final previous = _pageController;
       setState(() {
-        _currentPage = page;
+        _currentPage = page!;
         _pageController = PageController(initialPage: page);
       });
       previous.dispose();

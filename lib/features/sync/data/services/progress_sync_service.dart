@@ -31,8 +31,11 @@ class ProgressSyncService {
 
   final Map<int, Timer> _pushTimers = {};
   final Map<int, ServerClient> _clients = {};
+
+  /// Books whose open-time reconcile is in flight. The reader's restore
+  /// relocation writes progress meanwhile; pushing that would race the pull.
+  final Set<int> _openSyncs = {};
   StreamSubscription<List<ServerConnection>>? _connectionsSub;
-  bool _applyingRemote = false;
   bool _disposed = false;
 
   ProgressSyncService({
@@ -66,9 +69,9 @@ class ProgressSyncService {
   }
 
   /// Debounced fire-and-forget push, hooked to BookRepository progress
-  /// writes. No-ops while a pulled remote state is being applied.
+  /// writes. No-ops while the book's open-time sync is still reconciling.
   void schedulePush(int bookId) {
-    if (_disposed || _applyingRemote) return;
+    if (_disposed || _openSyncs.contains(bookId)) return;
     _pushTimers[bookId]?.cancel();
     _pushTimers[bookId] = Timer(pushDebounce, () {
       _pushTimers.remove(bookId);
@@ -90,46 +93,58 @@ class ProgressSyncService {
     await _markSynced(bookId);
   }
 
-  /// Sync at book-open time: push a newer local state first, then pull.
+  /// Sync at book-open time: pull, adopt a strictly newer remote state,
+  /// otherwise push local state that changed since the last sync.
   ///
   /// Returns the remote progress when it was strictly newer and has been
   /// persisted locally — the caller may additionally move the open reader
   /// to it. Returns null (silently, logging only) on any failure.
   Future<RemoteProgress?> syncOnOpen(Book book) async {
+    _openSyncs.add(book.id);
     try {
       final link = await _linkFor(book);
       if (link == null) return null;
 
-      final localNewer =
-          book.lastReadAt != null &&
-          (book.lastSyncedAt == null ||
-              book.lastReadAt!.isAfter(book.lastSyncedAt!));
-      if (localNewer) {
-        final progress = _localProgress(book);
+      final localAt = book.lastReadAt;
+      final syncedAt = book.lastSyncedAt;
+      final remote = await link.client.pullProgress(link.ids);
+
+      // Remote wins only when strictly newer than both the last local read
+      // and the last sync: a record this device pushed is stamped after
+      // lastReadAt, so lastReadAt alone would re-apply it on every open.
+      final remoteAt = remote?.lastModified;
+      final remoteNewer =
+          remote != null &&
+          (localAt == null ||
+              (remoteAt != null &&
+                  remoteAt.isAfter(localAt) &&
+                  (syncedAt == null || remoteAt.isAfter(syncedAt))));
+      if (!remoteNewer) {
+        // Local wins; push it if it has changed since the last sync.
+        final localNewer =
+            localAt != null && (syncedAt == null || localAt.isAfter(syncedAt));
+        final progress = localNewer ? _localProgress(book) : null;
         if (progress != null) {
           await link.client.pushProgress(link.ids, progress);
           await _markSynced(book.id);
         }
-      }
-
-      final remote = await link.client.pullProgress(link.ids);
-      if (remote == null) return null;
-
-      // Local wins unless the remote record is strictly newer.
-      final localAt = book.lastReadAt;
-      if (localAt != null &&
-          (remote.lastModified == null ||
-              !remote.lastModified!.isAfter(localAt))) {
-        await _markSynced(book.id);
         return null;
       }
 
-      await _applyRemote(book, remote);
-      await _markSynced(book.id);
+      if (!await _applyRemote(book, remote)) return null;
+      // An EPUB apply completes when the reader jumps there and saves the
+      // CFI (that write's push marks the sync). Marking here would let a
+      // jump that never happens — reader closed before epub.js locations
+      // exist — pass for reconciled.
+      if (book.bookType == 'manga') await _markSynced(book.id);
       return remote;
-    } on SyncException catch (e) {
+    } catch (e) {
+      // Fire-and-forget: transport errors, a proxy's HTML login page, or a
+      // secure-storage failure all just log; the next open retries.
       debugPrint('[Sync] syncOnOpen failed: $e');
       return null;
+    } finally {
+      _openSyncs.remove(book.id);
     }
   }
 
@@ -158,7 +173,7 @@ class ProgressSyncService {
         try {
           await pushBook(book.id);
           pushed++;
-        } on SyncException catch (e) {
+        } catch (e) {
           debugPrint('[Sync] syncAll push failed: $e');
           failed++;
         }
@@ -216,50 +231,51 @@ class ProgressSyncService {
     );
   }
 
-  /// Persist a newer remote state. Writes progress fields only — never
-  /// lastReadAt (so this apply can't masquerade as local reading) and, for
-  /// EPUBs, never the CFI (the on-open jump uses totalProgression; a stale
-  /// CFI is still the best offline fallback).
-  Future<void> _applyRemote(Book book, RemoteProgress remote) async {
-    _applyingRemote = true;
-    try {
-      if (book.bookType == 'manga' && remote.page != null) {
-        final page = remote.page!.clamp(
-          0,
-          book.totalPages > 0 ? book.totalPages - 1 : remote.page!,
-        );
-        final progress = book.totalPages > 1
-            ? page / (book.totalPages - 1)
-            : (remote.completed ? 1.0 : 0.0);
-        await (_db.update(_db.books)..where((t) => t.id.equals(book.id))).write(
-          BooksCompanion(
-            lastReadCfi: Value('$page'),
-            readProgress: Value(progress.clamp(0.0, 1.0)),
-          ),
-        );
-        return;
-      }
-      final total = remote.totalProgression;
-      if (book.bookType == 'epub' && total != null) {
-        await (_db.update(_db.books)..where((t) => t.id.equals(book.id))).write(
-          BooksCompanion(
-            readProgress: Value(total.clamp(0.0, 1.0)),
-            lastReadHref: remote.href != null
-                ? Value(remote.href)
-                : const Value.absent(),
-            lastReadProgression: remote.progression != null
-                ? Value(remote.progression)
-                : const Value.absent(),
-          ),
-        );
-      }
-    } finally {
-      _applyingRemote = false;
+  /// Persist a newer remote state; false (nothing written) when the record
+  /// carries nothing this book type can apply. Writes progress fields only —
+  /// never lastReadAt (so this apply can't masquerade as local reading) and,
+  /// for EPUBs, never the CFI (the on-open jump uses totalProgression; a
+  /// stale CFI is still the best offline fallback).
+  Future<bool> _applyRemote(Book book, RemoteProgress remote) async {
+    if (book.bookType == 'manga') {
+      final remotePage = remote.page;
+      if (remotePage == null) return false;
+      final page = remotePage.clamp(
+        0,
+        book.totalPages > 0 ? book.totalPages - 1 : remotePage,
+      );
+      final progress = book.totalPages > 1
+          ? page / (book.totalPages - 1)
+          : (remote.completed ? 1.0 : 0.0);
+      await (_db.update(_db.books)..where((t) => t.id.equals(book.id))).write(
+        BooksCompanion(
+          lastReadCfi: Value('$page'),
+          readProgress: Value(progress.clamp(0.0, 1.0)),
+        ),
+      );
+      return true;
     }
+    final total = remote.totalProgression;
+    if (book.bookType != 'epub' || total == null) return false;
+    await (_db.update(_db.books)..where((t) => t.id.equals(book.id))).write(
+      BooksCompanion(
+        readProgress: Value(total.clamp(0.0, 1.0)),
+        lastReadHref: remote.href != null
+            ? Value(remote.href)
+            : const Value.absent(),
+        lastReadProgression: remote.progression != null
+            ? Value(remote.progression)
+            : const Value.absent(),
+      ),
+    );
+    return true;
   }
 
-  Future<void> _markSynced(int bookId) =>
-      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
-        BooksCompanion(lastSyncedAt: Value(DateTime.now())),
-      );
+  Future<DateTime> _markSynced(int bookId) async {
+    final now = DateTime.now();
+    await (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+      BooksCompanion(lastSyncedAt: Value(now)),
+    );
+    return now;
+  }
 }
