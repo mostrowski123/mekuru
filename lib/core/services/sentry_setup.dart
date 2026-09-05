@@ -68,14 +68,34 @@ Future<bool> _detectSyntheticClient() async {
   }
 }
 
+/// Options every isolate's hub must agree on — above all the PII scrub
+/// hooks, which are the privacy guarantee this app documents.
+void applySharedSentryOptions(SentryOptions options, SentryAudience audience) {
+  options.dsn = EnvironmentConfig.sentryDsn;
+  options.environment = audience.environment;
+  // Silencing synthetic clients through the sample rates and signal
+  // switches drops their payloads before Sentry assembles contexts,
+  // breadcrumbs, and stack traces, and cannot miss a signal type the way
+  // enumerating each `beforeSendX` hook would.
+  final report = !audience.isSynthetic;
+  options.enableLogs = report;
+  options.enableMetrics = report;
+  options.sampleRate = report ? 1.0 : 0.0;
+  options.tracesSampleRate = report ? 0.1 : 0.0;
+  // Strip device file paths (which can embed book file names) from
+  // everything that leaves the device.
+  options.beforeSend = scrubEvent;
+  options.beforeSendLog = scrubLog;
+}
+
 /// Gives a background isolate its own Sentry hub. Dart globals are
 /// per-isolate, so without this every `logUsage`, `logFailure` and
 /// `captureException` in the isolate is a silent no-op.
 ///
-/// Dart-only on purpose: `SentryFlutter.init` would re-initialize — and
-/// [closeSentryForBackgroundIsolate] would then shut down — the process-wide
-/// native SDK the main isolate owns. Never throws: an isolate must finish
-/// its real work whether or not it can report.
+/// Dart-only on purpose: `SentryFlutter.init` would re-initialize — and the
+/// isolate's `Sentry.close` would then shut down — the process-wide native
+/// SDK the main isolate owns. Never throws: an isolate must finish its real
+/// work whether or not it can report.
 Future<void> initSentryForBackgroundIsolate() async {
   try {
     if (EnvironmentConfig.sentryDsn.isEmpty) return;
@@ -83,26 +103,12 @@ Future<void> initSentryForBackgroundIsolate() async {
     if (audience.isSynthetic) return;
     final info = await PackageInfo.fromPlatform();
     await Sentry.init((options) {
-      options.dsn = EnvironmentConfig.sentryDsn;
-      options.environment = audience.environment;
+      applySharedSentryOptions(options, audience);
       options.release =
           '${info.packageName}@${info.version}+${info.buildNumber}';
       options.dist = info.buildNumber;
-      options.enableLogs = true;
-      options.enableMetrics = true;
-      options.beforeSend = scrubEvent;
-      options.beforeSendLog = scrubLog;
     });
   } catch (error) {
     debugPrint('[Sentry] background init skipped: ${error.runtimeType}');
-  }
-}
-
-/// Flushes batched logs and metrics before the isolate exits. Never throws.
-Future<void> closeSentryForBackgroundIsolate() async {
-  try {
-    await Sentry.close();
-  } catch (error) {
-    debugPrint('[Sentry] background close failed: ${error.runtimeType}');
   }
 }

@@ -6,11 +6,10 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
-import 'config/environment_config.dart';
 import 'core/database/database_provider.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/firebase_runtime.dart';
-import 'core/services/pii_scrubber.dart';
+import 'core/services/sentry_helpers.dart';
 import 'core/services/sentry_setup.dart';
 import 'core/services/usage_telemetry.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
@@ -52,31 +51,15 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
   PaintingBinding.instance.imageCache.maximumSize = 50;
 
-  // Detect install source to set Sentry environment; synthetic clients
-  // (emulators, device farms) report nothing at all.
   final audience = await resolveSentryAudience();
-  final isSynthetic = audience.isSynthetic;
-  if (isSynthetic) {
+  if (audience.isSynthetic) {
     AnalyticsService.instance.suppress();
   }
 
   await SentryFlutter.init(
     (options) {
-      options.dsn = EnvironmentConfig.sentryDsn;
-      options.environment = audience.environment;
+      applySharedSentryOptions(options, audience);
       options.navigatorKey = navigatorKey;
-      // Silencing synthetic clients through the sample rates and signal
-      // switches drops their payloads before Sentry assembles contexts,
-      // breadcrumbs, and stack traces, and cannot miss a signal type the way
-      // enumerating each `beforeSendX` hook would.
-      options.enableLogs = !isSynthetic;
-      options.enableMetrics = !isSynthetic;
-      options.sampleRate = isSynthetic ? 0.0 : 1.0;
-      options.tracesSampleRate = isSynthetic ? 0.0 : 0.1;
-      // Strip device file paths (which can embed book file names) from
-      // everything that leaves the device.
-      options.beforeSend = scrubEvent;
-      options.beforeSendLog = scrubLog;
     },
     appRunner: () async {
       await PreloadedAppSettings.load();
@@ -93,43 +76,41 @@ void _scheduleDeferredStartupWarmups() {
   });
 }
 
-Future<void> _runDeferredStartupWarmups() async {
-  final sw = Stopwatch()..start();
-
-  // Keep the first frame light. These services all lazily initialize on
-  // demand, so we can warm them after the UI is visible.
-  await _runStartupWarmup(
-    step: 'firebase',
-    action: FirebaseRuntime.instance.ensureFirebaseApp,
-  );
-
-  await Future.wait([
-    _runStartupWarmup(step: 'ocr_flush', action: flushPendingOcrFinalizations),
-    _runStartupWarmup(
-      step: 'billing',
-      // Also converges the local Play entitlement (grants it to legacy
-      // buyers, revokes it after a refund).
-      action: OcrStoreService.instance.syncOwnedPurchases,
-    ),
-    _runStartupWarmup(
-      step: 'workmanager',
-      action: () => Workmanager().initialize(ocrWorkerCallbackDispatcher),
-    ),
-    _runStartupWarmup(
-      step: 'mecab',
-      action: () async {
-        await MecabService.instance.init();
-        logUsage(
-          'mecab.initialized',
-          attrs: {'dictionary': MecabService.instance.layout.label},
-        );
-      },
-    ),
-  ]);
-
-  sw.stop();
-  durationUsage('app.startup_warmup_ms', sw.elapsedMilliseconds);
-}
+// Keep the first frame light. These services all lazily initialize on
+// demand, so we can warm them after the UI is visible.
+Future<void> _runDeferredStartupWarmups() => tracedOperation(
+  'app.startup_warmup_duration_ms',
+  action: () async {
+    await _runStartupWarmup(
+      step: 'firebase',
+      action: FirebaseRuntime.instance.ensureFirebaseApp,
+    );
+    await Future.wait([
+      _runStartupWarmup(
+        step: 'ocr_flush',
+        action: flushPendingOcrFinalizations,
+      ),
+      _runStartupWarmup(
+        step: 'billing',
+        // Also converges the local Play entitlement (grants it to legacy
+        // buyers, revokes it after a refund).
+        action: OcrStoreService.instance.syncOwnedPurchases,
+      ),
+      _runStartupWarmup(
+        step: 'workmanager',
+        action: () => Workmanager().initialize(ocrWorkerCallbackDispatcher),
+      ),
+      _runStartupWarmup(
+        step: 'mecab',
+        action: () async {
+          await MecabService.instance.init();
+          // The dictionary rides along as the mecab_dict tag.
+          logUsage('mecab.initialized');
+        },
+      ),
+    ]);
+  },
+);
 
 Future<void> _runStartupWarmup({
   required String step,
@@ -138,7 +119,11 @@ Future<void> _runStartupWarmup({
   try {
     await action();
   } catch (error, stackTrace) {
-    logFailure('app.startup_warmup_failed', error, attrs: {'step': step});
-    await Sentry.captureException(error, stackTrace: stackTrace);
+    logFailure(
+      'app.startup_warmup_failed',
+      error,
+      stackTrace: stackTrace,
+      attrs: {'step': step},
+    );
   }
 }

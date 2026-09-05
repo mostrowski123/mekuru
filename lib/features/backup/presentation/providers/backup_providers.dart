@@ -159,8 +159,7 @@ class BackupNotifier extends Notifier<BackupState> {
       logUsage('backup.created', attrs: {'type': 'manual'});
       _showSuccess(const BackupMessage.backupCreated());
     } catch (e, st) {
-      logFailure('backup.failed', e, attrs: {'type': 'manual'});
-      Sentry.captureException(e, stackTrace: st);
+      logFailure('backup.failed', e, stackTrace: st, attrs: {'type': 'manual'});
       state = BackupState(error: BackupMessage.backupFailed(e.toString()));
     }
   }
@@ -437,8 +436,7 @@ final autoBackupCheckerProvider = FutureProvider<void>((ref) async {
       await scheduler.recordAutoBackup();
       logUsage('backup.created', attrs: {'type': 'auto'});
     } catch (e, st) {
-      logFailure('backup.failed', e, attrs: {'type': 'auto'});
-      Sentry.captureException(e, stackTrace: st);
+      logFailure('backup.failed', e, stackTrace: st, attrs: {'type': 'auto'});
     }
   }
 });

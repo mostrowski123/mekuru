@@ -1,7 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Repository for managing bookmarks within a book.
 class BookmarkRepository {
@@ -55,9 +54,6 @@ class BookmarkRepository {
           ),
         );
 
-    Sentry.addBreadcrumb(
-      Breadcrumb(message: 'Bookmark added', category: 'bookmarks'),
-    );
     logUsage('bookmark.added');
 
     return id;

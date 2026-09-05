@@ -78,7 +78,6 @@ class ProgressSyncService {
       _pushTimers.remove(bookId);
       pushBook(bookId).catchError((Object e) {
         debugPrint('[Sync] push failed for book $bookId: $e');
-        logFailure('sync.progress_pushed', e);
       });
     });
   }
@@ -91,9 +90,16 @@ class ProgressSyncService {
     if (link == null) return;
     final progress = _localProgress(book);
     if (progress == null) return;
-    await link.client.pushProgress(link.ids, progress);
-    await _markSynced(bookId);
-    countUsage('sync.progress_pushed', attrs: {'format': book.bookType});
+    // Success and failure are counted here so every caller (debounced write,
+    // open-time reconcile, Sync Now) feeds the same rate.
+    try {
+      await link.client.pushProgress(link.ids, progress);
+      await _markSynced(bookId);
+      countUsage('sync.progress_pushed', attrs: {'format': book.bookType});
+    } catch (e) {
+      logFailure('sync.progress_pushed', e, attrs: {'format': book.bookType});
+      rethrow;
+    }
   }
 
   /// Sync at book-open time: pull, adopt a strictly newer remote state,

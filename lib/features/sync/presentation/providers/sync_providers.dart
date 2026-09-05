@@ -18,7 +18,6 @@ import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 final serverConnectionRepositoryProvider = Provider<ServerConnectionRepository>(
   (ref) => ServerConnectionRepository(ref.watch(databaseProvider)),
@@ -187,9 +186,9 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
       logFailure(
         'sync.book_downloaded',
         e,
+        stackTrace: st,
         attrs: {'server_type': connection.serverType},
       );
-      Sentry.captureException(e, stackTrace: st);
       rethrow;
     } finally {
       state = {...state}..remove(key);

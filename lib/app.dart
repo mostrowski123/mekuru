@@ -144,7 +144,6 @@ class _MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<_MainShell> {
-  static const _screenCount = 4;
   static const _tabNames = ['library', 'dictionary', 'vocabulary', 'stats'];
 
   int _currentIndex = 0;
@@ -168,7 +167,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
 
   List<Widget> _indexedScreens() {
     return List<Widget>.generate(
-      _screenCount,
+      _tabNames.length,
       (index) => _loadedScreens[index] ?? const SizedBox.shrink(),
       growable: false,
     );

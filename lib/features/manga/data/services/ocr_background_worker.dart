@@ -136,8 +136,7 @@ void ocrWorkerCallbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
     if (taskName != ocrTaskName || inputData == null) return true;
 
-    // WorkManager runs this in its own isolate, which starts with no Sentry
-    // hub: without this every ocr.job log and exception is silently dropped.
+    // Own isolate, own Sentry hub; see sentry_setup.dart.
     await initSentryForBackgroundIsolate();
     try {
       return await _processOcrTask(inputData);
@@ -164,7 +163,13 @@ void ocrWorkerCallbackDispatcher() {
       }
       return false;
     } finally {
-      await closeSentryForBackgroundIsolate();
+      // Flush batched logs before the isolate goes away, bounded so a dead
+      // network never delays the task's result.
+      try {
+        await Sentry.close().timeout(const Duration(seconds: 3));
+      } catch (_) {
+        // Best effort only; the job's outcome is already persisted.
+      }
     }
   });
 }

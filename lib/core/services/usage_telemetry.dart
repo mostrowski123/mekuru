@@ -7,6 +7,8 @@
 /// Never put book titles, file names, user text, or looked-up words in either.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -38,11 +40,16 @@ UsageCountSink? usageCountSinkOverride;
 @visibleForTesting
 UsageAnalyticsSink? usageAnalyticsSinkOverride;
 @visibleForTesting
-void resetUsageTagsForTest() => _usageTags.clear();
+void resetUsageTagsForTest() {
+  _usageTags.clear();
+  _tagAttrs = const {};
+}
 
 /// Install segmentation set by [setUsageTag]; merged into every log, count
-/// and duration attribute map so any dashboard can split by it.
+/// and duration attribute map so any dashboard can split by it. The Sentry
+/// form is converted once per change, not once per page turn.
 final Map<String, String> _usageTags = {};
+Map<String, SentryAttribute> _tagAttrs = const {};
 
 /// Sets a segmentation tag: a Sentry scope tag (so issues filter by it), a
 /// Firebase user property, and an attribute on every subsequent usage log,
@@ -51,6 +58,7 @@ final Map<String, String> _usageTags = {};
 void setUsageTag(String key, String value) {
   _guarded(() {
     _usageTags[key] = value;
+    _tagAttrs = _toSentryAttributes(_usageTags);
     Sentry.configureScope((scope) => scope.setTag(key, value));
     AnalyticsService.instance.setUserProperty(key, value);
   });
@@ -77,13 +85,25 @@ void logUsage(String event, {Map<String, Object>? attrs}) {
 /// error contributes its runtime type plus its text run through
 /// [sanitizeErrorText], so failures are diagnosable without file paths or
 /// document content leaving the device.
-void logFailure(String event, Object error, {Map<String, Object>? attrs}) {
+///
+/// Pass [stackTrace] when the failure is a bug rather than an expected
+/// condition: it also files a Sentry issue (stack, breadcrumbs, grouping,
+/// alerting) so call sites never pair this with their own captureException.
+void logFailure(
+  String event,
+  Object error, {
+  StackTrace? stackTrace,
+  Map<String, Object>? attrs,
+}) {
   _guarded(() {
     _emitLog(event, {
       ...?attrs,
       'error_type': error.runtimeType.toString(),
       'error_message': sanitizeErrorText(error.toString()),
     }, isWarning: true);
+    if (stackTrace != null) {
+      unawaited(Sentry.captureException(error, stackTrace: stackTrace));
+    }
   });
 }
 
@@ -168,6 +188,16 @@ void _emitLog(
 }) {
   final logSink = usageLogSinkOverride ?? _defaultLogSink;
   logSink(event, _taggedAttributes(attrs) ?? const {}, isWarning: isWarning);
+  // The same trail rides on every crash report. Attribute values are enums,
+  // counts and sanitized error text by contract, so there is nothing to scrub.
+  Sentry.addBreadcrumb(
+    Breadcrumb(
+      message: event,
+      category: 'usage',
+      data: attrs,
+      level: isWarning ? SentryLevel.warning : SentryLevel.info,
+    ),
+  );
   // Tags reach Firebase as user properties, so they are not repeated here.
   final analyticsSink = usageAnalyticsSinkOverride ?? _defaultAnalyticsSink;
   analyticsSink(
@@ -218,8 +248,8 @@ void _swallow(Object error) {
 /// Caller attributes layered over the install tags; null when both are empty
 /// so metrics without attributes stay attribute-free.
 Map<String, SentryAttribute>? _taggedAttributes(Map<String, Object>? attrs) {
-  final merged = {..._usageTags, ...?attrs};
-  return merged.isEmpty ? null : _toSentryAttributes(merged);
+  if (attrs == null) return _tagAttrs.isEmpty ? null : Map.of(_tagAttrs);
+  return {..._tagAttrs, ..._toSentryAttributes(attrs)};
 }
 
 Map<String, SentryAttribute> _toSentryAttributes(Map<String, Object> attrs) {

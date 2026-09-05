@@ -1,7 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Repository for managing text highlights within a book.
 class HighlightRepository {
@@ -47,9 +46,6 @@ class HighlightRepository {
           ),
         );
 
-    Sentry.addBreadcrumb(
-      Breadcrumb(message: 'Highlight added', category: 'highlights'),
-    );
     logUsage('highlight.created');
 
     return id;

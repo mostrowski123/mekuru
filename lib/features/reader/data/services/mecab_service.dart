@@ -341,7 +341,7 @@ class MecabService {
       _setLayout(MecabFeatureLayout.unidicLite);
       previous?.dispose();
       debugPrint('[MeCab] Upgraded to UniDic-lite');
-      logUsage('mecab.upgraded', attrs: {'dictionary': 'unidic_lite'});
+      logUsage('mecab.upgraded');
     } catch (e) {
       debugPrint('[MeCab] UniDic-lite upgrade failed, staying on IPADIC: $e');
       logFailure('mecab.upgrade_failed', e);
