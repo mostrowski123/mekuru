@@ -343,7 +343,10 @@ class _GroupedDictionaryEntryHeaderState
     );
     if (!config.isConfigured) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const AnkidroidSettingsScreen()),
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'anki_settings'),
+          builder: (_) => const AnkidroidSettingsScreen(),
+        ),
       );
       return;
     }
@@ -352,6 +355,7 @@ class _GroupedDictionaryEntryHeaderState
     Navigator.of(context)
         .push<bool>(
           MaterialPageRoute(
+            settings: const RouteSettings(name: 'anki_card'),
             builder: (_) => AnkiCardCreationScreen(
               noteData: noteData,
               saveSource: widget.saveSource,

@@ -344,7 +344,10 @@ class _DictionaryManagerScreenState
             onPressed: () {
               AppHaptics.light();
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DownloadsScreen()),
+                MaterialPageRoute(
+                  settings: const RouteSettings(name: 'downloads'),
+                  builder: (_) => const DownloadsScreen(),
+                ),
               );
             },
           ),

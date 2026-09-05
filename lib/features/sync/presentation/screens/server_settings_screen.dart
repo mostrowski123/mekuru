@@ -78,6 +78,7 @@ class ServerSettingsScreen extends ConsumerWidget {
                 onTap: connection.enabled
                     ? () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
+                          settings: const RouteSettings(name: 'server_browse'),
                           builder: (_) =>
                               ServerBrowseScreen(connection: connection),
                         ),

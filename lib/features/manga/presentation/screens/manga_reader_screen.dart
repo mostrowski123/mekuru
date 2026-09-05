@@ -746,9 +746,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   Future<void> _openAllSettingsFromReader() async {
     await setReaderSystemBarsVisible(true);
     if (!mounted) return;
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()));
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'reading_settings'),
+        builder: (_) => const ReadingSettingsScreen(),
+      ),
+    );
     if (!mounted) return;
     await setReaderSystemBarsVisible(_showControls);
   }

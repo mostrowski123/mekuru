@@ -693,9 +693,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _suppressViewerRebuilds = true;
     await setReaderSystemBarsVisible(true);
     if (!mounted) return;
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()));
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'reading_settings'),
+        builder: (_) => const ReadingSettingsScreen(),
+      ),
+    );
     _suppressViewerRebuilds = false;
     if (!mounted) return;
     unawaited(setReaderSystemBarsVisible(_showControls));

@@ -133,9 +133,12 @@ class StatsScreen extends ConsumerWidget {
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           tooltip: context.l10n.settingsTitle,
-          onPressed: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              settings: const RouteSettings(name: 'settings'),
+              builder: (_) => const SettingsScreen(),
+            ),
+          ),
         ),
       ],
     ),

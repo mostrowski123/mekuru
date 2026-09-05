@@ -201,6 +201,9 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
+                        settings: const RouteSettings(
+                          name: 'dictionary_search',
+                        ),
                         builder: (_) => const DictionarySearchScreen(),
                       ),
                     );
@@ -212,6 +215,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
+                        settings: const RouteSettings(name: 'downloads'),
                         builder: (_) => const DownloadsScreen(),
                       ),
                     );

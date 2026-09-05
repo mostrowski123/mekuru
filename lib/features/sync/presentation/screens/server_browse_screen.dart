@@ -14,6 +14,9 @@ import 'package:mekuru/l10n/l10n.dart';
 void _openBookReader(BuildContext context, Book book) {
   Navigator.of(context).push(
     MaterialPageRoute<void>(
+      settings: RouteSettings(
+        name: book.bookType == 'manga' ? 'manga_reader' : 'reader',
+      ),
       builder: (_) => book.bookType == 'manga'
           ? MangaReaderScreen(book: book)
           : ReaderScreen(book: book),
@@ -65,6 +68,7 @@ class ServerBrowseScreen extends ConsumerWidget {
                     title: Text(library.name),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
+                        settings: const RouteSettings(name: 'server_series'),
                         builder: (_) => _SeriesListScreen(
                           connection: connection,
                           client: client,
@@ -205,6 +209,7 @@ class _SeriesListScreenState extends State<_SeriesListScreen> {
                           : null,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
+                          settings: const RouteSettings(name: 'server_books'),
                           builder: (_) => _BookListScreen(
                             connection: widget.connection,
                             client: widget.client,

@@ -145,6 +145,7 @@ class _MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<_MainShell> {
   static const _screenCount = 4;
+  static const _tabNames = ['library', 'dictionary', 'vocabulary', 'stats'];
 
   int _currentIndex = 0;
   bool _hasAppliedStartup = false;
@@ -187,6 +188,9 @@ class _MainShellState extends ConsumerState<_MainShell> {
     }
     _hasAppliedStartup = true;
     setState(() => _currentIndex = index);
+    // The tabs are an IndexedStack, not routes, so the navigator observers
+    // never see them; this is the only screen-usage signal for the tabs.
+    logUsage('screen.tab_selected', attrs: {'tab': _tabNames[index]});
     if (index == 1) {
       _focusDictionarySearchIfNeeded();
     }
@@ -262,9 +266,12 @@ class _MainShellState extends ConsumerState<_MainShell> {
     final repo = BookRepository(ref.read(databaseProvider));
     final book = await repo.getMostRecentlyReadBook();
     if (book != null && mounted) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => ReaderScreen(book: book)));
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'reader'),
+          builder: (_) => ReaderScreen(book: book),
+        ),
+      );
     }
   }
 }

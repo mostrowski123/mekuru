@@ -88,6 +88,7 @@ class AboutScreen extends StatelessWidget {
                     AppHaptics.light();
                     Navigator.of(context).push(
                       MaterialPageRoute(
+                        settings: const RouteSettings(name: 'attributions'),
                         builder: (_) => const AttributionsScreen(),
                       ),
                     );

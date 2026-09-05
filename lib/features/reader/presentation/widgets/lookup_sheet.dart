@@ -141,6 +141,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
   void _navigateToWord(String word) {
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'dictionary_search'),
         builder: (_) => DictionarySearchScreen(initialQuery: word),
       ),
     );

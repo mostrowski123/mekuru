@@ -51,6 +51,9 @@ import 'package:url_launcher/url_launcher.dart';
 void _openBookReader(BuildContext context, Book book) {
   Navigator.of(context).push(
     MaterialPageRoute(
+      settings: RouteSettings(
+        name: book.bookType == 'manga' ? 'manga_reader' : 'reader',
+      ),
       builder: (_) => book.bookType == 'manga'
           ? MangaReaderScreen(book: book)
           : ReaderScreen(book: book),
@@ -419,6 +422,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       AppHaptics.light();
                       Navigator.of(context).push(
                         MaterialPageRoute(
+                          settings: const RouteSettings(name: 'downloads'),
                           builder: (_) => const DownloadsScreen(),
                         ),
                       );
@@ -431,6 +435,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       AppHaptics.light();
                       Navigator.of(context).push(
                         MaterialPageRoute(
+                          settings: const RouteSettings(
+                            name: 'backup_settings',
+                          ),
                           builder: (_) => const BackupSettingsScreen(),
                         ),
                       );
@@ -609,6 +616,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
     Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'server_browse'),
         builder: (_) => ServerBrowseScreen(connection: server),
       ),
     );
@@ -1612,9 +1620,12 @@ class _BookTileState extends ConsumerState<_BookTile>
         bookId: book.id,
         onNavigate: (cfi) {
           Navigator.of(context).pop();
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => ReaderScreen(book: book)));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              settings: const RouteSettings(name: 'reader'),
+              builder: (_) => ReaderScreen(book: book),
+            ),
+          );
         },
       ),
     );
@@ -1628,9 +1639,12 @@ class _BookTileState extends ConsumerState<_BookTile>
         bookId: book.id,
         onNavigate: (cfiRange) {
           Navigator.of(context).pop();
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => ReaderScreen(book: book)));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              settings: const RouteSettings(name: 'reader'),
+              builder: (_) => ReaderScreen(book: book),
+            ),
+          );
         },
       ),
     );
@@ -2285,6 +2299,7 @@ Widget _maybeHero(String? tag, Widget child) => tag == null
 Route<void> _folderRoute(int collectionId) {
   countUsage('collection.opened');
   return PageRouteBuilder<void>(
+    settings: const RouteSettings(name: 'collection'),
     transitionDuration: const Duration(milliseconds: 320),
     reverseTransitionDuration: const Duration(milliseconds: 320),
     pageBuilder: (_, _, _) =>

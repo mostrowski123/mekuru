@@ -228,6 +228,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   void _navigateToWord(String word) {
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'dictionary_search'),
         builder: (_) => DictionarySearchScreen(initialQuery: word),
       ),
     );
@@ -318,6 +319,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
+                  settings: const RouteSettings(name: 'dictionary_manager'),
                   builder: (_) => const DictionaryManagerScreen(),
                 ),
               );
@@ -699,15 +701,21 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   }
 
   void _openDictionaryManager() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const DictionaryManagerScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'dictionary_manager'),
+        builder: (_) => const DictionaryManagerScreen(),
+      ),
+    );
   }
 
   void _openDownloads() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const DownloadsScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'downloads'),
+        builder: (_) => const DownloadsScreen(),
+      ),
+    );
   }
 }
 

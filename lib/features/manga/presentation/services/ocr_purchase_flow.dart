@@ -110,6 +110,7 @@ class OcrPurchaseFlow {
 
     return Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'pro_upgrade'),
         builder: (_) => const ProUpgradeScreen(source: 'ocr_setup'),
       ),
     );
@@ -121,9 +122,12 @@ class OcrPurchaseFlow {
     }
 
     // The custom OCR server tile lives on the Reading settings subpage.
-    return Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const ReadingSettingsScreen()));
+    return Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'reading_settings'),
+        builder: (_) => const ReadingSettingsScreen(),
+      ),
+    );
   }
 
   Future<_ServerSetupDialogAction?> _showCustomServerRequiredDialog(

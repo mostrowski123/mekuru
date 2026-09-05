@@ -106,6 +106,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                                 if (starterPackReady) {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
+                                      settings: const RouteSettings(
+                                        name: 'dictionary_search',
+                                      ),
                                       builder: (_) =>
                                           const DictionarySearchScreen(),
                                     ),
@@ -131,6 +134,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                             AppHaptics.light();
                             Navigator.of(context).push(
                               MaterialPageRoute(
+                                settings: const RouteSettings(
+                                  name: 'dictionary_search',
+                                ),
                                 builder: (_) => const DictionarySearchScreen(),
                               ),
                             );

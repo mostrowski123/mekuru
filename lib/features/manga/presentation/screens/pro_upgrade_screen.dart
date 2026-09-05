@@ -486,9 +486,12 @@ Future<void> openProUpgrade(
   WidgetRef ref, {
   String? source,
 }) async {
-  await Navigator.of(
-    context,
-  ).push(MaterialPageRoute(builder: (_) => ProUpgradeScreen(source: source)));
+  await Navigator.of(context).push(
+    MaterialPageRoute(
+      settings: const RouteSettings(name: 'pro_upgrade'),
+      builder: (_) => ProUpgradeScreen(source: source),
+    ),
+  );
   ref.invalidate(proUnlockedProvider);
 }
 
