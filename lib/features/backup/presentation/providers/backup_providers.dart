@@ -18,7 +18,7 @@ import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/core/services/analytics_service.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/main.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -156,18 +156,10 @@ class BackupNotifier extends Notifier<BackupState> {
       final manifest = await service.createBackup();
       await fileManager.createBackupFile(manifest);
       ref.invalidate(backupHistoryProvider);
-      Sentry.logger.info(
-        'Manual backup created',
-        attributes: {'category': SentryAttribute.string('backup')},
-      );
-      Sentry.metrics.count(
-        'backup.created',
-        1,
-        attributes: {'type': SentryAttribute.string('manual')},
-      );
-      AnalyticsService.instance.logEvent('backup_created', {'type': 'manual'});
+      logUsage('backup.created', attrs: {'type': 'manual'});
       _showSuccess(const BackupMessage.backupCreated());
     } catch (e, st) {
+      logFailure('backup.failed', e, attrs: {'type': 'manual'});
       Sentry.captureException(e, stackTrace: st);
       state = BackupState(error: BackupMessage.backupFailed(e.toString()));
     }
@@ -318,12 +310,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
         errors: errors,
       );
 
-      Sentry.logger.info(
-        'Backup restored',
-        attributes: {'category': SentryAttribute.string('backup')},
-      );
-      Sentry.metrics.count('backup.restored', 1);
-      AnalyticsService.instance.logEvent('backup_restored');
+      logUsage('backup.restored');
 
       // If backup contains highlights, user was likely Pro — try restoring purchases
       final hasHighlights = manifest.books.any((b) => b.highlights.isNotEmpty);
@@ -448,25 +435,9 @@ final autoBackupCheckerProvider = FutureProvider<void>((ref) async {
       final manifest = await service.createBackup();
       await fileManager.createBackupFile(manifest, isAuto: true);
       await scheduler.recordAutoBackup();
-      Sentry.logger.info(
-        'Auto-backup completed',
-        attributes: {'category': SentryAttribute.string('backup')},
-      );
-      Sentry.metrics.count(
-        'backup.created',
-        1,
-        attributes: {'type': SentryAttribute.string('auto')},
-      );
-      AnalyticsService.instance.logEvent('backup_created', {'type': 'auto'});
+      logUsage('backup.created', attrs: {'type': 'auto'});
     } catch (e, st) {
-      // Keep the message static: exception text can embed file paths.
-      Sentry.logger.error(
-        'Auto-backup failed',
-        attributes: {
-          'category': SentryAttribute.string('backup'),
-          'error_type': SentryAttribute.string(e.runtimeType.toString()),
-        },
-      );
+      logFailure('backup.failed', e, attrs: {'type': 'auto'});
       Sentry.captureException(e, stackTrace: st);
     }
   }

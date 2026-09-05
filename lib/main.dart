@@ -99,68 +99,46 @@ Future<void> _runDeferredStartupWarmups() async {
   // Keep the first frame light. These services all lazily initialize on
   // demand, so we can warm them after the UI is visible.
   await _runStartupWarmup(
-    logMessage: 'Firebase unavailable during startup warmup',
+    step: 'firebase',
     action: FirebaseRuntime.instance.ensureFirebaseApp,
   );
 
   await Future.wait([
+    _runStartupWarmup(step: 'ocr_flush', action: flushPendingOcrFinalizations),
     _runStartupWarmup(
-      logMessage: 'OCR finalization flush failed',
-      action: flushPendingOcrFinalizations,
-    ),
-    _runStartupWarmup(
-      logMessage: 'OcrStoreService init failed',
+      step: 'billing',
       // Also converges the local Play entitlement (grants it to legacy
       // buyers, revokes it after a refund).
       action: OcrStoreService.instance.syncOwnedPurchases,
     ),
     _runStartupWarmup(
-      logMessage: 'WorkManager init failed',
+      step: 'workmanager',
       action: () => Workmanager().initialize(ocrWorkerCallbackDispatcher),
     ),
     _runStartupWarmup(
-      logMessage: 'MeCab init failed (app will continue)',
+      step: 'mecab',
       action: () async {
         await MecabService.instance.init();
-        Sentry.logger.info(
-          'MeCab initialized',
-          attributes: {
-            'category': SentryAttribute.string('app.init'),
-            'dictionary': SentryAttribute.string(
-              MecabService.instance.layout.label,
-            ),
-          },
+        logUsage(
+          'mecab.initialized',
+          attrs: {'dictionary': MecabService.instance.layout.label},
         );
       },
     ),
   ]);
 
   sw.stop();
-  Sentry.metrics.distribution(
-    'app.startup_warmup_ms',
-    sw.elapsedMilliseconds,
-    unit: SentryMetricUnit.millisecond,
-  );
+  durationUsage('app.startup_warmup_ms', sw.elapsedMilliseconds);
 }
 
 Future<void> _runStartupWarmup({
-  required String logMessage,
+  required String step,
   required Future<void> Function() action,
 }) async {
   try {
     await action();
   } catch (error, stackTrace) {
-    // Keep the message static: exception text can embed file paths.
-    Sentry.logger.warn(
-      logMessage,
-      attributes: {
-        'category': SentryAttribute.string('app.init'),
-        'error_type': SentryAttribute.string(error.runtimeType.toString()),
-        'error_message': SentryAttribute.string(
-          sanitizeErrorText(error.toString()),
-        ),
-      },
-    );
+    logFailure('app.startup_warmup_failed', error, attrs: {'step': step});
     await Sentry.captureException(error, stackTrace: stackTrace);
   }
 }

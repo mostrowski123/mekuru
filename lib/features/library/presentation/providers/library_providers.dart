@@ -9,7 +9,6 @@ import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
-import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/main.dart';
@@ -220,20 +219,15 @@ class BookImportNotifier extends Notifier<BookImportState> {
       attributes: {'format': format},
     );
     await applyPendingBackupData(book);
-    Sentry.logger.info(
-      'Book imported',
-      attributes: {
-        'category': SentryAttribute.string('book.import'),
-        'format': SentryAttribute.string(format),
-      },
-    );
-    Sentry.metrics.count(
-      'book.imported',
-      1,
-      attributes: {'format': SentryAttribute.string(format)},
-    );
-    AnalyticsService.instance.logEvent('book_imported', {'format': format});
+    _logBookImported(format);
     return book;
+  }
+
+  /// One success log (mirrored to Firebase) plus a counter, so the failure
+  /// rate is derivable against tracedOperation's book.import_failed count.
+  void _logBookImported(String format) {
+    logUsage('book.imported', attrs: {'format': format});
+    countUsage('book.imported', attrs: {'format': format});
   }
 
   Future<Book?> importManga(String filePath, {String? cachedFilePath}) async {
@@ -252,19 +246,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
         attributes: {'format': 'manga'},
       );
       await applyPendingBackupData(book);
-      Sentry.logger.info(
-        'Book imported',
-        attributes: {
-          'category': SentryAttribute.string('book.import'),
-          'format': SentryAttribute.string('manga'),
-        },
-      );
-      Sentry.metrics.count(
-        'book.imported',
-        1,
-        attributes: {'format': SentryAttribute.string('manga')},
-      );
-      AnalyticsService.instance.logEvent('book_imported', {'format': 'manga'});
+      _logBookImported('manga');
       _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
@@ -295,21 +277,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
         attributes: {'format': 'manga_saf'},
       );
       await applyPendingBackupData(book);
-      Sentry.logger.info(
-        'Book imported',
-        attributes: {
-          'category': SentryAttribute.string('book.import'),
-          'format': SentryAttribute.string('manga_saf'),
-        },
-      );
-      Sentry.metrics.count(
-        'book.imported',
-        1,
-        attributes: {'format': SentryAttribute.string('manga_saf')},
-      );
-      AnalyticsService.instance.logEvent('book_imported', {
-        'format': 'manga_saf',
-      });
+      _logBookImported('manga_saf');
       _showSuccess('"${book.title}" added to library!', book);
       return book;
     } catch (e, st) {
