@@ -36,7 +36,7 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
     this.restoreUpgrade,
     this.openSelfHostRepo,
     this.forceServicesAvailable,
-    this.source,
+    required this.source,
   });
 
   final Future<ProUpgradeSnapshot> Function()? loadSnapshot;
@@ -46,8 +46,9 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
   final bool? forceServicesAvailable;
 
   /// Where the screen was opened from, for usage telemetry (enum-like value,
-  /// e.g. 'manga_reader' or 'ocr_setup').
-  final String? source;
+  /// e.g. 'manga_reader' or 'ocr_setup'). Required: an unattributed view
+  /// answers nothing about which gate drives upgrades.
+  final String source;
 
   @override
   ConsumerState<ProUpgradeScreen> createState() => _ProUpgradeScreenState();
@@ -74,11 +75,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       duration: const Duration(seconds: 3),
     );
     _storeService.onLateDelivery = _handleLateDelivery;
-    final source = widget.source;
-    logUsage(
-      'pro.upgrade_screen_shown',
-      attrs: source == null ? null : {'source': source},
-    );
+    logUsage('pro.upgrade_screen_shown', attrs: {'source': widget.source});
     unawaited(_loadSnapshot());
   }
 
@@ -484,7 +481,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
 Future<void> openProUpgrade(
   BuildContext context,
   WidgetRef ref, {
-  String? source,
+  required String source,
 }) async {
   await Navigator.of(context).push(
     MaterialPageRoute(

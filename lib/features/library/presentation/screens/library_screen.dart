@@ -1383,7 +1383,10 @@ class _BookTileState extends ConsumerState<_BookTile>
                           : TextButton(
                               onPressed: () {
                                 Navigator.of(sheetContext).pop();
-                                _openProUpgrade(context);
+                                _openProUpgrade(
+                                  context,
+                                  source: 'library_highlights',
+                                );
                               },
                               child: Text(context.l10n.commonUnlock),
                             ),
@@ -1507,7 +1510,10 @@ class _BookTileState extends ConsumerState<_BookTile>
                               ? TextButton(
                                   onPressed: () {
                                     Navigator.of(sheetContext).pop();
-                                    _openProUpgrade(context);
+                                    _openProUpgrade(
+                                      context,
+                                      source: 'library_ocr',
+                                    );
                                   },
                                   child: Text(l10n.commonUnlock),
                                 )
@@ -1719,8 +1725,11 @@ class _BookTileState extends ConsumerState<_BookTile>
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _openProUpgrade(BuildContext context) async {
-    await openProUpgrade(context, ref);
+  Future<void> _openProUpgrade(
+    BuildContext context, {
+    required String source,
+  }) async {
+    await openProUpgrade(context, ref, source: source);
   }
 
   void _startOcr(BuildContext context, ProviderContainer container) async {

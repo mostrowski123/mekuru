@@ -23,7 +23,9 @@ void main() {
   Future<void> pumpProScreen(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        child: buildLocalizedTestApp(home: const ProUpgradeScreen()),
+        child: buildLocalizedTestApp(
+          home: const ProUpgradeScreen(source: 'test'),
+        ),
       ),
     );
   }

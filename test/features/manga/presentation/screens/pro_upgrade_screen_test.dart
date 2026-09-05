@@ -42,6 +42,7 @@ Future<void> pumpLockedScreen(
     ProviderScope(
       child: buildLocalizedTestApp(
         home: ProUpgradeScreen(
+          source: 'test',
           loadSnapshot: () async => _lockedSnapshot,
           purchaseUpgrade: purchaseUpgrade,
           restoreUpgrade: restoreUpgrade,
@@ -104,6 +105,7 @@ void main() {
       ProviderScope(
         child: buildLocalizedTestApp(
           home: ProUpgradeScreen(
+            source: 'test',
             loadSnapshot: () async => const ProUpgradeSnapshot(
               isUnlocked: true,
               priceLabel: '\$0.99',
