@@ -219,4 +219,49 @@ void main() {
       await expectLater(emitInstallGauges(db, isPro: false), completes);
     });
   });
+
+  group('setUsageTag', () {
+    tearDown(resetUsageTagsForTest);
+
+    test('tags ride along on every log and count; caller attrs win', () {
+      Map<String, SentryAttribute>? logged;
+      Map<String, SentryAttribute>? counted;
+      usageLogSinkOverride = (message, attributes, {required isWarning}) =>
+          logged = attributes;
+      usageCountSinkOverride = (name, value, attributes) =>
+          counted = attributes;
+
+      setUsageTag('pro', 'true');
+      logUsage('reader.book_opened', attrs: {'format': 'epub'});
+      countUsage('reader.page_turn', attrs: {'pro': 'override'});
+
+      expect(logged!['pro']!.value, 'true');
+      expect(logged!['format']!.value, 'epub');
+      expect(counted!['pro']!.value, 'override');
+    });
+
+    test('attribute-free metrics stay attribute-free without tags', () {
+      Map<String, SentryAttribute>? counted = const {};
+      usageCountSinkOverride = (name, value, attributes) =>
+          counted = attributes;
+
+      countUsage('reader.page_turn');
+
+      expect(counted, isNull);
+    });
+
+    test('librarySizeBucket boundaries', () {
+      expect([0, 1, 9, 10, 49, 50, 199, 200, 5000].map(librarySizeBucket), [
+        '0',
+        '1-9',
+        '1-9',
+        '10-49',
+        '10-49',
+        '50-199',
+        '50-199',
+        '200+',
+        '200+',
+      ]);
+    });
+  });
 }

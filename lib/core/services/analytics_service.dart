@@ -43,4 +43,10 @@ class AnalyticsService {
   void logEvent(String name, [Map<String, Object>? parameters]) {
     _instance?.logEvent(name: name, parameters: parameters);
   }
+
+  /// Install-level segmentation (Firebase caps names at 24 chars and values
+  /// at 36). Only enums and buckets — never identifiers.
+  void setUserProperty(String name, String value) {
+    _instance?.setUserProperty(name: name, value: value);
+  }
 }

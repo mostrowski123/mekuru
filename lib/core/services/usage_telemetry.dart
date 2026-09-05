@@ -37,6 +37,33 @@ UsageLogSink? usageLogSinkOverride;
 UsageCountSink? usageCountSinkOverride;
 @visibleForTesting
 UsageAnalyticsSink? usageAnalyticsSinkOverride;
+@visibleForTesting
+void resetUsageTagsForTest() => _usageTags.clear();
+
+/// Install segmentation set by [setUsageTag]; merged into every log, count
+/// and duration attribute map so any dashboard can split by it.
+final Map<String, String> _usageTags = {};
+
+/// Sets a segmentation tag: a Sentry scope tag (so issues filter by it), a
+/// Firebase user property, and an attribute on every subsequent usage log,
+/// count and duration. Values must be enums or buckets — never counts,
+/// identifiers, or anything a single install could be picked out by.
+void setUsageTag(String key, String value) {
+  _guarded(() {
+    _usageTags[key] = value;
+    Sentry.configureScope((scope) => scope.setTag(key, value));
+    AnalyticsService.instance.setUserProperty(key, value);
+  });
+}
+
+/// Buckets a library size so it can be a tag without becoming an identifier.
+String librarySizeBucket(int books) => switch (books) {
+  0 => '0',
+  < 10 => '1-9',
+  < 50 => '10-49',
+  < 200 => '50-199',
+  _ => '200+',
+};
 
 /// Logs one structured usage event to Sentry and mirrors it to Firebase
 /// Analytics (`.` becomes `_` in the Analytics event name).
@@ -80,7 +107,7 @@ String sanitizeErrorText(String text) {
 void countUsage(String name, {int value = 1, Map<String, Object>? attrs}) {
   _guarded(() {
     final sink = usageCountSinkOverride ?? _defaultCountSink;
-    sink(name, value, attrs == null ? null : _toSentryAttributes(attrs));
+    sink(name, value, _taggedAttributes(attrs));
   });
 }
 
@@ -95,7 +122,7 @@ void durationUsage(
       name,
       milliseconds,
       unit: SentryMetricUnit.millisecond,
-      attributes: attrs == null ? null : _toSentryAttributes(attrs),
+      attributes: _taggedAttributes(attrs),
     );
   });
 }
@@ -113,6 +140,9 @@ Future<void> emitInstallGauges(AppDatabase db, {required bool isPro}) async {
     );
     final savedWords = await countRows(db, db.savedWords);
     final collections = await countRows(db, db.collections);
+
+    setUsageTag('pro', isPro.toString());
+    setUsageTag('library_size', librarySizeBucket(books));
 
     Sentry.metrics.gauge('install.library_books', books);
     Sentry.metrics.gauge('install.dicts_enabled', enabledDicts);
@@ -137,7 +167,8 @@ void _emitLog(
   required bool isWarning,
 }) {
   final logSink = usageLogSinkOverride ?? _defaultLogSink;
-  logSink(event, _toSentryAttributes(attrs ?? const {}), isWarning: isWarning);
+  logSink(event, _taggedAttributes(attrs) ?? const {}, isWarning: isWarning);
+  // Tags reach Firebase as user properties, so they are not repeated here.
   final analyticsSink = usageAnalyticsSinkOverride ?? _defaultAnalyticsSink;
   analyticsSink(
     event.replaceAll('.', '_'),
@@ -182,6 +213,13 @@ void _swallow(Object error) {
     debugPrint('[UsageTelemetry] emit failed: ${error.runtimeType}');
     return true;
   }());
+}
+
+/// Caller attributes layered over the install tags; null when both are empty
+/// so metrics without attributes stay attribute-free.
+Map<String, SentryAttribute>? _taggedAttributes(Map<String, Object>? attrs) {
+  final merged = {..._usageTags, ...?attrs};
+  return merged.isEmpty ? null : _toSentryAttributes(merged);
 }
 
 Map<String, SentryAttribute> _toSentryAttributes(Map<String, Object> attrs) {

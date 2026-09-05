@@ -147,6 +147,13 @@ class MecabService {
   /// The active feature-column layout, set by [init].
   MecabFeatureLayout get layout => _layout;
 
+  /// Every layout change re-tags telemetry so crashes and usage can be split
+  /// by IPADIC vs UniDic.
+  void _setLayout(MecabFeatureLayout layout) {
+    _layout = layout;
+    setUsageTag('mecab_dict', layout.label);
+  }
+
   /// The layout this session is expected to settle on: [layout], or
   /// UniDic-lite while its background upgrade is still in flight. Callers
   /// that persist tokenization results can use this as a cheap prediction
@@ -229,7 +236,7 @@ class MecabService {
   Future<void> _attachFromSnapshot(_TaggerSnapshot snapshot) async {
     try {
       _tagger = await Mecab.fromTransferableState(snapshot.taggerState);
-      _layout = snapshot.layout;
+      _setLayout(snapshot.layout);
       _initialized = true;
     } catch (e) {
       _initError = e;
@@ -281,7 +288,7 @@ class MecabService {
     // UniDic-lite dictionary (~260 MB) is loaded later in the background.
     final dictPath = await _getDictDir();
     final userDictPath = await _getUserDictPath();
-    _layout = MecabFeatureLayout.ipadic;
+    _setLayout(MecabFeatureLayout.ipadic);
     debugPrint(
       '[MeCab] Initializing (IPADIC) with dict path: $dictPath, '
       'user dict: $userDictPath',
@@ -331,7 +338,7 @@ class MecabService {
       // IPADIC tagger afterwards to release its (smaller) model.
       final previous = _tagger;
       _tagger = unidicTagger;
-      _layout = MecabFeatureLayout.unidicLite;
+      _setLayout(MecabFeatureLayout.unidicLite);
       previous?.dispose();
       debugPrint('[MeCab] Upgraded to UniDic-lite');
       logUsage('mecab.upgraded', attrs: {'dictionary': 'unidic_lite'});
