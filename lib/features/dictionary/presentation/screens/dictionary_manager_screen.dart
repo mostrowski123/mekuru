@@ -15,6 +15,7 @@ import 'package:mekuru/features/settings/presentation/screens/downloads_screen.d
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen for managing imported Yomitan dictionaries.
@@ -343,12 +344,9 @@ class _DictionaryManagerScreenState
             label: Text(l10n.dictionaryManagerBrowseDownloads),
             onPressed: () {
               AppHaptics.light();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'downloads'),
-                  builder: (_) => const DownloadsScreen(),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(namedRoute('downloads', (_) => const DownloadsScreen()));
             },
           ),
           const SizedBox(height: 4),

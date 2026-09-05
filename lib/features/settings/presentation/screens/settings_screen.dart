@@ -19,6 +19,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// General app settings screen.
@@ -122,9 +123,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'reading_settings'),
-                  builder: (_) => const ReadingSettingsScreen(),
+                namedRoute(
+                  'reading_settings',
+                  (_) => const ReadingSettingsScreen(),
                 ),
               );
             },
@@ -144,9 +145,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'dictionary_manager'),
-                  builder: (_) => const DictionaryManagerScreen(),
+                namedRoute(
+                  'dictionary_manager',
+                  (_) => const DictionaryManagerScreen(),
                 ),
               );
             },
@@ -211,9 +212,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () {
                 AppHaptics.light();
                 Navigator.of(context).push(
-                  MaterialPageRoute(
-                    settings: const RouteSettings(name: 'anki_settings'),
-                    builder: (_) => const AnkidroidSettingsScreen(),
+                  namedRoute(
+                    'anki_settings',
+                    (_) => const AnkidroidSettingsScreen(),
                   ),
                 );
               },
@@ -231,9 +232,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'server_settings'),
-                  builder: (_) => const ServerSettingsScreen(),
+                namedRoute(
+                  'server_settings',
+                  (_) => const ServerSettingsScreen(),
                 ),
               );
             },
@@ -269,12 +270,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'downloads'),
-                  builder: (_) => const DownloadsScreen(),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(namedRoute('downloads', (_) => const DownloadsScreen()));
             },
           ),
           const Divider(),
@@ -292,9 +290,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () {
               AppHaptics.light();
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'backup_settings'),
-                  builder: (_) => const BackupSettingsScreen(),
+                namedRoute(
+                  'backup_settings',
+                  (_) => const BackupSettingsScreen(),
                 ),
               );
             },
@@ -314,10 +312,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () async {
               AppHaptics.light();
               final result = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'feedback'),
-                  builder: (_) => const FeedbackScreen(),
-                ),
+                namedRoute('feedback', (_) => const FeedbackScreen()),
               );
               if (!context.mounted) return;
               if (result == true) {
@@ -362,12 +357,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               AppHaptics.light();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'about'),
-                  builder: (_) => const AboutScreen(),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(namedRoute('about', (_) => const AboutScreen()));
             },
           ),
           const SizedBox(height: 16),

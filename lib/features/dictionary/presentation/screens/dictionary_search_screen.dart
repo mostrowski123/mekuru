@@ -13,6 +13,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// Dictionary search screen with live fuzzy search.
 ///
@@ -227,9 +228,9 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
 
   void _navigateToWord(String word) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'dictionary_search'),
-        builder: (_) => DictionarySearchScreen(initialQuery: word),
+      namedRoute(
+        'dictionary_search',
+        (_) => DictionarySearchScreen(initialQuery: word),
       ),
     );
   }
@@ -318,9 +319,9 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
             tooltip: context.l10n.commonManageDictionaries,
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'dictionary_manager'),
-                  builder: (_) => const DictionaryManagerScreen(),
+                namedRoute(
+                  'dictionary_manager',
+                  (_) => const DictionaryManagerScreen(),
                 ),
               );
             },
@@ -702,20 +703,14 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
 
   void _openDictionaryManager() {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'dictionary_manager'),
-        builder: (_) => const DictionaryManagerScreen(),
-      ),
+      namedRoute('dictionary_manager', (_) => const DictionaryManagerScreen()),
     );
   }
 
   void _openDownloads() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'downloads'),
-        builder: (_) => const DownloadsScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(namedRoute('downloads', (_) => const DownloadsScreen()));
   }
 }
 

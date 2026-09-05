@@ -7,6 +7,7 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -478,17 +479,16 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   }
 }
 
+/// The Pro screen's route; [source] names the gate that opened it.
+Route<void> proUpgradeRoute(String source) =>
+    namedRoute<void>('pro_upgrade', (_) => ProUpgradeScreen(source: source));
+
 Future<void> openProUpgrade(
   BuildContext context,
   WidgetRef ref, {
   required String source,
 }) async {
-  await Navigator.of(context).push(
-    MaterialPageRoute(
-      settings: const RouteSettings(name: 'pro_upgrade'),
-      builder: (_) => ProUpgradeScreen(source: source),
-    ),
-  );
+  await Navigator.of(context).push(proUpgradeRoute(source));
   ref.invalidate(proUnlockedProvider);
 }
 

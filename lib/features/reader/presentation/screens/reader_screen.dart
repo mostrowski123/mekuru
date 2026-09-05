@@ -35,6 +35,7 @@ import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
 import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -692,10 +693,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     await setReaderSystemBarsVisible(true);
     if (!mounted) return;
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'reading_settings'),
-        builder: (_) => const ReadingSettingsScreen(),
-      ),
+      namedRoute('reading_settings', (_) => const ReadingSettingsScreen()),
     );
     _suppressViewerRebuilds = false;
     if (!mounted) return;

@@ -12,6 +12,7 @@ import 'package:mekuru/features/stats/presentation/widgets/reading_time_card.dar
 import 'package:mekuru/features/stats/presentation/widgets/vocab_growth_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/volume_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// Reading statistics: headline numbers first, then the filters, then the
 /// chart cards.
@@ -133,12 +134,9 @@ class StatsScreen extends ConsumerWidget {
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           tooltip: context.l10n.settingsTitle,
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              settings: const RouteSettings(name: 'settings'),
-              builder: (_) => const SettingsScreen(),
-            ),
-          ),
+          onPressed: () => Navigator.of(
+            context,
+          ).push(namedRoute('settings', (_) => const SettingsScreen())),
         ),
       ],
     ),

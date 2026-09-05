@@ -3,6 +3,7 @@ import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/features/settings/presentation/screens/attributions_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -87,9 +88,9 @@ class AboutScreen extends StatelessWidget {
                   onTap: () {
                     AppHaptics.light();
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        settings: const RouteSettings(name: 'attributions'),
-                        builder: (_) => const AttributionsScreen(),
+                      namedRoute(
+                        'attributions',
+                        (_) => const AttributionsScreen(),
                       ),
                     );
                   },

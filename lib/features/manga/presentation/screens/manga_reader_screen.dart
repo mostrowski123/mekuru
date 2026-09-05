@@ -38,6 +38,7 @@ import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -748,10 +749,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     await setReaderSystemBarsVisible(true);
     if (!mounted) return;
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'reading_settings'),
-        builder: (_) => const ReadingSettingsScreen(),
-      ),
+      namedRoute('reading_settings', (_) => const ReadingSettingsScreen()),
     );
     if (!mounted) return;
     await setReaderSystemBarsVisible(_showControls);

@@ -14,6 +14,7 @@ import 'package:mekuru/features/settings/presentation/providers/kanjivg_provider
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen listing all downloadable assets (dictionaries, kanji data, etc.).
@@ -105,12 +106,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                                 AppHaptics.light();
                                 if (starterPackReady) {
                                   Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      settings: const RouteSettings(
-                                        name: 'dictionary_search',
-                                      ),
-                                      builder: (_) =>
-                                          const DictionarySearchScreen(),
+                                    namedRoute(
+                                      'dictionary_search',
+                                      (_) => const DictionarySearchScreen(),
                                     ),
                                   );
                                   return;
@@ -133,11 +131,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                           onPressed: () {
                             AppHaptics.light();
                             Navigator.of(context).push(
-                              MaterialPageRoute(
-                                settings: const RouteSettings(
-                                  name: 'dictionary_search',
-                                ),
-                                builder: (_) => const DictionarySearchScreen(),
+                              namedRoute(
+                                'dictionary_search',
+                                (_) => const DictionarySearchScreen(),
                               ),
                             );
                           },

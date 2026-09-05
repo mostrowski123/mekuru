@@ -10,6 +10,7 @@ import 'package:mekuru/features/reader/data/services/deinflection.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 class LookupSheet extends ConsumerStatefulWidget {
   const LookupSheet({
@@ -140,9 +141,9 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
 
   void _navigateToWord(String word) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'dictionary_search'),
-        builder: (_) => DictionarySearchScreen(initialQuery: word),
+      namedRoute(
+        'dictionary_search',
+        (_) => DictionarySearchScreen(initialQuery: word),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 import '../../data/services/ocr_billing_client.dart';
 
@@ -108,12 +109,7 @@ class OcrPurchaseFlow {
       return _openProUpgradeScreenOverride(context);
     }
 
-    return Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'pro_upgrade'),
-        builder: (_) => const ProUpgradeScreen(source: 'ocr_setup'),
-      ),
-    );
+    return Navigator.of(context).push(proUpgradeRoute('ocr_setup'));
   }
 
   Future<void> _openSettingsScreen(BuildContext context) {
@@ -123,10 +119,7 @@ class OcrPurchaseFlow {
 
     // The custom OCR server tile lives on the Reading settings subpage.
     return Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'reading_settings'),
-        builder: (_) => const ReadingSettingsScreen(),
-      ),
+      namedRoute('reading_settings', (_) => const ReadingSettingsScreen()),
     );
   }
 

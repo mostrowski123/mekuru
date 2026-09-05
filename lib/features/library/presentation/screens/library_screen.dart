@@ -26,7 +26,6 @@ import 'package:mekuru/features/library/presentation/widgets/continue_reading_ca
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
-import 'package:mekuru/features/manga/presentation/screens/manga_reader_screen.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
@@ -45,21 +44,9 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
-
-void _openBookReader(BuildContext context, Book book) {
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      settings: RouteSettings(
-        name: book.bookType == 'manga' ? 'manga_reader' : 'reader',
-      ),
-      builder: (_) => book.bookType == 'manga'
-          ? MangaReaderScreen(book: book)
-          : ReaderScreen(book: book),
-    ),
-  );
-}
 
 /// The book the user most recently read, or null when none has been opened
 /// yet. Derived from the already-watched book list so it stays reactive and
@@ -255,7 +242,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   : () {
                       final book = importState.importedBook!;
                       ref.read(bookImportProvider.notifier).clearState();
-                      _openBookReader(context, book);
+                      Navigator.of(context).push(bookReaderRoute(book));
                     },
               onDismiss: () =>
                   ref.read(bookImportProvider.notifier).clearState(),
@@ -421,10 +408,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     onPressed: () {
                       AppHaptics.light();
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          settings: const RouteSettings(name: 'downloads'),
-                          builder: (_) => const DownloadsScreen(),
-                        ),
+                        namedRoute('downloads', (_) => const DownloadsScreen()),
                       );
                     },
                     icon: const Icon(Icons.download_outlined),
@@ -434,11 +418,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     onPressed: () {
                       AppHaptics.light();
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          settings: const RouteSettings(
-                            name: 'backup_settings',
-                          ),
-                          builder: (_) => const BackupSettingsScreen(),
+                        namedRoute(
+                          'backup_settings',
+                          (_) => const BackupSettingsScreen(),
                         ),
                       );
                     },
@@ -470,7 +452,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             sliver: SliverToBoxAdapter(
               child: ContinueReadingCard(
                 book: recent,
-                onTap: () => _openBookReader(context, recent),
+                onTap: () =>
+                    Navigator.of(context).push(bookReaderRoute(recent)),
               ),
             ),
           ),
@@ -615,9 +598,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       attrs: {'server_type': server.serverType},
     );
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        settings: const RouteSettings(name: 'server_browse'),
-        builder: (_) => ServerBrowseScreen(connection: server),
+      namedRoute<void>(
+        'server_browse',
+        (_) => ServerBrowseScreen(connection: server),
       ),
     );
   }
@@ -1215,7 +1198,7 @@ class _BookTileState extends ConsumerState<_BookTile>
       AppHaptics.light();
       widget.onToggleSelection?.call();
     } else {
-      _openBookReader(context, book);
+      Navigator.of(context).push(bookReaderRoute(book));
     }
   }
 
@@ -1626,12 +1609,9 @@ class _BookTileState extends ConsumerState<_BookTile>
         bookId: book.id,
         onNavigate: (cfi) {
           Navigator.of(context).pop();
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              settings: const RouteSettings(name: 'reader'),
-              builder: (_) => ReaderScreen(book: book),
-            ),
-          );
+          Navigator.of(
+            context,
+          ).push(namedRoute('reader', (_) => ReaderScreen(book: book)));
         },
       ),
     );
@@ -1645,12 +1625,9 @@ class _BookTileState extends ConsumerState<_BookTile>
         bookId: book.id,
         onNavigate: (cfiRange) {
           Navigator.of(context).pop();
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              settings: const RouteSettings(name: 'reader'),
-              builder: (_) => ReaderScreen(book: book),
-            ),
-          );
+          Navigator.of(
+            context,
+          ).push(namedRoute('reader', (_) => ReaderScreen(book: book)));
         },
       ),
     );

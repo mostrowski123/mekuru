@@ -10,6 +10,7 @@ import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_provi
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Screen for reviewing and sending a note to AnkiDroid.
@@ -296,12 +297,9 @@ class _AnkiCardCreationScreenState
   }
 
   Future<void> _openSettings() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: 'anki_settings'),
-        builder: (_) => const AnkidroidSettingsScreen(),
-      ),
-    );
+    await Navigator.of(
+      context,
+    ).push(namedRoute('anki_settings', (_) => const AnkidroidSettingsScreen()));
     if (mounted) _reloadFields();
   }
 

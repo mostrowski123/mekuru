@@ -22,6 +22,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart' show scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// A card that displays all dictionary definitions for a single
 /// (expression, reading) group.
@@ -343,10 +344,7 @@ class _GroupedDictionaryEntryHeaderState
     );
     if (!config.isConfigured) {
       Navigator.of(context).push(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: 'anki_settings'),
-          builder: (_) => const AnkidroidSettingsScreen(),
-        ),
+        namedRoute('anki_settings', (_) => const AnkidroidSettingsScreen()),
       );
       return;
     }
@@ -354,9 +352,9 @@ class _GroupedDictionaryEntryHeaderState
     final noteData = _buildAnkiNoteData();
     Navigator.of(context)
         .push<bool>(
-          MaterialPageRoute(
-            settings: const RouteSettings(name: 'anki_card'),
-            builder: (_) => AnkiCardCreationScreen(
+          namedRoute(
+            'anki_card',
+            (_) => AnkiCardCreationScreen(
               noteData: noteData,
               saveSource: widget.saveSource,
             ),

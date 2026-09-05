@@ -8,6 +8,7 @@ import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// Manage Komga/Kavita server connections: add, edit, test, delete.
 class ServerSettingsScreen extends ConsumerWidget {
@@ -78,10 +79,9 @@ class ServerSettingsScreen extends ConsumerWidget {
                 ),
                 onTap: connection.enabled
                     ? () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          settings: const RouteSettings(name: 'server_browse'),
-                          builder: (_) =>
-                              ServerBrowseScreen(connection: connection),
+                        namedRoute<void>(
+                          'server_browse',
+                          (_) => ServerBrowseScreen(connection: connection),
                         ),
                       )
                     : () => _showConnectionDialog(

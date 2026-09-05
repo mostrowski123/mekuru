@@ -3,26 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
-import 'package:mekuru/features/manga/presentation/screens/manga_reader_screen.dart';
-import 'package:mekuru/features/reader/presentation/screens/reader_screen.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
-
-void _openBookReader(BuildContext context, Book book) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      settings: RouteSettings(
-        name: book.bookType == 'manga' ? 'manga_reader' : 'reader',
-      ),
-      builder: (_) => book.bookType == 'manga'
-          ? MangaReaderScreen(book: book)
-          : ReaderScreen(book: book),
-    ),
-  );
-}
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// Entry point of server browsing: the connection's libraries.
 class ServerBrowseScreen extends ConsumerWidget {
@@ -67,9 +53,9 @@ class ServerBrowseScreen extends ConsumerWidget {
                     leading: const Icon(Icons.collections_bookmark),
                     title: Text(library.name),
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        settings: const RouteSettings(name: 'server_series'),
-                        builder: (_) => _SeriesListScreen(
+                      namedRoute<void>(
+                        'server_series',
+                        (_) => _SeriesListScreen(
                           connection: connection,
                           client: client,
                           library: library,
@@ -208,9 +194,9 @@ class _SeriesListScreenState extends State<_SeriesListScreen> {
                             )
                           : null,
                       onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          settings: const RouteSettings(name: 'server_books'),
-                          builder: (_) => _BookListScreen(
+                        namedRoute<void>(
+                          'server_books',
+                          (_) => _BookListScreen(
                             connection: widget.connection,
                             client: widget.client,
                             series: item,
@@ -336,7 +322,7 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
       );
       return;
     }
-    _openBookReader(context, linked);
+    Navigator.of(context).push(bookReaderRoute(linked));
   }
 
   @override

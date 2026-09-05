@@ -16,7 +16,6 @@ import 'features/library/presentation/screens/library_screen.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/presentation/providers/pro_access_provider.dart';
 import 'features/reader/presentation/providers/reader_providers.dart';
-import 'features/reader/presentation/screens/reader_screen.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
 import 'features/stats/presentation/screens/stats_screen.dart';
@@ -25,6 +24,7 @@ import 'l10n/generated/app_localizations.dart';
 import 'l10n/l10n.dart';
 import 'main.dart' show navigatorKey, scaffoldMessengerKey, databaseProvider;
 import 'shared/theme/app_theme.dart';
+import 'shared/utils/app_routes.dart';
 
 /// Root application widget.
 class MekuruApp extends ConsumerStatefulWidget {
@@ -266,12 +266,8 @@ class _MainShellState extends ConsumerState<_MainShell> {
     final repo = BookRepository(ref.read(databaseProvider));
     final book = await repo.getMostRecentlyReadBook();
     if (book != null && mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: 'reader'),
-          builder: (_) => ReaderScreen(book: book),
-        ),
-      );
+      // Any book type can be the most recent one.
+      Navigator.of(context).push(bookReaderRoute(book));
     }
   }
 }

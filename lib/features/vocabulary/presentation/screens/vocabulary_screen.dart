@@ -7,6 +7,7 @@ import 'package:mekuru/features/settings/presentation/screens/downloads_screen.d
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/utils/vocabulary_search.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 
 class VocabularyScreen extends ConsumerStatefulWidget {
   const VocabularyScreen({super.key});
@@ -200,11 +201,9 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                 FilledButton.icon(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        settings: const RouteSettings(
-                          name: 'dictionary_search',
-                        ),
-                        builder: (_) => const DictionarySearchScreen(),
+                      namedRoute(
+                        'dictionary_search',
+                        (_) => const DictionarySearchScreen(),
                       ),
                     );
                   },
@@ -214,10 +213,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                 OutlinedButton.icon(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        settings: const RouteSettings(name: 'downloads'),
-                        builder: (_) => const DownloadsScreen(),
-                      ),
+                      namedRoute('downloads', (_) => const DownloadsScreen()),
                     );
                   },
                   icon: const Icon(Icons.download_outlined),
