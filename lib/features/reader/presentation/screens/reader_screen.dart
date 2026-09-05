@@ -34,7 +34,6 @@ import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
 import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
-import 'package:mekuru/core/services/analytics_service.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -127,8 +126,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    Sentry.metrics.count('reader.book_opened', 1);
-    AnalyticsService.instance.logEvent('book_opened');
+    logUsage('reader.book_opened', attrs: {'format': 'epub'});
     _sessionTracker = ReaderSessionTracker(bookFormat: 'epub');
 
     unawaited(setReaderSystemBarsVisible(false));

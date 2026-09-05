@@ -104,6 +104,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _currentPage = cfi.startsWith('scroll:') ? 0 : (int.tryParse(cfi) ?? 0);
     _pageController = PageController(initialPage: _currentPage);
     WidgetsBinding.instance.addObserver(this);
+    logUsage('reader.book_opened', attrs: {'format': 'manga'});
     _statsRepository = ref.read(statsRepositoryProvider);
     // Captured here because dispose() calls it after `ref` is unusable.
     _brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
