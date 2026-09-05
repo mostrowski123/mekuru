@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as server_url;
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
@@ -131,6 +132,14 @@ class ServerSettingsScreen extends ConsumerWidget {
       final client = await clientFactory(connection);
       try {
         final result = await linker.linkExistingBooks(connection, client);
+        logUsage(
+          'sync.books_linked',
+          attrs: {
+            'server_type': connection.serverType,
+            'linked': result.linkedBookIds.length,
+            'unmatched': result.unmatched,
+          },
+        );
         for (final bookId in result.linkedBookIds) {
           await sync.syncBookById(bookId);
         }
@@ -150,6 +159,11 @@ class ServerSettingsScreen extends ConsumerWidget {
         client.dispose();
       }
     } catch (e) {
+      logFailure(
+        'sync.books_linked',
+        e,
+        attrs: {'server_type': connection.serverType},
+      );
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.serverSettingsLinkFailed(error: '$e'))),
@@ -162,6 +176,10 @@ class ServerSettingsScreen extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(SnackBar(content: Text(l10n.serverSettingsSyncing)));
     final result = await ref.read(progressSyncServiceProvider).syncAll();
+    logUsage(
+      'sync.sync_now',
+      attrs: {'pushed': result.pushed, 'failed': result.failed},
+    );
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
@@ -268,6 +286,10 @@ class _ServerConnectionDialogState
     );
     try {
       await client.testConnection();
+      logUsage(
+        'sync.connection_tested',
+        attrs: {'server_type': _type.storageValue, 'result': 'ok'},
+      );
       if (mounted) {
         setState(() {
           _testOk = true;
@@ -275,6 +297,11 @@ class _ServerConnectionDialogState
         });
       }
     } catch (e) {
+      logFailure(
+        'sync.connection_tested',
+        e,
+        attrs: {'server_type': _type.storageValue},
+      );
       if (mounted) {
         setState(() {
           _testOk = false;
@@ -320,6 +347,10 @@ class _ServerConnectionDialogState
           await secrets.save(widget.existing!.id, secret);
         }
       }
+      logUsage(
+        'sync.server_saved',
+        attrs: {'server_type': _type.storageValue, 'is_new': _isNew},
+      );
       if (mounted) Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _saving = false);

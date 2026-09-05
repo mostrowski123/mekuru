@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:mekuru/core/database/database_provider.dart';
-import 'package:mekuru/core/services/analytics_service.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
@@ -175,12 +175,20 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
       await ref
           .read(serverConnectionRepositoryProvider)
           .linkBook(imported.id, connection.id, book.ids);
-      AnalyticsService.instance.logEvent('server_book_downloaded', {
-        'server_type': connection.serverType,
-        'format': book.format.name,
-      });
+      logUsage(
+        'sync.book_downloaded',
+        attrs: {
+          'server_type': connection.serverType,
+          'format': book.format.name,
+        },
+      );
       return imported;
     } catch (e, st) {
+      logFailure(
+        'sync.book_downloaded',
+        e,
+        attrs: {'server_type': connection.serverType},
+      );
       Sentry.captureException(e, stackTrace: st);
       rethrow;
     } finally {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 
@@ -77,6 +78,7 @@ class ProgressSyncService {
       _pushTimers.remove(bookId);
       pushBook(bookId).catchError((Object e) {
         debugPrint('[Sync] push failed for book $bookId: $e');
+        logFailure('sync.progress_pushed', e);
       });
     });
   }
@@ -91,6 +93,7 @@ class ProgressSyncService {
     if (progress == null) return;
     await link.client.pushProgress(link.ids, progress);
     await _markSynced(bookId);
+    countUsage('sync.progress_pushed', attrs: {'format': book.bookType});
   }
 
   /// Sync at book-open time: pull, adopt a strictly newer remote state,
@@ -132,6 +135,7 @@ class ProgressSyncService {
       }
 
       if (!await _applyRemote(book, remote)) return null;
+      logUsage('sync.progress_pulled', attrs: {'format': book.bookType});
       // An EPUB apply completes when the reader jumps there and saves the
       // CFI (that write's push marks the sync). Marking here would let a
       // jump that never happens — reader closed before epub.js locations
@@ -142,6 +146,7 @@ class ProgressSyncService {
       // Fire-and-forget: transport errors, a proxy's HTML login page, or a
       // secure-storage failure all just log; the next open retries.
       debugPrint('[Sync] syncOnOpen failed: $e');
+      logFailure('sync.open_sync', e, attrs: {'format': book.bookType});
       return null;
     } finally {
       _openSyncs.remove(book.id);
