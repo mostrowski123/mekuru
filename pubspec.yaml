@@ -131,9 +131,13 @@ flutter:
     - assets/ipadic/
     - assets/user_dict/
 
+# Read by `dart run sentry_dart_plugin` in build-release.yml. Android-only,
+# so no source maps; `commits: false` because the GitHub repo is not linked
+# to Sentry and set-commits would fail the upload.
 sentry:
   upload_debug_symbols: true
-  upload_source_maps: true
+  upload_source_maps: false
+  commits: false
   project: mekuru
   org: matt-dl
   

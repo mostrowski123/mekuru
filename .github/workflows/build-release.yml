@@ -26,6 +26,9 @@ jobs:
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # Job-level so the symbol-upload step's `if:` can test it (steps cannot
+      # read the secrets context directly).
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -107,6 +110,7 @@ jobs:
           PLAY_VERSION_CODE_FLOOR=2026030713
           VERSION_CODE="$((PLAY_VERSION_CODE_FLOOR + ${{ github.run_number }}))"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "app_version=$APP_VERSION" >> "$GITHUB_OUTPUT"
           echo "name=Mekuru $APP_VERSION ($TAG)" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
@@ -144,6 +148,16 @@ jobs:
 
       - name: Verify MeCab native libs in parallel release APK
         run: python scripts/verify_native_libs.py build/app/outputs/flutter-apk/app-parallel-release.apk
+
+      # Native frames (libapp.so, NDK) only symbolicate in Sentry with these;
+      # Dart frames are readable without them. Skipped when the secret is
+      # unset, and a Sentry outage must never block a release.
+      - name: Upload debug symbols to Sentry
+        if: env.SENTRY_AUTH_TOKEN != ''
+        continue-on-error: true
+        env:
+          SENTRY_RELEASE: moe.matthew.mekuru@${{ steps.tag.outputs.app_version }}+${{ steps.tag.outputs.version_code }}
+        run: dart run sentry_dart_plugin
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
