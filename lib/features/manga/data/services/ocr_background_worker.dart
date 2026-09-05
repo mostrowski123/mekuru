@@ -4,11 +4,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../../../core/platform/android_saf_service.dart';
 import '../../../../core/services/firebase_runtime.dart';
+import '../../../../core/services/sentry_setup.dart';
 import '../../../../core/services/usage_telemetry.dart';
 import '../../../../core/utils/atomic_file.dart';
 import '../../data/models/mokuro_models.dart';
@@ -134,9 +136,13 @@ void ocrWorkerCallbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
     if (taskName != ocrTaskName || inputData == null) return true;
 
+    // WorkManager runs this in its own isolate, which starts with no Sentry
+    // hub: without this every ocr.job log and exception is silently dropped.
+    await initSentryForBackgroundIsolate();
     try {
       return await _processOcrTask(inputData);
-    } catch (e) {
+    } catch (e, st) {
+      unawaited(Sentry.captureException(e, stackTrace: st));
       try {
         final prefs = await SharedPreferences.getInstance();
         final bookId = inputData['bookId'] as int;
@@ -157,6 +163,8 @@ void ocrWorkerCallbackDispatcher() {
         );
       }
       return false;
+    } finally {
+      await closeSentryForBackgroundIsolate();
     }
   });
 }

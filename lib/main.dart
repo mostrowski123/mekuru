@@ -1,23 +1,18 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'config/environment_config.dart';
-import 'core/config/app_flavor.dart';
 import 'core/database/database_provider.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/firebase_runtime.dart';
 import 'core/services/pii_scrubber.dart';
+import 'core/services/sentry_setup.dart';
 import 'core/services/usage_telemetry.dart';
-import 'core/services/synthetic_client.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
@@ -57,27 +52,10 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
   PaintingBinding.instance.imageCache.maximumSize = 50;
 
-  // Detect install source to set Sentry environment.
-  // Debug builds always use 'debug'; release builds distinguish Play Store
-  // from sideload, with the parallel flavor getting its own bucket so its
-  // App Check / Play Integrity errors don't mix with regular sideloads.
-  // Emulators and cloud device farms otherwise blend into the sideload
-  // bucket, which is a real audience (the GitHub APK). Their crashes and
-  // product metrics are both misleading, so they report nothing at all.
-  final (isPlayStore, isSynthetic) = await (
-    _isPlayStoreInstall(),
-    _detectSyntheticClient(),
-  ).wait;
-
-  final String sentryEnvironment;
-  if (kDebugMode) {
-    sentryEnvironment = 'debug';
-  } else if (isPlayStore) {
-    sentryEnvironment = 'play-store';
-  } else {
-    sentryEnvironment = kIsParallelBuild ? 'sideload-parallel' : 'sideload';
-  }
-
+  // Detect install source to set Sentry environment; synthetic clients
+  // (emulators, device farms) report nothing at all.
+  final audience = await resolveSentryAudience();
+  final isSynthetic = audience.isSynthetic;
   if (isSynthetic) {
     AnalyticsService.instance.suppress();
   }
@@ -85,7 +63,7 @@ Future<void> main() async {
   await SentryFlutter.init(
     (options) {
       options.dsn = EnvironmentConfig.sentryDsn;
-      options.environment = sentryEnvironment;
+      options.environment = audience.environment;
       options.navigatorKey = navigatorKey;
       // Silencing synthetic clients through the sample rates and signal
       // switches drops their payloads before Sentry assembles contexts,
@@ -107,33 +85,6 @@ Future<void> main() async {
       _scheduleDeferredStartupWarmups();
     },
   );
-}
-
-Future<bool> _isPlayStoreInstall() async {
-  if (kDebugMode) return false;
-  final packageInfo = await PackageInfo.fromPlatform();
-  return packageInfo.installerStore == 'com.android.vending';
-}
-
-/// Reads Android build properties to decide whether this install is an
-/// emulator, cloud device farm, or bot rather than a real reader.
-///
-/// Fails open: if the platform lookup fails we assume a real user, because
-/// dropping genuine telemetry is worse than keeping some noise.
-Future<bool> _detectSyntheticClient() async {
-  if (kDebugMode || !Platform.isAndroid) return false;
-  try {
-    final info = await DeviceInfoPlugin().androidInfo;
-    return isSyntheticAndroidClient(
-      isPhysicalDevice: info.isPhysicalDevice,
-      fingerprint: info.fingerprint,
-      hardware: info.hardware,
-      product: info.product,
-      model: info.model,
-    );
-  } catch (_) {
-    return false;
-  }
 }
 
 void _scheduleDeferredStartupWarmups() {
