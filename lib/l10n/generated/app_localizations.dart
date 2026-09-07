@@ -1873,67 +1873,67 @@ abstract class AppLocalizations {
   /// Section header for backup actions.
   ///
   /// In en, this message translates to:
-  /// **'Backup'**
+  /// **'Reading data backup'**
   String get backupSectionBackup;
 
   /// Title for the create-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Create Backup Now'**
+  /// **'Create reading data backup'**
   String get backupCreateNowTitle;
 
   /// Subtitle for the create-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Save your settings and user data, like bookmarks, highlights, and vocabulary lists. EPUB and manga files are not included.'**
+  /// **'Saves your settings, reading progress, bookmarks, highlights, vocabulary and stats to a small .mekuru file. Books, manga and dictionaries are not included.'**
   String get backupCreateNowSubtitle;
 
   /// Title for the export-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Export Backup'**
+  /// **'Export reading data backup (.mekuru)'**
   String get backupExportTitle;
 
   /// Subtitle for the export-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Save your latest settings and user-data backup to a file. EPUB and manga files are not included.'**
+  /// **'Save the latest reading data backup to a file of your choice.'**
   String get backupExportSubtitle;
 
   /// Native file picker title when exporting a backup.
   ///
   /// In en, this message translates to:
-  /// **'Save Backup'**
+  /// **'Save reading data backup'**
   String get backupSaveFileDialogTitle;
 
   /// Title for the informational note explaining backup scope.
   ///
   /// In en, this message translates to:
-  /// **'What gets backed up?'**
+  /// **'Two kinds of backup'**
   String get backupScopeNoteTitle;
 
   /// Body text for the informational note explaining backup scope.
   ///
   /// In en, this message translates to:
-  /// **'Backups include your settings, dictionary order and enabled states, and the data you created in Mekuru, like bookmarks, highlights, vocabulary lists, and reading stats. They do not include the actual EPUB, manga, or dictionary files.'**
+  /// **'Reading data backup (.mekuru): a small file with your settings, dictionary order, bookmarks, highlights, vocabulary and reading stats. Importing it merges into what is already in Mekuru. Full backup (.zip): everything, including your books, manga and dictionaries. Restoring it replaces everything in Mekuru on this device.'**
   String get backupScopeNoteBody;
 
   /// Follow-up text for the informational note explaining how restored history is reapplied.
   ///
   /// In en, this message translates to:
-  /// **'After restoring, re-import the same EPUB or manga content. If the content matches exactly, your history will come back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.'**
+  /// **'After importing reading data, re-import the same EPUB or manga content and its history comes back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.'**
   String get backupScopeNoteRestore;
 
   /// Section header for auto-backup settings.
   ///
   /// In en, this message translates to:
-  /// **'Auto-Backup'**
+  /// **'Automatic reading data backup'**
   String get backupSectionAutoBackup;
 
   /// Title for the auto-backup interval setting.
   ///
   /// In en, this message translates to:
-  /// **'Auto-Backup Interval'**
+  /// **'Auto-backup interval'**
   String get backupAutoBackupIntervalTitle;
 
   /// Label for turning auto-backup off.
@@ -1957,31 +1957,31 @@ abstract class AppLocalizations {
   /// Section header for restore actions.
   ///
   /// In en, this message translates to:
-  /// **'Restore'**
+  /// **'Restore reading data'**
   String get backupSectionRestore;
 
   /// Title for the import-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Import Backup File'**
+  /// **'Import reading data (.mekuru)'**
   String get backupImportFileTitle;
 
   /// Subtitle for the import-backup action.
   ///
   /// In en, this message translates to:
-  /// **'Restore settings and user data from a .mekuru file. Re-import the same EPUB or manga content to bring back its history.'**
+  /// **'Merges settings, progress, bookmarks, highlights and vocabulary from a .mekuru file into Mekuru. Re-import the same EPUB or manga content to bring back its history.'**
   String get backupImportFileSubtitle;
 
   /// Section header for the backup history list.
   ///
   /// In en, this message translates to:
-  /// **'Backup History'**
+  /// **'Reading data backup history'**
   String get backupSectionHistory;
 
   /// Message shown when there are no backups.
   ///
   /// In en, this message translates to:
-  /// **'No backups yet'**
+  /// **'No reading data backups yet'**
   String get backupNoBackupsYet;
 
   /// Message shown when backup history fails to load.
@@ -1993,7 +1993,7 @@ abstract class AppLocalizations {
   /// Snackbar shown after a backup is created.
   ///
   /// In en, this message translates to:
-  /// **'Backup created successfully'**
+  /// **'Reading data backup created'**
   String get backupCreatedSuccess;
 
   /// Snackbar shown when backup creation fails.
@@ -2005,13 +2005,13 @@ abstract class AppLocalizations {
   /// Snackbar shown when there are no backups to export.
   ///
   /// In en, this message translates to:
-  /// **'No backups to export. Create one first.'**
+  /// **'No reading data backups to export. Create one first.'**
   String get backupNoBackupsToExport;
 
   /// Snackbar shown after exporting a backup.
   ///
   /// In en, this message translates to:
-  /// **'Backup exported successfully'**
+  /// **'Reading data backup exported'**
   String get backupExportedSuccess;
 
   /// Snackbar shown when exporting a backup fails.
@@ -2023,7 +2023,7 @@ abstract class AppLocalizations {
   /// Snackbar shown when the selected restore file has the wrong extension.
   ///
   /// In en, this message translates to:
-  /// **'Please select a .mekuru backup file.'**
+  /// **'Please select a .mekuru reading data backup file.'**
   String get backupInvalidFile;
 
   /// Snackbar shown when the backup file picker fails.
@@ -2134,13 +2134,13 @@ abstract class AppLocalizations {
   /// Title for the restore backup confirmation dialog.
   ///
   /// In en, this message translates to:
-  /// **'Restore Backup?'**
+  /// **'Import reading data?'**
   String get backupRestoreDialogTitle;
 
   /// Body for the restore backup confirmation dialog.
   ///
   /// In en, this message translates to:
-  /// **'This will restore settings and user data from {fileName}, like bookmarks, highlights, and vocabulary lists. It does not restore the actual EPUB, manga, or dictionary files. After restoring, re-import the same EPUB or manga content to bring back its history. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Your current settings will be overwritten.'**
+  /// **'This merges settings and reading data from {fileName} into Mekuru: bookmarks, highlights, vocabulary lists and progress. It does not restore books, manga or dictionary files. After importing, re-import the same EPUB or manga content to bring back its history. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Your current settings will be overwritten.'**
   String backupRestoreDialogBody({required String fileName});
 
   /// Checkbox label for queueing dictionary order and enabled states from a restored backup.
@@ -4317,6 +4317,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one {{count} page} other {{count} pages}}'**
   String serverBrowsePageCount({required int count});
+
+  /// File-type badge on the reading data backup card.
+  ///
+  /// In en, this message translates to:
+  /// **'.mekuru'**
+  String get backupReadingDataBadge;
+
+  /// File-type badge on the full backup card.
+  ///
+  /// In en, this message translates to:
+  /// **'.zip'**
+  String get backupFullBadge;
+
+  /// Shown when a zip is picked in the reading data importer.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a .zip file, not a reading data backup. If it is a Mekuru full backup, use Restore full backup instead.'**
+  String get backupWrongKindFullBackup;
+
+  /// Shown when a .mekuru file is picked in the full backup restore.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a reading data backup (.mekuru), not a full backup. Use Import reading data instead.'**
+  String get backupWrongKindReadingData;
+
+  /// Header of the full backup card.
+  ///
+  /// In en, this message translates to:
+  /// **'Full backup'**
+  String get backupFullSectionTitle;
+
+  /// Summary text on the full backup card.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.'**
+  String get backupFullScopeBody;
+
+  /// Limitations text on the full backup card.
+  ///
+  /// In en, this message translates to:
+  /// **'Not included: manga linked from folders outside Mekuru (their pages stay in your folder), downloaded UniDic-lite, the reading data backup history, and Pro, which is re-checked with Google Play.'**
+  String get backupFullNotIncluded;
+
+  /// Title of the export full backup action.
+  ///
+  /// In en, this message translates to:
+  /// **'Export full backup (.zip)…'**
+  String get backupFullExportTitle;
+
+  /// Subtitle of the export full backup action.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a folder. The file can be several gigabytes; keep Mekuru open until it finishes.'**
+  String get backupFullExportSubtitle;
+
+  /// Title of the restore full backup action.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore full backup (.zip)…'**
+  String get backupFullRestoreTitle;
+
+  /// Subtitle of the restore full backup action.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces everything in Mekuru on this device with the contents of a full backup.'**
+  String get backupFullRestoreSubtitle;
+
+  /// Warning chip on the restore full backup action.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces Mekuru\'s data'**
+  String get backupFullReplacesChip;
+
+  /// Progress dialog title while exporting.
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting full backup…'**
+  String get backupFullProgressExporting;
+
+  /// Progress dialog title while clearing old staging data.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing…'**
+  String get backupFullProgressPreparing;
+
+  /// Progress dialog title while extracting.
+  ///
+  /// In en, this message translates to:
+  /// **'Extracting full backup…'**
+  String get backupFullProgressExtracting;
+
+  /// Progress dialog title while validating the staged restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the restored data…'**
+  String get backupFullProgressFinishing;
+
+  /// Progress dialog byte counter; both values are preformatted sizes.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total}'**
+  String backupFullProgressBytes({required String done, required String total});
+
+  /// Snackbar after a successful export; size is preformatted.
+  ///
+  /// In en, this message translates to:
+  /// **'Full backup saved ({size})'**
+  String backupFullExported({required String size});
+
+  /// Snackbar after an export that skipped unreadable files.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {Full backup saved; {count} file could not be read and was skipped} other {Full backup saved; {count} files could not be read and were skipped}}'**
+  String backupFullExportedWithSkipped({required int count});
+
+  /// Snackbar after the user cancels an export or restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled. Nothing was changed.'**
+  String get backupFullCancelled;
+
+  /// Error when a full backup is started during an import.
+  ///
+  /// In en, this message translates to:
+  /// **'A book import is still running. Wait for it to finish, then try again.'**
+  String get backupFullBusy;
+
+  /// Error when the device lacks space; size is preformatted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough free space on this device. About {size} more is needed.'**
+  String backupFullNotEnoughSpace({required String size});
+
+  /// Error when the archive comes from a newer app version.
+  ///
+  /// In en, this message translates to:
+  /// **'This full backup was made with Mekuru {version}. Update Mekuru, then try again.'**
+  String backupFullTooNew({required String version});
+
+  /// Error when the picked zip has no Mekuru manifest.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is not a Mekuru full backup.'**
+  String get backupFullInvalid;
+
+  /// Error when a staged restore already exists.
+  ///
+  /// In en, this message translates to:
+  /// **'A previous full restore is still waiting to finish. Close Mekuru completely and reopen it first.'**
+  String get backupFullPendingRestore;
+
+  /// Generic export failure snackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Full backup failed: {details}'**
+  String backupFullFailed({required String details});
+
+  /// Generic restore failure snackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Full restore failed: {details}'**
+  String backupFullRestoreFailed({required String details});
+
+  /// Title of the first restore confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Review full backup'**
+  String get backupFullReviewTitle;
+
+  /// Label above the archive contents in the review dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'In this file'**
+  String get backupFullReviewInFile;
+
+  /// Archive provenance line in the review dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {date} with Mekuru {version}'**
+  String backupFullReviewCreated({
+    required String date,
+    required String version,
+  });
+
+  /// Book count fragment used in the restore dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} book} other {{count} books}}'**
+  String backupFullCountBooks({required int count});
+
+  /// Dictionary count fragment used in the restore dialogs.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} dictionary} other {{count} dictionaries}}'**
+  String backupFullCountDictionaries({required int count});
+
+  /// Warning line in the review dialog about SAF-linked manga.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} manga is linked from a folder outside Mekuru and will need re-linking after the restore.} other {{count} manga are linked from folders outside Mekuru and will need re-linking after the restore.}}'**
+  String backupFullReviewExternalManga({required int count});
+
+  /// Label above the current device contents in the review dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'In Mekuru on this device now'**
+  String get backupFullReviewOnDevice;
+
+  /// Button that moves from the review dialog to the replace dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get backupFullReviewContinue;
+
+  /// Title of the second (destructive) restore confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Mekuru\'s data and replace it?'**
+  String get backupFullReplaceTitle;
+
+  /// Body of the destructive confirmation; counts are preformatted fragments.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything currently in Mekuru on this device will be deleted: {books}, {dictionaries}, and all Mekuru settings and reading data. Nothing outside Mekuru is touched. This cannot be undone. Mekuru will close; reopen it to finish.'**
+  String backupFullReplaceBody({
+    required String books,
+    required String dictionaries,
+  });
+
+  /// Checkbox that unlocks the destructive confirm button.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand that Mekuru\'s data on this device will be deleted'**
+  String get backupFullReplaceAcknowledge;
+
+  /// Destructive confirm button label.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Mekuru data and replace'**
+  String get backupFullReplaceConfirm;
+
+  /// Title of the dialog shown once the restore is staged.
+  ///
+  /// In en, this message translates to:
+  /// **'Mekuru will close now'**
+  String get backupFullRestartTitle;
+
+  /// Body of the dialog shown once the restore is staged.
+  ///
+  /// In en, this message translates to:
+  /// **'The full backup is ready. Mekuru closes to finish restoring; open it again to continue with your restored library.'**
+  String get backupFullRestartBody;
+
+  /// Button that exits the app to finish the restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Mekuru'**
+  String get backupFullRestartButton;
+
+  /// Snackbar on the first launch after a successful full restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Full restore complete'**
+  String get backupFullRestoreComplete;
+
+  /// Snackbar on the first launch after a failed full restore.
+  ///
+  /// In en, this message translates to:
+  /// **'The full restore could not be completed and your previous data was kept. ({details})'**
+  String backupFullRestoreBootFailed({required String details});
 }
 
 class _AppLocalizationsDelegate
