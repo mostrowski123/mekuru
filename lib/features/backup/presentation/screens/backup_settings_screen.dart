@@ -4,12 +4,17 @@ import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
 import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
+import 'package:mekuru/features/backup/presentation/widgets/full_backup_progress_dialog.dart';
+import 'package:mekuru/features/backup/presentation/widgets/full_restore_confirm_flow.dart';
 import 'package:mekuru/features/backup/presentation/widgets/restore_conflict_dialog.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
-import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 
+/// Backup & Restore. Two visibly different kinds live here:
+/// - reading data backup (`.mekuru`, small, merges, can run automatically)
+/// - full backup (`.zip`, everything, replaces Mekuru's data, manual only)
+/// Every label carries its kind and file type so the two are never mixed up.
 class BackupSettingsScreen extends ConsumerStatefulWidget {
   const BackupSettingsScreen({super.key});
 
@@ -25,6 +30,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     final l10n = context.l10n;
     final backupState = ref.watch(backupNotifierProvider);
     final restoreState = ref.watch(restoreNotifierProvider);
+    final fullState = ref.watch(fullBackupNotifierProvider);
     final backupHistory = ref.watch(backupHistoryProvider);
     final autoInterval = ref.watch(autoBackupIntervalProvider);
 
@@ -35,233 +41,353 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
         _showConflictDialog(next.pendingConflicts!);
       }
     });
-
     ref.listen(backupNotifierProvider, (prev, next) {
-      if (next.error != null && next.error != prev?.error) {
-        _showSnackbar(_localizeMessage(next.error!), isError: true);
-      } else if (next.successMessage != null &&
-          next.successMessage != prev?.successMessage) {
-        _showSnackbar(_localizeMessage(next.successMessage!));
-      }
+      _announce(
+        prev?.error,
+        next.error,
+        prev?.successMessage,
+        next.successMessage,
+      );
     });
-
     ref.listen(restoreNotifierProvider, (prev, next) {
-      if (next.error != null && next.error != prev?.error) {
-        _showSnackbar(_localizeMessage(next.error!), isError: true);
-      } else if (next.successMessage != null &&
-          next.successMessage != prev?.successMessage) {
-        _showSnackbar(_localizeMessage(next.successMessage!));
-      }
+      _announce(
+        prev?.error,
+        next.error,
+        prev?.successMessage,
+        next.successMessage,
+      );
+    });
+    ref.listen(fullBackupNotifierProvider, (prev, next) {
+      _announce(
+        prev?.error,
+        next.error,
+        prev?.successMessage,
+        next.successMessage,
+      );
     });
 
-    final isWorking = backupState.isWorking || restoreState.isWorking;
+    final isWorking =
+        backupState.isWorking || restoreState.isWorking || fullState.isWorking;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.backupTitle)),
-      body: ListView(
-        children: [
-          if (isWorking) const LinearProgressIndicator(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Card(
-              color: theme.colorScheme.surfaceContainerHighest,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.info_outline, color: theme.colorScheme.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.backupScopeNoteTitle,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.backupScopeNoteBody,
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.backupScopeNoteRestore,
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return PopScope(
+      // A multi-gigabyte export or restore must not be backed out of by
+      // accident; Cancel on the overlay is the way out.
+      canPop: !fullState.isWorking,
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.backupTitle)),
+        body: Stack(
+          children: [
+            _buildContent(
+              context,
+              theme: theme,
+              l10n: l10n,
+              isWorking: isWorking,
+              autoInterval: autoInterval,
+              backupHistory: backupHistory,
             ),
-          ),
-          SettingsSectionHeader(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            title: l10n.backupSectionBackup,
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.backup_outlined,
-              color: theme.colorScheme.primary,
-            ),
-            title: Text(l10n.backupCreateNowTitle),
-            subtitle: Text(l10n.backupCreateNowSubtitle),
-            trailing: isWorking
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.chevron_right),
-            onTap: isWorking
-                ? null
-                : () {
-                    AppHaptics.light();
-                    ref.read(backupNotifierProvider.notifier).createBackup();
-                  },
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.save_alt_outlined,
-              color: theme.colorScheme.primary,
-            ),
-            title: Text(l10n.backupExportTitle),
-            subtitle: Text(l10n.backupExportSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: isWorking
-                ? null
-                : () {
-                    AppHaptics.light();
-                    ref
-                        .read(backupNotifierProvider.notifier)
-                        .exportLatestBackup(
-                          dialogTitle: l10n.backupSaveFileDialogTitle,
-                        );
-                  },
-          ),
-          const Divider(),
-          SettingsSectionHeader(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            title: l10n.backupSectionAutoBackup,
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.schedule_outlined,
-              color: theme.colorScheme.primary,
-            ),
-            title: Text(l10n.backupAutoBackupIntervalTitle),
-            subtitle: autoInterval.when(
-              data: (interval) => Text(_backupIntervalLabel(l10n, interval)),
-              loading: () => Text(l10n.commonLoading),
-              error: (_, _) => Text(l10n.commonError),
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              AppHaptics.light();
-              _showIntervalPicker(context);
-            },
-          ),
-          const Divider(),
-          SettingsSectionHeader(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            title: l10n.backupSectionRestore,
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.file_open_outlined,
-              color: theme.colorScheme.primary,
-            ),
-            title: Text(l10n.backupImportFileTitle),
-            subtitle: Text(l10n.backupImportFileSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: isWorking
-                ? null
-                : () {
-                    AppHaptics.light();
-                    _pickAndConfirmRestore(context);
-                  },
-          ),
-          const Divider(),
-          SettingsSectionHeader(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            title: l10n.backupSectionHistory,
-          ),
-          backupHistory.when(
-            data: (backups) {
-              if (backups.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Text(l10n.backupNoBackupsYet),
-                );
-              }
-              return Column(
-                children: backups
-                    .map(
-                      (info) => _BackupHistoryTile(
-                        info: info,
-                        onRestore: isWorking
-                            ? null
-                            : () {
-                                AppHaptics.light();
-                                _confirmRestore(
-                                  context,
-                                  filePath: info.filePath,
-                                  fileName: info.fileName,
-                                );
-                              },
-                        onDelete: isWorking
-                            ? null
-                            : () {
-                                AppHaptics.light();
-                                _confirmDelete(context, info);
-                              },
-                      ),
-                    )
-                    .toList(),
-              );
-            },
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            error: (e, _) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.backupErrorLoadingHistory(details: e.toString()),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
+            const FullBackupProgressOverlay(),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _buildContent(
+    BuildContext context, {
+    required ThemeData theme,
+    required AppLocalizations l10n,
+    required bool isWorking,
+    required AsyncValue<BackupInterval> autoInterval,
+    required AsyncValue<List<BackupFileInfo>> backupHistory,
+  }) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      children: [
+        if (isWorking) const LinearProgressIndicator(),
+        _InfoCard(
+          title: l10n.backupScopeNoteTitle,
+          body: l10n.backupScopeNoteBody,
+        ),
+        const SizedBox(height: 16),
+        _KindCard(
+          icon: Icons.description_outlined,
+          title: l10n.backupSectionBackup,
+          badge: l10n.backupReadingDataBadge,
+          children: [
+            ListTile(
+              leading: Icon(
+                Icons.backup_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(l10n.backupCreateNowTitle),
+              subtitle: Text(l10n.backupCreateNowSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: isWorking
+                  ? null
+                  : () {
+                      AppHaptics.light();
+                      ref.read(backupNotifierProvider.notifier).createBackup();
+                    },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.save_alt_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(l10n.backupExportTitle),
+              subtitle: Text(l10n.backupExportSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: isWorking
+                  ? null
+                  : () {
+                      AppHaptics.light();
+                      ref
+                          .read(backupNotifierProvider.notifier)
+                          .exportLatestBackup(
+                            dialogTitle: l10n.backupSaveFileDialogTitle,
+                          );
+                    },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.schedule_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(l10n.backupAutoBackupIntervalTitle),
+              subtitle: autoInterval.when(
+                data: (interval) => Text(_backupIntervalLabel(l10n, interval)),
+                loading: () => Text(l10n.commonLoading),
+                error: (_, _) => Text(l10n.commonError),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                AppHaptics.light();
+                _showIntervalPicker(context);
+              },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(
+                Icons.file_open_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(l10n.backupImportFileTitle),
+              subtitle: Text(l10n.backupImportFileSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: isWorking
+                  ? null
+                  : () {
+                      AppHaptics.light();
+                      _pickAndConfirmReadingDataImport(context);
+                    },
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                l10n.backupScopeNoteRestore,
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(
+                l10n.backupSectionHistory,
+                style: theme.textTheme.titleSmall,
+              ),
+            ),
+            backupHistory.when(
+              data: (backups) {
+                if (backups.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                    child: Text(l10n.backupNoBackupsYet),
+                  );
+                }
+                return Column(
+                  children: backups
+                      .map(
+                        (info) => _BackupHistoryTile(
+                          info: info,
+                          onRestore: isWorking
+                              ? null
+                              : () {
+                                  AppHaptics.light();
+                                  _confirmReadingDataImport(
+                                    context,
+                                    filePath: info.filePath,
+                                    fileName: info.fileName,
+                                  );
+                                },
+                          onDelete: isWorking
+                              ? null
+                              : () {
+                                  AppHaptics.light();
+                                  _confirmDelete(context, info);
+                                },
+                        ),
+                      )
+                      .toList(),
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (e, _) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n.backupErrorLoadingHistory(details: e.toString()),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _KindCard(
+          icon: Icons.inventory_2_outlined,
+          title: l10n.backupFullSectionTitle,
+          badge: l10n.backupFullBadge,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(l10n.backupFullScopeBody),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                l10n.backupFullNotIncluded,
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.drive_folder_upload_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(l10n.backupFullExportTitle),
+              subtitle: Text(l10n.backupFullExportSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: isWorking
+                  ? null
+                  : () {
+                      AppHaptics.light();
+                      ref
+                          .read(fullBackupNotifierProvider.notifier)
+                          .exportToFolder();
+                    },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.settings_backup_restore_outlined,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(l10n.backupFullRestoreTitle),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.backupFullRestoreSubtitle),
+                  const SizedBox(height: 6),
+                  Chip(
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    avatar: Icon(
+                      Icons.warning_amber_rounded,
+                      size: 16,
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
+                    label: Text(l10n.backupFullReplacesChip),
+                    labelStyle: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
+                    backgroundColor: theme.colorScheme.errorContainer,
+                    side: BorderSide.none,
+                  ),
+                ],
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: isWorking
+                  ? null
+                  : () {
+                      AppHaptics.light();
+                      _restoreFullBackup();
+                    },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ──────────────── Full backup flows ────────────────
+
+  Future<void> _restoreFullBackup() async {
+    final notifier = ref.read(fullBackupNotifierProvider.notifier);
+    final preview = await notifier.pickAndInspect();
+    if (preview == null || !mounted) return;
+
+    final confirmed = await showFullRestoreConfirmFlow(context, preview);
+    if (!confirmed || !mounted) return;
+
+    final staged = await notifier.stageForRestart();
+    if (!staged || !mounted) return;
+
+    await _showRestartDialog();
+    await notifier.exitApp();
+  }
+
+  Future<void> _showRestartDialog() {
+    final l10n = context.l10n;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: Text(l10n.backupFullRestartTitle),
+          content: Text(l10n.backupFullRestartBody),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.backupFullRestartButton),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ──────────────── Messages ────────────────
+
+  void _announce(
+    BackupMessage? prevError,
+    BackupMessage? error,
+    BackupMessage? prevSuccess,
+    BackupMessage? success,
+  ) {
+    if (error != null && error != prevError) {
+      _showSnackbar(_localizeMessage(error), isError: true);
+    } else if (success != null && success != prevSuccess) {
+      _showSnackbar(_localizeMessage(success));
+    }
+  }
+
   String _localizeMessage(BackupMessage message) {
     final l10n = context.l10n;
+    final details = message.details ?? '';
     return switch (message.kind) {
       BackupMessageKind.backupCreated => l10n.backupCreatedSuccess,
-      BackupMessageKind.backupFailed => l10n.backupFailed(
-        details: message.details ?? '',
-      ),
+      BackupMessageKind.backupFailed => l10n.backupFailed(details: details),
       BackupMessageKind.noBackupsToExport => l10n.backupNoBackupsToExport,
       BackupMessageKind.backupExported => l10n.backupExportedSuccess,
       BackupMessageKind.exportFailed => l10n.backupExportFailed(
-        details: message.details ?? '',
+        details: details,
       ),
       BackupMessageKind.invalidBackupFile => l10n.backupInvalidFile,
       BackupMessageKind.couldNotOpenFile => l10n.backupCouldNotOpenFile(
-        details: message.details ?? '',
+        details: details,
       ),
       BackupMessageKind.restoreSummary => _buildRestoreSummary(
         message.result ??
@@ -276,13 +402,33 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             ),
       ),
       BackupMessageKind.restoreFailed => l10n.backupRestoreFailed(
-        details: message.details ?? '',
+        details: details,
       ),
       BackupMessageKind.booksUpdatedFromBackup =>
         l10n.backupBooksUpdatedFromBackup(count: message.count ?? 0),
       BackupMessageKind.applyBookDataFailed => l10n.backupApplyBookDataFailed(
-        details: message.details ?? '',
+        details: details,
       ),
+      BackupMessageKind.wrongKindFullBackup => l10n.backupWrongKindFullBackup,
+      BackupMessageKind.wrongKindReadingData => l10n.backupWrongKindReadingData,
+      BackupMessageKind.fullExported => l10n.backupFullExported(size: details),
+      BackupMessageKind.fullExportedWithSkipped =>
+        l10n.backupFullExportedWithSkipped(count: message.count ?? 0),
+      BackupMessageKind.fullCancelled => l10n.backupFullCancelled,
+      BackupMessageKind.fullBusy => l10n.backupFullBusy,
+      BackupMessageKind.fullNotEnoughSpace => l10n.backupFullNotEnoughSpace(
+        size: details,
+      ),
+      BackupMessageKind.fullTooNew => l10n.backupFullTooNew(version: details),
+      BackupMessageKind.fullInvalid => l10n.backupFullInvalid,
+      BackupMessageKind.fullPendingRestore => l10n.backupFullPendingRestore,
+      BackupMessageKind.fullFailed => l10n.backupFullFailed(details: details),
+      BackupMessageKind.fullRestoreFailed => l10n.backupFullRestoreFailed(
+        details: details,
+      ),
+      BackupMessageKind.fullRestoreComplete => l10n.backupFullRestoreComplete,
+      BackupMessageKind.fullRestoreBootFailed =>
+        l10n.backupFullRestoreBootFailed(details: details),
     };
   }
 
@@ -349,6 +495,8 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     );
   }
 
+  // ──────────────── Reading data flows ────────────────
+
   Future<void> _showConflictDialog(List<dynamic> conflicts) async {
     final result = await RestoreConflictDialog.show(
       context,
@@ -361,7 +509,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     }
   }
 
-  Future<void> _pickAndConfirmRestore(BuildContext context) async {
+  Future<void> _pickAndConfirmReadingDataImport(BuildContext context) async {
     final l10n = context.l10n;
 
     try {
@@ -372,12 +520,20 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
 
       final filePath = picked.path;
       if (filePath == null) return;
+      if (filePath.toLowerCase().endsWith('.zip')) {
+        _showSnackbar(l10n.backupWrongKindFullBackup, isError: true);
+        return;
+      }
       if (!filePath.endsWith('.mekuru')) {
         _showSnackbar(l10n.backupInvalidFile, isError: true);
         return;
       }
 
-      _confirmRestore(context, filePath: filePath, fileName: picked.name);
+      _confirmReadingDataImport(
+        context,
+        filePath: filePath,
+        fileName: picked.name,
+      );
     } catch (e) {
       _showSnackbar(
         l10n.backupCouldNotOpenFile(details: e.toString()),
@@ -386,7 +542,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     }
   }
 
-  void _confirmRestore(
+  void _confirmReadingDataImport(
     BuildContext context, {
     required String filePath,
     required String fileName,
@@ -497,6 +653,111 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             child: Text(_backupIntervalLabel(l10n, interval)),
           );
         }).toList(),
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final String title;
+  final String body;
+
+  const _InfoCard({required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline, color: theme.colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(body, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One backup kind: a header with its own icon, name and file-type badge,
+/// then its actions. Keeping each kind in its own card is what stops a user
+/// exporting or restoring the wrong one.
+class _KindCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String badge;
+  final List<Widget> children;
+
+  const _KindCard({
+    required this.icon,
+    required this.title,
+    required this.badge,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Icon(icon, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badge,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...children,
+        ],
       ),
     );
   }

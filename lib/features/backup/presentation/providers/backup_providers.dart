@@ -1,8 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/features/backup/data/models/backup_kind.dart';
+import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
+import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/data/repositories/pending_book_data_repository.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
@@ -10,8 +15,10 @@ import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart';
 import 'package:mekuru/features/backup/data/services/pending_dictionary_restore_service.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
+import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
@@ -20,7 +27,12 @@ import 'package:mekuru/features/reader/presentation/providers/reader_providers.d
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/main.dart';
+import 'package:mekuru/shared/utils/format_bytes.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 // ──────────────── Service Providers ────────────────
 
@@ -84,6 +96,22 @@ enum BackupMessageKind {
   restoreFailed,
   booksUpdatedFromBackup,
   applyBookDataFailed,
+  // A .zip picked where a .mekuru was expected, and vice versa.
+  wrongKindFullBackup,
+  wrongKindReadingData,
+  // Full backup (details carries a preformatted size or a version).
+  fullExported,
+  fullExportedWithSkipped,
+  fullCancelled,
+  fullBusy,
+  fullNotEnoughSpace,
+  fullTooNew,
+  fullInvalid,
+  fullPendingRestore,
+  fullFailed,
+  fullRestoreFailed,
+  fullRestoreComplete,
+  fullRestoreBootFailed,
 }
 
 class BackupMessage {
@@ -131,6 +159,47 @@ class BackupMessage {
 
   const BackupMessage.applyBookDataFailed(String details)
     : this._(kind: BackupMessageKind.applyBookDataFailed, details: details);
+
+  const BackupMessage.wrongKindFullBackup()
+    : this._(kind: BackupMessageKind.wrongKindFullBackup);
+
+  const BackupMessage.wrongKindReadingData()
+    : this._(kind: BackupMessageKind.wrongKindReadingData);
+
+  const BackupMessage.fullExported(String size)
+    : this._(kind: BackupMessageKind.fullExported, details: size);
+
+  const BackupMessage.fullExportedWithSkipped(int count)
+    : this._(kind: BackupMessageKind.fullExportedWithSkipped, count: count);
+
+  const BackupMessage.fullCancelled()
+    : this._(kind: BackupMessageKind.fullCancelled);
+
+  const BackupMessage.fullBusy() : this._(kind: BackupMessageKind.fullBusy);
+
+  const BackupMessage.fullNotEnoughSpace(String size)
+    : this._(kind: BackupMessageKind.fullNotEnoughSpace, details: size);
+
+  const BackupMessage.fullTooNew(String version)
+    : this._(kind: BackupMessageKind.fullTooNew, details: version);
+
+  const BackupMessage.fullInvalid()
+    : this._(kind: BackupMessageKind.fullInvalid);
+
+  const BackupMessage.fullPendingRestore()
+    : this._(kind: BackupMessageKind.fullPendingRestore);
+
+  const BackupMessage.fullFailed(String details)
+    : this._(kind: BackupMessageKind.fullFailed, details: details);
+
+  const BackupMessage.fullRestoreFailed(String details)
+    : this._(kind: BackupMessageKind.fullRestoreFailed, details: details);
+
+  const BackupMessage.fullRestoreComplete()
+    : this._(kind: BackupMessageKind.fullRestoreComplete);
+
+  const BackupMessage.fullRestoreBootFailed(String details)
+    : this._(kind: BackupMessageKind.fullRestoreBootFailed, details: details);
 }
 
 class BackupState {
@@ -238,6 +307,10 @@ class RestoreNotifier extends Notifier<RestoreState> {
       final filePath = picked.path;
       if (filePath == null) return;
 
+      if (filePath.toLowerCase().endsWith('.zip')) {
+        state = const RestoreState(error: BackupMessage.wrongKindFullBackup());
+        return;
+      }
       if (!filePath.endsWith('.mekuru')) {
         state = const RestoreState(error: BackupMessage.invalidBackupFile());
         return;
@@ -325,6 +398,8 @@ class RestoreNotifier extends Notifier<RestoreState> {
       } else {
         _showSuccess(BackupMessage.restoreSummary(result));
       }
+    } on WrongBackupKindException {
+      state = const RestoreState(error: BackupMessage.wrongKindFullBackup());
     } on BackupVersionException catch (e) {
       state = RestoreState(error: BackupMessage.restoreFailed(e.toString()));
     } on BackupFormatException catch (e) {
@@ -411,6 +486,287 @@ class RestoreNotifier extends Notifier<RestoreState> {
 final restoreNotifierProvider = NotifierProvider<RestoreNotifier, RestoreState>(
   RestoreNotifier.new,
 );
+
+// ──────────────── Full Backup ────────────────
+
+/// The real full-backup service, bound to this device's directories.
+final fullBackupServiceProvider = FutureProvider<FullBackupApi>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return FullBackupService(
+    db: ref.watch(databaseProvider),
+    backupService: ref.watch(backupServiceProvider),
+    root: await getApplicationSupportDirectory(),
+    cacheDir: await getTemporaryDirectory(),
+    appVersion: info.version,
+  );
+});
+
+/// The two system pickers the full backup screen opens, already mapped to
+/// archive endpoints. Injected so widget tests can script them and
+/// integration tests can point the real service at plain files instead of
+/// SAF dialogs.
+class FullBackupPickers {
+  final Future<FullBackupTarget?> Function() pickExportTarget;
+  final Future<FullBackupSource?> Function() pickSource;
+
+  const FullBackupPickers({
+    required this.pickExportTarget,
+    required this.pickSource,
+  });
+}
+
+final fullBackupPickersProvider = Provider<FullBackupPickers>((ref) {
+  return FullBackupPickers(
+    pickExportTarget: () async {
+      final folder = await AndroidSafService.pickDirectory();
+      return folder == null ? null : FullBackupTarget.tree(folder.treeUri);
+    },
+    pickSource: () async {
+      final document = await AndroidSafService.pickDocument();
+      return document == null
+          ? null
+          : FullBackupSource.uri(
+              document.uri,
+              sizeBytes: document.sizeBytes,
+              displayName: document.displayName,
+            );
+    },
+  );
+});
+
+/// Ends the process so the staged restore applies on the next cold start.
+/// `SystemNavigator.pop` would keep the engine (and the open database)
+/// alive, so a real exit is the only deterministic trigger.
+final appExitProvider = Provider<Future<void> Function()>((ref) {
+  return () async {
+    try {
+      await Sentry.close().timeout(const Duration(seconds: 3));
+    } catch (_) {
+      // Flushing is best effort; captured events persist on disk anyway.
+    }
+    exit(0);
+  };
+});
+
+enum FullBackupPhase {
+  idle,
+  measuring,
+  exporting,
+  preparing,
+  extracting,
+  finishing,
+}
+
+class FullBackupState {
+  final FullBackupPhase phase;
+  final int done;
+  final int total;
+  final BackupMessage? error;
+  final BackupMessage? successMessage;
+
+  /// Set after a successful [FullBackupNotifier.pickAndInspect].
+  final FullBackupPreview? preview;
+  final FullBackupSource? source;
+
+  /// True once staging finished; the screen shows its closing dialog and
+  /// then calls [FullBackupNotifier.exitApp].
+  final bool readyToRestart;
+
+  const FullBackupState({
+    this.phase = FullBackupPhase.idle,
+    this.done = 0,
+    this.total = 0,
+    this.error,
+    this.successMessage,
+    this.preview,
+    this.source,
+    this.readyToRestart = false,
+  });
+
+  bool get isWorking => phase != FullBackupPhase.idle;
+}
+
+class FullBackupNotifier extends Notifier<FullBackupState> {
+  Timer? _autoDismissTimer;
+
+  @override
+  FullBackupState build() {
+    ref.onDispose(() => _autoDismissTimer?.cancel());
+    return const FullBackupState();
+  }
+
+  /// Folder picker → streaming export. Reports the size or the failure.
+  Future<void> exportToFolder() async {
+    if (state.isWorking) return;
+    final target = await ref.read(fullBackupPickersProvider).pickExportTarget();
+    if (target == null) return;
+
+    state = const FullBackupState(phase: FullBackupPhase.measuring);
+    await _run(restoring: false, () async {
+      final api = await ref.read(fullBackupServiceProvider.future);
+      final result = await api.export(
+        target,
+        onProgress: (done, total) => state = FullBackupState(
+          phase: FullBackupPhase.exporting,
+          done: done,
+          total: total,
+        ),
+      );
+      _showSuccess(
+        result.skippedFiles > 0
+            ? BackupMessage.fullExportedWithSkipped(result.skippedFiles)
+            : BackupMessage.fullExported(formatBytes(result.bytes)),
+      );
+    });
+  }
+
+  /// Document picker → manifest validation. Remembers the source for
+  /// [stageForRestart] and returns what the confirmation dialogs show.
+  Future<FullBackupPreview?> pickAndInspect() async {
+    if (state.isWorking) return null;
+    final source = await ref.read(fullBackupPickersProvider).pickSource();
+    if (source == null) return null;
+
+    state = const FullBackupState(phase: FullBackupPhase.preparing);
+    FullBackupPreview? preview;
+    await _run(restoring: true, () async {
+      final api = await ref.read(fullBackupServiceProvider.future);
+      preview = await api.inspect(source);
+      state = FullBackupState(preview: preview, source: source);
+    });
+    return preview;
+  }
+
+  /// Extracts and prepares the inspected archive. Returns true once the
+  /// READY marker exists, i.e. the app must now exit via [exitApp].
+  Future<bool> stageForRestart() async {
+    final source = state.source;
+    final preview = state.preview;
+    if (source == null || state.isWorking) return false;
+
+    state = FullBackupState(
+      phase: FullBackupPhase.preparing,
+      preview: preview,
+      source: source,
+    );
+    var staged = false;
+    await _run(restoring: true, () async {
+      final api = await ref.read(fullBackupServiceProvider.future);
+      await api.stage(
+        source,
+        onProgress: (done, total) => state = FullBackupState(
+          phase: FullBackupPhase.extracting,
+          done: done,
+          total: total,
+          preview: preview,
+          source: source,
+        ),
+      );
+      state = FullBackupState(
+        preview: preview,
+        source: source,
+        readyToRestart: true,
+      );
+      staged = true;
+    });
+    return staged;
+  }
+
+  Future<void> exitApp() => ref.read(appExitProvider)();
+
+  Future<void> cancel() async {
+    final api = await ref.read(fullBackupServiceProvider.future);
+    await api.cancel();
+  }
+
+  void clearState() {
+    _autoDismissTimer?.cancel();
+    state = const FullBackupState();
+  }
+
+  Future<void> _run(
+    Future<void> Function() body, {
+    required bool restoring,
+  }) async {
+    _setWakelock(true);
+    try {
+      await body();
+    } catch (e, st) {
+      final message = _messageFor(e, restoring: restoring);
+      if (message.kind == BackupMessageKind.fullFailed ||
+          message.kind == BackupMessageKind.fullRestoreFailed) {
+        Sentry.captureException(e, stackTrace: st);
+      }
+      state = FullBackupState(error: message);
+    } finally {
+      _setWakelock(false);
+      if (state.isWorking) {
+        state = FullBackupState(
+          preview: state.preview,
+          source: state.source,
+          readyToRestart: state.readyToRestart,
+        );
+      }
+    }
+  }
+
+  static BackupMessage _messageFor(Object error, {required bool restoring}) {
+    return switch (error) {
+      FullBackupBusyException() => const BackupMessage.fullBusy(),
+      FullBackupCancelledException() => const BackupMessage.fullCancelled(),
+      InsufficientSpaceException(:final neededBytes) =>
+        BackupMessage.fullNotEnoughSpace(formatBytes(neededBytes)),
+      FullBackupTooNewException(:final appVersion) => BackupMessage.fullTooNew(
+        appVersion,
+      ),
+      WrongBackupKindException(found: BackupKind.readingData) =>
+        const BackupMessage.wrongKindReadingData(),
+      WrongBackupKindException() => const BackupMessage.wrongKindFullBackup(),
+      FullBackupFormatException() ||
+      BackupFormatException() => const BackupMessage.fullInvalid(),
+      FullBackupPendingRestoreException() =>
+        const BackupMessage.fullPendingRestore(),
+      _ =>
+        restoring
+            ? BackupMessage.fullRestoreFailed(error.toString())
+            : BackupMessage.fullFailed(error.toString()),
+    };
+  }
+
+  /// Multi-gigabyte exports must not be interrupted by the screen sleeping.
+  /// Fire-and-forget: the plugin call must never sit on the critical path
+  /// (under the widget-test binding it does not even complete).
+  static void _setWakelock(bool on) {
+    unawaited(
+      (on ? WakelockPlus.enable() : WakelockPlus.disable()).catchError((
+        Object _,
+      ) {
+        // No wakelock plugin (tests) — harmless.
+      }),
+    );
+  }
+
+  void _showSuccess(BackupMessage message) {
+    _autoDismissTimer?.cancel();
+    state = FullBackupState(successMessage: message);
+    _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
+  }
+}
+
+final fullBackupNotifierProvider =
+    NotifierProvider<FullBackupNotifier, FullBackupState>(
+      FullBackupNotifier.new,
+    );
+
+/// Returns and clears the outcome the boot-time apply left behind:
+/// [StagedFullRestore.resultOk] or `error:<code>`. Consumed once so the
+/// message shows on one launch only.
+Future<String?> consumeFullRestoreResult() async {
+  final prefs = await SharedPreferences.getInstance();
+  final result = prefs.getString(StagedFullRestore.resultPrefKey);
+  if (result != null) await prefs.remove(StagedFullRestore.resultPrefKey);
+  return result;
+}
 
 // ──────────────── Backup History ────────────────
 

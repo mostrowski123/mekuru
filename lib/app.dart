@@ -8,12 +8,14 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/usage_telemetry.dart';
 import 'features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'features/backup/data/services/staged_full_restore.dart';
 import 'features/backup/presentation/providers/backup_providers.dart';
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/data/repositories/book_repository.dart';
 import 'features/library/presentation/providers/library_providers.dart';
 import 'features/library/presentation/screens/library_screen.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
+import 'features/manga/data/services/ocr_store_service.dart';
 import 'features/manga/presentation/providers/pro_access_provider.dart';
 import 'features/reader/presentation/providers/reader_providers.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
@@ -85,6 +87,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
 
       // Backups can do meaningful file I/O, so let the first frame land first.
       ref.read(autoBackupCheckerProvider);
+      unawaited(_announceFullRestoreResult());
       unawaited(ref.read(bookRepositoryProvider).sweepOrphanImportDirs());
       unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
       unawaited(
@@ -94,6 +97,46 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
         ),
       );
     });
+  }
+
+  /// First launch after a full restore: tell the user how it went and
+  /// re-check Pro with Google Play (the entitlement never travels).
+  Future<void> _announceFullRestoreResult() async {
+    final result = await consumeFullRestoreResult();
+    if (result == null || !mounted) return;
+    final messenger = scaffoldMessengerKey.currentState;
+    final messengerContext = scaffoldMessengerKey.currentContext;
+    if (messenger == null ||
+        messengerContext == null ||
+        !messengerContext.mounted) {
+      return;
+    }
+    final l10n = AppLocalizations.of(messengerContext);
+
+    if (result == StagedFullRestore.resultOk) {
+      logUsage('backup.full_restore_applied');
+      unawaited(_restorePurchasesAfterFullRestore());
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.backupFullRestoreComplete)),
+      );
+    } else {
+      final code = result.replaceFirst(StagedFullRestore.resultErrorPrefix, '');
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.backupFullRestoreBootFailed(details: code)),
+          duration: const Duration(seconds: 8),
+        ),
+      );
+    }
+  }
+
+  Future<void> _restorePurchasesAfterFullRestore() async {
+    try {
+      await OcrStoreService.instance.restorePurchases();
+      if (mounted) ref.invalidate(proUnlockedProvider);
+    } catch (e) {
+      debugPrint('[Backup] Purchase restoration after full restore failed: $e');
+    }
   }
 
   @override

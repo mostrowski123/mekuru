@@ -77,13 +77,31 @@ class FullBackupPreview {
 
 typedef FullBackupProgress = void Function(int done, int total);
 
+/// The operations the backup screen drives; [FullBackupService] is the real
+/// implementation, tests substitute a fake.
+abstract interface class FullBackupApi {
+  Future<FullBackupExportResult> export(
+    FullBackupTarget target, {
+    FullBackupProgress? onProgress,
+  });
+
+  Future<FullBackupPreview> inspect(FullBackupSource source);
+
+  Future<PreparedStagedRestore> stage(
+    FullBackupSource source, {
+    FullBackupProgress? onProgress,
+  });
+
+  Future<void> cancel();
+}
+
 /// Orchestrates full backups: snapshot the database, write the sidecar
 /// files, and drive the native streaming zip (see `FullBackupArchive.kt`).
 ///
 /// Export never holds more than the database snapshot in cache. Import
 /// extracts into `<root>/restore_staging/`, fixes it up there, and leaves a
 /// READY marker for [StagedFullRestore] to apply on the next cold start.
-class FullBackupService {
+class FullBackupService implements FullBackupApi {
   FullBackupService({
     required this.db,
     required this.backupService,
@@ -119,6 +137,7 @@ class FullBackupService {
 
   // ──────────────── Export ────────────────
 
+  @override
   Future<FullBackupExportResult> export(
     FullBackupTarget target, {
     FullBackupProgress? onProgress,
@@ -244,6 +263,7 @@ class FullBackupService {
   // ──────────────── Import ────────────────
 
   /// Reads only the manifest and validates it against this device.
+  @override
   Future<FullBackupPreview> inspect(FullBackupSource source) async {
     if (File(
       p.join(_staging.path, StagedFullRestore.readyMarkerName),
@@ -290,6 +310,7 @@ class FullBackupService {
   /// Extracts and prepares the archive for the boot-time apply. On return
   /// the READY marker exists and the app must exit; on failure nothing on the
   /// live device has changed and the staging directory is gone.
+  @override
   Future<PreparedStagedRestore> stage(
     FullBackupSource source, {
     FullBackupProgress? onProgress,
@@ -361,6 +382,7 @@ class FullBackupService {
     }
   }
 
+  @override
   Future<void> cancel() => AndroidSafService.cancelZip();
 
   // ──────────────── Helpers ────────────────

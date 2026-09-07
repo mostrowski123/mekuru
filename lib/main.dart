@@ -12,6 +12,7 @@ import 'core/services/firebase_runtime.dart';
 import 'core/services/sentry_helpers.dart';
 import 'core/services/sentry_setup.dart';
 import 'core/services/usage_telemetry.dart';
+import 'features/backup/data/services/staged_full_restore.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
@@ -62,6 +63,9 @@ Future<void> main() async {
       options.navigatorKey = navigatorKey;
     },
     appRunner: () async {
+      // Must run before anything opens the database: a staged full restore
+      // swaps the database and books directory into place with renames.
+      await applyStagedFullRestoreIfAny();
       await PreloadedAppSettings.load();
       await PreloadedProEntitlement.load();
       runApp(SentryWidget(child: const ProviderScope(child: MekuruApp())));
