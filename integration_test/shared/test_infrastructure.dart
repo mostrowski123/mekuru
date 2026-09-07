@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:mekuru/app.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:path/path.dart' as p;
@@ -268,6 +269,7 @@ Widget buildIntegrationTestApp({
   required Widget home,
   InMemoryAppSettingsStorage? appSettingsStorage,
   InMemoryReaderSettingsStorage? readerSettingsStorage,
+  List<Override> extraOverrides = const [],
 }) {
   return ProviderScope(
     overrides: [
@@ -280,6 +282,7 @@ Widget buildIntegrationTestApp({
       ),
       proUnlockedProvider.overrideWithBuild((ref, notifier) => false),
       autoBackupCheckerProvider.overrideWith((ref) async {}),
+      ...extraOverrides,
     ],
     child: buildLocalizedTestApp(home: home),
   );
