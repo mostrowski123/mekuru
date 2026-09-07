@@ -282,4 +282,29 @@ void main() {
       expect(book.pageProgressionDirection, 'rtl');
     });
   });
+
+  group('BackupService.createSettingsOnlyManifest', () {
+    test('carries every backed-up preference and nothing else', () async {
+      SharedPreferences.setMockInitialValues({
+        'app.theme_mode': 'dark',
+        'reader.font_size': 22.0,
+        'unrelated.key': 'ignored',
+      });
+      await db
+          .into(db.books)
+          .insert(BooksCompanion.insert(title: 'Book', filePath: '/fake'));
+
+      final manifest = await backupService.createSettingsOnlyManifest();
+
+      expect(manifest.version, 1);
+      expect(manifest.settings.app['app.theme_mode'], 'dark');
+      expect(manifest.settings.reader['reader.font_size'], 22.0);
+      expect(manifest.settings.app.containsKey('unrelated.key'), isFalse);
+      // The full backup ships the database itself; the sidecar manifest must
+      // not duplicate rows or trigger per-book hashing.
+      expect(manifest.books, isEmpty);
+      expect(manifest.savedWords, isEmpty);
+      expect(manifest.dictionaryPreferences, isEmpty);
+    });
+  });
 }

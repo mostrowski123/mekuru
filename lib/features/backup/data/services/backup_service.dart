@@ -30,11 +30,29 @@ class BackupService {
   static const List<String> readerKeys =
       SharedPreferencesReaderSettingsStorage.allKeys;
 
-  Future<BackupManifest> createBackup() async {
+  /// Every backed-up SharedPreferences value, typed as stored.
+  Future<BackupSettings> collectSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    return BackupSettings(
+      app: _readPrefsMap(prefs, appKeys),
+      reader: _readPrefsMap(prefs, readerKeys),
+    );
+  }
 
-    final appSettings = _readPrefsMap(prefs, appKeys);
-    final readerSettings = _readPrefsMap(prefs, readerKeys);
+  /// A manifest carrying only settings. The full backup ships the database
+  /// itself, so this sidecar must not duplicate rows or hash every book.
+  Future<BackupManifest> createSettingsOnlyManifest() async {
+    return BackupManifest(
+      version: BackupManifest.currentVersion,
+      createdAt: DateTime.now().toUtc(),
+      settings: await collectSettings(),
+      savedWords: const [],
+      books: const [],
+    );
+  }
+
+  Future<BackupManifest> createBackup() async {
+    final settings = await collectSettings();
     final dictionaryPreferences =
         await (_db.select(_db.dictionaryMetas)
               ..where((t) => t.isHidden.equals(false))
@@ -128,7 +146,7 @@ class BackupService {
     return BackupManifest(
       version: BackupManifest.currentVersion,
       createdAt: DateTime.now().toUtc(),
-      settings: BackupSettings(app: appSettings, reader: readerSettings),
+      settings: settings,
       dictionaryPreferences: dictionaryPreferences
           .map(
             (dictionary) => BackupDictionaryPreference(

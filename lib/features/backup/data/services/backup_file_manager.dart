@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:path/path.dart' as path;
@@ -133,6 +134,13 @@ class BackupFileManager {
   /// and parses it.
   Future<BackupManifest> importBackupFile(String externalPath) async {
     final file = File(externalPath);
+    final head = await file
+        .openRead(0, 4)
+        .fold<List<int>>([], (acc, chunk) => acc..addAll(chunk));
+    if (BackupKind.isZipSignature(head)) {
+      // A zip is the full backup kind; say so instead of "invalid JSON".
+      throw const WrongBackupKindException(BackupKind.full);
+    }
     final content = await file.readAsString();
     return BackupSerializer.decode(content);
   }

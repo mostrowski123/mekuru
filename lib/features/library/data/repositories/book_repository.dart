@@ -61,6 +61,11 @@ class BookRepository {
     r'^(?:book|manga)_(\d+)(?:_[0-9a-f]{8})?$',
   );
 
+  /// True while any import is writing into `books/` (see
+  /// [inFlightImportDirNames]); a full backup taken now would ship a
+  /// half-written directory.
+  static bool get hasImportInFlight => inFlightImportDirNames.isNotEmpty;
+
   static const _booksSegment = 'books';
 
   /// The single root every import dir lives under. Keep [_booksSegment] and

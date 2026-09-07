@@ -23,10 +23,14 @@ abstract class ReviewPromptStorage {
 }
 
 class SharedPreferencesReviewPromptStorage implements ReviewPromptStorage {
-  static const _firstSeenAtKey = 'review_prompt.first_seen_at';
-  static const _qualifyingSessionsKey = 'review_prompt.qualifying_sessions';
-  static const _requestCountKey = 'review_prompt.request_count';
-  static const _lastRequestAtKey = 'review_prompt.last_request_at';
+  /// Every key below starts with this. The full restore keeps these keys
+  /// across its preference wipe: they are device history, not app state.
+  static const keyPrefix = 'review_prompt.';
+
+  static const _firstSeenAtKey = '${keyPrefix}first_seen_at';
+  static const _qualifyingSessionsKey = '${keyPrefix}qualifying_sessions';
+  static const _requestCountKey = '${keyPrefix}request_count';
+  static const _lastRequestAtKey = '${keyPrefix}last_request_at';
 
   @override
   Future<ReviewPromptState> load() async {

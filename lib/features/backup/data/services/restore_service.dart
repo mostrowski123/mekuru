@@ -70,18 +70,27 @@ class RestoreService {
   Future<bool> restoreSettings(BackupManifest manifest) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
-      for (final entry in manifest.settings.app.entries) {
-        await _writePrefsValue(prefs, entry.key, entry.value);
-      }
-      for (final entry in manifest.settings.reader.entries) {
-        await _writePrefsValue(prefs, entry.key, entry.value);
-      }
-
+      await applySettings(prefs, manifest.settings);
       _syncPreloadedThemeSettings(manifest.settings.app);
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// Writes every backed-up preference into [prefs] with its original type.
+  ///
+  /// Static and database-free on purpose: the boot-time full restore applies
+  /// settings before any [AppDatabase] exists.
+  static Future<void> applySettings(
+    SharedPreferences prefs,
+    BackupSettings settings,
+  ) async {
+    for (final entry in settings.app.entries) {
+      await _writePrefsValue(prefs, entry.key, entry.value);
+    }
+    for (final entry in settings.reader.entries) {
+      await _writePrefsValue(prefs, entry.key, entry.value);
     }
   }
 
@@ -442,7 +451,7 @@ class RestoreService {
     }
   }
 
-  Future<void> _writePrefsValue(
+  static Future<void> _writePrefsValue(
     SharedPreferences prefs,
     String key,
     dynamic value,
@@ -455,6 +464,8 @@ class RestoreService {
       await prefs.setDouble(key, value);
     } else if (value is bool) {
       await prefs.setBool(key, value);
+    } else if (value is List<String>) {
+      await prefs.setStringList(key, value);
     }
   }
 }

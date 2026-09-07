@@ -81,8 +81,12 @@ class AppDatabase extends _$AppDatabase {
         'ALTER TABLE books ADD COLUMN last_read_progression REAL NULL',
   };
 
+  /// The schema this build writes. Static so code that must not open a
+  /// database (the boot-time full restore) can still compare versions.
+  static const int latestSchemaVersion = 23;
+
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => latestSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
