@@ -433,9 +433,14 @@ class AppDatabase extends _$AppDatabase {
     database.execute('PRAGMA busy_timeout = 5000;');
   }
 
+  /// The on-disk file drift_flutter creates for [_databaseName] under the
+  /// app-support directory. The full backup ships and swaps this file.
+  static const databaseFileName = '$_databaseName.sqlite';
+  static const _databaseName = 'mekuru_db';
+
   static QueryExecutor _openConnection() {
     return driftDatabase(
-      name: 'mekuru_db',
+      name: _databaseName,
       native: DriftNativeOptions(
         databaseDirectory: getApplicationSupportDirectory,
         setup: setupNativeConnection,

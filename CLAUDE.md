@@ -42,6 +42,8 @@ Schema version lives in `lib/core/database/database_provider.dart` (`schemaVersi
 
 In-memory test databases skip migrations entirely (they start at the latest schema). `test/database_migration_test.dart` exercises real file-backed migrations in `flutter test`; integration tests cover the rest.
 
+**Full restore swaps the database file at boot.** `applyStagedFullRestoreIfAny()` (`lib/features/backup/data/services/staged_full_restore.dart`) must stay the first statement in `main`'s app runner: it renames `restore_staging/mekuru_db.sqlite` and `restore_staging/books/` into place, and nothing may open the database or touch `books/` before it. The `restore_staging/` and `restore_rollback/` directories under app support belong to it; don't sweep or reuse them.
+
 `PRAGMA foreign_keys` is **OFF** app-wide — cascade deletes are enforced in repository code (e.g. collections), never rely on DB-level cascades. Newer tables: `ReadingSessions`/`WordEvents` (stats, v19), `Collections`/`BookCollections` (v21; per-collection `position` in v22).
 
 ## Japanese text pipeline

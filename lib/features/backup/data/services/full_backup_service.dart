@@ -47,14 +47,12 @@ class InsufficientSpaceException implements Exception {
 class FullBackupExportResult {
   final String location;
   final int bytes;
-  final int entries;
   final int skippedFiles;
   final FullBackupManifest manifest;
 
   const FullBackupExportResult({
     required this.location,
     required this.bytes,
-    required this.entries,
     required this.skippedFiles,
     required this.manifest,
   });
@@ -124,7 +122,9 @@ class FullBackupService implements FullBackupApi {
   final DateTime Function() _clock;
 
   static const exportDirName = 'full_backup_export';
-  static const excludedDirNames = ['.trash'];
+
+  /// The orphan-sweep quarantine is never worth shipping.
+  static const excludedDirNames = [BookRepository.trashDirName];
   static const _sidecarLevel = 6;
 
   /// Headroom kept free on top of the computed need.
@@ -187,7 +187,6 @@ class FullBackupService implements FullBackupApi {
         externalMangaCount: counts.external,
         dbBytes: snapshot.lengthSync(),
         booksBytes: measured.bytes,
-        entryCount: measured.files + 3,
       );
       final manifestFile = File(
         p.join(exportDir.path, FullBackupManifest.manifestEntry),
@@ -217,13 +216,12 @@ class FullBackupService implements FullBackupApi {
           _sidecarLevel,
         ),
       ];
-      final roots = [ZipRoot(_booksDir.path, FullBackupManifest.booksPrefix)];
-
       final result = await _withProgress(onProgress, () {
         return switch (target) {
           FullBackupFileTarget(:final path) => AndroidSafService.writeZipToFile(
             path: path,
-            roots: roots,
+            rootPath: _booksDir.path,
+            rootPrefix: FullBackupManifest.booksPrefix,
             files: files,
             excludeDirNames: excludedDirNames,
           ),
@@ -231,7 +229,8 @@ class FullBackupService implements FullBackupApi {
             AndroidSafService.writeZipToTree(
               treeUri: treeUri,
               displayName: _exportFileName(),
-              roots: roots,
+              rootPath: _booksDir.path,
+              rootPrefix: FullBackupManifest.booksPrefix,
               files: files,
               excludeDirNames: excludedDirNames,
             ),
@@ -251,7 +250,6 @@ class FullBackupService implements FullBackupApi {
       return FullBackupExportResult(
         location: result.location,
         bytes: result.bytes,
-        entries: result.entries,
         skippedFiles: result.skippedFiles,
         manifest: manifest,
       );

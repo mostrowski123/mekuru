@@ -1,4 +1,5 @@
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 
 /// Describes one full-backup archive (`mekuru-full-backup-*.zip`).
 ///
@@ -12,8 +13,11 @@ class FullBackupManifest {
 
   static const String manifestEntry = 'manifest.json';
   static const String settingsEntry = 'settings.mekuru';
-  static const String databaseEntry = 'mekuru_db.sqlite';
-  static const String booksPrefix = 'books/';
+
+  /// Archive entries mirror the on-disk layout under app support, so the
+  /// staged restore can move them into place by name.
+  static const String databaseEntry = AppDatabase.databaseFileName;
+  static const String booksPrefix = '${BookRepository.booksSegment}/';
 
   final int format;
   final String appVersion;
@@ -28,7 +32,6 @@ class FullBackupManifest {
   final int externalMangaCount;
   final int dbBytes;
   final int booksBytes;
-  final int entryCount;
 
   const FullBackupManifest({
     required this.format,
@@ -41,7 +44,6 @@ class FullBackupManifest {
     required this.externalMangaCount,
     required this.dbBytes,
     required this.booksBytes,
-    required this.entryCount,
   });
 
   /// Uncompressed bytes a restore needs on disk.
@@ -58,7 +60,6 @@ class FullBackupManifest {
     'externalMangaCount': externalMangaCount,
     'dbBytes': dbBytes,
     'booksBytes': booksBytes,
-    'entryCount': entryCount,
   };
 
   /// Parses a manifest, tolerating unknown keys and missing counts, and
@@ -98,7 +99,6 @@ class FullBackupManifest {
       externalMangaCount: count('externalMangaCount'),
       dbBytes: count('dbBytes'),
       booksBytes: count('booksBytes'),
-      entryCount: count('entryCount'),
     );
   }
 }

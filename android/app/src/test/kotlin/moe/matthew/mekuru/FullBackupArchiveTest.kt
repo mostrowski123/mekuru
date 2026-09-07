@@ -64,9 +64,10 @@ class FullBackupArchiveTest {
     fun planListsTopLevelFilesFirstAndPrunesTrashAndTmp() {
         val books = seedBooks()
         val plan = FullBackupArchive.plan(
-            roots = listOf(books to "books/"),
             files = topLevelFiles(),
-            excludeDirNames = setOf(".trash"),
+            root = books,
+            walked = FullBackupArchive.walk(books, setOf(".trash")),
+            prefix = "books/",
         )
 
         val names = plan.entries.map { it.name }
@@ -90,9 +91,10 @@ class FullBackupArchiveTest {
     fun writeThenExtractRoundTripsEveryByte() {
         val books = seedBooks()
         val plan = FullBackupArchive.plan(
-            roots = listOf(books to "books/"),
             files = topLevelFiles(),
-            excludeDirNames = setOf(".trash"),
+            root = books,
+            walked = FullBackupArchive.walk(books, setOf(".trash")),
+            prefix = "books/",
         )
 
         val progress = mutableListOf<Long>()
@@ -147,9 +149,10 @@ class FullBackupArchiveTest {
     fun fileVanishingBetweenPlanAndWriteIsSkippedNotFatal() {
         val books = seedBooks()
         val plan = FullBackupArchive.plan(
-            roots = listOf(books to "books/"),
             files = topLevelFiles(),
-            excludeDirNames = setOf(".trash"),
+            root = books,
+            walked = FullBackupArchive.walk(books, setOf(".trash")),
+            prefix = "books/",
         )
         assertTrue(File(books, "manga_2/pages/001.jpg").delete())
 
@@ -169,9 +172,10 @@ class FullBackupArchiveTest {
     fun readEntryTextFindsTheFirstEntryWithoutTheRestOfTheStream() {
         val books = seedBooks()
         val plan = FullBackupArchive.plan(
-            roots = listOf(books to "books/"),
             files = topLevelFiles(),
-            excludeDirNames = setOf(".trash"),
+            root = books,
+            walked = FullBackupArchive.walk(books, setOf(".trash")),
+            prefix = "books/",
         )
         val out = ByteArrayOutputStream()
         FullBackupArchive.write(out, plan)
@@ -247,9 +251,10 @@ class FullBackupArchiveTest {
     fun cancellationStopsWriteAndExtract() {
         val books = seedBooks()
         val plan = FullBackupArchive.plan(
-            roots = listOf(books to "books/"),
             files = topLevelFiles(),
-            excludeDirNames = setOf(".trash"),
+            root = books,
+            walked = FullBackupArchive.walk(books, setOf(".trash")),
+            prefix = "books/",
         )
         var writeCalls = 0
         try {

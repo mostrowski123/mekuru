@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -133,16 +134,32 @@ class BackupFileManager {
   /// Copies an external backup file (from file picker) to the backup directory
   /// and parses it.
   Future<BackupManifest> importBackupFile(String externalPath) async {
-    final file = File(externalPath);
-    final head = await file
-        .openRead(0, 4)
-        .fold<List<int>>([], (acc, chunk) => acc..addAll(chunk));
-    if (BackupKind.isZipSignature(head)) {
+    final bytes = await File(externalPath).readAsBytes();
+    if (BackupKind.isZipSignature(bytes)) {
       // A zip is the full backup kind; say so instead of "invalid JSON".
       throw const WrongBackupKindException(BackupKind.full);
     }
-    final content = await file.readAsString();
-    return BackupSerializer.decode(content);
+    return BackupSerializer.decode(utf8.decode(bytes));
+  }
+
+  /// Opens the system picker for a reading data backup and vets the pick:
+  /// null when cancelled, [WrongBackupKindException] when the file is a zip
+  /// (a full backup), [BackupFormatException] for any other non-`.mekuru`
+  /// file. The one place both import entry points go through.
+  static Future<PlatformFile?> pickReadingDataBackup() async {
+    final picked = await pickBackupFile();
+    final path = picked?.path;
+    if (picked == null || path == null) return null;
+    final head = await File(
+      path,
+    ).openRead(0, 4).fold<List<int>>([], (acc, chunk) => acc..addAll(chunk));
+    if (BackupKind.isZipSignature(head)) {
+      throw const WrongBackupKindException(BackupKind.full);
+    }
+    if (!path.endsWith(_extension)) {
+      throw BackupFormatException('Not a $_extension file');
+    }
+    return picked;
   }
 
   /// Deletes a backup file.

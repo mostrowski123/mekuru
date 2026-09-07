@@ -4408,12 +4408,6 @@ abstract class AppLocalizations {
   /// **'Extracting full backup…'**
   String get backupFullProgressExtracting;
 
-  /// Progress dialog title while validating the staged restore.
-  ///
-  /// In en, this message translates to:
-  /// **'Checking the restored data…'**
-  String get backupFullProgressFinishing;
-
   /// Progress dialog byte counter; both values are preformatted sizes.
   ///
   /// In en, this message translates to:

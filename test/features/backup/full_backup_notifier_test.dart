@@ -27,7 +27,6 @@ void main() {
     pickedTreeUri = 'content://tree/backups';
     pickedDocument = const AndroidSafDocument(
       uri: 'content://doc/picked.zip',
-      displayName: 'mekuru-full-backup.zip',
       sizeBytes: 4321,
     );
     exitCalls = 0;
@@ -47,7 +46,6 @@ void main() {
                   : FullBackupSource.uri(
                       document.uri,
                       sizeBytes: document.sizeBytes,
-                      displayName: document.displayName,
                     );
             },
           ),
@@ -168,7 +166,6 @@ void main() {
       final source = state().source! as FullBackupUriSource;
       expect(source.uri, 'content://doc/picked.zip');
       expect(source.sizeBytes, 4321);
-      expect(source.displayName, 'mekuru-full-backup.zip');
       expect(state().isWorking, isFalse);
     });
 
@@ -238,7 +235,6 @@ void main() {
       );
       // Exiting is the screen's explicit last step, after its closing dialog.
       expect(exitCalls, 0);
-      expect(state().readyToRestart, isTrue);
       expect(state().isWorking, isFalse);
 
       await notifier().exitApp();
@@ -254,7 +250,6 @@ void main() {
         expect(await notifier().stageForRestart(), isFalse);
 
         expect(exitCalls, 0);
-        expect(state().readyToRestart, isFalse);
         expect(state().error?.kind, BackupMessageKind.fullInvalid);
         expect(state().isWorking, isFalse);
       },

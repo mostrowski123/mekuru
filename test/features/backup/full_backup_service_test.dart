@@ -67,7 +67,6 @@ void main() {
           externalMangaCount: 1,
           dbBytes: 1000,
           booksBytes: 4000,
-          entryCount: 20,
         ).toJson(),
       );
 
@@ -111,6 +110,8 @@ void main() {
   }
 
   setUp(() async {
+    // The stage tests build a second, file-backed database on purpose.
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     root = await Directory.systemTemp.createTemp('full_backup_root_');
     cache = await Directory.systemTemp.createTemp('full_backup_cache_');
     booksDir().createSync();
@@ -213,9 +214,8 @@ void main() {
 
         expect(zipArgs!['path'], target);
         expect(zipArgs!['excludeDirNames'], ['.trash']);
-        expect(zipArgs!['roots'], [
-          {'path': booksDir().path, 'prefix': FullBackupManifest.booksPrefix},
-        ]);
+        expect(zipArgs!['rootPath'], booksDir().path);
+        expect(zipArgs!['rootPrefix'], FullBackupManifest.booksPrefix);
         final files = (zipArgs!['files'] as List)
             .map((e) => Map<Object?, Object?>.from(e as Map))
             .toList();
@@ -239,7 +239,6 @@ void main() {
         expect(snapshotBytes, greaterThan(0));
         expect(manifest.dbBytes, snapshotBytes);
         expect(manifest.booksBytes, 5000);
-        expect(manifest.entryCount, 15);
         expect(
           BackupSerializer.decode(settingsText!).settings.app['app.theme_mode'],
           'dark',
@@ -248,7 +247,6 @@ void main() {
 
         expect(result.location, target);
         expect(result.bytes, 777);
-        expect(result.entries, 15);
         expect(result.skippedFiles, 0);
         expect(result.manifest.bookCount, 2);
         expect(exportDir().existsSync(), isFalse);

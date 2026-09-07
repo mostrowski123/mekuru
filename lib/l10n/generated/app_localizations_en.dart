@@ -2590,9 +2590,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupFullProgressExtracting => 'Extracting full backup…';
 
   @override
-  String get backupFullProgressFinishing => 'Checking the restored data…';
-
-  @override
   String backupFullProgressBytes({
     required String done,
     required String total,

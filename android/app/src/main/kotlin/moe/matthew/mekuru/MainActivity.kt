@@ -252,8 +252,11 @@ class MainActivity : FlutterActivity() {
                 }
                 val exclude = (call.argument<List<String>>("excludeDirNames") ?: emptyList()).toSet()
                 runIo(result) {
-                    val plan = FullBackupArchive.plan(listOf(File(path) to ""), emptyList(), exclude)
-                    mapOf("bytes" to plan.totalBytes, "files" to plan.entries.size)
+                    val root = File(path)
+                    val walked = FullBackupArchive.walk(root, exclude)
+                    // The export that follows reuses this walk instead of a second one.
+                    lastWalk = Triple(root.path, exclude, walked)
+                    mapOf("bytes" to walked.sumOf { it.length() }, "files" to walked.size)
                 }
             }
             "writeZipToTree" -> {
@@ -365,28 +368,23 @@ class MainActivity : FlutterActivity() {
             callback.success(null)
             return
         }
-        try {
+        // Querying the provider for the size can block on a cold provider.
+        runIo(callback) {
             try {
                 contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             } catch (_: SecurityException) {
                 // Not persistable; the grant still lasts for this process.
             }
-            var displayName: String? = null
-            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (cursor.moveToFirst() && nameIdx >= 0) displayName = cursor.getString(nameIdx)
-            }
-            callback.success(
-                mapOf(
-                    "uri" to uri.toString(),
-                    "displayName" to displayName,
-                    "sizeBytes" to documentSize(uri),
-                ),
-            )
-        } catch (e: Exception) {
-            callback.error("saf_document_failed", describeThrowable(e), null)
+            mapOf("uri" to uri.toString(), "sizeBytes" to documentSize(uri))
         }
     }
+
+    /**
+     * The books walk `measureTree` just did, keyed by root path and exclusions,
+     * so the export that follows does not walk the tree a second time. Consumed
+     * once; never reused across exports, which could see new books.
+     */
+    private var lastWalk: Triple<String, Set<String>, List<File>>? = null
 
     /** Size of a document, or 0 when the provider does not report one. */
     private fun documentSize(uri: Uri): Long {
@@ -417,10 +415,8 @@ class MainActivity : FlutterActivity() {
             )
 
     private fun parseZipPlan(call: MethodCall): FullBackupArchive.Plan {
-        val roots = (call.argument<List<*>>("roots") ?: emptyList<Any?>()).map { raw ->
-            val map = raw as Map<*, *>
-            File(map["path"] as String) to (map["prefix"] as String)
-        }
+        val root = call.argument<String>("rootPath")?.let { File(it) }
+        val prefix = call.argument<String>("rootPrefix") ?: ""
         val files = (call.argument<List<*>>("files") ?: emptyList<Any?>()).map { raw ->
             val map = raw as Map<*, *>
             FullBackupArchive.Entry(
@@ -430,7 +426,13 @@ class MainActivity : FlutterActivity() {
             )
         }
         val exclude = (call.argument<List<String>>("excludeDirNames") ?: emptyList()).toSet()
-        return FullBackupArchive.plan(roots, files, exclude)
+        val walked = when {
+            root == null -> emptyList()
+            lastWalk?.first == root.path && lastWalk?.second == exclude -> lastWalk!!.third
+            else -> FullBackupArchive.walk(root, exclude)
+        }
+        lastWalk = null
+        return FullBackupArchive.plan(files, root, walked, prefix)
     }
 
     /**
@@ -503,7 +505,7 @@ class MainActivity : FlutterActivity() {
     }
 
     /**
-     * Like [runIo] for the streaming archive operations: one at a time, with
+     * [runIo] for the streaming archive operations: one at a time, with
      * progress and cancellation state reset per run, and a cancellation
      * reported as `{cancelled: true}` rather than as an error.
      */
@@ -515,20 +517,15 @@ class MainActivity : FlutterActivity() {
         archiveCancelled = false
         archiveDone = 0L
         archiveTotal = 0L
-        Thread {
+        runIo(result) {
             try {
-                val value = task()
-                runOnUiThread { result.success(value) }
+                task()
             } catch (_: FullBackupArchive.CancelledException) {
-                runOnUiThread { result.success(mapOf("cancelled" to true)) }
-            } catch (e: SafFailure) {
-                runOnUiThread { result.error(e.code, e.reason, e.details()) }
-            } catch (e: Exception) {
-                runOnUiThread { result.error("saf_io_error", describeThrowable(e), null) }
+                mapOf("cancelled" to true)
             } finally {
                 archiveBusy.set(false)
             }
-        }.start()
+        }
     }
 
     // AnkiDroid's content provider can block for seconds while its process

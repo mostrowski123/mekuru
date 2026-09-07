@@ -110,24 +110,9 @@ class AndroidSafFailure {
 /// A single document picked with the system file picker.
 class AndroidSafDocument {
   final String uri;
-  final String? displayName;
   final int sizeBytes;
 
-  const AndroidSafDocument({
-    required this.uri,
-    this.displayName,
-    required this.sizeBytes,
-  });
-}
-
-/// A directory tree the native zip writer walks: every file under [path]
-/// becomes an entry named `prefix + relativePath`.
-class ZipRoot {
-  final String path;
-  final String prefix;
-  const ZipRoot(this.path, this.prefix);
-
-  Map<String, Object?> toMap() => {'path': path, 'prefix': prefix};
+  const AndroidSafDocument({required this.uri, required this.sizeBytes});
 }
 
 /// One explicit file for the native zip writer, with its deflate level.
@@ -403,7 +388,6 @@ class AndroidSafService {
       if (uri == null || uri.isEmpty) return null;
       return AndroidSafDocument(
         uri: uri,
-        displayName: result['displayName'] as String?,
         sizeBytes: (result['sizeBytes'] as num?)?.toInt() ?? 0,
       );
     } on MissingPluginException {
@@ -444,19 +428,22 @@ class AndroidSafService {
     },
   );
 
-  /// Streams a zip of [files] then [roots] into a new document named
-  /// [displayName] inside the SAF tree. Throws [PlatformException] on failure.
+  /// Streams a zip of [files] then every file under [rootPath] (named
+  /// `rootPrefix + relativePath`) into a new document called [displayName]
+  /// inside the SAF tree. Throws [PlatformException] on failure.
   static Future<ZipWriteResult> writeZipToTree({
     required String treeUri,
     required String displayName,
-    required List<ZipRoot> roots,
+    required String rootPath,
+    required String rootPrefix,
     required List<ZipFileEntry> files,
     List<String> excludeDirNames = const [],
   }) => _invoke('writeZipToTree', () async {
     final result = await _channel.invokeMethod<Object?>('writeZipToTree', {
       'treeUri': treeUri,
       'displayName': displayName,
-      'roots': roots.map((r) => r.toMap()).toList(),
+      'rootPath': rootPath,
+      'rootPrefix': rootPrefix,
       'files': files.map((f) => f.toMap()).toList(),
       'excludeDirNames': excludeDirNames,
     });
@@ -466,13 +453,15 @@ class AndroidSafService {
   /// Same as [writeZipToTree] but onto a plain file path (tests, fallbacks).
   static Future<ZipWriteResult> writeZipToFile({
     required String path,
-    required List<ZipRoot> roots,
+    required String rootPath,
+    required String rootPrefix,
     required List<ZipFileEntry> files,
     List<String> excludeDirNames = const [],
   }) => _invoke('writeZipToFile', () async {
     final result = await _channel.invokeMethod<Object?>('writeZipToFile', {
       'path': path,
-      'roots': roots.map((r) => r.toMap()).toList(),
+      'rootPath': rootPath,
+      'rootPrefix': rootPrefix,
       'files': files.map((f) => f.toMap()).toList(),
       'excludeDirNames': excludeDirNames,
     });

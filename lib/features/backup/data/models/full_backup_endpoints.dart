@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
-
 /// Where a full backup export is written. The app uses a SAF folder the
 /// user picked; tests and any non-SAF fallback use a plain file path.
 sealed class FullBackupTarget {
@@ -25,34 +23,21 @@ final class FullBackupFileTarget extends FullBackupTarget {
 sealed class FullBackupSource {
   const FullBackupSource();
 
-  const factory FullBackupSource.uri(
-    String uri, {
-    required int sizeBytes,
-    String? displayName,
-  }) = FullBackupUriSource;
+  const factory FullBackupSource.uri(String uri, {required int sizeBytes}) =
+      FullBackupUriSource;
 
   const factory FullBackupSource.file(String path) = FullBackupFileSource;
 
   /// Archive size, used as the extraction progress total.
   int get sizeBytes;
-
-  String get displayName;
 }
 
 final class FullBackupUriSource extends FullBackupSource {
   final String uri;
   @override
   final int sizeBytes;
-  final String? _displayName;
 
-  const FullBackupUriSource(
-    this.uri, {
-    required this.sizeBytes,
-    String? displayName,
-  }) : _displayName = displayName;
-
-  @override
-  String get displayName => _displayName ?? uri;
+  const FullBackupUriSource(this.uri, {required this.sizeBytes});
 }
 
 final class FullBackupFileSource extends FullBackupSource {
@@ -64,7 +49,4 @@ final class FullBackupFileSource extends FullBackupSource {
     final file = File(path);
     return file.existsSync() ? file.lengthSync() : 0;
   }
-
-  @override
-  String get displayName => p.basename(path);
 }

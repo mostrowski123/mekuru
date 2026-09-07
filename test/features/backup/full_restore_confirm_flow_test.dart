@@ -26,7 +26,6 @@ void main() {
       externalMangaCount: externalManga,
       dbBytes: 1000,
       booksBytes: 4000,
-      entryCount: 20,
     ),
     sizeBytes: 3 * 1024 * 1024,
     currentBookCount: 2,

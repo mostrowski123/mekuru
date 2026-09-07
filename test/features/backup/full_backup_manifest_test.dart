@@ -19,7 +19,6 @@ void main() {
         externalMangaCount: 1,
         dbBytes: 1000,
         booksBytes: 5000,
-        entryCount: 42,
       );
 
   test('round-trips through JSON', () {

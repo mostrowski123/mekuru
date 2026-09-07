@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
 import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
+import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/backup/presentation/widgets/full_backup_progress_dialog.dart';
@@ -9,7 +11,9 @@ import 'package:mekuru/features/backup/presentation/widgets/full_restore_confirm
 import 'package:mekuru/features/backup/presentation/widgets/restore_conflict_dialog.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 
 /// Backup & Restore. Two visibly different kinds live here:
 /// - reading data backup (`.mekuru`, small, merges, can run automatically)
@@ -30,7 +34,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     final l10n = context.l10n;
     final backupState = ref.watch(backupNotifierProvider);
     final restoreState = ref.watch(restoreNotifierProvider);
-    final fullState = ref.watch(fullBackupNotifierProvider);
+    // Only the flag: progress ticks must repaint the overlay, not this page.
+    final fullWorking = ref.watch(
+      fullBackupNotifierProvider.select((s) => s.isWorking),
+    );
     final backupHistory = ref.watch(backupHistoryProvider);
     final autoInterval = ref.watch(autoBackupIntervalProvider);
 
@@ -67,12 +74,12 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     });
 
     final isWorking =
-        backupState.isWorking || restoreState.isWorking || fullState.isWorking;
+        backupState.isWorking || restoreState.isWorking || fullWorking;
 
     return PopScope(
       // A multi-gigabyte export or restore must not be backed out of by
       // accident; Cancel on the overlay is the way out.
-      canPop: !fullState.isWorking,
+      canPop: !fullWorking,
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.backupTitle)),
         body: Stack(
@@ -104,9 +111,15 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         if (isWorking) const LinearProgressIndicator(),
-        _InfoCard(
+        _KindCard(
+          icon: Icons.info_outline,
           title: l10n.backupScopeNoteTitle,
-          body: l10n.backupScopeNoteBody,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(l10n.backupScopeNoteBody),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         _KindCard(
@@ -189,12 +202,9 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
               ),
             ),
             const Divider(height: 1),
-            Padding(
+            SettingsSectionHeader(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text(
-                l10n.backupSectionHistory,
-                style: theme.textTheme.titleSmall,
-              ),
+              title: l10n.backupSectionHistory,
             ),
             backupHistory.when(
               data: (backups) {
@@ -426,9 +436,6 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       BackupMessageKind.fullRestoreFailed => l10n.backupFullRestoreFailed(
         details: details,
       ),
-      BackupMessageKind.fullRestoreComplete => l10n.backupFullRestoreComplete,
-      BackupMessageKind.fullRestoreBootFailed =>
-        l10n.backupFullRestoreBootFailed(details: details),
     };
   }
 
@@ -513,27 +520,18 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     final l10n = context.l10n;
 
     try {
-      final picked = await BackupFileManager.pickBackupFile();
-      if (picked == null) return;
-
-      if (!context.mounted) return;
-
-      final filePath = picked.path;
-      if (filePath == null) return;
-      if (filePath.toLowerCase().endsWith('.zip')) {
-        _showSnackbar(l10n.backupWrongKindFullBackup, isError: true);
-        return;
-      }
-      if (!filePath.endsWith('.mekuru')) {
-        _showSnackbar(l10n.backupInvalidFile, isError: true);
-        return;
-      }
-
+      final picked = await BackupFileManager.pickReadingDataBackup();
+      final filePath = picked?.path;
+      if (picked == null || filePath == null || !context.mounted) return;
       _confirmReadingDataImport(
         context,
         filePath: filePath,
         fileName: picked.name,
       );
+    } on WrongBackupKindException {
+      _showSnackbar(l10n.backupWrongKindFullBackup, isError: true);
+    } on BackupFormatException {
+      _showSnackbar(l10n.backupInvalidFile, isError: true);
     } catch (e) {
       _showSnackbar(
         l10n.backupCouldNotOpenFile(details: e.toString()),
@@ -658,59 +656,19 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  final String title;
-  final String body;
-
-  const _InfoCard({required this.title, required this.body});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.info_outline, color: theme.colorScheme.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(body, style: theme.textTheme.bodyMedium),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One backup kind: a header with its own icon, name and file-type badge,
-/// then its actions. Keeping each kind in its own card is what stops a user
-/// exporting or restoring the wrong one.
+/// A titled card: an icon, a name and optionally a file-type badge, then
+/// its content. Each backup kind gets its own card, which is what stops a
+/// user exporting or restoring the wrong one.
 class _KindCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String badge;
+  final String? badge;
   final List<Widget> children;
 
   const _KindCard({
     required this.icon,
     required this.title,
-    required this.badge,
+    this.badge,
     required this.children,
   });
 
@@ -736,23 +694,24 @@ class _KindCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    badge,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                      fontFamily: 'monospace',
+                if (badge case final badge?)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      badge,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSecondaryContainer,
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -774,7 +733,6 @@ class _BackupHistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final sizeKb = (info.sizeBytes / 1024).toStringAsFixed(1);
     final dateStr = _formatDate(info.createdAt);
 
     return ListTile(
@@ -787,7 +745,7 @@ class _BackupHistoryTile extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text('$dateStr - ${sizeKb}KB'),
+      subtitle: Text('$dateStr - ${formatBytes(info.sizeBytes)}'),
       trailing: PopupMenuButton<String>(
         onSelected: (value) {
           if (value == 'restore') onRestore?.call();

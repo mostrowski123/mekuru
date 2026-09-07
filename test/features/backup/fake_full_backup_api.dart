@@ -31,7 +31,6 @@ class FakeFullBackupApi implements FullBackupApi {
     externalMangaCount: 0,
     dbBytes: 1000,
     booksBytes: 4000,
-    entryCount: 20,
   );
 
   @override
@@ -48,7 +47,6 @@ class FakeFullBackupApi implements FullBackupApi {
     return FullBackupExportResult(
       location: 'content://tree/doc.zip',
       bytes: exportedBytes,
-      entries: 20,
       skippedFiles: skippedFiles,
       manifest: manifest,
     );

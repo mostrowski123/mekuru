@@ -66,14 +66,14 @@ class BookRepository {
   /// half-written directory.
   static bool get hasImportInFlight => inFlightImportDirNames.isNotEmpty;
 
-  static const _booksSegment = 'books';
+  static const booksSegment = 'books';
 
-  /// The single root every import dir lives under. Keep [_booksSegment] and
+  /// The single root every import dir lives under. Keep [booksSegment] and
   /// this helper the only spellings of the layout — [claimedDirNames] must
   /// always look for the same segment the writer creates.
   static Future<Directory> _booksRootDir() async {
     final appDir = await getApplicationSupportDirectory();
-    return Directory(p.join(appDir.path, _booksSegment));
+    return Directory(p.join(appDir.path, booksSegment));
   }
 
   /// Dir names under a `books` path segment that [path] claims — every
@@ -83,7 +83,7 @@ class BookRepository {
   static Iterable<String> claimedDirNames(String path) sync* {
     final parts = p.split(p.normalize(path));
     for (var i = 0; i < parts.length - 1; i++) {
-      if (parts[i] == _booksSegment) yield parts[i + 1];
+      if (parts[i] == booksSegment) yield parts[i + 1];
     }
   }
 
@@ -940,7 +940,7 @@ class BookRepository {
 
   // ──────────────── Orphan sweep ────────────────
 
-  static const _trashDirName = '.trash';
+  static const trashDirName = '.trash';
   static const _trashRetention = Duration(days: 14);
 
   /// Quarantines import directories under `books/` that no book row
@@ -985,7 +985,7 @@ class BookRepository {
         if (cover != null) referenced.addAll(claimedDirNames(cover));
       }
 
-      final trashDir = Directory(p.join(booksRoot.path, _trashDirName));
+      final trashDir = Directory(p.join(booksRoot.path, trashDirName));
       final trashDeleted = await _emptyExpiredTrash(trashDir);
 
       final now = DateTime.now();

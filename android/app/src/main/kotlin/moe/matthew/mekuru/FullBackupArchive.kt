@@ -38,29 +38,39 @@ object FullBackupArchive {
     private const val BUFFER_SIZE = 1 shl 20
 
     /**
-     * Lists what [write] will emit: [files] first, then every regular file under
-     * each root (sorted for determinism) named `prefix + relativePath`. Directories
-     * named in [excludeDirNames] are pruned at any depth; `*.tmp` files (in-flight
-     * atomic writes) are skipped.
+     * Regular files under [root] (sorted for determinism) with directories
+     * named in [excludeDirNames] pruned at any depth and `*.tmp` files
+     * (in-flight atomic writes) skipped. Empty when [root] is not a directory.
+     */
+    fun walk(root: File, excludeDirNames: Set<String>): List<File> {
+        if (!root.isDirectory) return emptyList()
+        return root.walkTopDown()
+            .onEnter { dir -> dir == root || dir.name !in excludeDirNames }
+            .filter { it.isFile && !it.name.endsWith(".tmp") }
+            .sortedBy { it.path }
+            .toList()
+    }
+
+    /**
+     * Lists what [write] will emit: [files] first, then every file of [walked]
+     * (a [walk] of [root]) named `prefix + relativePath`, stored uncompressed.
      */
     fun plan(
-        roots: List<Pair<File, String>>,
         files: List<Entry>,
-        excludeDirNames: Set<String>,
+        root: File?,
+        walked: List<File>,
+        prefix: String,
     ): Plan {
         val entries = ArrayList<Entry>(files)
-        for ((root, prefix) in roots) {
-            if (!root.isDirectory) continue
-            root.walkTopDown()
-                .onEnter { dir -> dir == root || dir.name !in excludeDirNames }
-                .filter { it.isFile && !it.name.endsWith(".tmp") }
-                .sortedBy { it.path }
-                .forEach { file ->
-                    val relative = file.relativeTo(root).invariantSeparatorsPath
-                    entries.add(Entry(file, prefix + relative, Deflater.NO_COMPRESSION))
-                }
+        var totalBytes = files.sumOf { it.file.length() }
+        if (root != null) {
+            for (file in walked) {
+                val relative = file.relativeTo(root).invariantSeparatorsPath
+                entries.add(Entry(file, prefix + relative, Deflater.NO_COMPRESSION))
+                totalBytes += file.length()
+            }
         }
-        return Plan(entries, entries.sumOf { it.file.length() })
+        return Plan(entries, totalBytes)
     }
 
     /**

@@ -2661,7 +2661,6 @@
   "backupFullProgressExporting": "Exporting full backup…",
   "backupFullProgressPreparing": "Preparing…",
   "backupFullProgressExtracting": "Extracting full backup…",
-  "backupFullProgressFinishing": "Checking the restored data…",
   "backupFullProgressBytes": "{done} of {total}",
   "backupFullExported": "Full backup saved ({size})",
   "backupFullExportedWithSkipped": "{count, plural, one {Full backup saved; {count} file could not be read and was skipped} other {Full backup saved; {count} files could not be read and were skipped}}",

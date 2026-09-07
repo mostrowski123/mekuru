@@ -110,8 +110,6 @@ enum BackupMessageKind {
   fullPendingRestore,
   fullFailed,
   fullRestoreFailed,
-  fullRestoreComplete,
-  fullRestoreBootFailed,
 }
 
 class BackupMessage {
@@ -194,12 +192,6 @@ class BackupMessage {
 
   const BackupMessage.fullRestoreFailed(String details)
     : this._(kind: BackupMessageKind.fullRestoreFailed, details: details);
-
-  const BackupMessage.fullRestoreComplete()
-    : this._(kind: BackupMessageKind.fullRestoreComplete);
-
-  const BackupMessage.fullRestoreBootFailed(String details)
-    : this._(kind: BackupMessageKind.fullRestoreBootFailed, details: details);
 }
 
 class BackupState {
@@ -301,22 +293,14 @@ class RestoreNotifier extends Notifier<RestoreState> {
   /// Restore from an external file (via file picker).
   Future<void> restoreFromFilePicker() async {
     try {
-      final picked = await BackupFileManager.pickBackupFile();
-      if (picked == null) return;
-
-      final filePath = picked.path;
+      final picked = await BackupFileManager.pickReadingDataBackup();
+      final filePath = picked?.path;
       if (filePath == null) return;
-
-      if (filePath.toLowerCase().endsWith('.zip')) {
-        state = const RestoreState(error: BackupMessage.wrongKindFullBackup());
-        return;
-      }
-      if (!filePath.endsWith('.mekuru')) {
-        state = const RestoreState(error: BackupMessage.invalidBackupFile());
-        return;
-      }
-
       await _restoreFromPath(filePath, queueDictionaryPreferences: true);
+    } on WrongBackupKindException {
+      state = const RestoreState(error: BackupMessage.wrongKindFullBackup());
+    } on BackupFormatException {
+      state = const RestoreState(error: BackupMessage.invalidBackupFile());
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
       state = RestoreState(error: BackupMessage.couldNotOpenFile(e.toString()));
@@ -491,12 +475,16 @@ final restoreNotifierProvider = NotifierProvider<RestoreNotifier, RestoreState>(
 
 /// The real full-backup service, bound to this device's directories.
 final fullBackupServiceProvider = FutureProvider<FullBackupApi>((ref) async {
-  final info = await PackageInfo.fromPlatform();
+  final (info, root, cache) = await (
+    PackageInfo.fromPlatform(),
+    getApplicationSupportDirectory(),
+    getTemporaryDirectory(),
+  ).wait;
   return FullBackupService(
     db: ref.watch(databaseProvider),
     backupService: ref.watch(backupServiceProvider),
-    root: await getApplicationSupportDirectory(),
-    cacheDir: await getTemporaryDirectory(),
+    root: root,
+    cacheDir: cache,
     appVersion: info.version,
   );
 });
@@ -525,11 +513,7 @@ final fullBackupPickersProvider = Provider<FullBackupPickers>((ref) {
       final document = await AndroidSafService.pickDocument();
       return document == null
           ? null
-          : FullBackupSource.uri(
-              document.uri,
-              sizeBytes: document.sizeBytes,
-              displayName: document.displayName,
-            );
+          : FullBackupSource.uri(document.uri, sizeBytes: document.sizeBytes);
     },
   );
 });
@@ -548,14 +532,7 @@ final appExitProvider = Provider<Future<void> Function()>((ref) {
   };
 });
 
-enum FullBackupPhase {
-  idle,
-  measuring,
-  exporting,
-  preparing,
-  extracting,
-  finishing,
-}
+enum FullBackupPhase { idle, preparing, exporting, extracting }
 
 class FullBackupState {
   final FullBackupPhase phase;
@@ -564,13 +541,9 @@ class FullBackupState {
   final BackupMessage? error;
   final BackupMessage? successMessage;
 
-  /// Set after a successful [FullBackupNotifier.pickAndInspect].
-  final FullBackupPreview? preview;
+  /// Set by a successful [FullBackupNotifier.pickAndInspect]; what
+  /// [FullBackupNotifier.stageForRestart] restores.
   final FullBackupSource? source;
-
-  /// True once staging finished; the screen shows its closing dialog and
-  /// then calls [FullBackupNotifier.exitApp].
-  final bool readyToRestart;
 
   const FullBackupState({
     this.phase = FullBackupPhase.idle,
@@ -578,9 +551,7 @@ class FullBackupState {
     this.total = 0,
     this.error,
     this.successMessage,
-    this.preview,
     this.source,
-    this.readyToRestart = false,
   });
 
   bool get isWorking => phase != FullBackupPhase.idle;
@@ -601,7 +572,7 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
     final target = await ref.read(fullBackupPickersProvider).pickExportTarget();
     if (target == null) return;
 
-    state = const FullBackupState(phase: FullBackupPhase.measuring);
+    state = const FullBackupState(phase: FullBackupPhase.preparing);
     await _run(restoring: false, () async {
       final api = await ref.read(fullBackupServiceProvider.future);
       final result = await api.export(
@@ -632,7 +603,7 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
     await _run(restoring: true, () async {
       final api = await ref.read(fullBackupServiceProvider.future);
       preview = await api.inspect(source);
-      state = FullBackupState(preview: preview, source: source);
+      state = FullBackupState(source: source);
     });
     return preview;
   }
@@ -641,14 +612,9 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
   /// READY marker exists, i.e. the app must now exit via [exitApp].
   Future<bool> stageForRestart() async {
     final source = state.source;
-    final preview = state.preview;
     if (source == null || state.isWorking) return false;
 
-    state = FullBackupState(
-      phase: FullBackupPhase.preparing,
-      preview: preview,
-      source: source,
-    );
+    state = FullBackupState(phase: FullBackupPhase.preparing, source: source);
     var staged = false;
     await _run(restoring: true, () async {
       final api = await ref.read(fullBackupServiceProvider.future);
@@ -658,15 +624,10 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
           phase: FullBackupPhase.extracting,
           done: done,
           total: total,
-          preview: preview,
           source: source,
         ),
       );
-      state = FullBackupState(
-        preview: preview,
-        source: source,
-        readyToRestart: true,
-      );
+      state = FullBackupState(source: source);
       staged = true;
     });
     return staged;
@@ -695,18 +656,18 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
       final message = _messageFor(e, restoring: restoring);
       if (message.kind == BackupMessageKind.fullFailed ||
           message.kind == BackupMessageKind.fullRestoreFailed) {
-        Sentry.captureException(e, stackTrace: st);
+        logFailure(
+          restoring
+              ? 'backup.full_restore_failed'
+              : 'backup.full_export_failed',
+          e,
+          stackTrace: st,
+        );
       }
       state = FullBackupState(error: message);
     } finally {
       _setWakelock(false);
-      if (state.isWorking) {
-        state = FullBackupState(
-          preview: state.preview,
-          source: state.source,
-          readyToRestart: state.readyToRestart,
-        );
-      }
+      if (state.isWorking) state = FullBackupState(source: state.source);
     }
   }
 

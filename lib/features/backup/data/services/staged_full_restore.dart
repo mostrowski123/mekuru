@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/review/review_prompt_storage.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart'
     show ocrPendingFinalizationsKey;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum StagedRestoreOutcome { applied, rolledBack }
@@ -49,8 +50,8 @@ class StagedFullRestore {
   static const stagingDirName = 'restore_staging';
   static const rollbackDirName = 'restore_rollback';
   static const readyMarkerName = 'READY';
-  static const databaseFileName = 'mekuru_db.sqlite';
-  static const booksDirName = 'books';
+  static const databaseFileName = AppDatabase.databaseFileName;
+  static const booksDirName = BookRepository.booksSegment;
   static const settingsEntryName = FullBackupManifest.settingsEntry;
 
   /// `ok`, or `error:<code>`; consumed once by the UI after the restart.
@@ -74,6 +75,13 @@ class StagedFullRestore {
   Directory get _staging => Directory(p.join(root.path, stagingDirName));
   Directory get _rollback => Directory(p.join(root.path, rollbackDirName));
   File get _ready => File(p.join(_staging.path, readyMarkerName));
+
+  /// True when a launch has something to do here: a staged restore, or a
+  /// rollback directory left behind by a committed one. Lets the boot path
+  /// skip loading preferences on the ordinary launch.
+  static bool hasWorkUnder(Directory root) =>
+      File(p.join(root.path, stagingDirName, readyMarkerName)).existsSync() ||
+      Directory(p.join(root.path, rollbackDirName)).existsSync();
 
   /// Applies a staged restore if one is ready. Returns null when nothing is
   /// staged. Never throws: failures roll back and are reported via [onError]
@@ -217,11 +225,16 @@ class StagedFullRestore {
 /// Runs first inside `main`'s app runner and never throws.
 Future<void> applyStagedFullRestoreIfAny() async {
   try {
+    final root = await getApplicationSupportDirectory();
+    if (!StagedFullRestore.hasWorkUnder(root)) return;
     final restore = StagedFullRestore(
-      root: await getApplicationSupportDirectory(),
+      root: root,
       prefs: await SharedPreferences.getInstance(),
-      onError: (error, stackTrace) =>
-          Sentry.captureException(error, stackTrace: stackTrace),
+      onError: (error, stackTrace) => logFailure(
+        'backup.full_restore_boot_failed',
+        error,
+        stackTrace: stackTrace,
+      ),
     );
     final outcome = await restore.applyIfStaged();
     if (outcome != null) {
@@ -229,6 +242,6 @@ Future<void> applyStagedFullRestoreIfAny() async {
     }
     unawaited(restore.deleteLeftovers());
   } catch (e, st) {
-    Sentry.captureException(e, stackTrace: st);
+    logFailure('backup.full_restore_boot_failed', e, stackTrace: st);
   }
 }

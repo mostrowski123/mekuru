@@ -21,10 +21,8 @@ class FullBackupProgressOverlay extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final title = switch (state.phase) {
-      FullBackupPhase.measuring ||
       FullBackupPhase.exporting => l10n.backupFullProgressExporting,
       FullBackupPhase.extracting => l10n.backupFullProgressExtracting,
-      FullBackupPhase.finishing => l10n.backupFullProgressFinishing,
       FullBackupPhase.preparing ||
       FullBackupPhase.idle => l10n.backupFullProgressPreparing,
     };

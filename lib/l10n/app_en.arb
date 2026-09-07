@@ -3332,10 +3332,6 @@
   "@backupFullProgressExtracting": {
     "description": "Progress dialog title while extracting."
   },
-  "backupFullProgressFinishing": "Checking the restored data…",
-  "@backupFullProgressFinishing": {
-    "description": "Progress dialog title while validating the staged restore."
-  },
   "backupFullProgressBytes": "{done} of {total}",
   "@backupFullProgressBytes": {
     "description": "Progress dialog byte counter; both values are preformatted sizes.",

@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,32 +15,6 @@ import '../../shared/test_database.dart';
 import '../../test_app.dart';
 import 'fake_full_backup_api.dart';
 
-/// Returns whatever file the test scripted, standing in for the system
-/// picker behind `BackupFileManager.pickBackupFile`.
-class _FakeFilePicker extends FilePickerPlatform {
-  PlatformFile? file;
-
-  @override
-  Future<FilePickerResult?> pickFiles({
-    String? dialogTitle,
-    String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Function(FilePickerStatus)? onFileLoading,
-    int compressionQuality = 0,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-    bool cancelUploadOnWindowBlur = true,
-    AndroidSAFOptions? androidSafOptions,
-  }) async {
-    final picked = file;
-    return picked == null ? null : FilePickerResult([picked]);
-  }
-}
-
 void main() {
   final l10n = AppLocalizationsEn();
 
@@ -49,8 +22,6 @@ void main() {
   late FakeFullBackupApi api;
   late AndroidSafDocument? pickedDocument;
   late int exitCalls;
-  late _FakeFilePicker filePicker;
-  late FilePickerPlatform originalFilePicker;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -58,19 +29,12 @@ void main() {
     api = FakeFullBackupApi();
     pickedDocument = const AndroidSafDocument(
       uri: 'content://doc/picked.zip',
-      displayName: 'mekuru-full-backup.zip',
       sizeBytes: 4321,
     );
     exitCalls = 0;
-    originalFilePicker = FilePickerPlatform.instance;
-    filePicker = _FakeFilePicker();
-    FilePickerPlatform.instance = filePicker;
   });
 
-  tearDown(() async {
-    FilePickerPlatform.instance = originalFilePicker;
-    await db.close();
-  });
+  tearDown(() => db.close());
 
   Future<void> pumpScreen(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1080, 3200);
@@ -93,7 +57,6 @@ void main() {
                     : FullBackupSource.uri(
                         document.uri,
                         sizeBytes: document.sizeBytes,
-                        displayName: document.displayName,
                       );
               },
             ),
@@ -191,25 +154,6 @@ void main() {
 
       expect(find.text(l10n.backupWrongKindReadingData), findsOneWidget);
       expect(find.text(l10n.backupFullReviewTitle), findsNothing);
-      await tester.pump(const Duration(seconds: 10));
-    },
-  );
-
-  testWidgets(
-    'a .zip picked for a reading data import names the other button',
-    (tester) async {
-      filePicker.file = PlatformFile(
-        name: 'mekuru-full-backup.zip',
-        size: 4,
-        path: '/picked/mekuru-full-backup.zip',
-      );
-      await pumpScreen(tester);
-
-      await tester.tap(find.text(l10n.backupImportFileTitle));
-      await tester.pumpAndSettle();
-
-      expect(find.text(l10n.backupWrongKindFullBackup), findsOneWidget);
-      expect(find.text(l10n.backupRestoreDialogTitle), findsNothing);
       await tester.pump(const Duration(seconds: 10));
     },
   );
