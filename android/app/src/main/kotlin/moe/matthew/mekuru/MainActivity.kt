@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
+import android.provider.OpenableColumns
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -17,6 +18,10 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -24,6 +29,8 @@ class MainActivity : FlutterActivity() {
         private const val ANKI_CHANNEL_NAME = "mekuru/ankidroid_native"
         private const val SYSTEM_UI_CHANNEL_NAME = "mekuru/android_system_ui"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
+        private const val REQUEST_OPEN_DOCUMENT = 7313
+        private const val ZIP_MIME_TYPE = "application/zip"
 
         /**
          * Shared so a configuration change does not throw away everything
@@ -34,6 +41,14 @@ class MainActivity : FlutterActivity() {
 
     private var pendingTreePickerResult: MethodChannel.Result? = null
     private var pendingPickedDocumentUri: Uri? = null
+    private var pendingDocumentPickerResult: MethodChannel.Result? = null
+
+    // One streaming archive operation at a time; Dart polls progress and
+    // sets the cancel flag through the same channel.
+    private val archiveBusy = AtomicBoolean(false)
+    @Volatile private var archiveCancelled = false
+    @Volatile private var archiveDone = 0L
+    @Volatile private var archiveTotal = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,6 +88,10 @@ class MainActivity : FlutterActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_OPEN_DOCUMENT) {
+            handleDocumentPicked(resultCode, data)
+            return
+        }
         if (requestCode != REQUEST_OPEN_DOCUMENT_TREE) return
 
         val callback = pendingTreePickerResult
@@ -213,8 +232,303 @@ class MainActivity : FlutterActivity() {
                     resolveTreeDocumentUri(Uri.parse(treeUri), relativePath)?.toString()
                 }
             }
+            "pickDocument" -> {
+                val mimeTypes = call.argument<List<String>>("mimeTypes") ?: emptyList()
+                requestDocument(mimeTypes, result)
+            }
+            "getFreeBytes" -> {
+                val path = call.argument<String>("path")
+                if (path.isNullOrBlank()) {
+                    result.error("bad_args", "path is required", null)
+                    return
+                }
+                runIo(result) { File(path).usableSpace }
+            }
+            "measureTree" -> {
+                val path = call.argument<String>("path")
+                if (path.isNullOrBlank()) {
+                    result.error("bad_args", "path is required", null)
+                    return
+                }
+                val exclude = (call.argument<List<String>>("excludeDirNames") ?: emptyList()).toSet()
+                runIo(result) {
+                    val plan = FullBackupArchive.plan(listOf(File(path) to ""), emptyList(), exclude)
+                    mapOf("bytes" to plan.totalBytes, "files" to plan.entries.size)
+                }
+            }
+            "writeZipToTree" -> {
+                val treeUri = call.argument<String>("treeUri")
+                val displayName = call.argument<String>("displayName")
+                if (treeUri.isNullOrBlank() || displayName.isNullOrBlank()) {
+                    result.error("bad_args", "treeUri and displayName are required", null)
+                    return
+                }
+                val plan = parseZipPlan(call)
+                runArchive(result) { writeZipToTree(Uri.parse(treeUri), displayName, plan) }
+            }
+            "writeZipToFile" -> {
+                val path = call.argument<String>("path")
+                if (path.isNullOrBlank()) {
+                    result.error("bad_args", "path is required", null)
+                    return
+                }
+                val plan = parseZipPlan(call)
+                runArchive(result) { writeZipToFile(File(path), plan) }
+            }
+            "peekZipEntryText" -> {
+                val name = call.argument<String>("name")
+                val uri = call.argument<String>("uri")
+                val path = call.argument<String>("path")
+                if (name.isNullOrBlank() || (uri.isNullOrBlank() && path.isNullOrBlank())) {
+                    result.error("bad_args", "name and one of uri or path are required", null)
+                    return
+                }
+                runIo(result) {
+                    val stream = if (!uri.isNullOrBlank()) openUriForRead(Uri.parse(uri)) else FileInputStream(path!!)
+                    val peek = FullBackupArchive.peek(stream, name)
+                    mapOf("isZip" to peek.isZip, "text" to peek.text)
+                }
+            }
+            "extractZipFromUri" -> {
+                val uri = call.argument<String>("uri")
+                val destPath = call.argument<String>("destPath")
+                if (uri.isNullOrBlank() || destPath.isNullOrBlank()) {
+                    result.error("bad_args", "uri and destPath are required", null)
+                    return
+                }
+                runArchive(result) {
+                    val parsed = Uri.parse(uri)
+                    archiveTotal = documentSize(parsed)
+                    val entries = FullBackupArchive.extract(
+                        openUriForRead(parsed),
+                        File(destPath),
+                        onBytes = { archiveDone = it },
+                        isCancelled = { archiveCancelled },
+                    )
+                    mapOf("entries" to entries)
+                }
+            }
+            "extractZipFromFile" -> {
+                val path = call.argument<String>("path")
+                val destPath = call.argument<String>("destPath")
+                if (path.isNullOrBlank() || destPath.isNullOrBlank()) {
+                    result.error("bad_args", "path and destPath are required", null)
+                    return
+                }
+                runArchive(result) {
+                    archiveTotal = File(path).length()
+                    val entries = FullBackupArchive.extract(
+                        FileInputStream(path),
+                        File(destPath),
+                        onBytes = { archiveDone = it },
+                        isCancelled = { archiveCancelled },
+                    )
+                    mapOf("entries" to entries)
+                }
+            }
+            "zipProgress" -> {
+                result.success(mapOf("done" to archiveDone, "total" to archiveTotal))
+            }
+            "cancelZip" -> {
+                archiveCancelled = true
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
+    }
+
+    // ──────────────── Full backup: document picker + streaming zip ────────────────
+
+    private fun requestDocument(mimeTypes: List<String>, result: MethodChannel.Result) {
+        if (pendingDocumentPickerResult != null) {
+            result.error("busy", "A document picker request is already in progress", null)
+            return
+        }
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            if (mimeTypes.isNotEmpty()) {
+                putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toTypedArray())
+            }
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+        }
+        pendingDocumentPickerResult = result
+        startActivityForResult(intent, REQUEST_OPEN_DOCUMENT)
+    }
+
+    private fun handleDocumentPicked(resultCode: Int, data: Intent?) {
+        val callback = pendingDocumentPickerResult ?: return
+        pendingDocumentPickerResult = null
+        val uri = data?.data
+        if (resultCode != Activity.RESULT_OK || uri == null) {
+            callback.success(null)
+            return
+        }
+        try {
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: SecurityException) {
+                // Not persistable; the grant still lasts for this process.
+            }
+            var displayName: String? = null
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (cursor.moveToFirst() && nameIdx >= 0) displayName = cursor.getString(nameIdx)
+            }
+            callback.success(
+                mapOf(
+                    "uri" to uri.toString(),
+                    "displayName" to displayName,
+                    "sizeBytes" to documentSize(uri),
+                ),
+            )
+        } catch (e: Exception) {
+            callback.error("saf_document_failed", describeThrowable(e), null)
+        }
+    }
+
+    /** Size of a document, or 0 when the provider does not report one. */
+    private fun documentSize(uri: Uri): Long {
+        try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+                val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (cursor.moveToFirst() && sizeIdx >= 0 && !cursor.isNull(sizeIdx)) {
+                    return cursor.getLong(sizeIdx)
+                }
+            }
+        } catch (_: Exception) {
+            // Fall through to the descriptor length.
+        }
+        return try {
+            contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: 0L
+        } catch (_: Exception) {
+            0L
+        }
+    }
+
+    private fun openUriForRead(uri: Uri) =
+        contentResolver.openInputStream(uri)
+            ?: throw SafFailure(
+                "saf_open_failed",
+                "The document provider returned no stream for the document",
+                uri.authority,
+                "open",
+            )
+
+    private fun parseZipPlan(call: MethodCall): FullBackupArchive.Plan {
+        val roots = (call.argument<List<*>>("roots") ?: emptyList<Any?>()).map { raw ->
+            val map = raw as Map<*, *>
+            File(map["path"] as String) to (map["prefix"] as String)
+        }
+        val files = (call.argument<List<*>>("files") ?: emptyList<Any?>()).map { raw ->
+            val map = raw as Map<*, *>
+            FullBackupArchive.Entry(
+                File(map["path"] as String),
+                map["name"] as String,
+                (map["level"] as Number).toInt(),
+            )
+        }
+        val exclude = (call.argument<List<String>>("excludeDirNames") ?: emptyList()).toSet()
+        return FullBackupArchive.plan(roots, files, exclude)
+    }
+
+    /**
+     * Creates `<displayName>.partial` in the tree, streams the archive into it
+     * and renames it on success, so a process death mid-export never leaves a
+     * truncated file that looks like a backup. Any failure deletes the document.
+     */
+    private fun writeZipToTree(treeUri: Uri, displayName: String, plan: FullBackupArchive.Plan): Map<String, Any?> {
+        val parent = DocumentsContract.buildDocumentUriUsingTree(
+            treeUri,
+            DocumentsContract.getTreeDocumentId(treeUri),
+        )
+        val docUri = DocumentsContract.createDocument(contentResolver, parent, ZIP_MIME_TYPE, "$displayName.partial")
+            ?: throw SafFailure(
+                "saf_create_failed",
+                "The document provider refused to create the backup file",
+                treeUri.authority,
+                "create",
+            )
+        val written = try {
+            val out = contentResolver.openOutputStream(docUri, "w")
+                ?: throw SafFailure(
+                    "saf_open_failed",
+                    "The document provider returned no stream for the new file",
+                    treeUri.authority,
+                    "open",
+                )
+            archiveTotal = plan.totalBytes
+            FullBackupArchive.write(out, plan, onBytes = { archiveDone = it }, isCancelled = { archiveCancelled })
+        } catch (e: Exception) {
+            try {
+                DocumentsContract.deleteDocument(contentResolver, docUri)
+            } catch (_: Exception) {
+                // Best effort; the partial name marks it as incomplete anyway.
+            }
+            throw e
+        }
+        val finalUri = try {
+            DocumentsContract.renameDocument(contentResolver, docUri, displayName) ?: docUri
+        } catch (_: Exception) {
+            docUri
+        }
+        return mapOf(
+            "documentUri" to finalUri.toString(),
+            "bytes" to written.bytes,
+            "entries" to written.entries,
+            "skippedFiles" to written.skippedFiles,
+        )
+    }
+
+    private fun writeZipToFile(target: File, plan: FullBackupArchive.Plan): Map<String, Any?> {
+        target.parentFile?.mkdirs()
+        val written = try {
+            archiveTotal = plan.totalBytes
+            FullBackupArchive.write(
+                FileOutputStream(target),
+                plan,
+                onBytes = { archiveDone = it },
+                isCancelled = { archiveCancelled },
+            )
+        } catch (e: Exception) {
+            target.delete()
+            throw e
+        }
+        return mapOf(
+            "bytes" to written.bytes,
+            "entries" to written.entries,
+            "skippedFiles" to written.skippedFiles,
+        )
+    }
+
+    /**
+     * Like [runIo] for the streaming archive operations: one at a time, with
+     * progress and cancellation state reset per run, and a cancellation
+     * reported as `{cancelled: true}` rather than as an error.
+     */
+    private fun runArchive(result: MethodChannel.Result, task: () -> Map<String, Any?>) {
+        if (!archiveBusy.compareAndSet(false, true)) {
+            result.error("busy", "Another archive operation is already in progress", null)
+            return
+        }
+        archiveCancelled = false
+        archiveDone = 0L
+        archiveTotal = 0L
+        Thread {
+            try {
+                val value = task()
+                runOnUiThread { result.success(value) }
+            } catch (_: FullBackupArchive.CancelledException) {
+                runOnUiThread { result.success(mapOf("cancelled" to true)) }
+            } catch (e: SafFailure) {
+                runOnUiThread { result.error(e.code, e.reason, e.details()) }
+            } catch (e: Exception) {
+                runOnUiThread { result.error("saf_io_error", describeThrowable(e), null) }
+            } finally {
+                archiveBusy.set(false)
+            }
+        }.start()
     }
 
     // AnkiDroid's content provider can block for seconds while its process
