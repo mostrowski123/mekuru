@@ -91,6 +91,10 @@ class FullBackupJobService : Service() {
             if (spec == null) return
             pendingAbortAfterBytes.also { pendingAbortAfterBytes = -1L }.let { if (it >= 0) runner.control.abortAfterBytes = it }
             live = runner
+            synchronized(startLock) {
+                jobStarts++
+                startLock.notifyAll()
+            }
             handler.post { startNotificationTicker(runner.control, spec) }
             outcome = runner.run(spec)
         } finally {
@@ -214,6 +218,28 @@ class FullBackupJobService : Service() {
 
         /** Test seam: applied to the next job to start (see the bridge). */
         @Volatile var pendingAbortAfterBytes = -1L
+
+        private val startLock = Object()
+
+        /** Jobs that have gone live in this process; see [awaitJobStart]. */
+        @Volatile var jobStarts = 0L
+            private set
+
+        /**
+         * Blocks until a job newer than [seen] is live or [timeoutMs] passes.
+         * Until the service thread claims a committed job, status has only
+         * the job files to go on and would report it as paused.
+         */
+        fun awaitJobStart(seen: Long, timeoutMs: Long) {
+            val deadline = System.currentTimeMillis() + timeoutMs
+            synchronized(startLock) {
+                while (jobStarts == seen) {
+                    val remaining = deadline - System.currentTimeMillis()
+                    if (remaining <= 0) return
+                    startLock.wait(remaining)
+                }
+            }
+        }
 
         /** `getApplicationSupportDirectory()` on Android is `filesDir`. */
         fun storeFor(context: Context): JobStore = JobStore.forRoot(context.filesDir)

@@ -124,7 +124,11 @@ class FullBackupJobBridge(private val activity: Activity) {
             staging.mkdirs()
         }
         store.writeSpec(spec)
+        val seen = FullBackupJobService.jobStarts
         FullBackupJobService.start(activity)
+        // Return only once the service owns the job, so no status poll can
+        // read the freshly committed files as a paused job.
+        FullBackupJobService.awaitJobStart(seen, START_TIMEOUT_MS)
         return null
     }
 
@@ -216,6 +220,7 @@ class FullBackupJobBridge(private val activity: Activity) {
     companion object {
         const val CHANNEL_NAME = "mekuru/full_backup_job"
         const val REQUEST_NOTIFICATIONS = 7314
+        private const val START_TIMEOUT_MS = 5_000L
         private val io = Executors.newSingleThreadExecutor { Thread(it, "mekuru-full-backup-bridge") }
     }
 }

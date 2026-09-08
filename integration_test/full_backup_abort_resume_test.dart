@@ -141,7 +141,13 @@ void main() {
     await service.startRestore(preview);
     final paused = await waitForJob(jobIsPaused, what: 'restore to pause');
     expect(paused.kind, FullBackupJobKind.restore);
-    expect(paused.done, greaterThanOrEqualTo(checkpointBytes));
+    expect(
+      paused.done,
+      greaterThanOrEqualTo(checkpointBytes),
+      reason:
+          'paused at ${paused.phase} ${paused.done}/${paused.total}, '
+          'error: ${paused.error}',
+    );
     expect(staging().existsSync(), isTrue);
     expect(
       File(
