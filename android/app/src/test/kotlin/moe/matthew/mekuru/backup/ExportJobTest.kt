@@ -50,7 +50,10 @@ class ExportJobTest {
         checkpointBytes: Long = 1L,
     ): Map<String, Any?> = ExportJob(store, store.readSpec()!!, io, control, checkpointBytes = checkpointBytes).run()
 
-    private fun expected(): Map<String, ByteArray> = plan.associate { it.name to File(it.path).readBytes() }
+    private fun expected(): Map<String, ByteArray> = plan.associate {
+        val file = if (it.path.startsWith("file:")) File(java.net.URI(it.path)) else File(it.path)
+        it.name to file.readBytes()
+    }
 
     private fun assertComplete(result: Map<String, Any?>) {
         assertEquals(JobStore.STATUS_DONE, result["status"])
@@ -81,6 +84,26 @@ class ExportJobTest {
         assertComplete(result)
         assertEquals(target.length(), result["bytes"])
         assertEquals(0, result["skippedFiles"])
+    }
+
+    @Test
+    fun anEntryNamedByUriIsOpenedThroughTheIoWithItsOwnTime() {
+        // Pages of a linked manga arrive as document URIs with their own
+        // modification time; the file: form is what the plain-file io accepts.
+        val page = JobTestSupport.write(File(sources, "linked/001.jpg"), ByteArray(4096) { it.toByte() })
+        val mtime = 1_600_000_000_000L
+        plan = plan + PlanEntry(page.toURI().toString(), "Manga/漫画/pages/001.jpg", page.length(), 0, mtime)
+        JobTestSupport.writePlan(store, plan)
+        spec = JobTestSupport.exportSpec(target, plan)
+        commit()
+
+        val result = run()
+
+        assertComplete(result)
+        java.util.zip.ZipFile(target).use { zip ->
+            val entry = zip.getEntry("Manga/漫画/pages/001.jpg")
+            assertTrue(Math.abs(entry.time - mtime) < 2_000)
+        }
     }
 
     @Test

@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
@@ -35,6 +36,14 @@ void main() {
   late FakeFullBackupJobApi jobs;
   late FullBackupService service;
   var freeBytes = 1 << 40;
+
+  /// What the folder grant of the linked manga lists, and who asked.
+  late List<SafTreeFile> treePages;
+  late List<(String, String)> listed;
+
+  Directory documents() => Directory(p.join(root.path, 'app_flutter'));
+  File unidicMarker() =>
+      File(p.join(documents().path, 'unidic-lite', '.install_complete'));
 
   Directory booksDir() =>
       Directory(p.join(root.path, StagedFullRestore.booksDirName));
@@ -102,9 +111,38 @@ void main() {
     );
     write(
       p.join(booksDir().path, 'manga_2_bbbbbbbb', 'pages_cache.json'),
-      '{}',
+      jsonEncode({
+        'title': 'External manga',
+        'imageDirPath': '/tmp/scratch/External manga',
+        'safTreeUri': 'content://tree/manga',
+        'safImageDirRelativePath': 'Manga/Vol 1',
+        'pages': [],
+      }),
     );
     write(p.join(booksDir().path, 'custom_cover_1.jpg'), 'JPG');
+    write(unidicMarker().path, '');
+    write(p.join(documents().path, 'unidic-lite', 'sys.dic'), 'DIC-BYTES');
+    treePages = const [
+      SafTreeFile(
+        name: '002.png',
+        uri: 'content://tree/manga/document/2',
+        size: 20,
+        lastModified: 1700000000000,
+      ),
+      SafTreeFile(
+        name: '001.jpg',
+        uri: 'content://tree/manga/document/1',
+        size: 10,
+        lastModified: 1700000001000,
+      ),
+      SafTreeFile(
+        name: 'notes.txt',
+        uri: 'content://tree/manga/document/3',
+        size: 5,
+        lastModified: 0,
+      ),
+    ];
+    listed = [];
     final dictionaries = DictionaryRepository(db);
     await dictionaries.insertDictionary('JMdict');
     final hiddenId = await dictionaries.insertDictionary('Bundled frequency');
@@ -121,11 +159,27 @@ void main() {
       db: db,
       backupService: BackupService(db, BookMatchService()),
       root: root,
+      documentsRoot: documents(),
       appVersion: '1.38.0',
       jobs: jobs,
+      listTreeFiles: (treeUri, relativePath) async {
+        listed.add((treeUri, relativePath));
+        return treePages;
+      },
       clock: () => DateTime(2026, 9, 8, 10, 30, 15),
     );
   });
+
+  List<String> planNames() =>
+      File(p.join(jobDir().path, FullBackupService.planFileName))
+          .readAsLinesSync()
+          .map((l) => (jsonDecode(l) as Map<String, dynamic>)['n'] as String)
+          .toList();
+
+  FullBackupManifest writtenManifest() => FullBackupManifest.fromJson(
+    jsonDecode(File(p.join(jobDir().path, 'manifest.json')).readAsStringSync())
+        as Map<String, dynamic>,
+  );
 
   tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -158,18 +212,30 @@ void main() {
         'Books/走れメロス/content/a.xhtml',
         'Books/走れメロス/メロス.epub',
         'Manga/External manga/pages_cache.json',
+        'Mekuru data/unidic-lite/.install_complete',
+        'Mekuru data/unidic-lite/sys.dic',
+        'Manga/External manga/pages/001.jpg',
+        'Manga/External manga/pages/002.png',
       ]);
       expect(planLines.skip(4).every((l) => l['l'] == 0), isTrue);
       for (final line in planLines) {
-        expect(File(line['p'] as String).lengthSync(), line['s']);
+        final path = line['p'] as String;
+        if (path.startsWith('content://')) {
+          // Pages read through the folder grant: listed size, listed time.
+          expect(line['s'], path.endsWith('/1') ? 10 : 20);
+          expect(
+            line['m'],
+            path.endsWith('/1') ? 1700000001000 : 1700000000000,
+          );
+        } else {
+          final stat = File(path).statSync();
+          expect(line['s'], stat.size);
+          expect(line['m'], stat.modified.millisecondsSinceEpoch);
+        }
       }
+      expect(listed, [('content://tree/manga', 'Manga/Vol 1')]);
 
-      final manifest = FullBackupManifest.fromJson(
-        jsonDecode(
-              File(p.join(jobDir().path, 'manifest.json')).readAsStringSync(),
-            )
-            as Map<String, dynamic>,
-      );
+      final manifest = writtenManifest();
       expect(manifest.appVersion, '1.38.0');
       expect(manifest.schemaVersion, AppDatabase.latestSchemaVersion);
       expect(manifest.appSupportPath, root.path);
@@ -184,7 +250,10 @@ void main() {
         p.join(jobDir().path, AppDatabase.databaseFileName),
       );
       expect(manifest.dbBytes, snapshot.lengthSync());
-      expect(manifest.booksBytes, 3 + 1 + 4 + 2);
+      expect(
+        manifest.booksBytes,
+        planLines.skip(4).fold<int>(0, (sum, l) => sum + (l['s'] as int)),
+      );
       final raw = sqlite.sqlite3.open(snapshot.path);
       expect(
         raw.select('SELECT count(*) AS c FROM dictionary_metas').first['c'],
@@ -210,6 +279,30 @@ void main() {
       expect(
         spec['totalBytes'],
         planLines.fold<int>(0, (sum, l) => sum + (l['s'] as int)),
+      );
+    });
+
+    test(
+      'a linked folder that cannot be listed leaves that manga without pages',
+      () async {
+        treePages = const [];
+        await service.prepareExport(
+          FullBackupTarget.file(p.join(root.path, 'o.zip')),
+        );
+        expect(planNames().any((n) => n.contains('/pages/')), isFalse);
+        expect(planNames(), contains('Manga/External manga/pages_cache.json'));
+        expect(writtenManifest().externalMangaCount, 0);
+      },
+    );
+
+    test('UniDic-lite ships only when its install had finished', () async {
+      unidicMarker().deleteSync();
+      await service.prepareExport(
+        FullBackupTarget.file(p.join(root.path, 'o.zip')),
+      );
+      expect(
+        planNames().any((n) => n.startsWith(FullBackupManifest.unidicPrefix)),
+        isFalse,
       );
     });
 

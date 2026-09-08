@@ -211,7 +211,7 @@ class CbzParser {
             (f) =>
                 f.isFile &&
                 !p.basename(f.name).startsWith('.') &&
-                _isImageFile(p.basename(f.name)),
+                isImageFile(p.basename(f.name)),
           )
           .toList();
       final total = imageFiles.length;
@@ -291,8 +291,17 @@ class CbzParser {
 
   // ── Private helpers ──
 
-  static bool _isImageFile(String fileName) =>
+  /// True for file names with one of [imageExtensions].
+  static bool isImageFile(String fileName) =>
       imageExtensions.contains(p.extension(fileName).toLowerCase());
+
+  /// Image file names in cover order: a plain ASCII sort, not the natural
+  /// order pages are read in. The mokuro page order does not always start
+  /// with the cover (names like `_01.jpg` or `000.jpg` precede numbered
+  /// pages, and the ASCII sort puts them first). The manga import and the
+  /// full restore both take the first existing name from this list.
+  static List<String> coverCandidates(Iterable<String> fileNames) =>
+      fileNames.where(isImageFile).toList()..sort();
 
   /// Natural string comparison that handles embedded numbers.
   /// Matches the algorithm in MokuroParser for consistency.

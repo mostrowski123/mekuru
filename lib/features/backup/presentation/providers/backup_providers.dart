@@ -469,14 +469,16 @@ final restoreNotifierProvider = NotifierProvider<RestoreNotifier, RestoreState>(
 
 /// The real full-backup service, bound to this device's directories.
 final fullBackupServiceProvider = FutureProvider<FullBackupApi>((ref) async {
-  final (info, root) = await (
+  final (info, root, documents) = await (
     PackageInfo.fromPlatform(),
     getApplicationSupportDirectory(),
+    getApplicationDocumentsDirectory(),
   ).wait;
   return FullBackupService(
     db: ref.watch(databaseProvider),
     backupService: ref.watch(backupServiceProvider),
     root: root,
+    documentsRoot: documents,
     appVersion: info.version,
     jobs: ref.watch(fullBackupJobApiProvider),
   );

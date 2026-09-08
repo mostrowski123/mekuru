@@ -8,6 +8,7 @@ import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 
@@ -56,8 +57,12 @@ const _booksAnchor = '/${StagedFullRestore.booksDirName}/';
 ///   `imageDirPath` inside every manga cache from the first `/books/` onto
 ///   [PrepareStagedRestoreArgs.rootPath]. Anchoring on the segment rather
 ///   than on the source root keeps it idempotent and independent of the
-///   manifest; `content://` covers and SAF image folders contain no anchor
-///   and are left alone.
+///   manifest.
+/// - Manga that were linked from a folder outside Mekuru and whose pages the
+///   archive carries (`<dir>/pages/`) become ordinary manga: the cache drops
+///   its folder link and reads from `pages/`, and a `content://` cover is
+///   replaced by the first page, the rule the import uses. A linked manga
+///   without pages in the archive stays linked, to be re-linked by hand.
 /// - Disables server connections (their secrets are not in the archive).
 /// - Fsyncs the database, then writes READY with `flush: true`, last.
 Future<PreparedStagedRestore> prepareStagedRestore(
@@ -83,7 +88,7 @@ Future<PreparedStagedRestore> prepareStagedRestore(
     p.join(staging.path, StagedFullRestore.booksDirName),
   )..createSync(recursive: true);
 
-  final (ids, rewrittenBooks) = _fixUpDatabase(dbFile.path, root);
+  final (ids, rewrittenBooks) = _fixUpDatabase(dbFile.path, root, booksDir);
   final rewrittenCaches = await _rewriteMangaCaches(booksDir, root);
 
   final raf = await dbFile.open(mode: FileMode.append);
@@ -101,7 +106,11 @@ Future<PreparedStagedRestore> prepareStagedRestore(
   );
 }
 
-(List<int>, int) _fixUpDatabase(String path, String root) {
+(List<int>, int) _fixUpDatabase(
+  String path,
+  String root,
+  Directory stagingBooks,
+) {
   final Database db;
   try {
     db = sqlite3.open(path);
@@ -124,6 +133,22 @@ Future<PreparedStagedRestore> prepareStagedRestore(
         [root, _booksAnchor, _booksAnchor],
       );
       if (column == 'file_path') rewrittenBooks = db.updatedRows;
+    }
+
+    // A linked manga whose pages the archive carries takes its first page as
+    // the cover; one without pages keeps the content:// URI and stays linked.
+    for (final row in db.select(
+      "SELECT id, file_path FROM books WHERE cover_image_path LIKE 'content://%'",
+    )) {
+      final dirs = BookRepository.claimedDirNames(row['file_path'] as String);
+      if (dirs.isEmpty) continue;
+      final dir = dirs.first;
+      final first = _firstPageIn(p.join(stagingBooks.path, dir));
+      if (first == null) continue;
+      db.execute('UPDATE books SET cover_image_path = ? WHERE id = ?', [
+        '$root$_booksAnchor$dir/${FullBackupManifest.linkedPagesDirName}/$first',
+        row['id'],
+      ]);
     }
 
     final ids = <int>[];
@@ -151,6 +176,7 @@ Future<int> _rewriteMangaCaches(Directory booksDir, String root) async {
   var rewritten = 0;
   await for (final entity in booksDir.list(followLinks: false)) {
     if (entity is! Directory) continue;
+    final dir = p.basename(entity.path);
     for (final name in [
       mangaPagesCacheFileName,
       BookRepository.originalMokuroOcrBackupFileName,
@@ -159,16 +185,47 @@ Future<int> _rewriteMangaCaches(Directory booksDir, String root) async {
       if (!file.existsSync()) continue;
       final decoded = jsonDecode(await file.readAsString());
       if (decoded is! Map<String, dynamic>) continue;
-      final dir = decoded['imageDirPath'];
-      if (dir is! String) continue;
-      final at = dir.indexOf(_booksAnchor);
-      if (at < 0) continue;
-      final next = root + dir.substring(at);
-      if (next == dir) continue;
+      final String? next;
+      if (decoded.containsKey('safTreeUri') &&
+          _firstPageIn(entity.path) != null) {
+        decoded.remove('safTreeUri');
+        decoded.remove('safImageDirRelativePath');
+        next =
+            '$root$_booksAnchor$dir/${FullBackupManifest.linkedPagesDirName}';
+      } else {
+        next = _reanchored(decoded['imageDirPath'], root);
+      }
+      if (next == null) continue;
       decoded['imageDirPath'] = next;
       await writeStringAtomic(file, jsonEncode(decoded));
       rewritten++;
     }
   }
   return rewritten;
+}
+
+/// [dir] moved onto [root] from its `/books/` anchor, or null when there is
+/// nothing to change.
+String? _reanchored(Object? dir, String root) {
+  if (dir is! String) return null;
+  final at = dir.indexOf(_booksAnchor);
+  if (at < 0) return null;
+  final next = root + dir.substring(at);
+  return next == dir ? null : next;
+}
+
+/// The cover-order first image inside `<mangaDir>/pages/`, or null when the
+/// archive brought no pages for this manga.
+String? _firstPageIn(String mangaDir) {
+  final pages = Directory(
+    p.join(mangaDir, FullBackupManifest.linkedPagesDirName),
+  );
+  if (!pages.existsSync()) return null;
+  final candidates = CbzParser.coverCandidates(
+    pages
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .map((f) => p.basename(f.path)),
+  );
+  return candidates.isEmpty ? null : candidates.first;
 }

@@ -4357,7 +4357,7 @@ abstract class AppLocalizations {
   /// Limitations text on the full backup card.
   ///
   /// In en, this message translates to:
-  /// **'Not included: manga linked from folders outside Mekuru (their pages stay in your folder), downloaded UniDic-lite, the reading data backup history, and Pro, which is re-checked with Google Play.'**
+  /// **'Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.'**
   String get backupFullNotIncluded;
 
   /// Title of the export full backup action.
@@ -4495,10 +4495,10 @@ abstract class AppLocalizations {
   /// **'{count, plural, one {{count} dictionary} other {{count} dictionaries}}'**
   String backupFullCountDictionaries({required int count});
 
-  /// Warning line in the review dialog about SAF-linked manga.
+  /// Note in the review dialog about manga whose pages were copied from a linked folder.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one {{count} manga is linked from a folder outside Mekuru and will need re-linking after the restore.} other {{count} manga are linked from folders outside Mekuru and will need re-linking after the restore.}}'**
+  /// **'{count, plural, one {{count} manga was linked from a folder outside Mekuru. Its pages are in this backup and will be stored inside Mekuru.} other {{count} manga were linked from folders outside Mekuru. Their pages are in this backup and will be stored inside Mekuru.}}'**
   String backupFullReviewExternalManga({required int count});
 
   /// Label above the current device contents in the review dialog.

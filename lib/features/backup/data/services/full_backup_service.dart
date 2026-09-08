@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' as math;
 
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
@@ -14,6 +15,7 @@ import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_plan.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:workmanager/workmanager.dart';
 
@@ -83,7 +85,9 @@ class FullBackupService implements FullBackupApi {
     required this.backupService,
     required this.root,
     required this.appVersion,
+    this.documentsRoot,
     this.jobs = const FullBackupJobChannel(),
+    this.listTreeFiles = AndroidSafService.listFilesInTreeDir,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
 
@@ -92,8 +96,16 @@ class FullBackupService implements FullBackupApi {
 
   /// The app-support directory: database, `books/` and the job dir live here.
   final Directory root;
+
+  /// The app-documents directory, home of the downloaded UniDic-lite; null
+  /// leaves the dictionary out (tests).
+  final Directory? documentsRoot;
   final String appVersion;
   final FullBackupJobApi jobs;
+
+  /// Lists the pages of a manga linked from a folder outside Mekuru.
+  final Future<List<SafTreeFile>> Function(String treeUri, String relativePath)
+  listTreeFiles;
   final DateTime Function() _clock;
 
   static const planFileName = 'plan.jsonl';
@@ -133,11 +145,17 @@ class FullBackupService implements FullBackupApi {
       final snapshot = File(p.join(_jobDir.path, AppDatabase.databaseFileName));
       await db.customStatement('VACUUM INTO ?', [snapshot.path]);
 
+      final documents = documentsRoot;
       final args = BuildExportPlanArgs(
         snapshotDbPath: snapshot.path,
         booksDirPath: _booksDir.path,
+        unidicDirPath: documents == null
+            ? null
+            : p.join(documents.path, FullBackupManifest.unidicDirName),
       );
       final plan = await Isolate.run(() => buildExportPlan(args));
+      final linked = await _linkedPages(plan.linkedManga);
+      final payload = [...plan.entries, ...linked.entries];
 
       final createdAt = _clock().toUtc();
       final manifest = FullBackupManifest(
@@ -148,9 +166,9 @@ class FullBackupService implements FullBackupApi {
         appSupportPath: root.path,
         bookCount: plan.bookCount,
         dictionaryCount: plan.dictionaryCount,
-        externalMangaCount: plan.externalMangaCount,
+        externalMangaCount: linked.mangaCount,
         dbBytes: snapshot.lengthSync(),
-        booksBytes: plan.booksBytes,
+        booksBytes: payload.fold(0, (sum, e) => sum + e.size),
         folders: plan.folders,
       );
       final sidecars = [
@@ -168,14 +186,9 @@ class FullBackupService implements FullBackupApi {
             await backupService.createSettingsOnlyManifest(),
           ),
         ),
-        FullBackupPlanEntry(
-          path: snapshot.path,
-          name: FullBackupManifest.databaseEntry,
-          size: snapshot.lengthSync(),
-          level: _sidecarLevel,
-        ),
+        _entryFor(snapshot, FullBackupManifest.databaseEntry),
       ];
-      final entries = [...sidecars, ...plan.entries];
+      final entries = [...sidecars, ...payload];
       File(p.join(_jobDir.path, planFileName)).writeAsStringSync(
         entries.map((e) => '${e.toJsonLine()}\n').join(),
         flush: true,
@@ -231,14 +244,70 @@ class FullBackupService implements FullBackupApi {
     }
   }
 
+  /// The page images of manga linked from folders outside Mekuru, read
+  /// through the folder grants at export time and filed under
+  /// `Manga/<Title>/pages/`. A folder that cannot be listed any more (grant
+  /// revoked, card removed) contributes nothing, and that manga stays linked
+  /// in the restored library as it always did.
+  Future<({List<FullBackupPlanEntry> entries, int mangaCount})> _linkedPages(
+    List<LinkedMangaSource> sources,
+  ) async {
+    // Each listing is a resolve plus a children query on its own thread;
+    // a few at a time overlaps them without swamping a slow provider.
+    final listings = <List<SafTreeFile>>[];
+    for (var i = 0; i < sources.length; i += _listingConcurrency) {
+      listings.addAll(
+        await Future.wait(
+          sources
+              .skip(i)
+              .take(_listingConcurrency)
+              .map((s) => listTreeFiles(s.treeUri, s.imageDirRelativePath)),
+        ),
+      );
+    }
+
+    final entries = <FullBackupPlanEntry>[];
+    var mangaCount = 0;
+    for (var i = 0; i < sources.length; i++) {
+      final source = sources[i];
+      final pages =
+          listings[i].where((f) => CbzParser.isImageFile(f.name)).toList()
+            ..sort((a, b) => a.name.compareTo(b.name));
+      if (pages.isEmpty) continue;
+      mangaCount++;
+      for (final page in pages) {
+        entries.add(
+          FullBackupPlanEntry(
+            path: page.uri,
+            name:
+                '${source.prefix}${FullBackupManifest.linkedPagesDirName}/'
+                '${page.name}',
+            size: math.max(page.size, 0),
+            level: 0,
+            mtime: page.lastModified,
+          ),
+        );
+      }
+    }
+    return (entries: entries, mangaCount: mangaCount);
+  }
+
+  static const _listingConcurrency = 4;
+
   FullBackupPlanEntry _writeSidecar(String entryName, String content) {
     final file = File(p.join(_jobDir.path, p.basename(entryName)))
       ..writeAsStringSync(content, flush: true);
+    return _entryFor(file, entryName);
+  }
+
+  FullBackupPlanEntry _entryFor(File file, String entryName) {
+    final stat = file.statSync();
     return FullBackupPlanEntry(
       path: file.path,
       name: entryName,
-      size: file.lengthSync(),
+      size: stat.size,
       level: _sidecarLevel,
+      mtime: stat.modified.millisecondsSinceEpoch,
     );
   }
 

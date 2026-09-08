@@ -7,7 +7,17 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /** One line of `plan.jsonl`: a source file and its name in the archive. */
-data class PlanEntry(val path: String, val name: String, val size: Long, val level: Int)
+/**
+ * One planned source: a file path, or a `content://` document for a page
+ * read through a folder grant; [mtime] in milliseconds since the epoch.
+ */
+data class PlanEntry(
+    val path: String,
+    val name: String,
+    val size: Long,
+    val level: Int,
+    val mtime: Long = 0L,
+)
 
 /**
  * The on-disk state of the one full-backup job that can exist at a time,
@@ -67,6 +77,7 @@ class JobStore(val dir: File, val stagingDir: File) {
                 name = json.getString("n"),
                 size = json.getLong("s"),
                 level = json.getInt("l"),
+                mtime = json.optLong("m", 0L),
             )
         }
     }

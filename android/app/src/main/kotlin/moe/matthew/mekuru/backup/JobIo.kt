@@ -56,8 +56,17 @@ interface JobIo {
     /** Gives the partial its final name; idempotent across a crash. */
     fun finalizePartial(spec: JobSpec): Finalized
 
-    /** Opens the restore source, or null when it no longer exists. */
-    fun openSource(spec: JobSpec): InputStream?
+    /**
+     * Opens a source for reading: a planned entry ([PlanEntry.path]) or the
+     * restore archive ([JobSpec.sourceUri]). Null when it is gone.
+     */
+    fun openEntry(path: String): InputStream?
+}
+
+/** A plain path or a `file:` URI as a stream, or null when it is not a file. */
+fun openFileEntry(path: String): InputStream? {
+    val file = if (path.startsWith("file:")) File(URI(path)) else File(path)
+    return if (file.isFile) FileInputStream(file) else null
 }
 
 /** Creates (replacing any) the `.partial` file beside [target]. */
@@ -107,11 +116,7 @@ class FileJobIo(private val seekable: Boolean = true) : JobIo {
     override fun finalizePartial(spec: JobSpec): Finalized =
         finalizePartialFile(partialOf(spec), File(requireNotNull(spec.targetPath) { "targetPath" }))
 
-    override fun openSource(spec: JobSpec): InputStream? {
-        val raw = requireNotNull(spec.sourceUri) { "sourceUri" }
-        val file = if (raw.startsWith("file:")) File(URI(raw)) else File(raw)
-        return if (file.isFile) FileInputStream(file) else null
-    }
+    override fun openEntry(path: String): InputStream? = openFileEntry(path)
 
     companion object {
         const val PARTIAL_SUFFIX = ".partial"

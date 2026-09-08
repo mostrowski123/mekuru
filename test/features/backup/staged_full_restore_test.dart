@@ -54,6 +54,42 @@ void main() {
       expect(h.prefs.getString('app.color_theme'), 'mekuruRed');
     });
 
+    test(
+      'a staged UniDic-lite replaces the copy in the documents dir',
+      () async {
+        h.seedLive(withDictionary: true);
+        h.seedStaging(withDictionary: true);
+
+        expect(await h.run(), StagedRestoreOutcome.applied);
+
+        h.expectRestoredEndState();
+        expect(h.read(h.liveDictionary.path), 'NEW-DIC');
+      },
+    );
+
+    test(
+      'an archive without UniDic-lite leaves the device copy alone',
+      () async {
+        h.seedLive(withDictionary: true);
+        h.seedStaging();
+
+        expect(await h.run(), StagedRestoreOutcome.applied);
+
+        h.expectRestoredEndState();
+        expect(h.read(h.liveDictionary.path), 'OLD-DIC');
+      },
+    );
+
+    test('a device without UniDic-lite gains the staged one', () async {
+      h.seedLive();
+      h.seedStaging(withDictionary: true);
+
+      expect(await h.run(), StagedRestoreOutcome.applied);
+
+      h.expectRestoredEndState();
+      expect(h.read(h.liveDictionary.path), 'NEW-DIC');
+    });
+
     test('a device with no library yet still restores', () async {
       h.write(h.liveDb.path, 'OLD-DB');
       h.seedStaging();
@@ -218,6 +254,40 @@ void main() {
         );
       },
     );
+
+    test(
+      'a failure after the dictionary swapped restores the old one',
+      () async {
+        h.seedLive(withDictionary: true);
+        h.seedStaging(withDictionary: true);
+        // Every swap has happened by the time the settings file is decoded.
+        h.write(
+          p.join(h.staging.path, StagedFullRestore.settingsEntryName),
+          'not a settings file',
+        );
+
+        expect(await h.run(), StagedRestoreOutcome.rolledBack);
+
+        h.expectUntouchedEndState();
+        expect(h.read(h.liveDictionary.path), 'OLD-DIC');
+        expect(h.staging.existsSync(), isFalse);
+        expect(h.rollback.existsSync(), isFalse);
+      },
+    );
+
+    test('a failure on a device without a dictionary leaves none', () async {
+      h.seedLive();
+      h.seedStaging(withDictionary: true);
+      h.write(
+        p.join(h.staging.path, StagedFullRestore.settingsEntryName),
+        'not a settings file',
+      );
+
+      expect(await h.run(), StagedRestoreOutcome.rolledBack);
+
+      h.expectUntouchedEndState();
+      expect(h.liveDictionary.existsSync(), isFalse);
+    });
 
     test('reports the failure to the caller', () async {
       h.seedLive();

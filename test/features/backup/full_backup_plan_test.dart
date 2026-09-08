@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -15,6 +16,7 @@ import 'package:path/path.dart' as p;
 void main() {
   late Directory root;
   late Directory books;
+  late Directory unidic;
   late String snapshotPath;
 
   File write(String path, String content) {
@@ -72,6 +74,7 @@ void main() {
   setUp(() async {
     root = await Directory.systemTemp.createTemp('plan_root_');
     books = Directory(p.join(root.path, 'books'))..createSync();
+    unidic = Directory(p.join(root.path, 'docs', 'unidic-lite'));
     snapshotPath = p.join(root.path, 'snapshot.sqlite');
     await seedSnapshot();
 
@@ -83,8 +86,21 @@ void main() {
     write(p.join(books.path, 'book_1_aaaaaaaa', 'content', 'cover.jpg'), 'J');
     write(p.join(books.path, 'book_1_aaaaaaaa', 'pages_cache.json.tmp'), 'x');
     write(p.join(books.path, 'manga_2_bbbbbbbb', '001.jpg'), 'IMG1');
-    write(p.join(books.path, 'manga_2_bbbbbbbb', 'pages_cache.json'), '{}');
-    write(p.join(books.path, 'manga_3_cccccccc', 'pages_cache.json'), '{}');
+    write(
+      p.join(books.path, 'manga_2_bbbbbbbb', 'pages_cache.json'),
+      jsonEncode({'title': 'local', 'imageDirPath': '/x', 'pages': []}),
+    );
+    // A manga linked from a folder outside Mekuru: only its cache is local.
+    write(
+      p.join(books.path, 'manga_3_cccccccc', 'pages_cache.json'),
+      jsonEncode({
+        'title': 'External',
+        'imageDirPath': '/tmp/import_scratch/External',
+        'safTreeUri': 'content://tree/x',
+        'safImageDirRelativePath': 'Manga/External',
+        'pages': [],
+      }),
+    );
     write(p.join(books.path, 'book_4_dddddddd', 'content', 'a.xhtml'), 'A');
     write(p.join(books.path, 'book_9_99999999', 'orphan.epub'), 'ORPHAN');
     write(p.join(books.path, '.trash', '1_book_8', 'old.bin'), 'OLD');
@@ -96,8 +112,12 @@ void main() {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
-  FullBackupPlan build() => buildExportPlan(
-    BuildExportPlanArgs(snapshotDbPath: snapshotPath, booksDirPath: books.path),
+  FullBackupPlan build({String? unidicDirPath}) => buildExportPlan(
+    BuildExportPlanArgs(
+      snapshotDbPath: snapshotPath,
+      booksDirPath: books.path,
+      unidicDirPath: unidicDirPath,
+    ),
   );
 
   test('maps claimed directories to titled folders and nothing else', () {
@@ -132,34 +152,83 @@ void main() {
 
     expect(plan.bookCount, 5);
     expect(plan.dictionaryCount, 1);
-    expect(plan.externalMangaCount, 1);
     final epub = plan.entries.singleWhere((e) => e.name.endsWith('メロス.epub'));
     expect(epub.path, p.join(books.path, 'book_1_aaaaaaaa', 'メロス.epub'));
     expect(epub.size, 'EPUB-BYTES'.length);
+    for (final entry in plan.entries) {
+      final stat = File(entry.path).statSync();
+      expect(entry.size, stat.size, reason: entry.name);
+      expect(entry.mtime, stat.modified.millisecondsSinceEpoch);
+    }
+  });
+
+  test(
+    'an unreadable manga cache leaves that manga unlinked, not the export',
+    () {
+      write(
+        p.join(books.path, 'manga_3_cccccccc', 'pages_cache.json'),
+        '{oops',
+      );
+
+      final plan = build();
+
+      expect(plan.linkedManga, isEmpty);
+      expect(
+        plan.entries.map((e) => e.name),
+        contains('Manga/External/pages_cache.json'),
+      );
+    },
+  );
+
+  test('names the folder of every manga linked from outside Mekuru', () {
+    final plan = build();
+
+    final linked = plan.linkedManga.single;
+    expect(linked.prefix, 'Manga/External/');
+    expect(linked.treeUri, 'content://tree/x');
+    expect(linked.imageDirRelativePath, 'Manga/External');
+  });
+
+  test('ships the installed UniDic-lite under Mekuru data', () {
+    write(p.join(unidic.path, '.install_complete'), '');
+    write(p.join(unidic.path, 'sys.dic'), 'DIC');
+    write(p.join(unidic.path, 'dicrc'), 'rc');
+
+    final names = build(
+      unidicDirPath: unidic.path,
+    ).entries.map((e) => e.name).toList();
+
+    expect(names.where((n) => n.startsWith(FullBackupManifest.unidicPrefix)), [
+      'Mekuru data/unidic-lite/.install_complete',
+      'Mekuru data/unidic-lite/dicrc',
+      'Mekuru data/unidic-lite/sys.dic',
+    ]);
     expect(
-      plan.booksBytes,
-      plan.entries.fold<int>(0, (sum, e) => sum + e.size),
+      build().entries.any((e) => e.name.startsWith('Mekuru data/unidic')),
+      isFalse,
     );
-    expect(plan.booksBytes, 10 + 4 + 1 + 1 + 4 + 2 + 2 + 3);
   });
 
   test('a missing books directory yields an empty payload', () {
     books.deleteSync(recursive: true);
     final plan = build();
     expect(plan.entries, isEmpty);
+    expect(plan.linkedManga, isEmpty);
     expect(plan.folders, isNotEmpty);
   });
 
   test('plan lines carry exactly what the native job reads', () {
     const entry = FullBackupPlanEntry(
-      path: '/a/b.epub',
-      name: 'Books/x/b.epub',
-      size: 12,
+      path: 'content://tree/x/document/1',
+      name: 'Manga/x/pages/001.jpg',
+      size: 3,
       level: 0,
+      mtime: 1700000000000,
     );
     expect(
       entry.toJsonLine(),
-      '{"p":"/a/b.epub","n":"Books/x/b.epub","s":12,"l":0}',
+      '{"p":"content://tree/x/document/1","n":"Manga/x/pages/001.jpg",'
+      '"s":3,"l":0,"m":1700000000000}',
     );
   });
 
@@ -173,6 +242,8 @@ void main() {
       'Books/',
       'Manga/',
       'Mekuru data/',
+      'pages/',
+      'unidic-lite/',
       FullBackupManifest.manifestEntry,
       'Restore full backup (.zip)',
       'replaces everything in Mekuru',
@@ -180,5 +251,6 @@ void main() {
       expect(text, contains(part));
     }
     expect(text, isNot(contains('device will be')));
+    expect(text, isNot(contains('not included')));
   });
 }

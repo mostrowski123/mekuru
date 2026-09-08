@@ -214,6 +214,44 @@ void main() {
     },
   );
 
+  test('adopts the pages of a linked manga the archive carries', () async {
+    await seedDatabase();
+    seedSettings();
+    seedCaches();
+    for (final name in ['002.jpg', '001.png', 'notes.txt']) {
+      write(p.join(staging.path, 'books', 'manga_2', 'pages', name), name);
+    }
+
+    final result = await run();
+    // A second boot (crash after READY was lost) must land in the same place.
+    await run();
+
+    const pagesDir = '$newRoot/books/manga_2/pages';
+    final cache = readJson(
+      p.join(staging.path, 'books', 'manga_2', mangaPagesCacheFileName),
+    );
+    expect(cache['imageDirPath'], pagesDir);
+    expect(cache.containsKey('safTreeUri'), isFalse);
+    expect(cache.containsKey('safImageDirRelativePath'), isFalse);
+    // The original-OCR copy was already local in this fixture: re-anchored.
+    expect(
+      readJson(
+        p.join(
+          staging.path,
+          'books',
+          'manga_2',
+          BookRepository.originalMokuroOcrBackupFileName,
+        ),
+      )['imageDirPath'],
+      '$newRoot/books/manga_2/img',
+    );
+    final manga = rows(
+      "SELECT cover_image_path FROM books WHERE title = 'SAF manga'",
+    ).single;
+    expect(manga['cover_image_path'], '$pagesDir/001.png');
+    expect(result.rewrittenCaches, 3);
+  });
+
   test('is idempotent and tolerates a trailing slash on the root', () async {
     await seedDatabase();
     seedSettings();

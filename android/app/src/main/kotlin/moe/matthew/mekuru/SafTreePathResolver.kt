@@ -6,6 +6,11 @@ import java.text.Normalizer
 data class SafChildDocument(
     val documentId: String,
     val displayName: String,
+    /** Bytes, or -1 when the provider reports none. */
+    val size: Long = -1L,
+    /** Milliseconds since the epoch, or 0 when unknown. */
+    val lastModified: Long = 0L,
+    val isDirectory: Boolean = false,
 )
 
 /**

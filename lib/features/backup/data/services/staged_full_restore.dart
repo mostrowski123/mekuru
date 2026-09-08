@@ -39,22 +39,28 @@ class StagedRestoreException implements Exception {
 ///
 /// The swap is a handful of same-filesystem renames driven purely by what
 /// exists on disk, so a process death at any point is repaired by simply
-/// running again: for each item X in {database, books}, `staging/X` present
-/// means the live X is still the old one. The old items wait in
-/// `<root>/restore_rollback/`; that directory is never deleted while `READY`
-/// exists, and `READY` goes away only once an apply or a rollback has fully
-/// completed. Directories are never deleted in place: they are renamed to a
-/// `*.trash` tombstone first, so the path is free at once and a concurrent
-/// job can never write into a tree that is being removed.
+/// running again: for each item X in {database, books, unidic-lite},
+/// `staging/X` present means the live X is still the old one. The old items
+/// wait in `<root>/restore_rollback/`; that directory is never deleted while
+/// `READY` exists, and `READY` goes away only once an apply or a rollback has
+/// fully completed. Directories are never deleted in place: they are renamed
+/// to a `*.trash` tombstone first, so the path is free at once and a
+/// concurrent job can never write into a tree that is being removed.
+///
+/// The database and `books/` live under [root] (app support); the downloaded
+/// UniDic-lite lives under [documentsRoot] (app documents) and is optional:
+/// an archive without it leaves the device's own copy alone.
 class StagedFullRestore {
   StagedFullRestore({
     required this.root,
+    required this.documentsRoot,
     required this.prefs,
     this.onError,
     Future<void> Function(int connectionId)? clearServerSecret,
   }) : _clearServerSecret = clearServerSecret ?? ServerSecretStorage().clear;
 
   final Directory root;
+  final Directory documentsRoot;
   final SharedPreferences prefs;
   final void Function(Object error, StackTrace stackTrace)? onError;
   final Future<void> Function(int connectionId) _clearServerSecret;
@@ -69,6 +75,7 @@ class StagedFullRestore {
   static const databaseFileName = AppDatabase.databaseFileName;
   static const booksDirName = BookRepository.booksSegment;
   static const settingsEntryName = FullBackupManifest.settingsFileName;
+  static const unidicDirName = FullBackupManifest.unidicDirName;
 
   /// `ok`, or `error:<code>`; consumed once by the UI after the restart.
   static const resultPrefKey = 'backup.full_restore_result';
@@ -150,16 +157,18 @@ class StagedFullRestore {
       return _fail(const StagedRestoreException('incomplete_staging'));
     }
 
+    var movedUnidic = false;
     try {
       _rollback.createSync(recursive: true);
       _swapIn(databaseFileName, suffixes: _databaseSuffixes);
       _swapIn(booksDirName);
+      movedUnidic = _swapIn(unidicDirName, into: documentsRoot);
       await _replacePrefs();
       await prefs.setString(resultPrefKey, resultOk);
       _ready.deleteSync();
       return StagedRestoreOutcome.applied;
     } catch (e, st) {
-      _rollBack();
+      _rollBack(movedUnidic: movedUnidic);
       return _fail(e, st);
     }
   }
@@ -211,28 +220,57 @@ class StagedFullRestore {
       Directory(p.join(_staging.path, booksDirName)).existsSync() &&
       File(p.join(_staging.path, settingsEntryName)).existsSync();
 
-  /// Moves the live item aside into the rollback dir, then the staged item
-  /// into place. Skips entirely when the staged item is gone: a previous run
-  /// already moved it in.
-  void _swapIn(String name, {List<String> suffixes = const ['']}) {
+  /// Moves the live item (under [into], default [root]) aside into the
+  /// rollback dir, then the staged item into place. Returns false without
+  /// touching anything when the staged item is gone: a previous run already
+  /// moved it in, or the archive never had it.
+  bool _swapIn(
+    String name, {
+    List<String> suffixes = const [''],
+    Directory? into,
+  }) {
     final staged = _existing(p.join(_staging.path, name));
-    if (staged == null) return;
+    if (staged == null) return false;
+    final live = into ?? root;
+    live.createSync(recursive: true);
     for (final suffix in suffixes) {
       _existing(
-        p.join(root.path, '$name$suffix'),
+        p.join(live.path, '$name$suffix'),
       )?.renameSync(p.join(_rollback.path, '$name$suffix'));
     }
-    staged.renameSync(p.join(root.path, name));
+    staged.renameSync(p.join(live.path, name));
+    return true;
   }
 
   /// Reverse of [_swapIn], best-effort per step so one failure cannot stop
   /// the rest: the item this run moved in goes back to staging (freeing the
   /// live slot), then the old item returns from the rollback dir.
-  void _rollBack() {
+  ///
+  /// The database and books are always staged, so "live present, staged
+  /// gone" identifies the item as ours even across a crash. The optional
+  /// dictionary is ours when this run moved it ([movedUnidic]) or when an
+  /// old one waits in the rollback dir; a crash between runs on a device
+  /// that had none leaves the restored dictionary in place, which is a
+  /// working dictionary either way.
+  void _rollBack({required bool movedUnidic}) {
     void attempt(void Function() step) {
       try {
         step();
       } catch (_) {}
+    }
+
+    final stagedUnidic = p.join(_staging.path, unidicDirName);
+    final oldUnidic = _existing(p.join(_rollback.path, unidicDirName));
+    if (movedUnidic || oldUnidic != null) {
+      final live = _existing(p.join(documentsRoot.path, unidicDirName));
+      if (live != null && _existing(stagedUnidic) == null) {
+        attempt(() => live.renameSync(stagedUnidic));
+      }
+    }
+    if (oldUnidic != null) {
+      attempt(
+        () => oldUnidic.renameSync(p.join(documentsRoot.path, unidicDirName)),
+      );
     }
 
     for (final (name, suffixes) in [
@@ -308,6 +346,7 @@ Future<void> applyStagedFullRestoreIfAny() async {
     if (!StagedFullRestore.hasWorkUnder(root)) return;
     final restore = StagedFullRestore(
       root: root,
+      documentsRoot: await getApplicationDocumentsDirectory(),
       prefs: await SharedPreferences.getInstance(),
       onError: (error, stackTrace) => logFailure(
         'backup.full_restore_boot_failed',

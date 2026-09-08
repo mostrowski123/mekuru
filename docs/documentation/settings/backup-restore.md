@@ -50,19 +50,19 @@ Unzip it on a computer and you will find:
 | Folder or file | What is in it |
 |---|---|
 | `Books/<title>/` | one folder per EPUB, with the original `.epub` file inside |
-| `Manga/<title>/` | one folder per manga, with its page images |
-| `Mekuru data/` | Mekuru's own files: the database (dictionaries, progress, vocabulary, statistics, collections), the settings file and any custom covers |
+| `Manga/<title>/` | one folder per manga, with its page images; for manga linked from a folder outside Mekuru, the pages are copied in under `pages/` |
+| `Mekuru data/` | Mekuru's own files: the database (dictionaries, progress, vocabulary, statistics, collections), the settings file, any custom covers, and the UniDic-lite dictionary if you had downloaded it |
 | `README.txt` | a short description of the layout and how to restore |
 | `manifest.json` | a summary Mekuru checks before restoring |
 
 You can copy individual books out of the archive freely. Do not rename, move or edit files inside it if you plan to restore from it.
 
+Manga you linked from a folder outside Mekuru are read from that folder while the backup is made. If the folder cannot be read any more (the access was revoked or the card removed), that manga goes into the backup without its pages and will need re-linking after a restore.
+
 Not included:
 
-- Manga you linked from a folder outside Mekuru. Their pages stay in your folder; after restoring on another device, open the manga and re-link the folder.
-- The downloaded UniDic-lite dictionary and KanjiVG data. Download them again from Settings.
+- The KanjiVG stroke order data. Download it again from Settings.
 - The reading data backup history.
-- Pro. It is re-checked with Google Play the first time Mekuru opens after a restore.
 
 ### Restoring
 
@@ -73,6 +73,8 @@ Restoring a full backup **replaces everything in Mekuru on this device**: its bo
 3. Read the red confirmation, tick **I understand that Mekuru's data on this device will be deleted**, then tap **Delete Mekuru data and replace**. Until the box is ticked the button stays disabled.
 4. The **Restoring** page shows the files being copied. You can still cancel here; nothing in Mekuru has changed yet.
 5. When the copy finishes, tap **Close Mekuru**. Mekuru closes to swap the data in. If you had left the app, a notification tells you the restore is ready to finish; just open Mekuru.
+
+Manga that were linked from a folder outside Mekuru come back as ordinary manga stored inside Mekuru; the old folder is not needed any more. The UniDic-lite dictionary comes back if it was in the backup; otherwise the copy already on the device stays.
 6. Open Mekuru again. Your restored library appears and a "Full restore complete" message confirms it.
 
 If anything goes wrong before the final step, nothing on the device changes and Mekuru tells you why. If the restore cannot be completed after the restart, your previous data is kept and a message says so.

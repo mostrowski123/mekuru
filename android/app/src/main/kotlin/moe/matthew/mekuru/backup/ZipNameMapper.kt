@@ -16,6 +16,8 @@ object ZipLayout {
     const val SETTINGS_FILE = "settings.mekuru"
     const val DATABASE = DATA_PREFIX + DATABASE_FILE
     const val SETTINGS = DATA_PREFIX + SETTINGS_FILE
+    const val UNIDIC_DIR = "unidic-lite"
+    const val UNIDIC_PREFIX = DATA_PREFIX + UNIDIC_DIR + "/"
     const val BOOKS_DIR = "books"
 }
 
@@ -41,6 +43,11 @@ class ZipNameMapper(folders: Map<String, String>) {
             val rest = name.removePrefix(ZipLayout.COVERS_PREFIX)
             if (rest.isEmpty() || rest.contains('/')) return null
             return "${ZipLayout.BOOKS_DIR}/$rest"
+        }
+        if (name.startsWith(ZipLayout.UNIDIC_PREFIX)) {
+            val rest = name.removePrefix(ZipLayout.UNIDIC_PREFIX)
+            if (rest.isEmpty()) return null
+            return "${ZipLayout.UNIDIC_DIR}/$rest"
         }
         for ((prefix, dir) in folders) {
             if (!name.startsWith(prefix)) continue

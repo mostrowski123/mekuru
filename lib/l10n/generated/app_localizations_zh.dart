@@ -2459,7 +2459,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupFullNotIncluded =>
-      'Not included: manga linked from folders outside Mekuru (their pages stay in your folder), downloaded UniDic-lite, the reading data backup history, and Pro, which is re-checked with Google Play.';
+      'Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.';
 
   @override
   String get backupFullExportTitle => 'Export full backup (.zip)…';
@@ -2582,9 +2582,9 @@ class AppLocalizationsZh extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count manga are linked from folders outside Mekuru and will need re-linking after the restore.',
+          '$count manga were linked from folders outside Mekuru. Their pages are in this backup and will be stored inside Mekuru.',
       one:
-          '$count manga is linked from a folder outside Mekuru and will need re-linking after the restore.',
+          '$count manga was linked from a folder outside Mekuru. Its pages are in this backup and will be stored inside Mekuru.',
     );
     return '$_temp0';
   }
@@ -5145,7 +5145,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullNotIncluded =>
-      'Not included: manga linked from folders outside Mekuru (their pages stay in your folder), downloaded UniDic-lite, the reading data backup history, and Pro, which is re-checked with Google Play.';
+      'Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.';
 
   @override
   String get backupFullExportTitle => 'Export full backup (.zip)…';
@@ -5268,9 +5268,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       count,
       locale: localeName,
       other:
-          '$count manga are linked from folders outside Mekuru and will need re-linking after the restore.',
+          '$count manga were linked from folders outside Mekuru. Their pages are in this backup and will be stored inside Mekuru.',
       one:
-          '$count manga is linked from a folder outside Mekuru and will need re-linking after the restore.',
+          '$count manga was linked from a folder outside Mekuru. Its pages are in this backup and will be stored inside Mekuru.',
     );
     return '$_temp0';
   }

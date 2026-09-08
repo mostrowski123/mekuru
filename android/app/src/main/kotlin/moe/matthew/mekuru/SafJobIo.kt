@@ -6,7 +6,7 @@ import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import java.io.BufferedOutputStream
 import java.io.File
-import java.io.FileNotFoundException
+import java.io.IOException
 import java.io.InputStream
 import moe.matthew.mekuru.backup.FileJobIo
 import moe.matthew.mekuru.backup.Finalized
@@ -16,6 +16,7 @@ import moe.matthew.mekuru.backup.JobSpec
 import moe.matthew.mekuru.backup.Sink
 import moe.matthew.mekuru.backup.createPartialFile
 import moe.matthew.mekuru.backup.finalizePartialFile
+import moe.matthew.mekuru.backup.openFileEntry
 
 /**
  * [JobIo] over `ContentResolver`. Handles both `content://` documents (the
@@ -94,11 +95,12 @@ class SafJobIo(private val resolver: ContentResolver) : JobIo {
         }
     }
 
-    override fun openSource(spec: JobSpec): InputStream? {
-        val uri = Uri.parse(requireNotNull(spec.sourceUri) { "sourceUri" })
+    /** `content://` through the resolver (the folder grant must still hold), anything else as a file. */
+    override fun openEntry(path: String): InputStream? {
+        if (!path.startsWith("content:")) return openFileEntry(path)
         return try {
-            resolver.openInputStream(uri)
-        } catch (_: FileNotFoundException) {
+            resolver.openInputStream(Uri.parse(path))
+        } catch (_: IOException) {
             null
         } catch (_: SecurityException) {
             null

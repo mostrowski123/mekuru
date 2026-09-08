@@ -581,15 +581,13 @@ class BookRepository {
         'for "${manifest.title}"',
       );
 
-      // Cover = alphabetically first image file (ASCII sort).
-      // The mokuro page order doesn't always start with the cover —
-      // filenames like _01.jpg or 000.jpg may precede numbered pages.
+      // Cover = the first existing name in CbzParser.coverCandidates order;
+      // the full restore applies the same rule to pages it adopts.
       String? coverImagePath;
       if (manifest.imageFileNames.isNotEmpty) {
-        final sorted = [...manifest.imageFileNames]..sort();
-        for (final fileName in sorted) {
-          final ext = p.extension(fileName).toLowerCase();
-          if (!CbzParser.imageExtensions.contains(ext)) continue;
+        for (final fileName in CbzParser.coverCandidates(
+          manifest.imageFileNames,
+        )) {
           if (manifest.safTreeUri != null &&
               manifest.safImageDirRelativePath != null) {
             final relPath = p.posix.join(

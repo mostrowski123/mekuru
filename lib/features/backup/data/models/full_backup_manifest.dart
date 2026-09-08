@@ -1,4 +1,5 @@
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 
 /// Describes one full-backup archive (`mekuru-full-backup-*.zip`).
 ///
@@ -15,8 +16,10 @@ import 'package:mekuru/core/database/database_provider.dart';
 /// Mekuru data/settings.mekuru
 /// Mekuru data/mekuru_db.sqlite
 /// Mekuru data/covers/<loose files from books/>
+/// Mekuru data/unidic-lite/...  the downloaded dictionary, when installed
 /// Books/<Title>/...            one folder per EPUB, contents as on disk
 /// Manga/<Title>/...            one folder per manga
+/// Manga/<Title>/pages/...      pages copied from a linked folder
 /// ```
 /// [folders] maps each `Books/<Title>/` or `Manga/<Title>/` prefix back to
 /// the import directory name under `books/`, so a restore recreates the
@@ -32,8 +35,16 @@ class FullBackupManifest {
   static const String settingsEntry = '$dataPrefix$settingsFileName';
   static const String databaseEntry =
       '$dataPrefix${AppDatabase.databaseFileName}';
+  static const String unidicDirName =
+      EnhancedFuriganaDictDownloadService.localDirName;
+  static const String unidicPrefix = '$dataPrefix$unidicDirName/';
   static const String booksPrefix = 'Books/';
   static const String mangaPrefix = 'Manga/';
+
+  /// Where a manga's pages go inside its folder when they were read from a
+  /// linked folder at export time; the restore turns such a manga into an
+  /// ordinary one reading from this directory.
+  static const String linkedPagesDirName = 'pages';
 
   final int format;
   final String appVersion;
@@ -43,10 +54,12 @@ class FullBackupManifest {
   final int bookCount;
   final int dictionaryCount;
 
-  /// Manga whose page images live in a user folder (SAF) and are therefore
-  /// not inside the archive; they need re-linking on another device.
+  /// Manga that were linked from a folder outside Mekuru and whose pages the
+  /// archive carries under `pages/`; a restore stores them inside Mekuru.
   final int externalMangaCount;
   final int dbBytes;
+
+  /// Every payload byte: books, manga (linked pages included), UniDic-lite.
   final int booksBytes;
 
   /// Zip folder prefix (with trailing slash) → import directory name.

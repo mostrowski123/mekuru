@@ -115,6 +115,27 @@ class AndroidSafDocument {
   const AndroidSafDocument({required this.uri, required this.sizeBytes});
 }
 
+/// A file inside a folder the user granted Mekuru access to.
+class SafTreeFile {
+  final String name;
+
+  /// The document URI a `ContentResolver` opens; valid while the grant is.
+  final String uri;
+
+  /// Bytes, or -1 when the provider did not report a size.
+  final int size;
+
+  /// Milliseconds since the epoch, or 0 when unknown.
+  final int lastModified;
+
+  const SafTreeFile({
+    required this.name,
+    required this.uri,
+    required this.size,
+    required this.lastModified,
+  });
+}
+
 /// Android Storage Access Framework helper.
 ///
 /// Provides persisted tree access and tree-relative file reads so the app can
@@ -311,6 +332,36 @@ class AndroidSafService {
       return const [];
     } on PlatformException catch (e) {
       _report(AndroidSafFailure.fromPlatformException('listNamesInTreeDir', e));
+      return const [];
+    }
+  }
+
+  /// Lists the files (not folders) directly inside [relativePath] of a
+  /// granted tree, with their document URIs and sizes. Empty when the grant
+  /// is gone or the folder cannot be read.
+  static Future<List<SafTreeFile>> listFilesInTreeDir(
+    String treeUri,
+    String relativePath,
+  ) async {
+    try {
+      final result = await _channel.invokeMethod<List<Object?>>(
+        'listFilesInTreeDir',
+        {'treeUri': treeUri, 'relativePath': relativePath},
+      );
+      return [
+        for (final item in result ?? const <Object?>[])
+          if (item is Map && item['name'] is String && item['uri'] is String)
+            SafTreeFile(
+              name: item['name'] as String,
+              uri: item['uri'] as String,
+              size: (item['size'] as num?)?.toInt() ?? -1,
+              lastModified: (item['lastModified'] as num?)?.toInt() ?? 0,
+            ),
+      ];
+    } on MissingPluginException {
+      return const [];
+    } on PlatformException catch (e) {
+      _report(AndroidSafFailure.fromPlatformException('listFilesInTreeDir', e));
       return const [];
     }
   }

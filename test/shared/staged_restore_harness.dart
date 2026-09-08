@@ -58,6 +58,12 @@ class StagedRestoreHarness {
   File get liveDb => File(p.join(root.path, db));
   File get liveJournal => File(p.join(root.path, journal));
 
+  /// Stands in for the app-documents directory, a sibling of app support.
+  Directory get documentsRoot => Directory(p.join(root.path, 'app_flutter'));
+  File get liveDictionary => File(
+    p.join(documentsRoot.path, StagedFullRestore.unidicDirName, 'sys.dic'),
+  );
+
   File write(String path, String content) {
     final file = File(path);
     file.parent.createSync(recursive: true);
@@ -80,18 +86,30 @@ class StagedRestoreHarness {
     ),
   );
 
-  /// The device before the restore: old DB with a hot journal, one old book.
-  void seedLive() {
+  /// The device before the restore: old DB with a hot journal, one old book,
+  /// optionally a downloaded dictionary.
+  void seedLive({bool withDictionary = false}) {
     write(liveDb.path, 'OLD-DB');
     write(liveJournal.path, 'OLD-JOURNAL');
     write(p.join(liveBooks.path, 'book_1', 'a.txt'), 'old book');
+    if (withDictionary) write(liveDictionary.path, 'OLD-DIC');
   }
 
   /// What the import step leaves behind, READY written last.
-  void seedStaging({bool withDb = true, bool withBooks = true}) {
+  void seedStaging({
+    bool withDb = true,
+    bool withBooks = true,
+    bool withDictionary = false,
+  }) {
     if (withDb) write(p.join(staging.path, db), 'NEW-DB');
     if (withBooks) {
       write(p.join(staging.path, 'books', 'book_9', 'b.txt'), 'new book');
+    }
+    if (withDictionary) {
+      write(
+        p.join(staging.path, StagedFullRestore.unidicDirName, 'sys.dic'),
+        'NEW-DIC',
+      );
     }
     write(
       p.join(staging.path, StagedFullRestore.settingsEntryName),
@@ -140,6 +158,7 @@ class StagedRestoreHarness {
   }) async {
     final restore = StagedFullRestore(
       root: root,
+      documentsRoot: documentsRoot,
       prefs: prefs,
       onError: (error, stackTrace) {
         errors.add(error);

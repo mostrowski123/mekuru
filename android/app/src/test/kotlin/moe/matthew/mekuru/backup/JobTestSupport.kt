@@ -40,7 +40,7 @@ object JobTestSupport {
         store.dir.mkdirs()
         store.planFile.writeText(
             entries.joinToString("") { e ->
-                "{\"p\":${quote(e.path)},\"n\":${quote(e.name)},\"s\":${e.size},\"l\":${e.level}}\n"
+                "{\"p\":${quote(e.path)},\"n\":${quote(e.name)},\"s\":${e.size},\"l\":${e.level},\"m\":${e.mtime}}\n"
             },
         )
     }

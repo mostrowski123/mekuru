@@ -7,6 +7,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
@@ -20,13 +21,26 @@ import 'package:path/path.dart' as p;
 /// standing in for the SAF pickers.
 const fullBackupJobs = FullBackupJobChannel();
 
-FullBackupService realFullBackupService(AppDatabase db, Directory root) =>
-    FullBackupService(
-      db: db,
-      backupService: BackupService(db, BookMatchService()),
-      root: root,
-      appVersion: 'integration',
-    );
+FullBackupService realFullBackupService(
+  AppDatabase db,
+  Directory root, {
+  Directory? documentsRoot,
+  Future<List<SafTreeFile>> Function(String treeUri, String relativePath)?
+  listTreeFiles,
+}) => FullBackupService(
+  db: db,
+  backupService: BackupService(db, BookMatchService()),
+  root: root,
+  documentsRoot: documentsRoot,
+  appVersion: 'integration',
+  listTreeFiles: listTreeFiles ?? AndroidSafService.listFilesInTreeDir,
+);
+
+/// A small valid PNG: the library decodes covers once the app shows, so
+/// fixtures must be real images.
+Uint8List tinyPng() => img.encodePng(
+  img.Image(width: 8, height: 8)..clear(img.ColorRgb8(200, 80, 80)),
+);
 
 /// Polls the native job until [until] holds.
 Future<FullBackupJobStatus> waitForJob(

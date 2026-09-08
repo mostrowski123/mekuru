@@ -127,8 +127,12 @@ class JobStoreTest {
         store.writeSpec(spec)
         assertEquals(spec, store.readSpec())
 
-        JobTestSupport.writePlan(store, listOf(PlanEntry("/a/b", "Books/x/b", 5, 0)))
-        assertEquals(listOf(PlanEntry("/a/b", "Books/x/b", 5, 0)), store.readPlan())
+        val plan = listOf(
+            PlanEntry("/a/b", "Books/x/b", 5, 0),
+            PlanEntry("content://tree/x/document/1", "Manga/x/pages/1.jpg", 7, 0, mtime = 1_700_000_000_000L),
+        )
+        JobTestSupport.writePlan(store, plan)
+        assertEquals(plan, store.readPlan())
     }
 
     @Test

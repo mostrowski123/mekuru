@@ -241,6 +241,27 @@ class MainActivity : FlutterActivity() {
                     listNamesInTreeDir(Uri.parse(treeUri), relativePath)
                 }
             }
+            "listFilesInTreeDir" -> {
+                val treeUri = call.argument<String>("treeUri")
+                val relativePath = call.argument<String>("relativePath") ?: ""
+                if (treeUri.isNullOrBlank()) {
+                    result.error("bad_args", "treeUri is required", null)
+                    return
+                }
+                runIo(result) {
+                    val tree = Uri.parse(treeUri)
+                    listChildrenInTreeDir(tree, relativePath, withDetails = true)
+                        .filter { !it.isDirectory }
+                        .map { child ->
+                            mapOf(
+                                "name" to child.displayName,
+                                "size" to child.size,
+                                "lastModified" to child.lastModified,
+                                "uri" to buildTreeDocumentUri(tree, child.documentId)?.toString(),
+                            )
+                        }
+                }
+            }
             "getDocumentUriInTree" -> {
                 val treeUri = call.argument<String>("treeUri")
                 val relativePath = call.argument<String>("relativePath")
@@ -628,20 +649,29 @@ class MainActivity : FlutterActivity() {
      * matters more than saving a query, so it never serves the cached index —
      * it refreshes it instead, which later resolutions then reuse.
      */
-    private fun listNamesInTreeDir(treeUri: Uri, relativePath: String): List<String> {
+    private fun listNamesInTreeDir(treeUri: Uri, relativePath: String): List<String> =
+        listChildrenInTreeDir(treeUri, relativePath).map { it.displayName }
+
+    /** [withDetails] adds size, time and type to each child; the resolver walk does not need them. */
+    private fun listChildrenInTreeDir(
+        treeUri: Uri,
+        relativePath: String,
+        withDetails: Boolean = false,
+    ): List<SafChildDocument> {
         val parentDocId = resolveTreeDocumentId(treeUri, relativePath) ?: return emptyList()
-        val children = listChildDocuments(treeUri, parentDocId)
+        val children = listChildDocuments(treeUri, parentDocId, withDetails)
         resolutionCache.putChildIndex(
             treeUri.toString(),
             parentDocId,
             SafTreePathResolver.indexChildren(children),
         )
-        return children.map { it.displayName }
+        return children
     }
 
     private fun listChildDocuments(
         treeUri: Uri,
         parentDocumentId: String,
+        withDetails: Boolean = false,
     ): List<SafChildDocument> {
         val childrenUri = try {
             DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId)
@@ -649,16 +679,37 @@ class MainActivity : FlutterActivity() {
             return emptyList()
         }
         val children = mutableListOf<SafChildDocument>()
-        val projection = arrayOf(Document.COLUMN_DOCUMENT_ID, Document.COLUMN_DISPLAY_NAME)
+        val projection = if (withDetails) {
+            arrayOf(
+                Document.COLUMN_DOCUMENT_ID,
+                Document.COLUMN_DISPLAY_NAME,
+                Document.COLUMN_MIME_TYPE,
+                Document.COLUMN_SIZE,
+                Document.COLUMN_LAST_MODIFIED,
+            )
+        } else {
+            arrayOf(Document.COLUMN_DOCUMENT_ID, Document.COLUMN_DISPLAY_NAME)
+        }
         try {
             contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
                 val idIdx = cursor.getColumnIndex(Document.COLUMN_DOCUMENT_ID)
                 val nameIdx = cursor.getColumnIndex(Document.COLUMN_DISPLAY_NAME)
+                val mimeIdx = cursor.getColumnIndex(Document.COLUMN_MIME_TYPE)
+                val sizeIdx = cursor.getColumnIndex(Document.COLUMN_SIZE)
+                val modifiedIdx = cursor.getColumnIndex(Document.COLUMN_LAST_MODIFIED)
                 if (idIdx < 0 || nameIdx < 0) return@use
                 while (cursor.moveToNext()) {
                     val documentId = cursor.getString(idIdx) ?: continue
                     val displayName = cursor.getString(nameIdx) ?: continue
-                    children.add(SafChildDocument(documentId, displayName))
+                    children.add(
+                        SafChildDocument(
+                            documentId,
+                            displayName,
+                            size = if (sizeIdx >= 0 && !cursor.isNull(sizeIdx)) cursor.getLong(sizeIdx) else -1L,
+                            lastModified = if (modifiedIdx >= 0 && !cursor.isNull(modifiedIdx)) cursor.getLong(modifiedIdx) else 0L,
+                            isDirectory = mimeIdx >= 0 && cursor.getString(mimeIdx) == Document.MIME_TYPE_DIR,
+                        ),
+                    )
                 }
             }
         } catch (_: Exception) {

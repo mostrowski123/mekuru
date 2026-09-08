@@ -37,7 +37,8 @@ class RestoreJob(
         control.done = 0L
         control.phase = if (state.names.isEmpty()) JobControl.PHASE_EXTRACTING else JobControl.PHASE_CHECKING
 
-        val input = io.openSource(spec) ?: throw JobFailedException("source_missing")
+        val input = io.openEntry(requireNotNull(spec.sourceUri) { "sourceUri" })
+            ?: throw JobFailedException("source_missing")
         val mapper = ZipNameMapper(spec.folders)
         val stagingCanonical = staging.canonicalFile
         val pending = ArrayList<String>()

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
@@ -15,6 +16,7 @@ import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +37,8 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory root;
+  late Directory documents;
+  late Directory unidicDir;
   late Directory tempDir;
 
   Future<void> wipeLiveData() async {
@@ -46,10 +50,15 @@ void main() {
       );
       if (await file.exists()) await file.delete();
     }
+    if (await unidicDir.exists()) await unidicDir.delete(recursive: true);
   }
 
   setUp(() async {
     root = await getApplicationSupportDirectory();
+    documents = await getApplicationDocumentsDirectory();
+    unidicDir = Directory(
+      p.join(documents.path, FullBackupManifest.unidicDirName),
+    );
     tempDir = await Directory.systemTemp.createTemp('full_backup_it_');
     await wipeLiveData();
   });
@@ -93,10 +102,68 @@ void main() {
         p.join(booksRoot.path, 'custom_cover_1.png'),
       ).writeAsBytesSync([0x89, 0x50, 0x4E, 0x47]);
 
+      // A manga linked from a folder outside Mekuru: only its cache is in
+      // books/, the pages are wherever the user keeps them. Plain files stand
+      // in for the folder grant through the listing seam; the job still opens
+      // them by URI.
+      final linkedPagesDir = Directory(p.join(tempDir.path, 'linked'))
+        ..createSync();
+      final page = tinyPng();
+      for (final name in ['001.png', '002.png']) {
+        File(p.join(linkedPagesDir.path, name)).writeAsBytesSync(page);
+      }
+      final linkedDirName = BookRepository.uniqueImportDirName('manga');
+      final linkedDir = Directory(p.join(booksRoot.path, linkedDirName))
+        ..createSync();
+      File(p.join(linkedDir.path, mangaPagesCacheFileName)).writeAsStringSync(
+        jsonEncode({
+          'title': 'リンク漫画',
+          'imageDirPath': '/data/local/tmp/scratch/リンク漫画',
+          'safTreeUri': 'content://tree/linked',
+          'safImageDirRelativePath': 'Manga/リンク漫画',
+          'pages': [],
+        }),
+      );
+      await db
+          .into(db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'リンク漫画',
+              filePath: linkedDir.path,
+              bookType: const Value('manga'),
+              coverImagePath: const Value(
+                'content://tree/linked/document/001.png',
+              ),
+            ),
+          );
+      Future<List<SafTreeFile>> listLinked(String treeUri, String rel) async {
+        expect(treeUri, 'content://tree/linked');
+        expect(rel, 'Manga/リンク漫画');
+        return [
+          for (final f in linkedPagesDir.listSync().whereType<File>())
+            SafTreeFile(
+              name: p.basename(f.path),
+              uri: f.uri.toString(),
+              size: f.lengthSync(),
+              lastModified: f.lastModifiedSync().millisecondsSinceEpoch,
+            ),
+        ];
+      }
+
+      // The downloaded dictionary lives in the documents directory.
+      unidicDir.createSync(recursive: true);
+      File(p.join(unidicDir.path, '.install_complete')).writeAsStringSync('');
+      final dicBytes = Uint8List.fromList(
+        List.generate(64 * 1024, (i) => (i * 7) & 0xFF),
+      );
+      File(p.join(unidicDir.path, 'sys.dic')).writeAsBytesSync(dicBytes);
+
       final zipPath = p.join(tempDir.path, 'mekuru-full-backup.zip');
       await realFullBackupService(
         db,
         root,
+        documentsRoot: documents,
+        listTreeFiles: listLinked,
       ).prepareExport(FullBackupTarget.file(zipPath));
       final exported = await waitForJob(jobIsTerminal, what: 'export');
       expect(exported.lifecycle, FullBackupJobLifecycle.done);
@@ -128,9 +195,17 @@ void main() {
         jsonDecode(utf8.decode(entries[FullBackupManifest.manifestEntry]!))
             as Map<String, dynamic>,
       );
-      expect(manifest.bookCount, 1);
+      expect(manifest.bookCount, 2);
       expect(manifest.dictionaryCount, dictionaryCount);
-      expect(manifest.folders, {'Books/銀河鉄道の夜/': p.basename(bookDir.path)});
+      expect(manifest.externalMangaCount, 1);
+      expect(manifest.folders, {
+        'Books/銀河鉄道の夜/': p.basename(bookDir.path),
+        'Manga/リンク漫画/': linkedDirName,
+      });
+      expect(entries['Manga/リンク漫画/pages/001.png'], page);
+      expect(entries['Manga/リンク漫画/pages/002.png'], page);
+      expect(entries['Mekuru data/unidic-lite/sys.dic'], dicBytes);
+      expect(entries['Mekuru data/unidic-lite/.install_complete'], isNotNull);
       final expectedBookFiles = filesUnder(bookDir);
       for (final MapEntry(key: rel, value: bytes)
           in expectedBookFiles.entries) {
@@ -152,15 +227,17 @@ void main() {
       );
       await db.close();
 
-      // ── A new device: nothing in Mekuru. ──
+      // ── A new device: nothing in Mekuru, no dictionary, and the folder
+      // the manga was linked from does not exist here. ──
       await wipeLiveData();
+      linkedPagesDir.deleteSync(recursive: true);
       SharedPreferences.setMockInitialValues({'app.theme_mode': 'light'});
       db = AppDatabase();
-      final target = realFullBackupService(db, root);
+      final target = realFullBackupService(db, root, documentsRoot: documents);
       final source = FullBackupSource.file(zipPath);
 
       final preview = await target.inspect(source);
-      expect(preview.manifest.bookCount, 1);
+      expect(preview.manifest.bookCount, 2);
       expect(preview.currentBookCount, 0);
 
       await target.startRestore(preview);
@@ -200,12 +277,34 @@ void main() {
       db = AppDatabase();
       addTearDown(db.close);
       final books = await db.select(db.books).get();
-      expect(books, hasLength(1));
-      expect(books.single.title, '銀河鉄道の夜');
-      expect(books.single.readProgress, 0.42);
-      expect(books.single.filePath, startsWith(root.path));
-      expect(Directory(books.single.filePath).existsSync(), isTrue);
+      expect(books, hasLength(2));
+      final novel = books.singleWhere((b) => b.title == '銀河鉄道の夜');
+      expect(novel.readProgress, 0.42);
+      expect(novel.filePath, startsWith(root.path));
+      expect(Directory(novel.filePath).existsSync(), isTrue);
       expect(await db.select(db.bookmarks).get(), hasLength(1));
+      // The linked manga is an ordinary one now, reading from pages/.
+      final linked = books.singleWhere((b) => b.title == 'リンク漫画');
+      final pagesDir = p.join(root.path, 'books', linkedDirName, 'pages');
+      expect(linked.coverImagePath, p.join(pagesDir, '001.png'));
+      expect(File(linked.coverImagePath!).readAsBytesSync(), page);
+      final linkedCache =
+          jsonDecode(
+                File(
+                  p.join(linked.filePath, mangaPagesCacheFileName),
+                ).readAsStringSync(),
+              )
+              as Map<String, dynamic>;
+      expect(linkedCache.containsKey('safTreeUri'), isFalse);
+      expect(linkedCache.containsKey('safImageDirRelativePath'), isFalse);
+      expect(linkedCache['imageDirPath'], pagesDir);
+      // The dictionary is back in the documents directory, install marker
+      // included, so MeCab picks it up on the next launch.
+      expect(await EnhancedFuriganaDictDownloadService.isInstalled(), isTrue);
+      expect(
+        File(p.join(unidicDir.path, 'sys.dic')).readAsBytesSync(),
+        dicBytes,
+      );
       expect(
         await db.select(db.dictionaryMetas).get(),
         hasLength(dictionaryCount),

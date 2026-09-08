@@ -1,9 +1,5 @@
 package moe.matthew.mekuru.backup
 
-import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
-
 /**
  * Streams the planned files into the partial document, checkpointing the
  * journal every [CHECKPOINT_BYTES] or [CHECKPOINT_ENTRIES], and finishes by
@@ -15,7 +11,8 @@ import java.io.IOException
  * - `finished` recorded: only the rename is left;
  * - partial gone (deleted by the user) or a target that cannot seek: a fresh
  *   partial is created and the archive starts over;
- * - a source file that vanished: counted as skipped, never fatal.
+ * - a source that vanished (a deleted file, a revoked folder grant): counted
+ *   as skipped, never fatal.
  *
  * Throws [CancelledException] / [PausedException] / [AbortedForTestException]
  * through from [JobControl.gate]; the service decides what to do with the
@@ -77,12 +74,7 @@ class ExportJob(
                 while (index < plan.size) {
                     control.gate()
                     val entry = plan[index]
-                    val file = File(entry.path)
-                    val input = try {
-                        FileInputStream(file)
-                    } catch (_: IOException) {
-                        null
-                    }
+                    val input = io.openEntry(entry.path)
                     if (input == null) {
                         skipped++
                         pending.add(ZipJournal.skipLine(index))
@@ -91,7 +83,7 @@ class ExportJob(
                             val base = control.done
                             val record = writer.add(
                                 entry.name,
-                                file.lastModified(),
+                                entry.mtime,
                                 entry.level,
                                 stream,
                                 onBytes = { control.done = base + it },

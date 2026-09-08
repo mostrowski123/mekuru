@@ -41,7 +41,9 @@ class EnhancedFuriganaDictDownloadService {
   /// Approximate on-disk size after extraction in bytes.
   static const approxInstalledBytes = 250 * 1024 * 1024;
 
-  static const _localDirName = 'unidic-lite';
+  /// Directory name under the app documents directory; the full backup
+  /// ships and restores this directory whole.
+  static const localDirName = 'unidic-lite';
   static const _markerFileName = '.install_complete';
 
   /// Shared-preferences key matching
@@ -68,15 +70,17 @@ class EnhancedFuriganaDictDownloadService {
   /// Absolute path to the directory where unidic-lite files live on disk.
   static Future<String> getStorageDir() async {
     final docsDir = await getApplicationDocumentsDirectory();
-    return p.join(docsDir.path, _localDirName);
+    return p.join(docsDir.path, localDirName);
   }
 
   /// `true` if the unidic-lite archive has been fully downloaded, verified,
   /// and extracted.
-  static Future<bool> isInstalled() async {
-    final dir = await getStorageDir();
-    return File(p.join(dir, _markerFileName)).existsSync();
-  }
+  static Future<bool> isInstalled() async =>
+      isInstalledAt(await getStorageDir());
+
+  /// [isInstalled] for a known directory path.
+  static bool isInstalledAt(String dir) =>
+      File(p.join(dir, _markerFileName)).existsSync();
 
   /// Delete the installed unidic-lite files. Safe to call when the dict is
   /// not installed.
