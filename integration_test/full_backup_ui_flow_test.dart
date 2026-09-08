@@ -130,6 +130,9 @@ void main() {
       expect(File(zipPath).lengthSync(), greaterThan(0));
       await tester.tap(find.text(l10n.backupFullJobDone));
       await pumpUntilGone(tester, find.byType(FullBackupJobScreen));
+      // Reaching the export tile scrolled the card's title off the top on a
+      // short viewport; bring it back before asking whether it is tappable.
+      await scrollTo(tester, find.text(l10n.backupFullSectionTitle));
       expect(
         find.text(l10n.backupFullSectionTitle).hitTestable(),
         findsOneWidget,
