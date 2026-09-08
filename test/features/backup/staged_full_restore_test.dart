@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 import '../../shared/staged_restore_harness.dart';
 
@@ -228,6 +229,109 @@ void main() {
         StagedRestoreOutcome.rolledBack,
       );
       expect(reported, isNotNull);
+    });
+  });
+
+  group('extracted by the native job', () {
+    test('runs the fix-ups, then applies', () async {
+      h.seedLive();
+      h.seedExtracted();
+
+      final outcome = await h.run();
+      expect(outcome, StagedRestoreOutcome.applied, reason: '${h.errors}');
+
+      h.expectRestoredEndState(sqliteDb: true);
+      expect(h.clearedSecrets, [42]);
+      final raw = sqlite.sqlite3.open(h.liveDb.path);
+      expect(
+        raw.select('SELECT file_path FROM books').single['file_path'],
+        '${h.root.path}/books/book_9/content',
+      );
+      expect(
+        raw.select('SELECT enabled FROM server_connections').single['enabled'],
+        0,
+      );
+      raw.close();
+    });
+
+    test(
+      'is left alone while the job that made it is being cancelled',
+      () async {
+        h.seedLive();
+        h.seedExtracted();
+        h.write(h.jobCancelled.path, '');
+
+        expect(await h.run(), isNull);
+
+        h.expectUntouchedEndState();
+        expect(h.extracted.existsSync(), isTrue);
+        expect(h.prefs.containsKey(StagedFullRestore.resultPrefKey), isFalse);
+      },
+    );
+
+    test(
+      'a database that cannot be opened fails before anything moves',
+      () async {
+        h.seedLive();
+        h.seedExtracted(validDb: false);
+
+        expect(await h.run(), StagedRestoreOutcome.rolledBack);
+
+        h.expectUntouchedEndState();
+        expect(h.staging.existsSync(), isFalse);
+        expect(h.ready.existsSync(), isFalse);
+        expect(
+          h.prefs.getString(StagedFullRestore.resultPrefKey),
+          startsWith(StagedFullRestore.resultErrorPrefix),
+        );
+      },
+    );
+
+    test(
+      'a crash between READY and the swap is resumed as a plain apply',
+      () async {
+        h.seedLive();
+        h.seedExtracted();
+        h.write(h.ready.path, '{"format":1}');
+
+        expect(await h.run(), StagedRestoreOutcome.applied);
+        expect(h.clearedSecrets, isEmpty);
+        expect(h.liveJournal.existsSync(), isFalse);
+      },
+    );
+
+    test('hasWorkUnder and hasStagedRestore see EXTRACTED', () {
+      expect(StagedFullRestore.hasWorkUnder(h.root), isFalse);
+      h.seedExtracted();
+      expect(StagedFullRestore.hasWorkUnder(h.root), isTrue);
+      expect(StagedFullRestore.hasStagedRestore(h.root), isTrue);
+    });
+  });
+
+  group('tombstones', () {
+    test('leftovers are retired before deletion and none remain', () async {
+      h.seedLive();
+      h.seedStaging();
+
+      expect(await h.run(), StagedRestoreOutcome.applied);
+
+      final names = h.root.listSync().map((e) => p.basename(e.path)).toList();
+      expect(names, isNot(contains(StagedFullRestore.stagingDirName)));
+      expect(names, isNot(contains(StagedFullRestore.rollbackDirName)));
+      expect(
+        names.where((n) => n.endsWith(StagedFullRestore.tombstoneSuffix)),
+        isEmpty,
+      );
+    });
+
+    test('retire frees the path at once and returns the tombstone', () {
+      h.write(p.join(h.staging.path, 'x.txt'), 'x');
+      final tombstone = StagedFullRestore.retire(h.staging);
+      expect(h.staging.existsSync(), isFalse);
+      expect(tombstone, isNotNull);
+      expect(tombstone!.path, endsWith(StagedFullRestore.tombstoneSuffix));
+      expect(File(p.join(tombstone.path, 'x.txt')).existsSync(), isTrue);
+      expect(StagedFullRestore.retire(h.staging), isNull);
     });
   });
 }

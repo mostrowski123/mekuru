@@ -5,7 +5,10 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
+import 'package:mekuru/core/platform/full_backup_job_api.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
+import 'package:mekuru/features/backup/presentation/providers/full_backup_job_provider.dart';
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
@@ -14,12 +17,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/test_database.dart';
 import '../../test_app.dart';
 import 'fake_full_backup_api.dart';
+import 'fake_full_backup_job_api.dart';
 
 void main() {
   final l10n = AppLocalizationsEn();
 
   late AppDatabase db;
   late FakeFullBackupApi api;
+  late FakeFullBackupJobApi jobs;
+  late ProviderContainer container;
   late AndroidSafDocument? pickedDocument;
   late int exitCalls;
 
@@ -27,6 +33,10 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     db = createTestDatabase();
     api = FakeFullBackupApi();
+    jobs = FakeFullBackupJobApi()
+      ..current = const FullBackupJobStatus(
+        lifecycle: FullBackupJobLifecycle.running,
+      );
     pickedDocument = const AndroidSafDocument(
       uri: 'content://doc/picked.zip',
       sizeBytes: 4321,
@@ -36,33 +46,45 @@ void main() {
 
   tearDown(() => db.close());
 
+  /// Lets the job notifier see the job disappear so no poll timer is pending.
+  Future<void> settleJob(WidgetTester tester) async {
+    jobs.current = FullBackupJobStatus.none;
+    await container.read(fullBackupJobProvider.notifier).refresh();
+    await tester.pumpAndSettle();
+  }
+
   Future<void> pumpScreen(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1080, 3200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          backupHistoryProvider.overrideWith((ref) async => []),
-          fullBackupServiceProvider.overrideWith((ref) async => api),
-          fullBackupPickersProvider.overrideWithValue(
-            FullBackupPickers(
-              pickExportTarget: () async =>
-                  const FullBackupTarget.tree('content://tree/backups'),
-              pickSource: () async {
-                final document = pickedDocument;
-                return document == null
-                    ? null
-                    : FullBackupSource.uri(
-                        document.uri,
-                        sizeBytes: document.sizeBytes,
-                      );
-              },
-            ),
+    container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        backupHistoryProvider.overrideWith((ref) async => []),
+        fullBackupServiceProvider.overrideWith((ref) async => api),
+        fullBackupJobApiProvider.overrideWithValue(jobs),
+        fullBackupPickersProvider.overrideWithValue(
+          FullBackupPickers(
+            pickExportTarget: () async =>
+                const FullBackupTarget.tree('content://tree/backups'),
+            pickSource: () async {
+              final document = pickedDocument;
+              return document == null
+                  ? null
+                  : FullBackupSource.uri(
+                      document.uri,
+                      sizeBytes: document.sizeBytes,
+                    );
+            },
           ),
-          appExitProvider.overrideWithValue(() async => exitCalls++),
-        ],
+        ),
+        appExitProvider.overrideWithValue(() async => exitCalls++),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
         child: buildLocalizedTestApp(home: const BackupSettingsScreen()),
       ),
     );
@@ -87,23 +109,49 @@ void main() {
     expect(find.text(l10n.backupScopeNoteTitle), findsOneWidget);
   });
 
-  testWidgets('export full backup reports the saved size', (tester) async {
+  testWidgets('export full backup asks for notifications, then hands off', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     await tester.tap(find.text(l10n.backupFullExportTitle));
     await tester.pumpAndSettle();
 
-    expect(api.calls, ['export']);
-    expect(find.text(l10n.backupFullExported(size: '777 B')), findsOneWidget);
-    // Let the snackbar and the success auto-dismiss timers run out.
+    expect(jobs.calls, contains('requestNotificationPermission'));
+    expect(api.calls, ['prepareExport']);
+    expect(api.exportTarget, isA<FullBackupTreeTarget>());
+    // The job page (mounted by the app shell, not this screen) takes over.
+    expect(
+      container.read(fullBackupJobProvider).stage,
+      FullBackupJobStage.active,
+    );
+    expect(find.byType(SnackBar), findsNothing);
+    await settleJob(tester);
+  });
+
+  testWidgets('a refused export releases the app and explains why', (
+    tester,
+  ) async {
+    api.exportError = const FullBackupBusyException();
+    await pumpScreen(tester);
+
+    await tester.tap(find.text(l10n.backupFullExportTitle));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.backupFullBusy), findsOneWidget);
+    expect(container.read(fullBackupJobProvider).blocksApp, isFalse);
     await tester.pump(const Duration(seconds: 10));
   });
 
   testWidgets(
-    'restore full backup walks review, acknowledgement, staging and exit',
+    'restore full backup walks review and acknowledgement, then hands off',
     (tester) async {
       await pumpScreen(tester);
 
+      jobs.current = const FullBackupJobStatus(
+        lifecycle: FullBackupJobLifecycle.running,
+        kind: FullBackupJobKind.restore,
+      );
       await tester.tap(find.text(l10n.backupFullRestoreTitle));
       await tester.pumpAndSettle();
       expect(find.text(l10n.backupFullReviewTitle), findsOneWidget);
@@ -120,17 +168,19 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(api.calls, ['inspect', 'stage']);
-      expect(find.text(l10n.backupFullRestartTitle), findsOneWidget);
+      expect(api.calls, ['inspect', 'startRestore']);
+      expect(api.restoredPreview?.source, isA<FullBackupUriSource>());
+      expect(
+        container.read(fullBackupJobProvider).kind,
+        FullBackupJobKind.restore,
+      );
+      expect(container.read(fullBackupJobProvider).blocksApp, isTrue);
       expect(exitCalls, 0);
-
-      await tester.tap(find.text(l10n.backupFullRestartButton));
-      await tester.pumpAndSettle();
-      expect(exitCalls, 1);
+      await settleJob(tester);
     },
   );
 
-  testWidgets('cancelling the review never stages or exits', (tester) async {
+  testWidgets('cancelling the review never starts a job', (tester) async {
     await pumpScreen(tester);
 
     await tester.tap(find.text(l10n.backupFullRestoreTitle));
@@ -139,7 +189,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(api.calls, ['inspect']);
-    expect(exitCalls, 0);
+    expect(jobs.committed, isEmpty);
+    expect(container.read(fullBackupJobProvider).blocksApp, isFalse);
     expect(find.byType(AlertDialog), findsNothing);
   });
 

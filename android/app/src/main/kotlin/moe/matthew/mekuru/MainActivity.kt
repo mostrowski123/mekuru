@@ -19,9 +19,6 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -30,7 +27,13 @@ class MainActivity : FlutterActivity() {
         private const val SYSTEM_UI_CHANNEL_NAME = "mekuru/android_system_ui"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
         private const val REQUEST_OPEN_DOCUMENT = 7313
-        private const val ZIP_MIME_TYPE = "application/zip"
+
+        /**
+         * True between onResume and onPause. The full-backup service posts a
+         * final notification only when nobody is looking at the app.
+         */
+        @Volatile var visible = false
+            private set
 
         /**
          * Shared so a configuration change does not throw away everything
@@ -43,20 +46,39 @@ class MainActivity : FlutterActivity() {
     private var pendingPickedDocumentUri: Uri? = null
     private var pendingDocumentPickerResult: MethodChannel.Result? = null
 
-    // One streaming archive operation at a time; Dart polls progress and
-    // sets the cancel flag through the same channel.
-    private val archiveBusy = AtomicBoolean(false)
-    @Volatile private var archiveCancelled = false
-    @Volatile private var archiveDone = 0L
-    @Volatile private var archiveTotal = 0L
+    private val fullBackupBridge = FullBackupJobBridge(this)
+    private var fullBackupRecovered = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.enableEdgeToEdge(window)
     }
 
+    override fun onResume() {
+        super.onResume()
+        visible = true
+        // Once per activity instance: resume, cancel or wipe whatever job the
+        // previous process left behind. The app is in the foreground here, so
+        // starting the foreground service is always allowed.
+        if (!fullBackupRecovered) {
+            fullBackupRecovered = true
+            FullBackupRecovery.run(this)
+        }
+    }
+
+    override fun onPause() {
+        visible = false
+        super.onPause()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (fullBackupBridge.onRequestPermissionsResult(requestCode, grantResults)) return
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        fullBackupBridge.attach(flutterEngine.dartExecutor.binaryMessenger)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SAF_CHANNEL_NAME)
             .setMethodCallHandler { call, result ->
@@ -244,103 +266,11 @@ class MainActivity : FlutterActivity() {
                 }
                 runIo(result) { File(path).usableSpace }
             }
-            "measureTree" -> {
-                val path = call.argument<String>("path")
-                if (path.isNullOrBlank()) {
-                    result.error("bad_args", "path is required", null)
-                    return
-                }
-                val exclude = (call.argument<List<String>>("excludeDirNames") ?: emptyList()).toSet()
-                runIo(result) {
-                    val root = File(path)
-                    val walked = FullBackupArchive.walk(root, exclude)
-                    // The export that follows reuses this walk instead of a second one.
-                    lastWalk = Triple(root.path, exclude, walked)
-                    mapOf("bytes" to walked.sumOf { it.length() }, "files" to walked.size)
-                }
-            }
-            "writeZipToTree" -> {
-                val treeUri = call.argument<String>("treeUri")
-                val displayName = call.argument<String>("displayName")
-                if (treeUri.isNullOrBlank() || displayName.isNullOrBlank()) {
-                    result.error("bad_args", "treeUri and displayName are required", null)
-                    return
-                }
-                val plan = parseZipPlan(call)
-                runArchive(result) { writeZipToTree(Uri.parse(treeUri), displayName, plan) }
-            }
-            "writeZipToFile" -> {
-                val path = call.argument<String>("path")
-                if (path.isNullOrBlank()) {
-                    result.error("bad_args", "path is required", null)
-                    return
-                }
-                val plan = parseZipPlan(call)
-                runArchive(result) { writeZipToFile(File(path), plan) }
-            }
-            "peekZipEntryText" -> {
-                val name = call.argument<String>("name")
-                val uri = call.argument<String>("uri")
-                val path = call.argument<String>("path")
-                if (name.isNullOrBlank() || (uri.isNullOrBlank() && path.isNullOrBlank())) {
-                    result.error("bad_args", "name and one of uri or path are required", null)
-                    return
-                }
-                runIo(result) {
-                    val stream = if (!uri.isNullOrBlank()) openUriForRead(Uri.parse(uri)) else FileInputStream(path!!)
-                    val peek = FullBackupArchive.peek(stream, name)
-                    mapOf("isZip" to peek.isZip, "text" to peek.text)
-                }
-            }
-            "extractZipFromUri" -> {
-                val uri = call.argument<String>("uri")
-                val destPath = call.argument<String>("destPath")
-                if (uri.isNullOrBlank() || destPath.isNullOrBlank()) {
-                    result.error("bad_args", "uri and destPath are required", null)
-                    return
-                }
-                runArchive(result) {
-                    val parsed = Uri.parse(uri)
-                    archiveTotal = documentSize(parsed)
-                    val entries = FullBackupArchive.extract(
-                        openUriForRead(parsed),
-                        File(destPath),
-                        onBytes = { archiveDone = it },
-                        isCancelled = { archiveCancelled },
-                    )
-                    mapOf("entries" to entries)
-                }
-            }
-            "extractZipFromFile" -> {
-                val path = call.argument<String>("path")
-                val destPath = call.argument<String>("destPath")
-                if (path.isNullOrBlank() || destPath.isNullOrBlank()) {
-                    result.error("bad_args", "path and destPath are required", null)
-                    return
-                }
-                runArchive(result) {
-                    archiveTotal = File(path).length()
-                    val entries = FullBackupArchive.extract(
-                        FileInputStream(path),
-                        File(destPath),
-                        onBytes = { archiveDone = it },
-                        isCancelled = { archiveCancelled },
-                    )
-                    mapOf("entries" to entries)
-                }
-            }
-            "zipProgress" -> {
-                result.success(mapOf("done" to archiveDone, "total" to archiveTotal))
-            }
-            "cancelZip" -> {
-                archiveCancelled = true
-                result.success(null)
-            }
             else -> result.notImplemented()
         }
     }
 
-    // ──────────────── Full backup: document picker + streaming zip ────────────────
+    // ──────────────── Full backup: document picker ────────────────
 
     private fun requestDocument(mimeTypes: List<String>, result: MethodChannel.Result) {
         if (pendingDocumentPickerResult != null) {
@@ -379,13 +309,6 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    /**
-     * The books walk `measureTree` just did, keyed by root path and exclusions,
-     * so the export that follows does not walk the tree a second time. Consumed
-     * once; never reused across exports, which could see new books.
-     */
-    private var lastWalk: Triple<String, Set<String>, List<File>>? = null
-
     /** Size of a document, or 0 when the provider does not report one. */
     private fun documentSize(uri: Uri): Long {
         try {
@@ -402,129 +325,6 @@ class MainActivity : FlutterActivity() {
             contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: 0L
         } catch (_: Exception) {
             0L
-        }
-    }
-
-    private fun openUriForRead(uri: Uri) =
-        contentResolver.openInputStream(uri)
-            ?: throw SafFailure(
-                "saf_open_failed",
-                "The document provider returned no stream for the document",
-                uri.authority,
-                "open",
-            )
-
-    private fun parseZipPlan(call: MethodCall): FullBackupArchive.Plan {
-        val root = call.argument<String>("rootPath")?.let { File(it) }
-        val prefix = call.argument<String>("rootPrefix") ?: ""
-        val files = (call.argument<List<*>>("files") ?: emptyList<Any?>()).map { raw ->
-            val map = raw as Map<*, *>
-            FullBackupArchive.Entry(
-                File(map["path"] as String),
-                map["name"] as String,
-                (map["level"] as Number).toInt(),
-            )
-        }
-        val exclude = (call.argument<List<String>>("excludeDirNames") ?: emptyList()).toSet()
-        val walked = when {
-            root == null -> emptyList()
-            lastWalk?.first == root.path && lastWalk?.second == exclude -> lastWalk!!.third
-            else -> FullBackupArchive.walk(root, exclude)
-        }
-        lastWalk = null
-        return FullBackupArchive.plan(files, root, walked, prefix)
-    }
-
-    /**
-     * Creates `<displayName>.partial` in the tree, streams the archive into it
-     * and renames it on success, so a process death mid-export never leaves a
-     * truncated file that looks like a backup. Any failure deletes the document.
-     */
-    private fun writeZipToTree(treeUri: Uri, displayName: String, plan: FullBackupArchive.Plan): Map<String, Any?> {
-        val parent = DocumentsContract.buildDocumentUriUsingTree(
-            treeUri,
-            DocumentsContract.getTreeDocumentId(treeUri),
-        )
-        val docUri = DocumentsContract.createDocument(contentResolver, parent, ZIP_MIME_TYPE, "$displayName.partial")
-            ?: throw SafFailure(
-                "saf_create_failed",
-                "The document provider refused to create the backup file",
-                treeUri.authority,
-                "create",
-            )
-        val written = try {
-            val out = contentResolver.openOutputStream(docUri, "w")
-                ?: throw SafFailure(
-                    "saf_open_failed",
-                    "The document provider returned no stream for the new file",
-                    treeUri.authority,
-                    "open",
-                )
-            archiveTotal = plan.totalBytes
-            FullBackupArchive.write(out, plan, onBytes = { archiveDone = it }, isCancelled = { archiveCancelled })
-        } catch (e: Exception) {
-            try {
-                DocumentsContract.deleteDocument(contentResolver, docUri)
-            } catch (_: Exception) {
-                // Best effort; the partial name marks it as incomplete anyway.
-            }
-            throw e
-        }
-        val finalUri = try {
-            DocumentsContract.renameDocument(contentResolver, docUri, displayName) ?: docUri
-        } catch (_: Exception) {
-            docUri
-        }
-        return mapOf(
-            "documentUri" to finalUri.toString(),
-            "bytes" to written.bytes,
-            "entries" to written.entries,
-            "skippedFiles" to written.skippedFiles,
-        )
-    }
-
-    private fun writeZipToFile(target: File, plan: FullBackupArchive.Plan): Map<String, Any?> {
-        target.parentFile?.mkdirs()
-        val written = try {
-            archiveTotal = plan.totalBytes
-            FullBackupArchive.write(
-                FileOutputStream(target),
-                plan,
-                onBytes = { archiveDone = it },
-                isCancelled = { archiveCancelled },
-            )
-        } catch (e: Exception) {
-            target.delete()
-            throw e
-        }
-        return mapOf(
-            "bytes" to written.bytes,
-            "entries" to written.entries,
-            "skippedFiles" to written.skippedFiles,
-        )
-    }
-
-    /**
-     * [runIo] for the streaming archive operations: one at a time, with
-     * progress and cancellation state reset per run, and a cancellation
-     * reported as `{cancelled: true}` rather than as an error.
-     */
-    private fun runArchive(result: MethodChannel.Result, task: () -> Map<String, Any?>) {
-        if (!archiveBusy.compareAndSet(false, true)) {
-            result.error("busy", "Another archive operation is already in progress", null)
-            return
-        }
-        archiveCancelled = false
-        archiveDone = 0L
-        archiveTotal = 0L
-        runIo(result) {
-            try {
-                task()
-            } catch (_: FullBackupArchive.CancelledException) {
-                mapOf("cancelled" to true)
-            } finally {
-                archiveBusy.set(false)
-            }
         }
     }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart';
 import 'package:mekuru/features/backup/presentation/widgets/full_restore_confirm_flow.dart';
@@ -15,6 +16,7 @@ void main() {
   final l10n = AppLocalizationsEn();
 
   FullBackupPreview preview({int externalManga = 0}) => FullBackupPreview(
+    source: const FullBackupSource.uri('content://doc/a.zip', sizeBytes: 5000),
     manifest: FullBackupManifest(
       format: 1,
       appVersion: '1.37.0',

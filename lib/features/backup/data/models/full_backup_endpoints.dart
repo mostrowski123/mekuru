@@ -30,6 +30,9 @@ sealed class FullBackupSource {
 
   /// Archive size, used as the extraction progress total.
   int get sizeBytes;
+
+  /// The source as the native side opens it (`content://` or `file://`).
+  String get uriString;
 }
 
 final class FullBackupUriSource extends FullBackupSource {
@@ -38,6 +41,9 @@ final class FullBackupUriSource extends FullBackupSource {
   final int sizeBytes;
 
   const FullBackupUriSource(this.uri, {required this.sizeBytes});
+
+  @override
+  String get uriString => uri;
 }
 
 final class FullBackupFileSource extends FullBackupSource {
@@ -49,4 +55,7 @@ final class FullBackupFileSource extends FullBackupSource {
     final file = File(path);
     return file.existsSync() ? file.lengthSync() : 0;
   }
+
+  @override
+  String get uriString => Uri.file(path).toString();
 }

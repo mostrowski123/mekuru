@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Full backup foreground service. English only for now; the in-app
+         page carries the localized copy. -->
+    <string name="full_backup_channel_name">Full backup</string>
+    <string name="full_backup_notification_export_title">Backing up Mekuru</string>
+    <string name="full_backup_notification_restore_title">Restoring Mekuru</string>
+    <string name="full_backup_notification_preparing">Preparing…</string>
+    <string name="full_backup_notification_export_done">Full backup complete</string>
+    <string name="full_backup_notification_restore_ready">Restore ready. Open Mekuru to finish.</string>
+    <string name="full_backup_notification_paused">Paused. Open Mekuru to continue.</string>
+    <string name="full_backup_notification_failed">Full backup stopped. Open Mekuru for details.</string>
+</resources>

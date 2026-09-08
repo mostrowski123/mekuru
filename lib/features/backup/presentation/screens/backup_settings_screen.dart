@@ -6,7 +6,6 @@ import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
-import 'package:mekuru/features/backup/presentation/widgets/full_backup_progress_dialog.dart';
 import 'package:mekuru/features/backup/presentation/widgets/full_restore_confirm_flow.dart';
 import 'package:mekuru/features/backup/presentation/widgets/restore_conflict_dialog.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
@@ -34,9 +33,9 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     final l10n = context.l10n;
     final backupState = ref.watch(backupNotifierProvider);
     final restoreState = ref.watch(restoreNotifierProvider);
-    // Only the flag: progress ticks must repaint the overlay, not this page.
-    final fullWorking = ref.watch(
-      fullBackupNotifierProvider.select((s) => s.isWorking),
+    // Only until the job is committed; the job page owns everything after.
+    final fullBusy = ref.watch(
+      fullBackupNotifierProvider.select((s) => s.busy),
     );
     final backupHistory = ref.watch(backupHistoryProvider);
     final autoInterval = ref.watch(autoBackupIntervalProvider);
@@ -65,36 +64,21 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       );
     });
     ref.listen(fullBackupNotifierProvider, (prev, next) {
-      _announce(
-        prev?.error,
-        next.error,
-        prev?.successMessage,
-        next.successMessage,
-      );
+      _announce(prev?.error, next.error);
     });
 
     final isWorking =
-        backupState.isWorking || restoreState.isWorking || fullWorking;
+        backupState.isWorking || restoreState.isWorking || fullBusy;
 
-    return PopScope(
-      // A multi-gigabyte export or restore must not be backed out of by
-      // accident; Cancel on the overlay is the way out.
-      canPop: !fullWorking,
-      child: Scaffold(
-        appBar: AppBar(title: Text(l10n.backupTitle)),
-        body: Stack(
-          children: [
-            _buildContent(
-              context,
-              theme: theme,
-              l10n: l10n,
-              isWorking: isWorking,
-              autoInterval: autoInterval,
-              backupHistory: backupHistory,
-            ),
-            const FullBackupProgressOverlay(),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.backupTitle)),
+      body: _buildContent(
+        context,
+        theme: theme,
+        l10n: l10n,
+        isWorking: isWorking,
+        autoInterval: autoInterval,
+        backupHistory: backupHistory,
       ),
     );
   }
@@ -333,6 +317,9 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
 
   // ──────────────── Full backup flows ────────────────
 
+  /// Pick → review → acknowledge → hand the job to the native service. The
+  /// job page covers the app from there until the files are copied and
+  /// Mekuru closes to apply them.
   Future<void> _restoreFullBackup() async {
     final notifier = ref.read(fullBackupNotifierProvider.notifier);
     final preview = await notifier.pickAndInspect();
@@ -341,42 +328,17 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     final confirmed = await showFullRestoreConfirmFlow(context, preview);
     if (!confirmed || !mounted) return;
 
-    final staged = await notifier.stageForRestart();
-    if (!staged || !mounted) return;
-
-    await _showRestartDialog();
-    await notifier.exitApp();
-  }
-
-  Future<void> _showRestartDialog() {
-    final l10n = context.l10n;
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => PopScope(
-        canPop: false,
-        child: AlertDialog(
-          title: Text(l10n.backupFullRestartTitle),
-          content: Text(l10n.backupFullRestartBody),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(l10n.backupFullRestartButton),
-            ),
-          ],
-        ),
-      ),
-    );
+    await notifier.startRestore(preview);
   }
 
   // ──────────────── Messages ────────────────
 
   void _announce(
     BackupMessage? prevError,
-    BackupMessage? error,
+    BackupMessage? error, [
     BackupMessage? prevSuccess,
     BackupMessage? success,
-  ) {
+  ]) {
     if (error != null && error != prevError) {
       _showSnackbar(_localizeMessage(error), isError: true);
     } else if (success != null && success != prevSuccess) {
@@ -421,16 +383,13 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       ),
       BackupMessageKind.wrongKindFullBackup => l10n.backupWrongKindFullBackup,
       BackupMessageKind.wrongKindReadingData => l10n.backupWrongKindReadingData,
-      BackupMessageKind.fullExported => l10n.backupFullExported(size: details),
-      BackupMessageKind.fullExportedWithSkipped =>
-        l10n.backupFullExportedWithSkipped(count: message.count ?? 0),
-      BackupMessageKind.fullCancelled => l10n.backupFullCancelled,
       BackupMessageKind.fullBusy => l10n.backupFullBusy,
       BackupMessageKind.fullNotEnoughSpace => l10n.backupFullNotEnoughSpace(
         size: details,
       ),
       BackupMessageKind.fullTooNew => l10n.backupFullTooNew(version: details),
       BackupMessageKind.fullInvalid => l10n.backupFullInvalid,
+      BackupMessageKind.fullIncomplete => l10n.backupFullIncomplete,
       BackupMessageKind.fullPendingRestore => l10n.backupFullPendingRestore,
       BackupMessageKind.fullFailed => l10n.backupFullFailed(details: details),
       BackupMessageKind.fullRestoreFailed => l10n.backupFullRestoreFailed(

@@ -89,8 +89,38 @@ void main() {
 
   test('entry names are the fixed archive contract', () {
     expect(FullBackupManifest.manifestEntry, 'manifest.json');
-    expect(FullBackupManifest.settingsEntry, 'settings.mekuru');
-    expect(FullBackupManifest.databaseEntry, 'mekuru_db.sqlite');
-    expect(FullBackupManifest.booksPrefix, 'books/');
+    expect(FullBackupManifest.readmeEntry, 'README.txt');
+    expect(FullBackupManifest.settingsEntry, 'Mekuru data/settings.mekuru');
+    expect(FullBackupManifest.databaseEntry, 'Mekuru data/mekuru_db.sqlite');
+    expect(FullBackupManifest.coversPrefix, 'Mekuru data/covers/');
+    expect(FullBackupManifest.booksPrefix, 'Books/');
+    expect(FullBackupManifest.mangaPrefix, 'Manga/');
+  });
+
+  test('the folder map round-trips and tolerates junk', () {
+    final withFolders = FullBackupManifest(
+      format: FullBackupManifest.currentFormat,
+      appVersion: '1.38.0',
+      schemaVersion: AppDatabase.latestSchemaVersion,
+      createdAt: DateTime.utc(2026, 9, 7),
+      appSupportPath: '/x',
+      bookCount: 1,
+      dictionaryCount: 0,
+      externalMangaCount: 0,
+      dbBytes: 1,
+      booksBytes: 2,
+      folders: const {'Books/走れメロス/': 'book_1_abcdef12'},
+    );
+    final decoded = FullBackupManifest.fromJson(
+      jsonDecode(jsonEncode(withFolders.toJson())) as Map<String, dynamic>,
+    );
+    expect(decoded.folders, {'Books/走れメロス/': 'book_1_abcdef12'});
+
+    final junk = sample().toJson()..['folders'] = {'Books/a/': 5, 3: 'x'};
+    expect(FullBackupManifest.fromJson(junk).folders, isEmpty);
+    expect(
+      FullBackupManifest.fromJson(sample().toJson()..remove('folders')).folders,
+      isEmpty,
+    );
   });
 }

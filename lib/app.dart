@@ -10,6 +10,8 @@ import 'core/services/usage_telemetry.dart';
 import 'features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'features/backup/data/services/staged_full_restore.dart';
 import 'features/backup/presentation/providers/backup_providers.dart';
+import 'features/backup/presentation/providers/full_backup_job_provider.dart';
+import 'features/backup/presentation/screens/full_backup_job_screen.dart';
 import 'features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'features/library/data/repositories/book_repository.dart';
 import 'features/library/presentation/providers/library_providers.dart';
@@ -143,7 +145,18 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
+      // A full backup may have finished (or paused) while the app was away.
+      unawaited(ref.read(fullBackupJobProvider.notifier).refresh());
     }
+  }
+
+  /// The job page sits above the Navigator, so Back must be swallowed here
+  /// rather than by a PopScope: nothing underneath may be reached while a
+  /// full backup or restore is in flight.
+  @override
+  Future<bool> didPopRoute() async {
+    if (ref.read(fullBackupJobProvider).blocksApp) return true;
+    return super.didPopRoute();
   }
 
   @override
@@ -173,6 +186,9 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
         SentryNavigatorObserver(),
         ?AnalyticsService.instance.navigatorObserver,
       ],
+      // Covers every route and dialog while a full backup or restore runs.
+      builder: (context, child) =>
+          FullBackupJobGate(child: child ?? const SizedBox.shrink()),
       home: const _MainShell(),
     );
   }

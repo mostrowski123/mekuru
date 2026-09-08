@@ -1,38 +1,36 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
-import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
-import 'package:mekuru/core/services/sentry_helpers.dart';
+import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
-import 'package:mekuru/features/backup/data/services/prepare_staged_restore.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_plan.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
-import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:workmanager/workmanager.dart';
 
-/// A book import is running; its directory would be half-written in the zip.
+/// A book import is running, or another job already exists.
 class FullBackupBusyException implements Exception {
   const FullBackupBusyException();
-}
-
-/// The operation was cancelled by the user.
-class FullBackupCancelledException implements Exception {
-  const FullBackupCancelledException();
 }
 
 /// A staged restore is already waiting for a restart; stacking another would
 /// mean the boot apply is broken.
 class FullBackupPendingRestoreException implements Exception {
   const FullBackupPendingRestoreException();
+}
+
+/// The archive has no end record: a copy or download that never finished.
+class FullBackupIncompleteException implements Exception {
+  const FullBackupIncompleteException();
 }
 
 class InsufficientSpaceException implements Exception {
@@ -44,92 +42,68 @@ class InsufficientSpaceException implements Exception {
   String toString() => 'Not enough free space: $neededBytes more bytes needed';
 }
 
-class FullBackupExportResult {
-  final String location;
-  final int bytes;
-  final int skippedFiles;
-  final FullBackupManifest manifest;
-
-  const FullBackupExportResult({
-    required this.location,
-    required this.bytes,
-    required this.skippedFiles,
-    required this.manifest,
-  });
-}
-
 /// What the confirmation dialogs show before a restore.
 class FullBackupPreview {
   final FullBackupManifest manifest;
+  final FullBackupSource source;
   final int sizeBytes;
   final int currentBookCount;
   final int currentDictionaryCount;
 
   const FullBackupPreview({
     required this.manifest,
+    required this.source,
     required this.sizeBytes,
     required this.currentBookCount,
     required this.currentDictionaryCount,
   });
 }
 
-typedef FullBackupProgress = void Function(int done, int total);
-
 /// The operations the backup screen drives; [FullBackupService] is the real
-/// implementation, tests substitute a fake.
+/// implementation, tests substitute a fake. Both directions end in a job
+/// committed to the Kotlin foreground service; progress and completion are
+/// observed through [FullBackupJobApi.status].
 abstract interface class FullBackupApi {
-  Future<FullBackupExportResult> export(
-    FullBackupTarget target, {
-    FullBackupProgress? onProgress,
-  });
+  /// Snapshots the database, plans the archive and commits the export job.
+  Future<void> prepareExport(FullBackupTarget target);
 
   Future<FullBackupPreview> inspect(FullBackupSource source);
 
-  Future<PreparedStagedRestore> stage(
-    FullBackupSource source, {
-    FullBackupProgress? onProgress,
-  });
-
-  Future<void> cancel();
+  /// Commits the restore job for an inspected archive.
+  Future<void> startRestore(FullBackupPreview preview);
 }
 
-/// Orchestrates full backups: snapshot the database, write the sidecar
-/// files, and drive the native streaming zip (see `FullBackupArchive.kt`).
-///
-/// Export never holds more than the database snapshot in cache. Import
-/// extracts into `<root>/restore_staging/`, fixes it up there, and leaves a
-/// READY marker for [StagedFullRestore] to apply on the next cold start.
+/// Prepares full-backup jobs for the native service (see
+/// `FullBackupJobService.kt`): everything the job needs is written under
+/// `<root>/full_backup_job/` before `commitJob`, so the service never
+/// depends on the Flutter engine again.
 class FullBackupService implements FullBackupApi {
   FullBackupService({
     required this.db,
     required this.backupService,
     required this.root,
-    required this.cacheDir,
     required this.appVersion,
-    Future<void> Function(int connectionId)? clearServerSecret,
+    this.jobs = const FullBackupJobChannel(),
     DateTime Function()? clock,
-  }) : _clearServerSecret = clearServerSecret ?? ServerSecretStorage().clear,
-       _clock = clock ?? DateTime.now;
+  }) : _clock = clock ?? DateTime.now;
 
   final AppDatabase db;
   final BackupService backupService;
 
-  /// The app-support directory: database and `books/` live here.
+  /// The app-support directory: database, `books/` and the job dir live here.
   final Directory root;
-  final Directory cacheDir;
   final String appVersion;
-  final Future<void> Function(int connectionId) _clearServerSecret;
+  final FullBackupJobApi jobs;
   final DateTime Function() _clock;
 
-  static const exportDirName = 'full_backup_export';
-
-  /// The orphan-sweep quarantine is never worth shipping.
-  static const excludedDirNames = [BookRepository.trashDirName];
+  static const planFileName = 'plan.jsonl';
   static const _sidecarLevel = 6;
 
   /// Headroom kept free on top of the computed need.
   static const _spaceMargin = 64 * 1024 * 1024;
 
+  Directory get _jobDir =>
+      Directory(p.join(root.path, StagedFullRestore.jobDirName));
   Directory get _booksDir =>
       Directory(p.join(root.path, StagedFullRestore.booksDirName));
   Directory get _staging =>
@@ -138,124 +112,134 @@ class FullBackupService implements FullBackupApi {
   // ──────────────── Export ────────────────
 
   @override
-  Future<FullBackupExportResult> export(
-    FullBackupTarget target, {
-    FullBackupProgress? onProgress,
-  }) => tracedOperation(
-    'backup.full_export_duration_ms',
-    action: () => _export(target, onProgress),
-  );
-
-  Future<FullBackupExportResult> _export(
-    FullBackupTarget target,
-    FullBackupProgress? onProgress,
-  ) async {
+  Future<void> prepareExport(FullBackupTarget target) async {
     if (BookRepository.hasImportInFlight) {
       throw const FullBackupBusyException();
     }
-    final exportDir = Directory(p.join(cacheDir.path, exportDirName));
-    if (exportDir.existsSync()) exportDir.deleteSync(recursive: true);
-    exportDir.createSync(recursive: true);
+    await _requireNoJob();
+
+    // Only our own preparation files are replaced: the directory belongs to
+    // the service, and a job that slipped in first keeps its files.
+    _jobDir.createSync(recursive: true);
+    _deletePrepFiles();
     try {
       final liveDb = File(
         p.join(root.path, StagedFullRestore.databaseFileName),
       );
       final liveDbBytes = liveDb.existsSync() ? liveDb.lengthSync() : 0;
-      final measured =
-          await AndroidSafService.measureTree(
-            _booksDir.path,
-            excludeDirNames: excludedDirNames,
-          ) ??
-          (bytes: 0, files: 0);
-      // The snapshot is the only thing written to local storage.
-      await _requireFreeSpace(cacheDir, (liveDbBytes * 1.5).ceil());
+      // The snapshot is the only thing the export writes to local storage.
+      await _requireFreeSpace(root, (liveDbBytes * 1.5).ceil());
 
-      final snapshot = File(
-        p.join(exportDir.path, FullBackupManifest.databaseEntry),
-      );
+      final snapshot = File(p.join(_jobDir.path, AppDatabase.databaseFileName));
       await db.customStatement('VACUUM INTO ?', [snapshot.path]);
 
-      final counts = await _counts();
+      final args = BuildExportPlanArgs(
+        snapshotDbPath: snapshot.path,
+        booksDirPath: _booksDir.path,
+      );
+      final plan = await Isolate.run(() => buildExportPlan(args));
+
+      final createdAt = _clock().toUtc();
       final manifest = FullBackupManifest(
         format: FullBackupManifest.currentFormat,
         appVersion: appVersion,
         schemaVersion: AppDatabase.latestSchemaVersion,
-        createdAt: _clock().toUtc(),
+        createdAt: createdAt,
         appSupportPath: root.path,
-        bookCount: counts.books,
-        dictionaryCount: counts.dictionaries,
-        externalMangaCount: counts.external,
+        bookCount: plan.bookCount,
+        dictionaryCount: plan.dictionaryCount,
+        externalMangaCount: plan.externalMangaCount,
         dbBytes: snapshot.lengthSync(),
-        booksBytes: measured.bytes,
+        booksBytes: plan.booksBytes,
+        folders: plan.folders,
       );
-      final manifestFile = File(
-        p.join(exportDir.path, FullBackupManifest.manifestEntry),
-      )..writeAsStringSync(jsonEncode(manifest.toJson()));
-      final settingsFile =
-          File(p.join(exportDir.path, FullBackupManifest.settingsEntry))
-            ..writeAsStringSync(
-              BackupSerializer.encode(
-                await backupService.createSettingsOnlyManifest(),
-              ),
-            );
-
-      final files = [
-        ZipFileEntry(
-          manifestFile.path,
+      final sidecars = [
+        _writeSidecar(
           FullBackupManifest.manifestEntry,
-          _sidecarLevel,
+          jsonEncode(manifest.toJson()),
         ),
-        ZipFileEntry(
-          settingsFile.path,
+        _writeSidecar(
+          FullBackupManifest.readmeEntry,
+          fullBackupReadme(appVersion: appVersion, createdAt: createdAt),
+        ),
+        _writeSidecar(
           FullBackupManifest.settingsEntry,
-          _sidecarLevel,
+          BackupSerializer.encode(
+            await backupService.createSettingsOnlyManifest(),
+          ),
         ),
-        ZipFileEntry(
-          snapshot.path,
-          FullBackupManifest.databaseEntry,
-          _sidecarLevel,
+        FullBackupPlanEntry(
+          path: snapshot.path,
+          name: FullBackupManifest.databaseEntry,
+          size: snapshot.lengthSync(),
+          level: _sidecarLevel,
         ),
       ];
-      final result = await _withProgress(onProgress, () {
-        return switch (target) {
-          FullBackupFileTarget(:final path) => AndroidSafService.writeZipToFile(
-            path: path,
-            rootPath: _booksDir.path,
-            rootPrefix: FullBackupManifest.booksPrefix,
-            files: files,
-            excludeDirNames: excludedDirNames,
-          ),
-          FullBackupTreeTarget(:final treeUri) =>
-            AndroidSafService.writeZipToTree(
-              treeUri: treeUri,
-              displayName: _exportFileName(),
-              rootPath: _booksDir.path,
-              rootPrefix: FullBackupManifest.booksPrefix,
-              files: files,
-              excludeDirNames: excludedDirNames,
-            ),
-        };
-      });
-      if (result.cancelled) throw const FullBackupCancelledException();
+      final entries = [...sidecars, ...plan.entries];
+      File(p.join(_jobDir.path, planFileName)).writeAsStringSync(
+        entries.map((e) => '${e.toJsonLine()}\n').join(),
+        flush: true,
+      );
 
+      final totalBytes = entries.fold(0, (sum, e) => sum + e.size);
+      await _commit({
+        'kind': 'export',
+        'totalBytes': totalBytes,
+        ...switch (target) {
+          FullBackupTreeTarget(:final treeUri) => {
+            'displayName': _exportFileName(createdAt.toLocal()),
+            'treeUri': treeUri,
+          },
+          FullBackupFileTarget(:final path) => {
+            'displayName': p.basename(path),
+            'targetPath': path,
+          },
+        },
+      });
       logUsage(
-        'backup.full_export',
+        'backup.full_export_started',
         attrs: {
-          'books': counts.books,
-          'dictionaries': counts.dictionaries,
-          'size_bucket': _sizeBucket(result.bytes),
-          'skipped_files': result.skippedFiles,
+          'books': plan.bookCount,
+          'dictionaries': plan.dictionaryCount,
+          'size_bucket': _sizeBucket(totalBytes),
         },
       );
-      return FullBackupExportResult(
-        location: result.location,
-        bytes: result.bytes,
-        skippedFiles: result.skippedFiles,
-        manifest: manifest,
-      );
-    } finally {
-      if (exportDir.existsSync()) exportDir.deleteSync(recursive: true);
+    } on FullBackupBusyException {
+      // Another job claimed the directory first; leave everything to it.
+      rethrow;
+    } catch (_) {
+      _deletePrepFiles();
+      rethrow;
     }
+  }
+
+  /// The files [prepareExport] writes before committing.
+  List<File> get _prepFiles => [
+    for (final name in [
+      AppDatabase.databaseFileName,
+      FullBackupManifest.manifestEntry,
+      FullBackupManifest.readmeEntry,
+      FullBackupManifest.settingsFileName,
+      planFileName,
+    ])
+      File(p.join(_jobDir.path, name)),
+  ];
+
+  void _deletePrepFiles() {
+    for (final file in _prepFiles) {
+      if (file.existsSync()) file.deleteSync();
+    }
+  }
+
+  FullBackupPlanEntry _writeSidecar(String entryName, String content) {
+    final file = File(p.join(_jobDir.path, p.basename(entryName)))
+      ..writeAsStringSync(content, flush: true);
+    return FullBackupPlanEntry(
+      path: file.path,
+      name: entryName,
+      size: file.lengthSync(),
+      level: _sidecarLevel,
+    );
   }
 
   // ──────────────── Import ────────────────
@@ -263,25 +247,26 @@ class FullBackupService implements FullBackupApi {
   /// Reads only the manifest and validates it against this device.
   @override
   Future<FullBackupPreview> inspect(FullBackupSource source) async {
-    if (File(
-      p.join(_staging.path, StagedFullRestore.readyMarkerName),
-    ).existsSync()) {
+    if (StagedFullRestore.hasStagedRestore(root)) {
       throw const FullBackupPendingRestoreException();
     }
+    await _requireNoJob();
 
-    final peek = await AndroidSafService.peekZipEntryText(
-      uri: source is FullBackupUriSource ? source.uri : null,
-      path: source is FullBackupFileSource ? source.path : null,
+    final inspection = await jobs.inspectZip(
+      uri: source.uriString,
       name: FullBackupManifest.manifestEntry,
     );
-    if (peek == null || !peek.isZip) {
+    if (inspection == null || !inspection.isZip) {
       throw const WrongBackupKindException(BackupKind.readingData);
     }
-    final text = peek.text;
+    final text = inspection.text;
     if (text == null) {
       throw const FullBackupFormatException(
         'This zip is not a Mekuru full backup',
       );
+    }
+    if (inspection.complete == false) {
+      throw const FullBackupIncompleteException();
     }
     final FullBackupManifest manifest;
     try {
@@ -299,91 +284,51 @@ class FullBackupService implements FullBackupApi {
     final counts = await _counts();
     return FullBackupPreview(
       manifest: manifest,
+      source: source,
       sizeBytes: source.sizeBytes,
       currentBookCount: counts.books,
       currentDictionaryCount: counts.dictionaries,
     );
   }
 
-  /// Extracts and prepares the archive for the boot-time apply. On return
-  /// the READY marker exists and the app must exit; on failure nothing on the
-  /// live device has changed and the staging directory is gone.
   @override
-  Future<PreparedStagedRestore> stage(
-    FullBackupSource source, {
-    FullBackupProgress? onProgress,
-  }) => tracedOperation(
-    'backup.full_restore_stage_duration_ms',
-    action: () => _stage(source, onProgress),
-  );
-
-  Future<PreparedStagedRestore> _stage(
-    FullBackupSource source,
-    FullBackupProgress? onProgress,
-  ) async {
+  Future<void> startRestore(FullBackupPreview preview) async {
     await _cancelBackgroundWork();
-    final rollback = Directory(
-      p.join(root.path, StagedFullRestore.rollbackDirName),
+    final manifest = preview.manifest;
+    await _commit({
+      'kind': 'restore',
+      'sourceUri': preview.source.uriString,
+      'stagingPath': _staging.path,
+      'totalBytes': manifest.totalBytes,
+      'folders': manifest.folders,
+      'manifestJson': jsonEncode(manifest.toJson()),
+    });
+    logUsage(
+      'backup.full_restore_started',
+      attrs: {
+        'books': manifest.bookCount,
+        'dictionaries': manifest.dictionaryCount,
+        'size_bucket': _sizeBucket(manifest.totalBytes),
+      },
     );
-    for (final dir in [_staging, rollback]) {
-      if (dir.existsSync()) await dir.delete(recursive: true);
-    }
-    _staging.createSync(recursive: true);
-    try {
-      final entries = await _withProgress(onProgress, () {
-        return switch (source) {
-          FullBackupFileSource(:final path) =>
-            AndroidSafService.extractZipFromFile(
-              path: path,
-              destPath: _staging.path,
-            ),
-          FullBackupUriSource(:final uri) =>
-            AndroidSafService.extractZipFromUri(
-              uri: uri,
-              destPath: _staging.path,
-            ),
-        };
-      });
-      if (entries == null) throw const FullBackupCancelledException();
+  }
 
-      final manifestFile = File(
-        p.join(_staging.path, FullBackupManifest.manifestEntry),
-      );
-      final prepared = await compute(
-        prepareStagedRestore,
-        PrepareStagedRestoreArgs(
-          stagingPath: _staging.path,
-          rootPath: root.path,
-          manifestJson: manifestFile.existsSync()
-              ? manifestFile.readAsStringSync()
-              : '{}',
-        ),
-      );
-      // Secrets are keyed by connection id; the restored ids can collide
-      // with this device's old connections, so never let a stale secret
-      // pair with a restored URL.
-      for (final id in prepared.serverConnectionIds) {
-        await _clearServerSecret(id);
-      }
-      logUsage(
-        'backup.full_restore_staged',
-        attrs: {
-          'entries': entries,
-          'rewritten_books': prepared.rewrittenBooks,
-          'rewritten_caches': prepared.rewrittenCaches,
-        },
-      );
-      return prepared;
-    } catch (_) {
-      if (_staging.existsSync()) await _staging.delete(recursive: true);
-      rethrow;
+  // ──────────────── Helpers ────────────────
+
+  Future<void> _commit(Map<String, Object?> spec) async {
+    try {
+      await jobs.commitJob(spec);
+    } on FullBackupJobBusyException {
+      throw const FullBackupBusyException();
     }
   }
 
-  @override
-  Future<void> cancel() => AndroidSafService.cancelZip();
-
-  // ──────────────── Helpers ────────────────
+  Future<void> _requireNoJob() async {
+    final status = await jobs.status();
+    if (status.lifecycle != FullBackupJobLifecycle.none) {
+      throw const FullBackupBusyException();
+    }
+  }
 
   Future<void> _requireFreeSpace(Directory on, int bytes) async {
     final free = await AndroidSafService.getFreeBytes(on.path);
@@ -394,37 +339,18 @@ class FullBackupService implements FullBackupApi {
     }
   }
 
-  Future<({int books, int dictionaries, int external})> _counts() async {
+  Future<({int books, int dictionaries})> _counts() async {
     final row = await db
         .customSelect(
           'SELECT (SELECT count(*) FROM books) AS books, '
           '(SELECT count(*) FROM dictionary_metas WHERE is_hidden = 0) '
-          'AS dictionaries, '
-          "(SELECT count(*) FROM books WHERE cover_image_path LIKE 'content://%') "
-          'AS external',
+          'AS dictionaries',
         )
         .getSingle();
     return (
       books: row.read<int>('books'),
       dictionaries: row.read<int>('dictionaries'),
-      external: row.read<int>('external'),
     );
-  }
-
-  Future<T> _withProgress<T>(
-    FullBackupProgress? onProgress,
-    Future<T> Function() action,
-  ) async {
-    final subscription = onProgress == null
-        ? null
-        : AndroidSafService.pollZipProgress().listen(
-            (progress) => onProgress(progress.$1, progress.$2),
-          );
-    try {
-      return await action();
-    } finally {
-      await subscription?.cancel();
-    }
   }
 
   /// WorkManager can revive the process between `exit(0)` and the user's
@@ -437,8 +363,7 @@ class FullBackupService implements FullBackupApi {
     }
   }
 
-  String _exportFileName() {
-    final now = _clock();
+  static String _exportFileName(DateTime now) {
     String two(int v) => v.toString().padLeft(2, '0');
     return 'mekuru-full-backup-${now.year}${two(now.month)}${two(now.day)}-'
         '${two(now.hour)}${two(now.minute)}${two(now.second)}.zip';
@@ -452,3 +377,9 @@ class FullBackupService implements FullBackupApi {
     return '>=5GiB';
   }
 }
+
+/// True when the service holds a job or an unread result. Checked in `main`
+/// before the first frame so the job page is the first thing on screen.
+Future<bool> hasPendingFullBackupJob({
+  FullBackupJobApi jobs = const FullBackupJobChannel(),
+}) async => (await jobs.status()).lifecycle != FullBackupJobLifecycle.none;

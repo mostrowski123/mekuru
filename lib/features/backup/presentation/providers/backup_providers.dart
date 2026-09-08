@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
@@ -19,6 +19,7 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart';
 import 'package:mekuru/features/backup/data/services/pending_dictionary_restore_service.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
+import 'package:mekuru/features/backup/presentation/providers/full_backup_job_provider.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
@@ -32,7 +33,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 // ──────────────── Service Providers ────────────────
 
@@ -99,14 +99,14 @@ enum BackupMessageKind {
   // A .zip picked where a .mekuru was expected, and vice versa.
   wrongKindFullBackup,
   wrongKindReadingData,
-  // Full backup (details carries a preformatted size or a version).
-  fullExported,
-  fullExportedWithSkipped,
-  fullCancelled,
+  // Full backup (details carries a preformatted size or a version). Progress
+  // and outcomes live on the job page; these are the refusals before a job
+  // is committed.
   fullBusy,
   fullNotEnoughSpace,
   fullTooNew,
   fullInvalid,
+  fullIncomplete,
   fullPendingRestore,
   fullFailed,
   fullRestoreFailed,
@@ -164,15 +164,6 @@ class BackupMessage {
   const BackupMessage.wrongKindReadingData()
     : this._(kind: BackupMessageKind.wrongKindReadingData);
 
-  const BackupMessage.fullExported(String size)
-    : this._(kind: BackupMessageKind.fullExported, details: size);
-
-  const BackupMessage.fullExportedWithSkipped(int count)
-    : this._(kind: BackupMessageKind.fullExportedWithSkipped, count: count);
-
-  const BackupMessage.fullCancelled()
-    : this._(kind: BackupMessageKind.fullCancelled);
-
   const BackupMessage.fullBusy() : this._(kind: BackupMessageKind.fullBusy);
 
   const BackupMessage.fullNotEnoughSpace(String size)
@@ -183,6 +174,9 @@ class BackupMessage {
 
   const BackupMessage.fullInvalid()
     : this._(kind: BackupMessageKind.fullInvalid);
+
+  const BackupMessage.fullIncomplete()
+    : this._(kind: BackupMessageKind.fullIncomplete);
 
   const BackupMessage.fullPendingRestore()
     : this._(kind: BackupMessageKind.fullPendingRestore);
@@ -475,17 +469,16 @@ final restoreNotifierProvider = NotifierProvider<RestoreNotifier, RestoreState>(
 
 /// The real full-backup service, bound to this device's directories.
 final fullBackupServiceProvider = FutureProvider<FullBackupApi>((ref) async {
-  final (info, root, cache) = await (
+  final (info, root) = await (
     PackageInfo.fromPlatform(),
     getApplicationSupportDirectory(),
-    getTemporaryDirectory(),
   ).wait;
   return FullBackupService(
     db: ref.watch(databaseProvider),
     backupService: ref.watch(backupServiceProvider),
     root: root,
-    cacheDir: cache,
     appVersion: info.version,
+    jobs: ref.watch(fullBackupJobApiProvider),
   );
 });
 
@@ -518,163 +511,96 @@ final fullBackupPickersProvider = Provider<FullBackupPickers>((ref) {
   );
 });
 
-/// Ends the process so the staged restore applies on the next cold start.
-/// `SystemNavigator.pop` would keep the engine (and the open database)
-/// alive, so a real exit is the only deterministic trigger.
-final appExitProvider = Provider<Future<void> Function()>((ref) {
-  return () async {
-    try {
-      await Sentry.close().timeout(const Duration(seconds: 3));
-    } catch (_) {
-      // Flushing is best effort; captured events persist on disk anyway.
-    }
-    exit(0);
-  };
-});
-
-enum FullBackupPhase { idle, preparing, exporting, extracting }
-
 class FullBackupState {
-  final FullBackupPhase phase;
-  final int done;
-  final int total;
+  /// A refusal or failure before a job was committed; the job page owns
+  /// everything after that.
   final BackupMessage? error;
-  final BackupMessage? successMessage;
 
-  /// Set by a successful [FullBackupNotifier.pickAndInspect]; what
-  /// [FullBackupNotifier.stageForRestart] restores.
-  final FullBackupSource? source;
+  /// True from the tap until the job is committed or refused.
+  final bool busy;
 
-  const FullBackupState({
-    this.phase = FullBackupPhase.idle,
-    this.done = 0,
-    this.total = 0,
-    this.error,
-    this.successMessage,
-    this.source,
-  });
-
-  bool get isWorking => phase != FullBackupPhase.idle;
+  const FullBackupState({this.error, this.busy = false});
 }
 
+/// Starts full backups and restores: pickers, validation, the Dart-side
+/// preparation, then hands the job to the native service. Progress and
+/// outcomes are followed by [fullBackupJobProvider].
 class FullBackupNotifier extends Notifier<FullBackupState> {
-  Timer? _autoDismissTimer;
-
   @override
-  FullBackupState build() {
-    ref.onDispose(() => _autoDismissTimer?.cancel());
-    return const FullBackupState();
-  }
+  FullBackupState build() => const FullBackupState();
 
-  /// Folder picker → streaming export. Reports the size or the failure.
+  /// Folder picker → snapshot, plan, commit.
   Future<void> exportToFolder() async {
-    if (state.isWorking) return;
+    if (state.busy) return;
     final target = await ref.read(fullBackupPickersProvider).pickExportTarget();
     if (target == null) return;
-
-    state = const FullBackupState(phase: FullBackupPhase.preparing);
-    await _run(restoring: false, () async {
-      final api = await ref.read(fullBackupServiceProvider.future);
-      final result = await api.export(
-        target,
-        onProgress: (done, total) => state = FullBackupState(
-          phase: FullBackupPhase.exporting,
-          done: done,
-          total: total,
-        ),
-      );
-      _showSuccess(
-        result.skippedFiles > 0
-            ? BackupMessage.fullExportedWithSkipped(result.skippedFiles)
-            : BackupMessage.fullExported(formatBytes(result.bytes)),
-      );
-    });
+    await _commitJob(
+      FullBackupJobKind.export,
+      (api) => api.prepareExport(target),
+    );
   }
 
-  /// Document picker → manifest validation. Remembers the source for
-  /// [stageForRestart] and returns what the confirmation dialogs show.
+  /// Document picker → manifest validation. Returns what the confirmation
+  /// dialogs show, or null when the picker was dismissed or the file refused.
   Future<FullBackupPreview?> pickAndInspect() async {
-    if (state.isWorking) return null;
+    if (state.busy) return null;
     final source = await ref.read(fullBackupPickersProvider).pickSource();
     if (source == null) return null;
 
-    state = const FullBackupState(phase: FullBackupPhase.preparing);
-    FullBackupPreview? preview;
-    await _run(restoring: true, () async {
-      final api = await ref.read(fullBackupServiceProvider.future);
-      preview = await api.inspect(source);
-      state = FullBackupState(source: source);
-    });
-    return preview;
-  }
-
-  /// Extracts and prepares the inspected archive. Returns true once the
-  /// READY marker exists, i.e. the app must now exit via [exitApp].
-  Future<bool> stageForRestart() async {
-    final source = state.source;
-    if (source == null || state.isWorking) return false;
-
-    state = FullBackupState(phase: FullBackupPhase.preparing, source: source);
-    var staged = false;
-    await _run(restoring: true, () async {
-      final api = await ref.read(fullBackupServiceProvider.future);
-      await api.stage(
-        source,
-        onProgress: (done, total) => state = FullBackupState(
-          phase: FullBackupPhase.extracting,
-          done: done,
-          total: total,
-          source: source,
-        ),
-      );
-      state = FullBackupState(source: source);
-      staged = true;
-    });
-    return staged;
-  }
-
-  Future<void> exitApp() => ref.read(appExitProvider)();
-
-  Future<void> cancel() async {
-    final api = await ref.read(fullBackupServiceProvider.future);
-    await api.cancel();
-  }
-
-  void clearState() {
-    _autoDismissTimer?.cancel();
-    state = const FullBackupState();
-  }
-
-  Future<void> _run(
-    Future<void> Function() body, {
-    required bool restoring,
-  }) async {
-    _setWakelock(true);
+    state = const FullBackupState(busy: true);
     try {
-      await body();
+      final api = await ref.read(fullBackupServiceProvider.future);
+      final preview = await api.inspect(source);
+      state = const FullBackupState();
+      return preview;
     } catch (e, st) {
-      final message = _messageFor(e, restoring: restoring);
-      if (message.kind == BackupMessageKind.fullFailed ||
-          message.kind == BackupMessageKind.fullRestoreFailed) {
-        logFailure(
-          restoring
-              ? 'backup.full_restore_failed'
-              : 'backup.full_export_failed',
-          e,
-          stackTrace: st,
-        );
-      }
-      state = FullBackupState(error: message);
-    } finally {
-      _setWakelock(false);
-      if (state.isWorking) state = FullBackupState(source: state.source);
+      state = FullBackupState(error: _messageFor(e, st, restoring: true));
+      return null;
     }
   }
 
-  static BackupMessage _messageFor(Object error, {required bool restoring}) {
-    return switch (error) {
+  /// Commits the restore job; the job page takes over from here.
+  Future<void> startRestore(FullBackupPreview preview) async {
+    if (state.busy) return;
+    await _commitJob(
+      FullBackupJobKind.restore,
+      (api) => api.startRestore(preview),
+    );
+  }
+
+  /// Blocks the app, asks for the notification permission (the answer does
+  /// not gate the job; a denial only hides the progress notification), runs
+  /// the Dart-side preparation and hands the job to the service. A refusal
+  /// before commit releases the app and becomes a snackbar.
+  Future<void> _commitJob(
+    FullBackupJobKind kind,
+    Future<void> Function(FullBackupApi api) prepare,
+  ) async {
+    final job = ref.read(fullBackupJobProvider.notifier);
+    state = const FullBackupState(busy: true);
+    job.markPreparing(kind);
+    try {
+      await ref.read(fullBackupJobApiProvider).requestNotificationPermission();
+      await prepare(await ref.read(fullBackupServiceProvider.future));
+      await job.jobCommitted(kind);
+      state = const FullBackupState();
+    } catch (e, st) {
+      job.preparationFailed();
+      state = FullBackupState(
+        error: _messageFor(e, st, restoring: kind == FullBackupJobKind.restore),
+      );
+    }
+  }
+
+  void clearState() => state = const FullBackupState();
+
+  static BackupMessage _messageFor(
+    Object error,
+    StackTrace stackTrace, {
+    required bool restoring,
+  }) {
+    final message = switch (error) {
       FullBackupBusyException() => const BackupMessage.fullBusy(),
-      FullBackupCancelledException() => const BackupMessage.fullCancelled(),
       InsufficientSpaceException(:final neededBytes) =>
         BackupMessage.fullNotEnoughSpace(formatBytes(neededBytes)),
       FullBackupTooNewException(:final appVersion) => BackupMessage.fullTooNew(
@@ -683,6 +609,7 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
       WrongBackupKindException(found: BackupKind.readingData) =>
         const BackupMessage.wrongKindReadingData(),
       WrongBackupKindException() => const BackupMessage.wrongKindFullBackup(),
+      FullBackupIncompleteException() => const BackupMessage.fullIncomplete(),
       FullBackupFormatException() ||
       BackupFormatException() => const BackupMessage.fullInvalid(),
       FullBackupPendingRestoreException() =>
@@ -692,25 +619,15 @@ class FullBackupNotifier extends Notifier<FullBackupState> {
             ? BackupMessage.fullRestoreFailed(error.toString())
             : BackupMessage.fullFailed(error.toString()),
     };
-  }
-
-  /// Multi-gigabyte exports must not be interrupted by the screen sleeping.
-  /// Fire-and-forget: the plugin call must never sit on the critical path
-  /// (under the widget-test binding it does not even complete).
-  static void _setWakelock(bool on) {
-    unawaited(
-      (on ? WakelockPlus.enable() : WakelockPlus.disable()).catchError((
-        Object _,
-      ) {
-        // No wakelock plugin (tests) — harmless.
-      }),
-    );
-  }
-
-  void _showSuccess(BackupMessage message) {
-    _autoDismissTimer?.cancel();
-    state = FullBackupState(successMessage: message);
-    _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
+    if (message.kind == BackupMessageKind.fullFailed ||
+        message.kind == BackupMessageKind.fullRestoreFailed) {
+      logFailure(
+        restoring ? 'backup.full_restore_failed' : 'backup.full_export_failed',
+        error,
+        stackTrace: stackTrace,
+      );
+    }
+    return message;
   }
 }
 

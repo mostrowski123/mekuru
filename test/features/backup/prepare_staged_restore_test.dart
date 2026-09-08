@@ -77,7 +77,7 @@ void main() {
 
   void seedSettings() {
     write(
-      p.join(staging.path, FullBackupManifest.settingsEntry),
+      p.join(staging.path, StagedFullRestore.settingsEntryName),
       BackupSerializer.encode(
         BackupManifest(
           version: BackupManifest.currentVersion,

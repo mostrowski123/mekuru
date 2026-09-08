@@ -13,6 +13,10 @@ import 'core/services/sentry_helpers.dart';
 import 'core/services/sentry_setup.dart';
 import 'core/services/usage_telemetry.dart';
 import 'features/backup/data/services/staged_full_restore.dart';
+import 'features/backup/data/services/full_backup_service.dart'
+    show hasPendingFullBackupJob;
+import 'features/backup/presentation/providers/full_backup_job_provider.dart'
+    show initialFullBackupJobPendingProvider;
 import 'features/manga/data/services/ocr_background_worker.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
@@ -68,7 +72,21 @@ Future<void> main() async {
       await applyStagedFullRestoreIfAny();
       await PreloadedAppSettings.load();
       await PreloadedProEntitlement.load();
-      runApp(SentryWidget(child: const ProviderScope(child: MekuruApp())));
+      // A job left by the previous process must block the app from the
+      // first frame, before any poll answers.
+      final fullBackupJobPending = await hasPendingFullBackupJob();
+      runApp(
+        SentryWidget(
+          child: ProviderScope(
+            overrides: [
+              initialFullBackupJobPendingProvider.overrideWithValue(
+                fullBackupJobPending,
+              ),
+            ],
+            child: const MekuruApp(),
+          ),
+        ),
+      );
       _scheduleDeferredStartupWarmups();
     },
   );

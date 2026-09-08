@@ -404,6 +404,8 @@ android {
 dependencies {
     implementation("com.github.ankidroid:Anki-Android:v2.17.4")
     testImplementation("junit:junit:4.13.2")
+    // The real org.json for JVM unit tests; the android.jar stub throws.
+    testImplementation("org.json:json:20250517")
 }
 
 flutter {

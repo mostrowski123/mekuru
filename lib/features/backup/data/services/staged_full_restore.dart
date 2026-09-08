@@ -7,10 +7,12 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
+import 'package:mekuru/features/backup/data/services/prepare_staged_restore.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart'
     show ocrPendingFinalizationsKey;
+import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,10 +30,12 @@ class StagedRestoreException implements Exception {
 
 /// Boot-time half of a full restore.
 ///
-/// The import step extracts the archive into `<root>/restore_staging/`,
-/// fixes up the staged database, and writes the `READY` marker last. Nothing
-/// else can swap the live database while Drift holds it open, so the app
-/// exits and this runs on the next cold start, before any database opens.
+/// The native job unpacks the archive into `<root>/restore_staging/` in the
+/// on-device layout and writes the `EXTRACTED` marker last. Nothing else can
+/// swap the live database while Drift holds it open, so the app exits and
+/// this runs on the next cold start, before any database opens: first the
+/// fix-ups ([prepareStagedRestore], which ends by writing `READY`), then the
+/// swap.
 ///
 /// The swap is a handful of same-filesystem renames driven purely by what
 /// exists on disk, so a process death at any point is repaired by simply
@@ -39,20 +43,32 @@ class StagedRestoreException implements Exception {
 /// means the live X is still the old one. The old items wait in
 /// `<root>/restore_rollback/`; that directory is never deleted while `READY`
 /// exists, and `READY` goes away only once an apply or a rollback has fully
-/// completed.
+/// completed. Directories are never deleted in place: they are renamed to a
+/// `*.trash` tombstone first, so the path is free at once and a concurrent
+/// job can never write into a tree that is being removed.
 class StagedFullRestore {
-  StagedFullRestore({required this.root, required this.prefs, this.onError});
+  StagedFullRestore({
+    required this.root,
+    required this.prefs,
+    this.onError,
+    Future<void> Function(int connectionId)? clearServerSecret,
+  }) : _clearServerSecret = clearServerSecret ?? ServerSecretStorage().clear;
 
   final Directory root;
   final SharedPreferences prefs;
   final void Function(Object error, StackTrace stackTrace)? onError;
+  final Future<void> Function(int connectionId) _clearServerSecret;
 
   static const stagingDirName = 'restore_staging';
   static const rollbackDirName = 'restore_rollback';
   static const readyMarkerName = 'READY';
+  static const extractedMarkerName = 'EXTRACTED';
+  static const jobDirName = 'full_backup_job';
+  static const cancelledMarkerName = 'CANCELLED';
+  static const tombstoneSuffix = '.trash';
   static const databaseFileName = AppDatabase.databaseFileName;
   static const booksDirName = BookRepository.booksSegment;
-  static const settingsEntryName = FullBackupManifest.settingsEntry;
+  static const settingsEntryName = FullBackupManifest.settingsFileName;
 
   /// `ok`, or `error:<code>`; consumed once by the UI after the restart.
   static const resultPrefKey = 'backup.full_restore_result';
@@ -70,28 +86,61 @@ class StagedFullRestore {
     SharedPreferencesReviewPromptStorage.keyPrefix,
   ];
 
-  final List<FileSystemEntity> _leftovers = [];
+  final List<Directory> _leftovers = [];
 
   Directory get _staging => Directory(p.join(root.path, stagingDirName));
   Directory get _rollback => Directory(p.join(root.path, rollbackDirName));
   File get _ready => File(p.join(_staging.path, readyMarkerName));
+  File get _extracted => File(p.join(_staging.path, extractedMarkerName));
+  File get _jobCancelled =>
+      File(p.join(root.path, jobDirName, cancelledMarkerName));
 
   /// True when a launch has something to do here: a staged restore, or a
   /// rollback directory left behind by a committed one. Lets the boot path
   /// skip loading preferences on the ordinary launch.
   static bool hasWorkUnder(Directory root) =>
-      File(p.join(root.path, stagingDirName, readyMarkerName)).existsSync() ||
+      hasStagedRestore(root) ||
       Directory(p.join(root.path, rollbackDirName)).existsSync();
+
+  /// True while a restore is waiting to be applied on the next cold start.
+  static bool hasStagedRestore(Directory root) =>
+      File(p.join(root.path, stagingDirName, readyMarkerName)).existsSync() ||
+      File(p.join(root.path, stagingDirName, extractedMarkerName)).existsSync();
+
+  /// Renames [dir] to a unique sibling tombstone and returns it, or null when
+  /// there was nothing to retire. The gigabytes behind it are deleted later.
+  static Directory? retire(Directory dir) {
+    if (!dir.existsSync()) return null;
+    final tombstone = Directory(
+      '${dir.path}.${DateTime.now().microsecondsSinceEpoch}$tombstoneSuffix',
+    );
+    try {
+      return dir.renameSync(tombstone.path);
+    } on FileSystemException {
+      // Rename refused: fall back to deleting in place.
+      dir.deleteSync(recursive: true);
+      return null;
+    }
+  }
 
   /// Applies a staged restore if one is ready. Returns null when nothing is
   /// staged. Never throws: failures roll back and are reported via [onError]
   /// and [resultPrefKey].
   Future<StagedRestoreOutcome?> applyIfStaged() async {
     if (!_ready.existsSync()) {
-      // A READY-less staging dir belongs to an import that may be running;
-      // only a rollback dir left behind by a committed run is ours to clean.
-      _leftovers.add(_rollback);
-      return null;
+      // A staging dir carrying neither marker belongs to a job that may be
+      // running (or that cancel is still cleaning up); only a rollback dir
+      // left behind by a committed run is ours to clean.
+      if (!_extracted.existsSync() || _jobCancelled.existsSync()) {
+        _leftovers.add(_rollback);
+        return null;
+      }
+      try {
+        await _prepare();
+      } catch (e, st) {
+        _leftovers.addAll([_staging, _rollback]);
+        return _fail(e, st);
+      }
     }
     _leftovers.addAll([_staging, _rollback]);
 
@@ -115,17 +164,46 @@ class StagedFullRestore {
     }
   }
 
-  /// Deletes the staging and rollback directories once a run has committed
-  /// (either way). Fire-and-forget from boot: the trees can be gigabytes.
+  /// Retires then deletes the staging and rollback directories once a run
+  /// has committed (either way). Fire-and-forget from boot: the trees can be
+  /// gigabytes, but the renames free the paths immediately.
   Future<void> deleteLeftovers() async {
-    for (final entity in _leftovers) {
+    final tombstones = <Directory>[];
+    for (final dir in _leftovers) {
       try {
-        if (await entity.exists()) await entity.delete(recursive: true);
+        final tombstone = retire(dir);
+        if (tombstone != null) tombstones.add(tombstone);
       } catch (_) {
-        // Best effort; the next import wipes whatever is left.
+        // Best effort; the next launch sweeps whatever is left.
       }
     }
     _leftovers.clear();
+    for (final tombstone in tombstones) {
+      try {
+        await tombstone.delete(recursive: true);
+      } catch (_) {
+        // The native recovery sweeps tombstones too.
+      }
+    }
+  }
+
+  /// The fix-ups the job left to boot: validate and rewrite the staged
+  /// database, forget secrets whose ids the archive reuses, write READY.
+  Future<void> _prepare() async {
+    final prepared = await prepareStagedRestore(
+      PrepareStagedRestoreArgs(
+        stagingPath: _staging.path,
+        rootPath: root.path,
+        manifestJson: _extracted.readAsStringSync(),
+      ),
+    );
+    // Secrets are keyed by connection id; the restored ids can collide with
+    // this device's old connections, so never let a stale secret pair with a
+    // restored URL.
+    for (final id in prepared.serverConnectionIds) {
+      await _clearServerSecret(id);
+    }
+    _extracted.deleteSync();
   }
 
   bool _stagingIsComplete() =>
@@ -206,8 +284,9 @@ class StagedFullRestore {
     try {
       await prefs.setString(resultPrefKey, '$resultErrorPrefix$code');
       if (_ready.existsSync()) _ready.deleteSync();
+      if (_extracted.existsSync()) _extracted.deleteSync();
     } catch (_) {
-      // The result pref and marker are best effort on the failure path.
+      // The result pref and markers are best effort on the failure path.
     }
     onError?.call(error, stackTrace ?? StackTrace.current);
     return StagedRestoreOutcome.rolledBack;

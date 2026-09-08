@@ -78,8 +78,8 @@ class BookRepository {
 
   /// Dir names under a `books` path segment that [path] claims — every
   /// occurrence, never the absolute prefix, because stored paths go stale
-  /// when Android restores the app into a different data directory.
-  @visibleForTesting
+  /// when Android restores the app into a different data directory. Also
+  /// how the full backup decides which directories ship.
   static Iterable<String> claimedDirNames(String path) sync* {
     final parts = p.split(p.normalize(path));
     for (var i = 0; i < parts.length - 1; i++) {

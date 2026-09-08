@@ -2,21 +2,17 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart';
-import 'package:mekuru/features/backup/data/services/prepare_staged_restore.dart';
 
 /// Scriptable stand-in for [FullBackupService] so notifier and screen tests
-/// run without SAF, a database snapshot or a process exit.
+/// run without SAF, a database snapshot or the native job service.
 class FakeFullBackupApi implements FullBackupApi {
   final calls = <String>[];
   FullBackupTarget? exportTarget;
   FullBackupSource? inspectedSource;
-  FullBackupSource? stagedSource;
+  FullBackupPreview? restoredPreview;
   Object? exportError;
   Object? inspectError;
-  Object? stageError;
-  List<(int, int)> progressToEmit = const [];
-  int exportedBytes = 777;
-  int skippedFiles = 0;
+  Object? restoreError;
   int currentBookCount = 2;
   int currentDictionaryCount = 1;
 
@@ -31,25 +27,14 @@ class FakeFullBackupApi implements FullBackupApi {
     externalMangaCount: 0,
     dbBytes: 1000,
     booksBytes: 4000,
+    folders: const {'Books/走れメロス/': 'book_1_aaaaaaaa'},
   );
 
   @override
-  Future<FullBackupExportResult> export(
-    FullBackupTarget target, {
-    FullBackupProgress? onProgress,
-  }) async {
-    calls.add('export');
+  Future<void> prepareExport(FullBackupTarget target) async {
+    calls.add('prepareExport');
     exportTarget = target;
-    for (final (done, total) in progressToEmit) {
-      onProgress?.call(done, total);
-    }
     if (exportError != null) throw exportError!;
-    return FullBackupExportResult(
-      location: 'content://tree/doc.zip',
-      bytes: exportedBytes,
-      skippedFiles: skippedFiles,
-      manifest: manifest,
-    );
   }
 
   @override
@@ -59,6 +44,7 @@ class FakeFullBackupApi implements FullBackupApi {
     if (inspectError != null) throw inspectError!;
     return FullBackupPreview(
       manifest: manifest,
+      source: source,
       sizeBytes: source.sizeBytes,
       currentBookCount: currentBookCount,
       currentDictionaryCount: currentDictionaryCount,
@@ -66,25 +52,9 @@ class FakeFullBackupApi implements FullBackupApi {
   }
 
   @override
-  Future<PreparedStagedRestore> stage(
-    FullBackupSource source, {
-    FullBackupProgress? onProgress,
-  }) async {
-    calls.add('stage');
-    stagedSource = source;
-    for (final (done, total) in progressToEmit) {
-      onProgress?.call(done, total);
-    }
-    if (stageError != null) throw stageError!;
-    return const PreparedStagedRestore(
-      serverConnectionIds: [],
-      rewrittenBooks: 0,
-      rewrittenCaches: 0,
-    );
-  }
-
-  @override
-  Future<void> cancel() async {
-    calls.add('cancel');
+  Future<void> startRestore(FullBackupPreview preview) async {
+    calls.add('startRestore');
+    restoredPreview = preview;
+    if (restoreError != null) throw restoreError!;
   }
 }

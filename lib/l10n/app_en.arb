@@ -3304,7 +3304,7 @@
   "@backupFullExportTitle": {
     "description": "Title of the export full backup action."
   },
-  "backupFullExportSubtitle": "Choose a folder. The file can be several gigabytes; keep Mekuru open until it finishes.",
+  "backupFullExportSubtitle": "Choose a folder. The file can be several gigabytes; the backup keeps running in the background and shows its progress in a notification.",
   "@backupFullExportSubtitle": {
     "description": "Subtitle of the export full backup action."
   },
@@ -3312,7 +3312,7 @@
   "@backupFullRestoreTitle": {
     "description": "Title of the restore full backup action."
   },
-  "backupFullRestoreSubtitle": "Replaces everything in Mekuru on this device with the contents of a full backup.",
+  "backupFullRestoreSubtitle": "Replaces everything in Mekuru on this device with the contents of a full backup. Runs in the background; Mekuru closes once the files are copied.",
   "@backupFullRestoreSubtitle": {
     "description": "Subtitle of the restore full backup action."
   },
@@ -3320,17 +3320,9 @@
   "@backupFullReplacesChip": {
     "description": "Warning chip on the restore full backup action."
   },
-  "backupFullProgressExporting": "Exporting full backup…",
-  "@backupFullProgressExporting": {
-    "description": "Progress dialog title while exporting."
-  },
   "backupFullProgressPreparing": "Preparing…",
   "@backupFullProgressPreparing": {
     "description": "Progress dialog title while clearing old staging data."
-  },
-  "backupFullProgressExtracting": "Extracting full backup…",
-  "@backupFullProgressExtracting": {
-    "description": "Progress dialog title while extracting."
   },
   "backupFullProgressBytes": "{done} of {total}",
   "@backupFullProgressBytes": {
@@ -3517,5 +3509,78 @@
         "type": "String"
       }
     }
+  },
+  "backupFullJobExportTitle": "Backing up",
+  "@backupFullJobExportTitle": {
+    "description": "Title of the full-screen page shown while a full backup runs."
+  },
+  "backupFullJobRestoreTitle": "Restoring",
+  "@backupFullJobRestoreTitle": {
+    "description": "Title of the full-screen page shown while a full restore runs."
+  },
+  "backupFullJobPhaseWriting": "Writing backup…",
+  "@backupFullJobPhaseWriting": {
+    "description": "Phase line on the job page while the archive is written."
+  },
+  "backupFullJobPhaseChecking": "Checking files already copied…",
+  "@backupFullJobPhaseChecking": {
+    "description": "Phase line on the job page while a resumed restore re-reads what it already extracted."
+  },
+  "backupFullJobPhaseExtracting": "Copying files…",
+  "@backupFullJobPhaseExtracting": {
+    "description": "Phase line on the job page while the archive is unpacked."
+  },
+  "backupFullJobPhaseFinishing": "Finishing…",
+  "@backupFullJobPhaseFinishing": {
+    "description": "Phase line on the job page while the last records are written."
+  },
+  "backupFullJobPhaseResuming": "Resuming…",
+  "@backupFullJobPhaseResuming": {
+    "description": "Phase line on the job page while a paused job is being restarted."
+  },
+  "backupFullJobPaused": "Paused: {details}. Mekuru will try again when you reopen it.",
+  "@backupFullJobPaused": {
+    "description": "Phase line on the job page when the last run stopped with an error.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "backupFullJobBackgroundHint": "This keeps running if you leave Mekuru. Progress also shows in your notifications.",
+  "@backupFullJobBackgroundHint": {
+    "description": "Explains on the job page that the job survives leaving the app."
+  },
+  "backupFullJobCancelConfirmExport": "Stop the backup? What has been written so far will be deleted.",
+  "@backupFullJobCancelConfirmExport": {
+    "description": "Inline confirmation before cancelling a running full backup."
+  },
+  "backupFullJobCancelConfirmRestore": "Stop the restore? Nothing in Mekuru has changed yet; the copied files will be deleted.",
+  "@backupFullJobCancelConfirmRestore": {
+    "description": "Inline confirmation before cancelling a running full restore."
+  },
+  "backupFullJobKeepGoing": "Keep going",
+  "@backupFullJobKeepGoing": {
+    "description": "Dismisses the cancel confirmation on the job page."
+  },
+  "backupFullJobStop": "Stop",
+  "@backupFullJobStop": {
+    "description": "Confirms cancelling the job on the job page."
+  },
+  "backupFullJobDone": "Done",
+  "@backupFullJobDone": {
+    "description": "Acknowledges a finished full backup on the job page."
+  },
+  "backupFullJobClose": "Close",
+  "@backupFullJobClose": {
+    "description": "Acknowledges a cancelled or failed job on the job page."
+  },
+  "backupFullJobRenameFailed": "The file was saved with a temporary name ending in .partial. Rename it to end in .zip before restoring from it.",
+  "@backupFullJobRenameFailed": {
+    "description": "Shown when the storage provider refused to give the finished archive its final name."
+  },
+  "backupFullIncomplete": "This file is incomplete or damaged. Copy it again from where it was saved.",
+  "@backupFullIncomplete": {
+    "description": "Shown when a picked zip has no end record (a truncated copy)."
   }
 }

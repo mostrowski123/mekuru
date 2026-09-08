@@ -4369,7 +4369,7 @@ abstract class AppLocalizations {
   /// Subtitle of the export full backup action.
   ///
   /// In en, this message translates to:
-  /// **'Choose a folder. The file can be several gigabytes; keep Mekuru open until it finishes.'**
+  /// **'Choose a folder. The file can be several gigabytes; the backup keeps running in the background and shows its progress in a notification.'**
   String get backupFullExportSubtitle;
 
   /// Title of the restore full backup action.
@@ -4381,7 +4381,7 @@ abstract class AppLocalizations {
   /// Subtitle of the restore full backup action.
   ///
   /// In en, this message translates to:
-  /// **'Replaces everything in Mekuru on this device with the contents of a full backup.'**
+  /// **'Replaces everything in Mekuru on this device with the contents of a full backup. Runs in the background; Mekuru closes once the files are copied.'**
   String get backupFullRestoreSubtitle;
 
   /// Warning chip on the restore full backup action.
@@ -4390,23 +4390,11 @@ abstract class AppLocalizations {
   /// **'Replaces Mekuru\'s data'**
   String get backupFullReplacesChip;
 
-  /// Progress dialog title while exporting.
-  ///
-  /// In en, this message translates to:
-  /// **'Exporting full backup…'**
-  String get backupFullProgressExporting;
-
   /// Progress dialog title while clearing old staging data.
   ///
   /// In en, this message translates to:
   /// **'Preparing…'**
   String get backupFullProgressPreparing;
-
-  /// Progress dialog title while extracting.
-  ///
-  /// In en, this message translates to:
-  /// **'Extracting full backup…'**
-  String get backupFullProgressExtracting;
 
   /// Progress dialog byte counter; both values are preformatted sizes.
   ///
@@ -4581,6 +4569,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The full restore could not be completed and your previous data was kept. ({details})'**
   String backupFullRestoreBootFailed({required String details});
+
+  /// Title of the full-screen page shown while a full backup runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Backing up'**
+  String get backupFullJobExportTitle;
+
+  /// Title of the full-screen page shown while a full restore runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring'**
+  String get backupFullJobRestoreTitle;
+
+  /// Phase line on the job page while the archive is written.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing backup…'**
+  String get backupFullJobPhaseWriting;
+
+  /// Phase line on the job page while a resumed restore re-reads what it already extracted.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking files already copied…'**
+  String get backupFullJobPhaseChecking;
+
+  /// Phase line on the job page while the archive is unpacked.
+  ///
+  /// In en, this message translates to:
+  /// **'Copying files…'**
+  String get backupFullJobPhaseExtracting;
+
+  /// Phase line on the job page while the last records are written.
+  ///
+  /// In en, this message translates to:
+  /// **'Finishing…'**
+  String get backupFullJobPhaseFinishing;
+
+  /// Phase line on the job page while a paused job is being restarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Resuming…'**
+  String get backupFullJobPhaseResuming;
+
+  /// Phase line on the job page when the last run stopped with an error.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused: {details}. Mekuru will try again when you reopen it.'**
+  String backupFullJobPaused({required String details});
+
+  /// Explains on the job page that the job survives leaving the app.
+  ///
+  /// In en, this message translates to:
+  /// **'This keeps running if you leave Mekuru. Progress also shows in your notifications.'**
+  String get backupFullJobBackgroundHint;
+
+  /// Inline confirmation before cancelling a running full backup.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop the backup? What has been written so far will be deleted.'**
+  String get backupFullJobCancelConfirmExport;
+
+  /// Inline confirmation before cancelling a running full restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop the restore? Nothing in Mekuru has changed yet; the copied files will be deleted.'**
+  String get backupFullJobCancelConfirmRestore;
+
+  /// Dismisses the cancel confirmation on the job page.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep going'**
+  String get backupFullJobKeepGoing;
+
+  /// Confirms cancelling the job on the job page.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get backupFullJobStop;
+
+  /// Acknowledges a finished full backup on the job page.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get backupFullJobDone;
+
+  /// Acknowledges a cancelled or failed job on the job page.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get backupFullJobClose;
+
+  /// Shown when the storage provider refused to give the finished archive its final name.
+  ///
+  /// In en, this message translates to:
+  /// **'The file was saved with a temporary name ending in .partial. Rename it to end in .zip before restoring from it.'**
+  String get backupFullJobRenameFailed;
+
+  /// Shown when a picked zip has no end record (a truncated copy).
+  ///
+  /// In en, this message translates to:
+  /// **'This file is incomplete or damaged. Copy it again from where it was saved.'**
+  String get backupFullIncomplete;
 }
 
 class _AppLocalizationsDelegate

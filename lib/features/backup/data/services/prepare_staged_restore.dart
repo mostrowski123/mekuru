@@ -44,11 +44,14 @@ class PreparedStagedRestore {
 const _booksAnchor = '/${StagedFullRestore.booksDirName}/';
 
 /// Validates and fixes up an extracted full backup in place, then writes the
-/// READY marker. Runs in the import step, before anything on the live device
-/// changes, so a failure here is "restore failed, nothing happened".
+/// READY marker. Runs at boot, after the native job wrote EXTRACTED and
+/// before anything on the live device changes, so a failure here is
+/// "restore failed, nothing happened".
 ///
-/// - Refuses a database schema newer than this build or one that fails
-///   `PRAGMA quick_check`.
+/// - Refuses a database schema newer than this build. (No `quick_check`:
+///   the staged file is a CRC-verified copy of a `VACUUM INTO` output, and
+///   reading every page of a multi-gigabyte database on each launch until
+///   READY exists is not worth the redundant assurance.)
 /// - Rewrites `books.file_path`, `books.cover_image_path` and the
 ///   `imageDirPath` inside every manga cache from the first `/books/` onto
 ///   [PrepareStagedRestoreArgs.rootPath]. Anchoring on the segment rather
@@ -68,7 +71,7 @@ Future<PreparedStagedRestore> prepareStagedRestore(
     throw const FullBackupFormatException('The archive has no database');
   }
   final settingsFile = File(
-    p.join(staging.path, FullBackupManifest.settingsEntry),
+    p.join(staging.path, StagedFullRestore.settingsEntryName),
   );
   if (!settingsFile.existsSync()) {
     throw const FullBackupFormatException('The archive has no settings file');
@@ -113,13 +116,6 @@ Future<PreparedStagedRestore> prepareStagedRestore(
         '(${AppDatabase.latestSchemaVersion})',
       );
     }
-    final check = db.select('PRAGMA quick_check');
-    if (check.isEmpty || check.first.columnAt(0) != 'ok') {
-      throw const FullBackupFormatException(
-        'The database failed its integrity check',
-      );
-    }
-
     var rewrittenBooks = 0;
     for (final column in ['file_path', 'cover_image_path']) {
       db.execute(

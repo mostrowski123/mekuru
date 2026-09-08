@@ -2582,26 +2582,20 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupFullExportSubtitle =>
-      'Choose a folder. The file can be several gigabytes; keep Mekuru open until it finishes.';
+      'Choose a folder. The file can be several gigabytes; the backup keeps running in the background and shows its progress in a notification.';
 
   @override
   String get backupFullRestoreTitle => 'Restore full backup (.zip)…';
 
   @override
   String get backupFullRestoreSubtitle =>
-      'Replaces everything in Mekuru on this device with the contents of a full backup.';
+      'Replaces everything in Mekuru on this device with the contents of a full backup. Runs in the background; Mekuru closes once the files are copied.';
 
   @override
   String get backupFullReplacesChip => 'Replaces Mekuru\'s data';
 
   @override
-  String get backupFullProgressExporting => 'Exporting full backup…';
-
-  @override
   String get backupFullProgressPreparing => 'Preparing…';
-
-  @override
-  String get backupFullProgressExtracting => 'Extracting full backup…';
 
   @override
   String backupFullProgressBytes({
@@ -2752,4 +2746,62 @@ class AppLocalizationsId extends AppLocalizations {
   String backupFullRestoreBootFailed({required String details}) {
     return 'The full restore could not be completed and your previous data was kept. ($details)';
   }
+
+  @override
+  String get backupFullJobExportTitle => 'Backing up';
+
+  @override
+  String get backupFullJobRestoreTitle => 'Restoring';
+
+  @override
+  String get backupFullJobPhaseWriting => 'Writing backup…';
+
+  @override
+  String get backupFullJobPhaseChecking => 'Checking files already copied…';
+
+  @override
+  String get backupFullJobPhaseExtracting => 'Copying files…';
+
+  @override
+  String get backupFullJobPhaseFinishing => 'Finishing…';
+
+  @override
+  String get backupFullJobPhaseResuming => 'Resuming…';
+
+  @override
+  String backupFullJobPaused({required String details}) {
+    return 'Paused: $details. Mekuru will try again when you reopen it.';
+  }
+
+  @override
+  String get backupFullJobBackgroundHint =>
+      'This keeps running if you leave Mekuru. Progress also shows in your notifications.';
+
+  @override
+  String get backupFullJobCancelConfirmExport =>
+      'Stop the backup? What has been written so far will be deleted.';
+
+  @override
+  String get backupFullJobCancelConfirmRestore =>
+      'Stop the restore? Nothing in Mekuru has changed yet; the copied files will be deleted.';
+
+  @override
+  String get backupFullJobKeepGoing => 'Keep going';
+
+  @override
+  String get backupFullJobStop => 'Stop';
+
+  @override
+  String get backupFullJobDone => 'Done';
+
+  @override
+  String get backupFullJobClose => 'Close';
+
+  @override
+  String get backupFullJobRenameFailed =>
+      'The file was saved with a temporary name ending in .partial. Rename it to end in .zip before restoring from it.';
+
+  @override
+  String get backupFullIncomplete =>
+      'This file is incomplete or damaged. Copy it again from where it was saved.';
 }
