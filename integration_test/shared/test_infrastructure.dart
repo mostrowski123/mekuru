@@ -292,7 +292,10 @@ Widget buildIntegrationTestApp({
 /// including its startup post-frame hooks — instead of wrapping a single
 /// screen. MekuruApp is its own MaterialApp, so it must not be nested in
 /// [buildLocalizedTestApp].
-Widget buildIntegrationTestRealApp({required AppDatabase db}) {
+Widget buildIntegrationTestRealApp({
+  required AppDatabase db,
+  List<Override> extraOverrides = const [],
+}) {
   return ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(db),
@@ -304,6 +307,7 @@ Widget buildIntegrationTestRealApp({required AppDatabase db}) {
       ),
       proUnlockedProvider.overrideWithBuild((ref, notifier) => false),
       autoBackupCheckerProvider.overrideWith((ref) async {}),
+      ...extraOverrides,
     ],
     child: const MekuruApp(),
   );

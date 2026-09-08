@@ -104,4 +104,32 @@ void main() {
     expect(h.staging.existsSync(), isFalse);
     expect(h.rollback.existsSync(), isFalse);
   });
+
+  testWidgets('EXTRACTED is prepared and applied on the device filesystem', (
+    tester,
+  ) async {
+    h.seedLive();
+    h.seedExtracted();
+
+    final outcome = await h.run();
+    expect(outcome, StagedRestoreOutcome.applied, reason: '${h.errors}');
+    h.expectRestoredEndState(sqliteDb: true);
+    expect(h.clearedSecrets, [42]);
+  });
+
+  testWidgets('retiring a directory frees its path at once', (tester) async {
+    h.write(p.join(h.rollback.path, 'books', 'old.bin'), 'old');
+
+    final tombstone = StagedFullRestore.retire(h.rollback);
+
+    expect(h.rollback.existsSync(), isFalse);
+    expect(tombstone, isNotNull);
+    expect(
+      File(p.join(tombstone!.path, 'books', 'old.bin')).existsSync(),
+      isTrue,
+    );
+    // The path is free for the next job while the old tree is still there.
+    h.rollback.createSync();
+    expect(h.rollback.listSync(), isEmpty);
+  });
 }
