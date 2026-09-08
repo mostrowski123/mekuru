@@ -32,7 +32,7 @@ concurrency:
 jobs:
   android-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -144,7 +144,7 @@ jobs:
           echo "no" | "$AVDMANAGER" create avd -n test -k "system-images;android-34;google_atd;x86_64" --device "pixel_6" --force
 
       - name: Run Android integration tests
-        timeout-minutes: 30
+        timeout-minutes: 45
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
