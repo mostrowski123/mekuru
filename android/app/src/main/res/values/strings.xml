@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Full backup foreground service. English only for now; the in-app
-         page carries the localized copy. -->
+    <!-- Full backup foreground service. Translations: values-es, values-in,
+         values-b+zh+Hans (same locales as the Flutter side). -->
     <string name="full_backup_channel_name">Full backup</string>
     <string name="full_backup_notification_export_title">Backing up Mekuru</string>
     <string name="full_backup_notification_restore_title">Restoring Mekuru</string>

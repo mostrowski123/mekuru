@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="full_backup_channel_name">Copia completa</string>
+    <string name="full_backup_notification_export_title">Creando copia de Mekuru</string>
+    <string name="full_backup_notification_restore_title">Restaurando Mekuru</string>
+    <string name="full_backup_notification_preparing">Preparando…</string>
+    <string name="full_backup_notification_export_done">Copia completa finalizada</string>
+    <string name="full_backup_notification_restore_ready">Restauración lista. Abre Mekuru para terminar.</string>
+    <string name="full_backup_notification_paused">En pausa. Abre Mekuru para continuar.</string>
+    <string name="full_backup_notification_failed">La copia completa se detuvo. Abre Mekuru para ver los detalles.</string>
+</resources>

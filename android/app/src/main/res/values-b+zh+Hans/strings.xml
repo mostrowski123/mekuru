@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="full_backup_channel_name">完整备份</string>
+    <string name="full_backup_notification_export_title">正在备份 Mekuru</string>
+    <string name="full_backup_notification_restore_title">正在恢复 Mekuru</string>
+    <string name="full_backup_notification_preparing">正在准备…</string>
+    <string name="full_backup_notification_export_done">完整备份已完成</string>
+    <string name="full_backup_notification_restore_ready">恢复已就绪。打开 Mekuru 以完成。</string>
+    <string name="full_backup_notification_paused">已暂停。打开 Mekuru 以继续。</string>
+    <string name="full_backup_notification_failed">完整备份已停止。打开 Mekuru 查看详情。</string>
+</resources>

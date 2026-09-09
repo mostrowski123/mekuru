@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="full_backup_channel_name">Cadangan lengkap</string>
+    <string name="full_backup_notification_export_title">Mencadangkan Mekuru</string>
+    <string name="full_backup_notification_restore_title">Memulihkan Mekuru</string>
+    <string name="full_backup_notification_preparing">Menyiapkan…</string>
+    <string name="full_backup_notification_export_done">Cadangan lengkap selesai</string>
+    <string name="full_backup_notification_restore_ready">Pemulihan siap. Buka Mekuru untuk menyelesaikan.</string>
+    <string name="full_backup_notification_paused">Dijeda. Buka Mekuru untuk melanjutkan.</string>
+    <string name="full_backup_notification_failed">Cadangan lengkap berhenti. Buka Mekuru untuk detailnya.</string>
+</resources>
