@@ -1039,41 +1039,41 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupTitle => 'Cadangkan & Pulihkan';
 
   @override
-  String get backupSectionBackup => 'Reading data backup';
+  String get backupSectionBackup => 'Cadangan data bacaan';
 
   @override
-  String get backupCreateNowTitle => 'Create reading data backup';
+  String get backupCreateNowTitle => 'Buat cadangan data bacaan';
 
   @override
   String get backupCreateNowSubtitle =>
-      'Saves your settings, reading progress, bookmarks, highlights, vocabulary and stats to a small .mekuru file. Books, manga and dictionaries are not included.';
+      'Menyimpan pengaturan, kemajuan membaca, bookmark, sorotan, kosakata, dan statistik Anda ke file .mekuru berukuran kecil. Buku, manga, dan kamus tidak disertakan.';
 
   @override
-  String get backupExportTitle => 'Export reading data backup (.mekuru)';
+  String get backupExportTitle => 'Ekspor cadangan data bacaan (.mekuru)';
 
   @override
   String get backupExportSubtitle =>
-      'Save the latest reading data backup to a file of your choice.';
+      'Simpan cadangan data bacaan terbaru ke file pilihan Anda.';
 
   @override
-  String get backupSaveFileDialogTitle => 'Save reading data backup';
+  String get backupSaveFileDialogTitle => 'Simpan cadangan data bacaan';
 
   @override
-  String get backupScopeNoteTitle => 'Two kinds of backup';
+  String get backupScopeNoteTitle => 'Dua jenis cadangan';
 
   @override
   String get backupScopeNoteBody =>
-      'Reading data backup (.mekuru): a small file with your settings, dictionary order, bookmarks, highlights, vocabulary and reading stats. Importing it merges into what is already in Mekuru. Full backup (.zip): everything, including your books, manga and dictionaries. Restoring it replaces everything in Mekuru on this device.';
+      'Cadangan data bacaan (.mekuru): file kecil berisi pengaturan, urutan kamus, bookmark, sorotan, kosakata, dan statistik membaca Anda. Mengimpornya akan menggabungkannya dengan yang sudah ada di Mekuru. Cadangan lengkap (.zip): semuanya, termasuk buku, manga, dan kamus Anda. Memulihkannya akan mengganti semua yang ada di Mekuru pada perangkat ini.';
 
   @override
   String get backupScopeNoteRestore =>
-      'After importing reading data, re-import the same EPUB or manga content and its history comes back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.';
+      'Setelah mengimpor data bacaan, impor ulang konten EPUB atau manga yang sama dan riwayatnya akan kembali. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan kamus yang cocok dapat diterapkan nanti dari Pengelola Kamus.';
 
   @override
-  String get backupSectionAutoBackup => 'Automatic reading data backup';
+  String get backupSectionAutoBackup => 'Cadangan data bacaan otomatis';
 
   @override
-  String get backupAutoBackupIntervalTitle => 'Auto-backup interval';
+  String get backupAutoBackupIntervalTitle => 'Interval cadangan otomatis';
 
   @override
   String get backupIntervalOff => 'Mati';
@@ -1085,20 +1085,20 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupIntervalWeekly => 'Mingguan';
 
   @override
-  String get backupSectionRestore => 'Restore reading data';
+  String get backupSectionRestore => 'Pulihkan data bacaan';
 
   @override
-  String get backupImportFileTitle => 'Import reading data (.mekuru)';
+  String get backupImportFileTitle => 'Impor data bacaan (.mekuru)';
 
   @override
   String get backupImportFileSubtitle =>
-      'Merges settings, progress, bookmarks, highlights and vocabulary from a .mekuru file into Mekuru. Re-import the same EPUB or manga content to bring back its history.';
+      'Menggabungkan pengaturan, kemajuan, bookmark, sorotan, dan kosakata dari file .mekuru ke Mekuru. Impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya.';
 
   @override
-  String get backupSectionHistory => 'Reading data backup history';
+  String get backupSectionHistory => 'Riwayat cadangan data bacaan';
 
   @override
-  String get backupNoBackupsYet => 'No reading data backups yet';
+  String get backupNoBackupsYet => 'Belum ada cadangan data bacaan';
 
   @override
   String backupErrorLoadingHistory({required String details}) {
@@ -1106,7 +1106,7 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get backupCreatedSuccess => 'Reading data backup created';
+  String get backupCreatedSuccess => 'Cadangan data bacaan dibuat';
 
   @override
   String backupFailed({required String details}) {
@@ -1115,10 +1115,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupNoBackupsToExport =>
-      'No reading data backups to export. Create one first.';
+      'Tidak ada cadangan data bacaan untuk diekspor. Buat satu terlebih dahulu.';
 
   @override
-  String get backupExportedSuccess => 'Reading data backup exported';
+  String get backupExportedSuccess => 'Cadangan data bacaan diekspor';
 
   @override
   String backupExportFailed({required String details}) {
@@ -1127,7 +1127,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupInvalidFile =>
-      'Please select a .mekuru reading data backup file.';
+      'Silakan pilih file cadangan data bacaan .mekuru.';
 
   @override
   String backupCouldNotOpenFile({required String details}) {
@@ -1231,11 +1231,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupRestoreComplete => 'Pemulihan selesai';
 
   @override
-  String get backupRestoreDialogTitle => 'Import reading data?';
+  String get backupRestoreDialogTitle => 'Impor data bacaan?';
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'This merges settings and reading data from $fileName into Mekuru: bookmarks, highlights, vocabulary lists and progress. It does not restore books, manga or dictionary files. After importing, re-import the same EPUB or manga content to bring back its history. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Your current settings will be overwritten.';
+    return 'Ini akan menggabungkan pengaturan dan data bacaan dari $fileName ke Mekuru: bookmark, sorotan, daftar kosakata, dan kemajuan. Ini tidak memulihkan file buku, manga, atau kamus. Setelah mengimpor, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan Anda saat ini akan ditimpa.';
   }
 
   @override
@@ -2560,54 +2560,54 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupWrongKindFullBackup =>
-      'This is a .zip file, not a reading data backup. If it is a Mekuru full backup, use Restore full backup instead.';
+      'Ini adalah file .zip, bukan cadangan data bacaan. Jika ini cadangan lengkap Mekuru, gunakan Pulihkan cadangan lengkap.';
 
   @override
   String get backupWrongKindReadingData =>
-      'This is a reading data backup (.mekuru), not a full backup. Use Import reading data instead.';
+      'Ini adalah cadangan data bacaan (.mekuru), bukan cadangan lengkap. Gunakan Impor data bacaan.';
 
   @override
-  String get backupFullSectionTitle => 'Full backup';
+  String get backupFullSectionTitle => 'Cadangan lengkap';
 
   @override
   String get backupFullScopeBody =>
-      'Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.';
+      'Semuanya dalam satu file .zip berukuran besar: buku, manga, kamus, pengaturan, dan data bacaan. Memulihkannya akan mengganti semua yang ada di Mekuru pada perangkat ini; aplikasi dan file lain tidak tersentuh. Hanya manual.';
 
   @override
   String get backupFullNotIncluded =>
-      'Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.';
+      'Tidak disertakan: data urutan goresan KanjiVG yang diunduh (unduh lagi dari Pengaturan) dan riwayat cadangan data bacaan.';
 
   @override
-  String get backupFullExportTitle => 'Export full backup (.zip)…';
+  String get backupFullExportTitle => 'Ekspor cadangan lengkap (.zip)…';
 
   @override
   String get backupFullExportSubtitle =>
-      'Choose a folder. The file can be several gigabytes; the backup keeps running in the background and shows its progress in a notification.';
+      'Pilih folder. File bisa berukuran beberapa gigabita; pencadangan tetap berjalan di latar belakang dan menampilkan kemajuannya di notifikasi.';
 
   @override
-  String get backupFullRestoreTitle => 'Restore full backup (.zip)…';
+  String get backupFullRestoreTitle => 'Pulihkan cadangan lengkap (.zip)…';
 
   @override
   String get backupFullRestoreSubtitle =>
-      'Replaces everything in Mekuru on this device with the contents of a full backup. Runs in the background; Mekuru closes once the files are copied.';
+      'Mengganti semua yang ada di Mekuru pada perangkat ini dengan isi cadangan lengkap. Berjalan di latar belakang; Mekuru akan menutup setelah file selesai disalin.';
 
   @override
-  String get backupFullReplacesChip => 'Replaces Mekuru\'s data';
+  String get backupFullReplacesChip => 'Mengganti data Mekuru';
 
   @override
-  String get backupFullProgressPreparing => 'Preparing…';
+  String get backupFullProgressPreparing => 'Menyiapkan…';
 
   @override
   String backupFullProgressBytes({
     required String done,
     required String total,
   }) {
-    return '$done of $total';
+    return '$done dari $total';
   }
 
   @override
   String backupFullExported({required String size}) {
-    return 'Full backup saved ($size)';
+    return 'Cadangan lengkap disimpan ($size)';
   }
 
   @override
@@ -2616,58 +2616,59 @@ class AppLocalizationsId extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Full backup saved; $count files could not be read and were skipped',
-      one: 'Full backup saved; $count file could not be read and was skipped',
+          'Cadangan lengkap disimpan; $count file tidak dapat dibaca dan dilewati',
+      one:
+          'Cadangan lengkap disimpan; $count file tidak dapat dibaca dan dilewati',
     );
     return '$_temp0';
   }
 
   @override
-  String get backupFullCancelled => 'Cancelled. Nothing was changed.';
+  String get backupFullCancelled => 'Dibatalkan. Tidak ada yang berubah.';
 
   @override
   String get backupFullBusy =>
-      'A book import is still running. Wait for it to finish, then try again.';
+      'Impor buku masih berjalan. Tunggu hingga selesai, lalu coba lagi.';
 
   @override
   String backupFullNotEnoughSpace({required String size}) {
-    return 'Not enough free space on this device. About $size more is needed.';
+    return 'Ruang kosong di perangkat ini tidak cukup. Dibutuhkan sekitar $size lagi.';
   }
 
   @override
   String backupFullTooNew({required String version}) {
-    return 'This full backup was made with Mekuru $version. Update Mekuru, then try again.';
+    return 'Cadangan lengkap ini dibuat dengan Mekuru $version. Perbarui Mekuru, lalu coba lagi.';
   }
 
   @override
-  String get backupFullInvalid => 'This file is not a Mekuru full backup.';
+  String get backupFullInvalid => 'File ini bukan cadangan lengkap Mekuru.';
 
   @override
   String get backupFullPendingRestore =>
-      'A previous full restore is still waiting to finish. Close Mekuru completely and reopen it first.';
+      'Pemulihan lengkap sebelumnya masih menunggu untuk diselesaikan. Tutup Mekuru sepenuhnya dan buka kembali terlebih dahulu.';
 
   @override
   String backupFullFailed({required String details}) {
-    return 'Full backup failed: $details';
+    return 'Cadangan lengkap gagal: $details';
   }
 
   @override
   String backupFullRestoreFailed({required String details}) {
-    return 'Full restore failed: $details';
+    return 'Pemulihan lengkap gagal: $details';
   }
 
   @override
-  String get backupFullReviewTitle => 'Review full backup';
+  String get backupFullReviewTitle => 'Tinjau cadangan lengkap';
 
   @override
-  String get backupFullReviewInFile => 'In this file';
+  String get backupFullReviewInFile => 'Dalam file ini';
 
   @override
   String backupFullReviewCreated({
     required String date,
     required String version,
   }) {
-    return 'Created $date with Mekuru $version';
+    return 'Dibuat $date dengan Mekuru $version';
   }
 
   @override
@@ -2675,8 +2676,8 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count books',
-      one: '$count book',
+      other: '$count buku',
+      one: '$count buku',
     );
     return '$_temp0';
   }
@@ -2686,8 +2687,8 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count dictionaries',
-      one: '$count dictionary',
+      other: '$count kamus',
+      one: '$count kamus',
     );
     return '$_temp0';
   }
@@ -2698,110 +2699,111 @@ class AppLocalizationsId extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count manga were linked from folders outside Mekuru. Their pages are in this backup and will be stored inside Mekuru.',
+          '$count manga ditautkan dari folder di luar Mekuru. Halamannya ada dalam cadangan ini dan akan disimpan di dalam Mekuru.',
       one:
-          '$count manga was linked from a folder outside Mekuru. Its pages are in this backup and will be stored inside Mekuru.',
+          '$count manga ditautkan dari folder di luar Mekuru. Halamannya ada dalam cadangan ini dan akan disimpan di dalam Mekuru.',
     );
     return '$_temp0';
   }
 
   @override
-  String get backupFullReviewOnDevice => 'In Mekuru on this device now';
+  String get backupFullReviewOnDevice =>
+      'Saat ini di Mekuru pada perangkat ini';
 
   @override
-  String get backupFullReviewContinue => 'Continue';
+  String get backupFullReviewContinue => 'Lanjutkan';
 
   @override
-  String get backupFullReplaceTitle => 'Delete Mekuru\'s data and replace it?';
+  String get backupFullReplaceTitle => 'Hapus data Mekuru dan ganti?';
 
   @override
   String backupFullReplaceBody({
     required String books,
     required String dictionaries,
   }) {
-    return 'Everything currently in Mekuru on this device will be deleted: $books, $dictionaries, and all Mekuru settings and reading data. Nothing outside Mekuru is touched. This cannot be undone. Mekuru will close; reopen it to finish.';
+    return 'Semua yang saat ini ada di Mekuru pada perangkat ini akan dihapus: $books, $dictionaries, serta semua pengaturan dan data bacaan Mekuru. Tidak ada yang tersentuh di luar Mekuru. Ini tidak dapat dibatalkan. Mekuru akan menutup; buka kembali untuk menyelesaikan.';
   }
 
   @override
   String get backupFullReplaceAcknowledge =>
-      'I understand that Mekuru\'s data on this device will be deleted';
+      'Saya mengerti bahwa data Mekuru di perangkat ini akan dihapus';
 
   @override
-  String get backupFullReplaceConfirm => 'Delete Mekuru data and replace';
+  String get backupFullReplaceConfirm => 'Hapus data Mekuru dan ganti';
 
   @override
-  String get backupFullRestartTitle => 'Mekuru will close now';
+  String get backupFullRestartTitle => 'Mekuru akan menutup sekarang';
 
   @override
   String get backupFullRestartBody =>
-      'The full backup is ready. Mekuru closes to finish restoring; open it again to continue with your restored library.';
+      'Cadangan lengkap sudah siap. Mekuru menutup untuk menyelesaikan pemulihan; buka lagi untuk melanjutkan dengan perpustakaan Anda yang telah dipulihkan.';
 
   @override
-  String get backupFullRestartButton => 'Close Mekuru';
+  String get backupFullRestartButton => 'Tutup Mekuru';
 
   @override
-  String get backupFullRestoreComplete => 'Full restore complete';
+  String get backupFullRestoreComplete => 'Pemulihan lengkap selesai';
 
   @override
   String backupFullRestoreBootFailed({required String details}) {
-    return 'The full restore could not be completed and your previous data was kept. ($details)';
+    return 'Pemulihan lengkap tidak dapat diselesaikan dan data Anda sebelumnya tetap dipertahankan. ($details)';
   }
 
   @override
-  String get backupFullJobExportTitle => 'Backing up';
+  String get backupFullJobExportTitle => 'Mencadangkan';
 
   @override
-  String get backupFullJobRestoreTitle => 'Restoring';
+  String get backupFullJobRestoreTitle => 'Memulihkan';
 
   @override
-  String get backupFullJobPhaseWriting => 'Writing backup…';
+  String get backupFullJobPhaseWriting => 'Menulis cadangan…';
 
   @override
-  String get backupFullJobPhaseChecking => 'Checking files already copied…';
+  String get backupFullJobPhaseChecking => 'Memeriksa file yang sudah disalin…';
 
   @override
-  String get backupFullJobPhaseExtracting => 'Copying files…';
+  String get backupFullJobPhaseExtracting => 'Menyalin file…';
 
   @override
-  String get backupFullJobPhaseFinishing => 'Finishing…';
+  String get backupFullJobPhaseFinishing => 'Menyelesaikan…';
 
   @override
-  String get backupFullJobPhaseResuming => 'Resuming…';
+  String get backupFullJobPhaseResuming => 'Melanjutkan…';
 
   @override
   String backupFullJobPaused({required String details}) {
-    return 'Paused: $details. Mekuru will try again when you reopen it.';
+    return 'Dijeda: $details. Mekuru akan mencoba lagi saat Anda membukanya kembali.';
   }
 
   @override
   String get backupFullJobBackgroundHint =>
-      'This keeps running if you leave Mekuru. Progress also shows in your notifications.';
+      'Ini tetap berjalan jika Anda meninggalkan Mekuru. Kemajuannya juga ditampilkan di notifikasi Anda.';
 
   @override
   String get backupFullJobCancelConfirmExport =>
-      'Stop the backup? What has been written so far will be deleted.';
+      'Hentikan pencadangan? Apa yang sudah ditulis sejauh ini akan dihapus.';
 
   @override
   String get backupFullJobCancelConfirmRestore =>
-      'Stop the restore? Nothing in Mekuru has changed yet; the copied files will be deleted.';
+      'Hentikan pemulihan? Belum ada yang berubah di Mekuru; file yang sudah disalin akan dihapus.';
 
   @override
-  String get backupFullJobKeepGoing => 'Keep going';
+  String get backupFullJobKeepGoing => 'Lanjutkan';
 
   @override
-  String get backupFullJobStop => 'Stop';
+  String get backupFullJobStop => 'Hentikan';
 
   @override
-  String get backupFullJobDone => 'Done';
+  String get backupFullJobDone => 'Selesai';
 
   @override
-  String get backupFullJobClose => 'Close';
+  String get backupFullJobClose => 'Tutup';
 
   @override
   String get backupFullJobRenameFailed =>
-      'The file was saved with a temporary name ending in .partial. Rename it to end in .zip before restoring from it.';
+      'File disimpan dengan nama sementara yang berakhiran .partial. Ubah namanya agar berakhiran .zip sebelum memulihkan darinya.';
 
   @override
   String get backupFullIncomplete =>
-      'This file is incomplete or damaged. Copy it again from where it was saved.';
+      'File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya.';
 }

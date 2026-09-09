@@ -1298,47 +1298,47 @@
   "@backupTitle": {
     "description": "Title for the backup screen."
   },
-  "backupSectionBackup": "Reading data backup",
+  "backupSectionBackup": "Cadangan data bacaan",
   "@backupSectionBackup": {
     "description": "Section header for backup actions."
   },
-  "backupCreateNowTitle": "Create reading data backup",
+  "backupCreateNowTitle": "Buat cadangan data bacaan",
   "@backupCreateNowTitle": {
     "description": "Title for the create-backup action."
   },
-  "backupCreateNowSubtitle": "Saves your settings, reading progress, bookmarks, highlights, vocabulary and stats to a small .mekuru file. Books, manga and dictionaries are not included.",
+  "backupCreateNowSubtitle": "Menyimpan pengaturan, kemajuan membaca, bookmark, sorotan, kosakata, dan statistik Anda ke file .mekuru berukuran kecil. Buku, manga, dan kamus tidak disertakan.",
   "@backupCreateNowSubtitle": {
     "description": "Subtitle for the create-backup action."
   },
-  "backupExportTitle": "Export reading data backup (.mekuru)",
+  "backupExportTitle": "Ekspor cadangan data bacaan (.mekuru)",
   "@backupExportTitle": {
     "description": "Title for the export-backup action."
   },
-  "backupExportSubtitle": "Save the latest reading data backup to a file of your choice.",
+  "backupExportSubtitle": "Simpan cadangan data bacaan terbaru ke file pilihan Anda.",
   "@backupExportSubtitle": {
     "description": "Subtitle for the export-backup action."
   },
-  "backupSaveFileDialogTitle": "Save reading data backup",
+  "backupSaveFileDialogTitle": "Simpan cadangan data bacaan",
   "@backupSaveFileDialogTitle": {
     "description": "Native file picker title when exporting a backup."
   },
-  "backupScopeNoteTitle": "Two kinds of backup",
+  "backupScopeNoteTitle": "Dua jenis cadangan",
   "@backupScopeNoteTitle": {
     "description": "Title for the informational note explaining backup scope."
   },
-  "backupScopeNoteBody": "Reading data backup (.mekuru): a small file with your settings, dictionary order, bookmarks, highlights, vocabulary and reading stats. Importing it merges into what is already in Mekuru. Full backup (.zip): everything, including your books, manga and dictionaries. Restoring it replaces everything in Mekuru on this device.",
+  "backupScopeNoteBody": "Cadangan data bacaan (.mekuru): file kecil berisi pengaturan, urutan kamus, bookmark, sorotan, kosakata, dan statistik membaca Anda. Mengimpornya akan menggabungkannya dengan yang sudah ada di Mekuru. Cadangan lengkap (.zip): semuanya, termasuk buku, manga, dan kamus Anda. Memulihkannya akan mengganti semua yang ada di Mekuru pada perangkat ini.",
   "@backupScopeNoteBody": {
     "description": "Body text for the informational note explaining backup scope."
   },
-  "backupScopeNoteRestore": "After importing reading data, re-import the same EPUB or manga content and its history comes back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.",
+  "backupScopeNoteRestore": "Setelah mengimpor data bacaan, impor ulang konten EPUB atau manga yang sama dan riwayatnya akan kembali. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan kamus yang cocok dapat diterapkan nanti dari Pengelola Kamus.",
   "@backupScopeNoteRestore": {
     "description": "Follow-up text for the informational note explaining how restored history is reapplied."
   },
-  "backupSectionAutoBackup": "Automatic reading data backup",
+  "backupSectionAutoBackup": "Cadangan data bacaan otomatis",
   "@backupSectionAutoBackup": {
     "description": "Section header for auto-backup settings."
   },
-  "backupAutoBackupIntervalTitle": "Auto-backup interval",
+  "backupAutoBackupIntervalTitle": "Interval cadangan otomatis",
   "@backupAutoBackupIntervalTitle": {
     "description": "Title for the auto-backup interval setting."
   },
@@ -1354,23 +1354,23 @@
   "@backupIntervalWeekly": {
     "description": "Label for weekly auto-backups."
   },
-  "backupSectionRestore": "Restore reading data",
+  "backupSectionRestore": "Pulihkan data bacaan",
   "@backupSectionRestore": {
     "description": "Section header for restore actions."
   },
-  "backupImportFileTitle": "Import reading data (.mekuru)",
+  "backupImportFileTitle": "Impor data bacaan (.mekuru)",
   "@backupImportFileTitle": {
     "description": "Title for the import-backup action."
   },
-  "backupImportFileSubtitle": "Merges settings, progress, bookmarks, highlights and vocabulary from a .mekuru file into Mekuru. Re-import the same EPUB or manga content to bring back its history.",
+  "backupImportFileSubtitle": "Menggabungkan pengaturan, kemajuan, bookmark, sorotan, dan kosakata dari file .mekuru ke Mekuru. Impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya.",
   "@backupImportFileSubtitle": {
     "description": "Subtitle for the import-backup action."
   },
-  "backupSectionHistory": "Reading data backup history",
+  "backupSectionHistory": "Riwayat cadangan data bacaan",
   "@backupSectionHistory": {
     "description": "Section header for the backup history list."
   },
-  "backupNoBackupsYet": "No reading data backups yet",
+  "backupNoBackupsYet": "Belum ada cadangan data bacaan",
   "@backupNoBackupsYet": {
     "description": "Message shown when there are no backups."
   },
@@ -1383,7 +1383,7 @@
       }
     }
   },
-  "backupCreatedSuccess": "Reading data backup created",
+  "backupCreatedSuccess": "Cadangan data bacaan dibuat",
   "@backupCreatedSuccess": {
     "description": "Snackbar shown after a backup is created."
   },
@@ -1396,11 +1396,11 @@
       }
     }
   },
-  "backupNoBackupsToExport": "No reading data backups to export. Create one first.",
+  "backupNoBackupsToExport": "Tidak ada cadangan data bacaan untuk diekspor. Buat satu terlebih dahulu.",
   "@backupNoBackupsToExport": {
     "description": "Snackbar shown when there are no backups to export."
   },
-  "backupExportedSuccess": "Reading data backup exported",
+  "backupExportedSuccess": "Cadangan data bacaan diekspor",
   "@backupExportedSuccess": {
     "description": "Snackbar shown after exporting a backup."
   },
@@ -1413,7 +1413,7 @@
       }
     }
   },
-  "backupInvalidFile": "Please select a .mekuru reading data backup file.",
+  "backupInvalidFile": "Silakan pilih file cadangan data bacaan .mekuru.",
   "@backupInvalidFile": {
     "description": "Snackbar shown when the selected restore file has the wrong extension."
   },
@@ -1536,11 +1536,11 @@
   "@backupRestoreComplete": {
     "description": "Fallback restore summary when there is nothing else to report."
   },
-  "backupRestoreDialogTitle": "Import reading data?",
+  "backupRestoreDialogTitle": "Impor data bacaan?",
   "@backupRestoreDialogTitle": {
     "description": "Title for the restore backup confirmation dialog."
   },
-  "backupRestoreDialogBody": "This merges settings and reading data from {fileName} into Mekuru: bookmarks, highlights, vocabulary lists and progress. It does not restore books, manga or dictionary files. After importing, re-import the same EPUB or manga content to bring back its history. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Your current settings will be overwritten.",
+  "backupRestoreDialogBody": "Ini akan menggabungkan pengaturan dan data bacaan dari {fileName} ke Mekuru: bookmark, sorotan, daftar kosakata, dan kemajuan. Ini tidak memulihkan file buku, manga, atau kamus. Setelah mengimpor, impor ulang konten EPUB atau manga yang sama untuk mengembalikan riwayatnya. Riwayat waktu baca hanya dipulihkan jika perangkat ini belum memilikinya; statistik kosakata digabungkan dengan yang sudah ada. Pengaturan Anda saat ini akan ditimpa.",
   "@backupRestoreDialogBody": {
     "description": "Body for the restore backup confirmation dialog.",
     "placeholders": {
@@ -2648,60 +2648,60 @@
   "serverBrowsePageCount": "{count, plural, one {{count} halaman} other {{count} halaman}}",
   "backupReadingDataBadge": ".mekuru",
   "backupFullBadge": ".zip",
-  "backupWrongKindFullBackup": "This is a .zip file, not a reading data backup. If it is a Mekuru full backup, use Restore full backup instead.",
-  "backupWrongKindReadingData": "This is a reading data backup (.mekuru), not a full backup. Use Import reading data instead.",
-  "backupFullSectionTitle": "Full backup",
-  "backupFullScopeBody": "Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.",
-  "backupFullNotIncluded": "Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.",
-  "backupFullExportTitle": "Export full backup (.zip)…",
-  "backupFullExportSubtitle": "Choose a folder. The file can be several gigabytes; the backup keeps running in the background and shows its progress in a notification.",
-  "backupFullRestoreTitle": "Restore full backup (.zip)…",
-  "backupFullRestoreSubtitle": "Replaces everything in Mekuru on this device with the contents of a full backup. Runs in the background; Mekuru closes once the files are copied.",
-  "backupFullReplacesChip": "Replaces Mekuru's data",
-  "backupFullProgressPreparing": "Preparing…",
-  "backupFullProgressBytes": "{done} of {total}",
-  "backupFullExported": "Full backup saved ({size})",
-  "backupFullExportedWithSkipped": "{count, plural, one {Full backup saved; {count} file could not be read and was skipped} other {Full backup saved; {count} files could not be read and were skipped}}",
-  "backupFullCancelled": "Cancelled. Nothing was changed.",
-  "backupFullBusy": "A book import is still running. Wait for it to finish, then try again.",
-  "backupFullNotEnoughSpace": "Not enough free space on this device. About {size} more is needed.",
-  "backupFullTooNew": "This full backup was made with Mekuru {version}. Update Mekuru, then try again.",
-  "backupFullInvalid": "This file is not a Mekuru full backup.",
-  "backupFullPendingRestore": "A previous full restore is still waiting to finish. Close Mekuru completely and reopen it first.",
-  "backupFullFailed": "Full backup failed: {details}",
-  "backupFullRestoreFailed": "Full restore failed: {details}",
-  "backupFullReviewTitle": "Review full backup",
-  "backupFullReviewInFile": "In this file",
-  "backupFullReviewCreated": "Created {date} with Mekuru {version}",
-  "backupFullCountBooks": "{count, plural, one {{count} book} other {{count} books}}",
-  "backupFullCountDictionaries": "{count, plural, one {{count} dictionary} other {{count} dictionaries}}",
-  "backupFullReviewExternalManga": "{count, plural, one {{count} manga was linked from a folder outside Mekuru. Its pages are in this backup and will be stored inside Mekuru.} other {{count} manga were linked from folders outside Mekuru. Their pages are in this backup and will be stored inside Mekuru.}}",
-  "backupFullReviewOnDevice": "In Mekuru on this device now",
-  "backupFullReviewContinue": "Continue",
-  "backupFullReplaceTitle": "Delete Mekuru's data and replace it?",
-  "backupFullReplaceBody": "Everything currently in Mekuru on this device will be deleted: {books}, {dictionaries}, and all Mekuru settings and reading data. Nothing outside Mekuru is touched. This cannot be undone. Mekuru will close; reopen it to finish.",
-  "backupFullReplaceAcknowledge": "I understand that Mekuru's data on this device will be deleted",
-  "backupFullReplaceConfirm": "Delete Mekuru data and replace",
-  "backupFullRestartTitle": "Mekuru will close now",
-  "backupFullRestartBody": "The full backup is ready. Mekuru closes to finish restoring; open it again to continue with your restored library.",
-  "backupFullRestartButton": "Close Mekuru",
-  "backupFullRestoreComplete": "Full restore complete",
-  "backupFullRestoreBootFailed": "The full restore could not be completed and your previous data was kept. ({details})",
-  "backupFullJobExportTitle": "Backing up",
-  "backupFullJobRestoreTitle": "Restoring",
-  "backupFullJobPhaseWriting": "Writing backup…",
-  "backupFullJobPhaseChecking": "Checking files already copied…",
-  "backupFullJobPhaseExtracting": "Copying files…",
-  "backupFullJobPhaseFinishing": "Finishing…",
-  "backupFullJobPhaseResuming": "Resuming…",
-  "backupFullJobPaused": "Paused: {details}. Mekuru will try again when you reopen it.",
-  "backupFullJobBackgroundHint": "This keeps running if you leave Mekuru. Progress also shows in your notifications.",
-  "backupFullJobCancelConfirmExport": "Stop the backup? What has been written so far will be deleted.",
-  "backupFullJobCancelConfirmRestore": "Stop the restore? Nothing in Mekuru has changed yet; the copied files will be deleted.",
-  "backupFullJobKeepGoing": "Keep going",
-  "backupFullJobStop": "Stop",
-  "backupFullJobDone": "Done",
-  "backupFullJobClose": "Close",
-  "backupFullJobRenameFailed": "The file was saved with a temporary name ending in .partial. Rename it to end in .zip before restoring from it.",
-  "backupFullIncomplete": "This file is incomplete or damaged. Copy it again from where it was saved."
+  "backupWrongKindFullBackup": "Ini adalah file .zip, bukan cadangan data bacaan. Jika ini cadangan lengkap Mekuru, gunakan Pulihkan cadangan lengkap.",
+  "backupWrongKindReadingData": "Ini adalah cadangan data bacaan (.mekuru), bukan cadangan lengkap. Gunakan Impor data bacaan.",
+  "backupFullSectionTitle": "Cadangan lengkap",
+  "backupFullScopeBody": "Semuanya dalam satu file .zip berukuran besar: buku, manga, kamus, pengaturan, dan data bacaan. Memulihkannya akan mengganti semua yang ada di Mekuru pada perangkat ini; aplikasi dan file lain tidak tersentuh. Hanya manual.",
+  "backupFullNotIncluded": "Tidak disertakan: data urutan goresan KanjiVG yang diunduh (unduh lagi dari Pengaturan) dan riwayat cadangan data bacaan.",
+  "backupFullExportTitle": "Ekspor cadangan lengkap (.zip)…",
+  "backupFullExportSubtitle": "Pilih folder. File bisa berukuran beberapa gigabita; pencadangan tetap berjalan di latar belakang dan menampilkan kemajuannya di notifikasi.",
+  "backupFullRestoreTitle": "Pulihkan cadangan lengkap (.zip)…",
+  "backupFullRestoreSubtitle": "Mengganti semua yang ada di Mekuru pada perangkat ini dengan isi cadangan lengkap. Berjalan di latar belakang; Mekuru akan menutup setelah file selesai disalin.",
+  "backupFullReplacesChip": "Mengganti data Mekuru",
+  "backupFullProgressPreparing": "Menyiapkan…",
+  "backupFullProgressBytes": "{done} dari {total}",
+  "backupFullExported": "Cadangan lengkap disimpan ({size})",
+  "backupFullExportedWithSkipped": "{count, plural, one {Cadangan lengkap disimpan; {count} file tidak dapat dibaca dan dilewati} other {Cadangan lengkap disimpan; {count} file tidak dapat dibaca dan dilewati}}",
+  "backupFullCancelled": "Dibatalkan. Tidak ada yang berubah.",
+  "backupFullBusy": "Impor buku masih berjalan. Tunggu hingga selesai, lalu coba lagi.",
+  "backupFullNotEnoughSpace": "Ruang kosong di perangkat ini tidak cukup. Dibutuhkan sekitar {size} lagi.",
+  "backupFullTooNew": "Cadangan lengkap ini dibuat dengan Mekuru {version}. Perbarui Mekuru, lalu coba lagi.",
+  "backupFullInvalid": "File ini bukan cadangan lengkap Mekuru.",
+  "backupFullPendingRestore": "Pemulihan lengkap sebelumnya masih menunggu untuk diselesaikan. Tutup Mekuru sepenuhnya dan buka kembali terlebih dahulu.",
+  "backupFullFailed": "Cadangan lengkap gagal: {details}",
+  "backupFullRestoreFailed": "Pemulihan lengkap gagal: {details}",
+  "backupFullReviewTitle": "Tinjau cadangan lengkap",
+  "backupFullReviewInFile": "Dalam file ini",
+  "backupFullReviewCreated": "Dibuat {date} dengan Mekuru {version}",
+  "backupFullCountBooks": "{count, plural, one {{count} buku} other {{count} buku}}",
+  "backupFullCountDictionaries": "{count, plural, one {{count} kamus} other {{count} kamus}}",
+  "backupFullReviewExternalManga": "{count, plural, one {{count} manga ditautkan dari folder di luar Mekuru. Halamannya ada dalam cadangan ini dan akan disimpan di dalam Mekuru.} other {{count} manga ditautkan dari folder di luar Mekuru. Halamannya ada dalam cadangan ini dan akan disimpan di dalam Mekuru.}}",
+  "backupFullReviewOnDevice": "Saat ini di Mekuru pada perangkat ini",
+  "backupFullReviewContinue": "Lanjutkan",
+  "backupFullReplaceTitle": "Hapus data Mekuru dan ganti?",
+  "backupFullReplaceBody": "Semua yang saat ini ada di Mekuru pada perangkat ini akan dihapus: {books}, {dictionaries}, serta semua pengaturan dan data bacaan Mekuru. Tidak ada yang tersentuh di luar Mekuru. Ini tidak dapat dibatalkan. Mekuru akan menutup; buka kembali untuk menyelesaikan.",
+  "backupFullReplaceAcknowledge": "Saya mengerti bahwa data Mekuru di perangkat ini akan dihapus",
+  "backupFullReplaceConfirm": "Hapus data Mekuru dan ganti",
+  "backupFullRestartTitle": "Mekuru akan menutup sekarang",
+  "backupFullRestartBody": "Cadangan lengkap sudah siap. Mekuru menutup untuk menyelesaikan pemulihan; buka lagi untuk melanjutkan dengan perpustakaan Anda yang telah dipulihkan.",
+  "backupFullRestartButton": "Tutup Mekuru",
+  "backupFullRestoreComplete": "Pemulihan lengkap selesai",
+  "backupFullRestoreBootFailed": "Pemulihan lengkap tidak dapat diselesaikan dan data Anda sebelumnya tetap dipertahankan. ({details})",
+  "backupFullJobExportTitle": "Mencadangkan",
+  "backupFullJobRestoreTitle": "Memulihkan",
+  "backupFullJobPhaseWriting": "Menulis cadangan…",
+  "backupFullJobPhaseChecking": "Memeriksa file yang sudah disalin…",
+  "backupFullJobPhaseExtracting": "Menyalin file…",
+  "backupFullJobPhaseFinishing": "Menyelesaikan…",
+  "backupFullJobPhaseResuming": "Melanjutkan…",
+  "backupFullJobPaused": "Dijeda: {details}. Mekuru akan mencoba lagi saat Anda membukanya kembali.",
+  "backupFullJobBackgroundHint": "Ini tetap berjalan jika Anda meninggalkan Mekuru. Kemajuannya juga ditampilkan di notifikasi Anda.",
+  "backupFullJobCancelConfirmExport": "Hentikan pencadangan? Apa yang sudah ditulis sejauh ini akan dihapus.",
+  "backupFullJobCancelConfirmRestore": "Hentikan pemulihan? Belum ada yang berubah di Mekuru; file yang sudah disalin akan dihapus.",
+  "backupFullJobKeepGoing": "Lanjutkan",
+  "backupFullJobStop": "Hentikan",
+  "backupFullJobDone": "Selesai",
+  "backupFullJobClose": "Tutup",
+  "backupFullJobRenameFailed": "File disimpan dengan nama sementara yang berakhiran .partial. Ubah namanya agar berakhiran .zip sebelum memulihkan darinya.",
+  "backupFullIncomplete": "File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya."
 }

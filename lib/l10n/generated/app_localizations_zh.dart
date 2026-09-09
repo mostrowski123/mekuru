@@ -987,41 +987,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupTitle => '备份与恢复';
 
   @override
-  String get backupSectionBackup => 'Reading data backup';
+  String get backupSectionBackup => '阅读数据备份';
 
   @override
-  String get backupCreateNowTitle => 'Create reading data backup';
+  String get backupCreateNowTitle => '创建阅读数据备份';
 
   @override
   String get backupCreateNowSubtitle =>
-      'Saves your settings, reading progress, bookmarks, highlights, vocabulary and stats to a small .mekuru file. Books, manga and dictionaries are not included.';
+      '将您的设置、阅读进度、书签、高亮、词汇和统计保存到一个小巧的 .mekuru 文件中。不包含书籍、漫画和词典。';
 
   @override
-  String get backupExportTitle => 'Export reading data backup (.mekuru)';
+  String get backupExportTitle => '导出阅读数据备份（.mekuru）';
 
   @override
-  String get backupExportSubtitle =>
-      'Save the latest reading data backup to a file of your choice.';
+  String get backupExportSubtitle => '将最新的阅读数据备份保存到您选择的文件。';
 
   @override
-  String get backupSaveFileDialogTitle => 'Save reading data backup';
+  String get backupSaveFileDialogTitle => '保存阅读数据备份';
 
   @override
-  String get backupScopeNoteTitle => 'Two kinds of backup';
+  String get backupScopeNoteTitle => '两种备份';
 
   @override
   String get backupScopeNoteBody =>
-      'Reading data backup (.mekuru): a small file with your settings, dictionary order, bookmarks, highlights, vocabulary and reading stats. Importing it merges into what is already in Mekuru. Full backup (.zip): everything, including your books, manga and dictionaries. Restoring it replaces everything in Mekuru on this device.';
+      '阅读数据备份（.mekuru）：一个小文件，包含您的设置、词典排序、书签、高亮、词汇和阅读统计。导入时会与 Mekuru 中已有的数据合并。完整备份（.zip）：包含全部内容，包括您的书籍、漫画和词典。恢复时会替换此设备上 Mekuru 中的所有内容。';
 
   @override
   String get backupScopeNoteRestore =>
-      'After importing reading data, re-import the same EPUB or manga content and its history comes back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.';
+      '导入阅读数据后，重新导入相同的 EPUB 或漫画内容，其记录就会恢复。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。匹配的词典设置可稍后在“词典管理”中应用。';
 
   @override
-  String get backupSectionAutoBackup => 'Automatic reading data backup';
+  String get backupSectionAutoBackup => '自动阅读数据备份';
 
   @override
-  String get backupAutoBackupIntervalTitle => 'Auto-backup interval';
+  String get backupAutoBackupIntervalTitle => '自动备份间隔';
 
   @override
   String get backupIntervalOff => '关闭';
@@ -1033,20 +1032,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupIntervalWeekly => '每周';
 
   @override
-  String get backupSectionRestore => 'Restore reading data';
+  String get backupSectionRestore => '恢复阅读数据';
 
   @override
-  String get backupImportFileTitle => 'Import reading data (.mekuru)';
+  String get backupImportFileTitle => '导入阅读数据（.mekuru）';
 
   @override
   String get backupImportFileSubtitle =>
-      'Merges settings, progress, bookmarks, highlights and vocabulary from a .mekuru file into Mekuru. Re-import the same EPUB or manga content to bring back its history.';
+      '将 .mekuru 文件中的设置、进度、书签、高亮和词汇合并到 Mekuru 中。重新导入相同的 EPUB 或漫画内容即可恢复其记录。';
 
   @override
-  String get backupSectionHistory => 'Reading data backup history';
+  String get backupSectionHistory => '阅读数据备份历史';
 
   @override
-  String get backupNoBackupsYet => 'No reading data backups yet';
+  String get backupNoBackupsYet => '暂无阅读数据备份';
 
   @override
   String backupErrorLoadingHistory({required String details}) {
@@ -1054,7 +1053,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get backupCreatedSuccess => 'Reading data backup created';
+  String get backupCreatedSuccess => '阅读数据备份已创建';
 
   @override
   String backupFailed({required String details}) {
@@ -1062,11 +1061,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get backupNoBackupsToExport =>
-      'No reading data backups to export. Create one first.';
+  String get backupNoBackupsToExport => '没有可导出的阅读数据备份，请先创建。';
 
   @override
-  String get backupExportedSuccess => 'Reading data backup exported';
+  String get backupExportedSuccess => '阅读数据备份已导出';
 
   @override
   String backupExportFailed({required String details}) {
@@ -1074,8 +1072,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get backupInvalidFile =>
-      'Please select a .mekuru reading data backup file.';
+  String get backupInvalidFile => '请选择一个 .mekuru 阅读数据备份文件。';
 
   @override
   String backupCouldNotOpenFile({required String details}) {
@@ -1174,11 +1171,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupRestoreComplete => '恢复完成';
 
   @override
-  String get backupRestoreDialogTitle => 'Import reading data?';
+  String get backupRestoreDialogTitle => '导入阅读数据？';
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'This merges settings and reading data from $fileName into Mekuru: bookmarks, highlights, vocabulary lists and progress. It does not restore books, manga or dictionary files. After importing, re-import the same EPUB or manga content to bring back its history. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Your current settings will be overwritten.';
+    return '这会将 $fileName 中的设置和阅读数据合并到 Mekuru 中：书签、高亮、词汇表和进度。它不会恢复书籍、漫画或词典文件。导入后，请重新导入相同的 EPUB 或漫画内容以找回其记录。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。您当前的设置将被覆盖。';
   }
 
   @override
@@ -2444,54 +2441,54 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupWrongKindFullBackup =>
-      'This is a .zip file, not a reading data backup. If it is a Mekuru full backup, use Restore full backup instead.';
+      '这是一个 .zip 文件，不是阅读数据备份。如果它是 Mekuru 的完整备份，请改用“恢复完整备份”。';
 
   @override
   String get backupWrongKindReadingData =>
-      'This is a reading data backup (.mekuru), not a full backup. Use Import reading data instead.';
+      '这是阅读数据备份（.mekuru），不是完整备份。请改用“导入阅读数据”。';
 
   @override
-  String get backupFullSectionTitle => 'Full backup';
+  String get backupFullSectionTitle => '完整备份';
 
   @override
   String get backupFullScopeBody =>
-      'Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.';
+      '所有内容都在一个较大的 .zip 文件中：书籍、漫画、词典、设置和阅读数据。恢复时会替换此设备上 Mekuru 中的所有内容；其他应用和文件不受影响。仅支持手动操作。';
 
   @override
   String get backupFullNotIncluded =>
-      'Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.';
+      '不包含：已下载的 KanjiVG 笔顺数据（可在设置中重新下载）和阅读数据备份历史。';
 
   @override
-  String get backupFullExportTitle => 'Export full backup (.zip)…';
+  String get backupFullExportTitle => '导出完整备份（.zip）…';
 
   @override
   String get backupFullExportSubtitle =>
-      'Choose a folder. The file can be several gigabytes; the backup keeps running in the background and shows its progress in a notification.';
+      '选择一个文件夹。文件可能有数 GB 大小；备份会在后台持续运行，并在通知中显示进度。';
 
   @override
-  String get backupFullRestoreTitle => 'Restore full backup (.zip)…';
+  String get backupFullRestoreTitle => '恢复完整备份（.zip）…';
 
   @override
   String get backupFullRestoreSubtitle =>
-      'Replaces everything in Mekuru on this device with the contents of a full backup. Runs in the background; Mekuru closes once the files are copied.';
+      '用完整备份的内容替换此设备上 Mekuru 中的所有内容。在后台运行；文件复制完成后 Mekuru 会关闭。';
 
   @override
-  String get backupFullReplacesChip => 'Replaces Mekuru\'s data';
+  String get backupFullReplacesChip => '替换 Mekuru 的数据';
 
   @override
-  String get backupFullProgressPreparing => 'Preparing…';
+  String get backupFullProgressPreparing => '正在准备…';
 
   @override
   String backupFullProgressBytes({
     required String done,
     required String total,
   }) {
-    return '$done of $total';
+    return '$done / $total';
   }
 
   @override
   String backupFullExported({required String size}) {
-    return 'Full backup saved ($size)';
+    return '完整备份已保存（$size）';
   }
 
   @override
@@ -2499,59 +2496,56 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          'Full backup saved; $count files could not be read and were skipped',
-      one: 'Full backup saved; $count file could not be read and was skipped',
+      other: '完整备份已保存；$count 个文件无法读取，已跳过',
+      one: '完整备份已保存；$count 个文件无法读取，已跳过',
     );
     return '$_temp0';
   }
 
   @override
-  String get backupFullCancelled => 'Cancelled. Nothing was changed.';
+  String get backupFullCancelled => '已取消。未做任何更改。';
 
   @override
-  String get backupFullBusy =>
-      'A book import is still running. Wait for it to finish, then try again.';
+  String get backupFullBusy => '书籍导入仍在进行中。请等待其完成后再试。';
 
   @override
   String backupFullNotEnoughSpace({required String size}) {
-    return 'Not enough free space on this device. About $size more is needed.';
+    return '此设备上的可用空间不足。还需要约 $size。';
   }
 
   @override
   String backupFullTooNew({required String version}) {
-    return 'This full backup was made with Mekuru $version. Update Mekuru, then try again.';
+    return '此完整备份由 Mekuru $version 创建。请更新 Mekuru 后再试。';
   }
 
   @override
-  String get backupFullInvalid => 'This file is not a Mekuru full backup.';
+  String get backupFullInvalid => '此文件不是 Mekuru 的完整备份。';
 
   @override
-  String get backupFullPendingRestore =>
-      'A previous full restore is still waiting to finish. Close Mekuru completely and reopen it first.';
+  String get backupFullPendingRestore => '上一次完整恢复仍在等待完成。请先完全关闭 Mekuru 并重新打开。';
 
   @override
   String backupFullFailed({required String details}) {
-    return 'Full backup failed: $details';
+    return '完整备份失败：$details';
   }
 
   @override
   String backupFullRestoreFailed({required String details}) {
-    return 'Full restore failed: $details';
+    return '完整恢复失败：$details';
   }
 
   @override
-  String get backupFullReviewTitle => 'Review full backup';
+  String get backupFullReviewTitle => '查看完整备份';
 
   @override
-  String get backupFullReviewInFile => 'In this file';
+  String get backupFullReviewInFile => '此文件中';
 
   @override
   String backupFullReviewCreated({
     required String date,
     required String version,
   }) {
-    return 'Created $date with Mekuru $version';
+    return '由 Mekuru $version 创建于 $date';
   }
 
   @override
@@ -2559,8 +2553,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count books',
-      one: '$count book',
+      other: '$count 本书',
+      one: '$count 本书',
     );
     return '$_temp0';
   }
@@ -2570,8 +2564,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count dictionaries',
-      one: '$count dictionary',
+      other: '$count 部词典',
+      one: '$count 部词典',
     );
     return '$_temp0';
   }
@@ -2581,113 +2575,107 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count manga were linked from folders outside Mekuru. Their pages are in this backup and will be stored inside Mekuru.',
-      one:
-          '$count manga was linked from a folder outside Mekuru. Its pages are in this backup and will be stored inside Mekuru.',
+      other: '$count 部漫画关联自 Mekuru 之外的文件夹。其页面已包含在此备份中，将保存到 Mekuru 内。',
+      one: '$count 部漫画关联自 Mekuru 之外的文件夹。其页面已包含在此备份中，将保存到 Mekuru 内。',
     );
     return '$_temp0';
   }
 
   @override
-  String get backupFullReviewOnDevice => 'In Mekuru on this device now';
+  String get backupFullReviewOnDevice => '此设备上 Mekuru 中现有';
 
   @override
-  String get backupFullReviewContinue => 'Continue';
+  String get backupFullReviewContinue => '继续';
 
   @override
-  String get backupFullReplaceTitle => 'Delete Mekuru\'s data and replace it?';
+  String get backupFullReplaceTitle => '删除 Mekuru 的数据并替换？';
 
   @override
   String backupFullReplaceBody({
     required String books,
     required String dictionaries,
   }) {
-    return 'Everything currently in Mekuru on this device will be deleted: $books, $dictionaries, and all Mekuru settings and reading data. Nothing outside Mekuru is touched. This cannot be undone. Mekuru will close; reopen it to finish.';
+    return '此设备上 Mekuru 中现有的所有内容都将被删除：$books、$dictionaries，以及 Mekuru 的全部设置和阅读数据。Mekuru 之外的内容不受影响。此操作无法撤销。Mekuru 将会关闭；请重新打开以完成恢复。';
   }
 
   @override
-  String get backupFullReplaceAcknowledge =>
-      'I understand that Mekuru\'s data on this device will be deleted';
+  String get backupFullReplaceAcknowledge => '我了解此设备上 Mekuru 的数据将被删除';
 
   @override
-  String get backupFullReplaceConfirm => 'Delete Mekuru data and replace';
+  String get backupFullReplaceConfirm => '删除 Mekuru 数据并替换';
 
   @override
-  String get backupFullRestartTitle => 'Mekuru will close now';
+  String get backupFullRestartTitle => 'Mekuru 即将关闭';
 
   @override
   String get backupFullRestartBody =>
-      'The full backup is ready. Mekuru closes to finish restoring; open it again to continue with your restored library.';
+      '完整备份已就绪。Mekuru 将关闭以完成恢复；再次打开即可继续使用已恢复的书库。';
 
   @override
-  String get backupFullRestartButton => 'Close Mekuru';
+  String get backupFullRestartButton => '关闭 Mekuru';
 
   @override
-  String get backupFullRestoreComplete => 'Full restore complete';
+  String get backupFullRestoreComplete => '完整恢复已完成';
 
   @override
   String backupFullRestoreBootFailed({required String details}) {
-    return 'The full restore could not be completed and your previous data was kept. ($details)';
+    return '完整恢复未能完成，已保留您之前的数据。（$details）';
   }
 
   @override
-  String get backupFullJobExportTitle => 'Backing up';
+  String get backupFullJobExportTitle => '正在备份';
 
   @override
-  String get backupFullJobRestoreTitle => 'Restoring';
+  String get backupFullJobRestoreTitle => '正在恢复';
 
   @override
-  String get backupFullJobPhaseWriting => 'Writing backup…';
+  String get backupFullJobPhaseWriting => '正在写入备份…';
 
   @override
-  String get backupFullJobPhaseChecking => 'Checking files already copied…';
+  String get backupFullJobPhaseChecking => '正在检查已复制的文件…';
 
   @override
-  String get backupFullJobPhaseExtracting => 'Copying files…';
+  String get backupFullJobPhaseExtracting => '正在复制文件…';
 
   @override
-  String get backupFullJobPhaseFinishing => 'Finishing…';
+  String get backupFullJobPhaseFinishing => '正在完成…';
 
   @override
-  String get backupFullJobPhaseResuming => 'Resuming…';
+  String get backupFullJobPhaseResuming => '正在继续…';
 
   @override
   String backupFullJobPaused({required String details}) {
-    return 'Paused: $details. Mekuru will try again when you reopen it.';
+    return '已暂停：$details。重新打开 Mekuru 时会再次尝试。';
   }
 
   @override
-  String get backupFullJobBackgroundHint =>
-      'This keeps running if you leave Mekuru. Progress also shows in your notifications.';
+  String get backupFullJobBackgroundHint => '即使离开 Mekuru，此操作也会继续运行。进度也会显示在通知中。';
 
   @override
-  String get backupFullJobCancelConfirmExport =>
-      'Stop the backup? What has been written so far will be deleted.';
+  String get backupFullJobCancelConfirmExport => '停止备份？目前已写入的内容将被删除。';
 
   @override
   String get backupFullJobCancelConfirmRestore =>
-      'Stop the restore? Nothing in Mekuru has changed yet; the copied files will be deleted.';
+      '停止恢复？Mekuru 中尚未有任何更改；已复制的文件将被删除。';
 
   @override
-  String get backupFullJobKeepGoing => 'Keep going';
+  String get backupFullJobKeepGoing => '继续';
 
   @override
-  String get backupFullJobStop => 'Stop';
+  String get backupFullJobStop => '停止';
 
   @override
-  String get backupFullJobDone => 'Done';
+  String get backupFullJobDone => '完成';
 
   @override
-  String get backupFullJobClose => 'Close';
+  String get backupFullJobClose => '关闭';
 
   @override
   String get backupFullJobRenameFailed =>
-      'The file was saved with a temporary name ending in .partial. Rename it to end in .zip before restoring from it.';
+      '文件已用以 .partial 结尾的临时名称保存。请先将其重命名为以 .zip 结尾，再从中恢复。';
 
   @override
-  String get backupFullIncomplete =>
-      'This file is incomplete or damaged. Copy it again from where it was saved.';
+  String get backupFullIncomplete => '此文件不完整或已损坏。请从其保存位置重新复制。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3673,41 +3661,40 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupTitle => '备份与恢复';
 
   @override
-  String get backupSectionBackup => 'Reading data backup';
+  String get backupSectionBackup => '阅读数据备份';
 
   @override
-  String get backupCreateNowTitle => 'Create reading data backup';
+  String get backupCreateNowTitle => '创建阅读数据备份';
 
   @override
   String get backupCreateNowSubtitle =>
-      'Saves your settings, reading progress, bookmarks, highlights, vocabulary and stats to a small .mekuru file. Books, manga and dictionaries are not included.';
+      '将您的设置、阅读进度、书签、高亮、词汇和统计保存到一个小巧的 .mekuru 文件中。不包含书籍、漫画和词典。';
 
   @override
-  String get backupExportTitle => 'Export reading data backup (.mekuru)';
+  String get backupExportTitle => '导出阅读数据备份（.mekuru）';
 
   @override
-  String get backupExportSubtitle =>
-      'Save the latest reading data backup to a file of your choice.';
+  String get backupExportSubtitle => '将最新的阅读数据备份保存到您选择的文件。';
 
   @override
-  String get backupSaveFileDialogTitle => 'Save reading data backup';
+  String get backupSaveFileDialogTitle => '保存阅读数据备份';
 
   @override
-  String get backupScopeNoteTitle => 'Two kinds of backup';
+  String get backupScopeNoteTitle => '两种备份';
 
   @override
   String get backupScopeNoteBody =>
-      'Reading data backup (.mekuru): a small file with your settings, dictionary order, bookmarks, highlights, vocabulary and reading stats. Importing it merges into what is already in Mekuru. Full backup (.zip): everything, including your books, manga and dictionaries. Restoring it replaces everything in Mekuru on this device.';
+      '阅读数据备份（.mekuru）：一个小文件，包含您的设置、词典排序、书签、高亮、词汇和阅读统计。导入时会与 Mekuru 中已有的数据合并。完整备份（.zip）：包含全部内容，包括您的书籍、漫画和词典。恢复时会替换此设备上 Mekuru 中的所有内容。';
 
   @override
   String get backupScopeNoteRestore =>
-      'After importing reading data, re-import the same EPUB or manga content and its history comes back. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Matching dictionary settings can be applied later from Dictionary Manager.';
+      '导入阅读数据后，重新导入相同的 EPUB 或漫画内容，其记录就会恢复。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。匹配的词典设置可稍后在“词典管理”中应用。';
 
   @override
-  String get backupSectionAutoBackup => 'Automatic reading data backup';
+  String get backupSectionAutoBackup => '自动阅读数据备份';
 
   @override
-  String get backupAutoBackupIntervalTitle => 'Auto-backup interval';
+  String get backupAutoBackupIntervalTitle => '自动备份间隔';
 
   @override
   String get backupIntervalOff => '关闭';
@@ -3719,20 +3706,20 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupIntervalWeekly => '每周';
 
   @override
-  String get backupSectionRestore => 'Restore reading data';
+  String get backupSectionRestore => '恢复阅读数据';
 
   @override
-  String get backupImportFileTitle => 'Import reading data (.mekuru)';
+  String get backupImportFileTitle => '导入阅读数据（.mekuru）';
 
   @override
   String get backupImportFileSubtitle =>
-      'Merges settings, progress, bookmarks, highlights and vocabulary from a .mekuru file into Mekuru. Re-import the same EPUB or manga content to bring back its history.';
+      '将 .mekuru 文件中的设置、进度、书签、高亮和词汇合并到 Mekuru 中。重新导入相同的 EPUB 或漫画内容即可恢复其记录。';
 
   @override
-  String get backupSectionHistory => 'Reading data backup history';
+  String get backupSectionHistory => '阅读数据备份历史';
 
   @override
-  String get backupNoBackupsYet => 'No reading data backups yet';
+  String get backupNoBackupsYet => '暂无阅读数据备份';
 
   @override
   String backupErrorLoadingHistory({required String details}) {
@@ -3740,7 +3727,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get backupCreatedSuccess => 'Reading data backup created';
+  String get backupCreatedSuccess => '阅读数据备份已创建';
 
   @override
   String backupFailed({required String details}) {
@@ -3748,11 +3735,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get backupNoBackupsToExport =>
-      'No reading data backups to export. Create one first.';
+  String get backupNoBackupsToExport => '没有可导出的阅读数据备份，请先创建。';
 
   @override
-  String get backupExportedSuccess => 'Reading data backup exported';
+  String get backupExportedSuccess => '阅读数据备份已导出';
 
   @override
   String backupExportFailed({required String details}) {
@@ -3760,8 +3746,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get backupInvalidFile =>
-      'Please select a .mekuru reading data backup file.';
+  String get backupInvalidFile => '请选择一个 .mekuru 阅读数据备份文件。';
 
   @override
   String backupCouldNotOpenFile({required String details}) {
@@ -3860,11 +3845,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupRestoreComplete => '恢复完成';
 
   @override
-  String get backupRestoreDialogTitle => 'Import reading data?';
+  String get backupRestoreDialogTitle => '导入阅读数据？';
 
   @override
   String backupRestoreDialogBody({required String fileName}) {
-    return 'This merges settings and reading data from $fileName into Mekuru: bookmarks, highlights, vocabulary lists and progress. It does not restore books, manga or dictionary files. After importing, re-import the same EPUB or manga content to bring back its history. Reading-time history is only restored if this device has none yet; vocabulary stats are merged in. Your current settings will be overwritten.';
+    return '这会将 $fileName 中的设置和阅读数据合并到 Mekuru 中：书签、高亮、词汇表和进度。它不会恢复书籍、漫画或词典文件。导入后，请重新导入相同的 EPUB 或漫画内容以找回其记录。阅读时长记录仅在此设备尚无记录时才会恢复；词汇统计则会与现有数据合并。您当前的设置将被覆盖。';
   }
 
   @override
@@ -5130,54 +5115,54 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupWrongKindFullBackup =>
-      'This is a .zip file, not a reading data backup. If it is a Mekuru full backup, use Restore full backup instead.';
+      '这是一个 .zip 文件，不是阅读数据备份。如果它是 Mekuru 的完整备份，请改用“恢复完整备份”。';
 
   @override
   String get backupWrongKindReadingData =>
-      'This is a reading data backup (.mekuru), not a full backup. Use Import reading data instead.';
+      '这是阅读数据备份（.mekuru），不是完整备份。请改用“导入阅读数据”。';
 
   @override
-  String get backupFullSectionTitle => 'Full backup';
+  String get backupFullSectionTitle => '完整备份';
 
   @override
   String get backupFullScopeBody =>
-      'Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.';
+      '所有内容都在一个较大的 .zip 文件中：书籍、漫画、词典、设置和阅读数据。恢复时会替换此设备上 Mekuru 中的所有内容；其他应用和文件不受影响。仅支持手动操作。';
 
   @override
   String get backupFullNotIncluded =>
-      'Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.';
+      '不包含：已下载的 KanjiVG 笔顺数据（可在设置中重新下载）和阅读数据备份历史。';
 
   @override
-  String get backupFullExportTitle => 'Export full backup (.zip)…';
+  String get backupFullExportTitle => '导出完整备份（.zip）…';
 
   @override
   String get backupFullExportSubtitle =>
-      'Choose a folder. The file can be several gigabytes; the backup keeps running in the background and shows its progress in a notification.';
+      '选择一个文件夹。文件可能有数 GB 大小；备份会在后台持续运行，并在通知中显示进度。';
 
   @override
-  String get backupFullRestoreTitle => 'Restore full backup (.zip)…';
+  String get backupFullRestoreTitle => '恢复完整备份（.zip）…';
 
   @override
   String get backupFullRestoreSubtitle =>
-      'Replaces everything in Mekuru on this device with the contents of a full backup. Runs in the background; Mekuru closes once the files are copied.';
+      '用完整备份的内容替换此设备上 Mekuru 中的所有内容。在后台运行；文件复制完成后 Mekuru 会关闭。';
 
   @override
-  String get backupFullReplacesChip => 'Replaces Mekuru\'s data';
+  String get backupFullReplacesChip => '替换 Mekuru 的数据';
 
   @override
-  String get backupFullProgressPreparing => 'Preparing…';
+  String get backupFullProgressPreparing => '正在准备…';
 
   @override
   String backupFullProgressBytes({
     required String done,
     required String total,
   }) {
-    return '$done of $total';
+    return '$done / $total';
   }
 
   @override
   String backupFullExported({required String size}) {
-    return 'Full backup saved ($size)';
+    return '完整备份已保存（$size）';
   }
 
   @override
@@ -5185,59 +5170,56 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          'Full backup saved; $count files could not be read and were skipped',
-      one: 'Full backup saved; $count file could not be read and was skipped',
+      other: '完整备份已保存；$count 个文件无法读取，已跳过',
+      one: '完整备份已保存；$count 个文件无法读取，已跳过',
     );
     return '$_temp0';
   }
 
   @override
-  String get backupFullCancelled => 'Cancelled. Nothing was changed.';
+  String get backupFullCancelled => '已取消。未做任何更改。';
 
   @override
-  String get backupFullBusy =>
-      'A book import is still running. Wait for it to finish, then try again.';
+  String get backupFullBusy => '书籍导入仍在进行中。请等待其完成后再试。';
 
   @override
   String backupFullNotEnoughSpace({required String size}) {
-    return 'Not enough free space on this device. About $size more is needed.';
+    return '此设备上的可用空间不足。还需要约 $size。';
   }
 
   @override
   String backupFullTooNew({required String version}) {
-    return 'This full backup was made with Mekuru $version. Update Mekuru, then try again.';
+    return '此完整备份由 Mekuru $version 创建。请更新 Mekuru 后再试。';
   }
 
   @override
-  String get backupFullInvalid => 'This file is not a Mekuru full backup.';
+  String get backupFullInvalid => '此文件不是 Mekuru 的完整备份。';
 
   @override
-  String get backupFullPendingRestore =>
-      'A previous full restore is still waiting to finish. Close Mekuru completely and reopen it first.';
+  String get backupFullPendingRestore => '上一次完整恢复仍在等待完成。请先完全关闭 Mekuru 并重新打开。';
 
   @override
   String backupFullFailed({required String details}) {
-    return 'Full backup failed: $details';
+    return '完整备份失败：$details';
   }
 
   @override
   String backupFullRestoreFailed({required String details}) {
-    return 'Full restore failed: $details';
+    return '完整恢复失败：$details';
   }
 
   @override
-  String get backupFullReviewTitle => 'Review full backup';
+  String get backupFullReviewTitle => '查看完整备份';
 
   @override
-  String get backupFullReviewInFile => 'In this file';
+  String get backupFullReviewInFile => '此文件中';
 
   @override
   String backupFullReviewCreated({
     required String date,
     required String version,
   }) {
-    return 'Created $date with Mekuru $version';
+    return '由 Mekuru $version 创建于 $date';
   }
 
   @override
@@ -5245,8 +5227,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count books',
-      one: '$count book',
+      other: '$count 本书',
+      one: '$count 本书',
     );
     return '$_temp0';
   }
@@ -5256,8 +5238,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count dictionaries',
-      one: '$count dictionary',
+      other: '$count 部词典',
+      one: '$count 部词典',
     );
     return '$_temp0';
   }
@@ -5267,111 +5249,105 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count manga were linked from folders outside Mekuru. Their pages are in this backup and will be stored inside Mekuru.',
-      one:
-          '$count manga was linked from a folder outside Mekuru. Its pages are in this backup and will be stored inside Mekuru.',
+      other: '$count 部漫画关联自 Mekuru 之外的文件夹。其页面已包含在此备份中，将保存到 Mekuru 内。',
+      one: '$count 部漫画关联自 Mekuru 之外的文件夹。其页面已包含在此备份中，将保存到 Mekuru 内。',
     );
     return '$_temp0';
   }
 
   @override
-  String get backupFullReviewOnDevice => 'In Mekuru on this device now';
+  String get backupFullReviewOnDevice => '此设备上 Mekuru 中现有';
 
   @override
-  String get backupFullReviewContinue => 'Continue';
+  String get backupFullReviewContinue => '继续';
 
   @override
-  String get backupFullReplaceTitle => 'Delete Mekuru\'s data and replace it?';
+  String get backupFullReplaceTitle => '删除 Mekuru 的数据并替换？';
 
   @override
   String backupFullReplaceBody({
     required String books,
     required String dictionaries,
   }) {
-    return 'Everything currently in Mekuru on this device will be deleted: $books, $dictionaries, and all Mekuru settings and reading data. Nothing outside Mekuru is touched. This cannot be undone. Mekuru will close; reopen it to finish.';
+    return '此设备上 Mekuru 中现有的所有内容都将被删除：$books、$dictionaries，以及 Mekuru 的全部设置和阅读数据。Mekuru 之外的内容不受影响。此操作无法撤销。Mekuru 将会关闭；请重新打开以完成恢复。';
   }
 
   @override
-  String get backupFullReplaceAcknowledge =>
-      'I understand that Mekuru\'s data on this device will be deleted';
+  String get backupFullReplaceAcknowledge => '我了解此设备上 Mekuru 的数据将被删除';
 
   @override
-  String get backupFullReplaceConfirm => 'Delete Mekuru data and replace';
+  String get backupFullReplaceConfirm => '删除 Mekuru 数据并替换';
 
   @override
-  String get backupFullRestartTitle => 'Mekuru will close now';
+  String get backupFullRestartTitle => 'Mekuru 即将关闭';
 
   @override
   String get backupFullRestartBody =>
-      'The full backup is ready. Mekuru closes to finish restoring; open it again to continue with your restored library.';
+      '完整备份已就绪。Mekuru 将关闭以完成恢复；再次打开即可继续使用已恢复的书库。';
 
   @override
-  String get backupFullRestartButton => 'Close Mekuru';
+  String get backupFullRestartButton => '关闭 Mekuru';
 
   @override
-  String get backupFullRestoreComplete => 'Full restore complete';
+  String get backupFullRestoreComplete => '完整恢复已完成';
 
   @override
   String backupFullRestoreBootFailed({required String details}) {
-    return 'The full restore could not be completed and your previous data was kept. ($details)';
+    return '完整恢复未能完成，已保留您之前的数据。（$details）';
   }
 
   @override
-  String get backupFullJobExportTitle => 'Backing up';
+  String get backupFullJobExportTitle => '正在备份';
 
   @override
-  String get backupFullJobRestoreTitle => 'Restoring';
+  String get backupFullJobRestoreTitle => '正在恢复';
 
   @override
-  String get backupFullJobPhaseWriting => 'Writing backup…';
+  String get backupFullJobPhaseWriting => '正在写入备份…';
 
   @override
-  String get backupFullJobPhaseChecking => 'Checking files already copied…';
+  String get backupFullJobPhaseChecking => '正在检查已复制的文件…';
 
   @override
-  String get backupFullJobPhaseExtracting => 'Copying files…';
+  String get backupFullJobPhaseExtracting => '正在复制文件…';
 
   @override
-  String get backupFullJobPhaseFinishing => 'Finishing…';
+  String get backupFullJobPhaseFinishing => '正在完成…';
 
   @override
-  String get backupFullJobPhaseResuming => 'Resuming…';
+  String get backupFullJobPhaseResuming => '正在继续…';
 
   @override
   String backupFullJobPaused({required String details}) {
-    return 'Paused: $details. Mekuru will try again when you reopen it.';
+    return '已暂停：$details。重新打开 Mekuru 时会再次尝试。';
   }
 
   @override
-  String get backupFullJobBackgroundHint =>
-      'This keeps running if you leave Mekuru. Progress also shows in your notifications.';
+  String get backupFullJobBackgroundHint => '即使离开 Mekuru，此操作也会继续运行。进度也会显示在通知中。';
 
   @override
-  String get backupFullJobCancelConfirmExport =>
-      'Stop the backup? What has been written so far will be deleted.';
+  String get backupFullJobCancelConfirmExport => '停止备份？目前已写入的内容将被删除。';
 
   @override
   String get backupFullJobCancelConfirmRestore =>
-      'Stop the restore? Nothing in Mekuru has changed yet; the copied files will be deleted.';
+      '停止恢复？Mekuru 中尚未有任何更改；已复制的文件将被删除。';
 
   @override
-  String get backupFullJobKeepGoing => 'Keep going';
+  String get backupFullJobKeepGoing => '继续';
 
   @override
-  String get backupFullJobStop => 'Stop';
+  String get backupFullJobStop => '停止';
 
   @override
-  String get backupFullJobDone => 'Done';
+  String get backupFullJobDone => '完成';
 
   @override
-  String get backupFullJobClose => 'Close';
+  String get backupFullJobClose => '关闭';
 
   @override
   String get backupFullJobRenameFailed =>
-      'The file was saved with a temporary name ending in .partial. Rename it to end in .zip before restoring from it.';
+      '文件已用以 .partial 结尾的临时名称保存。请先将其重命名为以 .zip 结尾，再从中恢复。';
 
   @override
-  String get backupFullIncomplete =>
-      'This file is incomplete or damaged. Copy it again from where it was saved.';
+  String get backupFullIncomplete => '此文件不完整或已损坏。请从其保存位置重新复制。';
 }
