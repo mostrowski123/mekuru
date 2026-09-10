@@ -2703,5 +2703,7 @@
   "backupFullJobDone": "Listo",
   "backupFullJobClose": "Cerrar",
   "backupFullJobRenameFailed": "El archivo se guardó con un nombre temporal que termina en .partial. Cámbiale el nombre para que termine en .zip antes de restaurar desde él.",
-  "backupFullIncomplete": "Este archivo está incompleto o dañado. Vuelve a copiarlo desde donde se guardó."
+  "backupFullIncomplete": "Este archivo está incompleto o dañado. Vuelve a copiarlo desde donde se guardó.",
+  "epubLookupAnimationTitle": "Lookup Animation",
+  "epubLookupAnimationSubtitle": "Turn off for e-reader displays"
 }

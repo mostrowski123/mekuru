@@ -4671,6 +4671,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This file is incomplete or damaged. Copy it again from where it was saved.'**
   String get backupFullIncomplete;
+
+  /// Toggle for animating the EPUB reader's dictionary lookup sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Lookup Animation'**
+  String get epubLookupAnimationTitle;
+
+  /// Explains that disabling the EPUB lookup sheet animation suits e-ink e-reader screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off for e-reader displays'**
+  String get epubLookupAnimationSubtitle;
 }
 
 class _AppLocalizationsDelegate

@@ -2806,4 +2806,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get backupFullIncomplete =>
       'File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya.';
+
+  @override
+  String get epubLookupAnimationTitle => 'Lookup Animation';
+
+  @override
+  String get epubLookupAnimationSubtitle => 'Turn off for e-reader displays';
 }

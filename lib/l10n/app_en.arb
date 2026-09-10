@@ -3582,5 +3582,13 @@
   "backupFullIncomplete": "This file is incomplete or damaged. Copy it again from where it was saved.",
   "@backupFullIncomplete": {
     "description": "Shown when a picked zip has no end record (a truncated copy)."
+  },
+  "epubLookupAnimationTitle": "Lookup Animation",
+  "@epubLookupAnimationTitle": {
+    "description": "Toggle for animating the EPUB reader's dictionary lookup sheet."
+  },
+  "epubLookupAnimationSubtitle": "Turn off for e-reader displays",
+  "@epubLookupAnimationSubtitle": {
+    "description": "Explains that disabling the EPUB lookup sheet animation suits e-ink e-reader screens."
   }
 }

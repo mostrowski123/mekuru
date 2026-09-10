@@ -160,6 +160,10 @@ class ReaderSettings {
   /// (e-ink) displays, where transitions ghost.
   final bool mangaPageTurnAnimation;
 
+  /// EPUB: whether the lookup sheet slides in and out. Disable for e-reader
+  /// (e-ink) displays, where transitions ghost.
+  final bool epubLookupAnimation;
+
   const ReaderSettings({
     this.fontSize = 18,
     this.verticalText = true,
@@ -182,6 +186,7 @@ class ReaderSettings {
     this.mangaAutoCrop = false,
     this.mangaTransparentLookup = true,
     this.mangaPageTurnAnimation = true,
+    this.epubLookupAnimation = true,
   });
 
   ReaderSettings copyWith({
@@ -206,6 +211,7 @@ class ReaderSettings {
     bool? mangaAutoCrop,
     bool? mangaTransparentLookup,
     bool? mangaPageTurnAnimation,
+    bool? epubLookupAnimation,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -233,6 +239,7 @@ class ReaderSettings {
           mangaTransparentLookup ?? this.mangaTransparentLookup,
       mangaPageTurnAnimation:
           mangaPageTurnAnimation ?? this.mangaPageTurnAnimation,
+      epubLookupAnimation: epubLookupAnimation ?? this.epubLookupAnimation,
     );
   }
 }

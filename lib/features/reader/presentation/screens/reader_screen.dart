@@ -945,6 +945,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  /// Whether the lookup sheet slides in and out (off for e-reader displays).
+  bool get _animateLookupSheet =>
+      ref.read(readerSettingsProvider).epubLookupAnimation;
+
   void _showLookupSheet(WordLookupResult result, double normalizedY) {
     _setControlsVisible(false);
 
@@ -960,6 +964,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
+        sheetAnimationStyle: _animateLookupSheet
+            ? null
+            : AnimationStyle.noAnimation,
         builder: (context) => LookupSheet(
           selectedText: result.dictionaryForm,
           surfaceForm: result.surfaceForm,
@@ -978,7 +985,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       barrierDismissible: true,
       barrierLabel: context.l10n.readerDismiss,
       barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: _animateLookupSheet
+          ? const Duration(milliseconds: 300)
+          : Duration.zero,
       pageBuilder: (context, animation, secondaryAnimation) {
         return Align(
           alignment: Alignment.topCenter,

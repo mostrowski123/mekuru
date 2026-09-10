@@ -2703,5 +2703,7 @@
   "backupFullJobDone": "完成",
   "backupFullJobClose": "关闭",
   "backupFullJobRenameFailed": "文件已用以 .partial 结尾的临时名称保存。请先将其重命名为以 .zip 结尾，再从中恢复。",
-  "backupFullIncomplete": "此文件不完整或已损坏。请从其保存位置重新复制。"
+  "backupFullIncomplete": "此文件不完整或已损坏。请从其保存位置重新复制。",
+  "epubLookupAnimationTitle": "Lookup Animation",
+  "epubLookupAnimationSubtitle": "Turn off for e-reader displays"
 }
