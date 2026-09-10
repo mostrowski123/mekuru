@@ -38,6 +38,7 @@ class MokuroBook {
   final int autoCropVersion;
   final String? ocrSource;
   final bool ocrCompleted;
+  final String? ocrGeneration;
   final List<MokuroPage> pages;
 
   const MokuroBook({
@@ -48,6 +49,7 @@ class MokuroBook {
     this.autoCropVersion = 0,
     this.ocrSource,
     this.ocrCompleted = false,
+    this.ocrGeneration,
     required this.pages,
   });
 
@@ -78,6 +80,7 @@ class MokuroBook {
         ? this.ocrSource
         : ocrSource as String?,
     ocrCompleted: ocrCompleted ?? this.ocrCompleted,
+    ocrGeneration: ocrGeneration,
     pages: pages ?? this.pages,
   );
 
@@ -90,6 +93,7 @@ class MokuroBook {
     'autoCropVersion': autoCropVersion,
     if (ocrSource != null) 'ocrSource': ocrSource,
     'ocrCompleted': ocrCompleted,
+    if (ocrGeneration != null) 'ocrGeneration': ocrGeneration,
     'pages': pages.map((p) => p.toJson()).toList(),
   };
 
@@ -103,6 +107,7 @@ class MokuroBook {
       safImageDirRelativePath: json['safImageDirRelativePath'] as String?,
       autoCropVersion: (json['autoCropVersion'] as num?)?.toInt() ?? 0,
       ocrSource: ocrSource,
+      ocrGeneration: json['ocrGeneration'] as String?,
       ocrCompleted: hasExplicitOcrCompleted
           ? (json['ocrCompleted'] as bool? ?? false)
           : ocrSource != null,
@@ -122,6 +127,24 @@ class MokuroPage {
   final List<MokuroTextBlock> blocks;
   final Rect? contentBounds;
 
+  /// Native or remote page-level completion, including successful empty pages.
+  /// Retained through word segmentation and export/backup cache updates.
+  final Map<String, dynamic>? ocr;
+
+  bool hasOcr(MokuroBook book) =>
+      ocr?['completed'] == true || blocks.isNotEmpty || book.ocrCompleted;
+
+  /// Optional extension in Mekuru-exported .mokuro files. Ordinary Mokuro
+  /// imports retain their historical "all pages processed" semantics.
+  static Map<String, dynamic>? importedOcrState(Map<String, dynamic> page) {
+    if (!page.containsKey('mekuru_ocr')) return null;
+    final value = page['mekuru_ocr'];
+    if (value is Map && value['completed'] is bool) {
+      return Map<String, dynamic>.from(value);
+    }
+    return const {'completed': false};
+  }
+
   /// Label of the MeCab dictionary that produced this page's word
   /// segmentation (`MecabFeatureLayout.label`). `null` on caches written
   /// before provenance was recorded; those are treated as IPADIC.
@@ -134,6 +157,7 @@ class MokuroPage {
     required this.imgHeight,
     required this.blocks,
     this.contentBounds,
+    this.ocr,
     this.segmentationDictionary,
   });
 
@@ -141,6 +165,7 @@ class MokuroPage {
     List<MokuroTextBlock>? blocks,
     Rect? contentBounds,
     String? segmentationDictionary,
+    Map<String, dynamic>? ocr,
   }) => MokuroPage(
     pageIndex: pageIndex,
     imageFileName: imageFileName,
@@ -148,6 +173,7 @@ class MokuroPage {
     imgHeight: imgHeight,
     blocks: blocks ?? this.blocks,
     contentBounds: contentBounds ?? this.contentBounds,
+    ocr: ocr ?? this.ocr,
     segmentationDictionary:
         segmentationDictionary ?? this.segmentationDictionary,
   );
@@ -158,6 +184,7 @@ class MokuroPage {
     'imgWidth': imgWidth,
     'imgHeight': imgHeight,
     'blocks': blocks.map((b) => b.toJson()).toList(),
+    if (ocr != null) 'ocr': ocr,
     if (segmentationDictionary != null)
       'segmentationDictionary': segmentationDictionary,
     if (contentBounds != null)
@@ -180,6 +207,7 @@ class MokuroPage {
           .map((b) => MokuroTextBlock.fromJson(b as Map<String, dynamic>))
           .toList(),
       segmentationDictionary: json['segmentationDictionary'] as String?,
+      ocr: (json['ocr'] as Map?)?.cast<String, dynamic>(),
       contentBounds: cb != null
           ? Rect.fromLTRB(
               (cb[0] as num).toDouble(),

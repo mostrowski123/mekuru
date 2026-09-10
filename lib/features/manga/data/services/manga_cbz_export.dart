@@ -49,6 +49,14 @@ Future<int> writeCbz(String cacheDirPath, String outPath) async {
         'img_width': page.imgWidth,
         'img_height': page.imgHeight,
         'blocks': [for (final block in page.blocks) block.toOcrJson()],
+        'mekuru_ocr': {
+          'completed': page.hasOcr(book),
+          if (page.ocr?['source'] is String) 'source': page.ocr!['source'],
+          if (page.ocr?['modelVersion'] is String)
+            'modelVersion': page.ocr!['modelVersion'],
+          if (page.ocr?['engineVersion'] is String)
+            'engineVersion': page.ocr!['engineVersion'],
+        },
       });
       // Stored, not deflated: pages are already-compressed JPEG/PNG, and the
       // stored path streams straight to the output file. add() closes the
@@ -62,7 +70,7 @@ Future<int> writeCbz(String cacheDirPath, String outPath) async {
     // (on any device, or after a round-trip through a Komga/Kavita server)
     // restores tap-to-lookup without re-running OCR. Books with no OCR data
     // export images-only, as before.
-    if (book.pages.any((page) => page.blocks.isNotEmpty)) {
+    if (book.pages.any((page) => page.hasOcr(book))) {
       final mokuroJson = jsonEncode({
         'version': '0.2.1',
         'title': book.title,

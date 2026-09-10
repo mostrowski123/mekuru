@@ -21,7 +21,10 @@ void main() {
   });
 
   /// Write a manga cache dir with [pages] and matching image files.
-  Future<String> createCacheDir(List<MokuroPage> pages) async {
+  Future<String> createCacheDir(
+    List<MokuroPage> pages, {
+    bool ocrCompleted = true,
+  }) async {
     final cacheDir = Directory('${tmpDir.path}/cache')..createSync();
     final imageDir = Directory('${cacheDir.path}/images')..createSync();
     for (final page in pages) {
@@ -33,7 +36,7 @@ void main() {
       title: 'テスト本',
       imageDirPath: imageDir.path,
       ocrSource: 'mokuro',
-      ocrCompleted: true,
+      ocrCompleted: ocrCompleted,
       pages: pages,
     );
     File(
@@ -138,7 +141,7 @@ void main() {
         imgHeight: 1200,
         blocks: [],
       ),
-    ]);
+    ], ocrCompleted: false);
 
     final outPath = '${tmpDir.path}/plain.cbz';
     await writeCbz(cacheDirPath, outPath);

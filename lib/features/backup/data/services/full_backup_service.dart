@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
@@ -362,6 +364,13 @@ class FullBackupService implements FullBackupApi {
 
   @override
   Future<void> startRestore(FullBackupPreview preview) async {
+    // Best effort: the restore is applied at the next boot, when no OCR
+    // service can be running, so a stuck quiesce must not block it.
+    try {
+      await LocalMangaOcr.quiesce();
+    } catch (error) {
+      debugPrint('[FULL_BACKUP] OCR quiesce failed: $error');
+    }
     await _cancelBackgroundWork();
     final manifest = preview.manifest;
     await _commit({

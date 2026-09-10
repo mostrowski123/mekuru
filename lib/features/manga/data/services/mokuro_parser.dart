@@ -560,6 +560,7 @@ class MokuroParser {
           imgWidth: imgWidth.toInt(),
           imgHeight: imgHeight.toInt(),
           blocks: blocks,
+          ocr: MokuroPage.importedOcrState(pageJson),
         ),
       );
     }

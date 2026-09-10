@@ -1,3 +1,6 @@
+import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -350,7 +353,9 @@ class BookRepository {
         title: cbzMeta.title,
         imageDirPath: cbzMeta.imageDirPath,
         ocrSource: ocrPages != null ? 'mokuro' : null,
-        ocrCompleted: ocrPages != null,
+        ocrCompleted:
+            ocrPages != null &&
+            ocrPages.every((page) => page.ocr?['completed'] != false),
         pages: pages,
       );
       String? cacheJson;
@@ -431,10 +436,11 @@ class BookRepository {
           MokuroPage(
             pageIndex: pages.length,
             imageFileName: imageFileName,
-            imgWidth: imgWidth is num
+            ocr: MokuroPage.importedOcrState(pageJson),
+            imgWidth: imgWidth is num && imgWidth > 0
                 ? imgWidth.toInt()
                 : dimensions?.width ?? 0,
-            imgHeight: imgHeight is num
+            imgHeight: imgHeight is num && imgHeight > 0
                 ? imgHeight.toInt()
                 : dimensions?.height ?? 0,
             blocks: rawBlocks is List
@@ -557,7 +563,9 @@ class BookRepository {
           safTreeUri: manifest.safTreeUri,
           safImageDirRelativePath: manifest.safImageDirRelativePath,
           ocrSource: 'mokuro',
-          ocrCompleted: true,
+          ocrCompleted: rawPages.every(
+            (page) => page.ocr?['completed'] != false,
+          ),
           pages: rawPages,
         ),
       );
@@ -758,7 +766,7 @@ class BookRepository {
       return;
     }
 
-    await writeStringAtomic(cacheFile, updatedJson);
+    await MangaCacheStore.merge(cacheFile, before: content, after: updatedJson);
 
     debugPrint(
       '[MangaOCR] Reprocessed ${updated.pages.length} pages '
@@ -811,7 +819,7 @@ class BookRepository {
     final json = jsonDecode(content) as Map<String, dynamic>;
     MokuroBook.fromJson(json); // Validate the backup before restoring it.
 
-    await writeStringAtomic(cacheFile, content);
+    await MangaCacheStore.reset(cacheFile, book.id, content);
     debugPrint('[MangaOCR] Restored original Mokuro OCR for "${book.title}"');
     return true;
   }
@@ -833,7 +841,10 @@ class BookRepository {
     final mokuroBook = MokuroBook.fromJson(json);
 
     final clearedPages = mokuroBook.pages
-        .map((page) => page.copyWith(blocks: const []))
+        .map(
+          (page) =>
+              page.copyWith(blocks: const [], ocr: const {'completed': false}),
+        )
         .toList();
 
     final updated = mokuroBook.copyWith(
@@ -842,7 +853,11 @@ class BookRepository {
       pages: clearedPages,
     );
 
-    await writeStringAtomic(cacheFile, jsonEncode(updated.toJson()));
+    await MangaCacheStore.reset(
+      cacheFile,
+      book.id,
+      jsonEncode(updated.toJson()),
+    );
     debugPrint('[MangaOCR] Cleared OCR for "${book.title}"');
   }
 
@@ -891,7 +906,11 @@ class BookRepository {
       pages: withBounds,
     );
 
-    await writeStringAtomic(cacheFile, jsonEncode(updated.toJson()));
+    await MangaCacheStore.merge(
+      cacheFile,
+      before: content,
+      after: jsonEncode(updated.toJson()),
+    );
     debugPrint(
       '[MangaAutoCrop] Computed bounds for ${withBounds.length} pages '
       'for "${book.title}"',
@@ -907,6 +926,9 @@ class BookRepository {
   /// For manga: deletes only the cache directory. Original images are
   /// kept since they belong to the user.
   Future<void> deleteBook(int bookId) async {
+    if (LocalMangaOcr.available) {
+      await clearOcrTaskState(bookId);
+    }
     final book = await getBookById(bookId);
     if (book != null) {
       // Manga rows store the import dir itself; EPUB rows store its

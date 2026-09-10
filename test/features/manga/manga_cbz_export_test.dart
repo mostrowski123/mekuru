@@ -1,3 +1,4 @@
+import 'package:mekuru/features/manga/data/services/ocr_page_selection.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -153,6 +154,60 @@ void main() {
   });
 
   group('convert → export → re-import round trip', () {
+    for (final allComplete in [false, true]) {
+      test(
+        'OCR completion and successful blanks survive CBZ round trip: $allComplete',
+        () async {
+          PathProviderPlatform.instance = FakePathProviderPlatform(
+            tempDir.path,
+          );
+          final db = createTestDatabase();
+          addTearDown(db.close);
+          final repo = BookRepository(db);
+          final directory = await buildCacheDir({
+            'a.png': png(10, 100),
+            'b.png': png(10, 100),
+          });
+          final file = File(p.join(directory, 'pages_cache.json'));
+          final original = MokuroBook.fromJson(
+            jsonDecode(await file.readAsString()) as Map<String, dynamic>,
+          );
+          final withState = original.copyWith(
+            ocrCompleted: allComplete,
+            pages: [
+              original.pages[0].copyWith(
+                ocr: {
+                  'completed': true,
+                  'source': 'onDevice',
+                  'modelVersion': 'v1',
+                  'engineVersion': 'baberu-opencv-2',
+                },
+              ),
+              original.pages[1].copyWith(ocr: {'completed': allComplete}),
+            ],
+          );
+          await file.writeAsString(jsonEncode(withState.toJson()));
+          final output = p.join(tempDir.path, 'ocr-state.cbz');
+          await writeCbz(directory, output);
+          final imported = await repo.importCbz(output);
+          final restored = MokuroBook.fromJson(
+            jsonDecode(
+                  await File(
+                    p.join(imported.filePath, 'pages_cache.json'),
+                  ).readAsString(),
+                )
+                as Map<String, dynamic>,
+          );
+          expect(restored.ocrCompleted, allComplete);
+          expect(restored.pages[0].blocks, isEmpty);
+          expect(restored.pages[0].ocr?['completed'], true);
+          expect(restored.pages[0].ocr?['modelVersion'], 'v1');
+          expect(restored.pages[0].ocr?['engineVersion'], 'baberu-opencv-2');
+          expect(selectOcrPages(restored), allComplete ? isEmpty : [1]);
+        },
+      );
+    }
+
     test(
       'a converted EPUB exports to a CBZ that imports identically',
       () async {

@@ -1,3 +1,5 @@
+import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -45,9 +47,6 @@ const ocrServerUrlKey = 'app.ocr_server_url';
 
 /// Default OCR server URL (Modal deployment).
 const defaultOcrServerUrl = ocr_server_config.defaultOcrServerUrl;
-
-/// Save interval write partial results every N pages.
-const _saveIntervalPages = 10;
 
 /// Stop processing after this many consecutive page failures.
 /// The OCR client already retries each page 3 times internally, so
@@ -207,6 +206,58 @@ Future<void> flushPendingOcrFinalizations() async {
 
 /// The actual OCR processing logic run by WorkManager.
 Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
+  var leaseId = inputData['leaseId'] as String?;
+  if (LocalMangaOcr.available && leaseId == null) {
+    final path = inputData['cacheFilePath'] as String;
+    final book = MokuroBook.fromJson(
+      jsonDecode(await File(path).readAsString()) as Map<String, dynamic>,
+    );
+    final targets =
+        (inputData['selectedPages'] as List?)?.cast<int>() ??
+        [
+          for (var i = 0; i < book.pages.length; i++)
+            if (_pageNeedsOcr(book, book.pages[i])) i,
+        ];
+    if (targets.isNotEmpty) {
+      final lease = await LocalMangaOcr.channel
+          .invokeMapMethod<String, dynamic>('claimRemote', {
+            'bookId': inputData['bookId'],
+            'title': book.title,
+            'cachePath': path,
+            'pages': targets,
+            'replace': inputData['replace'] == true,
+          });
+      leaseId = lease!['id'] as String;
+    }
+  }
+  try {
+    var selectedPages = (inputData['selectedPages'] as List?)?.cast<int>();
+    if (LocalMangaOcr.available && leaseId != null) {
+      final lease = await LocalMangaOcr.channel
+          .invokeMapMethod<String, dynamic>('ensureRemoteLease', {
+            'id': leaseId,
+          });
+      final done = lease!['outcomes'] as Map? ?? const {};
+      selectedPages = (lease['pages'] as List)
+          .cast<int>()
+          .where((index) => done[index.toString()] != 'done')
+          .toList();
+    }
+    return await _processRemoteOcrTask({
+      ...inputData,
+      'leaseId': leaseId,
+      'selectedPages': selectedPages,
+    });
+  } finally {
+    if (LocalMangaOcr.available && leaseId != null) {
+      await LocalMangaOcr.channel.invokeMethod('releaseRemote', {
+        'id': leaseId,
+      });
+    }
+  }
+}
+
+Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
   final jobStopwatch = Stopwatch()..start();
   final bookId = inputData['bookId'] as int;
   final cacheFilePath = inputData['cacheFilePath'] as String;
@@ -360,8 +411,11 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     final mokuroBook = MokuroBook.fromJson(cacheJson);
 
     final pagesToProcess = <int>[];
+    final selected = (inputData['selectedPages'] as List?)?.cast<int>();
     for (var i = 0; i < mokuroBook.pages.length; i++) {
-      if (_pageNeedsOcr(mokuroBook, mokuroBook.pages[i])) {
+      if ((selected == null || selected.contains(i)) &&
+          (inputData['replace'] == true ||
+              _pageNeedsOcr(mokuroBook, mokuroBook.pages[i]))) {
         pagesToProcess.add(i);
       }
     }
@@ -551,8 +605,28 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           pageIndex: effectiveJobId == null ? null : pageIndex,
         );
 
-        final ocrPage = page.copyWith(blocks: result.blocks);
+        final ocrPage = page.copyWith(
+          blocks: result.blocks,
+          ocr: {
+            'completed': true,
+            'source': 'remote',
+            'modelVersion': 'remote',
+            'revision': (page.ocr?['revision'] as int? ?? 0) + 1,
+            if (inputData['leaseId'] != null) 'jobId': inputData['leaseId'],
+          },
+        );
         updatedPages[pageIndex] = await _segmentSinglePageForLookup(ocrPage);
+        if (LocalMangaOcr.available && inputData['leaseId'] != null) {
+          await LocalMangaOcr.channel.invokeMethod('commitRemote', {
+            'id': inputData['leaseId'],
+            'index': pageIndex,
+            'blocks': updatedPages[pageIndex].blocks
+                .map((b) => b.toJson())
+                .toList(),
+          });
+        } else {
+          await _saveCache(cacheFile, mokuroBook, updatedPages);
+        }
         completed++;
         consecutiveFailures = 0;
         anyPageSucceeded = true;
@@ -564,16 +638,6 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
           return true;
         }
         await saveRunningProgress();
-
-        if (completed % _saveIntervalPages == 0) {
-          await _saveCache(cacheFile, mokuroBook, updatedPages);
-          if (await handleStopRequest(
-            stopRequest: await loadStopRequest(),
-            pagesToKeep: updatedPages,
-          )) {
-            return true;
-          }
-        }
       } on OcrServerException catch (e) {
         if (await handleStopRequest(
           stopRequest: await loadStopRequest(),
@@ -628,7 +692,9 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
       mokuroBook,
       pagesToSave,
       ocrSourceOverride: 'custom_ocr',
-      ocrCompletedOverride: true,
+      ocrCompletedOverride: updatedPages.every(
+        (page) => page.hasOcr(mokuroBook),
+      ),
     );
     if (await handleStopRequest(
       stopRequest: await loadStopRequest(),
@@ -724,7 +790,7 @@ String _describeOcrError(Object error) {
 }
 
 bool _pageNeedsOcr(MokuroBook book, MokuroPage page) {
-  return !book.ocrCompleted && page.blocks.isEmpty;
+  return !page.hasOcr(book);
 }
 
 Future<List<MokuroPage>> _segmentPagesForLookup(List<MokuroPage> pages) async {
@@ -770,7 +836,15 @@ Future<void> _saveCache(
   );
   // Atomic write: the WorkManager process can be killed mid-write, and a
   // truncated cache would corrupt already-completed OCR results.
-  await writeStringAtomic(cacheFile, json.encode(updated.toJson()));
+  if (LocalMangaOcr.available) {
+    await MangaCacheStore.merge(
+      cacheFile,
+      before: json.encode(originalBook.toJson()),
+      after: json.encode(updated.toJson()),
+    );
+  } else {
+    await writeStringAtomic(cacheFile, json.encode(updated.toJson()));
+  }
 }
 
 Future<void> _queuePendingOcrFinalization(String jobId, String status) async {
@@ -983,85 +1057,133 @@ Future<void> scheduleOcrTask({
   required String imageDir,
   String? jobId,
   int? reservedPages,
+  List<int>? selectedPages,
+  bool replace = false,
 }) async {
   if ((jobId == null) != (reservedPages == null)) {
     throw ArgumentError('jobId and reservedPages must be provided together.');
   }
 
   await _clearOcrStopRequest(bookId);
+  String? leaseId;
+  if (LocalMangaOcr.available) {
+    final book = MokuroBook.fromJson(
+      jsonDecode(await File(cacheFilePath).readAsString())
+          as Map<String, dynamic>,
+    );
+    final targets =
+        selectedPages ??
+        [
+          for (var i = 0; i < book.pages.length; i++)
+            if (_pageNeedsOcr(book, book.pages[i])) i,
+        ];
+    if (targets.isNotEmpty) {
+      final lease = await LocalMangaOcr.channel
+          .invokeMapMethod<String, dynamic>('claimRemote', {
+            'bookId': bookId,
+            'title': book.title,
+            'cachePath': cacheFilePath,
+            'pages': targets,
+            'replace': replace,
+          });
+      leaseId = lease!['id'] as String;
+    }
+  }
 
-  final executionMode = await determineOcrTaskExecutionMode(
-    cacheFilePath: cacheFilePath,
-  );
-  if (executionMode == OcrTaskExecutionMode.foreground) {
-    debugPrint(
-      '[OCR_WORKER] Using foreground OCR for SAF-backed manga bookId=$bookId',
+  try {
+    final executionMode = await determineOcrTaskExecutionMode(
+      cacheFilePath: cacheFilePath,
+    );
+    if (executionMode == OcrTaskExecutionMode.foreground) {
+      debugPrint(
+        '[OCR_WORKER] Using foreground OCR for SAF-backed manga bookId=$bookId',
+      );
+      await _saveScheduledOcrProgress(
+        bookId: bookId,
+        cacheFilePath: cacheFilePath,
+        reservedPages: reservedPages,
+      );
+      if (jobId != null) {
+        await _storeActiveOcrJob(bookId, jobId);
+      } else {
+        await _clearActiveOcrJob(bookId);
+      }
+
+      unawaited(() async {
+        try {
+          await _processOcrTask({
+            'bookId': bookId,
+            'cacheFilePath': cacheFilePath,
+            'imageDir': imageDir,
+            'leaseId': ?leaseId,
+            'selectedPages': ?selectedPages,
+            'replace': replace,
+            ...?jobId == null ? null : {'jobId': jobId},
+            ...?reservedPages == null ? null : {'reservedPages': reservedPages},
+          });
+        } catch (error, stackTrace) {
+          debugPrint('[OCR_WORKER] Foreground OCR failed: $error');
+          FlutterError.reportError(
+            FlutterErrorDetails(
+              exception: error,
+              stack: stackTrace,
+              library: 'ocr_background_worker',
+              context: ErrorDescription('while running SAF-backed OCR'),
+            ),
+          );
+        }
+      }());
+      return;
+    }
+
+    await Workmanager().registerOneOffTask(
+      '$ocrTaskTagPrefix$bookId',
+      ocrTaskName,
+      inputData: {
+        'bookId': bookId,
+        'cacheFilePath': cacheFilePath,
+        'imageDir': imageDir,
+        'leaseId': ?leaseId,
+        'selectedPages': ?(LocalMangaOcr.available ? null : selectedPages),
+        'replace': replace,
+        ...?jobId == null ? null : {'jobId': jobId},
+        ...?reservedPages == null ? null : {'reservedPages': reservedPages},
+      },
+      tag: '$ocrTaskTagPrefix$bookId',
+      constraints: Constraints(networkType: NetworkType.connected),
+      backoffPolicy: BackoffPolicy.exponential,
+      existingWorkPolicy: ExistingWorkPolicy.replace,
     );
     await _saveScheduledOcrProgress(
       bookId: bookId,
       cacheFilePath: cacheFilePath,
       reservedPages: reservedPages,
     );
+
     if (jobId != null) {
       await _storeActiveOcrJob(bookId, jobId);
     } else {
       await _clearActiveOcrJob(bookId);
     }
-
-    unawaited(() async {
-      try {
-        await _processOcrTask({
-          'bookId': bookId,
-          'cacheFilePath': cacheFilePath,
-          'imageDir': imageDir,
-          ...?jobId == null ? null : {'jobId': jobId},
-          ...?reservedPages == null ? null : {'reservedPages': reservedPages},
-        });
-      } catch (error, stackTrace) {
-        debugPrint('[OCR_WORKER] Foreground OCR failed: $error');
-        FlutterError.reportError(
-          FlutterErrorDetails(
-            exception: error,
-            stack: stackTrace,
-            library: 'ocr_background_worker',
-            context: ErrorDescription('while running SAF-backed OCR'),
-          ),
-        );
-      }
-    }());
-    return;
-  }
-
-  await Workmanager().registerOneOffTask(
-    '$ocrTaskTagPrefix$bookId',
-    ocrTaskName,
-    inputData: {
-      'bookId': bookId,
-      'cacheFilePath': cacheFilePath,
-      'imageDir': imageDir,
-      ...?jobId == null ? null : {'jobId': jobId},
-      ...?reservedPages == null ? null : {'reservedPages': reservedPages},
-    },
-    tag: '$ocrTaskTagPrefix$bookId',
-    constraints: Constraints(networkType: NetworkType.connected),
-    backoffPolicy: BackoffPolicy.exponential,
-    existingWorkPolicy: ExistingWorkPolicy.replace,
-  );
-  await _saveScheduledOcrProgress(
-    bookId: bookId,
-    cacheFilePath: cacheFilePath,
-    reservedPages: reservedPages,
-  );
-
-  if (jobId != null) {
-    await _storeActiveOcrJob(bookId, jobId);
-  } else {
-    await _clearActiveOcrJob(bookId);
+  } catch (_) {
+    await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
+    if (LocalMangaOcr.available && leaseId != null) {
+      await LocalMangaOcr.channel.invokeMethod('releaseRemote', {
+        'id': leaseId,
+      });
+    }
+    rethrow;
   }
 }
 
 /// Cancel an OCR task for a book.
 Future<void> cancelOcrTask(int bookId) async {
+  if (LocalMangaOcr.available) {
+    await LocalMangaOcr.channel.invokeMethod('cancelBook', {
+      'bookId': bookId,
+      'backend': 'remote',
+    });
+  }
   final prefs = await SharedPreferences.getInstance();
   final existingProgress = OcrProgress.load(prefs, bookId);
   await _setOcrStopRequest(bookId, OcrStopRequest.paused);
@@ -1080,6 +1202,9 @@ Future<void> cancelOcrTask(int bookId) async {
 
 /// Remove queued/running OCR work and hide persisted OCR progress state.
 Future<void> clearOcrTaskState(int bookId) async {
+  if (LocalMangaOcr.available) {
+    await LocalMangaOcr.channel.invokeMethod('cancelBook', {'bookId': bookId});
+  }
   final prefs = await SharedPreferences.getInstance();
   await _setOcrStopRequest(bookId, OcrStopRequest.deleted);
   await _saveIdleOcrProgress(prefs, bookId);
