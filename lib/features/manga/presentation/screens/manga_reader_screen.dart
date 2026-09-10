@@ -602,6 +602,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       isScrollControlled: true,
       backgroundColor: transparent ? Colors.transparent : null,
       barrierColor: transparent ? Colors.black.withAlpha(30) : null,
+      sheetAnimationStyle: _animatePageTurns
+          ? null
+          : AnimationStyle.noAnimation,
       builder: (_) => LookupSheet(
         selectedText: lookup.dictionaryForm,
         surfaceForm: lookup.surfaceForm,
@@ -636,7 +639,9 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       barrierDismissible: true,
       barrierLabel: context.l10n.readerDismiss,
       barrierColor: transparent ? Colors.black.withAlpha(30) : Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: _animatePageTurns
+          ? const Duration(milliseconds: 300)
+          : Duration.zero,
       pageBuilder: (context, animation, secondaryAnimation) {
         return Align(
           alignment: Alignment.topCenter,
