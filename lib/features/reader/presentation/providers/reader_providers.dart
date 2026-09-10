@@ -134,12 +134,8 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(mangaTransparentLookup: transparent));
   }
 
-  void setMangaPageTurnAnimation(bool enabled) {
-    _update(state.copyWith(mangaPageTurnAnimation: enabled));
-  }
-
-  void setEpubLookupAnimation(bool enabled) {
-    _update(state.copyWith(epubLookupAnimation: enabled));
+  void setReaderAnimations(bool enabled) {
+    _update(state.copyWith(readerAnimations: enabled));
   }
 
   void setColorMode(ColorMode mode) {

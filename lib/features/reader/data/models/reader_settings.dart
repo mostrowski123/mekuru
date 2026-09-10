@@ -156,13 +156,10 @@ class ReaderSettings {
   /// Manga: whether the lookup sheet uses a transparent background.
   final bool mangaTransparentLookup;
 
-  /// Manga: whether programmatic page turns animate. Disable for e-reader
-  /// (e-ink) displays, where transitions ghost.
-  final bool mangaPageTurnAnimation;
-
-  /// EPUB: whether the lookup sheet slides in and out. Disable for e-reader
-  /// (e-ink) displays, where transitions ghost.
-  final bool epubLookupAnimation;
+  /// Whether reader transitions animate: manga page turns and the lookup
+  /// sheet in both readers. Disable for e-reader (e-ink) displays, where
+  /// transitions ghost.
+  final bool readerAnimations;
 
   const ReaderSettings({
     this.fontSize = 18,
@@ -185,8 +182,7 @@ class ReaderSettings {
     this.mangaReadingDirection = ReaderDirection.rtl,
     this.mangaAutoCrop = false,
     this.mangaTransparentLookup = true,
-    this.mangaPageTurnAnimation = true,
-    this.epubLookupAnimation = true,
+    this.readerAnimations = true,
   });
 
   ReaderSettings copyWith({
@@ -210,8 +206,7 @@ class ReaderSettings {
     ReaderDirection? mangaReadingDirection,
     bool? mangaAutoCrop,
     bool? mangaTransparentLookup,
-    bool? mangaPageTurnAnimation,
-    bool? epubLookupAnimation,
+    bool? readerAnimations,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -237,9 +232,7 @@ class ReaderSettings {
       mangaAutoCrop: mangaAutoCrop ?? this.mangaAutoCrop,
       mangaTransparentLookup:
           mangaTransparentLookup ?? this.mangaTransparentLookup,
-      mangaPageTurnAnimation:
-          mangaPageTurnAnimation ?? this.mangaPageTurnAnimation,
-      epubLookupAnimation: epubLookupAnimation ?? this.epubLookupAnimation,
+      readerAnimations: readerAnimations ?? this.readerAnimations,
     );
   }
 }

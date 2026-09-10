@@ -40,7 +40,6 @@ void main() {
           mangaReadingDirection: ReaderDirection.ltr,
           mangaAutoCrop: true,
           mangaTransparentLookup: false,
-          mangaPageTurnAnimation: false,
         ),
       );
 
@@ -50,7 +49,6 @@ void main() {
       expect(loaded.mangaReadingDirection, ReaderDirection.ltr);
       expect(loaded.mangaAutoCrop, isTrue);
       expect(loaded.mangaTransparentLookup, isFalse);
-      expect(loaded.mangaPageTurnAnimation, isFalse);
     });
 
     test(
@@ -66,7 +64,6 @@ void main() {
         expect(loaded.mangaReadingDirection, ReaderDirection.rtl);
         expect(loaded.mangaAutoCrop, isFalse);
         expect(loaded.mangaTransparentLookup, isTrue);
-        expect(loaded.mangaPageTurnAnimation, isTrue);
       },
     );
   });

@@ -48,6 +48,13 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             value: settings.keepScreenOn,
             onChanged: notifier.setKeepScreenOn,
           ),
+          SettingsSwitchRow(
+            icon: Icons.animation,
+            title: l10n.readerAnimationsTitle,
+            subtitle: l10n.readerAnimationsSubtitle,
+            value: settings.readerAnimations,
+            onChanged: notifier.setReaderAnimations,
+          ),
           const Divider(),
 
           // ── EPUB ──
@@ -153,13 +160,6 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             value: settings.disableLinks,
             onChanged: notifier.setDisableLinks,
           ),
-          SettingsSwitchRow(
-            icon: Icons.animation,
-            title: l10n.epubLookupAnimationTitle,
-            subtitle: l10n.epubLookupAnimationSubtitle,
-            value: settings.epubLookupAnimation,
-            onChanged: notifier.setEpubLookupAnimation,
-          ),
           const Divider(),
 
           // ── Manga ──
@@ -178,7 +178,6 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
               ],
             ),
           ),
-          const MangaPageTurnAnimationRow(),
           const MangaTransparentLookupRow(),
           if (isProUnlocked) ...[
             ListTile(

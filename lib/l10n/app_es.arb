@@ -1694,13 +1694,13 @@
   "@mangaViewModeTitle": {
     "description": "Label for the manga page layout control (single page, spread, or scroll)."
   },
-  "mangaPageTurnAnimationTitle": "Animación al pasar página",
-  "@mangaPageTurnAnimationTitle": {
-    "description": "Toggle for animating manga page turns."
+  "readerAnimationsTitle": "Animaciones",
+  "@readerAnimationsTitle": {
+    "description": "Toggle for reader transitions: manga page turns and the dictionary lookup sheet in both readers."
   },
-  "mangaPageTurnAnimationSubtitle": "Desactívala en pantallas de tinta electrónica",
-  "@mangaPageTurnAnimationSubtitle": {
-    "description": "Explains that disabling the manga page turn animation suits e-ink e-reader screens."
+  "readerAnimationsSubtitle": "Desactívalas en pantallas de tinta electrónica",
+  "@readerAnimationsSubtitle": {
+    "description": "Explains that disabling reader animations suits e-ink e-reader screens."
   },
   "settingsReadingTitle": "Ajustes del lector",
   "@settingsReadingTitle": {
@@ -2703,7 +2703,5 @@
   "backupFullJobDone": "Listo",
   "backupFullJobClose": "Cerrar",
   "backupFullJobRenameFailed": "El archivo se guardó con un nombre temporal que termina en .partial. Cámbiale el nombre para que termine en .zip antes de restaurar desde él.",
-  "backupFullIncomplete": "Este archivo está incompleto o dañado. Vuelve a copiarlo desde donde se guardó.",
-  "epubLookupAnimationTitle": "Animación de consultas",
-  "epubLookupAnimationSubtitle": "Desactívala en pantallas de tinta electrónica"
+  "backupFullIncomplete": "Este archivo está incompleto o dañado. Vuelve a copiarlo desde donde se guardó."
 }

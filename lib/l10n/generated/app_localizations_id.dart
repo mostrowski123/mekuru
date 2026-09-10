@@ -1378,11 +1378,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get mangaViewModeTitle => 'Mode Tampilan';
 
   @override
-  String get mangaPageTurnAnimationTitle => 'Animasi Pergantian Halaman';
+  String get readerAnimationsTitle => 'Animasi';
 
   @override
-  String get mangaPageTurnAnimationSubtitle =>
-      'Nonaktifkan untuk layar e-reader';
+  String get readerAnimationsSubtitle => 'Nonaktifkan untuk layar e-reader';
 
   @override
   String get settingsReadingTitle => 'Pengaturan Pembaca';
@@ -2806,10 +2805,4 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get backupFullIncomplete =>
       'File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya.';
-
-  @override
-  String get epubLookupAnimationTitle => 'Animasi Penelusuran';
-
-  @override
-  String get epubLookupAnimationSubtitle => 'Nonaktifkan untuk layar e-reader';
 }

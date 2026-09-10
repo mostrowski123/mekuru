@@ -1694,13 +1694,13 @@
   "@mangaViewModeTitle": {
     "description": "Label for the manga page layout control (single page, spread, or scroll)."
   },
-  "mangaPageTurnAnimationTitle": "翻页动画",
-  "@mangaPageTurnAnimationTitle": {
-    "description": "Toggle for animating manga page turns."
+  "readerAnimationsTitle": "动画效果",
+  "@readerAnimationsTitle": {
+    "description": "Toggle for reader transitions: manga page turns and the dictionary lookup sheet in both readers."
   },
-  "mangaPageTurnAnimationSubtitle": "电子墨水屏建议关闭",
-  "@mangaPageTurnAnimationSubtitle": {
-    "description": "Explains that disabling the manga page turn animation suits e-ink e-reader screens."
+  "readerAnimationsSubtitle": "电子墨水屏建议关闭",
+  "@readerAnimationsSubtitle": {
+    "description": "Explains that disabling reader animations suits e-ink e-reader screens."
   },
   "settingsReadingTitle": "阅读器设置",
   "@settingsReadingTitle": {
@@ -2703,7 +2703,5 @@
   "backupFullJobDone": "完成",
   "backupFullJobClose": "关闭",
   "backupFullJobRenameFailed": "文件已用以 .partial 结尾的临时名称保存。请先将其重命名为以 .zip 结尾，再从中恢复。",
-  "backupFullIncomplete": "此文件不完整或已损坏。请从其保存位置重新复制。",
-  "epubLookupAnimationTitle": "查词动画",
-  "epubLookupAnimationSubtitle": "电子墨水屏建议关闭"
+  "backupFullIncomplete": "此文件不完整或已损坏。请从其保存位置重新复制。"
 }

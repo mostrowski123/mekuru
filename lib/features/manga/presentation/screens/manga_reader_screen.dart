@@ -337,7 +337,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
 
   /// Whether programmatic page turns animate (off for e-reader displays).
   bool get _animatePageTurns =>
-      ref.read(readerSettingsProvider).mangaPageTurnAnimation;
+      ref.read(readerSettingsProvider).readerAnimations;
 
   // E-reader mode swipe tracking. Raw pointer events instead of a gesture
   // recognizer: the page views' physics are disabled in this mode, and a
@@ -918,7 +918,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               s.mangaViewMode,
               s.mangaReadingDirection,
               s.mangaAutoCrop,
-              s.mangaPageTurnAnimation,
+              s.readerAnimations,
             ),
           ),
         );

@@ -1390,11 +1390,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get mangaViewModeTitle => 'Modo de visualización';
 
   @override
-  String get mangaPageTurnAnimationTitle => 'Animación al pasar página';
+  String get readerAnimationsTitle => 'Animaciones';
 
   @override
-  String get mangaPageTurnAnimationSubtitle =>
-      'Desactívala en pantallas de tinta electrónica';
+  String get readerAnimationsSubtitle =>
+      'Desactívalas en pantallas de tinta electrónica';
 
   @override
   String get settingsReadingTitle => 'Ajustes del lector';
@@ -2828,11 +2828,4 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get backupFullIncomplete =>
       'Este archivo está incompleto o dañado. Vuelve a copiarlo desde donde se guardó.';
-
-  @override
-  String get epubLookupAnimationTitle => 'Animación de consultas';
-
-  @override
-  String get epubLookupAnimationSubtitle =>
-      'Desactívala en pantallas de tinta electrónica';
 }

@@ -947,7 +947,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   /// Whether the lookup sheet slides in and out (off for e-reader displays).
   bool get _animateLookupSheet =>
-      ref.read(readerSettingsProvider).epubLookupAnimation;
+      ref.read(readerSettingsProvider).readerAnimations;
 
   void _showLookupSheet(WordLookupResult result, double normalizedY) {
     _setControlsVisible(false);

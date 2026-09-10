@@ -193,16 +193,6 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
             onSettingChanged('disable_links', value);
           },
         ),
-        SettingsSwitchRow(
-          icon: Icons.animation,
-          title: l10n.epubLookupAnimationTitle,
-          subtitle: l10n.epubLookupAnimationSubtitle,
-          value: settings.epubLookupAnimation,
-          onChanged: (value) {
-            notifier.setEpubLookupAnimation(value);
-            onSettingChanged('lookup_animation', value);
-          },
-        ),
         const SizedBox(height: 16),
       ],
     );

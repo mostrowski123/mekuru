@@ -1694,13 +1694,13 @@
   "@mangaViewModeTitle": {
     "description": "Label for the manga page layout control (single page, spread, or scroll)."
   },
-  "mangaPageTurnAnimationTitle": "Animasi Pergantian Halaman",
-  "@mangaPageTurnAnimationTitle": {
-    "description": "Toggle for animating manga page turns."
+  "readerAnimationsTitle": "Animasi",
+  "@readerAnimationsTitle": {
+    "description": "Toggle for reader transitions: manga page turns and the dictionary lookup sheet in both readers."
   },
-  "mangaPageTurnAnimationSubtitle": "Nonaktifkan untuk layar e-reader",
-  "@mangaPageTurnAnimationSubtitle": {
-    "description": "Explains that disabling the manga page turn animation suits e-ink e-reader screens."
+  "readerAnimationsSubtitle": "Nonaktifkan untuk layar e-reader",
+  "@readerAnimationsSubtitle": {
+    "description": "Explains that disabling reader animations suits e-ink e-reader screens."
   },
   "settingsReadingTitle": "Pengaturan Pembaca",
   "@settingsReadingTitle": {
@@ -2703,7 +2703,5 @@
   "backupFullJobDone": "Selesai",
   "backupFullJobClose": "Tutup",
   "backupFullJobRenameFailed": "File disimpan dengan nama sementara yang berakhiran .partial. Ubah namanya agar berakhiran .zip sebelum memulihkan darinya.",
-  "backupFullIncomplete": "File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya.",
-  "epubLookupAnimationTitle": "Animasi Penelusuran",
-  "epubLookupAnimationSubtitle": "Nonaktifkan untuk layar e-reader"
+  "backupFullIncomplete": "File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya."
 }

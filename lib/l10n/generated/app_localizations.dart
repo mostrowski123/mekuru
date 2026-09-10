@@ -2386,17 +2386,17 @@ abstract class AppLocalizations {
   /// **'View Mode'**
   String get mangaViewModeTitle;
 
-  /// Toggle for animating manga page turns.
+  /// Toggle for reader transitions: manga page turns and the dictionary lookup sheet in both readers.
   ///
   /// In en, this message translates to:
-  /// **'Page Turn Animation'**
-  String get mangaPageTurnAnimationTitle;
+  /// **'Animations'**
+  String get readerAnimationsTitle;
 
-  /// Explains that disabling the manga page turn animation suits e-ink e-reader screens.
+  /// Explains that disabling reader animations suits e-ink e-reader screens.
   ///
   /// In en, this message translates to:
   /// **'Turn off for e-reader displays'**
-  String get mangaPageTurnAnimationSubtitle;
+  String get readerAnimationsSubtitle;
 
   /// Title of the reader settings subpage and its entry tile on the main settings screen.
   ///
@@ -4671,18 +4671,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This file is incomplete or damaged. Copy it again from where it was saved.'**
   String get backupFullIncomplete;
-
-  /// Toggle for animating the EPUB reader's dictionary lookup sheet.
-  ///
-  /// In en, this message translates to:
-  /// **'Lookup Animation'**
-  String get epubLookupAnimationTitle;
-
-  /// Explains that disabling the EPUB lookup sheet animation suits e-ink e-reader screens.
-  ///
-  /// In en, this message translates to:
-  /// **'Turn off for e-reader displays'**
-  String get epubLookupAnimationSubtitle;
 }
 
 class _AppLocalizationsDelegate

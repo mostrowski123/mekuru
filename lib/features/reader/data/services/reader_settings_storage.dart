@@ -26,8 +26,9 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _mangaReadingDirectionKey = 'reader.manga_reading_direction';
   static const _mangaAutoCropKey = 'reader.manga_auto_crop';
   static const _mangaTransparentLookupKey = 'reader.manga_transparent_lookup';
-  static const _mangaPageTurnAnimationKey = 'reader.manga_page_turn_animation';
-  static const _epubLookupAnimationKey = 'reader.epub_lookup_animation';
+  // Historical key: the toggle started as manga-only. Kept so users who
+  // already turned it off stay off.
+  static const _readerAnimationsKey = 'reader.manga_page_turn_animation';
 
   /// Every SharedPreferences key this storage reads or writes. The backup
   /// service derives its reader key list from this, so a key added here is
@@ -50,8 +51,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     _mangaReadingDirectionKey,
     _mangaAutoCropKey,
     _mangaTransparentLookupKey,
-    _mangaPageTurnAnimationKey,
-    _epubLookupAnimationKey,
+    _readerAnimationsKey,
   ];
 
   @override
@@ -91,8 +91,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       ),
       mangaAutoCrop: prefs.getBool(_mangaAutoCropKey) ?? false,
       mangaTransparentLookup: prefs.getBool(_mangaTransparentLookupKey) ?? true,
-      mangaPageTurnAnimation: prefs.getBool(_mangaPageTurnAnimationKey) ?? true,
-      epubLookupAnimation: prefs.getBool(_epubLookupAnimationKey) ?? true,
+      readerAnimations: prefs.getBool(_readerAnimationsKey) ?? true,
     );
   }
 
@@ -128,11 +127,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       _mangaTransparentLookupKey,
       settings.mangaTransparentLookup,
     );
-    await prefs.setBool(
-      _mangaPageTurnAnimationKey,
-      settings.mangaPageTurnAnimation,
-    );
-    await prefs.setBool(_epubLookupAnimationKey, settings.epubLookupAnimation);
+    await prefs.setBool(_readerAnimationsKey, settings.readerAnimations);
     // An absent key means "follow the system brightness".
     final brightness = settings.brightness;
     if (brightness == null) {
