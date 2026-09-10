@@ -30,19 +30,23 @@ class WanikaniException implements Exception {
 }
 
 /// Everything a sync leaves behind: the per-kanji SRS stage map (rune →
-/// stage 0..9) plus the account fields and the sync time. Persisted as one
-/// JSON string; the API token is deliberately NOT part of it so the
-/// snapshot can be backed up while the secret stays in secure storage.
+/// stage 0..9), the kanji subject catalogue (subject id → rune, static on
+/// WaniKani's side and cached so refreshes skip re-downloading it), the
+/// account fields and the sync time. Persisted as one JSON string; the API
+/// token is deliberately NOT part of it so the snapshot can be backed up
+/// while the secret stays in secure storage.
 class WanikaniSnapshot {
   final String username;
   final int level;
   final Map<int, int> stages;
+  final Map<int, int> subjectRunes;
   final DateTime syncedAt;
 
   const WanikaniSnapshot({
     required this.username,
     required this.level,
     required this.stages,
+    this.subjectRunes = const {},
     required this.syncedAt,
   });
 
@@ -60,6 +64,10 @@ class WanikaniSnapshot {
       for (final entry in stages.entries)
         String.fromCharCode(entry.key): entry.value,
     },
+    'subjects': {
+      for (final entry in subjectRunes.entries)
+        '${entry.key}': String.fromCharCode(entry.value),
+    },
   };
 
   String encode() => jsonEncode(toJson());
@@ -68,23 +76,25 @@ class WanikaniSnapshot {
   /// corrupted values), so a bad preference reads as "never synced".
   static WanikaniSnapshot? decode(String? raw) {
     if (raw == null) return null;
+    final Object? json;
     try {
-      return fromJson(jsonDecode(raw));
+      json = jsonDecode(raw);
     } on FormatException {
       return null;
     }
-  }
-
-  static WanikaniSnapshot? fromJson(Object? json) {
     if (json is! Map) return null;
     final username = json['username'];
     final level = json['level'];
     final syncedAt = json['synced_at'];
     final rawStages = json['stages'];
+    // Absent in snapshots written before the catalogue was cached; the
+    // next sync simply re-downloads it.
+    final rawSubjects = json['subjects'] ?? const {};
     if (username is! String ||
         level is! int ||
         syncedAt is! String ||
-        rawStages is! Map) {
+        rawStages is! Map ||
+        rawSubjects is! Map) {
       return null;
     }
     final parsedSyncedAt = DateTime.tryParse(syncedAt);
@@ -98,10 +108,20 @@ class WanikaniSnapshot {
       }
       stages[key.runes.first] = value;
     }
+    final subjectRunes = <int, int>{};
+    for (final entry in rawSubjects.entries) {
+      final id = int.tryParse('${entry.key}');
+      final value = entry.value;
+      if (id == null || value is! String || value.runes.length != 1) {
+        return null;
+      }
+      subjectRunes[id] = value.runes.first;
+    }
     return WanikaniSnapshot(
       username: username,
       level: level,
       stages: stages,
+      subjectRunes: subjectRunes,
       syncedAt: parsedSyncedAt,
     );
   }

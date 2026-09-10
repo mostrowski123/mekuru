@@ -44,7 +44,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colorTheme = ref.watch(appColorThemeProvider);
     final startupScreen = ref.watch(startupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
-    final wanikaniState = ref.watch(wanikaniProvider);
+    final (wanikaniLinked, wanikaniUsername) = ref.watch(
+      wanikaniProvider.select((s) => (s.linked, s.snapshot?.username)),
+    );
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final resolvedLocale = Localizations.localeOf(context);
@@ -137,9 +139,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             leading: Icon(Icons.link, color: theme.colorScheme.primary),
             title: Text(l10n.readerFuriganaWanikani),
             subtitle: Text(
-              wanikaniState.linked
+              wanikaniLinked
                   ? l10n.settingsWanikaniLinkedAs(
-                      username: wanikaniState.snapshot?.username ?? '',
+                      username: wanikaniUsername ?? '',
                     )
                   : l10n.settingsWanikaniSubtitle,
             ),

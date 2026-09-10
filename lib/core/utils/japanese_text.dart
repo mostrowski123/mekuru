@@ -93,26 +93,10 @@ bool wordNeedsFuriganaAboveLevel(String surface, int level) {
 
 /// Whether [surface] contains a kanji that is not in [knownKanji] (a set of
 /// runes, e.g. the kanji a WaniKani user has reached a given SRS stage on).
-/// Only strict [isKanji] runes count; the repetition mark 々 inherits the
-/// preceding kanji's verdict, and 〆ヵヶ are ignored because they are never
-/// learning-app subjects (一ヶ月 with 一 and 月 known must stay bare).
-/// Kana-only words never qualify. As with [wordNeedsFuriganaAboveLevel], a
-/// single unknown kanji flags the whole word so its reading stays readable
-/// end to end.
-bool wordHasUnknownKanji(String surface, Set<int> knownKanji) {
-  bool? previousUnknown;
-  for (final rune in surface.runes) {
-    final bool unknown;
-    if (isKanji(rune)) {
-      unknown = !knownKanji.contains(rune);
-    } else if (rune == 0x3005) {
-      unknown = previousUnknown ?? false;
-    } else {
-      previousUnknown = null;
-      continue;
-    }
-    previousUnknown = unknown;
-    if (unknown) return true;
-  }
-  return false;
-}
+/// Only strict [isKanji] runes count: 々 needs no verdict of its own (the
+/// kanji it repeats already decided), and 〆ヵヶ are never learning-app
+/// subjects (一ヶ月 with 一 and 月 known must stay bare). Kana-only words never
+/// qualify. As with [wordNeedsFuriganaAboveLevel], a single unknown kanji
+/// flags the whole word so its reading stays readable end to end.
+bool wordHasUnknownKanji(String surface, Set<int> knownKanji) =>
+    surface.runes.any((rune) => isKanji(rune) && !knownKanji.contains(rune));

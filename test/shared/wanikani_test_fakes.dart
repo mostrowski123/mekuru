@@ -9,19 +9,15 @@ int rune(String kanji) => kanji.runes.single;
 /// Scripted API client: answers with [user] and [stages], or throws [error].
 /// [gate] (when set) holds every call until completed, for overlap tests.
 class FakeWanikaniApiClient extends WanikaniApiClient {
-  FakeWanikaniApiClient({
-    this.user = const WanikaniUser(username: 'crabigator', level: 5),
-    Map<int, int>? stages,
-    this.error,
-  }) : stages = stages ?? {rune('日'): 9, rune('本'): 5};
-
-  WanikaniUser user;
-  Map<int, int> stages;
+  WanikaniUser user = const WanikaniUser(username: 'crabigator', level: 5);
+  Map<int, int> stages = {rune('日'): 9, rune('本'): 5};
+  Map<int, int> subjectRunes = {440: rune('日'), 441: rune('本')};
   Object? error;
   Completer<void>? gate;
   int userCalls = 0;
   int stagesCalls = 0;
   final tokens = <String>[];
+  final receivedSubjectRunes = <Map<int, int>>[];
 
   @override
   Future<WanikaniUser> fetchUser(String token) async {
@@ -33,17 +29,21 @@ class FakeWanikaniApiClient extends WanikaniApiClient {
   }
 
   @override
-  Future<Map<int, int>> fetchKanjiStages(String token) async {
+  Future<KanjiStages> fetchKanjiStages(
+    String token, {
+    Map<int, int> subjectRunes = const {},
+  }) async {
     stagesCalls++;
+    receivedSubjectRunes.add(subjectRunes);
     await gate?.future;
     if (error != null) throw error!;
-    return Map.of(stages);
+    return (stages: Map.of(stages), subjectRunes: Map.of(this.subjectRunes));
   }
 }
 
 /// In-memory storage: what the secure store and prefs would hold.
 class FakeWanikaniStorage extends WanikaniStorage {
-  FakeWanikaniStorage({this.token, this.snapshot}) : super();
+  FakeWanikaniStorage({this.token, this.snapshot});
 
   String? token;
   WanikaniSnapshot? snapshot;
@@ -75,14 +75,11 @@ class FakeWanikaniStorage extends WanikaniStorage {
   Future<void> clearSnapshot() async => snapshot = null;
 }
 
-WanikaniSnapshot snapshotAt(
-  DateTime syncedAt, {
-  Map<int, int>? stages,
-  String username = 'crabigator',
-  int level = 5,
-}) => WanikaniSnapshot(
-  username: username,
-  level: level,
-  stages: stages ?? {rune('日'): 9, rune('本'): 5},
-  syncedAt: syncedAt,
-);
+WanikaniSnapshot snapshotAt(DateTime syncedAt, {Map<int, int>? stages}) =>
+    WanikaniSnapshot(
+      username: 'crabigator',
+      level: 5,
+      stages: stages ?? {rune('日'): 9, rune('本'): 5},
+      subjectRunes: {440: rune('日'), 441: rune('本')},
+      syncedAt: syncedAt,
+    );

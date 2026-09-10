@@ -35,11 +35,7 @@ Future<void> runFuriganaExport(
   );
   if (choice == null || !context.mounted) return;
   final (exportMode, exportLevel) = choice;
-  // Only the WaniKani mode reads the set; an empty one keeps the isolate
-  // closure's payload minimal for every other mode.
-  final knownKanji = exportMode == FuriganaMode.wanikani
-      ? ref.read(wanikaniKnownKanjiProvider)
-      : const <int>{};
+  final knownKanji = ref.read(wanikaniKnownKanjiProvider);
 
   showBlockingProgressDialog(context, l10n.libraryExportFuriganaProgress);
 

@@ -655,6 +655,10 @@ function _renderedIframeDocs() {
 // tags — so switching back to 'book' restores the authored ruby untouched.
 // Unknown mode strings fall back to 'book', matching furiganaModeFromString
 // on the Dart side.
+// Filtered modes hide the authored ruby _classifyAuthoredRuby tagged.
+var FILTERED_RUBY_CSS =
+  'ruby.mekuru-below-level > rt, ruby.mekuru-below-level > rp ' +
+  '{ display: none !important; }';
 var FURIGANA_MODES = {
   hide: {
     generate: false,
@@ -666,18 +670,9 @@ var FURIGANA_MODES = {
          '{ display: none !important; }'
   },
   all: { generate: true, css: '' },
-  aboveLevel: {
-    generate: true,
-    filtered: true,
-    css: 'ruby.mekuru-below-level > rt, ruby.mekuru-below-level > rp ' +
-         '{ display: none !important; }'
-  }
-};
-// Same mechanics as aboveLevel; only the Dart-side predicate differs.
-FURIGANA_MODES.wanikani = {
-  generate: true,
-  filtered: true,
-  css: FURIGANA_MODES.aboveLevel.css
+  // The two filtered modes share mechanics; only the Dart predicate differs.
+  aboveLevel: { generate: true, filtered: true, css: FILTERED_RUBY_CSS },
+  wanikani: { generate: true, filtered: true, css: FILTERED_RUBY_CSS }
 };
 
 function _furiganaBehavior() {
@@ -779,7 +774,7 @@ function processSectionForFurigana(doc) {
   if (_furiganaProcessedDocs.has(doc)) return;
   _furiganaProcessedDocs.add(doc);
 
-  if (_furiganaBehavior().filtered) _classifyAuthoredRuby(doc);
+  if (_isFilteredMode(_furiganaMode)) _classifyAuthoredRuby(doc);
 
   // SHOW_ELEMENT lets us FILTER_REJECT entire ruby/script/style subtrees
   // up-front; without it the walker would visit each text node and we'd

@@ -84,9 +84,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
           .read(enhancedFuriganaDictEnabledProvider.notifier)
           .loadPersistedSettings(),
     );
-    final wanikaniLoaded = ref
-        .read(wanikaniProvider.notifier)
-        .loadPersistedSettings();
+    unawaited(ref.read(wanikaniProvider.notifier).loadPersistedSettings());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -96,14 +94,10 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       unawaited(_announceFullRestoreResult());
       unawaited(ref.read(bookRepositoryProvider).sweepOrphanImportDirs());
       unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
-      // Silent WaniKani refresh once the persisted link is known; failures
-      // stay in telemetry and never reach the user.
+      // Silent WaniKani refresh; failures stay in telemetry and never
+      // reach the user.
       unawaited(
-        wanikaniLoaded.then(
-          (_) => ref
-              .read(wanikaniProvider.notifier)
-              .refreshIfDue(trigger: 'startup'),
-        ),
+        ref.read(wanikaniProvider.notifier).refreshIfDue(trigger: 'startup'),
       );
       unawaited(
         emitInstallGauges(

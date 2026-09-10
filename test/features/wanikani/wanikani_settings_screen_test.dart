@@ -6,8 +6,8 @@ import 'package:mekuru/features/wanikani/presentation/providers/wanikani_provide
 import 'package:mekuru/features/wanikani/presentation/screens/wanikani_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../shared/wanikani_test_fakes.dart';
 import '../../test_app.dart';
-import 'wanikani_test_fakes.dart';
 
 void main() {
   final now = DateTime.utc(2026, 9, 10, 12);

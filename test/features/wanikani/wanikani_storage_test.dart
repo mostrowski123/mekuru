@@ -5,6 +5,9 @@ import 'package:mekuru/features/wanikani/data/models/wanikani_snapshot.dart';
 import 'package:mekuru/features/wanikani/data/services/wanikani_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Stateless: everything lives in the mocked prefs/secure store reset per test.
+const storage = WanikaniStorage();
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -22,24 +25,21 @@ void main() {
 
   group('WanikaniStorage token', () {
     test('starts empty', () async {
-      expect(await const WanikaniStorage().loadToken(), isNull);
+      expect(await storage.loadToken(), isNull);
     });
 
     test('saves trimmed and reloads', () async {
-      const storage = WanikaniStorage();
       await storage.saveToken('  abc-123  ');
       expect(await storage.loadToken(), 'abc-123');
     });
 
     test('saving blank clears the token', () async {
-      const storage = WanikaniStorage();
       await storage.saveToken('abc');
       await storage.saveToken('   ');
       expect(await storage.loadToken(), isNull);
     });
 
     test('clearToken removes it', () async {
-      const storage = WanikaniStorage();
       await storage.saveToken('abc');
       await storage.clearToken();
       expect(await storage.loadToken(), isNull);
@@ -48,11 +48,10 @@ void main() {
 
   group('WanikaniStorage snapshot', () {
     test('starts empty', () async {
-      expect(await const WanikaniStorage().loadSnapshot(), isNull);
+      expect(await storage.loadSnapshot(), isNull);
     });
 
     test('round-trips under the backed-up key', () async {
-      const storage = WanikaniStorage();
       await storage.saveSnapshot(snapshot);
       final loaded = await storage.loadSnapshot();
       expect(loaded!.username, 'crabigator');
@@ -67,11 +66,10 @@ void main() {
       SharedPreferences.setMockInitialValues({
         WanikaniStorage.snapshotPrefsKey: '{oops',
       });
-      expect(await const WanikaniStorage().loadSnapshot(), isNull);
+      expect(await storage.loadSnapshot(), isNull);
     });
 
     test('clearSnapshot removes the key', () async {
-      const storage = WanikaniStorage();
       await storage.saveSnapshot(snapshot);
       await storage.clearSnapshot();
       expect(await storage.loadSnapshot(), isNull);
@@ -80,7 +78,6 @@ void main() {
     });
 
     test('the token never lands in SharedPreferences', () async {
-      const storage = WanikaniStorage();
       await storage.saveToken('secret-token');
       await storage.saveSnapshot(snapshot);
       final prefs = await SharedPreferences.getInstance();

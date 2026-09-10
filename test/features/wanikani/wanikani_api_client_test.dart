@@ -162,58 +162,102 @@ void main() {
   });
 
   group('WanikaniApiClient.fetchKanjiStages', () {
-    test('joins paged subjects and assignments into rune → stage', () async {
+    const assignmentsUrl = '$_base/assignments?subject_types=kanji';
+    const subjectsUrl = '$_base/subjects?types=kanji';
+
+    test('joins paged assignments and subjects into rune → stage', () async {
       final calls = <String>[];
       final client = _client((request) async {
         calls.add(request.url.toString());
         expect(request.headers['Authorization'], 'Bearer tok');
         return switch (request.url.toString()) {
-          '$_base/subjects?types=kanji' => _json(
-            _page([
-              _subject(1, '日'),
-              _subject(2, '本'),
-            ], next: '$_base/subjects?types=kanji&page_after_id=2'),
-          ),
-          '$_base/subjects?types=kanji&page_after_id=2' => _json(
-            _page([_subject(3, '語'), _subject(4, null), _subject(5, '')]),
-          ),
-          '$_base/assignments?subject_types=kanji' => _json(
+          assignmentsUrl => _json(
             _page([
               _assignment(1, 9),
               _assignment(2, 5),
-            ], next: '$_base/assignments?subject_types=kanji&page_after_id=20'),
+            ], next: '$assignmentsUrl&page_after_id=20'),
           ),
-          '$_base/assignments?subject_types=kanji&page_after_id=20' => _json(
+          '$assignmentsUrl&page_after_id=20' => _json(
             _page([
               _assignment(3, 0),
-              // Assignment for a subject that is not a kanji we saw.
+              // Assignment for a subject that is not a kanji we see.
               _assignment(99, 9),
             ]),
+          ),
+          subjectsUrl => _json(
+            _page([
+              _subject(1, '日'),
+              _subject(2, '本'),
+            ], next: '$subjectsUrl&page_after_id=2'),
+          ),
+          '$subjectsUrl&page_after_id=2' => _json(
+            _page([_subject(3, '語'), _subject(4, null), _subject(5, '')]),
           ),
           _ => http.Response('unexpected', 404),
         };
       });
 
-      final stages = await client.fetchKanjiStages('tok');
+      final result = await client.fetchKanjiStages('tok');
 
-      expect(stages, {
+      expect(result.stages, {
         '日'.runes.first: 9,
         '本'.runes.first: 5,
         '語'.runes.first: 0,
       });
+      expect(result.subjectRunes, {
+        1: '日'.runes.first,
+        2: '本'.runes.first,
+        3: '語'.runes.first,
+      });
       expect(calls, hasLength(4));
-      // Subjects are fetched before assignments so the join has its keys.
-      expect(calls.first, startsWith('$_base/subjects'));
-      expect(calls.last, startsWith('$_base/assignments'));
+      // Assignments first: they decide whether the catalogue is needed.
+      expect(calls.first, startsWith('$_base/assignments'));
+      expect(calls.last, startsWith('$_base/subjects'));
     });
 
-    test('returns an empty map for an account with no assignments', () async {
+    test('skips the catalogue when every subject is already cached', () async {
+      final calls = <String>[];
       final client = _client((request) async {
-        return request.url.path.endsWith('/subjects')
-            ? _json(_page([_subject(1, '日')]))
-            : _json(_page(const []));
+        calls.add(request.url.toString());
+        return _json(_page([_assignment(1, 9), _assignment(2, 5)]));
       });
-      expect(await client.fetchKanjiStages('tok'), isEmpty);
+      final cached = {1: '日'.runes.first, 2: '本'.runes.first};
+
+      final result = await client.fetchKanjiStages('tok', subjectRunes: cached);
+
+      expect(calls, [assignmentsUrl]);
+      expect(result.stages, {'日'.runes.first: 9, '本'.runes.first: 5});
+      expect(result.subjectRunes, same(cached));
+    });
+
+    test('refetches the whole catalogue when a new subject appears', () async {
+      final calls = <String>[];
+      final client = _client((request) async {
+        calls.add(request.url.toString());
+        return request.url.path.endsWith('/assignments')
+            ? _json(_page([_assignment(1, 9), _assignment(2, 5)]))
+            : _json(_page([_subject(1, '日'), _subject(2, '本')]));
+      });
+
+      final result = await client.fetchKanjiStages(
+        'tok',
+        subjectRunes: {1: '日'.runes.first},
+      );
+
+      expect(calls, [assignmentsUrl, subjectsUrl]);
+      expect(result.subjectRunes, {1: '日'.runes.first, 2: '本'.runes.first});
+      expect(result.stages, {'日'.runes.first: 9, '本'.runes.first: 5});
+    });
+
+    test('an account with no assignments needs no catalogue', () async {
+      var calls = 0;
+      final client = _client((request) async {
+        calls++;
+        return _json(_page(const []));
+      });
+      final result = await client.fetchKanjiStages('tok');
+      expect(result.stages, isEmpty);
+      expect(calls, 1);
     });
 
     test('treats an empty next_url as the last page', () async {
@@ -226,7 +270,7 @@ void main() {
         });
       });
       await client.fetchKanjiStages('tok');
-      expect(calls, 2);
+      expect(calls, 1);
     });
 
     test('stops a never-ending next_url loop as malformed', () async {
@@ -242,7 +286,7 @@ void main() {
       expect(calls, WanikaniApiClient.maxPages);
     });
 
-    test('propagates a token rejection from the subjects page', () async {
+    test('propagates a token rejection', () async {
       final client = _client((_) async => http.Response('', 401));
       await expectLater(
         () => client.fetchKanjiStages('tok'),
@@ -252,28 +296,19 @@ void main() {
 
     test('rejects assignments missing srs_stage as malformed', () async {
       final client = _client((request) async {
-        return request.url.path.endsWith('/subjects')
-            ? _json(_page([_subject(1, '日')]))
-            : _json(
-                _page([
-                  {
-                    'id': 10,
-                    'data': {'subject_id': 1},
-                  },
-                ]),
-              );
+        return _json(
+          _page([
+            {
+              'id': 10,
+              'data': {'subject_id': 1},
+            },
+          ]),
+        );
       });
       await expectLater(
         () => client.fetchKanjiStages('tok'),
         _throwsCode(WanikaniException.malformed),
       );
     });
-  });
-
-  test('tokenPageUrl points at the personal access tokens page', () {
-    expect(
-      WanikaniApiClient.tokenPageUrl.toString(),
-      'https://www.wanikani.com/settings/personal_access_tokens',
-    );
   });
 }

@@ -9,8 +9,8 @@ import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/reader_settings_test_helpers.dart';
+import '../../../../shared/wanikani_test_fakes.dart';
 import '../../../../test_app.dart';
-import '../../../wanikani/wanikani_test_fakes.dart';
 
 Future<ProviderContainer> _pumpSheet(
   WidgetTester tester, {

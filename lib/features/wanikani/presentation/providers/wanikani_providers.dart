@@ -50,11 +50,10 @@ class WanikaniState {
   WanikaniState copyWith({
     bool? linked,
     WanikaniSnapshot? snapshot,
-    bool clearSnapshot = false,
     bool? syncing,
   }) => WanikaniState(
     linked: linked ?? this.linked,
-    snapshot: clearSnapshot ? null : (snapshot ?? this.snapshot),
+    snapshot: snapshot ?? this.snapshot,
     syncing: syncing ?? this.syncing,
   );
 }
@@ -63,7 +62,8 @@ class WanikaniState {
 /// trip, and the two refresh policies (silent-and-swallowing for startup
 /// and resume, throwing for the settings screen's "Sync now").
 class WanikaniNotifier extends Notifier<WanikaniState> {
-  bool _hasLoadedPersistedSettings = false;
+  Future<void>? _persistedSettingsLoad;
+  bool _persistedSettingsLoaded = false;
 
   /// The sync currently running, shared by overlapping callers so a manual
   /// refresh during the startup one awaits it instead of doubling requests.
@@ -72,14 +72,19 @@ class WanikaniNotifier extends Notifier<WanikaniState> {
   @override
   WanikaniState build() => const WanikaniState();
 
-  Future<void> loadPersistedSettings() async {
-    if (_hasLoadedPersistedSettings) return;
-    _hasLoadedPersistedSettings = true;
+  /// Idempotent: every caller awaits the same first load.
+  Future<void> loadPersistedSettings() =>
+      _persistedSettingsLoad ??= _loadPersistedSettings();
+
+  Future<void> _loadPersistedSettings() async {
     final storage = ref.read(wanikaniStorageProvider);
-    final token = await storage.loadToken();
-    final snapshot = await storage.loadSnapshot();
+    final (token, snapshot) = await (
+      storage.loadToken(),
+      storage.loadSnapshot(),
+    ).wait;
     if (!ref.mounted) return;
     state = state.copyWith(linked: token != null, snapshot: snapshot);
+    _persistedSettingsLoaded = true;
   }
 
   /// Validates [token] against the account, pulls the kanji stages, and only
@@ -112,8 +117,7 @@ class WanikaniNotifier extends Notifier<WanikaniState> {
 
   Future<void> unlink() async {
     final storage = ref.read(wanikaniStorageProvider);
-    await storage.clearToken();
-    await storage.clearSnapshot();
+    await (storage.clearToken(), storage.clearSnapshot()).wait;
     if (!ref.mounted) return;
     state = const WanikaniState();
     logUsage('wanikani.unlinked');
@@ -126,7 +130,11 @@ class WanikaniNotifier extends Notifier<WanikaniState> {
   /// Silent refresh for startup and resume: skipped unless linked and the
   /// snapshot is older than [wanikaniRefreshInterval]; never throws.
   Future<void> refreshIfDue({required String trigger}) async {
-    if (!state.linked) return;
+    // The decision reads persisted state, so make sure it is in. Skipping
+    // the await once loaded keeps the in-flight registration synchronous
+    // for a link() issued right after.
+    if (!_persistedSettingsLoaded) await loadPersistedSettings();
+    if (!ref.mounted || !state.linked) return;
     final syncedAt = state.snapshot?.syncedAt;
     if (syncedAt != null) {
       final age = ref.read(wanikaniClockProvider)().difference(syncedAt);
@@ -175,11 +183,15 @@ class WanikaniNotifier extends Notifier<WanikaniState> {
     try {
       final client = ref.read(wanikaniApiClientProvider);
       final user = await client.fetchUser(token);
-      final stages = await client.fetchKanjiStages(token);
+      final kanji = await client.fetchKanjiStages(
+        token,
+        subjectRunes: state.snapshot?.subjectRunes ?? const {},
+      );
       final snapshot = WanikaniSnapshot(
         username: user.username,
         level: user.level,
-        stages: stages,
+        stages: kanji.stages,
+        subjectRunes: kanji.subjectRunes,
         syncedAt: ref.read(wanikaniClockProvider)(),
       );
       await ref.read(wanikaniStorageProvider).saveSnapshot(snapshot);
@@ -187,7 +199,7 @@ class WanikaniNotifier extends Notifier<WanikaniState> {
         'wanikani.synced',
         attrs: {
           'trigger': trigger,
-          'kanji_count': stages.length,
+          'kanji_count': kanji.stages.length,
           'duration_ms': stopwatch.elapsedMilliseconds,
         },
       );

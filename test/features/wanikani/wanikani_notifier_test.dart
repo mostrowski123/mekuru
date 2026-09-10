@@ -8,27 +8,26 @@ import 'package:mekuru/features/wanikani/data/models/wanikani_snapshot.dart';
 import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'wanikani_test_fakes.dart';
+import '../../shared/wanikani_test_fakes.dart';
 
 void main() {
   final now = DateTime.utc(2026, 9, 10, 12);
+  final yesterday = now.subtract(const Duration(days: 1));
   late FakeWanikaniApiClient client;
   late FakeWanikaniStorage storage;
   late DateTime clock;
   late List<String> events;
   late List<String> warnings;
+  late ProviderContainer container;
 
-  ProviderContainer makeContainer() {
-    final container = ProviderContainer(
-      overrides: [
-        wanikaniApiClientProvider.overrideWithValue(client),
-        wanikaniStorageProvider.overrideWithValue(storage),
-        wanikaniClockProvider.overrideWithValue(() => clock),
-      ],
-    );
-    addTearDown(container.dispose);
-    return container;
+  /// The notifier with persisted state loaded, as app startup leaves it.
+  Future<WanikaniNotifier> loadedNotifier() async {
+    final notifier = container.read(wanikaniProvider.notifier);
+    await notifier.loadPersistedSettings();
+    return notifier;
   }
+
+  WanikaniState state() => container.read(wanikaniProvider);
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -40,6 +39,14 @@ void main() {
     usageLogSinkOverride = (message, attributes, {required isWarning}) {
       (isWarning ? warnings : events).add(message);
     };
+    container = ProviderContainer(
+      overrides: [
+        wanikaniApiClientProvider.overrideWithValue(client),
+        wanikaniStorageProvider.overrideWithValue(storage),
+        wanikaniClockProvider.overrideWithValue(() => clock),
+      ],
+    );
+    addTearDown(container.dispose);
   });
 
   tearDown(() {
@@ -51,59 +58,50 @@ void main() {
       storage
         ..token = 'tok'
         ..snapshot = snapshotAt(now);
-      final container = makeContainer();
-      await container.read(wanikaniProvider.notifier).loadPersistedSettings();
+      await loadedNotifier();
 
-      final state = container.read(wanikaniProvider);
-      expect(state.linked, isTrue);
-      expect(state.hasKanji, isTrue);
-      expect(state.syncing, isFalse);
+      expect(state().linked, isTrue);
+      expect(state().hasKanji, isTrue);
+      expect(state().syncing, isFalse);
     });
 
     test('a snapshot without a token is restored but not linked', () async {
       storage.snapshot = snapshotAt(now);
-      final container = makeContainer();
-      await container.read(wanikaniProvider.notifier).loadPersistedSettings();
+      await loadedNotifier();
 
-      final state = container.read(wanikaniProvider);
-      expect(state.linked, isFalse);
-      expect(state.hasKanji, isTrue);
+      expect(state().linked, isFalse);
+      expect(state().hasKanji, isTrue);
     });
 
     test('nothing stored means unlinked and empty', () async {
-      final container = makeContainer();
-      await container.read(wanikaniProvider.notifier).loadPersistedSettings();
+      await loadedNotifier();
 
-      final state = container.read(wanikaniProvider);
-      expect(state.linked, isFalse);
-      expect(state.snapshot, isNull);
-      expect(state.stages, isEmpty);
+      expect(state().linked, isFalse);
+      expect(state().snapshot, isNull);
+      expect(state().stages, isEmpty);
     });
 
     test('runs once', () async {
       storage.token = 'tok';
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
       storage.token = null;
       await notifier.loadPersistedSettings();
-      expect(container.read(wanikaniProvider).linked, isTrue);
+      expect(state().linked, isTrue);
     });
   });
 
   group('link', () {
     test('validates, syncs, then persists token and snapshot', () async {
-      final container = makeContainer();
       await container.read(wanikaniProvider.notifier).link('  tok-1  ');
 
       expect(client.tokens, ['tok-1']);
       expect(storage.token, 'tok-1');
       expect(storage.snapshot!.username, 'crabigator');
       expect(storage.snapshot!.syncedAt, now);
-      final state = container.read(wanikaniProvider);
-      expect(state.linked, isTrue);
-      expect(state.stages, {rune('日'): 9, rune('本'): 5});
-      expect(state.syncing, isFalse);
+      expect(storage.snapshot!.subjectRunes, client.subjectRunes);
+      expect(state().linked, isTrue);
+      expect(state().stages, {rune('日'): 9, rune('本'): 5});
+      expect(state().syncing, isFalse);
       expect(events, ['wanikani.synced', 'wanikani.linked']);
       expect(warnings, isEmpty);
     });
@@ -111,10 +109,8 @@ void main() {
     test('a rejected token writes nothing and keeps the old link', () async {
       storage
         ..token = 'old'
-        ..snapshot = snapshotAt(now.subtract(const Duration(days: 1)));
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+        ..snapshot = snapshotAt(yesterday);
+      final notifier = await loadedNotifier();
       client.error = const WanikaniException(
         WanikaniException.tokenInvalid,
         statusCode: 401,
@@ -134,16 +130,14 @@ void main() {
       expect(storage.token, 'old');
       expect(storage.tokenSaves, 0);
       expect(storage.snapshotSaves, 0);
-      final state = container.read(wanikaniProvider);
-      expect(state.linked, isTrue);
-      expect(state.snapshot!.syncedAt, now.subtract(const Duration(days: 1)));
-      expect(state.syncing, isFalse);
+      expect(state().linked, isTrue);
+      expect(state().snapshot!.syncedAt, yesterday);
+      expect(state().syncing, isFalse);
       expect(events, isEmpty);
       expect(warnings, ['wanikani.synced']);
     });
 
     test('a blank token is rejected without a request', () async {
-      final container = makeContainer();
       await expectLater(
         () => container.read(wanikaniProvider.notifier).link('   '),
         throwsA(isA<WanikaniException>()),
@@ -154,10 +148,8 @@ void main() {
     test('waits for an in-flight sync before linking', () async {
       storage
         ..token = 'old'
-        ..snapshot = snapshotAt(now.subtract(const Duration(days: 1)));
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+        ..snapshot = snapshotAt(yesterday);
+      final notifier = await loadedNotifier();
 
       client.gate = Completer<void>();
       final background = notifier.refreshIfDue(trigger: 'startup');
@@ -180,27 +172,32 @@ void main() {
       storage
         ..token = 'tok'
         ..snapshot = snapshotAt(now);
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       await notifier.unlink();
 
       expect(storage.token, isNull);
       expect(storage.snapshot, isNull);
-      final state = container.read(wanikaniProvider);
-      expect(state.linked, isFalse);
-      expect(state.snapshot, isNull);
+      expect(state().linked, isFalse);
+      expect(state().snapshot, isNull);
       expect(events, ['wanikani.unlinked']);
     });
   });
 
   group('refreshIfDue', () {
+    test('loads persisted state itself before deciding', () async {
+      storage.token = 'tok';
+      // No explicit loadPersistedSettings(): app.dart fires both unawaited.
+      await container
+          .read(wanikaniProvider.notifier)
+          .refreshIfDue(trigger: 'startup');
+      expect(client.userCalls, 1);
+      expect(state().linked, isTrue);
+    });
+
     test('does nothing when unlinked, even with a restored snapshot', () async {
       storage.snapshot = snapshotAt(now.subtract(const Duration(days: 3)));
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       await notifier.refreshIfDue(trigger: 'startup');
       expect(client.userCalls, 0);
@@ -210,24 +207,21 @@ void main() {
       storage
         ..token = 'tok'
         ..snapshot = snapshotAt(now.subtract(const Duration(minutes: 59)));
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       await notifier.refreshIfDue(trigger: 'startup');
       expect(client.userCalls, 0);
     });
 
-    test('re-syncs a stale snapshot and records the trigger', () async {
+    test('re-syncs a stale snapshot, reusing the cached catalogue', () async {
+      final stale = snapshotAt(
+        now.subtract(const Duration(hours: 2)),
+        stages: {rune('日'): 1},
+      );
       storage
         ..token = 'tok'
-        ..snapshot = snapshotAt(
-          now.subtract(const Duration(hours: 2)),
-          stages: {rune('日'): 1},
-        );
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+        ..snapshot = stale;
+      final notifier = await loadedNotifier();
 
       Map<String, Object?>? syncedAttrs;
       usageLogSinkOverride = (message, attributes, {required isWarning}) {
@@ -237,9 +231,9 @@ void main() {
 
       expect(client.userCalls, 1);
       expect(client.tokens, ['tok']);
-      final state = container.read(wanikaniProvider);
-      expect(state.stages, {rune('日'): 9, rune('本'): 5});
-      expect(state.snapshot!.syncedAt, now);
+      expect(client.receivedSubjectRunes, [stale.subjectRunes]);
+      expect(state().stages, {rune('日'): 9, rune('本'): 5});
+      expect(state().snapshot!.syncedAt, now);
       expect(storage.snapshot!.syncedAt, now);
       expect(syncedAttrs, isNotNull);
       expect(syncedAttrs!.keys, containsAll(['trigger', 'kanji_count']));
@@ -247,44 +241,38 @@ void main() {
 
     test('syncs when linked without any snapshot', () async {
       storage.token = 'tok';
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       await notifier.refreshIfDue(trigger: 'startup');
       expect(client.userCalls, 1);
-      expect(container.read(wanikaniProvider).hasKanji, isTrue);
+      expect(client.receivedSubjectRunes, [isEmpty]);
+      expect(state().hasKanji, isTrue);
     });
 
     test('swallows failures and leaves the old snapshot', () async {
-      final old = snapshotAt(now.subtract(const Duration(days: 1)));
+      final old = snapshotAt(yesterday);
       storage
         ..token = 'tok'
         ..snapshot = old;
       client.error = const WanikaniException(WanikaniException.network);
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       await notifier.refreshIfDue(trigger: 'startup');
 
-      final state = container.read(wanikaniProvider);
-      expect(state.snapshot, same(old));
-      expect(state.linked, isTrue);
-      expect(state.syncing, isFalse);
+      expect(state().snapshot, same(old));
+      expect(state().linked, isTrue);
+      expect(state().syncing, isFalse);
       expect(warnings, ['wanikani.synced']);
     });
 
     test('a token that vanished from secure storage unlinks', () async {
       storage.token = 'tok';
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
       storage.token = null;
 
       await notifier.refreshIfDue(trigger: 'startup');
       expect(client.userCalls, 0);
-      expect(container.read(wanikaniProvider).linked, isFalse);
+      expect(state().linked, isFalse);
     });
   });
 
@@ -295,9 +283,7 @@ void main() {
         WanikaniException.rateLimited,
         statusCode: 429,
       );
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       await expectLater(
         notifier.syncNow,
@@ -309,16 +295,14 @@ void main() {
           ),
         ),
       );
-      expect(container.read(wanikaniProvider).syncing, isFalse);
+      expect(state().syncing, isFalse);
     });
 
     test('ignores the staleness gate', () async {
       storage
         ..token = 'tok'
         ..snapshot = snapshotAt(now);
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       await notifier.syncNow();
       expect(client.userCalls, 1);
@@ -326,46 +310,43 @@ void main() {
 
     test('overlapping calls share one round-trip', () async {
       storage.token = 'tok';
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       client.gate = Completer<void>();
       final first = notifier.syncNow();
       final second = notifier.syncNow();
       await Future<void>.delayed(Duration.zero);
-      expect(container.read(wanikaniProvider).syncing, isTrue);
+      expect(state().syncing, isTrue);
       client.gate!.complete();
       await Future.wait([first, second]);
 
       expect(client.userCalls, 1);
       expect(client.stagesCalls, 1);
-      expect(container.read(wanikaniProvider).syncing, isFalse);
+      expect(state().syncing, isFalse);
     });
 
     test('a shared failure reaches the manual caller only', () async {
       storage.token = 'tok';
       client.error = const WanikaniException(WanikaniException.network);
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       client.gate = Completer<void>();
       final silent = notifier.refreshIfDue(trigger: 'startup');
-      final manual = notifier.syncNow();
+      final manual = expectLater(
+        notifier.syncNow(),
+        throwsA(isA<WanikaniException>()),
+      );
       client.gate!.complete();
 
       await silent;
-      await expectLater(() => manual, throwsA(isA<WanikaniException>()));
+      await manual;
       expect(client.userCalls, 1);
     });
 
     test('unexpected errors are reported as bugs', () async {
       storage.token = 'tok';
       client.error = StateError('boom');
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
+      final notifier = await loadedNotifier();
 
       await expectLater(notifier.syncNow, throwsStateError);
       expect(warnings, ['wanikani.synced']);
@@ -373,9 +354,10 @@ void main() {
   });
 
   group('wanikaniKnownKanjiProvider', () {
+    Set<int> known() => container.read(wanikaniKnownKanjiProvider);
+
     test('is empty without a snapshot', () {
-      final container = makeContainer();
-      expect(container.read(wanikaniKnownKanjiProvider), isEmpty);
+      expect(known(), isEmpty);
     });
 
     test('filters by the reader threshold and follows changes', () async {
@@ -385,41 +367,28 @@ void main() {
           now,
           stages: {rune('日'): 9, rune('本'): 5, rune('語'): 1},
         );
-      final container = makeContainer();
-      await container.read(wanikaniProvider.notifier).loadPersistedSettings();
+      await loadedNotifier();
+      final reader = container.read(readerSettingsProvider.notifier);
 
-      expect(container.read(wanikaniKnownKanjiProvider), {rune('日')});
+      expect(known(), {rune('日')});
 
-      container
-          .read(readerSettingsProvider.notifier)
-          .setFuriganaWanikaniMinStage(5);
-      expect(container.read(wanikaniKnownKanjiProvider), {
-        rune('日'),
-        rune('本'),
-      });
+      reader.setFuriganaWanikaniMinStage(5);
+      expect(known(), {rune('日'), rune('本')});
 
-      container
-          .read(readerSettingsProvider.notifier)
-          .setFuriganaWanikaniMinStage(1);
-      expect(container.read(wanikaniKnownKanjiProvider), {
-        rune('日'),
-        rune('本'),
-        rune('語'),
-      });
+      reader.setFuriganaWanikaniMinStage(1);
+      expect(known(), {rune('日'), rune('本'), rune('語')});
     });
 
     test('updates after a sync and empties after unlink', () async {
       storage.token = 'tok';
-      final container = makeContainer();
-      final notifier = container.read(wanikaniProvider.notifier);
-      await notifier.loadPersistedSettings();
-      expect(container.read(wanikaniKnownKanjiProvider), isEmpty);
+      final notifier = await loadedNotifier();
+      expect(known(), isEmpty);
 
       await notifier.syncNow();
-      expect(container.read(wanikaniKnownKanjiProvider), {rune('日')});
+      expect(known(), {rune('日')});
 
       await notifier.unlink();
-      expect(container.read(wanikaniKnownKanjiProvider), isEmpty);
+      expect(known(), isEmpty);
     });
   });
 }

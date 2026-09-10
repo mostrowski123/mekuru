@@ -23,6 +23,12 @@ String wanikaniErrorMessage(AppLocalizations l10n, Object error) {
   };
 }
 
+const _busySpinner = SizedBox(
+  width: 18,
+  height: 18,
+  child: CircularProgressIndicator(strokeWidth: 2),
+);
+
 /// Link, refresh, or unlink the WaniKani account that drives the reader's
 /// WaniKani furigana mode.
 class WanikaniSettingsScreen extends ConsumerStatefulWidget {
@@ -199,13 +205,7 @@ class _LinkedSection extends StatelessWidget {
               child: FilledButton.tonalIcon(
                 key: const Key('wanikani-sync-now'),
                 onPressed: onSyncNow,
-                icon: state.syncing
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.sync),
+                icon: state.syncing ? _busySpinner : const Icon(Icons.sync),
                 label: Text(l10n.wanikaniSettingsSyncNow),
               ),
             ),
@@ -303,13 +303,7 @@ class _LinkSection extends StatelessWidget {
           builder: (context, value, _) => FilledButton.icon(
             key: const Key('wanikani-link'),
             onPressed: linking || value.text.trim().isEmpty ? null : onLink,
-            icon: linking
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.link),
+            icon: linking ? _busySpinner : const Icon(Icons.link),
             label: Text(l10n.wanikaniSettingsLink),
           ),
         ),

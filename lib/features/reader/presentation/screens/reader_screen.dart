@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter/foundation.dart' show compute, setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -304,7 +304,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     // this is the one WaniKani trigger: re-pushing the mode makes the JS
     // side drop its annotation cache and re-annotate against the new set.
     ref.listen<Set<int>>(wanikaniKnownKanjiProvider, (previous, next) {
-      if (previous == null) return;
+      // A sync that changed nothing must not re-annotate the open page.
+      if (previous == null || setEquals(previous, next)) return;
       if (settings.furiganaMode == FuriganaMode.wanikani && _isEpubLoaded) {
         _epubController.setFuriganaMode(FuriganaMode.wanikani.storageValue);
       }

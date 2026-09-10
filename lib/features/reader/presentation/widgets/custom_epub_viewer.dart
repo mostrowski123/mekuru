@@ -515,15 +515,15 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       callback: (data) {
         final raw = data.isNotEmpty && data[0] is List ? data[0] as List : data;
         // Pure character-level check — no MeCab, so it answers immediately.
-        // Built per call so the mode's current threshold applies; a null
-        // policy (unfiltered mode) keeps every authored ruby visible.
-        final strip = authoredRubyStripFor(
+        // Built per call so the mode's current threshold applies; an
+        // unfiltered mode (null) keeps every authored ruby visible.
+        final needsFurigana = furiganaWordFilter(
           widget.furiganaMode,
           widget.furiganaJlptLevel,
           knownKanji: widget.furiganaKnownKanji,
         );
         return [
-          for (final e in raw) strip == null || !strip(e?.toString() ?? ''),
+          for (final e in raw) needsFurigana?.call(e?.toString() ?? '') ?? true,
         ];
       },
     );

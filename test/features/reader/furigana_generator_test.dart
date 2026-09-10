@@ -147,12 +147,13 @@ void main() {
   group('furiganaGeneratorFor / authoredRubyStripFor', () {
     final known = '日本'.runes.toSet();
 
-    test('unfiltered modes install no token filter', () {
+    test('unfiltered modes install no word filter', () {
       for (final mode in [
         FuriganaMode.hide,
         FuriganaMode.book,
         FuriganaMode.all,
       ]) {
+        expect(furiganaWordFilter(mode, 3), isNull, reason: '$mode');
         expect(
           furiganaGeneratorFor(mode, 3).skipToken,
           isNull,
@@ -160,6 +161,17 @@ void main() {
         );
         expect(authoredRubyStripFor(mode, 3), isNull, reason: '$mode');
       }
+    });
+
+    test('the word filter says whether a word still needs furigana', () {
+      final needs = furiganaWordFilter(
+        FuriganaMode.wanikani,
+        3,
+        knownKanji: known,
+      )!;
+      expect(needs('日本'), isFalse);
+      expect(needs('日本語'), isTrue);
+      expect(needs('かな'), isFalse);
     });
 
     test('aboveLevel filters by JLPT level and ignores the known set', () {
