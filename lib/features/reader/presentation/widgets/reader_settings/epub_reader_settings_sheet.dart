@@ -6,7 +6,11 @@ import 'package:mekuru/features/reader/presentation/providers/reader_providers.d
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_brightness_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_setting_segments.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
+import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
+import 'package:mekuru/features/wanikani/presentation/screens/wanikani_settings_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
+import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 
 /// Quick-settings sheet for the EPUB reader, grouped into "This book"
@@ -50,6 +54,9 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
     final settings = ref.watch(readerSettingsProvider);
     final notifier = ref.read(readerSettingsProvider.notifier);
     final supportsVerticalText = bookSupportsVerticalText(bookLanguage);
+    final hasWanikaniKanji = ref.watch(
+      wanikaniProvider.select((s) => s.hasKanji),
+    );
 
     return ReaderSettingsSheetScaffold(
       title: l10n.readerQuickSettings,
@@ -129,6 +136,50 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
               onSettingChanged('furigana_jlpt_level', level);
             },
           ),
+        ],
+        if (settings.furiganaMode == FuriganaMode.wanikani) ...[
+          const SizedBox(height: 8),
+          if (hasWanikaniKanji)
+            ListTile(
+              key: const Key('reader-wanikani-stage'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.readerFuriganaWanikaniStageTitle),
+              trailing: Text(
+                wanikaniStageLabel(l10n, settings.furiganaWanikaniMinStage),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              onTap: () => showSettingsOptionPickerSheet<int>(
+                context: context,
+                title: l10n.readerFuriganaWanikaniStageTitle,
+                values: wanikaniStageValues,
+                selected: settings.furiganaWanikaniMinStage,
+                labelOf: (stage) => wanikaniStageLabel(l10n, stage),
+                onSelected: (stage) {
+                  notifier.setFuriganaWanikaniMinStage(stage);
+                  onSettingChanged('furigana_wanikani_stage', stage);
+                },
+              ),
+            )
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('reader-wanikani-link-prompt'),
+                onPressed: () {
+                  AppHaptics.light();
+                  Navigator.of(context).push(
+                    namedRoute(
+                      'wanikani_settings',
+                      (_) => const WanikaniSettingsScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.link),
+                label: Text(l10n.readerFuriganaWanikaniLinkPrompt),
+              ),
+            ),
         ],
 
         // ── Display ──

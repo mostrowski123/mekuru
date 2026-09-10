@@ -4,20 +4,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/epub_reader_settings_sheet.dart';
+import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/reader_settings_test_helpers.dart';
 import '../../../../test_app.dart';
+import '../../../wanikani/wanikani_test_fakes.dart';
 
 Future<ProviderContainer> _pumpSheet(
   WidgetTester tester, {
   String? bookLanguage = 'ja',
   void Function(String, Object)? onSettingChanged,
+  FakeWanikaniStorage? wanikaniStorage,
 }) async {
   final container = ProviderContainer(
     overrides: [
       readerBrightnessProvider.overrideWith(FakeReaderBrightnessNotifier.new),
+      if (wanikaniStorage != null)
+        wanikaniStorageProvider.overrideWithValue(wanikaniStorage),
     ],
   );
   addTearDown(container.dispose);
@@ -74,7 +79,61 @@ void main() {
       FuriganaMode.book,
       FuriganaMode.all,
       FuriganaMode.aboveLevel,
+      FuriganaMode.wanikani,
     ]);
+  });
+
+  testWidgets('WaniKani mode without synced kanji offers to link', (
+    tester,
+  ) async {
+    final container = await _pumpSheet(tester);
+    await scrollSettingsTo(tester, find.text('Furigana'));
+    expect(find.byKey(const Key('reader-wanikani-link-prompt')), findsNothing);
+
+    container
+        .read(readerSettingsProvider.notifier)
+        .setFuriganaMode(FuriganaMode.wanikani);
+    await tester.pumpAndSettle();
+
+    await scrollSettingsTo(tester, find.text('Link your WaniKani account'));
+    expect(
+      find.byKey(const Key('reader-wanikani-link-prompt')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('reader-wanikani-stage')), findsNothing);
+  });
+
+  testWidgets('WaniKani mode with synced kanji reveals the stage picker', (
+    tester,
+  ) async {
+    final changes = <String>[];
+    final storage = FakeWanikaniStorage(
+      token: 'tok',
+      snapshot: snapshotAt(DateTime.utc(2026, 9, 10)),
+    );
+    final container = await _pumpSheet(
+      tester,
+      onSettingChanged: (setting, value) => changes.add(setting),
+      wanikaniStorage: storage,
+    );
+    await container.read(wanikaniProvider.notifier).loadPersistedSettings();
+    container
+        .read(readerSettingsProvider.notifier)
+        .setFuriganaMode(FuriganaMode.wanikani);
+    await tester.pumpAndSettle();
+
+    await scrollSettingsTo(tester, find.text('Hide furigana for kanji at'));
+    expect(find.byKey(const Key('reader-wanikani-link-prompt')), findsNothing);
+    expect(find.text('Burned'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('reader-wanikani-stage')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guru+'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(readerSettingsProvider).furiganaWanikaniMinStage, 5);
+    expect(changes, contains('furigana_wanikani_stage'));
+    expect(find.text('Guru+'), findsOneWidget);
   });
 
   testWidgets('JLPT mode reveals the level picker and sets the level', (

@@ -31,6 +31,7 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/shared/review/reading_session_review_prompt.dart';
+import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/reader_system_bars.dart';
 import 'package:mekuru/shared/widgets/reader_seek_bar.dart';
@@ -297,6 +298,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final settings = ref.watch(readerSettingsProvider);
     _lastSettings = settings;
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
+    final wanikaniKnownKanji = ref.watch(wanikaniKnownKanjiProvider);
+
+    // The known set folds in both the threshold and background syncs, so
+    // this is the one WaniKani trigger: re-pushing the mode makes the JS
+    // side drop its annotation cache and re-annotate against the new set.
+    ref.listen<Set<int>>(wanikaniKnownKanjiProvider, (previous, next) {
+      if (previous == null) return;
+      if (settings.furiganaMode == FuriganaMode.wanikani && _isEpubLoaded) {
+        _epubController.setFuriganaMode(FuriganaMode.wanikani.storageValue);
+      }
+    });
 
     ref.listen<ReaderSettings>(readerSettingsProvider, (previous, next) {
       if (previous == null) {
@@ -407,6 +419,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         verticalTextBlocks: settings.splitVerticalText ? 2 : 1,
                         furiganaMode: settings.furiganaMode,
                         furiganaJlptLevel: settings.furiganaJlptLevel,
+                        furiganaKnownKanji: wanikaniKnownKanji,
                         onLoaded: () {
                           if (!mounted) return;
                           _loadWatchdog?.cancel();

@@ -42,8 +42,28 @@ List<ButtonSegment<FuriganaMode>> furiganaModeSegments(AppLocalizations l10n) {
       label: Text(l10n.readerFuriganaAboveLevel),
       icon: const Icon(Icons.school_outlined),
     ),
+    ButtonSegment(
+      value: FuriganaMode.wanikani,
+      label: Text(l10n.readerFuriganaWanikani),
+      icon: const Icon(Icons.link),
+    ),
   ];
 }
+
+/// WaniKani SRS-stage thresholds offered for
+/// [ReaderSettings.furiganaWanikaniMinStage], lowest first: Apprentice I,
+/// Guru I, Master, Enlightened, Burned.
+const wanikaniStageValues = [1, 5, 7, 8, 9];
+
+/// Label for a [ReaderSettings.furiganaWanikaniMinStage] value; stages
+/// between the offered ones map to the band they fall in.
+String wanikaniStageLabel(AppLocalizations l10n, int stage) => switch (stage) {
+  < 5 => l10n.wanikaniStageApprentice,
+  < 7 => l10n.wanikaniStageGuru,
+  7 => l10n.wanikaniStageMaster,
+  8 => l10n.wanikaniStageEnlightened,
+  _ => l10n.wanikaniStageBurned,
+};
 
 /// N5 (easiest) → N1 (hardest); values are the numeric JLPT level used by
 /// [ReaderSettings.furiganaJlptLevel].
