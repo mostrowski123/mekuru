@@ -6,6 +6,7 @@ import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:mekuru/features/manga/data/services/manga_lookup_override_storage.dart';
 import 'package:mekuru/features/reader/data/services/reader_settings_storage.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
+import 'package:mekuru/features/wanikani/data/services/wanikani_storage.dart';
 import 'package:mekuru/features/stats/data/repositories/stats_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,6 +25,7 @@ class BackupService {
     ...SharedPreferencesAppSettingsStorage.allKeys,
     MangaLookupOverrideStorage.prefsKey,
     BackupScheduler.intervalKey,
+    WanikaniStorage.snapshotPrefsKey,
   ];
 
   /// All reader.* SharedPreferences keys to include in backup.
