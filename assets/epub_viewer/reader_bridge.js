@@ -12,7 +12,7 @@ var _lastTappedBlock = null;       // block element from last getTextAtPoint
 var _lastTappedDoc = null;         // document from last getTextAtPoint
 var _currentWordHighlightCfi = null; // CFI of current word highlight
 var _disableLinks = false;           // When true, links trigger dictionary instead of navigating
-var _furiganaMode = 'book';          // 'hide' | 'book' | 'all' | 'aboveLevel'
+var _furiganaMode = 'book';          // 'hide' | 'book' | 'all' | 'aboveLevel' | 'wanikani'
 var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processed
 // Armed by navigation (initial display, page turns, TOC/CFI/progress jumps)
 // and consumed by the next 'relocated' event. Re-layout relocations (font
@@ -648,10 +648,11 @@ function _renderedIframeDocs() {
 // differ in which ruby the injected CSS hides. In 'book' the class selector
 // matters after an all -> book switch mid-session: generated ruby already
 // sits in the DOM and is never torn down, so CSS is what separates it from
-// the publisher's own ruby. In 'aboveLevel' the JLPT filter also wins over
-// the publisher: _classifyAuthoredRuby tags authored ruby whose base is
-// entirely at/below the threshold, and the mode's CSS hides only those tags
-// — so switching back to 'book' restores the authored ruby untouched.
+// the publisher's own ruby. In the filtered modes ('aboveLevel' by JLPT
+// level, 'wanikani' by the reader's known kanji) the Dart-side filter also
+// wins over the publisher: _classifyAuthoredRuby tags authored ruby whose
+// base is entirely below the threshold, and the mode's CSS hides only those
+// tags — so switching back to 'book' restores the authored ruby untouched.
 // Unknown mode strings fall back to 'book', matching furiganaModeFromString
 // on the Dart side.
 var FURIGANA_MODES = {
@@ -667,13 +668,24 @@ var FURIGANA_MODES = {
   all: { generate: true, css: '' },
   aboveLevel: {
     generate: true,
+    filtered: true,
     css: 'ruby.mekuru-below-level > rt, ruby.mekuru-below-level > rp ' +
          '{ display: none !important; }'
   }
 };
+// Same mechanics as aboveLevel; only the Dart-side predicate differs.
+FURIGANA_MODES.wanikani = {
+  generate: true,
+  filtered: true,
+  css: FURIGANA_MODES.aboveLevel.css
+};
 
 function _furiganaBehavior() {
   return FURIGANA_MODES[_furiganaMode] || FURIGANA_MODES.book;
+}
+
+function _isFilteredMode(mode) {
+  return !!(FURIGANA_MODES[mode] && FURIGANA_MODES[mode].filtered);
 }
 
 function applyFuriganaStyleToDoc(doc) {
@@ -708,11 +720,12 @@ function setFuriganaMode(mode) {
   var prev = _furiganaMode;
   _furiganaMode = next;
   console.log('[EPUB_BRIDGE] setFuriganaMode: ' + _furiganaMode);
-  // aboveLevel annotations are filtered per-word on the Dart side, so
-  // entering, leaving, or re-selecting it (JLPT level change re-pushes the
-  // same mode) invalidates both the cache and already-injected ruby. The
-  // re-walk also re-runs _classifyAuthoredRuby at the new level.
-  var rebuild = next === 'aboveLevel' || prev === 'aboveLevel';
+  // Filtered-mode annotations are decided per-word on the Dart side, so
+  // entering, leaving, or re-selecting one (a threshold or known-kanji
+  // change re-pushes the same mode) invalidates both the cache and
+  // already-injected ruby. The re-walk also re-runs _classifyAuthoredRuby
+  // against the new threshold.
+  var rebuild = _isFilteredMode(next) || _isFilteredMode(prev);
   if (rebuild) _furiganaCache.clear();
   var docs = _renderedIframeDocs();
   for (var i = 0; i < docs.length; i++) {
@@ -725,13 +738,13 @@ function setFuriganaMode(mode) {
   }
 }
 
-// Tags publisher-authored ruby whose base text is entirely at/below the
-// JLPT threshold so aboveLevel's CSS hides its rt. Tag-only — the ruby is
-// never unwrapped, so leaving aboveLevel restores it via the CSS swap.
-// The verdict comes from Dart's wordNeedsFuriganaAboveLevel (a pure
-// character check, so no MeCab dependency) in one batched round-trip per
-// section; if the call fails nothing is tagged and the authored ruby stays
-// visible — the safe default.
+// Tags publisher-authored ruby whose base text is entirely below the
+// current filtered mode's threshold (JLPT level or known kanji) so the
+// mode's CSS hides its rt. Tag-only — the ruby is never unwrapped, so
+// leaving the mode restores it via the CSS swap. The verdict comes from
+// Dart's authoredRubyStripFor (a pure character check, so no MeCab
+// dependency) in one batched round-trip per section; if the call fails
+// nothing is tagged and the authored ruby stays visible — the safe default.
 function _classifyAuthoredRuby(doc) {
   var rubies = doc.body.querySelectorAll('ruby:not(.mekuru-furigana)');
   if (!rubies.length) return;
@@ -743,7 +756,7 @@ function _classifyAuthoredRuby(doc) {
     for (var j = 0; j < drops.length; j++) drops[j].remove();
     bases.push(clone.textContent);
   }
-  callDartAsync('needsFuriganaAboveLevel', bases).then(function (flags) {
+  callDartAsync('needsFurigana', bases).then(function (flags) {
     if (!Array.isArray(flags)) return;
     var below = 0;
     for (var i = 0; i < rubies.length && i < flags.length; i++) {
@@ -752,11 +765,11 @@ function _classifyAuthoredRuby(doc) {
       rubies[i].classList.toggle('mekuru-below-level', belowLevel);
     }
     // Contract with integration_test/shared/word_tap_scenario.dart, which
-    // asserts this exact phrasing.
-    console.log('[EPUB_BRIDGE] aboveLevel authored ruby: ' + below +
-                ' of ' + rubies.length + ' below level');
+    // asserts this exact phrasing (with the mode name in front).
+    console.log('[EPUB_BRIDGE] ' + _furiganaMode + ' authored ruby: ' +
+                below + ' of ' + rubies.length + ' below level');
   }, function (e) {
-    console.error('[EPUB_BRIDGE] needsFuriganaAboveLevel failed:', e);
+    console.error('[EPUB_BRIDGE] needsFurigana failed:', e);
   });
 }
 
@@ -766,7 +779,7 @@ function processSectionForFurigana(doc) {
   if (_furiganaProcessedDocs.has(doc)) return;
   _furiganaProcessedDocs.add(doc);
 
-  if (_furiganaMode === 'aboveLevel') _classifyAuthoredRuby(doc);
+  if (_furiganaBehavior().filtered) _classifyAuthoredRuby(doc);
 
   // SHOW_ELEMENT lets us FILTER_REJECT entire ruby/script/style subtrees
   // up-front; without it the walker would visit each text node and we'd

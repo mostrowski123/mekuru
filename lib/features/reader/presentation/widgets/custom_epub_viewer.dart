@@ -8,7 +8,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:mekuru/core/utils/japanese_text.dart';
 
 import '../../data/models/epub_models.dart';
 import '../../data/models/reader_settings.dart';
@@ -102,6 +101,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.verticalTextBlocks = 1,
     required this.furiganaMode,
     this.furiganaJlptLevel = 3,
+    this.furiganaKnownKanji = const {},
     this.onLoaded,
     this.onChaptersLoaded,
     this.onRelocated,
@@ -140,6 +140,10 @@ class CustomEpubViewer extends StatefulWidget {
   /// JLPT threshold used while [furiganaMode] is [FuriganaMode.aboveLevel].
   /// Read at generateFurigana time, so rebuilds keep it current.
   final int furiganaJlptLevel;
+
+  /// Known kanji (runes) used while [furiganaMode] is
+  /// [FuriganaMode.wanikani]. Read per bridge call like [furiganaJlptLevel].
+  final Set<int> furiganaKnownKanji;
 
   final VoidCallback? onLoaded;
   final ValueChanged<List<EpubChapter>>? onChaptersLoaded;
@@ -496,26 +500,30 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         final inputs = raw.map((e) => e?.toString() ?? '').toList();
         // The webview plugin awaits this future before resolving the JS
         // promise, so the reply blocks until MeCab is ready (or null).
-        // Built per call: mode and JLPT level can change mid-session.
+        // Built per call: mode, JLPT level and known kanji can change
+        // mid-session.
         return furiganaGeneratorFor(
           widget.furiganaMode,
           widget.furiganaJlptLevel,
+          knownKanji: widget.furiganaKnownKanji,
         ).generate(inputs);
       },
     );
 
     controller.addJavaScriptHandler(
-      handlerName: 'needsFuriganaAboveLevel',
+      handlerName: 'needsFurigana',
       callback: (data) {
         final raw = data.isNotEmpty && data[0] is List ? data[0] as List : data;
         // Pure character-level check — no MeCab, so it answers immediately.
-        // The level is read per call, keeping mid-session changes current.
+        // Built per call so the mode's current threshold applies; a null
+        // policy (unfiltered mode) keeps every authored ruby visible.
+        final strip = authoredRubyStripFor(
+          widget.furiganaMode,
+          widget.furiganaJlptLevel,
+          knownKanji: widget.furiganaKnownKanji,
+        );
         return [
-          for (final e in raw)
-            wordNeedsFuriganaAboveLevel(
-              e?.toString() ?? '',
-              widget.furiganaJlptLevel,
-            ),
+          for (final e in raw) strip == null || !strip(e?.toString() ?? ''),
         ];
       },
     );
