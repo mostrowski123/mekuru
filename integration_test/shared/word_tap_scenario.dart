@@ -31,6 +31,8 @@ import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/features/wanikani/data/models/wanikani_snapshot.dart';
+import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -142,15 +144,37 @@ Future<void> _removeNewBooksDirEntries(Set<String> before) async {
 /// Registers the complete single-scenario test. Call this as the entire
 /// `main()` of a dedicated test file — see the one-scenario-per-file note in
 /// the library comment above.
+/// A WaniKani link that already holds the given stages, exactly as a
+/// restored backup would (no token, so no refresh is ever attempted).
+class _SeededWanikaniNotifier extends WanikaniNotifier {
+  _SeededWanikaniNotifier(this._stages);
+
+  final Map<int, int> _stages;
+
+  @override
+  WanikaniState build() => WanikaniState(
+    snapshot: WanikaniSnapshot(
+      username: 'fixture',
+      level: 60,
+      stages: _stages,
+      syncedAt: DateTime.now(),
+    ),
+  );
+}
+
 void registerWordTapScenario(
   String description, {
   required FuriganaMode furiganaMode,
   bool verticalWithRuby = false,
-  // In aboveLevel mode the bridge must classify publisher-authored ruby
-  // against the JLPT threshold and log the result. The fixture's ruby words
+  // In a filtered mode the bridge must classify publisher-authored ruby
+  // against the threshold and log the result. The fixture's ruby words
   // (学校, 日本語) are all N5 kanji, so at the default N3 threshold every
-  // authored ruby must be classified below-level (hidden).
+  // authored ruby must be classified below-level (hidden); the wanikani
+  // scenario seeds the same kanji as burned for the same outcome.
   bool expectAuthoredRubyClassification = false,
+  // Seeds a synced WaniKani snapshot (rune → SRS stage) so the wanikani
+  // mode has a known set without any network or secure-storage access.
+  Map<int, int>? wanikaniStages,
 }) {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -199,6 +223,12 @@ void registerWordTapScenario(
         db: db,
         home: const LibraryScreen(),
         readerSettingsStorage: readerSettings,
+        extraOverrides: [
+          if (wanikaniStages != null)
+            wanikaniProvider.overrideWith(
+              () => _SeededWanikaniNotifier(wanikaniStages),
+            ),
+        ],
       ),
     );
     await pumpUntilVisible(tester, find.text('タップ本'));
@@ -257,7 +287,8 @@ void registerWordTapScenario(
       // The classification call is async (bridge round-trip), so poll for
       // its log line rather than asserting immediately.
       final pattern = RegExp(
-        r'aboveLevel authored ruby: (\d+) of (\d+) below level',
+        '${furiganaMode.name} authored ruby: '
+        r'(\d+) of (\d+) below level',
       );
       RegExpMatch? match;
       for (var tick = 0; tick < 40 && match == null; tick++) {
@@ -272,7 +303,7 @@ void registerWordTapScenario(
         isNotNull,
         reason:
             'Bridge never logged authored-ruby classification in '
-            'aboveLevel mode.',
+            '${furiganaMode.name} mode.',
       );
       final below = int.parse(match!.group(1)!);
       final total = int.parse(match.group(2)!);
@@ -281,8 +312,9 @@ void registerWordTapScenario(
         below,
         total,
         reason:
-            'All fixture ruby words are N5 kanji, so every authored ruby '
-            'must classify below the default N3 threshold.',
+            'Every fixture ruby word is below the threshold (N5 kanji at '
+            'the default N3 level, or seeded as burned on WaniKani), so '
+            'every authored ruby must classify below level.',
       );
     }
   });
