@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'lib/**'
+      - 'packages/local_manga_ocr/**'
       - 'android/**'
       - 'assets/**'
       - 'integration_test/**'
@@ -14,6 +15,7 @@ on:
     branches: [main]
     paths:
       - 'lib/**'
+      - 'packages/local_manga_ocr/**'
       - 'android/**'
       - 'assets/**'
       - 'integration_test/**'
@@ -32,7 +34,7 @@ concurrency:
 jobs:
   android-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -153,7 +155,7 @@ jobs:
           cores: 2
           ram-size: 2048M
           heap-size: 512M
-          disk-size: 2048M
+          disk-size: 4096M
           disable-animations: true
           emulator-boot-timeout: 1200
           emulator-options: >-
@@ -164,4 +166,19 @@ jobs:
             -no-boot-anim
             -no-metrics
           force-avd-creation: ${{ steps.avd-cache.outputs.cache-hit != 'true' }}
-          script: flutter test integration_test/app_smoke_test.dart integration_test/dictionary_search_flow_test.dart integration_test/vocabulary_lifecycle_test.dart integration_test/settings_persistence_test.dart integration_test/cross_feature_navigation_test.dart integration_test/backup_restore_roundtrip_test.dart integration_test/bookmark_highlight_persistence_test.dart integration_test/pending_restore_flow_test.dart integration_test/reader_progress_persistence_flow_test.dart integration_test/dictionary_import_flow_test.dart integration_test/vocabulary_csv_export_test.dart integration_test/library_import_flow_test.dart integration_test/orphan_sweep_flow_test.dart integration_test/collections_flow_test.dart integration_test/mecab_enhanced_dict_upgrade_test.dart integration_test/epub_furigana_export_flow_test.dart integration_test/furigana_generator_flow_test.dart integration_test/manga_word_segmentation_test.dart integration_test/reader_indesign_vertical_epub_test.dart integration_test/pro_entitlement_flow_test.dart integration_test/full_backup_roundtrip_test.dart integration_test/full_restore_crash_resume_test.dart integration_test/full_backup_ui_flow_test.dart integration_test/full_backup_abort_resume_test.dart integration_test/full_backup_service_lifecycle_test.dart integration_test/full_backup_boot_gate_test.dart -d emulator-5554 --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded
+          script: |
+            mkdir -p build
+            status=0
+            flutter test integration_test/app_smoke_test.dart integration_test/dictionary_search_flow_test.dart integration_test/vocabulary_lifecycle_test.dart integration_test/settings_persistence_test.dart integration_test/cross_feature_navigation_test.dart integration_test/backup_restore_roundtrip_test.dart integration_test/bookmark_highlight_persistence_test.dart integration_test/pending_restore_flow_test.dart integration_test/reader_progress_persistence_flow_test.dart integration_test/dictionary_import_flow_test.dart integration_test/vocabulary_csv_export_test.dart integration_test/library_import_flow_test.dart integration_test/orphan_sweep_flow_test.dart integration_test/collections_flow_test.dart integration_test/mecab_enhanced_dict_upgrade_test.dart integration_test/epub_furigana_export_flow_test.dart integration_test/furigana_generator_flow_test.dart integration_test/manga_word_segmentation_test.dart integration_test/reader_indesign_vertical_epub_test.dart integration_test/pro_entitlement_flow_test.dart integration_test/full_backup_roundtrip_test.dart integration_test/full_restore_crash_resume_test.dart integration_test/full_backup_ui_flow_test.dart integration_test/full_backup_abort_resume_test.dart integration_test/full_backup_service_lifecycle_test.dart integration_test/full_backup_boot_gate_test.dart integration_test/local_ocr_lifecycle_test.dart integration_test/local_ocr_reader_test.dart integration_test/local_ocr_detector_test.dart -d emulator-5554 --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded --file-reporter=json:build/android-integration-results.json || status=$?
+            adb -s emulator-5554 logcat -d -s MekuruLocalOcr AndroidRuntime > build/android-ocr-logcat.txt || true
+            exit "$status"
+
+      - name: Upload Android test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-integration-reports
+          if-no-files-found: ignore
+          path: |
+            build/android-integration-results.json
+            build/android-ocr-logcat.txt

@@ -128,14 +128,14 @@ jobs:
         timeout-minutes: 15
         run: flutter build apk --release --no-pub --flavor play --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
-      - name: Verify MeCab native libs in release APK
+      - name: Verify native libraries and manifest in release APK
         run: python scripts/verify_native_libs.py build/app/outputs/flutter-apk/app-play-release.apk
 
       - name: Build release App Bundle
         timeout-minutes: 15
         run: flutter build appbundle --release --no-pub --flavor play --build-number=${{ steps.tag.outputs.version_code }} --target-platform android-arm,android-arm64,android-x64
 
-      - name: Verify MeCab native libs in release App Bundle
+      - name: Verify native libraries and manifest in release App Bundle
         run: python scripts/verify_native_libs.py build/app/outputs/bundle/playRelease/app-play-release.aab
 
       - name: Build parallel release APK
@@ -146,7 +146,7 @@ jobs:
           --build-number=${{ steps.tag.outputs.version_code }}
           --target-platform android-arm,android-arm64,android-x64
 
-      - name: Verify MeCab native libs in parallel release APK
+      - name: Verify native libraries and manifest in parallel release APK
         run: python scripts/verify_native_libs.py build/app/outputs/flutter-apk/app-parallel-release.apk
 
       # Native frames (libapp.so, NDK) only symbolicate in Sentry with these;

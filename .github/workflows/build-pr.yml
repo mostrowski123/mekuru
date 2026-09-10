@@ -4,9 +4,12 @@ on:
   pull_request:
     paths:
       - 'lib/**'
+      - 'packages/local_manga_ocr/**'
       - 'android/**'
       - 'assets/**'
       - 'test/**'
+      - 'scripts/verify_native_libs.py'
+      - 'scripts/test_verify_native_libs.py'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/build-pr.yml'
@@ -21,7 +24,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 75
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -87,14 +90,36 @@ jobs:
 
       - name: Run tests
         timeout-minutes: 20
-        run: flutter test -r expanded
+        run: flutter test -r expanded --file-reporter=json:build/flutter-tests.json
 
       # Covers the SAF document-ID resolution in MainActivity.kt, which
       # flutter test cannot reach. local.properties is not in the repo and is
-      # normally written by `flutter build`, which this workflow never runs.
+      # normally written by `flutter build`, which runs later in this workflow.
       - name: Run Android unit tests
         timeout-minutes: 20
         working-directory: android
         run: |
           echo "flutter.sdk=$FLUTTER_ROOT" > local.properties
-          ./gradlew :app:testPlayDebugUnitTest --console=plain
+          ./gradlew :app:testPlayDebugUnitTest :local_manga_ocr:testDebugUnitTest --console=plain
+
+
+      - name: Test native archive validation
+        run: python -m unittest discover -s scripts -p test_verify_native_libs.py
+
+      - name: Verify emulator-to-phone native packaging without cleaning
+        run: |
+          flutter build apk --debug --flavor parallel --target-platform android-x64 --split-per-abi --no-pub
+          python scripts/verify_native_libs.py build/app/outputs/flutter-apk/app-x86_64-parallel-debug.apk --abis x86_64
+          flutter build apk --debug --flavor parallel --target-platform android-arm64 --split-per-abi --no-pub
+          python scripts/verify_native_libs.py build/app/outputs/flutter-apk/app-arm64-v8a-parallel-debug.apk --abis arm64-v8a
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          if-no-files-found: ignore
+          path: |
+            build/flutter-tests.json
+            build/app/test-results/**/*.xml
+            build/local_manga_ocr/test-results/**/*.xml
