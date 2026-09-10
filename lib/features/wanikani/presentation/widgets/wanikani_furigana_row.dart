@@ -15,23 +15,14 @@ import '../screens/wanikani_settings_screen.dart';
 /// Guru I, Master, Enlightened, Burned.
 const wanikaniStageValues = [1, 5, 7, 8, 9];
 
-/// "Guru or higher", "Burned only" — the threshold as a range, so a user
-/// never has to guess which side of the stage counts.
+/// "Guru and up", "Burned" — the threshold as a range, so a user never has
+/// to guess which side of the stage counts.
 String wanikaniStageLabel(AppLocalizations l10n, int stage) => switch (stage) {
   1 => l10n.wanikaniStageApprentice,
   5 => l10n.wanikaniStageGuru,
   7 => l10n.wanikaniStageMaster,
   8 => l10n.wanikaniStageEnlightened,
   _ => l10n.wanikaniStageBurned,
-};
-
-/// The stages a threshold covers, spelled out under each picker option.
-String wanikaniStageHint(AppLocalizations l10n, int stage) => switch (stage) {
-  1 => l10n.wanikaniStageApprenticeHint,
-  5 => l10n.wanikaniStageGuruHint,
-  7 => l10n.wanikaniStageMasterHint,
-  8 => l10n.wanikaniStageEnlightenedHint,
-  _ => l10n.wanikaniStageBurnedHint,
 };
 
 /// The row the reader's furigana setting shows while WaniKani is selected:
@@ -76,7 +67,6 @@ class WanikaniFuriganaRow extends ConsumerWidget {
       key: const Key('reader-wanikani-stage'),
       contentPadding: EdgeInsets.zero,
       title: Text(l10n.readerFuriganaWanikaniStageTitle),
-      subtitle: Text(l10n.readerFuriganaWanikaniStageSubtitle),
       trailing: Text(
         wanikaniStageLabel(l10n, minStage),
         style: theme.textTheme.bodyMedium?.copyWith(
@@ -89,7 +79,6 @@ class WanikaniFuriganaRow extends ConsumerWidget {
         values: wanikaniStageValues,
         selected: minStage,
         labelOf: (stage) => wanikaniStageLabel(l10n, stage),
-        subtitleOf: (stage) => wanikaniStageHint(l10n, stage),
         onSelected: (stage) {
           ref
               .read(readerSettingsProvider.notifier)

@@ -4681,37 +4681,37 @@ abstract class AppLocalizations {
   /// Label of the WaniKani SRS-stage threshold row; the current stage name follows it.
   ///
   /// In en, this message translates to:
-  /// **'Known kanji'**
+  /// **'Hide furigana at'**
   String get readerFuriganaWanikaniStageTitle;
 
   /// WaniKani SRS stage option: Apprentice and above (WaniKani's own English stage name).
   ///
   /// In en, this message translates to:
-  /// **'Apprentice or higher'**
+  /// **'Apprentice and up'**
   String get wanikaniStageApprentice;
 
   /// WaniKani SRS stage option: Guru and above (WaniKani's own English stage name).
   ///
   /// In en, this message translates to:
-  /// **'Guru or higher'**
+  /// **'Guru and up'**
   String get wanikaniStageGuru;
 
   /// WaniKani SRS stage option: Master and above (WaniKani's own English stage name).
   ///
   /// In en, this message translates to:
-  /// **'Master or higher'**
+  /// **'Master and up'**
   String get wanikaniStageMaster;
 
   /// WaniKani SRS stage option: Enlightened and above (WaniKani's own English stage name).
   ///
   /// In en, this message translates to:
-  /// **'Enlightened or higher'**
+  /// **'Enlightened and up'**
   String get wanikaniStageEnlightened;
 
   /// WaniKani SRS stage option: Burned only (WaniKani's own English stage name).
   ///
   /// In en, this message translates to:
-  /// **'Burned only'**
+  /// **'Burned'**
   String get wanikaniStageBurned;
 
   /// Button under the furigana mode row when WaniKani is selected but no account is linked; opens the WaniKani settings screen.
@@ -4795,7 +4795,7 @@ abstract class AppLocalizations {
   /// Caption at the bottom of the WaniKani settings screen pointing to the reader's furigana setting.
   ///
   /// In en, this message translates to:
-  /// **'Pick WaniKani under Furigana in the reader settings to choose which kanji count as known.'**
+  /// **'Pick WaniKani under Furigana in the reader settings to choose which kanji are hidden.'**
   String get wanikaniSettingsThresholdCaption;
 
   /// Snackbar after a successful manual WaniKani sync.
@@ -4834,47 +4834,11 @@ abstract class AppLocalizations {
   /// **'Kanji not yet known on WaniKani'**
   String get libraryExportFuriganaWanikani;
 
-  /// Subtitle under the Known kanji row explaining what the threshold does.
-  ///
-  /// In en, this message translates to:
-  /// **'Words made only of known kanji lose their furigana.'**
-  String get readerFuriganaWanikaniStageSubtitle;
-
   /// Title of the bottom sheet that picks the WaniKani SRS-stage threshold.
   ///
   /// In en, this message translates to:
-  /// **'Which kanji count as known?'**
+  /// **'Hide furigana for kanji at'**
   String get readerFuriganaWanikaniStagePickerTitle;
-
-  /// Which stages the Apprentice-or-higher option covers.
-  ///
-  /// In en, this message translates to:
-  /// **'Every kanji you\'ve started learning'**
-  String get wanikaniStageApprenticeHint;
-
-  /// Which stages the Guru-or-higher option covers.
-  ///
-  /// In en, this message translates to:
-  /// **'Guru, Master, Enlightened and Burned'**
-  String get wanikaniStageGuruHint;
-
-  /// Which stages the Master-or-higher option covers.
-  ///
-  /// In en, this message translates to:
-  /// **'Master, Enlightened and Burned'**
-  String get wanikaniStageMasterHint;
-
-  /// Which stages the Enlightened-or-higher option covers.
-  ///
-  /// In en, this message translates to:
-  /// **'Enlightened and Burned'**
-  String get wanikaniStageEnlightenedHint;
-
-  /// Which stages the Burned-only option covers.
-  ///
-  /// In en, this message translates to:
-  /// **'Only kanji you\'ve burned'**
-  String get wanikaniStageBurnedHint;
 }
 
 class _AppLocalizationsDelegate

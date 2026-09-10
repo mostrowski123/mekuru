@@ -2833,22 +2833,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get readerFuriganaWanikani => 'WaniKani';
 
   @override
-  String get readerFuriganaWanikaniStageTitle => 'Kanji conocidos';
+  String get readerFuriganaWanikaniStageTitle => 'Ocultar furigana a partir de';
 
   @override
-  String get wanikaniStageApprentice => 'Apprentice o superior';
+  String get wanikaniStageApprentice => 'Apprentice en adelante';
 
   @override
-  String get wanikaniStageGuru => 'Guru o superior';
+  String get wanikaniStageGuru => 'Guru en adelante';
 
   @override
-  String get wanikaniStageMaster => 'Master o superior';
+  String get wanikaniStageMaster => 'Master en adelante';
 
   @override
-  String get wanikaniStageEnlightened => 'Enlightened o superior';
+  String get wanikaniStageEnlightened => 'Enlightened en adelante';
 
   @override
-  String get wanikaniStageBurned => 'Solo Burned';
+  String get wanikaniStageBurned => 'Burned';
 
   @override
   String get readerFuriganaWanikaniLinkPrompt =>
@@ -2902,7 +2902,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wanikaniSettingsThresholdCaption =>
-      'Elige WaniKani en Furigana dentro de los ajustes del lector para decidir qué kanji cuentan como conocidos.';
+      'Elige WaniKani en Furigana dentro de los ajustes del lector para decidir qué kanji se ocultan.';
 
   @override
   String wanikaniSettingsSyncDone({required int count}) {
@@ -2930,26 +2930,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Kanji que aún no conoces en WaniKani';
 
   @override
-  String get readerFuriganaWanikaniStageSubtitle =>
-      'Las palabras formadas solo por kanji conocidos pierden el furigana.';
-
-  @override
   String get readerFuriganaWanikaniStagePickerTitle =>
-      '¿Qué kanji cuentan como conocidos?';
-
-  @override
-  String get wanikaniStageApprenticeHint =>
-      'Todos los kanji que has empezado a aprender';
-
-  @override
-  String get wanikaniStageGuruHint => 'Guru, Master, Enlightened y Burned';
-
-  @override
-  String get wanikaniStageMasterHint => 'Master, Enlightened y Burned';
-
-  @override
-  String get wanikaniStageEnlightenedHint => 'Enlightened y Burned';
-
-  @override
-  String get wanikaniStageBurnedHint => 'Solo los kanji que has quemado';
+      'Ocultar furigana de kanji a partir de';
 }

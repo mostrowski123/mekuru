@@ -2810,7 +2810,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get readerFuriganaWanikani => 'WaniKani';
 
   @override
-  String get readerFuriganaWanikaniStageTitle => 'Kanji yang dikenal';
+  String get readerFuriganaWanikaniStageTitle => 'Sembunyikan furigana mulai';
 
   @override
   String get wanikaniStageApprentice => 'Apprentice ke atas';
@@ -2825,7 +2825,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get wanikaniStageEnlightened => 'Enlightened ke atas';
 
   @override
-  String get wanikaniStageBurned => 'Hanya Burned';
+  String get wanikaniStageBurned => 'Burned';
 
   @override
   String get readerFuriganaWanikaniLinkPrompt => 'Tautkan akun WaniKani Anda';
@@ -2878,7 +2878,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wanikaniSettingsThresholdCaption =>
-      'Pilih WaniKani di bagian Furigana pada pengaturan pembaca untuk menentukan kanji mana yang dianggap dikenal.';
+      'Pilih WaniKani di bagian Furigana pada pengaturan pembaca untuk menentukan kanji mana yang disembunyikan.';
 
   @override
   String wanikaniSettingsSyncDone({required int count}) {
@@ -2906,26 +2906,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Kanji yang belum Anda kenal di WaniKani';
 
   @override
-  String get readerFuriganaWanikaniStageSubtitle =>
-      'Kata yang hanya terdiri dari kanji yang dikenal kehilangan furigananya.';
-
-  @override
   String get readerFuriganaWanikaniStagePickerTitle =>
-      'Kanji mana yang dianggap dikenal?';
-
-  @override
-  String get wanikaniStageApprenticeHint =>
-      'Semua kanji yang sudah mulai Anda pelajari';
-
-  @override
-  String get wanikaniStageGuruHint => 'Guru, Master, Enlightened, dan Burned';
-
-  @override
-  String get wanikaniStageMasterHint => 'Master, Enlightened, dan Burned';
-
-  @override
-  String get wanikaniStageEnlightenedHint => 'Enlightened dan Burned';
-
-  @override
-  String get wanikaniStageBurnedHint => 'Hanya kanji yang sudah Anda burn';
+      'Sembunyikan furigana untuk kanji mulai';
 }

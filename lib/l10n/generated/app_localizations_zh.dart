@@ -2681,7 +2681,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerFuriganaWanikani => 'WaniKani';
 
   @override
-  String get readerFuriganaWanikaniStageTitle => '已掌握的汉字';
+  String get readerFuriganaWanikaniStageTitle => '隐藏振假名的起始阶段';
 
   @override
   String get wanikaniStageApprentice => 'Apprentice 及以上';
@@ -2696,7 +2696,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get wanikaniStageEnlightened => 'Enlightened 及以上';
 
   @override
-  String get wanikaniStageBurned => '仅 Burned';
+  String get wanikaniStageBurned => 'Burned';
 
   @override
   String get readerFuriganaWanikaniLinkPrompt => '关联你的 WaniKani 账号';
@@ -2747,7 +2747,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get wanikaniSettingsThresholdCaption =>
-      '在阅读器设置的“振假名”中选择 WaniKani，以决定哪些汉字算作已掌握。';
+      '在阅读器设置的“振假名”中选择 WaniKani，以决定隐藏哪些汉字的振假名。';
 
   @override
   String wanikaniSettingsSyncDone({required int count}) {
@@ -2770,25 +2770,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryExportFuriganaWanikani => 'WaniKani 上尚未掌握的汉字';
 
   @override
-  String get readerFuriganaWanikaniStageSubtitle => '仅由已掌握汉字组成的词语将不显示振假名。';
-
-  @override
-  String get readerFuriganaWanikaniStagePickerTitle => '哪些汉字算作已掌握？';
-
-  @override
-  String get wanikaniStageApprenticeHint => '所有已开始学习的汉字';
-
-  @override
-  String get wanikaniStageGuruHint => 'Guru、Master、Enlightened 和 Burned';
-
-  @override
-  String get wanikaniStageMasterHint => 'Master、Enlightened 和 Burned';
-
-  @override
-  String get wanikaniStageEnlightenedHint => 'Enlightened 和 Burned';
-
-  @override
-  String get wanikaniStageBurnedHint => '仅已 Burned 的汉字';
+  String get readerFuriganaWanikaniStagePickerTitle => '隐藏此阶段及以上汉字的振假名';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -5468,7 +5450,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get readerFuriganaWanikani => 'WaniKani';
 
   @override
-  String get readerFuriganaWanikaniStageTitle => '已掌握的汉字';
+  String get readerFuriganaWanikaniStageTitle => '隐藏振假名的起始阶段';
 
   @override
   String get wanikaniStageApprentice => 'Apprentice 及以上';
@@ -5483,7 +5465,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get wanikaniStageEnlightened => 'Enlightened 及以上';
 
   @override
-  String get wanikaniStageBurned => '仅 Burned';
+  String get wanikaniStageBurned => 'Burned';
 
   @override
   String get readerFuriganaWanikaniLinkPrompt => '关联你的 WaniKani 账号';
@@ -5534,7 +5516,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get wanikaniSettingsThresholdCaption =>
-      '在阅读器设置的“振假名”中选择 WaniKani，以决定哪些汉字算作已掌握。';
+      '在阅读器设置的“振假名”中选择 WaniKani，以决定隐藏哪些汉字的振假名。';
 
   @override
   String wanikaniSettingsSyncDone({required int count}) {
@@ -5557,23 +5539,5 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get libraryExportFuriganaWanikani => 'WaniKani 上尚未掌握的汉字';
 
   @override
-  String get readerFuriganaWanikaniStageSubtitle => '仅由已掌握汉字组成的词语将不显示振假名。';
-
-  @override
-  String get readerFuriganaWanikaniStagePickerTitle => '哪些汉字算作已掌握？';
-
-  @override
-  String get wanikaniStageApprenticeHint => '所有已开始学习的汉字';
-
-  @override
-  String get wanikaniStageGuruHint => 'Guru、Master、Enlightened 和 Burned';
-
-  @override
-  String get wanikaniStageMasterHint => 'Master、Enlightened 和 Burned';
-
-  @override
-  String get wanikaniStageEnlightenedHint => 'Enlightened 和 Burned';
-
-  @override
-  String get wanikaniStageBurnedHint => '仅已 Burned 的汉字';
+  String get readerFuriganaWanikaniStagePickerTitle => '隐藏此阶段及以上汉字的振假名';
 }
