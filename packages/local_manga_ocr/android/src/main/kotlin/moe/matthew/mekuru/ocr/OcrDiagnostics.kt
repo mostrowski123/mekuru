@@ -23,7 +23,7 @@ object OcrDiagnostics {
         val latest=File(context.noBackupFilesDir,"local_manga_ocr/last-diagnostics.json")
         return JSONObject().put("device",Build.MANUFACTURER+" "+Build.MODEL)
             .put("sdk",Build.VERSION.SDK_INT).put("abis",JSONArray(Build.SUPPORTED_ABIS.toList()))
-            .put("modelVersion",OcrRuntime.models.version).put("engineVersion","baberu-opencv-2")
+            .put("modelVersion",OcrRuntime.models.version).put("engineVersion","manga-ocr-1")
             .put("availableMemoryBytes",memory.availMem).put("lowMemory",memory.lowMemory)
             .put("processExits",exits)
             .put("lastPage",if(latest.isFile) JSONObject(latest.readText()) else JSONObject.NULL)

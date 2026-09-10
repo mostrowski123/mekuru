@@ -16,7 +16,7 @@ object DebugOcrHooks {
         OcrRuntime.models.verify()
         val started=System.currentTimeMillis()
         var completed=0
-        BaberuEngine(OcrRuntime.models.installedDirectory,2).use { engine ->
+        MangaOcrEngine(OcrRuntime.models.installedDirectory,2).use { engine ->
             java.io.FileOutputStream(output).bufferedWriter().use { writer ->
                 for(i in 0 until rows.length()) {
                     val row=rows.getJSONObject(i)

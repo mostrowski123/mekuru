@@ -8,8 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 class OcrAttributions extends StatelessWidget {
   const OcrAttributions({super.key});
   static const licenseFiles = [
-    'BABERU.txt',
-    'BABERU-LICENSE.txt',
+    'MANGA-OCR.txt',
     'APACHE-2.0.txt',
     'COMIC-TEXT-DETECTOR.txt',
     'GPL-3.0.txt',
@@ -32,7 +31,7 @@ class OcrAttributions extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            Text(l.localOcrLicenseBaberu),
+            Text(l.localOcrLicenseRecognizer),
             const SizedBox(height: 8),
             Text(l.localOcrLicenseDetector),
             const SizedBox(height: 8),
@@ -42,12 +41,10 @@ class OcrAttributions extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: () => launchUrl(
-                    Uri.parse(
-                      'https://huggingface.co/genshiai-daichi/baberu-ocr',
-                    ),
+                    Uri.parse('https://github.com/kha-white/manga-ocr'),
                     mode: LaunchMode.externalApplication,
                   ),
-                  child: const Text('Baberu'),
+                  child: const Text('manga-ocr'),
                 ),
                 TextButton(
                   onPressed: () => launchUrl(

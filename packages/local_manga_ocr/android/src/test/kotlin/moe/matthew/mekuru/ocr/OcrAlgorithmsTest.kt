@@ -27,32 +27,43 @@ class OcrAlgorithmsTest {
     @Test fun supplementaryKanjiAreNotSplit() {
         assertEquals(listOf("𠮷野家","です"),LineAlignment.align("𠮷野家です",listOf("𠮷野家","です")))
     }
-    @Test fun decoderRepetitionPenaltyAppliesToBothSigns() {
-        assertEquals(1,BaberuDecode.next(floatArrayOf(10f,9f),listOf(0),emptySet()))
-        assertEquals(1,BaberuDecode.next(floatArrayOf(-1f,-1.1f),listOf(0),emptySet()))
-    }
-    @Test fun decoderContentRunIsBoundedAndSymbolsAreExempt() {
-        assertEquals(0,BaberuDecode.next(floatArrayOf(2f,10f),List(12){1},setOf(1)))
-        assertEquals(1,BaberuDecode.next(floatArrayOf(2f,10f),List(12){1},emptySet()))
-        assertFalse(BaberuDecode.content("ー")); assertFalse(BaberuDecode.content("〜"))
-        assertTrue(BaberuDecode.content("漢")); assertTrue(BaberuDecode.content("𠮷"))
-        assertTrue(BaberuDecode.content("①")); assertTrue(BaberuDecode.content("Ⅳ"))
-        assertFalse(BaberuDecode.content("！！"))
+    @Test fun greedyStepNeverRepeatsATrigram() {
+        // Sequence 2,5,6,5,6: completing "5,6" with 5 again would repeat the trigram 5,6,5.
+        assertEquals(7,MangaOcrDecode.next(floatArrayOf(0f,0f,0f,0f,0f,9f,1f,8f),listOf(2,5,6,5,6)))
+        assertEquals(5,MangaOcrDecode.next(floatArrayOf(0f,0f,0f,0f,0f,9f,1f,8f),listOf(2,5,6)))
     }
     @Test fun argmaxTiesUseFirstId() {
-        assertEquals(0,BaberuDecode.next(floatArrayOf(1f,1f),emptyList(),emptySet()))
+        assertEquals(0,MangaOcrDecode.next(floatArrayOf(1f,1f),emptyList()))
+    }
+    @Test fun postProcessMatchesMangaOcr() {
+        assertEquals("こんにちは",MangaOcrDecode.postProcess("こん にち\nは"))
+        // Vectors checked against manga_ocr.ocr.post_process 0.1.16.
+        assertEquals("え．．．",MangaOcrDecode.postProcess("え…"))
+        assertEquals("あ．．．．",MangaOcrDecode.postProcess("あ・・・・"))
+        assertEquals("ＡＢＣ１２３！？",MangaOcrDecode.postProcess("ABC123!?"))
+        assertEquals("ｘ－ｙ＿ｚ～",MangaOcrDecode.postProcess("x-y_z~"))
+        assertEquals("ガギパ。ー",MangaOcrDecode.postProcess("ｶﾞｷﾞﾊﾟ｡ｰ"))
+        assertEquals("ヲﾞ",MangaOcrDecode.postProcess("ｦﾞ"))
+        assertEquals("ﾞ",MangaOcrDecode.postProcess("ﾞ"))
+        assertEquals("漢字ひらがな",MangaOcrDecode.postProcess("漢字ひらがな"))
+    }
+    @Test fun grayscaleMatchesPillowLuma() {
+        assertEquals(0x4c4c4c,OcrPixels.grayscale(intArrayOf(0xff0000))[0])
+        assertEquals(0xffffff,OcrPixels.grayscale(intArrayOf(0xffffff))[0])
+        assertEquals(0x000000,OcrPixels.grayscale(intArrayOf(0x000000))[0])
     }
     @Test fun resizePreservesConstantRgbAcrossUpsamplingAndDownsampling() {
         for((w,h) in listOf(1 to 1,17 to 31,640 to 310)) {
-            val rgb=BaberuPixels.resizeRgb(IntArray(w*h){0x1234ab},w,h)
+            val rgb=OcrPixels.resizeRgb(IntArray(w*h){0x1234ab},w,h)
             assertTrue(rgb.all { it==0x1234ab })
         }
     }
     @Test fun normalizationIsRgbChannelFirst() {
-        val result=BaberuPixels.normalize(intArrayOf(0xff0000,0x00ff00))
-        assertEquals((1-.485f)/.229f,result[0],.00001f)
-        assertEquals((0-.485f)/.229f,result[1],.00001f)
-        assertEquals((1-.456f)/.224f,result[3],.00001f)
+        val result=OcrPixels.normalize(intArrayOf(0xff0000,0x00ff00),.5f,.5f)
+        assertEquals(1f,result[0],.00001f)
+        assertEquals(-1f,result[1],.00001f)
+        assertEquals(-1f,result[2],.00001f)
+        assertEquals(1f,result[3],.00001f)
     }
     @Test fun preprocessingMatchesIndependentPillowGoldenDigests() {
         val text=javaClass.getResource("/pillow_bicubic_vectors.json")!!.readText()
@@ -62,7 +73,7 @@ class OcrAlgorithmsTest {
                 val x=it%w; val y=it/w
                 (((x*13+y*7)%256) shl 16) or (((x*3+y*29)%256) shl 8) or ((x*47+y*11)%256)
             }
-            val rgb=BaberuPixels.resizeRgb(source,w,h)
+            val rgb=OcrPixels.resizeRgb(source,w,h)
             val bytes=ByteArray(rgb.size*3) {
                 ((rgb[it/3] ushr (16-(it%3)*8)) and 255).toByte()
             }

@@ -2830,7 +2830,7 @@ class AppLocalizationsZh extends AppLocalizations {
       'The selected pages already have OCR. Choose Replace existing OCR to scan them again.';
 
   @override
-  String get localOcrModelTitle => 'Japanese manga OCR — Baberu';
+  String get localOcrModelTitle => 'Japanese manga OCR — manga-ocr';
 
   @override
   String get localOcrModelDescription =>
@@ -2980,8 +2980,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrLicenseTitle => 'Manga OCR models and runtime';
 
   @override
-  String get localOcrLicenseBaberu =>
-      'Baberu OCR by genshiai-daichi. Used for text recognition. Apache-2.0.';
+  String get localOcrLicenseRecognizer =>
+      'manga-ocr by kha-white. Used for text recognition. Apache-2.0.';
 
   @override
   String get localOcrLicenseDetector =>

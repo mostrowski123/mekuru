@@ -3792,7 +3792,7 @@
   "@localOcrNothingToDo": {
     "description": "On-device manga OCR: localOcrNothingToDo"
   },
-  "localOcrModelTitle": "Japanese manga OCR — Baberu",
+  "localOcrModelTitle": "Japanese manga OCR — manga-ocr",
   "@localOcrModelTitle": {
     "description": "On-device manga OCR: localOcrModelTitle"
   },
@@ -3988,9 +3988,9 @@
   "@localOcrLicenseTitle": {
     "description": "On-device manga OCR: localOcrLicenseTitle"
   },
-  "localOcrLicenseBaberu": "Baberu OCR by genshiai-daichi. Used for text recognition. Apache-2.0.",
-  "@localOcrLicenseBaberu": {
-    "description": "On-device manga OCR: localOcrLicenseBaberu"
+  "localOcrLicenseRecognizer": "manga-ocr by kha-white. Used for text recognition. Apache-2.0.",
+  "@localOcrLicenseRecognizer": {
+    "description": "On-device manga OCR: attribution line for the text recognition model"
   },
   "localOcrLicenseDetector": "Comic Text Detector by dmMaze and contributors. Used for manga text detection. GPL-3.0 project; see artifact provenance and source notices.",
   "@localOcrLicenseDetector": {

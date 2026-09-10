@@ -1,0 +1,19 @@
+manga-ocr
+Author/project: kha-white (https://github.com/kha-white/manga-ocr)
+Model: https://huggingface.co/kha-white/manga-ocr-base
+Weights revision: aa6573bd10b0d446cbf622e29c3e084914df9741
+ONNX export: https://huggingface.co/onnx-community/manga-ocr-base-ONNX
+ONNX export revision: f9023406bb2f6b17df67bc4a327c56ecd20611f0
+License declared upstream for code and weights: Apache License 2.0.
+The complete license is included in APACHE-2.0.txt.
+
+Mekuru uses the FP16 encoder and INT8 decoder ONNX graphs of the export and
+the character vocabulary of the source model. Image preprocessing, greedy
+decoding and text post-processing were reimplemented in Kotlin to match the
+manga_ocr Python package. Line alignment, cancellation, storage and
+integration are Mekuru additions. Model weights are downloaded separately
+from the pinned upstream repositories. No manga training images or
+transcriptions are distributed.
+
+The corresponding Mekuru integration source and build instructions accompany
+the Mekuru source release: https://github.com/mostrowski123/mekuru

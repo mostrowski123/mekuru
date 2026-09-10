@@ -263,7 +263,7 @@ class OcrStore(private val directory: File,
                 .put("modelVersion", job.getString("modelVersion")).put("inputHash", inputHash)
                 .put("jobId", id).put("revision", revision).put("completedAt", System.currentTimeMillis()))
             if(job.getString("backend")=="onDevice") {
-                page.getJSONObject("ocr").put("engineVersion","baberu-opencv-2")
+                page.getJSONObject("ocr").put("engineVersion","manga-ocr-1")
             }
             book.put("ocrCompleted", pages.objects().all {
                 it.optJSONObject("ocr")?.optBoolean("completed") == true ||

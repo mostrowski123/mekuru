@@ -87,7 +87,7 @@ void main() {
                 'supported': true,
                 'installed': false,
                 'status': 'missing',
-                'totalBytes': 336780451,
+                'totalBytes': 296173655,
                 'downloadedBytes': 0,
               }),
             ),
@@ -97,8 +97,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Japanese manga OCR — Baberu'), findsOneWidget);
-    expect(find.textContaining('336.8 MB'), findsOneWidget);
+    expect(find.text('Japanese manga OCR — manga-ocr'), findsOneWidget);
+    expect(find.textContaining('296.2 MB'), findsOneWidget);
     await tester.tap(find.text('Download'));
     await tester.pumpAndSettle();
     expect(calls.map((c) => c.method), ['isWifiConnected', 'download']);
@@ -114,7 +114,7 @@ void main() {
             'supported': true,
             'installed': false,
             'status': 'missing',
-            'totalBytes': 336780451,
+            'totalBytes': 296173655,
             'downloadedBytes': downloaded,
           }),
         ),
@@ -137,7 +137,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(AlertDialog),
-        matching: find.textContaining('336.8 MB'),
+        matching: find.textContaining('296.2 MB'),
       ),
       findsOneWidget,
     );
@@ -183,7 +183,7 @@ void main() {
       wifi = false;
       await tester.pumpWidget(modelDownload(downloaded: 100000000));
       await tester.pumpAndSettle();
-      expect(find.text('100.0 MB / 336.8 MB downloaded'), findsOneWidget);
+      expect(find.text('100.0 MB / 296.2 MB downloaded'), findsOneWidget);
       await tester.tap(find.text('Resume'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -228,14 +228,14 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(host(const OcrAttributions()));
-    expect(find.textContaining('Baberu OCR by'), findsOneWidget);
+    expect(find.textContaining('manga-ocr by'), findsOneWidget);
     expect(find.textContaining('Comic Text Detector by'), findsOneWidget);
     await tester.tap(find.text('View license and source notices'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('BABERU.txt'));
+    await tester.tap(find.text('MANGA-OCR.txt'));
     await tester.pumpAndSettle();
     expect(
-      find.textContaining('d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae'),
+      find.textContaining('aa6573bd10b0d446cbf622e29c3e084914df9741'),
       findsOneWidget,
     );
     expect(calls, isEmpty);

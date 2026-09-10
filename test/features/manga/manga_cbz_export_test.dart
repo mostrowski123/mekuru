@@ -180,7 +180,7 @@ void main() {
                   'completed': true,
                   'source': 'onDevice',
                   'modelVersion': 'v1',
-                  'engineVersion': 'baberu-opencv-2',
+                  'engineVersion': 'manga-ocr-1',
                 },
               ),
               original.pages[1].copyWith(ocr: {'completed': allComplete}),
@@ -202,7 +202,7 @@ void main() {
           expect(restored.pages[0].blocks, isEmpty);
           expect(restored.pages[0].ocr?['completed'], true);
           expect(restored.pages[0].ocr?['modelVersion'], 'v1');
-          expect(restored.pages[0].ocr?['engineVersion'], 'baberu-opencv-2');
+          expect(restored.pages[0].ocr?['engineVersion'], 'manga-ocr-1');
           expect(selectOcrPages(restored), allComplete ? isEmpty : [1]);
         },
       );

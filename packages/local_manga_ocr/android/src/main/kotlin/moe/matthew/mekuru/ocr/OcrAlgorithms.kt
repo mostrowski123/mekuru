@@ -48,37 +48,70 @@ object LineAlignment {
     }
 }
 
-/** Port of Baberu onnx_infer.py decoding controls (Apache-2.0).
- * Modified for Android, 2026-09-10. See assets/licenses/BABERU.txt. */
-object BaberuDecode {
-    fun next(logits: FloatArray, sequence: List<Int>, contentIds: Set<Int>): Int {
-        val values = DoubleArray(logits.size) { logits[it].toDouble() }
-        for (id in sequence.toSet()) if (id in values.indices) {
-            values[id] = if (values[id] < 0) values[id] * 1.2 else values[id] / 1.2
+/** Greedy decoding and text clean-up matching manga_ocr's generation config
+ * and post_process(), so on-device text agrees with the server. */
+object MangaOcrDecode {
+    const val BOS = 2
+    const val EOS = 3
+    const val MAX_TOKENS = 300
+    private const val NO_REPEAT_NGRAM = 3
+
+    /** Argmax over [logits], never completing a trigram already present in [sequence]. */
+    fun next(logits: FloatArray, sequence: List<Int>): Int {
+        val banned = HashSet<Int>()
+        val prefix = NO_REPEAT_NGRAM - 1
+        if (sequence.size >= prefix) {
+            val tail = sequence.subList(sequence.size - prefix, sequence.size)
+            for (i in 0..sequence.size - NO_REPEAT_NGRAM) {
+                if (sequence.subList(i, i + prefix) == tail) banned.add(sequence[i + prefix])
+            }
         }
-        val last = sequence.lastOrNull()
-        if (last != null && last in contentIds &&
-            sequence.asReversed().takeWhile { it == last }.size >= 12) {
-            values[last] = Double.NEGATIVE_INFINITY
+        var best = -1
+        for (i in logits.indices) {
+            if (i !in banned && (best < 0 || logits[i] > logits[best])) best = i
         }
-        var best = 0
-        for (i in 1 until values.size) if (values[i] > values[best]) best = i
         return best
     }
 
-    fun content(character: String): Boolean {
-        if (character.codePointCount(0, character.length) != 1 ||
-            character in listOf("ー", "ｰ", "〜", "~")) return false
-        val cp=character.codePointAt(0)
-        val kind=Character.getType(cp)
-        return Character.isLetterOrDigit(cp) || kind==Character.LETTER_NUMBER.toInt() ||
-            kind==Character.OTHER_NUMBER.toInt()
+    private const val HALF_KANA = "｡｢｣､･ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ"
+    private const val FULL_KANA = "。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン"
+
+    /** manga_ocr.ocr.post_process: strip whitespace, normalize dot runs, then
+     * jaconv.h2z(ascii=True, digit=True) with its default kana conversion. */
+    fun postProcess(text: String): String {
+        var result = text.filterNot { it.isWhitespace() }.replace("…", "...")
+        result = Regex("[・.]{2,}").replace(result) { ".".repeat(it.value.length) }
+        val out = StringBuilder(result.length)
+        for (ch in result) {
+            val kana = HALF_KANA.indexOf(ch)
+            when {
+                kana >= 0 -> out.append(FULL_KANA[kana])
+                ch == 'ﾞ' || ch == 'ﾟ' -> {
+                    // jaconv composes only where a precomposed kana exists (ｶﾞ -> ガ)
+                    // and otherwise keeps the half-width mark as is.
+                    val mark = if (ch == 'ﾞ') "\u3099" else "\u309A"
+                    val bases = if (ch == 'ﾞ') "ウカキクケコサシスセソタチツテトハヒフヘホ" else "ハヒフヘホ"
+                    val composed = if (out.isNotEmpty() && out.last() in bases) java.text.Normalizer.normalize(
+                        out.last() + mark, java.text.Normalizer.Form.NFC) else ""
+                    if (composed.length == 1) out.setCharAt(out.length - 1, composed[0]) else out.append(ch)
+                }
+                ch in '!'..'~' -> out.append(ch + 0xFEE0)
+                else -> out.append(ch)
+            }
+        }
+        return out.toString()
     }
 }
 
 /** Pillow-compatible separable bicubic resize of RGB bytes, including
  * antialias support on downscaling and rounding after each pass. */
-object BaberuPixels {
+object OcrPixels {
+    /** PIL convert("L") replicated into every channel. */
+    fun grayscale(rgb: IntArray): IntArray = IntArray(rgb.size) {
+        val p = rgb[it]
+        val l = (((p ushr 16) and 255)*19595 + ((p ushr 8) and 255)*38470 + (p and 255)*7471 + 0x8000) ushr 16
+        (l shl 16) or (l shl 8) or l
+    }
     private fun kernel(x0: Double): Double {
         val x = abs(x0)
         return when {
@@ -131,13 +164,11 @@ object BaberuPixels {
             (channel(r) shl 16) or (channel(g) shl 8) or channel(b)
         }
     }
-    fun normalize(rgb: IntArray): FloatArray {
-        val means = floatArrayOf(.485f,.456f,.406f)
-        val stds = floatArrayOf(.229f,.224f,.225f)
-        return FloatArray(rgb.size*3) { i ->
+    /** Channel-first float tensor, (x/255 - mean) / std per channel. */
+    fun normalize(rgb: IntArray, mean: Float, std: Float): FloatArray =
+        FloatArray(rgb.size*3) { i ->
             val c = i/rgb.size
             val value = (rgb[i%rgb.size] ushr (16-c*8)) and 255
-            (value/255f-means[c])/stds[c]
+            (value/255f-mean)/std
         }
-    }
 }

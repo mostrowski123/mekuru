@@ -14,7 +14,7 @@ void main() {
             )
             as Map;
     final files = manifest['files'] as List;
-    expect(files.length, 5);
+    expect(files.length, 4);
     var total = 0;
     for (final file in files.cast<Map>()) {
       expect(file['url'], startsWith('https://'));
@@ -40,8 +40,8 @@ void main() {
     expect(detector, contains('Modified'));
     expect(detector, contains('Corresponding source'));
     expect(
-      File('$plugin/assets/licenses/BABERU.txt').readAsStringSync(),
-      contains('d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae'),
+      File('$plugin/assets/licenses/MANGA-OCR.txt').readAsStringSync(),
+      contains('aa6573bd10b0d446cbf622e29c3e084914df9741'),
     );
   });
   test(

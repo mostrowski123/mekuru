@@ -1,36 +1,28 @@
 {
-  "version": "baberu-fp16-ctd-v1",
+  "version": "manga-ocr-base-onnx-v1",
   "files": [
     {
-      "name": "vision_fp16.onnx",
-      "bytes": 172917304,
-      "sha256": "4ce333804846b23f1983376efe363c164d4624ecc6bd16f99a15a859d8423117",
-      "url": "https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae/onnx/vision_fp16.onnx",
-      "component": "baberu",
+      "name": "encoder_model_fp16.onnx",
+      "bytes": 171851891,
+      "sha256": "1a6a57bc3608195c4577b13ac3aadab810dce42fa22c5a3acf0570bffc013b60",
+      "url": "https://huggingface.co/onnx-community/manga-ocr-base-ONNX/resolve/f9023406bb2f6b17df67bc4a327c56ecd20611f0/onnx/encoder_model_fp16.onnx",
+      "component": "manga-ocr",
       "license": "Apache-2.0"
     },
     {
-      "name": "decoder_prefill_int8.onnx",
-      "bytes": 35133596,
-      "sha256": "4f8d28d4e5e8b6c7f3a4510663aa0a9199a7eec06bcb1dc0afb3ca571494e97f",
-      "url": "https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae/onnx/decoder_prefill_int8.onnx",
-      "component": "baberu",
+      "name": "decoder_model_int8.onnx",
+      "bytes": 29627936,
+      "sha256": "2e7177d2b0a59f1c612b694ed70c13971bee765cc2b2bc7bc9376e4753652f27",
+      "url": "https://huggingface.co/onnx-community/manga-ocr-base-ONNX/resolve/f9023406bb2f6b17df67bc4a327c56ecd20611f0/onnx/decoder_model_int8.onnx",
+      "component": "manga-ocr",
       "license": "Apache-2.0"
     },
     {
-      "name": "decoder_step_int8.onnx",
-      "bytes": 33929034,
-      "sha256": "2eaf792ca70b67e55140ef0bcfbfc3c3b1e07d72ca277dcc46aae27c81f27ac8",
-      "url": "https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae/onnx/decoder_step_int8.onnx",
-      "component": "baberu",
-      "license": "Apache-2.0"
-    },
-    {
-      "name": "vocab.json",
-      "bytes": 130761,
-      "sha256": "681de4eb83154a397af49e2ddae4705041b12a22e16fe00860b829e889e5f47c",
-      "url": "https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae/tokenizer/vocab.json",
-      "component": "baberu",
+      "name": "vocab.txt",
+      "bytes": 24072,
+      "sha256": "344fbb6b8bf18c57839e924e2c9365434697e0227fac00b88bb4899b78aa594d",
+      "url": "https://huggingface.co/kha-white/manga-ocr-base/resolve/aa6573bd10b0d446cbf622e29c3e084914df9741/vocab.txt",
+      "component": "manga-ocr",
       "license": "Apache-2.0"
     },
     {
@@ -43,8 +35,9 @@
       "licenseProvenance": "Upstream detector project license; no separate weight license is included in the release asset. Redistribution provenance must be verified before release."
     }
   ],
-  "totalBytes": 336780451,
-  "baberuRevision": "d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae",
+  "totalBytes": 296173655,
+  "mangaOcrRevision": "aa6573bd10b0d446cbf622e29c3e084914df9741",
+  "mangaOcrOnnxRevision": "f9023406bb2f6b17df67bc4a327c56ecd20611f0",
   "detectorRevision": "293ae8060b08f2ed323693019f9bd0c173af4eab",
   "runtime": "onnxruntime-android:1.24.3",
   "detectorRuntime": "OpenCV 4.12.0 DNN CPU"

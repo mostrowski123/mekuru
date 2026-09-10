@@ -12,7 +12,7 @@ import 'package:path_provider/path_provider.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
-    'pinned Baberu inference on Android',
+    'pinned manga-ocr inference on Android',
     (tester) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: Text('Local model evaluation'))),

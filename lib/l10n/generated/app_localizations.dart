@@ -4927,7 +4927,7 @@ abstract class AppLocalizations {
   /// On-device manga OCR: localOcrModelTitle
   ///
   /// In en, this message translates to:
-  /// **'Japanese manga OCR — Baberu'**
+  /// **'Japanese manga OCR — manga-ocr'**
   String get localOcrModelTitle;
 
   /// On-device manga OCR: localOcrModelDescription
@@ -5174,11 +5174,11 @@ abstract class AppLocalizations {
   /// **'Manga OCR models and runtime'**
   String get localOcrLicenseTitle;
 
-  /// On-device manga OCR: localOcrLicenseBaberu
+  /// On-device manga OCR: attribution line for the text recognition model
   ///
   /// In en, this message translates to:
-  /// **'Baberu OCR by genshiai-daichi. Used for text recognition. Apache-2.0.'**
-  String get localOcrLicenseBaberu;
+  /// **'manga-ocr by kha-white. Used for text recognition. Apache-2.0.'**
+  String get localOcrLicenseRecognizer;
 
   /// On-device manga OCR: localOcrLicenseDetector
   ///

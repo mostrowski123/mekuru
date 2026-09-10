@@ -129,7 +129,7 @@ class OcrJobService : Service() {
                     OcrRuntime.models.verify()
                     resourceCheck(job)
                     val lowRam=getSystemService(ActivityManager::class.java).isLowRamDevice
-                    val engine=BaberuEngine(OcrRuntime.models.installedDirectory,if(lowRam) 1 else 2) {
+                    val engine=MangaOcrEngine(OcrRuntime.models.installedDirectory,if(lowRam) 1 else 2) {
                         resourceCheck(job)
                         if(OcrRuntime.store.read(id).getString("status")!="preparing") throw OcrPause("stopped")
                     }

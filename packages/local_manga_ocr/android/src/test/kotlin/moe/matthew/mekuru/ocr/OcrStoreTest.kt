@@ -48,7 +48,7 @@ class OcrStoreTest {
         assertTrue(OcrStore.pageComplete(book,book.getJSONArray("pages").getJSONObject(0)))
         assertFalse(OcrStore.pageComplete(book,book.getJSONArray("pages").getJSONObject(1)))
         assertFalse(book.getBoolean("ocrCompleted"))
-        assertEquals("baberu-opencv-2",book.getJSONArray("pages").getJSONObject(0).getJSONObject("ocr").getString("engineVersion"))
+        assertEquals("manga-ocr-1",book.getJSONArray("pages").getJSONObject(0).getJSONObject("ocr").getString("engineVersion"))
     }
     @Test fun legacyMokuroEmptyPagesArePreservedAsComplete() {
         val book=JSONObject(cache.readText()).put("ocrCompleted",true).put("ocrSource","mokuro")

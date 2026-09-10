@@ -8,10 +8,12 @@ import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
+import ai.onnxruntime.platform.Fp16Conversions
 import java.io.Closeable
 import java.io.File
 import java.nio.FloatBuffer
 import java.nio.LongBuffer
+import java.nio.ShortBuffer
 import java.util.concurrent.CancellationException
 import kotlin.math.*
 
@@ -21,19 +23,25 @@ interface PageOcrEngine : Closeable {
     fun cancel()
 }
 
-/** Native Baberu host loop, adapted from the pinned Apache-2.0 onnx_infer.py.
- * No Python interpreter, downloaded code, or remote execution is involved. */
-class BaberuEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit = {}) : PageOcrEngine {
+/** manga-ocr (kha-white/manga-ocr-base, the same recognizer as the Mekuru OCR
+ * server) through its onnx-community ONNX export: a DeiT encoder plus a
+ * two-layer BERT decoder, driven by a greedy loop that mirrors the server's
+ * generation config (no_repeat_ngram_size 3, max 300 tokens). The decoder
+ * export carries no KV cache, so each step re-runs the whole prefix.
+ * ponytail: O(T^2) per crop; export decoder_with_past via optimum and host it
+ * if phone latency demands, and add 4-beam search if quality demands. */
+class MangaOcrEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit = {}) : PageOcrEngine {
     private val env = OrtEnvironment.getEnvironment()
     private val sessions = mutableListOf<OrtSession>()
     private val options = OrtSession.RunOptions()
     @Volatile private var cancelled = false
     private var closed = false
     private val vocabulary: List<String>
-    private val contentIds: Set<Int>
-    private val vision: OrtSession
-    private val prefill: OrtSession
-    private val step: OrtSession
+    private val encoder: OrtSession
+    private val decoder: OrtSession
+    private val encoderInput: String
+    private val encoderInputType: OnnxJavaType
+    private val hiddenType: OnnxJavaType
     private var detector: ComicTextDetectorNative? = null
     var regionProgress: (Int,Int) -> Unit = { _,_ -> }
     var statistics=org.json.JSONObject()
@@ -57,12 +65,13 @@ class BaberuEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit = {
             }
             detector=ComicTextDetectorNative(File(directory,"comictextdetector.onnx"),threads)
             loadCheckpoint()
-            vision=session("vision_fp16.onnx")
-            prefill=session("decoder_prefill_int8.onnx")
-            step=session("decoder_step_int8.onnx")
-            val chars = JSONArray(File(directory,"vocab.json").readText())
-            vocabulary = listOf("","","","")+(0 until chars.length()).map { chars.getString(it) }
-            contentIds = vocabulary.indices.filter { BaberuDecode.content(vocabulary[it]) }.toSet()
+            encoder=session("encoder_model_fp16.onnx")
+            decoder=session("decoder_model_int8.onnx")
+            encoderInput=encoder.inputNames.first()
+            encoderInputType=(encoder.inputInfo.getValue(encoderInput).info as TensorInfo).type
+            hiddenType=(decoder.inputInfo.getValue("encoder_hidden_states").info as TensorInfo).type
+            // BERT WordPiece vocabulary, one token per line; ids 0..4 are special.
+            vocabulary = File(directory,"vocab.txt").readLines()
         } catch (e: Throwable) { close(); throw e }
     }
     @Synchronized override fun cancel() {
@@ -79,50 +88,51 @@ class BaberuEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit = {
         options.close()
         // The process-wide OrtEnvironment is shared; sessions own all job resources.
     }
+    /** Reads fp32, fp16 and bf16 tensors alike. */
     private fun floats(tensor: OnnxValue): FloatArray {
         val buffer = (tensor as OnnxTensor).floatBuffer
         return FloatArray(buffer.remaining()).also { buffer.get(it) }
     }
+    private fun tensor(values: FloatArray, shape: LongArray, type: OnnxJavaType): OnnxTensor =
+        if (type == OnnxJavaType.FLOAT16) OnnxTensor.createTensor(env,
+            ShortBuffer.wrap(ShortArray(values.size) { Fp16Conversions.floatToFp16(values[it]) }),
+            shape, OnnxJavaType.FLOAT16)
+        else OnnxTensor.createTensor(env, FloatBuffer.wrap(values), shape)
     fun recognize(bitmap: Bitmap, checkpoint: () -> Unit): Recognized {
         check(); checkpoint()
         val pixels = IntArray(bitmap.width*bitmap.height)
         bitmap.getPixels(pixels,0,bitmap.width,0,0,bitmap.width,bitmap.height)
-        val tensor = OnnxTensor.createTensor(env,FloatBuffer.wrap(
-            BaberuPixels.normalize(BaberuPixels.resizeRgb(pixels,bitmap.width,bitmap.height))),
-            longArrayOf(1,3,224,224))
-        var result: OrtSession.Result? = null
-        var position = 0L
-        try {
-            tensor.use { input ->
-                vision.run(mapOf("pixel_values" to input),options).use { visual ->
-                    position = (visual[0].info as TensorInfo).shape[1] + 1
-                    OnnxTensor.createTensor(env,LongBuffer.wrap(longArrayOf(1)),longArrayOf(1,1)).use { bos ->
-                        result=prefill.run(mapOf("vision_embeds" to visual[0] as OnnxTensor,
-                            "input_ids" to bos),options)
+        // manga_ocr: img.convert("L").convert("RGB"), bicubic 224, (x/255-.5)/.5
+        val normalized = OcrPixels.normalize(
+            OcrPixels.resizeRgb(OcrPixels.grayscale(pixels),bitmap.width,bitmap.height),.5f,.5f)
+        val tokens = mutableListOf(MangaOcrDecode.BOS)
+        var truncated = true
+        tensor(normalized,longArrayOf(1,3,224,224),encoderInputType).use { input ->
+            encoder.run(mapOf(encoderInput to input),options).use { encoded ->
+                val encodedInfo = encoded[0].info as TensorInfo
+                tensor(floats(encoded[0]),encodedInfo.shape,hiddenType).use { hidden ->
+                    while (tokens.size < MangaOcrDecode.MAX_TOKENS) {
+                        check(); checkpoint()
+                        val ids = LongArray(tokens.size) { tokens[it].toLong() }
+                        val next = OnnxTensor.createTensor(env,LongBuffer.wrap(ids),
+                            longArrayOf(1,tokens.size.toLong())).use { input ->
+                            decoder.run(mapOf("input_ids" to input,"encoder_hidden_states" to hidden),
+                                options).use { out ->
+                                val vocabSize = (out[0].info as TensorInfo).shape.last().toInt()
+                                val logits = floats(out[0])
+                                MangaOcrDecode.next(logits.copyOfRange(logits.size-vocabSize,logits.size),tokens)
+                            }
+                        }
+                        if (next == MangaOcrDecode.EOS) { truncated = false; break }
+                        tokens.add(next)
                     }
                 }
             }
-            val tokens=mutableListOf(1)
-            for (index in 0 until 128) {
-                check(); checkpoint()
-                val current = result!!
-                val logits=floats(current[0]).takeLast(vocabulary.size).toFloatArray()
-                val next=BaberuDecode.next(logits,tokens,contentIds)
-                if (next==2) return Recognized(tokens.drop(1).joinToString("") { vocabulary[it] },false)
-                tokens.add(next)
-                if (index==127) break
-                OnnxTensor.createTensor(env,LongBuffer.wrap(longArrayOf(next.toLong())),longArrayOf(1,1)).use { ids ->
-                    OnnxTensor.createTensor(env,LongBuffer.wrap(longArrayOf(position)),longArrayOf(1,1)).use { pos ->
-                        val feed=mutableMapOf("input_ids" to ids,"position_ids" to pos)
-                        for (i in 0 until 6) feed["past_k"+i]=current[i+1] as OnnxTensor
-                        for (i in 0 until 6) feed["past_v"+i]=current[i+7] as OnnxTensor
-                        result=step.run(feed,options)
-                    }
-                }
-                current.close(); position++
-            }
-            return Recognized(tokens.drop(1).joinToString("") { vocabulary[it] },true)
-        } finally { result?.close() }
+        }
+        val text = tokens.drop(1).joinToString("") { id ->
+            vocabulary.getOrNull(id)?.takeUnless { it.startsWith("[") || it.startsWith("<unused") } ?: ""
+        }
+        return Recognized(MangaOcrDecode.postProcess(text),truncated)
     }
 
     private fun recognizeLine(source: MangaImageSource, quad: List<P>, vertical: Boolean,
