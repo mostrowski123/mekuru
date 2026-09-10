@@ -1,0 +1,7 @@
+<resources>
+    <string name="ocr_notification_channel">On-device manga OCR</string>
+    <string name="ocr_preparing">Preparing text recognition…</string>
+    <string name="ocr_notification_progress">On device · %1$d / %2$d pages processed</string>
+    <string name="ocr_pause">Pause</string>
+    <string name="ocr_cancel">Cancel</string>
+</resources>

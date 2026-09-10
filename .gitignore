@@ -35,6 +35,11 @@ example/*
 .pub/
 /build/
 /coverage/
+packages/**/build/
+packages/**/.dart_tool/
+packages/**/android/.gradle/
+packages/**/android/.cxx/
+packages/**/android/.externalNativeBuild/
 /.site-dist/
 
 # Symbolication related

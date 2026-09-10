@@ -1,0 +1,51 @@
+{
+  "version": "baberu-fp16-ctd-v1",
+  "files": [
+    {
+      "name": "vision_fp16.onnx",
+      "bytes": 172917304,
+      "sha256": "4ce333804846b23f1983376efe363c164d4624ecc6bd16f99a15a859d8423117",
+      "url": "https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae/onnx/vision_fp16.onnx",
+      "component": "baberu",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "decoder_prefill_int8.onnx",
+      "bytes": 35133596,
+      "sha256": "4f8d28d4e5e8b6c7f3a4510663aa0a9199a7eec06bcb1dc0afb3ca571494e97f",
+      "url": "https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae/onnx/decoder_prefill_int8.onnx",
+      "component": "baberu",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "decoder_step_int8.onnx",
+      "bytes": 33929034,
+      "sha256": "2eaf792ca70b67e55140ef0bcfbfc3c3b1e07d72ca277dcc46aae27c81f27ac8",
+      "url": "https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae/onnx/decoder_step_int8.onnx",
+      "component": "baberu",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "vocab.json",
+      "bytes": 130761,
+      "sha256": "681de4eb83154a397af49e2ddae4705041b12a22e16fe00860b829e889e5f47c",
+      "url": "https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae/tokenizer/vocab.json",
+      "component": "baberu",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "comictextdetector.onnx",
+      "bytes": 94669756,
+      "sha256": "1a86ace74961413cbd650002e7bb4dcec4980ffa21b2f19b86933372071d718f",
+      "url": "https://github.com/zyddnys/manga-image-translator/releases/download/beta-0.2.1/comictextdetector.pt.onnx",
+      "component": "comic-text-detector",
+      "license": "GPL-3.0",
+      "licenseProvenance": "Upstream detector project license; no separate weight license is included in the release asset. Redistribution provenance must be verified before release."
+    }
+  ],
+  "totalBytes": 336780451,
+  "baberuRevision": "d9cc13153e9a1cd8fdfa3b7b1cc329da2020aeae",
+  "detectorRevision": "293ae8060b08f2ed323693019f9bd0c173af4eab",
+  "runtime": "onnxruntime-android:1.24.3",
+  "detectorRuntime": "OpenCV 4.12.0 DNN CPU"
+}

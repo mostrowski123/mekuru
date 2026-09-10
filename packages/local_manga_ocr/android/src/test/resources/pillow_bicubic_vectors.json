@@ -1,0 +1,27 @@
+[
+  {
+    "width": 17,
+    "height": 31,
+    "sha256": "63d8010f26be6a71a6a252b4e511c59e6ed20897a3f891bb0ac77148c781b4fb"
+  },
+  {
+    "width": 413,
+    "height": 57,
+    "sha256": "7edd9ef8bf1e0cee88f19750b232505a56ba4a851e0175fcf0117d84a5288ef9"
+  },
+  {
+    "width": 1600,
+    "height": 100,
+    "sha256": "da54c01e26e487b829b797bc1c2a7534356b2728188d63c0b1dd0afbffa2b360"
+  },
+  {
+    "width": 224,
+    "height": 224,
+    "sha256": "2b4acca33e2432fdeb90391ce5906f5b6beb1f02e2b0bb73eae810e0794df549"
+  },
+  {
+    "width": 1,
+    "height": 13,
+    "sha256": "f6faeabeefb0be636cfd7c7c591b0f025b26963ab3857308b504fe10ab4485a2"
+  }
+]

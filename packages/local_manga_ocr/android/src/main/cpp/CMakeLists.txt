@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(mekuru_ocr_detector LANGUAGES CXX)
+find_package(OpenCV REQUIRED CONFIG)
+add_library(mekuru_ocr_detector SHARED detector_jni.cpp)
+target_compile_features(mekuru_ocr_detector PRIVATE cxx_std_17)
+target_compile_options(mekuru_ocr_detector PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(mekuru_ocr_detector PRIVATE OpenCV::opencv_java4)
+target_link_options(mekuru_ocr_detector PRIVATE "-Wl,-z,max-page-size=16384")

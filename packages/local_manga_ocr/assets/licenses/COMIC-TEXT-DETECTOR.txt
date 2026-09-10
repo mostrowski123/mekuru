@@ -1,0 +1,32 @@
+Comic Text Detector
+Project: dmMaze and contributors
+Source: https://github.com/dmMaze/comic-text-detector
+Revision: 293ae8060b08f2ed323693019f9bd0c173af4eab
+Code license: GNU General Public License version 3 (included in GPL-3.0.txt).
+
+Modified for Mekuru on 2026-09-10:
+The detector preprocessing, DBNet contour extraction, YOLO suppression and
+text-block/line grouping were ported to Kotlin/OpenCV. Runtime inference uses
+ONNX Runtime. Resource bounds, input validation and lifecycle control were added.
+For rectangular DBNet mini-boxes the offset is calculated analytically rather
+than invoking Python's polygon-offset dependency.
+
+Corresponding source includes the native plugin, its build files, model manifest,
+Mekuru integration, and reproduction instructions in docs/development/local-ocr.md.
+It accompanies Mekuru's source release at https://github.com/mostrowski123/mekuru.
+Retain the upstream license and notices when distributing modified versions.
+This software is provided WITHOUT ANY WARRANTY, including implied warranties of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE; see GPL-3.0.txt.
+
+Model artifact provenance:
+https://github.com/zyddnys/manga-image-translator/releases/tag/beta-0.2.1
+Asset: comictextdetector.pt.onnx
+SHA-256: 1a86ace74961413cbd650002e7bb4dcec4980ffa21b2f19b86933372071d718f
+The detector README directs users to this release. The asset has no separate
+weight-license notice. Do not represent the code license as an independently
+confirmed weight license. Verify weight-distribution terms before a public
+release; Mekuru currently points downloads directly to the upstream artifact.
+
+The release project at the exact beta-0.2.1 tag also carries GPL-3.0:
+https://raw.githubusercontent.com/zyddnys/manga-image-translator/beta-0.2.1/LICENSE
+This is project-level provenance; no separate weight-asset notice was found.

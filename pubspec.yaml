@@ -7,6 +7,8 @@ environment:
   sdk: ^3.10.8
 
 dependencies:
+  local_manga_ocr:
+    path: packages/local_manga_ocr
   flutter:
     sdk: flutter
   flutter_localizations:

@@ -312,6 +312,13 @@ tasks.matching {
         (it.name.endsWith("JniLibFolders") || it.name.endsWith("NativeLibs"))
 }.configureEach {
     dependsOn(ensureBundledLibCppShared)
+    // A device-targeted build replaces Flutter's variant JNI directory with a
+    // different ABI. AGP may otherwise reuse the previous ABI's merged output
+    // even though the new native-assets manifest references new libraries.
+    // Treat target-platform as a merge input so switching emulator/phone builds
+    // forces the merge to rebuild instead of shipping SQLite/MeCab references
+    // without the corresponding .so files.
+    inputs.property("flutterNativeAssetAbis", requestedMecabAbis.sorted())
 }
 
 tasks.matching {
