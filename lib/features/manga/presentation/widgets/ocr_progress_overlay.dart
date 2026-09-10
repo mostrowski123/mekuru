@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
 import '../../data/services/ocr_background_worker.dart';
+import '../providers/local_ocr_providers.dart';
 import '../providers/ocr_progress_provider.dart';
+import 'local_ocr_widgets.dart';
 
 /// Overlay widget displayed on top of book covers in the library grid
 /// to show OCR processing progress.
@@ -20,6 +22,52 @@ class OcrProgressOverlay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progressAsync = ref.watch(ocrProgressProvider(bookId));
+    final local = ref.watch(localOcrJobProvider(bookId));
+    // Only live work earns a badge; finished, paused and failed jobs are shown
+    // in the reader's OCR sheet. The badge is deliberately not tappable: the
+    // tile's own Listener already opens the book, so a tap target here pushed
+    // a second (possibly empty) sheet on top of the reader.
+    if (local != null &&
+        local.isActive &&
+        progressAsync.asData?.value?.status != OcrStatus.running) {
+      return Positioned.fill(
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.72),
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.document_scanner, color: Colors.white),
+              Text(
+                context.l10n.localOcrOnDevice,
+                style: const TextStyle(color: Colors.white, fontSize: 11),
+              ),
+              Text(
+                localOcrPhase(context, local),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 11),
+              ),
+              Text(
+                context.l10n.localOcrProgress(
+                  processed: local.processed,
+                  total: local.total,
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 11),
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: local.status == 'preparing'
+                    ? null
+                    : local.total == 0
+                    ? 0
+                    : (local.processed / local.total).clamp(0, 1),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return progressAsync.when(
       data: (progress) {

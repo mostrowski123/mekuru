@@ -1,3 +1,7 @@
+import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
+import 'package:mekuru/features/manga/presentation/widgets/local_ocr_page_overlay.dart';
+import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
+import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -906,6 +910,22 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     }
   }
 
+  bool _ocrSheetOpen = false;
+  Future<void> _showOcrOptions(MokuroBook manga, List<int> pages) async {
+    if (_ocrSheetOpen) return;
+    _ocrSheetOpen = true;
+    try {
+      await showOcrActionSheet(
+        context,
+        widget.book,
+        visiblePages: pages,
+        initialManga: manga,
+      );
+    } finally {
+      _ocrSheetOpen = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
@@ -924,8 +944,30 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         );
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final autoCrop = isProUnlocked && mangaAutoCropEnabled;
-    final isOcrRunning = ref.watch(isOcrRunningProvider(widget.book.id));
-    final enableWordOverlays = !isOcrRunning;
+    const enableWordOverlays = true;
+    ref.listen(
+      localOcrJobProvider(widget.book.id).select((job) => job?.succeeded),
+      (previous, next) {
+        if (previous != next && next != null && next > 0) {
+          ref.invalidate(mangaPagesProvider(widget.book.id));
+        }
+      },
+    );
+
+    ref.listen(localOcrJobProvider(widget.book.id), (previous, next) {
+      if ((previous?.isActive ?? false) &&
+          (next?.canResume ?? false) &&
+          mounted) {
+        final reason = localOcrReason(context, next!.reason);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              reason.isEmpty ? localOcrPhase(context, next) : reason,
+            ),
+          ),
+        );
+      }
+    });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: readerSystemBarsOverlayStyle,
@@ -1033,6 +1075,11 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                   ),
                 ),
 
+                LocalOcrPageOverlay(
+                  bookId: widget.book.id,
+                  visiblePages: _visiblePageIndexes(viewMode, spreads),
+                ),
+
                 // Top controls bar
                 if (_showControls)
                   Positioned(
@@ -1066,6 +1113,17 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                                   fontSize: 16,
                                 ),
                                 overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: context.l10n.localOcrRecognize,
+                              icon: const Icon(
+                                Icons.document_scanner,
+                                color: Colors.white,
+                              ),
+                              onPressed: () => _showOcrOptions(
+                                mokuroBook,
+                                _visiblePageIndexes(viewMode, spreads),
                               ),
                             ),
                             IconButton(

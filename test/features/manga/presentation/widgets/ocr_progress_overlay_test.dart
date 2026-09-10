@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
 
@@ -10,12 +12,20 @@ import '../../../../test_app.dart';
 void main() {
   /// Builds a test widget with the ocrProgressProvider overridden to emit
   /// a single value (no polling), so the test framework isn't stuck waiting.
-  Widget buildTestWidget({required int bookId, OcrProgress? progress}) {
+  Widget buildTestWidget({
+    required int bookId,
+    OcrProgress? progress,
+    OcrJobProgress? localJob,
+  }) {
     return ProviderScope(
+      // Overrides are fixed for a scope's lifetime; key it so each pump of a
+      // different job gets a fresh container.
+      key: ValueKey(localJob?.status),
       overrides: [
         ocrProgressProvider(
           bookId,
         ).overrideWith((ref) => Stream.value(progress)),
+        localOcrJobProvider(bookId).overrideWith((ref) => localJob),
       ],
       child: buildLocalizedTestApp(
         home: Scaffold(
@@ -165,6 +175,39 @@ void main() {
       // 990 remaining * 5.0 sec = 4950 seconds = 1h 22m
       expect(find.textContaining('h'), findsOneWidget);
       expect(find.textContaining('m remaining'), findsOneWidget);
+    });
+
+    testWidgets('on-device badge shows only while the job is active', (
+      tester,
+    ) async {
+      OcrJobProgress job(String status) => OcrJobProgress({
+        'id': 'job',
+        'bookId': 1,
+        'status': status,
+        'pages': [0, 1, 2],
+        'outcomes': {'0': 'done'},
+      });
+
+      await tester.pumpWidget(
+        buildTestWidget(bookId: 1, localJob: job('running')),
+      );
+      await tester.pump();
+      expect(find.text('On device'), findsOneWidget);
+      // Not a tap target: the library tile's Listener already opens the book.
+      expect(find.byType(InkWell), findsNothing);
+
+      for (final status in [
+        'completed',
+        'completedWithErrors',
+        'paused',
+        'failed',
+      ]) {
+        await tester.pumpWidget(
+          buildTestWidget(bookId: 1, localJob: job(status)),
+        );
+        await tester.pump();
+        expect(find.text('On device'), findsNothing, reason: status);
+      }
     });
   });
 }

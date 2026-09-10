@@ -3717,5 +3717,368 @@
   "readerFuriganaWanikaniStagePickerTitle": "Hide furigana for kanji at",
   "@readerFuriganaWanikaniStagePickerTitle": {
     "description": "Title of the bottom sheet that picks the WaniKani SRS-stage threshold."
+  },
+  "localOcrRecognize": "Recognize text",
+  "@localOcrRecognize": {
+    "description": "On-device manga OCR: localOcrRecognize"
+  },
+  "localOcrOnDevice": "On device",
+  "@localOcrOnDevice": {
+    "description": "On-device manga OCR: localOcrOnDevice"
+  },
+  "localOcrOnDeviceSubtitle": "Offline after downloading the models",
+  "@localOcrOnDeviceSubtitle": {
+    "description": "On-device manga OCR: localOcrOnDeviceSubtitle"
+  },
+  "localOcrRemote": "Remote",
+  "@localOcrRemote": {
+    "description": "On-device manga OCR: localOcrRemote"
+  },
+  "localOcrRemoteSubtitle": "Uses your OCR server and its existing access requirements",
+  "@localOcrRemoteSubtitle": {
+    "description": "On-device manga OCR: localOcrRemoteSubtitle"
+  },
+  "localOcrEntireManga": "Entire manga",
+  "@localOcrEntireManga": {
+    "description": "On-device manga OCR: localOcrEntireManga"
+  },
+  "localOcrThisPage": "Page {page}",
+  "@localOcrThisPage": {
+    "description": "On-device manga OCR: localOcrThisPage",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "localOcrCoverage": "{done} of {total} pages already have OCR",
+  "@localOcrCoverage": {
+    "description": "On-device manga OCR: localOcrCoverage",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "localOcrMissingOnly": "Only pages without OCR",
+  "@localOcrMissingOnly": {
+    "description": "On-device manga OCR: localOcrMissingOnly"
+  },
+  "localOcrReplace": "Replace existing OCR",
+  "@localOcrReplace": {
+    "description": "On-device manga OCR: localOcrReplace"
+  },
+  "localOcrReplaceDescription": "Existing results are kept until each replacement succeeds. Completed replacements are kept if you cancel.",
+  "@localOcrReplaceDescription": {
+    "description": "On-device manga OCR: localOcrReplaceDescription"
+  },
+  "localOcrChargingOnly": "Only while charging",
+  "@localOcrChargingOnly": {
+    "description": "On-device manga OCR: localOcrChargingOnly"
+  },
+  "localOcrStartPages": "{count, plural, one{Recognize 1 page} other{Recognize {count} pages}}",
+  "@localOcrStartPages": {
+    "description": "On-device manga OCR: localOcrStartPages",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "localOcrNothingToDo": "The selected pages already have OCR. Choose Replace existing OCR to scan them again.",
+  "@localOcrNothingToDo": {
+    "description": "On-device manga OCR: localOcrNothingToDo"
+  },
+  "localOcrModelTitle": "Japanese manga OCR — Baberu",
+  "@localOcrModelTitle": {
+    "description": "On-device manga OCR: localOcrModelTitle"
+  },
+  "localOcrModelDescription": "Recognize Japanese manga offline. Page images stay on your device.",
+  "@localOcrModelDescription": {
+    "description": "On-device manga OCR: localOcrModelDescription"
+  },
+  "localOcrDownloadSize": "{done} / {total} downloaded",
+  "@localOcrDownloadSize": {
+    "description": "On-device manga OCR: localOcrDownloadSize",
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "localOcrDownloadRequired": "Download the OCR models in Settings → Downloads, then return here to start.",
+  "@localOcrDownloadRequired": {
+    "description": "On-device manga OCR: localOcrDownloadRequired"
+  },
+  "localOcrModelReady": "Models installed · works offline",
+  "@localOcrModelReady": {
+    "description": "On-device manga OCR: localOcrModelReady"
+  },
+  "localOcrModelMissing": "Additional download required",
+  "@localOcrModelMissing": {
+    "description": "On-device manga OCR: localOcrModelMissing"
+  },
+  "localOcrModelVerifying": "Verifying model files…",
+  "@localOcrModelVerifying": {
+    "description": "On-device manga OCR: localOcrModelVerifying"
+  },
+  "localOcrModelDownloading": "Downloading models…",
+  "@localOcrModelDownloading": {
+    "description": "On-device manga OCR: localOcrModelDownloading"
+  },
+  "localOcrUnsupported": "On-device OCR requires a supported 64-bit ARM Android device. Remote OCR remains available.",
+  "@localOcrUnsupported": {
+    "description": "On-device manga OCR: localOcrUnsupported"
+  },
+  "localOcrPause": "Pause",
+  "@localOcrPause": {
+    "description": "On-device manga OCR: localOcrPause"
+  },
+  "localOcrResume": "Resume",
+  "@localOcrResume": {
+    "description": "On-device manga OCR: localOcrResume"
+  },
+  "localOcrCancelJob": "Cancel scan",
+  "@localOcrCancelJob": {
+    "description": "On-device manga OCR: localOcrCancelJob"
+  },
+  "localOcrCancelDescription": "Stop this scan and remove its remaining work? Completed OCR will be kept.",
+  "@localOcrCancelDescription": {
+    "description": "On-device manga OCR: localOcrCancelDescription"
+  },
+  "localOcrPaused": "Paused",
+  "@localOcrPaused": {
+    "description": "On-device manga OCR: localOcrPaused"
+  },
+  "localOcrQueued": "Queued",
+  "@localOcrQueued": {
+    "description": "On-device manga OCR: localOcrQueued"
+  },
+  "localOcrPreparing": "Preparing models…",
+  "@localOcrPreparing": {
+    "description": "On-device manga OCR: localOcrPreparing"
+  },
+  "localOcrDetecting": "Finding text…",
+  "@localOcrDetecting": {
+    "description": "On-device manga OCR: localOcrDetecting"
+  },
+  "localOcrRecognizing": "Recognizing text…",
+  "@localOcrRecognizing": {
+    "description": "On-device manga OCR: localOcrRecognizing"
+  },
+  "localOcrPausing": "Pausing…",
+  "@localOcrPausing": {
+    "description": "On-device manga OCR: localOcrPausing"
+  },
+  "localOcrCancelling": "Cancelling…",
+  "@localOcrCancelling": {
+    "description": "On-device manga OCR: localOcrCancelling"
+  },
+  "localOcrCancelled": "Scan cancelled · completed OCR kept",
+  "@localOcrCancelled": {
+    "description": "On-device manga OCR: localOcrCancelled"
+  },
+  "localOcrCompleted": "OCR complete",
+  "@localOcrCompleted": {
+    "description": "On-device manga OCR: localOcrCompleted"
+  },
+  "localOcrCompletedErrors": "Finished with page errors",
+  "@localOcrCompletedErrors": {
+    "description": "On-device manga OCR: localOcrCompletedErrors"
+  },
+  "localOcrFailed": "OCR stopped after repeated page errors",
+  "@localOcrFailed": {
+    "description": "On-device manga OCR: localOcrFailed"
+  },
+  "localOcrProgress": "{processed} / {total} pages processed",
+  "@localOcrProgress": {
+    "description": "On-device manga OCR: localOcrProgress",
+    "placeholders": {
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "localOcrOutcomeCounts": "{succeeded} saved · {skipped} skipped · {failed} failed",
+  "@localOcrOutcomeCounts": {
+    "description": "On-device manga OCR: localOcrOutcomeCounts",
+    "placeholders": {
+      "succeeded": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "localOcrRetryFailed": "Retry failed pages",
+  "@localOcrRetryFailed": {
+    "description": "On-device manga OCR: localOcrRetryFailed"
+  },
+  "localOcrDismiss": "Dismiss",
+  "@localOcrDismiss": {
+    "description": "On-device manga OCR: localOcrDismiss"
+  },
+  "localOcrError": "OCR could not continue: {details}",
+  "@localOcrError": {
+    "description": "On-device manga OCR: localOcrError",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "localOcrInterrupted": "The scan was interrupted. Resume to continue from saved progress.",
+  "@localOcrInterrupted": {
+    "description": "On-device manga OCR: localOcrInterrupted"
+  },
+  "localOcrLowMemory": "Paused because the device is low on memory. Close other apps before resuming.",
+  "@localOcrLowMemory": {
+    "description": "On-device manga OCR: localOcrLowMemory"
+  },
+  "localOcrTooHot": "Paused because the device is too hot. Let it cool before resuming.",
+  "@localOcrTooHot": {
+    "description": "On-device manga OCR: localOcrTooHot"
+  },
+  "localOcrLowBattery": "Paused because the battery is below 15%. Charge the device before resuming.",
+  "@localOcrLowBattery": {
+    "description": "On-device manga OCR: localOcrLowBattery"
+  },
+  "localOcrChargingRequired": "Connect a charger before resuming this scan.",
+  "@localOcrChargingRequired": {
+    "description": "On-device manga OCR: localOcrChargingRequired"
+  },
+  "localOcrBackgroundLimit": "Android stopped background processing. Open Mekuru and resume the scan.",
+  "@localOcrBackgroundLimit": {
+    "description": "On-device manga OCR: localOcrBackgroundLimit"
+  },
+  "localOcrRuntimeError": "The OCR runtime could not continue on this device. Progress is saved.",
+  "@localOcrRuntimeError": {
+    "description": "On-device manga OCR: localOcrRuntimeError"
+  },
+  "localOcrAccessLost": "A manga image could not be read. Restore folder access before retrying.",
+  "@localOcrAccessLost": {
+    "description": "On-device manga OCR: localOcrAccessLost"
+  },
+  "localOcrStorageFull": "There is not enough free storage to continue.",
+  "@localOcrStorageFull": {
+    "description": "On-device manga OCR: localOcrStorageFull"
+  },
+  "localOcrBusy": "This manga already has an OCR job. Pause or cancel it before starting another.",
+  "@localOcrBusy": {
+    "description": "On-device manga OCR: localOcrBusy"
+  },
+  "localOcrModelBusy": "Stop active OCR and downloads before changing the installed models.",
+  "@localOcrModelBusy": {
+    "description": "On-device manga OCR: localOcrModelBusy"
+  },
+  "localOcrLicenseTitle": "Manga OCR models and runtime",
+  "@localOcrLicenseTitle": {
+    "description": "On-device manga OCR: localOcrLicenseTitle"
+  },
+  "localOcrLicenseBaberu": "Baberu OCR by genshiai-daichi. Used for text recognition. Apache-2.0.",
+  "@localOcrLicenseBaberu": {
+    "description": "On-device manga OCR: localOcrLicenseBaberu"
+  },
+  "localOcrLicenseDetector": "Comic Text Detector by dmMaze and contributors. Used for manga text detection. GPL-3.0 project; see artifact provenance and source notices.",
+  "@localOcrLicenseDetector": {
+    "description": "On-device manga OCR: localOcrLicenseDetector"
+  },
+  "localOcrLicenseRuntime": "ONNX Runtime by Microsoft and contributors; OpenCV by the OpenCV contributors. Used for local inference and image processing.",
+  "@localOcrLicenseRuntime": {
+    "description": "On-device manga OCR: localOcrLicenseRuntime"
+  },
+  "localOcrLicenseOpen": "View license and source notices",
+  "@localOcrLicenseOpen": {
+    "description": "On-device manga OCR: localOcrLicenseOpen"
+  },
+  "localOcrPageErrors": "Page errors",
+  "@localOcrPageErrors": {
+    "description": "On-device manga OCR: localOcrPageErrors"
+  },
+  "localOcrPageError": "Page {page}: {details}",
+  "@localOcrPageError": {
+    "description": "On-device manga OCR: localOcrPageError",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "localOcrNotificationsOff": "OCR can continue with notifications off. Use the manga’s recognition sheet to pause or cancel.",
+  "@localOcrNotificationsOff": {
+    "description": "Shown once when starting local OCR without notification permission."
+  },
+  "localOcrModelCorrupt": "The model files failed verification. Remove and download the OCR models again.",
+  "@localOcrModelCorrupt": {
+    "description": "Recovery instructions for corrupted installed OCR model files."
+  },
+  "localOcrMobileDownloadTitle": "Download over mobile data?",
+  "localOcrMobileDownloadBody": "Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data? Any saved download progress will be reused.",
+  "@localOcrMobileDownloadBody": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "localOcrWaitingWifi": "Waiting for Wi-Fi. Cancel and resume to use mobile data.",
+  "localOcrDownloadQueued": "Waiting to download…",
+  "@localOcrMobileDownloadTitle": {
+    "description": "On-device OCR model download network confirmation and status."
+  },
+  "@localOcrWaitingWifi": {
+    "description": "On-device OCR model download network confirmation and status."
+  },
+  "@localOcrDownloadQueued": {
+    "description": "On-device OCR model download network confirmation and status."
+  },
+  "localOcrEstimating": "Estimating time remaining…",
+  "@localOcrEstimating": {
+    "description": "Progress displayed over the current manga page."
+  },
+  "localOcrReadingRegions": "{done} / {total} text regions read",
+  "@localOcrReadingRegions": {
+    "description": "Progress displayed over the current manga page.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "localOcrCurrentPage": "Recognizing page {page}",
+  "@localOcrCurrentPage": {
+    "description": "Progress displayed over the current manga page.",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "localOcrCopyDiagnostics": "Copy OCR diagnostics",
+  "@localOcrCopyDiagnostics": {
+    "description": "Troubleshooting action in debug builds, without book text or account data."
+  },
+  "localOcrDiagnosticsCopied": "OCR diagnostics copied",
+  "@localOcrDiagnosticsCopied": {
+    "description": "Troubleshooting action in debug builds, without book text or account data."
   }
 }

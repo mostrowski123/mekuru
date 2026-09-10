@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mekuru/core/utils/atomic_file.dart';
+import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/manga_lookup_override_storage.dart';
@@ -57,7 +57,12 @@ final mangaPagesProvider = FutureProvider.autoDispose.family<MokuroBook, int>((
     // the repair heuristic but re-segments identically can never cause a
     // rewrite-on-every-open loop.
     if (updatedJson != null && updatedJson != content) {
-      await writeStringAtomic(cacheFile, updatedJson);
+      final merged = await MangaCacheStore.merge(
+        cacheFile,
+        before: content,
+        after: updatedJson,
+      );
+      return MokuroBook.fromJson(jsonDecode(merged) as Map<String, dynamic>);
     }
     return updated;
   }

@@ -2932,4 +2932,276 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get readerFuriganaWanikaniStagePickerTitle =>
       'Ocultar furigana de kanji a partir de';
+
+  @override
+  String get localOcrRecognize => 'Recognize text';
+
+  @override
+  String get localOcrOnDevice => 'On device';
+
+  @override
+  String get localOcrOnDeviceSubtitle => 'Offline after downloading the models';
+
+  @override
+  String get localOcrRemote => 'Remote';
+
+  @override
+  String get localOcrRemoteSubtitle =>
+      'Uses your OCR server and its existing access requirements';
+
+  @override
+  String get localOcrEntireManga => 'Entire manga';
+
+  @override
+  String localOcrThisPage({required int page}) {
+    return 'Page $page';
+  }
+
+  @override
+  String localOcrCoverage({required int done, required int total}) {
+    return '$done of $total pages already have OCR';
+  }
+
+  @override
+  String get localOcrMissingOnly => 'Only pages without OCR';
+
+  @override
+  String get localOcrReplace => 'Replace existing OCR';
+
+  @override
+  String get localOcrReplaceDescription =>
+      'Existing results are kept until each replacement succeeds. Completed replacements are kept if you cancel.';
+
+  @override
+  String get localOcrChargingOnly => 'Only while charging';
+
+  @override
+  String localOcrStartPages({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Recognize $count pages',
+      one: 'Recognize 1 page',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get localOcrNothingToDo =>
+      'The selected pages already have OCR. Choose Replace existing OCR to scan them again.';
+
+  @override
+  String get localOcrModelTitle => 'Japanese manga OCR — Baberu';
+
+  @override
+  String get localOcrModelDescription =>
+      'Recognize Japanese manga offline. Page images stay on your device.';
+
+  @override
+  String localOcrDownloadSize({required String done, required String total}) {
+    return '$done / $total downloaded';
+  }
+
+  @override
+  String get localOcrDownloadRequired =>
+      'Download the OCR models in Settings → Downloads, then return here to start.';
+
+  @override
+  String get localOcrModelReady => 'Models installed · works offline';
+
+  @override
+  String get localOcrModelMissing => 'Additional download required';
+
+  @override
+  String get localOcrModelVerifying => 'Verifying model files…';
+
+  @override
+  String get localOcrModelDownloading => 'Downloading models…';
+
+  @override
+  String get localOcrUnsupported =>
+      'On-device OCR requires a supported 64-bit ARM Android device. Remote OCR remains available.';
+
+  @override
+  String get localOcrPause => 'Pause';
+
+  @override
+  String get localOcrResume => 'Resume';
+
+  @override
+  String get localOcrCancelJob => 'Cancel scan';
+
+  @override
+  String get localOcrCancelDescription =>
+      'Stop this scan and remove its remaining work? Completed OCR will be kept.';
+
+  @override
+  String get localOcrPaused => 'Paused';
+
+  @override
+  String get localOcrQueued => 'Queued';
+
+  @override
+  String get localOcrPreparing => 'Preparing models…';
+
+  @override
+  String get localOcrDetecting => 'Finding text…';
+
+  @override
+  String get localOcrRecognizing => 'Recognizing text…';
+
+  @override
+  String get localOcrPausing => 'Pausing…';
+
+  @override
+  String get localOcrCancelling => 'Cancelling…';
+
+  @override
+  String get localOcrCancelled => 'Scan cancelled · completed OCR kept';
+
+  @override
+  String get localOcrCompleted => 'OCR complete';
+
+  @override
+  String get localOcrCompletedErrors => 'Finished with page errors';
+
+  @override
+  String get localOcrFailed => 'OCR stopped after repeated page errors';
+
+  @override
+  String localOcrProgress({required int processed, required int total}) {
+    return '$processed / $total pages processed';
+  }
+
+  @override
+  String localOcrOutcomeCounts({
+    required int succeeded,
+    required int skipped,
+    required int failed,
+  }) {
+    return '$succeeded saved · $skipped skipped · $failed failed';
+  }
+
+  @override
+  String get localOcrRetryFailed => 'Retry failed pages';
+
+  @override
+  String get localOcrDismiss => 'Dismiss';
+
+  @override
+  String localOcrError({required String details}) {
+    return 'OCR could not continue: $details';
+  }
+
+  @override
+  String get localOcrInterrupted =>
+      'The scan was interrupted. Resume to continue from saved progress.';
+
+  @override
+  String get localOcrLowMemory =>
+      'Paused because the device is low on memory. Close other apps before resuming.';
+
+  @override
+  String get localOcrTooHot =>
+      'Paused because the device is too hot. Let it cool before resuming.';
+
+  @override
+  String get localOcrLowBattery =>
+      'Paused because the battery is below 15%. Charge the device before resuming.';
+
+  @override
+  String get localOcrChargingRequired =>
+      'Connect a charger before resuming this scan.';
+
+  @override
+  String get localOcrBackgroundLimit =>
+      'Android stopped background processing. Open Mekuru and resume the scan.';
+
+  @override
+  String get localOcrRuntimeError =>
+      'The OCR runtime could not continue on this device. Progress is saved.';
+
+  @override
+  String get localOcrAccessLost =>
+      'A manga image could not be read. Restore folder access before retrying.';
+
+  @override
+  String get localOcrStorageFull =>
+      'There is not enough free storage to continue.';
+
+  @override
+  String get localOcrBusy =>
+      'This manga already has an OCR job. Pause or cancel it before starting another.';
+
+  @override
+  String get localOcrModelBusy =>
+      'Stop active OCR and downloads before changing the installed models.';
+
+  @override
+  String get localOcrLicenseTitle => 'Manga OCR models and runtime';
+
+  @override
+  String get localOcrLicenseBaberu =>
+      'Baberu OCR by genshiai-daichi. Used for text recognition. Apache-2.0.';
+
+  @override
+  String get localOcrLicenseDetector =>
+      'Comic Text Detector by dmMaze and contributors. Used for manga text detection. GPL-3.0 project; see artifact provenance and source notices.';
+
+  @override
+  String get localOcrLicenseRuntime =>
+      'ONNX Runtime by Microsoft and contributors; OpenCV by the OpenCV contributors. Used for local inference and image processing.';
+
+  @override
+  String get localOcrLicenseOpen => 'View license and source notices';
+
+  @override
+  String get localOcrPageErrors => 'Page errors';
+
+  @override
+  String localOcrPageError({required int page, required String details}) {
+    return 'Page $page: $details';
+  }
+
+  @override
+  String get localOcrNotificationsOff =>
+      'OCR can continue with notifications off. Use the manga’s recognition sheet to pause or cancel.';
+
+  @override
+  String get localOcrModelCorrupt =>
+      'The model files failed verification. Remove and download the OCR models again.';
+
+  @override
+  String get localOcrMobileDownloadTitle => 'Download over mobile data?';
+
+  @override
+  String localOcrMobileDownloadBody({required String size}) {
+    return 'Wi-Fi is not connected. The OCR model download is $size. Continue using mobile data? Any saved download progress will be reused.';
+  }
+
+  @override
+  String get localOcrWaitingWifi =>
+      'Waiting for Wi-Fi. Cancel and resume to use mobile data.';
+
+  @override
+  String get localOcrDownloadQueued => 'Waiting to download…';
+
+  @override
+  String get localOcrEstimating => 'Estimating time remaining…';
+
+  @override
+  String localOcrReadingRegions({required int done, required int total}) {
+    return '$done / $total text regions read';
+  }
+
+  @override
+  String localOcrCurrentPage({required int page}) {
+    return 'Recognizing page $page';
+  }
+
+  @override
+  String get localOcrCopyDiagnostics => 'Copy OCR diagnostics';
+
+  @override
+  String get localOcrDiagnosticsCopied => 'OCR diagnostics copied';
 }

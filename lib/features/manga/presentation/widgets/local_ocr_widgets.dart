@@ -1,0 +1,398 @@
+import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/l10n/l10n.dart';
+import '../providers/local_ocr_providers.dart';
+
+String localOcrReason(BuildContext context, String? code) {
+  final l = context.l10n;
+  return switch (code) {
+    null || '' => '',
+    'interrupted' || 'stopped' => l.localOcrInterrupted,
+    'low_memory' => l.localOcrLowMemory,
+    'too_hot' => l.localOcrTooHot,
+    'low_battery' => l.localOcrLowBattery,
+    'charging_required' => l.localOcrChargingRequired,
+    'background_timeout' ||
+    'background_start_denied' => l.localOcrBackgroundLimit,
+    'runtime_error' => l.localOcrRuntimeError,
+    'model_corrupt' => l.localOcrModelCorrupt,
+    'image_access_lost' ||
+    'image_unreadable' ||
+    'image_changed' => l.localOcrAccessLost,
+    'insufficient_storage' || 'storage_error' => l.localOcrStorageFull,
+    'book_busy' => l.localOcrBusy,
+    'model_busy' || 'download_busy' => l.localOcrModelBusy,
+    'model_missing' || 'model_version_missing' => l.localOcrDownloadRequired,
+    'unsupported_device' => l.localOcrUnsupported,
+    _ => l.localOcrError(details: code),
+  };
+}
+
+String localOcrEta(BuildContext context, OcrJobProgress job) {
+  final seconds = job.etaSeconds;
+  if (seconds == null || seconds <= 0) return '';
+  final l = context.l10n;
+  if (seconds < 60) {
+    return l.ocrEtaSecondsRemaining(seconds: seconds);
+  }
+  if (seconds < 3600) {
+    return l.ocrEtaMinutesRemaining(minutes: (seconds / 60).ceil());
+  }
+  final minutes = (seconds / 60).ceil();
+  return l.ocrEtaHoursMinutesRemaining(
+    hours: minutes ~/ 60,
+    minutes: minutes % 60,
+  );
+}
+
+String localOcrPhase(BuildContext context, OcrJobProgress job) {
+  final l = context.l10n;
+  return switch (job.status == 'running' ? job.phase : job.status) {
+    'queued' => l.localOcrQueued,
+    'preparing' => l.localOcrPreparing,
+    'detecting' => l.localOcrDetecting,
+    'recognizing' || 'running' => l.localOcrRecognizing,
+    'pausing' => l.localOcrPausing,
+    'cancelling' => l.localOcrCancelling,
+    'paused' => l.localOcrPaused,
+    'cancelled' => l.localOcrCancelled,
+    'completed' => l.localOcrCompleted,
+    'completedWithErrors' => l.localOcrCompletedErrors,
+    'failed' => l.localOcrFailed,
+    _ => job.status,
+  };
+}
+
+Future<void> runLocalOcrAction(
+  BuildContext context,
+  Future<void> Function() action,
+) async {
+  try {
+    await action();
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            localOcrReason(
+              context,
+              error is PlatformException ? error.code : '$error',
+            ),
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class LocalOcrJobCard extends StatelessWidget {
+  final OcrJobProgress job;
+  const LocalOcrJobCard({super.key, required this.job});
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.localOcrOnDevice,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            Text(localOcrPhase(context, job)),
+            if (job.etaSeconds != null && job.etaSeconds! > 0)
+              Text(localOcrEta(context, job)),
+            Text(
+              l.localOcrProgress(processed: job.processed, total: job.total),
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: job.status == 'preparing'
+                  ? null
+                  : job.total == 0
+                  ? 0
+                  : (job.processed / job.total).clamp(0, 1),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l.localOcrOutcomeCounts(
+                succeeded: job.succeeded,
+                skipped: job.skipped,
+                failed: job.failed,
+              ),
+            ),
+            if (job.reason != null) Text(localOcrReason(context, job.reason)),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (job.isActive &&
+                    !const {'pausing', 'cancelling'}.contains(job.status))
+                  TextButton(
+                    onPressed: () => runLocalOcrAction(
+                      context,
+                      () => LocalMangaOcr.pause(job.id),
+                    ),
+                    child: Text(l.localOcrPause),
+                  ),
+                if (job.canResume)
+                  TextButton(
+                    onPressed: () => runLocalOcrAction(
+                      context,
+                      () => LocalMangaOcr.resume(
+                        job.id,
+                        retryFailed: job.failed > 0,
+                      ),
+                    ),
+                    child: Text(
+                      job.failed > 0 ? l.localOcrRetryFailed : l.localOcrResume,
+                    ),
+                  ),
+                if (job.isActive || job.canResume)
+                  TextButton(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: Text(l.localOcrCancelJob),
+                          content: Text(l.localOcrCancelDescription),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: Text(l.commonClose),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: Text(l.localOcrCancelJob),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true && context.mounted) {
+                        await runLocalOcrAction(
+                          context,
+                          () => LocalMangaOcr.cancel(job.id),
+                        );
+                      }
+                    },
+                    child: Text(l.localOcrCancelJob),
+                  ),
+                if (!job.isActive)
+                  TextButton(
+                    onPressed: () => runLocalOcrAction(context, () async {
+                      await LocalMangaOcr.channel.invokeMethod('dismiss', {
+                        'id': job.id,
+                      });
+                    }),
+                    child: Text(l.localOcrDismiss),
+                  ),
+              ],
+            ),
+            if (job.failed > 0)
+              ExpansionTile(
+                title: Text(l.localOcrPageErrors),
+                children: [
+                  for (final entry
+                      in (job.json['errors'] as Map? ?? {}).entries)
+                    ListTile(
+                      title: Text(
+                        l.localOcrPageError(
+                          page: int.parse(entry.key as String) + 1,
+                          details: localOcrReason(
+                            context,
+                            entry.value as String,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Uses the same tile, tonal action and inline progress as other downloads.
+class LocalOcrDownloadTile extends ConsumerStatefulWidget {
+  const LocalOcrDownloadTile({super.key});
+  @override
+  ConsumerState<LocalOcrDownloadTile> createState() =>
+      _LocalOcrDownloadTileState();
+}
+
+class _LocalOcrDownloadTileState extends ConsumerState<LocalOcrDownloadTile> {
+  bool _acting = false;
+  String _bytes(int bytes) => '${(bytes / 1000000).toStringAsFixed(1)} MB';
+
+  Future<void> _act(Future<void> Function() action) async {
+    setState(() => _acting = true);
+    await runLocalOcrAction(context, action);
+    if (!mounted) return;
+    setState(() => _acting = false);
+    ref.invalidate(localOcrModelProvider);
+  }
+
+  Future<void> _download(OcrModelState model) => _act(() async {
+    final wifi = await LocalMangaOcr.isWifiConnected();
+    if (!mounted) return;
+    if (!wifi) {
+      final l = context.l10n;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.localOcrMobileDownloadTitle),
+          content: Text(
+            l.localOcrMobileDownloadBody(size: _bytes(model.totalBytes)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.commonDownload),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+    await LocalMangaOcr.download(allowMetered: !wifi);
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final theme = Theme.of(context);
+    final state = ref.watch(localOcrModelProvider);
+    final model = state.asData?.value;
+    final busy = _acting || model?.busy == true;
+    final subtitle = model == null
+        ? l.localOcrModelDescription
+        : !model.supported
+        ? l.localOcrUnsupported
+        : model.installed
+        ? l.localOcrModelReady
+        : '${l.localOcrModelDescription} (${_bytes(model.totalBytes)})';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: Icon(
+            Icons.document_scanner_outlined,
+            color: theme.colorScheme.primary,
+          ),
+          title: Text(l.localOcrModelTitle),
+          subtitle: Text(subtitle),
+          trailing: state.isLoading || _acting
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : model?.supported != true
+              ? null
+              : model!.busy
+              ? IconButton(
+                  tooltip: l.commonCancel,
+                  icon: const Icon(Icons.close),
+                  onPressed: () => _act(LocalMangaOcr.cancelDownload),
+                )
+              : model.installed
+              ? IconButton(
+                  tooltip: l.commonRemove,
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: theme.colorScheme.error,
+                  ),
+                  onPressed: () => _act(LocalMangaOcr.removeModels),
+                )
+              : FilledButton.tonal(
+                  onPressed: () => _download(model),
+                  child: Text(
+                    model.downloadedBytes > 0
+                        ? l.localOcrResume
+                        : l.commonDownload,
+                  ),
+                ),
+        ),
+        if (model?.busy == true)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LinearProgressIndicator(
+                  value: model!.status == 'verifying' || model.totalBytes == 0
+                      ? null
+                      : (model.downloadedBytes / model.totalBytes).clamp(0, 1),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  switch (model.status) {
+                    'queued' =>
+                      model.error == 'wifi_required'
+                          ? l.localOcrWaitingWifi
+                          : l.localOcrDownloadQueued,
+                    'verifying' => l.localOcrModelVerifying,
+                    _ => l.localOcrDownloadSize(
+                      done: _bytes(model.downloadedBytes),
+                      total: _bytes(model.totalBytes),
+                    ),
+                  },
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        if (state.hasError ||
+            (model?.error != null && model!.error != 'wifi_required'))
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              localOcrReason(
+                context,
+                state.hasError ? state.error.toString() : model!.error,
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ),
+        if (model != null &&
+            !model.installed &&
+            !busy &&
+            model.downloadedBytes > 0)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l.localOcrDownloadSize(
+                      done: _bytes(model.downloadedBytes),
+                      total: _bytes(model.totalBytes),
+                    ),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _act(LocalMangaOcr.removeModels),
+                  child: Text(l.commonRemove),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}

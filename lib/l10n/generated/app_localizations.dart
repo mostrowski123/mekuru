@@ -4839,6 +4839,442 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide furigana for kanji at'**
   String get readerFuriganaWanikaniStagePickerTitle;
+
+  /// On-device manga OCR: localOcrRecognize
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize text'**
+  String get localOcrRecognize;
+
+  /// On-device manga OCR: localOcrOnDevice
+  ///
+  /// In en, this message translates to:
+  /// **'On device'**
+  String get localOcrOnDevice;
+
+  /// On-device manga OCR: localOcrOnDeviceSubtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Offline after downloading the models'**
+  String get localOcrOnDeviceSubtitle;
+
+  /// On-device manga OCR: localOcrRemote
+  ///
+  /// In en, this message translates to:
+  /// **'Remote'**
+  String get localOcrRemote;
+
+  /// On-device manga OCR: localOcrRemoteSubtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Uses your OCR server and its existing access requirements'**
+  String get localOcrRemoteSubtitle;
+
+  /// On-device manga OCR: localOcrEntireManga
+  ///
+  /// In en, this message translates to:
+  /// **'Entire manga'**
+  String get localOcrEntireManga;
+
+  /// On-device manga OCR: localOcrThisPage
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page}'**
+  String localOcrThisPage({required int page});
+
+  /// On-device manga OCR: localOcrCoverage
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} pages already have OCR'**
+  String localOcrCoverage({required int done, required int total});
+
+  /// On-device manga OCR: localOcrMissingOnly
+  ///
+  /// In en, this message translates to:
+  /// **'Only pages without OCR'**
+  String get localOcrMissingOnly;
+
+  /// On-device manga OCR: localOcrReplace
+  ///
+  /// In en, this message translates to:
+  /// **'Replace existing OCR'**
+  String get localOcrReplace;
+
+  /// On-device manga OCR: localOcrReplaceDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Existing results are kept until each replacement succeeds. Completed replacements are kept if you cancel.'**
+  String get localOcrReplaceDescription;
+
+  /// On-device manga OCR: localOcrChargingOnly
+  ///
+  /// In en, this message translates to:
+  /// **'Only while charging'**
+  String get localOcrChargingOnly;
+
+  /// On-device manga OCR: localOcrStartPages
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Recognize 1 page} other{Recognize {count} pages}}'**
+  String localOcrStartPages({required int count});
+
+  /// On-device manga OCR: localOcrNothingToDo
+  ///
+  /// In en, this message translates to:
+  /// **'The selected pages already have OCR. Choose Replace existing OCR to scan them again.'**
+  String get localOcrNothingToDo;
+
+  /// On-device manga OCR: localOcrModelTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese manga OCR — Baberu'**
+  String get localOcrModelTitle;
+
+  /// On-device manga OCR: localOcrModelDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize Japanese manga offline. Page images stay on your device.'**
+  String get localOcrModelDescription;
+
+  /// On-device manga OCR: localOcrDownloadSize
+  ///
+  /// In en, this message translates to:
+  /// **'{done} / {total} downloaded'**
+  String localOcrDownloadSize({required String done, required String total});
+
+  /// On-device manga OCR: localOcrDownloadRequired
+  ///
+  /// In en, this message translates to:
+  /// **'Download the OCR models in Settings → Downloads, then return here to start.'**
+  String get localOcrDownloadRequired;
+
+  /// On-device manga OCR: localOcrModelReady
+  ///
+  /// In en, this message translates to:
+  /// **'Models installed · works offline'**
+  String get localOcrModelReady;
+
+  /// On-device manga OCR: localOcrModelMissing
+  ///
+  /// In en, this message translates to:
+  /// **'Additional download required'**
+  String get localOcrModelMissing;
+
+  /// On-device manga OCR: localOcrModelVerifying
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying model files…'**
+  String get localOcrModelVerifying;
+
+  /// On-device manga OCR: localOcrModelDownloading
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading models…'**
+  String get localOcrModelDownloading;
+
+  /// On-device manga OCR: localOcrUnsupported
+  ///
+  /// In en, this message translates to:
+  /// **'On-device OCR requires a supported 64-bit ARM Android device. Remote OCR remains available.'**
+  String get localOcrUnsupported;
+
+  /// On-device manga OCR: localOcrPause
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get localOcrPause;
+
+  /// On-device manga OCR: localOcrResume
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get localOcrResume;
+
+  /// On-device manga OCR: localOcrCancelJob
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel scan'**
+  String get localOcrCancelJob;
+
+  /// On-device manga OCR: localOcrCancelDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Stop this scan and remove its remaining work? Completed OCR will be kept.'**
+  String get localOcrCancelDescription;
+
+  /// On-device manga OCR: localOcrPaused
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get localOcrPaused;
+
+  /// On-device manga OCR: localOcrQueued
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get localOcrQueued;
+
+  /// On-device manga OCR: localOcrPreparing
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing models…'**
+  String get localOcrPreparing;
+
+  /// On-device manga OCR: localOcrDetecting
+  ///
+  /// In en, this message translates to:
+  /// **'Finding text…'**
+  String get localOcrDetecting;
+
+  /// On-device manga OCR: localOcrRecognizing
+  ///
+  /// In en, this message translates to:
+  /// **'Recognizing text…'**
+  String get localOcrRecognizing;
+
+  /// On-device manga OCR: localOcrPausing
+  ///
+  /// In en, this message translates to:
+  /// **'Pausing…'**
+  String get localOcrPausing;
+
+  /// On-device manga OCR: localOcrCancelling
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling…'**
+  String get localOcrCancelling;
+
+  /// On-device manga OCR: localOcrCancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Scan cancelled · completed OCR kept'**
+  String get localOcrCancelled;
+
+  /// On-device manga OCR: localOcrCompleted
+  ///
+  /// In en, this message translates to:
+  /// **'OCR complete'**
+  String get localOcrCompleted;
+
+  /// On-device manga OCR: localOcrCompletedErrors
+  ///
+  /// In en, this message translates to:
+  /// **'Finished with page errors'**
+  String get localOcrCompletedErrors;
+
+  /// On-device manga OCR: localOcrFailed
+  ///
+  /// In en, this message translates to:
+  /// **'OCR stopped after repeated page errors'**
+  String get localOcrFailed;
+
+  /// On-device manga OCR: localOcrProgress
+  ///
+  /// In en, this message translates to:
+  /// **'{processed} / {total} pages processed'**
+  String localOcrProgress({required int processed, required int total});
+
+  /// On-device manga OCR: localOcrOutcomeCounts
+  ///
+  /// In en, this message translates to:
+  /// **'{succeeded} saved · {skipped} skipped · {failed} failed'**
+  String localOcrOutcomeCounts({
+    required int succeeded,
+    required int skipped,
+    required int failed,
+  });
+
+  /// On-device manga OCR: localOcrRetryFailed
+  ///
+  /// In en, this message translates to:
+  /// **'Retry failed pages'**
+  String get localOcrRetryFailed;
+
+  /// On-device manga OCR: localOcrDismiss
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get localOcrDismiss;
+
+  /// On-device manga OCR: localOcrError
+  ///
+  /// In en, this message translates to:
+  /// **'OCR could not continue: {details}'**
+  String localOcrError({required String details});
+
+  /// On-device manga OCR: localOcrInterrupted
+  ///
+  /// In en, this message translates to:
+  /// **'The scan was interrupted. Resume to continue from saved progress.'**
+  String get localOcrInterrupted;
+
+  /// On-device manga OCR: localOcrLowMemory
+  ///
+  /// In en, this message translates to:
+  /// **'Paused because the device is low on memory. Close other apps before resuming.'**
+  String get localOcrLowMemory;
+
+  /// On-device manga OCR: localOcrTooHot
+  ///
+  /// In en, this message translates to:
+  /// **'Paused because the device is too hot. Let it cool before resuming.'**
+  String get localOcrTooHot;
+
+  /// On-device manga OCR: localOcrLowBattery
+  ///
+  /// In en, this message translates to:
+  /// **'Paused because the battery is below 15%. Charge the device before resuming.'**
+  String get localOcrLowBattery;
+
+  /// On-device manga OCR: localOcrChargingRequired
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a charger before resuming this scan.'**
+  String get localOcrChargingRequired;
+
+  /// On-device manga OCR: localOcrBackgroundLimit
+  ///
+  /// In en, this message translates to:
+  /// **'Android stopped background processing. Open Mekuru and resume the scan.'**
+  String get localOcrBackgroundLimit;
+
+  /// On-device manga OCR: localOcrRuntimeError
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR runtime could not continue on this device. Progress is saved.'**
+  String get localOcrRuntimeError;
+
+  /// On-device manga OCR: localOcrAccessLost
+  ///
+  /// In en, this message translates to:
+  /// **'A manga image could not be read. Restore folder access before retrying.'**
+  String get localOcrAccessLost;
+
+  /// On-device manga OCR: localOcrStorageFull
+  ///
+  /// In en, this message translates to:
+  /// **'There is not enough free storage to continue.'**
+  String get localOcrStorageFull;
+
+  /// On-device manga OCR: localOcrBusy
+  ///
+  /// In en, this message translates to:
+  /// **'This manga already has an OCR job. Pause or cancel it before starting another.'**
+  String get localOcrBusy;
+
+  /// On-device manga OCR: localOcrModelBusy
+  ///
+  /// In en, this message translates to:
+  /// **'Stop active OCR and downloads before changing the installed models.'**
+  String get localOcrModelBusy;
+
+  /// On-device manga OCR: localOcrLicenseTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Manga OCR models and runtime'**
+  String get localOcrLicenseTitle;
+
+  /// On-device manga OCR: localOcrLicenseBaberu
+  ///
+  /// In en, this message translates to:
+  /// **'Baberu OCR by genshiai-daichi. Used for text recognition. Apache-2.0.'**
+  String get localOcrLicenseBaberu;
+
+  /// On-device manga OCR: localOcrLicenseDetector
+  ///
+  /// In en, this message translates to:
+  /// **'Comic Text Detector by dmMaze and contributors. Used for manga text detection. GPL-3.0 project; see artifact provenance and source notices.'**
+  String get localOcrLicenseDetector;
+
+  /// On-device manga OCR: localOcrLicenseRuntime
+  ///
+  /// In en, this message translates to:
+  /// **'ONNX Runtime by Microsoft and contributors; OpenCV by the OpenCV contributors. Used for local inference and image processing.'**
+  String get localOcrLicenseRuntime;
+
+  /// On-device manga OCR: localOcrLicenseOpen
+  ///
+  /// In en, this message translates to:
+  /// **'View license and source notices'**
+  String get localOcrLicenseOpen;
+
+  /// On-device manga OCR: localOcrPageErrors
+  ///
+  /// In en, this message translates to:
+  /// **'Page errors'**
+  String get localOcrPageErrors;
+
+  /// On-device manga OCR: localOcrPageError
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page}: {details}'**
+  String localOcrPageError({required int page, required String details});
+
+  /// Shown once when starting local OCR without notification permission.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR can continue with notifications off. Use the manga’s recognition sheet to pause or cancel.'**
+  String get localOcrNotificationsOff;
+
+  /// Recovery instructions for corrupted installed OCR model files.
+  ///
+  /// In en, this message translates to:
+  /// **'The model files failed verification. Remove and download the OCR models again.'**
+  String get localOcrModelCorrupt;
+
+  /// On-device OCR model download network confirmation and status.
+  ///
+  /// In en, this message translates to:
+  /// **'Download over mobile data?'**
+  String get localOcrMobileDownloadTitle;
+
+  /// No description provided for @localOcrMobileDownloadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data? Any saved download progress will be reused.'**
+  String localOcrMobileDownloadBody({required String size});
+
+  /// On-device OCR model download network confirmation and status.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Wi-Fi. Cancel and resume to use mobile data.'**
+  String get localOcrWaitingWifi;
+
+  /// On-device OCR model download network confirmation and status.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to download…'**
+  String get localOcrDownloadQueued;
+
+  /// Progress displayed over the current manga page.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimating time remaining…'**
+  String get localOcrEstimating;
+
+  /// Progress displayed over the current manga page.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} / {total} text regions read'**
+  String localOcrReadingRegions({required int done, required int total});
+
+  /// Progress displayed over the current manga page.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognizing page {page}'**
+  String localOcrCurrentPage({required int page});
+
+  /// Troubleshooting action in debug builds, without book text or account data.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy OCR diagnostics'**
+  String get localOcrCopyDiagnostics;
+
+  /// Troubleshooting action in debug builds, without book text or account data.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR diagnostics copied'**
+  String get localOcrDiagnosticsCopied;
 }
 
 class _AppLocalizationsDelegate
