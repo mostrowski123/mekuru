@@ -24,6 +24,7 @@ import 'features/settings/data/services/app_settings_storage.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
 import 'features/stats/presentation/screens/stats_screen.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
+import 'features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/l10n.dart';
 import 'main.dart' show navigatorKey, scaffoldMessengerKey, databaseProvider;
@@ -83,6 +84,9 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
           .read(enhancedFuriganaDictEnabledProvider.notifier)
           .loadPersistedSettings(),
     );
+    final wanikaniLoaded = ref
+        .read(wanikaniProvider.notifier)
+        .loadPersistedSettings();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -92,6 +96,15 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       unawaited(_announceFullRestoreResult());
       unawaited(ref.read(bookRepositoryProvider).sweepOrphanImportDirs());
       unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
+      // Silent WaniKani refresh once the persisted link is known; failures
+      // stay in telemetry and never reach the user.
+      unawaited(
+        wanikaniLoaded.then(
+          (_) => ref
+              .read(wanikaniProvider.notifier)
+              .refreshIfDue(trigger: 'startup'),
+        ),
+      );
       unawaited(
         emitInstallGauges(
           ref.read(databaseProvider),
@@ -145,6 +158,9 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
+      unawaited(
+        ref.read(wanikaniProvider.notifier).refreshIfDue(trigger: 'resume'),
+      );
       // A full backup may have finished (or paused) while the app was away.
       unawaited(ref.read(fullBackupJobProvider.notifier).refresh());
     }

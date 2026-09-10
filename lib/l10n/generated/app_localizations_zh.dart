@@ -2676,6 +2676,98 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupFullIncomplete => '此文件不完整或已损坏。请从其保存位置重新复制。';
+
+  @override
+  String get readerFuriganaWanikani => 'WaniKani';
+
+  @override
+  String get readerFuriganaWanikaniStageTitle => '隐藏此阶段及以上汉字的振假名';
+
+  @override
+  String get wanikaniStageApprentice => 'Apprentice+';
+
+  @override
+  String get wanikaniStageGuru => 'Guru+';
+
+  @override
+  String get wanikaniStageMaster => 'Master+';
+
+  @override
+  String get wanikaniStageEnlightened => 'Enlightened+';
+
+  @override
+  String get wanikaniStageBurned => 'Burned';
+
+  @override
+  String get readerFuriganaWanikaniLinkPrompt => '关联你的 WaniKani 账号';
+
+  @override
+  String get settingsWanikaniSubtitle => '隐藏你已学会的汉字的振假名';
+
+  @override
+  String settingsWanikaniLinkedAs({required String username}) {
+    return '已关联为 $username';
+  }
+
+  @override
+  String get wanikaniSettingsIntro =>
+      '粘贴 WaniKani API 令牌（只读令牌即可）。Mekuru 会下载每个汉字的 SRS 阶段，并隐藏仅由你已掌握的汉字组成的词语的振假名。';
+
+  @override
+  String get wanikaniSettingsTokenLabel => 'API 令牌';
+
+  @override
+  String get wanikaniSettingsGetToken => '获取 API 令牌';
+
+  @override
+  String get wanikaniSettingsLink => '关联账号';
+
+  @override
+  String get wanikaniSettingsUnlink => '取消关联';
+
+  @override
+  String get wanikaniSettingsUnlinkConfirm =>
+      '取消关联 WaniKani？Mekuru 将忘记令牌和汉字列表。';
+
+  @override
+  String get wanikaniSettingsSyncNow => '立即同步';
+
+  @override
+  String wanikaniSettingsStatus({required int level, required int count}) {
+    return '等级 $level · 已同步 $count 个汉字';
+  }
+
+  @override
+  String wanikaniSettingsLastSynced({required String time}) {
+    return '上次同步：$time';
+  }
+
+  @override
+  String get wanikaniSettingsRestoredNoToken => '汉字列表已从备份恢复。重新关联以保持更新。';
+
+  @override
+  String get wanikaniSettingsThresholdCaption =>
+      '在阅读器设置的“振假名”中选择 WaniKani，以决定隐藏哪些汉字的振假名。';
+
+  @override
+  String wanikaniSettingsSyncDone({required int count}) {
+    return '已同步 $count 个汉字';
+  }
+
+  @override
+  String get wanikaniErrorTokenInvalid => 'WaniKani 拒绝了此令牌。请新建一个后重试。';
+
+  @override
+  String get wanikaniErrorNetwork => '无法连接 WaniKani。请检查网络连接。';
+
+  @override
+  String get wanikaniErrorRateLimited => 'WaniKani 正在限制请求频率。请一分钟后重试。';
+
+  @override
+  String get wanikaniErrorGeneric => 'WaniKani 同步失败。请稍后重试。';
+
+  @override
+  String get libraryExportFuriganaWanikani => 'WaniKani 上尚未掌握的汉字';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -5350,4 +5442,96 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullIncomplete => '此文件不完整或已损坏。请从其保存位置重新复制。';
+
+  @override
+  String get readerFuriganaWanikani => 'WaniKani';
+
+  @override
+  String get readerFuriganaWanikaniStageTitle => '隐藏此阶段及以上汉字的振假名';
+
+  @override
+  String get wanikaniStageApprentice => 'Apprentice+';
+
+  @override
+  String get wanikaniStageGuru => 'Guru+';
+
+  @override
+  String get wanikaniStageMaster => 'Master+';
+
+  @override
+  String get wanikaniStageEnlightened => 'Enlightened+';
+
+  @override
+  String get wanikaniStageBurned => 'Burned';
+
+  @override
+  String get readerFuriganaWanikaniLinkPrompt => '关联你的 WaniKani 账号';
+
+  @override
+  String get settingsWanikaniSubtitle => '隐藏你已学会的汉字的振假名';
+
+  @override
+  String settingsWanikaniLinkedAs({required String username}) {
+    return '已关联为 $username';
+  }
+
+  @override
+  String get wanikaniSettingsIntro =>
+      '粘贴 WaniKani API 令牌（只读令牌即可）。Mekuru 会下载每个汉字的 SRS 阶段，并隐藏仅由你已掌握的汉字组成的词语的振假名。';
+
+  @override
+  String get wanikaniSettingsTokenLabel => 'API 令牌';
+
+  @override
+  String get wanikaniSettingsGetToken => '获取 API 令牌';
+
+  @override
+  String get wanikaniSettingsLink => '关联账号';
+
+  @override
+  String get wanikaniSettingsUnlink => '取消关联';
+
+  @override
+  String get wanikaniSettingsUnlinkConfirm =>
+      '取消关联 WaniKani？Mekuru 将忘记令牌和汉字列表。';
+
+  @override
+  String get wanikaniSettingsSyncNow => '立即同步';
+
+  @override
+  String wanikaniSettingsStatus({required int level, required int count}) {
+    return '等级 $level · 已同步 $count 个汉字';
+  }
+
+  @override
+  String wanikaniSettingsLastSynced({required String time}) {
+    return '上次同步：$time';
+  }
+
+  @override
+  String get wanikaniSettingsRestoredNoToken => '汉字列表已从备份恢复。重新关联以保持更新。';
+
+  @override
+  String get wanikaniSettingsThresholdCaption =>
+      '在阅读器设置的“振假名”中选择 WaniKani，以决定隐藏哪些汉字的振假名。';
+
+  @override
+  String wanikaniSettingsSyncDone({required int count}) {
+    return '已同步 $count 个汉字';
+  }
+
+  @override
+  String get wanikaniErrorTokenInvalid => 'WaniKani 拒绝了此令牌。请新建一个后重试。';
+
+  @override
+  String get wanikaniErrorNetwork => '无法连接 WaniKani。请检查网络连接。';
+
+  @override
+  String get wanikaniErrorRateLimited => 'WaniKani 正在限制请求频率。请一分钟后重试。';
+
+  @override
+  String get wanikaniErrorGeneric => 'WaniKani 同步失败。请稍后重试。';
+
+  @override
+  String get libraryExportFuriganaWanikani => 'WaniKani 上尚未掌握的汉字';
 }

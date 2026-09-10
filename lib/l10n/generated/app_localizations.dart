@@ -4671,6 +4671,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This file is incomplete or damaged. Copy it again from where it was saved.'**
   String get backupFullIncomplete;
+
+  /// Furigana mode segment, export option and settings row title for the WaniKani-driven mode.
+  ///
+  /// In en, this message translates to:
+  /// **'WaniKani'**
+  String get readerFuriganaWanikani;
+
+  /// Label of the WaniKani SRS-stage threshold row; the current stage name follows it.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide furigana for kanji at'**
+  String get readerFuriganaWanikaniStageTitle;
+
+  /// WaniKani SRS stage option: Apprentice and above (WaniKani's own English stage name).
+  ///
+  /// In en, this message translates to:
+  /// **'Apprentice+'**
+  String get wanikaniStageApprentice;
+
+  /// WaniKani SRS stage option: Guru and above (WaniKani's own English stage name).
+  ///
+  /// In en, this message translates to:
+  /// **'Guru+'**
+  String get wanikaniStageGuru;
+
+  /// WaniKani SRS stage option: Master and above (WaniKani's own English stage name).
+  ///
+  /// In en, this message translates to:
+  /// **'Master+'**
+  String get wanikaniStageMaster;
+
+  /// WaniKani SRS stage option: Enlightened and above (WaniKani's own English stage name).
+  ///
+  /// In en, this message translates to:
+  /// **'Enlightened+'**
+  String get wanikaniStageEnlightened;
+
+  /// WaniKani SRS stage option: Burned only (WaniKani's own English stage name).
+  ///
+  /// In en, this message translates to:
+  /// **'Burned'**
+  String get wanikaniStageBurned;
+
+  /// Button under the furigana mode row when WaniKani is selected but no account is linked; opens the WaniKani settings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Link your WaniKani account'**
+  String get readerFuriganaWanikaniLinkPrompt;
+
+  /// Subtitle of the WaniKani row on the settings screen while no account is linked.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide furigana for kanji you\'ve learned'**
+  String get settingsWanikaniSubtitle;
+
+  /// Status line naming the linked WaniKani account.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked as {username}'**
+  String settingsWanikaniLinkedAs({required String username});
+
+  /// Explanation at the top of the WaniKani settings screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a WaniKani API token (a read-only token is enough). Mekuru downloads the SRS stage of every kanji and hides furigana for words made only of kanji you know.'**
+  String get wanikaniSettingsIntro;
+
+  /// Label of the WaniKani API token text field.
+  ///
+  /// In en, this message translates to:
+  /// **'API token'**
+  String get wanikaniSettingsTokenLabel;
+
+  /// Button that opens the WaniKani personal access tokens page in the browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Get an API token'**
+  String get wanikaniSettingsGetToken;
+
+  /// Button that validates the pasted token and links the WaniKani account.
+  ///
+  /// In en, this message translates to:
+  /// **'Link account'**
+  String get wanikaniSettingsLink;
+
+  /// Button (and confirmation title) that removes the WaniKani link.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get wanikaniSettingsUnlink;
+
+  /// Body of the unlink confirmation dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink WaniKani? Mekuru forgets the token and the kanji list.'**
+  String get wanikaniSettingsUnlinkConfirm;
+
+  /// Button that refreshes the kanji stages from WaniKani immediately.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get wanikaniSettingsSyncNow;
+
+  /// Status line under the linked account: the WaniKani level and how many kanji have a synced SRS stage.
+  ///
+  /// In en, this message translates to:
+  /// **'Level {level} · {count} kanji synced'**
+  String wanikaniSettingsStatus({required int level, required int count});
+
+  /// When the kanji stages were last refreshed; time is a localized date and time.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced {time}'**
+  String wanikaniSettingsLastSynced({required String time});
+
+  /// Shown when a backup restored the kanji list but the API token (never backed up) is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Kanji list restored from a backup. Link again to keep it updated.'**
+  String get wanikaniSettingsRestoredNoToken;
+
+  /// Caption at the bottom of the WaniKani settings screen pointing to the reader's furigana setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick WaniKani under Furigana in the reader settings to choose which kanji are hidden.'**
+  String get wanikaniSettingsThresholdCaption;
+
+  /// Snackbar after a successful manual WaniKani sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced {count} kanji'**
+  String wanikaniSettingsSyncDone({required int count});
+
+  /// Error when WaniKani answers 401 for the pasted or stored token.
+  ///
+  /// In en, this message translates to:
+  /// **'WaniKani rejected this token. Create a new one and try again.'**
+  String get wanikaniErrorTokenInvalid;
+
+  /// Error when the WaniKani API is unreachable or times out.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach WaniKani. Check your connection.'**
+  String get wanikaniErrorNetwork;
+
+  /// Error when WaniKani answers 429.
+  ///
+  /// In en, this message translates to:
+  /// **'WaniKani is rate limiting requests. Try again in a minute.'**
+  String get wanikaniErrorRateLimited;
+
+  /// Error for any other WaniKani sync failure.
+  ///
+  /// In en, this message translates to:
+  /// **'WaniKani sync failed. Try again later.'**
+  String get wanikaniErrorGeneric;
+
+  /// Furigana export coverage option: annotate only words containing kanji below the WaniKani threshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Kanji not yet known on WaniKani'**
+  String get libraryExportFuriganaWanikani;
 }
 
 class _AppLocalizationsDelegate

@@ -3582,5 +3582,136 @@
   "backupFullIncomplete": "This file is incomplete or damaged. Copy it again from where it was saved.",
   "@backupFullIncomplete": {
     "description": "Shown when a picked zip has no end record (a truncated copy)."
+  },
+  "readerFuriganaWanikani": "WaniKani",
+  "@readerFuriganaWanikani": {
+    "description": "Furigana mode segment, export option and settings row title for the WaniKani-driven mode."
+  },
+  "readerFuriganaWanikaniStageTitle": "Hide furigana for kanji at",
+  "@readerFuriganaWanikaniStageTitle": {
+    "description": "Label of the WaniKani SRS-stage threshold row; the current stage name follows it."
+  },
+  "wanikaniStageApprentice": "Apprentice+",
+  "@wanikaniStageApprentice": {
+    "description": "WaniKani SRS stage option: Apprentice and above (WaniKani's own English stage name)."
+  },
+  "wanikaniStageGuru": "Guru+",
+  "@wanikaniStageGuru": {
+    "description": "WaniKani SRS stage option: Guru and above (WaniKani's own English stage name)."
+  },
+  "wanikaniStageMaster": "Master+",
+  "@wanikaniStageMaster": {
+    "description": "WaniKani SRS stage option: Master and above (WaniKani's own English stage name)."
+  },
+  "wanikaniStageEnlightened": "Enlightened+",
+  "@wanikaniStageEnlightened": {
+    "description": "WaniKani SRS stage option: Enlightened and above (WaniKani's own English stage name)."
+  },
+  "wanikaniStageBurned": "Burned",
+  "@wanikaniStageBurned": {
+    "description": "WaniKani SRS stage option: Burned only (WaniKani's own English stage name)."
+  },
+  "readerFuriganaWanikaniLinkPrompt": "Link your WaniKani account",
+  "@readerFuriganaWanikaniLinkPrompt": {
+    "description": "Button under the furigana mode row when WaniKani is selected but no account is linked; opens the WaniKani settings screen."
+  },
+  "settingsWanikaniSubtitle": "Hide furigana for kanji you've learned",
+  "@settingsWanikaniSubtitle": {
+    "description": "Subtitle of the WaniKani row on the settings screen while no account is linked."
+  },
+  "settingsWanikaniLinkedAs": "Linked as {username}",
+  "@settingsWanikaniLinkedAs": {
+    "description": "Status line naming the linked WaniKani account.",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "wanikaniSettingsIntro": "Paste a WaniKani API token (a read-only token is enough). Mekuru downloads the SRS stage of every kanji and hides furigana for words made only of kanji you know.",
+  "@wanikaniSettingsIntro": {
+    "description": "Explanation at the top of the WaniKani settings screen."
+  },
+  "wanikaniSettingsTokenLabel": "API token",
+  "@wanikaniSettingsTokenLabel": {
+    "description": "Label of the WaniKani API token text field."
+  },
+  "wanikaniSettingsGetToken": "Get an API token",
+  "@wanikaniSettingsGetToken": {
+    "description": "Button that opens the WaniKani personal access tokens page in the browser."
+  },
+  "wanikaniSettingsLink": "Link account",
+  "@wanikaniSettingsLink": {
+    "description": "Button that validates the pasted token and links the WaniKani account."
+  },
+  "wanikaniSettingsUnlink": "Unlink",
+  "@wanikaniSettingsUnlink": {
+    "description": "Button (and confirmation title) that removes the WaniKani link."
+  },
+  "wanikaniSettingsUnlinkConfirm": "Unlink WaniKani? Mekuru forgets the token and the kanji list.",
+  "@wanikaniSettingsUnlinkConfirm": {
+    "description": "Body of the unlink confirmation dialog."
+  },
+  "wanikaniSettingsSyncNow": "Sync now",
+  "@wanikaniSettingsSyncNow": {
+    "description": "Button that refreshes the kanji stages from WaniKani immediately."
+  },
+  "wanikaniSettingsStatus": "Level {level} · {count} kanji synced",
+  "@wanikaniSettingsStatus": {
+    "description": "Status line under the linked account: the WaniKani level and how many kanji have a synced SRS stage.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wanikaniSettingsLastSynced": "Last synced {time}",
+  "@wanikaniSettingsLastSynced": {
+    "description": "When the kanji stages were last refreshed; time is a localized date and time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wanikaniSettingsRestoredNoToken": "Kanji list restored from a backup. Link again to keep it updated.",
+  "@wanikaniSettingsRestoredNoToken": {
+    "description": "Shown when a backup restored the kanji list but the API token (never backed up) is missing."
+  },
+  "wanikaniSettingsThresholdCaption": "Pick WaniKani under Furigana in the reader settings to choose which kanji are hidden.",
+  "@wanikaniSettingsThresholdCaption": {
+    "description": "Caption at the bottom of the WaniKani settings screen pointing to the reader's furigana setting."
+  },
+  "wanikaniSettingsSyncDone": "Synced {count} kanji",
+  "@wanikaniSettingsSyncDone": {
+    "description": "Snackbar after a successful manual WaniKani sync.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wanikaniErrorTokenInvalid": "WaniKani rejected this token. Create a new one and try again.",
+  "@wanikaniErrorTokenInvalid": {
+    "description": "Error when WaniKani answers 401 for the pasted or stored token."
+  },
+  "wanikaniErrorNetwork": "Couldn't reach WaniKani. Check your connection.",
+  "@wanikaniErrorNetwork": {
+    "description": "Error when the WaniKani API is unreachable or times out."
+  },
+  "wanikaniErrorRateLimited": "WaniKani is rate limiting requests. Try again in a minute.",
+  "@wanikaniErrorRateLimited": {
+    "description": "Error when WaniKani answers 429."
+  },
+  "wanikaniErrorGeneric": "WaniKani sync failed. Try again later.",
+  "@wanikaniErrorGeneric": {
+    "description": "Error for any other WaniKani sync failure."
+  },
+  "libraryExportFuriganaWanikani": "Kanji not yet known on WaniKani",
+  "@libraryExportFuriganaWanikani": {
+    "description": "Furigana export coverage option: annotate only words containing kanji below the WaniKani threshold."
   }
 }

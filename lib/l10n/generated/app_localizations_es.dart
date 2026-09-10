@@ -2828,4 +2828,104 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get backupFullIncomplete =>
       'Este archivo está incompleto o dañado. Vuelve a copiarlo desde donde se guardó.';
+
+  @override
+  String get readerFuriganaWanikani => 'WaniKani';
+
+  @override
+  String get readerFuriganaWanikaniStageTitle => 'Ocultar furigana de kanji en';
+
+  @override
+  String get wanikaniStageApprentice => 'Apprentice+';
+
+  @override
+  String get wanikaniStageGuru => 'Guru+';
+
+  @override
+  String get wanikaniStageMaster => 'Master+';
+
+  @override
+  String get wanikaniStageEnlightened => 'Enlightened+';
+
+  @override
+  String get wanikaniStageBurned => 'Burned';
+
+  @override
+  String get readerFuriganaWanikaniLinkPrompt =>
+      'Vincular tu cuenta de WaniKani';
+
+  @override
+  String get settingsWanikaniSubtitle =>
+      'Oculta el furigana de los kanji que ya conoces';
+
+  @override
+  String settingsWanikaniLinkedAs({required String username}) {
+    return 'Vinculado como $username';
+  }
+
+  @override
+  String get wanikaniSettingsIntro =>
+      'Pega un token de API de WaniKani (basta con uno de solo lectura). Mekuru descarga la etapa SRS de cada kanji y oculta el furigana de las palabras formadas solo por kanji que conoces.';
+
+  @override
+  String get wanikaniSettingsTokenLabel => 'Token de API';
+
+  @override
+  String get wanikaniSettingsGetToken => 'Obtener un token de API';
+
+  @override
+  String get wanikaniSettingsLink => 'Vincular cuenta';
+
+  @override
+  String get wanikaniSettingsUnlink => 'Desvincular';
+
+  @override
+  String get wanikaniSettingsUnlinkConfirm =>
+      '¿Desvincular WaniKani? Mekuru olvidará el token y la lista de kanji.';
+
+  @override
+  String get wanikaniSettingsSyncNow => 'Sincronizar ahora';
+
+  @override
+  String wanikaniSettingsStatus({required int level, required int count}) {
+    return 'Nivel $level · $count kanji sincronizados';
+  }
+
+  @override
+  String wanikaniSettingsLastSynced({required String time}) {
+    return 'Última sincronización: $time';
+  }
+
+  @override
+  String get wanikaniSettingsRestoredNoToken =>
+      'Lista de kanji restaurada desde una copia de seguridad. Vuelve a vincular para mantenerla actualizada.';
+
+  @override
+  String get wanikaniSettingsThresholdCaption =>
+      'Elige WaniKani en Furigana dentro de los ajustes del lector para decidir qué kanji se ocultan.';
+
+  @override
+  String wanikaniSettingsSyncDone({required int count}) {
+    return '$count kanji sincronizados';
+  }
+
+  @override
+  String get wanikaniErrorTokenInvalid =>
+      'WaniKani rechazó este token. Crea uno nuevo e inténtalo de nuevo.';
+
+  @override
+  String get wanikaniErrorNetwork =>
+      'No se pudo conectar con WaniKani. Comprueba tu conexión.';
+
+  @override
+  String get wanikaniErrorRateLimited =>
+      'WaniKani está limitando las solicitudes. Inténtalo de nuevo en un minuto.';
+
+  @override
+  String get wanikaniErrorGeneric =>
+      'La sincronización con WaniKani falló. Inténtalo más tarde.';
+
+  @override
+  String get libraryExportFuriganaWanikani =>
+      'Kanji que aún no conoces en WaniKani';
 }

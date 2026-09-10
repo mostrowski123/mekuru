@@ -2805,4 +2805,104 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get backupFullIncomplete =>
       'File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya.';
+
+  @override
+  String get readerFuriganaWanikani => 'WaniKani';
+
+  @override
+  String get readerFuriganaWanikaniStageTitle =>
+      'Sembunyikan furigana untuk kanji di';
+
+  @override
+  String get wanikaniStageApprentice => 'Apprentice+';
+
+  @override
+  String get wanikaniStageGuru => 'Guru+';
+
+  @override
+  String get wanikaniStageMaster => 'Master+';
+
+  @override
+  String get wanikaniStageEnlightened => 'Enlightened+';
+
+  @override
+  String get wanikaniStageBurned => 'Burned';
+
+  @override
+  String get readerFuriganaWanikaniLinkPrompt => 'Tautkan akun WaniKani Anda';
+
+  @override
+  String get settingsWanikaniSubtitle =>
+      'Sembunyikan furigana untuk kanji yang sudah Anda pelajari';
+
+  @override
+  String settingsWanikaniLinkedAs({required String username}) {
+    return 'Tertaut sebagai $username';
+  }
+
+  @override
+  String get wanikaniSettingsIntro =>
+      'Tempel token API WaniKani (token hanya-baca sudah cukup). Mekuru mengunduh tahap SRS setiap kanji dan menyembunyikan furigana untuk kata yang hanya terdiri dari kanji yang Anda kenal.';
+
+  @override
+  String get wanikaniSettingsTokenLabel => 'Token API';
+
+  @override
+  String get wanikaniSettingsGetToken => 'Dapatkan token API';
+
+  @override
+  String get wanikaniSettingsLink => 'Tautkan akun';
+
+  @override
+  String get wanikaniSettingsUnlink => 'Putuskan tautan';
+
+  @override
+  String get wanikaniSettingsUnlinkConfirm =>
+      'Putuskan tautan WaniKani? Mekuru akan melupakan token dan daftar kanji.';
+
+  @override
+  String get wanikaniSettingsSyncNow => 'Sinkronkan sekarang';
+
+  @override
+  String wanikaniSettingsStatus({required int level, required int count}) {
+    return 'Level $level · $count kanji tersinkron';
+  }
+
+  @override
+  String wanikaniSettingsLastSynced({required String time}) {
+    return 'Terakhir disinkronkan $time';
+  }
+
+  @override
+  String get wanikaniSettingsRestoredNoToken =>
+      'Daftar kanji dipulihkan dari cadangan. Tautkan lagi agar tetap diperbarui.';
+
+  @override
+  String get wanikaniSettingsThresholdCaption =>
+      'Pilih WaniKani di bagian Furigana pada pengaturan pembaca untuk menentukan kanji mana yang disembunyikan.';
+
+  @override
+  String wanikaniSettingsSyncDone({required int count}) {
+    return '$count kanji tersinkron';
+  }
+
+  @override
+  String get wanikaniErrorTokenInvalid =>
+      'WaniKani menolak token ini. Buat token baru dan coba lagi.';
+
+  @override
+  String get wanikaniErrorNetwork =>
+      'Tidak dapat menghubungi WaniKani. Periksa koneksi Anda.';
+
+  @override
+  String get wanikaniErrorRateLimited =>
+      'WaniKani membatasi permintaan. Coba lagi dalam satu menit.';
+
+  @override
+  String get wanikaniErrorGeneric =>
+      'Sinkronisasi WaniKani gagal. Coba lagi nanti.';
+
+  @override
+  String get libraryExportFuriganaWanikani =>
+      'Kanji yang belum Anda kenal di WaniKani';
 }

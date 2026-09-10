@@ -9,6 +9,8 @@ import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.da
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_settings_screen.dart';
+import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
+import 'package:mekuru/features/wanikani/presentation/screens/wanikani_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/about_screen.dart';
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
@@ -42,6 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final colorTheme = ref.watch(appColorThemeProvider);
     final startupScreen = ref.watch(startupScreenProvider);
     final lookupFontSize = ref.watch(lookupFontSizeProvider);
+    final wanikaniState = ref.watch(wanikaniProvider);
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final resolvedLocale = Localizations.localeOf(context);
@@ -126,6 +129,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 namedRoute(
                   'reading_settings',
                   (_) => const ReadingSettingsScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.link, color: theme.colorScheme.primary),
+            title: Text(l10n.readerFuriganaWanikani),
+            subtitle: Text(
+              wanikaniState.linked
+                  ? l10n.settingsWanikaniLinkedAs(
+                      username: wanikaniState.snapshot?.username ?? '',
+                    )
+                  : l10n.settingsWanikaniSubtitle,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              Navigator.of(context).push(
+                namedRoute(
+                  'wanikani_settings',
+                  (_) => const WanikaniSettingsScreen(),
                 ),
               );
             },
