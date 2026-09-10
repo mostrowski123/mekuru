@@ -316,13 +316,18 @@ Future<Uint8List?> buildFuriganaEpubForMode(
   String epubPath, {
   required FuriganaMode mode,
   required int jlptLevel,
+  Set<int> knownKanji = const {},
 }) {
   // The generator is unused by the book/hide modes, so it is built
   // unconditionally rather than branching on the mode.
   return buildFuriganaEpub(
     epubPath,
     mode: mode,
-    generator: furiganaGeneratorFor(mode, jlptLevel),
-    stripRubyWhere: authoredRubyStripFor(mode, jlptLevel),
+    generator: furiganaGeneratorFor(mode, jlptLevel, knownKanji: knownKanji),
+    stripRubyWhere: authoredRubyStripFor(
+      mode,
+      jlptLevel,
+      knownKanji: knownKanji,
+    ),
   );
 }

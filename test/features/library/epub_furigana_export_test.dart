@@ -299,6 +299,49 @@ void main() {
       expect(chapterOut, contains('<ruby>憂鬱<rt>ゆううつ</rt></ruby>'));
     });
 
+    test('wanikani mode bakes in the known-kanji filter', () async {
+      final path = await writeEpub(
+        buildTestEpub(
+          chapter(
+            '<p><ruby>今日<rt>きょう</rt></ruby>の'
+            '<ruby>鬱<rt>うつ</rt></ruby>と憂鬱</p>',
+          ),
+        ),
+      );
+      final known = '今日'.runes.toSet();
+      final generator = FuriganaGenerator(
+        _FakeTokenizer({
+          '今日': [_tok('今日', 'キョウ', 0)],
+          'と憂鬱': [_tok('と', 'ト', 0), _tok('憂鬱', 'ユウウツ', 1)],
+        }),
+        skipToken: furiganaGeneratorFor(
+          FuriganaMode.wanikani,
+          3,
+          knownKanji: known,
+        ).skipToken,
+      );
+
+      final out = await buildFuriganaEpub(
+        path,
+        mode: FuriganaMode.wanikani,
+        generator: generator,
+        stripRubyWhere: authoredRubyStripFor(
+          FuriganaMode.wanikani,
+          3,
+          knownKanji: known,
+        ),
+      );
+
+      final chapterOut = chapterOf(out!);
+      // Authored ruby over known kanji unwrapped and not re-annotated.
+      expect(chapterOut, isNot(contains('<rt>きょう</rt>')));
+      expect(chapterOut, contains('今日の'));
+      // Authored ruby over an unknown kanji untouched.
+      expect(chapterOut, contains('<ruby>鬱<rt>うつ</rt></ruby>'));
+      // Bare text with unknown kanji still gets generated ruby.
+      expect(chapterOut, contains('<ruby>憂鬱<rt>ゆううつ</rt></ruby>'));
+    });
+
     test('container.xml and OPF survive export byte-identical', () async {
       final path = await writeEpub(buildTestEpub(chapter('<p>今日</p>')));
 

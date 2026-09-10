@@ -12,6 +12,7 @@ import 'package:mekuru/features/reader/data/services/epub_file_resolver.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_setting_segments.dart';
+import 'package:mekuru/features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/blocking_progress_dialog.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -27,12 +28,18 @@ Future<void> runFuriganaExport(
   final l10n = context.l10n;
   final messenger = ScaffoldMessenger.of(context);
 
-  final choice = await _showCoverageDialog(
+  final choice = await showFuriganaCoverageDialog(
     context,
     initialLevel: ref.read(readerSettingsProvider).furiganaJlptLevel,
+    offerWanikani: ref.read(wanikaniProvider).hasKanji,
   );
   if (choice == null || !context.mounted) return;
   final (exportMode, exportLevel) = choice;
+  // Only the WaniKani mode reads the set; an empty one keeps the isolate
+  // closure's payload minimal for every other mode.
+  final knownKanji = exportMode == FuriganaMode.wanikani
+      ? ref.read(wanikaniKnownKanjiProvider)
+      : const <int>{};
 
   showBlockingProgressDialog(context, l10n.libraryExportFuriganaProgress);
 
@@ -55,6 +62,7 @@ Future<void> runFuriganaExport(
             epubPath,
             mode: exportMode,
             jlptLevel: exportLevel,
+            knownKanji: knownKanji,
           ),
         );
       },
@@ -100,9 +108,15 @@ Future<void> runFuriganaExport(
   }
 }
 
-Future<(FuriganaMode, int)?> _showCoverageDialog(
+/// Picks the export coverage: the returned tuple is the mode plus the JLPT
+/// level (meaningful for aboveLevel only). [offerWanikani] adds the WaniKani
+/// option; it is hidden until kanji stages have been synced because an
+/// empty known set would just export every kanji annotated.
+@visibleForTesting
+Future<(FuriganaMode, int)?> showFuriganaCoverageDialog(
   BuildContext context, {
   required int initialLevel,
+  bool offerWanikani = false,
 }) {
   final l10n = context.l10n;
   var mode = FuriganaMode.all;
@@ -143,6 +157,11 @@ Future<(FuriganaMode, int)?> _showCoverageDialog(
                       onSelectionChanged: (selection) =>
                           setState(() => level = selection.single),
                     ),
+                  ),
+                if (offerWanikani)
+                  option(
+                    FuriganaMode.wanikani,
+                    l10n.libraryExportFuriganaWanikani,
                   ),
                 option(FuriganaMode.book, l10n.libraryExportFuriganaMatchBook),
                 option(FuriganaMode.hide, l10n.libraryExportFuriganaNone),
