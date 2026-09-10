@@ -122,18 +122,21 @@ void main() {
         .setFuriganaMode(FuriganaMode.wanikani);
     await tester.pumpAndSettle();
 
-    await scrollSettingsTo(tester, find.text('Hide furigana for kanji at'));
+    await scrollSettingsTo(tester, find.text('Known kanji'));
     expect(find.byKey(const Key('reader-wanikani-link-prompt')), findsNothing);
-    expect(find.text('Burned'), findsOneWidget);
+    expect(find.text('Burned only'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('reader-wanikani-stage')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Guru+'));
+    // Every option spells out the stages it covers.
+    expect(find.text('Which kanji count as known?'), findsOneWidget);
+    expect(find.text('Guru, Master, Enlightened and Burned'), findsOneWidget);
+    await tester.tap(find.text('Guru or higher'));
     await tester.pumpAndSettle();
 
     expect(container.read(readerSettingsProvider).furiganaWanikaniMinStage, 5);
     expect(changes, contains('furigana_wanikani_stage'));
-    expect(find.text('Guru+'), findsOneWidget);
+    expect(find.text('Guru or higher'), findsOneWidget);
   });
 
   testWidgets('JLPT mode reveals the level picker and sets the level', (

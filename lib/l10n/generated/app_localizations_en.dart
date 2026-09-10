@@ -2795,22 +2795,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerFuriganaWanikani => 'WaniKani';
 
   @override
-  String get readerFuriganaWanikaniStageTitle => 'Hide furigana for kanji at';
+  String get readerFuriganaWanikaniStageTitle => 'Known kanji';
 
   @override
-  String get wanikaniStageApprentice => 'Apprentice+';
+  String get wanikaniStageApprentice => 'Apprentice or higher';
 
   @override
-  String get wanikaniStageGuru => 'Guru+';
+  String get wanikaniStageGuru => 'Guru or higher';
 
   @override
-  String get wanikaniStageMaster => 'Master+';
+  String get wanikaniStageMaster => 'Master or higher';
 
   @override
-  String get wanikaniStageEnlightened => 'Enlightened+';
+  String get wanikaniStageEnlightened => 'Enlightened or higher';
 
   @override
-  String get wanikaniStageBurned => 'Burned';
+  String get wanikaniStageBurned => 'Burned only';
 
   @override
   String get readerFuriganaWanikaniLinkPrompt => 'Link your WaniKani account';
@@ -2863,7 +2863,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wanikaniSettingsThresholdCaption =>
-      'Pick WaniKani under Furigana in the reader settings to choose which kanji are hidden.';
+      'Pick WaniKani under Furigana in the reader settings to choose which kanji count as known.';
 
   @override
   String wanikaniSettingsSyncDone({required int count}) {
@@ -2887,4 +2887,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryExportFuriganaWanikani => 'Kanji not yet known on WaniKani';
+
+  @override
+  String get readerFuriganaWanikaniStageSubtitle =>
+      'Words made only of known kanji lose their furigana.';
+
+  @override
+  String get readerFuriganaWanikaniStagePickerTitle =>
+      'Which kanji count as known?';
+
+  @override
+  String get wanikaniStageApprenticeHint =>
+      'Every kanji you\'ve started learning';
+
+  @override
+  String get wanikaniStageGuruHint => 'Guru, Master, Enlightened and Burned';
+
+  @override
+  String get wanikaniStageMasterHint => 'Master, Enlightened and Burned';
+
+  @override
+  String get wanikaniStageEnlightenedHint => 'Enlightened and Burned';
+
+  @override
+  String get wanikaniStageBurnedHint => 'Only kanji you\'ve burned';
 }

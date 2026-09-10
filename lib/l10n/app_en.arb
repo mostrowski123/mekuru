@@ -3587,27 +3587,27 @@
   "@readerFuriganaWanikani": {
     "description": "Furigana mode segment, export option and settings row title for the WaniKani-driven mode."
   },
-  "readerFuriganaWanikaniStageTitle": "Hide furigana for kanji at",
+  "readerFuriganaWanikaniStageTitle": "Known kanji",
   "@readerFuriganaWanikaniStageTitle": {
     "description": "Label of the WaniKani SRS-stage threshold row; the current stage name follows it."
   },
-  "wanikaniStageApprentice": "Apprentice+",
+  "wanikaniStageApprentice": "Apprentice or higher",
   "@wanikaniStageApprentice": {
     "description": "WaniKani SRS stage option: Apprentice and above (WaniKani's own English stage name)."
   },
-  "wanikaniStageGuru": "Guru+",
+  "wanikaniStageGuru": "Guru or higher",
   "@wanikaniStageGuru": {
     "description": "WaniKani SRS stage option: Guru and above (WaniKani's own English stage name)."
   },
-  "wanikaniStageMaster": "Master+",
+  "wanikaniStageMaster": "Master or higher",
   "@wanikaniStageMaster": {
     "description": "WaniKani SRS stage option: Master and above (WaniKani's own English stage name)."
   },
-  "wanikaniStageEnlightened": "Enlightened+",
+  "wanikaniStageEnlightened": "Enlightened or higher",
   "@wanikaniStageEnlightened": {
     "description": "WaniKani SRS stage option: Enlightened and above (WaniKani's own English stage name)."
   },
-  "wanikaniStageBurned": "Burned",
+  "wanikaniStageBurned": "Burned only",
   "@wanikaniStageBurned": {
     "description": "WaniKani SRS stage option: Burned only (WaniKani's own English stage name)."
   },
@@ -3681,7 +3681,7 @@
   "@wanikaniSettingsRestoredNoToken": {
     "description": "Shown when a backup restored the kanji list but the API token (never backed up) is missing."
   },
-  "wanikaniSettingsThresholdCaption": "Pick WaniKani under Furigana in the reader settings to choose which kanji are hidden.",
+  "wanikaniSettingsThresholdCaption": "Pick WaniKani under Furigana in the reader settings to choose which kanji count as known.",
   "@wanikaniSettingsThresholdCaption": {
     "description": "Caption at the bottom of the WaniKani settings screen pointing to the reader's furigana setting."
   },
@@ -3713,5 +3713,33 @@
   "libraryExportFuriganaWanikani": "Kanji not yet known on WaniKani",
   "@libraryExportFuriganaWanikani": {
     "description": "Furigana export coverage option: annotate only words containing kanji below the WaniKani threshold."
+  },
+  "readerFuriganaWanikaniStageSubtitle": "Words made only of known kanji lose their furigana.",
+  "@readerFuriganaWanikaniStageSubtitle": {
+    "description": "Subtitle under the Known kanji row explaining what the threshold does."
+  },
+  "readerFuriganaWanikaniStagePickerTitle": "Which kanji count as known?",
+  "@readerFuriganaWanikaniStagePickerTitle": {
+    "description": "Title of the bottom sheet that picks the WaniKani SRS-stage threshold."
+  },
+  "wanikaniStageApprenticeHint": "Every kanji you've started learning",
+  "@wanikaniStageApprenticeHint": {
+    "description": "Which stages the Apprentice-or-higher option covers."
+  },
+  "wanikaniStageGuruHint": "Guru, Master, Enlightened and Burned",
+  "@wanikaniStageGuruHint": {
+    "description": "Which stages the Guru-or-higher option covers."
+  },
+  "wanikaniStageMasterHint": "Master, Enlightened and Burned",
+  "@wanikaniStageMasterHint": {
+    "description": "Which stages the Master-or-higher option covers."
+  },
+  "wanikaniStageEnlightenedHint": "Enlightened and Burned",
+  "@wanikaniStageEnlightenedHint": {
+    "description": "Which stages the Enlightened-or-higher option covers."
+  },
+  "wanikaniStageBurnedHint": "Only kanji you've burned",
+  "@wanikaniStageBurnedHint": {
+    "description": "Which stages the Burned-only option covers."
   }
 }
