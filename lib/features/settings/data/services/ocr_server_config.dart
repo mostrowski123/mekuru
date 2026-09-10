@@ -1,4 +1,9 @@
+import 'package:mekuru/core/services/secret_store.dart';
+
 const defaultOcrServerUrl = '';
+
+/// Bearer key for a self-hosted OCR server; secure storage only.
+const ocrCustomServerSecretStore = SecretStore('ocr.custom_server_bearer_key');
 const legacyBuiltInOcrServerUrl =
     'https://mostrowski123--mekuru-ocr-fastapi-app.modal.run';
 

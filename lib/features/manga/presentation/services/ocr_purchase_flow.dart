@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart';
+import 'package:mekuru/core/services/secret_store.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
@@ -11,13 +11,14 @@ import '../../data/services/ocr_billing_client.dart';
 
 class OcrPurchaseFlow {
   OcrPurchaseFlow({
-    OcrAuthSecretStorage? ocrAuthSecretStorage,
+    SecretStore? ocrAuthSecretStorage,
     OcrBillingClient? billingClient,
     Future<bool> Function()? readProUnlocked,
     Future<String?> Function()? loadCustomServerBearerKey,
     Future<void> Function(BuildContext context)? openProUpgradeScreen,
     Future<void> Function(BuildContext context)? openSettingsScreen,
-  }) : _ocrAuthSecretStorage = ocrAuthSecretStorage ?? OcrAuthSecretStorage(),
+  }) : _ocrAuthSecretStorage =
+           ocrAuthSecretStorage ?? ocr_server_config.ocrCustomServerSecretStore,
        _billingClient = billingClient ?? OcrBillingClient(),
        _readProUnlockedOverride = readProUnlocked,
        _loadCustomServerBearerKeyOverride = loadCustomServerBearerKey,
@@ -26,7 +27,7 @@ class OcrPurchaseFlow {
 
   static final OcrPurchaseFlow instance = OcrPurchaseFlow();
 
-  final OcrAuthSecretStorage _ocrAuthSecretStorage;
+  final SecretStore _ocrAuthSecretStorage;
   final OcrBillingClient _billingClient;
   final Future<bool> Function()? _readProUnlockedOverride;
   final Future<String?> Function()? _loadCustomServerBearerKeyOverride;
@@ -101,7 +102,7 @@ class OcrPurchaseFlow {
       return _loadCustomServerBearerKeyOverride();
     }
 
-    return _ocrAuthSecretStorage.loadCustomServerBearerKey();
+    return _ocrAuthSecretStorage.load();
   }
 
   Future<void> _openProUpgradeScreen(BuildContext context) {

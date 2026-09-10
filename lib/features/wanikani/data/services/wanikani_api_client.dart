@@ -1,8 +1,5 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:http/http.dart' as http;
+import 'package:mekuru/core/services/http_transport.dart';
 
 import '../models/wanikani_snapshot.dart';
 
@@ -114,26 +111,16 @@ class WanikaniApiClient {
   }
 
   Future<Map<String, dynamic>> _getJson(String url, String token) async {
+    final request = http.Request('GET', Uri.parse(url))
+      ..headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Wanikani-Revision': _revision,
+        'Accept': 'application/json',
+      });
     final http.Response response;
     try {
-      response = await _http
-          .get(
-            Uri.parse(url),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Wanikani-Revision': _revision,
-              'Accept': 'application/json',
-            },
-          )
-          .timeout(_timeout);
-    } on TimeoutException {
-      throw const WanikaniException(
-        WanikaniException.network,
-        message: 'timed out',
-      );
-    } on SocketException catch (e) {
-      throw WanikaniException(WanikaniException.network, message: e.message);
-    } on http.ClientException catch (e) {
+      response = await sendWithTimeout(_http, request, timeout: _timeout);
+    } on NetworkException catch (e) {
       throw WanikaniException(WanikaniException.network, message: e.message);
     }
 
@@ -159,11 +146,7 @@ class WanikaniApiClient {
     }
 
     try {
-      // JSON is UTF-8 by spec; decoding bodyBytes sidesteps a missing
-      // charset in content-type (package:http would assume latin1).
-      return _as<Map>(
-        jsonDecode(utf8.decode(response.bodyBytes)),
-      ).cast<String, dynamic>();
+      return _as<Map>(decodeJsonBody(response)).cast<String, dynamic>();
     } on FormatException catch (e) {
       throw WanikaniException(WanikaniException.malformed, message: e.message);
     }

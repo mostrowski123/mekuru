@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mekuru/features/manga/data/services/ocr_auth_secret_storage.dart';
+import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
+    show ocrCustomServerSecretStore;
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_settings_rows.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
@@ -24,8 +25,6 @@ class ReadingSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
-  final OcrAuthSecretStorage _ocrAuthSecretStorage = OcrAuthSecretStorage();
-
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(readerSettingsProvider);
@@ -262,8 +261,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
   Future<void> _showOcrServerUrlDialog() async {
     // Resolved before the awaits: the screen can unmount while they run.
     final container = ProviderScope.containerOf(context, listen: false);
-    final savedCustomBearerKey =
-        await _ocrAuthSecretStorage.loadCustomServerBearerKey() ?? '';
+    final savedCustomBearerKey = await ocrCustomServerSecretStore.load() ?? '';
     final currentUrl = container.read(ocrServerUrlProvider);
     final initialUrl = isUnsetOrBuiltInOcrServerUrl(currentUrl)
         ? ''
@@ -280,7 +278,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
     );
 
     if (result != null) {
-      await _ocrAuthSecretStorage.saveCustomServerBearerKey(result.bearerKey!);
+      await ocrCustomServerSecretStore.save(result.bearerKey!);
       container.read(ocrServerUrlProvider.notifier).setUrl(result.url);
     }
   }

@@ -1,4 +1,4 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mekuru/core/services/secret_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/wanikani_snapshot.dart';
@@ -9,30 +9,15 @@ import '../models/wanikani_snapshot.dart';
 /// keeps hiding furigana until the user links again.
 class WanikaniStorage {
   static const snapshotPrefsKey = 'app.wanikani_sync';
-  static const _tokenKey = 'wanikani.api_token';
+  static const _token = SecretStore('wanikani.api_token');
 
-  final FlutterSecureStorage _secureStorage;
+  const WanikaniStorage();
 
-  const WanikaniStorage({
-    FlutterSecureStorage secureStorage = const FlutterSecureStorage(),
-  }) : _secureStorage = secureStorage;
+  Future<String?> loadToken() => _token.load();
 
-  Future<String?> loadToken() async {
-    final value = await _secureStorage.read(key: _tokenKey);
-    final trimmed = value?.trim();
-    return trimmed == null || trimmed.isEmpty ? null : trimmed;
-  }
+  Future<void> saveToken(String token) => _token.save(token);
 
-  Future<void> saveToken(String token) async {
-    final trimmed = token.trim();
-    if (trimmed.isEmpty) {
-      await clearToken();
-      return;
-    }
-    await _secureStorage.write(key: _tokenKey, value: trimmed);
-  }
-
-  Future<void> clearToken() => _secureStorage.delete(key: _tokenKey);
+  Future<void> clearToken() => _token.clear();
 
   Future<WanikaniSnapshot?> loadSnapshot() async {
     final prefs = await SharedPreferences.getInstance();

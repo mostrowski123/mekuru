@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/services/firebase_runtime.dart';
+import '../../../../core/services/http_transport.dart';
 import '../../../../firebase_options.dart';
 import 'ocr_account_link_service.dart';
 
@@ -560,10 +561,11 @@ class OcrBillingClient {
     });
 
     try {
-      final streamed = await _httpClient.send(request).timeout(requestTimeout);
-      final response = await http.Response.fromStream(
-        streamed,
-      ).timeout(requestTimeout);
+      final response = await sendWithTimeout(
+        _httpClient,
+        request,
+        timeout: requestTimeout,
+      );
 
       _log('response', {
         'method': method,
@@ -578,9 +580,7 @@ class OcrBillingClient {
 
       if (response.body.isEmpty) return <String, dynamic>{};
       return json.decode(response.body) as Map<String, dynamic>;
-    } on SocketException {
-      throw _networkUnavailableError;
-    } on TimeoutException {
+    } on NetworkException {
       throw _networkUnavailableError;
     }
   }

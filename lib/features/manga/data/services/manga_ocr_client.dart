@@ -4,9 +4,10 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:mime/mime.dart';
+import 'package:mekuru/core/services/http_transport.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
+import 'package:mime/mime.dart';
 
 import '../../data/models/mokuro_models.dart';
 
@@ -128,10 +129,12 @@ class MangaOcrClient {
           final delay = _baseRetryDelay * (1 << attempt);
           await Future<void>.delayed(delay);
         }
-      } on TimeoutException {
-        lastError = const OcrServerException(
+      } on NetworkException catch (e) {
+        lastError = OcrServerException(
           0,
-          'Request timed out. The server may be starting up.',
+          e.timedOut
+              ? 'Request timed out. The server may be starting up.'
+              : 'Network error: ${e.message}',
         );
         if (attempt < _maxRetries - 1) {
           final delay = _baseRetryDelay * (1 << attempt);
@@ -205,10 +208,11 @@ class MangaOcrClient {
       request.fields['page_index'] = pageIndex.toString();
     }
 
-    final streamedResponse = await _httpClient
-        .send(request)
-        .timeout(_requestTimeout);
-    final response = await http.Response.fromStream(streamedResponse);
+    final response = await sendWithTimeout(
+      _httpClient,
+      request,
+      timeout: _requestTimeout,
+    );
 
     if (response.statusCode != 200) {
       throw _errorFromResponse(response);

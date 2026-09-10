@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:mekuru/core/services/http_transport.dart';
 
 import 'ocr_server_config.dart' as ocr_server_config;
 
@@ -54,7 +54,11 @@ class OcrServerHealthClient {
     );
 
     try {
-      final response = await _httpClient.get(uri).timeout(_timeout);
+      final response = await sendWithTimeout(
+        _httpClient,
+        http.Request('GET', uri),
+        timeout: _timeout,
+      );
       if (response.statusCode != 200) {
         throw OcrServerHealthException(
           response.statusCode,
@@ -78,10 +82,12 @@ class OcrServerHealthClient {
       }
 
       return OcrServerHealthResult(status: status);
-    } on TimeoutException {
-      throw const OcrServerHealthException(
+    } on NetworkException catch (e) {
+      throw OcrServerHealthException(
         0,
-        'OCR server did not respond in time.',
+        e.timedOut
+            ? 'OCR server did not respond in time.'
+            : 'Could not connect to OCR server: ${e.message}',
       );
     } on OcrServerHealthException {
       rethrow;

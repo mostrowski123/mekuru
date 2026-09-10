@@ -24,23 +24,14 @@ void main() {
   );
 
   group('WanikaniStorage token', () {
-    test('starts empty', () async {
+    test('lives in secure storage under its own key', () async {
       expect(await storage.loadToken(), isNull);
-    });
-
-    test('saves trimmed and reloads', () async {
       await storage.saveToken('  abc-123  ');
       expect(await storage.loadToken(), 'abc-123');
-    });
-
-    test('saving blank clears the token', () async {
-      await storage.saveToken('abc');
-      await storage.saveToken('   ');
-      expect(await storage.loadToken(), isNull);
-    });
-
-    test('clearToken removes it', () async {
-      await storage.saveToken('abc');
+      expect(
+        await const FlutterSecureStorage().read(key: 'wanikani.api_token'),
+        'abc-123',
+      );
       await storage.clearToken();
       expect(await storage.loadToken(), isNull);
     });

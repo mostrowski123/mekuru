@@ -1,8 +1,7 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:mekuru/core/services/http_transport.dart';
 
 import 'server_client.dart';
 
@@ -43,14 +42,18 @@ abstract class HttpServerClient implements ServerClient {
       request.body = jsonEncode(body);
     }
     try {
-      final streamed = await httpClient.send(request).timeout(requestTimeout);
-      return await http.Response.fromStream(streamed);
-    } on TimeoutException {
-      throw SyncException(0, '$serverName server timed out');
-    } on SocketException catch (e) {
-      throw SyncException(0, 'Cannot reach $serverName server: ${e.message}');
-    } on http.ClientException catch (e) {
-      throw SyncException(0, 'Cannot reach $serverName server: ${e.message}');
+      return await sendWithTimeout(
+        httpClient,
+        request,
+        timeout: requestTimeout,
+      );
+    } on NetworkException catch (e) {
+      throw SyncException(
+        0,
+        e.timedOut
+            ? '$serverName server timed out'
+            : 'Cannot reach $serverName server: ${e.message}',
+      );
     }
   }
 
@@ -76,10 +79,8 @@ abstract class HttpServerClient implements ServerClient {
     return response;
   }
 
-  // JSON is UTF-8 by spec; decoding bodyBytes directly sidesteps servers
-  // that omit charset from content-type (package:http then assumes latin1).
   Future<dynamic> getJson(String path) async =>
-      jsonDecode(utf8.decode((await send('GET', path)).bodyBytes));
+      decodeJsonBody(await send('GET', path));
 
   @override
   void dispose() => httpClient.close();

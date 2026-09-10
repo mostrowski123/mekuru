@@ -20,7 +20,6 @@ import '../../../reader/data/services/mecab_service.dart';
 import 'manga_ocr_client.dart';
 import 'mokuro_segmentation_repair.dart';
 import 'mokuro_word_segmenter.dart';
-import 'ocr_auth_secret_storage.dart';
 import 'ocr_billing_client.dart';
 
 /// WorkManager task name for OCR processing.
@@ -230,10 +229,9 @@ Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
     prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl,
   );
   final usesBuiltInServer = ocr_server_config.isBuiltInOcrServerUrl(serverUrl);
-  final authSecretStorage = OcrAuthSecretStorage();
   final customBearerKey = usesBuiltInServer
       ? null
-      : await authSecretStorage.loadCustomServerBearerKey();
+      : await ocr_server_config.ocrCustomServerSecretStore.load();
   final effectiveJobId = usesBuiltInServer ? jobId : null;
 
   await flushPendingOcrFinalizations();
