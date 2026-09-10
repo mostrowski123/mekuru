@@ -2704,6 +2704,6 @@
   "backupFullJobClose": "Tutup",
   "backupFullJobRenameFailed": "File disimpan dengan nama sementara yang berakhiran .partial. Ubah namanya agar berakhiran .zip sebelum memulihkan darinya.",
   "backupFullIncomplete": "File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya.",
-  "epubLookupAnimationTitle": "Lookup Animation",
-  "epubLookupAnimationSubtitle": "Turn off for e-reader displays"
+  "epubLookupAnimationTitle": "Animasi Penelusuran",
+  "epubLookupAnimationSubtitle": "Nonaktifkan untuk layar e-reader"
 }

@@ -2678,10 +2678,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupFullIncomplete => '此文件不完整或已损坏。请从其保存位置重新复制。';
 
   @override
-  String get epubLookupAnimationTitle => 'Lookup Animation';
+  String get epubLookupAnimationTitle => '查词动画';
 
   @override
-  String get epubLookupAnimationSubtitle => 'Turn off for e-reader displays';
+  String get epubLookupAnimationSubtitle => '电子墨水屏建议关闭';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -5358,8 +5358,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get backupFullIncomplete => '此文件不完整或已损坏。请从其保存位置重新复制。';
 
   @override
-  String get epubLookupAnimationTitle => 'Lookup Animation';
+  String get epubLookupAnimationTitle => '查词动画';
 
   @override
-  String get epubLookupAnimationSubtitle => 'Turn off for e-reader displays';
+  String get epubLookupAnimationSubtitle => '电子墨水屏建议关闭';
 }

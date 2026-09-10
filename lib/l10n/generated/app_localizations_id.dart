@@ -2808,8 +2808,8 @@ class AppLocalizationsId extends AppLocalizations {
       'File ini tidak lengkap atau rusak. Salin lagi dari tempat penyimpanannya.';
 
   @override
-  String get epubLookupAnimationTitle => 'Lookup Animation';
+  String get epubLookupAnimationTitle => 'Animasi Penelusuran';
 
   @override
-  String get epubLookupAnimationSubtitle => 'Turn off for e-reader displays';
+  String get epubLookupAnimationSubtitle => 'Nonaktifkan untuk layar e-reader';
 }

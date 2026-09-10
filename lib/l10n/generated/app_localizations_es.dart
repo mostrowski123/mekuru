@@ -2830,8 +2830,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Este archivo está incompleto o dañado. Vuelve a copiarlo desde donde se guardó.';
 
   @override
-  String get epubLookupAnimationTitle => 'Lookup Animation';
+  String get epubLookupAnimationTitle => 'Animación de consultas';
 
   @override
-  String get epubLookupAnimationSubtitle => 'Turn off for e-reader displays';
+  String get epubLookupAnimationSubtitle =>
+      'Desactívala en pantallas de tinta electrónica';
 }
