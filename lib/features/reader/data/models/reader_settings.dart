@@ -26,13 +26,14 @@ extension ColorModeStorage on ColorMode {
   String get storageValue => name;
 }
 
-enum FuriganaMode { hide, book, all, aboveLevel }
+enum FuriganaMode { hide, book, all, aboveLevel, wanikani }
 
 FuriganaMode furiganaModeFromString(String? value) {
   return switch (value) {
     'hide' => FuriganaMode.hide,
     'all' => FuriganaMode.all,
     'aboveLevel' => FuriganaMode.aboveLevel,
+    'wanikani' => FuriganaMode.wanikani,
     // Deliberately no 'off' case: versions <= 1.25.x persisted 'off' (both
     // the global preference and per-book Books.furigana_mode overrides) as a
     // hide-everything default most users never chose. Letting 'off' fall
@@ -132,12 +133,20 @@ class ReaderSettings {
   /// - [FuriganaMode.aboveLevel]: like [FuriganaMode.all], but only words
   ///   containing at least one kanji harder than [furiganaJlptLevel] are
   ///   annotated.
+  /// - [FuriganaMode.wanikani]: like [FuriganaMode.all], but only words
+  ///   containing at least one kanji the linked WaniKani account has not
+  ///   reached [furiganaWanikaniMinStage] on are annotated.
   final FuriganaMode furiganaMode;
 
   /// JLPT threshold for [FuriganaMode.aboveLevel]: 5 (N5) … 1 (N1). Words
   /// whose kanji are all at or below this level render without generated
   /// furigana. Global — not per book.
   final int furiganaJlptLevel;
+
+  /// WaniKani SRS-stage threshold for [FuriganaMode.wanikani]: a kanji counts
+  /// as known once its assignment reaches this stage (1 Apprentice … 5 Guru,
+  /// 7 Master, 8 Enlightened, 9 Burned). Global — not per book.
+  final int furiganaWanikaniMinStage;
 
   /// Screen brightness override (0.0–1.0) applied while a reader is open.
   /// `null` means follow the system brightness.
@@ -177,6 +186,7 @@ class ReaderSettings {
     this.disableLinks = false,
     this.furiganaMode = FuriganaMode.book,
     this.furiganaJlptLevel = 3,
+    this.furiganaWanikaniMinStage = 9,
     this.brightness,
     this.mangaViewMode = MangaViewMode.singlePage,
     this.mangaReadingDirection = ReaderDirection.rtl,
@@ -200,6 +210,7 @@ class ReaderSettings {
     bool? disableLinks,
     FuriganaMode? furiganaMode,
     int? furiganaJlptLevel,
+    int? furiganaWanikaniMinStage,
     double? brightness,
     bool clearBrightness = false,
     MangaViewMode? mangaViewMode,
@@ -225,6 +236,8 @@ class ReaderSettings {
       disableLinks: disableLinks ?? this.disableLinks,
       furiganaMode: furiganaMode ?? this.furiganaMode,
       furiganaJlptLevel: furiganaJlptLevel ?? this.furiganaJlptLevel,
+      furiganaWanikaniMinStage:
+          furiganaWanikaniMinStage ?? this.furiganaWanikaniMinStage,
       brightness: clearBrightness ? null : (brightness ?? this.brightness),
       mangaViewMode: mangaViewMode ?? this.mangaViewMode,
       mangaReadingDirection:

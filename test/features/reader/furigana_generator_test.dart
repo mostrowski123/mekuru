@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/furigana_generator.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 
@@ -140,6 +141,87 @@ void main() {
         'source': '',
         'segments': const <Map<String, Object?>>[],
       });
+    });
+  });
+
+  group('furiganaGeneratorFor / authoredRubyStripFor', () {
+    final known = '日本'.runes.toSet();
+
+    test('unfiltered modes install no token filter', () {
+      for (final mode in [
+        FuriganaMode.hide,
+        FuriganaMode.book,
+        FuriganaMode.all,
+      ]) {
+        expect(
+          furiganaGeneratorFor(mode, 3).skipToken,
+          isNull,
+          reason: '$mode',
+        );
+        expect(authoredRubyStripFor(mode, 3), isNull, reason: '$mode');
+      }
+    });
+
+    test('aboveLevel filters by JLPT level and ignores the known set', () {
+      final skip = furiganaGeneratorFor(
+        FuriganaMode.aboveLevel,
+        3,
+        knownKanji: '憂'.runes.toSet(),
+      ).skipToken!;
+      expect(skip(_tok('一', 'イチ', 0)), isTrue);
+      expect(skip(_tok('憂鬱', 'ユウウツ', 0)), isFalse);
+      expect(authoredRubyStripFor(FuriganaMode.aboveLevel, 3)!('一'), isTrue);
+      expect(authoredRubyStripFor(FuriganaMode.aboveLevel, 3)!('憂鬱'), isFalse);
+    });
+
+    test('wanikani skips tokens whose kanji are all known', () {
+      final skip = furiganaGeneratorFor(
+        FuriganaMode.wanikani,
+        3,
+        knownKanji: known,
+      ).skipToken!;
+      expect(skip(_tok('日本', 'ニホン', 0)), isTrue);
+      expect(skip(_tok('日本語', 'ニホンゴ', 0)), isFalse);
+      expect(skip(_tok('かな', 'カナ', 0)), isTrue);
+    });
+
+    test('wanikani strips authored ruby whose base is fully known', () {
+      final strip = authoredRubyStripFor(
+        FuriganaMode.wanikani,
+        3,
+        knownKanji: known,
+      )!;
+      expect(strip('日本'), isTrue);
+      expect(strip('日本語'), isFalse);
+    });
+
+    test('wanikani with an empty known set annotates every kanji', () {
+      final skip = furiganaGeneratorFor(FuriganaMode.wanikani, 3).skipToken!;
+      expect(skip(_tok('日', 'ヒ', 0)), isFalse);
+      expect(skip(_tok('かな', 'カナ', 0)), isTrue);
+    });
+
+    test('wanikani generator emits known-only tokens bare', () async {
+      final generator = FuriganaGenerator(
+        _FakeTokenizer({
+          '日本の言葉': [
+            _tok('日本', 'ニホン', 0),
+            _tok('の', '', 2),
+            _tok('言葉', 'コトバ', 3),
+          ],
+        }),
+        skipToken: furiganaGeneratorFor(
+          FuriganaMode.wanikani,
+          3,
+          knownKanji: known,
+        ).skipToken,
+      );
+      final result = (await generator.generate(['日本の言葉']))!.first;
+      expect(result['segments'], [
+        {'t': '日本'},
+        {'t': 'の'},
+        {'t': '言葉', 'f': 'ことば'},
+      ]);
     });
   });
 }

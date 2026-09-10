@@ -489,6 +489,58 @@ void main() {
       expect(spyRepo.lastFuriganaMode.value, 'hide');
     });
 
+    test('wanikani mode persists as a per-book override string', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final spyRepo = _SpyBookRepository(db);
+      final harness = _createHarness(bookRepo: spyRepo);
+      addTearDown(() async {
+        await harness.dispose();
+        await db.close();
+      });
+
+      final notifier = harness.container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(bookId: 42, language: 'ja');
+      notifier.setFuriganaMode(FuriganaMode.wanikani);
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spyRepo.lastFuriganaMode.value, 'wanikani');
+    });
+
+    test('the WaniKani stage is global: it clamps, persists, and never '
+        'writes a per-book override', () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final spyRepo = _SpyBookRepository(db);
+      final fakeStorage = _FakeReaderSettingsStorage();
+      final harness = _createHarness(storage: fakeStorage, bookRepo: spyRepo);
+      addTearDown(() async {
+        await harness.dispose();
+        await db.close();
+      });
+
+      final notifier = harness.container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(bookId: 42, language: 'ja');
+      notifier.setFuriganaWanikaniMinStage(5);
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        harness.container.read(readerSettingsProvider).furiganaWanikaniMinStage,
+        5,
+      );
+      expect(fakeStorage.savedSettings!.furiganaWanikaniMinStage, 5);
+      expect(spyRepo.updateDisplayOverridesCalls, 0);
+
+      notifier.setFuriganaWanikaniMinStage(0);
+      expect(
+        harness.container.read(readerSettingsProvider).furiganaWanikaniMinStage,
+        1,
+      );
+      notifier.setFuriganaWanikaniMinStage(99);
+      expect(
+        harness.container.read(readerSettingsProvider).furiganaWanikaniMinStage,
+        9,
+      );
+    });
+
     test('re-selecting the default book mode writes no override', () async {
       final db = AppDatabase(NativeDatabase.memory());
       final spyRepo = _SpyBookRepository(db);

@@ -5,28 +5,48 @@ import 'package:mekuru/shared/widgets/furigana_text.dart';
 
 /// The real-MeCab generator preconfigured for [mode]:
 /// [FuriganaMode.aboveLevel] skips words with no kanji above the JLPT
-/// threshold, every other generating mode annotates everything. Shared by
-/// the reader's webview handler and the EPUB exporter.
-FuriganaGenerator furiganaGeneratorFor(FuriganaMode mode, int jlptLevel) {
+/// threshold, [FuriganaMode.wanikani] skips words whose kanji are all in
+/// [knownKanji] (runes), every other generating mode annotates everything.
+/// Shared by the reader's webview handler and the EPUB exporter.
+FuriganaGenerator furiganaGeneratorFor(
+  FuriganaMode mode,
+  int jlptLevel, {
+  Set<int> knownKanji = const {},
+}) {
   return FuriganaGenerator(
     const MecabFuriganaTokenizer(),
-    skipToken: mode == FuriganaMode.aboveLevel
-        ? (token) => !wordNeedsFuriganaAboveLevel(token.surface, jlptLevel)
-        : null,
+    skipToken: switch (mode) {
+      FuriganaMode.aboveLevel => (token) => !wordNeedsFuriganaAboveLevel(
+        token.surface,
+        jlptLevel,
+      ),
+      FuriganaMode.wanikani => (token) => !wordHasUnknownKanji(
+        token.surface,
+        knownKanji,
+      ),
+      _ => null,
+    },
   );
 }
 
 /// The authored-ruby policy paired with [furiganaGeneratorFor]:
 /// [FuriganaMode.aboveLevel] strips publisher ruby whose base has no kanji
-/// above the JLPT threshold, every other mode leaves it alone (null).
-/// Kept beside the generator factory so the two halves of the aboveLevel
-/// filter cannot be derived from different mode/level pairs.
+/// above the JLPT threshold, [FuriganaMode.wanikani] strips ruby whose base
+/// has no kanji outside [knownKanji], every other mode leaves it alone
+/// (null). Kept beside the generator factory so the two halves of a filtered
+/// mode cannot be derived from different mode/threshold pairs.
 bool Function(String baseText)? authoredRubyStripFor(
   FuriganaMode mode,
-  int jlptLevel,
-) => mode == FuriganaMode.aboveLevel
-    ? ((base) => !wordNeedsFuriganaAboveLevel(base, jlptLevel))
-    : null;
+  int jlptLevel, {
+  Set<int> knownKanji = const {},
+}) => switch (mode) {
+  FuriganaMode.aboveLevel => (base) => !wordNeedsFuriganaAboveLevel(
+    base,
+    jlptLevel,
+  ),
+  FuriganaMode.wanikani => (base) => !wordHasUnknownKanji(base, knownKanji),
+  _ => null,
+};
 
 /// Abstraction over MeCab so the generator can be unit-tested with a fake.
 abstract class FuriganaTokenizer {

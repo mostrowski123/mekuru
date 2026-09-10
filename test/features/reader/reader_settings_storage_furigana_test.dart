@@ -10,6 +10,7 @@ void main() {
       expect(furiganaModeFromString('book'), FuriganaMode.book);
       expect(furiganaModeFromString('all'), FuriganaMode.all);
       expect(furiganaModeFromString('aboveLevel'), FuriganaMode.aboveLevel);
+      expect(furiganaModeFromString('wanikani'), FuriganaMode.wanikani);
     });
 
     test('reinterprets legacy "off" as book', () {
@@ -49,6 +50,69 @@ void main() {
       const settings = ReaderSettings(furiganaMode: FuriganaMode.hide);
       final copy = settings.copyWith(furiganaMode: FuriganaMode.all);
       expect(copy.furiganaMode, FuriganaMode.all);
+    });
+  });
+
+  group('ReaderSettings.furiganaWanikaniMinStage', () {
+    test('defaults to burned (9)', () {
+      expect(const ReaderSettings().furiganaWanikaniMinStage, 9);
+    });
+
+    test('copyWith preserves and updates the stage', () {
+      const settings = ReaderSettings(furiganaWanikaniMinStage: 5);
+      expect(settings.copyWith(fontSize: 24).furiganaWanikaniMinStage, 5);
+      expect(
+        settings.copyWith(furiganaWanikaniMinStage: 7).furiganaWanikaniMinStage,
+        7,
+      );
+    });
+  });
+
+  group('SharedPreferencesReaderSettingsStorage — wanikani stage', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    test('round-trips the stage', () async {
+      final storage = SharedPreferencesReaderSettingsStorage();
+      await storage.save(
+        const ReaderSettings(
+          furiganaMode: FuriganaMode.wanikani,
+          furiganaWanikaniMinStage: 5,
+        ),
+      );
+
+      final loaded = await storage.load();
+      expect(loaded!.furiganaMode, FuriganaMode.wanikani);
+      expect(loaded.furiganaWanikaniMinStage, 5);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('reader.furigana_wanikani_min_stage'), 5);
+    });
+
+    test('defaults to 9 for installs predating the key', () async {
+      SharedPreferences.setMockInitialValues({'reader.font_size': 24.0});
+      final loaded = await SharedPreferencesReaderSettingsStorage().load();
+      expect(loaded!.furiganaWanikaniMinStage, 9);
+    });
+
+    test('clamps out-of-range stored values', () async {
+      SharedPreferences.setMockInitialValues({
+        'reader.furigana_wanikani_min_stage': 42,
+      });
+      expect(
+        (await SharedPreferencesReaderSettingsStorage().load())!
+            .furiganaWanikaniMinStage,
+        9,
+      );
+
+      SharedPreferences.setMockInitialValues({
+        'reader.furigana_wanikani_min_stage': 0,
+      });
+      expect(
+        (await SharedPreferencesReaderSettingsStorage().load())!
+            .furiganaWanikaniMinStage,
+        1,
+      );
     });
   });
 

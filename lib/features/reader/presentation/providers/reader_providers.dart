@@ -171,6 +171,10 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(furiganaJlptLevel: level.clamp(1, 5)));
   }
 
+  void setFuriganaWanikaniMinStage(int stage) {
+    _update(state.copyWith(furiganaWanikaniMinStage: stage.clamp(1, 9)));
+  }
+
   /// Apply book-specific defaults when opening a book.
   ///
   /// Uses per-book overrides from the database if the user has previously
