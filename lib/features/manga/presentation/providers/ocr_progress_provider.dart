@@ -38,13 +38,6 @@ Stream<OcrProgress?> _pollOcrProgress(int bookId) async* {
   }
 }
 
-/// Whether OCR is actively running for a specific book.
-final isOcrRunningProvider = Provider.family<bool, int>((ref, bookId) {
-  final progress = ref.watch(ocrProgressProvider(bookId));
-  return progress.whenOrNull(data: (p) => p?.status == OcrStatus.running) ??
-      false;
-});
-
 /// Whether a book has partial OCR data (some pages processed, but not all).
 final hasPartialOcrProvider = Provider.family<bool, int>((ref, bookId) {
   final progress = ref.watch(ocrProgressProvider(bookId));

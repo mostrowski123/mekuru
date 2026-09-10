@@ -31,9 +31,7 @@ object OcrRuntime {
     fun startService() {
         try { ContextCompat.startForegroundService(context,Intent(context,OcrJobService::class.java)) }
         catch(error: Exception) {
-            for(job in store.all().filter { it.optString("backend")=="onDevice" && it.getString("status")=="queued" }) {
-                store.transition(job.getString("id"),"paused","background_start_denied")
-            }
+            store.pauseQueued("onDevice","background_start_denied")
             throw error
         }
     }
@@ -63,8 +61,8 @@ object OcrRuntime {
     }
     fun checkedCache(path: String): File {
         val file=File(path).canonicalFile
-        val roots=listOf(context.filesDir,context.cacheDir,File(context.applicationInfo.dataDir,"app_flutter"))
-        require(roots.any { file.path.startsWith(it.canonicalPath+File.separator) }) { "invalid_cache_path" }
+        val root=File(context.applicationInfo.dataDir).canonicalPath+File.separator
+        require(file.path.startsWith(root)) { "invalid_cache_path" }
         require(file.name=="pages_cache.json") { "invalid_cache_path" }
         return file
     }

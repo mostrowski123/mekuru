@@ -75,6 +75,7 @@ object MangaOcrDecode {
 
     private const val HALF_KANA = "｡｢｣､･ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ"
     private const val FULL_KANA = "。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン"
+    init { require(HALF_KANA.length == FULL_KANA.length) { "kana tables must align" } }
 
     /** manga_ocr.ocr.post_process: strip whitespace, normalize dot runs, then
      * jaconv.h2z(ascii=True, digit=True) with its default kana conversion. */

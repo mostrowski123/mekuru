@@ -143,10 +143,11 @@ class ModelPack(private val context: Context) {
         val state = if (statusFile.isFile) {
             try { JSONObject(statusFile.readText()) } catch (_: Exception) { JSONObject() }
         } else JSONObject()
-        if (installed()) state.put("status", "installed")
-        state.put("installed", installed()).put("supported", supported)
+        val ready = installed()
+        if (ready) state.put("status", "installed")
+        state.put("installed", ready).put("supported", supported)
             .put("version", version).put("totalBytes", files.sumOf { it.bytes })
-            .put("downloadedBytes", if (installed()) files.sumOf { it.bytes }
+            .put("downloadedBytes", if (ready) files.sumOf { it.bytes }
                 else files.sumOf { File(staging, it.name).length().coerceAtMost(it.bytes) })
     }
     fun status(status: String, error: String? = null,downloadId: String? = null) = OcrWrites.lock.withLock {
@@ -210,10 +211,16 @@ class ModelDownloadWorker(context: Context, parameters: WorkerParameters) : Work
         return try {
             if (cancelled()) return Result.success()
             pack.status("downloading")
-            for (spec in pack.files) {
-                transfer.download(spec, File(pack.staging, spec.name),
-                    { cancelled() || System.currentTimeMillis()-started > 8*60*1000 })
+            // cancelled() re-reads download.json; once a second is plenty for a 64 KB loop.
+            var checkedAt = 0L
+            fun stopped(): Boolean {
+                val now = System.currentTimeMillis()
+                if (isStopped || now-started > 8*60*1000) return true
+                if (now-checkedAt < 1000) return false
+                checkedAt = now
+                return cancelled()
             }
+            for (spec in pack.files) transfer.download(spec, File(pack.staging, spec.name), ::stopped)
             if (cancelled()) return Result.success()
             pack.status("verifying")
             pack.install()

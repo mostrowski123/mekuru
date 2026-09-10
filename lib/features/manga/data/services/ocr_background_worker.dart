@@ -1,10 +1,9 @@
-import 'package:local_manga_ocr/local_manga_ocr.dart';
-import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:path/path.dart' as p;
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,10 +18,12 @@ import '../../data/models/mokuro_models.dart';
 import '../../../settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import '../../../reader/data/services/mecab_service.dart';
+import 'manga_cache_store.dart';
 import 'manga_ocr_client.dart';
 import 'mokuro_segmentation_repair.dart';
 import 'mokuro_word_segmenter.dart';
 import 'ocr_billing_client.dart';
+import 'ocr_page_selection.dart';
 
 /// WorkManager task name for OCR processing.
 const ocrTaskName = 'mekuru_ocr_processing';
@@ -204,32 +205,46 @@ Future<void> flushPendingOcrFinalizations() async {
   }
 }
 
+/// Claims the per-book job lease for a remote run, or returns null when the
+/// plugin is unavailable or nothing needs OCR.
+Future<String?> _claimRemoteLease({
+  required int bookId,
+  required String cachePath,
+  List<int>? selectedPages,
+  required bool replace,
+}) async {
+  if (!LocalMangaOcr.available) return null;
+  final book = await MangaCacheStore.read(cachePath);
+  final targets =
+      selectedPages ??
+      selectOcrPages(
+        book,
+        policy: replace
+            ? OcrExistingPolicy.replace
+            : OcrExistingPolicy.missingOnly,
+      );
+  if (targets.isEmpty) return null;
+  final lease = await LocalMangaOcr.channel
+      .invokeMapMethod<String, dynamic>('claimRemote', {
+        'bookId': bookId,
+        'title': book.title,
+        'cachePath': cachePath,
+        'pages': targets,
+        'replace': replace,
+      });
+  return lease!['id'] as String;
+}
+
 /// The actual OCR processing logic run by WorkManager.
 Future<bool> _processOcrTask(Map<String, dynamic> inputData) async {
-  var leaseId = inputData['leaseId'] as String?;
-  if (LocalMangaOcr.available && leaseId == null) {
-    final path = inputData['cacheFilePath'] as String;
-    final book = MokuroBook.fromJson(
-      jsonDecode(await File(path).readAsString()) as Map<String, dynamic>,
-    );
-    final targets =
-        (inputData['selectedPages'] as List?)?.cast<int>() ??
-        [
-          for (var i = 0; i < book.pages.length; i++)
-            if (_pageNeedsOcr(book, book.pages[i])) i,
-        ];
-    if (targets.isNotEmpty) {
-      final lease = await LocalMangaOcr.channel
-          .invokeMapMethod<String, dynamic>('claimRemote', {
-            'bookId': inputData['bookId'],
-            'title': book.title,
-            'cachePath': path,
-            'pages': targets,
-            'replace': inputData['replace'] == true,
-          });
-      leaseId = lease!['id'] as String;
-    }
-  }
+  final leaseId =
+      inputData['leaseId'] as String? ??
+      await _claimRemoteLease(
+        bookId: inputData['bookId'] as int,
+        cachePath: inputData['cacheFilePath'] as String,
+        selectedPages: (inputData['selectedPages'] as List?)?.cast<int>(),
+        replace: inputData['replace'] == true,
+      );
   try {
     var selectedPages = (inputData['selectedPages'] as List?)?.cast<int>();
     if (LocalMangaOcr.available && leaseId != null) {
@@ -1065,30 +1080,12 @@ Future<void> scheduleOcrTask({
   }
 
   await _clearOcrStopRequest(bookId);
-  String? leaseId;
-  if (LocalMangaOcr.available) {
-    final book = MokuroBook.fromJson(
-      jsonDecode(await File(cacheFilePath).readAsString())
-          as Map<String, dynamic>,
-    );
-    final targets =
-        selectedPages ??
-        [
-          for (var i = 0; i < book.pages.length; i++)
-            if (_pageNeedsOcr(book, book.pages[i])) i,
-        ];
-    if (targets.isNotEmpty) {
-      final lease = await LocalMangaOcr.channel
-          .invokeMapMethod<String, dynamic>('claimRemote', {
-            'bookId': bookId,
-            'title': book.title,
-            'cachePath': cacheFilePath,
-            'pages': targets,
-            'replace': replace,
-          });
-      leaseId = lease!['id'] as String;
-    }
-  }
+  final leaseId = await _claimRemoteLease(
+    bookId: bookId,
+    cachePath: cacheFilePath,
+    selectedPages: selectedPages,
+    replace: replace,
+  );
 
   try {
     final executionMode = await determineOcrTaskExecutionMode(

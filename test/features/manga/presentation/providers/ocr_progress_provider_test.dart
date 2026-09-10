@@ -97,64 +97,6 @@ void main() {
     });
   });
 
-  group('isOcrRunningProvider', () {
-    test('returns false when no progress stored', () async {
-      SharedPreferences.setMockInitialValues({});
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      // Need to wait for the stream provider to emit
-      container.listen(ocrProgressProvider(999), (_, _) {});
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      final isRunning = container.read(isOcrRunningProvider(999));
-      expect(isRunning, isFalse);
-    });
-
-    test('returns true when status is running', () async {
-      const progress = OcrProgress(
-        completed: 5,
-        total: 50,
-        status: OcrStatus.running,
-      );
-
-      SharedPreferences.setMockInitialValues({
-        '${ocrProgressKeyPrefix}42': progress.toJson(),
-      });
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      container.listen(ocrProgressProvider(42), (_, _) {});
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      final isRunning = container.read(isOcrRunningProvider(42));
-      expect(isRunning, isTrue);
-    });
-
-    test('returns false when status is completed', () async {
-      const progress = OcrProgress(
-        completed: 50,
-        total: 50,
-        status: OcrStatus.completed,
-      );
-
-      SharedPreferences.setMockInitialValues({
-        '${ocrProgressKeyPrefix}42': progress.toJson(),
-      });
-
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      container.listen(ocrProgressProvider(42), (_, _) {});
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      final isRunning = container.read(isOcrRunningProvider(42));
-      expect(isRunning, isFalse);
-    });
-  });
-
   group('hasPartialOcrProvider', () {
     test('returns false when no progress stored', () async {
       SharedPreferences.setMockInitialValues({});

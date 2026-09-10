@@ -364,13 +364,6 @@ class FullBackupService implements FullBackupApi {
 
   @override
   Future<void> startRestore(FullBackupPreview preview) async {
-    // Best effort: the restore is applied at the next boot, when no OCR
-    // service can be running, so a stuck quiesce must not block it.
-    try {
-      await LocalMangaOcr.quiesce();
-    } catch (error) {
-      debugPrint('[FULL_BACKUP] OCR quiesce failed: $error');
-    }
     await _cancelBackgroundWork();
     final manifest = preview.manifest;
     await _commit({
@@ -434,6 +427,13 @@ class FullBackupService implements FullBackupApi {
   /// WorkManager can revive the process between `exit(0)` and the user's
   /// relaunch and write OCR results into the old library. Best effort.
   Future<void> _cancelBackgroundWork() async {
+    // Best effort: the restore is applied at the next boot, when no OCR
+    // service can be running, so a stuck quiesce must not block it.
+    try {
+      await LocalMangaOcr.quiesce();
+    } catch (error) {
+      debugPrint('[FULL_BACKUP] OCR quiesce failed: $error');
+    }
     try {
       await Workmanager().cancelAll();
     } catch (_) {

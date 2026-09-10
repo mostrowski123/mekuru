@@ -49,6 +49,13 @@ class OcrJobProgress {
   int get failed => outcomes.values.where((v) => v == 'failed').length;
   int get skipped => outcomes.values.where((v) => v == 'skipped').length;
   int get succeeded => outcomes.values.where((v) => v == 'done').length;
+
+  /// Progress bar value: indeterminate while preparing, else pages done.
+  double? get fraction => status == 'preparing'
+      ? null
+      : total == 0
+      ? 0
+      : (processed / total).clamp(0, 1);
   int? get etaSeconds {
     final done = (json['regionsDone'] as num?)?.toInt() ?? 0;
     final regions = (json['regionsTotal'] as num?)?.toInt() ?? 0;
@@ -80,7 +87,6 @@ class OcrJobProgress {
       status == 'paused' ||
       status == 'failed' ||
       status == 'completedWithErrors';
-  int get revision => (json['revision'] as num?)?.toInt() ?? 0;
 }
 
 class OcrModelState {
@@ -94,7 +100,6 @@ class OcrModelState {
   String? get error => json['error'] as String?;
   int get totalBytes => (json['totalBytes'] as num?)?.toInt() ?? 0;
   int get downloadedBytes => (json['downloadedBytes'] as num?)?.toInt() ?? 0;
-  String get version => json['version'] as String? ?? '';
 }
 
 /// No account, server client, Firebase, or purchase dependency belongs here.

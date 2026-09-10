@@ -158,6 +158,13 @@ class OcrStore(private val directory: File,
         save(job); job
     }
 
+    fun pauseQueued(backend: String, reason: String) = OcrWrites.lock.withLock {
+        for (job in all()) {
+            if (job.optString("backend") == backend && job.getString("status") == "queued") {
+                transition(job.getString("id"), "paused", reason)
+            }
+        }
+    }
     fun delete(id: String) = OcrWrites.lock.withLock {
         require(read(id).getString("status") !in active) { "job_busy" }
         unsavedPauses.remove(id)

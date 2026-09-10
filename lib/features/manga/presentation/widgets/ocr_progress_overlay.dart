@@ -56,13 +56,7 @@ class OcrProgressOverlay extends ConsumerWidget {
                 style: const TextStyle(color: Colors.white, fontSize: 11),
               ),
               const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: local.status == 'preparing'
-                    ? null
-                    : local.total == 0
-                    ? 0
-                    : (local.processed / local.total).clamp(0, 1),
-              ),
+              LinearProgressIndicator(value: local.fraction),
             ],
           ),
         ),

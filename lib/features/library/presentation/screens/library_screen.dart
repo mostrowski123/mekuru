@@ -1,6 +1,5 @@
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
@@ -20,6 +19,8 @@ import 'package:mekuru/features/library/presentation/providers/library_providers
 import 'package:mekuru/features/library/presentation/widgets/book_cover_image.dart';
 import 'package:mekuru/features/library/presentation/widgets/collection_widgets.dart';
 import 'package:mekuru/features/library/presentation/widgets/epub_manga_convert_action.dart';
+import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
 import 'package:mekuru/features/library/presentation/widgets/manga_cbz_export_action.dart';
 import 'package:mekuru/features/library/presentation/widgets/continue_reading_card.dart';
@@ -36,7 +37,6 @@ import 'package:mekuru/features/backup/presentation/screens/backup_settings_scre
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
-import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
@@ -1033,62 +1033,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 }
 
-class _MangaOcrCacheSummary {
-  final int totalPages;
-  final int pagesWithOcr;
-  final int pagesWithoutOcr;
-  final int pagesNeedingWordSegmentation;
-  final String? ocrSource;
-  final bool ocrCompleted;
-  final bool hasOriginalMokuroBackup;
-
-  const _MangaOcrCacheSummary({
-    required this.totalPages,
-    required this.pagesWithOcr,
-    required this.pagesWithoutOcr,
-    required this.pagesNeedingWordSegmentation,
-    this.ocrSource,
-    this.ocrCompleted = false,
-    this.hasOriginalMokuroBackup = false,
-  });
-
-  static const empty = _MangaOcrCacheSummary(
-    totalPages: 0,
-    pagesWithOcr: 0,
-    pagesWithoutOcr: 0,
-    pagesNeedingWordSegmentation: 0,
-  );
-
-  bool get isMokuroSource => ocrSource == 'mokuro';
-  bool get hasPartialOcr =>
-      !isMokuroSource &&
-      !hasCompleteOcr &&
-      pagesWithOcr > 0 &&
-      pagesWithoutOcr > 0;
-  bool get hasCompleteOcr =>
-      totalPages > 0 && (ocrCompleted || pagesWithoutOcr == 0);
-  bool get needsWordSegmentation => pagesNeedingWordSegmentation > 0;
-  bool get canRestoreOriginalMokuroOcr => hasOriginalMokuroBackup;
-}
-
-@visibleForTesting
-String mangaOcrPrimaryActionTitle({
-  required AppLocalizations l10n,
-  required bool isRunning,
-  required bool isMokuroComplete,
-  required bool hasCompleteOcr,
-}) {
-  if (isRunning) {
-    return l10n.ocrCancelActionTitle;
-  }
-  if (isMokuroComplete) {
-    return l10n.ocrReplaceActionTitle;
-  }
-  if (hasCompleteOcr) {
-    return l10n.ocrRemoveActionTitle;
-  }
-  return l10n.ocrRunActionTitle;
-}
+/// What the options sheet needs to know about a manga's OCR state.
+typedef _MangaOcrCacheSummary = ({bool hasOcr, bool hasOriginalMokuroBackup});
 
 /// Individual book tile for the grid.
 class _BookTile extends ConsumerStatefulWidget {
@@ -1405,7 +1351,8 @@ class _BookTileState extends ConsumerState<_BookTile>
                   future: ocrSummaryFuture,
                   builder: (ctx, snapshot) {
                     final summary =
-                        snapshot.data ?? _MangaOcrCacheSummary.empty;
+                        snapshot.data ??
+                        (hasOcr: false, hasOriginalMokuroBackup: false);
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1418,13 +1365,12 @@ class _BookTileState extends ConsumerState<_BookTile>
                             showOcrActionSheet(context, book);
                           },
                         ),
-                        if (summary.pagesWithOcr > 0 ||
-                            summary.canRestoreOriginalMokuroOcr)
+                        if (summary.hasOcr || summary.hasOriginalMokuroBackup)
                           ListTile(
                             leading: const Icon(Icons.delete_sweep_outlined),
                             title: Text(context.l10n.ocrRemoveActionTitle),
                             subtitle: Text(
-                              summary.canRestoreOriginalMokuroOcr
+                              summary.hasOriginalMokuroBackup
                                   ? context
                                         .l10n
                                         .ocrRestoreOriginalMokuroSubtitle
@@ -1436,7 +1382,7 @@ class _BookTileState extends ConsumerState<_BookTile>
                                 context,
                                 container,
                                 restoreOriginalMokuro:
-                                    summary.canRestoreOriginalMokuroOcr,
+                                    summary.hasOriginalMokuroBackup,
                               );
                             },
                           ),
@@ -1664,88 +1610,19 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   Future<_MangaOcrCacheSummary> _loadMangaOcrSummary() async {
-    final cacheFilePath = p.join(book.filePath, 'pages_cache.json');
-    final cacheFile = File(cacheFilePath);
-    final backupFile = File(
+    final hasOriginalMokuroBackup = await File(
       p.join(book.filePath, BookRepository.originalMokuroOcrBackupFileName),
-    );
-    final hasOriginalMokuroBackup = await backupFile.exists();
-    if (!await cacheFile.exists()) {
-      return _MangaOcrCacheSummary(
-        totalPages: 0,
-        pagesWithOcr: 0,
-        pagesWithoutOcr: 0,
-        pagesNeedingWordSegmentation: 0,
-        hasOriginalMokuroBackup: hasOriginalMokuroBackup,
-      );
-    }
-
+    ).exists();
+    var hasOcr = false;
     try {
-      final cacheJson =
-          json.decode(await cacheFile.readAsString()) as Map<String, dynamic>;
-      final pages = cacheJson['pages'] as List<dynamic>? ?? [];
-      final ocrSource = cacheJson['ocrSource'] as String?;
-      final ocrCompleted = cacheJson['ocrCompleted'] as bool?;
-      return _summarizeOcrPages(
-        pages,
-        ocrSource: ocrSource,
-        ocrCompleted: ocrCompleted,
-        hasOriginalMokuroBackup: hasOriginalMokuroBackup,
+      final manga = await MangaCacheStore.read(
+        p.join(book.filePath, mangaPagesCacheFileName),
       );
+      hasOcr = manga.pages.any((page) => page.blocks.isNotEmpty);
     } catch (_) {
-      return _MangaOcrCacheSummary(
-        totalPages: 0,
-        pagesWithOcr: 0,
-        pagesWithoutOcr: 0,
-        pagesNeedingWordSegmentation: 0,
-        hasOriginalMokuroBackup: hasOriginalMokuroBackup,
-      );
+      // No readable cache: nothing to delete.
     }
-  }
-
-  _MangaOcrCacheSummary _summarizeOcrPages(
-    List<dynamic> pages, {
-    String? ocrSource,
-    bool? ocrCompleted,
-    bool hasOriginalMokuroBackup = false,
-  }) {
-    var pagesWithOcr = 0;
-    var pagesWithoutOcr = 0;
-    var pagesNeedingWordSegmentation = 0;
-    final isOcrCompleted = ocrCompleted ?? ocrSource != null;
-
-    for (final pageData in pages) {
-      if (pageData is! Map) continue;
-      final blocks = pageData['blocks'] as List<dynamic>? ?? const [];
-      if (blocks.isEmpty) {
-        if (!isOcrCompleted &&
-            (pageData['ocr'] as Map?)?['completed'] != true) {
-          pagesWithoutOcr++;
-        }
-        continue;
-      }
-
-      pagesWithOcr++;
-      final pageNeedsWordSegmentation = blocks.any((blockData) {
-        if (blockData is! Map) return false;
-        final lines = blockData['lines'] as List<dynamic>? ?? const [];
-        final words = blockData['words'] as List<dynamic>? ?? const [];
-        return lines.isNotEmpty && words.isEmpty;
-      });
-      if (pageNeedsWordSegmentation) {
-        pagesNeedingWordSegmentation++;
-      }
-    }
-
-    return _MangaOcrCacheSummary(
-      totalPages: pages.length,
-      pagesWithOcr: pagesWithOcr,
-      pagesWithoutOcr: pagesWithoutOcr,
-      pagesNeedingWordSegmentation: pagesNeedingWordSegmentation,
-      ocrSource: ocrSource,
-      ocrCompleted: isOcrCompleted,
-      hasOriginalMokuroBackup: hasOriginalMokuroBackup,
-    );
+    return (hasOcr: hasOcr, hasOriginalMokuroBackup: hasOriginalMokuroBackup);
   }
 
   void _confirmDelete(BuildContext context) {

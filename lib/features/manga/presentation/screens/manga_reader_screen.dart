@@ -944,7 +944,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         );
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final autoCrop = isProUnlocked && mangaAutoCropEnabled;
-    const enableWordOverlays = true;
     ref.listen(
       localOcrJobProvider(widget.book.id).select((job) => job?.succeeded),
       (previous, next) {
@@ -1069,7 +1068,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                       totalPages,
                       isRtl,
                       autoCrop,
-                      enableWordOverlays,
                       animatePageTurns,
                     ),
                   ),
@@ -1190,7 +1188,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     int totalPages,
     bool isRtl,
     bool autoCrop,
-    bool enableWordOverlays,
     bool animatePageTurns,
   ) {
     final debugOverlay = ref.watch(mangaDebugWordOverlayProvider);
@@ -1226,7 +1223,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               safImageDirRelativePath: mokuroBook.safImageDirRelativePath,
               debugOverlay: debugOverlay,
               autoCrop: autoCrop,
-              enableWordOverlays: enableWordOverlays,
               highlightedRects: _highlight?.rects ?? const [],
               highlightedPageIndex: _highlight?.pageIndex,
               onWordTapped: _onWordTapped,
@@ -1249,7 +1245,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           animatePageTurns: animatePageTurns,
           debugOverlay: debugOverlay,
           autoCrop: autoCrop,
-          enableWordOverlays: enableWordOverlays,
           highlightedRects: _highlight?.rects ?? const [],
           highlightedPageIndex: _highlight?.pageIndex,
           onWordTapped: _onWordTapped,
@@ -1280,7 +1275,6 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               _currentPage * MediaQuery.of(context).size.height,
           debugOverlay: debugOverlay,
           autoCrop: autoCrop,
-          enableWordOverlays: enableWordOverlays,
           highlightedRects: _highlight?.rects ?? const [],
           highlightedPageIndex: _highlight?.pageIndex,
           onWordTapped: _onWordTapped,

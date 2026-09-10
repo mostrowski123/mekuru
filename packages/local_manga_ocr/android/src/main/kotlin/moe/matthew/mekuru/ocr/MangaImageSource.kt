@@ -14,7 +14,6 @@ import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import java.io.Closeable
 import java.io.File
-import java.security.MessageDigest
 import kotlin.math.*
 
 /** Reads the same private files or persisted SAF tree grants as the reader.
@@ -51,17 +50,8 @@ class MangaImageSource(private val context: Context,book: JSONObject,page: JSONO
         ParcelFileDescriptor.open(File(uri.path!!),ParcelFileDescriptor.MODE_READ_ONLY)
         else context.contentResolver.openFileDescriptor(uri,"r")
             ?: throw IllegalStateException("image_unreadable")
-    fun hash(): String {
-        val digest=MessageDigest.getInstance("SHA-256")
-        ParcelFileDescriptor.AutoCloseInputStream(open()).use { input ->
-            val bytes=ByteArray(64*1024)
-            while(true) {
-                val count=input.read(bytes); if(count<0) break
-                digest.update(bytes,0,count)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
+    /** Cheap identity for the committed page: byte size plus decoded size. */
+    fun signature(): String = "${descriptor.statSize}:${width}x$height"
     fun preview(): Bitmap {
         var sample=1
         while(max(width,height)/sample>2048) sample*=2

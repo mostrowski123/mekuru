@@ -68,7 +68,6 @@ object DebugOcrHooks {
                     .put("size",array.size).put("first",array.first()).put("last",array.last()) }))
             }
         } finally { engine.close() }
-        engine.close()
         val rejected=try { engine.run(FloatArray(0)); false } catch(_: IllegalStateException) { true }
         return JSONObject().put("passes",passes).put("closedRejected",rejected)
     }

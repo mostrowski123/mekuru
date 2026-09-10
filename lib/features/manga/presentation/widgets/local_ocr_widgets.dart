@@ -110,13 +110,7 @@ class LocalOcrJobCard extends StatelessWidget {
               l.localOcrProgress(processed: job.processed, total: job.total),
             ),
             const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: job.status == 'preparing'
-                  ? null
-                  : job.total == 0
-                  ? 0
-                  : (job.processed / job.total).clamp(0, 1),
-            ),
+            LinearProgressIndicator(value: job.fraction),
             const SizedBox(height: 8),
             Text(
               l.localOcrOutcomeCounts(

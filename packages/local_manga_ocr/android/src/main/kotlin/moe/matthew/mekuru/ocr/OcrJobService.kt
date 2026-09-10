@@ -41,16 +41,10 @@ class OcrJobService : Service() {
         }
         if(!foregroundReady) {
             Thread({
-                try { pauseQueued("background_start_denied") }
+                try { OcrRuntime.store.pauseQueued("onDevice","background_start_denied") }
                 catch(error: Exception) { android.util.Log.w("MekuruLocalOcr","Could not pause queued jobs",error) }
             },"mekuru-ocr-denied").start()
             stopSelf()
-        }
-    }
-    private fun pauseQueued(reason: String) {
-        for(job in OcrRuntime.store.all().filter { it.optString("backend")=="onDevice" &&
-            it.getString("status")=="queued" }) {
-            OcrRuntime.store.transition(job.getString("id"),"paused",reason)
         }
     }
     override fun onStartCommand(intent: Intent?,flags: Int,startId: Int): Int {
@@ -145,7 +139,7 @@ class OcrJobService : Service() {
                     OcrRunner(OcrRuntime.store,id).run({ resourceCheck(job) }) { book,page,checkpoint,phase ->
                         try {
                             MangaImageSource(this,book,page).use { source ->
-                                val hash=source.hash()
+                                val hash=source.signature()
                                 OcrPageOutput(engine.process(source,checkpoint,phase),hash)
                             }
                         } catch(error: ai.onnxruntime.OrtException) {

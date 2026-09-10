@@ -118,9 +118,11 @@ class MangaOcrEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit =
                             longArrayOf(1,tokens.size.toLong())).use { input ->
                             decoder.run(mapOf("input_ids" to input,"encoder_hidden_states" to hidden),
                                 options).use { out ->
+                                // Only the last row of [1, T, vocab] matters; skip copying the rest.
                                 val vocabSize = (out[0].info as TensorInfo).shape.last().toInt()
-                                val logits = floats(out[0])
-                                MangaOcrDecode.next(logits.copyOfRange(logits.size-vocabSize,logits.size),tokens)
+                                val buffer = (out[0] as OnnxTensor).floatBuffer
+                                buffer.position(buffer.limit()-vocabSize)
+                                MangaOcrDecode.next(FloatArray(vocabSize).also { buffer.get(it) },tokens)
                             }
                         }
                         if (next == MangaOcrDecode.EOS) { truncated = false; break }
