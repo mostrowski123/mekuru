@@ -73,3 +73,6 @@ The **You** tab shows your reading time, an activity heatmap, lookup rate, and v
 | Pro | One-time upgrade that unlocks auto-crop, book highlights, and custom OCR server support for remote manga OCR. |
 
 > See [Remote OCR](manga/cloud-ocr.md) and [Custom OCR Server](manga/custom-server.md) for setup details.
+
+On-device Japanese manga OCR is free and uses separately downloaded models.
+See [On-device OCR](manga/on-device-ocr.md).

@@ -59,7 +59,7 @@ The import creates the manga entry and extracts the page images, but it does **n
 
 After import, long-press the manga entry in the library to open its actions. From there, Mekuru can show:
 
-- **Run OCR** - start OCR for pages that do not have text yet
+- **Recognize text** - choose free on-device OCR or your remote server, and scan missing pages or replace existing OCR
 - **Resume OCR** - continue a partial OCR pass
 - **Pause OCR** - pause the current OCR job and keep progress so far
 - **Delete OCR** - remove OCR text and word overlays; for replaced Mokuro/HTML books this restores the original imported OCR
@@ -85,4 +85,5 @@ Because manga pages are images rather than flowing text, some features work diff
 
 - [Reading Manga](../manga/cbz-reading.md) - view modes, reader settings, and overlays
 - [Remote OCR](../manga/cloud-ocr.md) - Pro-powered OCR with your own server
+- [On-device OCR](../manga/on-device-ocr.md) - free Japanese manga OCR with separately downloaded models
 - [Custom OCR Server](../manga/custom-server.md) - using your own OCR endpoint

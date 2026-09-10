@@ -27,6 +27,13 @@ These downloads are imported automatically and appear in the Dictionary Manager 
 
 This pack does not turn furigana on or off — it only improves the accuracy of the readings Mekuru generates. It has its own **Use enhanced dictionary** toggle on the Downloads screen; if tapping words ever stops working, turn the toggle off (the download is kept) and restart the app. See [Furigana](../reading/furigana.md) for the display modes themselves.
 
+## Manga OCR
+
+**Japanese manga OCR — manga-ocr** adds free on-device recognition for one page or
+an entire manga. The approximately 296 MB model download is separate from the
+app and can be removed without deleting existing OCR results.
+See [On-device OCR](../manga/on-device-ocr.md).
+
 ## Sources
 
 - **JMdict / KANJIDIC** - from the EDRDG projects, distributed through Yomitan releases

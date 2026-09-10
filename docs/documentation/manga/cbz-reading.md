@@ -38,4 +38,6 @@ Once text overlays exist, tapping a word opens the same dictionary lookup used i
 
 ## OCR Notes for CBZ
 
-CBZ OCR is managed from the library item's long-press actions, not from inside the reader. See [Remote OCR](cloud-ocr.md) and [Custom OCR Server](custom-server.md).
+Use **Recognize text** in the reader for one page or an entire manga, or open it
+from the library item's long-press actions. See [On-device OCR](on-device-ocr.md),
+[Remote OCR](cloud-ocr.md), and [Custom OCR Server](custom-server.md).

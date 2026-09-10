@@ -68,6 +68,7 @@ nav:
       - Exporting to Anki: vocabulary/anki-export.md
   - Manga & OCR:
       - Reading Manga: manga/cbz-reading.md
+      - On-device OCR: manga/on-device-ocr.md
       - Pro (Remote OCR): manga/cloud-ocr.md
       - Custom OCR Server: manga/custom-server.md
   - Progress & Stats:

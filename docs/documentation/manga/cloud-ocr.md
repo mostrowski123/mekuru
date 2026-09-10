@@ -4,12 +4,15 @@
 
 Remote OCR extracts text from CBZ manga pages so you can tap words and look them up.
 
+[On-device OCR](on-device-ocr.md) is a separate, free option using downloaded
+models. It does not require Pro or a server.
+
 ## How the Workflow Works
 
 1. Import a `.cbz` file from the **Library** tab.
 2. Open **Settings > Reader Settings > Manga > Custom OCR Server** and enter your own server URL plus shared key. (Settings is behind the gear icon on the **You** tab.)
 3. Long-press the manga item in the library.
-4. Choose **Run OCR**.
+4. Choose **Recognize text → Remote**, then select the pages to process.
 5. Mekuru uploads page images to your configured server and processes pages in the background.
 6. Once text overlays are available, open the manga and tap the detected words.
 
@@ -19,12 +22,12 @@ Remote OCR extracts text from CBZ manga pages so you can tap words and look them
 
 OCR runs in the background, so it can continue after you leave the library screen.
 
-Depending on the current state, the long-press actions can change to:
+Use the recognition sheet and the library progress overlay to manage work:
 
 - **Resume OCR** - continue a partial pass
 - **Pause OCR** - pause the background job and keep completed work
 - **Delete OCR** - remove OCR text and overlays; for replaced Mokuro/HTML books this restores the original imported OCR
-- **Build Word Overlays** - rebuild tap targets when OCR text exists but word segmentation is still missing
+- Word overlays are repaired when the reader loads existing OCR with missing or stale word segmentation.
 
 ## Pro Access
 
