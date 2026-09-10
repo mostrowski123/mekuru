@@ -4,6 +4,8 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../widgets/ocr_attributions.dart';
+
 class AttributionsScreen extends StatelessWidget {
   const AttributionsScreen({super.key});
 
@@ -21,6 +23,7 @@ class AttributionsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const OcrAttributions(),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),

@@ -8,6 +8,7 @@ import 'package:mekuru/features/settings/presentation/providers/kanjidic_provide
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 
 import 'test_app.dart';
 
@@ -91,5 +92,10 @@ void main() {
     await tester.pump();
 
     expect(started, unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']));
+    final list = tester.widget<ListView>(find.byType(ListView));
+    final children =
+        (list.childrenDelegate as SliverChildListDelegate).children;
+    expect(children.first, isNot(isA<LocalOcrDownloadTile>()));
+    expect(children[children.length - 2], isA<LocalOcrDownloadTile>());
   });
 }

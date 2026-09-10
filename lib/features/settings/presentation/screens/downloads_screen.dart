@@ -1,9 +1,10 @@
-import 'package:flutter/gestures.dart';
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
+import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
@@ -317,6 +318,8 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               theme: theme,
             ),
           ),
+          const SizedBox(height: 8),
+          const LocalOcrDownloadTile(),
           const SizedBox(height: 16),
         ],
       ),
