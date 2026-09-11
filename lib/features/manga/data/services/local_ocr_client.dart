@@ -1,4 +1,5 @@
 import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/core/platform/full_backup_job_api.dart';
 
 /// Injectable boundary for user-initiated local OCR. Deliberately has no
 /// entitlement or remote-server methods.
@@ -10,7 +11,15 @@ abstract interface class LocalOcrClient {
 }
 
 class NativeLocalOcrClient implements LocalOcrClient {
-  const NativeLocalOcrClient();
+  const NativeLocalOcrClient({this.permissions = const FullBackupJobChannel()});
+
+  /// The app's own permission bridge. MainActivity answers its request code
+  /// before Flutter fans the result out to every plugin listener; going
+  /// through a plugin instead crashed the app on the first scan, because
+  /// ankidroid_for_flutter force-unwraps a pending result it never had on
+  /// any foreign permission callback.
+  final FullBackupJobApi permissions;
+
   @override
   Future<void> cancel(String jobId) => LocalMangaOcr.cancel(jobId);
   @override
@@ -18,5 +27,6 @@ class NativeLocalOcrClient implements LocalOcrClient {
   @override
   Future<OcrJobProgress> start(OcrJobSpec spec) => LocalMangaOcr.start(spec);
   @override
-  Future<bool> requestNotifications() => LocalMangaOcr.requestNotifications();
+  Future<bool> requestNotifications() =>
+      permissions.requestNotificationPermission();
 }

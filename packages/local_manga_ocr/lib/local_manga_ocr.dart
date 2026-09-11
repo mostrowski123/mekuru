@@ -144,7 +144,4 @@ class LocalMangaOcr {
   static Future<void> quiesce() async {
     if (available) await channel.invokeMethod('quiesce');
   }
-
-  static Future<bool> requestNotifications() async =>
-      await channel.invokeMethod<bool>('requestNotifications') ?? false;
 }

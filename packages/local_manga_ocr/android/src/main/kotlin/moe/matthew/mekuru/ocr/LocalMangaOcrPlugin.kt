@@ -1,34 +1,24 @@
 package moe.matthew.mekuru.ocr
 
-import android.Manifest
-import android.app.Activity
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.work.*
 import io.flutter.embedding.engine.plugins.FlutterPlugin
-import io.flutter.embedding.engine.plugins.activity.ActivityAware
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.PluginRegistry
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.concurrent.withLock
 
-class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler,ActivityAware,
-    PluginRegistry.RequestPermissionsResultListener {
+/** Not ActivityAware on purpose: the notification permission is requested
+ * through the app's own bridge, whose request code MainActivity answers before
+ * Flutter fans the result out to every plugin's listener. */
+class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
     private lateinit var channel: MethodChannel
     private val executor=Executors.newSingleThreadExecutor()
     private val main=Handler(Looper.getMainLooper())
-    private var activity: Activity?=null
-    private var binding: ActivityPluginBinding?=null
-    private var notificationResult: MethodChannel.Result?=null
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         OcrRuntime.initialize(binding.applicationContext)
         channel=MethodChannel(binding.binaryMessenger,"mekuru/local_manga_ocr")
@@ -38,34 +28,7 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler,Activi
         channel.setMethodCallHandler(null)
         executor.shutdown()
     }
-    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        this.binding=binding; activity=binding.activity
-        binding.addRequestPermissionsResultListener(this)
-    }
-    override fun onDetachedFromActivityForConfigChanges() = onDetachedFromActivity()
-    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) = onAttachedToActivity(binding)
-    override fun onDetachedFromActivity() {
-        binding?.removeRequestPermissionsResultListener(this)
-        binding=null; activity=null
-        notificationResult?.success(false); notificationResult=null
-    }
-    override fun onRequestPermissionsResult(code: Int,permissions: Array<out String>,results: IntArray): Boolean {
-        if(code!=REQUEST_NOTIFICATIONS) return false
-        notificationResult?.success(results.isNotEmpty() && results[0]==PackageManager.PERMISSION_GRANTED)
-        notificationResult=null; return true
-    }
     override fun onMethodCall(call: MethodCall,result: MethodChannel.Result) {
-        if(call.method=="requestNotifications") {
-            val host=activity
-            if(Build.VERSION.SDK_INT<33 || ContextCompat.checkSelfPermission(OcrRuntime.context,
-                Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED) result.success(true)
-            else if(host==null || notificationResult!=null) result.success(false)
-            else {
-                notificationResult=result
-                ActivityCompat.requestPermissions(host,arrayOf(Manifest.permission.POST_NOTIFICATIONS),REQUEST_NOTIFICATIONS)
-            }
-            return
-        }
         try {
             executor.execute {
                 try {
@@ -198,6 +161,5 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler,Activi
     }
     companion object {
         const val DOWNLOAD="mekuru_local_ocr_models"
-        const val REQUEST_NOTIFICATIONS=3918
     }
 }

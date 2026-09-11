@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/features/manga/data/services/local_ocr_client.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'package:mekuru/features/manga/data/services/ocr_page_selection.dart';
@@ -252,4 +254,24 @@ void main() {
       }
     });
   });
+
+  test(
+    'notification prompt goes through the app bridge, not the plugin',
+    () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      const bridge = MethodChannel('mekuru/full_backup_job');
+      final calls = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(bridge, (call) async {
+            calls.add(call.method);
+            return true;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(bridge, null),
+      );
+      expect(await const NativeLocalOcrClient().requestNotifications(), isTrue);
+      expect(calls, ['requestNotificationPermission']);
+    },
+  );
 }
