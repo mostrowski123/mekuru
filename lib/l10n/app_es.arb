@@ -1127,7 +1127,7 @@
   "@settingsProUnavailableSubtitle": {
     "description": "Subtitle shown when Pro services are unavailable."
   },
-  "settingsProSubtitle": "Desbloquea recorte automático, resaltados de libros y OCR personalizado",
+  "settingsProSubtitle": "Desbloquea recorte automático, resaltados de libros y OCR de manga",
   "@settingsProSubtitle": {
     "description": "Subtitle describing the Pro upgrade."
   },
@@ -2731,5 +2731,13 @@
   "wanikaniErrorRateLimited": "WaniKani está limitando las solicitudes. Inténtalo de nuevo en un minuto.",
   "wanikaniErrorGeneric": "La sincronización con WaniKani falló. Inténtalo más tarde.",
   "libraryExportFuriganaWanikani": "Kanji que aún no conoces en WaniKani",
-  "readerFuriganaWanikaniStagePickerTitle": "Ocultar furigana de kanji a partir de"
+  "readerFuriganaWanikaniStagePickerTitle": "Ocultar furigana de kanji a partir de",
+  "localOcrRecognizeQuick": "Reconocer esta página (mantén pulsado para ver opciones)",
+  "localOcrAlreadyDone": "Esta página ya tiene OCR",
+  "proFeatureLocalOcrTitle": "OCR en el dispositivo",
+  "proFeatureLocalOcrDescription": "Reconoce el texto del manga sin conexión, en tu teléfono. Es un trabajo pesado: una página tarda unos segundos en un teléfono reciente y un minuto o más en los antiguos, y consume batería. Prueba tu dispositivo antes de comprar.",
+  "localOcrSpeedTest": "Probar velocidad del dispositivo",
+  "localOcrSpeedTestRunning": "Probando la velocidad del OCR en el dispositivo…",
+  "localOcrSpeedTestResult": "Unos {pageSeconds} s por página · un tomo de 200 páginas tarda unos {minutes} min",
+  "localOcrSpeedTestCancelled": "Prueba de velocidad cancelada"
 }

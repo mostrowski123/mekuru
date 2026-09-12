@@ -472,11 +472,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get proFeatureHighlightsDescription => '在阅读 EPUB 书籍时保存并回顾高亮内容。';
 
   @override
-  String get proFeatureLocalOcrTitle => 'On-device OCR';
+  String get proFeatureLocalOcrTitle => '设备端 OCR';
 
   @override
   String get proFeatureLocalOcrDescription =>
-      'Recognize manga text offline, on your phone. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.';
+      '在手机上离线识别漫画文字。这是一项繁重的工作：新款手机每页需要几秒，旧手机需要一分钟以上，而且很耗电。购买前请先测试你的设备。';
 
   @override
   String get proFeatureCustomOcrTitle => '自定义 OCR 服务器';
@@ -869,7 +869,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsProUnavailableSubtitle => '专业版服务暂时不可用。';
 
   @override
-  String get settingsProSubtitle => '解锁自动裁边、书籍高亮和自定义 OCR';
+  String get settingsProSubtitle => '解锁自动裁边、书籍高亮和漫画 OCR';
 
   @override
   String get settingsWhiteThresholdTitle => '白色阈值';
@@ -2783,10 +2783,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrRecognize => 'Recognize text';
 
   @override
-  String get localOcrRecognizeQuick => 'Recognize this page (hold for options)';
+  String get localOcrRecognizeQuick => '识别本页（长按查看选项）';
 
   @override
-  String get localOcrAlreadyDone => 'This page already has OCR';
+  String get localOcrAlreadyDone => '本页已有 OCR';
 
   @override
   String get localOcrOnDevice => 'On device';
@@ -3058,18 +3058,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrDiagnosticsCopied => 'OCR diagnostics copied';
 
   @override
-  String get localOcrSpeedTest => 'Test device speed';
+  String get localOcrSpeedTest => '测试设备速度';
 
   @override
-  String get localOcrSpeedTestRunning => 'Testing on-device OCR speed…';
+  String get localOcrSpeedTestRunning => '正在测试设备端 OCR 速度…';
 
   @override
   String localOcrSpeedTestResult({
     required String pageSeconds,
     required int minutes,
   }) {
-    return 'About $pageSeconds s per page · a 200-page volume takes about $minutes min';
+    return '每页约 $pageSeconds 秒 · 200 页的一卷约需 $minutes 分钟';
   }
+
+  @override
+  String get localOcrSpeedTestCancelled => '已取消速度测试';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3540,6 +3543,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get proFeatureHighlightsDescription => '在阅读 EPUB 书籍时保存并回顾高亮内容。';
 
   @override
+  String get proFeatureLocalOcrTitle => '设备端 OCR';
+
+  @override
+  String get proFeatureLocalOcrDescription =>
+      '在手机上离线识别漫画文字。这是一项繁重的工作：新款手机每页需要几秒，旧手机需要一分钟以上，而且很耗电。购买前请先测试你的设备。';
+
+  @override
   String get proFeatureCustomOcrTitle => '自定义 OCR 服务器';
 
   @override
@@ -3930,7 +3940,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get settingsProUnavailableSubtitle => '专业版服务暂时不可用。';
 
   @override
-  String get settingsProSubtitle => '解锁自动裁边、书籍高亮和自定义 OCR';
+  String get settingsProSubtitle => '解锁自动裁边、书籍高亮和漫画 OCR';
 
   @override
   String get settingsWhiteThresholdTitle => '白色阈值';
@@ -5839,4 +5849,27 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerFuriganaWanikaniStagePickerTitle => '隐藏此阶段及以上汉字的振假名';
+
+  @override
+  String get localOcrRecognizeQuick => '识别本页（长按查看选项）';
+
+  @override
+  String get localOcrAlreadyDone => '本页已有 OCR';
+
+  @override
+  String get localOcrSpeedTest => '测试设备速度';
+
+  @override
+  String get localOcrSpeedTestRunning => '正在测试设备端 OCR 速度…';
+
+  @override
+  String localOcrSpeedTestResult({
+    required String pageSeconds,
+    required int minutes,
+  }) {
+    return '每页约 $pageSeconds 秒 · 200 页的一卷约需 $minutes 分钟';
+  }
+
+  @override
+  String get localOcrSpeedTestCancelled => '已取消速度测试';
 }

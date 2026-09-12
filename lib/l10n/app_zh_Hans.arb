@@ -1127,7 +1127,7 @@
   "@settingsProUnavailableSubtitle": {
     "description": "Subtitle shown when Pro services are unavailable."
   },
-  "settingsProSubtitle": "解锁自动裁边、书籍高亮和自定义 OCR",
+  "settingsProSubtitle": "解锁自动裁边、书籍高亮和漫画 OCR",
   "@settingsProSubtitle": {
     "description": "Subtitle describing the Pro upgrade."
   },
@@ -2731,5 +2731,13 @@
   "wanikaniErrorRateLimited": "WaniKani 正在限制请求频率。请一分钟后重试。",
   "wanikaniErrorGeneric": "WaniKani 同步失败。请稍后重试。",
   "libraryExportFuriganaWanikani": "WaniKani 上尚未掌握的汉字",
-  "readerFuriganaWanikaniStagePickerTitle": "隐藏此阶段及以上汉字的振假名"
+  "readerFuriganaWanikaniStagePickerTitle": "隐藏此阶段及以上汉字的振假名",
+  "localOcrRecognizeQuick": "识别本页（长按查看选项）",
+  "localOcrAlreadyDone": "本页已有 OCR",
+  "proFeatureLocalOcrTitle": "设备端 OCR",
+  "proFeatureLocalOcrDescription": "在手机上离线识别漫画文字。这是一项繁重的工作：新款手机每页需要几秒，旧手机需要一分钟以上，而且很耗电。购买前请先测试你的设备。",
+  "localOcrSpeedTest": "测试设备速度",
+  "localOcrSpeedTestRunning": "正在测试设备端 OCR 速度…",
+  "localOcrSpeedTestResult": "每页约 {pageSeconds} 秒 · 200 页的一卷约需 {minutes} 分钟",
+  "localOcrSpeedTestCancelled": "已取消速度测试"
 }

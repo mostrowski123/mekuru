@@ -1127,7 +1127,7 @@
   "@settingsProUnavailableSubtitle": {
     "description": "Subtitle shown when Pro services are unavailable."
   },
-  "settingsProSubtitle": "Buka fitur auto-crop, sorotan buku, dan OCR kustom",
+  "settingsProSubtitle": "Buka fitur auto-crop, sorotan buku, dan OCR manga",
   "@settingsProSubtitle": {
     "description": "Subtitle describing the Pro upgrade."
   },
@@ -2731,5 +2731,13 @@
   "wanikaniErrorRateLimited": "WaniKani membatasi permintaan. Coba lagi dalam satu menit.",
   "wanikaniErrorGeneric": "Sinkronisasi WaniKani gagal. Coba lagi nanti.",
   "libraryExportFuriganaWanikani": "Kanji yang belum Anda kenal di WaniKani",
-  "readerFuriganaWanikaniStagePickerTitle": "Sembunyikan furigana untuk kanji mulai"
+  "readerFuriganaWanikaniStagePickerTitle": "Sembunyikan furigana untuk kanji mulai",
+  "localOcrRecognizeQuick": "Kenali halaman ini (tahan untuk opsi)",
+  "localOcrAlreadyDone": "Halaman ini sudah memiliki OCR",
+  "proFeatureLocalOcrTitle": "OCR di perangkat",
+  "proFeatureLocalOcrDescription": "Kenali teks manga secara offline di ponsel Anda. Proses ini berat: satu halaman memakan waktu beberapa detik di ponsel baru dan satu menit atau lebih di ponsel lama, serta menguras baterai. Uji perangkat Anda sebelum membeli.",
+  "localOcrSpeedTest": "Uji kecepatan perangkat",
+  "localOcrSpeedTestRunning": "Menguji kecepatan OCR di perangkat…",
+  "localOcrSpeedTestResult": "Sekitar {pageSeconds} dtk per halaman · satu volume 200 halaman memakan waktu sekitar {minutes} mnt",
+  "localOcrSpeedTestCancelled": "Uji kecepatan dibatalkan"
 }

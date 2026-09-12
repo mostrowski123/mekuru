@@ -496,11 +496,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Guarda y revisa pasajes destacados mientras lees libros EPUB.';
 
   @override
-  String get proFeatureLocalOcrTitle => 'On-device OCR';
+  String get proFeatureLocalOcrTitle => 'OCR en el dispositivo';
 
   @override
   String get proFeatureLocalOcrDescription =>
-      'Recognize manga text offline, on your phone. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.';
+      'Reconoce el texto del manga sin conexión, en tu teléfono. Es un trabajo pesado: una página tarda unos segundos en un teléfono reciente y un minuto o más en los antiguos, y consume batería. Prueba tu dispositivo antes de comprar.';
 
   @override
   String get proFeatureCustomOcrTitle => 'Servidor OCR personalizado';
@@ -924,7 +924,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsProSubtitle =>
-      'Desbloquea recorte automático, resaltados de libros y OCR personalizado';
+      'Desbloquea recorte automático, resaltados de libros y OCR de manga';
 
   @override
   String get settingsWhiteThresholdTitle => 'Umbral de blanco';
@@ -2944,10 +2944,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get localOcrRecognize => 'Recognize text';
 
   @override
-  String get localOcrRecognizeQuick => 'Recognize this page (hold for options)';
+  String get localOcrRecognizeQuick =>
+      'Reconocer esta página (mantén pulsado para ver opciones)';
 
   @override
-  String get localOcrAlreadyDone => 'This page already has OCR';
+  String get localOcrAlreadyDone => 'Esta página ya tiene OCR';
 
   @override
   String get localOcrOnDevice => 'On device';
@@ -3219,16 +3220,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get localOcrDiagnosticsCopied => 'OCR diagnostics copied';
 
   @override
-  String get localOcrSpeedTest => 'Test device speed';
+  String get localOcrSpeedTest => 'Probar velocidad del dispositivo';
 
   @override
-  String get localOcrSpeedTestRunning => 'Testing on-device OCR speed…';
+  String get localOcrSpeedTestRunning =>
+      'Probando la velocidad del OCR en el dispositivo…';
 
   @override
   String localOcrSpeedTestResult({
     required String pageSeconds,
     required int minutes,
   }) {
-    return 'About $pageSeconds s per page · a 200-page volume takes about $minutes min';
+    return 'Unos $pageSeconds s por página · un tomo de 200 páginas tarda unos $minutes min';
   }
+
+  @override
+  String get localOcrSpeedTestCancelled => 'Prueba de velocidad cancelada';
 }
