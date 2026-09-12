@@ -476,7 +476,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get proFeatureLocalOcrDescription =>
-      '在手机上使用 kha-white 的 manga-ocr 模型和 Comic Text Detector 离线识别漫画文字。这是一项繁重的工作：新款手机每页需要几秒，旧手机需要一分钟以上，而且很耗电。购买前请先测试你的设备。';
+      '在手机上使用 kha-white 的 manga-ocr 模型和 Comic Text Detector 离线识别漫画文字。这是一项繁重的工作：速度因手机而异，差别很大，而且很耗电。购买前请先测试你的设备。';
 
   @override
   String get proFeatureCustomOcrTitle => '自定义 OCR 服务器';
@@ -2847,7 +2847,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get localOcrModelDescription =>
-      'Recognize Japanese manga offline. Page images stay on your device.';
+      'Recognize Japanese manga offline. Page images stay on your device. Using it needs Mekuru Pro, but anyone can download the models to test their device first.';
 
   @override
   String localOcrDownloadSize({required String done, required String total}) {
@@ -3547,7 +3547,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get proFeatureLocalOcrDescription =>
-      '在手机上使用 kha-white 的 manga-ocr 模型和 Comic Text Detector 离线识别漫画文字。这是一项繁重的工作：新款手机每页需要几秒，旧手机需要一分钟以上，而且很耗电。购买前请先测试你的设备。';
+      '在手机上使用 kha-white 的 manga-ocr 模型和 Comic Text Detector 离线识别漫画文字。这是一项繁重的工作：速度因手机而异，差别很大，而且很耗电。购买前请先测试你的设备。';
 
   @override
   String get proFeatureCustomOcrTitle => '自定义 OCR 服务器';

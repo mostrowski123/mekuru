@@ -640,7 +640,7 @@
   "@proFeatureLocalOcrTitle": {
     "description": "Title of the on-device manga OCR Pro feature."
   },
-  "proFeatureLocalOcrDescription": "Recognize manga text offline, on your phone, with kha-white's manga-ocr model and Comic Text Detector. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.",
+  "proFeatureLocalOcrDescription": "Recognize manga text offline, on your phone, with kha-white's manga-ocr model and Comic Text Detector. This is heavy work: speed varies a lot from phone to phone, and it drains the battery. Test your device before you buy.",
   "@proFeatureLocalOcrDescription": {
     "description": "Description of the on-device manga OCR Pro feature; warns that recognition is CPU-heavy and points at the speed test."
   },
@@ -3812,7 +3812,7 @@
   "@localOcrModelTitle": {
     "description": "On-device manga OCR: localOcrModelTitle"
   },
-  "localOcrModelDescription": "Recognize Japanese manga offline. Page images stay on your device.",
+  "localOcrModelDescription": "Recognize Japanese manga offline. Page images stay on your device. Using it needs Mekuru Pro, but anyone can download the models to test their device first.",
   "@localOcrModelDescription": {
     "description": "On-device manga OCR: localOcrModelDescription"
   },

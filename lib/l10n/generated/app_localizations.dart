@@ -913,7 +913,7 @@ abstract class AppLocalizations {
   /// Description of the on-device manga OCR Pro feature; warns that recognition is CPU-heavy and points at the speed test.
   ///
   /// In en, this message translates to:
-  /// **'Recognize manga text offline, on your phone, with kha-white\'s manga-ocr model and Comic Text Detector. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.'**
+  /// **'Recognize manga text offline, on your phone, with kha-white\'s manga-ocr model and Comic Text Detector. This is heavy work: speed varies a lot from phone to phone, and it drains the battery. Test your device before you buy.'**
   String get proFeatureLocalOcrDescription;
 
   /// Title of the custom OCR server Pro feature.
@@ -4957,7 +4957,7 @@ abstract class AppLocalizations {
   /// On-device manga OCR: localOcrModelDescription
   ///
   /// In en, this message translates to:
-  /// **'Recognize Japanese manga offline. Page images stay on your device.'**
+  /// **'Recognize Japanese manga offline. Page images stay on your device. Using it needs Mekuru Pro, but anyone can download the models to test their device first.'**
   String get localOcrModelDescription;
 
   /// On-device manga OCR: localOcrDownloadSize

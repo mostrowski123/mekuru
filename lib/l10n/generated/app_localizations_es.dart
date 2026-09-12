@@ -500,7 +500,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get proFeatureLocalOcrDescription =>
-      'Reconoce el texto del manga sin conexión, en tu teléfono, con el modelo manga-ocr de kha-white y Comic Text Detector. Es un trabajo pesado: una página tarda unos segundos en un teléfono reciente y un minuto o más en los antiguos, y consume batería. Prueba tu dispositivo antes de comprar.';
+      'Reconoce el texto del manga sin conexión, en tu teléfono, con el modelo manga-ocr de kha-white y Comic Text Detector. Es un trabajo pesado: la velocidad varía mucho de un teléfono a otro, y consume batería. Prueba tu dispositivo antes de comprar.';
 
   @override
   String get proFeatureCustomOcrTitle => 'Servidor OCR personalizado';
@@ -3009,7 +3009,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get localOcrModelDescription =>
-      'Recognize Japanese manga offline. Page images stay on your device.';
+      'Recognize Japanese manga offline. Page images stay on your device. Using it needs Mekuru Pro, but anyone can download the models to test their device first.';
 
   @override
   String localOcrDownloadSize({required String done, required String total}) {
