@@ -29,6 +29,7 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
         executor.shutdown()
     }
     @Volatile private var benchmarkEngine: PageOcrEngine?=null
+    @Volatile private var benchmarkCancelled=false
     override fun onMethodCall(call: MethodCall,result: MethodChannel.Result) {
         val task=Runnable {
             try {
@@ -58,6 +59,7 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
             check(!OcrRuntime.hasModelLease()) { "model_busy" }
             OcrRuntime.benchmarking=true
         }
+        benchmarkCancelled=false
         try {
             val context=OcrRuntime.context
             val activity=context.getSystemService(android.app.ActivityManager::class.java)
@@ -90,6 +92,10 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
                         .put("blocks",blocks).put("threads",threads)
                 }
             }
+        } catch(error: Throwable) {
+            // A cancelled ORT run surfaces as ORT_FAIL "terminate flag"; report
+            // it as the interruption the user asked for, like a cancelled job.
+            if(benchmarkCancelled) error("stopped") else throw error
         } finally {
             benchmarkEngine=null
             OcrRuntime.benchmarking=false
@@ -119,7 +125,7 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
             }
             "removeModels" -> { OcrRuntime.models.remove(); null }
             "benchmark" -> benchmark(args)
-            "benchmarkCancel" -> { benchmarkEngine?.cancel(); null }
+            "benchmarkCancel" -> { benchmarkCancelled=true; benchmarkEngine?.cancel(); null }
             "jobs" -> JSONArray(store.all().filter { it.optString("backend")=="onDevice" })
             "start" -> {
                 OcrRuntime.checkedCache(args.getString("cachePath"))
