@@ -32,6 +32,74 @@ class _FakeBillingClient extends OcrBillingClient {
 }
 
 void main() {
+  testWidgets('ensurePro passes silently when Pro is already unlocked', (
+    tester,
+  ) async {
+    var proOpens = 0;
+    bool? result;
+    final flow = OcrPurchaseFlow(
+      readProUnlocked: () async => true,
+      openProUpgradeScreen: (_) async {
+        proOpens++;
+      },
+    );
+
+    await tester.pumpWidget(
+      buildLocalizedTestApp(
+        home: _FlowHarness(
+          onRun: (context) async {
+            result = await flow.ensurePro(context, source: 'local_ocr');
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Start'));
+    await tester.pumpAndSettle();
+
+    expect(result, isTrue);
+    expect(proOpens, 0);
+  });
+
+  testWidgets('ensurePro opens the Pro screen once and reports the outcome', (
+    tester,
+  ) async {
+    var proOpens = 0;
+    var unlocked = false;
+    var unlockOnScreen = false;
+    bool? result;
+    final flow = OcrPurchaseFlow(
+      readProUnlocked: () async => unlocked,
+      openProUpgradeScreen: (_) async {
+        proOpens++;
+        unlocked = unlockOnScreen;
+      },
+    );
+
+    Future<void> run() async {
+      await tester.pumpWidget(
+        buildLocalizedTestApp(
+          home: _FlowHarness(
+            onRun: (context) async {
+              result = await flow.ensurePro(context, source: 'local_ocr');
+            },
+          ),
+        ),
+      );
+      await tester.tap(find.text('Start'));
+      await tester.pumpAndSettle();
+    }
+
+    await run();
+    expect(result, isFalse);
+    expect(proOpens, 1);
+
+    unlockOnScreen = true;
+    await run();
+    expect(result, isTrue);
+    expect(proOpens, 2);
+  });
+
   testWidgets('immediate OCR start succeeds from the last known Pro snapshot', (
     tester,
   ) async {

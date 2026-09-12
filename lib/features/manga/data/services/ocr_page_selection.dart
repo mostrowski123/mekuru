@@ -17,3 +17,14 @@ List<int> selectOcrPages(
         index,
   ];
 }
+
+/// The visible [pages] a one-tap scan recognizes: those without OCR unless
+/// [replace].
+List<int> quickOcrTargets(
+  MokuroBook book,
+  List<int> pages, {
+  bool replace = false,
+}) => [
+  for (final index in pages)
+    if (replace || !book.pages[index].hasOcr(book)) index,
+];

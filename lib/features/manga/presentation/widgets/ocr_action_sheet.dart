@@ -39,6 +39,99 @@ Future<void> showOcrActionSheet(
   );
 }
 
+/// The backend the user last chose, else remote for manga with remote history.
+Future<OcrBackend> preferredOcrBackend(MokuroBook manga) async {
+  final prefs = await SharedPreferences.getInstance();
+  final remembered = prefs.getString('ocr.preferred_backend');
+  final usedRemote =
+      prefs.getKeys().any(
+        (key) =>
+            key.startsWith(ocrProgressKeyPrefix) ||
+            key.startsWith(ocrActiveJobKeyPrefix),
+      ) ||
+      manga.ocrSource == 'custom_ocr' ||
+      manga.pages.any((page) => page.ocr?['source'] == 'remote');
+  return remembered == 'remote' || (remembered == null && usedRemote)
+      ? OcrBackend.remote
+      : OcrBackend.onDevice;
+}
+
+/// Starts OCR for [pages] of [book]. Returns true once a job is launched and
+/// false when the user was sent to the Pro or Downloads screen instead; other
+/// failures throw (see [localOcrReason]).
+Future<bool> startOcr(
+  BuildContext context,
+  WidgetRef ref,
+  Book book,
+  MokuroBook manga, {
+  required OcrBackend backend,
+  required List<int> pages,
+  OcrExistingPolicy policy = OcrExistingPolicy.missingOnly,
+  bool onlyWhileCharging = false,
+}) async {
+  final cachePath = p.join(book.filePath, mangaPagesCacheFileName);
+  final replace = policy == OcrExistingPolicy.replace;
+  if (backend == OcrBackend.remote) {
+    final ready = await OcrPurchaseFlow.instance.ensureProAndCustomOcrReady(
+      context,
+      getServerUrl: () => ref.read(ocrServerUrlProvider),
+    );
+    if (!ready) return false;
+    if (replace) {
+      await ref
+          .read(bookRepositoryProvider)
+          .backupOriginalMokuroOcrIfNeeded(book);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('ocr.preferred_backend', backend.name);
+    await scheduleOcrTask(
+      bookId: book.id,
+      cacheFilePath: cachePath,
+      imageDir: manga.imageDirPath,
+      selectedPages: pages,
+      replace: replace,
+    );
+    ref.invalidate(ocrProgressProvider(book.id));
+    return true;
+  }
+  if (!await OcrPurchaseFlow.instance.ensurePro(context, source: 'local_ocr')) {
+    return false;
+  }
+  final client = ref.read(localOcrClientProvider);
+  final model = await client.modelState();
+  if (!context.mounted) return false;
+  if (!model.supported) throw PlatformException(code: 'unsupported_device');
+  if (!model.installed) {
+    await Navigator.of(
+      context,
+    ).push(namedRoute('downloads', (_) => const DownloadsScreen()));
+    return false;
+  }
+  final spec = OcrJobSpec(
+    bookId: book.id,
+    title: book.title,
+    cachePath: cachePath,
+    pages: pages,
+    policy: policy,
+    onlyWhileCharging: onlyWhileCharging,
+  );
+  final repository = replace ? ref.read(bookRepositoryProvider) : null;
+  // Publish preparation before the caller leaves its route. All asynchronous
+  // work is owned by the provider, so a popped sheet cannot drop a job or use
+  // a disposed WidgetRef. Cancel also works before native Start returns.
+  unawaited(
+    ref.read(localOcrLaunchesProvider.notifier).start(spec, () async {
+      if (repository != null) {
+        await repository.backupOriginalMokuroOcrIfNeeded(book);
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('ocr.preferred_backend', 'onDevice');
+      await client.requestNotifications();
+    }),
+  );
+  return true;
+}
+
 class OcrActionSheet extends ConsumerStatefulWidget {
   final Book book;
   final List<int> visiblePages;
@@ -72,25 +165,14 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
 
   Future<void> _load() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final cached =
           widget.initialManga ??
           await ref.read(ocrBookLoaderProvider)(_cachePath);
-      final remembered = prefs.getString('ocr.preferred_backend');
-      final usedRemote =
-          prefs.getKeys().any(
-            (key) =>
-                key.startsWith(ocrProgressKeyPrefix) ||
-                key.startsWith(ocrActiveJobKeyPrefix),
-          ) ||
-          cached.ocrSource == 'custom_ocr' ||
-          cached.pages.any((page) => page.ocr?['source'] == 'remote');
+      final backend = await preferredOcrBackend(cached);
       if (!mounted) return;
       setState(() {
         _manga = cached;
-        _backend = remembered == 'remote' || (remembered == null && usedRemote)
-            ? OcrBackend.remote
-            : OcrBackend.onDevice;
+        _backend = backend;
         _busy = false;
       });
     } catch (e) {
@@ -103,7 +185,7 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
     }
   }
 
-  Future<void> _startLocal() async {
+  Future<void> _start() async {
     final manga = _manga;
     if (manga == null) return;
     final pages = selectOcrPages(manga, pageIndex: _page, policy: _policy);
@@ -116,102 +198,23 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
       _error = null;
     });
     try {
-      final client = ref.read(localOcrClientProvider);
-      final model = await client.modelState();
-      if (!mounted) return;
-      if (!model.supported) {
-        setState(() => _error = context.l10n.localOcrUnsupported);
-        return;
-      }
-      if (!model.installed) {
-        await Navigator.of(
-          context,
-        ).push(namedRoute('downloads', (_) => const DownloadsScreen()));
-        return;
-      }
-      final spec = OcrJobSpec(
-        bookId: widget.book.id,
-        title: widget.book.title,
-        cachePath: _cachePath,
+      final started = await startOcr(
+        context,
+        ref,
+        widget.book,
+        manga,
+        backend: _backend,
         pages: pages,
         policy: _policy,
         onlyWhileCharging: _page == null && _charging,
       );
-      final launches = ref.read(localOcrLaunchesProvider.notifier);
-      final repository = _policy == OcrExistingPolicy.replace
-          ? ref.read(bookRepositoryProvider)
-          : null;
-      final book = widget.book;
-      // Publish preparation before dismissing the sheet. All asynchronous work
-      // is owned by the provider, so leaving this route cannot drop a job or use
-      // a disposed WidgetRef. Cancel also works before native Start returns.
-      unawaited(
-        launches.start(spec, () async {
-          if (repository != null) {
-            await repository.backupOriginalMokuroOcrIfNeeded(book);
-          }
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('ocr.preferred_backend', 'onDevice');
-          await client.requestNotifications();
-        }),
-      );
-      Navigator.pop(context);
+      if (started && mounted) Navigator.pop(context);
     } catch (error) {
       if (mounted) {
         setState(
           () => _error = localOcrReason(
             context,
-            error is PlatformException ? error.code : error.toString(),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _start() async {
-    if (_backend == OcrBackend.onDevice) return _startLocal();
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      final manga = await ref.read(ocrBookLoaderProvider)(_cachePath);
-      final pages = selectOcrPages(manga, pageIndex: _page, policy: _policy);
-      if (pages.isEmpty) {
-        setState(() => _error = context.l10n.localOcrNothingToDo);
-        return;
-      }
-      if (!mounted) return;
-      final ready = await OcrPurchaseFlow.instance.ensureProAndCustomOcrReady(
-        context,
-        getServerUrl: () => ref.read(ocrServerUrlProvider),
-      );
-      if (!ready) return;
-      if (!mounted) return;
-      if (_policy == OcrExistingPolicy.replace) {
-        await ref
-            .read(bookRepositoryProvider)
-            .backupOriginalMokuroOcrIfNeeded(widget.book);
-      }
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('ocr.preferred_backend', _backend.name);
-      await scheduleOcrTask(
-        bookId: widget.book.id,
-        cacheFilePath: _cachePath,
-        imageDir: manga.imageDirPath,
-        selectedPages: pages,
-        replace: _policy == OcrExistingPolicy.replace,
-      );
-      ref.invalidate(ocrProgressProvider(widget.book.id));
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      if (mounted) {
-        setState(
-          () => _error = localOcrReason(
-            context,
-            e is PlatformException ? e.code : '$e',
+            error is PlatformException ? error.code : '$error',
           ),
         );
       }

@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/manga/data/services/local_ocr_client.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.dart';
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
@@ -39,8 +41,20 @@ void main() {
   late Directory root;
   late Book manga;
   late _FreeClient client;
+  late OcrPurchaseFlow originalFlow;
+  var unlocked = true;
+  var proOpens = 0;
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    unlocked = true;
+    proOpens = 0;
+    originalFlow = OcrPurchaseFlow.instance;
+    OcrPurchaseFlow.instance = OcrPurchaseFlow(
+      readProUnlocked: () async => unlocked,
+      openProUpgradeScreen: (_) async {
+        proOpens++;
+      },
+    );
     root = await Directory.systemTemp.createTemp('ocr-sheet-test');
     manga = Book(
       id: 1,
@@ -72,6 +86,7 @@ void main() {
     client = _FreeClient();
   });
   tearDown(() async {
+    OcrPurchaseFlow.instance = originalFlow;
     await root.delete(recursive: true);
   });
   Future<void> open(WidgetTester tester, {List<int> visible = const []}) async {
@@ -165,5 +180,66 @@ void main() {
     );
     expect(segmented.selected, {OcrBackend.remote});
     expect(client.started, isEmpty);
+  });
+  testWidgets('locked users see the Pro screen and the sheet stays open', (
+    tester,
+  ) async {
+    unlocked = false;
+    await open(tester);
+    await tester.tap(find.text('Recognize 2 pages'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pumpAndSettle();
+    expect(proOpens, 1);
+    expect(client.started, isEmpty);
+    expect(find.byType(OcrActionSheet), findsOneWidget);
+  });
+  group('preferredOcrBackend', () {
+    MokuroBook manga({String? source, String? pageSource}) =>
+        MokuroBook.fromJson({
+          'title': 'Test manga',
+          'imageDirPath': '/test',
+          'ocrSource': ?source,
+          'pages': [
+            {
+              'pageIndex': 0,
+              'imageFileName': '0.png',
+              'imgWidth': 1,
+              'imgHeight': 1,
+              'blocks': <Object>[],
+              if (pageSource != null)
+                'ocr': {'completed': true, 'source': pageSource},
+            },
+          ],
+        });
+    test('defaults to on-device', () async {
+      expect(await preferredOcrBackend(manga()), OcrBackend.onDevice);
+    });
+    test('an explicit choice wins over history', () async {
+      SharedPreferences.setMockInitialValues({
+        'ocr.preferred_backend': 'remote',
+      });
+      expect(await preferredOcrBackend(manga()), OcrBackend.remote);
+      SharedPreferences.setMockInitialValues({
+        'ocr.preferred_backend': 'onDevice',
+      });
+      expect(
+        await preferredOcrBackend(manga(pageSource: 'remote')),
+        OcrBackend.onDevice,
+      );
+    });
+    test('remote history wins when nothing was chosen', () async {
+      expect(
+        await preferredOcrBackend(manga(source: 'custom_ocr')),
+        OcrBackend.remote,
+      );
+      expect(
+        await preferredOcrBackend(manga(pageSource: 'remote')),
+        OcrBackend.remote,
+      );
+      SharedPreferences.setMockInitialValues({'${ocrProgressKeyPrefix}1': '1'});
+      expect(await preferredOcrBackend(manga()), OcrBackend.remote);
+    });
   });
 }

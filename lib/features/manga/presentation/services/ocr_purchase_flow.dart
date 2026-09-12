@@ -25,7 +25,9 @@ class OcrPurchaseFlow {
        _openProUpgradeScreenOverride = openProUpgradeScreen,
        _openSettingsScreenOverride = openSettingsScreen;
 
-  static final OcrPurchaseFlow instance = OcrPurchaseFlow();
+  /// Replaceable so tests and integration apps can inject a Pro state without
+  /// overriding `proUnlockedProvider` a second time.
+  static OcrPurchaseFlow instance = OcrPurchaseFlow();
 
   final SecretStore _ocrAuthSecretStorage;
   final OcrBillingClient _billingClient;
@@ -40,16 +42,9 @@ class OcrPurchaseFlow {
     BuildContext context, {
     required String Function() getServerUrl,
   }) async {
-    while (context.mounted) {
-      if (!await _readProUnlocked()) {
-        if (!context.mounted) return false;
-        await _openProUpgradeScreen(context);
-        if (!context.mounted) return false;
-        if (!await _readProUnlocked()) {
-          return false;
-        }
-        continue;
-      }
+    while (true) {
+      if (!context.mounted) return false;
+      if (!await ensurePro(context)) return false;
       if (!context.mounted) return false;
 
       final serverUrl = getServerUrl().trim();
@@ -77,8 +72,18 @@ class OcrPurchaseFlow {
 
       return true;
     }
+  }
 
-    return false;
+  /// True when Pro is unlocked, opening the Pro screen (attributed to [source])
+  /// once when it is not.
+  Future<bool> ensurePro(
+    BuildContext context, {
+    String source = 'ocr_setup',
+  }) async {
+    if (await _readProUnlocked()) return true;
+    if (!context.mounted) return false;
+    await _openProUpgradeScreen(context, source);
+    return context.mounted && await _readProUnlocked();
   }
 
   Future<bool> _readProUnlocked() async {
@@ -105,12 +110,12 @@ class OcrPurchaseFlow {
     return _ocrAuthSecretStorage.load();
   }
 
-  Future<void> _openProUpgradeScreen(BuildContext context) {
+  Future<void> _openProUpgradeScreen(BuildContext context, String source) {
     if (_openProUpgradeScreenOverride != null) {
       return _openProUpgradeScreenOverride(context);
     }
 
-    return Navigator.of(context).push(proUpgradeRoute('ocr_setup'));
+    return Navigator.of(context).push(proUpgradeRoute(source));
   }
 
   Future<void> _openSettingsScreen(BuildContext context) {

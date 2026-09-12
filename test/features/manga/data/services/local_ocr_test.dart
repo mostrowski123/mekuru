@@ -51,6 +51,16 @@ void main() {
         throwsRangeError,
       );
     });
+    test('one-tap targets skip pages with OCR unless replacing', () {
+      final manga = book([
+        page(0, ocr: {'completed': true, 'source': 'onDevice'}),
+        page(1),
+        page(2),
+      ]);
+      expect(quickOcrTargets(manga, [0, 1]), [1]);
+      expect(quickOcrTargets(manga, [0, 1], replace: true), [0, 1]);
+      expect(quickOcrTargets(manga, [0]), isEmpty);
+    });
     test('legacy Mokuro completion includes empty pages', () {
       final manga = MokuroBook.fromJson({
         'title': 'Legacy',
