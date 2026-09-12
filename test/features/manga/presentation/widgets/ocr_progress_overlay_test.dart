@@ -209,5 +209,34 @@ void main() {
         expect(find.text('On device'), findsNothing, reason: status);
       }
     });
+
+    testWidgets('on-device badge shows the ETA once pages are timed', (
+      tester,
+    ) async {
+      OcrJobProgress job(Map<String, Object> timing) => OcrJobProgress({
+        'id': 'job',
+        'bookId': 1,
+        'status': 'running',
+        'pages': [0, 1, 2],
+        'outcomes': {'0': 'done'},
+        ...timing,
+      });
+
+      await tester.pumpWidget(buildTestWidget(bookId: 1, localJob: job({})));
+      await tester.pump();
+      expect(find.text('Estimating time remaining…'), findsOneWidget);
+
+      // Same status, same scope key: rebuild from scratch to swap the job.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(
+        buildTestWidget(
+          bookId: 1,
+          localJob: job({'timedPages': 3, 'avgPageMs': 60000}),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('~2 min remaining'), findsOneWidget);
+      expect(find.text('Estimating time remaining…'), findsNothing);
+    });
   });
 }

@@ -30,6 +30,7 @@ class OcrProgressOverlay extends ConsumerWidget {
     if (local != null &&
         local.isActive &&
         progressAsync.asData?.value?.status != OcrStatus.running) {
+      final eta = localOcrEta(context, local);
       return Positioned.fill(
         child: Container(
           color: Colors.black.withValues(alpha: 0.72),
@@ -55,6 +56,14 @@ class OcrProgressOverlay extends ConsumerWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white, fontSize: 11),
               ),
+              if (local.status == 'running')
+                Text(
+                  eta.isEmpty ? context.l10n.localOcrEstimating : eta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                ),
               const SizedBox(height: 8),
               LinearProgressIndicator(value: local.fraction),
             ],
