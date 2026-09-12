@@ -155,8 +155,16 @@ class _LocalOcrSpeedTestRowState extends State<LocalOcrSpeedTestRow> {
         ),
       ),
     );
+    var cancelled = false;
     await runLocalOcrAction(context, () async {
-      final result = await LocalMangaOcr.benchmark();
+      final Map<String, dynamic> result;
+      try {
+        result = await LocalMangaOcr.benchmark();
+      } on PlatformException catch (error) {
+        if (error.code != 'stopped') rethrow;
+        cancelled = true;
+        return;
+      }
       final pageMs = (result['pageMs'] as num).toInt();
       final loadMs = (result['loadMs'] as num).toInt();
       final prefs = await SharedPreferences.getInstance();
@@ -179,6 +187,11 @@ class _LocalOcrSpeedTestRowState extends State<LocalOcrSpeedTestRow> {
     });
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pop();
+    if (cancelled) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.localOcrSpeedTestCancelled)));
+    }
     setState(() => _running = false);
   }
 

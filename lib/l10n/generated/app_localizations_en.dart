@@ -3190,4 +3190,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }) {
     return 'About $pageSeconds s per page · a 200-page volume takes about $minutes min';
   }
+
+  @override
+  String get localOcrSpeedTestCancelled => 'Speed test cancelled';
 }

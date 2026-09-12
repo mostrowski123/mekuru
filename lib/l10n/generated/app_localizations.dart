@@ -5320,6 +5320,12 @@ abstract class AppLocalizations {
     required String pageSeconds,
     required int minutes,
   });
+
+  /// Snack bar after the user cancels the on-device OCR speed test; no result is kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed test cancelled'**
+  String get localOcrSpeedTestCancelled;
 }
 
 class _AppLocalizationsDelegate

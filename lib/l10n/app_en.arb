@@ -4116,5 +4116,9 @@
         "type": "int"
       }
     }
+  },
+  "localOcrSpeedTestCancelled": "Speed test cancelled",
+  "@localOcrSpeedTestCancelled": {
+    "description": "Snack bar after the user cancels the on-device OCR speed test; no result is kept."
   }
 }

@@ -321,7 +321,8 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(calls.map((c) => c.method), ['benchmark', 'benchmarkCancel']);
-      expect(find.text(en.localOcrInterrupted), findsOneWidget);
+      expect(find.text(en.localOcrSpeedTestCancelled), findsOneWidget);
+      expect(find.text(en.localOcrInterrupted), findsNothing);
       expect(find.text(running), findsNothing);
       expect(find.textContaining('About '), findsNothing);
     });
