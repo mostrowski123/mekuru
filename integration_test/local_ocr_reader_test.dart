@@ -181,7 +181,8 @@ void main() {
       expect(reader.client.created, isNull);
       expect(find.byType(OcrActionSheet), findsNothing);
       expect(reader.overlayCancel, findsNothing);
-      expect(await LocalMangaOcr.jobs(), isEmpty);
+      // Earlier cases leave cancelled jobs in the journal; none may be live.
+      expect((await LocalMangaOcr.jobs()).where((j) => j.isActive), isEmpty);
       await reader.close(tester);
     },
     timeout: const Timeout(Duration(minutes: 5)),
