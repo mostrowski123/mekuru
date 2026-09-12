@@ -125,6 +125,12 @@ class LocalMangaOcr {
   static Future<void> cancelDownload() =>
       channel.invokeMethod('cancelDownload');
   static Future<void> removeModels() => channel.invokeMethod('removeModels');
+
+  /// Times model load and one bundled sample page on this device:
+  /// `{loadMs, pageMs, blocks, threads}`. Holds the model lease meanwhile.
+  static Future<Map<String, dynamic>> benchmark() => _map('benchmark');
+  static Future<void> benchmarkCancel() =>
+      channel.invokeMethod('benchmarkCancel');
   static Future<OcrJobProgress> start(OcrJobSpec spec) async =>
       OcrJobProgress(await _map('start', spec.toJson()));
   static Future<List<OcrJobProgress>> jobs() async {

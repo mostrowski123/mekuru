@@ -71,6 +71,23 @@ object DebugOcrHooks {
         val rejected=try { engine.run(FloatArray(0)); false } catch(_: IllegalStateException) { true }
         return JSONObject().put("passes",passes).put("closedRejected",rejected)
     }
+    /** A `testEngine` speed test exercises the lease, thread and cancel plumbing
+     * without weights: it sleeps `testDelaySteps` x 25 ms and finds no text. */
+    fun benchmarkEngine(args: JSONObject): PageOcrEngine? {
+        if(!accept(args)) return null
+        return object : PageOcrEngine {
+            @Volatile private var cancelled=false
+            override fun process(source: MangaImageSource,checkpoint: ()->Unit,phase: (String)->Unit): JSONArray {
+                for(i in 0 until args.optInt("testDelaySteps",10)) {
+                    if(cancelled) throw java.util.concurrent.CancellationException("stopped")
+                    checkpoint(); Thread.sleep(25)
+                }
+                return JSONArray()
+            }
+            override fun cancel() { cancelled=true }
+            override fun close() {}
+        }
+    }
     fun processor(job: JSONObject): ((JSONObject,JSONObject,()->Unit,(String)->Unit)->OcrPageOutput)? {
         if(!accept(job)) return null
         return { _,page,checkpoint,phase ->

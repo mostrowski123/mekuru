@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
@@ -214,5 +215,30 @@ void main() {
     await cache.delete();
     await LocalMangaOcr.quiesce();
     expect(await cache.exists(), false);
+  });
+  testWidgets('speed test holds the model lease until it ends', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+    Future<Map<String, dynamic>> benchmark(int steps) async =>
+        Map<String, dynamic>.from(
+          (await LocalMangaOcr.channel.invokeMapMethod<String, dynamic>(
+            'benchmark',
+            {'testEngine': true, 'testDelaySteps': steps},
+          ))!,
+        );
+    final quick = await benchmark(4);
+    expect(quick['pageMs'], greaterThan(0));
+    expect(quick['blocks'], 0);
+    expect([1, 2], contains(quick['threads']));
+
+    Matcher refused(String code) =>
+        throwsA(isA<PlatformException>().having((e) => e.code, 'code', code));
+    final running = benchmark(400);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    await expectLater(start(), refused('model_busy'));
+    final stopped = expectLater(running, refused('stopped'));
+    await LocalMangaOcr.benchmarkCancel();
+    await stopped;
+    final job = await start(pages: [0]);
+    await waitFor(job.id, (j) => !j.isActive);
   });
 }

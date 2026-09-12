@@ -28,20 +28,71 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
         channel.setMethodCallHandler(null)
         executor.shutdown()
     }
+    @Volatile private var benchmarkEngine: PageOcrEngine?=null
     override fun onMethodCall(call: MethodCall,result: MethodChannel.Result) {
-        try {
-            executor.execute {
-                try {
-                    val args=JSONObject(call.arguments as? Map<*,*> ?: emptyMap<String,Any>())
-                    val value=handle(call.method,args)
-                    main.post { if(value===NotImplemented) result.notImplemented() else result.success(plain(value)) }
-                } catch(error: Throwable) {
-                    main.post { result.error(error.message ?: "ocr_error",
-                        error.message ?: error.javaClass.simpleName,null) }
-                }
+        val task=Runnable {
+            try {
+                val args=JSONObject(call.arguments as? Map<*,*> ?: emptyMap<String,Any>())
+                val value=handle(call.method,args)
+                main.post { if(value===NotImplemented) result.notImplemented() else result.success(plain(value)) }
+            } catch(error: Throwable) {
+                main.post { result.error(error.message ?: "ocr_error",
+                    error.message ?: error.javaClass.simpleName,null) }
             }
+        }
+        try {
+            // A speed test runs for many seconds; the serial executor must stay
+            // free for the 1 Hz jobs/modelState polls and for benchmarkCancel.
+            if(call.method=="benchmark") Thread(task,"mekuru-ocr-benchmark").start()
+            else executor.execute(task)
         } catch(_: java.util.concurrent.RejectedExecutionException) {
             result.error("detached","plugin detached",null)
+        }
+    }
+    /** Times the real pipeline on the bundled synthetic sample page. Holds the
+     * model lease so downloads, removal and jobs wait as for a running job. */
+    private fun benchmark(args: JSONObject): JSONObject {
+        val isTest=DebugOcrHooks.accept(args)
+        check(isTest || OcrRuntime.models.installed()) { "model_missing" }
+        synchronized(OcrRuntime) {
+            check(!OcrRuntime.hasModelLease()) { "model_busy" }
+            OcrRuntime.benchmarking=true
+        }
+        try {
+            val context=OcrRuntime.context
+            val activity=context.getSystemService(android.app.ActivityManager::class.java)
+            if(!isTest) {
+                val memory=android.app.ActivityManager.MemoryInfo().also { activity.getMemoryInfo(it) }
+                check(memory.availMem>=1024L*1024*1024) { "low_memory" }
+            }
+            val threads=if(activity.isLowRamDevice) 1 else 2
+            val sample=java.io.File(context.cacheDir,"local_manga_ocr_sample.jpg")
+            if(!sample.isFile) {
+                val partial=java.io.File(sample.path+".partial")
+                context.assets.open("local_manga_ocr/sample.jpg").use { input ->
+                    partial.outputStream().use { input.copyTo(it) }
+                }
+                check(partial.renameTo(sample)) { "storage_error" }
+            }
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+            val started=System.nanoTime()
+            val engine=DebugOcrHooks.benchmarkEngine(args)
+                ?: MangaOcrEngine(OcrRuntime.models.installedDirectory,threads)
+            val loadMs=(System.nanoTime()-started)/1_000_000
+            benchmarkEngine=engine
+            return engine.use {
+                val book=JSONObject().put("imageDirPath",sample.parent)
+                val page=JSONObject().put("imageFileName",sample.name)
+                MangaImageSource(context,book,page).use { source ->
+                    val at=System.nanoTime()
+                    val blocks=engine.process(source,{},{}).length()
+                    JSONObject().put("loadMs",loadMs).put("pageMs",(System.nanoTime()-at)/1_000_000)
+                        .put("blocks",blocks).put("threads",threads)
+                }
+            }
+        } finally {
+            benchmarkEngine=null
+            OcrRuntime.benchmarking=false
         }
     }
     private fun handle(method: String,args: JSONObject): Any? {
@@ -67,12 +118,17 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
                 null
             }
             "removeModels" -> { OcrRuntime.models.remove(); null }
+            "benchmark" -> benchmark(args)
+            "benchmarkCancel" -> { benchmarkEngine?.cancel(); null }
             "jobs" -> JSONArray(store.all().filter { it.optString("backend")=="onDevice" })
             "start" -> {
                 OcrRuntime.checkedCache(args.getString("cachePath"))
                 val isTest=DebugOcrHooks.accept(args)
                 check(isTest || OcrRuntime.models.supported) { "unsupported_device" }
                 check(isTest || OcrRuntime.models.installed()) { "model_missing" }
+                // ponytail: a job queued before a speed test began can still race
+                // the service for a second engine; accept that narrow window.
+                check(!OcrRuntime.benchmarking) { "model_busy" }
                 val job=store.create(args,OcrRuntime.models.version)
                 OcrRuntime.startService(); job
             }
@@ -82,6 +138,7 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
                 val job=store.read(args.getString("id"))
                 check(DebugOcrHooks.accept(job) || OcrRuntime.models.installed()) { "model_missing" }
                 check(job.getString("modelVersion")==OcrRuntime.models.version) { "model_version_missing" }
+                check(!OcrRuntime.benchmarking) { "model_busy" }
                 store.resume(job.getString("id"),args.optBoolean("retryFailed"))
                 OcrRuntime.startService(); null
             }

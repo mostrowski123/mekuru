@@ -27,7 +27,10 @@ object OcrRuntime {
         store.recover()
         initialized=true
     }
-    fun hasModelLease()=serviceRunning.get() || currentId!=null
+    /** Set while the device speed test holds an engine: downloads, removal and
+     * jobs then wait for it exactly as they wait for a running job. */
+    @Volatile var benchmarking=false
+    fun hasModelLease()=serviceRunning.get() || currentId!=null || benchmarking
     fun startService() {
         try { ContextCompat.startForegroundService(context,Intent(context,OcrJobService::class.java)) }
         catch(error: Exception) {
