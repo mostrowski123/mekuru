@@ -636,6 +636,14 @@
   "@proFeatureHighlightsDescription": {
     "description": "Description of the book highlights Pro feature."
   },
+  "proFeatureLocalOcrTitle": "On-device OCR",
+  "@proFeatureLocalOcrTitle": {
+    "description": "Title of the on-device manga OCR Pro feature."
+  },
+  "proFeatureLocalOcrDescription": "Recognize manga text offline, on your phone. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.",
+  "@proFeatureLocalOcrDescription": {
+    "description": "Description of the on-device manga OCR Pro feature; warns that recognition is CPU-heavy and points at the speed test."
+  },
   "proFeatureCustomOcrTitle": "Custom OCR Server",
   "@proFeatureCustomOcrTitle": {
     "description": "Title of the custom OCR server Pro feature."
@@ -1169,7 +1177,7 @@
   "@settingsProUnavailableSubtitle": {
     "description": "Subtitle shown when Pro services are unavailable."
   },
-  "settingsProSubtitle": "Unlock auto-crop, book highlights, and custom OCR",
+  "settingsProSubtitle": "Unlock auto-crop, book highlights, and manga OCR",
   "@settingsProSubtitle": {
     "description": "Subtitle describing the Pro upgrade."
   },
@@ -4088,5 +4096,25 @@
   "localOcrDiagnosticsCopied": "OCR diagnostics copied",
   "@localOcrDiagnosticsCopied": {
     "description": "Troubleshooting action in debug builds, without book text or account data."
+  },
+  "localOcrSpeedTest": "Test device speed",
+  "@localOcrSpeedTest": {
+    "description": "Button that times on-device OCR on a bundled sample page."
+  },
+  "localOcrSpeedTestRunning": "Testing on-device OCR speed…",
+  "@localOcrSpeedTestRunning": {
+    "description": "Title of the modal progress dialog while the speed test runs."
+  },
+  "localOcrSpeedTestResult": "About {pageSeconds} s per page · a 200-page volume takes about {minutes} min",
+  "@localOcrSpeedTestResult": {
+    "description": "Speed test result shown under the button; pageSeconds is already formatted with one decimal.",
+    "placeholders": {
+      "pageSeconds": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
   }
 }

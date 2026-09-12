@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
@@ -84,5 +85,19 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.byType(FilledButton), findsOneWidget);
+
+    // The on-device OCR card warns about the cost and offers the speed test.
+    await tester.scrollUntilVisible(
+      find.text(l10n.localOcrSpeedTest),
+      -200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text(l10n.proFeatureLocalOcrTitle), findsOneWidget);
+    if (!(await LocalMangaOcr.modelState()).installed) {
+      // Without the models (CI) the test reports the download requirement
+      // through the same snack bar as every other native refusal.
+      await tester.tap(find.text(l10n.localOcrSpeedTest));
+      await pumpUntilVisible(tester, find.text(l10n.localOcrDownloadRequired));
+    }
   });
 }

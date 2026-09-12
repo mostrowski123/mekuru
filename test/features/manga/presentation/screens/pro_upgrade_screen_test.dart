@@ -6,6 +6,7 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/ocr_account_link_service.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../test_app.dart';
 
@@ -38,6 +39,11 @@ Future<void> pumpLockedScreen(
   Future<ProUpgradeSnapshot> Function()? purchaseUpgrade,
   Future<ProUpgradeSnapshot> Function()? restoreUpgrade,
 }) async {
+  // The screen outgrew one default test viewport; a tall surface keeps every
+  // card and button built so the fixed drag below cannot dispose them.
+  tester.view.physicalSize = const Size(800, 2400);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
       child: buildLocalizedTestApp(
@@ -63,6 +69,41 @@ Future<void> tapAndSettleSnackBar(WidgetTester tester, Finder button) async {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets(
+    'locked state warns about on-device OCR and offers the speed test',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: buildLocalizedTestApp(
+            home: ProUpgradeScreen(
+              source: 'test',
+              loadSnapshot: () async => _lockedSnapshot,
+              openSelfHostRepo: () async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Test device speed'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('On-device OCR'), findsOneWidget);
+      expect(
+        find.textContaining('Test your device before you buy'),
+        findsOneWidget,
+      );
+      // Buy stays the only FilledButton; the test button is outlined.
+      expect(
+        find.widgetWithText(OutlinedButton, 'Test device speed'),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('locked state shows Pro upgrade CTA and feature list', (
     tester,
   ) async {

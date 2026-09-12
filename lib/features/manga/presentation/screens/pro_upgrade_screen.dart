@@ -14,6 +14,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/services/ocr_billing_client.dart';
 import '../../data/services/ocr_store_service.dart';
 import '../providers/pro_access_provider.dart';
+import '../widgets/local_ocr_widgets.dart';
 
 class ProUpgradeSnapshot {
   final bool isUnlocked;
@@ -423,6 +424,13 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                     ),
                     const SizedBox(height: 12),
                     _ProFeatureCard(
+                      icon: Icons.offline_bolt_outlined,
+                      title: l10n.proFeatureLocalOcrTitle,
+                      description: l10n.proFeatureLocalOcrDescription,
+                      footer: const LocalOcrSpeedTestRow(),
+                    ),
+                    const SizedBox(height: 12),
+                    _ProFeatureCard(
                       icon: Icons.document_scanner_outlined,
                       title: l10n.proFeatureCustomOcrTitle,
                       description: l10n.proFeatureCustomOcrDescription,
@@ -498,17 +506,24 @@ class _ProFeatureCard extends StatelessWidget {
     required this.title,
     required this.description,
     this.trailing,
+    this.footer,
   });
 
   final IconData icon;
   final String title;
   final String description;
+
+  /// Sits in the title row; keep it small.
   final Widget? trailing;
+
+  /// Rendered under the description, full width.
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final trailing = this.trailing;
+    final footer = this.footer;
 
     return Card(
       child: Padding(
@@ -536,6 +551,7 @@ class _ProFeatureCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(description, style: theme.textTheme.bodyMedium),
+            if (footer != null) ...[const SizedBox(height: 12), footer],
           ],
         ),
       ),

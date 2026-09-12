@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,15 +8,22 @@ import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/l10n/generated/app_localizations_en.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final calls = <MethodCall>[];
   var wifi = true;
   var failNetworkCheck = false;
+  Future<Object?> Function() benchmark = () async => null;
+  void Function()? onBenchmarkCancel;
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     wifi = true;
     failNetworkCheck = false;
+    benchmark = () async => null;
+    onBenchmarkCancel = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(LocalMangaOcr.channel, (call) async {
           calls.add(call);
@@ -25,6 +33,8 @@ void main() {
             }
             return wifi;
           }
+          if (call.method == 'benchmark') return benchmark();
+          if (call.method == 'benchmarkCancel') onBenchmarkCancel?.call();
           return null;
         });
     calls.clear();
@@ -239,5 +249,116 @@ void main() {
       findsOneWidget,
     );
     expect(calls, isEmpty);
+  });
+
+  group('LocalOcrSpeedTestRow', () {
+    final en = AppLocalizationsEn();
+    const result = {'loadMs': 1200, 'pageMs': 8000, 'blocks': 5, 'threads': 2};
+    const running = 'Testing on-device OCR speed…';
+
+    testWidgets('runs behind a modal and remembers the result', (tester) async {
+      final pending = Completer<Map<String, Object>>();
+      benchmark = () => pending.future;
+      await tester.pumpWidget(host(const LocalOcrSpeedTestRow()));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('About '), findsNothing);
+
+      await tester.tap(find.text('Test device speed'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text(running), findsOneWidget);
+
+      pending.complete(result);
+      await tester.pumpAndSettle();
+      expect(find.text(running), findsNothing);
+      expect(
+        find.text(
+          'About 8.0 s per page · a 200-page volume takes about 27 min',
+        ),
+        findsOneWidget,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('ocr.speed_test_page_ms'), 8000);
+      expect(prefs.getInt('ocr.speed_test_load_ms'), 1200);
+      expect(calls.map((c) => c.method), ['benchmark']);
+
+      // A fresh row restores the remembered result without running again.
+      calls.clear();
+      await tester.pumpWidget(host(const SizedBox.shrink()));
+      await tester.pumpWidget(host(const LocalOcrSpeedTestRow()));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('About 8.0 s per page'), findsOneWidget);
+      expect(calls, isEmpty);
+    });
+
+    testWidgets('missing models point at Downloads and keep no result', (
+      tester,
+    ) async {
+      benchmark = () async => throw PlatformException(code: 'model_missing');
+      await tester.pumpWidget(host(const LocalOcrSpeedTestRow()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Test device speed'));
+      await tester.pumpAndSettle();
+      expect(find.text(en.localOcrDownloadRequired), findsOneWidget);
+      expect(find.text(running), findsNothing);
+      expect(find.textContaining('About '), findsNothing);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('ocr.speed_test_page_ms'), isNull);
+    });
+
+    testWidgets('cancel stops the test and reports the interruption', (
+      tester,
+    ) async {
+      final pending = Completer<Map<String, Object>>();
+      benchmark = () => pending.future;
+      onBenchmarkCancel = () =>
+          pending.completeError(PlatformException(code: 'stopped'));
+      await tester.pumpWidget(host(const LocalOcrSpeedTestRow()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Test device speed'));
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(calls.map((c) => c.method), ['benchmark', 'benchmarkCancel']);
+      expect(find.text(en.localOcrInterrupted), findsOneWidget);
+      expect(find.text(running), findsNothing);
+      expect(find.textContaining('About '), findsNothing);
+    });
+
+    test('volume estimate rounds up to whole minutes', () {
+      expect(localOcrVolumeMinutes(1200, 8000), 27);
+      expect(localOcrVolumeMinutes(0, 60000), 200);
+      expect(localOcrVolumeMinutes(0, 0), 0);
+    });
+
+    testWidgets('download tile offers the test only once installed', (
+      tester,
+    ) async {
+      Widget tile(bool installed) => ProviderScope(
+        key: ValueKey(installed),
+        overrides: [
+          localOcrModelProvider.overrideWith(
+            (ref) => Stream.value(
+              OcrModelState({
+                'supported': true,
+                'installed': installed,
+                'status': installed ? 'installed' : 'missing',
+                'totalBytes': 296173655,
+                'downloadedBytes': 0,
+              }),
+            ),
+          ),
+        ],
+        child: host(const LocalOcrDownloadTile()),
+      );
+      await tester.pumpWidget(tile(false));
+      await tester.pumpAndSettle();
+      expect(find.byType(LocalOcrSpeedTestRow), findsNothing);
+      await tester.pumpWidget(tile(true));
+      await tester.pumpAndSettle();
+      expect(find.byType(LocalOcrSpeedTestRow), findsOneWidget);
+      expect(find.text('Test device speed'), findsOneWidget);
+    });
   });
 }

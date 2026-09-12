@@ -904,6 +904,18 @@ abstract class AppLocalizations {
   /// **'Save and review highlighted passages while reading EPUB books.'**
   String get proFeatureHighlightsDescription;
 
+  /// Title of the on-device manga OCR Pro feature.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device OCR'**
+  String get proFeatureLocalOcrTitle;
+
+  /// Description of the on-device manga OCR Pro feature; warns that recognition is CPU-heavy and points at the speed test.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize manga text offline, on your phone. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.'**
+  String get proFeatureLocalOcrDescription;
+
   /// Title of the custom OCR server Pro feature.
   ///
   /// In en, this message translates to:
@@ -1639,7 +1651,7 @@ abstract class AppLocalizations {
   /// Subtitle describing the Pro upgrade.
   ///
   /// In en, this message translates to:
-  /// **'Unlock auto-crop, book highlights, and custom OCR'**
+  /// **'Unlock auto-crop, book highlights, and manga OCR'**
   String get settingsProSubtitle;
 
   /// Title for the manga auto-crop white threshold setting.
@@ -5287,6 +5299,27 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OCR diagnostics copied'**
   String get localOcrDiagnosticsCopied;
+
+  /// Button that times on-device OCR on a bundled sample page.
+  ///
+  /// In en, this message translates to:
+  /// **'Test device speed'**
+  String get localOcrSpeedTest;
+
+  /// Title of the modal progress dialog while the speed test runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing on-device OCR speed…'**
+  String get localOcrSpeedTestRunning;
+
+  /// Speed test result shown under the button; pageSeconds is already formatted with one decimal.
+  ///
+  /// In en, this message translates to:
+  /// **'About {pageSeconds} s per page · a 200-page volume takes about {minutes} min'**
+  String localOcrSpeedTestResult({
+    required String pageSeconds,
+    required int minutes,
+  });
 }
 
 class _AppLocalizationsDelegate

@@ -496,6 +496,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Guarda y revisa pasajes destacados mientras lees libros EPUB.';
 
   @override
+  String get proFeatureLocalOcrTitle => 'On-device OCR';
+
+  @override
+  String get proFeatureLocalOcrDescription =>
+      'Recognize manga text offline, on your phone. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.';
+
+  @override
   String get proFeatureCustomOcrTitle => 'Servidor OCR personalizado';
 
   @override
@@ -3210,4 +3217,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get localOcrDiagnosticsCopied => 'OCR diagnostics copied';
+
+  @override
+  String get localOcrSpeedTest => 'Test device speed';
+
+  @override
+  String get localOcrSpeedTestRunning => 'Testing on-device OCR speed…';
+
+  @override
+  String localOcrSpeedTestResult({
+    required String pageSeconds,
+    required int minutes,
+  }) {
+    return 'About $pageSeconds s per page · a 200-page volume takes about $minutes min';
+  }
 }

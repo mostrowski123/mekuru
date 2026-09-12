@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/local_ocr_providers.dart';
 
 String localOcrReason(BuildContext context, String? code) {
@@ -84,6 +87,127 @@ Future<void> runLocalOcrAction(
         ),
       );
     }
+  }
+}
+
+/// Minutes a [pages]-page volume takes at the measured speed.
+int localOcrVolumeMinutes(int loadMs, int pageMs, {int pages = 200}) =>
+    ((loadMs + pages * pageMs) / 60000).ceil();
+
+/// "Test device speed": times the real pipeline on the bundled sample page
+/// and keeps the last result under the button.
+class LocalOcrSpeedTestRow extends StatefulWidget {
+  const LocalOcrSpeedTestRow({super.key});
+  @override
+  State<LocalOcrSpeedTestRow> createState() => _LocalOcrSpeedTestRowState();
+}
+
+class _LocalOcrSpeedTestRowState extends State<LocalOcrSpeedTestRow> {
+  static const _pageKey = 'ocr.speed_test_page_ms';
+  static const _loadKey = 'ocr.speed_test_load_ms';
+  int? _pageMs;
+  int? _loadMs;
+  bool _running = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restore();
+  }
+
+  Future<void> _restore() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pageMs = prefs.getInt(_pageKey);
+      final loadMs = prefs.getInt(_loadKey);
+      if (!mounted || pageMs == null || loadMs == null) return;
+      setState(() {
+        _pageMs = pageMs;
+        _loadMs = loadMs;
+      });
+    } catch (_) {
+      // Without a preferences store only the remembered result is lost.
+    }
+  }
+
+  Future<void> _run() async {
+    final l = context.l10n;
+    setState(() => _running = true);
+    // Modal: native refuses scans, downloads and removal during the test, so
+    // the UI should not offer them either.
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            title: Text(l.localOcrSpeedTestRunning),
+            content: const LinearProgressIndicator(),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    runLocalOcrAction(ctx, LocalMangaOcr.benchmarkCancel),
+                child: Text(l.commonCancel),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await runLocalOcrAction(context, () async {
+      final result = await LocalMangaOcr.benchmark();
+      final pageMs = (result['pageMs'] as num).toInt();
+      final loadMs = (result['loadMs'] as num).toInt();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_pageKey, pageMs);
+      await prefs.setInt(_loadKey, loadMs);
+      logUsage(
+        'ocr.speed_test',
+        attrs: {
+          'page_ms': pageMs,
+          'load_ms': loadMs,
+          'blocks': (result['blocks'] as num?)?.toInt() ?? 0,
+          'threads': (result['threads'] as num?)?.toInt() ?? 0,
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        _pageMs = pageMs;
+        _loadMs = loadMs;
+      });
+    });
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+    setState(() => _running = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final pageMs = _pageMs;
+    final loadMs = _loadMs;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _running ? null : _run,
+          icon: const Icon(Icons.speed),
+          label: Text(l.localOcrSpeedTest),
+        ),
+        if (pageMs != null && loadMs != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              l.localOcrSpeedTestResult(
+                pageSeconds: (pageMs / 1000).toStringAsFixed(1),
+                minutes: localOcrVolumeMinutes(loadMs, pageMs),
+              ),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+      ],
+    );
   }
 }
 
@@ -385,6 +509,11 @@ class _LocalOcrDownloadTileState extends ConsumerState<LocalOcrDownloadTile> {
                 ),
               ],
             ),
+          ),
+        if (model?.installed == true)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: LocalOcrSpeedTestRow(),
           ),
       ],
     );
