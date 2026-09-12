@@ -20,6 +20,10 @@ const _billingFunctionsBaseUrlOverride = String.fromEnvironment(
 );
 const _entitlementRefreshInterval = Duration(hours: 24);
 
+/// Debug builds only: `--dart-define=MEKURU_FORCE_PRO=true` reports Pro as
+/// owned so the gates can be exercised by hand on an emulator without Play.
+const _forcePro = bool.fromEnvironment('MEKURU_FORCE_PRO');
+
 abstract class OcrBillingStatusStorage {
   Future<String?> read({required String key});
   Future<void> write({required String key, required String value});
@@ -270,6 +274,7 @@ class OcrBillingClient {
   bool get hasAuthenticatedUser => _readCurrentUid() != null;
 
   Future<bool> hasPlayEntitlement() async {
+    if (kDebugMode && _forcePro) return true;
     try {
       return await _statusStorage.read(key: _playEntitlementKey) == '1';
     } catch (e) {
