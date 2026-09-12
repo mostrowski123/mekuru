@@ -44,24 +44,28 @@ void main() {
       contains('aa6573bd10b0d446cbf622e29c3e084914df9741'),
     );
   });
-  test(
-    'shipped assets do not contain weights or restricted benchmark data',
-    () {
-      final roots = [
-        Directory('$plugin/assets'),
-        Directory('$plugin/android/src/main/assets'),
-      ];
-      for (final root in roots) {
-        for (final file in root.listSync(recursive: true).whereType<File>()) {
-          expect(
-            file.path,
-            isNot(matches(RegExp(r'\.(onnx|pt|safetensors|png|jpg|zip)$'))),
-          );
-          expect(file.path.toLowerCase(), isNot(contains('manga109')));
+  test('shipped assets do not contain weights or restricted benchmark data', () {
+    final roots = [
+      Directory('$plugin/assets'),
+      Directory('$plugin/android/src/main/assets'),
+    ];
+    // The speed test's page is script-generated (tools/make_ocr_sample_page.py):
+    // the only image that may ship, and it must stay small.
+    final samplePage = RegExp(r'[\\/]local_manga_ocr[\\/]sample\.jpg$');
+    for (final root in roots) {
+      for (final file in root.listSync(recursive: true).whereType<File>()) {
+        if (samplePage.hasMatch(file.path)) {
+          expect(file.lengthSync(), lessThan(300 * 1000));
+          continue;
         }
+        expect(
+          file.path,
+          isNot(matches(RegExp(r'\.(onnx|pt|safetensors|png|jpg|zip)$'))),
+        );
+        expect(file.path.toLowerCase(), isNot(contains('manga109')));
       }
-    },
-  );
+    }
+  });
   test('release variant excludes synthetic inference and recovery hooks', () {
     final release = File(
       '$plugin/android/src/release/kotlin/moe/matthew/mekuru/ocr/DebugOcrHooks.kt',
