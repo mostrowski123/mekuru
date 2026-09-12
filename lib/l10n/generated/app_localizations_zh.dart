@@ -2780,7 +2780,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerFuriganaWanikaniStagePickerTitle => '隐藏此阶段及以上汉字的振假名';
 
   @override
-  String get localOcrRecognize => 'Recognize text';
+  String get localOcrRecognize => '识别文字';
 
   @override
   String get localOcrRecognizeQuick => '识别本页（长按查看选项）';
@@ -2789,140 +2789,135 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrAlreadyDone => '本页已有 OCR';
 
   @override
-  String get localOcrOnDevice => 'On device';
+  String get localOcrOnDevice => '设备端';
 
   @override
-  String get localOcrOnDeviceSubtitle => 'Offline after downloading the models';
+  String get localOcrOnDeviceSubtitle => '下载模型后可离线使用';
 
   @override
-  String get localOcrRemote => 'Remote';
+  String get localOcrRemote => '远程';
 
   @override
-  String get localOcrRemoteSubtitle =>
-      'Uses your OCR server and its existing access requirements';
+  String get localOcrRemoteSubtitle => '使用你的 OCR 服务器及其现有的访问要求';
 
   @override
-  String get localOcrEntireManga => 'Entire manga';
+  String get localOcrEntireManga => '整部漫画';
 
   @override
   String localOcrThisPage({required int page}) {
-    return 'Page $page';
+    return '第 $page 页';
   }
 
   @override
   String localOcrCoverage({required int done, required int total}) {
-    return '$done of $total pages already have OCR';
+    return '$total 页中已有 $done 页完成 OCR';
   }
 
   @override
-  String get localOcrMissingOnly => 'Only pages without OCR';
+  String get localOcrMissingOnly => '仅限没有 OCR 的页面';
 
   @override
-  String get localOcrReplace => 'Replace existing OCR';
+  String get localOcrReplace => '替换现有 OCR';
 
   @override
-  String get localOcrReplaceDescription =>
-      'Existing results are kept until each replacement succeeds. Completed replacements are kept if you cancel.';
+  String get localOcrReplaceDescription => '在每次替换成功之前，现有结果会保留。取消时已完成的替换会保留。';
 
   @override
-  String get localOcrChargingOnly => 'Only while charging';
+  String get localOcrChargingOnly => '仅在充电时';
 
   @override
   String localOcrStartPages({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Recognize $count pages',
-      one: 'Recognize 1 page',
+      other: '识别 $count 页',
+      one: '识别 $count 页',
     );
     return '$_temp0';
   }
 
   @override
-  String get localOcrNothingToDo =>
-      'The selected pages already have OCR. Choose Replace existing OCR to scan them again.';
+  String get localOcrNothingToDo => '所选页面已有 OCR。选择“替换现有 OCR”可重新扫描。';
 
   @override
-  String get localOcrModelTitle => 'Japanese manga OCR — manga-ocr';
+  String get localOcrModelTitle => '日语漫画 OCR — manga-ocr';
 
   @override
   String get localOcrModelDescription =>
-      'Recognize Japanese manga offline. Page images stay on your device. Using it needs Mekuru Pro, but anyone can download the models to test their device first.';
+      '离线识别日语漫画。页面图片不会离开你的设备。使用需要 Mekuru Pro，但任何人都可以先下载模型来测试自己的设备。';
 
   @override
   String localOcrDownloadSize({required String done, required String total}) {
-    return '$done / $total downloaded';
+    return '已下载 $done / $total';
   }
 
   @override
-  String get localOcrDownloadRequired =>
-      'Download the OCR models in Settings → Downloads, then return here to start.';
+  String get localOcrDownloadRequired => '请在“设置 → 下载”中下载 OCR 模型，然后回到这里开始。';
 
   @override
-  String get localOcrModelReady => 'Models installed · works offline';
+  String get localOcrModelReady => '模型已安装 · 可离线使用';
 
   @override
-  String get localOcrModelMissing => 'Additional download required';
+  String get localOcrModelMissing => '需要额外下载';
 
   @override
-  String get localOcrModelVerifying => 'Verifying model files…';
+  String get localOcrModelVerifying => '正在验证模型文件…';
 
   @override
-  String get localOcrModelDownloading => 'Downloading models…';
+  String get localOcrModelDownloading => '正在下载模型…';
 
   @override
   String get localOcrUnsupported =>
-      'On-device OCR requires a supported 64-bit ARM Android device. Remote OCR remains available.';
+      '设备端 OCR 需要受支持的 64 位 ARM Android 设备。远程 OCR 仍然可用。';
 
   @override
-  String get localOcrPause => 'Pause';
+  String get localOcrPause => '暂停';
 
   @override
-  String get localOcrResume => 'Resume';
+  String get localOcrResume => '继续';
 
   @override
-  String get localOcrCancelJob => 'Cancel scan';
+  String get localOcrCancelJob => '取消扫描';
 
   @override
-  String get localOcrCancelDescription =>
-      'Stop this scan and remove its remaining work? Completed OCR will be kept.';
+  String get localOcrCancelDescription => '停止此次扫描并放弃剩余工作？已完成的 OCR 会保留。';
 
   @override
-  String get localOcrPaused => 'Paused';
+  String get localOcrPaused => '已暂停';
 
   @override
-  String get localOcrQueued => 'Queued';
+  String get localOcrQueued => '排队中';
 
   @override
-  String get localOcrPreparing => 'Preparing models…';
+  String get localOcrPreparing => '正在准备模型…';
 
   @override
-  String get localOcrDetecting => 'Finding text…';
+  String get localOcrDetecting => '正在查找文字…';
 
   @override
-  String get localOcrRecognizing => 'Recognizing text…';
+  String get localOcrRecognizing => '正在识别文字…';
 
   @override
-  String get localOcrPausing => 'Pausing…';
+  String get localOcrPausing => '正在暂停…';
 
   @override
-  String get localOcrCancelling => 'Cancelling…';
+  String get localOcrCancelling => '正在取消…';
 
   @override
-  String get localOcrCancelled => 'Scan cancelled · completed OCR kept';
+  String get localOcrCancelled => '扫描已取消 · 已完成的 OCR 已保留';
 
   @override
-  String get localOcrCompleted => 'OCR complete';
+  String get localOcrCompleted => 'OCR 完成';
 
   @override
-  String get localOcrCompletedErrors => 'Finished with page errors';
+  String get localOcrCompletedErrors => '已完成，但部分页面出错';
 
   @override
-  String get localOcrFailed => 'OCR stopped after repeated page errors';
+  String get localOcrFailed => '页面反复出错，OCR 已停止';
 
   @override
   String localOcrProgress({required int processed, required int total}) {
-    return '$processed / $total pages processed';
+    return '已处理 $processed / $total 页';
   }
 
   @override
@@ -2931,131 +2926,117 @@ class AppLocalizationsZh extends AppLocalizations {
     required int skipped,
     required int failed,
   }) {
-    return '$succeeded saved · $skipped skipped · $failed failed';
+    return '$succeeded 页已保存 · $skipped 页已跳过 · $failed 页失败';
   }
 
   @override
-  String get localOcrRetryFailed => 'Retry failed pages';
+  String get localOcrRetryFailed => '重试失败的页面';
 
   @override
-  String get localOcrDismiss => 'Dismiss';
+  String get localOcrDismiss => '关闭';
 
   @override
   String localOcrError({required String details}) {
-    return 'OCR could not continue: $details';
+    return 'OCR 无法继续：$details';
   }
 
   @override
-  String get localOcrInterrupted =>
-      'The scan was interrupted. Resume to continue from saved progress.';
+  String get localOcrInterrupted => '扫描已中断。点击“继续”可从已保存的进度接着进行。';
 
   @override
-  String get localOcrLowMemory =>
-      'Paused because the device is low on memory. Close other apps before resuming.';
+  String get localOcrLowMemory => '设备内存不足，已暂停。请关闭其他应用后再继续。';
 
   @override
-  String get localOcrTooHot =>
-      'Paused because the device is too hot. Let it cool before resuming.';
+  String get localOcrTooHot => '设备温度过高，已暂停。请等待设备冷却后再继续。';
 
   @override
-  String get localOcrLowBattery =>
-      'Paused because the battery is below 15%. Charge the device before resuming.';
+  String get localOcrLowBattery => '电量低于 15%，已暂停。请为设备充电后再继续。';
 
   @override
-  String get localOcrChargingRequired =>
-      'Connect a charger before resuming this scan.';
+  String get localOcrChargingRequired => '请连接充电器后再继续此次扫描。';
 
   @override
-  String get localOcrBackgroundLimit =>
-      'Android stopped background processing. Open Mekuru and resume the scan.';
+  String get localOcrBackgroundLimit => 'Android 已停止后台处理。请打开 Mekuru 并继续扫描。';
 
   @override
-  String get localOcrRuntimeError =>
-      'The OCR runtime could not continue on this device. Progress is saved.';
+  String get localOcrRuntimeError => 'OCR 运行时无法在此设备上继续。进度已保存。';
 
   @override
-  String get localOcrAccessLost =>
-      'A manga image could not be read. Restore folder access before retrying.';
+  String get localOcrAccessLost => '无法读取某张漫画图片。请恢复文件夹访问权限后再重试。';
 
   @override
-  String get localOcrStorageFull =>
-      'There is not enough free storage to continue.';
+  String get localOcrStorageFull => '可用存储空间不足，无法继续。';
 
   @override
-  String get localOcrBusy =>
-      'This manga already has an OCR job. Pause or cancel it before starting another.';
+  String get localOcrBusy => '这部漫画已有一个 OCR 任务。请先暂停或取消，再开始新的任务。';
 
   @override
-  String get localOcrModelBusy =>
-      'Stop active OCR and downloads before changing the installed models.';
+  String get localOcrModelBusy => '请先停止正在进行的 OCR 和下载，再更改已安装的模型。';
 
   @override
-  String get localOcrLicenseTitle => 'Manga OCR models and runtime';
+  String get localOcrLicenseTitle => '漫画 OCR 模型与运行时';
 
   @override
   String get localOcrLicenseRecognizer =>
-      'manga-ocr by kha-white. Used for text recognition. Apache-2.0.';
+      'manga-ocr，作者 kha-white。用于文字识别。Apache-2.0。';
 
   @override
   String get localOcrLicenseDetector =>
-      'Comic Text Detector by dmMaze and contributors. Used for manga text detection. GPL-3.0 project; see artifact provenance and source notices.';
+      'Comic Text Detector，作者 dmMaze 及贡献者。用于漫画文字检测。GPL-3.0 项目；请参阅构件来源和源代码声明。';
 
   @override
   String get localOcrLicenseRuntime =>
-      'ONNX Runtime by Microsoft and contributors; OpenCV by the OpenCV contributors. Used for local inference and image processing.';
+      'ONNX Runtime，由 Microsoft 及贡献者开发；OpenCV，由 OpenCV 贡献者开发。用于本地推理和图像处理。';
 
   @override
-  String get localOcrLicenseOpen => 'View license and source notices';
+  String get localOcrLicenseOpen => '查看许可证和源代码声明';
 
   @override
-  String get localOcrPageErrors => 'Page errors';
+  String get localOcrPageErrors => '页面错误';
 
   @override
   String localOcrPageError({required int page, required String details}) {
-    return 'Page $page: $details';
+    return '第 $page 页：$details';
   }
 
   @override
-  String get localOcrNotificationsOff =>
-      'OCR can continue with notifications off. Use the manga’s recognition sheet to pause or cancel.';
+  String get localOcrNotificationsOff => '关闭通知后 OCR 仍可继续。可在漫画的识别面板中暂停或取消。';
 
   @override
-  String get localOcrModelCorrupt =>
-      'The model files failed verification. Remove and download the OCR models again.';
+  String get localOcrModelCorrupt => '模型文件未通过验证。请移除并重新下载 OCR 模型。';
 
   @override
-  String get localOcrMobileDownloadTitle => 'Download over mobile data?';
+  String get localOcrMobileDownloadTitle => '使用移动数据下载？';
 
   @override
   String localOcrMobileDownloadBody({required String size}) {
-    return 'Wi-Fi is not connected. The OCR model download is $size. Continue using mobile data? Any saved download progress will be reused.';
+    return '未连接 Wi-Fi。OCR 模型下载大小为 $size。是否继续使用移动数据？已保存的下载进度会被复用。';
   }
 
   @override
-  String get localOcrWaitingWifi =>
-      'Waiting for Wi-Fi. Cancel and resume to use mobile data.';
+  String get localOcrWaitingWifi => '正在等待 Wi-Fi。取消后再继续即可使用移动数据。';
 
   @override
-  String get localOcrDownloadQueued => 'Waiting to download…';
+  String get localOcrDownloadQueued => '等待下载…';
 
   @override
-  String get localOcrEstimating => 'Estimating time remaining…';
+  String get localOcrEstimating => '正在估算剩余时间…';
 
   @override
   String localOcrReadingRegions({required int done, required int total}) {
-    return '$done / $total text regions read';
+    return '已读取 $done / $total 个文字区域';
   }
 
   @override
   String localOcrCurrentPage({required int page}) {
-    return 'Recognizing page $page';
+    return '正在识别第 $page 页';
   }
 
   @override
-  String get localOcrCopyDiagnostics => 'Copy OCR diagnostics';
+  String get localOcrCopyDiagnostics => '复制 OCR 诊断信息';
 
   @override
-  String get localOcrDiagnosticsCopied => 'OCR diagnostics copied';
+  String get localOcrDiagnosticsCopied => '已复制 OCR 诊断信息';
 
   @override
   String get localOcrSpeedTest => '测试设备速度';
@@ -5851,10 +5832,263 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get readerFuriganaWanikaniStagePickerTitle => '隐藏此阶段及以上汉字的振假名';
 
   @override
+  String get localOcrRecognize => '识别文字';
+
+  @override
   String get localOcrRecognizeQuick => '识别本页（长按查看选项）';
 
   @override
   String get localOcrAlreadyDone => '本页已有 OCR';
+
+  @override
+  String get localOcrOnDevice => '设备端';
+
+  @override
+  String get localOcrOnDeviceSubtitle => '下载模型后可离线使用';
+
+  @override
+  String get localOcrRemote => '远程';
+
+  @override
+  String get localOcrRemoteSubtitle => '使用你的 OCR 服务器及其现有的访问要求';
+
+  @override
+  String get localOcrEntireManga => '整部漫画';
+
+  @override
+  String localOcrThisPage({required int page}) {
+    return '第 $page 页';
+  }
+
+  @override
+  String localOcrCoverage({required int done, required int total}) {
+    return '$total 页中已有 $done 页完成 OCR';
+  }
+
+  @override
+  String get localOcrMissingOnly => '仅限没有 OCR 的页面';
+
+  @override
+  String get localOcrReplace => '替换现有 OCR';
+
+  @override
+  String get localOcrReplaceDescription => '在每次替换成功之前，现有结果会保留。取消时已完成的替换会保留。';
+
+  @override
+  String get localOcrChargingOnly => '仅在充电时';
+
+  @override
+  String localOcrStartPages({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '识别 $count 页',
+      one: '识别 $count 页',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get localOcrNothingToDo => '所选页面已有 OCR。选择“替换现有 OCR”可重新扫描。';
+
+  @override
+  String get localOcrModelTitle => '日语漫画 OCR — manga-ocr';
+
+  @override
+  String get localOcrModelDescription =>
+      '离线识别日语漫画。页面图片不会离开你的设备。使用需要 Mekuru Pro，但任何人都可以先下载模型来测试自己的设备。';
+
+  @override
+  String localOcrDownloadSize({required String done, required String total}) {
+    return '已下载 $done / $total';
+  }
+
+  @override
+  String get localOcrDownloadRequired => '请在“设置 → 下载”中下载 OCR 模型，然后回到这里开始。';
+
+  @override
+  String get localOcrModelReady => '模型已安装 · 可离线使用';
+
+  @override
+  String get localOcrModelMissing => '需要额外下载';
+
+  @override
+  String get localOcrModelVerifying => '正在验证模型文件…';
+
+  @override
+  String get localOcrModelDownloading => '正在下载模型…';
+
+  @override
+  String get localOcrUnsupported =>
+      '设备端 OCR 需要受支持的 64 位 ARM Android 设备。远程 OCR 仍然可用。';
+
+  @override
+  String get localOcrPause => '暂停';
+
+  @override
+  String get localOcrResume => '继续';
+
+  @override
+  String get localOcrCancelJob => '取消扫描';
+
+  @override
+  String get localOcrCancelDescription => '停止此次扫描并放弃剩余工作？已完成的 OCR 会保留。';
+
+  @override
+  String get localOcrPaused => '已暂停';
+
+  @override
+  String get localOcrQueued => '排队中';
+
+  @override
+  String get localOcrPreparing => '正在准备模型…';
+
+  @override
+  String get localOcrDetecting => '正在查找文字…';
+
+  @override
+  String get localOcrRecognizing => '正在识别文字…';
+
+  @override
+  String get localOcrPausing => '正在暂停…';
+
+  @override
+  String get localOcrCancelling => '正在取消…';
+
+  @override
+  String get localOcrCancelled => '扫描已取消 · 已完成的 OCR 已保留';
+
+  @override
+  String get localOcrCompleted => 'OCR 完成';
+
+  @override
+  String get localOcrCompletedErrors => '已完成，但部分页面出错';
+
+  @override
+  String get localOcrFailed => '页面反复出错，OCR 已停止';
+
+  @override
+  String localOcrProgress({required int processed, required int total}) {
+    return '已处理 $processed / $total 页';
+  }
+
+  @override
+  String localOcrOutcomeCounts({
+    required int succeeded,
+    required int skipped,
+    required int failed,
+  }) {
+    return '$succeeded 页已保存 · $skipped 页已跳过 · $failed 页失败';
+  }
+
+  @override
+  String get localOcrRetryFailed => '重试失败的页面';
+
+  @override
+  String get localOcrDismiss => '关闭';
+
+  @override
+  String localOcrError({required String details}) {
+    return 'OCR 无法继续：$details';
+  }
+
+  @override
+  String get localOcrInterrupted => '扫描已中断。点击“继续”可从已保存的进度接着进行。';
+
+  @override
+  String get localOcrLowMemory => '设备内存不足，已暂停。请关闭其他应用后再继续。';
+
+  @override
+  String get localOcrTooHot => '设备温度过高，已暂停。请等待设备冷却后再继续。';
+
+  @override
+  String get localOcrLowBattery => '电量低于 15%，已暂停。请为设备充电后再继续。';
+
+  @override
+  String get localOcrChargingRequired => '请连接充电器后再继续此次扫描。';
+
+  @override
+  String get localOcrBackgroundLimit => 'Android 已停止后台处理。请打开 Mekuru 并继续扫描。';
+
+  @override
+  String get localOcrRuntimeError => 'OCR 运行时无法在此设备上继续。进度已保存。';
+
+  @override
+  String get localOcrAccessLost => '无法读取某张漫画图片。请恢复文件夹访问权限后再重试。';
+
+  @override
+  String get localOcrStorageFull => '可用存储空间不足，无法继续。';
+
+  @override
+  String get localOcrBusy => '这部漫画已有一个 OCR 任务。请先暂停或取消，再开始新的任务。';
+
+  @override
+  String get localOcrModelBusy => '请先停止正在进行的 OCR 和下载，再更改已安装的模型。';
+
+  @override
+  String get localOcrLicenseTitle => '漫画 OCR 模型与运行时';
+
+  @override
+  String get localOcrLicenseRecognizer =>
+      'manga-ocr，作者 kha-white。用于文字识别。Apache-2.0。';
+
+  @override
+  String get localOcrLicenseDetector =>
+      'Comic Text Detector，作者 dmMaze 及贡献者。用于漫画文字检测。GPL-3.0 项目；请参阅构件来源和源代码声明。';
+
+  @override
+  String get localOcrLicenseRuntime =>
+      'ONNX Runtime，由 Microsoft 及贡献者开发；OpenCV，由 OpenCV 贡献者开发。用于本地推理和图像处理。';
+
+  @override
+  String get localOcrLicenseOpen => '查看许可证和源代码声明';
+
+  @override
+  String get localOcrPageErrors => '页面错误';
+
+  @override
+  String localOcrPageError({required int page, required String details}) {
+    return '第 $page 页：$details';
+  }
+
+  @override
+  String get localOcrNotificationsOff => '关闭通知后 OCR 仍可继续。可在漫画的识别面板中暂停或取消。';
+
+  @override
+  String get localOcrModelCorrupt => '模型文件未通过验证。请移除并重新下载 OCR 模型。';
+
+  @override
+  String get localOcrMobileDownloadTitle => '使用移动数据下载？';
+
+  @override
+  String localOcrMobileDownloadBody({required String size}) {
+    return '未连接 Wi-Fi。OCR 模型下载大小为 $size。是否继续使用移动数据？已保存的下载进度会被复用。';
+  }
+
+  @override
+  String get localOcrWaitingWifi => '正在等待 Wi-Fi。取消后再继续即可使用移动数据。';
+
+  @override
+  String get localOcrDownloadQueued => '等待下载…';
+
+  @override
+  String get localOcrEstimating => '正在估算剩余时间…';
+
+  @override
+  String localOcrReadingRegions({required int done, required int total}) {
+    return '已读取 $done / $total 个文字区域';
+  }
+
+  @override
+  String localOcrCurrentPage({required int page}) {
+    return '正在识别第 $page 页';
+  }
+
+  @override
+  String get localOcrCopyDiagnostics => '复制 OCR 诊断信息';
+
+  @override
+  String get localOcrDiagnosticsCopied => '已复制 OCR 诊断信息';
 
   @override
   String get localOcrSpeedTest => '测试设备速度';
