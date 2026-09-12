@@ -79,9 +79,13 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
             val started=System.nanoTime()
             val engine=DebugOcrHooks.benchmarkEngine(args)
-                ?: MangaOcrEngine(OcrRuntime.models.installedDirectory,threads)
+                ?: MangaOcrEngine(OcrRuntime.models.installedDirectory,threads) {
+                    // Cancel must also land during the multi-second model load.
+                    if(benchmarkCancelled) throw java.util.concurrent.CancellationException("stopped")
+                }
             val loadMs=(System.nanoTime()-started)/1_000_000
             benchmarkEngine=engine
+            if(benchmarkCancelled) engine.cancel()
             return engine.use {
                 val book=JSONObject().put("imageDirPath",sample.parent)
                 val page=JSONObject().put("imageFileName",sample.name)
