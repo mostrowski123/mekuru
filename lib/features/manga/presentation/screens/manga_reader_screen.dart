@@ -9,7 +9,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/manga/data/services/ocr_page_selection.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -926,6 +928,50 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     }
   }
 
+  /// Tap on the OCR button: recognize the visible pages that lack OCR, or
+  /// offer to replace when every visible page already has it.
+  Future<void> _quickOcr(
+    MokuroBook manga,
+    List<int> pages, {
+    bool replace = false,
+  }) async {
+    if (_ocrSheetOpen) return;
+    final targets = quickOcrTargets(manga, pages, replace: replace);
+    if (targets.isEmpty) {
+      final l = context.l10n;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l.localOcrAlreadyDone),
+          action: SnackBarAction(
+            label: l.localOcrReplace,
+            onPressed: () => _quickOcr(manga, pages, replace: true),
+          ),
+        ),
+      );
+      return;
+    }
+    _ocrSheetOpen = true;
+    try {
+      await runLocalOcrAction(context, () async {
+        final backend = await preferredOcrBackend(manga);
+        if (!mounted) return;
+        await startOcr(
+          context,
+          ref,
+          widget.book,
+          manga,
+          backend: backend,
+          pages: targets,
+          policy: replace
+              ? OcrExistingPolicy.replace
+              : OcrExistingPolicy.missingOnly,
+        );
+      });
+    } finally {
+      _ocrSheetOpen = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
@@ -1114,12 +1160,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                               ),
                             ),
                             IconButton(
-                              tooltip: context.l10n.localOcrRecognize,
+                              tooltip: context.l10n.localOcrRecognizeQuick,
                               icon: const Icon(
                                 Icons.document_scanner,
                                 color: Colors.white,
                               ),
-                              onPressed: () => _showOcrOptions(
+                              onPressed: () => _quickOcr(
+                                mokuroBook,
+                                _visiblePageIndexes(viewMode, spreads),
+                              ),
+                              onLongPress: () => _showOcrOptions(
                                 mokuroBook,
                                 _visiblePageIndexes(viewMode, spreads),
                               ),

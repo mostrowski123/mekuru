@@ -2937,6 +2937,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get localOcrRecognize => 'Recognize text';
 
   @override
+  String get localOcrRecognizeQuick => 'Recognize this page (hold for options)';
+
+  @override
+  String get localOcrAlreadyDone => 'This page already has OCR';
+
+  @override
   String get localOcrOnDevice => 'On device';
 
   @override

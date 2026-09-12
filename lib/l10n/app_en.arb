@@ -3722,6 +3722,14 @@
   "@localOcrRecognize": {
     "description": "On-device manga OCR: localOcrRecognize"
   },
+  "localOcrRecognizeQuick": "Recognize this page (hold for options)",
+  "@localOcrRecognizeQuick": {
+    "description": "Tooltip of the reader's OCR button: a tap scans the visible page, a long press opens the options sheet."
+  },
+  "localOcrAlreadyDone": "This page already has OCR",
+  "@localOcrAlreadyDone": {
+    "description": "Snack bar after a one-tap scan when every visible page is already recognized; its action offers to replace."
+  },
   "localOcrOnDevice": "On device",
   "@localOcrOnDevice": {
     "description": "On-device manga OCR: localOcrOnDevice"

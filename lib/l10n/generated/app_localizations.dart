@@ -4846,6 +4846,18 @@ abstract class AppLocalizations {
   /// **'Recognize text'**
   String get localOcrRecognize;
 
+  /// Tooltip of the reader's OCR button: a tap scans the visible page, a long press opens the options sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize this page (hold for options)'**
+  String get localOcrRecognizeQuick;
+
+  /// Snack bar after a one-tap scan when every visible page is already recognized; its action offers to replace.
+  ///
+  /// In en, this message translates to:
+  /// **'This page already has OCR'**
+  String get localOcrAlreadyDone;
+
   /// On-device manga OCR: localOcrOnDevice
   ///
   /// In en, this message translates to:
