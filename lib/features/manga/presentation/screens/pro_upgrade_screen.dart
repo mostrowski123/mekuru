@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
+import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,6 +38,7 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
     this.purchaseUpgrade,
     this.restoreUpgrade,
     this.openSelfHostRepo,
+    this.launchExternalUrl,
     this.forceServicesAvailable,
     required this.source,
   });
@@ -45,6 +47,9 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
   final Future<ProUpgradeSnapshot> Function()? purchaseUpgrade;
   final Future<ProUpgradeSnapshot> Function()? restoreUpgrade;
   final Future<void> Function()? openSelfHostRepo;
+
+  /// Test seam for the model repository links; production launches the URL.
+  final Future<void> Function(Uri url)? launchExternalUrl;
   final bool? forceServicesAvailable;
 
   /// Where the screen was opened from, for usage telemetry (enum-like value,
@@ -288,6 +293,14 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     );
   }
 
+  Future<void> _openModelRepo(Uri url) async {
+    if (widget.launchExternalUrl != null) {
+      await widget.launchExternalUrl!(url);
+      return;
+    }
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
   Future<void> _openSelfHostRepo() async {
     if (widget.openSelfHostRepo != null) {
       await widget.openSelfHostRepo!();
@@ -427,7 +440,32 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                       icon: Icons.offline_bolt_outlined,
                       title: l10n.proFeatureLocalOcrTitle,
                       description: l10n.proFeatureLocalOcrDescription,
-                      footer: const LocalOcrSpeedTestRow(),
+                      footer: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Proper names, shared with the Downloads attributions.
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => _openModelRepo(
+                                  Uri.parse(OcrAttributions.mangaOcrRepoUrl),
+                                ),
+                                icon: const Icon(Icons.open_in_new),
+                                label: const Text('manga-ocr'),
+                              ),
+                              TextButton.icon(
+                                onPressed: () => _openModelRepo(
+                                  Uri.parse(OcrAttributions.detectorRepoUrl),
+                                ),
+                                icon: const Icon(Icons.open_in_new),
+                                label: const Text('Comic Text Detector'),
+                              ),
+                            ],
+                          ),
+                          const LocalOcrSpeedTestRow(),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     _ProFeatureCard(

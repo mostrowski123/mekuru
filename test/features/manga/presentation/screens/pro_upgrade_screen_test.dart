@@ -6,6 +6,7 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/ocr_account_link_service.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
+import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../test_app.dart';
@@ -74,6 +75,7 @@ void main() {
   testWidgets(
     'locked state warns about on-device OCR and offers the speed test',
     (tester) async {
+      final opened = <Uri>[];
       await tester.pumpWidget(
         ProviderScope(
           child: buildLocalizedTestApp(
@@ -81,6 +83,7 @@ void main() {
               source: 'test',
               loadSnapshot: () async => _lockedSnapshot,
               openSelfHostRepo: () async {},
+              launchExternalUrl: (url) async => opened.add(url),
             ),
           ),
         ),
@@ -92,6 +95,22 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('On-device OCR'), findsOneWidget);
+      // The card names the models and links to their repositories.
+      expect(
+        find.textContaining("kha-white's manga-ocr model"),
+        findsOneWidget,
+      );
+      // The list only builds the links within its cache extent; bring them
+      // on screen before tapping.
+      for (final name in ['manga-ocr', 'Comic Text Detector']) {
+        await tester.ensureVisible(find.text(name));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(name));
+      }
+      expect(opened.map((u) => u.toString()), [
+        OcrAttributions.mangaOcrRepoUrl,
+        OcrAttributions.detectorRepoUrl,
+      ]);
       expect(
         find.textContaining('Test your device before you buy'),
         findsOneWidget,

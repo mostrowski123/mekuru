@@ -500,7 +500,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get proFeatureLocalOcrDescription =>
-      'Reconoce el texto del manga sin conexión, en tu teléfono. Es un trabajo pesado: una página tarda unos segundos en un teléfono reciente y un minuto o más en los antiguos, y consume batería. Prueba tu dispositivo antes de comprar.';
+      'Reconoce el texto del manga sin conexión, en tu teléfono, con el modelo manga-ocr de kha-white y Comic Text Detector. Es un trabajo pesado: una página tarda unos segundos en un teléfono reciente y un minuto o más en los antiguos, y consume batería. Prueba tu dispositivo antes de comprar.';
 
   @override
   String get proFeatureCustomOcrTitle => 'Servidor OCR personalizado';

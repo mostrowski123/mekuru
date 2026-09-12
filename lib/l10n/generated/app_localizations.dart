@@ -913,7 +913,7 @@ abstract class AppLocalizations {
   /// Description of the on-device manga OCR Pro feature; warns that recognition is CPU-heavy and points at the speed test.
   ///
   /// In en, this message translates to:
-  /// **'Recognize manga text offline, on your phone. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.'**
+  /// **'Recognize manga text offline, on your phone, with kha-white\'s manga-ocr model and Comic Text Detector. This is heavy work: a page takes a few seconds on a recent phone, a minute or more on older ones, and it drains the battery. Test your device before you buy.'**
   String get proFeatureLocalOcrDescription;
 
   /// Title of the custom OCR server Pro feature.

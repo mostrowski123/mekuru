@@ -7,6 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 /// License text is installed with the app, even before downloading any weights.
 class OcrAttributions extends StatelessWidget {
   const OcrAttributions({super.key});
+  static const mangaOcrRepoUrl = 'https://github.com/kha-white/manga-ocr';
+  static const detectorRepoUrl =
+      'https://github.com/dmMaze/comic-text-detector';
   static const licenseFiles = [
     'MANGA-OCR.txt',
     'APACHE-2.0.txt',
@@ -41,14 +44,14 @@ class OcrAttributions extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: () => launchUrl(
-                    Uri.parse('https://github.com/kha-white/manga-ocr'),
+                    Uri.parse(mangaOcrRepoUrl),
                     mode: LaunchMode.externalApplication,
                   ),
                   child: const Text('manga-ocr'),
                 ),
                 TextButton(
                   onPressed: () => launchUrl(
-                    Uri.parse('https://github.com/dmMaze/comic-text-detector'),
+                    Uri.parse(detectorRepoUrl),
                     mode: LaunchMode.externalApplication,
                   ),
                   child: const Text('Comic Text Detector'),
