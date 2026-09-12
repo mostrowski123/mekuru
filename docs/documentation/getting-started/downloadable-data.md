@@ -29,9 +29,10 @@ This pack does not turn furigana on or off — it only improves the accuracy of 
 
 ## Manga OCR
 
-**Japanese manga OCR — manga-ocr** adds free on-device recognition for one page or
-an entire manga. The approximately 296 MB model download is separate from the
-app and can be removed without deleting existing OCR results.
+**Japanese manga OCR — manga-ocr** adds on-device recognition for one page or
+an entire manga. The approximately 296 MB model download is free and separate
+from the app, and can be removed without deleting existing OCR results;
+recognizing your own books requires Mekuru Pro.
 See [On-device OCR](../manga/on-device-ocr.md).
 
 ## Sources

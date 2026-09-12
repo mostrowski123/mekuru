@@ -2,9 +2,10 @@
 
 On-device OCR recognizes Japanese manga using manga-ocr (the same model as the
 Mekuru OCR server) and Comic Text Detector.
-It does not require an account, OCR credits, or a server.
-After downloading the models, recognition works offline and page images stay
-on your device.
+Downloading the models is free; recognizing your own books is part of
+**Mekuru Pro**, like remote OCR. It does not require an account, OCR credits,
+or a server. After downloading the models, recognition works offline and page
+images stay on your device.
 
 ## Download the models
 
@@ -20,10 +21,19 @@ The initial version supports 64-bit Android devices. Recognition needs
 substantial free memory and may be slow on older phones. Close other demanding
 apps before starting a large scan.
 
+Recognition is heavy work: a page takes a few seconds on a recent phone and a
+minute or more on older ones. **Test device speed** on the Pro screen (and on
+the Downloads tile once the models are installed) runs the real pipeline on a
+bundled sample page and shows the time per page plus an estimate for a
+200-page volume, so you can check your phone before buying.
+
 ## Scan a page or manga
 
-In the reader, tap **Recognize text** and choose **On device**. Select the current
-page or **Entire manga**. A two-page spread lists the individual page numbers.
+In the reader, tap the **Recognize** button to scan the visible page right away.
+If the page already has OCR, a message offers to replace it. Hold the button
+for options: **On device** or a remote server, the current page or **Entire
+manga** (a two-page spread lists the individual page numbers), and whether to
+replace existing results.
 The library's long-press actions also offer **Recognize text** for the whole manga.
 
 By default, Mekuru scans only pages without OCR. A successfully scanned page with
