@@ -15,7 +15,7 @@ Mekuru is a Japanese-first EPUB and manga reader built with Flutter for language
   <img src="docs/documentation/screenshots/manga-reader-spread-settings.jpg" alt="Manga Reader" width="200">
 </p>
 
-**[Homepage](https://mekuru.matthew.moe/)** | **[Documentation](https://mekuru.matthew.moe/documentation/#/)** | **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)**
+**[Homepage](https://mekuru.matthew.moe/)** | **[Documentation](https://mekuru.matthew.moe/documentation/)** | **[Google Play](https://play.google.com/store/apps/details?id=moe.matthew.mekuru)**
 
 ## Install
 
@@ -44,16 +44,20 @@ Every GitHub release also includes a second installable APK, `app-parallel-relea
 ## Features
 
 - **EPUB Reader**: Vertical or horizontal reading, RTL or LTR page flow, automatic progress restore, bookmarks, and per-book reader settings
-- **Manga Reader**: Mokuro and CBZ support with single-page, spread, and scroll modes
+- **Manga Reader**: Mokuro and CBZ support with single-page, spread, and scroll modes; CBZ archives that carry `.mokuro` data get tap-to-lookup on import
+- **Manga OCR**: On-device recognition with manga-ocr and Comic Text Detector (models downloaded separately, runs offline) or a self-hosted OCR server — scan the visible page from the reader or a whole manga from the library (Pro)
+- **Manga Tools**: Convert image-only EPUBs into manga, and export any manga as a CBZ with its OCR data embedded
 - **Offline Dictionaries**: Import Yomitan ZIPs, Yomitan collection JSON backups, or download built-in packs such as JMdict, KANJIDIC, KanjiVG, and JPDB frequency data
 - **Smart Japanese Lookups**: MeCab-powered tokenization, compound-word matching, pitch accents, stroke-order diagrams, and frequency data
 - **Vocabulary Workflow**: Save words with sentence context, browse saved terms, export CSV for Anki, or send cards directly to AnkiDroid on Android
-- **Furigana**: Per-book display modes — off, book default, all kanji, or only kanji above a chosen JLPT level (applies to publisher-authored ruby too) — plus EPUB export with generated furigana baked in
+- **Furigana**: Per-book display modes — off, book default, all kanji, only kanji above a chosen JLPT level, or only kanji you have not yet learned on WaniKani (applies to publisher-authored ruby too) — plus EPUB export with generated furigana baked in
+- **WaniKani Integration**: Link your account with an API token and hide furigana for kanji at or above the SRS stage you choose
+- **Book Server Sync**: Browse and download books from self-hosted Komga or Kavita servers, link copies you already have, and keep reading progress in sync both ways
 - **Library Collections**: iOS-style folder tiles with drag-to-reorder, folder edit mode, and multi-select batch add
 - **Reading Stats**: A "You" tab with activity heatmap, reading time, lookup rate, and vocabulary growth
-- **Backup & Restore**: Local backup covering library metadata, vocabulary, collections, and per-book settings
-- **Reader Customization**: Themes, color modes, margins, swipe sensitivity, and other reader controls
-- **Optional Pro Upgrade**: Unlocks book highlights, manga auto-crop, and custom-server OCR support for remote manga OCR
+- **Backup & Restore**: Small reading-data backups (settings, vocabulary, bookmarks, collections, per-book settings, reading history) with optional auto-backup, plus a full backup that packs the whole library into one zip for moving to a new phone
+- **Reader Customization**: Themes, color modes, margins, swipe sensitivity, an animations switch for e-ink displays, and other reader controls
+- **Optional Pro Upgrade**: Unlocks book highlights, manga auto-crop, on-device manga OCR, and custom-server OCR support for remote manga OCR
 
 ## Pro Features
 
@@ -61,13 +65,14 @@ Mekuru is free and open source. The optional one-time Pro upgrade unlocks:
 
 - Book highlights
 - Manga auto-crop
+- On-device manga OCR (the models download for free; recognizing your own manga needs Pro — **Test device speed** on the Pro screen shows how fast your phone is before you buy)
 - Custom-server OCR support for remote manga OCR
 
 Remote OCR requires your own OCR endpoint. See the [custom server guide](docs/documentation/manga/custom-server.md) for setup details.
 
 ## Roadmap
 
-- Cloud sync for reading progress and vocabulary across devices
+- Vocabulary sync across devices (reading progress already syncs through Komga and Kavita)
 
 ## Technology Stack
 
@@ -76,6 +81,7 @@ Remote OCR requires your own OCR endpoint. See the [custom server guide](docs/do
 - **Database**: [Drift](https://drift.simonbinder.eu/) over SQLite
 - **Reader Rendering**: [epub.js](https://github.com/futurepress/epub.js) bridged through [InAppWebView](https://pub.dev/packages/flutter_inappwebview)
 - **Japanese Analysis**: [mecab_for_flutter](https://pub.dev/packages/mecab_for_flutter) for tokenization and word boundary detection
+- **On-device OCR**: [ONNX Runtime](https://onnxruntime.ai/) and OpenCV DNN in the `packages/local_manga_ocr` Android plugin, running manga-ocr and Comic Text Detector
 - **Backend Services**: Firebase Auth plus optional TypeScript Firebase Functions for OCR-related services
 
 ## Getting Started
@@ -162,11 +168,16 @@ lib/
 |   |-- reader/
 |   |-- settings/
 |   |-- stats/
-|   `-- vocabulary/
+|   |-- sync/
+|   |-- vocabulary/
+|   `-- wanikani/
 `-- shared/
 
+packages/    # local_manga_ocr Android plugin (on-device OCR)
 functions/   # Optional TypeScript Firebase Functions
-docs/        # Documentation site content
+docs/        # Documentation site content and landing page
+site/        # MkDocs build for the documentation site
+tools/       # OCR model manifest and benchmark scripts
 ```
 
 Feature modules follow a `data/` and `presentation/` split for models, repositories, services, providers, screens, and widgets.
