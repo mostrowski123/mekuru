@@ -16,6 +16,7 @@ void main() {
     required int bookId,
     OcrProgress? progress,
     OcrJobProgress? localJob,
+    Size size = const Size(200, 300),
   }) {
     return ProviderScope(
       // Overrides are fixed for a scope's lifetime; key it so each pump of a
@@ -30,8 +31,8 @@ void main() {
       child: buildLocalizedTestApp(
         home: Scaffold(
           body: SizedBox(
-            width: 200,
-            height: 300,
+            width: size.width,
+            height: size.height,
             child: Stack(
               children: [
                 Container(color: Colors.grey),
@@ -237,6 +238,33 @@ void main() {
       await tester.pump();
       expect(find.text('~2 min remaining'), findsOneWidget);
       expect(find.text('Estimating time remaining…'), findsNothing);
+    });
+
+    testWidgets('on-device badge fits a phone-width library tile', (
+      tester,
+    ) async {
+      // Three columns on a 360dp screen leave ~101dp per cover; every row
+      // must stay on one line or the estimate at the bottom is clipped away.
+      await tester.pumpWidget(
+        buildTestWidget(
+          bookId: 1,
+          size: const Size(101, 130),
+          localJob: OcrJobProgress({
+            'id': 'job',
+            'bookId': 1,
+            'status': 'running',
+            'phase': 'recognizing',
+            'pages': [0, 1, 2],
+            'outcomes': {'0': 'done'},
+            'timedPages': 3,
+            'avgPageMs': 60000,
+          }),
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('1/3 pages'), findsOneWidget);
+      expect(find.text('~2 min remaining'), findsOneWidget);
     });
   });
 }

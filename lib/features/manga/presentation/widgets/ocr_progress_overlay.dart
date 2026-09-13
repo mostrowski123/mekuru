@@ -31,6 +31,7 @@ class OcrProgressOverlay extends ConsumerWidget {
         local.isActive &&
         progressAsync.asData?.value?.status != OcrStatus.running) {
       final eta = localOcrEta(context, local);
+      const label = TextStyle(color: Colors.white, fontSize: 11);
       return Positioned.fill(
         child: Container(
           color: Colors.black.withValues(alpha: 0.72),
@@ -41,29 +42,31 @@ class OcrProgressOverlay extends ConsumerWidget {
               const Icon(Icons.document_scanner, color: Colors.white),
               Text(
                 context.l10n.localOcrOnDevice,
-                style: const TextStyle(color: Colors.white, fontSize: 11),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: label,
               ),
               Text(
-                localOcrPhase(context, local),
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 11),
-              ),
-              Text(
-                context.l10n.localOcrProgress(
-                  processed: local.processed,
+                context.l10n.ocrPagesProgress(
+                  completed: local.processed,
                   total: local.total,
                 ),
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 11),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: label,
               ),
-              if (local.status == 'running')
-                Text(
-                  eta.isEmpty ? context.l10n.localOcrEstimating : eta,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70, fontSize: 10),
-                ),
+              // Phase and time left share one row: a fifth row of wrapping
+              // text overflowed a phone-width cover and clipped the estimate.
+              Text(
+                local.status != 'running'
+                    ? localOcrPhase(context, local)
+                    : eta.isEmpty
+                    ? context.l10n.localOcrEstimating
+                    : eta,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: label,
+              ),
               const SizedBox(height: 8),
               LinearProgressIndicator(value: local.fraction),
             ],
