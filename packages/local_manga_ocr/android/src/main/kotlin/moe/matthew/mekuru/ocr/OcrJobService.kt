@@ -15,7 +15,10 @@ class OcrJobService : Service() {
     // full pages_cache.json fsyncs. Never take it from the main looper.
     private val tickerThread=HandlerThread("mekuru-ocr-ticker").also { it.start() }
     private val ticker=Handler(tickerThread.looper)
-    private var tick: Runnable?=null
+    @Volatile private var tick: Runnable?=null
+    // Serializes a tick's notify + re-post against removeNotification(), so a tick that
+    // lost the race neither re-creates the notification nor re-arms itself.
+    private val tickLock=Any()
     private var foregroundReady=false
     @Volatile private var starts=0
     @Volatile private var stoppedReason: String?=null
@@ -62,13 +65,18 @@ class OcrJobService : Service() {
                 .apply { acquire(6*60*60*1000L) }
             tick=object: Runnable {
                 override fun run() {
-                    try {
-                        val job=OcrRuntime.currentId?.let { OcrRuntime.store.read(it) }
-                        getSystemService(NotificationManager::class.java).notify(NOTIFICATION,notification(job))
-                    } catch(error: Exception) {
-                        android.util.Log.w("MekuruLocalOcr","Notification update failed",error)
+                    // The journal read waits on OcrWrites.lock; it stays outside the guard so
+                    // the main-thread teardown never waits on that lock transitively.
+                    val job=runCatching { OcrRuntime.currentId?.let { OcrRuntime.store.read(it) } }
+                    synchronized(tickLock) {
+                        if(tick!==this) return
+                        try {
+                            getSystemService(NotificationManager::class.java).notify(NOTIFICATION,notification(job.getOrThrow()))
+                        } catch(error: Exception) {
+                            android.util.Log.w("MekuruLocalOcr","Notification update failed",error)
+                        }
+                        ticker.postDelayed(this,1000)
                     }
-                    ticker.postDelayed(this,1000)
                 }
             }.also { ticker.post(it) }
             Thread({ work() },"mekuru-local-ocr").start()
@@ -171,9 +179,8 @@ class OcrJobService : Service() {
                     Thread({ work() },"mekuru-local-ocr").start()
                     return@post
                 }
-                tick?.let { ticker.removeCallbacks(it) }; tick=null
+                removeNotification()
                 wakeLock?.let { if(it.isHeld) it.release() }; wakeLock=null
-                stopForeground(STOP_FOREGROUND_REMOVE)
                 OcrRuntime.serviceRunning.set(false)
                 stopSelf()
             }
@@ -185,11 +192,18 @@ class OcrJobService : Service() {
         stoppedReason="background_timeout"
         OcrRuntime.engine?.cancel()
         // Android only allows a few seconds here. Disk work belongs off main.
-        stopForeground(STOP_FOREGROUND_REMOVE); stopSelf()
+        removeNotification(); stopSelf()
         Thread({
             try { pauseRemaining("background_timeout") }
             catch(error: Exception) { android.util.Log.w("MekuruLocalOcr","Could not persist timeout",error) }
         },"mekuru-ocr-timeout").start()
+    }
+    // Main thread only. Under the guard an in-flight tick can neither notify nor re-post
+    // once this ran; the explicit cancel is belt and braces.
+    private fun removeNotification() = synchronized(tickLock) {
+        tick?.let { ticker.removeCallbacks(it) }; tick=null
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        getSystemService(NotificationManager::class.java).cancel(NOTIFICATION)
     }
     private fun pauseRemaining(reason: String) {
         for(job in OcrRuntime.store.all().filter { it.optString("backend")=="onDevice" &&
@@ -206,7 +220,7 @@ class OcrJobService : Service() {
                 catch(error: Exception) { android.util.Log.w("MekuruLocalOcr","Could not pause on destroy",error) }
             },"mekuru-ocr-destroy").start()
         }
-        tick?.let { ticker.removeCallbacks(it) }; tick=null
+        removeNotification()
         tickerThread.quitSafely()
         wakeLock?.let { if(it.isHeld) it.release() }; wakeLock=null
         // The worker clears currentId itself; the lease must not outlive the service.
