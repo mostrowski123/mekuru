@@ -2811,5 +2811,7 @@
   "localOcrReadingRegions": "{done} / {total} area teks dibaca",
   "localOcrCurrentPage": "Mengenali halaman {page}",
   "localOcrCopyDiagnostics": "Salin diagnostik OCR",
-  "localOcrDiagnosticsCopied": "Diagnostik OCR disalin"
+  "localOcrDiagnosticsCopied": "Diagnostik OCR disalin",
+  "localOcrModelsMissingBody": "OCR di perangkat perlu mengunduh modelnya terlebih dahulu. Buka Unduhan untuk mendapatkannya, lalu kembali dan ketuk OCR lagi.",
+  "commonOpenDownloads": "Buka Unduhan"
 }

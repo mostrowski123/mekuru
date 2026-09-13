@@ -102,6 +102,24 @@ Future<bool> startOcr(
   if (!context.mounted) return false;
   if (!model.supported) throw PlatformException(code: 'unsupported_device');
   if (!model.installed) {
+    final open = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.l10n.proFeatureLocalOcrTitle),
+        content: Text(dialogContext.l10n.localOcrModelsMissingBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(dialogContext.l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(dialogContext.l10n.commonOpenDownloads),
+          ),
+        ],
+      ),
+    );
+    if (open != true || !context.mounted) return false;
     await Navigator.of(
       context,
     ).push(namedRoute('downloads', (_) => const DownloadsScreen()));

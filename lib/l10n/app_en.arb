@@ -100,6 +100,10 @@
   "@commonOpenSettings": {
     "description": "Action label to open the settings screen."
   },
+  "commonOpenDownloads": "Open Downloads",
+  "@commonOpenDownloads": {
+    "description": "Action label to open the downloads screen."
+  },
   "commonGotIt": "Got it",
   "@commonGotIt": {
     "description": "Acknowledgement action label."
@@ -3831,6 +3835,10 @@
   "localOcrDownloadRequired": "Download the OCR models in Settings → Downloads, then return here to start.",
   "@localOcrDownloadRequired": {
     "description": "On-device manga OCR: localOcrDownloadRequired"
+  },
+  "localOcrModelsMissingBody": "On-device OCR needs its models downloaded first. Open Downloads to get them, then come back and tap OCR again.",
+  "@localOcrModelsMissingBody": {
+    "description": "On-device manga OCR: dialog body shown from the reader when the models are not installed yet, before opening Downloads."
   },
   "localOcrModelReady": "Models installed · works offline",
   "@localOcrModelReady": {

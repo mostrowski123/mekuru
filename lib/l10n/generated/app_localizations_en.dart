@@ -84,6 +84,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonOpenSettings => 'Open Settings';
 
   @override
+  String get commonOpenDownloads => 'Open Downloads';
+
+  @override
   String get commonGotIt => 'Got it';
 
   @override
@@ -2977,6 +2980,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get localOcrDownloadRequired =>
       'Download the OCR models in Settings → Downloads, then return here to start.';
+
+  @override
+  String get localOcrModelsMissingBody =>
+      'On-device OCR needs its models downloaded first. Open Downloads to get them, then come back and tap OCR again.';
 
   @override
   String get localOcrModelReady => 'Models installed · works offline';

@@ -2811,5 +2811,7 @@
   "localOcrReadingRegions": "已读取 {done} / {total} 个文字区域",
   "localOcrCurrentPage": "正在识别第 {page} 页",
   "localOcrCopyDiagnostics": "复制 OCR 诊断信息",
-  "localOcrDiagnosticsCopied": "已复制 OCR 诊断信息"
+  "localOcrDiagnosticsCopied": "已复制 OCR 诊断信息",
+  "localOcrModelsMissingBody": "设备端 OCR 需要先下载模型。请打开“下载”获取模型，然后回到这里再次点按 OCR。",
+  "commonOpenDownloads": "打开下载"
 }

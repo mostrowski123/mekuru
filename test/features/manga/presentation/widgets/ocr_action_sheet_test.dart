@@ -12,16 +12,22 @@ import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.da
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
+import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FreeClient implements LocalOcrClient {
   final List<OcrJobSpec> started = [];
+  var installed = true;
   @override
   Future<void> cancel(String jobId) async {}
   @override
   Future<OcrModelState> modelState() async =>
-      const OcrModelState({'supported': true, 'installed': true});
+      OcrModelState({'supported': true, 'installed': installed});
   @override
   Future<bool> requestNotifications() async => false;
   @override
@@ -34,6 +40,28 @@ class _FreeClient implements LocalOcrClient {
       'pages': spec.pages,
     });
   }
+}
+
+// DownloadsScreen.initState calls checkStatus() on the asset notifiers, which
+// touches the file system; the fakes keep it idle when startOcr pushes it.
+class _FakeJmdictNotifier extends JmdictNotifier {
+  @override
+  Future<void> checkStatus() async {}
+}
+
+class _FakeJpdbFreqNotifier extends JpdbFreqNotifier {
+  @override
+  Future<void> checkStatus() async {}
+}
+
+class _FakeKanjidicNotifier extends KanjidicNotifier {
+  @override
+  Future<void> checkStatus() async {}
+}
+
+class _FakeKanjiVgNotifier extends KanjiVgNotifier {
+  @override
+  Future<void> checkStatus() async {}
 }
 
 void main() {
@@ -114,6 +142,10 @@ void main() {
             ),
           ),
           localOcrJobsProvider.overrideWith((ref) => Stream.value(const [])),
+          jmdictProvider.overrideWith(_FakeJmdictNotifier.new),
+          jpdbFreqProvider.overrideWith(_FakeJpdbFreqNotifier.new),
+          kanjidicProvider.overrideWith(_FakeKanjidicNotifier.new),
+          kanjiVgProvider.overrideWith(_FakeKanjiVgNotifier.new),
           ocrProgressProvider(1).overrideWith((ref) => Stream.value(null)),
         ],
         child: MaterialApp(
@@ -137,6 +169,19 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 100)),
     );
     await tester.pumpAndSettle();
+  }
+
+  // The sheet shows an indeterminate progress bar while startOcr waits on the
+  // dialog, so the dialog is pumped by hand instead of pumpAndSettle.
+  Future<void> openModelsMissingDialog(WidgetTester tester) async {
+    client.installed = false;
+    await open(tester);
+    await tester.tap(find.text('Recognize 2 pages'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
   }
 
   testWidgets(
@@ -194,6 +239,39 @@ void main() {
     expect(proOpens, 1);
     expect(client.started, isEmpty);
     expect(find.byType(OcrActionSheet), findsOneWidget);
+  });
+  testWidgets('missing models explain the download; Cancel keeps the sheet', (
+    tester,
+  ) async {
+    await openModelsMissingDialog(tester);
+    expect(
+      find.text(
+        'On-device OCR needs its models downloaded first. Open Downloads to '
+        'get them, then come back and tap OCR again.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Cancel'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(client.started, isEmpty);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(OcrActionSheet), findsOneWidget);
+    expect(find.byType(DownloadsScreen), findsNothing);
+  });
+  testWidgets('missing models open Downloads on confirm', (tester) async {
+    await openModelsMissingDialog(tester);
+    await tester.tap(find.text('Open Downloads'));
+    // startOcr keeps awaiting until Downloads is popped, so the sheet stays
+    // busy underneath; pump the route transition by hand.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(DownloadsScreen), findsOneWidget);
+    expect(client.started, isEmpty);
   });
   group('preferredOcrBackend', () {
     MokuroBook manga({String? source, String? pageSource}) =>

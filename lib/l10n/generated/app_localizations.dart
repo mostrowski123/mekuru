@@ -253,6 +253,12 @@ abstract class AppLocalizations {
   /// **'Open Settings'**
   String get commonOpenSettings;
 
+  /// Action label to open the downloads screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Downloads'**
+  String get commonOpenDownloads;
+
   /// Acknowledgement action label.
   ///
   /// In en, this message translates to:
@@ -4971,6 +4977,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download the OCR models in Settings → Downloads, then return here to start.'**
   String get localOcrDownloadRequired;
+
+  /// On-device manga OCR: dialog body shown from the reader when the models are not installed yet, before opening Downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device OCR needs its models downloaded first. Open Downloads to get them, then come back and tap OCR again.'**
+  String get localOcrModelsMissingBody;
 
   /// On-device manga OCR: localOcrModelReady
   ///

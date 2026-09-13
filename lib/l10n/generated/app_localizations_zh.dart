@@ -84,6 +84,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonOpenSettings => '打开设置';
 
   @override
+  String get commonOpenDownloads => '打开下载';
+
+  @override
   String get commonGotIt => '知道了';
 
   @override
@@ -2853,6 +2856,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get localOcrDownloadRequired => '请在“设置 → 下载”中下载 OCR 模型，然后回到这里开始。';
+
+  @override
+  String get localOcrModelsMissingBody =>
+      '设备端 OCR 需要先下载模型。请打开“下载”获取模型，然后回到这里再次点按 OCR。';
 
   @override
   String get localOcrModelReady => '模型已安装 · 可离线使用';
@@ -3136,6 +3143,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get commonOpenSettings => '打开设置';
 
   @override
+  String get commonOpenDownloads => '打开下载';
+
+  @override
   String get commonGotIt => '知道了';
 
   @override
@@ -5905,6 +5915,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get localOcrDownloadRequired => '请在“设置 → 下载”中下载 OCR 模型，然后回到这里开始。';
+
+  @override
+  String get localOcrModelsMissingBody =>
+      '设备端 OCR 需要先下载模型。请打开“下载”获取模型，然后回到这里再次点按 OCR。';
 
   @override
   String get localOcrModelReady => '模型已安装 · 可离线使用';

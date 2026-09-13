@@ -84,6 +84,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonOpenSettings => 'Buka Pengaturan';
 
   @override
+  String get commonOpenDownloads => 'Buka Unduhan';
+
+  @override
   String get commonGotIt => 'Mengerti';
 
   @override
@@ -2994,6 +2997,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get localOcrDownloadRequired =>
       'Unduh model OCR di Pengaturan → Unduhan, lalu kembali ke sini untuk memulai.';
+
+  @override
+  String get localOcrModelsMissingBody =>
+      'OCR di perangkat perlu mengunduh modelnya terlebih dahulu. Buka Unduhan untuk mendapatkannya, lalu kembali dan ketuk OCR lagi.';
 
   @override
   String get localOcrModelReady => 'Model terpasang · berfungsi offline';

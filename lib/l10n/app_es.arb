@@ -2811,5 +2811,7 @@
   "localOcrReadingRegions": "{done} / {total} regiones de texto leídas",
   "localOcrCurrentPage": "Reconociendo la página {page}",
   "localOcrCopyDiagnostics": "Copiar diagnóstico de OCR",
-  "localOcrDiagnosticsCopied": "Diagnóstico de OCR copiado"
+  "localOcrDiagnosticsCopied": "Diagnóstico de OCR copiado",
+  "localOcrModelsMissingBody": "El OCR en el dispositivo necesita descargar sus modelos primero. Abre Descargas para obtenerlos y luego vuelve y toca OCR de nuevo.",
+  "commonOpenDownloads": "Abrir Descargas"
 }
