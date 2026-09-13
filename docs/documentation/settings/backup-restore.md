@@ -83,5 +83,6 @@ Things to know:
 
 - A full backup made with a newer version of Mekuru cannot be restored by an older one. Update Mekuru first.
 - Server connections (Komga, Kavita) come back disabled. Re-enter their credentials to turn them on again.
+- A linked WaniKani account comes back with its kanji list but without the API token. Open **Settings > Reading > WaniKani** and link again to keep the list updated.
 - If you pick a `.mekuru` file here, or a `.zip` in the reading data importer, Mekuru points you to the right button instead of importing the wrong kind.
 - A `.zip` that was cut short while copying or downloading is refused before anything starts; copy it again from where it was saved.

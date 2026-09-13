@@ -17,6 +17,7 @@ From the **Library** tab, tap **+** and choose one of the supported import flows
 - **Import EPUB** - import a single `.epub` file
 - **Import Manga > Mokuro folder** - select the folder that contains a `.mokuro` or `.html` manifest alongside the images
 - **Import Manga > CBZ archive** - import a single `.cbz` archive
+- **Download from _server_** - listed for every Komga or Kavita server you have added; see [Book Servers](library/book-servers.md)
 
 See [Importing Books (EPUB)](getting-started/importing-books.md) and [Importing Manga](getting-started/importing-manga.md).
 
@@ -26,7 +27,7 @@ Go to the **Dictionary** tab to import a Yomitan-compatible dictionary, import a
 
 **3. Start reading**
 
-Tap a library item to open it. Long-press a library item to open management actions such as rename, add to collection, export as EPUB, bookmarks, highlights, OCR controls, or delete. See [Navigation & Gestures](reading/navigation.md) and [Collections & Folders](library/collections.md).
+Tap a library item to open it. Long-press a library item to open management actions such as rename, add to collection, export as EPUB, convert to manga, export as CBZ, bookmarks, highlights, OCR controls, or delete. See [Navigation & Gestures](reading/navigation.md) and [Collections & Folders](library/collections.md).
 
 **4. Look up and save words**
 
@@ -47,14 +48,17 @@ The **You** tab shows your reading time, an activity heatmap, lookup rate, and v
 | Feature | Description |
 |-|-|
 | EPUB Reader | Vertical and horizontal reading, RTL or LTR page flow, and automatic progress restore |
-| Manga Reader | Mokuro and CBZ support with single-page, spread, and scroll modes |
+| Manga Reader | Mokuro and CBZ support with single-page, spread, and scroll modes; CBZ archives with embedded `.mokuro` data get lookups on import |
 | Offline Dictionaries | Import Yomitan `.zip` files, collection `.json` backups, or built-in download packs |
 | Built-in Downloads | JMdict, JMdict with examples, KANJIDIC, KanjiVG, JPDB frequency data, and the Enhanced Furigana Dictionary |
 | Collections | Organize books into iOS-style folder tiles with drag-to-reorder and multi-select batch actions |
-| Furigana Display | Per-book furigana modes: off, book default, all kanji, or only kanji above a chosen JLPT level |
+| Furigana Display | Per-book furigana modes: off, book default, all kanji, only kanji above a chosen JLPT level, or only kanji not yet learned on WaniKani |
+| WaniKani Integration | Link your WaniKani account and hide furigana for kanji at or above the SRS stage you choose |
 | Furigana EPUB Export | Export a copy of any EPUB with generated furigana baked in |
+| Manga Conversion & CBZ Export | Convert image-only EPUBs into manga, and export any manga as a CBZ with its OCR data embedded |
+| Book Server Sync | Browse and download from Komga or Kavita servers and keep reading progress in sync both ways |
 | Reading Stats | Reading time, activity heatmap, lookup rate, and vocabulary growth on the You tab |
-| Backup & Restore | Local backup of settings, vocabulary, bookmarks, collections, and reading history |
+| Backup & Restore | Reading-data backups of settings, vocabulary, bookmarks, collections, and reading history, plus a full backup of the whole library in one zip |
 | Smart Word Detection | Accurate Japanese word boundary detection for tap-to-lookup |
 | Compound Words | Greedy multi-token matching for longer dictionary hits |
 | Kanji Stroke Order | KanjiVG diagrams for single-kanji searches and compatible lookups |
@@ -70,9 +74,9 @@ The **You** tab shows your reading time, an activity heatmap, lookup rate, and v
 
 | Feature | Description |
 |-|-|
-| Pro | One-time upgrade that unlocks auto-crop, book highlights, and custom OCR server support for remote manga OCR. |
+| Pro | One-time upgrade that unlocks auto-crop, book highlights, on-device manga OCR, and custom OCR server support for remote manga OCR. |
 
 > See [Remote OCR](manga/cloud-ocr.md) and [Custom OCR Server](manga/custom-server.md) for setup details.
 
-On-device Japanese manga OCR is free and uses separately downloaded models.
+On-device Japanese manga OCR uses separately downloaded models. Downloading them is free; recognizing your own manga is part of Pro.
 See [On-device OCR](manga/on-device-ocr.md).

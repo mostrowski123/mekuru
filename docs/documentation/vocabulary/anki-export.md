@@ -42,4 +42,8 @@ Mekuru can send cards directly to AnkiDroid from dictionary lookup cards.
 
 ### Sending Cards
 
-Once configured, a send-to-AnkiDroid action appears on dictionary lookup cards. Tap it to create a card immediately.
+Once configured, a **Send to AnkiDroid** button appears on dictionary lookup cards. Mekuru first checks whether the word is already in your default deck: if it is, the button shows a check mark (**Already in default Anki deck. Long press to add anyway**). Otherwise tapping it opens a card screen where you can change the **Deck** and **Tags** before pressing **Add to Anki**. If AnkiDroid is not set up yet, the button opens the settings screen instead.
+
+### When Anki Changes
+
+AnkiDroid stays the source of truth. If you delete or rename the note type, deck, or a mapped field in Anki, Mekuru flags it: the settings rows read **no longer exists in Anki**, orphaned field mappings are listed with a **Remove** button and can be moved to another field, and the card screen shows a warning until the mapping is fixed. Send errors say whether AnkiDroid was unreachable, its permission was missing, or the note type or deck is gone.

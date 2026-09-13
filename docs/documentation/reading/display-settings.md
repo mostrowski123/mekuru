@@ -11,6 +11,7 @@ Open **Settings** (gear icon on the **You** tab), then **Reader Settings**. The 
 | **Font Size** | Default reader text size |
 | **Color Mode** | Normal, Sepia, or Dark, with a sepia intensity control inside the picker |
 | **Keep Screen On** | Prevent the screen from sleeping while reading |
+| **Animations** | Page-turn and lookup-sheet transitions in both readers; turn it off for e-ink displays |
 | **Horizontal Margin** | Side padding around EPUB text |
 | **Vertical Margin** | Top and bottom padding around EPUB text |
 | **Swipe Sensitivity** | How far you need to drag before a page swipe triggers |
@@ -27,7 +28,7 @@ Inside an EPUB reader session, open the quick settings sheet for the current boo
 
 | Setting | Notes |
 |-|-|
-| **Furigana** | Off, Book, All kanji, or JLPT — with a level picker for the JLPT mode; see [Furigana](furigana.md) |
+| **Furigana** | Off, Book, All kanji, JLPT, or WaniKani — with a level picker for JLPT and an SRS stage picker for WaniKani; see [Furigana](furigana.md) |
 | **Vertical Text** | Only available when the book supports it |
 | **Reading Direction** | Switch between right-to-left and left-to-right for that book |
 | **Disable Links** | Treat linked text as lookup targets instead of navigation |

@@ -6,9 +6,11 @@ Mekuru supports EPUB files for text-based books and novels.
 
 1. Open the **Library** tab.
 2. Tap the **+** button.
-3. Choose **EPUB**.
+3. Choose **Import EPUB**.
 4. Select an `.epub` file from the system file picker.
 5. The book is imported into your library grid.
+
+If you have added a [book server](../library/book-servers.md), the same sheet also lists **Download from _server_** for each enabled server.
 
 ## What Gets Imported
 
@@ -32,6 +34,7 @@ EPUB files up to **200 MB** are supported.
 - **Change Cover** - available from the long-press actions
 - **Add to Collection** - group books into folder tiles; see [Collections & Folders](../library/collections.md)
 - **Export as EPUB** - save a copy with furigana baked in; see [Furigana EPUB Export](../library/furigana-export.md)
+- **Convert to manga** - for manga sold as EPUBs where every page is an image; see [Importing Manga](importing-manga.md#converting-an-image-only-epub)
 - **Delete Book** - available from the long-press actions
 - **Bookmarks and Highlights** - EPUB entries expose these from the long-press actions
 - **Select multiple** - tap the checklist icon in the app bar to select several books and batch-add them to a collection

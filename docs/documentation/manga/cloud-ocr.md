@@ -4,8 +4,8 @@
 
 Remote OCR extracts text from CBZ manga pages so you can tap words and look them up.
 
-[On-device OCR](on-device-ocr.md) is a separate, free option using downloaded
-models. It does not require Pro or a server.
+[On-device OCR](on-device-ocr.md) is the other Pro option: it uses models
+downloaded to your phone and needs no server.
 
 ## How the Workflow Works
 

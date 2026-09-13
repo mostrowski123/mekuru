@@ -55,6 +55,7 @@ nav:
   - Library:
       - Collections & Folders: library/collections.md
       - Furigana EPUB Export: library/furigana-export.md
+      - Book Servers (Komga & Kavita): library/book-servers.md
   - Reading:
       - Navigation & Gestures: reading/navigation.md
       - Display Settings: reading/display-settings.md
