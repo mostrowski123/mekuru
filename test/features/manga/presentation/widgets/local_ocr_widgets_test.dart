@@ -85,6 +85,46 @@ void main() {
     await tester.pump();
     expect(calls.map((c) => c.method), ['pause']);
   });
+  testWidgets('dismiss deletes the finished job and tells the host at once', (
+    tester,
+  ) async {
+    var dismissed = 0;
+    await tester.pumpWidget(
+      host(
+        LocalOcrJobCard(job: job('completed'), onDismissed: () => dismissed++),
+      ),
+    );
+    await tester.tap(find.text('Dismiss'));
+    await tester.pumpAndSettle();
+    expect(calls.map((c) => c.method), ['dismiss']);
+    expect((calls.single.arguments as Map)['id'], 'job');
+    // Fired only after the delete lands, so a failure cannot leave the card
+    // hidden while the journal still holds the job.
+    expect(dismissed, 1);
+  });
+  testWidgets('a failed dismiss reports the error and keeps the card', (
+    tester,
+  ) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(LocalMangaOcr.channel, (call) async {
+          calls.add(call);
+          throw PlatformException(code: 'job_busy');
+        });
+    var dismissed = 0;
+    await tester.pumpWidget(
+      host(
+        LocalOcrJobCard(job: job('completed'), onDismissed: () => dismissed++),
+      ),
+    );
+    await tester.tap(find.text('Dismiss'));
+    await tester.pumpAndSettle();
+    expect(calls.map((c) => c.method), ['dismiss']);
+    expect(dismissed, 0);
+    expect(
+      find.text(AppLocalizationsEn().localOcrError(details: 'job_busy')),
+      findsOneWidget,
+    );
+  });
   testWidgets('download is available without Pro or account providers', (
     tester,
   ) async {

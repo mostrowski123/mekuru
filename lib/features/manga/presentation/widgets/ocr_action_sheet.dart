@@ -268,7 +268,19 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
-            if (job != null) LocalOcrJobCard(job: job),
+            // Collapse on Dismiss instead of waiting for the next one-second
+            // journal poll and then blinking out, which read as a glitch.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: job == null
+                  ? const SizedBox.shrink()
+                  : LocalOcrJobCard(
+                      job: job,
+                      onDismissed: () => ref.invalidate(localOcrJobsProvider),
+                    ),
+            ),
             if (remoteRunning) ...[
               Text(l.localOcrRemote),
               Text(

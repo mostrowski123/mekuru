@@ -226,7 +226,11 @@ class _LocalOcrSpeedTestRowState extends State<LocalOcrSpeedTestRow> {
 
 class LocalOcrJobCard extends StatelessWidget {
   final OcrJobProgress job;
-  const LocalOcrJobCard({super.key, required this.job});
+
+  /// Called once the journal delete has landed, so the host can refresh rather
+  /// than leave the card up until the next one-second poll.
+  final VoidCallback? onDismissed;
+  const LocalOcrJobCard({super.key, required this.job, this.onDismissed});
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -314,9 +318,8 @@ class LocalOcrJobCard extends StatelessWidget {
                 if (!job.isActive)
                   TextButton(
                     onPressed: () => runLocalOcrAction(context, () async {
-                      await LocalMangaOcr.channel.invokeMethod('dismiss', {
-                        'id': job.id,
-                      });
+                      await LocalMangaOcr.dismiss(job.id);
+                      onDismissed?.call();
                     }),
                     child: Text(l.localOcrDismiss),
                   ),

@@ -143,6 +143,8 @@ class LocalMangaOcr {
 
   static Future<void> pause(String id) =>
       channel.invokeMethod('pause', {'id': id});
+  static Future<void> dismiss(String id) =>
+      channel.invokeMethod('dismiss', {'id': id});
   static Future<void> cancel(String id) =>
       channel.invokeMethod('cancel', {'id': id});
   static Future<void> resume(String id, {bool retryFailed = false}) =>
