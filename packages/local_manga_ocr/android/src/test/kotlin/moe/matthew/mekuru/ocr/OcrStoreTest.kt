@@ -204,6 +204,48 @@ class OcrStoreTest {
         assertTrue(jsonEquivalent(JSONObject("""{"a":1,"b":[2]}"""),JSONObject("""{"b":[2.0],"a":1.0}""")))
         assertFalse(jsonEquivalent(JSONObject("""{"a":1}"""),JSONObject("""{"a":2}""")))
     }
+    @Test fun startingAJobDropsTheBooksFinishedHistory() {
+        val first=create()
+        store.transition(first.getString("id"),"preparing")
+        store.transition(first.getString("id"),"running")
+        store.transition(first.getString("id"),"completed")
+        val second=create()
+        assertEquals(listOf(second.getString("id")),store.all().map { it.getString("id") })
+    }
+    @Test fun startingAJobSupersedesAnEarlierPausedRunOfTheSameBook() {
+        val first=create()
+        store.transition(first.getString("id"),"paused")
+        val second=create()
+        assertEquals(listOf(second.getString("id")),store.all().map { it.getString("id") })
+    }
+    @Test fun recoverDropsSupersededHistoryFromOlderInstalls() {
+        val first=create()
+        store.transition(first.getString("id"),"preparing")
+        store.transition(first.getString("id"),"running")
+        store.transition(first.getString("id"),"completed")
+        // A journal written before the one-entry-per-book rule: a second finished
+        // run for the same book, newer than the first.
+        val done=store.read(first.getString("id"))
+        val legacyId="11111111-1111-1111-1111-111111111111"
+        val legacy=JSONObject(done.toString()).put("id",legacyId)
+            .put("createdAt",done.optLong("createdAt")+1000)
+        File(File(root,"jobs"),"$legacyId.json").writeText(legacy.toString())
+        assertEquals(2,store.all().size)
+        store.recover()
+        assertEquals(listOf(legacyId),store.all().map { it.getString("id") })
+    }
+    @Test fun recoverKeepsAResumableRunAlongsideTheNewest() {
+        val paused=create()
+        store.transition(paused.getString("id"),"paused")
+        val pausedId=paused.getString("id")
+        val newerId="22222222-2222-2222-2222-222222222222"
+        val newer=JSONObject(store.read(pausedId).toString()).put("id",newerId)
+            .put("status","completed").put("phase","completed")
+            .put("createdAt",paused.optLong("createdAt")+1000)
+        File(File(root,"jobs"),"$newerId.json").writeText(newer.toString())
+        store.recover()
+        assertEquals(setOf(pausedId,newerId),store.all().map { it.getString("id") }.toSet())
+    }
     @Test fun cancellingRemoteDoesNotCancelPausedLocalJob() {
         val local=create()
         store.transition(local.getString("id"),"paused")

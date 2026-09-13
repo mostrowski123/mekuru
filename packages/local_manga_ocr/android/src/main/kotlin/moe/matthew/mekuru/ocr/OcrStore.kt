@@ -65,6 +65,7 @@ class OcrStore(private val directory: File,
     private val unsavedPauses=mutableMapOf<String,JSONObject>()
     companion object {
         val active = setOf("queued", "preparing", "running", "pausing", "cancelling")
+        val resumable = setOf("paused", "failed", "completedWithErrors")
         fun pageComplete(book: JSONObject, page: JSONObject): Boolean =
             page.optJSONObject("ocr")?.optBoolean("completed") == true ||
             page.optJSONArray("blocks")?.length()?.let { it > 0 } == true ||
@@ -95,7 +96,12 @@ class OcrStore(private val directory: File,
     }
     fun create(spec: JSONObject, modelVersion: String, backend: String = "onDevice"): JSONObject =
         OcrWrites.lock.withLock {
-            require(activeFor(spec.getInt("bookId")) == null) { "book_busy" }
+            val bookId = spec.getInt("bookId")
+            // One listing serves both the busy check and the history sweep below. The
+            // journal lock is held across all of it, and the 1 Hz notification ticker
+            // and jobs poll block on that same lock.
+            val existing = all().filter { it.getInt("bookId") == bookId }
+            require(existing.none { it.getString("status") in active }) { "book_busy" }
             val cache = File(spec.getString("cachePath"))
             require(cache.isFile) { "cache_missing" }
             val book = JSONObject(cache.readText())
@@ -119,6 +125,14 @@ class OcrStore(private val directory: File,
                 .put("createdAt", System.currentTimeMillis())
                 .put("outcomes", JSONObject()).put("errors", JSONObject())
                 .put("pageNames", JSONArray(targets.map { pages.getJSONObject(it).getString("imageFileName") }))
+            // Keep one entry per book so the sheet always shows the last run. Older
+            // finished jobs would otherwise surface one by one as each is dismissed.
+            // A resumable job on the other backend is left alone: claiming a remote
+            // job must not discard a paused on-device one.
+            for (old in existing) {
+                if (old.optString("backend") == backend ||
+                    old.getString("status") !in resumable) discard(old.getString("id"))
+            }
             save(job); job
         }
 
@@ -131,7 +145,7 @@ class OcrStore(private val directory: File,
                 "running" -> before == "preparing" || before == "running"
                 "pausing", "cancelling" -> before in active
                 "paused" -> before in active
-                "cancelled" -> before in active || before in setOf("paused", "failed", "completedWithErrors")
+                "cancelled" -> before in active || before in resumable
                 "completed", "completedWithErrors", "failed" -> before in active
                 else -> false
             }
@@ -143,7 +157,7 @@ class OcrStore(private val directory: File,
 
     fun resume(id: String, retryFailed: Boolean): JSONObject = OcrWrites.lock.withLock {
         val job = read(id)
-        require(job.getString("status") in setOf("paused", "failed", "completedWithErrors")) { "not_resumable" }
+        require(job.getString("status") in resumable) { "not_resumable" }
         require(activeFor(job.getInt("bookId")) == null) { "book_busy" }
         val cache=File(job.getString("cachePath"))
         require(cache.isFile) { "cache_missing" }
@@ -167,6 +181,12 @@ class OcrStore(private val directory: File,
     }
     fun delete(id: String) = OcrWrites.lock.withLock {
         require(read(id).getString("status") !in active) { "job_busy" }
+        discard(id)
+    }
+
+    /** Journal removal for callers that already hold the job and its status, so the
+     * file is not parsed a second time only to re-derive what they already know. */
+    private fun discard(id: String) {
         unsavedPauses.remove(id)
         file(id).delete()
     }
@@ -174,9 +194,19 @@ class OcrStore(private val directory: File,
     /** Called once on native process initialization, never on each UI attach. */
     fun recover() = OcrWrites.lock.withLock {
         val stale = System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000
-        for (job in all()) {
+        val jobs = all()
+        // Installs predating the one-entry-per-book rule carry a stack of finished
+        // runs, and the sheet reveals the next one down as each is dismissed. Keep
+        // the newest per book plus anything still resumable, and drop the rest.
+        val newest = jobs.groupBy { it.getInt("bookId") }
+            .mapValues { (_, group) -> group.last().getString("id") }
+        for (job in jobs) {
             if (job.getString("status") !in active) {
-                if (job.optLong("createdAt", Long.MAX_VALUE) < stale) file(job.getString("id")).delete()
+                val superseded = newest[job.getInt("bookId")] != job.getString("id") &&
+                    job.getString("status") !in resumable
+                if (superseded || job.optLong("createdAt", Long.MAX_VALUE) < stale) {
+                    discard(job.getString("id"))
+                }
                 continue
             }
             try { reconcile(job) } catch (_: Exception) { job.put("reason","cache_invalid") }
@@ -293,7 +323,7 @@ class OcrStore(private val directory: File,
         for (job in all().filter { it.getInt("bookId") == bookId &&
             (backend==null || it.optString("backend")==backend) }) {
             if (job.getString("status") in active ||
-                job.getString("status") in setOf("paused", "failed", "completedWithErrors")) {
+                job.getString("status") in resumable) {
                 job.put("status", "cancelled").put("phase", "cancelled"); save(job)
             }
         }
