@@ -242,16 +242,28 @@ class OcrJobService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         if(job==null) builder.setContentText(getString(R.string.ocr_preparing)).setProgress(0,0,true)
         else {
-            val count=job.getJSONObject("outcomes").length()
-            val total=job.getJSONArray("pages").length()
-            builder.setContentText(getString(R.string.ocr_notification_progress,count,total))
-                .setProgress(total,count,job.getString("status")=="preparing")
-            for((action,label) in listOf("pause" to R.string.ocr_pause,"cancel" to R.string.ocr_cancel)) {
-                val intent=Intent(this,OcrJobService::class.java).setAction(action)
-                    .putExtra("id",job.getString("id"))
-                val pending=PendingIntent.getService(this,action.hashCode(),intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                builder.addAction(0,getString(label),pending)
+            val status=job.getString("status")
+            // A requested stop can take seconds to land: the detector pass is a single
+            // uninterruptible native call. Say so and drop the buttons as soon as the tap
+            // is recorded, so the unchanged progress text does not read as "nothing happened".
+            val stopping=when(status) {
+                "pausing" -> R.string.ocr_pausing
+                "cancelling" -> R.string.ocr_cancelling
+                else -> null
+            }
+            if(stopping!=null) builder.setContentText(getString(stopping)).setProgress(0,0,true)
+            else {
+                val count=job.getJSONObject("outcomes").length()
+                val total=job.getJSONArray("pages").length()
+                builder.setContentText(getString(R.string.ocr_notification_progress,count,total))
+                    .setProgress(total,count,status=="preparing")
+                for((action,label) in listOf("pause" to R.string.ocr_pause,"cancel" to R.string.ocr_cancel)) {
+                    val intent=Intent(this,OcrJobService::class.java).setAction(action)
+                        .putExtra("id",job.getString("id"))
+                    val pending=PendingIntent.getService(this,action.hashCode(),intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                    builder.addAction(0,getString(label),pending)
+                }
             }
         }
         return builder.build()

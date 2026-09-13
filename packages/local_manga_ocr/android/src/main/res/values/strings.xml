@@ -4,4 +4,6 @@
     <string name="ocr_notification_progress">On device · %1$d / %2$d pages processed</string>
     <string name="ocr_pause">Pause</string>
     <string name="ocr_cancel">Cancel</string>
+    <string name="ocr_pausing">Pausing…</string>
+    <string name="ocr_cancelling">Cancelling…</string>
 </resources>
