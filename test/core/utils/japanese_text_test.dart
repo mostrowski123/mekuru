@@ -183,4 +183,38 @@ void main() {
       expect(mecabAnnotatedCharPattern.hasMatch('〆'), isTrue);
     });
   });
+
+  group('foldSearchInput', () {
+    test('folds keyboard and clipboard spellings to the stored form', () {
+      const cases = {
+        // Half-width katakana, including voiced marks applied to the
+        // previous kana and the ウ+゛ special case.
+        'ｶｰﾄﾞ': 'カード',
+        'ﾊﾟﾝ': 'パン',
+        'ｳﾞｧ': 'ヴァ',
+        // Full-width Latin and the ideographic space.
+        'ｔａｂｅｒｕ': 'taberu',
+        'ｒｅｎ　ａｉ': 'ren ai',
+        // Combining (U+3099/U+309A) and spacing (U+309B/U+309C) marks.
+        'がっこう': 'がっこう',
+        'ぱん': 'ぱん',
+        'う゛': 'ゔ',
+        // Curly apostrophes and Hepburn long vowels.
+        'ren’ai': "ren'ai",
+        'gakkō': 'gakkou',
+        'sensē': 'sensei',
+        'okāsan': 'okaasan',
+        'onīsan': 'oniisan',
+        'sūshi': 'suushi',
+        'Ōsaka': 'ousaka',
+        // Already-folded input passes through untouched.
+        'カード': 'カード',
+        "ren'ai": "ren'ai",
+        '食べる': '食べる',
+      };
+      cases.forEach((input, expected) {
+        expect(foldSearchInput(input), expected, reason: input);
+      });
+    });
+  });
 }

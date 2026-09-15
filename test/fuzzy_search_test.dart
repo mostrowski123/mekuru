@@ -173,6 +173,19 @@ void main() {
       expect(results.first.entry.expression, 'ラーメン');
     });
 
+    test('finds words typed in half-width, full-width or with combining '
+        'marks', () async {
+      for (final (query, expected) in [
+        ('ﾗｰﾒﾝ', 'ラーメン'),
+        ('ｔａｂｅｒｕ', '食べる'),
+        ('たべる', '食べる'),
+      ]) {
+        final results = await queryService.fuzzySearchWithSource(query);
+        expect(results, isNotEmpty, reason: query);
+        expect(results.first.entry.expression, expected, reason: query);
+      }
+    });
+
     test('returns empty for no matches', () async {
       final results = await queryService.fuzzySearchWithSource('zzzzz');
       expect(results, isEmpty);

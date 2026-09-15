@@ -55,6 +55,74 @@ String katakanaToHiragana(String text) {
   return buffer.toString();
 }
 
+/// Half-width katakana block U+FF61–U+FF9D in code-point order. The voiced
+/// marks ﾞ (U+FF9E) and ﾟ (U+FF9F) follow it and are folded onto the
+/// preceding kana by [foldSearchInput].
+const _halfWidthKatakanaToFull =
+    '。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
+
+/// Hepburn long vowels (macron or circumflex) as the doubled wapuro romaji
+/// an IME expects. ō/ē take the common ou/ei spelling (学校, 先生), not the
+/// rarer oo/ee.
+const _longVowelRomaji = {
+  'ā': 'aa',
+  'ī': 'ii',
+  'ū': 'uu',
+  'ē': 'ei',
+  'ō': 'ou',
+  'â': 'aa',
+  'î': 'ii',
+  'û': 'uu',
+  'ê': 'ei',
+  'ô': 'ou',
+};
+
+/// Folds the spellings a keyboard or the clipboard can produce for the same
+/// word into the form dictionaries store: half-width katakana → full-width,
+/// full-width Latin and the ideographic space → ASCII, combining or spacing
+/// (semi-)voiced marks → the precomposed kana, curly apostrophes → ', and
+/// macron/circumflex vowels → doubled romaji. Anything else passes through.
+String foldSearchInput(String text) {
+  final out = <int>[];
+  for (final rune in text.runes) {
+    if (rune >= 0xFF01 && rune <= 0xFF5E) {
+      out.add(rune - 0xFEE0);
+    } else if (rune == 0x3000) {
+      out.add(0x20);
+    } else if (rune >= 0xFF61 && rune <= 0xFF9D) {
+      out.add(_halfWidthKatakanaToFull.codeUnitAt(rune - 0xFF61));
+    } else if (rune == 0xFF9E || rune == 0x3099 || rune == 0x309B) {
+      if (!_voiceLastKana(out, 1)) out.add(rune);
+    } else if (rune == 0xFF9F || rune == 0x309A || rune == 0x309C) {
+      if (!_voiceLastKana(out, 2)) out.add(rune);
+    } else if (rune == 0x2018 || rune == 0x2019 || rune == 0x02BC) {
+      out.add(0x27);
+    } else {
+      final doubled = _longVowelRomaji[String.fromCharCode(rune).toLowerCase()];
+      if (doubled == null) {
+        out.add(rune);
+      } else {
+        out.addAll(doubled.codeUnits);
+      }
+    }
+  }
+  return String.fromCharCodes(out);
+}
+
+/// Replaces the kana at the end of [out] with its (semi-)voiced form, which
+/// sits [offset] code points up the kana block. Returns false when there is
+/// no kana to voice, so the caller can keep the mark as typed.
+bool _voiceLastKana(List<int> out, int offset) {
+  if (out.isEmpty || !isKana(out.last)) return false;
+  final prev = out.last;
+  out.last = switch (prev) {
+    0x3046 => 0x3094, // う → ゔ: not adjacent in the block
+    0x30A6 => 0x30F4, // ウ → ヴ
+    _ => prev + offset,
+  };
+  return true;
+}
+
 /// Matches runs of Japanese text: hiragana (U+3040–U+309F), katakana
 /// (U+30A0–U+30FF, including ー), kanji (CJK Unified Ideographs and
 /// Extension A), and the iteration mark 々 (U+3005).

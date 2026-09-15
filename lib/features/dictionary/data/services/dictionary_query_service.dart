@@ -931,8 +931,9 @@ class DictionaryQueryService {
   /// are sorted by frequency rank (most common first). Fuzzy and glossary
   /// tiers preserve their match-quality ordering as a secondary signal.
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
-    String term,
+    String input,
   ) async {
+    final term = foldSearchInput(input);
     if (term.isEmpty) return [];
 
     final cache = await _ensureMetasCached();
