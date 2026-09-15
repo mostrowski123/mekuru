@@ -601,7 +601,9 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
       const SliverToBoxAdapter(child: SizedBox(height: 16)),
     ];
 
-    return CustomScrollView(slivers: slivers);
+    // Keyed by query so a new search starts at the top; a refresh of the
+    // same query (dictionary or filter toggles) keeps its scroll position.
+    return CustomScrollView(key: ValueKey(query), slivers: slivers);
   }
 
   Widget _buildEmptySearchState(ThemeData theme) {

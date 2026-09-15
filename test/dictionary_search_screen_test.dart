@@ -644,4 +644,84 @@ void main() {
       expect(container.read(searchHistoryProvider), ['食べる']);
     });
   });
+
+  testWidgets('a new query starts at the top of the results', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    List<DictionaryEntryWithSource> manyWords(String prefix, int firstId) => [
+      for (var i = 0; i < 30; i++)
+        DictionaryEntryWithSource(
+          entry: _buildEntry(
+            id: firstId + i,
+            expression: '$prefix$i',
+            reading: '$prefix$i',
+            glossaries: '["$prefix definition $i"]',
+          ),
+          dictionaryName: 'JMdict',
+        ),
+    ];
+    final service = _FakeDictionaryQueryService(
+      db,
+      resultsByTerm: {
+        'first': manyWords('一', 1),
+        'second': manyWords('二', 100),
+      },
+    );
+    final dictionaries = [
+      DictionaryMeta(
+        id: 1,
+        name: 'JMdict',
+        isEnabled: true,
+        dateImported: DateTime(2026, 3, 12),
+        sortOrder: 0,
+        isHidden: false,
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          dictionaryQueryServiceProvider.overrideWithValue(service),
+          dictionariesProvider.overrideWith(
+            (ref) => Stream.value(dictionaries),
+          ),
+        ],
+        child: buildLocalizedTestApp(
+          home: const DictionarySearchScreen(initialQuery: 'first'),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final resultsFinder = find.byType(CustomScrollView);
+    double scrollOffset() => tester
+        .state<ScrollableState>(
+          find.descendant(of: resultsFinder, matching: find.byType(Scrollable)),
+        )
+        .position
+        .pixels;
+
+    await tester.drag(resultsFinder, const Offset(0, -900));
+    await tester.pumpAndSettle();
+    expect(scrollOffset(), greaterThan(0));
+
+    await tester.enterText(find.byType(TextField), 'second');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    expect(scrollOffset(), 0);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is GroupedDictionaryEntryHeader &&
+            widget.entries.first.entry.expression == '二0',
+      ),
+      findsOneWidget,
+    );
+  });
 }
