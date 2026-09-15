@@ -851,7 +851,10 @@ class DictionaryQueryService {
     }
 
     add(term);
-    if (RomajiConverter.isRomaji(term)) {
+    // English words that merely start like romaji ("world" → を + "rld")
+    // must not plant their partial reading in the exact tier.
+    if (RomajiConverter.isRomaji(term) &&
+        RomajiConverter.isConvertiblePrefix(term)) {
       RomajiConverter.convertAll(
         term,
         maxCandidates: _maxRomajiReadings,

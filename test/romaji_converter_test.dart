@@ -354,4 +354,39 @@ void main() {
       );
     });
   });
+
+  group('RomajiConverter.convert — Hepburn spellings', () {
+    test('reads m before b, m, p as ん', () {
+      expect(RomajiConverter.convert('shimbun'), 'しんぶん');
+      expect(RomajiConverter.convert('kampai'), 'かんぱい');
+      expect(RomajiConverter.convert('gumma'), 'ぐんま');
+    });
+
+    test('reads tch as っち', () {
+      expect(RomajiConverter.convert('matcha'), 'まっちゃ');
+      expect(RomajiConverter.convert('kotchi'), 'こっち');
+    });
+  });
+
+  group('RomajiConverter.isConvertiblePrefix', () {
+    test('accepts complete words and words cut off mid-syllable', () {
+      for (final input in ['taberu', 'tabe', 'tabesh', 'tabets', 'eat', 'sh']) {
+        expect(
+          RomajiConverter.isConvertiblePrefix(input),
+          isTrue,
+          reason: input,
+        );
+      }
+    });
+
+    test('rejects tails that cannot start a syllable', () {
+      for (final input in ['world', 'school', 'techno', 'tabexq']) {
+        expect(
+          RomajiConverter.isConvertiblePrefix(input),
+          isFalse,
+          reason: input,
+        );
+      }
+    });
+  });
 }

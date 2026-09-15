@@ -226,10 +226,28 @@ class RomajiConverter {
   /// every ambiguity point, so element 0 is always [convert]'s output and
   /// truncation under [maxCandidates] drops the least conventional readings
   /// first. Never returns an empty list.
-  static List<String> convertAll(String romaji, {int maxCandidates = 16}) {
+  static List<String> convertAll(String romaji, {int maxCandidates = 16}) =>
+      _scan(romaji, maxCandidates).readings;
+
+  /// True if [romaji] converts without dropping letters, allowing an
+  /// unfinished trailing syllable ("tabe", "tabesh"): it could be Japanese
+  /// the user is still typing. False for "world" or "school", whose tails
+  /// cannot start any syllable — English, not an incomplete spelling.
+  static bool isConvertiblePrefix(String romaji) {
+    final tail = _scan(romaji, 1).unconverted;
+    return tail.isEmpty || _mappings.keys.any((key) => key.startsWith(tail));
+  }
+
+  /// The readings behind [convertAll], plus the input left unconverted by
+  /// the conventional reading (empty when every letter was consumed).
+  static ({List<String> readings, String unconverted}) _scan(
+    String romaji,
+    int maxCandidates,
+  ) {
     final input = romaji.toLowerCase();
     final limit = maxCandidates < 1 ? 1 : maxCandidates;
     final out = <String>{}; // Insertion-ordered: keeps conventional first
+    var unconverted = '';
     var paths = 1;
 
     bool tryFork() {
@@ -252,6 +270,19 @@ class RomajiConverter {
         }
         if (ch == '-') {
           kana += 'ー';
+          i++;
+          continue;
+        }
+
+        // Traditional Hepburn: ん is written m before b, m, p (shimbun,
+        // kampai) and っち as tch (matcha).
+        if (ch == 'm' && i + 1 < input.length && 'bmp'.contains(input[i + 1])) {
+          kana += 'ん';
+          i++;
+          continue;
+        }
+        if (ch == 't' && input.startsWith('ch', i + 1)) {
+          kana += 'っ';
           i++;
           continue;
         }
@@ -312,7 +343,12 @@ class RomajiConverter {
           i++;
           continue;
         }
-        if (chunk == null) break; // Unrecognized — drop trailing partial
+        if (chunk == null) {
+          // Unrecognized — drop the trailing partial. The conventional path
+          // finishes first, so its tail is the one reported.
+          if (out.isEmpty) unconverted = input.substring(i);
+          break;
+        }
         kana += chunk.kana;
         i += chunk.length;
       }
@@ -321,7 +357,7 @@ class RomajiConverter {
     }
 
     scan(0, '');
-    return out.toList();
+    return (readings: out.toList(), unconverted: unconverted);
   }
 
   /// A vowel or y — what makes a preceding n ambiguous.

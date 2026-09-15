@@ -82,6 +82,13 @@ void main() {
         glossaries: jsonEncode(['to run']),
         dictionaryId: dictId,
       ),
+      // Particle whose reading is the start of English words like "world"
+      DictionaryEntriesCompanion.insert(
+        expression: 'を',
+        reading: const Value('を'),
+        glossaries: jsonEncode(['object marker']),
+        dictionaryId: dictId,
+      ),
       // Katakana entry
       DictionaryEntriesCompanion.insert(
         expression: 'ラーメン',
@@ -184,6 +191,17 @@ void main() {
         expect(results, isNotEmpty, reason: query);
         expect(results.first.entry.expression, expected, reason: query);
       }
+    });
+
+    test('English words are not read as romaji when their tail cannot be '
+        'Japanese', () async {
+      // "world" starts like "wo" but "rld" is no syllable, so を must not
+      // ride the partial conversion into the exact tier...
+      final world = await queryService.fuzzySearchWithSource('world');
+      expect(world.map((r) => r.entry.expression), isNot(contains('を')));
+      // ...while typing the word itself still finds it.
+      final wo = await queryService.fuzzySearchWithSource('wo');
+      expect(wo.map((r) => r.entry.expression), contains('を'));
     });
 
     test('returns empty for no matches', () async {
