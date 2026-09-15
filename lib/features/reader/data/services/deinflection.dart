@@ -25,29 +25,69 @@ List<String> deinflect(String surfaceForm) {
 List<DeinflectedCandidate> deinflectDetailed(String surfaceForm) {
   if (surfaceForm.length < 2) return [];
 
-  final candidates = <String>{};
+  // Breadth-first over the rule table, bounded by _maxDeinflectionDepth:
+  // each pass unwinds one ending, so 食べていました → 食べています →
+  // 食べている → 食べて → 食べる. Depth-1 candidates keep their rule order.
+  final seen = <String>{surfaceForm};
   final detailed = <DeinflectedCandidate>[];
+  var frontier = [surfaceForm];
 
-  for (final rule in _deinflectionRules) {
-    if (surfaceForm.length > rule.suffix.length &&
-        surfaceForm.endsWith(rule.suffix)) {
-      final stem = surfaceForm.substring(
-        0,
-        surfaceForm.length - rule.suffix.length,
-      );
-      for (final replacement in rule.replacements) {
-        final candidate = stem + replacement;
-        if (candidates.add(candidate)) {
-          detailed.add(
-            DeinflectedCandidate(term: candidate, family: rule.family),
-          );
+  for (var depth = 0; depth < _maxDeinflectionDepth; depth++) {
+    final next = <String>[];
+    for (final form in frontier) {
+      for (final candidate in _deinflectOnce(form)) {
+        if (seen.add(candidate.term)) {
+          detailed.add(candidate);
+          next.add(candidate.term);
         }
       }
     }
+    if (next.isEmpty) break;
+    frontier = next;
   }
 
   return detailed;
 }
+
+/// One pass of every rule (and irregular alias) over [form].
+Iterable<DeinflectedCandidate> _deinflectOnce(String form) sync* {
+  for (final base in _irregularForms[form] ?? const <String>[]) {
+    yield DeinflectedCandidate(term: base, family: DeinflectionFamily.verbal);
+  }
+  for (final rule in _deinflectionRules) {
+    if (form.length > rule.suffix.length && form.endsWith(rule.suffix)) {
+      final stem = form.substring(0, form.length - rule.suffix.length);
+      for (final replacement in rule.replacements) {
+        yield DeinflectedCandidate(
+          term: stem + replacement,
+          family: rule.family,
+        );
+      }
+    }
+  }
+}
+
+/// Passes of [_deinflectOnce] per lookup. Four covers the deepest common
+/// stack (progressive + polite + past: ていました → ています → ている → て
+/// → る) while keeping candidate sets small for the per-tap reader path.
+const _maxDeinflectionDepth = 4;
+
+/// Whole-word forms of the irregular verbs する and 来る, whose stems
+/// change and so never reach the dictionary form through suffix rules.
+/// Kanji 来 spellings do (来て → 来る via the て rule). Stacked endings still
+/// chain through here: しませんでした → します → する.
+const _irregularForms = <String, List<String>>{
+  'した': ['する'],
+  'します': ['する'],
+  'して': ['する'],
+  'しない': ['する'],
+  'しよう': ['する'],
+  'きた': ['来る', 'くる'],
+  'きて': ['来る', 'くる'],
+  'きます': ['来る', 'くる'],
+  'こない': ['来る', 'くる'],
+  'こよう': ['来る', 'くる'],
+};
 
 class _DeinflectionRule {
   final String suffix;
@@ -59,10 +99,27 @@ class _DeinflectionRule {
 
 /// Conjugation reversal rules.
 ///
-/// Rules are applied exhaustively (all matching rules contribute candidates).
-/// Longer suffixes are listed first for documentation clarity, but since all
-/// rules are checked independently, ordering does not affect correctness.
+/// Rules are applied exhaustively (all matching rules contribute candidates)
+/// and repeatedly (see [deinflectDetailed]), so a rule only needs to peel one
+/// ending: stacked endings normalize to an intermediate form (ました → ます,
+/// ている → て) that the basic rules then finish. Longer suffixes are listed
+/// first for documentation clarity, but since all rules are checked
+/// independently, ordering does not affect correctness.
 const _deinflectionRules = [
+  // ── Polite stacked endings → ます, which the ます rules then unwind ────
+  _DeinflectionRule('ませんでした', ['ます'], DeinflectionFamily.verbal),
+  _DeinflectionRule('ましょう', ['ます'], DeinflectionFamily.verbal),
+  _DeinflectionRule('ました', ['ます'], DeinflectionFamily.verbal),
+  _DeinflectionRule('ません', ['ます'], DeinflectionFamily.verbal),
+
+  // ── Progressive (ている / てる) → te-form, which the て rules unwind ──
+  // Its own た/ない/ます endings need no rules: 食べていた → 食べている via
+  // the ichidan た rule, then here.
+  _DeinflectionRule('ている', ['て'], DeinflectionFamily.verbal),
+  _DeinflectionRule('でいる', ['で'], DeinflectionFamily.verbal),
+  _DeinflectionRule('てる', ['て'], DeinflectionFamily.verbal),
+  _DeinflectionRule('でる', ['で'], DeinflectionFamily.verbal),
+
   // ── する verbs (サ変) ────────────────────────────────────────────
   // Dictionary entries often store the noun stem only (e.g., 駆使),
   // but MeCab may return the する-verb form (e.g., 駆使する).

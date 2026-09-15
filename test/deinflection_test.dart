@@ -265,4 +265,38 @@ void main() {
       expect(results, contains('行う'));
     });
   });
+
+  group('deinflect — stacked endings', () {
+    test('polite past and negative reach the dictionary form', () {
+      expect(deinflect('食べました'), contains('食べる'));
+      expect(deinflect('食べません'), contains('食べる'));
+      expect(deinflect('食べませんでした'), contains('食べる'));
+      expect(deinflect('行きました'), contains('行く'));
+    });
+
+    test('negative past reaches the dictionary form', () {
+      expect(deinflect('食べなかった'), contains('食べる'));
+      expect(deinflect('行かなかった'), contains('行く'));
+    });
+
+    test('progressive forms reach the dictionary form', () {
+      expect(deinflect('食べている'), contains('食べる'));
+      expect(deinflect('食べてる'), contains('食べる'));
+      expect(deinflect('読んでいました'), contains('読む'));
+      expect(deinflect('書いていなかった'), contains('書く'));
+    });
+
+    test('irregular する and 来る forms reach the dictionary form', () {
+      for (final form in ['した', 'します', 'して', 'しない', 'しませんでした']) {
+        expect(deinflect(form), contains('する'), reason: form);
+      }
+      for (final form in ['きた', 'きて', 'きます', 'こない', 'きました']) {
+        expect(deinflect(form), containsAll(['来る', 'くる']), reason: form);
+      }
+    });
+
+    test('candidate sets stay small', () {
+      expect(deinflect('食べていませんでした'), hasLength(lessThan(30)));
+    });
+  });
 }

@@ -204,6 +204,17 @@ void main() {
       expect(wo.map((r) => r.entry.expression), contains('を'));
     });
 
+    test('conjugated input finds the dictionary form', () async {
+      for (final query in ['食べました', '食べている', 'tabemashita']) {
+        final results = await queryService.fuzzySearchWithSource(query);
+        expect(
+          results.map((r) => r.entry.expression),
+          contains('食べる'),
+          reason: query,
+        );
+      }
+    });
+
     test('returns empty for no matches', () async {
       final results = await queryService.fuzzySearchWithSource('zzzzz');
       expect(results, isEmpty);
