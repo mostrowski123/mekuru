@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
@@ -44,11 +45,14 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
   final Map<String, List<DictionaryEntryWithSource>> resultsByTerm;
   final List<List<String>> pitchAccentBatchQueries = [];
   final Map<String, Completer<void>> gates = {};
+  bool failSearch = false;
+  bool failPitchAccents = false;
 
   @override
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
     String term,
   ) async {
+    if (failSearch) throw StateError('search unavailable');
     await gates[term]?.future;
     return resultsByTerm[term] ?? const [];
   }
@@ -62,6 +66,7 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
   Future<Map<String, List<PitchAccentResult>>> searchPitchAccentsBatch(
     Iterable<String> expressions,
   ) async {
+    if (failPitchAccents) throw StateError('pitch accents unavailable');
     final batch = expressions.toList(growable: false);
     pitchAccentBatchQueries.add(batch);
     return {for (final expression in batch) expression: const []};
@@ -805,5 +810,87 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('cat'), findsOneWidget);
     expect(find.text('to eat'), findsNothing);
+  });
+
+  group('search failures', () {
+    late List<String> failures;
+
+    setUp(() {
+      failures = [];
+      usageLogSinkOverride = (message, attributes, {required isWarning}) {
+        if (isWarning) failures.add(message);
+      };
+    });
+
+    tearDown(() {
+      usageLogSinkOverride = null;
+    });
+
+    Future<_FakeDictionaryQueryService> pumpScreen(WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final service = _FakeDictionaryQueryService(
+        db,
+        resultsByTerm: {
+          '食べる': [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: 1,
+                expression: '食べる',
+                reading: 'たべる',
+                glossaries: '["to eat"]',
+              ),
+              dictionaryName: 'JMdict',
+            ),
+          ],
+        },
+      );
+      final dictionaries = [
+        DictionaryMeta(
+          id: 1,
+          name: 'JMdict',
+          isEnabled: true,
+          dateImported: DateTime(2026, 3, 12),
+          sortOrder: 0,
+          isHidden: false,
+        ),
+      ];
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(service),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value(dictionaries),
+            ),
+          ],
+          child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+        ),
+      );
+      await tester.pump();
+      return service;
+    }
+
+    Future<void> search(WidgetTester tester) async {
+      await tester.enterText(find.byType(TextField), '食べる');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('word results survive a pitch-accent failure', (tester) async {
+      final service = await pumpScreen(tester);
+      service.failPitchAccents = true;
+      await search(tester);
+      expect(find.text('to eat'), findsOneWidget);
+      expect(failures, contains('dictionary.pitch_accents_failed'));
+    });
+
+    testWidgets('a failed search is reported', (tester) async {
+      final service = await pumpScreen(tester);
+      service.failSearch = true;
+      await search(tester);
+      expect(failures, contains('dictionary.search_failed'));
+    });
   });
 }

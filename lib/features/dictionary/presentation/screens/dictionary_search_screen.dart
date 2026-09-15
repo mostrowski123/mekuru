@@ -221,7 +221,8 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
           _isSearching = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      logFailure('dictionary.search_failed', e, stackTrace: st);
       if (mounted && seq == _searchSeq) {
         setState(() {
           _groupedResults = const [];
@@ -258,9 +259,16 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
       }
     }
 
-    final pitchAccentsByExpression = await queryService.searchPitchAccentsBatch(
-      groupOrder.map((key) => key.$1),
-    );
+    // Pitch accents decorate the results; a failure there must not take
+    // the definitions down with it.
+    var pitchAccentsByExpression = const <String, List<PitchAccentResult>>{};
+    try {
+      pitchAccentsByExpression = await queryService.searchPitchAccentsBatch(
+        groupOrder.map((key) => key.$1),
+      );
+    } catch (e, st) {
+      logFailure('dictionary.pitch_accents_failed', e, stackTrace: st);
+    }
 
     return [
       for (final key in groupOrder)
