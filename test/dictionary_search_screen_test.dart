@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,11 +43,13 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
 
   final Map<String, List<DictionaryEntryWithSource>> resultsByTerm;
   final List<List<String>> pitchAccentBatchQueries = [];
+  final Map<String, Completer<void>> gates = {};
 
   @override
   Future<List<DictionaryEntryWithSource>> fuzzySearchWithSource(
     String term,
   ) async {
+    await gates[term]?.future;
     return resultsByTerm[term] ?? const [];
   }
 
@@ -723,5 +727,83 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('a search that finishes after the field changed is discarded', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    final service = _FakeDictionaryQueryService(
+      db,
+      resultsByTerm: {
+        'たべる': [
+          DictionaryEntryWithSource(
+            entry: _buildEntry(
+              id: 1,
+              expression: '食べる',
+              reading: 'たべる',
+              glossaries: '["to eat"]',
+            ),
+            dictionaryName: 'JMdict',
+          ),
+        ],
+        'ねこ': [
+          DictionaryEntryWithSource(
+            entry: _buildEntry(
+              id: 2,
+              expression: '猫',
+              reading: 'ねこ',
+              glossaries: '["cat"]',
+            ),
+            dictionaryName: 'JMdict',
+          ),
+        ],
+      },
+    );
+    final slowSearch = Completer<void>();
+    service.gates['たべる'] = slowSearch;
+    final dictionaries = [
+      DictionaryMeta(
+        id: 1,
+        name: 'JMdict',
+        isEnabled: true,
+        dateImported: DateTime(2026, 3, 12),
+        sortOrder: 0,
+        isHidden: false,
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          dictionaryQueryServiceProvider.overrideWithValue(service),
+          dictionariesProvider.overrideWith(
+            (ref) => Stream.value(dictionaries),
+          ),
+        ],
+        child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+      ),
+    );
+    await tester.pump();
+
+    // The first search starts and blocks; the field changes while the
+    // second search is still debouncing.
+    await tester.enterText(find.byType(TextField), 'たべる');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.enterText(find.byType(TextField), 'ねこ');
+    await tester.pump(const Duration(milliseconds: 100));
+
+    slowSearch.complete();
+    await tester.pump();
+    expect(find.text('to eat'), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.text('cat'), findsOneWidget);
+    expect(find.text('to eat'), findsNothing);
   });
 }

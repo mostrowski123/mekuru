@@ -41,6 +41,9 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   List<_GroupedSearchResultData>? _groupedResults;
   bool _isSearching = false;
   String _lastQuery = '';
+  // Bumped on every edit and every search so a request that finishes after
+  // the field changed (or after a re-search of the same text) is discarded.
+  int _searchSeq = 0;
   bool _autoCommitNextResult = false;
 
   /// Request focus on the search field (e.g. when the tab becomes visible).
@@ -130,6 +133,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   void _onSearchChanged(String value) {
     _debounce?.cancel();
     _historyDebounce?.cancel();
+    _searchSeq++;
     // Any user-driven edit invalidates a pending reader-initiated auto-commit.
     _autoCommitNextResult = false;
     final trimmed = value.trim();
@@ -176,6 +180,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   Future<void> _performSearch(String term) async {
     if (!mounted) return;
     _lastQuery = term;
+    final seq = ++_searchSeq;
     setState(() => _isSearching = true);
 
     try {
@@ -194,8 +199,8 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
         queryService: queryService,
       );
 
-      // Only update if this is still the latest query
-      if (mounted && term == _lastQuery) {
+      // Only update if this is still the latest request
+      if (mounted && seq == _searchSeq) {
         logUsage(
           'dictionary.search',
           attrs: {'result_count': results.length, 'query_length': term.length},
@@ -217,7 +222,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
         });
       }
     } catch (e) {
-      if (mounted && term == _lastQuery) {
+      if (mounted && seq == _searchSeq) {
         setState(() {
           _groupedResults = const [];
           _isSearching = false;
