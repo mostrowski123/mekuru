@@ -73,6 +73,56 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
   }
 }
 
+DictionaryMeta _enabledDictionary() => DictionaryMeta(
+  id: 1,
+  name: 'JMdict',
+  isEnabled: true,
+  dateImported: DateTime(2026, 3, 12),
+  sortOrder: 0,
+  isHidden: false,
+);
+
+_FakeDictionaryQueryService _buildService(AppDatabase db) {
+  final entry = _buildEntry(
+    id: 1,
+    expression: '食べる',
+    reading: 'たべる',
+    glossaries: '["to eat"]',
+  );
+  return _FakeDictionaryQueryService(
+    db,
+    resultsByTerm: {
+      '食べる': [
+        DictionaryEntryWithSource(entry: entry, dictionaryName: 'JMdict'),
+      ],
+    },
+  );
+}
+
+/// Pumps the search screen over [service] with one enabled dictionary.
+Future<void> _pumpSearchScreen(
+  WidgetTester tester,
+  AppDatabase db,
+  _FakeDictionaryQueryService service, {
+  String? initialQuery,
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        databaseProvider.overrideWithValue(db),
+        dictionaryQueryServiceProvider.overrideWithValue(service),
+        dictionariesProvider.overrideWith(
+          (ref) => Stream.value([_enabledDictionary()]),
+        ),
+      ],
+      child: buildLocalizedTestApp(
+        home: DictionarySearchScreen(initialQuery: initialQuery),
+      ),
+    ),
+  );
+  await tester.pump();
+}
+
 void main() {
   testWidgets('shows guidance when all imported dictionaries are disabled', (
     tester,
@@ -363,32 +413,6 @@ void main() {
   );
 
   group('recent search history commit behavior', () {
-    DictionaryMeta enabledDictionary() => DictionaryMeta(
-      id: 1,
-      name: 'JMdict',
-      isEnabled: true,
-      dateImported: DateTime(2026, 3, 12),
-      sortOrder: 0,
-      isHidden: false,
-    );
-
-    _FakeDictionaryQueryService buildService(AppDatabase db) {
-      final entry = _buildEntry(
-        id: 1,
-        expression: '食べる',
-        reading: 'たべる',
-        glossaries: '["to eat"]',
-      );
-      return _FakeDictionaryQueryService(
-        db,
-        resultsByTerm: {
-          '食べる': [
-            DictionaryEntryWithSource(entry: entry, dictionaryName: 'JMdict'),
-          ],
-        },
-      );
-    }
-
     testWidgets(
       'typing characters does not save partial keystrokes to history',
       (tester) async {
@@ -398,9 +422,9 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             databaseProvider.overrideWithValue(db),
-            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionaryQueryServiceProvider.overrideWithValue(_buildService(db)),
             dictionariesProvider.overrideWith(
-              (ref) => Stream.value([enabledDictionary()]),
+              (ref) => Stream.value([_enabledDictionary()]),
             ),
           ],
         );
@@ -433,9 +457,9 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
-          dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+          dictionaryQueryServiceProvider.overrideWithValue(_buildService(db)),
           dictionariesProvider.overrideWith(
-            (ref) => Stream.value([enabledDictionary()]),
+            (ref) => Stream.value([_enabledDictionary()]),
           ),
         ],
       );
@@ -476,9 +500,9 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             databaseProvider.overrideWithValue(db),
-            dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+            dictionaryQueryServiceProvider.overrideWithValue(_buildService(db)),
             dictionariesProvider.overrideWith(
-              (ref) => Stream.value([enabledDictionary()]),
+              (ref) => Stream.value([_enabledDictionary()]),
             ),
           ],
         );
@@ -512,9 +536,9 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
-          dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+          dictionaryQueryServiceProvider.overrideWithValue(_buildService(db)),
           dictionariesProvider.overrideWith(
-            (ref) => Stream.value([enabledDictionary()]),
+            (ref) => Stream.value([_enabledDictionary()]),
           ),
         ],
       );
@@ -549,9 +573,9 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
-          dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+          dictionaryQueryServiceProvider.overrideWithValue(_buildService(db)),
           dictionariesProvider.overrideWith(
-            (ref) => Stream.value([enabledDictionary()]),
+            (ref) => Stream.value([_enabledDictionary()]),
           ),
         ],
       );
@@ -584,9 +608,9 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
-          dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+          dictionaryQueryServiceProvider.overrideWithValue(_buildService(db)),
           dictionariesProvider.overrideWith(
-            (ref) => Stream.value([enabledDictionary()]),
+            (ref) => Stream.value([_enabledDictionary()]),
           ),
         ],
       );
@@ -624,9 +648,9 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
-          dictionaryQueryServiceProvider.overrideWithValue(buildService(db)),
+          dictionaryQueryServiceProvider.overrideWithValue(_buildService(db)),
           dictionariesProvider.overrideWith(
-            (ref) => Stream.value([enabledDictionary()]),
+            (ref) => Stream.value([_enabledDictionary()]),
           ),
         ],
       );
@@ -678,32 +702,7 @@ void main() {
         'second': manyWords('二', 100),
       },
     );
-    final dictionaries = [
-      DictionaryMeta(
-        id: 1,
-        name: 'JMdict',
-        isEnabled: true,
-        dateImported: DateTime(2026, 3, 12),
-        sortOrder: 0,
-        isHidden: false,
-      ),
-    ];
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          dictionaryQueryServiceProvider.overrideWithValue(service),
-          dictionariesProvider.overrideWith(
-            (ref) => Stream.value(dictionaries),
-          ),
-        ],
-        child: buildLocalizedTestApp(
-          home: const DictionarySearchScreen(initialQuery: 'first'),
-        ),
-      ),
-    );
-    await tester.pump();
+    await _pumpSearchScreen(tester, db, service, initialQuery: 'first');
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
 
@@ -770,30 +769,7 @@ void main() {
     );
     final slowSearch = Completer<void>();
     service.gates['たべる'] = slowSearch;
-    final dictionaries = [
-      DictionaryMeta(
-        id: 1,
-        name: 'JMdict',
-        isEnabled: true,
-        dateImported: DateTime(2026, 3, 12),
-        sortOrder: 0,
-        isHidden: false,
-      ),
-    ];
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          dictionaryQueryServiceProvider.overrideWithValue(service),
-          dictionariesProvider.overrideWith(
-            (ref) => Stream.value(dictionaries),
-          ),
-        ],
-        child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
-      ),
-    );
-    await tester.pump();
+    await _pumpSearchScreen(tester, db, service);
 
     // The first search starts and blocks; the field changes while the
     // second search is still debouncing.
@@ -830,45 +806,8 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
-      final service = _FakeDictionaryQueryService(
-        db,
-        resultsByTerm: {
-          '食べる': [
-            DictionaryEntryWithSource(
-              entry: _buildEntry(
-                id: 1,
-                expression: '食べる',
-                reading: 'たべる',
-                glossaries: '["to eat"]',
-              ),
-              dictionaryName: 'JMdict',
-            ),
-          ],
-        },
-      );
-      final dictionaries = [
-        DictionaryMeta(
-          id: 1,
-          name: 'JMdict',
-          isEnabled: true,
-          dateImported: DateTime(2026, 3, 12),
-          sortOrder: 0,
-          isHidden: false,
-        ),
-      ];
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseProvider.overrideWithValue(db),
-            dictionaryQueryServiceProvider.overrideWithValue(service),
-            dictionariesProvider.overrideWith(
-              (ref) => Stream.value(dictionaries),
-            ),
-          ],
-          child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
-        ),
-      );
-      await tester.pump();
+      final service = _buildService(db);
+      await _pumpSearchScreen(tester, db, service);
       return service;
     }
 

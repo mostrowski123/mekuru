@@ -519,10 +519,9 @@ class DictionaryQueryService {
 
   /// Attach frequency ranks and group results by (expression, reading).
   ///
-  /// Within each group, entries retain their original order (which is the
-  /// dictionary sort_order from the SQL query). Groups are ordered by
-  /// exact-match priority when provided, then by frequency rank (lowest
-  /// rank first, with missing frequencies treated as least frequent).
+  /// Within each group, entries follow the dictionary sort order. Groups are
+  /// ordered by exact-match priority when provided, then by frequency rank
+  /// (lowest rank first, with missing frequencies treated as least frequent).
   Future<List<DictionaryEntryWithSource>> _attachFrequencyRanks(
     List<DictionaryEntryWithSource> results, {
     Set<String>? exactTerms,

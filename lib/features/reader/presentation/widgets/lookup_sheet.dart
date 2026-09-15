@@ -168,10 +168,13 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
       allTerms.addAll(deinflect(secondary));
     }
 
+    // One round-trip for every candidate; deinflection can hand back a
+    // dozen of them for a stacked polite-progressive ending.
+    final byTerm = await queryService.searchPitchAccentsBatch(allTerms);
     final allResults = <PitchAccentResult>[];
     final seenKeys = <(String, int)>{};
     for (final term in allTerms) {
-      for (final r in await queryService.searchPitchAccents(term)) {
+      for (final r in byTerm[term] ?? const <PitchAccentResult>[]) {
         if (seenKeys.add((r.reading, r.downstepPosition))) {
           allResults.add(r);
         }

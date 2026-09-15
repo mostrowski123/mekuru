@@ -49,9 +49,11 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
   }
 
   @override
-  Future<List<PitchAccentResult>> searchPitchAccents(String term) async {
-    pitchAccentQueries.add(term);
-    return const [];
+  Future<Map<String, List<PitchAccentResult>>> searchPitchAccentsBatch(
+    Iterable<String> expressions,
+  ) async {
+    pitchAccentQueries.addAll(expressions);
+    return const {};
   }
 }
 

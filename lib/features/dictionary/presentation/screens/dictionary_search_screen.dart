@@ -44,6 +44,10 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
   // Bumped on every edit and every search so a request that finishes after
   // the field changed (or after a re-search of the same text) is discarded.
   int _searchSeq = 0;
+  // The query whose results are on screen. Keys the list, so a new result
+  // set starts at the top while a refresh of the same query (dictionary or
+  // filter toggles) keeps its scroll position.
+  String _resultsQuery = '';
   bool _autoCommitNextResult = false;
 
   /// Request focus on the search field (e.g. when the tab becomes visible).
@@ -218,6 +222,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
         }
         setState(() {
           _groupedResults = groupedResults;
+          _resultsQuery = term;
           _isSearching = false;
         });
       }
@@ -226,6 +231,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
       if (mounted && seq == _searchSeq) {
         setState(() {
           _groupedResults = const [];
+          _resultsQuery = term;
           _isSearching = false;
         });
       }
@@ -614,9 +620,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
       const SliverToBoxAdapter(child: SizedBox(height: 16)),
     ];
 
-    // Keyed by query so a new search starts at the top; a refresh of the
-    // same query (dictionary or filter toggles) keeps its scroll position.
-    return CustomScrollView(key: ValueKey(query), slivers: slivers);
+    return CustomScrollView(key: ValueKey(_resultsQuery), slivers: slivers);
   }
 
   Widget _buildEmptySearchState(ThemeData theme) {

@@ -99,11 +99,7 @@ String foldSearchInput(String text) {
       out.add(0x27);
     } else {
       final doubled = _longVowelRomaji[String.fromCharCode(rune).toLowerCase()];
-      if (doubled == null) {
-        out.add(rune);
-      } else {
-        out.addAll(doubled.codeUnits);
-      }
+      out.addAll(doubled?.codeUnits ?? [rune]);
     }
   }
   return String.fromCharCodes(out);
