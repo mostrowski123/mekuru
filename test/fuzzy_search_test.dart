@@ -598,4 +598,49 @@ void main() {
       expect(expressions, isNot(contains('には')));
     });
   });
+
+  group('fuzzySearchWithSource — dictionary priority within a word', () {
+    late AppDatabase db2;
+    late DictionaryQueryService queryService2;
+
+    setUp(() async {
+      db2 = createTestDatabase();
+      final repo2 = DictionaryRepository(db2);
+      queryService2 = DictionaryQueryService(db2);
+
+      // The lower-priority dictionary is imported first, so its rows carry
+      // the lower ids that id-ordered tiers would otherwise list first.
+      final secondaryId = await repo2.insertDictionary(
+        'Secondary',
+        sortOrder: 1,
+      );
+      final preferredId = await repo2.insertDictionary(
+        'Preferred',
+        sortOrder: 0,
+      );
+      await repo2.batchInsertEntries([
+        for (final id in [secondaryId, preferredId])
+          DictionaryEntriesCompanion.insert(
+            expression: '食べ物',
+            reading: const Value('たべもの'),
+            glossaries: jsonEncode(['food']),
+            dictionaryId: id,
+          ),
+      ]);
+    });
+
+    tearDown(() async {
+      await db2.close();
+    });
+
+    test('every tier lists the preferred dictionary first', () async {
+      for (final query in ['食べ物', '食べ', 'food']) {
+        final results = await queryService2.fuzzySearchWithSource(query);
+        expect(results.map((r) => r.dictionaryName).toList(), [
+          'Preferred',
+          'Secondary',
+        ], reason: query);
+      }
+    });
+  });
 }

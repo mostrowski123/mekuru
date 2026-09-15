@@ -539,6 +539,7 @@ class DictionaryQueryService {
     return _applyFrequencyRanks(
       results,
       ranks,
+      await _ensureMetasCached(),
       matchPriorities: matchPriorities,
     );
   }
@@ -546,7 +547,8 @@ class DictionaryQueryService {
   /// Apply pre-fetched frequency ranks and group/sort results.
   List<DictionaryEntryWithSource> _applyFrequencyRanks(
     List<DictionaryEntryWithSource> results,
-    Map<(String, String), int> ranks, {
+    Map<(String, String), int> ranks,
+    _MetasCache cache, {
     Map<(String, String), int>? matchPriorities,
   }) {
     if (results.isEmpty) return results;
@@ -557,14 +559,18 @@ class DictionaryQueryService {
       return r.withFrequencyRank(rank);
     }).toList();
 
-    // Group by (expression, reading), preserving insertion order within
-    // each group (which is the SQL sort_order).
+    // Group by (expression, reading). Within a word the user's dictionary
+    // order wins over the tier's own ranking (id, fuzzy score, bm25), so the
+    // preferred dictionary is the headline entry in every tier.
     final groups = <(String, String), List<DictionaryEntryWithSource>>{};
     final groupOrder = <(String, String), int>{};
     for (final r in ranked) {
       final key = (r.entry.expression, r.entry.reading);
       groupOrder.putIfAbsent(key, () => groupOrder.length);
       groups.putIfAbsent(key, () => []).add(r);
+    }
+    for (final group in groups.values) {
+      _sortWithSourceBySortOrder(group, cache);
     }
 
     // Sort group keys by exact-match priority first, then by frequency rank
@@ -1072,15 +1078,16 @@ class DictionaryQueryService {
       ..._applyFrequencyRanks(
         exactResults,
         ranks,
+        cache,
         matchPriorities: _buildExactMatchPriorities(
           exactResults,
           exactMatchTerms,
         ),
       ),
-      ..._applyFrequencyRanks(glossaryExactResults, ranks),
-      ..._applyFrequencyRanks(fuzzyResults, ranks),
-      ..._applyFrequencyRanks(subComponentResults, ranks),
-      ..._applyFrequencyRanks(glossaryResults, ranks),
+      ..._applyFrequencyRanks(glossaryExactResults, ranks, cache),
+      ..._applyFrequencyRanks(fuzzyResults, ranks, cache),
+      ..._applyFrequencyRanks(subComponentResults, ranks, cache),
+      ..._applyFrequencyRanks(glossaryResults, ranks, cache),
     ];
   }
 
