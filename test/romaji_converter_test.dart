@@ -389,4 +389,25 @@ void main() {
       }
     });
   });
+
+  group('RomajiConverter.isComplete', () {
+    test('true when every letter converts', () {
+      for (final input in [
+        'taberu',
+        'tabe',
+        'shi',
+        'shin',
+        'kinen',
+        "ren'ai",
+      ]) {
+        expect(RomajiConverter.isComplete(input), isTrue, reason: input);
+      }
+    });
+
+    test('false when the last syllable is unfinished', () {
+      for (final input in ['tabesh', 'ship', 'eat', 'world']) {
+        expect(RomajiConverter.isComplete(input), isFalse, reason: input);
+      }
+    });
+  });
 }

@@ -96,6 +96,48 @@ void main() {
         glossaries: jsonEncode(['ramen']),
         dictionaryId: dictId,
       ),
+      // Homophone of the partial romaji reading in "ship" (し + "p")
+      DictionaryEntriesCompanion.insert(
+        expression: '死',
+        reading: const Value('し'),
+        glossaries: jsonEncode(['death']),
+        dictionaryId: dictId,
+      ),
+      DictionaryEntriesCompanion.insert(
+        expression: '船',
+        reading: const Value('ふね'),
+        glossaries: jsonEncode(['ship', 'boat']),
+        dictionaryId: dictId,
+      ),
+      // Frequent words whose side glosses match "ship"/"eat" (JMdict rows
+      // carry the sense number at the head of definitionTags)
+      DictionaryEntriesCompanion.insert(
+        expression: '送る',
+        reading: const Value('おくる'),
+        definitionTags: const Value('1 v5r vt'),
+        glossaries: jsonEncode(['to send', 'to dispatch', 'to ship']),
+        dictionaryId: dictId,
+      ),
+      DictionaryEntriesCompanion.insert(
+        expression: 'やる',
+        reading: const Value('やる'),
+        definitionTags: const Value('7 v5r vt uk'),
+        glossaries: jsonEncode(['to have (food, drink, etc.)', 'to eat']),
+        dictionaryId: dictId,
+      ),
+      // "water" scans as わて + "r"; deinflecting わて yields 割る
+      DictionaryEntriesCompanion.insert(
+        expression: '水',
+        reading: const Value('みず'),
+        glossaries: jsonEncode(['water (esp. cool or cold)']),
+        dictionaryId: dictId,
+      ),
+      DictionaryEntriesCompanion.insert(
+        expression: '割る',
+        reading: const Value('わる'),
+        glossaries: jsonEncode(['to divide']),
+        dictionaryId: dictId,
+      ),
     ]);
   });
 
@@ -202,6 +244,55 @@ void main() {
       // ...while typing the word itself still finds it.
       final wo = await queryService.fuzzySearchWithSource('wo');
       expect(wo.map((r) => r.entry.expression), contains('を'));
+    });
+
+    test('a romaji reading cut off mid-syllable stays out of the exact '
+        'tier', () async {
+      // "ship" scans as し + "p": the translation must lead, not the し
+      // homophones.
+      final ship = await queryService.fuzzySearchWithSource('ship');
+      expect(ship.first.entry.expression, '船');
+      // The partial reading still guides the prefix tier while typing...
+      final tabesh = await queryService.fuzzySearchWithSource('tabesh');
+      expect(tabesh.first.entry.expression, '食べる');
+      // ...and a finished syllable is still an exact match.
+      final shi = await queryService.fuzzySearchWithSource('shi');
+      expect(shi.first.entry.expression, '死');
+    });
+
+    test('a partial romaji reading is not deinflected into the exact '
+        'tier', () async {
+      final water = await queryService.fuzzySearchWithSource('water');
+      expect(water.first.entry.expression, '水');
+      expect(water.map((r) => r.entry.expression), isNot(contains('割る')));
+    });
+
+    test("the headline gloss beats a frequent word's side gloss", () async {
+      // やる outranks 食べる and 送る outranks 船 by frequency, but "eat"
+      // and "ship" are their side glosses: the primary translation leads.
+      final freqDictId = await repo.insertDictionary('FreqDict');
+      await repo.batchInsertFrequencies([
+        for (final (expression, reading, rank) in [
+          ('やる', 'やる', 41),
+          ('食べる', 'たべる', 184),
+          ('送る', 'おくる', 362),
+          ('船', 'ふね', 1642),
+        ])
+          FrequenciesCompanion.insert(
+            expression: expression,
+            reading: Value(reading),
+            frequencyRank: rank,
+            dictionaryId: freqDictId,
+          ),
+      ]);
+      queryService.invalidateMetasCache();
+
+      final eat = await queryService.fuzzySearchWithSource('eat');
+      expect(eat.first.entry.expression, '食べる');
+      expect(eat.map((r) => r.entry.expression), contains('やる'));
+      final ship = await queryService.fuzzySearchWithSource('ship');
+      expect(ship.first.entry.expression, '船');
+      expect(ship.map((r) => r.entry.expression), contains('送る'));
     });
 
     test('conjugated input finds the dictionary form', () async {

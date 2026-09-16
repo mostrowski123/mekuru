@@ -832,7 +832,14 @@ class DictionaryQueryService {
   /// term plus long-vowel-collapsed variants so phonetic spellings reach the
   /// ー orthography (kaado → かあど → カアド → カード).
   ///
-  /// `all` adds trailing-long-vowel completions (がっこ also searches
+  /// `prefix` adds readings cut off mid-syllable ("tabesh" → たべ, "ship"
+  /// → し) for the prefix and fuzzy tiers only. An exact hit on an
+  /// unfinished word is a coincidence — for a one-syllable English word
+  /// (ship, bus, dog) it is dozens of homophones ahead of the translation
+  /// — and so is its deinflection ("water" → わて → 割る).
+  ///
+  /// `exact` is the exact tier: the complete spellings plus
+  /// trailing-long-vowel completions (がっこ also searches
   /// がっこう, so "gakko" reaches 学校 as an exact match). Completions are
   /// guesses at a different word and only widen the exact tier:
   /// - not the prefix/fuzzy tiers — a completion's rows always sit inside
@@ -841,7 +848,8 @@ class DictionaryQueryService {
   ///   turned "konnyaku" from 7ms into ~480ms);
   /// - not single-kana terms — completing ほ to ほう floods the exact tier
   ///   with more-frequent ほう words above every as-typed ほ word.
-  ({List<String> all, List<String> asTyped}) _expandSearchTerms(String term) {
+  ({List<String> exact, List<String> asTyped, List<String> prefix})
+  _expandSearchTerms(String term) {
     // Insertion-ordered set: dedups while keeping the typed term first.
     final terms = <String>{};
 
@@ -851,18 +859,26 @@ class DictionaryQueryService {
 
     add(term);
     // English words that merely start like romaji ("world" → を + "rld")
-    // must not plant their partial reading in the exact tier.
+    // must not plant their partial reading anywhere; a reading cut off
+    // mid-syllable ("ship" → し + "p") only guides the prefix tier.
+    final partialReadings = <String>{};
     if (RomajiConverter.isRomaji(term) &&
         RomajiConverter.isConvertiblePrefix(term)) {
-      RomajiConverter.convertAll(
+      final complete = RomajiConverter.isComplete(term);
+      for (final reading in RomajiConverter.convertAll(
         term,
         maxCandidates: _maxRomajiReadings,
-      ).forEach(add);
+      )) {
+        if (reading.isEmpty) continue;
+        (complete ? terms : partialReadings).add(reading);
+      }
     }
     add(katakanaToHiragana(term));
     _addKatakanaVariants(terms);
+    _addKatakanaVariants(partialReadings);
 
     final asTyped = terms.toList();
+    final prefix = [...asTyped, ...partialReadings];
 
     // Kana runes are BMP, so length equals rune count for kana-only terms.
     final completions = <String>{
@@ -888,7 +904,7 @@ class DictionaryQueryService {
     };
     terms.addAll(particleSpellings);
 
-    return (all: terms.toList(), asTyped: asTyped);
+    return (exact: terms.toList(), asTyped: asTyped, prefix: prefix);
   }
 
   /// Adds the katakana form and its long-vowel-collapsed variant for every
@@ -965,7 +981,7 @@ class DictionaryQueryService {
 
     // Build search terms based on input type
     final expansion = _expandSearchTerms(term);
-    final searchTerms = expansion.all;
+    final searchTerms = expansion.exact;
     final isRomaji = RomajiConverter.isRomaji(term);
 
     // 1. Exact matches (highest priority — always on top), one batched
@@ -995,20 +1011,24 @@ class DictionaryQueryService {
       );
     }
 
-    // 2. Whole-gloss English matches. Started here and claimed for this
-    // tier before the kana fuzzy tier: for an English word like "eat" the
-    // definitive translations must not drown under エア-style romaji
-    // guesses, of which there can be dozens. The fetch runs concurrently
-    // with the prefix-candidate query below — they are independent.
+    // 2. Whole-gloss English matches, headline glosses first (the term
+    // is the first gloss of the entry's first sense: 船 for "ship", not
+    // 送る whose fifth gloss is "to ship"). Started here and claimed for
+    // this tier before the kana fuzzy tier: for an English word like
+    // "eat" the definitive translations must not drown under エア-style
+    // romaji guesses, of which there can be dozens. The fetch runs
+    // concurrently with the prefix-candidate query below — they are
+    // independent.
     final glossaryFuture = _hasLatinLetters(term)
         ? _fetchGlossaryDirectAndCandidates(term, cache)
         : null;
 
     // 3. Fuzzy matches on expression/reading via fuzzy_bolt. As-typed
-    // spellings only: completions live inside their base term's prefix
-    // range, so scanning or fuzzy-matching them separately is pure cost.
+    // spellings and partial readings, never completions: those live
+    // inside their base term's prefix range, so scanning or
+    // fuzzy-matching them separately is pure cost.
     final prefixCandidates = await _fetchPrefixCandidates(
-      expansion.asTyped,
+      expansion.prefix,
       limit: 100,
     );
     final glossaryData = glossaryFuture != null ? await glossaryFuture : null;
@@ -1016,7 +1036,7 @@ class DictionaryQueryService {
       addTo(glossaryExactResults, glossaryData.exactGlossMatches);
     }
     if (prefixCandidates.isNotEmpty) {
-      for (final t in expansion.asTyped) {
+      for (final t in expansion.prefix) {
         final fuzzyMatches = await FuzzyBolt.search<DictionaryEntryWithSource>(
           prefixCandidates,
           t,
@@ -1087,7 +1107,12 @@ class DictionaryQueryService {
           exactMatchTerms,
         ),
       ),
-      ..._applyFrequencyRanks(glossaryExactResults, ranks, cache),
+      ..._applyFrequencyRanks(
+        glossaryExactResults,
+        ranks,
+        cache,
+        matchPriorities: glossaryData?.sideGlossPriorities,
+      ),
       ..._applyFrequencyRanks(fuzzyResults, ranks, cache),
       ..._applyFrequencyRanks(subComponentResults, ranks, cache),
       ..._applyFrequencyRanks(glossaryResults, ranks, cache),
@@ -1099,6 +1124,7 @@ class DictionaryQueryService {
       List<DictionaryEntryWithSource> exactGlossMatches,
       List<DictionaryEntryWithSource> containsMatches,
       List<DictionaryEntryWithSource> fuzzyCandidates,
+      Map<(String, String), int> sideGlossPriorities,
     })
   >
   _fetchGlossaryDirectAndCandidates(String term, _MetasCache cache) async {
@@ -1125,7 +1151,24 @@ class DictionaryQueryService {
       exactGlossMatches: matches.exactGloss,
       containsMatches: matches.containing.take(containsCount).toList(),
       fuzzyCandidates: [...matches.exactGloss, ...matches.containing],
+      sideGlossPriorities: matches.sideGlossPriorities,
     );
+  }
+
+  /// True when one of the whole-gloss [needles] is the first gloss of
+  /// [entry]'s first sense. JMdict's yomitan rows carry the sense number
+  /// at the head of definitionTags ("7 v5r vt uk"); rows without one count
+  /// as sense 1. Without this, frequency alone ranks やる's seventh sense
+  /// ("to have (food, drink, etc.); to eat") above 食べる for "eat".
+  /// Checked in Dart over the returned rows: a second instr() CASE in SQL
+  /// cost +25% on every Latin-letter query.
+  static bool _isHeadlineGloss(DictionaryEntry entry, List<String> needles) {
+    final sense = int.tryParse(entry.definitionTags.split(' ').first);
+    if (sense != null && sense > 1) return false;
+    final text = entry.searchText;
+    final newline = text.indexOf('\n');
+    final firstLine = newline < 0 ? text : text.substring(0, newline);
+    return needles.any('\n$firstLine\n'.contains);
   }
 
   /// English glossary lookup on the dictionary_entries_fts FTS5 index
@@ -1135,11 +1178,13 @@ class DictionaryQueryService {
   /// parenthetical, so "water (esp. cool or cold)" counts) and plain
   /// contains-matches. Each list is in relevance order: bm25, then
   /// search-text length (the term occupies the largest fraction of a
-  /// short gloss), then id.
+  /// short gloss), then id. `sideGlossPriorities` demotes the whole-gloss
+  /// words none of whose rows is a headline match ([_isHeadlineGloss]).
   Future<
     ({
       List<DictionaryEntryWithSource> exactGloss,
       List<DictionaryEntryWithSource> containing,
+      Map<(String, String), int> sideGlossPriorities,
     })
   >
   _fetchGlossaryMatchesRanked(
@@ -1152,6 +1197,7 @@ class DictionaryQueryService {
       return (
         exactGloss: <DictionaryEntryWithSource>[],
         containing: <DictionaryEntryWithSource>[],
+        sideGlossPriorities: const <(String, String), int>{},
       );
     }
 
@@ -1203,11 +1249,26 @@ class DictionaryQueryService {
     final results = _mapEntriesWithSourceUnsorted(entries, cache);
     final exactGloss = <DictionaryEntryWithSource>[];
     final containing = <DictionaryEntryWithSource>[];
+    final headlineWords = <(String, String)>{};
     for (var i = 0; i < results.length; i++) {
       final isExact = rows[i].data['exact_gloss'] as int == 1;
       (isExact ? exactGloss : containing).add(results[i]);
+      if (isExact && _isHeadlineGloss(entries[i], needles)) {
+        headlineWords.add((entries[i].expression, entries[i].reading));
+      }
     }
-    return (exactGloss: exactGloss, containing: containing);
+    // Missing keys sort first in _applyFrequencyRanks, so only the words
+    // without a headline row need a priority.
+    final sideGlossPriorities = <(String, String), int>{
+      for (final r in exactGloss)
+        if (!headlineWords.contains((r.entry.expression, r.entry.reading)))
+          (r.entry.expression, r.entry.reading): 1,
+    };
+    return (
+      exactGloss: exactGloss,
+      containing: containing,
+      sideGlossPriorities: sideGlossPriorities,
+    );
   }
 
   /// FTS5 MATCH expression for [term]: the whole term as a quoted phrase

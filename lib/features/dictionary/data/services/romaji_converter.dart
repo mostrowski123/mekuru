@@ -238,6 +238,10 @@ class RomajiConverter {
     return tail.isEmpty || _mappings.keys.any((key) => key.startsWith(tail));
   }
 
+  /// True when every letter of [romaji] converts — the last syllable is
+  /// finished ("tabe", "shin"), unlike "tabesh" or "ship".
+  static bool isComplete(String romaji) => _scan(romaji, 1).unconverted.isEmpty;
+
   /// The readings behind [convertAll], plus the input left unconverted by
   /// the conventional reading (empty when every letter was consumed).
   static ({List<String> readings, String unconverted}) _scan(
