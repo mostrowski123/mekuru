@@ -2948,7 +2948,38 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get localOcrRecognizeQuick =>
-      'Reconocer esta página (mantén pulsado para ver opciones)';
+      'Reconocer esta página. Mantén pulsado para ver más opciones';
+
+  @override
+  String localOcrQuickStartedOnDevice({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Reconociendo las páginas $pages en el dispositivo',
+      one: 'Reconociendo la página $pages en el dispositivo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String localOcrQuickStartedRemote({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Reconociendo las páginas $pages en tu servidor OCR',
+      one: 'Reconociendo la página $pages en tu servidor OCR',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get localOcrOptions => 'Opciones';
 
   @override
   String get localOcrAlreadyDone => 'Esta página ya tiene OCR';

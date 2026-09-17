@@ -2906,7 +2906,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get localOcrRecognize => 'Recognize text';
 
   @override
-  String get localOcrRecognizeQuick => 'Recognize this page (hold for options)';
+  String get localOcrRecognizeQuick =>
+      'Recognize this page. Long press for more options';
+
+  @override
+  String localOcrQuickStartedOnDevice({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Recognizing pages $pages on device',
+      one: 'Recognizing page $pages on device',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String localOcrQuickStartedRemote({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Recognizing pages $pages on your OCR server',
+      one: 'Recognizing page $pages on your OCR server',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get localOcrOptions => 'Options';
 
   @override
   String get localOcrAlreadyDone => 'This page already has OCR';

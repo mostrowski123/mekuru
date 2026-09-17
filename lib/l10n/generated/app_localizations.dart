@@ -4864,11 +4864,35 @@ abstract class AppLocalizations {
   /// **'Recognize text'**
   String get localOcrRecognize;
 
-  /// Tooltip of the reader's OCR button: a tap scans the visible page, a long press opens the options sheet.
+  /// Tooltip of the reader's OCR button: a tap scans the visible page, a long press opens the options sheet. Touch users rarely see it, so screen readers are its main audience.
   ///
   /// In en, this message translates to:
-  /// **'Recognize this page (hold for options)'**
+  /// **'Recognize this page. Long press for more options'**
   String get localOcrRecognizeQuick;
+
+  /// Snack bar after a one-tap scan starts with the on-device engine. pages is a comma-separated list of page numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Recognizing page {pages} on device} other{Recognizing pages {pages} on device}}'**
+  String localOcrQuickStartedOnDevice({
+    required int count,
+    required String pages,
+  });
+
+  /// Snack bar after a one-tap scan is sent to the user's own OCR server. pages is a comma-separated list of page numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Recognizing page {pages} on your OCR server} other{Recognizing pages {pages} on your OCR server}}'**
+  String localOcrQuickStartedRemote({
+    required int count,
+    required String pages,
+  });
+
+  /// Snack bar action in the manga reader that opens the OCR options sheet (engine, page or entire manga, replace).
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get localOcrOptions;
 
   /// Snack bar after a one-tap scan when every visible page is already recognized; its action offers to replace.
   ///

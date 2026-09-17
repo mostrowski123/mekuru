@@ -319,5 +319,19 @@ void main() {
       SharedPreferences.setMockInitialValues({'${ocrProgressKeyPrefix}1': '1'});
       expect(await preferredOcrBackend(manga()), OcrBackend.remote);
     });
+    test('remote history is not a remembered choice', () async {
+      // The reader's one-tap scan keys off this: history alone must open the
+      // sheet, not send a page to a server the user never picked.
+      SharedPreferences.setMockInitialValues({'${ocrProgressKeyPrefix}1': '1'});
+      expect(await rememberedOcrBackend(), isNull);
+      SharedPreferences.setMockInitialValues({
+        'ocr.preferred_backend': 'remote',
+      });
+      expect(await rememberedOcrBackend(), OcrBackend.remote);
+      SharedPreferences.setMockInitialValues({
+        'ocr.preferred_backend': 'onDevice',
+      });
+      expect(await rememberedOcrBackend(), OcrBackend.onDevice);
+    });
   });
 }

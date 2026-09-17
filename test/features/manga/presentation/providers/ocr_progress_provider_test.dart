@@ -5,6 +5,82 @@ import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provid
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  group('remoteOcrChange', () {
+    AsyncValue<OcrProgress?> at(String status, [int completed = 0]) =>
+        AsyncData(OcrProgress(completed: completed, total: 10, status: status));
+
+    test('the first value is never a change', () {
+      final failed = at(OcrStatus.failed);
+      expect(remoteOcrChange(null, failed), RemoteOcrChange.none);
+      expect(
+        remoteOcrChange(const AsyncLoading(), failed),
+        RemoteOcrChange.none,
+      );
+    });
+
+    test('a running job that fails is reported once', () {
+      final failed = at(OcrStatus.failed);
+      expect(
+        remoteOcrChange(at(OcrStatus.running), failed),
+        RemoteOcrChange.failed,
+      );
+      expect(remoteOcrChange(failed, failed), RemoteOcrChange.none);
+    });
+
+    test('new pages and a finished job reload the reader', () {
+      expect(
+        remoteOcrChange(at(OcrStatus.running, 3), at(OcrStatus.running, 4)),
+        RemoteOcrChange.pagesCommitted,
+      );
+      expect(
+        remoteOcrChange(at(OcrStatus.running, 3), at(OcrStatus.running, 3)),
+        RemoteOcrChange.none,
+      );
+      // Replacing one page of a fully recognized manga never raises the count.
+      expect(
+        remoteOcrChange(at(OcrStatus.running, 9), at(OcrStatus.completed, 10)),
+        RemoteOcrChange.pagesCommitted,
+      );
+      expect(
+        remoteOcrChange(const AsyncData(null), at(OcrStatus.completed, 10)),
+        RemoteOcrChange.pagesCommitted,
+      );
+    });
+
+    test('a first scheduled job and a cleared state change nothing', () {
+      expect(
+        remoteOcrChange(const AsyncData(null), at(OcrStatus.running, 5)),
+        RemoteOcrChange.none,
+      );
+      expect(
+        remoteOcrChange(at(OcrStatus.completed, 10), const AsyncData(null)),
+        RemoteOcrChange.none,
+      );
+    });
+
+    test('a refresh that lands on failed is a job that died before the first '
+        'poll', () async {
+      final provider = StreamProvider<OcrProgress?>(
+        (ref) => Stream.value(at(OcrStatus.failed).value),
+      );
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final changes = <RemoteOcrChange>[];
+      container.listen(
+        provider,
+        (previous, next) => changes.add(remoteOcrChange(previous, next)),
+      );
+      await container.read(provider.future);
+      expect(changes, everyElement(RemoteOcrChange.none));
+
+      container.invalidate(provider);
+      await container.read(provider.future);
+      expect(changes.where((c) => c != RemoteOcrChange.none), [
+        RemoteOcrChange.failed,
+      ]);
+    });
+  });
+
   group('ocrProgressProvider', () {
     test('emits null when no progress stored', () async {
       SharedPreferences.setMockInitialValues({});

@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:integration_test/integration_test.dart';
@@ -9,12 +12,15 @@ import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/local_ocr_client.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
+import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/screens/manga_reader_screen.dart';
 import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_page_overlay.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'shared/test_infrastructure.dart';
 import 'test_helpers.dart';
 
@@ -46,9 +52,13 @@ class _Reader {
   final bool supplied;
   final Directory _root;
   final AppDatabase _db;
+  late final Book book;
   _Reader._(this.l, this.supplied, this._root, this._db);
 
-  static Future<_Reader> open(WidgetTester tester) async {
+  static Future<_Reader> open(
+    WidgetTester tester, {
+    List<Override> Function(Book book)? overrides,
+  }) async {
     final db = createTestDatabase();
     final root = await Directory.systemTemp.createTemp('ocr-reader-');
     final repository = BookRepository(db);
@@ -74,13 +84,14 @@ class _Reader {
     }
     final imported = await repository.importCbz(source);
     final book = imported.copyWith(lastReadCfi: const Value('7'));
-    final reader = _Reader._(l, supplied.isNotEmpty, root, db);
+    final reader = _Reader._(l, supplied.isNotEmpty, root, db)..book = book;
     await tester.pumpWidget(
       buildIntegrationTestApp(
         db: db,
         home: MangaReaderScreen(book: book),
         extraOverrides: [
           localOcrClientProvider.overrideWithValue(reader.client),
+          ...?overrides?.call(book),
         ],
       ),
     );
@@ -122,9 +133,13 @@ void main() {
   late OcrPurchaseFlow originalFlow;
   var unlocked = true;
   var proOpens = 0;
-  setUp(() {
+  setUp(() async {
     unlocked = true;
     proOpens = 0;
+    // A tap only scans once an engine has been chosen; without one it opens
+    // the sheet (covered below).
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(ocrPreferredBackendKey, OcrBackend.onDevice.name);
     // The shared integration app pins proUnlockedProvider to locked; the OCR
     // gate reads Pro through this seam instead.
     originalFlow = OcrPurchaseFlow.instance;
@@ -164,7 +179,85 @@ void main() {
       await pumpUntilVisible(tester, reader.overlayCancel);
       expect(find.byType(OcrActionSheet), findsNothing);
       if (!reader.supplied) expect(reader.client.created?.json['pages'], [7]);
+      // The receipt names the engine and is the tappable way to the options.
+      expect(
+        find.text(reader.l.localOcrQuickStartedOnDevice(count: 1, pages: '8')),
+        findsOneWidget,
+      );
+      await tester.tap(find.text(reader.l.localOcrOptions));
+      await pumpUntilVisible(tester, find.byType(OcrActionSheet));
+      Navigator.of(tester.element(find.byType(OcrActionSheet))).pop();
+      await pumpUntilGone(tester, find.byType(OcrActionSheet));
       await reader.cancelScan(tester);
+      await reader.close(tester);
+    },
+    timeout: const Timeout(Duration(minutes: 5)),
+  );
+
+  testWidgets(
+    'the first tap, before any engine was chosen, opens the options sheet',
+    (tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(ocrPreferredBackendKey);
+      final reader = await _Reader.open(tester);
+      await tester.tap(reader.button);
+      await pumpUntilVisible(tester, find.byType(OcrActionSheet));
+      expect(reader.client.created, isNull);
+      expect(reader.overlayCancel, findsNothing);
+      await reader.close(tester);
+    },
+    timeout: const Timeout(Duration(minutes: 5)),
+  );
+
+  testWidgets(
+    'remote OCR progress reloads the open page and reports a failed scan',
+    (tester) async {
+      // The remote worker reports only through ocrProgressProvider; a fake
+      // stream stands in for it, and the cache edit for the page it committed.
+      final progress = StreamController<OcrProgress?>();
+      final reader = await _Reader.open(
+        tester,
+        overrides: (book) => [
+          ocrProgressProvider(book.id).overrideWith((ref) => progress.stream),
+        ],
+      );
+      final l = reader.l;
+      OcrProgress at(String status, int completed, [String? error]) =>
+          OcrProgress(
+            completed: completed,
+            total: 12,
+            status: status,
+            errorMessage: error,
+          );
+      progress.add(at(OcrStatus.running, 0));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final cache = File('${reader.book.filePath}/pages_cache.json');
+      final json = jsonDecode(await cache.readAsString()) as Map;
+      ((json['pages'] as List)[7] as Map)['ocr'] = {
+        'completed': true,
+        'source': 'remote',
+      };
+      await cache.writeAsString(jsonEncode(json));
+      progress.add(at(OcrStatus.completed, 12));
+      await pumpUntilVisible(tester, find.text(l.ocrComplete));
+      // Only a reloaded page 8 knows it has OCR now.
+      await tester.tap(reader.button);
+      await pumpUntilVisible(tester, find.text(l.localOcrAlreadyDone));
+      expect(reader.client.created, isNull);
+
+      progress.add(at(OcrStatus.running, 0));
+      await tester.pump(const Duration(milliseconds: 300));
+      progress.add(at(OcrStatus.failed, 0, 'Could not connect to OCR server.'));
+      await pumpUntilVisible(
+        tester,
+        find.text('Could not connect to OCR server.'),
+      );
+      // Let the bar finish sliding in; its action is off screen until then.
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text(l.localOcrOptions));
+      await pumpUntilVisible(tester, find.byType(OcrActionSheet));
+      await progress.close();
       await reader.close(tester);
     },
     timeout: const Timeout(Duration(minutes: 5)),

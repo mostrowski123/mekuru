@@ -38,6 +38,38 @@ Stream<OcrProgress?> _pollOcrProgress(int bookId) async* {
   }
 }
 
+/// What a step in remote OCR progress means for a reader that is open on the
+/// book.
+enum RemoteOcrChange { none, pagesCommitted, failed }
+
+/// Classifies the step from [previous] to [next]. The provider's first value
+/// is never a change, so a failure left over from an earlier run stays quiet
+/// when the reader opens.
+RemoteOcrChange remoteOcrChange(
+  AsyncValue<OcrProgress?>? previous,
+  AsyncValue<OcrProgress?> next,
+) {
+  final after = next.value;
+  if (previous?.hasValue != true || next.isLoading || after == null) {
+    return RemoteOcrChange.none;
+  }
+  final before = previous!.value;
+  if (after.status == OcrStatus.failed) {
+    // Scheduling overwrites the old state with `running` before it refreshes
+    // this provider, so a refresh that lands on `failed` is a new job that
+    // died before the first poll.
+    return previous.isLoading || before?.status != OcrStatus.failed
+        ? RemoteOcrChange.failed
+        : RemoteOcrChange.none;
+  }
+  final finished =
+      after.status == OcrStatus.completed &&
+      before?.status != OcrStatus.completed;
+  return finished || (before != null && after.completed > before.completed)
+      ? RemoteOcrChange.pagesCommitted
+      : RemoteOcrChange.none;
+}
+
 /// Whether a book has partial OCR data (some pages processed, but not all).
 final hasPartialOcrProvider = Provider.family<bool, int>((ref, bookId) {
   final progress = ref.watch(ocrProgressProvider(bookId));

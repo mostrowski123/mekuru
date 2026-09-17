@@ -39,10 +39,19 @@ Future<void> showOcrActionSheet(
   );
 }
 
+const ocrPreferredBackendKey = 'ocr.preferred_backend';
+
+/// The backend the user last started a scan with, or null if they never have.
+Future<OcrBackend?> rememberedOcrBackend() async {
+  final prefs = await SharedPreferences.getInstance();
+  return OcrBackend.values.asNameMap()[prefs.getString(ocrPreferredBackendKey)];
+}
+
 /// The backend the user last chose, else remote for manga with remote history.
 Future<OcrBackend> preferredOcrBackend(MokuroBook manga) async {
+  final remembered = await rememberedOcrBackend();
+  if (remembered != null) return remembered;
   final prefs = await SharedPreferences.getInstance();
-  final remembered = prefs.getString('ocr.preferred_backend');
   final usedRemote =
       prefs.getKeys().any(
         (key) =>
@@ -51,9 +60,7 @@ Future<OcrBackend> preferredOcrBackend(MokuroBook manga) async {
       ) ||
       manga.ocrSource == 'custom_ocr' ||
       manga.pages.any((page) => page.ocr?['source'] == 'remote');
-  return remembered == 'remote' || (remembered == null && usedRemote)
-      ? OcrBackend.remote
-      : OcrBackend.onDevice;
+  return usedRemote ? OcrBackend.remote : OcrBackend.onDevice;
 }
 
 /// Starts OCR for [pages] of [book]. Returns true once a job is launched and
@@ -83,7 +90,7 @@ Future<bool> startOcr(
           .backupOriginalMokuroOcrIfNeeded(book);
     }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('ocr.preferred_backend', backend.name);
+    await prefs.setString(ocrPreferredBackendKey, backend.name);
     await scheduleOcrTask(
       bookId: book.id,
       cacheFilePath: cachePath,
@@ -143,7 +150,7 @@ Future<bool> startOcr(
         await repository.backupOriginalMokuroOcrIfNeeded(book);
       }
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('ocr.preferred_backend', 'onDevice');
+      await prefs.setString(ocrPreferredBackendKey, OcrBackend.onDevice.name);
       await client.requestNotifications();
     }),
   );

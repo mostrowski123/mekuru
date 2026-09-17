@@ -928,6 +928,19 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     }
   }
 
+  /// The pages on screen as of the last build, for callbacks that outlive it.
+  List<int> _visiblePages = const [];
+
+  /// Opens the options sheet for whatever is on screen when it is tapped; the
+  /// page may have turned since the snack bar appeared.
+  SnackBarAction _ocrOptionsAction() => SnackBarAction(
+    label: context.l10n.localOcrOptions,
+    onPressed: () {
+      final manga = ref.read(mangaPagesProvider(widget.book.id)).value;
+      if (manga != null) _showOcrOptions(manga, _visiblePages);
+    },
+  );
+
   /// Tap on the OCR button: recognize the visible pages that lack OCR, or
   /// offer to replace when every visible page already has it.
   Future<void> _quickOcr(
@@ -936,11 +949,19 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     bool replace = false,
   }) async {
     if (_ocrSheetOpen) return;
+    // Until the user has started a scan from the sheet there is no engine to
+    // tap through to: show them the choices instead of guessing one from
+    // their OCR history.
+    final backend = await rememberedOcrBackend();
+    if (!mounted || _ocrSheetOpen) return;
+    if (backend == null) return _showOcrOptions(manga, pages);
     final targets = quickOcrTargets(manga, pages, replace: replace);
     if (targets.isEmpty) {
       final l = context.l10n;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          // A snack bar with an action stays up until dismissed by default.
+          persist: false,
           content: Text(l.localOcrAlreadyDone),
           action: SnackBarAction(
             label: l.localOcrReplace,
@@ -953,9 +974,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _ocrSheetOpen = true;
     try {
       await runLocalOcrAction(context, () async {
-        final backend = await preferredOcrBackend(manga);
-        if (!mounted) return;
-        await startOcr(
+        final started = await startOcr(
           context,
           ref,
           widget.book,
@@ -966,9 +985,68 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               ? OcrExistingPolicy.replace
               : OcrExistingPolicy.missingOnly,
         );
+        if (!started || !mounted) return;
+        final l = context.l10n;
+        final receipt = backend == OcrBackend.remote
+            ? l.localOcrQuickStartedRemote
+            : l.localOcrQuickStartedOnDevice;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            persist: false,
+            content: Text(
+              receipt(
+                count: targets.length,
+                pages: targets.map((index) => index + 1).join(', '),
+              ),
+            ),
+            action: _ocrOptionsAction(),
+          ),
+        );
       });
     } finally {
       _ocrSheetOpen = false;
+    }
+  }
+
+  /// Remote OCR runs in a background worker that only reports through
+  /// [ocrProgressProvider]; without this the reader would learn nothing of it.
+  void _onRemoteOcrProgress(
+    AsyncValue<OcrProgress?>? previous,
+    AsyncValue<OcrProgress?> next,
+  ) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    switch (remoteOcrChange(previous, next)) {
+      case RemoteOcrChange.none:
+        return;
+      case RemoteOcrChange.pagesCommitted:
+        final finished = next.value?.status == OcrStatus.completed;
+        // A reload re-parses the whole cache, so a whole-manga job only earns
+        // one while it can still change what is on screen.
+        final manga = ref.read(mangaPagesProvider(widget.book.id)).value;
+        if (finished ||
+            manga == null ||
+            _visiblePages.any((page) => !manga.pages[page].hasOcr(manga))) {
+          ref.invalidate(mangaPagesProvider(widget.book.id));
+        }
+        if (!finished) return;
+        // The user is looking at the result, so the library cover need not
+        // keep announcing it.
+        unawaited(_acknowledgeCompletedOcrOverlay());
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(context.l10n.ocrComplete)));
+      case RemoteOcrChange.failed:
+        // Stays up until dismissed (the default with an action): nothing else
+        // in the reader says the scan died.
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(next.value?.errorMessage ?? context.l10n.ocrFailed),
+              action: _ocrOptionsAction(),
+            ),
+          );
     }
   }
 
@@ -998,6 +1076,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         }
       },
     );
+
+    ref.listen(ocrProgressProvider(widget.book.id), _onRemoteOcrProgress);
 
     ref.listen(localOcrJobProvider(widget.book.id), (previous, next) {
       if ((previous?.isActive ?? false) &&
@@ -1070,6 +1150,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
             final spreads = viewMode == MangaViewMode.twoPageSpread
                 ? computeSpreads(totalPages, isRtl: isRtl)
                 : <PageSpread>[];
+
+            _visiblePages = _visiblePageIndexes(viewMode, spreads);
 
             // Count the page(s) shown when the book first opens; every later
             // page is counted as it becomes visible. One-shot, because build

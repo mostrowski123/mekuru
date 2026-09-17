@@ -3734,9 +3734,37 @@
   "@localOcrRecognize": {
     "description": "On-device manga OCR: localOcrRecognize"
   },
-  "localOcrRecognizeQuick": "Recognize this page (hold for options)",
+  "localOcrRecognizeQuick": "Recognize this page. Long press for more options",
   "@localOcrRecognizeQuick": {
-    "description": "Tooltip of the reader's OCR button: a tap scans the visible page, a long press opens the options sheet."
+    "description": "Tooltip of the reader's OCR button: a tap scans the visible page, a long press opens the options sheet. Touch users rarely see it, so screen readers are its main audience."
+  },
+  "localOcrQuickStartedOnDevice": "{count, plural, one{Recognizing page {pages} on device} other{Recognizing pages {pages} on device}}",
+  "@localOcrQuickStartedOnDevice": {
+    "description": "Snack bar after a one-tap scan starts with the on-device engine. pages is a comma-separated list of page numbers.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "localOcrQuickStartedRemote": "{count, plural, one{Recognizing page {pages} on your OCR server} other{Recognizing pages {pages} on your OCR server}}",
+  "@localOcrQuickStartedRemote": {
+    "description": "Snack bar after a one-tap scan is sent to the user's own OCR server. pages is a comma-separated list of page numbers.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "localOcrOptions": "Options",
+  "@localOcrOptions": {
+    "description": "Snack bar action in the manga reader that opens the OCR options sheet (engine, page or entire manga, replace)."
   },
   "localOcrAlreadyDone": "This page already has OCR",
   "@localOcrAlreadyDone": {

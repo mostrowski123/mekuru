@@ -2786,7 +2786,38 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrRecognize => '识别文字';
 
   @override
-  String get localOcrRecognizeQuick => '识别本页（长按查看选项）';
+  String get localOcrRecognizeQuick => '识别本页。长按查看更多选项';
+
+  @override
+  String localOcrQuickStartedOnDevice({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在设备端识别第 $pages 页',
+      one: '正在设备端识别第 $pages 页',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String localOcrQuickStartedRemote({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在你的 OCR 服务器上识别第 $pages 页',
+      one: '正在你的 OCR 服务器上识别第 $pages 页',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get localOcrOptions => '选项';
 
   @override
   String get localOcrAlreadyDone => '本页已有 OCR';
@@ -5845,7 +5876,38 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get localOcrRecognize => '识别文字';
 
   @override
-  String get localOcrRecognizeQuick => '识别本页（长按查看选项）';
+  String get localOcrRecognizeQuick => '识别本页。长按查看更多选项';
+
+  @override
+  String localOcrQuickStartedOnDevice({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在设备端识别第 $pages 页',
+      one: '正在设备端识别第 $pages 页',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String localOcrQuickStartedRemote({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在你的 OCR 服务器上识别第 $pages 页',
+      one: '正在你的 OCR 服务器上识别第 $pages 页',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get localOcrOptions => '选项';
 
   @override
   String get localOcrAlreadyDone => '本页已有 OCR';

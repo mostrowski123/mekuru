@@ -2923,7 +2923,39 @@ class AppLocalizationsId extends AppLocalizations {
   String get localOcrRecognize => 'Kenali teks';
 
   @override
-  String get localOcrRecognizeQuick => 'Kenali halaman ini (tahan untuk opsi)';
+  String get localOcrRecognizeQuick =>
+      'Kenali halaman ini. Tahan untuk opsi lainnya';
+
+  @override
+  String localOcrQuickStartedOnDevice({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mengenali halaman $pages di perangkat',
+      one: 'Mengenali halaman $pages di perangkat',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String localOcrQuickStartedRemote({
+    required int count,
+    required String pages,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mengenali halaman $pages di server OCR Anda',
+      one: 'Mengenali halaman $pages di server OCR Anda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get localOcrOptions => 'Opsi';
 
   @override
   String get localOcrAlreadyDone => 'Halaman ini sudah memiliki OCR';
