@@ -115,6 +115,16 @@ void main() {
       expect(bodyCss['text-spacing-trim'], 'space-all');
     });
 
+    test('turns off WebKit text autosizing '
+        '(iPhone pins long paragraphs at an inflated size otherwise)', () {
+      final theme = buildReaderTheme(settings: const ReaderSettings());
+      final htmlCss = theme.customCss!['html'] as Map<String, dynamic>;
+      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+
+      expect(htmlCss['-webkit-text-size-adjust'], '100% !important');
+      expect(bodyCss['-webkit-text-size-adjust'], '100% !important');
+    });
+
     test('writing-mode override works with dark color mode', () {
       final theme = buildReaderTheme(
         settings: const ReaderSettings(

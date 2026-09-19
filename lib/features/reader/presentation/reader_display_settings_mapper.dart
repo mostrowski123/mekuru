@@ -58,15 +58,24 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
   // text and for WebViews without text-spacing-trim support.
   const textSpacingTrim = 'space-all';
 
+  // iPhone WebKit "autosizes" text in blocks much wider than the screen, and
+  // a paginated section is one such block: long paragraphs get pinned at an
+  // inflated size and ignore the font-size setting while short ones follow
+  // it. 100% turns that off. Inherited, so the roots cover all content; a
+  // no-op on Android, where the WebView does not autosize.
+  const textSizeAdjust = '100% !important';
+
   final Map<String, dynamic> htmlCss = {
     'background': '$bgHex !important',
     'color': '$fgHex !important',
     'text-spacing-trim': textSpacingTrim,
+    '-webkit-text-size-adjust': textSizeAdjust,
   };
   final Map<String, dynamic> bodyCss = {
     'background': '$bgHex !important',
     'color': '$fgHex !important',
     'text-spacing-trim': textSpacingTrim,
+    '-webkit-text-size-adjust': textSizeAdjust,
   };
 
   // Force horizontal writing mode when vertical text is disabled.
