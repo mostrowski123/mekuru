@@ -1,0 +1,135 @@
+name: Release iOS to TestFlight
+
+on:
+  workflow_dispatch:
+  # ponytail: temporary. workflow_dispatch only works once this file is on
+  # main, so until the iOS port merges a change to this file on the port
+  # branch starts a run. Remove this trigger before merging.
+  push:
+    branches: [feat/ios-phase-0]
+    paths:
+      - '.github/workflows/release-ios.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # Job-level so the symbol-upload step's `if:` can test it (steps cannot
+      # read the secrets context directly).
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-macos-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-macos-
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: build/ios/SourcePackages
+          key: spm-${{ hashFiles('ios/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: spm-
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Generate environment config
+        run: >
+          flutter pub run environment_config:generate
+          --sentryDsn=${{ secrets.SENTRY_DSN }}
+          --sentryEnvironment=production
+
+      # TestFlight needs a build number that rises within a version.
+      # ponytail: run_number restarts at 1 if this workflow file is renamed;
+      # add a floor (like PLAY_VERSION_CODE_FLOOR) if that ever happens.
+      - name: Build archive
+        run: flutter build ipa --no-codesign --no-pub --build-number=${{ github.run_number }}
+
+      - name: Verify native frameworks
+        run: |
+          app=build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app
+          ls "$app/Frameworks"
+          test -d "$app/Frameworks/mecab_dart.framework"
+          test -d "$app/Frameworks/sqlite3.framework"
+
+      # An unsigned archive carries no entitlements, and the export step reads
+      # them from the archived app's signature. Ad-hoc sign the app with
+      # Runner.entitlements so App Attest survives into the signed IPA.
+      - name: Attach entitlements to the archive
+        run: >
+          codesign --force --sign -
+          --entitlements ios/Runner/Runner.entitlements
+          build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app
+
+      # altool and xcodebuild both find the key in this directory by its ID.
+      - name: Install App Store Connect API key
+        env:
+          ASC_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s' "$ASC_API_KEY" > ~/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8
+
+      # Signs with a cloud-managed distribution certificate, so the runner
+      # needs no certificate or provisioning profile of its own.
+      - name: Sign and export IPA
+        run: >
+          xcodebuild -exportArchive
+          -archivePath build/ios/archive/Runner.xcarchive
+          -exportOptionsPlist ios/ci/ExportOptions.plist
+          -exportPath build/ios/ipa
+          -allowProvisioningUpdates
+          -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8
+          -authenticationKeyID $ASC_KEY_ID
+          -authenticationKeyIssuerID $ASC_ISSUER_ID
+
+      # The archive is built unsigned, so check that the entitlements in
+      # Runner.entitlements survived into the signed app.
+      - name: Verify entitlements
+        run: |
+          ls -l build/ios/ipa
+          unzip -q build/ios/ipa/*.ipa -d build/ios/ipa/unpacked
+          codesign -d --entitlements - --xml build/ios/ipa/unpacked/Payload/Runner.app > build/ios/ipa/entitlements.plist
+          plutil -p build/ios/ipa/entitlements.plist
+          grep -q 'com.apple.developer.devicecheck.appattest-environment' build/ios/ipa/entitlements.plist
+
+      - name: Upload to TestFlight
+        run: xcrun altool --upload-app --type ios -f build/ios/ipa/*.ipa --apiKey $ASC_KEY_ID --apiIssuer $ASC_ISSUER_ID
+
+      - name: Upload debug symbols to Sentry
+        if: env.SENTRY_AUTH_TOKEN != ''
+        run: dart run sentry_dart_plugin
+
+      - name: Remove App Store Connect API key
+        if: always()
+        run: rm -rf ~/.appstoreconnect/private_keys
