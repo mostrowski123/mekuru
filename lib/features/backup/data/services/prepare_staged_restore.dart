@@ -125,15 +125,7 @@ Future<PreparedStagedRestore> prepareStagedRestore(
         '(${AppDatabase.latestSchemaVersion})',
       );
     }
-    var rewrittenBooks = 0;
-    for (final column in ['file_path', 'cover_image_path']) {
-      db.execute(
-        'UPDATE books SET $column = ? || substr($column, instr($column, ?)) '
-        'WHERE $column IS NOT NULL AND instr($column, ?) > 0',
-        [root, _booksAnchor, _booksAnchor],
-      );
-      if (column == 'file_path') rewrittenBooks = db.updatedRows;
-    }
+    final rewrittenBooks = _reanchorBookPaths(db, root);
 
     // A linked manga whose pages the archive carries takes its first page as
     // the cover; one without pages keeps the content:// URI and stays linked.
@@ -167,6 +159,56 @@ Future<PreparedStagedRestore> prepareStagedRestore(
     return (ids, rewrittenBooks);
   } on SqliteException catch (e) {
     throw FullBackupFormatException('The database is unreadable: $e');
+  } finally {
+    db.close();
+  }
+}
+
+/// Moves `books.file_path` and `books.cover_image_path` onto [root] from
+/// their `/books/` anchor; returns how many `file_path`s it touched.
+int _reanchorBookPaths(Database db, String root) {
+  var rewrittenBooks = 0;
+  for (final column in ['file_path', 'cover_image_path']) {
+    db.execute(
+      'UPDATE books SET $column = ? || substr($column, instr($column, ?)) '
+      'WHERE $column IS NOT NULL AND instr($column, ?) > 0',
+      [root, _booksAnchor, _booksAnchor],
+    );
+    if (column == 'file_path') rewrittenBooks = db.updatedRows;
+  }
+  return rewrittenBooks;
+}
+
+/// Boot pass for a data root that moved under an installed library: iOS gives
+/// the app container a new UUID on reinstall (and sometimes on update), and
+/// Android can restore the app into a different data directory. Applies the
+/// restore's re-anchoring to the live database and manga caches under
+/// [rootPath]; a no-op (one SELECT) when nothing moved.
+///
+/// Must run before the database is opened, after any staged restore was
+/// applied. Caches go first and the database last, so the database keeps
+/// reporting "moved" until a pass ran to completion. Returns whether it
+/// rewrote anything.
+// ponytail: rewrites every manga cache on each root move (every Xcode
+// reinstall). Store paths relative to the books root if that gets slow.
+Future<bool> reanchorLibraryIfMoved(String rootPath) async {
+  final root = rootPath.replaceFirst(RegExp(r'/+$'), '');
+  final dbFile = File(p.join(root, StagedFullRestore.databaseFileName));
+  if (!dbFile.existsSync()) return false;
+
+  final db = sqlite3.open(dbFile.path);
+  try {
+    final moved = db.select(
+      'SELECT 1 FROM books WHERE instr(file_path, ?1) > 0 '
+      'AND substr(file_path, 1, length(?2)) != ?2 LIMIT 1',
+      [_booksAnchor, '$root$_booksAnchor'],
+    ).isNotEmpty;
+    if (!moved) return false;
+
+    final booksDir = Directory(p.join(root, StagedFullRestore.booksDirName));
+    if (booksDir.existsSync()) await _rewriteMangaCaches(booksDir, root);
+    _reanchorBookPaths(db, root);
+    return true;
   } finally {
     db.close();
   }

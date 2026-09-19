@@ -70,6 +70,9 @@ Future<void> main() async {
       // Must run before anything opens the database: a staged full restore
       // swaps the database and books directory into place with renames.
       await applyStagedFullRestoreIfAny();
+      // iOS moves the data container on reinstall; stored absolute paths
+      // follow it here, still before the database opens.
+      await reanchorLibraryIfMovedAtBoot();
       await PreloadedAppSettings.load();
       await PreloadedProEntitlement.load();
       // A job left by the previous process must block the app from the

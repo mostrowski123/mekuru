@@ -329,4 +329,75 @@ void main() {
     await expectLater(run(), throwsA(isA<FullBackupFormatException>()));
     expect(readyFile().existsSync(), isFalse);
   });
+
+  // The staging dir has the live layout (database + books/ side by side), so
+  // it stands in for an app-support root whose container path just changed.
+  group('reanchorLibraryIfMoved', () {
+    test(
+      'moves rows and caches onto the root the library now lives under',
+      () async {
+        await seedDatabase();
+        seedCaches();
+        final liveRoot = staging.path;
+
+        expect(await reanchorLibraryIfMoved('$liveRoot/'), isTrue);
+
+        final books = rows(
+          'SELECT title, file_path, cover_image_path FROM books',
+        );
+        final epub = books.singleWhere((r) => r['title'] == 'EPUB');
+        expect(epub['file_path'], '$liveRoot/books/book_1/content');
+        expect(epub['cover_image_path'], '$liveRoot/books/book_1/cover.jpg');
+        final manga = books.singleWhere((r) => r['title'] == 'SAF manga');
+        expect(manga['file_path'], '$liveRoot/books/manga_2');
+        expect(manga['cover_image_path'], startsWith('content://'));
+        expect(
+          readJson(
+            p.join(liveRoot, 'books', 'book_1', mangaPagesCacheFileName),
+          )['imageDirPath'],
+          '$liveRoot/books/book_1/images',
+        );
+      },
+    );
+
+    test('is a no-op once the library is on the current root', () async {
+      await seedDatabase();
+      seedCaches();
+      await reanchorLibraryIfMoved(staging.path);
+      final cache = File(
+        p.join(staging.path, 'books', 'book_1', mangaPagesCacheFileName),
+      );
+      final before = cache.lastModifiedSync();
+
+      expect(await reanchorLibraryIfMoved(staging.path), isFalse);
+      expect(cache.lastModifiedSync(), before);
+    });
+
+    test('redoes the caches when a pass died before the database', () async {
+      await seedDatabase();
+      seedCaches();
+      // Rows still on the old root are the "moved" signal, whatever state
+      // the caches were left in.
+      await reanchorLibraryIfMoved(staging.path);
+      final raw = sqlite.sqlite3.open(dbPath);
+      raw.execute(
+        "UPDATE books SET file_path = '$oldRoot/books/book_1/content' "
+        "WHERE title = 'EPUB'",
+      );
+      raw.close();
+
+      expect(await reanchorLibraryIfMoved(staging.path), isTrue);
+      expect(
+        rows(
+          "SELECT file_path FROM books WHERE title = 'EPUB'",
+        ).single['file_path'],
+        '${staging.path}/books/book_1/content',
+      );
+    });
+
+    test('does nothing, and creates nothing, on a fresh install', () async {
+      expect(await reanchorLibraryIfMoved(staging.path), isFalse);
+      expect(File(dbPath).existsSync(), isFalse);
+    });
+  });
 }

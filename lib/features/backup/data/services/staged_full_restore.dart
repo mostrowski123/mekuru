@@ -363,3 +363,18 @@ Future<void> applyStagedFullRestoreIfAny() async {
     logFailure('backup.full_restore_boot_failed', e, stackTrace: st);
   }
 }
+
+/// Boot hook: re-anchors stored library paths when the app's data root moved
+/// (see [reanchorLibraryIfMoved]). Runs right after
+/// [applyStagedFullRestoreIfAny], before any database is opened, and never
+/// throws.
+Future<void> reanchorLibraryIfMovedAtBoot() async {
+  try {
+    final root = await getApplicationSupportDirectory();
+    if (await reanchorLibraryIfMoved(root.path)) {
+      logUsage('library.paths_reanchored');
+    }
+  } catch (e, st) {
+    logFailure('library.paths_reanchor_failed', e, stackTrace: st);
+  }
+}
