@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 
 import 'ocr_billing_client.dart';
@@ -53,12 +56,56 @@ bool? proOwnershipFrom(QueryPurchaseDetailsResponse response) {
   );
 }
 
+/// True when the App Store reports this purchase as paid and not refunded.
+///
+/// The status is not enough on iOS: the plugin forwards every verified
+/// StoreKit transaction as `purchased`, including the update StoreKit sends
+/// when a purchase is refunded or revoked, so trusting it would hand Pro
+/// back on a refund.
+bool isOwnedAppStorePurchase(PurchaseDetails details) {
+  if (details is! SK2PurchaseDetails) return false;
+  if (details.status != PurchaseStatus.purchased &&
+      details.status != PurchaseStatus.restored) {
+    return false;
+  }
+  return !isRevokedAppStoreTransaction(
+    details.verificationData.localVerificationData,
+  );
+}
+
+/// Whether a StoreKit 2 transaction's JSON payload carries a
+/// `revocationDate` (refund, or Family Sharing access withdrawn). JSON that
+/// cannot be read counts as not revoked: it only reaches here for a
+/// transaction StoreKit already verified, and locking out a payer is worse
+/// than a refund staying unlocked until the next ownership sync.
+bool isRevokedAppStoreTransaction(String? transactionJson) {
+  if (transactionJson == null || transactionJson.isEmpty) return false;
+  try {
+    final decoded = jsonDecode(transactionJson);
+    return decoded is Map && decoded['revocationDate'] != null;
+  } on FormatException {
+    return false;
+  }
+}
+
+/// Whether the App Store account owns the Pro unlock: some Pro transaction
+/// that has not been refunded or revoked.
+bool ownsProInAppStore(Iterable<SK2Transaction> transactions) {
+  return transactions.any(
+    (t) =>
+        t.productId == proUnlockProductId &&
+        !isRevokedAppStoreTransaction(t.jsonRepresentation),
+  );
+}
+
 // ponytail: DI is test-only (forTesting) — app code always goes through the
 // plain singleton on InAppPurchase.instance.
 class OcrStoreService {
   OcrStoreService._()
     : _inAppPurchase = InAppPurchase.instance,
-      _billingClient = OcrBillingClient();
+      _billingClient = OcrBillingClient(),
+      _appStoreTransactions = SK2Transaction.transactions,
+      _appStoreSync = AppStore().sync;
 
   /// The purchase orchestration (grant→acknowledge→verify order, refund
   /// convergence, waiter semantics) is only reachable with fakes behind
@@ -67,17 +114,29 @@ class OcrStoreService {
   OcrStoreService.forTesting({
     required InAppPurchase inAppPurchase,
     required OcrBillingClient billingClient,
+    Future<List<SK2Transaction>> Function()? appStoreTransactions,
+    Future<void> Function()? appStoreSync,
   }) : _inAppPurchase = inAppPurchase,
-       _billingClient = billingClient;
+       _billingClient = billingClient,
+       _appStoreTransactions = appStoreTransactions ?? (() async => const []),
+       _appStoreSync = appStoreSync ?? (() async {});
 
   static final OcrStoreService instance = OcrStoreService._();
 
   final InAppPurchase _inAppPurchase;
   final OcrBillingClient _billingClient;
 
+  /// StoreKit 2's `Transaction.all` and `AppStore.sync()`. The plugin only
+  /// exposes them as statics, so they are held here to stay fakeable.
+  final Future<List<SK2Transaction>> Function() _appStoreTransactions;
+  final Future<void> Function() _appStoreSync;
+
   // defaultTargetPlatform (not dart:io Platform) so host unit tests, which
   // flutter_test runs as android, exercise the real code paths.
   static bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
+  static bool get _isIos => defaultTargetPlatform == TargetPlatform.iOS;
+  static bool get _hasStore => _isAndroid || _isIos;
+  static String get _storeName => _isIos ? 'the App Store' : 'Google Play';
   final Map<String, ProductDetails> _productCache = {};
   final Map<String, List<Completer<PurchaseGrantResult>>> _pendingWaiters = {};
 
@@ -109,7 +168,7 @@ class OcrStoreService {
   }
 
   Future<void> _doInitialize() async {
-    if (!_isAndroid) return;
+    if (!_hasStore) return;
 
     bool isAvailable;
     try {
@@ -137,7 +196,7 @@ class OcrStoreService {
         _completeAllPendingWithError(
           OcrBillingException(
             500,
-            'Failed to observe Google Play purchase updates: $error',
+            'Failed to observe $_storeName purchase updates: $error',
             code: 'purchase_stream_error',
           ),
         );
@@ -149,10 +208,10 @@ class OcrStoreService {
     Set<String> productIds,
   ) async {
     await initialize();
-    if (!_isAndroid) {
+    if (!_hasStore) {
       throw const OcrBillingException(
         422,
-        'OCR purchases are only available on Android right now.',
+        'Purchases are not available on this platform.',
         code: 'platform_unsupported',
       );
     }
@@ -180,7 +239,7 @@ class OcrStoreService {
     if (missing.isNotEmpty) {
       throw OcrBillingException(
         422,
-        'Missing Google Play products: ${missing.join(', ')}',
+        'Missing $_storeName products: ${missing.join(', ')}',
         code: 'store_product_missing',
       );
     }
@@ -190,10 +249,10 @@ class OcrStoreService {
 
   Future<PurchaseGrantResult> purchaseProduct(String productId) async {
     await initialize();
-    if (!_isAndroid) {
+    if (!_hasStore) {
       throw const OcrBillingException(
         422,
-        'OCR purchases are only available on Android right now.',
+        'Purchases are not available on this platform.',
         code: 'platform_unsupported',
       );
     }
@@ -248,9 +307,9 @@ class OcrStoreService {
       return await waiter.future.timeout(
         const Duration(minutes: 3),
         onTimeout: () {
-          throw const OcrBillingException(
+          throw OcrBillingException(
             408,
-            'Timed out waiting for Google Play to finish the purchase.',
+            'Timed out waiting for $_storeName to finish the purchase.',
             code: 'purchase_timeout',
           );
         },
@@ -267,7 +326,7 @@ class OcrStoreService {
 
   Future<OcrBillingStatus> restorePurchases() async {
     await initialize();
-    if (_isAndroid) {
+    if (_hasStore) {
       _log('restorePurchases start');
       await _syncOwnedPurchases(reason: 'restore', isRestore: true);
     }
@@ -395,6 +454,9 @@ class OcrStoreService {
     required String reason,
     bool isRestore = false,
   }) async {
+    if (_isIos) {
+      return _syncOwnedAppStorePurchases(reason: reason, isRestore: isRestore);
+    }
     if (!_isAndroid) return;
 
     final addition = _inAppPurchase
@@ -439,6 +501,48 @@ class OcrStoreService {
     if (ownsPro != null) {
       await _billingClient.setPlayEntitlement(ownsPro);
     }
+  }
+
+  /// iOS counterpart of the owned-purchases query. Nothing is delivered from
+  /// here: StoreKit replays unfinished transactions through the purchase
+  /// stream at launch, and that path grants and finishes them.
+  ///
+  /// ponytail: `Transaction.all` answers from StoreKit's local cache and
+  /// cannot report "I could not reach the App Store". A reinstall whose first
+  /// launch is offline therefore reads as not owned and clears a flag the
+  /// Keychain kept; the next online sync grants it again. Revisit if payers
+  /// report losing Pro offline.
+  Future<void> _syncOwnedAppStorePurchases({
+    required String reason,
+    required bool isRestore,
+  }) async {
+    if (isRestore) {
+      // Only on an explicit restore: this can show an App Store sign-in
+      // prompt. Cancelling it is not an error worth surfacing.
+      try {
+        await _appStoreSync();
+      } catch (e) {
+        _log('AppStore.sync failed (non-fatal)', {'error': e.toString()});
+      }
+    }
+
+    final List<SK2Transaction> transactions;
+    try {
+      transactions = await _appStoreTransactions();
+    } on PlatformException catch (e) {
+      throw OcrBillingException(
+        502,
+        e.message ?? 'Could not read your App Store purchases.',
+        code: 'restore_query_failed',
+      );
+    }
+    final ownsPro = ownsProInAppStore(transactions);
+    _log('appStoreTransactions', {
+      'reason': reason,
+      'count': transactions.length,
+      'ownsPro': ownsPro,
+    });
+    await _billingClient.setPlayEntitlement(ownsPro);
   }
 
   Future<void> _deliverPurchase(
@@ -495,7 +599,15 @@ class OcrStoreService {
     required bool completeWaiterOnSuccess,
     bool? isRestoreOverride,
   }) async {
-    if (!isOwnedPlayPurchase(details)) {
+    if (details is SK2PurchaseDetails && !isOwnedAppStorePurchase(details)) {
+      // A refund or revocation notice. Finish it so StoreKit stops replaying
+      // it, and let the ownership query decide whether Pro goes away.
+      _log('pro purchase revoked', {'source': source});
+      await _completeIfPending(details, source);
+      await syncOwnedPurchases();
+      return;
+    }
+    if (!isOwnedPlayPurchase(details) && !isOwnedAppStorePurchase(details)) {
       // Pending slow payment: no grant, no acknowledge. The purchase stream
       // delivers it again once Play confirms the money arrived.
       _log('pro purchase not yet owned – skipping', {
@@ -524,7 +636,9 @@ class OcrStoreService {
     // buyers) — but only on live purchases and explicit restores, not the
     // passive startup sync, which would otherwise re-verify on every launch.
     // Failures are non-fatal: Play ownership is the ground truth here.
+    // Android only: the backend has no App Store verification yet.
     final shouldVerify =
+        _isAndroid &&
         _billingClient.hasAuthenticatedUser &&
         (completeWaiterOnSuccess || isRestoreOverride == true);
     if (shouldVerify) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:confetti/confetti.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -138,11 +139,14 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
   Future<ProUpgradeSnapshot> _loadSnapshotDefault() async {
     String? errorMessage;
     String? priceLabel;
+    final store = defaultTargetPlatform == TargetPlatform.iOS
+        ? 'App Store'
+        : 'Google Play';
 
     try {
       await _storeService.initialize();
     } catch (e) {
-      errorMessage ??= 'Failed to initialize Google Play billing: $e';
+      errorMessage ??= 'Failed to initialize $store billing: $e';
     }
 
     final servicesAvailable =
@@ -169,7 +173,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         );
         priceLabel = products[proUnlockProductId]?.price;
       } catch (e) {
-        errorMessage ??= 'Failed to load Google Play pricing: $e';
+        errorMessage ??= 'Failed to load $store pricing: $e';
       }
     }
 

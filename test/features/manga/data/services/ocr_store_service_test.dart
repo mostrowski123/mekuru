@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
 import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
 
@@ -58,6 +61,37 @@ GooglePlayPurchaseDetails _creditPurchase({bool pendingComplete = true}) =>
       purchaseState: PurchaseStateWrapper.purchased,
       pendingComplete: pendingComplete,
     );
+
+const _revokedJson =
+    '{"productId":"pro_unlock_v1","revocationDate":1758300000000}';
+const _paidJson = '{"productId":"pro_unlock_v1"}';
+
+SK2Transaction _appStoreTransaction({
+  String productId = proUnlockProductId,
+  String json = _paidJson,
+}) => SK2Transaction(
+  id: '1',
+  originalId: '1',
+  productId: productId,
+  purchaseDate: '2026-09-20',
+  appAccountToken: null,
+  jsonRepresentation: json,
+);
+
+SK2PurchaseDetails _appStorePurchase({
+  PurchaseStatus status = PurchaseStatus.purchased,
+  String json = _paidJson,
+}) => SK2PurchaseDetails(
+  productID: proUnlockProductId,
+  purchaseID: '1',
+  verificationData: PurchaseVerificationData(
+    localVerificationData: json,
+    serverVerificationData: 'jws',
+    source: 'app_store',
+  ),
+  transactionDate: '2026-09-20',
+  status: status,
+);
 
 class _FakeStatusStorage implements OcrBillingStatusStorage {
   final Map<String, String> values = {};
@@ -240,8 +274,23 @@ class _Harness {
     service = OcrStoreService.forTesting(
       inAppPurchase: iap,
       billingClient: billing,
+      appStoreTransactions: () async {
+        callLog.add('appStoreTransactions');
+        final error = appStoreTransactionsError;
+        if (error != null) throw error;
+        return appStoreTransactions;
+      },
+      appStoreSync: () async {
+        callLog.add('appStoreSync');
+        final error = appStoreSyncError;
+        if (error != null) throw error;
+      },
     );
   }
+
+  List<SK2Transaction> appStoreTransactions = [];
+  Object? appStoreTransactionsError;
+  Object? appStoreSyncError;
 
   String? uid;
   final List<String> callLog = [];
@@ -364,6 +413,156 @@ void main() {
         ],
       );
       expect(proOwnershipFrom(response), isFalse);
+    });
+  });
+
+  group('App Store ownership', () {
+    test('a transaction is revoked only when its JSON says so', () {
+      expect(isRevokedAppStoreTransaction(_revokedJson), isTrue);
+      expect(isRevokedAppStoreTransaction(_paidJson), isFalse);
+      expect(isRevokedAppStoreTransaction(null), isFalse);
+      expect(isRevokedAppStoreTransaction(''), isFalse);
+      expect(isRevokedAppStoreTransaction('not json'), isFalse);
+    });
+
+    test('a purchased or restored transaction is owned, a refund is not', () {
+      expect(isOwnedAppStorePurchase(_appStorePurchase()), isTrue);
+      expect(
+        isOwnedAppStorePurchase(
+          _appStorePurchase(status: PurchaseStatus.restored),
+        ),
+        isTrue,
+      );
+      // The plugin reports a refund notice as `purchased`.
+      expect(
+        isOwnedAppStorePurchase(_appStorePurchase(json: _revokedJson)),
+        isFalse,
+      );
+      expect(
+        isOwnedAppStorePurchase(
+          _appStorePurchase(status: PurchaseStatus.pending),
+        ),
+        isFalse,
+      );
+      expect(isOwnedAppStorePurchase(_ownedProPurchase()), isFalse);
+    });
+
+    test('Pro is owned when any Pro transaction is not revoked', () {
+      expect(ownsProInAppStore(const []), isFalse);
+      expect(ownsProInAppStore([_appStoreTransaction()]), isTrue);
+      expect(
+        ownsProInAppStore([_appStoreTransaction(json: _revokedJson)]),
+        isFalse,
+      );
+      expect(
+        ownsProInAppStore([
+          _appStoreTransaction(json: _revokedJson),
+          _appStoreTransaction(),
+        ]),
+        isTrue,
+      );
+      expect(
+        ownsProInAppStore([_appStoreTransaction(productId: 'other')]),
+        isFalse,
+      );
+    });
+  });
+
+  group('OcrStoreService on iOS', () {
+    late _Harness h;
+
+    setUp(() {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      h = _Harness();
+    });
+
+    tearDown(() async {
+      debugDefaultTargetPlatformOverride = null;
+      await h.dispose();
+      PreloadedProEntitlement.setInitialSnapshot(null);
+    });
+
+    test('the startup sync grants Pro from an App Store transaction', () async {
+      h.appStoreTransactions = [_appStoreTransaction()];
+
+      await h.service.syncOwnedPurchases();
+
+      expect(h.hasEntitlement, isTrue);
+      expect(h.iap.addition.queryPastPurchasesCalls, 0);
+      expect(h.callLog, isNot(contains('appStoreSync')));
+    });
+
+    test(
+      'a sync that finds only a refunded Pro clears the entitlement',
+      () async {
+        h.appStoreTransactions = [_appStoreTransaction()];
+        await h.service.syncOwnedPurchases();
+        expect(h.hasEntitlement, isTrue);
+
+        h.appStoreTransactions = [_appStoreTransaction(json: _revokedJson)];
+        await h.service.syncOwnedPurchases();
+
+        expect(h.hasEntitlement, isFalse);
+      },
+    );
+
+    test('a failed transaction query leaves the entitlement alone', () async {
+      h.appStoreTransactions = [_appStoreTransaction()];
+      await h.service.syncOwnedPurchases();
+
+      h.appStoreTransactionsError = PlatformException(code: 'boom');
+      await h.service.syncOwnedPurchases();
+
+      expect(h.hasEntitlement, isTrue);
+    });
+
+    test('a live purchase grants, finishes, and never calls the Play '
+        'verify endpoint', () async {
+      h.uid = 'signed-in';
+
+      final result = await h.buyAndDeliver(
+        proUnlockProductId,
+        _appStorePurchase(),
+      );
+
+      expect(result.ocrUnlocked, isTrue);
+      expect(h.hasEntitlement, isTrue);
+      expect(h.acknowledgeCalls, hasLength(1));
+      expect(h.verifyCalls, isEmpty);
+      expect(
+        h.callLog.indexOf('setPlayEntitlement(true)'),
+        lessThan(h.callLog.indexOf('completePurchase($proUnlockProductId)')),
+      );
+    });
+
+    test(
+      'a refund notice is finished and takes Pro away, not granted',
+      () async {
+        h.appStoreTransactions = [_appStoreTransaction()];
+        await h.service.syncOwnedPurchases();
+        expect(h.hasEntitlement, isTrue);
+
+        h.appStoreTransactions = [_appStoreTransaction(json: _revokedJson)];
+        h.iap.purchaseUpdates.add([_appStorePurchase(json: _revokedJson)]);
+        await pumpEventQueue();
+
+        expect(h.hasEntitlement, isFalse);
+        expect(h.acknowledgeCalls, hasLength(1));
+      },
+    );
+
+    test('restore syncs with the App Store first, and survives a cancelled '
+        'sign-in', () async {
+      h.appStoreTransactions = [_appStoreTransaction()];
+      h.appStoreSyncError = PlatformException(code: 'cancelled');
+
+      final status = await h.service.restorePurchases();
+
+      expect(status.ocrUnlocked, isTrue);
+      expect(
+        h.callLog.indexOf('appStoreSync'),
+        lessThan(h.callLog.indexOf('appStoreTransactions')),
+      );
     });
   });
 

@@ -99,6 +99,8 @@ dependencies:
   # requires. Do not downgrade below 0.5.0.
   in_app_purchase: ^3.3.0
   in_app_purchase_android: ^0.5.2
+  # Direct so the iOS purchase path can read StoreKit 2 transaction types.
+  in_app_purchase_storekit: ^0.4.8
 
   # Background task scheduling (OCR processing)
   workmanager: ^0.9.0
