@@ -20,35 +20,24 @@ List<ButtonSegment<ReaderDirection>> readerDirectionSegments(
   ];
 }
 
-List<ButtonSegment<FuriganaMode>> furiganaModeSegments(AppLocalizations l10n) {
-  return [
-    ButtonSegment(
-      value: FuriganaMode.hide,
-      label: Text(l10n.readerFuriganaOff),
-      icon: const Icon(Icons.visibility_off),
-    ),
-    ButtonSegment(
-      value: FuriganaMode.book,
-      label: Text(l10n.readerFuriganaBook),
-      icon: const Icon(Icons.menu_book),
-    ),
-    ButtonSegment(
-      value: FuriganaMode.all,
-      label: Text(l10n.readerFuriganaAllKanji),
-      icon: const Icon(Icons.visibility),
-    ),
-    ButtonSegment(
-      value: FuriganaMode.aboveLevel,
-      label: Text(l10n.readerFuriganaAboveLevel),
-      icon: const Icon(Icons.school_outlined),
-    ),
-    ButtonSegment(
-      value: FuriganaMode.wanikani,
-      label: Text(l10n.readerFuriganaWanikani),
-      icon: const Icon(Icons.link),
-    ),
-  ];
-}
+// Five modes don't fit a phone-width SegmentedButton (labels wrap per
+// character), so furigana is a picker row — label/icon only, no segments.
+String furiganaModeLabel(AppLocalizations l10n, FuriganaMode mode) =>
+    switch (mode) {
+      FuriganaMode.hide => l10n.readerFuriganaOff,
+      FuriganaMode.book => l10n.readerFuriganaBook,
+      FuriganaMode.all => l10n.readerFuriganaAllKanji,
+      FuriganaMode.aboveLevel => l10n.readerFuriganaAboveLevel,
+      FuriganaMode.wanikani => l10n.readerFuriganaWanikani,
+    };
+
+IconData furiganaModeIcon(FuriganaMode mode) => switch (mode) {
+  FuriganaMode.hide => Icons.visibility_off,
+  FuriganaMode.book => Icons.menu_book,
+  FuriganaMode.all => Icons.visibility,
+  FuriganaMode.aboveLevel => Icons.school_outlined,
+  FuriganaMode.wanikani => Icons.link,
+};
 
 /// N5 (easiest) → N1 (hardest); values are the numeric JLPT level used by
 /// [ReaderSettings.furiganaJlptLevel].

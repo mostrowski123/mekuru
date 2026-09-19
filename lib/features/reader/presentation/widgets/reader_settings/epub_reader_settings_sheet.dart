@@ -109,15 +109,29 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
             onSettingChanged('direction', direction.name);
           },
         ),
-        const SizedBox(height: 16),
-        SettingsSegmentedRow<FuriganaMode>(
-          label: l10n.readerFuriganaTitle,
-          segments: furiganaModeSegments(l10n),
-          selected: settings.furiganaMode,
-          onSelected: (chosen) {
-            notifier.setFuriganaMode(chosen);
-            onSettingChanged('furigana_mode', chosen.name);
-          },
+        const SizedBox(height: 8),
+        ListTile(
+          key: const Key('reader-furigana-mode'),
+          leading: Icon(furiganaModeIcon(settings.furiganaMode)),
+          title: Text(l10n.readerFuriganaTitle),
+          trailing: Text(
+            furiganaModeLabel(l10n, settings.furiganaMode),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          onTap: () => showSettingsOptionPickerSheet<FuriganaMode>(
+            context: context,
+            title: l10n.readerFuriganaTitle,
+            values: FuriganaMode.values,
+            selected: settings.furiganaMode,
+            labelOf: (mode) => furiganaModeLabel(l10n, mode),
+            iconOf: furiganaModeIcon,
+            onSelected: (chosen) {
+              notifier.setFuriganaMode(chosen);
+              onSettingChanged('furigana_mode', chosen.name);
+            },
+          ),
         ),
         if (settings.furiganaMode == FuriganaMode.aboveLevel) ...[
           const SizedBox(height: 8),

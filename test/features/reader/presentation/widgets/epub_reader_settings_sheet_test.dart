@@ -58,29 +58,42 @@ void main() {
     expect(find.text('Behavior'), findsOneWidget);
   });
 
-  testWidgets('furigana labels come from localization', (tester) async {
+  testWidgets('furigana row shows the current mode, defaulting to Book', (
+    tester,
+  ) async {
     await _pumpSheet(tester);
     await scrollSettingsTo(tester, find.text('Furigana'));
     expect(find.text('Furigana'), findsOneWidget);
-    expect(find.text('Off'), findsOneWidget);
     expect(find.text('Book'), findsOneWidget);
-    expect(find.text('All kanji'), findsOneWidget);
+    // The other modes live in the picker, not squeezed into the row.
+    expect(find.text('All kanji'), findsNothing);
   });
 
-  testWidgets('furigana defaults to the book segment', (tester) async {
-    await _pumpSheet(tester);
-    await scrollSettingsTo(tester, find.text('Furigana'));
-    final row = tester.widget<SettingsSegmentedRow<FuriganaMode>>(
-      find.byType(SettingsSegmentedRow<FuriganaMode>),
+  testWidgets('furigana picker lists every mode and applies the choice', (
+    tester,
+  ) async {
+    final changes = <String>[];
+    final container = await _pumpSheet(
+      tester,
+      onSettingChanged: (setting, value) => changes.add(setting),
     );
-    expect(row.selected, FuriganaMode.book);
-    expect(row.segments.map((s) => s.value).toList(), [
-      FuriganaMode.hide,
-      FuriganaMode.book,
+    await scrollSettingsTo(tester, find.text('Furigana'));
+    await tester.tap(find.byKey(const Key('reader-furigana-mode')));
+    await tester.pumpAndSettle();
+
+    for (final label in ['Off', 'Book', 'All kanji', 'JLPT', 'WaniKani']) {
+      expect(find.text(label), findsWidgets);
+    }
+
+    await tester.tap(find.text('All kanji'));
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(readerSettingsProvider).furiganaMode,
       FuriganaMode.all,
-      FuriganaMode.aboveLevel,
-      FuriganaMode.wanikani,
-    ]);
+    );
+    expect(changes, contains('furigana_mode'));
+    expect(find.text('All kanji'), findsOneWidget);
   });
 
   testWidgets('WaniKani mode without synced kanji offers to link', (
