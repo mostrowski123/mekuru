@@ -86,6 +86,9 @@ class FirebaseRuntime {
       providerAndroid: usesDebugAppCheckProvider
           ? const AndroidDebugProvider()
           : const AndroidPlayIntegrityProvider(),
+      providerApple: usesDebugAppCheckProvider
+          ? const AppleDebugProvider()
+          : const AppleAppAttestWithDeviceCheckFallbackProvider(),
     );
     _appCheckActivated = true;
   }
