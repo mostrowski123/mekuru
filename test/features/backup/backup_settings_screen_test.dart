@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,6 +108,21 @@ void main() {
     expect(find.text(l10n.backupFullRestoreTitle), findsOneWidget);
     expect(find.text(l10n.backupFullReplacesChip), findsOneWidget);
     expect(find.text(l10n.backupScopeNoteTitle), findsOneWidget);
+  });
+
+  testWidgets('iOS offers only the reading data backup', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await pumpScreen(tester);
+
+      expect(find.text(l10n.backupSectionBackup), findsOneWidget);
+      expect(find.text(l10n.backupExportTitle), findsOneWidget);
+      expect(find.text(l10n.backupFullSectionTitle), findsNothing);
+      expect(find.text(l10n.backupFullRestoreTitle), findsNothing);
+      expect(find.text(l10n.backupScopeNoteTitle), findsNothing);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('export full backup asks for notifications, then hands off', (
