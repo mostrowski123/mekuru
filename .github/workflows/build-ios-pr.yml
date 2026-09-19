@@ -1,0 +1,83 @@
+name: Build iOS PR Check
+
+on:
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'packages/local_manga_ocr/**'
+      - 'ios/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/build-ios-pr.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-macos-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-macos-
+
+      # The Swift package checkout (Firebase and friends) is by far the slowest
+      # part of a cold iOS build.
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: build/ios/SourcePackages
+          key: spm-${{ hashFiles('ios/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: spm-
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Generate environment config
+        run: >
+          flutter pub run environment_config:generate
+          --sentryDsn=${{ secrets.SENTRY_DSN }}
+          --sentryEnvironment=development
+
+      # Release build of the device (arm64) slice, which is what ships. Static
+      # analysis and unit tests already run in the Ubuntu job.
+      - name: Build iOS app
+        run: flutter build ios --no-codesign --no-pub
+
+      # iOS counterpart of scripts/verify_native_libs.py: the MeCab and sqlite
+      # build hooks must have produced frameworks inside the app bundle.
+      - name: Verify native frameworks
+        run: |
+          app=build/ios/iphoneos/Runner.app
+          ls "$app/Frameworks"
+          test -d "$app/Frameworks/mecab_dart.framework"
+          test -d "$app/Frameworks/sqlite3.framework"
