@@ -20,6 +20,7 @@ import 'features/backup/data/services/full_backup_service.dart'
     show hasPendingFullBackupJob;
 import 'features/backup/presentation/providers/full_backup_job_provider.dart'
     show initialFullBackupJobPendingProvider;
+import 'features/library/data/repositories/book_repository.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
@@ -139,7 +140,10 @@ Future<void> _runDeferredStartupWarmups() => tracedOperation(
           // After init, so the IPADIC copy under Documents/assets exists.
           // Every launch: a restored unidic-lite dir arrives without the flag.
           final docs = await getApplicationDocumentsDirectory();
+          final support = await getApplicationSupportDirectory();
           await excludeFromIosBackup([
+            // A restored books dir also arrives without the flag.
+            p.join(support.path, BookRepository.booksSegment),
             p.join(docs.path, 'assets'),
             await EnhancedFuriganaDictDownloadService.getStorageDir(),
             await KanjiVgDownloadService.getStorageDir(),

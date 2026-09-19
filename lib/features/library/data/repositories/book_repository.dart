@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
@@ -130,6 +131,9 @@ class BookRepository {
     inFlightImportDirNames.add(name);
     try {
       await dir.create(recursive: true);
+      // Books stay out of iCloud backups: they can be gigabytes, and the
+      // app's own backup is the supported way to move a library.
+      await excludeFromIosBackup([dir.parent.path]);
       return await body(dir);
     } catch (_) {
       try {
