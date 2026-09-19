@@ -18,43 +18,57 @@ import 'synthetic_client.dart';
 /// reader at all.
 typedef SentryAudience = ({String environment, bool isSynthetic});
 
-/// Debug builds always use 'debug'; release builds distinguish Play Store
-/// from sideload, with the parallel flavor getting its own bucket so its
-/// App Check / Play Integrity errors don't mix with regular sideloads.
+/// Debug builds always use 'debug'; release builds are bucketed by where the
+/// install came from (see [sentryEnvironmentForInstaller]).
 /// Emulators and cloud device farms otherwise blend into the sideload
 /// bucket, which is a real audience (the GitHub APK). Their crashes and
 /// product metrics are both misleading, so callers report nothing for them.
 Future<SentryAudience> resolveSentryAudience() async {
-  final (isPlayStore, isSynthetic) = await (
-    _isPlayStoreInstall(),
+  final (installerStore, isSynthetic) = await (
+    _installerStore(),
     _detectSyntheticClient(),
   ).wait;
 
-  final String environment;
-  if (kDebugMode) {
-    environment = 'debug';
-  } else if (isPlayStore) {
-    environment = 'play-store';
-  } else {
-    environment = kIsParallelBuild ? 'sideload-parallel' : 'sideload';
-  }
-  return (environment: environment, isSynthetic: isSynthetic);
+  return (
+    environment: kDebugMode
+        ? 'debug'
+        : sentryEnvironmentForInstaller(installerStore),
+    isSynthetic: isSynthetic,
+  );
 }
 
-Future<bool> _isPlayStoreInstall() async {
-  if (kDebugMode) return false;
-  final packageInfo = await PackageInfo.fromPlatform();
-  return packageInfo.installerStore == 'com.android.vending';
+/// Release-build environment for an install. `package_info_plus` reports
+/// `com.apple` for the App Store and `com.apple.testflight` for a sandbox
+/// receipt (TestFlight, or a release build run from Xcode). Anything else is
+/// a sideload, with the parallel flavor getting its own bucket so its
+/// App Check / Play Integrity errors don't mix with regular sideloads.
+@visibleForTesting
+String sentryEnvironmentForInstaller(String? installerStore) =>
+    switch (installerStore) {
+      'com.android.vending' => 'play-store',
+      'com.apple' => 'app-store',
+      'com.apple.testflight' => 'testflight',
+      _ => kIsParallelBuild ? 'sideload-parallel' : 'sideload',
+    };
+
+Future<String?> _installerStore() async {
+  if (kDebugMode) return null;
+  return (await PackageInfo.fromPlatform()).installerStore;
 }
 
-/// Reads Android build properties to decide whether this install is an
-/// emulator, cloud device farm, or bot rather than a real reader.
+/// Reads the platform's build properties to decide whether this install is
+/// an emulator, simulator, cloud device farm, or bot rather than a real
+/// reader.
 ///
 /// Fails open: if the platform lookup fails we assume a real user, because
 /// dropping genuine telemetry is worse than keeping some noise.
 Future<bool> _detectSyntheticClient() async {
-  if (kDebugMode || !Platform.isAndroid) return false;
+  if (kDebugMode) return false;
   try {
+    if (Platform.isIOS) {
+      return !(await DeviceInfoPlugin().iosInfo).isPhysicalDevice;
+    }
+    if (!Platform.isAndroid) return false;
     final info = await DeviceInfoPlugin().androidInfo;
     return isSyntheticAndroidClient(
       isPhysicalDevice: info.isPhysicalDevice,

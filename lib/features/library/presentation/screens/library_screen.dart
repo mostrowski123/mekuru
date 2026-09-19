@@ -826,8 +826,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   static Future<bool> _isLowMemoryDevice() async {
-    if (!Platform.isAndroid) return false;
     try {
+      if (Platform.isIOS) {
+        final info = await DeviceInfoPlugin().iosInfo;
+        return info.physicalRamSize < lowRamDeviceThresholdMb;
+      }
+      if (!Platform.isAndroid) return false;
       final info = await DeviceInfoPlugin().androidInfo;
       return info.isLowRamDevice ||
           info.physicalRamSize < lowRamDeviceThresholdMb;
