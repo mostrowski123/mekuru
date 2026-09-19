@@ -5153,6 +5153,16 @@ class Contents {
     if (border && border.width) {
       width += border.width;
     }
+    // [MEKURU PATCH] borders() counts the body's *used* margins. The
+    // paginated layout sets the body's margin to 0, but in an rtl document
+    // whose frame is wider than the fixed-width body the used margin-left
+    // becomes the leftover width, so "two pages wide" is a stable state:
+    // rect + padding + leftover == frame width. WebKit lands in it for
+    // image-only (horizontal-axis) sections, which leaves a blank page beside
+    // the image. Margins are not content; leave them out so the frame
+    // settles back to the real width.
+    var marginStyle = this.window.getComputedStyle(content);
+    width -= (parseFloat(marginStyle.marginLeft) || 0) + (parseFloat(marginStyle.marginRight) || 0);
     return Math.round(width);
   }
 
