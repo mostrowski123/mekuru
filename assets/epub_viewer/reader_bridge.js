@@ -722,14 +722,30 @@ function setFuriganaMode(mode) {
   // against the new threshold.
   var rebuild = _isFilteredMode(next) || _isFilteredMode(prev);
   if (rebuild) _furiganaCache.clear();
+  // A mode that generates nothing must leave nothing generated behind.
+  // Generated <ruby> wrappers shift the child indices a CFI is built from,
+  // and a section reloaded in such a mode (any re-layout reloads it) comes
+  // back without them: a location CFI taken while they were still in the
+  // DOM then resolves nowhere ("No startContainer found") and the reader
+  // falls back to the start of the section.
+  var strip = rebuild || !_furiganaBehavior().generate;
+  var stripped = false;
   var docs = _renderedIframeDocs();
   for (var i = 0; i < docs.length; i++) {
-    if (rebuild) {
+    if (strip) {
+      if (docs[i].body &&
+          docs[i].body.querySelector('ruby.mekuru-furigana')) stripped = true;
       _removeGeneratedFurigana(docs[i]);
       _furiganaProcessedDocs.delete(docs[i]);
     }
     applyFuriganaStyleToDoc(docs[i]);
     processSectionForFurigana(docs[i]);
+  }
+  // The stored location was computed against the wrappers just removed;
+  // recompute it (and let Dart re-save progress) against the clean DOM.
+  if (stripped && !_furiganaBehavior().generate && rendition) {
+    _pendingNavChars = false; // same page, not a navigation
+    rendition.reportLocation();
   }
 }
 
