@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:convert/convert.dart' show AccumulatorSink;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:path/path.dart' as p;
@@ -129,6 +130,7 @@ class EnhancedFuriganaDictDownloadService {
       await outputDir.delete(recursive: true);
     }
     await outputDir.create(recursive: true);
+    await excludeFromIosBackup([dir]);
 
     final tempDir = await getTemporaryDirectory();
     try {

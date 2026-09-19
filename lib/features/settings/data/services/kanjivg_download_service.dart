@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mekuru/core/platform/ios_storage.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:path/path.dart' as p;
@@ -98,6 +99,7 @@ class KanjiVgDownloadService {
     if (!await outputDir.exists()) {
       await outputDir.create(recursive: true);
     }
+    await excludeFromIosBackup([dir]);
 
     // Phase 1: Download ZIP straight to disk
     onProgress?.call(0.0);

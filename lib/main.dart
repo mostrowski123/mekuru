@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'core/database/database_provider.dart';
+import 'core/platform/ios_storage.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/firebase_runtime.dart';
 import 'core/services/sentry_helpers.dart';
@@ -22,6 +25,8 @@ import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
 import 'features/reader/data/services/mecab_service.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
+import 'features/settings/data/services/enhanced_furigana_dict_download_service.dart';
+import 'features/settings/data/services/kanjivg_download_service.dart';
 
 /// Global navigator key used by Sentry for feedback screenshots
 /// and navigator observation.
@@ -131,6 +136,14 @@ Future<void> _runDeferredStartupWarmups() => tracedOperation(
           await MecabService.instance.init();
           // The dictionary rides along as the mecab_dict tag.
           logUsage('mecab.initialized');
+          // After init, so the IPADIC copy under Documents/assets exists.
+          // Every launch: a restored unidic-lite dir arrives without the flag.
+          final docs = await getApplicationDocumentsDirectory();
+          await excludeFromIosBackup([
+            p.join(docs.path, 'assets'),
+            await EnhancedFuriganaDictDownloadService.getStorageDir(),
+            await KanjiVgDownloadService.getStorageDir(),
+          ]);
         },
       ),
     ]);
