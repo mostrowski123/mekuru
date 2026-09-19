@@ -93,13 +93,14 @@ jobs:
         run: flutter test -r expanded --file-reporter=json:build/flutter-tests.json
 
       # Covers the SAF document-ID resolution in MainActivity.kt, which
-      # flutter test cannot reach. local.properties is not in the repo and is
-      # normally written by `flutter build`, which runs later in this workflow.
+      # flutter test cannot reach. Neither local.properties nor the Gradle
+      # wrapper is in the repo; `--config-only` has Flutter write both without
+      # building anything.
       - name: Run Android unit tests
         timeout-minutes: 20
-        working-directory: android
         run: |
-          echo "flutter.sdk=$FLUTTER_ROOT" > local.properties
+          flutter build apk --config-only --debug --flavor parallel --no-pub
+          cd android
           ./gradlew :app:testPlayDebugUnitTest :local_manga_ocr:testDebugUnitTest --console=plain
 
 
