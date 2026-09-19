@@ -13,8 +13,15 @@ const SystemUiOverlayStyle readerSystemBarsOverlayStyle = SystemUiOverlayStyle(
 
 const _systemUiChannel = MethodChannel('mekuru/android_system_ui');
 
-/// Shows or hides the Android status/navigation bars for immersive reading.
+/// Shows or hides the system bars for immersive reading: the status and
+/// navigation bars on Android, the status bar and home indicator on iOS.
 Future<void> setReaderSystemBarsVisible(bool visible) async {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    await SystemChrome.setEnabledSystemUIMode(
+      visible ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
+    );
+    return;
+  }
   if (defaultTargetPlatform != TargetPlatform.android) return;
 
   try {

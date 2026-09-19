@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart' show compute, setEquals;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, compute, defaultTargetPlatform, setEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -378,6 +379,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     });
 
     final readerTheme = buildReaderTheme(settings: settings);
+    // iOS never letterboxes the Dynamic Island / notch, and the reader draws
+    // edge to edge, so keep the page itself clear of it. Android is unchanged.
+    final viewerInsets = defaultTargetPlatform == TargetPlatform.iOS
+        ? MediaQuery.viewPaddingOf(context)
+        : EdgeInsets.zero;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: readerSystemBarsOverlayStyle,
@@ -388,7 +394,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             : Stack(
                 children: [
                   if (_epubPath != null)
-                    Positioned.fill(
+                    Positioned(
+                      top: viewerInsets.top,
+                      left: viewerInsets.left,
+                      right: viewerInsets.right,
+                      bottom: 0,
                       child: CustomEpubViewer(
                         key: ValueKey('reader-${widget.book.id}-$_viewerEpoch'),
                         controller: _epubController,
