@@ -10,6 +10,7 @@ import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
+import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/library/data/services/epub_manga_converter.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
@@ -545,12 +546,40 @@ class BookRepository {
     return (outPath, pageCount);
   }
 
+  /// Copies the manifest's page images into `<cacheDir>/pages/`, the layout a
+  /// full restore gives a linked manga it adopts, and returns that directory.
+  /// Names that would land outside it (a hostile `img_path`) are skipped.
+  @visibleForTesting
+  static Future<String> copyPagesInto(
+    Directory cacheDir,
+    MokuroBookManifest manifest,
+  ) async {
+    final pagesDir = Directory(
+      p.join(cacheDir.path, FullBackupManifest.linkedPagesDirName),
+    );
+    await pagesDir.create();
+    for (final name in manifest.imageFileNames) {
+      final dest = File(p.join(pagesDir.path, name));
+      if (!p.isWithin(pagesDir.path, dest.path)) continue;
+      await dest.parent.create(recursive: true);
+      await File(p.join(manifest.imageDirPath, name)).copy(dest.path);
+    }
+    return pagesDir.path;
+  }
+
   /// Shared import logic: segment words, save cache, insert into DB.
   Future<Book> _importManifestWithPages(
     MokuroBookManifest manifest,
     List<MokuroPage> rawPages,
   ) async {
     return _inNewImportDir('manga', (cacheDir) async {
+      // iOS grants a picked folder for this session only (a security-scoped
+      // URL), so a manga linked in place would be unreadable after a
+      // relaunch. Copy its pages in instead.
+      final imageDirPath = Platform.isIOS && manifest.safTreeUri == null
+          ? await copyPagesInto(cacheDir, manifest)
+          : manifest.imageDirPath;
+
       // Segment words using MeCab, off the UI isolate — imports can be large.
       // The worker also encodes the pages_cache.json content, keeping that
       // multi-MB string build off the UI isolate too.
@@ -559,7 +588,7 @@ class BookRepository {
       final segmented = await MokuroWordSegmenter.segmentBookInBackground(
         MokuroBook(
           title: manifest.title,
-          imageDirPath: manifest.imageDirPath,
+          imageDirPath: imageDirPath,
           safTreeUri: manifest.safTreeUri,
           safImageDirRelativePath: manifest.safImageDirRelativePath,
           ocrSource: 'mokuro',
@@ -617,7 +646,7 @@ class BookRepository {
               break;
             }
           } else {
-            final candidatePath = p.join(manifest.imageDirPath, fileName);
+            final candidatePath = p.join(imageDirPath, fileName);
             if (await File(candidatePath).exists()) {
               coverImagePath = candidatePath;
               break;
