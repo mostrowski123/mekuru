@@ -37,17 +37,17 @@ Future<SentryAudience> resolveSentryAudience() async {
   );
 }
 
-/// Release-build environment for an install. `package_info_plus` reports
-/// `com.apple` for the App Store and `com.apple.testflight` for a sandbox
-/// receipt (TestFlight, or a release build run from Xcode). Anything else is
-/// a sideload, with the parallel flavor getting its own bucket so its
-/// App Check / Play Integrity errors don't mix with regular sideloads.
+/// Release-build environment for an install. Every iOS install is `ios`:
+/// `package_info_plus` reports `com.apple` (App Store), `com.apple.testflight`
+/// or `com.apple.simulator` there, and TestFlight and the App Store ship the
+/// same binary. Anything else is a sideload, with the parallel flavor getting
+/// its own bucket so its App Check / Play Integrity errors don't mix with
+/// regular sideloads.
 @visibleForTesting
 String sentryEnvironmentForInstaller(String? installerStore) =>
     switch (installerStore) {
       'com.android.vending' => 'play-store',
-      'com.apple' => 'app-store',
-      'com.apple.testflight' => 'testflight',
+      final store? when store.startsWith('com.apple') => 'ios',
       _ => kIsParallelBuild ? 'sideload-parallel' : 'sideload',
     };
 
