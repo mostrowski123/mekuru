@@ -180,6 +180,20 @@ void main() {
     expect(blocks, hasLength(1));
   });
 
+  test('a long bubble of evenly spaced columns is not split', () {
+    // Columns of falling length fill only 57% of their bounds, but they are
+    // spaced alike, so no link stands out as the bridge between two bubbles.
+    final blocks = groupVisionLines([
+      _column(100, 100, height: 200, text: 'いちれつめ'),
+      _column(145, 100, height: 150, text: 'にれつめ'),
+      _column(190, 100, height: 100, text: 'さんれつ'),
+      _column(235, 100, height: 50, text: 'よん'),
+    ]);
+
+    expect(blocks, hasLength(1));
+    expect(blocks.single.lines, hasLength(4));
+  });
+
   test('blank lines are ignored', () {
     expect(groupVisionLines([_column(100, 100, text: '  ')]), isEmpty);
   });

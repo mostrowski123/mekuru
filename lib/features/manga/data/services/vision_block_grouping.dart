@@ -80,15 +80,15 @@ const _maxGapInChars = 0.9;
 /// direction; this is how much of the shorter line must overlap.
 const _minOverlap = 0.3;
 
+/// How much looser than the rest the link holding two bubbles together is.
+/// The columns of one bubble are spaced alike, so no link stands out and
+/// nothing is cut; a bridge between two bubbles does stand out.
+const _bridgeOutlier = 2.0;
+
 /// A block's lines fill most of its bounds. Two bubbles chained into one
 /// through a line that sits near both leave a hole, so a block this empty is
 /// grouped again with a tighter gap, which tells them apart.
 const _minFill = 0.6;
-
-/// How much tighter each re-grouping is, and how tight it may get: below this
-/// the columns of one bubble start to come apart.
-const _splitGapFactor = 0.5;
-const _minGapInChars = 0.2;
 
 /// Ruby (furigana) is set at about half the size of the text it annotates.
 const _rubySizeRatio = 0.6;
@@ -145,9 +145,8 @@ List<VisionBlock> groupVisionLines(List<VisionLine> lines) {
   return blocks;
 }
 
-/// Union-find over units that are neighbours, then a second look: a group
-/// whose lines leave a hole in its bounds is two bubbles that chained through
-/// a line near both, and is grouped again with a tighter gap.
+/// Union-find over units that are neighbours, then a second look at any group
+/// that leaves a hole in its bounds.
 List<List<_Unit>> _cluster(List<_Unit> units, double maxGap) {
   final parent = List<int>.generate(units.length, (i) => i);
   int find(int i) => parent[i] == i ? i : parent[i] = find(parent[i]);
@@ -164,19 +163,120 @@ List<List<_Unit>> _cluster(List<_Unit> units, double maxGap) {
     groups.putIfAbsent(find(i), () => []).add(units[i]);
   }
 
-  final tighter = maxGap * _splitGapFactor;
+  return [for (final group in groups.values) ..._splitWhileHollow(group)];
+}
+
+/// A group whose lines leave a hole in its bounds is two bubbles chained
+/// together through a line that sits near both. Cutting the one loosest link
+/// separates them; re-grouping the whole thing at a tighter gap would also
+/// pull apart bubbles that are simply long.
+///
+/// Two lines that grouped are directly adjacent, so they cannot be a chain,
+/// and a short line beside a long one is a real block that just does not fill
+/// its bounds.
+List<List<_Unit>> _splitWhileHollow(List<_Unit> group) {
+  if (group.length <= 2 || _fill(group) >= _minFill) return [group];
+  final parts = _cutLoosestLink(group);
+  if (parts.length < 2) return [group];
+  return [for (final part in parts) ..._splitWhileHollow(part)];
+}
+
+/// Splits a group in two at the loosest link holding it together: the heaviest
+/// edge of its minimum spanning tree, built over the pairs that grouped.
+List<List<_Unit>> _cutLoosestLink(List<_Unit> group) {
+  final n = group.length;
+  final inTree = List.filled(n, false);
+  final cost = List.filled(n, double.infinity);
+  final from = List.filled(n, -1);
+  cost[0] = 0;
+  final edges = <(int, int, double)>[];
+  for (var k = 0; k < n; k++) {
+    var u = -1;
+    for (var i = 0; i < n; i++) {
+      if (!inTree[i] && (u < 0 || cost[i] < cost[u])) u = i;
+    }
+    if (u < 0 || cost[u] == double.infinity) break;
+    inTree[u] = true;
+    if (from[u] >= 0) edges.add((from[u], u, cost[u]));
+    for (var v = 0; v < n; v++) {
+      if (inTree[v]) continue;
+      final w = _separation(group[u].line, group[v].line);
+      if (w != null && w < cost[v]) {
+        cost[v] = w;
+        from[v] = u;
+      }
+    }
+  }
+  // Not one tree: the group is held together by pairs this does not see.
+  if (edges.length != n - 1) return [group];
+
+  var worst = 0;
+  for (var i = 1; i < edges.length; i++) {
+    if (edges[i].$3 > edges[worst].$3) worst = i;
+  }
+  // Only cut a link that is loose against its neighbours. Evenly spaced
+  // columns are one long bubble that happens not to fill its bounds.
+  final rest = [
+    for (var i = 0; i < edges.length; i++)
+      if (i != worst) edges[i].$3,
+  ]..sort();
+  if (rest.isNotEmpty) {
+    final median = rest[rest.length ~/ 2];
+    if (edges[worst].$3 < median * _bridgeOutlier) return [group];
+  }
+  final cut = edges.removeAt(worst);
+  final side = List.filled(n, -1);
+  final neighbours = <int, List<int>>{};
+  for (final (a, b, _) in edges) {
+    neighbours.putIfAbsent(a, () => []).add(b);
+    neighbours.putIfAbsent(b, () => []).add(a);
+  }
+  for (final (start, mark) in [(cut.$1, 0), (cut.$2, 1)]) {
+    final queue = [start];
+    side[start] = mark;
+    while (queue.isNotEmpty) {
+      for (final next in neighbours[queue.removeLast()] ?? const <int>[]) {
+        if (side[next] < 0) {
+          side[next] = mark;
+          queue.add(next);
+        }
+      }
+    }
+  }
   return [
-    for (final group in groups.values)
-      // Two lines that grouped are directly adjacent; it takes a third to
-      // chain two bubbles together, and a short line beside a long one is a
-      // real block that simply does not fill its bounds.
-      if (group.length > 2 &&
-          tighter >= _minGapInChars &&
-          _fill(group) < _minFill)
-        ..._cluster(group, tighter)
-      else
-        group,
+    [
+      for (var i = 0; i < n; i++)
+        if (side[i] == 0) group[i],
+    ],
+    [
+      for (var i = 0; i < n; i++)
+        if (side[i] == 1) group[i],
+    ],
   ];
+}
+
+/// How loosely two lines are linked, in characters of the smaller: the gap
+/// between them, plus what their overlap along the reading direction falls
+/// short of. Null when they are not neighbours at all. A line bridging two
+/// bubbles is far from at least one of them, poorly lined up with it, or both.
+double? _separation(VisionLine a, VisionLine b) {
+  final size = math.min(a.fontSize, b.fontSize);
+  if (!_sameBlock(a, b, _maxGapInChars)) return null;
+  final vertical = a.text.runes.length >= 2 ? a.looksVertical : b.looksVertical;
+  final double gap;
+  final double overlap;
+  final double shorter;
+  if (vertical) {
+    gap = math.max(a.left, b.left) - math.min(a.right, b.right);
+    overlap = math.min(a.bottom, b.bottom) - math.max(a.top, b.top);
+    shorter = math.min(a.height, b.height);
+  } else {
+    gap = math.max(a.top, b.top) - math.min(a.bottom, b.bottom);
+    overlap = math.min(a.right, b.right) - math.max(a.left, b.left);
+    shorter = math.min(a.width, b.width);
+  }
+  final aligned = shorter <= 0 ? 1.0 : math.min(1, overlap / shorter);
+  return math.max(0, gap) / size + (1 - aligned);
 }
 
 /// How much of a group's bounds its lines actually cover.
