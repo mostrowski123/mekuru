@@ -123,6 +123,9 @@ Future<void> _bootApp() async {
 /// runs again from the top, as on a cold start. [db] is the database the old
 /// tree used; the caller reads it from its provider before the tree goes.
 Future<void> restartAppInProcess(AppDatabase db) async {
+  // Leave the tap handler first: runApp's warm-up frame locks event dispatch,
+  // and doing that in the middle of the tap trips a debug assertion.
+  await Future<void>.delayed(Duration.zero);
   runApp(
     const ColoredBox(
       color: Color(0xFF000000),
