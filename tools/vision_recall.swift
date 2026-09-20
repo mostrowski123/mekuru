@@ -280,8 +280,8 @@ for page in pages {
   score(b, blocks: blocks, into: &second, scoreText: scoreText && !legacy)
   dump.append([
     "img_path": name,
-    "first": a.map { ["box": [$0.box.x0, $0.box.y0, $0.box.x1, $0.box.y1], "text": $0.text] },
-    "second": b.map { ["box": [$0.box.x0, $0.box.y0, $0.box.x1, $0.box.y1], "text": $0.text] },
+    "lines": a.map { ["box": [$0.box.x0, $0.box.y0, $0.box.x1, $0.box.y1], "text": $0.text] },
+    "paragraphs": b.map { ["box": [$0.box.x0, $0.box.y0, $0.box.x1, $0.box.y1], "text": $0.text] },
   ])
 }
 
