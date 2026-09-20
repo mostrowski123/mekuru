@@ -2,6 +2,7 @@
 # Runs iOS integration tests on a simulator, one file at a time.
 #
 #   scripts/run_ios_integration_tests.sh <simulator udid> integration_test/a_test.dart ...
+#   IOS_IT_SHARD=2/3 scripts/run_ios_integration_tests.sh <udid> <the same full list>
 #
 # One file at a time with a watchdog each: a failing integration test can leave
 # `flutter test -d <simulator>` hanging forever instead of exiting non-zero.
@@ -9,8 +10,14 @@ set -u
 device="$1"
 shift
 limit="${IOS_IT_TIMEOUT_SECONDS:-900}"
+# IOS_IT_SHARD="2/3" runs every third file starting with the second, so CI
+# can spread one list over parallel jobs (each file costs minutes there).
+shard="${IOS_IT_SHARD:-1/1}"
+index=0
 failed=()
 for test in "$@"; do
+  index=$((index + 1))
+  if [ $(((index - 1) % ${shard#*/})) -ne $((${shard%/*} - 1)) ]; then continue; fi
   echo "::group::$test"
   flutter test "$test" -d "$device" --no-pub \
     --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded &

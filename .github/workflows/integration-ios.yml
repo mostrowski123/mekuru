@@ -24,9 +24,17 @@ jobs:
   ios-integration:
     runs-on: macos-latest
     timeout-minutes: 120
+    # On a runner every file costs five to six minutes (each one rebuilds the
+    # app), so the list is spread over parallel jobs; all of it in one job
+    # ran past two hours.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      IOS_IT_SHARD: ${{ matrix.shard }}/3
 
     steps:
       - uses: actions/checkout@v4
