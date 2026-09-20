@@ -91,6 +91,9 @@
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <StoreKitConfigurationFileReference
+         identifier = "../Runner/Mekuru - Japanese Reader.storekit">
+      </StoreKitConfigurationFileReference>
       <MetalAPIValidationSettings
          isEnabled = "No">
       </MetalAPIValidationSettings>
