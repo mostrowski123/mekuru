@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
@@ -92,26 +91,21 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     required AsyncValue<BackupInterval> autoInterval,
     required AsyncValue<List<BackupFileInfo>> backupHistory,
   }) {
-    // Full backup is a native Android job with no iOS counterpart yet, so
-    // elsewhere only the reading data backup is offered.
-    final hasFullBackup = defaultTargetPlatform == TargetPlatform.android;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         if (isWorking) const LinearProgressIndicator(),
-        if (hasFullBackup) ...[
-          _KindCard(
-            icon: Icons.info_outline,
-            title: l10n.backupScopeNoteTitle,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Text(l10n.backupScopeNoteBody),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-        ],
+        _KindCard(
+          icon: Icons.info_outline,
+          title: l10n.backupScopeNoteTitle,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(l10n.backupScopeNoteBody),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         _KindCard(
           icon: Icons.description_outlined,
           title: l10n.backupSectionBackup,
@@ -245,79 +239,78 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             ),
           ],
         ),
-        if (hasFullBackup) const SizedBox(height: 16),
-        if (hasFullBackup)
-          _KindCard(
-            icon: Icons.inventory_2_outlined,
-            title: l10n.backupFullSectionTitle,
-            badge: l10n.backupFullBadge,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text(l10n.backupFullScopeBody),
+        const SizedBox(height: 16),
+        _KindCard(
+          icon: Icons.inventory_2_outlined,
+          title: l10n.backupFullSectionTitle,
+          badge: l10n.backupFullBadge,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(l10n.backupFullScopeBody),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                l10n.backupFullNotIncluded,
+                style: theme.textTheme.bodySmall,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text(
-                  l10n.backupFullNotIncluded,
-                  style: theme.textTheme.bodySmall,
-                ),
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.drive_folder_upload_outlined,
+                color: theme.colorScheme.primary,
               ),
-              ListTile(
-                leading: Icon(
-                  Icons.drive_folder_upload_outlined,
-                  color: theme.colorScheme.primary,
-                ),
-                title: Text(l10n.backupFullExportTitle),
-                subtitle: Text(l10n.backupFullExportSubtitle),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: isWorking
-                    ? null
-                    : () {
-                        AppHaptics.light();
-                        ref
-                            .read(fullBackupNotifierProvider.notifier)
-                            .exportToFolder();
-                      },
+              title: Text(l10n.backupFullExportTitle),
+              subtitle: Text(l10n.backupFullExportSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: isWorking
+                  ? null
+                  : () {
+                      AppHaptics.light();
+                      ref
+                          .read(fullBackupNotifierProvider.notifier)
+                          .exportToFolder();
+                    },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.settings_backup_restore_outlined,
+                color: theme.colorScheme.error,
               ),
-              ListTile(
-                leading: Icon(
-                  Icons.settings_backup_restore_outlined,
-                  color: theme.colorScheme.error,
-                ),
-                title: Text(l10n.backupFullRestoreTitle),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l10n.backupFullRestoreSubtitle),
-                    const SizedBox(height: 6),
-                    Chip(
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      avatar: Icon(
-                        Icons.warning_amber_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onErrorContainer,
-                      ),
-                      label: Text(l10n.backupFullReplacesChip),
-                      labelStyle: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onErrorContainer,
-                      ),
-                      backgroundColor: theme.colorScheme.errorContainer,
-                      side: BorderSide.none,
+              title: Text(l10n.backupFullRestoreTitle),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.backupFullRestoreSubtitle),
+                  const SizedBox(height: 6),
+                  Chip(
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    avatar: Icon(
+                      Icons.warning_amber_rounded,
+                      size: 16,
+                      color: theme.colorScheme.onErrorContainer,
                     ),
-                  ],
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: isWorking
-                    ? null
-                    : () {
-                        AppHaptics.light();
-                        _restoreFullBackup();
-                      },
+                    label: Text(l10n.backupFullReplacesChip),
+                    labelStyle: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
+                    backgroundColor: theme.colorScheme.errorContainer,
+                    side: BorderSide.none,
+                  ),
+                ],
               ),
-            ],
-          ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: isWorking
+                  ? null
+                  : () {
+                      AppHaptics.light();
+                      _restoreFullBackup();
+                    },
+            ),
+          ],
+        ),
       ],
     );
   }
