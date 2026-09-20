@@ -4678,6 +4678,12 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get backupFullJobDone;
 
+  /// Full backup job page, iOS: opens the picker that moves the finished zip out of the app
+  ///
+  /// In en, this message translates to:
+  /// **'Save backup…'**
+  String get backupFullSaveButton;
+
   /// Acknowledges a cancelled or failed job on the job page.
   ///
   /// In en, this message translates to:

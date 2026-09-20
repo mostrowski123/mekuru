@@ -2819,6 +2819,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupFullJobDone => 'Selesai';
 
   @override
+  String get backupFullSaveButton => 'Simpan cadangan…';
+
+  @override
   String get backupFullJobClose => 'Tutup';
 
   @override

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,8 +19,9 @@ import 'core/services/usage_telemetry.dart';
 import 'features/backup/data/services/staged_full_restore.dart';
 import 'features/backup/data/services/full_backup_service.dart'
     show hasPendingFullBackupJob;
+import 'features/backup/data/services/ios_full_backup.dart';
 import 'features/backup/presentation/providers/full_backup_job_provider.dart'
-    show initialFullBackupJobPendingProvider;
+    show fullBackupJobApiProvider, initialFullBackupJobPendingProvider;
 import 'features/library/data/repositories/book_repository.dart';
 import 'features/manga/data/services/ocr_background_worker.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
@@ -83,7 +85,13 @@ Future<void> main() async {
       await PreloadedProEntitlement.load();
       // A job left by the previous process must block the app from the
       // first frame, before any poll answers.
-      final fullBackupJobPending = await hasPendingFullBackupJob();
+      // iOS has no native job service: the job runs in this process.
+      final iosFullBackupJob = Platform.isIOS
+          ? await IosFullBackup.start()
+          : null;
+      final fullBackupJobPending = iosFullBackupJob == null
+          ? await hasPendingFullBackupJob()
+          : await hasPendingFullBackupJob(jobs: iosFullBackupJob);
       runApp(
         SentryWidget(
           child: ProviderScope(
@@ -91,6 +99,8 @@ Future<void> main() async {
               initialFullBackupJobPendingProvider.overrideWithValue(
                 fullBackupJobPending,
               ),
+              if (iosFullBackupJob != null)
+                fullBackupJobApiProvider.overrideWithValue(iosFullBackupJob),
             ],
             child: const MekuruApp(),
           ),

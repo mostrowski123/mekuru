@@ -11,6 +11,7 @@ import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/data/repositories/pending_book_data_repository.dart';
 import 'package:mekuru/features/backup/data/services/backup_file_manager.dart';
+import 'package:mekuru/features/backup/data/services/ios_full_backup.dart';
 import 'package:mekuru/features/backup/data/services/backup_scheduler.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
@@ -499,6 +500,12 @@ class FullBackupPickers {
 }
 
 final fullBackupPickersProvider = Provider<FullBackupPickers>((ref) {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return const FullBackupPickers(
+      pickExportTarget: IosFullBackup.exportTarget,
+      pickSource: IosFullBackup.pickSource,
+    );
+  }
   return FullBackupPickers(
     pickExportTarget: () async {
       final folder = await AndroidSafService.pickDirectory();

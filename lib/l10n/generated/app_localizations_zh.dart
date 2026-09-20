@@ -2692,6 +2692,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupFullJobDone => '完成';
 
   @override
+  String get backupFullSaveButton => '保存备份…';
+
+  @override
   String get backupFullJobClose => '关闭';
 
   @override
@@ -5818,6 +5821,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullJobDone => '完成';
+
+  @override
+  String get backupFullSaveButton => '保存备份…';
 
   @override
   String get backupFullJobClose => '关闭';

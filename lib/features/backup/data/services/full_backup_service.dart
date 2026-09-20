@@ -13,6 +13,7 @@ import 'package:mekuru/features/backup/data/models/backup_kind.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_endpoints.dart';
 import 'package:mekuru/features/backup/data/models/full_backup_manifest.dart';
 import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
+import 'package:mekuru/features/backup/data/services/ios_full_backup.dart';
 import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_plan.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
@@ -202,7 +203,7 @@ class FullBackupService implements FullBackupApi {
         'totalBytes': totalBytes,
         ...switch (target) {
           FullBackupTreeTarget(:final treeUri) => {
-            'displayName': _exportFileName(createdAt.toLocal()),
+            'displayName': exportFileName(createdAt.toLocal()),
             'treeUri': treeUri,
           },
           FullBackupFileTarget(:final path) => {
@@ -402,7 +403,9 @@ class FullBackupService implements FullBackupApi {
   }
 
   Future<void> _requireFreeSpace(Directory on, int bytes) async {
-    final free = await AndroidSafService.getFreeBytes(on.path);
+    final free = Platform.isIOS
+        ? await IosFullBackup.freeBytes()
+        : await AndroidSafService.getFreeBytes(on.path);
     if (free == null) return; // Unknown: let the write fail loudly instead.
     final needed = bytes + _spaceMargin;
     if (free < needed) {
@@ -441,7 +444,7 @@ class FullBackupService implements FullBackupApi {
     }
   }
 
-  static String _exportFileName(DateTime now) {
+  static String exportFileName(DateTime now) {
     String two(int v) => v.toString().padLeft(2, '0');
     return 'mekuru-full-backup-${now.year}${two(now.month)}${two(now.day)}-'
         '${two(now.hour)}${two(now.minute)}${two(now.second)}.zip';

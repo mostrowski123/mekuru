@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
@@ -251,6 +254,13 @@ class _FullBackupJobScreenState extends ConsumerState<FullBackupJobScreen> {
               color: theme.colorScheme.error,
             ),
           const SizedBox(height: 12),
+          // iOS writes the zip inside the app; until it has been moved out,
+          // offer the picker again (a cancelled picker must not cost the
+          // whole export).
+          if (defaultTargetPlatform == TargetPlatform.iOS &&
+              status.location != null &&
+              File(status.location!).existsSync())
+            button(l10n.backupFullSaveButton, notifier.saveExportedZip),
           button(l10n.backupFullJobDone, notifier.dismiss),
         ];
       case FullBackupJobLifecycle.done:

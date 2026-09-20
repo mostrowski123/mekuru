@@ -3617,6 +3617,10 @@
   "@backupFullJobDone": {
     "description": "Acknowledges a finished full backup on the job page."
   },
+  "backupFullSaveButton": "Save backup…",
+  "@backupFullSaveButton": {
+    "description": "Full backup job page, iOS: opens the picker that moves the finished zip out of the app"
+  },
   "backupFullJobClose": "Close",
   "@backupFullJobClose": {
     "description": "Acknowledges a cancelled or failed job on the job page."

@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
+import 'package:mekuru/features/backup/data/services/ios_full_backup.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// The native job service; tests substitute a fake.
 final fullBackupJobApiProvider = Provider<FullBackupJobApi>(
@@ -100,7 +103,11 @@ class FullBackupJobNotifier extends Notifier<FullBackupJobState> {
         status: status,
       ),
     };
+    final before = state;
     if (next != state) state = next;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      await _followOnIos(before, next);
+    }
     if (next.stage == FullBackupJobStage.active) {
       _startPolling();
     } else {
@@ -141,8 +148,45 @@ class FullBackupJobNotifier extends Notifier<FullBackupJobState> {
     await refresh();
   }
 
+  /// iOS runs the job inside the app: keep the phone awake while it works,
+  /// and when an export finishes, let the user move the zip out of the app.
+  Future<void> _followOnIos(
+    FullBackupJobState before,
+    FullBackupJobState next,
+  ) async {
+    final active = next.stage == FullBackupJobStage.active;
+    if (active != (before.stage == FullBackupJobStage.active)) {
+      await WakelockPlus.toggle(enable: active);
+    }
+    if (before.stage != FullBackupJobStage.active ||
+        next.stage != FullBackupJobStage.terminal) {
+      return;
+    }
+    final status = next.status;
+    if (status.kind == FullBackupJobKind.export &&
+        status.lifecycle == FullBackupJobLifecycle.done) {
+      await saveExportedZip();
+    } else {
+      await IosFullBackup.cleanUp();
+    }
+  }
+
+  /// iOS: asks where the finished zip should go and moves it there. The job
+  /// page offers this again while the file is still in the app.
+  Future<void> saveExportedZip() async {
+    final path = state.status.location;
+    if (path == null || !File(path).existsSync()) return;
+    await IosFullBackup.saveElsewhere(path);
+    // The page reads whether the file is still there.
+    ref.notifyListeners();
+  }
+
   /// Acknowledges a terminal outcome and releases the app.
   Future<void> dismiss() async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // An export the user chose not to save goes with the dismissal.
+      await IosFullBackup.cleanUp(exportedZip: state.status.location);
+    }
     await ref.read(fullBackupJobApiProvider).consumeResult();
     _stopPolling();
     state = const FullBackupJobState();

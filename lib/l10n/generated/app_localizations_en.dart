@@ -2805,6 +2805,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupFullJobDone => 'Done';
 
   @override
+  String get backupFullSaveButton => 'Save backup…';
+
+  @override
   String get backupFullJobClose => 'Close';
 
   @override
