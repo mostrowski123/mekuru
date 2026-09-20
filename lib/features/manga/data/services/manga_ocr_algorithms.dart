@@ -158,6 +158,33 @@ List<String>? alignLines(String whole, List<String> lines) {
   ];
 }
 
+/// [alignLines], and where that finds the boundaries ambiguous, a split in
+/// proportion to the anchor lines' lengths. Measured on Manga109-s, keeping
+/// the anchors' own text in those cases gave back most of what the better
+/// reading had gained; a boundary that is a character off only shifts a word
+/// highlight, the looked-up text stays right.
+List<String> splitAcrossLines(String whole, List<String> lines) {
+  if (lines.length <= 1) return [whole];
+  final aligned = alignLines(whole, lines);
+  if (aligned != null) return aligned;
+
+  final target = whole.runes.toList();
+  final lengths = [for (final l in lines) math.max(1, l.runes.length)];
+  final total = lengths.fold<int>(0, (a, b) => a + b);
+  final out = <String>[];
+  var seen = 0;
+  var start = 0;
+  for (var i = 0; i < lines.length; i++) {
+    seen += lengths[i];
+    final end = i == lines.length - 1
+        ? target.length
+        : (target.length * seen / total).round().clamp(start, target.length);
+    out.add(String.fromCharCodes(target.sublist(start, end)));
+    start = end;
+  }
+  return out;
+}
+
 /// Pillow-compatible pixel preparation: grayscale, then a separable bicubic
 /// resize with antialiasing on downscaling and rounding after each pass.
 /// Pixels are packed 0xRRGGBB.

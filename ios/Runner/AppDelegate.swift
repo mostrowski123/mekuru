@@ -2,6 +2,7 @@ import Flutter
 import ImageIO
 import UIKit
 import Vision
+import onnxruntime_objc
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -27,6 +28,10 @@ import Vision
   private func registerVisionOcrChannel(messenger: FlutterBinaryMessenger) {
     FlutterMethodChannel(name: "mekuru/vision_ocr", binaryMessenger: messenger)
       .setMethodCallHandler { call, result in
+        if call.method.hasPrefix("mangaOcr") {
+          MangaOcrModel.shared.handle(call, result: result)
+          return
+        }
         guard call.method == "recognizeLines",
           let bytes = (call.arguments as? FlutterStandardTypedData)?.data
         else {
@@ -89,5 +94,84 @@ import Vision
           result(FlutterError(code: "exclude_failed", message: error.localizedDescription, details: nil))
         }
       }
+  }
+}
+
+/// The manga-ocr model on ONNX Runtime, as thin as it can be: Dart prepares
+/// the pixels, runs the greedy decoding loop and cleans the text
+/// (`manga_ocr_algorithms.dart`, shared test vectors with Android); this only
+/// runs the two sessions. One encode, then one step per token, all on a
+/// serial queue. ponytail: lives here to avoid a plugin for one class; move it
+/// into `packages/local_manga_ocr/ios` if the iOS side grows.
+final class MangaOcrModel {
+  static let shared = MangaOcrModel()
+
+  private let queue = DispatchQueue(label: "mekuru.manga_ocr")
+  private var env: ORTEnv?
+  private var encoder: ORTSession?
+  private var decoder: ORTSession?
+  private var hiddenStates: ORTValue?
+
+  func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    queue.async {
+      let reply: Any?
+      do {
+        reply = try self.run(call)
+      } catch {
+        reply = FlutterError(code: "manga_ocr_failed", message: error.localizedDescription, details: nil)
+      }
+      DispatchQueue.main.async { result(reply) }
+    }
+  }
+
+  private func run(_ call: FlutterMethodCall) throws -> Any? {
+    switch call.method {
+    case "mangaOcrLoad":
+      guard let args = call.arguments as? [String: String],
+        let encoderPath = args["encoder"], let decoderPath = args["decoder"]
+      else { return FlutterMethodNotImplemented }
+      if encoder == nil {
+        let env = try ORTEnv(loggingLevel: .warning)
+        let options = try ORTSessionOptions()
+        encoder = try ORTSession(env: env, modelPath: encoderPath, sessionOptions: options)
+        decoder = try ORTSession(env: env, modelPath: decoderPath, sessionOptions: options)
+        self.env = env
+      }
+      return true
+    case "mangaOcrUnload":
+      (encoder, decoder, hiddenStates, env) = (nil, nil, nil, nil)
+      return nil
+    case "mangaOcrEncode":
+      // float32 [1, 3, 224, 224], already normalised.
+      guard let pixels = (call.arguments as? FlutterStandardTypedData)?.data, let encoder else {
+        return FlutterMethodNotImplemented
+      }
+      let input = try ORTValue(
+        tensorData: NSMutableData(data: pixels), elementType: .float, shape: [1, 3, 224, 224])
+      hiddenStates = try encoder.run(
+        withInputs: ["pixel_values": input], outputNames: ["last_hidden_state"], runOptions: nil
+      )["last_hidden_state"]
+      return nil
+    case "mangaOcrStep":
+      // The token ids so far; answers the logits for the next token.
+      guard let ids = call.arguments as? [Int], let decoder, let hiddenStates else {
+        return FlutterMethodNotImplemented
+      }
+      let idData = NSMutableData(length: ids.count * MemoryLayout<Int64>.size)!
+      let idPointer = idData.mutableBytes.bindMemory(to: Int64.self, capacity: ids.count)
+      for (i, id) in ids.enumerated() { idPointer[i] = Int64(id) }
+      let input = try ORTValue(
+        tensorData: idData, elementType: .int64, shape: [1, NSNumber(value: ids.count)])
+      let logits = try decoder.run(
+        withInputs: ["input_ids": input, "encoder_hidden_states": hiddenStates],
+        outputNames: ["logits"], runOptions: nil)["logits"]!
+      // [1, ids.count, vocabulary]: keep the last position only.
+      let all = try logits.tensorData() as Data
+      let vocabulary = all.count / MemoryLayout<Float>.size / ids.count
+      let last = all.suffix(vocabulary * MemoryLayout<Float>.size)
+      return FlutterStandardTypedData(float32: Data(last))
+    default:
+      return FlutterMethodNotImplemented
+    }
   }
 }

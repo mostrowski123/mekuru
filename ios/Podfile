@@ -33,6 +33,8 @@ target 'Runner' do
   use_frameworks!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  # Runs the manga-ocr model for on-device OCR (AppDelegate.swift).
+  pod 'onnxruntime-objc', '~> 1.30'
   target 'RunnerTests' do
     inherit! :search_paths
   end

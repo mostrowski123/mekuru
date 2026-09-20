@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/manga/data/services/vision_block_grouping.dart';
 import 'package:mekuru/features/manga/data/services/vision_page_ocr.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -95,6 +97,46 @@ void main() {
       expect(page.blocks.single.vertical, isTrue);
       expect(text, contains('天気'));
       expect(text, contains('散歩'));
+    },
+  );
+
+  testWidgets(
+    'manga-ocr reads the block Vision found, through ONNX Runtime',
+    skip: !Platform.isIOS,
+    timeout: const Timeout(Duration(minutes: 20)),
+    (tester) async {
+      final drawn = await drawPage(tester);
+      final bytes = Uint8List.fromList(drawn.png);
+      final readings = await tester.runAsync(() async {
+        // About 200 MB from Hugging Face the first time on a simulator.
+        if (!await MangaOcrIos.instance.installed) {
+          await MangaOcrIos.instance.download();
+        }
+        final page = await recognizePageWithVision(bytes, 'page.png');
+        final direct = await MangaOcrIos.instance.readBlocks(bytes, [
+          VisionBlock(
+            vertical: true,
+            lines: [
+              VisionLine(
+                left: 0,
+                top: 0,
+                right: drawn.width.toDouble(),
+                bottom: drawn.height.toDouble(),
+                text: 'x',
+              ),
+            ],
+          ),
+        ]);
+        return (page: page.blocks.single.lines, direct: direct);
+      });
+
+      // ignore: avoid_print
+      print(
+        'manga-ocr read: ${readings!.page} / whole page: ${readings.direct}',
+      );
+      // Not null: the model ran, this is not the Vision fallback.
+      expect(readings.direct, isNotNull);
+      expect(readings.page, ['今日は天気がいい', '散歩に行きましょう']);
     },
   );
 

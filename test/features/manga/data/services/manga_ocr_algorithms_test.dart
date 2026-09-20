@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_algorithms.dart';
+import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
 
 /// The same vectors as the Android `OcrAlgorithmsTest`, so both platforms
 /// stay in step.
@@ -32,6 +33,42 @@ void main() {
     });
     test('supplementary kanji are not split', () {
       expect(alignLines('𠮷野家です', ['𠮷野家', 'です']), ['𠮷野家', 'です']);
+    });
+  });
+
+  test('the iOS model files are the Android manifest minus the detector', () {
+    final manifest =
+        jsonDecode(
+              File(
+                'packages/local_manga_ocr/android/src/main/assets/'
+                'local_manga_ocr/manifest.json',
+              ).readAsStringSync(),
+            )
+            as Map<String, dynamic>;
+    final android = {
+      for (final f in manifest['files'] as List)
+        if (f['component'] == 'manga-ocr') f['name']: f,
+    };
+    expect(mangaOcrIosModelFiles.map((f) => f.name), android.keys);
+    for (final f in mangaOcrIosModelFiles) {
+      expect(f.url, android[f.name]['url']);
+      expect(f.bytes, android[f.name]['bytes']);
+      expect(f.sha256, android[f.name]['sha256']);
+    }
+  });
+
+  group('splitAcrossLines', () {
+    test('uses the alignment when it is unambiguous', () {
+      expect(splitAcrossLines('今日は晴れです', ['令日は', '晴れです']), ['今日は', '晴れです']);
+    });
+    test('falls back to a proportional split, never to the anchors', () {
+      // Too different to align; the better reading must still win.
+      expect(splitAcrossLines('月曜日ですよ', ['火星', '大好きだ']), ['月曜', '日ですよ']);
+      expect(splitAcrossLines('あああああ', ['ああ', 'ああ']).join(), 'あああああ');
+    });
+    test('a single line takes the whole text', () {
+      expect(splitAcrossLines('こんにちは', ['こんにちわ']), ['こんにちは']);
+      expect(splitAcrossLines('こんにちは', []), ['こんにちは']);
     });
   });
 
