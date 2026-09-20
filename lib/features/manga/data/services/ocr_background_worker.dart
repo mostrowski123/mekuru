@@ -7,6 +7,7 @@ import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:path/path.dart' as p;
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../../../core/platform/android_saf_service.dart';
@@ -589,6 +590,8 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
         return true;
       }
 
+      // A reader closed mid-scan turns the wakelock off; take it back.
+      if (inputData['keepAwake'] == true) await WakelockPlus.enable();
       final page = mokuroBook.pages[pageIndex];
       final imageBytes = await _readOcrPageImageBytes(
         mokuroBook: mokuroBook,
@@ -1006,6 +1009,11 @@ Future<void> _saveScheduledOcrProgress({
 Future<OcrTaskExecutionMode> determineOcrTaskExecutionMode({
   required String cacheFilePath,
 }) async {
+  // An iOS background task gets seconds, not the minutes a volume needs, and
+  // cannot reach the app's own channels; scans there run while the app is open.
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return OcrTaskExecutionMode.foreground;
+  }
   final cacheFile = File(cacheFilePath);
   if (!await cacheFile.exists()) {
     return OcrTaskExecutionMode.workmanager;
@@ -1072,6 +1080,32 @@ String _describeMissingPageImage({
       'Check that the manga image folder is still available.';
 }
 
+/// iOS scans run inside the app, so one that was `running` when the app last
+/// died is not running any more. Marks it cancelled: the badge stops claiming
+/// progress, and pressing Start again continues, because finished pages are
+/// skipped. A no-op elsewhere (WorkManager re-runs its own tasks).
+Future<void> resetInterruptedIosOcr() async {
+  if (defaultTargetPlatform != TargetPlatform.iOS) return;
+  final prefs = await SharedPreferences.getInstance();
+  for (final key in prefs.getKeys().toList()) {
+    if (!key.startsWith(ocrProgressKeyPrefix)) continue;
+    final bookId = int.tryParse(key.substring(ocrProgressKeyPrefix.length));
+    final progress = bookId == null ? null : OcrProgress.load(prefs, bookId);
+    if (progress?.status != OcrStatus.running) continue;
+    await OcrProgress.save(
+      prefs,
+      bookId!,
+      OcrProgress(
+        completed: progress!.completed,
+        total: progress.total,
+        status: OcrStatus.cancelled,
+        avgSecondsPerPage: progress.avgSecondsPerPage,
+      ),
+    );
+    await _clearActiveOcrJob(bookId);
+  }
+}
+
 /// Schedule an OCR task for a book.
 Future<void> scheduleOcrTask({
   required int bookId,
@@ -1096,11 +1130,9 @@ Future<void> scheduleOcrTask({
   );
 
   try {
-    // Vision runs behind a channel on the app's own engine, which a
-    // WorkManager isolate cannot reach.
-    final executionMode = onDevice
-        ? OcrTaskExecutionMode.foreground
-        : await determineOcrTaskExecutionMode(cacheFilePath: cacheFilePath);
+    final executionMode = await determineOcrTaskExecutionMode(
+      cacheFilePath: cacheFilePath,
+    );
     if (executionMode == OcrTaskExecutionMode.foreground) {
       debugPrint('[OCR_WORKER] Using foreground OCR bookId=$bookId');
       await _saveScheduledOcrProgress(
@@ -1114,8 +1146,11 @@ Future<void> scheduleOcrTask({
         await _clearActiveOcrJob(bookId);
       }
 
+      // A sleeping iPhone suspends the app and the scan with it.
+      final keepAwake = defaultTargetPlatform == TargetPlatform.iOS;
       unawaited(() async {
         try {
+          if (keepAwake) await WakelockPlus.enable();
           await _processOcrTask({
             'bookId': bookId,
             'cacheFilePath': cacheFilePath,
@@ -1124,6 +1159,7 @@ Future<void> scheduleOcrTask({
             'selectedPages': ?selectedPages,
             'replace': replace,
             'onDevice': onDevice,
+            'keepAwake': keepAwake,
             ...?jobId == null ? null : {'jobId': jobId},
             ...?reservedPages == null ? null : {'reservedPages': reservedPages},
           });
@@ -1134,9 +1170,14 @@ Future<void> scheduleOcrTask({
               exception: error,
               stack: stackTrace,
               library: 'ocr_background_worker',
-              context: ErrorDescription('while running SAF-backed OCR'),
+              context: ErrorDescription('while running in-process OCR'),
             ),
           );
+        } finally {
+          // ponytail: not reference-counted, so a reader opened during the
+          // scan loses its keep-awake when the scan ends; it takes it back the
+          // next time it opens.
+          if (keepAwake) await WakelockPlus.disable();
         }
       }());
       return;

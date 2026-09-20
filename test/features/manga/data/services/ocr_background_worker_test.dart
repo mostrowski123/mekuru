@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:path/path.dart' as p;
@@ -245,6 +246,59 @@ void main() {
         ]);
       },
     );
+  });
+
+  group('iOS runs scans inside the app', () {
+    setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.iOS);
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    test('the execution mode is always foreground', () async {
+      final mode = await determineOcrTaskExecutionMode(
+        cacheFilePath: p.join(Directory.systemTemp.path, 'missing.json'),
+      );
+
+      expect(mode, OcrTaskExecutionMode.foreground);
+    });
+
+    test('a scan left running by a dead app is marked cancelled', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      await OcrProgress.save(
+        prefs,
+        7,
+        const OcrProgress(completed: 3, total: 10, status: OcrStatus.running),
+      );
+      await OcrProgress.save(
+        prefs,
+        8,
+        const OcrProgress(
+          completed: 10,
+          total: 10,
+          status: OcrStatus.completed,
+        ),
+      );
+
+      await resetInterruptedIosOcr();
+
+      final interrupted = OcrProgress.load(prefs, 7)!;
+      expect(interrupted.status, OcrStatus.cancelled);
+      expect((interrupted.completed, interrupted.total), (3, 10));
+      expect(OcrProgress.load(prefs, 8)!.status, OcrStatus.completed);
+    });
+  });
+
+  test('other platforms leave a running scan alone at startup', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    await OcrProgress.save(
+      prefs,
+      7,
+      const OcrProgress(completed: 3, total: 10, status: OcrStatus.running),
+    );
+
+    await resetInterruptedIosOcr();
+
+    expect(OcrProgress.load(prefs, 7)!.status, OcrStatus.running);
   });
 
   group('determineOcrTaskExecutionMode', () {

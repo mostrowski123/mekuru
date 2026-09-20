@@ -122,6 +122,10 @@ Future<void> _runDeferredStartupWarmups() => tracedOperation(
         action: flushPendingOcrFinalizations,
       ),
       _runStartupWarmup(
+        step: 'ocr_interrupted',
+        action: resetInterruptedIosOcr,
+      ),
+      _runStartupWarmup(
         step: 'billing',
         // Also converges the local Play entitlement (grants it to legacy
         // buyers, revokes it after a refund).
