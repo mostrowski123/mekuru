@@ -25,6 +25,10 @@ jobs:
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # firebase_analytics' Package.swift reads this and links Analytics without
+      # ad-ID support: the app shows no ATT prompt, so it must not carry
+      # GoogleAppMeasurementIdentitySupport or GoogleAdsOnDeviceConversion.
+      FIREBASE_ANALYTICS_WITHOUT_ADID: true
 
     steps:
       - uses: actions/checkout@v4
@@ -81,3 +85,5 @@ jobs:
           ls "$app/Frameworks"
           test -d "$app/Frameworks/mecab_dart.framework"
           test -d "$app/Frameworks/sqlite3.framework"
+          test ! -e "$app/Frameworks/GoogleAppMeasurementIdentitySupport.framework"
+          test ! -e "$app/Frameworks/GoogleAdsOnDeviceConversion.framework"
