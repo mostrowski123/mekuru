@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -156,6 +157,21 @@ void main() {
       findsNothing,
     );
     expect(find.textContaining('subscription'), findsNothing);
+  });
+
+  testWidgets('on-device OCR is offered on Android only', (tester) async {
+    await pumpLockedScreen(tester);
+    expect(find.text('On-device OCR'), findsOneWidget);
+
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await pumpLockedScreen(tester);
+      expect(find.text('On-device OCR'), findsNothing);
+      expect(find.text('Comic Text Detector'), findsNothing);
+      expect(find.text('Custom OCR Server'), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('unlocked state shows the Pro-active banner and no buy button', (

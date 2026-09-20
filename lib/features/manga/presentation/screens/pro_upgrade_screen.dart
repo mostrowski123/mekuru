@@ -439,38 +439,42 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                       title: l10n.proFeatureHighlightsTitle,
                       description: l10n.proFeatureHighlightsDescription,
                     ),
-                    const SizedBox(height: 12),
-                    _ProFeatureCard(
-                      icon: Icons.offline_bolt_outlined,
-                      title: l10n.proFeatureLocalOcrTitle,
-                      description: l10n.proFeatureLocalOcrDescription,
-                      footer: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Proper names, shared with the Downloads attributions.
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              TextButton.icon(
-                                onPressed: () => _openModelRepo(
-                                  Uri.parse(OcrAttributions.mangaOcrRepoUrl),
+                    // On-device OCR exists only on Android so far; the store
+                    // page must not sell a feature this platform lacks.
+                    if (defaultTargetPlatform == TargetPlatform.android) ...[
+                      const SizedBox(height: 12),
+                      _ProFeatureCard(
+                        icon: Icons.offline_bolt_outlined,
+                        title: l10n.proFeatureLocalOcrTitle,
+                        description: l10n.proFeatureLocalOcrDescription,
+                        footer: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Proper names, shared with the Downloads attributions.
+                            Wrap(
+                              spacing: 8,
+                              children: [
+                                TextButton.icon(
+                                  onPressed: () => _openModelRepo(
+                                    Uri.parse(OcrAttributions.mangaOcrRepoUrl),
+                                  ),
+                                  icon: const Icon(Icons.open_in_new),
+                                  label: const Text('manga-ocr'),
                                 ),
-                                icon: const Icon(Icons.open_in_new),
-                                label: const Text('manga-ocr'),
-                              ),
-                              TextButton.icon(
-                                onPressed: () => _openModelRepo(
-                                  Uri.parse(OcrAttributions.detectorRepoUrl),
+                                TextButton.icon(
+                                  onPressed: () => _openModelRepo(
+                                    Uri.parse(OcrAttributions.detectorRepoUrl),
+                                  ),
+                                  icon: const Icon(Icons.open_in_new),
+                                  label: const Text('Comic Text Detector'),
                                 ),
-                                icon: const Icon(Icons.open_in_new),
-                                label: const Text('Comic Text Detector'),
-                              ),
-                            ],
-                          ),
-                          const LocalOcrSpeedTestRow(),
-                        ],
+                              ],
+                            ),
+                            const LocalOcrSpeedTestRow(),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                     const SizedBox(height: 12),
                     _ProFeatureCard(
                       icon: Icons.document_scanner_outlined,
