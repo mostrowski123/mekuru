@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import '../../data/services/ocr_background_worker.dart';
 import '../providers/local_ocr_providers.dart';
+import '../providers/ocr_progress_provider.dart';
 import 'local_ocr_widgets.dart';
 
 /// Sits above the existing page widget without replacing it or its zoom state.
@@ -16,6 +19,13 @@ class LocalOcrPageOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // iOS runs every scan through the page loop, which keeps no job journal;
+    // without this the reader is silent until "OCR complete".
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final progress = ref.watch(ocrProgressProvider(bookId)).asData?.value;
+      if (progress?.status != OcrStatus.running) return const SizedBox.shrink();
+      return _PageLoopProgress(bookId: bookId, progress: progress!);
+    }
     final launch = ref.watch(
       localOcrLaunchesProvider.select((all) => all[bookId]),
     );
@@ -143,6 +153,74 @@ class LocalOcrPageOverlay extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Progress of an iOS page-loop scan, kept at the bottom so pages stay
+/// readable while the rest of the volume is scanned.
+class _PageLoopProgress extends ConsumerWidget {
+  final int bookId;
+  final OcrProgress progress;
+  const _PageLoopProgress({required this.bookId, required this.progress});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    return Positioned.fill(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Material(
+                color: Colors.black.withValues(alpha: .78),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l.localOcrProgress(
+                                processed: progress.completed,
+                                total: progress.total,
+                              ),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(
+                              value: progress.total > 0
+                                  ? progress.completed / progress.total
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await cancelOcrTask(bookId);
+                          ref.invalidate(ocrProgressProvider(bookId));
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                        ),
+                        child: Text(l.localOcrPause),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

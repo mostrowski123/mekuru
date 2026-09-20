@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/features/manga/data/services/local_ocr_client.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
+import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_page_overlay.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 
@@ -44,6 +47,52 @@ const queued = OcrJobProgress({
 });
 
 void main() {
+  testWidgets('on iOS a running page-loop scan shows its progress', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      Future<void> pump(OcrProgress? progress) => tester.pumpWidget(
+        ProviderScope(
+          key: UniqueKey(),
+          overrides: [
+            ocrProgressProvider(
+              1,
+            ).overrideWith((ref) => Stream.value(progress)),
+          ],
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Stack(
+              children: [
+                LocalOcrPageOverlay(bookId: 1, visiblePages: [0]),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await pump(
+        const OcrProgress(completed: 27, total: 130, status: OcrStatus.running),
+      );
+      await tester.pump();
+      expect(find.text('27 / 130 pages processed'), findsOneWidget);
+      expect(find.text('Pause'), findsOneWidget);
+
+      await pump(
+        const OcrProgress(
+          completed: 27,
+          total: 130,
+          status: OcrStatus.cancelled,
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Pause'), findsNothing);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
   test(
     'launch is immediate and cancel during preparation creates no native job',
     () async {

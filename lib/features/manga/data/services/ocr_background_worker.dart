@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
@@ -447,6 +448,8 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     final startingCompleted = total - pagesToProcess.length;
     var completed = 0;
     final stopwatch = Stopwatch()..start();
+    var activeMs = 0;
+    var lastPageMark = 0;
     final updatedPages = List<MokuroPage>.from(mokuroBook.pages);
     var consecutiveFailures = 0;
     var anyPageSucceeded = false;
@@ -538,10 +541,17 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
       return true;
     }
 
+    // Called once per finished page.
     Future<void> saveRunningProgress() async {
-      final avgSeconds = completed > 0
-          ? stopwatch.elapsedMilliseconds / 1000.0 / completed
-          : null;
+      final now = stopwatch.elapsedMilliseconds;
+      activeMs += activePageMillis(
+        pageMs: now - lastPageMark,
+        activeMsBefore: activeMs,
+        pagesBefore: completed - 1,
+        suspends: defaultTargetPlatform == TargetPlatform.iOS,
+      );
+      lastPageMark = now;
+      final avgSeconds = completed > 0 ? activeMs / 1000.0 / completed : null;
 
       await OcrProgress.save(
         prefs,
@@ -1101,6 +1111,24 @@ Future<void> resetInterruptedIosOcr() async {
     );
     await _clearActiveOcrJob(bookId);
   }
+}
+
+/// What one page adds to the time the ETA is averaged over. iOS suspends the
+/// app, and the page loop with it, in the background while the clock runs on;
+/// a page that spans a suspension would otherwise inflate the ETA for the rest
+/// of the scan.
+// ponytail: a cap (three average pages, never under 10 s), not a lifecycle
+// observer; this file has no widget binding. Observe the lifecycle if a slow
+// server ever makes honest pages hit the cap.
+@visibleForTesting
+int activePageMillis({
+  required int pageMs,
+  required int activeMsBefore,
+  required int pagesBefore,
+  required bool suspends,
+}) {
+  if (!suspends || pagesBefore <= 0) return pageMs;
+  return math.min(pageMs, math.max(10000, 3 * activeMsBefore ~/ pagesBefore));
 }
 
 /// iOS applies a full restore inside the running app, so this process's page

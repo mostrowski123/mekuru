@@ -200,10 +200,12 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
     _load();
   }
 
-  Future<void> _load() async {
+  /// [fromDisk] skips the manga the reader handed over: a scan that just
+  /// stopped has written pages the in-memory copy does not know about.
+  Future<void> _load({bool fromDisk = false}) async {
     try {
       final cached =
-          widget.initialManga ??
+          (fromDisk ? null : widget.initialManga) ??
           await ref.read(ocrBookLoaderProvider)(_cachePath);
       final backend = await preferredOcrBackend(cached);
       if (!mounted) return;
@@ -266,6 +268,17 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
     final job = ref.watch(localOcrJobProvider(widget.book.id));
     final remote = ref.watch(ocrProgressProvider(widget.book.id)).asData?.value;
     final remoteRunning = remote?.status == OcrStatus.running;
+    // Keep "n of m pages already have OCR" and the page count on the button
+    // true after a scan pauses, fails or finishes while the sheet is open.
+    ref.listen(ocrProgressProvider(widget.book.id), (previous, next) {
+      final before = previous?.asData?.value;
+      final after = next.asData?.value;
+      if (after == null || after.status == OcrStatus.running) return;
+      if (before?.status != after.status ||
+          before?.completed != after.completed) {
+        _load(fromDisk: true);
+      }
+    });
     final manga = _manga;
     final targets = manga == null
         ? const <int>[]
@@ -409,7 +422,11 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
                 ),
               const SizedBox(height: 12),
               FilledButton(
-                onPressed: _busy || manga == null ? null : _start,
+                // Nothing left to scan: "Recognize 0 pages" must not start
+                // an empty job.
+                onPressed: _busy || manga == null || targets.isEmpty
+                    ? null
+                    : _start,
                 child: Text(l.localOcrStartPages(count: targets.length)),
               ),
             ],

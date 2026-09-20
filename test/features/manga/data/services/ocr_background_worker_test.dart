@@ -274,6 +274,31 @@ void main() {
       expect(mode, OcrTaskExecutionMode.foreground);
     });
 
+    test('a page that spans a suspension does not inflate the ETA', () {
+      int page(int ms, {bool suspends = true}) => activePageMillis(
+        pageMs: ms,
+        activeMsBefore: 13000,
+        pagesBefore: 10,
+        suspends: suspends,
+      );
+
+      expect(page(1400), 1400);
+      // 22 s in the background: counted as the 10 s floor, not at face value.
+      expect(page(22000), 10000);
+      // Android never suspends a running scan; its numbers stay as measured.
+      expect(page(22000, suspends: false), 22000);
+      // A slow server: the cap follows the average (3 x 30 s).
+      expect(
+        activePageMillis(
+          pageMs: 600000,
+          activeMsBefore: 300000,
+          pagesBefore: 10,
+          suspends: true,
+        ),
+        90000,
+      );
+    });
+
     test('a restore pauses the scans this process is running', () async {
       SharedPreferences.setMockInitialValues({
         '${ocrProgressKeyPrefix}7': const OcrProgress(
