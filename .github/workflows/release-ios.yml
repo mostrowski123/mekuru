@@ -2,13 +2,6 @@ name: Release iOS to TestFlight
 
 on:
   workflow_dispatch:
-  # ponytail: temporary. workflow_dispatch only works once this file is on
-  # main, so until the iOS port merges a change to this file on the port
-  # branch starts a run. Remove this trigger before merging.
-  push:
-    branches: [feat/ios-phase-0]
-    paths:
-      - '.github/workflows/release-ios.yml'
 
 permissions:
   contents: read

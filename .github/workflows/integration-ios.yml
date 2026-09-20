@@ -1,0 +1,106 @@
+name: iOS Integration Tests
+
+on:
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'packages/local_manga_ocr/**'
+      - 'ios/**'
+      - 'assets/**'
+      - 'integration_test/**'
+      - 'scripts/run_ios_integration_tests.sh'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/integration-ios.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  ios-integration:
+    runs-on: macos-latest
+    timeout-minutes: 120
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-macos-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-macos-
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: build/ios/SourcePackages
+          key: spm-${{ hashFiles('ios/Runner.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: spm-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run code generation
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Generate environment config
+        run: >
+          flutter pub run environment_config:generate
+          --sentryDsn=${{ secrets.SENTRY_DSN }}
+          --sentryEnvironment=development
+
+      - name: Boot a simulator
+        id: simulator
+        run: |
+          udid=$(xcrun simctl list devices available --json |
+            python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for r in sorted(d, reverse=True) if 'iOS' in r for x in d[r] if x['name'].startswith('iPhone')))")
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      # One file at a time with a watchdog each (see the script): a failing
+      # iOS integration test can hang instead of failing. Every file listed
+      # has passed on an iPhone simulator. Not listed: Android-only suites
+      # (full_backup_*, local_ocr_*, pro_entitlement_flow) and
+      # reader_resume_reopen, which fails on iOS at tester.pageBack().
+      # vision_ocr_test downloads the manga-ocr pack (about 200 MB).
+      - name: Run iOS integration tests
+        run: >
+          scripts/run_ios_integration_tests.sh ${{ steps.simulator.outputs.udid }}
+          integration_test/app_smoke_test.dart
+          integration_test/dictionary_search_flow_test.dart
+          integration_test/vocabulary_lifecycle_test.dart
+          integration_test/settings_persistence_test.dart
+          integration_test/cross_feature_navigation_test.dart
+          integration_test/backup_restore_roundtrip_test.dart
+          integration_test/bookmark_highlight_persistence_test.dart
+          integration_test/pending_restore_flow_test.dart
+          integration_test/reader_progress_persistence_flow_test.dart
+          integration_test/dictionary_import_flow_test.dart
+          integration_test/vocabulary_csv_export_test.dart
+          integration_test/library_import_flow_test.dart
+          integration_test/orphan_sweep_flow_test.dart
+          integration_test/collections_flow_test.dart
+          integration_test/mecab_enhanced_dict_upgrade_test.dart
+          integration_test/epub_furigana_export_flow_test.dart
+          integration_test/furigana_generator_flow_test.dart
+          integration_test/manga_word_segmentation_test.dart
+          integration_test/reader_indesign_vertical_epub_test.dart
+          integration_test/ios_full_backup_test.dart
+          integration_test/vision_ocr_test.dart

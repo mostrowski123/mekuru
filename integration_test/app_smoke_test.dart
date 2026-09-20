@@ -64,7 +64,10 @@ void main() {
     );
     expect(find.byType(ReadingTimeCard), findsOneWidget);
     expect(find.text(l10n.statsUnavailable), findsNothing);
-    expect(await LocalMangaOcr.isWifiConnected(), isA<bool>());
+    // The native OCR channel exists on Android only.
+    if (LocalMangaOcr.available) {
+      expect(await LocalMangaOcr.isWifiConnected(), isA<bool>());
+    }
 
     // Settings has no navigation-bar slot of its own; it opens from the gear
     // in the You tab's app bar.
