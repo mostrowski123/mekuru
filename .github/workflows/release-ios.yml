@@ -83,14 +83,19 @@ jobs:
           test -d "$app/Frameworks/mecab_dart.framework"
           test -d "$app/Frameworks/sqlite3.framework"
 
-      # An unsigned archive carries no entitlements, and the export step reads
-      # them from the archived app's signature. Ad-hoc sign the app with
-      # Runner.entitlements so App Attest survives into the signed IPA.
-      - name: Attach entitlements to the archive
-        run: >
-          codesign --force --sign -
-          --entitlements ios/Runner/Runner.entitlements
-          build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app
+      # The export step re-signs only what already carries a full signature,
+      # and reads the app's entitlements from its signature. In an unsigned
+      # archive the app has neither, and the prebuilt Swift package frameworks
+      # (Sentry, Firebase) have only the linker's stub signature, which App
+      # Store validation then rejects (error 90035). Ad-hoc sign every
+      # framework, then the app with Runner.entitlements.
+      - name: Prepare the archive for signing
+        run: |
+          app=build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app
+          for framework in "$app"/Frameworks/*.framework; do
+            codesign --force --sign - "$framework"
+          done
+          codesign --force --sign - --entitlements ios/Runner/Runner.entitlements "$app"
 
       # altool and xcodebuild both find the key in this directory by its ID.
       - name: Install App Store Connect API key
@@ -113,15 +118,22 @@ jobs:
           -authenticationKeyID $ASC_KEY_ID
           -authenticationKeyIssuerID $ASC_ISSUER_ID
 
-      # The archive is built unsigned, so check that the entitlements in
-      # Runner.entitlements survived into the signed app.
-      - name: Verify entitlements
+      # Catch a bad export here rather than in App Store validation: the App
+      # Attest entitlement must have survived, and every framework must be
+      # signed by the team, not left with an ad-hoc signature.
+      - name: Verify signing
         run: |
           ls -l build/ios/ipa
           unzip -q build/ios/ipa/*.ipa -d build/ios/ipa/unpacked
-          codesign -d --entitlements - --xml build/ios/ipa/unpacked/Payload/Runner.app > build/ios/ipa/entitlements.plist
+          app=build/ios/ipa/unpacked/Payload/Runner.app
+          codesign -d --entitlements - --xml "$app" > build/ios/ipa/entitlements.plist
           plutil -p build/ios/ipa/entitlements.plist
           grep -q 'com.apple.developer.devicecheck.appattest-environment' build/ios/ipa/entitlements.plist
+          for framework in "$app"/Frameworks/*.framework; do
+            team=$(codesign -dvv "$framework" 2>&1 | sed -n 's/^TeamIdentifier=//p')
+            echo "$(basename "$framework"): $team"
+            test "$team" = VE9NCMS5L4
+          done
 
       - name: Upload to TestFlight
         run: xcrun altool --upload-app --type ios -f build/ios/ipa/*.ipa --apiKey $ASC_KEY_ID --apiIssuer $ASC_ISSUER_ID
