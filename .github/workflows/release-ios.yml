@@ -131,9 +131,13 @@ jobs:
       - name: Upload to TestFlight
         run: xcrun altool --upload-app --type ios -f build/ios/ipa/*.ipa --apiKey $ASC_KEY_ID --apiIssuer $ASC_ISSUER_ID
 
+      # The release the app itself reports (package@version+build); without it
+      # the plugin files the symbols under `mekuru@<pubspec version>`.
       - name: Upload debug symbols to Sentry
         if: env.SENTRY_AUTH_TOKEN != ''
-        run: dart run sentry_dart_plugin
+        run: |
+          version=$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)
+          SENTRY_RELEASE="moe.matthew.mekuru@${version}+${{ github.run_number }}" dart run sentry_dart_plugin
 
       - name: Remove App Store Connect API key
         if: always()

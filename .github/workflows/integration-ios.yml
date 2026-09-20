@@ -70,8 +70,8 @@ jobs:
       - name: Generate environment config
         run: >
           flutter pub run environment_config:generate
-          --sentryDsn=${{ secrets.SENTRY_DSN }}
-          --sentryEnvironment=development
+          --sentryDsn=
+          --sentryEnvironment=ci
 
       - name: Boot a simulator
         id: simulator
