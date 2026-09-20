@@ -1,6 +1,7 @@
 import Flutter
 import ImageIO
 import UIKit
+import UniformTypeIdentifiers
 import Vision
 import onnxruntime_objc
 
@@ -17,6 +18,7 @@ import onnxruntime_objc
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     registerStorageChannel(messenger: engineBridge.applicationRegistrar.messenger())
     registerVisionOcrChannel(messenger: engineBridge.applicationRegistrar.messenger())
+    FilesBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
 
   /// `mekuru/vision_ocr`: the text lines Apple Vision finds and reads on one
@@ -173,5 +175,66 @@ final class MangaOcrModel {
     default:
       return FlutterMethodNotImplemented
     }
+  }
+}
+
+/// `mekuru/ios_files`: the document-picker calls full backup needs, which no
+/// plugin in the app offers without pulling a multi-gigabyte file into memory.
+///  - `exportFile(path)`: lets the user choose where the file goes and MOVES
+///    it there (no second copy on disk). True when moved, false if cancelled.
+///  - `pickZip()`: a local copy of the zip the user picked, or nil. The caller
+///    deletes the copy when done.
+///  - `freeBytes()`: space the system is willing to give the app.
+final class FilesBridge: NSObject, UIDocumentPickerDelegate {
+  static let shared = FilesBridge()
+  private var pending: FlutterResult?
+  private var exporting = false
+
+  func register(messenger: FlutterBinaryMessenger) {
+    FlutterMethodChannel(name: "mekuru/ios_files", binaryMessenger: messenger)
+      .setMethodCallHandler { [weak self] call, result in
+        guard let self else { return }
+        switch call.method {
+        case "exportFile":
+          guard let path = call.arguments as? String else { return result(FlutterMethodNotImplemented) }
+          self.present(
+            UIDocumentPickerViewController(forExporting: [URL(fileURLWithPath: path)], asCopy: false),
+            exporting: true, result: result)
+        case "pickZip":
+          self.present(
+            UIDocumentPickerViewController(forOpeningContentTypes: [.zip], asCopy: true),
+            exporting: false, result: result)
+        case "freeBytes":
+          let values = try? URL(fileURLWithPath: NSHomeDirectory())
+            .resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+          result(values?.volumeAvailableCapacityForImportantUsage)
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+  }
+
+  private func present(_ picker: UIDocumentPickerViewController, exporting: Bool, result: @escaping FlutterResult) {
+    guard pending == nil,
+      var top = UIApplication.shared.connectedScenes
+        .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController
+    else {
+      return result(FlutterError(code: "picker_unavailable", message: nil, details: nil))
+    }
+    while let presented = top.presentedViewController { top = presented }
+    pending = result
+    self.exporting = exporting
+    picker.delegate = self
+    top.present(picker, animated: true)
+  }
+
+  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+    pending?(exporting ? true : urls.first?.path)
+    pending = nil
+  }
+
+  func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+    pending?(exporting ? false : nil)
+    pending = nil
   }
 }
