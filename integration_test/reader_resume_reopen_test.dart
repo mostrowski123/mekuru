@@ -115,8 +115,9 @@ void main() {
         timeout: const Duration(seconds: 20),
       );
 
-      // Back to library.
-      await tester.pageBack();
+      // Back to library. The reader opens with its controls (and so its back
+      // button) hidden, which leaves tester.pageBack() nothing to tap.
+      Navigator.of(tester.element(find.byType(CustomEpubViewer))).pop();
       await pumpUntilVisible(tester, find.text('テストの本'));
 
       // Background → foreground via the lifecycle channel, matching the

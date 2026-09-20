@@ -92,8 +92,8 @@ jobs:
       # One file at a time with a watchdog each (see the script): a failing
       # iOS integration test can hang instead of failing. Every file listed
       # has passed on an iPhone simulator. Not listed: Android-only suites
-      # (full_backup_*, local_ocr_*, pro_entitlement_flow) and
-      # reader_resume_reopen, which fails on iOS at tester.pageBack().
+      # (full_backup_*, local_ocr_*, pro_entitlement_flow) and word_tap_lookup_*
+      # (no tap reaches the WKWebView under the integration-test binding).
       # vision_ocr_test downloads the manga-ocr pack (about 200 MB).
       - name: Run iOS integration tests
         run: >
@@ -118,4 +118,7 @@ jobs:
           integration_test/manga_word_segmentation_test.dart
           integration_test/reader_indesign_vertical_epub_test.dart
           integration_test/ios_full_backup_test.dart
+          integration_test/reader_resume_reopen_test.dart
+          integration_test/server_sync_flow_test.dart
+          integration_test/epub_manga_convert_flow_test.dart
           integration_test/vision_ocr_test.dart
