@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
@@ -318,8 +319,11 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               theme: theme,
             ),
           ),
-          const SizedBox(height: 8),
-          const LocalOcrDownloadTile(),
+          // iOS reads manga with Apple Vision: there is no OCR model to get.
+          if (defaultTargetPlatform != TargetPlatform.iOS) ...[
+            const SizedBox(height: 8),
+            const LocalOcrDownloadTile(),
+          ],
           const SizedBox(height: 16),
         ],
       ),
