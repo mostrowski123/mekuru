@@ -23,14 +23,11 @@ final initialFullBackupJobPendingProvider = Provider<bool>((ref) => false);
 /// alive, so a real exit is the only deterministic trigger.
 ///
 /// iOS never exits by itself (it reads as a crash, to users and to App
-/// Review): the database is closed and the boot sequence runs again inside
-/// the process, which applies the restore the same way.
+/// Review): the app is unmounted, the database closed, and the boot sequence
+/// runs again inside the process, which applies the restore the same way.
 final appExitProvider = Provider<Future<void> Function()>((ref) {
   if (defaultTargetPlatform == TargetPlatform.iOS) {
-    return () async {
-      await ref.read(databaseProvider).close();
-      await restartAppInProcess();
-    };
+    return () => restartAppInProcess(ref.read(databaseProvider));
   }
   return () async {
     try {

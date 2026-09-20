@@ -119,10 +119,10 @@ Future<void> _bootApp() async {
 
 /// Applies a staged full restore without ending the process. iOS only: an app
 /// that exits by itself reads as a crash there, to users and to App Review.
-/// The caller closes the database first. Unmounting the old tree disposes
-/// every provider, then the boot sequence runs again from the top, as on a
-/// cold start.
-Future<void> restartAppInProcess() async {
+/// Unmounting the old tree disposes every provider, then the boot sequence
+/// runs again from the top, as on a cold start. [db] is the database the old
+/// tree used; the caller reads it from its provider before the tree goes.
+Future<void> restartAppInProcess(AppDatabase db) async {
   runApp(
     const ColoredBox(
       color: Color(0xFF000000),
@@ -130,6 +130,12 @@ Future<void> restartAppInProcess() async {
     ),
   );
   await WidgetsBinding.instance.endOfFrame;
+  // Only now: drift's close() waits for every open query stream, and a stream
+  // whose listener is paused (the library sits offstage under the restore
+  // page) never finishes, so closing before the unmount hangs for good. The
+  // unmount cancelled them all. databaseProvider's onDispose has already
+  // called close(); a second call waits for the same shutdown.
+  await db.close();
   // Covers are cached by file path, and the restored library reuses paths.
   PaintingBinding.instance.imageCache
     ..clear()
