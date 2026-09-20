@@ -5416,6 +5416,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not connect to Anki. Check the address and make sure Anki is running on your computer.'**
   String get ankiConnectCouldNotConnect;
+
+  /// Section title and picker title for choosing which Anki the cards are sent to (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Send cards to'**
+  String get ankiBackendLabel;
+
+  /// Backend choice: the AnkiMobile app on this device (iOS). Also the title of its setup section.
+  ///
+  /// In en, this message translates to:
+  /// **'AnkiMobile (this device)'**
+  String get ankiBackendAnkiMobile;
+
+  /// Backend choice: Anki on a computer, reached through the AnkiConnect add-on (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Anki on a computer (AnkiConnect)'**
+  String get ankiBackendAnkiConnect;
+
+  /// Help text above the AnkiMobile note type, deck and field name inputs (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'AnkiMobile cannot tell other apps its note types, decks or fields, so type them here. The names must match AnkiMobile exactly.'**
+  String get ankiMobileSetupHelp;
+
+  /// Label of the AnkiMobile note type name input (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Note type'**
+  String get ankiMobileNoteTypeLabel;
+
+  /// Label of the AnkiMobile deck name input (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Deck'**
+  String get ankiMobileDeckLabel;
+
+  /// Label of the AnkiMobile field names input (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Field names, separated by commas'**
+  String get ankiMobileFieldNamesLabel;
+
+  /// Validation error when an AnkiMobile input is left empty (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a note type, a deck and at least one field name.'**
+  String get ankiMobileNamesRequired;
+
+  /// Error shown in Anki settings on iOS when AnkiMobile is not installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open AnkiMobile. Make sure it is installed on this device.'**
+  String get ankiMobileCouldNotOpen;
 }
 
 class _AppLocalizationsDelegate

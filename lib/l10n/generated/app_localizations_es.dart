@@ -3320,4 +3320,35 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get ankiConnectCouldNotConnect =>
       'No se pudo conectar con Anki. Comprueba la dirección y que Anki esté abierto en tu ordenador.';
+
+  @override
+  String get ankiBackendLabel => 'Enviar tarjetas a';
+
+  @override
+  String get ankiBackendAnkiMobile => 'AnkiMobile (este dispositivo)';
+
+  @override
+  String get ankiBackendAnkiConnect => 'Anki en un ordenador (AnkiConnect)';
+
+  @override
+  String get ankiMobileSetupHelp =>
+      'AnkiMobile no puede indicar a otras apps sus tipos de nota, barajas ni campos, así que escríbelos aquí. Los nombres deben coincidir exactamente con los de AnkiMobile.';
+
+  @override
+  String get ankiMobileNoteTypeLabel => 'Tipo de nota';
+
+  @override
+  String get ankiMobileDeckLabel => 'Baraja';
+
+  @override
+  String get ankiMobileFieldNamesLabel =>
+      'Nombres de los campos, separados por comas';
+
+  @override
+  String get ankiMobileNamesRequired =>
+      'Introduce un tipo de nota, una baraja y al menos un nombre de campo.';
+
+  @override
+  String get ankiMobileCouldNotOpen =>
+      'No se pudo abrir AnkiMobile. Comprueba que esté instalado en este dispositivo.';
 }

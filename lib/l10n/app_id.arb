@@ -2855,5 +2855,14 @@
   "ankiConnectSetupHelp": "Di Anki pada komputer, pasang add-on AnkiConnect (kode 2055492159), atur \"webBindAddress\": \"0.0.0.0\" di konfigurasinya, lalu mulai ulang Anki. Pastikan perangkat ini dan komputer berada di jaringan yang sama, dan izinkan akses jaringan lokal saat diminta. Lalu masukkan alamat komputer, mis. http://192.168.1.20:8765.",
   "ankiConnectInvalidAddress": "Masukkan alamat seperti http://192.168.1.20:8765",
   "ankiConnectConnect": "Hubungkan",
-  "ankiConnectCouldNotConnect": "Tidak dapat terhubung ke Anki. Periksa alamatnya dan pastikan Anki berjalan di komputer."
+  "ankiConnectCouldNotConnect": "Tidak dapat terhubung ke Anki. Periksa alamatnya dan pastikan Anki berjalan di komputer.",
+  "ankiBackendLabel": "Kirim kartu ke",
+  "ankiBackendAnkiMobile": "AnkiMobile (perangkat ini)",
+  "ankiBackendAnkiConnect": "Anki di komputer (AnkiConnect)",
+  "ankiMobileSetupHelp": "AnkiMobile tidak dapat memberi tahu aplikasi lain tentang tipe catatan, dek, atau kolomnya, jadi ketik di sini. Namanya harus sama persis dengan yang ada di AnkiMobile.",
+  "ankiMobileNoteTypeLabel": "Tipe catatan",
+  "ankiMobileDeckLabel": "Dek",
+  "ankiMobileFieldNamesLabel": "Nama kolom, dipisahkan dengan koma",
+  "ankiMobileNamesRequired": "Masukkan tipe catatan, dek, dan setidaknya satu nama kolom.",
+  "ankiMobileCouldNotOpen": "Tidak dapat membuka AnkiMobile. Pastikan aplikasinya terpasang di perangkat ini."
 }

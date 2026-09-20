@@ -30,6 +30,20 @@ class AnkidroidConfig {
   /// `http://192.168.1.20:8765`. Empty until the user enters one.
   final String ankiConnectUrl;
 
+  /// iOS only: export to AnkiMobile on this device (the default) instead of
+  /// AnkiConnect.
+  final bool useAnkiMobile;
+
+  /// What the user typed for AnkiMobile, whose URL scheme cannot list note
+  /// types, decks or fields. Must match the names in AnkiMobile exactly.
+  final String ankiMobileNoteType;
+  final String ankiMobileDeck;
+  final List<String> ankiMobileFields;
+
+  /// iOS only: the inactive backend's selection ([_selection]), swapped back
+  /// in by [withUseAnkiMobile] so switching backends loses neither mapping.
+  final Map<String, dynamic> parkedSelection;
+
   const AnkidroidConfig({
     this.modelId,
     this.modelName,
@@ -39,6 +53,11 @@ class AnkidroidConfig {
     this.ankiFieldNames = const [],
     this.tags = const ['mekuru'],
     this.ankiConnectUrl = '',
+    this.useAnkiMobile = true,
+    this.ankiMobileNoteType = '',
+    this.ankiMobileDeck = '',
+    this.ankiMobileFields = const [],
+    this.parkedSelection = const {},
   });
 
   bool get isConfigured => modelId != null && deckId != null;
@@ -52,6 +71,9 @@ class AnkidroidConfig {
     List<String>? ankiFieldNames,
     List<String>? tags,
     String? ankiConnectUrl,
+    String? ankiMobileNoteType,
+    String? ankiMobileDeck,
+    List<String>? ankiMobileFields,
   }) {
     return AnkidroidConfig(
       modelId: modelId ?? this.modelId,
@@ -62,18 +84,55 @@ class AnkidroidConfig {
       ankiFieldNames: ankiFieldNames ?? this.ankiFieldNames,
       tags: tags ?? this.tags,
       ankiConnectUrl: ankiConnectUrl ?? this.ankiConnectUrl,
+      useAnkiMobile: useAnkiMobile,
+      ankiMobileNoteType: ankiMobileNoteType ?? this.ankiMobileNoteType,
+      ankiMobileDeck: ankiMobileDeck ?? this.ankiMobileDeck,
+      ankiMobileFields: ankiMobileFields ?? this.ankiMobileFields,
+      parkedSelection: parkedSelection,
     );
   }
 
-  Map<String, dynamic> toJson() => {
+  /// Switches the iOS backend: the current selection is parked and the other
+  /// backend's parked selection (nothing, the first time) becomes current.
+  AnkidroidConfig withUseAnkiMobile(bool value) {
+    if (value == useAnkiMobile) return this;
+    final parked = AnkidroidConfig.fromJson(parkedSelection);
+    return AnkidroidConfig(
+      modelId: parked.modelId,
+      modelName: parked.modelName,
+      deckId: parked.deckId,
+      deckName: parked.deckName,
+      fieldMapping: parked.fieldMapping,
+      ankiFieldNames: parked.ankiFieldNames,
+      tags: tags,
+      ankiConnectUrl: ankiConnectUrl,
+      useAnkiMobile: value,
+      ankiMobileNoteType: ankiMobileNoteType,
+      ankiMobileDeck: ankiMobileDeck,
+      ankiMobileFields: ankiMobileFields,
+      parkedSelection: _selection,
+    );
+  }
+
+  /// The values that belong to one backend: its note type, deck and mapping.
+  Map<String, dynamic> get _selection => {
     'modelId': modelId,
     'modelName': modelName,
     'deckId': deckId,
     'deckName': deckName,
     'fieldMapping': fieldMapping,
     'ankiFieldNames': ankiFieldNames,
+  };
+
+  Map<String, dynamic> toJson() => {
+    ..._selection,
     'tags': tags,
     'ankiConnectUrl': ankiConnectUrl,
+    'useAnkiMobile': useAnkiMobile,
+    'ankiMobileNoteType': ankiMobileNoteType,
+    'ankiMobileDeck': ankiMobileDeck,
+    'ankiMobileFields': ankiMobileFields,
+    'parkedSelection': parkedSelection,
   };
 
   factory AnkidroidConfig.fromJson(Map<String, dynamic> json) {
@@ -93,6 +152,18 @@ class AnkidroidConfig {
       tags:
           (json['tags'] as List<dynamic>?)?.cast<String>() ?? const ['mekuru'],
       ankiConnectUrl: json['ankiConnectUrl'] as String? ?? '',
+      // Configs saved before the choice existed stay on AnkiConnect when
+      // they already carry its address.
+      useAnkiMobile:
+          json['useAnkiMobile'] as bool? ??
+          (json['ankiConnectUrl'] as String? ?? '').isEmpty,
+      ankiMobileNoteType: json['ankiMobileNoteType'] as String? ?? '',
+      ankiMobileDeck: json['ankiMobileDeck'] as String? ?? '',
+      ankiMobileFields:
+          (json['ankiMobileFields'] as List<dynamic>?)?.cast<String>() ??
+          const [],
+      parkedSelection:
+          json['parkedSelection'] as Map<String, dynamic>? ?? const {},
     );
   }
 

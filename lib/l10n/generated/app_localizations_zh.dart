@@ -3133,6 +3133,34 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get ankiConnectCouldNotConnect =>
       '无法连接到 Anki。请检查地址，并确认电脑上的 Anki 正在运行。';
+
+  @override
+  String get ankiBackendLabel => '卡片发送到';
+
+  @override
+  String get ankiBackendAnkiMobile => 'AnkiMobile（本设备）';
+
+  @override
+  String get ankiBackendAnkiConnect => '电脑上的 Anki（AnkiConnect）';
+
+  @override
+  String get ankiMobileSetupHelp =>
+      'AnkiMobile 无法向其他应用提供笔记类型、牌组和字段，请在此手动输入。名称必须与 AnkiMobile 中的完全一致。';
+
+  @override
+  String get ankiMobileNoteTypeLabel => '笔记类型';
+
+  @override
+  String get ankiMobileDeckLabel => '牌组';
+
+  @override
+  String get ankiMobileFieldNamesLabel => '字段名称，用逗号分隔';
+
+  @override
+  String get ankiMobileNamesRequired => '请输入笔记类型、牌组和至少一个字段名称。';
+
+  @override
+  String get ankiMobileCouldNotOpen => '无法打开 AnkiMobile。请确认本设备已安装该应用。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -6264,4 +6292,32 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get ankiConnectCouldNotConnect =>
       '无法连接到 Anki。请检查地址，并确认电脑上的 Anki 正在运行。';
+
+  @override
+  String get ankiBackendLabel => '卡片发送到';
+
+  @override
+  String get ankiBackendAnkiMobile => 'AnkiMobile（本设备）';
+
+  @override
+  String get ankiBackendAnkiConnect => '电脑上的 Anki（AnkiConnect）';
+
+  @override
+  String get ankiMobileSetupHelp =>
+      'AnkiMobile 无法向其他应用提供笔记类型、牌组和字段，请在此手动输入。名称必须与 AnkiMobile 中的完全一致。';
+
+  @override
+  String get ankiMobileNoteTypeLabel => '笔记类型';
+
+  @override
+  String get ankiMobileDeckLabel => '牌组';
+
+  @override
+  String get ankiMobileFieldNamesLabel => '字段名称，用逗号分隔';
+
+  @override
+  String get ankiMobileNamesRequired => '请输入笔记类型、牌组和至少一个字段名称。';
+
+  @override
+  String get ankiMobileCouldNotOpen => '无法打开 AnkiMobile。请确认本设备已安装该应用。';
 }

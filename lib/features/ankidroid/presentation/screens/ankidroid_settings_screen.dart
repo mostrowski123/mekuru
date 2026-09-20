@@ -35,12 +35,25 @@ class _AnkidroidSettingsScreenState
   late TextEditingController _urlController;
   String? _urlError;
 
+  // AnkiMobile (iOS): the names it cannot be asked for.
+  late TextEditingController _noteTypeController;
+  late TextEditingController _deckController;
+  late TextEditingController _fieldNamesController;
+  String? _ankiMobileError;
+
   @override
   void initState() {
     super.initState();
     final config = ref.read(ankidroidConfigProvider);
     _tagsController = TextEditingController(text: config.tags.join(', '));
     _urlController = TextEditingController(text: config.ankiConnectUrl);
+    _noteTypeController = TextEditingController(
+      text: config.ankiMobileNoteType,
+    );
+    _deckController = TextEditingController(text: config.ankiMobileDeck);
+    _fieldNamesController = TextEditingController(
+      text: config.ankiMobileFields.join(', '),
+    );
     _initAnkidroid();
   }
 
@@ -48,10 +61,19 @@ class _AnkidroidSettingsScreenState
   void dispose() {
     _tagsController.dispose();
     _urlController.dispose();
+    _noteTypeController.dispose();
+    _deckController.dispose();
+    _fieldNamesController.dispose();
     super.dispose();
   }
 
-  String get _couldNotConnectMessage => usesAnkiConnect
+  /// Whether the AnkiMobile backend (iOS) is the one in use.
+  bool get _usesAnkiMobile =>
+      usesIosAnki && ref.read(ankidroidConfigProvider).useAnkiMobile;
+
+  String get _couldNotConnectMessage => _usesAnkiMobile
+      ? context.l10n.ankiMobileCouldNotOpen
+      : usesIosAnki
       ? context.l10n.ankiConnectCouldNotConnect
       : context.l10n.ankidroidCouldNotConnectLong;
 
@@ -138,6 +160,29 @@ class _AnkidroidSettingsScreenState
     _retry();
   }
 
+  /// Saves the names typed for AnkiMobile and reconnects through the usual
+  /// flow, which then offers the field mapping.
+  void _saveAnkiMobile() {
+    final noteType = _noteTypeController.text.trim();
+    final deck = _deckController.text.trim();
+    // ponytail: comma-separated, so a field name containing a comma cannot
+    // be entered; switch to one input per field if anyone has one.
+    final fieldNames = _fieldNamesController.text
+        .split(',')
+        .map((f) => f.trim())
+        .where((f) => f.isNotEmpty)
+        .toList();
+    if (noteType.isEmpty || deck.isEmpty || fieldNames.isEmpty) {
+      setState(() => _ankiMobileError = context.l10n.ankiMobileNamesRequired);
+      return;
+    }
+    _ankiMobileError = null;
+    ref
+        .read(ankidroidConfigProvider.notifier)
+        .setAnkiMobile(noteType, deck, fieldNames);
+    _retry();
+  }
+
   void _saveTags() {
     final tags = _tagsController.text
         .split(',')
@@ -157,8 +202,11 @@ class _AnkidroidSettingsScreenState
         ? const Center(child: CircularProgressIndicator())
         : _error == null
         ? null
-        // No address yet: the setup help says what to do, not an error.
-        : usesAnkiConnect && config.ankiConnectUrl.isEmpty
+        // Nothing entered yet: the setup help says what to do, not an error.
+        : usesIosAnki &&
+              (config.useAnkiMobile
+                  ? config.ankiMobileNoteType.isEmpty
+                  : config.ankiConnectUrl.isEmpty)
         ? const SizedBox.shrink()
         : _buildError(theme);
 
@@ -168,13 +216,99 @@ class _AnkidroidSettingsScreenState
       ),
       body: status == null
           ? _buildSettings(theme, config)
-          : usesAnkiConnect
-          ? ListView(children: [..._buildAnkiConnectSection(theme), status])
+          : usesIosAnki
+          ? ListView(children: [..._buildIosBackendSection(theme), status])
           : status,
     );
   }
 
-  /// iOS only: where AnkiConnect runs, and how to set it up.
+  /// iOS only: which Anki the cards go to, then that backend's own setup.
+  List<Widget> _buildIosBackendSection(ThemeData theme) {
+    final l10n = context.l10n;
+    final usesAnkiMobile = _usesAnkiMobile;
+    String labelOf(bool ankiMobile) =>
+        ankiMobile ? l10n.ankiBackendAnkiMobile : l10n.ankiBackendAnkiConnect;
+
+    return [
+      SettingsSectionHeader(title: l10n.ankiBackendLabel),
+      ListTile(
+        leading: Icon(Icons.send_outlined, color: theme.colorScheme.primary),
+        title: Text(labelOf(usesAnkiMobile)),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => showSettingsOptionPickerSheet<bool>(
+          context: context,
+          title: l10n.ankiBackendLabel,
+          values: const [true, false],
+          selected: usesAnkiMobile,
+          labelOf: labelOf,
+          onSelected: (value) {
+            ref.read(ankidroidConfigProvider.notifier).setUseAnkiMobile(value);
+            _retry();
+          },
+        ),
+      ),
+      const Divider(),
+      if (usesAnkiMobile)
+        ..._buildAnkiMobileSection(theme)
+      else
+        ..._buildAnkiConnectSection(theme),
+    ];
+  }
+
+  /// The note type, deck and field names as they are spelled in AnkiMobile.
+  List<Widget> _buildAnkiMobileSection(ThemeData theme) {
+    final l10n = context.l10n;
+    Widget input(
+      TextEditingController controller,
+      String label, {
+      String? errorText,
+    }) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: TextField(
+        controller: controller,
+        autocorrect: false,
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          labelText: label,
+          errorText: errorText,
+          isDense: true,
+        ),
+      ),
+    );
+
+    return [
+      SettingsSectionHeader(title: l10n.ankiBackendAnkiMobile),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Text(
+          l10n.ankiMobileSetupHelp,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      input(_noteTypeController, l10n.ankiMobileNoteTypeLabel),
+      input(_deckController, l10n.ankiMobileDeckLabel),
+      input(
+        _fieldNamesController,
+        l10n.ankiMobileFieldNamesLabel,
+        errorText: _ankiMobileError,
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: FilledButton.tonal(
+            onPressed: _saveAnkiMobile,
+            child: Text(l10n.commonSave),
+          ),
+        ),
+      ),
+      const Divider(),
+    ];
+  }
+
+  /// Where AnkiConnect runs, and how to set it up.
   List<Widget> _buildAnkiConnectSection(ThemeData theme) {
     final l10n = context.l10n;
 
@@ -253,39 +387,47 @@ class _AnkidroidSettingsScreenState
 
     return ListView(
       children: [
-        if (usesAnkiConnect) ..._buildAnkiConnectSection(theme),
+        if (usesIosAnki) ..._buildIosBackendSection(theme),
 
-        // ── Note Type ──
-        SettingsSectionHeader(title: l10n.ankidroidSettingsNoteTypeSection),
-        ListTile(
-          leading: Icon(Icons.note_outlined, color: theme.colorScheme.primary),
-          title: Text(l10n.ankidroidSettingsNoteTypeTitle),
-          subtitle: _missingAwareSubtitle(
-            config.modelName,
-            missing: config.modelId != null && _currentModelFields.isEmpty,
+        // AnkiMobile's note type and deck are the ones typed above.
+        if (!_usesAnkiMobile) ...[
+          // ── Note Type ──
+          SettingsSectionHeader(title: l10n.ankidroidSettingsNoteTypeSection),
+          ListTile(
+            leading: Icon(
+              Icons.note_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.ankidroidSettingsNoteTypeTitle),
+            subtitle: _missingAwareSubtitle(
+              config.modelName,
+              missing: config.modelId != null && _currentModelFields.isEmpty,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showModelPicker(context),
           ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showModelPicker(context),
-        ),
-        const Divider(),
+          const Divider(),
 
-        // ── Default Deck ──
-        SettingsSectionHeader(title: l10n.ankidroidSettingsDefaultDeckSection),
-        ListTile(
-          leading: Icon(
-            Icons.layers_outlined,
-            color: theme.colorScheme.primary,
+          // ── Default Deck ──
+          SettingsSectionHeader(
+            title: l10n.ankidroidSettingsDefaultDeckSection,
           ),
-          title: Text(l10n.ankidroidSettingsTargetDeckTitle),
-          subtitle: _missingAwareSubtitle(
-            config.deckName,
-            missing:
-                config.deckId != null && !_decks.containsKey(config.deckId),
+          ListTile(
+            leading: Icon(
+              Icons.layers_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.ankidroidSettingsTargetDeckTitle),
+            subtitle: _missingAwareSubtitle(
+              config.deckName,
+              missing:
+                  config.deckId != null && !_decks.containsKey(config.deckId),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showDeckPicker(context),
           ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showDeckPicker(context),
-        ),
-        const Divider(),
+          const Divider(),
+        ],
 
         // ── Field Mapping ──
         if (config.modelId != null && _currentModelFields.isNotEmpty) ...[

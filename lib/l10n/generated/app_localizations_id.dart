@@ -3294,4 +3294,34 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get ankiConnectCouldNotConnect =>
       'Tidak dapat terhubung ke Anki. Periksa alamatnya dan pastikan Anki berjalan di komputer.';
+
+  @override
+  String get ankiBackendLabel => 'Kirim kartu ke';
+
+  @override
+  String get ankiBackendAnkiMobile => 'AnkiMobile (perangkat ini)';
+
+  @override
+  String get ankiBackendAnkiConnect => 'Anki di komputer (AnkiConnect)';
+
+  @override
+  String get ankiMobileSetupHelp =>
+      'AnkiMobile tidak dapat memberi tahu aplikasi lain tentang tipe catatan, dek, atau kolomnya, jadi ketik di sini. Namanya harus sama persis dengan yang ada di AnkiMobile.';
+
+  @override
+  String get ankiMobileNoteTypeLabel => 'Tipe catatan';
+
+  @override
+  String get ankiMobileDeckLabel => 'Dek';
+
+  @override
+  String get ankiMobileFieldNamesLabel => 'Nama kolom, dipisahkan dengan koma';
+
+  @override
+  String get ankiMobileNamesRequired =>
+      'Masukkan tipe catatan, dek, dan setidaknya satu nama kolom.';
+
+  @override
+  String get ankiMobileCouldNotOpen =>
+      'Tidak dapat membuka AnkiMobile. Pastikan aplikasinya terpasang di perangkat ini.';
 }

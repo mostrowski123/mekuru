@@ -3275,4 +3275,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ankiConnectCouldNotConnect =>
       'Could not connect to Anki. Check the address and make sure Anki is running on your computer.';
+
+  @override
+  String get ankiBackendLabel => 'Send cards to';
+
+  @override
+  String get ankiBackendAnkiMobile => 'AnkiMobile (this device)';
+
+  @override
+  String get ankiBackendAnkiConnect => 'Anki on a computer (AnkiConnect)';
+
+  @override
+  String get ankiMobileSetupHelp =>
+      'AnkiMobile cannot tell other apps its note types, decks or fields, so type them here. The names must match AnkiMobile exactly.';
+
+  @override
+  String get ankiMobileNoteTypeLabel => 'Note type';
+
+  @override
+  String get ankiMobileDeckLabel => 'Deck';
+
+  @override
+  String get ankiMobileFieldNamesLabel => 'Field names, separated by commas';
+
+  @override
+  String get ankiMobileNamesRequired =>
+      'Enter a note type, a deck and at least one field name.';
+
+  @override
+  String get ankiMobileCouldNotOpen =>
+      'Could not open AnkiMobile. Make sure it is installed on this device.';
 }

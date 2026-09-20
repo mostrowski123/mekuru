@@ -4,31 +4,48 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_connect_service.dart';
+import 'package:mekuru/features/ankidroid/data/services/anki_mobile_service.dart';
 import 'package:mekuru/features/ankidroid/data/services/ankidroid_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 
-/// Whether this platform reaches Anki through the AnkiConnect desktop add-on
-/// (iOS) instead of the AnkiDroid app.
-bool get usesAnkiConnect => defaultTargetPlatform == TargetPlatform.iOS;
+/// Whether this platform exports to Anki through the iOS backends (AnkiMobile
+/// on the device, or the AnkiConnect desktop add-on) instead of AnkiDroid.
+bool get usesIosAnki => defaultTargetPlatform == TargetPlatform.iOS;
 
 /// User-visible name of the Anki app this platform exports to.
-String get ankiAppName => usesAnkiConnect ? 'Anki' : 'AnkiDroid';
+String get ankiAppName => usesIosAnki ? 'Anki' : 'AnkiDroid';
 
-/// Provider for the Anki service singleton: AnkiDroid on Android, AnkiConnect
-/// (rebuilt when its address changes) on iOS.
+/// Provider for the Anki service singleton: AnkiDroid on Android; on iOS the
+/// configured backend, rebuilt when the values it is built from change.
 final ankidroidServiceProvider = Provider<AnkidroidService>((ref) {
-  final AnkidroidService service = usesAnkiConnect
-      ? AnkiConnectService(
-          ref.watch(ankidroidConfigProvider.select((c) => c.ankiConnectUrl)),
-        )
-      : AnkidroidService();
+  final AnkidroidService service;
+  if (!usesIosAnki) {
+    service = AnkidroidService();
+  } else if (ref.watch(
+    ankidroidConfigProvider.select((c) => c.useAnkiMobile),
+  )) {
+    final (noteType, deck, fieldNames) = ref.watch(
+      ankidroidConfigProvider.select(
+        (c) => (c.ankiMobileNoteType, c.ankiMobileDeck, c.ankiMobileFields),
+      ),
+    );
+    service = AnkiMobileService(
+      noteType: noteType,
+      deck: deck,
+      fieldNames: fieldNames,
+    );
+  } else {
+    service = AnkiConnectService(
+      ref.watch(ankidroidConfigProvider.select((c) => c.ankiConnectUrl)),
+    );
+  }
   ref.onDispose(() => service.dispose());
   return service;
 });
 
 /// Whether the current platform supports Anki card export.
 final ankidroidAvailableProvider = Provider<bool>((ref) {
-  return defaultTargetPlatform == TargetPlatform.android || usesAnkiConnect;
+  return defaultTargetPlatform == TargetPlatform.android || usesIosAnki;
 });
 
 /// Manages the persisted AnkiDroid configuration.
@@ -112,6 +129,31 @@ class AnkidroidConfigNotifier extends Notifier<AnkidroidConfig> {
   /// Update the AnkiConnect address (iOS).
   void setAnkiConnectUrl(String url) {
     setConfig(state.copyWith(ankiConnectUrl: url));
+  }
+
+  /// Switch the iOS backend; each backend keeps its own selection.
+  void setUseAnkiMobile(bool value) {
+    setConfig(state.withUseAnkiMobile(value));
+  }
+
+  /// Save the names typed for AnkiMobile and select the synthetic note type
+  /// and deck made from them. Fields that kept their name keep their mapping.
+  void setAnkiMobile(String noteType, String deck, List<String> fields) {
+    setConfig(
+      state.copyWith(
+        ankiMobileNoteType: noteType,
+        ankiMobileDeck: deck,
+        ankiMobileFields: fields,
+        modelId: AnkiMobileService.syntheticId,
+        modelName: noteType,
+        deckId: AnkiMobileService.syntheticId,
+        deckName: deck,
+        ankiFieldNames: fields,
+        fieldMapping: {
+          for (final f in fields) f: state.fieldMapping[f] ?? 'empty',
+        },
+      ),
+    );
   }
 }
 

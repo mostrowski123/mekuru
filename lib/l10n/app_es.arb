@@ -2855,5 +2855,14 @@
   "ankiConnectSetupHelp": "En Anki en tu ordenador, instala el complemento AnkiConnect (código 2055492159), pon \"webBindAddress\": \"0.0.0.0\" en su configuración y reinicia Anki. Mantén este dispositivo y el ordenador en la misma red y permite el acceso a la red local cuando se solicite. Luego introduce la dirección del ordenador, p. ej. http://192.168.1.20:8765.",
   "ankiConnectInvalidAddress": "Introduce una dirección como http://192.168.1.20:8765",
   "ankiConnectConnect": "Conectar",
-  "ankiConnectCouldNotConnect": "No se pudo conectar con Anki. Comprueba la dirección y que Anki esté abierto en tu ordenador."
+  "ankiConnectCouldNotConnect": "No se pudo conectar con Anki. Comprueba la dirección y que Anki esté abierto en tu ordenador.",
+  "ankiBackendLabel": "Enviar tarjetas a",
+  "ankiBackendAnkiMobile": "AnkiMobile (este dispositivo)",
+  "ankiBackendAnkiConnect": "Anki en un ordenador (AnkiConnect)",
+  "ankiMobileSetupHelp": "AnkiMobile no puede indicar a otras apps sus tipos de nota, barajas ni campos, así que escríbelos aquí. Los nombres deben coincidir exactamente con los de AnkiMobile.",
+  "ankiMobileNoteTypeLabel": "Tipo de nota",
+  "ankiMobileDeckLabel": "Baraja",
+  "ankiMobileFieldNamesLabel": "Nombres de los campos, separados por comas",
+  "ankiMobileNamesRequired": "Introduce un tipo de nota, una baraja y al menos un nombre de campo.",
+  "ankiMobileCouldNotOpen": "No se pudo abrir AnkiMobile. Comprueba que esté instalado en este dispositivo."
 }

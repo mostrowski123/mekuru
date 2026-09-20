@@ -2855,5 +2855,14 @@
   "ankiConnectSetupHelp": "在电脑上的 Anki 中安装 AnkiConnect 插件（代码 2055492159），在插件配置中设置 \"webBindAddress\": \"0.0.0.0\"，然后重启 Anki。请让本设备与电脑处于同一网络，并在提示时允许访问本地网络。然后输入电脑的地址，例如 http://192.168.1.20:8765。",
   "ankiConnectInvalidAddress": "请输入类似 http://192.168.1.20:8765 的地址",
   "ankiConnectConnect": "连接",
-  "ankiConnectCouldNotConnect": "无法连接到 Anki。请检查地址，并确认电脑上的 Anki 正在运行。"
+  "ankiConnectCouldNotConnect": "无法连接到 Anki。请检查地址，并确认电脑上的 Anki 正在运行。",
+  "ankiBackendLabel": "卡片发送到",
+  "ankiBackendAnkiMobile": "AnkiMobile（本设备）",
+  "ankiBackendAnkiConnect": "电脑上的 Anki（AnkiConnect）",
+  "ankiMobileSetupHelp": "AnkiMobile 无法向其他应用提供笔记类型、牌组和字段，请在此手动输入。名称必须与 AnkiMobile 中的完全一致。",
+  "ankiMobileNoteTypeLabel": "笔记类型",
+  "ankiMobileDeckLabel": "牌组",
+  "ankiMobileFieldNamesLabel": "字段名称，用逗号分隔",
+  "ankiMobileNamesRequired": "请输入笔记类型、牌组和至少一个字段名称。",
+  "ankiMobileCouldNotOpen": "无法打开 AnkiMobile。请确认本设备已安装该应用。"
 }

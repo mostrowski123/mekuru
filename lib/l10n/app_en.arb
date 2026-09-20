@@ -4222,5 +4222,41 @@
   "ankiConnectCouldNotConnect": "Could not connect to Anki. Check the address and make sure Anki is running on your computer.",
   "@ankiConnectCouldNotConnect": {
     "description": "Error shown in Anki settings on iOS when AnkiConnect cannot be reached."
+  },
+  "ankiBackendLabel": "Send cards to",
+  "@ankiBackendLabel": {
+    "description": "Section title and picker title for choosing which Anki the cards are sent to (iOS)."
+  },
+  "ankiBackendAnkiMobile": "AnkiMobile (this device)",
+  "@ankiBackendAnkiMobile": {
+    "description": "Backend choice: the AnkiMobile app on this device (iOS). Also the title of its setup section."
+  },
+  "ankiBackendAnkiConnect": "Anki on a computer (AnkiConnect)",
+  "@ankiBackendAnkiConnect": {
+    "description": "Backend choice: Anki on a computer, reached through the AnkiConnect add-on (iOS)."
+  },
+  "ankiMobileSetupHelp": "AnkiMobile cannot tell other apps its note types, decks or fields, so type them here. The names must match AnkiMobile exactly.",
+  "@ankiMobileSetupHelp": {
+    "description": "Help text above the AnkiMobile note type, deck and field name inputs (iOS)."
+  },
+  "ankiMobileNoteTypeLabel": "Note type",
+  "@ankiMobileNoteTypeLabel": {
+    "description": "Label of the AnkiMobile note type name input (iOS)."
+  },
+  "ankiMobileDeckLabel": "Deck",
+  "@ankiMobileDeckLabel": {
+    "description": "Label of the AnkiMobile deck name input (iOS)."
+  },
+  "ankiMobileFieldNamesLabel": "Field names, separated by commas",
+  "@ankiMobileFieldNamesLabel": {
+    "description": "Label of the AnkiMobile field names input (iOS)."
+  },
+  "ankiMobileNamesRequired": "Enter a note type, a deck and at least one field name.",
+  "@ankiMobileNamesRequired": {
+    "description": "Validation error when an AnkiMobile input is left empty (iOS)."
+  },
+  "ankiMobileCouldNotOpen": "Could not open AnkiMobile. Make sure it is installed on this device.",
+  "@ankiMobileCouldNotOpen": {
+    "description": "Error shown in Anki settings on iOS when AnkiMobile is not installed."
   }
 }
