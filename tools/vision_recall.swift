@@ -16,6 +16,11 @@
 //   the whole page. --rotate turns the page a quarter turn first, so vertical
 //   columns reach Vision as horizontal lines (boxes are mapped back).
 //
+// Dump mode, for benchmarks that score elsewhere (tools/manga109_ocr_benchmark.py):
+//   swift tools/vision_recall.swift --images-from paths.txt --json lines.json
+// reads one image path per line and writes RecognizeTextRequest's lines for
+// each as [{path, width, height, lines: [{box, text}]}].
+//
 // Images are read from the folder next to the .mokuro file with the same name.
 // A reference block counts as found when Vision's boxes cover at least half of
 // its area. The text score compares Vision's own reading with the reference,
@@ -228,6 +233,30 @@ func report(_ name: String, _ t: Tally) {
   print("  Vision boxes: \(t.boxes), outside every reference block: \(t.stray)")
   if t.found > 0 { print(String(format: "  Vision boxes per found block: %.2f", Double(t.pieces) / Double(t.found))) }
   if t.refChars > 0 { print("  Vision's own text vs reference (CER, informational): \(pct(t.editErrors, t.refChars))") }
+}
+
+if let listPath = option("--images-from") {
+  let paths = try String(contentsOfFile: listPath, encoding: .utf8)
+    .split(separator: "\n").map(String.init).filter { !$0.isEmpty }
+  var pagesOut: [[String: Any]] = []
+  let began = Date()
+  for (i, path) in paths.enumerated() {
+    guard let image = loadImage(URL(fileURLWithPath: path)) else {
+      print("cannot read \(path)")
+      continue
+    }
+    let lines = try await recognizeTextModern(image)
+    pagesOut.append([
+      "path": path, "width": image.width, "height": image.height,
+      "lines": lines.map { ["box": [$0.box.x0, $0.box.y0, $0.box.x1, $0.box.y1], "text": $0.text] },
+    ])
+    if (i + 1) % 10 == 0 || i + 1 == paths.count {
+      print(String(format: "%d/%d pages, %.1f s per page", i + 1, paths.count, Date().timeIntervalSince(began) / Double(i + 1)))
+    }
+  }
+  let out = try JSONSerialization.data(withJSONObject: pagesOut, options: [])
+  try out.write(to: URL(fileURLWithPath: option("--json") ?? "vision-lines.json"))
+  exit(0)
 }
 
 let args = CommandLine.arguments
