@@ -326,7 +326,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Comprobando el mazo predeterminado de Anki';
 
   @override
-  String get dictionarySendToAnkiTooltip => 'Enviar a AnkiDroid';
+  String dictionarySendToAnkiTooltip({required String app}) {
+    return 'Enviar a $app';
+  }
 
   @override
   String get dictionaryAlreadyInVocabTooltip =>
@@ -915,7 +917,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Abrir el teclado al seleccionar la pestaña del diccionario';
 
   @override
-  String get settingsAnkiDroidIntegrationTitle => 'Integración con AnkiDroid';
+  String settingsAnkiDroidIntegrationTitle({required String app}) {
+    return 'Integración con $app';
+  }
 
   @override
   String get settingsAnkiDroidIntegrationSubtitle =>
@@ -1803,12 +1807,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Permiso de AnkiDroid no concedido.';
 
   @override
-  String get ankidroidCouldNotConnectShort =>
-      'No se pudo conectar con AnkiDroid.';
+  String ankidroidCouldNotConnectShort({required String app}) {
+    return 'No se pudo conectar con $app.';
+  }
 
   @override
-  String get ankidroidFailedToAddNote =>
-      'No se pudo añadir la nota. Asegúrate de que AnkiDroid esté en funcionamiento y que el tipo de nota y baraja seleccionados sigan existiendo.';
+  String ankidroidFailedToAddNote({required String app}) {
+    return 'No se pudo añadir la nota. Asegúrate de que $app esté en funcionamiento y que el tipo de nota y baraja seleccionados sigan existiendo.';
+  }
 
   @override
   String get ankidroidSettingsNoteTypeSection => 'Tipo de nota';
@@ -1851,7 +1857,9 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'Ajustes de AnkiDroid en Mekuru';
+  String ankidroidCardSettingsTooltip({required String app}) {
+    return 'Ajustes de $app en Mekuru';
+  }
 
   @override
   String get ankidroidCardDeckTitle => 'Baraja';
@@ -1863,8 +1871,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ankidroidCardAddToAnki => 'Añadir a Anki';
 
   @override
-  String get ankidroidNoteTypeMissing =>
-      'El tipo de nota configurado ya no existe en Anki. Elige uno nuevo en los ajustes de AnkiDroid de Mekuru.';
+  String ankidroidNoteTypeMissing({required String app}) {
+    return 'El tipo de nota configurado ya no existe en Anki. Elige uno nuevo en los ajustes de $app de Mekuru.';
+  }
 
   @override
   String ankidroidStaleMappingBanner({required String fields}) {
@@ -3278,4 +3287,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get localOcrSpeedTestCancelled => 'Prueba de velocidad cancelada';
+
+  @override
+  String get ankiConnectAddressLabel => 'Dirección de AnkiConnect';
+
+  @override
+  String get ankiConnectSetupHelp =>
+      'En Anki en tu ordenador, instala el complemento AnkiConnect (código 2055492159), pon \"webBindAddress\": \"0.0.0.0\" en su configuración y reinicia Anki. Mantén este dispositivo y el ordenador en la misma red y permite el acceso a la red local cuando se solicite. Luego introduce la dirección del ordenador, p. ej. http://192.168.1.20:8765.';
+
+  @override
+  String get ankiConnectInvalidAddress =>
+      'Introduce una dirección como http://192.168.1.20:8765';
+
+  @override
+  String get ankiConnectConnect => 'Conectar';
+
+  @override
+  String get ankiConnectCouldNotConnect =>
+      'No se pudo conectar con Anki. Comprueba la dirección y que Anki esté abierto en tu ordenador.';
 }

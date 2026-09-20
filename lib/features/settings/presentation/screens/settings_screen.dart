@@ -1,8 +1,7 @@
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/config/app_links.dart';
+import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
@@ -225,14 +224,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(),
 
           // ── Vocabulary & Export ──
-          if (defaultTargetPlatform == TargetPlatform.android) ...[
+          if (ref.watch(ankidroidAvailableProvider)) ...[
             SettingsSectionHeader(title: l10n.settingsSectionVocabularyExport),
             ListTile(
               leading: Icon(
                 Icons.electric_bolt_outlined,
                 color: theme.colorScheme.primary,
               ),
-              title: Text(l10n.settingsAnkiDroidIntegrationTitle),
+              title: Text(
+                l10n.settingsAnkiDroidIntegrationTitle(app: ankiAppName),
+              ),
               subtitle: Text(l10n.settingsAnkiDroidIntegrationSubtitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {

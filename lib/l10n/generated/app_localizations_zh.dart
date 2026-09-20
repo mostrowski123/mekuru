@@ -311,7 +311,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dictionaryCheckingAnkiTooltip => '正在检查默认Anki牌组';
 
   @override
-  String get dictionarySendToAnkiTooltip => '发送到AnkiDroid';
+  String dictionarySendToAnkiTooltip({required String app}) {
+    return '发送到$app';
+  }
 
   @override
   String get dictionaryAlreadyInVocabTooltip => '已在单词本';
@@ -863,7 +865,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAutoFocusSearchSubtitle => '切换到词典页时自动打开键盘';
 
   @override
-  String get settingsAnkiDroidIntegrationTitle => 'AnkiDroid 集成';
+  String settingsAnkiDroidIntegrationTitle({required String app}) {
+    return '$app 集成';
+  }
 
   @override
   String get settingsAnkiDroidIntegrationSubtitle => '配置笔记类型、牌组和字段映射';
@@ -1703,11 +1707,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ankidroidPermissionNotGrantedShort => '未授予 AnkiDroid 权限。';
 
   @override
-  String get ankidroidCouldNotConnectShort => '无法连接到 AnkiDroid。';
+  String ankidroidCouldNotConnectShort({required String app}) {
+    return '无法连接到 $app。';
+  }
 
   @override
-  String get ankidroidFailedToAddNote =>
-      '添加笔记失败。请确认 AnkiDroid 正在运行，所选笔记类型和牌组仍然存在。';
+  String ankidroidFailedToAddNote({required String app}) {
+    return '添加笔记失败。请确认 $app 正在运行，所选笔记类型和牌组仍然存在。';
+  }
 
   @override
   String get ankidroidSettingsNoteTypeSection => '笔记类型';
@@ -1748,7 +1755,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'Mekuru 的 AnkiDroid 设置';
+  String ankidroidCardSettingsTooltip({required String app}) {
+    return 'Mekuru 的 $app 设置';
+  }
 
   @override
   String get ankidroidCardDeckTitle => '牌组';
@@ -1760,8 +1769,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ankidroidCardAddToAnki => '添加到 Anki';
 
   @override
-  String get ankidroidNoteTypeMissing =>
-      '配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 AnkiDroid 设置中重新选择。';
+  String ankidroidNoteTypeMissing({required String app}) {
+    return '配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 $app 设置中重新选择。';
+  }
 
   @override
   String ankidroidStaleMappingBanner({required String fields}) {
@@ -3092,6 +3102,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get localOcrSpeedTestCancelled => '已取消速度测试';
+
+  @override
+  String get ankiConnectAddressLabel => 'AnkiConnect 地址';
+
+  @override
+  String get ankiConnectSetupHelp =>
+      '在电脑上的 Anki 中安装 AnkiConnect 插件（代码 2055492159），在插件配置中设置 \"webBindAddress\": \"0.0.0.0\"，然后重启 Anki。请让本设备与电脑处于同一网络，并在提示时允许访问本地网络。然后输入电脑的地址，例如 http://192.168.1.20:8765。';
+
+  @override
+  String get ankiConnectInvalidAddress => '请输入类似 http://192.168.1.20:8765 的地址';
+
+  @override
+  String get ankiConnectConnect => '连接';
+
+  @override
+  String get ankiConnectCouldNotConnect =>
+      '无法连接到 Anki。请检查地址，并确认电脑上的 Anki 正在运行。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3401,7 +3428,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get dictionaryCheckingAnkiTooltip => '正在检查默认Anki牌组';
 
   @override
-  String get dictionarySendToAnkiTooltip => '发送到AnkiDroid';
+  String dictionarySendToAnkiTooltip({required String app}) {
+    return '发送到$app';
+  }
 
   @override
   String get dictionaryAlreadyInVocabTooltip => '已在单词本';
@@ -3953,7 +3982,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get settingsAutoFocusSearchSubtitle => '切换到词典页时自动打开键盘';
 
   @override
-  String get settingsAnkiDroidIntegrationTitle => 'AnkiDroid 集成';
+  String settingsAnkiDroidIntegrationTitle({required String app}) {
+    return '$app 集成';
+  }
 
   @override
   String get settingsAnkiDroidIntegrationSubtitle => '配置笔记类型、牌组和字段映射';
@@ -4793,11 +4824,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get ankidroidPermissionNotGrantedShort => '未授予 AnkiDroid 权限。';
 
   @override
-  String get ankidroidCouldNotConnectShort => '无法连接到 AnkiDroid。';
+  String ankidroidCouldNotConnectShort({required String app}) {
+    return '无法连接到 $app。';
+  }
 
   @override
-  String get ankidroidFailedToAddNote =>
-      '添加笔记失败。请确认 AnkiDroid 正在运行，所选笔记类型和牌组仍然存在。';
+  String ankidroidFailedToAddNote({required String app}) {
+    return '添加笔记失败。请确认 $app 正在运行，所选笔记类型和牌组仍然存在。';
+  }
 
   @override
   String get ankidroidSettingsNoteTypeSection => '笔记类型';
@@ -4838,7 +4872,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'Mekuru 的 AnkiDroid 设置';
+  String ankidroidCardSettingsTooltip({required String app}) {
+    return 'Mekuru 的 $app 设置';
+  }
 
   @override
   String get ankidroidCardDeckTitle => '牌组';
@@ -4850,8 +4886,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get ankidroidCardAddToAnki => '添加到 Anki';
 
   @override
-  String get ankidroidNoteTypeMissing =>
-      '配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 AnkiDroid 设置中重新选择。';
+  String ankidroidNoteTypeMissing({required String app}) {
+    return '配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 $app 设置中重新选择。';
+  }
 
   @override
   String ankidroidStaleMappingBanner({required String fields}) {
@@ -6182,4 +6219,21 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get localOcrSpeedTestCancelled => '已取消速度测试';
+
+  @override
+  String get ankiConnectAddressLabel => 'AnkiConnect 地址';
+
+  @override
+  String get ankiConnectSetupHelp =>
+      '在电脑上的 Anki 中安装 AnkiConnect 插件（代码 2055492159），在插件配置中设置 \"webBindAddress\": \"0.0.0.0\"，然后重启 Anki。请让本设备与电脑处于同一网络，并在提示时允许访问本地网络。然后输入电脑的地址，例如 http://192.168.1.20:8765。';
+
+  @override
+  String get ankiConnectInvalidAddress => '请输入类似 http://192.168.1.20:8765 的地址';
+
+  @override
+  String get ankiConnectConnect => '连接';
+
+  @override
+  String get ankiConnectCouldNotConnect =>
+      '无法连接到 Anki。请检查地址，并确认电脑上的 Anki 正在运行。';
 }

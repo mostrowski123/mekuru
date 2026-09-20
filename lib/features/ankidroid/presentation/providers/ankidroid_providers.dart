@@ -3,19 +3,32 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
+import 'package:mekuru/features/ankidroid/data/services/anki_connect_service.dart';
 import 'package:mekuru/features/ankidroid/data/services/ankidroid_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 
-/// Provider for the AnkiDroid service singleton.
+/// Whether this platform reaches Anki through the AnkiConnect desktop add-on
+/// (iOS) instead of the AnkiDroid app.
+bool get usesAnkiConnect => defaultTargetPlatform == TargetPlatform.iOS;
+
+/// User-visible name of the Anki app this platform exports to.
+String get ankiAppName => usesAnkiConnect ? 'Anki' : 'AnkiDroid';
+
+/// Provider for the Anki service singleton: AnkiDroid on Android, AnkiConnect
+/// (rebuilt when its address changes) on iOS.
 final ankidroidServiceProvider = Provider<AnkidroidService>((ref) {
-  final service = AnkidroidService();
+  final AnkidroidService service = usesAnkiConnect
+      ? AnkiConnectService(
+          ref.watch(ankidroidConfigProvider.select((c) => c.ankiConnectUrl)),
+        )
+      : AnkidroidService();
   ref.onDispose(() => service.dispose());
   return service;
 });
 
-/// Whether the current platform supports AnkiDroid integration.
+/// Whether the current platform supports Anki card export.
 final ankidroidAvailableProvider = Provider<bool>((ref) {
-  return defaultTargetPlatform == TargetPlatform.android;
+  return defaultTargetPlatform == TargetPlatform.android || usesAnkiConnect;
 });
 
 /// Manages the persisted AnkiDroid configuration.
@@ -94,6 +107,11 @@ class AnkidroidConfigNotifier extends Notifier<AnkidroidConfig> {
   /// Update the default tags.
   void setTags(List<String> tags) {
     setConfig(state.copyWith(tags: tags));
+  }
+
+  /// Update the AnkiConnect address (iOS).
+  void setAnkiConnectUrl(String url) {
+    setConfig(state.copyWith(ankiConnectUrl: url));
   }
 }
 

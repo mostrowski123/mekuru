@@ -383,9 +383,14 @@
   "@dictionaryCheckingAnkiTooltip": {
     "description": "Tooltip shown while checking for an existing Anki note."
   },
-  "dictionarySendToAnkiTooltip": "发送到AnkiDroid",
+  "dictionarySendToAnkiTooltip": "发送到{app}",
   "@dictionarySendToAnkiTooltip": {
-    "description": "Tooltip for sending a word to AnkiDroid."
+    "description": "Tooltip for sending a word to AnkiDroid.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "dictionaryAlreadyInVocabTooltip": "已在单词本",
   "@dictionaryAlreadyInVocabTooltip": {
@@ -1115,9 +1120,14 @@
   "@settingsAutoFocusSearchSubtitle": {
     "description": "Subtitle for the auto-focus dictionary search setting."
   },
-  "settingsAnkiDroidIntegrationTitle": "AnkiDroid 集成",
+  "settingsAnkiDroidIntegrationTitle": "{app} 集成",
   "@settingsAnkiDroidIntegrationTitle": {
-    "description": "Title for the AnkiDroid settings entry."
+    "description": "Title for the AnkiDroid settings entry.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "settingsAnkiDroidIntegrationSubtitle": "配置笔记类型、牌组和字段映射",
   "@settingsAnkiDroidIntegrationSubtitle": {
@@ -2007,13 +2017,23 @@
   "@ankidroidPermissionNotGrantedShort": {
     "description": "Short error shown when AnkiDroid permission is not granted in the create-card flow."
   },
-  "ankidroidCouldNotConnectShort": "无法连接到 AnkiDroid。",
+  "ankidroidCouldNotConnectShort": "无法连接到 {app}。",
   "@ankidroidCouldNotConnectShort": {
-    "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow."
+    "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
-  "ankidroidFailedToAddNote": "添加笔记失败。请确认 AnkiDroid 正在运行，所选笔记类型和牌组仍然存在。",
+  "ankidroidFailedToAddNote": "添加笔记失败。请确认 {app} 正在运行，所选笔记类型和牌组仍然存在。",
   "@ankidroidFailedToAddNote": {
-    "description": "Error shown when sending a note to AnkiDroid fails."
+    "description": "Error shown when sending a note to AnkiDroid fails.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidSettingsNoteTypeSection": "笔记类型",
   "@ankidroidSettingsNoteTypeSection": {
@@ -2068,9 +2088,14 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "Mekuru 的 AnkiDroid 设置",
+  "ankidroidCardSettingsTooltip": "Mekuru 的 {app} 设置",
   "@ankidroidCardSettingsTooltip": {
-    "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
+    "description": "Tooltip for opening AnkiDroid settings from the create-card flow.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidCardDeckTitle": "牌组",
   "@ankidroidCardDeckTitle": {
@@ -2084,9 +2109,14 @@
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
   },
-  "ankidroidNoteTypeMissing": "配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 AnkiDroid 设置中重新选择。",
+  "ankidroidNoteTypeMissing": "配置的笔记类型在 Anki 中已不存在。请在 Mekuru 的 {app} 设置中重新选择。",
   "@ankidroidNoteTypeMissing": {
-    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid."
+    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidStaleMappingBanner": "部分已映射的字段在 Anki 中已不存在：{fields}。点按以修复字段映射。",
   "@ankidroidStaleMappingBanner": {
@@ -2816,5 +2846,10 @@
   "localOcrCopyDiagnostics": "复制 OCR 诊断信息",
   "localOcrDiagnosticsCopied": "已复制 OCR 诊断信息",
   "localOcrModelsMissingBody": "设备端 OCR 需要先下载模型。请打开“下载”获取模型，然后回到这里再次点按 OCR。",
-  "commonOpenDownloads": "打开下载"
+  "commonOpenDownloads": "打开下载",
+  "ankiConnectAddressLabel": "AnkiConnect 地址",
+  "ankiConnectSetupHelp": "在电脑上的 Anki 中安装 AnkiConnect 插件（代码 2055492159），在插件配置中设置 \"webBindAddress\": \"0.0.0.0\"，然后重启 Anki。请让本设备与电脑处于同一网络，并在提示时允许访问本地网络。然后输入电脑的地址，例如 http://192.168.1.20:8765。",
+  "ankiConnectInvalidAddress": "请输入类似 http://192.168.1.20:8765 的地址",
+  "ankiConnectConnect": "连接",
+  "ankiConnectCouldNotConnect": "无法连接到 Anki。请检查地址，并确认电脑上的 Anki 正在运行。"
 }

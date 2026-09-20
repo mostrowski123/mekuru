@@ -383,9 +383,14 @@
   "@dictionaryCheckingAnkiTooltip": {
     "description": "Tooltip shown while checking for an existing Anki note."
   },
-  "dictionarySendToAnkiTooltip": "Kirim ke AnkiDroid",
+  "dictionarySendToAnkiTooltip": "Kirim ke {app}",
   "@dictionarySendToAnkiTooltip": {
-    "description": "Tooltip for sending a word to AnkiDroid."
+    "description": "Tooltip for sending a word to AnkiDroid.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "dictionaryAlreadyInVocabTooltip": "Sudah ada di daftar kosakata",
   "@dictionaryAlreadyInVocabTooltip": {
@@ -1115,9 +1120,14 @@
   "@settingsAutoFocusSearchSubtitle": {
     "description": "Subtitle for the auto-focus dictionary search setting."
   },
-  "settingsAnkiDroidIntegrationTitle": "Integrasi AnkiDroid",
+  "settingsAnkiDroidIntegrationTitle": "Integrasi {app}",
   "@settingsAnkiDroidIntegrationTitle": {
-    "description": "Title for the AnkiDroid settings entry."
+    "description": "Title for the AnkiDroid settings entry.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "settingsAnkiDroidIntegrationSubtitle": "Atur tipe catatan, dek, dan pemetaan kolom",
   "@settingsAnkiDroidIntegrationSubtitle": {
@@ -2007,13 +2017,23 @@
   "@ankidroidPermissionNotGrantedShort": {
     "description": "Short error shown when AnkiDroid permission is not granted in the create-card flow."
   },
-  "ankidroidCouldNotConnectShort": "Tidak dapat terhubung ke AnkiDroid.",
+  "ankidroidCouldNotConnectShort": "Tidak dapat terhubung ke {app}.",
   "@ankidroidCouldNotConnectShort": {
-    "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow."
+    "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
-  "ankidroidFailedToAddNote": "Gagal menambahkan catatan. Pastikan AnkiDroid sedang berjalan dan tipe catatan serta dek yang dipilih masih ada.",
+  "ankidroidFailedToAddNote": "Gagal menambahkan catatan. Pastikan {app} sedang berjalan dan tipe catatan serta dek yang dipilih masih ada.",
   "@ankidroidFailedToAddNote": {
-    "description": "Error shown when sending a note to AnkiDroid fails."
+    "description": "Error shown when sending a note to AnkiDroid fails.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidSettingsNoteTypeSection": "Tipe Catatan",
   "@ankidroidSettingsNoteTypeSection": {
@@ -2068,9 +2088,14 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "Pengaturan AnkiDroid di Mekuru",
+  "ankidroidCardSettingsTooltip": "Pengaturan {app} di Mekuru",
   "@ankidroidCardSettingsTooltip": {
-    "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
+    "description": "Tooltip for opening AnkiDroid settings from the create-card flow.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidCardDeckTitle": "Dek",
   "@ankidroidCardDeckTitle": {
@@ -2084,9 +2109,14 @@
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
   },
-  "ankidroidNoteTypeMissing": "Tipe catatan yang dikonfigurasi sudah tidak ada di Anki. Pilih yang baru di pengaturan AnkiDroid Mekuru.",
+  "ankidroidNoteTypeMissing": "Tipe catatan yang dikonfigurasi sudah tidak ada di Anki. Pilih yang baru di pengaturan {app} Mekuru.",
   "@ankidroidNoteTypeMissing": {
-    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid."
+    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidStaleMappingBanner": "Beberapa kolom yang dipetakan sudah tidak ada di Anki: {fields}. Ketuk untuk memperbaiki pemetaan kolom.",
   "@ankidroidStaleMappingBanner": {
@@ -2816,5 +2846,10 @@
   "localOcrCopyDiagnostics": "Salin diagnostik OCR",
   "localOcrDiagnosticsCopied": "Diagnostik OCR disalin",
   "localOcrModelsMissingBody": "OCR di perangkat perlu mengunduh modelnya terlebih dahulu. Buka Unduhan untuk mendapatkannya, lalu kembali dan ketuk OCR lagi.",
-  "commonOpenDownloads": "Buka Unduhan"
+  "commonOpenDownloads": "Buka Unduhan",
+  "ankiConnectAddressLabel": "Alamat AnkiConnect",
+  "ankiConnectSetupHelp": "Di Anki pada komputer, pasang add-on AnkiConnect (kode 2055492159), atur \"webBindAddress\": \"0.0.0.0\" di konfigurasinya, lalu mulai ulang Anki. Pastikan perangkat ini dan komputer berada di jaringan yang sama, dan izinkan akses jaringan lokal saat diminta. Lalu masukkan alamat komputer, mis. http://192.168.1.20:8765.",
+  "ankiConnectInvalidAddress": "Masukkan alamat seperti http://192.168.1.20:8765",
+  "ankiConnectConnect": "Hubungkan",
+  "ankiConnectCouldNotConnect": "Tidak dapat terhubung ke Anki. Periksa alamatnya dan pastikan Anki berjalan di komputer."
 }

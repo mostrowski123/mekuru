@@ -323,7 +323,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dictionaryCheckingAnkiTooltip => 'Checking default Anki deck';
 
   @override
-  String get dictionarySendToAnkiTooltip => 'Send to AnkiDroid';
+  String dictionarySendToAnkiTooltip({required String app}) {
+    return 'Send to $app';
+  }
 
   @override
   String get dictionaryAlreadyInVocabTooltip => 'Already in vocab list';
@@ -902,7 +904,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open keyboard when dictionary tab is selected';
 
   @override
-  String get settingsAnkiDroidIntegrationTitle => 'AnkiDroid Integration';
+  String settingsAnkiDroidIntegrationTitle({required String app}) {
+    return '$app Integration';
+  }
 
   @override
   String get settingsAnkiDroidIntegrationSubtitle =>
@@ -1783,11 +1787,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'AnkiDroid permission not granted.';
 
   @override
-  String get ankidroidCouldNotConnectShort => 'Could not connect to AnkiDroid.';
+  String ankidroidCouldNotConnectShort({required String app}) {
+    return 'Could not connect to $app.';
+  }
 
   @override
-  String get ankidroidFailedToAddNote =>
-      'Failed to add note. Make sure AnkiDroid is running and the selected note type and deck still exist.';
+  String ankidroidFailedToAddNote({required String app}) {
+    return 'Failed to add note. Make sure $app is running and the selected note type and deck still exist.';
+  }
 
   @override
   String get ankidroidSettingsNoteTypeSection => 'Note Type';
@@ -1830,7 +1837,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'Mekuru\'s AnkiDroid Settings';
+  String ankidroidCardSettingsTooltip({required String app}) {
+    return 'Mekuru\'s $app Settings';
+  }
 
   @override
   String get ankidroidCardDeckTitle => 'Deck';
@@ -1842,8 +1851,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ankidroidCardAddToAnki => 'Add to Anki';
 
   @override
-  String get ankidroidNoteTypeMissing =>
-      'The configured note type no longer exists in Anki. Choose a new one in Mekuru\'s AnkiDroid settings.';
+  String ankidroidNoteTypeMissing({required String app}) {
+    return 'The configured note type no longer exists in Anki. Choose a new one in Mekuru\'s $app settings.';
+  }
 
   @override
   String ankidroidStaleMappingBanner({required String fields}) {
@@ -3232,4 +3242,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get localOcrSpeedTestCancelled => 'Speed test cancelled';
+
+  @override
+  String get ankiConnectAddressLabel => 'AnkiConnect address';
+
+  @override
+  String get ankiConnectSetupHelp =>
+      'In Anki on your computer, install the AnkiConnect add-on (code 2055492159), set \"webBindAddress\": \"0.0.0.0\" in its config and restart Anki. Keep this device and the computer on the same network, and allow local network access when asked. Then enter the computer\'s address, e.g. http://192.168.1.20:8765.';
+
+  @override
+  String get ankiConnectInvalidAddress =>
+      'Enter an address like http://192.168.1.20:8765';
+
+  @override
+  String get ankiConnectConnect => 'Connect';
+
+  @override
+  String get ankiConnectCouldNotConnect =>
+      'Could not connect to Anki. Check the address and make sure Anki is running on your computer.';
 }

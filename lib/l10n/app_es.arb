@@ -383,9 +383,14 @@
   "@dictionaryCheckingAnkiTooltip": {
     "description": "Tooltip shown while checking for an existing Anki note."
   },
-  "dictionarySendToAnkiTooltip": "Enviar a AnkiDroid",
+  "dictionarySendToAnkiTooltip": "Enviar a {app}",
   "@dictionarySendToAnkiTooltip": {
-    "description": "Tooltip for sending a word to AnkiDroid."
+    "description": "Tooltip for sending a word to AnkiDroid.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "dictionaryAlreadyInVocabTooltip": "Ya está en la lista de vocabulario",
   "@dictionaryAlreadyInVocabTooltip": {
@@ -1115,9 +1120,14 @@
   "@settingsAutoFocusSearchSubtitle": {
     "description": "Subtitle for the auto-focus dictionary search setting."
   },
-  "settingsAnkiDroidIntegrationTitle": "Integración con AnkiDroid",
+  "settingsAnkiDroidIntegrationTitle": "Integración con {app}",
   "@settingsAnkiDroidIntegrationTitle": {
-    "description": "Title for the AnkiDroid settings entry."
+    "description": "Title for the AnkiDroid settings entry.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "settingsAnkiDroidIntegrationSubtitle": "Configura el tipo de nota, mazo y asignación de campos",
   "@settingsAnkiDroidIntegrationSubtitle": {
@@ -2007,13 +2017,23 @@
   "@ankidroidPermissionNotGrantedShort": {
     "description": "Short error shown when AnkiDroid permission is not granted in the create-card flow."
   },
-  "ankidroidCouldNotConnectShort": "No se pudo conectar con AnkiDroid.",
+  "ankidroidCouldNotConnectShort": "No se pudo conectar con {app}.",
   "@ankidroidCouldNotConnectShort": {
-    "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow."
+    "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
-  "ankidroidFailedToAddNote": "No se pudo añadir la nota. Asegúrate de que AnkiDroid esté en funcionamiento y que el tipo de nota y baraja seleccionados sigan existiendo.",
+  "ankidroidFailedToAddNote": "No se pudo añadir la nota. Asegúrate de que {app} esté en funcionamiento y que el tipo de nota y baraja seleccionados sigan existiendo.",
   "@ankidroidFailedToAddNote": {
-    "description": "Error shown when sending a note to AnkiDroid fails."
+    "description": "Error shown when sending a note to AnkiDroid fails.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidSettingsNoteTypeSection": "Tipo de nota",
   "@ankidroidSettingsNoteTypeSection": {
@@ -2068,9 +2088,14 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "Ajustes de AnkiDroid en Mekuru",
+  "ankidroidCardSettingsTooltip": "Ajustes de {app} en Mekuru",
   "@ankidroidCardSettingsTooltip": {
-    "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
+    "description": "Tooltip for opening AnkiDroid settings from the create-card flow.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidCardDeckTitle": "Baraja",
   "@ankidroidCardDeckTitle": {
@@ -2084,9 +2109,14 @@
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
   },
-  "ankidroidNoteTypeMissing": "El tipo de nota configurado ya no existe en Anki. Elige uno nuevo en los ajustes de AnkiDroid de Mekuru.",
+  "ankidroidNoteTypeMissing": "El tipo de nota configurado ya no existe en Anki. Elige uno nuevo en los ajustes de {app} de Mekuru.",
   "@ankidroidNoteTypeMissing": {
-    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid."
+    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidStaleMappingBanner": "Algunos campos asignados ya no existen en Anki: {fields}. Toca para corregir la asignación de campos.",
   "@ankidroidStaleMappingBanner": {
@@ -2816,5 +2846,10 @@
   "localOcrCopyDiagnostics": "Copiar diagnóstico de OCR",
   "localOcrDiagnosticsCopied": "Diagnóstico de OCR copiado",
   "localOcrModelsMissingBody": "El OCR en el dispositivo necesita descargar sus modelos primero. Abre Descargas para obtenerlos y luego vuelve y toca OCR de nuevo.",
-  "commonOpenDownloads": "Abrir Descargas"
+  "commonOpenDownloads": "Abrir Descargas",
+  "ankiConnectAddressLabel": "Dirección de AnkiConnect",
+  "ankiConnectSetupHelp": "En Anki en tu ordenador, instala el complemento AnkiConnect (código 2055492159), pon \"webBindAddress\": \"0.0.0.0\" en su configuración y reinicia Anki. Mantén este dispositivo y el ordenador en la misma red y permite el acceso a la red local cuando se solicite. Luego introduce la dirección del ordenador, p. ej. http://192.168.1.20:8765.",
+  "ankiConnectInvalidAddress": "Introduce una dirección como http://192.168.1.20:8765",
+  "ankiConnectConnect": "Conectar",
+  "ankiConnectCouldNotConnect": "No se pudo conectar con Anki. Comprueba la dirección y que Anki esté abierto en tu ordenador."
 }

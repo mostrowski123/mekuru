@@ -79,7 +79,7 @@ class _AnkiCardCreationScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = context.l10n.ankidroidCouldNotConnectShort;
+          _error = context.l10n.ankidroidCouldNotConnectShort(app: ankiAppName);
         });
       }
       return;
@@ -126,8 +126,8 @@ class _AnkiCardCreationScreenState
         setState(() {
           _isLoading = false;
           _error = fields == null || decks == null
-              ? context.l10n.ankidroidCouldNotConnectShort
-              : context.l10n.ankidroidNoteTypeMissing;
+              ? context.l10n.ankidroidCouldNotConnectShort(app: ankiAppName)
+              : context.l10n.ankidroidNoteTypeMissing(app: ankiAppName);
         });
       }
       return;
@@ -250,7 +250,9 @@ class _AnkiCardCreationScreenState
         // ScaffoldMessenger so it appears on top of the lookup sheet.
         Navigator.pop(context, true);
       } else {
-        final errorMsg = context.l10n.ankidroidFailedToAddNote;
+        final errorMsg = context.l10n.ankidroidFailedToAddNote(
+          app: ankiAppName,
+        );
         setState(() {
           _isSending = false;
           _error = errorMsg;
@@ -277,7 +279,7 @@ class _AnkiCardCreationScreenState
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: l10n.ankidroidCardSettingsTooltip,
+            tooltip: l10n.ankidroidCardSettingsTooltip(app: ankiAppName),
             onPressed: _openSettings,
           ),
         ],
@@ -316,7 +318,9 @@ class _AnkiCardCreationScreenState
             const SizedBox(height: 16),
             FilledButton.tonal(
               onPressed: _openSettings,
-              child: Text(context.l10n.ankidroidCardSettingsTooltip),
+              child: Text(
+                context.l10n.ankidroidCardSettingsTooltip(app: ankiAppName),
+              ),
             ),
           ],
         ),

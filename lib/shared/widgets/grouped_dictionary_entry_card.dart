@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -452,7 +450,7 @@ class _GroupedDictionaryEntryHeaderState
         tooltip: context.l10n.dictionaryCopyTooltip,
         iconSize: 20,
       ),
-      if (defaultTargetPlatform == TargetPlatform.android)
+      if (ref.watch(ankidroidAvailableProvider))
         IconButton(
           onPressed: _isCheckingAnki && ankidroidConfig.isConfigured
               ? null
@@ -470,7 +468,7 @@ class _GroupedDictionaryEntryHeaderState
               ? context.l10n.dictionaryAlreadyInAnkiTooltip
               : _isCheckingAnki && ankidroidConfig.isConfigured
               ? context.l10n.dictionaryCheckingAnkiTooltip
-              : context.l10n.dictionarySendToAnkiTooltip,
+              : context.l10n.dictionarySendToAnkiTooltip(app: ankiAppName),
           iconSize: 20,
         ),
       IconButton.filledTonal(

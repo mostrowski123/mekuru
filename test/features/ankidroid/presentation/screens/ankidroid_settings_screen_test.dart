@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -147,5 +148,39 @@ void main() {
     ).read(ankidroidConfigProvider);
     expect(config.fieldMapping, configWithStaleField.fieldMapping);
     expect(config.modelName, 'Basic');
+  });
+
+  testWidgets('asks for the AnkiConnect address on iOS only', (tester) async {
+    await pumpScreen(tester, config: configWithStaleField);
+    expect(find.text('AnkiConnect address'), findsNothing);
+    expect(find.text('AnkiDroid Integration'), findsOneWidget);
+
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await tester.pumpWidget(const SizedBox());
+      await pumpScreen(tester, config: configWithStaleField);
+
+      expect(find.text('AnkiConnect address'), findsOneWidget);
+      expect(find.text('Anki Integration'), findsOneWidget);
+
+      // A bad address is rejected without touching the config.
+      await tester.enterText(find.byType(TextField).first, '192.168.1.20');
+      await tester.tap(find.byTooltip('Connect'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Enter an address like'), findsOneWidget);
+
+      await tester.enterText(
+        find.byType(TextField).first,
+        'http://192.168.1.20:8765',
+      );
+      await tester.tap(find.byTooltip('Connect'));
+      await tester.pumpAndSettle();
+      final config = ProviderScope.containerOf(
+        tester.element(find.byType(AnkidroidSettingsScreen)),
+      ).read(ankidroidConfigProvider);
+      expect(config.ankiConnectUrl, 'http://192.168.1.20:8765');
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }

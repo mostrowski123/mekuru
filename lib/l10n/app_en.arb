@@ -409,9 +409,14 @@
   "@dictionaryCheckingAnkiTooltip": {
     "description": "Tooltip shown while checking for an existing Anki note."
   },
-  "dictionarySendToAnkiTooltip": "Send to AnkiDroid",
+  "dictionarySendToAnkiTooltip": "Send to {app}",
   "@dictionarySendToAnkiTooltip": {
-    "description": "Tooltip for sending a word to AnkiDroid."
+    "description": "Tooltip for sending a word to AnkiDroid.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "dictionaryAlreadyInVocabTooltip": "Already in vocab list",
   "@dictionaryAlreadyInVocabTooltip": {
@@ -1169,9 +1174,14 @@
   "@settingsAutoFocusSearchSubtitle": {
     "description": "Subtitle for the auto-focus dictionary search setting."
   },
-  "settingsAnkiDroidIntegrationTitle": "AnkiDroid Integration",
+  "settingsAnkiDroidIntegrationTitle": "{app} Integration",
   "@settingsAnkiDroidIntegrationTitle": {
-    "description": "Title for the AnkiDroid settings entry."
+    "description": "Title for the AnkiDroid settings entry.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "settingsAnkiDroidIntegrationSubtitle": "Configure note type, deck, and field mapping",
   "@settingsAnkiDroidIntegrationSubtitle": {
@@ -2288,13 +2298,23 @@
   "@ankidroidPermissionNotGrantedShort": {
     "description": "Short error shown when AnkiDroid permission is not granted in the create-card flow."
   },
-  "ankidroidCouldNotConnectShort": "Could not connect to AnkiDroid.",
+  "ankidroidCouldNotConnectShort": "Could not connect to {app}.",
   "@ankidroidCouldNotConnectShort": {
-    "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow."
+    "description": "Short error shown when the app cannot connect to AnkiDroid in the create-card flow.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
-  "ankidroidFailedToAddNote": "Failed to add note. Make sure AnkiDroid is running and the selected note type and deck still exist.",
+  "ankidroidFailedToAddNote": "Failed to add note. Make sure {app} is running and the selected note type and deck still exist.",
   "@ankidroidFailedToAddNote": {
-    "description": "Error shown when sending a note to AnkiDroid fails."
+    "description": "Error shown when sending a note to AnkiDroid fails.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidSettingsNoteTypeSection": "Note Type",
   "@ankidroidSettingsNoteTypeSection": {
@@ -2349,9 +2369,14 @@
       }
     }
   },
-  "ankidroidCardSettingsTooltip": "Mekuru's AnkiDroid Settings",
+  "ankidroidCardSettingsTooltip": "Mekuru's {app} Settings",
   "@ankidroidCardSettingsTooltip": {
-    "description": "Tooltip for opening AnkiDroid settings from the create-card flow."
+    "description": "Tooltip for opening AnkiDroid settings from the create-card flow.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidCardDeckTitle": "Deck",
   "@ankidroidCardDeckTitle": {
@@ -2365,9 +2390,14 @@
   "@ankidroidCardAddToAnki": {
     "description": "Button label to submit a note to AnkiDroid."
   },
-  "ankidroidNoteTypeMissing": "The configured note type no longer exists in Anki. Choose a new one in Mekuru's AnkiDroid settings.",
+  "ankidroidNoteTypeMissing": "The configured note type no longer exists in Anki. Choose a new one in Mekuru's {app} settings.",
   "@ankidroidNoteTypeMissing": {
-    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid."
+    "description": "Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
   },
   "ankidroidStaleMappingBanner": "Some mapped fields no longer exist in Anki: {fields}. Tap to fix the field mapping.",
   "@ankidroidStaleMappingBanner": {
@@ -4156,5 +4186,25 @@
   "localOcrSpeedTestCancelled": "Speed test cancelled",
   "@localOcrSpeedTestCancelled": {
     "description": "Snack bar after the user cancels the on-device OCR speed test; no result is kept."
+  },
+  "ankiConnectAddressLabel": "AnkiConnect address",
+  "@ankiConnectAddressLabel": {
+    "description": "Section title and field label for the AnkiConnect address on iOS."
+  },
+  "ankiConnectSetupHelp": "In Anki on your computer, install the AnkiConnect add-on (code 2055492159), set \"webBindAddress\": \"0.0.0.0\" in its config and restart Anki. Keep this device and the computer on the same network, and allow local network access when asked. Then enter the computer's address, e.g. http://192.168.1.20:8765.",
+  "@ankiConnectSetupHelp": {
+    "description": "Setup instructions for reaching Anki on a computer through the AnkiConnect add-on (iOS)."
+  },
+  "ankiConnectInvalidAddress": "Enter an address like http://192.168.1.20:8765",
+  "@ankiConnectInvalidAddress": {
+    "description": "Validation error for the AnkiConnect address field."
+  },
+  "ankiConnectConnect": "Connect",
+  "@ankiConnectConnect": {
+    "description": "Tooltip for the button that connects to the entered AnkiConnect address."
+  },
+  "ankiConnectCouldNotConnect": "Could not connect to Anki. Check the address and make sure Anki is running on your computer.",
+  "@ankiConnectCouldNotConnect": {
+    "description": "Error shown in Anki settings on iOS when AnkiConnect cannot be reached."
   }
 }

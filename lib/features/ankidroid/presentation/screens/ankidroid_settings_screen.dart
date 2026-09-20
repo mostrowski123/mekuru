@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
+import 'package:mekuru/features/ankidroid/data/services/anki_connect_service.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -31,20 +32,28 @@ class _AnkidroidSettingsScreenState
   List<String> _currentModelFields = [];
 
   late TextEditingController _tagsController;
+  late TextEditingController _urlController;
+  String? _urlError;
 
   @override
   void initState() {
     super.initState();
     final config = ref.read(ankidroidConfigProvider);
     _tagsController = TextEditingController(text: config.tags.join(', '));
+    _urlController = TextEditingController(text: config.ankiConnectUrl);
     _initAnkidroid();
   }
 
   @override
   void dispose() {
     _tagsController.dispose();
+    _urlController.dispose();
     super.dispose();
   }
+
+  String get _couldNotConnectMessage => usesAnkiConnect
+      ? context.l10n.ankiConnectCouldNotConnect
+      : context.l10n.ankidroidCouldNotConnectLong;
 
   Future<void> _initAnkidroid() async {
     final service = ref.read(ankidroidServiceProvider);
@@ -65,7 +74,7 @@ class _AnkidroidSettingsScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = context.l10n.ankidroidCouldNotConnectLong;
+          _error = _couldNotConnectMessage;
         });
       }
       return;
@@ -88,7 +97,7 @@ class _AnkidroidSettingsScreenState
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = context.l10n.ankidroidCouldNotConnectLong;
+          _error = _couldNotConnectMessage;
         });
       }
       return;
@@ -109,6 +118,26 @@ class _AnkidroidSettingsScreenState
     }
   }
 
+  void _retry() {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    _initAnkidroid();
+  }
+
+  /// Saves the AnkiConnect address and reconnects through the usual flow.
+  void _connect() {
+    final url = _urlController.text.trim();
+    if (!AnkiConnectService.isValidUrl(url)) {
+      setState(() => _urlError = context.l10n.ankiConnectInvalidAddress);
+      return;
+    }
+    _urlError = null;
+    ref.read(ankidroidConfigProvider.notifier).setAnkiConnectUrl(url);
+    _retry();
+  }
+
   void _saveTags() {
     final tags = _tagsController.text
         .split(',')
@@ -124,14 +153,64 @@ class _AnkidroidSettingsScreenState
     final config = ref.watch(ankidroidConfigProvider);
     final l10n = context.l10n;
 
+    final status = _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _error == null
+        ? null
+        // No address yet: the setup help says what to do, not an error.
+        : usesAnkiConnect && config.ankiConnectUrl.isEmpty
+        ? const SizedBox.shrink()
+        : _buildError(theme);
+
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsAnkiDroidIntegrationTitle)),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? _buildError(theme)
-          : _buildSettings(theme, config),
+      appBar: AppBar(
+        title: Text(l10n.settingsAnkiDroidIntegrationTitle(app: ankiAppName)),
+      ),
+      body: status == null
+          ? _buildSettings(theme, config)
+          : usesAnkiConnect
+          ? ListView(children: [..._buildAnkiConnectSection(theme), status])
+          : status,
     );
+  }
+
+  /// iOS only: where AnkiConnect runs, and how to set it up.
+  List<Widget> _buildAnkiConnectSection(ThemeData theme) {
+    final l10n = context.l10n;
+
+    return [
+      SettingsSectionHeader(title: l10n.ankiConnectAddressLabel),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Text(
+          l10n.ankiConnectSetupHelp,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: TextField(
+          controller: _urlController,
+          keyboardType: TextInputType.url,
+          autocorrect: false,
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            hintText: 'http://192.168.1.20:8765',
+            errorText: _urlError,
+            isDense: true,
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.sync),
+              tooltip: l10n.ankiConnectConnect,
+              onPressed: _connect,
+            ),
+          ),
+          onSubmitted: (_) => _connect(),
+        ),
+      ),
+      const Divider(),
+    ];
   }
 
   Widget _buildError(ThemeData theme) {
@@ -148,13 +227,7 @@ class _AnkidroidSettingsScreenState
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton.tonal(
-              onPressed: () {
-                setState(() {
-                  _isLoading = true;
-                  _error = null;
-                });
-                _initAnkidroid();
-              },
+              onPressed: _retry,
               child: Text(l10n.commonRetry),
             ),
           ],
@@ -180,6 +253,8 @@ class _AnkidroidSettingsScreenState
 
     return ListView(
       children: [
+        if (usesAnkiConnect) ..._buildAnkiConnectSection(theme),
+
         // ── Note Type ──
         SettingsSectionHeader(title: l10n.ankidroidSettingsNoteTypeSection),
         ListTile(

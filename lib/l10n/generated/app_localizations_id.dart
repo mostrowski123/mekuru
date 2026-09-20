@@ -322,7 +322,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get dictionaryCheckingAnkiTooltip => 'Memeriksa dek Anki default';
 
   @override
-  String get dictionarySendToAnkiTooltip => 'Kirim ke AnkiDroid';
+  String dictionarySendToAnkiTooltip({required String app}) {
+    return 'Kirim ke $app';
+  }
 
   @override
   String get dictionaryAlreadyInVocabTooltip => 'Sudah ada di daftar kosakata';
@@ -905,7 +907,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Buka keyboard saat tab kamus dipilih';
 
   @override
-  String get settingsAnkiDroidIntegrationTitle => 'Integrasi AnkiDroid';
+  String settingsAnkiDroidIntegrationTitle({required String app}) {
+    return 'Integrasi $app';
+  }
 
   @override
   String get settingsAnkiDroidIntegrationSubtitle =>
@@ -1789,12 +1793,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Izin AnkiDroid tidak diberikan.';
 
   @override
-  String get ankidroidCouldNotConnectShort =>
-      'Tidak dapat terhubung ke AnkiDroid.';
+  String ankidroidCouldNotConnectShort({required String app}) {
+    return 'Tidak dapat terhubung ke $app.';
+  }
 
   @override
-  String get ankidroidFailedToAddNote =>
-      'Gagal menambahkan catatan. Pastikan AnkiDroid sedang berjalan dan tipe catatan serta dek yang dipilih masih ada.';
+  String ankidroidFailedToAddNote({required String app}) {
+    return 'Gagal menambahkan catatan. Pastikan $app sedang berjalan dan tipe catatan serta dek yang dipilih masih ada.';
+  }
 
   @override
   String get ankidroidSettingsNoteTypeSection => 'Tipe Catatan';
@@ -1837,7 +1843,9 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get ankidroidCardSettingsTooltip => 'Pengaturan AnkiDroid di Mekuru';
+  String ankidroidCardSettingsTooltip({required String app}) {
+    return 'Pengaturan $app di Mekuru';
+  }
 
   @override
   String get ankidroidCardDeckTitle => 'Dek';
@@ -1849,8 +1857,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get ankidroidCardAddToAnki => 'Tambah ke Anki';
 
   @override
-  String get ankidroidNoteTypeMissing =>
-      'Tipe catatan yang dikonfigurasi sudah tidak ada di Anki. Pilih yang baru di pengaturan AnkiDroid Mekuru.';
+  String ankidroidNoteTypeMissing({required String app}) {
+    return 'Tipe catatan yang dikonfigurasi sudah tidak ada di Anki. Pilih yang baru di pengaturan $app Mekuru.';
+  }
 
   @override
   String ankidroidStaleMappingBanner({required String fields}) {
@@ -3252,4 +3261,22 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get localOcrSpeedTestCancelled => 'Uji kecepatan dibatalkan';
+
+  @override
+  String get ankiConnectAddressLabel => 'Alamat AnkiConnect';
+
+  @override
+  String get ankiConnectSetupHelp =>
+      'Di Anki pada komputer, pasang add-on AnkiConnect (kode 2055492159), atur \"webBindAddress\": \"0.0.0.0\" di konfigurasinya, lalu mulai ulang Anki. Pastikan perangkat ini dan komputer berada di jaringan yang sama, dan izinkan akses jaringan lokal saat diminta. Lalu masukkan alamat komputer, mis. http://192.168.1.20:8765.';
+
+  @override
+  String get ankiConnectInvalidAddress =>
+      'Masukkan alamat seperti http://192.168.1.20:8765';
+
+  @override
+  String get ankiConnectConnect => 'Hubungkan';
+
+  @override
+  String get ankiConnectCouldNotConnect =>
+      'Tidak dapat terhubung ke Anki. Periksa alamatnya dan pastikan Anki berjalan di komputer.';
 }

@@ -26,6 +26,10 @@ class AnkidroidConfig {
   /// Default tags to apply to every exported note.
   final List<String> tags;
 
+  /// Address of the AnkiConnect add-on (iOS only), e.g.
+  /// `http://192.168.1.20:8765`. Empty until the user enters one.
+  final String ankiConnectUrl;
+
   const AnkidroidConfig({
     this.modelId,
     this.modelName,
@@ -34,6 +38,7 @@ class AnkidroidConfig {
     this.fieldMapping = const {},
     this.ankiFieldNames = const [],
     this.tags = const ['mekuru'],
+    this.ankiConnectUrl = '',
   });
 
   bool get isConfigured => modelId != null && deckId != null;
@@ -46,6 +51,7 @@ class AnkidroidConfig {
     Map<String, String>? fieldMapping,
     List<String>? ankiFieldNames,
     List<String>? tags,
+    String? ankiConnectUrl,
   }) {
     return AnkidroidConfig(
       modelId: modelId ?? this.modelId,
@@ -55,6 +61,7 @@ class AnkidroidConfig {
       fieldMapping: fieldMapping ?? this.fieldMapping,
       ankiFieldNames: ankiFieldNames ?? this.ankiFieldNames,
       tags: tags ?? this.tags,
+      ankiConnectUrl: ankiConnectUrl ?? this.ankiConnectUrl,
     );
   }
 
@@ -66,6 +73,7 @@ class AnkidroidConfig {
     'fieldMapping': fieldMapping,
     'ankiFieldNames': ankiFieldNames,
     'tags': tags,
+    'ankiConnectUrl': ankiConnectUrl,
   };
 
   factory AnkidroidConfig.fromJson(Map<String, dynamic> json) {
@@ -84,6 +92,7 @@ class AnkidroidConfig {
           const [],
       tags:
           (json['tags'] as List<dynamic>?)?.cast<String>() ?? const ['mekuru'],
+      ankiConnectUrl: json['ankiConnectUrl'] as String? ?? '',
     );
   }
 

@@ -640,8 +640,8 @@ abstract class AppLocalizations {
   /// Tooltip for sending a word to AnkiDroid.
   ///
   /// In en, this message translates to:
-  /// **'Send to AnkiDroid'**
-  String get dictionarySendToAnkiTooltip;
+  /// **'Send to {app}'**
+  String dictionarySendToAnkiTooltip({required String app});
 
   /// Tooltip shown when a word is already saved to vocabulary.
   ///
@@ -1639,8 +1639,8 @@ abstract class AppLocalizations {
   /// Title for the AnkiDroid settings entry.
   ///
   /// In en, this message translates to:
-  /// **'AnkiDroid Integration'**
-  String get settingsAnkiDroidIntegrationTitle;
+  /// **'{app} Integration'**
+  String settingsAnkiDroidIntegrationTitle({required String app});
 
   /// Subtitle for the AnkiDroid settings entry.
   ///
@@ -3076,14 +3076,14 @@ abstract class AppLocalizations {
   /// Short error shown when the app cannot connect to AnkiDroid in the create-card flow.
   ///
   /// In en, this message translates to:
-  /// **'Could not connect to AnkiDroid.'**
-  String get ankidroidCouldNotConnectShort;
+  /// **'Could not connect to {app}.'**
+  String ankidroidCouldNotConnectShort({required String app});
 
   /// Error shown when sending a note to AnkiDroid fails.
   ///
   /// In en, this message translates to:
-  /// **'Failed to add note. Make sure AnkiDroid is running and the selected note type and deck still exist.'**
-  String get ankidroidFailedToAddNote;
+  /// **'Failed to add note. Make sure {app} is running and the selected note type and deck still exist.'**
+  String ankidroidFailedToAddNote({required String app});
 
   /// Section heading for Anki note type settings.
   ///
@@ -3160,8 +3160,8 @@ abstract class AppLocalizations {
   /// Tooltip for opening AnkiDroid settings from the create-card flow.
   ///
   /// In en, this message translates to:
-  /// **'Mekuru\'s AnkiDroid Settings'**
-  String get ankidroidCardSettingsTooltip;
+  /// **'Mekuru\'s {app} Settings'**
+  String ankidroidCardSettingsTooltip({required String app});
 
   /// Label for the selected Anki deck in the create-card flow.
   ///
@@ -3184,8 +3184,8 @@ abstract class AppLocalizations {
   /// Error shown in the create-card flow when the configured Anki note type has been deleted in AnkiDroid.
   ///
   /// In en, this message translates to:
-  /// **'The configured note type no longer exists in Anki. Choose a new one in Mekuru\'s AnkiDroid settings.'**
-  String get ankidroidNoteTypeMissing;
+  /// **'The configured note type no longer exists in Anki. Choose a new one in Mekuru\'s {app} settings.'**
+  String ankidroidNoteTypeMissing({required String app});
 
   /// Warning banner in the create-card flow listing mapped fields that were renamed or deleted in AnkiDroid.
   ///
@@ -5362,6 +5362,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Speed test cancelled'**
   String get localOcrSpeedTestCancelled;
+
+  /// Section title and field label for the AnkiConnect address on iOS.
+  ///
+  /// In en, this message translates to:
+  /// **'AnkiConnect address'**
+  String get ankiConnectAddressLabel;
+
+  /// Setup instructions for reaching Anki on a computer through the AnkiConnect add-on (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'In Anki on your computer, install the AnkiConnect add-on (code 2055492159), set \"webBindAddress\": \"0.0.0.0\" in its config and restart Anki. Keep this device and the computer on the same network, and allow local network access when asked. Then enter the computer\'s address, e.g. http://192.168.1.20:8765.'**
+  String get ankiConnectSetupHelp;
+
+  /// Validation error for the AnkiConnect address field.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an address like http://192.168.1.20:8765'**
+  String get ankiConnectInvalidAddress;
+
+  /// Tooltip for the button that connects to the entered AnkiConnect address.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get ankiConnectConnect;
+
+  /// Error shown in Anki settings on iOS when AnkiConnect cannot be reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to Anki. Check the address and make sure Anki is running on your computer.'**
+  String get ankiConnectCouldNotConnect;
 }
 
 class _AppLocalizationsDelegate
