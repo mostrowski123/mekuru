@@ -123,14 +123,18 @@ void main() {
     );
   }
 
-  Future<PreparedStagedRestore> run({String rootPath = newRoot}) =>
-      prepareStagedRestore(
-        PrepareStagedRestoreArgs(
-          stagingPath: staging.path,
-          rootPath: rootPath,
-          manifestJson: '{"format":1}',
-        ),
-      );
+  // Folder links kept, as on Android, unless a test restores elsewhere.
+  Future<PreparedStagedRestore> run({
+    String rootPath = newRoot,
+    bool keepFolderLinks = true,
+  }) => prepareStagedRestore(
+    PrepareStagedRestoreArgs(
+      stagingPath: staging.path,
+      rootPath: rootPath,
+      manifestJson: '{"format":1}',
+      keepFolderLinks: keepFolderLinks,
+    ),
+  );
 
   Map<String, dynamic> readJson(String path) =>
       jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
@@ -179,6 +183,32 @@ void main() {
       expect(result.rewrittenBooks, 2);
     },
   );
+
+  test('off Android a linked manga without its pages loses the link, not its '
+      'row', () async {
+    await seedDatabase();
+    seedSettings();
+    seedCaches();
+
+    await run(keepFolderLinks: false);
+
+    final books = rows('SELECT title, file_path, cover_image_path FROM books');
+    final manga = books.singleWhere((r) => r['title'] == 'SAF manga');
+    // A content:// cover can only be drawn by Android; the placeholder shows.
+    expect(manga['cover_image_path'], isNull);
+    expect(manga['file_path'], '$newRoot/books/manga_2');
+    final saf = readJson(
+      p.join(staging.path, 'books', 'manga_2', mangaPagesCacheFileName),
+    );
+    expect(saf.containsKey('safTreeUri'), isFalse);
+    expect(saf.containsKey('safImageDirRelativePath'), isFalse);
+    expect(saf['imageDirPath'], '$newRoot/books/manga_2/pages');
+    // An ordinary book's cover is untouched.
+    expect(
+      books.singleWhere((r) => r['title'] == 'EPUB')['cover_image_path'],
+      '$newRoot/books/book_1/cover.jpg',
+    );
+  });
 
   test(
     'rewrites imageDirPath in both manga cache files, not SAF dirs',

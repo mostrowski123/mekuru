@@ -19,11 +19,17 @@ class PrepareStagedRestoreArgs {
   final String rootPath;
   final String manifestJson;
 
-  const PrepareStagedRestoreArgs({
+  /// Whether a manga whose pages the archive does not carry may stay linked
+  /// to its folder outside Mekuru. Only Android can follow such a link (a
+  /// `content://` URI); anywhere else it is cut, see [prepareStagedRestore].
+  final bool keepFolderLinks;
+
+  PrepareStagedRestoreArgs({
     required this.stagingPath,
     required this.rootPath,
     required this.manifestJson,
-  });
+    bool? keepFolderLinks,
+  }) : keepFolderLinks = keepFolderLinks ?? Platform.isAndroid;
 }
 
 class PreparedStagedRestore {
@@ -62,7 +68,11 @@ const _booksAnchor = '/${StagedFullRestore.booksDirName}/';
 ///   archive carries (`<dir>/pages/`) become ordinary manga: the cache drops
 ///   its folder link and reads from `pages/`, and a `content://` cover is
 ///   replaced by the first page, the rule the import uses. A linked manga
-///   without pages in the archive stays linked, to be re-linked by hand.
+///   without pages in the archive stays linked, to be re-linked by hand,
+///   except where the link cannot be followed (an Android backup restored
+///   on iOS): there the cover becomes the placeholder and the cache stops
+///   naming the folder, so the book is an empty shell that keeps its reading
+///   data instead of calling into a platform service that is not there.
 /// - Disables server connections (their secrets are not in the archive).
 /// - Fsyncs the database, then writes READY with `flush: true`, last.
 Future<PreparedStagedRestore> prepareStagedRestore(
@@ -88,8 +98,17 @@ Future<PreparedStagedRestore> prepareStagedRestore(
     p.join(staging.path, StagedFullRestore.booksDirName),
   )..createSync(recursive: true);
 
-  final (ids, rewrittenBooks) = _fixUpDatabase(dbFile.path, root, booksDir);
-  final rewrittenCaches = await _rewriteMangaCaches(booksDir, root);
+  final (ids, rewrittenBooks) = _fixUpDatabase(
+    dbFile.path,
+    root,
+    booksDir,
+    keepFolderLinks: args.keepFolderLinks,
+  );
+  final rewrittenCaches = await _rewriteMangaCaches(
+    booksDir,
+    root,
+    keepFolderLinks: args.keepFolderLinks,
+  );
 
   final raf = await dbFile.open(mode: FileMode.append);
   await raf.flush();
@@ -109,8 +128,9 @@ Future<PreparedStagedRestore> prepareStagedRestore(
 (List<int>, int) _fixUpDatabase(
   String path,
   String root,
-  Directory stagingBooks,
-) {
+  Directory stagingBooks, {
+  required bool keepFolderLinks,
+}) {
   final Database db;
   try {
     db = sqlite3.open(path);
@@ -141,6 +161,12 @@ Future<PreparedStagedRestore> prepareStagedRestore(
         '$root$_booksAnchor$dir/${FullBackupManifest.linkedPagesDirName}/$first',
         row['id'],
       ]);
+    }
+    if (!keepFolderLinks) {
+      db.execute(
+        "UPDATE books SET cover_image_path = NULL "
+        "WHERE cover_image_path LIKE 'content://%'",
+      );
     }
 
     final ids = <int>[];
@@ -214,7 +240,11 @@ Future<bool> reanchorLibraryIfMoved(String rootPath) async {
   }
 }
 
-Future<int> _rewriteMangaCaches(Directory booksDir, String root) async {
+Future<int> _rewriteMangaCaches(
+  Directory booksDir,
+  String root, {
+  bool keepFolderLinks = true,
+}) async {
   var rewritten = 0;
   await for (final entity in booksDir.list(followLinks: false)) {
     if (entity is! Directory) continue;
@@ -229,7 +259,7 @@ Future<int> _rewriteMangaCaches(Directory booksDir, String root) async {
       if (decoded is! Map<String, dynamic>) continue;
       final String? next;
       if (decoded.containsKey('safTreeUri') &&
-          _firstPageIn(entity.path) != null) {
+          (_firstPageIn(entity.path) != null || !keepFolderLinks)) {
         decoded.remove('safTreeUri');
         decoded.remove('safImageDirRelativePath');
         next =
