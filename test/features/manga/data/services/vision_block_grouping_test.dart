@@ -69,7 +69,7 @@ void main() {
     expect(blocks.single.lines.map((l) => l.text), ['上の行', '下の行']);
   });
 
-  test('ruby beside a column is dropped', () {
+  test('ruby beside a column is not text, but the bounds still cover it', () {
     final blocks = groupVisionLines([
       _column(100, 100, text: '結衣が'),
       _column(142, 100, width: 18, height: 80, text: 'ゆい'),
@@ -77,6 +77,24 @@ void main() {
 
     expect(blocks, hasLength(1));
     expect(blocks.single.lines.map((l) => l.text), ['結衣が']);
+    // The crop handed to manga-ocr reaches past the base column to the ruby.
+    expect(blocks.single.right, 160);
+    expect(blocks.single.left, 100);
+    // Ruby is not counted when sizing the block.
+    expect(blocks.single.fontSize, 40);
+  });
+
+  test('ruby between two columns of one bubble keeps them together', () {
+    final blocks = groupVisionLines([
+      _column(100, 100, text: '結衣が'),
+      _column(142, 100, width: 18, height: 80, text: 'ゆい'),
+      _column(170, 100, text: '言った'),
+    ]);
+
+    expect(blocks, hasLength(1));
+    expect(blocks.single.lines.map((l) => l.text), ['言った', '結衣が']);
+    expect(blocks.single.left, 100);
+    expect(blocks.single.right, 210);
   });
 
   test('text of a very different size is a different block', () {

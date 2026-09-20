@@ -39,16 +39,30 @@ class VisionLine {
 
 /// Lines that belong together, in reading order.
 class VisionBlock {
-  const VisionBlock({required this.lines, required this.vertical});
+  const VisionBlock({
+    required this.lines,
+    required this.vertical,
+    this.rubyLines = const [],
+  });
 
   /// Right to left for vertical text, top to bottom for horizontal.
   final List<VisionLine> lines;
+
+  /// The ruby (furigana) annotating [lines]. Not text of its own: it is here
+  /// so the bounds cover it, and nowhere else.
+  final List<VisionLine> rubyLines;
+
   final bool vertical;
 
-  double get left => lines.map((l) => l.left).reduce(math.min);
-  double get top => lines.map((l) => l.top).reduce(math.min);
-  double get right => lines.map((l) => l.right).reduce(math.max);
-  double get bottom => lines.map((l) => l.bottom).reduce(math.max);
+  /// Bounds cover the ruby too. manga-ocr reads the crop these bounds make and
+  /// was trained to ignore furigana inside it, so leaving the ruby out only
+  /// clips the edge of the bubble off the crop and costs accuracy.
+  Iterable<VisionLine> get _extent => lines.followedBy(rubyLines);
+
+  double get left => _extent.map((l) => l.left).reduce(math.min);
+  double get top => _extent.map((l) => l.top).reduce(math.min);
+  double get right => _extent.map((l) => l.right).reduce(math.max);
+  double get bottom => _extent.map((l) => l.bottom).reduce(math.max);
 
   /// Median character size of the block's lines.
   double get fontSize {
@@ -70,25 +84,44 @@ const _minOverlap = 0.3;
 const _rubySizeRatio = 0.6;
 
 List<VisionBlock> groupVisionLines(List<VisionLine> lines) {
-  final kept = _withoutRuby(
-    lines.where((l) => l.text.trim().isNotEmpty).toList(),
-  );
+  final kept = lines.where((l) => l.text.trim().isNotEmpty).toList();
+  // Ruby joins the block of the line it annotates and nothing else: reading it
+  // as text of its own would put the reading of a word beside the word, and
+  // letting it group freely would let it bridge two bubbles.
+  final rubyBase = _rubyBases(kept);
 
   // Union-find over lines that are neighbours in the same block.
   final parent = List<int>.generate(kept.length, (i) => i);
   int find(int i) => parent[i] == i ? i : parent[i] = find(parent[i]);
   for (var i = 0; i < kept.length; i++) {
+    if (rubyBase.containsKey(i)) continue;
     for (var j = i + 1; j < kept.length; j++) {
+      if (rubyBase.containsKey(j)) continue;
       if (_sameBlock(kept[i], kept[j])) parent[find(i)] = find(j);
     }
   }
+  rubyBase.forEach((ruby, base) => parent[find(ruby)] = find(base));
 
-  final groups = <int, List<VisionLine>>{};
+  final groups = <int, List<int>>{};
   for (var i = 0; i < kept.length; i++) {
-    groups.putIfAbsent(find(i), () => []).add(kept[i]);
+    groups.putIfAbsent(find(i), () => []).add(i);
   }
 
-  final blocks = [for (final group in groups.values) _block(group)];
+  final blocks = <VisionBlock>[];
+  for (final group in groups.values) {
+    final text = [
+      for (final i in group)
+        if (!rubyBase.containsKey(i)) kept[i],
+    ];
+    // Ruby of a line that is itself ruby: no text to annotate, so no block.
+    if (text.isEmpty) continue;
+    blocks.add(
+      _block(text, [
+        for (final i in group)
+          if (rubyBase.containsKey(i)) kept[i],
+      ]),
+    );
+  }
   // Page reading order for manga: top to bottom, right to left within a row.
   blocks.sort((a, b) {
     final rowHeight = math.max(a.fontSize, b.fontSize) * 2;
@@ -98,7 +131,7 @@ List<VisionBlock> groupVisionLines(List<VisionLine> lines) {
   return blocks;
 }
 
-VisionBlock _block(List<VisionLine> lines) {
+VisionBlock _block(List<VisionLine> lines, List<VisionLine> ruby) {
   // Longer lines say more about the direction than one stray character.
   var verticalWeight = 0;
   var horizontalWeight = 0;
@@ -112,7 +145,7 @@ VisionBlock _block(List<VisionLine> lines) {
     ..sort(
       (a, b) => vertical ? b.right.compareTo(a.right) : a.top.compareTo(b.top),
     );
-  return VisionBlock(lines: ordered, vertical: vertical);
+  return VisionBlock(lines: ordered, vertical: vertical, rubyLines: ruby);
 }
 
 bool _sameBlock(VisionLine a, VisionLine b) {
@@ -141,9 +174,9 @@ bool _sameBlock(VisionLine a, VisionLine b) {
   return gap <= size * _maxGapInChars && overlap >= shorter * _minOverlap;
 }
 
-/// Drops ruby: a much smaller line hugging a larger one. Reading it as text
-/// of its own would put the reading of a word beside the word.
-List<VisionLine> _withoutRuby(List<VisionLine> lines) {
+/// Finds the ruby: a much smaller line hugging a larger one. Maps the index of
+/// each ruby line to the index of the line it annotates.
+Map<int, int> _rubyBases(List<VisionLine> lines) {
   bool isRubyOf(VisionLine small, VisionLine base) {
     if (small.fontSize > base.fontSize * _rubySizeRatio) return false;
     final gap = base.looksVertical
@@ -155,11 +188,14 @@ List<VisionLine> _withoutRuby(List<VisionLine> lines) {
     return gap <= small.fontSize * 0.5 && overlap > 0;
   }
 
-  return [
-    for (final line in lines)
-      if (!lines.any(
-        (other) => !identical(other, line) && isRubyOf(line, other),
-      ))
-        line,
-  ];
+  final bases = <int, int>{};
+  for (var i = 0; i < lines.length; i++) {
+    for (var j = 0; j < lines.length; j++) {
+      if (i != j && isRubyOf(lines[i], lines[j])) {
+        bases[i] = j;
+        break;
+      }
+    }
+  }
+  return bases;
 }
