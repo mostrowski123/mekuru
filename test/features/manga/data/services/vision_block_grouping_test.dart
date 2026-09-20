@@ -153,6 +153,33 @@ void main() {
     expect(blocks.single.lines.map((l) => l.text), ['左の行', '右の行']);
   });
 
+  test('two bubbles chained through a near line are split apart', () {
+    // Two columns of one bubble, then a third column 30 px off to the side
+    // and 100 px down: close enough for the gap test, so union-find chains it
+    // in, but the three together leave a hole in their bounds.
+    final blocks = groupVisionLines([
+      _column(100, 100, text: '一行目'),
+      _column(145, 100, text: '二行目'),
+      _column(215, 200, text: '別の吹き出し'),
+    ]);
+
+    expect(blocks, hasLength(2));
+    expect(
+      blocks.map((b) => b.lines.map((l) => l.text).join()),
+      containsAll(['二行目一行目', '別の吹き出し']),
+    );
+  });
+
+  test('a real column that simply runs short does not split its block', () {
+    final blocks = groupVisionLines([
+      _column(100, 100, text: 'ながいれつ'),
+      _column(145, 100, text: 'これもながい'),
+      _column(190, 100, height: 60, text: 'みじかい'),
+    ]);
+
+    expect(blocks, hasLength(1));
+  });
+
   test('blank lines are ignored', () {
     expect(groupVisionLines([_column(100, 100, text: '  ')]), isEmpty);
   });

@@ -80,8 +80,32 @@ const _maxGapInChars = 0.9;
 /// direction; this is how much of the shorter line must overlap.
 const _minOverlap = 0.3;
 
+/// A block's lines fill most of its bounds. Two bubbles chained into one
+/// through a line that sits near both leave a hole, so a block this empty is
+/// grouped again with a tighter gap, which tells them apart.
+const _minFill = 0.6;
+
+/// How much tighter each re-grouping is, and how tight it may get: below this
+/// the columns of one bubble start to come apart.
+const _splitGapFactor = 0.5;
+const _minGapInChars = 0.2;
+
 /// Ruby (furigana) is set at about half the size of the text it annotates.
 const _rubySizeRatio = 0.6;
+
+/// Ruby annotates a word, not a whole column, so it runs well short of the
+/// line it sits beside. A neighbouring column of smaller text runs the length
+/// of the bubble and is text, not ruby.
+const _rubySpanRatio = 0.8;
+
+/// One text line and the ruby hanging off it. They travel together, so a
+/// re-grouping never has to work out the ruby again.
+class _Unit {
+  _Unit(this.line);
+
+  final VisionLine line;
+  final List<VisionLine> ruby = [];
+}
 
 List<VisionBlock> groupVisionLines(List<VisionLine> lines) {
   final kept = dedupeVisionLines(
@@ -92,38 +116,26 @@ List<VisionBlock> groupVisionLines(List<VisionLine> lines) {
   // letting it group freely would let it bridge two bubbles.
   final rubyBase = _rubyBases(kept);
 
-  // Union-find over lines that are neighbours in the same block.
-  final parent = List<int>.generate(kept.length, (i) => i);
-  int find(int i) => parent[i] == i ? i : parent[i] = find(parent[i]);
+  final units = <_Unit>[];
+  final unitOfLine = <int, int>{};
   for (var i = 0; i < kept.length; i++) {
     if (rubyBase.containsKey(i)) continue;
-    for (var j = i + 1; j < kept.length; j++) {
-      if (rubyBase.containsKey(j)) continue;
-      if (_sameBlock(kept[i], kept[j])) parent[find(i)] = find(j);
-    }
+    unitOfLine[i] = units.length;
+    units.add(_Unit(kept[i]));
   }
-  rubyBase.forEach((ruby, base) => parent[find(ruby)] = find(base));
+  rubyBase.forEach((ruby, base) {
+    // Ruby of a line that is itself ruby annotates no text, so it is dropped.
+    final unit = unitOfLine[base];
+    if (unit != null) units[unit].ruby.add(kept[ruby]);
+  });
 
-  final groups = <int, List<int>>{};
-  for (var i = 0; i < kept.length; i++) {
-    groups.putIfAbsent(find(i), () => []).add(i);
-  }
-
-  final blocks = <VisionBlock>[];
-  for (final group in groups.values) {
-    final text = [
-      for (final i in group)
-        if (!rubyBase.containsKey(i)) kept[i],
-    ];
-    // Ruby of a line that is itself ruby: no text to annotate, so no block.
-    if (text.isEmpty) continue;
-    blocks.add(
-      _block(text, [
-        for (final i in group)
-          if (rubyBase.containsKey(i)) kept[i],
-      ]),
-    );
-  }
+  final blocks = [
+    for (final group in _cluster(units, _maxGapInChars))
+      _block(
+        [for (final u in group) u.line],
+        [for (final u in group) ...u.ruby],
+      ),
+  ];
   // Page reading order for manga: top to bottom, right to left within a row.
   blocks.sort((a, b) {
     final rowHeight = math.max(a.fontSize, b.fontSize) * 2;
@@ -131,6 +143,56 @@ List<VisionBlock> groupVisionLines(List<VisionLine> lines) {
     return b.right.compareTo(a.right);
   });
   return blocks;
+}
+
+/// Union-find over units that are neighbours, then a second look: a group
+/// whose lines leave a hole in its bounds is two bubbles that chained through
+/// a line near both, and is grouped again with a tighter gap.
+List<List<_Unit>> _cluster(List<_Unit> units, double maxGap) {
+  final parent = List<int>.generate(units.length, (i) => i);
+  int find(int i) => parent[i] == i ? i : parent[i] = find(parent[i]);
+  for (var i = 0; i < units.length; i++) {
+    for (var j = i + 1; j < units.length; j++) {
+      if (_sameBlock(units[i].line, units[j].line, maxGap)) {
+        parent[find(i)] = find(j);
+      }
+    }
+  }
+
+  final groups = <int, List<_Unit>>{};
+  for (var i = 0; i < units.length; i++) {
+    groups.putIfAbsent(find(i), () => []).add(units[i]);
+  }
+
+  final tighter = maxGap * _splitGapFactor;
+  return [
+    for (final group in groups.values)
+      // Two lines that grouped are directly adjacent; it takes a third to
+      // chain two bubbles together, and a short line beside a long one is a
+      // real block that simply does not fill its bounds.
+      if (group.length > 2 &&
+          tighter >= _minGapInChars &&
+          _fill(group) < _minFill)
+        ..._cluster(group, tighter)
+      else
+        group,
+  ];
+}
+
+/// How much of a group's bounds its lines actually cover.
+double _fill(List<_Unit> group) {
+  final lines = [
+    for (final u in group) ...[u.line, ...u.ruby],
+  ];
+  final covered = lines.fold<double>(0, (sum, l) => sum + l.width * l.height);
+  final width =
+      lines.map((l) => l.right).reduce(math.max) -
+      lines.map((l) => l.left).reduce(math.min);
+  final height =
+      lines.map((l) => l.bottom).reduce(math.max) -
+      lines.map((l) => l.top).reduce(math.min);
+  final bounds = width * height;
+  return bounds <= 0 ? 1 : math.min(1, covered / bounds);
 }
 
 VisionBlock _block(List<VisionLine> lines, List<VisionLine> ruby) {
@@ -150,7 +212,7 @@ VisionBlock _block(List<VisionLine> lines, List<VisionLine> ruby) {
   return VisionBlock(lines: ordered, vertical: vertical, rubyLines: ruby);
 }
 
-bool _sameBlock(VisionLine a, VisionLine b) {
+bool _sameBlock(VisionLine a, VisionLine b, double maxGap) {
   final size = math.min(a.fontSize, b.fontSize);
   // Text of very different sizes is a different voice (a shout beside a
   // whisper, a caption beside dialogue), even when it touches.
@@ -173,7 +235,7 @@ bool _sameBlock(VisionLine a, VisionLine b) {
     overlap = math.min(a.right, b.right) - math.max(a.left, b.left);
     shorter = math.min(a.width, b.width);
   }
-  return gap <= size * _maxGapInChars && overlap >= shorter * _minOverlap;
+  return gap <= size * maxGap && overlap >= shorter * _minOverlap;
 }
 
 /// Finds the ruby: a much smaller line hugging a larger one. Maps the index of
@@ -187,7 +249,20 @@ Map<int, int> _rubyBases(List<VisionLine> lines) {
     final overlap = base.looksVertical
         ? math.min(small.bottom, base.bottom) - math.max(small.top, base.top)
         : math.min(small.right, base.right) - math.max(small.left, base.left);
-    return gap <= small.fontSize * 0.5 && overlap > 0;
+    if (gap > small.fontSize * 0.5 || overlap <= 0) return false;
+    // Along the reading direction: ruby stays inside the span of the line it
+    // annotates, and covers only part of it.
+    final (smallStart, smallEnd) = base.looksVertical
+        ? (small.top, small.bottom)
+        : (small.left, small.right);
+    final (baseStart, baseEnd) = base.looksVertical
+        ? (base.top, base.bottom)
+        : (base.left, base.right);
+    if (smallEnd - smallStart > (baseEnd - baseStart) * _rubySpanRatio) {
+      return false;
+    }
+    final slack = small.fontSize;
+    return smallStart >= baseStart - slack && smallEnd <= baseEnd + slack;
   }
 
   final bases = <int, int>{};
