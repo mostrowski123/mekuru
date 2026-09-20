@@ -126,6 +126,33 @@ void main() {
     expect(blocks.map((b) => b.lines.single.text), ['一番', '二番', '三番']);
   });
 
+  test('a line found by both passes of a spread is kept once', () {
+    // The same column, as the left and right pass of a spread each saw it.
+    final blocks = groupVisionLines([
+      _column(100, 100, text: '同じ行'),
+      VisionLine(
+        left: 101,
+        top: 99,
+        right: 141,
+        bottom: 301,
+        text: '同じ行',
+      ),
+    ]);
+
+    expect(blocks, hasLength(1));
+    expect(blocks.single.lines.map((l) => l.text), ['同じ行']);
+  });
+
+  test('two real columns side by side are not mistaken for duplicates', () {
+    final blocks = groupVisionLines([
+      // Boxes that overlap by a quarter of their width: close, but two lines.
+      _column(100, 100, text: '右の行'),
+      _column(130, 100, text: '左の行'),
+    ]);
+
+    expect(blocks.single.lines.map((l) => l.text), ['左の行', '右の行']);
+  });
+
   test('blank lines are ignored', () {
     expect(groupVisionLines([_column(100, 100, text: '  ')]), isEmpty);
   });

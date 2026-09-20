@@ -84,7 +84,9 @@ const _minOverlap = 0.3;
 const _rubySizeRatio = 0.6;
 
 List<VisionBlock> groupVisionLines(List<VisionLine> lines) {
-  final kept = lines.where((l) => l.text.trim().isNotEmpty).toList();
+  final kept = dedupeVisionLines(
+    lines.where((l) => l.text.trim().isNotEmpty).toList(),
+  );
   // Ruby joins the block of the line it annotates and nothing else: reading it
   // as text of its own would put the reading of a word beside the word, and
   // letting it group freely would let it bridge two bubbles.
@@ -198,4 +200,30 @@ Map<int, int> _rubyBases(List<VisionLine> lines) {
     }
   }
   return bases;
+}
+
+/// Drops lines that repeat one already in the list: a double-page spread is
+/// read as two overlapping passes (`visionPasses` in `AppDelegate.swift`), so
+/// a line on the gutter comes back from both. The first reading wins.
+List<VisionLine> dedupeVisionLines(List<VisionLine> lines) {
+  final kept = <VisionLine>[];
+  for (final line in lines) {
+    if (!kept.any((other) => _iou(line, other) >= _duplicateIou)) {
+      kept.add(line);
+    }
+  }
+  return kept;
+}
+
+/// Two boxes of the same line, found by two passes, land within a pixel or
+/// two of each other; anything this close is the same line twice.
+const _duplicateIou = 0.5;
+
+double _iou(VisionLine a, VisionLine b) {
+  final w = math.min(a.right, b.right) - math.max(a.left, b.left);
+  final h = math.min(a.bottom, b.bottom) - math.max(a.top, b.top);
+  if (w <= 0 || h <= 0) return 0;
+  final overlap = w * h;
+  final union = a.width * a.height + b.width * b.height - overlap;
+  return union <= 0 ? 0 : overlap / union;
 }
