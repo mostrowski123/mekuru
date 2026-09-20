@@ -3543,6 +3543,26 @@
   "@backupFullRestartButton": {
     "description": "Button that exits the app to finish the restore."
   },
+  "backupFullExportSubtitleIos": "The file can be several gigabytes. Keep Mekuru open while it is written; you choose where to save it at the end.",
+  "@backupFullExportSubtitleIos": {
+    "description": "iOS: subtitle of the full-backup export tile. The job runs inside the open app and the file is saved through the document picker at the end."
+  },
+  "backupFullRestoreSubtitleIos": "Replaces everything in Mekuru on this device with the contents of a full backup. Keep Mekuru open while the files are copied; it reloads at the end.",
+  "@backupFullRestoreSubtitleIos": {
+    "description": "iOS: subtitle of the full-restore tile. The app reloads in place at the end."
+  },
+  "backupFullReplaceBodyIos": "Everything currently in Mekuru on this device will be deleted: {books}, {dictionaries}, and all Mekuru settings and reading data. Nothing outside Mekuru is touched. This cannot be undone. Mekuru reloads at the end to finish.",
+  "@backupFullReplaceBodyIos": {
+    "description": "iOS: body of the destructive confirmation; counts are preformatted fragments.",
+    "placeholders": {
+      "books": {
+        "type": "String"
+      },
+      "dictionaries": {
+        "type": "String"
+      }
+    }
+  },
   "backupFullReloadTitle": "Mekuru will reload now",
   "@backupFullReloadTitle": {
     "description": "iOS: title shown once the restore is staged. The app reloads in place instead of closing."

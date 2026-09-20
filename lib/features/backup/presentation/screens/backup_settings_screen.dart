@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/backup/data/models/backup_kind.dart';
@@ -262,7 +263,11 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 color: theme.colorScheme.primary,
               ),
               title: Text(l10n.backupFullExportTitle),
-              subtitle: Text(l10n.backupFullExportSubtitle),
+              subtitle: Text(
+                defaultTargetPlatform == TargetPlatform.iOS
+                    ? l10n.backupFullExportSubtitleIos
+                    : l10n.backupFullExportSubtitle,
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: isWorking
                   ? null
@@ -282,7 +287,11 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.backupFullRestoreSubtitle),
+                  Text(
+                    defaultTargetPlatform == TargetPlatform.iOS
+                        ? l10n.backupFullRestoreSubtitleIos
+                        : l10n.backupFullRestoreSubtitle,
+                  ),
                   const SizedBox(height: 6),
                   Chip(
                     visualDensity: VisualDensity.compact,

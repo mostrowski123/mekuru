@@ -141,7 +141,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
 
   Future<void> _restorePurchasesAfterFullRestore() async {
     try {
-      await OcrStoreService.instance.restorePurchases();
+      await OcrStoreService.instance.restorePurchasesUnprompted();
       if (mounted) ref.invalidate(proUnlockedProvider);
     } catch (e) {
       debugPrint('[Backup] Purchase restoration after full restore failed: $e');

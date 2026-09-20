@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -124,7 +125,10 @@ class _FullRestoreReplaceDialogState extends State<FullRestoreReplaceDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.backupFullReplaceBody(
+              // iOS reloads in place at the end; elsewhere the app closes.
+              (defaultTargetPlatform == TargetPlatform.iOS
+                  ? l10n.backupFullReplaceBodyIos
+                  : l10n.backupFullReplaceBody)(
                 books: l10n.backupFullCountBooks(
                   count: preview.currentBookCount,
                 ),

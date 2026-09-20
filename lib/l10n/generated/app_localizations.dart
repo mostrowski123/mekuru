@@ -4582,6 +4582,27 @@ abstract class AppLocalizations {
   /// **'Close Mekuru'**
   String get backupFullRestartButton;
 
+  /// iOS: subtitle of the full-backup export tile. The job runs inside the open app and the file is saved through the document picker at the end.
+  ///
+  /// In en, this message translates to:
+  /// **'The file can be several gigabytes. Keep Mekuru open while it is written; you choose where to save it at the end.'**
+  String get backupFullExportSubtitleIos;
+
+  /// iOS: subtitle of the full-restore tile. The app reloads in place at the end.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces everything in Mekuru on this device with the contents of a full backup. Keep Mekuru open while the files are copied; it reloads at the end.'**
+  String get backupFullRestoreSubtitleIos;
+
+  /// iOS: body of the destructive confirmation; counts are preformatted fragments.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything currently in Mekuru on this device will be deleted: {books}, {dictionaries}, and all Mekuru settings and reading data. Nothing outside Mekuru is touched. This cannot be undone. Mekuru reloads at the end to finish.'**
+  String backupFullReplaceBodyIos({
+    required String books,
+    required String dictionaries,
+  });
+
   /// iOS: title shown once the restore is staged. The app reloads in place instead of closing.
   ///
   /// In en, this message translates to:

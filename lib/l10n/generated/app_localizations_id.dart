@@ -2764,6 +2764,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupFullRestartButton => 'Tutup Mekuru';
 
   @override
+  String get backupFullExportSubtitleIos =>
+      'File bisa berukuran beberapa gigabita. Biarkan Mekuru tetap terbuka selama file ditulis; di akhir Anda memilih tempat menyimpannya.';
+
+  @override
+  String get backupFullRestoreSubtitleIos =>
+      'Mengganti semua yang ada di Mekuru pada perangkat ini dengan isi cadangan lengkap. Biarkan Mekuru tetap terbuka selama file disalin; di akhir Mekuru dimuat ulang.';
+
+  @override
+  String backupFullReplaceBodyIos({
+    required String books,
+    required String dictionaries,
+  }) {
+    return 'Semua yang saat ini ada di Mekuru pada perangkat ini akan dihapus: $books, $dictionaries, serta semua pengaturan dan data bacaan Mekuru. Tidak ada yang tersentuh di luar Mekuru. Ini tidak dapat dibatalkan. Mekuru dimuat ulang di akhir untuk menyelesaikan.';
+  }
+
+  @override
   String get backupFullReloadTitle => 'Mekuru akan dimuat ulang sekarang';
 
   @override

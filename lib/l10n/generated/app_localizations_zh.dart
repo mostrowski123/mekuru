@@ -2639,6 +2639,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupFullRestartButton => '关闭 Mekuru';
 
   @override
+  String get backupFullExportSubtitleIos =>
+      '文件可能有数 GB 大小。写入期间请保持 Mekuru 打开；完成后由你选择保存位置。';
+
+  @override
+  String get backupFullRestoreSubtitleIos =>
+      '用完整备份的内容替换此设备上 Mekuru 中的所有内容。复制文件期间请保持 Mekuru 打开；完成后会重新加载。';
+
+  @override
+  String backupFullReplaceBodyIos({
+    required String books,
+    required String dictionaries,
+  }) {
+    return '此设备上 Mekuru 中现有的所有内容都将被删除：$books、$dictionaries，以及 Mekuru 的全部设置和阅读数据。Mekuru 之外的内容不受影响。此操作无法撤销。Mekuru 会在最后重新加载以完成恢复。';
+  }
+
+  @override
   String get backupFullReloadTitle => 'Mekuru 即将重新加载';
 
   @override
@@ -5805,6 +5821,22 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullRestartButton => '关闭 Mekuru';
+
+  @override
+  String get backupFullExportSubtitleIos =>
+      '文件可能有数 GB 大小。写入期间请保持 Mekuru 打开；完成后由你选择保存位置。';
+
+  @override
+  String get backupFullRestoreSubtitleIos =>
+      '用完整备份的内容替换此设备上 Mekuru 中的所有内容。复制文件期间请保持 Mekuru 打开；完成后会重新加载。';
+
+  @override
+  String backupFullReplaceBodyIos({
+    required String books,
+    required String dictionaries,
+  }) {
+    return '此设备上 Mekuru 中现有的所有内容都将被删除：$books、$dictionaries，以及 Mekuru 的全部设置和阅读数据。Mekuru 之外的内容不受影响。此操作无法撤销。Mekuru 会在最后重新加载以完成恢复。';
+  }
 
   @override
   String get backupFullReloadTitle => 'Mekuru 即将重新加载';

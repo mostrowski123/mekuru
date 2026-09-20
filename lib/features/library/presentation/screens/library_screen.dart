@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reorderable_grid_view/entities/reorderable_animation_config.dart';
 import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
@@ -1363,7 +1364,11 @@ class _BookTileState extends ConsumerState<_BookTile>
                         ListTile(
                           leading: const Icon(Icons.document_scanner),
                           title: Text(context.l10n.localOcrRecognize),
-                          subtitle: Text(context.l10n.localOcrOnDeviceSubtitle),
+                          subtitle: Text(
+                            defaultTargetPlatform == TargetPlatform.iOS
+                                ? context.l10n.localOcrOnDeviceSubtitleIos
+                                : context.l10n.localOcrOnDeviceSubtitle,
+                          ),
                           onTap: () {
                             Navigator.of(sheetContext).pop();
                             showOcrActionSheet(context, book);

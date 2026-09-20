@@ -451,7 +451,7 @@ class RestoreNotifier extends Notifier<RestoreState> {
     unawaited(
       Future(() async {
         try {
-          await OcrStoreService.instance.restorePurchases();
+          await OcrStoreService.instance.restorePurchasesUnprompted();
           ref.invalidate(proUnlockedProvider);
           debugPrint('[Backup] Purchase restoration triggered');
         } catch (e) {

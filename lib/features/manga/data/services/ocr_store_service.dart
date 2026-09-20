@@ -347,6 +347,15 @@ class OcrStoreService {
     return status;
   }
 
+  /// Restoring purchases when nobody pressed Restore (after a backup restore).
+  /// On iOS [restorePurchases] runs `AppStore.sync()`, which can ask for the
+  /// Apple Account and is only for an explicit user action; the owned-purchases
+  /// query finds the same entitlement without a prompt.
+  Future<void> restorePurchasesUnprompted() async {
+    if (_isIos) return syncOwnedPurchases();
+    await restorePurchases();
+  }
+
   /// Fire-and-forget convergence of the local Play entitlement with the
   /// owned-purchases list (startup warmup). Never throws; a failed query
   /// leaves the stored entitlement untouched.

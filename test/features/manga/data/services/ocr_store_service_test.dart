@@ -493,6 +493,18 @@ void main() {
     });
 
     test(
+      'a restore nobody asked for never opens the Apple Account prompt',
+      () async {
+        h.appStoreTransactions = [_appStoreTransaction()];
+
+        await h.service.restorePurchasesUnprompted();
+
+        expect(h.hasEntitlement, isTrue);
+        expect(h.callLog, isNot(contains('appStoreSync')));
+      },
+    );
+
+    test(
       'a sync that finds only a refunded Pro clears the entitlement',
       () async {
         h.appStoreTransactions = [_appStoreTransaction()];
