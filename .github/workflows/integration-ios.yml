@@ -74,6 +74,13 @@ jobs:
           xcrun simctl bootstatus "$udid" -b
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
 
+      # The first test file would otherwise pay for the cold Xcode build
+      # (pods, Swift packages, native hooks: over ten minutes on a runner) and
+      # run into its watchdog. Build once here; each file then rebuilds only
+      # its own entry point.
+      - name: Warm up the simulator build
+        run: flutter build ios --simulator --debug --no-pub
+
       # One file at a time with a watchdog each (see the script): a failing
       # iOS integration test can hang instead of failing. Every file listed
       # has passed on an iPhone simulator. Not listed: Android-only suites
