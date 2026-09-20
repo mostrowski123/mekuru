@@ -508,6 +508,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Reconoce el texto del manga sin conexión, en tu teléfono, con el modelo manga-ocr de kha-white y Comic Text Detector. Es un trabajo pesado: la velocidad varía mucho de un teléfono a otro, y consume batería. Prueba tu dispositivo antes de comprar.';
 
   @override
+  String get proFeatureLocalOcrDescriptionIos =>
+      'Reconoce el texto del manga sin conexión, en tu dispositivo, con el reconocimiento de texto de Apple. El escaneo funciona mientras Mekuru está abierta.';
+
+  @override
   String get proFeatureCustomOcrTitle => 'Servidor OCR personalizado';
 
   @override
@@ -2999,6 +3003,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get localOcrOnDeviceSubtitle =>
       'Sin conexión tras descargar los modelos';
+
+  @override
+  String get localOcrOnDeviceSubtitleIos =>
+      'Sin conexión, con el reconocimiento de texto de Apple. Mantén Mekuru abierta durante el escaneo.';
 
   @override
   String get localOcrRemote => 'Remoto';

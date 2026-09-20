@@ -922,6 +922,12 @@ abstract class AppLocalizations {
   /// **'Recognize manga text offline, on your phone, with kha-white\'s manga-ocr model and Comic Text Detector. This is heavy work: speed varies a lot from phone to phone, and it drains the battery. Test your device before you buy.'**
   String get proFeatureLocalOcrDescription;
 
+  /// Pro feature card for on-device OCR on iOS (Apple Vision)
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize manga text offline, on your device, with Apple\'s text recognition. Scanning runs while Mekuru is open.'**
+  String get proFeatureLocalOcrDescriptionIos;
+
   /// Title of the custom OCR server Pro feature.
   ///
   /// In en, this message translates to:
@@ -4911,6 +4917,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline after downloading the models'**
   String get localOcrOnDeviceSubtitle;
+
+  /// On-device manga OCR on iOS (Apple Vision, no model download): subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Offline, with Apple\'s text recognition. Keep Mekuru open while it scans.'**
+  String get localOcrOnDeviceSubtitleIos;
 
   /// On-device manga OCR: localOcrRemote
   ///

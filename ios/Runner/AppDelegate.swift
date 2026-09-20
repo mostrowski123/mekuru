@@ -1,5 +1,7 @@
 import Flutter
+import ImageIO
 import UIKit
+import Vision
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -13,6 +15,57 @@ import UIKit
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     registerStorageChannel(messenger: engineBridge.applicationRegistrar.messenger())
+    registerVisionOcrChannel(messenger: engineBridge.applicationRegistrar.messenger())
+  }
+
+  /// `mekuru/vision_ocr`: the text lines Apple Vision finds and reads on one
+  /// manga page, as `{width, height, lines: [{box: [x0, y0, x1, y1], text}]}`
+  /// in page pixels from the top-left. Dart groups the lines into blocks
+  /// (`vision_block_grouping.dart`). This is the iOS stand-in for the Android
+  /// detector; use the Swift `RecognizeTextRequest`, not `VNRecognizeTextRequest`,
+  /// which barely sees vertical Japanese (measured with tools/vision_recall.swift).
+  private func registerVisionOcrChannel(messenger: FlutterBinaryMessenger) {
+    FlutterMethodChannel(name: "mekuru/vision_ocr", binaryMessenger: messenger)
+      .setMethodCallHandler { call, result in
+        guard call.method == "recognizeLines",
+          let bytes = (call.arguments as? FlutterStandardTypedData)?.data
+        else {
+          result(FlutterMethodNotImplemented)
+          return
+        }
+        Task.detached(priority: .userInitiated) {
+          let reply: Any
+          do {
+            guard let source = CGImageSourceCreateWithData(bytes as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+            else {
+              throw NSError(
+                domain: "mekuru.vision_ocr", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "The page image could not be decoded."])
+            }
+            var request = RecognizeTextRequest()
+            request.recognitionLanguages = [Locale.Language(identifier: "ja-JP")]
+            request.recognitionLevel = .accurate
+            // Vision's default skips text under 1/32 of the image height,
+            // which is most lettering on a full manga page.
+            request.minimumTextHeightFraction = 0
+            let (w, h) = (Double(image.width), Double(image.height))
+            let lines = try await request.perform(on: image).map { line -> [String: Any] in
+              // Normalised, origin bottom-left.
+              let r = line.boundingBox.cgRect
+              return [
+                "box": [r.minX * w, (1 - r.maxY) * h, r.maxX * w, (1 - r.minY) * h],
+                "text": line.topCandidates(1).first?.string ?? "",
+              ]
+            }
+            reply = ["width": image.width, "height": image.height, "lines": lines]
+          } catch {
+            reply = FlutterError(
+              code: "vision_failed", message: error.localizedDescription, details: nil)
+          }
+          await MainActor.run { result(reply) }
+        }
+      }
   }
 
   /// `mekuru/ios_storage`: keeps re-downloadable data (MeCab dictionaries,

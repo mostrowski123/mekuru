@@ -20,6 +20,7 @@ import '../../../settings/data/services/ocr_server_config.dart'
 import '../../../reader/data/services/mecab_service.dart';
 import 'manga_cache_store.dart';
 import 'manga_ocr_client.dart';
+import 'vision_page_ocr.dart';
 import 'mokuro_segmentation_repair.dart';
 import 'mokuro_word_segmenter.dart';
 import 'ocr_billing_client.dart';
@@ -291,18 +292,22 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     }
     return true;
   }
+  // iOS on-device OCR: the same page loop, with Apple Vision in place of a
+  // server, so none of the server and sign-in setup below applies.
+  final onDevice = inputData['onDevice'] == true;
   final serverUrl = ocr_server_config.normalizeOcrServerUrl(
     prefs.getString(ocrServerUrlKey) ?? defaultOcrServerUrl,
   );
-  final usesBuiltInServer = ocr_server_config.isBuiltInOcrServerUrl(serverUrl);
-  final customBearerKey = usesBuiltInServer
+  final usesBuiltInServer =
+      !onDevice && ocr_server_config.isBuiltInOcrServerUrl(serverUrl);
+  final customBearerKey = onDevice || usesBuiltInServer
       ? null
       : await ocr_server_config.ocrCustomServerSecretStore.load();
   final effectiveJobId = usesBuiltInServer ? jobId : null;
 
   await flushPendingOcrFinalizations();
 
-  if (serverUrl.isEmpty) {
+  if (!onDevice && serverUrl.isEmpty) {
     await OcrProgress.save(
       prefs,
       bookId,
@@ -317,7 +322,8 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     return false;
   }
 
-  if (!usesBuiltInServer &&
+  if (!onDevice &&
+      !usesBuiltInServer &&
       ocr_server_config.validateOcrServerUrl(serverUrl) != null) {
     await OcrProgress.save(
       prefs,
@@ -334,7 +340,7 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     return false;
   }
 
-  if (!usesBuiltInServer && customBearerKey == null) {
+  if (!onDevice && !usesBuiltInServer && customBearerKey == null) {
     await OcrProgress.save(
       prefs,
       bookId,
@@ -380,13 +386,14 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     debugPrint('[OCR_WORKER] MeCab init failed (word segmentation skipped)');
   }
 
-  final bearerToken = usesBuiltInServer
-      ? builtInBearerToken!
-      : customBearerKey!;
-  final ocrClient = MangaOcrClient(
-    serverUrl: serverUrl,
-    getBearerToken: () => bearerToken,
-  );
+  final bearerToken = usesBuiltInServer ? builtInBearerToken : customBearerKey;
+  final ocrClient = onDevice
+      ? null
+      : MangaOcrClient(
+          serverUrl: serverUrl,
+          getBearerToken: () => bearerToken!,
+        );
+  final processPage = ocrClient?.processPage ?? recognizePageWithVision;
   final billingClient = effectiveJobId == null ? null : OcrBillingClient();
   var finalizationSent = false;
 
@@ -613,7 +620,7 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
       }
 
       try {
-        final result = await ocrClient.processPage(
+        final result = await processPage(
           imageBytes,
           page.imageFileName,
           jobId: effectiveJobId,
@@ -624,8 +631,8 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
           blocks: result.blocks,
           ocr: {
             'completed': true,
-            'source': 'remote',
-            'modelVersion': 'remote',
+            'source': onDevice ? 'vision' : 'remote',
+            'modelVersion': onDevice ? 'apple-vision' : 'remote',
             'revision': (page.ocr?['revision'] as int? ?? 0) + 1,
             if (inputData['leaseId'] != null) 'jobId': inputData['leaseId'],
           },
@@ -706,7 +713,7 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
       cacheFile,
       mokuroBook,
       pagesToSave,
-      ocrSourceOverride: 'custom_ocr',
+      ocrSourceOverride: onDevice ? 'on_device' : 'custom_ocr',
       ocrCompletedOverride: updatedPages.every(
         (page) => page.hasOcr(mokuroBook),
       ),
@@ -737,7 +744,7 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     await finalizeIfNeeded(OcrStatus.failed);
     rethrow;
   } finally {
-    ocrClient.dispose();
+    ocrClient?.dispose();
     billingClient?.dispose();
   }
 }
@@ -1074,6 +1081,7 @@ Future<void> scheduleOcrTask({
   int? reservedPages,
   List<int>? selectedPages,
   bool replace = false,
+  bool onDevice = false,
 }) async {
   if ((jobId == null) != (reservedPages == null)) {
     throw ArgumentError('jobId and reservedPages must be provided together.');
@@ -1088,13 +1096,13 @@ Future<void> scheduleOcrTask({
   );
 
   try {
-    final executionMode = await determineOcrTaskExecutionMode(
-      cacheFilePath: cacheFilePath,
-    );
+    // Vision runs behind a channel on the app's own engine, which a
+    // WorkManager isolate cannot reach.
+    final executionMode = onDevice
+        ? OcrTaskExecutionMode.foreground
+        : await determineOcrTaskExecutionMode(cacheFilePath: cacheFilePath);
     if (executionMode == OcrTaskExecutionMode.foreground) {
-      debugPrint(
-        '[OCR_WORKER] Using foreground OCR for SAF-backed manga bookId=$bookId',
-      );
+      debugPrint('[OCR_WORKER] Using foreground OCR bookId=$bookId');
       await _saveScheduledOcrProgress(
         bookId: bookId,
         cacheFilePath: cacheFilePath,
@@ -1115,6 +1123,7 @@ Future<void> scheduleOcrTask({
             'leaseId': ?leaseId,
             'selectedPages': ?selectedPages,
             'replace': replace,
+            'onDevice': onDevice,
             ...?jobId == null ? null : {'jobId': jobId},
             ...?reservedPages == null ? null : {'reservedPages': reservedPages},
           });

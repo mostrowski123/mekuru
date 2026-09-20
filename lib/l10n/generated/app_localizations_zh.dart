@@ -484,6 +484,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '在手机上使用 kha-white 的 manga-ocr 模型和 Comic Text Detector 离线识别漫画文字。这是一项繁重的工作：速度因手机而异，差别很大，而且很耗电。购买前请先测试你的设备。';
 
   @override
+  String get proFeatureLocalOcrDescriptionIos =>
+      '使用 Apple 文字识别在设备上离线识别漫画文字。扫描在 Mekuru 打开时进行。';
+
+  @override
   String get proFeatureCustomOcrTitle => '自定义 OCR 服务器';
 
   @override
@@ -2837,6 +2841,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get localOcrOnDeviceSubtitle => '下载模型后可离线使用';
+
+  @override
+  String get localOcrOnDeviceSubtitleIos => '离线使用 Apple 文字识别。扫描时请保持 Mekuru 打开。';
 
   @override
   String get localOcrRemote => '远程';
@@ -3601,6 +3608,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '在手机上使用 kha-white 的 manga-ocr 模型和 Comic Text Detector 离线识别漫画文字。这是一项繁重的工作：速度因手机而异，差别很大，而且很耗电。购买前请先测试你的设备。';
 
   @override
+  String get proFeatureLocalOcrDescriptionIos =>
+      '使用 Apple 文字识别在设备上离线识别漫画文字。扫描在 Mekuru 打开时进行。';
+
+  @override
   String get proFeatureCustomOcrTitle => '自定义 OCR 服务器';
 
   @override
@@ -5954,6 +5965,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get localOcrOnDeviceSubtitle => '下载模型后可离线使用';
+
+  @override
+  String get localOcrOnDeviceSubtitleIos => '离线使用 Apple 文字识别。扫描时请保持 Mekuru 打开。';
 
   @override
   String get localOcrRemote => '远程';

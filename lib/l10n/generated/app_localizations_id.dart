@@ -501,6 +501,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Kenali teks manga secara offline di ponsel Anda dengan model manga-ocr dari kha-white dan Comic Text Detector. Proses ini berat: kecepatannya sangat bervariasi antar ponsel, serta menguras baterai. Uji perangkat Anda sebelum membeli.';
 
   @override
+  String get proFeatureLocalOcrDescriptionIos =>
+      'Kenali teks manga secara offline di perangkatmu dengan pengenalan teks Apple. Pemindaian berjalan selama Mekuru terbuka.';
+
+  @override
   String get proFeatureCustomOcrTitle => 'Server OCR Kustom';
 
   @override
@@ -2974,6 +2978,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get localOcrOnDeviceSubtitle => 'Offline setelah model diunduh';
+
+  @override
+  String get localOcrOnDeviceSubtitleIos =>
+      'Offline, dengan pengenalan teks Apple. Biarkan Mekuru terbuka selama pemindaian.';
 
   @override
   String get localOcrRemote => 'Jarak jauh';

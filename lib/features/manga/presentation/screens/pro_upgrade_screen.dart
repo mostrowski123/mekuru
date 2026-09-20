@@ -439,9 +439,16 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                       title: l10n.proFeatureHighlightsTitle,
                       description: l10n.proFeatureHighlightsDescription,
                     ),
-                    // On-device OCR exists only on Android so far; the store
-                    // page must not sell a feature this platform lacks.
-                    if (defaultTargetPlatform == TargetPlatform.android) ...[
+                    // iOS reads pages with Apple Vision: no model pack, so
+                    // none of the Android card's model links or speed test.
+                    if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+                      const SizedBox(height: 12),
+                      _ProFeatureCard(
+                        icon: Icons.offline_bolt_outlined,
+                        title: l10n.proFeatureLocalOcrTitle,
+                        description: l10n.proFeatureLocalOcrDescriptionIos,
+                      ),
+                    ] else ...[
                       const SizedBox(height: 12),
                       _ProFeatureCard(
                         icon: Icons.offline_bolt_outlined,

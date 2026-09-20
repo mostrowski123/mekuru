@@ -159,14 +159,18 @@ void main() {
     expect(find.textContaining('subscription'), findsNothing);
   });
 
-  testWidgets('on-device OCR is offered on Android only', (tester) async {
+  testWidgets('the iOS on-device OCR card names no Android model', (
+    tester,
+  ) async {
     await pumpLockedScreen(tester);
     expect(find.text('On-device OCR'), findsOneWidget);
+    expect(find.text('Comic Text Detector'), findsOneWidget);
 
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     try {
       await pumpLockedScreen(tester);
-      expect(find.text('On-device OCR'), findsNothing);
+      expect(find.text('On-device OCR'), findsOneWidget);
+      expect(find.textContaining("Apple's text recognition"), findsOneWidget);
       expect(find.text('Comic Text Detector'), findsNothing);
       expect(find.text('Custom OCR Server'), findsOneWidget);
     } finally {
