@@ -4582,6 +4582,24 @@ abstract class AppLocalizations {
   /// **'Close Mekuru'**
   String get backupFullRestartButton;
 
+  /// iOS: title shown once the restore is staged. The app reloads in place instead of closing.
+  ///
+  /// In en, this message translates to:
+  /// **'Mekuru will reload now'**
+  String get backupFullReloadTitle;
+
+  /// iOS: body shown once the restore is staged.
+  ///
+  /// In en, this message translates to:
+  /// **'The full backup is ready. Mekuru reloads to finish restoring, then opens your restored library.'**
+  String get backupFullReloadBody;
+
+  /// iOS: button that reloads the app in place to finish the restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload Mekuru'**
+  String get backupFullReloadButton;
+
   /// Snackbar on the first launch after a successful full restore.
   ///
   /// In en, this message translates to:

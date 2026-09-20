@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -238,6 +239,30 @@ void main() {
     await tester.tap(find.text(l10n.backupFullRestartButton));
     await tester.pump();
     expect(exitCalls, 1);
+  });
+
+  testWidgets('on iOS a finished restore offers to reload, not to close', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await pumpGate(
+        tester,
+        status: const FullBackupJobStatus(
+          lifecycle: FullBackupJobLifecycle.done,
+          kind: FullBackupJobKind.restore,
+        ),
+      );
+      expect(find.text(l10n.backupFullReloadTitle), findsOneWidget);
+      expect(find.text(l10n.backupFullReloadBody), findsOneWidget);
+      expect(find.text(l10n.backupFullRestartButton), findsNothing);
+
+      await tester.tap(find.text(l10n.backupFullReloadButton));
+      await tester.pump();
+      expect(exitCalls, 1);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('a failure names the code and Close dismisses it', (

@@ -69,12 +69,18 @@ Future<void> main() async {
     AnalyticsService.instance.suppress();
   }
 
-  await SentryFlutter.init(
-    (options) {
-      applySharedSentryOptions(options, audience);
-      options.navigatorKey = navigatorKey;
-    },
-    appRunner: () async {
+  await SentryFlutter.init((options) {
+    applySharedSentryOptions(options, audience);
+    options.navigatorKey = navigatorKey;
+  }, appRunner: _bootApp);
+}
+
+/// Everything from the staged-restore check to the first frame. iOS runs it a
+/// second time in the same process to apply a full restore
+/// ([restartAppInProcess]).
+Future<void> _bootApp() async {
+  {
+    {
       // Must run before anything opens the database: a staged full restore
       // swaps the database and books directory into place with renames.
       await applyStagedFullRestoreIfAny();
@@ -107,8 +113,28 @@ Future<void> main() async {
         ),
       );
       _scheduleDeferredStartupWarmups();
-    },
+    }
+  }
+}
+
+/// Applies a staged full restore without ending the process. iOS only: an app
+/// that exits by itself reads as a crash there, to users and to App Review.
+/// The caller closes the database first. Unmounting the old tree disposes
+/// every provider, then the boot sequence runs again from the top, as on a
+/// cold start.
+Future<void> restartAppInProcess() async {
+  runApp(
+    const ColoredBox(
+      color: Color(0xFF000000),
+      child: Center(child: CircularProgressIndicator()),
+    ),
   );
+  await WidgetsBinding.instance.endOfFrame;
+  // Covers are cached by file path, and the restored library reuses paths.
+  PaintingBinding.instance.imageCache
+    ..clear()
+    ..clearLiveImages();
+  await _bootApp();
 }
 
 void _scheduleDeferredStartupWarmups() {

@@ -3543,6 +3543,18 @@
   "@backupFullRestartButton": {
     "description": "Button that exits the app to finish the restore."
   },
+  "backupFullReloadTitle": "Mekuru will reload now",
+  "@backupFullReloadTitle": {
+    "description": "iOS: title shown once the restore is staged. The app reloads in place instead of closing."
+  },
+  "backupFullReloadBody": "The full backup is ready. Mekuru reloads to finish restoring, then opens your restored library.",
+  "@backupFullReloadBody": {
+    "description": "iOS: body shown once the restore is staged."
+  },
+  "backupFullReloadButton": "Reload Mekuru",
+  "@backupFullReloadButton": {
+    "description": "iOS: button that reloads the app in place to finish the restore."
+  },
   "backupFullRestoreComplete": "Full restore complete",
   "@backupFullRestoreComplete": {
     "description": "Snackbar on the first launch after a successful full restore."

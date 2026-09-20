@@ -19,6 +19,7 @@ import 'package:mekuru/features/backup/data/services/full_backup_plan.dart';
 import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:path/path.dart' as p;
 import 'package:workmanager/workmanager.dart';
 
@@ -442,6 +443,8 @@ class FullBackupService implements FullBackupApi {
     } catch (_) {
       // No WorkManager here (tests) or nothing scheduled.
     }
+    // iOS runs scans inside this process, which a restore no longer ends.
+    await pauseRunningIosOcr();
   }
 
   static String exportFileName(DateTime now) {

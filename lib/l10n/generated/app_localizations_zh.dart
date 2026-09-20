@@ -2639,6 +2639,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupFullRestartButton => '关闭 Mekuru';
 
   @override
+  String get backupFullReloadTitle => 'Mekuru 即将重新加载';
+
+  @override
+  String get backupFullReloadBody => '完整备份已就绪。Mekuru 将重新加载以完成恢复，然后打开已恢复的书库。';
+
+  @override
+  String get backupFullReloadButton => '重新加载 Mekuru';
+
+  @override
   String get backupFullRestoreComplete => '完整恢复已完成';
 
   @override
@@ -5796,6 +5805,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullRestartButton => '关闭 Mekuru';
+
+  @override
+  String get backupFullReloadTitle => 'Mekuru 即将重新加载';
+
+  @override
+  String get backupFullReloadBody => '完整备份已就绪。Mekuru 将重新加载以完成恢复，然后打开已恢复的书库。';
+
+  @override
+  String get backupFullReloadButton => '重新加载 Mekuru';
 
   @override
   String get backupFullRestoreComplete => '完整恢复已完成';

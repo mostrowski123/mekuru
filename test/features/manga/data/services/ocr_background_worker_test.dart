@@ -274,6 +274,29 @@ void main() {
       expect(mode, OcrTaskExecutionMode.foreground);
     });
 
+    test('a restore pauses the scans this process is running', () async {
+      SharedPreferences.setMockInitialValues({
+        '${ocrProgressKeyPrefix}7': const OcrProgress(
+          completed: 3,
+          total: 10,
+          status: OcrStatus.running,
+        ).toJson(),
+        '${ocrProgressKeyPrefix}8': const OcrProgress(
+          completed: 10,
+          total: 10,
+          status: OcrStatus.completed,
+        ).toJson(),
+      });
+      final prefs = await SharedPreferences.getInstance();
+
+      await pauseRunningIosOcr();
+
+      expect(OcrProgress.load(prefs, 7)!.status, OcrStatus.cancelled);
+      expect(await loadOcrStopRequest(7), OcrStopRequest.paused);
+      expect(OcrProgress.load(prefs, 8)!.status, OcrStatus.completed);
+      expect(await loadOcrStopRequest(8), isNull);
+    });
+
     test('a scan left running by a dead app is marked cancelled', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();

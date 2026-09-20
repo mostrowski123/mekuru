@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/backup/data/services/ios_full_backup.dart';
+import 'package:mekuru/main.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -20,7 +21,17 @@ final initialFullBackupJobPendingProvider = Provider<bool>((ref) => false);
 /// Ends the process so the staged restore applies on the next cold start.
 /// `SystemNavigator.pop` would keep the engine (and the open database)
 /// alive, so a real exit is the only deterministic trigger.
+///
+/// iOS never exits by itself (it reads as a crash, to users and to App
+/// Review): the database is closed and the boot sequence runs again inside
+/// the process, which applies the restore the same way.
 final appExitProvider = Provider<Future<void> Function()>((ref) {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return () async {
+      await ref.read(databaseProvider).close();
+      await restartAppInProcess();
+    };
+  }
   return () async {
     try {
       await Sentry.close().timeout(const Duration(seconds: 3));

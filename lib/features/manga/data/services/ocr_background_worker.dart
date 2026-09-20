@@ -1087,16 +1087,13 @@ String _describeMissingPageImage({
 Future<void> resetInterruptedIosOcr() async {
   if (defaultTargetPlatform != TargetPlatform.iOS) return;
   final prefs = await SharedPreferences.getInstance();
-  for (final key in prefs.getKeys().toList()) {
-    if (!key.startsWith(ocrProgressKeyPrefix)) continue;
-    final bookId = int.tryParse(key.substring(ocrProgressKeyPrefix.length));
-    final progress = bookId == null ? null : OcrProgress.load(prefs, bookId);
-    if (progress?.status != OcrStatus.running) continue;
+  for (final bookId in _runningOcrBookIds(prefs)) {
+    final progress = OcrProgress.load(prefs, bookId)!;
     await OcrProgress.save(
       prefs,
-      bookId!,
+      bookId,
       OcrProgress(
-        completed: progress!.completed,
+        completed: progress.completed,
         total: progress.total,
         status: OcrStatus.cancelled,
         avgSecondsPerPage: progress.avgSecondsPerPage,
@@ -1105,6 +1102,26 @@ Future<void> resetInterruptedIosOcr() async {
     await _clearActiveOcrJob(bookId);
   }
 }
+
+/// iOS applies a full restore inside the running app, so this process's page
+/// loops must stop writing into the library first. Best effort: a loop sees
+/// its stop request at the next page boundary.
+Future<void> pauseRunningIosOcr() async {
+  if (defaultTargetPlatform != TargetPlatform.iOS) return;
+  final prefs = await SharedPreferences.getInstance();
+  for (final bookId in _runningOcrBookIds(prefs)) {
+    await cancelOcrTask(bookId);
+  }
+}
+
+List<int> _runningOcrBookIds(SharedPreferences prefs) => [
+  for (final key in prefs.getKeys())
+    if (key.startsWith(ocrProgressKeyPrefix))
+      if (int.tryParse(key.substring(ocrProgressKeyPrefix.length))
+          case final bookId?)
+        if (OcrProgress.load(prefs, bookId)?.status == OcrStatus.running)
+          bookId,
+];
 
 /// Schedule an OCR task for a book.
 Future<void> scheduleOcrTask({

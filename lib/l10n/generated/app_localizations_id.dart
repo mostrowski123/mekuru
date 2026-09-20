@@ -2764,6 +2764,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupFullRestartButton => 'Tutup Mekuru';
 
   @override
+  String get backupFullReloadTitle => 'Mekuru akan dimuat ulang sekarang';
+
+  @override
+  String get backupFullReloadBody =>
+      'Cadangan lengkap sudah siap. Mekuru dimuat ulang untuk menyelesaikan pemulihan, lalu membuka perpustakaan Anda yang telah dipulihkan.';
+
+  @override
+  String get backupFullReloadButton => 'Muat ulang Mekuru';
+
+  @override
   String get backupFullRestoreComplete => 'Pemulihan lengkap selesai';
 
   @override

@@ -264,12 +264,24 @@ class _FullBackupJobScreenState extends ConsumerState<FullBackupJobScreen> {
           button(l10n.backupFullJobDone, notifier.dismiss),
         ];
       case FullBackupJobLifecycle.done:
+        // iOS reloads in place; everywhere else the process ends.
+        final reloads = defaultTargetPlatform == TargetPlatform.iOS;
         return [
-          Text(l10n.backupFullRestartTitle, style: theme.textTheme.titleMedium),
+          Text(
+            reloads ? l10n.backupFullReloadTitle : l10n.backupFullRestartTitle,
+            style: theme.textTheme.titleMedium,
+          ),
           const SizedBox(height: 12),
-          Text(l10n.backupFullRestartBody),
+          Text(
+            reloads ? l10n.backupFullReloadBody : l10n.backupFullRestartBody,
+          ),
           const SizedBox(height: 24),
-          button(l10n.backupFullRestartButton, notifier.exitApp),
+          button(
+            reloads
+                ? l10n.backupFullReloadButton
+                : l10n.backupFullRestartButton,
+            notifier.exitApp,
+          ),
         ];
       case FullBackupJobLifecycle.cancelled:
         return [

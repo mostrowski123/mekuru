@@ -2750,6 +2750,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupFullRestartButton => 'Close Mekuru';
 
   @override
+  String get backupFullReloadTitle => 'Mekuru will reload now';
+
+  @override
+  String get backupFullReloadBody =>
+      'The full backup is ready. Mekuru reloads to finish restoring, then opens your restored library.';
+
+  @override
+  String get backupFullReloadButton => 'Reload Mekuru';
+
+  @override
   String get backupFullRestoreComplete => 'Full restore complete';
 
   @override
