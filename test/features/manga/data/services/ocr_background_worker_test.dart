@@ -221,6 +221,20 @@ void main() {
       expect(fakeWorkmanagerPlatform.cancelledTags, ['${ocrTaskTagPrefix}42']);
     });
 
+    test('on iOS pausing and clearing never reach WorkManager', () async {
+      // workmanager_apple throws "cancelByTag is not supported on iOS".
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      SharedPreferences.setMockInitialValues({});
+
+      await cancelOcrTask(42);
+      expect(await loadOcrStopRequest(42), OcrStopRequest.paused);
+      await clearOcrTaskState(42);
+      expect(await loadOcrStopRequest(42), OcrStopRequest.deleted);
+
+      expect(fakeWorkmanagerPlatform.cancelledTags, isEmpty);
+    });
+
     test(
       'clearOcrTaskState records a delete stop request and hides progress',
       () async {

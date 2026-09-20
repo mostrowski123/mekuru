@@ -1,6 +1,7 @@
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -117,7 +118,11 @@ void main() {
     OcrPurchaseFlow.instance = originalFlow;
     await root.delete(recursive: true);
   });
-  Future<void> open(WidgetTester tester, {List<int> visible = const []}) async {
+  Future<void> open(
+    WidgetTester tester, {
+    List<int> visible = const [],
+    OcrProgress? progress,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -146,7 +151,7 @@ void main() {
           jpdbFreqProvider.overrideWith(_FakeJpdbFreqNotifier.new),
           kanjidicProvider.overrideWith(_FakeKanjidicNotifier.new),
           kanjiVgProvider.overrideWith(_FakeKanjiVgNotifier.new),
-          ocrProgressProvider(1).overrideWith((ref) => Stream.value(null)),
+          ocrProgressProvider(1).overrideWith((ref) => Stream.value(progress)),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -205,6 +210,28 @@ void main() {
       );
     },
   );
+  testWidgets('a running page-loop scan is headed by the backend running it', (
+    tester,
+  ) async {
+    const running = OcrProgress(
+      completed: 1,
+      total: 3,
+      status: OcrStatus.running,
+    );
+    await open(tester, progress: running);
+    expect(find.text('Remote'), findsOneWidget);
+
+    // On iOS the page loop also runs on-device scans (the default backend).
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await tester.pumpWidget(const SizedBox());
+      await open(tester, progress: running);
+      expect(find.text('On device'), findsOneWidget);
+      expect(find.text('Remote'), findsNothing);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
   testWidgets('spread action identifies the individual source page', (
     tester,
   ) async {

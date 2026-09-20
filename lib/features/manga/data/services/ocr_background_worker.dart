@@ -1213,7 +1213,7 @@ Future<void> scheduleOcrTask({
       await _clearActiveOcrJob(bookId);
     }
   } catch (_) {
-    await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
+    await _cancelWorkmanagerTask(bookId);
     if (LocalMangaOcr.available && leaseId != null) {
       await LocalMangaOcr.channel.invokeMethod('releaseRemote', {
         'id': leaseId,
@@ -1244,6 +1244,14 @@ Future<void> cancelOcrTask(int bookId) async {
     ),
   );
   await _finalizeActiveOcrJobAsCancelled(prefs: prefs, bookId: bookId);
+  await _cancelWorkmanagerTask(bookId);
+}
+
+/// iOS never hands a scan to WorkManager (see
+/// [determineOcrTaskExecutionMode]), and `workmanager_apple` throws on
+/// `cancelByTag`.
+Future<void> _cancelWorkmanagerTask(int bookId) async {
+  if (defaultTargetPlatform == TargetPlatform.iOS) return;
   await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
 }
 
@@ -1256,5 +1264,5 @@ Future<void> clearOcrTaskState(int bookId) async {
   await _setOcrStopRequest(bookId, OcrStopRequest.deleted);
   await _saveIdleOcrProgress(prefs, bookId);
   await _finalizeActiveOcrJobAsCancelled(prefs: prefs, bookId: bookId);
-  await Workmanager().cancelByTag('$ocrTaskTagPrefix$bookId');
+  await _cancelWorkmanagerTask(bookId);
 }

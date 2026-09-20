@@ -301,7 +301,13 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
                     ),
             ),
             if (remoteRunning) ...[
-              Text(l.localOcrRemote),
+              // On iOS this page loop runs on-device scans too.
+              Text(
+                defaultTargetPlatform == TargetPlatform.iOS &&
+                        _backend == OcrBackend.onDevice
+                    ? l.localOcrOnDevice
+                    : l.localOcrRemote,
+              ),
               Text(
                 l.localOcrProgress(
                   processed: remote!.completed,
