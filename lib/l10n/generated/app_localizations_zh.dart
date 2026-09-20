@@ -2898,6 +2898,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '离线识别日语漫画。页面图片不会离开你的设备。使用需要 Mekuru Pro，但任何人都可以先下载模型来测试自己的设备。';
 
   @override
+  String get localOcrModelDescriptionIos =>
+      '可选。没有它时由 Apple 文字识别查找并读取漫画文字；安装后由 manga-ocr 更准确地读取文字。页面图像不会离开你的设备。';
+
+  @override
   String localOcrDownloadSize({required String done, required String total}) {
     return '已下载 $done / $total';
   }
@@ -6020,6 +6024,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get localOcrModelDescription =>
       '离线识别日语漫画。页面图片不会离开你的设备。使用需要 Mekuru Pro，但任何人都可以先下载模型来测试自己的设备。';
+
+  @override
+  String get localOcrModelDescriptionIos =>
+      '可选。没有它时由 Apple 文字识别查找并读取漫画文字；安装后由 manga-ocr 更准确地读取文字。页面图像不会离开你的设备。';
 
   @override
   String localOcrDownloadSize({required String done, required String total}) {

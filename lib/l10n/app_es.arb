@@ -2791,6 +2791,7 @@
   "localOcrNothingToDo": "Las páginas seleccionadas ya tienen OCR. Elige Reemplazar el OCR existente para volver a escanearlas.",
   "localOcrModelTitle": "OCR de manga japonés — manga-ocr",
   "localOcrModelDescription": "Reconoce manga japonés sin conexión. Las imágenes de las páginas no salen de tu dispositivo. Usarlo requiere Mekuru Pro, pero cualquiera puede descargar los modelos para probar antes su dispositivo.",
+  "localOcrModelDescriptionIos": "Opcional. El reconocimiento de texto de Apple encuentra y lee el texto del manga sin él; con él, manga-ocr lee el texto con más precisión. Las imágenes no salen de tu dispositivo.",
   "localOcrDownloadSize": "{done} / {total} descargados",
   "localOcrDownloadRequired": "Descarga los modelos de OCR en Configuración → Descargas y vuelve aquí para empezar.",
   "localOcrModelReady": "Modelos instalados · funciona sin conexión",

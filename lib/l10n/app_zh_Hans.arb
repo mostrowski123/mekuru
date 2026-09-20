@@ -2791,6 +2791,7 @@
   "localOcrNothingToDo": "所选页面已有 OCR。选择“替换现有 OCR”可重新扫描。",
   "localOcrModelTitle": "日语漫画 OCR — manga-ocr",
   "localOcrModelDescription": "离线识别日语漫画。页面图片不会离开你的设备。使用需要 Mekuru Pro，但任何人都可以先下载模型来测试自己的设备。",
+  "localOcrModelDescriptionIos": "可选。没有它时由 Apple 文字识别查找并读取漫画文字；安装后由 manga-ocr 更准确地读取文字。页面图像不会离开你的设备。",
   "localOcrDownloadSize": "已下载 {done} / {total}",
   "localOcrDownloadRequired": "请在“设置 → 下载”中下载 OCR 模型，然后回到这里开始。",
   "localOcrModelReady": "模型已安装 · 可离线使用",

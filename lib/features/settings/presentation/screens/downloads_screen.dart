@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
@@ -319,11 +320,13 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               theme: theme,
             ),
           ),
-          // iOS reads manga with Apple Vision: there is no OCR model to get.
-          if (defaultTargetPlatform != TargetPlatform.iOS) ...[
-            const SizedBox(height: 8),
+          const SizedBox(height: 8),
+          // iOS finds text with Apple Vision and needs only the manga-ocr
+          // files; Android's pack and its download run in the native service.
+          if (defaultTargetPlatform == TargetPlatform.iOS)
+            const MangaOcrIosDownloadTile()
+          else
             const LocalOcrDownloadTile(),
-          ],
           const SizedBox(height: 16),
         ],
       ),

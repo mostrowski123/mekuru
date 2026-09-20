@@ -2791,6 +2791,7 @@
   "localOcrNothingToDo": "Halaman yang dipilih sudah memiliki OCR. Pilih Ganti OCR yang ada untuk memindainya lagi.",
   "localOcrModelTitle": "OCR manga Jepang — manga-ocr",
   "localOcrModelDescription": "Kenali manga Jepang secara offline. Gambar halaman tetap berada di perangkat Anda. Untuk menggunakannya diperlukan Mekuru Pro, tetapi siapa pun dapat mengunduh model untuk menguji perangkatnya terlebih dahulu.",
+  "localOcrModelDescriptionIos": "Opsional. Pengenalan teks Apple menemukan dan membaca teks manga tanpanya; dengan model ini, manga-ocr membaca teks lebih akurat. Gambar halaman tetap di perangkatmu.",
   "localOcrDownloadSize": "{done} / {total} terunduh",
   "localOcrDownloadRequired": "Unduh model OCR di Pengaturan → Unduhan, lalu kembali ke sini untuk memulai.",
   "localOcrModelReady": "Model terpasang · berfungsi offline",

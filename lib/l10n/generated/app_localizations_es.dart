@@ -3064,6 +3064,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Reconoce manga japonés sin conexión. Las imágenes de las páginas no salen de tu dispositivo. Usarlo requiere Mekuru Pro, pero cualquiera puede descargar los modelos para probar antes su dispositivo.';
 
   @override
+  String get localOcrModelDescriptionIos =>
+      'Opcional. El reconocimiento de texto de Apple encuentra y lee el texto del manga sin él; con él, manga-ocr lee el texto con más precisión. Las imágenes no salen de tu dispositivo.';
+
+  @override
   String localOcrDownloadSize({required String done, required String total}) {
     return '$done / $total descargados';
   }

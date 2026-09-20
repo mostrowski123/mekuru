@@ -3886,6 +3886,10 @@
   "@localOcrModelDescription": {
     "description": "On-device manga OCR: localOcrModelDescription"
   },
+  "localOcrModelDescriptionIos": "Optional. Apple's text recognition finds and reads manga text without it; with it, manga-ocr reads the text more accurately. Page images stay on your device.",
+  "@localOcrModelDescriptionIos": {
+    "description": "Downloads screen, iOS: the optional manga-ocr model pack"
+  },
   "localOcrDownloadSize": "{done} / {total} downloaded",
   "@localOcrDownloadSize": {
     "description": "On-device manga OCR: localOcrDownloadSize",
