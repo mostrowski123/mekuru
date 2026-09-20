@@ -20,17 +20,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  Widget column(String text) => Column(
+  Widget column(String text, {double size = 40}) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
       for (final rune in text.runes)
         Text(
           String.fromCharCode(rune),
-          style: const TextStyle(
-            fontSize: 40,
-            height: 1.05,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontSize: size, height: 1.05, color: Colors.black),
         ),
     ],
   );
@@ -79,6 +75,115 @@ void main() {
       );
     }))!;
   }
+
+  /// Pumps a white landscape page: a column at each edge and one centred on
+  /// the gutter. Wider than tall, so `visionPasses` in AppDelegate.swift reads
+  /// it as two overlapping passes. It has to fit the device: a SizedBox wider
+  /// than the screen is constrained down and anything positioned past the
+  /// screen edge is never drawn.
+  Future<({List<int> png, int width, int height})> drawSpread(
+    WidgetTester tester,
+  ) async {
+    final key = GlobalKey();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          backgroundColor: Colors.white,
+          body: Center(
+            child: RepaintBoundary(
+              key: key,
+              child: Container(
+                color: Colors.white,
+                width: 360,
+                height: 230,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 16,
+                      top: 16,
+                      child: column('今日は天気', size: 36),
+                    ),
+                    // Centred, so it stays on the gutter whatever width the
+                    // device gives us, and inside both passes' overlap.
+                    Positioned.fill(
+                      top: 16,
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: column('散歩に行く', size: 36),
+                      ),
+                    ),
+                    Positioned(
+                      right: 16,
+                      top: 16,
+                      child: column('読書します', size: 36),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final boundary =
+        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    return (await tester.runAsync(() async {
+      final image = await boundary.toImage(pixelRatio: 3);
+      final png = await image.toByteData(format: ui.ImageByteFormat.png);
+      return (
+        png: png!.buffer.asUint8List().toList(),
+        width: image.width,
+        height: image.height,
+      );
+    }))!;
+  }
+
+  testWidgets(
+    'a landscape spread is read as two passes, in page coordinates',
+    skip: !Platform.isIOS,
+    (tester) async {
+      final drawn = await drawSpread(tester);
+      expect(
+        drawn.width,
+        greaterThan(drawn.height),
+        reason: 'the page has to be landscape for visionPasses to split it',
+      );
+      final page = await tester.runAsync(
+        () => recognizePageWithVision(
+          Uint8List.fromList(drawn.png),
+          'spread.png',
+        ),
+      );
+
+      // ignore: avoid_print
+      print(
+        'spread blocks: '
+        '${page!.blocks.map((b) => (b.lines, b.box)).toList()}',
+      );
+      // Blocks read right to left, so the first is the right-hand column.
+      expect(page.blocks, hasLength(3));
+      // The right-hand column is found by the second pass only. Its box has
+      // to carry that pass's offset: without it the box lands near x = 0.
+      expect(
+        page.blocks.first.box[0],
+        greaterThan(drawn.width / 2),
+        reason: 'the second pass box was not mapped back onto the page',
+      );
+      expect(page.blocks.last.box[2], lessThan(drawn.width / 2));
+      // The column on the gutter is inside both passes; it is kept once, so
+      // its block holds one line and not the same line twice.
+      final gutter = page.blocks.firstWhere(
+        (b) => b.box[0] < drawn.width / 2 && b.box[2] > drawn.width / 2,
+        orElse: () => throw StateError('nothing was found on the gutter'),
+      );
+      expect(
+        gutter.lines,
+        hasLength(1),
+        reason: 'a line on the seam came back from both passes',
+      );
+      expect(page.blocks.expand((b) => b.lines).join(), contains('天気'));
+    },
+  );
 
   testWidgets(
     'Apple Vision reads vertical Japanese and the lines group into one block',
