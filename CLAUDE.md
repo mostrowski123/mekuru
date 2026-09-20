@@ -1,6 +1,6 @@
 # Mekuru (めくる)
 
-Japanese-first EPUB and manga reader. Flutter, **Android-only** — `firebase_options.dart` throws on web/desktop.
+Japanese-first EPUB and manga reader. Flutter, **Android and iOS** (iOS 18+; `firebase_options.dart` throws on web/desktop). Android is the shipped platform: every iOS change must leave Android behaviour identical, so add an iOS branch rather than editing the Android path.
 
 ## Build & test commands
 
@@ -13,7 +13,11 @@ flutter test                                               # unit tests (in-memo
 flutter test test/path/to/file_test.dart                   # single test
 dart format lib test integration_test
 flutter run                                                # device/emulator
+flutter build ios --no-codesign                            # iOS release build (what CI checks)
+scripts/run_ios_integration_tests.sh <simulator-udid> integration_test/x_test.dart   # iOS, one file at a time
 ```
+
+iOS: never run two iOS builds at once in this checkout (an integration-test run counts; they share `build/ios` and the loser fails to link). After changing `ios/Podfile`, run `pod install` in `ios/` with `LANG=en_US.UTF-8`. A failing integration test can hang on a simulator instead of failing, hence the script's per-file watchdog.
 
 Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_config.yaml`.
 
@@ -71,7 +75,18 @@ In-memory test databases skip migrations entirely (they start at the latest sche
 - **Release builds are R8-minified** (Flutter's Gradle plugin enables shrinking for `--release`). Any library whose Java classes are constructed from JNI needs consumer keep rules or release crashes where debug works: `packages/local_manga_ocr/android/consumer-rules.pro` keeps `ai.onnxruntime.**` and `org.opencv.**` for exactly that reason (release-only SIGABRT in `OrtSession.getInputInfo`, 2026-09-11). Test OCR changes on a `--release` build before shipping a preview.
 - **On-device OCR** lives in `packages/local_manga_ocr` (Kotlin + JNI + OpenCV DNN detector + onnxruntime recognizer, manga-ocr-base weights downloaded at runtime). JVM tests: `.ndroid\gradlew.bat -p android :local_manga_ocr:testDebugUnitTest` from PowerShell. Regenerate the model manifest only with `tools/prepare_ocr_manifest.py`. See Serena memory `local_ocr_architecture` for the service/journal invariants.
 
+## iOS / native
+
+- **Project**: scheme and configurations `play` (`Debug-play` etc.; there is no `parallel` flavor on iOS). Plugins come through Swift Package Manager; CocoaPods remains for `flutter_inappwebview_ios`, `workmanager_apple` and `onnxruntime-objc`. Deployment target 18.0 (policy: the last three major iOS versions).
+- **All app-level native code is in `ios/Runner/AppDelegate.swift`**, as method channels: `mekuru/ios_storage` (exclude re-downloadable data from backups), `mekuru/vision_ocr` (Apple Vision text lines, and `MangaOcrModel`, a thin ONNX Runtime wrapper), `mekuru/ios_files` (`FilesBridge`: move a file out through the document picker, pick a zip, free space). Logic stays in Dart where it is unit-testable; Swift stays thin.
+- **Nothing runs in the background on iOS.** OCR scans and full-backup jobs run inside the app with the wakelock held (`determineOcrTaskExecutionMode` is always foreground on iOS; `DartFullBackupJob` replaces the Android service). Work that dies with the app is restarted by the user: `resetInterruptedIosOcr()` and `DartFullBackupJob.recover()` clean up at launch. `IosFullBackup.start()` must stay after `applyStagedFullRestoreIfAny()` in `main`.
+- **On-device OCR on iOS contains no GPL code.** Text is found with Apple Vision through the Swift `RecognizeTextRequest` (the older `VNRecognizeTextRequest` barely sees vertical Japanese), grouped into blocks by `vision_block_grouping.dart`, and read by manga-ocr per block when the optional model pack is installed (`manga_ocr_ios.dart`; Vision's own text otherwise). **Never translate or paraphrase `ComicGeometry.kt` or the detector parts of `MangaOcrEngine.kt`** (ported from GPL comic-text-detector), and never download `comictextdetector.onnx` on iOS. `manga_ocr_algorithms.dart` mirrors the app's own `OcrAlgorithms.kt` and shares its test vectors; change both together. Benchmarks: `tools/manga109_ocr_benchmark.py` (data stays under the gitignored `example/`; Manga109-s may not be redistributed).
+- **Pro on iOS** is a separate StoreKit purchase of `pro_unlock_v1`, same secure-storage key and clearing rule as Android. The StoreKit plugin reports a refund notice as `purchased`: a transaction only counts as owned when its JSON has no `revocationDate` (`isOwnedAppStorePurchase`), and ownership comes from `SK2Transaction.transactions()`, not `restorePurchases()` (its reply races its events). No server verification on iOS yet.
+- **Anki on iOS**: `AnkiMobileService` (URL scheme, add-only, names typed by the user) or `AnkiConnectService` (HTTP to Anki on a computer), both behind the `AnkidroidService` contract.
+
 ## CI / release workflows
+
+iOS: `build-ios-pr.yml` (release build without signing, plus a check that the MeCab and sqlite frameworks are in `Runner.app`), `integration-ios.yml` (simulator tests through `scripts/run_ios_integration_tests.sh`), `release-ios.yml` (TestFlight: unsigned archive, then every framework and the app are ad-hoc signed with `Runner.entitlements` before `xcodebuild -exportArchive` signs with a cloud-managed certificate, because the export step re-signs only fully signed code and reads entitlements from the signature; the App Store Connect API key needs the Admin role).
 
 `.github/workflows/build-release.yml` produces the Play artifact, plus a second `parallel` flavor APK (`--dart-define=PARALLEL_BUILD=true`, side-by-side install for testers). `scripts/verify_native_libs.py` gates every artifact — it asserts the MeCab native libs actually made it into the build. Two gotchas have bitten this workflow repeatedly:
 
