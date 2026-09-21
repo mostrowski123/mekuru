@@ -15,28 +15,38 @@ limit="${IOS_IT_TIMEOUT_SECONDS:-900}"
 shard="${IOS_IT_SHARD:-1/1}"
 index=0
 failed=()
+log="$(mktemp)"
 for test in "$@"; do
   index=$((index + 1))
   if [ $(((index - 1) % ${shard#*/})) -ne $((${shard%/*} - 1)) ]; then continue; fi
   echo "::group::$test"
-  flutter test "$test" -d "$device" --no-pub \
-    --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded &
-  pid=$!
-  (
-    sleep "$limit" &
-    sleeper=$!
-    # Stood down: leave without touching the test's (by now reusable) pid.
-    trap 'kill "$sleeper" 2>/dev/null; exit 0' TERM
-    wait "$sleeper"
-    echo "watchdog: $test ran longer than ${limit}s, stopping it"
-    pkill -P "$pid"
-    kill "$pid"
-  ) &
-  watchdog=$!
-  wait "$pid"
-  status=$?
-  kill "$watchdog" 2>/dev/null
-  wait "$watchdog" 2>/dev/null
+  for attempt in 1 2; do
+    flutter test "$test" -d "$device" --no-pub \
+      --dart-define=FORCE_DEBUG_APP_CHECK_PROVIDER=true -r expanded > >(tee "$log") 2>&1 &
+    pid=$!
+    (
+      sleep "$limit" &
+      sleeper=$!
+      # Stood down: leave without touching the test's (by now reusable) pid.
+      trap 'kill "$sleeper" 2>/dev/null; exit 0' TERM
+      wait "$sleeper"
+      echo "watchdog: $test ran longer than ${limit}s, stopping it"
+      pkill -P "$pid"
+      kill "$pid"
+    ) &
+    watchdog=$!
+    wait "$pid"
+    status=$?
+    kill "$watchdog" 2>/dev/null
+    wait "$watchdog" 2>/dev/null
+    # Sometimes the simulator never gives Flutter a debug connection: the app is
+    # built, no test starts, and the run sits until the watchdog. That says
+    # nothing about the test, so try the file once more.
+    if [ "$status" -eq 0 ] || [ "$attempt" -eq 2 ]; then break; fi
+    sleep 1 # let tee finish writing the log
+    grep -q "Error waiting for a debug connection" "$log" || break
+    echo "retry: the app never connected for $test"
+  done
   echo "::endgroup::"
   if [ "$status" -eq 0 ]; then echo "PASS $test"; else echo "FAIL $test ($status)"; failed+=("$test"); fi
 done
