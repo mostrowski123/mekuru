@@ -2,6 +2,18 @@
 
 Japanese-first EPUB and manga reader. Flutter, **Android and iOS** (iOS 18+; `firebase_options.dart` throws on web/desktop). Android is the shipped platform: every iOS change must leave Android behaviour identical, so add an iOS branch rather than editing the Android path.
 
+## Both platforms
+
+A feature or fix is for both platforms unless the task says otherwise. Android must stay identical (above), and iOS must not be left behind. When you change shared Dart code, check what it does on iOS:
+
+- **Android-only mechanisms have no iOS counterpart**: foreground services and background work, SAF and `content://` URIs, intents (AnkiDroid), the `FullBackupJobBridge` permission path, exiting the process, Google Play billing. A feature built on one needs an iOS equivalent (see "iOS / native"), or its entry point is hidden on iOS. Never ship a control that silently does nothing there.
+- **Branch with `defaultTargetPlatform == TargetPlatform.iOS`**, not `Platform.isIOS`, in code a test should reach: tests switch it with `debugDefaultTargetPlatformOverride`.
+- **Stored paths**: the iOS data container moves on every reinstall and can move on an update. `Books.filePath`, `Books.coverImagePath` and each manga cache's `imageDirPath` are re-anchored at boot (`reanchorLibraryIfMovedAtBoot()`). A new persisted absolute path must join that pass, or be stored relative.
+- **Copy**: text that names Android things (Google Play, AnkiDroid, background notifications) gets an `…Ios` l10n key next to the original, e.g. `backupFullExportSubtitleIos`.
+- **Reader**: `reader_bridge.js` and `epub.js` run in WKWebView on iOS and in the Chromium WebView on Android. Verify a change there on both.
+- **New plugin or native API**: it must support iOS 18 (Swift Package Manager preferred). Add the `Info.plist` usage string it needs (a missing one crashes on first use) and declare required-reason APIs in `ios/Runner/PrivacyInfo.xcprivacy`.
+- **Checking**: `build-ios-pr.yml` builds iOS for every PR that touches `lib/`, `ios/`, `assets/`, `packages/local_manga_ocr/` or `pubspec.*`. Run `flutter build ios --no-codesign` yourself after changing `ios/`, plugins or native assets.
+
 ## Build & test commands
 
 ```bash
@@ -27,7 +39,7 @@ Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_con
 
 1. `flutter analyze lib test` — **must be clean.** CI fails on info-level deprecation warnings too.
 2. `flutter test` — must pass.
-3. For user-facing changes, bump `version:` in `pubspec.yaml` (minor for `feat:`, patch for `fix:`).
+3. For user-facing changes, bump `version:` in `pubspec.yaml` (minor for `feat:`, patch for `fix:`). It is the one version for both stores, so an iOS-only change bumps it too (see "Versioning").
 4. Never add `Co-Authored-By:` trailers to commits.
 
 ## Conventions
@@ -90,6 +102,10 @@ Sentry environments: `play-store`, `sideload`, `sideload-parallel`, `ios` (every
 
 iOS: `build-ios-pr.yml` (release build without signing, plus a check that the MeCab and sqlite frameworks are in `Runner.app`), `integration-ios.yml` (simulator tests through `scripts/run_ios_integration_tests.sh`), both build jobs set `FIREBASE_ANALYTICS_WITHOUT_ADID` (no ATT prompt, so the ad-ID Analytics frameworks must not be in `Runner.app`; needs `firebase_analytics` >= 12.5), `release-ios.yml` (TestFlight: unsigned archive, then every framework and the app are ad-hoc signed with `Runner.entitlements` before `xcodebuild -exportArchive` signs with a cloud-managed certificate, because the export step re-signs only fully signed code and reads entitlements from the signature; the App Store Connect API key needs the Admin role).
 
+**Versioning**: `version:` in `pubspec.yaml` is the one marketing version for both stores. Android `versionName` and iOS `CFBundleShortVersionString` both come from it; never pass `--build-name` or set `MARKETING_VERSION` for Runner. iOS releases less often, so its App Store versions skip numbers. That is fine: Apple only wants each version higher than the last approved one. Build numbers are per platform and unrelated: Android uses `PLAY_VERSION_CODE_FLOOR + run_number`, iOS the `release-ios.yml` run number. Once a version is approved on the App Store, TestFlight rejects further builds with that version string, so `version:` must have moved on before the next `release-ios.yml` run. App Store Connect does not check that its version record matches the attached build on iOS (the store shows the record's string), so keep them equal by hand: rename the draft, not the build.
+
+**App Store Connect**: agents may edit draft metadata (the `asc` CLI) and start `release-ios.yml` when asked. Never submit for review, release a version, or change a review submission's state; Matt does that himself. Age rating, App Privacy labels and export compliance are his declarations to Apple: prepare them, do not set them.
+
 `.github/workflows/build-release.yml` produces the Play artifact, plus a second `parallel` flavor APK (`--dart-define=PARALLEL_BUILD=true`, side-by-side install for testers). `scripts/verify_native_libs.py` gates every artifact — it asserts the MeCab native libs actually made it into the build. Two gotchas have bitten this workflow repeatedly:
 
 - **AAB output path includes the flavor.** With `--flavor X`, AGP writes the bundle to `build/app/outputs/bundle/<flavor>Release/app-<flavor>-release.aab` — e.g. `bundle/playRelease/app-play-release.aab`. APKs are flat (`flutter-apk/app-<flavor>-release.apk`), but bundles are not. Any time you change the flavor flag, update every `bundle/...` path in the workflow (verify, GitHub Release `files:`, Play upload `releaseFiles:`).
@@ -100,7 +116,7 @@ iOS: `build-ios-pr.yml` (release build without signing, plus a check that the Me
 - Import `createTestDatabase()` from `test/shared/test_database.dart` — returns `AppDatabase(NativeDatabase.memory())`. Always `await db.close()` in `tearDown`. (Integration tests have their own copy in `integration_test/shared/test_infrastructure.dart`.)
 - Build DB seed rows inline with `Companion.insert(...)` — no DB fixture files. (EPUB/SAF byte fixtures live in `test/shared/`.)
 - MeCab needs device assets — cannot run in unit tests. For compound-word tests, construct `WordIdentification` objects directly.
-- Integration tests live in `integration_test/` and run on a real emulator via `.github/workflows/integration-android.yml`. Keep them out of `test/`.
+- Integration tests live in `integration_test/` and run on a real emulator via `.github/workflows/integration-android.yml` and on an iOS simulator via `integration-ios.yml`. Keep them out of `test/`.
 
 ## Tools
 
