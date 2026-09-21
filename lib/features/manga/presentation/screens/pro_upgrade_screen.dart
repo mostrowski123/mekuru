@@ -4,6 +4,7 @@ import 'package:confetti/confetti.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/ios_sandbox_refund.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
@@ -41,6 +42,7 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
     this.openSelfHostRepo,
     this.launchExternalUrl,
     this.forceServicesAvailable,
+    this.canRequestSandboxRefund,
     required this.source,
   });
 
@@ -52,6 +54,9 @@ class ProUpgradeScreen extends ConsumerStatefulWidget {
   /// Test seam for the model repository links; production launches the URL.
   final Future<void> Function(Uri url)? launchExternalUrl;
   final bool? forceServicesAvailable;
+
+  /// Test seam for the testers' refund button; production asks StoreKit.
+  final Future<bool> Function()? canRequestSandboxRefund;
 
   /// Where the screen was opened from, for usage telemetry (enum-like value,
   /// e.g. 'manga_reader' or 'ocr_setup'). Required: an unattributed view
@@ -71,6 +76,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
 
   bool _isLoading = true;
   bool _isBusy = false;
+  bool _canTestRefund = false;
   ProUpgradeSnapshot _snapshot = const ProUpgradeSnapshot(
     isUnlocked: false,
     servicesAvailable: true,
@@ -85,6 +91,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
     _storeService.onLateDelivery = _handleLateDelivery;
     logUsage('pro.upgrade_screen_shown', attrs: {'source': widget.source});
     unawaited(_loadSnapshot());
+    unawaited(_checkSandboxRefund());
   }
 
   @override
@@ -132,6 +139,14 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
       _snapshot = snapshot;
       _isLoading = false;
     });
+  }
+
+  Future<void> _checkSandboxRefund() async {
+    final check =
+        widget.canRequestSandboxRefund ??
+        () => canRequestSandboxRefund(proUnlockProductId);
+    final canTestRefund = await check();
+    if (mounted) setState(() => _canTestRefund = canTestRefund);
   }
 
   // Runs synchronously from initState, so it must stay context-free; the
@@ -223,6 +238,7 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         setState(() {
           _isBusy = false;
         });
+        unawaited(_checkSandboxRefund());
       }
     }
   }
@@ -268,6 +284,23 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
         );
         rethrow;
       }
+    });
+  }
+
+  /// Testers only (see [canRequestSandboxRefund]), hence the English text.
+  Future<void> _handleSandboxRefund() {
+    return _runBusyAction(() async {
+      if (await requestSandboxRefund(proUnlockProductId)) {
+        // The revocation also arrives on the purchase stream, possibly after
+        // this query; then Pro is gone the next time the screen opens.
+        await _storeService.syncOwnedPurchases();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sandbox refund requested')),
+          );
+        }
+      }
+      return _loadSnapshotDefault();
     });
   }
 
@@ -367,6 +400,14 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                           ),
                         ),
                       ),
+                      if (_canTestRefund) ...[
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: _isBusy ? null : _handleSandboxRefund,
+                          icon: const Icon(Icons.bug_report_outlined),
+                          label: const Text('Sandbox test: request refund'),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                     ],
                     Card(

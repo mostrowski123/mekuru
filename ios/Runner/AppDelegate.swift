@@ -1,5 +1,6 @@
 import Flutter
 import ImageIO
+import StoreKit
 import UIKit
 import UniformTypeIdentifiers
 import Vision
@@ -18,6 +19,7 @@ import onnxruntime_objc
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     registerStorageChannel(messenger: engineBridge.applicationRegistrar.messenger())
     registerVisionOcrChannel(messenger: engineBridge.applicationRegistrar.messenger())
+    registerSandboxRefundChannel(messenger: engineBridge.applicationRegistrar.messenger())
     FilesBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
 
@@ -103,6 +105,51 @@ import onnxruntime_objc
         }
       }
   }
+
+  /// `mekuru/sandbox_refund`: how a tester refunds the Pro purchase. A sandbox
+  /// purchase is in no purchase history, so Apple's refund sheet is the only
+  /// way. Both methods take the product id and go through
+  /// `sandboxTransaction(for:)`, which answers only for test money: an App
+  /// Store customer never sees the button and cannot open the sheet.
+  private func registerSandboxRefundChannel(messenger: FlutterBinaryMessenger) {
+    FlutterMethodChannel(name: "mekuru/sandbox_refund", binaryMessenger: messenger)
+      .setMethodCallHandler { call, result in
+        guard let productId = call.arguments as? String else { return result(FlutterMethodNotImplemented) }
+        Task { @MainActor in
+          let transaction = await sandboxTransaction(for: productId)
+          switch call.method {
+          case "canRequest":
+            result(transaction != nil)
+          case "request":
+            guard let transaction,
+              let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive })
+            else {
+              return result(FlutterError(code: "refund_unavailable", message: nil, details: nil))
+            }
+            do {
+              result(try await transaction.beginRefundRequest(in: scene) == .success)
+            } catch {
+              result(FlutterError(code: "refund_failed", message: error.localizedDescription, details: nil))
+            }
+          default:
+            result(FlutterMethodNotImplemented)
+          }
+        }
+      }
+  }
+}
+
+/// The purchase of `productId` that is not refunded yet, and only when it was
+/// paid with test money (TestFlight, a sandbox Apple Account, Xcode). Every
+/// App Store customer is `.production`. A list of the allowed environments,
+/// so that one Apple adds later stays hidden.
+private func sandboxTransaction(for productId: String) async -> StoreKit.Transaction? {
+  guard case .verified(let transaction) = await StoreKit.Transaction.latest(for: productId),
+    transaction.revocationDate == nil,
+    transaction.environment == .sandbox || transaction.environment == .xcode
+  else { return nil }
+  return transaction
 }
 
 /// A double-page spread is read as two pages. Vision misses text on a full

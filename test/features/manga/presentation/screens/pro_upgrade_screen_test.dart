@@ -202,6 +202,30 @@ void main() {
     expect(find.byType(FilledButton), findsNothing);
     expect(find.text('Locked'), findsNothing);
     expect(find.text('Unlocked'), findsOneWidget);
+    // No sandbox transaction behind this Pro: no refund button.
+    expect(find.text('Sandbox test: request refund'), findsNothing);
+  });
+
+  testWidgets('a sandbox purchase gets the testers\' refund button', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: buildLocalizedTestApp(
+          home: ProUpgradeScreen(
+            source: 'test',
+            loadSnapshot: () async => const ProUpgradeSnapshot(
+              isUnlocked: true,
+              servicesAvailable: true,
+            ),
+            canRequestSandboxRefund: () async => true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sandbox test: request refund'), findsOneWidget);
   });
 
   testWidgets('auth throttling shows retry guidance', (tester) async {
