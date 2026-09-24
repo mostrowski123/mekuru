@@ -9,8 +9,9 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
-/// The request never produced an HTTP response: DNS or socket failure, a
-/// connection closed mid-flight, or no answer within the timeout. Carries no
+/// The request never produced an HTTP response: DNS or socket failure, a host
+/// dart:io refuses, a connection closed mid-flight, or no answer within the
+/// timeout. Carries no
 /// status code — callers map it to their own "network unavailable" case.
 class NetworkException implements Exception {
   final String message;
@@ -39,6 +40,10 @@ Future<http.Response> sendWithTimeout(
   } on SocketException catch (e) {
     throw NetworkException(e.message);
   } on http.ClientException catch (e) {
+    throw NetworkException(e.message);
+  } on FormatException catch (e) {
+    // dart:io refuses a host it can't connect to (e.g. `%3C…%3E` from a URL
+    // typed with `<` `>`) before opening a socket.
     throw NetworkException(e.message);
   }
 }

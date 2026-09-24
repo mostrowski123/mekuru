@@ -53,6 +53,18 @@ void main() {
       );
     });
 
+    test('a host dart:io refuses becomes NetworkException', () async {
+      await expectLater(
+        () => send(
+          (_) async => throw const FormatException(
+            '%3C192.168.1.5%3E is not a valid link-local address but '
+            'contains %.',
+          ),
+        ),
+        throwsA(isA<NetworkException>()),
+      );
+    });
+
     test('other errors pass through untouched', () async {
       await expectLater(
         () => send((_) async => throw StateError('bug')),

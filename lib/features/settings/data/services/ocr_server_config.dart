@@ -38,8 +38,14 @@ Uri? tryParseOcrServerUrl(String url) {
       uri != null &&
       (uri.scheme == 'http' || uri.scheme == 'https') &&
       uri.hasAuthority;
-  return hasValidScheme ? uri : null;
+  return hasValidScheme && !_hostWasEscaped(uri) ? uri : null;
 }
+
+/// `Uri` percent-encodes what a host can't hold (`<`, `>`, spaces) instead of
+/// rejecting it, and dart:io then throws a FormatException on the `%` before
+/// any request goes out. An IPv6 literal's `%` zone id is legitimate.
+bool _hostWasEscaped(Uri uri) =>
+    uri.host.contains('%') && !uri.host.contains(':');
 
 String? validateOcrServerUrl(String url, {bool allowEmpty = false}) {
   final normalized = normalizeOcrServerUrl(url);
@@ -47,9 +53,12 @@ String? validateOcrServerUrl(String url, {bool allowEmpty = false}) {
     return allowEmpty ? null : 'Enter your server URL.';
   }
 
-  if (tryParseOcrServerUrl(normalized) == null) {
-    return 'Enter a full http:// or https:// server URL.';
+  if (tryParseOcrServerUrl(normalized) != null) {
+    return null;
   }
 
-  return null;
+  final parsed = Uri.tryParse(normalized);
+  return parsed != null && _hostWasEscaped(parsed)
+      ? 'Remove spaces and symbols like < > from the server address.'
+      : 'Enter a full http:// or https:// server URL.';
 }
