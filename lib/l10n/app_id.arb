@@ -2674,6 +2674,7 @@
   "serverBrowseAddedToLibrary": "\"{title}\" ditambahkan ke perpustakaan!",
   "serverBrowseDownloadFailed": "Gagal mengunduh: {error}",
   "serverBrowseBookGone": "Buku ini sudah tidak ada di perangkat ini",
+  "serverLinkDropped": "\"{title}\" sudah tidak ada di server, jadi tidak lagi disinkronkan. Tautkan lagi dari daftar buku server.",
   "serverBrowseNoBooks": "Tidak ada buku dalam seri ini",
   "serverBrowsePageCount": "{count, plural, one {{count} halaman} other {{count} halaman}}",
   "backupReadingDataBadge": ".mekuru",

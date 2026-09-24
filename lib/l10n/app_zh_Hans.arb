@@ -2674,6 +2674,7 @@
   "serverBrowseAddedToLibrary": "“{title}”已添加到书库！",
   "serverBrowseDownloadFailed": "下载失败：{error}",
   "serverBrowseBookGone": "这本书已不在此设备上",
+  "serverLinkDropped": "“{title}”已不在服务器上，因此已停止同步。请在服务器的图书列表中重新关联。",
   "serverBrowseNoBooks": "此系列中没有图书",
   "serverBrowsePageCount": "{count, plural, one {{count} 页} other {{count} 页}}",
   "backupReadingDataBadge": ".mekuru",

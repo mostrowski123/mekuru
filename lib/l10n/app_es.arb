@@ -2674,6 +2674,7 @@
   "serverBrowseAddedToLibrary": "\"{title}\" se añadió a la biblioteca",
   "serverBrowseDownloadFailed": "Error al descargar: {error}",
   "serverBrowseBookGone": "El libro ya no está en este dispositivo",
+  "serverLinkDropped": "\"{title}\" ya no está en el servidor, así que dejó de sincronizarse. Vuelve a vincularlo desde la lista de libros del servidor.",
   "serverBrowseNoBooks": "Esta serie no tiene libros",
   "serverBrowsePageCount": "{count, plural, one {{count} página} other {{count} páginas}}",
   "backupReadingDataBadge": ".mekuru",

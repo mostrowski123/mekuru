@@ -2562,7 +2562,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String serverLinkDropped({required String title}) {
-    return '\"$title\" is no longer on the server, so it stopped syncing. Link it again from the server\'s book list.';
+    return '\"$title\" sudah tidak ada di server, jadi tidak lagi disinkronkan. Tautkan lagi dari daftar buku server.';
   }
 
   @override

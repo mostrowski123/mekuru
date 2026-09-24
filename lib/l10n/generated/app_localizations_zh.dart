@@ -2445,7 +2445,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String serverLinkDropped({required String title}) {
-    return '\"$title\" is no longer on the server, so it stopped syncing. Link it again from the server\'s book list.';
+    return '“$title”已不在服务器上，因此已停止同步。请在服务器的图书列表中重新关联。';
   }
 
   @override
@@ -5631,6 +5631,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get serverBrowseBookGone => '这本书已不在此设备上';
+
+  @override
+  String serverLinkDropped({required String title}) {
+    return '“$title”已不在服务器上，因此已停止同步。请在服务器的图书列表中重新关联。';
+  }
 
   @override
   String get serverBrowseNoBooks => '此系列中没有图书';
