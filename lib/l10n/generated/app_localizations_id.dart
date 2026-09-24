@@ -2561,6 +2561,11 @@ class AppLocalizationsId extends AppLocalizations {
       'Buku ini sudah tidak ada di perangkat ini';
 
   @override
+  String serverLinkDropped({required String title}) {
+    return '\"$title\" is no longer on the server, so it stopped syncing. Link it again from the server\'s book list.';
+  }
+
+  @override
   String get serverBrowseNoBooks => 'Tidak ada buku dalam seri ini';
 
   @override

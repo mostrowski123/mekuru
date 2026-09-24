@@ -107,6 +107,34 @@ void main() {
     expect(book.readProgress, 0.5);
   });
 
+  test('unlinkBook frees one book for relinking and keeps its data', () async {
+    final connectionId = await repo.create(
+      serverType: 'komga',
+      name: 'K',
+      baseUrl: 'http://k',
+    );
+    final stale = await insertBook(
+      title: 'A',
+      connectionId: connectionId,
+      remoteIds: '{"bookId":"gone"}',
+    );
+    final other = await insertBook(
+      title: 'B',
+      connectionId: connectionId,
+      remoteIds: '{"bookId":"b"}',
+    );
+
+    await repo.unlinkBook(stale);
+
+    expect((await repo.findUnlinkedTitleMatch('a', 'manga'))?.id, stale);
+    expect((await repo.booksLinkedTo(connectionId)).map((b) => b.id), [other]);
+    final book = await (db.select(
+      db.books,
+    )..where((t) => t.id.equals(stale))).getSingle();
+    expect(book.remoteIds, null);
+    expect(book.lastReadCfi, '5');
+  });
+
   test('findUnlinkedTitleMatch normalizes and filters', () async {
     final connectionId = await repo.create(
       serverType: 'komga',

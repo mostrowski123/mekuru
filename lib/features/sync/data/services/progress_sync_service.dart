@@ -14,6 +14,8 @@ import 'server_client.dart';
 typedef ServerClientFactory =
     Future<ServerClient> Function(ServerConnection connection);
 
+typedef _Link = ({ServerClient client, Map<String, String> ids});
+
 /// Bidirectional progress sync for server-linked books.
 ///
 /// Rules (deliberately simple — progress can be delayed, never lost):
@@ -46,12 +48,17 @@ class ProgressSyncService {
   final DateTime Function() _now;
   final Map<int, DateTime> _unreachableUntil = {};
 
+  /// Told about each book unlinked because its server no longer has it, so
+  /// the user learns why the book stopped syncing.
+  final void Function(Book book)? onLinkDropped;
+
   ProgressSyncService({
     required AppDatabase db,
     required ServerConnectionRepository connections,
     required ServerClientFactory clientFactory,
     this.pushDebounce = const Duration(seconds: 2),
     DateTime Function()? now,
+    this.onLinkDropped,
   }) : _db = db,
        _connections = connections,
        _clientFactory = clientFactory,
@@ -111,7 +118,9 @@ class ProgressSyncService {
       countUsage('sync.progress_pushed', attrs: {'format': book.bookType});
     } catch (e) {
       _noteReachability(connectionId, e);
-      logFailure('sync.progress_pushed', e, attrs: {'format': book.bookType});
+      if (!await _unlinkIfGone(book, link, e)) {
+        logFailure('sync.progress_pushed', e, attrs: {'format': book.bookType});
+      }
       rethrow;
     }
   }
@@ -124,8 +133,9 @@ class ProgressSyncService {
   /// to it. Returns null (silently, logging only) on any failure.
   Future<RemoteProgress?> syncOnOpen(Book book) async {
     _openSyncs.add(book.id);
+    _Link? link;
     try {
-      final link = await _linkFor(book);
+      link = await _linkFor(book);
       if (link == null) return null;
 
       final localAt = book.lastReadAt;
@@ -169,7 +179,9 @@ class ProgressSyncService {
       debugPrint('[Sync] syncOnOpen failed: $e');
       final connectionId = book.serverConnectionId;
       if (connectionId != null) _noteReachability(connectionId, e);
-      logFailure('sync.open_sync', e, attrs: {'format': book.bookType});
+      if (link == null || !await _unlinkIfGone(book, link, e)) {
+        logFailure('sync.open_sync', e, attrs: {'format': book.bookType});
+      }
       return null;
     } finally {
       _openSyncs.remove(book.id);
@@ -233,9 +245,33 @@ class ProgressSyncService {
     }
   }
 
-  Future<({ServerClient client, Map<String, String> ids})?> _linkFor(
-    Book book,
-  ) async {
+  /// Whether [error] meant the server no longer has [book] (a rescan or
+  /// rebuild gave it a new id, or the connection now points at another
+  /// server). If so the book is unlinked, which lets the browse screen and
+  /// bulk link offer it again; its files and reading data stay. A 404 alone
+  /// is no proof: an older Komga 404s EPUB progression, and a wrong URL 404s
+  /// everything. So the book lookup itself must 404 while the server still
+  /// passes its connection test.
+  Future<bool> _unlinkIfGone(Book book, _Link link, Object error) async {
+    if (error is! SyncException || error.statusCode != 404) return false;
+    try {
+      await link.client.pullProgress(link.ids);
+      return false;
+    } catch (e) {
+      if (e is! SyncException || e.statusCode != 404) return false;
+    }
+    try {
+      await link.client.testConnection();
+    } catch (_) {
+      return false;
+    }
+    await _connections.unlinkBook(book.id);
+    logUsage('sync.link_dropped', attrs: {'format': book.bookType});
+    onLinkDropped?.call(book);
+    return true;
+  }
+
+  Future<_Link?> _linkFor(Book book) async {
     final connectionId = book.serverConnectionId;
     final ids = ServerConnectionRepository.decodeRemoteIds(book.remoteIds);
     if (connectionId == null || ids == null) return null;

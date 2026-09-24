@@ -4330,6 +4330,12 @@ abstract class AppLocalizations {
   /// **'Book is no longer on this device'**
   String get serverBrowseBookGone;
 
+  /// Snackbar shown after sync found that a linked book no longer exists on its server (rescanned or rebuilt server) and unlinked it; title is the local book's title.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" is no longer on the server, so it stopped syncing. Link it again from the server\'s book list.'**
+  String serverLinkDropped({required String title});
+
   /// Empty state when a server series has no books.
   ///
   /// In en, this message translates to:

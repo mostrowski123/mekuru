@@ -54,17 +54,23 @@ class ServerConnectionRepository {
   Future<void> delete(int id) async {
     await (_db.update(
       _db.books,
-    )..where((t) => t.serverConnectionId.equals(id))).write(
-      const BooksCompanion(
-        serverConnectionId: Value(null),
-        remoteIds: Value(null),
-        lastSyncedAt: Value(null),
-      ),
-    );
+    )..where((t) => t.serverConnectionId.equals(id))).write(_unlinked);
     await (_db.delete(
       _db.serverConnections,
     )..where((t) => t.id.equals(id))).go();
   }
+
+  /// Unlink one book (e.g. the server no longer has it), which makes it
+  /// eligible for relinking again. Link columns only, like [delete].
+  Future<void> unlinkBook(int bookId) => (_db.update(
+    _db.books,
+  )..where((t) => t.id.equals(bookId))).write(_unlinked);
+
+  static const _unlinked = BooksCompanion(
+    serverConnectionId: Value(null),
+    remoteIds: Value(null),
+    lastSyncedAt: Value(null),
+  );
 
   /// Link a local book to a server book. Metadata-only: never touches the
   /// book's files or reading data.

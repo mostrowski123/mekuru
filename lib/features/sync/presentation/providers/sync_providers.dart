@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:mekuru/core/database/database_provider.dart';
@@ -15,6 +16,7 @@ import 'package:mekuru/features/sync/data/services/komga_client.dart';
 import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -118,6 +120,7 @@ final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
     db: ref.watch(databaseProvider),
     connections: ref.watch(serverConnectionRepositoryProvider),
     clientFactory: ref.watch(serverClientFactoryProvider),
+    onLinkDropped: _announceDroppedLink,
   );
   BookRepository.onProgressWritten = service.schedulePush;
   ref.onDispose(() {
@@ -126,6 +129,15 @@ final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
   });
   return service;
 });
+
+/// Tells the user, wherever they are in the app, why a book stopped syncing.
+void _announceDroppedLink(Book book) {
+  final context = scaffoldMessengerKey.currentContext;
+  if (context == null || !context.mounted) return;
+  scaffoldMessengerKey.currentState?.showSnackBar(
+    SnackBar(content: Text(context.l10n.serverLinkDropped(title: book.title))),
+  );
+}
 
 /// Download-and-import state: progress (0..1) per in-flight book, keyed by
 /// primary remote id.

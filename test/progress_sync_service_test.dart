@@ -12,9 +12,18 @@ import 'shared/test_database.dart';
 
 class FakeServerClient extends StubServerClient {
   RemoteProgress? pullResult;
+
+  /// Thrown by every progress call; [pushFailure] by pushes alone.
   SyncException? failure;
+  SyncException? pushFailure;
+  SyncException? connectionFailure;
   final List<(Map<String, String>, RemoteProgress)> pushes = [];
   int pullCalls = 0;
+
+  @override
+  Future<void> testConnection() async {
+    if (connectionFailure != null) throw connectionFailure!;
+  }
 
   @override
   Future<RemoteProgress?> pullProgress(Map<String, String> ids) async {
@@ -28,7 +37,8 @@ class FakeServerClient extends StubServerClient {
     Map<String, String> ids,
     RemoteProgress progress,
   ) async {
-    if (failure != null) throw failure!;
+    final error = failure ?? pushFailure;
+    if (error != null) throw error;
     pushes.add((ids, progress));
   }
 }
@@ -40,6 +50,7 @@ void main() {
   late ProgressSyncService service;
   late int connectionId;
   late DateTime now;
+  late List<int> dropped;
 
   final readAt = DateTime.utc(2026, 9, 1, 10);
   final before = DateTime.utc(2026, 9, 1, 9);
@@ -50,12 +61,14 @@ void main() {
     connections = ServerConnectionRepository(db);
     client = FakeServerClient();
     now = DateTime.utc(2026, 9, 24, 12);
+    dropped = [];
     service = ProgressSyncService(
       db: db,
       connections: connections,
       clientFactory: (_) async => client,
       pushDebounce: const Duration(milliseconds: 5),
       now: () => now,
+      onLinkDropped: (book) => dropped.add(book.id),
     );
     connectionId = await connections.create(
       serverType: 'komga',
@@ -288,6 +301,56 @@ void main() {
 
       final pushed = client.pushes.length;
       expect(await pushesAfterPageTurn(), pushed + 1);
+    });
+  });
+
+  group('when the server no longer has a linked book', () {
+    late Book book;
+
+    setUp(() async {
+      book = await insertLinkedManga(lastReadAt: readAt);
+      client.failure = const SyncException(404, 'GET /api/v1/books/b1');
+    });
+
+    Future<void> expectUnlinked() async {
+      final unlinked = await reload(book.id);
+      expect(unlinked.serverConnectionId, isNull);
+      expect(unlinked.remoteIds, isNull);
+      expect(unlinked.lastReadCfi, '5', reason: 'reading data stays');
+      expect(dropped, [book.id]);
+    }
+
+    test('opening it unlinks it and reports the drop', () async {
+      expect(await service.syncOnOpen(book), isNull);
+      await expectUnlinked();
+    });
+
+    test('a page turn or Sync Now unlinks it too', () async {
+      await expectLater(
+        service.pushBook(book.id),
+        throwsA(isA<SyncException>()),
+      );
+      await expectUnlinked();
+    });
+
+    test('a 404 from the progress write alone keeps the link', () async {
+      // An older Komga 404s the EPUB progression endpoint of a live book.
+      client.failure = null;
+      client.pushFailure = const SyncException(404, 'PUT …/progression');
+      await expectLater(
+        service.pushBook(book.id),
+        throwsA(isA<SyncException>()),
+      );
+      expect((await reload(book.id)).serverConnectionId, connectionId);
+      expect(dropped, isEmpty);
+    });
+
+    test('a server failing its connection test keeps the link', () async {
+      // A wrong URL 404s everything; that must not unlink the library.
+      client.connectionFailure = const SyncException(404, 'GET /libraries');
+      await service.syncOnOpen(book);
+      expect((await reload(book.id)).serverConnectionId, connectionId);
+      expect(dropped, isEmpty);
     });
   });
 

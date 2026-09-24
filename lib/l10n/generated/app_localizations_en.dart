@@ -2549,6 +2549,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverBrowseBookGone => 'Book is no longer on this device';
 
   @override
+  String serverLinkDropped({required String title}) {
+    return '\"$title\" is no longer on the server, so it stopped syncing. Link it again from the server\'s book list.';
+  }
+
+  @override
   String get serverBrowseNoBooks => 'No books in this series';
 
   @override

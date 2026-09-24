@@ -3305,6 +3305,15 @@
   "@serverBrowseBookGone": {
     "description": "Snackbar shown when tapping a server book marked as downloaded whose local copy has since been deleted."
   },
+  "serverLinkDropped": "\"{title}\" is no longer on the server, so it stopped syncing. Link it again from the server's book list.",
+  "@serverLinkDropped": {
+    "description": "Snackbar shown after sync found that a linked book no longer exists on its server (rescanned or rebuilt server) and unlinked it; title is the local book's title.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "serverBrowseNoBooks": "No books in this series",
   "@serverBrowseNoBooks": {
     "description": "Empty state when a server series has no books."
