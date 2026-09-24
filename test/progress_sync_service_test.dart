@@ -39,6 +39,7 @@ void main() {
   late FakeServerClient client;
   late ProgressSyncService service;
   late int connectionId;
+  late DateTime now;
 
   final readAt = DateTime.utc(2026, 9, 1, 10);
   final before = DateTime.utc(2026, 9, 1, 9);
@@ -48,11 +49,13 @@ void main() {
     db = createTestDatabase();
     connections = ServerConnectionRepository(db);
     client = FakeServerClient();
+    now = DateTime.utc(2026, 9, 24, 12);
     service = ProgressSyncService(
       db: db,
       connections: connections,
       clientFactory: (_) async => client,
       pushDebounce: const Duration(milliseconds: 5),
+      now: () => now,
     );
     connectionId = await connections.create(
       serverType: 'komga',
@@ -251,6 +254,41 @@ void main() {
     final unchanged = await reload(book.id);
     expect(unchanged.lastReadCfi, '5');
     expect(unchanged.lastSyncedAt!.toUtc(), before);
+  });
+
+  group('after a request never reaches the server', () {
+    late Book book;
+
+    setUp(() async {
+      book = await insertLinkedManga(lastReadAt: readAt);
+      client.failure = const SyncException(0, 'No route to host');
+      await expectLater(
+        service.pushBook(book.id),
+        throwsA(isA<SyncException>()),
+      );
+      client.failure = null;
+    });
+
+    Future<int> pushesAfterPageTurn() async {
+      service.schedulePush(book.id);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      return client.pushes.length;
+    }
+
+    test('page-turn pushes pause until the pause runs out', () async {
+      expect(await pushesAfterPageTurn(), 0);
+
+      now = now.add(ProgressSyncService.unreachablePause);
+      expect(await pushesAfterPageTurn(), 1);
+    });
+
+    test('opening the book still tries and lifts the pause', () async {
+      await service.syncOnOpen(book);
+      expect(client.pullCalls, 1);
+
+      final pushed = client.pushes.length;
+      expect(await pushesAfterPageTurn(), pushed + 1);
+    });
   });
 
   test('unlinked books and disabled connections are ignored', () async {

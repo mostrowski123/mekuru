@@ -10,6 +10,9 @@ class SyncException implements Exception {
 
   bool get isAuthFailure => statusCode == 401 || statusCode == 403;
 
+  /// The request never reached the server (no route, refused, timed out).
+  bool get isUnreachable => statusCode == 0;
+
   @override
   String toString() => 'SyncException($statusCode): $message';
 }

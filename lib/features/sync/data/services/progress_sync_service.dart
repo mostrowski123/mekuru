@@ -39,14 +39,23 @@ class ProgressSyncService {
   StreamSubscription<List<ServerConnection>>? _connectionsSub;
   bool _disposed = false;
 
+  /// How long page-turn pushes to a connection pause after a request to it
+  /// never reached the server (a home server while the phone is out, say).
+  /// Opening a book and Sync Now still try, and any answer lifts the pause.
+  static const unreachablePause = Duration(minutes: 5);
+  final DateTime Function() _now;
+  final Map<int, DateTime> _unreachableUntil = {};
+
   ProgressSyncService({
     required AppDatabase db,
     required ServerConnectionRepository connections,
     required ServerClientFactory clientFactory,
     this.pushDebounce = const Duration(seconds: 2),
+    DateTime Function()? now,
   }) : _db = db,
        _connections = connections,
-       _clientFactory = clientFactory {
+       _clientFactory = clientFactory,
+       _now = now ?? DateTime.now {
     // Connection edits (URL/credentials) invalidate cached clients.
     _connectionsSub = _connections.watchConnections().listen((_) {
       for (final client in _clients.values) {
@@ -76,16 +85,19 @@ class ProgressSyncService {
     _pushTimers[bookId]?.cancel();
     _pushTimers[bookId] = Timer(pushDebounce, () {
       _pushTimers.remove(bookId);
-      pushBook(bookId).catchError((Object e) {
+      pushBook(bookId, skipIfUnreachable: true).catchError((Object e) {
         debugPrint('[Sync] push failed for book $bookId: $e');
       });
     });
   }
 
   /// Push the book's current progress to its server, if linked and enabled.
-  Future<void> pushBook(int bookId) async {
+  Future<void> pushBook(int bookId, {bool skipIfUnreachable = false}) async {
     final book = await _bookById(bookId);
     if (book == null) return;
+    final connectionId = book.serverConnectionId;
+    if (connectionId == null) return;
+    if (skipIfUnreachable && _pausedAsUnreachable(connectionId)) return;
     final link = await _linkFor(book);
     if (link == null) return;
     final progress = _localProgress(book);
@@ -94,9 +106,11 @@ class ProgressSyncService {
     // open-time reconcile, Sync Now) feeds the same rate.
     try {
       await link.client.pushProgress(link.ids, progress);
+      _noteReachability(connectionId);
       await _markSynced(bookId);
       countUsage('sync.progress_pushed', attrs: {'format': book.bookType});
     } catch (e) {
+      _noteReachability(connectionId, e);
       logFailure('sync.progress_pushed', e, attrs: {'format': book.bookType});
       rethrow;
     }
@@ -117,6 +131,7 @@ class ProgressSyncService {
       final localAt = book.lastReadAt;
       final syncedAt = book.lastSyncedAt;
       final remote = await link.client.pullProgress(link.ids);
+      _noteReachability(book.serverConnectionId!);
 
       // Remote wins only when strictly newer than both the last local read
       // and the last sync: a record this device pushed is stamped after
@@ -152,6 +167,8 @@ class ProgressSyncService {
       // Fire-and-forget: transport errors, a proxy's HTML login page, or a
       // secure-storage failure all just log; the next open retries.
       debugPrint('[Sync] syncOnOpen failed: $e');
+      final connectionId = book.serverConnectionId;
+      if (connectionId != null) _noteReachability(connectionId, e);
       logFailure('sync.open_sync', e, attrs: {'format': book.bookType});
       return null;
     } finally {
@@ -199,6 +216,21 @@ class ProgressSyncService {
     final readAt = book.lastReadAt;
     final syncedAt = book.lastSyncedAt;
     return readAt != null && (syncedAt == null || readAt.isAfter(syncedAt));
+  }
+
+  bool _pausedAsUnreachable(int connectionId) {
+    final until = _unreachableUntil[connectionId];
+    return until != null && _now().isBefore(until);
+  }
+
+  /// A request that never reached the server starts the [unreachablePause];
+  /// any other outcome lifts it.
+  void _noteReachability(int connectionId, [Object? error]) {
+    if (error is SyncException && error.isUnreachable) {
+      _unreachableUntil[connectionId] = _now().add(unreachablePause);
+    } else {
+      _unreachableUntil.remove(connectionId);
+    }
   }
 
   Future<({ServerClient client, Map<String, String> ids})?> _linkFor(
