@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Locale for any text that may contain Japanese.
@@ -5,9 +6,34 @@ import 'package:flutter/material.dart';
 /// Chinese and Japanese share code points for Han characters but draw some
 /// of them differently (直 is one). Font fallback picks the face from the
 /// text's locale, which defaults to the UI language, so an English UI gets
-/// the Chinese glyphs on both Android and iOS. Text that bypasses the theme
-/// (a bare [RichText] or [TextPainter]) must pass this locale itself.
+/// the Chinese glyphs on both Android and iOS.
 const Locale japaneseTextLocale = Locale('ja', 'JP');
+
+/// Bundled Japanese font: kana, CJK punctuation and the JIS X 0208 kanji of
+/// Noto Sans JP, without Latin.
+// ponytail: JIS X 0208 only (2.1 MB a weight); rarer kanji (剝, 𠮟) still come
+// from the system font. Widen the range in tools/subset_japanese_font.py if
+// they show up in Chinese forms.
+const String japaneseFontFamily = 'NotoSansJP';
+
+/// Base style for any text that may contain Japanese.
+///
+/// The locale is enough where the system font has no kanji (stock Android,
+/// iOS): fallback then picks the Japanese face. Xiaomi, OnePlus and Oppo
+/// phones ship a system font that has every kanji in its Chinese form, so
+/// fallback never runs and the locale is ignored. On Android the bundled
+/// font therefore comes first; the rest falls through to what an unset
+/// family resolved to before (Roboto where it exists by name, else the
+/// system default). Text that bypasses the theme (a bare [RichText] or
+/// [TextPainter]) must start from this style itself.
+TextStyle get japaneseTextStyle =>
+    defaultTargetPlatform == TargetPlatform.android
+    ? const TextStyle(
+        locale: japaneseTextLocale,
+        fontFamily: japaneseFontFamily,
+        fontFamilyFallback: ['Roboto', 'sans-serif'],
+      )
+    : const TextStyle(locale: japaneseTextLocale);
 
 /// Available color themes for the app.
 enum AppColorTheme {
@@ -31,28 +57,29 @@ enum AppColorTheme {
 class AppTheme {
   AppTheme._();
 
-  static const TextStyle _japanese = TextStyle(locale: japaneseTextLocale);
-
   /// Merged into the Material typography, so every theme-derived style (and
   /// every [Text] under a [Material], through [DefaultTextStyle]) renders
   /// Han characters with Japanese glyphs whatever the UI language.
-  static const TextTheme _japaneseTextTheme = TextTheme(
-    displayLarge: _japanese,
-    displayMedium: _japanese,
-    displaySmall: _japanese,
-    headlineLarge: _japanese,
-    headlineMedium: _japanese,
-    headlineSmall: _japanese,
-    titleLarge: _japanese,
-    titleMedium: _japanese,
-    titleSmall: _japanese,
-    bodyLarge: _japanese,
-    bodyMedium: _japanese,
-    bodySmall: _japanese,
-    labelLarge: _japanese,
-    labelMedium: _japanese,
-    labelSmall: _japanese,
-  );
+  static TextTheme get _japaneseTextTheme {
+    final japanese = japaneseTextStyle;
+    return TextTheme(
+      displayLarge: japanese,
+      displayMedium: japanese,
+      displaySmall: japanese,
+      headlineLarge: japanese,
+      headlineMedium: japanese,
+      headlineSmall: japanese,
+      titleLarge: japanese,
+      titleMedium: japanese,
+      titleSmall: japanese,
+      bodyLarge: japanese,
+      bodyMedium: japanese,
+      bodySmall: japanese,
+      labelLarge: japanese,
+      labelMedium: japanese,
+      labelSmall: japanese,
+    );
+  }
 
   static ThemeData darkTheme(Color seedColor) {
     final colorScheme = ColorScheme.fromSeed(

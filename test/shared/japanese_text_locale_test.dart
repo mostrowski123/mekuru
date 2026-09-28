@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/hit_testable_rich_text.dart';
@@ -6,15 +7,15 @@ import 'package:mekuru/features/settings/data/services/app_settings_storage.dart
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 
-/// The locale a [RichText] hands to its paragraph for [text]: the span's own
-/// style locale wins over the widget-level default.
-Locale? _effectiveLocale(WidgetTester tester, String text) {
+/// The root span style a [RichText] hands to its paragraph for [text]; every
+/// span inherits its locale and font family.
+TextStyle? _rootStyle(WidgetTester tester, String text) {
   final richText = tester.widget<RichText>(
     find.byWidgetPredicate(
       (widget) => widget is RichText && widget.text.toPlainText() == text,
     ),
   );
-  return richText.text.style?.locale ?? richText.locale;
+  return richText.text.style;
 }
 
 Widget _app({required Widget home, required Locale locale}) {
@@ -57,9 +58,22 @@ void main() {
         ];
         for (final style in styles) {
           expect(style?.locale, japaneseTextLocale);
+          expect(style?.fontFamily, japaneseFontFamily);
+          expect(style?.fontFamilyFallback, ['Roboto', 'sans-serif']);
         }
       }
     }
+  });
+
+  test('iOS keeps the system fonts', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    final style = AppTheme.lightTheme(
+      AppColorTheme.mekuruRed.seedColor,
+    ).textTheme.bodyMedium;
+    expect(style?.locale, japaneseTextLocale);
+    expect(style?.fontFamily, isNot(japaneseFontFamily));
   });
 
   for (final uiLocale in _uiLocales) {
@@ -72,7 +86,7 @@ void main() {
         ),
       );
 
-      expect(_effectiveLocale(tester, '直す'), japaneseTextLocale);
+      expect(_rootStyle(tester, '直す')?.locale, japaneseTextLocale);
     });
 
     testWidgets('dictionary headword renders Japanese under a '
@@ -92,7 +106,8 @@ void main() {
       );
 
       expect(find.byType(HitTestableRichText), findsOneWidget);
-      expect(_effectiveLocale(tester, '直す'), japaneseTextLocale);
+      expect(_rootStyle(tester, '直す')?.locale, japaneseTextLocale);
+      expect(_rootStyle(tester, '直す')?.fontFamily, japaneseFontFamily);
     });
   }
 
@@ -112,8 +127,10 @@ void main() {
       ),
     );
 
-    expect(_effectiveLocale(tester, '直'), japaneseTextLocale);
-    expect(_effectiveLocale(tester, 'なお'), japaneseTextLocale);
+    expect(_rootStyle(tester, '直')?.locale, japaneseTextLocale);
+    expect(_rootStyle(tester, 'なお')?.locale, japaneseTextLocale);
+    expect(_rootStyle(tester, '直')?.fontFamily, japaneseFontFamily);
+    expect(_rootStyle(tester, 'なお')?.fontFamily, japaneseFontFamily);
   });
 
   testWidgets('HitTestableRichText pins the Japanese locale', (tester) async {
@@ -128,6 +145,7 @@ void main() {
       ),
     );
 
-    expect(_effectiveLocale(tester, '直す'), japaneseTextLocale);
+    expect(_rootStyle(tester, '直す')?.locale, japaneseTextLocale);
+    expect(_rootStyle(tester, '直す')?.fontFamily, japaneseFontFamily);
   });
 }

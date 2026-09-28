@@ -179,10 +179,9 @@ class _PitchAccentPainter extends CustomPainter {
     return TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(fontSize: size, color: color),
+        style: japaneseTextStyle.copyWith(fontSize: size, color: color),
       ),
       textDirection: TextDirection.ltr,
-      locale: japaneseTextLocale,
     );
   }
 

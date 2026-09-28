@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -63,6 +65,13 @@ Future<void> main() async {
   // where each decoded page can be several MB.
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 * 1024 * 1024;
   PaintingBinding.instance.imageCache.maximumSize = 50;
+
+  // Bundled Noto Sans JP (see japaneseTextStyle), shown on the licenses page.
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(const [
+      'Noto Sans JP',
+    ], await rootBundle.loadString('assets/fonts/OFL.txt'));
+  });
 
   final audience = await resolveSentryAudience();
   if (audience.isSynthetic) {

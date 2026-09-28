@@ -193,21 +193,22 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
     final basePainter = TextPainter(
       text: TextSpan(
         children: _buildCharSpans(segment.glyphs, expressionStyle, kanjiStyle),
-        style: expressionStyle,
+        style: japaneseTextStyle.merge(expressionStyle),
       ),
       textDirection: textDirection,
       textScaler: textScaler,
-      locale: japaneseTextLocale,
     )..layout();
 
     TextPainter? furiganaPainter;
     if (segment.furigana != null) {
       furiganaPainter = TextPainter(
-        text: TextSpan(text: segment.furigana!, style: furiganaStyle),
+        text: TextSpan(
+          text: segment.furigana!,
+          style: japaneseTextStyle.merge(furiganaStyle),
+        ),
         textDirection: textDirection,
         textScaler: textScaler,
         textAlign: TextAlign.center,
-        locale: japaneseTextLocale,
       )..layout();
     }
 

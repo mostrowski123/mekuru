@@ -19,7 +19,7 @@ class TextTapTarget {
 /// selection boxes from the laid-out [RenderParagraph].
 ///
 /// A bare [RichText] skips [DefaultTextStyle] and takes its locale from the
-/// UI language, so it is pinned to [japaneseTextLocale] here.
+/// UI language, so its text starts from [japaneseTextStyle] here.
 class HitTestableRichText extends StatefulWidget {
   const HitTestableRichText({
     super.key,
@@ -50,10 +50,9 @@ class _HitTestableRichTextState extends State<HitTestableRichText> {
       onTapUp: _handleTap,
       child: RichText(
         key: _richTextKey,
-        text: widget.text,
+        text: TextSpan(style: japaneseTextStyle, children: [widget.text]),
         textAlign: widget.textAlign,
         softWrap: widget.softWrap,
-        locale: japaneseTextLocale,
         textScaler: MediaQuery.textScalerOf(context),
         textDirection: Directionality.of(context),
       ),

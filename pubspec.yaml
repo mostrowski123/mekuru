@@ -134,8 +134,19 @@ flutter:
 
   assets:
     - assets/epub_viewer/
+    - assets/fonts/OFL.txt
     - assets/ipadic/
     - assets/user_dict/
+
+  # Japanese glyphs on Android, where some phones' system fonts draw kanji in
+  # their Chinese forms (see japaneseTextStyle). Built by
+  # tools/subset_japanese_font.py.
+  fonts:
+    - family: NotoSansJP
+      fonts:
+        - asset: assets/fonts/NotoSansJP-Regular.otf
+        - asset: assets/fonts/NotoSansJP-Bold.otf
+          weight: 700
 
 # Read by `dart run sentry_dart_plugin` in build-release.yml (Android) and
 # release-ios.yml (dSYMs). No web build, so no source maps; `commits: false` because the GitHub repo is not linked
