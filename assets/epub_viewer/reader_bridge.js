@@ -28,6 +28,36 @@ window._forceHorizontalAxis = false;
 // [MEKURU PATCH] in Contents.columns().
 window._verticalBlockCount = 1;
 
+// ── Document language ────────────────────────────────────────────────
+
+// Chinese and Japanese fonts draw some shared Han characters differently
+// (直, 骨, 角). The WebView picks the face from the document language, and a
+// book that declares none (or a wrong one) falls back to the system locale,
+// which on an English device means the Chinese glyphs. Every section is
+// tagged Japanese before epub.js serializes it into the iframe, so the
+// first layout already uses Japanese fonts. Attributes only: the node tree,
+// and so every CFI, is unchanged. Elements below <body> keep their own
+// lang (an English phrase tagged by the publisher stays English).
+var XML_NS = 'http://www.w3.org/XML/1998/namespace';
+
+function tagElementJapanese(el, force) {
+  if (!el) return;
+  if (force || el.hasAttribute('lang')) el.setAttribute('lang', 'ja');
+  // In XHTML, xml:lang outranks lang.
+  if (force || el.hasAttributeNS(XML_NS, 'lang')) {
+    el.setAttributeNS(XML_NS, 'xml:lang', 'ja');
+  }
+}
+
+function tagSectionJapanese(doc) {
+  var root = doc && doc.documentElement;
+  if (!root) return;
+  tagElementJapanese(root, true);
+  tagElementJapanese(root.getElementsByTagName('body')[0], false);
+}
+
+book.spine.hooks.content.register(tagSectionJapanese);
+
 function callDart(name) {
   var args = Array.prototype.slice.call(arguments, 1);
   try {

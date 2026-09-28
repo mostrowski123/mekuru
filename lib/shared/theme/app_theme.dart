@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 
+/// Locale for any text that may contain Japanese.
+///
+/// Chinese and Japanese share code points for Han characters but draw some
+/// of them differently (直 is one). Font fallback picks the face from the
+/// text's locale, which defaults to the UI language, so an English UI gets
+/// the Chinese glyphs on both Android and iOS. Text that bypasses the theme
+/// (a bare [RichText] or [TextPainter]) must pass this locale itself.
+const Locale japaneseTextLocale = Locale('ja', 'JP');
+
 /// Available color themes for the app.
 enum AppColorTheme {
   // Default — the app's signature Japanese-inspired red
@@ -22,6 +31,29 @@ enum AppColorTheme {
 class AppTheme {
   AppTheme._();
 
+  static const TextStyle _japanese = TextStyle(locale: japaneseTextLocale);
+
+  /// Merged into the Material typography, so every theme-derived style (and
+  /// every [Text] under a [Material], through [DefaultTextStyle]) renders
+  /// Han characters with Japanese glyphs whatever the UI language.
+  static const TextTheme _japaneseTextTheme = TextTheme(
+    displayLarge: _japanese,
+    displayMedium: _japanese,
+    displaySmall: _japanese,
+    headlineLarge: _japanese,
+    headlineMedium: _japanese,
+    headlineSmall: _japanese,
+    titleLarge: _japanese,
+    titleMedium: _japanese,
+    titleSmall: _japanese,
+    bodyLarge: _japanese,
+    bodyMedium: _japanese,
+    bodySmall: _japanese,
+    labelLarge: _japanese,
+    labelMedium: _japanese,
+    labelSmall: _japanese,
+  );
+
   static ThemeData darkTheme(Color seedColor) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: seedColor,
@@ -32,6 +64,8 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
+      textTheme: _japaneseTextTheme,
+      primaryTextTheme: _japaneseTextTheme,
       scaffoldBackgroundColor: const Color(0xFF121212),
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
@@ -71,6 +105,8 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
+      textTheme: _japaneseTextTheme,
+      primaryTextTheme: _japaneseTextTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,

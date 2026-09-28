@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 
 /// Splits a Japanese reading into morae (rhythmic units).
 ///
@@ -181,6 +182,7 @@ class _PitchAccentPainter extends CustomPainter {
         style: TextStyle(fontSize: size, color: color),
       ),
       textDirection: TextDirection.ltr,
+      locale: japaneseTextLocale,
     );
   }
 

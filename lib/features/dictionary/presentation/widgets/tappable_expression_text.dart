@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/utils/japanese_text.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/hit_testable_rich_text.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 
 /// Displays a Japanese expression with furigana only above kanji, where each
@@ -196,6 +197,7 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
       ),
       textDirection: textDirection,
       textScaler: textScaler,
+      locale: japaneseTextLocale,
     )..layout();
 
     TextPainter? furiganaPainter;
@@ -205,6 +207,7 @@ class _TappableExpressionTextState extends State<TappableExpressionText> {
         textDirection: textDirection,
         textScaler: textScaler,
         textAlign: TextAlign.center,
+        locale: japaneseTextLocale,
       )..layout();
     }
 
