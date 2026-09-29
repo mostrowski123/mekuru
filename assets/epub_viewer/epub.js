@@ -9100,6 +9100,14 @@ class IframeView {
       if (this.settings.flow !== "scrolled" && width % this.layout.pageWidth > 0) {
         width = Math.ceil(width / this.layout.pageWidth) * this.layout.pageWidth;
       }
+      // [MEKURU PATCH] In scrolled flow, cover the whole document. The text's
+      // box leaves out the first and last paragraphs' margins, so the strip
+      // stopped short and cut into the last line, and the reader's blank
+      // space after it (reader_bridge.js addScrollEndSpace()). In vertical
+      // writing the root element is exactly as wide as its content.
+      if (this.settings.flow === "scrolled") {
+        width = Math.max(width, Math.ceil(this.contents.documentElement.getBoundingClientRect().width));
+      }
       if (this.settings.forceEvenPages) {
         columns = width / this.layout.pageWidth;
         if (this.layout.divisor > 1 && this.layout.name === "reflowable" && columns % 2 > 0) {

@@ -25,8 +25,9 @@ import 'test_infrastructure.dart';
 /// (the per-character Mapping [MEKURU PATCH]), the display(cfi) round trip
 /// (moveToTarget(); without it a resumed vertical book opens at the end of
 /// its chapter), chapter changes at both ends without a flash of the wrong
-/// layout (expand() sizing patch), no side margins, and an image page that
-/// fits one screen (adjustImages() patch).
+/// layout (expand() sizing patch), no side margins, blank strip after a
+/// vertical chapter's last line, and an image page that fits one screen
+/// (adjustImages() patch).
 void registerScrollViewScenario({required bool vertical}) {
   late Directory tempDir;
 
@@ -146,6 +147,10 @@ void registerScrollViewScenario({required bool vertical}) {
       await scrollScreens(100);
       final atEnd = await settle();
       expect(atEnd['atEnd'], isTrue, reason: '$atEnd');
+      // A vertical chapter's strip runs on past its last line.
+      if (vertical) {
+        expect(atEnd['endGap'], greaterThan(1), reason: '$atEnd');
+      }
       controller.next();
       final chapter2 = await settle();
       expect(chapter2['index'], 1, reason: '$chapter2');
@@ -339,9 +344,15 @@ Future<Map<String, dynamic>> _scrollState(CustomEpubController controller) =>
       '  var firstLine = box && (vertical'
       '    ? (frame.top + box.rect.top - edge.top) / box.line'
       '    : (edge.right - frame.left - box.rect.right) / box.line);'
+      '  var text = v.contents.document.createRange();'
+      '  text.selectNodeContents(v.contents.document.body);'
+      '  var textEnd = frame.left + text.getBoundingClientRect().left;'
+      '  var endGap = box && !vertical'
+      '    ? (textEnd - edge.left) / box.line : null;'
       '  return JSON.stringify({'
       '    sideMargin: edge.left,'
       '    firstLine: firstLine,'
+      '    endGap: endGap,'
       '    length: vertical ? c.scrollHeight : c.scrollWidth,'
       '    flow: rendition.settings.flow,'
       '    axis: m.settings.axis,'

@@ -275,6 +275,8 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     applyFuriganaStyleToDoc(doc);
     processSectionForFurigana(doc);
 
+    if (_scrollView) addScrollEndSpace(contents);
+
     doc.addEventListener('selectionchange', function () {
       var sel = contents.window.getSelection();
       var text = sel ? sel.toString() : '';
@@ -1274,6 +1276,22 @@ function scrollEdges() {
     }
   }
   return { axis: axis, dir: dir, atStart: pos <= 1, atEnd: pos >= max - 1 };
+}
+
+// Blank space after a vertical chapter's last line, so the end of the strip
+// doesn't leave that line against the screen edge (there are no side
+// margins in scroll view). padding-block-end is the left side in
+// vertical-rl, and the strip covers the whole document ([MEKURU PATCH] in
+// IframeView.expand()). Horizontal text keeps the vertical margin below it,
+// and image-only sections get none, so an illustration still fits a screen.
+var SCROLL_END_SPACE = '2em';
+
+function addScrollEndSpace(contents) {
+  var body = contents.document.body;
+  if (!body || !body.textContent.trim()) return;
+  var mode = contents.window.getComputedStyle(body).writingMode || '';
+  if (mode.indexOf('vertical') !== 0) return;
+  body.style.setProperty('padding-block-end', SCROLL_END_SPACE, 'important');
 }
 
 // Opens the strip at its end (going back into the previous chapter) and
