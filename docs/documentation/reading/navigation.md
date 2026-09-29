@@ -9,6 +9,7 @@ The EPUB reader uses three main tap zones:
 - **Left edge** - go forward in RTL mode, or backward in LTR mode
 - **Right edge** - go backward in RTL mode, or forward in LTR mode
 - **Center** - show or hide the reader controls
+- **Top and bottom margins** - show or hide the reader controls, like the center
 
 ![EPUB reader view with navigation controls visible](../screenshots/epub-reader-navigation-view.jpg)
 
@@ -18,6 +19,8 @@ Swipe horizontally to turn pages. The swipe direction follows the book's current
 
 - **RTL** - swipe left to go forward, swipe right to go back
 - **LTR** - swipe right to go forward, swipe left to go back
+
+Swipe down to show the reader controls, and swipe up to hide them. With Scroll View on, swipes move through the chapter instead: tap the center or a top or bottom margin to show the controls.
 
 Swipe sensitivity is part of the app-wide reading defaults described in [Display Settings](display-settings.md).
 

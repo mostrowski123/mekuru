@@ -42,7 +42,7 @@ void registerScrollViewScenario({required bool vertical}) {
         ? 'vertical text scrolls sideways chapter by chapter'
         : 'horizontal text scrolls up and down chapter by chapter',
     (tester) async {
-      final controller = await _openInScrollView(
+      final controller = await openReader(
         tester,
         await writeScrollViewEpub(
           tempDir,
@@ -223,19 +223,20 @@ Future<String> writeScrollViewEpub(
   return epubPath;
 }
 
-/// Imports [epubPath], opens it with scroll view on and waits for the first
+/// Imports [epubPath], opens it with [settings] and waits for the first
 /// chapter to render. Returns the viewer's controller.
-Future<CustomEpubController> _openInScrollView(
+Future<CustomEpubController> openReader(
   WidgetTester tester,
   String epubPath,
-  String title,
-) async {
+  String title, {
+  ReaderSettings settings = const ReaderSettings(scrollView: true),
+}) async {
   final db = createTestDatabase();
   addTearDown(db.close);
   await BookRepository(db).importEpub(epubPath);
 
   final storage = InMemoryReaderSettingsStorage();
-  await storage.save(const ReaderSettings(scrollView: true));
+  await storage.save(settings);
 
   await tester.pumpWidget(
     buildIntegrationTestApp(

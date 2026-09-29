@@ -267,6 +267,16 @@ void main() {
       expect(nearEdgeIntent, ReaderNavigationIntent.goForward);
       expect(innerIntent, ReaderNavigationIntent.toggleControls);
     });
+
+    test('a tap in the top or bottom margin toggles controls', () {
+      final intent = resolveTapIntent(
+        normalizedX: 0.02,
+        normalizedY: 0.01,
+        readingDirection: ReaderDirection.rtl,
+        inTopOrBottomMargin: true,
+      );
+      expect(intent, ReaderNavigationIntent.toggleControls);
+    });
   });
 
   // ── resolveSwipeIntent ────────────────────────────────────────────────

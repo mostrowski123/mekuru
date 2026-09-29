@@ -535,10 +535,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             'y=${y.toStringAsFixed(3)}',
                           );
                         },
-                        onTouchUp: (x, y) {
+                        onTouchUp: (x, y, inTopOrBottomMargin) {
                           _handleTouchUp(
                             x,
                             y,
+                            inTopOrBottomMargin,
                             settings.readingDirection,
                             settings.swipeSensitivity,
                           );
@@ -786,6 +787,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   void _handleTouchUp(
     double x,
     double y,
+    bool inTopOrBottomMargin,
     ReaderDirection readingDirection,
     double swipeSensitivity,
   ) {
@@ -807,6 +809,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       normalizedX: upX,
       normalizedY: upY,
       readingDirection: readingDirection,
+      inTopOrBottomMargin: inTopOrBottomMargin,
     );
     debugPrint(
       '[READER] TAP detected: x=${upX.toStringAsFixed(3)} '

@@ -162,7 +162,10 @@ class CustomEpubViewer extends StatefulWidget {
   /// [edges] is where the scroll-view strip stood at touch-down; null in
   /// paginated mode.
   final void Function(double x, double y, ScrollEdges? edges)? onTouchDown;
-  final void Function(double x, double y)? onTouchUp;
+
+  /// [inTopOrBottomMargin]: the finger lifted in the page margin above or
+  /// below the text.
+  final void Function(double x, double y, bool inTopOrBottomMargin)? onTouchUp;
   final void Function(
     String surroundingText,
     int charOffset,
@@ -442,11 +445,12 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         if (data.length >= 2) {
           final x = (data[0] as num).toDouble();
           final y = (data[1] as num).toDouble();
+          final inTopOrBottomMargin = data.length >= 3 && data[2] == true;
           debugPrint(
             '[EPUB_DART] touchUp x=${x.toStringAsFixed(3)} '
-            'y=${y.toStringAsFixed(3)}',
+            'y=${y.toStringAsFixed(3)} margin=$inTopOrBottomMargin',
           );
-          widget.onTouchUp?.call(x, y);
+          widget.onTouchUp?.call(x, y, inTopOrBottomMargin);
         }
       },
     );

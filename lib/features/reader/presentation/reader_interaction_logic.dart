@@ -28,13 +28,17 @@ bool isCenterTapZone({
   return clampedX >= zoneStart && clampedX <= zoneEnd;
 }
 
+/// [inTopOrBottomMargin]: the tap landed in the page margin above or below
+/// the text, which toggles the controls like the center zone.
 ReaderNavigationIntent resolveTapIntent({
   required double normalizedX,
   required double normalizedY,
   required ReaderDirection readingDirection,
   double centerZoneWidthFraction = kToggleZoneWidthFraction,
+  bool inTopOrBottomMargin = false,
 }) {
-  if (isCenterTapZone(x: normalizedX, widthFraction: centerZoneWidthFraction)) {
+  if (inTopOrBottomMargin ||
+      isCenterTapZone(x: normalizedX, widthFraction: centerZoneWidthFraction)) {
     return ReaderNavigationIntent.toggleControls;
   }
 

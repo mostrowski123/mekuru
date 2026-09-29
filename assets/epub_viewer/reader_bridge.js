@@ -309,16 +309,13 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     var lastTouchTs = 0;
 
     function forwardDown(clientX, clientY, source) {
-      unpinScrollEnd();
       var coords = normalizedCoords({ clientX: clientX, clientY: clientY }, contents);
       if (!coords) return;
       console.log(
         '[EPUB_BRIDGE] touchDown(' + source + ') x=' +
           coords.x.toFixed(3) + ' y=' + coords.y.toFixed(3)
       );
-      // In scroll view, also say where the strip stood when the finger
-      // came down: a drag only changes chapter when it started at an edge.
-      callDart('touchDown', coords.x, coords.y, _scrollView ? scrollEdges() : null);
+      sendTouchDown(coords.x, coords.y);
     }
 
     function forwardUp(clientX, clientY, source) {
@@ -412,6 +409,47 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     }
   });
 }
+
+// x and y are fractions of the viewport. In scroll view, also say where the
+// strip stood when the finger came down: a drag only changes chapter when it
+// started at an edge.
+function sendTouchDown(x, y) {
+  unpinScrollEnd();
+  callDart('touchDown', x, y, _scrollView ? scrollEdges() : null);
+}
+
+// ── Page margins ──────────────────────────────────────────────────────
+// Touches on the margins around the epub.js container land on this page,
+// never in the book's iframe, so the content hook above misses them.
+// touchUp's third argument says the finger lifted above or below the text:
+// Dart shows the controls for a tap there, like a tap in the center.
+
+function forwardMarginDown(clientX, clientY) {
+  sendTouchDown(clientX / window.innerWidth, clientY / window.innerHeight);
+}
+
+function forwardMarginUp(clientX, clientY) {
+  var box = rendition && rendition.manager &&
+    rendition.manager.container.getBoundingClientRect();
+  var topOrBottom = !!box && (clientY < box.top || clientY > box.bottom);
+  callDart('touchUp', clientX / window.innerWidth, clientY / window.innerHeight, topOrBottom);
+}
+
+document.addEventListener('touchstart', function (e) {
+  forwardMarginDown(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: true });
+
+document.addEventListener('touchend', function (e) {
+  forwardMarginUp(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+}, { passive: true });
+
+document.addEventListener('pointerdown', function (e) {
+  if (e.pointerType !== 'touch') forwardMarginDown(e.clientX, e.clientY);
+}, { passive: true });
+
+document.addEventListener('pointerup', function (e) {
+  if (e.pointerType !== 'touch') forwardMarginUp(e.clientX, e.clientY);
+}, { passive: true });
 
 // ── Navigation (section-aware — bypasses epub.js broken scroll-delta logic) ──
 
