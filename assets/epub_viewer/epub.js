@@ -3988,6 +3988,20 @@ class default_DefaultViewManager {
       forceRight = true;
     }
     this.add(section, forceRight).then(function (view) {
+      // [MEKURU PATCH] In scrolled flow, place and show a new view only once
+      // its content hooks have run: they apply the reader's theme, font size
+      // and image caps, which reflow the text. Upstream showed it first, so
+      // a new chapter appeared in its unthemed layout and then jumped, and a
+      // display() target was placed in text that then moved. Hook failures
+      // were never awaited upstream, so they are ignored here too.
+      // The hooks' reflow is measured right away (expand()), not a resize
+      // event later, after the view is already on screen.
+      if (this.isPaginated || !view.hooked) return view;
+      return view.hooked.catch(() => {}).then(() => {
+        view.expand();
+        return view;
+      });
+    }.bind(this)).then(function (view) {
       // Move to correct place within the section, if needed
       if (target) {
         // [MEKURU PATCH] see moveToTarget()
@@ -4042,29 +4056,63 @@ class default_DefaultViewManager {
     this.scrollTo(distX, distY, true);
   }
 
-  // [MEKURU PATCH] display()'s move-to-target step. Scroll view with
-  // vertical text (scrolled flow, horizontal axis) needs its own: upstream
-  // moveTo() only moves along the vertical axis when not paginated, and its
-  // rtl branch then scrolls to the far left, which is the chapter's end. It
-  // is also fed locationOf(), whose box for a collapsed CFI runs to the next
-  // space; Japanese has none, so that box spans the rest of the text node.
-  // There the target character's own column is scrolled to the start edge
-  // of the container. Raising scrollLeft moves the content left in both rtl
-  // scroll types Chromium and WebKit use ("negative" and "default"), so a
-  // relative move works in both. Every other layout keeps upstream moveTo().
+  // [MEKURU PATCH] display()'s move-to-target step. Paginated layouts keep
+  // upstream moveTo(). In scrolled flow (scroll view) upstream only moves
+  // along the vertical axis, and its rtl branch then scrolls vertical text
+  // to the far left, the chapter's end; it is also fed locationOf(), whose
+  // box for a collapsed CFI runs to the next space, i.e. for Japanese to the
+  // end of the text node. So the target is placed by alignTarget() and kept
+  // there by pinScroll().
   moveToTarget(view, target) {
-    if (this.isPaginated || this.settings.axis !== "horizontal") {
+    if (this.isPaginated) {
       this.moveTo(view.locationOf(target), view.width());
       return;
     }
-    let rect = view.contents && view.contents.firstCharRect(target, view.settings.ignoreClass);
-    if (!rect) return;
-    let iframeLeft = view.iframe.getBoundingClientRect().left;
+    this.pinScroll(view, () => this.alignTarget(view, target));
+  }
+
+  // [MEKURU PATCH] Scroll view: keeps a position (a display() target, or the
+  // strip's end) in place while a new view settles. It can still grow after
+  // display() resolves (fonts, ruby, furigana, images): text before the
+  // target pushes it away, and a target near the end of a strip that was not
+  // yet long enough could not even be reached. Every resize of the view
+  // re-applies the position until the reader touches the screen or moves on
+  // (the bridge calls unpinScroll()), or the next pin replaces this one.
+  pinScroll(view, apply) {
+    this.unpinScroll();
+    apply();
+    this._pin = { view: view, apply: apply };
+    view.on(constants["c" /* EVENTS */].VIEWS.RESIZED, apply);
+  }
+  unpinScroll() {
+    if (!this._pin) return;
+    this._pin.view.off(constants["c" /* EVENTS */].VIEWS.RESIZED, this._pin.apply);
+    this._pin = null;
+  }
+
+  // [MEKURU PATCH] Scroll view: makes the target character's line the first
+  // line on screen. Its centre sits half a line in from the start edge (the
+  // right edge for vertical rtl text, the top for horizontal text), so the
+  // whole line and its ruby show, and Mapping reports that same character
+  // as the start again: saving and restoring never drift. Raising
+  // scrollLeft moves the content left in both rtl scroll types Chromium and
+  // WebKit use ("negative" and "default"), so a relative move works in both.
+  alignTarget(view, target) {
+    let box = view.contents && view.contents.charBox(target, view.settings.ignoreClass);
+    if (!box) return;
+    let frame = view.iframe.getBoundingClientRect();
     let container = this.container.getBoundingClientRect();
-    let delta = this.settings.direction === "rtl"
-      ? iframeLeft + rect.right - container.right
-      : iframeLeft + rect.left - container.left;
-    this.scrollTo(this.container.scrollLeft + delta, 0, true);
+    let rect = box.rect;
+    if (this.settings.axis === "horizontal") {
+      let half = Math.max(box.line, rect.width + 2) / 2;
+      let goal = this.settings.direction === "rtl" ? container.right - half : container.left + half;
+      let centre = frame.left + (rect.left + rect.right) / 2;
+      this.scrollTo(this.container.scrollLeft + centre - goal, 0, true);
+    } else {
+      let half = Math.max(box.line, rect.height + 2) / 2;
+      let centre = frame.top + (rect.top + rect.bottom) / 2;
+      this.scrollTo(this.container.scrollLeft, this.container.scrollTop + centre - (container.top + half), true);
+    }
   }
   add(section, forceRight) {
     var view = this.createView(section, forceRight);
@@ -4771,7 +4819,7 @@ class Mapping {
           right = this.horizontal ? elPos.right : elPos.bottom;
           if (left >= start && left <= end) {
             return node;
-          } else if (right > start) {
+          } else if (right > start && this.hasStartChar(node, start, end)) {
             return node;
           } else {
             $prev = node;
@@ -4782,7 +4830,7 @@ class Mapping {
           right = elPos.right;
           if (right <= end && right >= start) {
             return node;
-          } else if (left < end) {
+          } else if (left < end && this.hasStartChar(node, start, end)) {
             return node;
           } else {
             $prev = node;
@@ -4793,7 +4841,7 @@ class Mapping {
           bottom = elPos.bottom;
           if (top >= start && top <= end) {
             return node;
-          } else if (bottom > start) {
+          } else if (bottom > start && this.hasStartChar(node, start, end)) {
             return node;
           } else {
             $prev = node;
@@ -4882,7 +4930,16 @@ class Mapping {
    * @param {number} end position to end at
    * @return {Range}
    */
-  findTextStartRange(node, start, end) {
+  findTextStartRange(node, start, end, strict) {
+    // [MEKURU PATCH] Text nodes are searched per character, see charSearch().
+    var chars = this.charSearch(node);
+    if (chars) {
+      var ltr = this.horizontal && this.direction === "ltr";
+      var rtl = this.horizontal && this.direction === "rtl";
+      var i = chars.first(ltr ? r => r.left >= start : rtl ? r => r.right <= end : r => r.top >= start);
+      if (i < chars.count) return chars.rangeAt(i);
+      return strict ? null : chars.rangeAt(0); // see hasStartChar()
+    }
     var ranges = this.splitTextNodeIntoRanges(node);
     var range;
     var pos;
@@ -4909,7 +4966,16 @@ class Mapping {
 
       // prev = range;
     }
-    return ranges[0];
+    return strict ? null : ranges[0]; // [MEKURU PATCH] see hasStartChar()
+  }
+
+  // [MEKURU PATCH] Whether any character of a node that straddles the start
+  // edge is on screen. A node whose box just reaches the edge while all its
+  // glyphs are still beyond it (only a paragraph's line spacing shows) must
+  // be skipped; its start would otherwise fall back to its first, off-screen
+  // character. Only called for that one straddling node.
+  hasStartChar(node, start, end) {
+    return this.findTextStartRange(node, start, end, true) !== null;
   }
 
   /**
@@ -4921,6 +4987,18 @@ class Mapping {
    * @return {Range}
    */
   findTextEndRange(node, start, end) {
+    // [MEKURU PATCH] Text nodes are searched per character, see charSearch():
+    // the last character is the one before the first that reaches past the
+    // end edge, or that one itself when it is still partly on screen.
+    var chars = this.charSearch(node);
+    if (chars) {
+      var ltr = this.horizontal && this.direction === "ltr";
+      var rtl = this.horizontal && this.direction === "rtl";
+      var j = chars.first(ltr ? r => r.right > end : rtl ? r => r.left < start : r => r.bottom > end);
+      if (j === chars.count) return chars.rangeAt(j - 1);
+      var beyond = ltr ? r => r.left > end : rtl ? r => r.right < start : r => r.top > end;
+      return chars.rangeAt(j > 0 && beyond(chars.rectAt(j)) ? j - 1 : j);
+    }
     var ranges = this.splitTextNodeIntoRanges(node);
     var prev;
     var range;
@@ -4959,6 +5037,53 @@ class Mapping {
 
     // Ends before limit
     return ranges[ranges.length - 1];
+  }
+
+  // [MEKURU PATCH] Positions are found per character, not per word:
+  // Japanese has no spaces, so a "word" was a whole paragraph and every start
+  // or end position (resume, resize, bookmarks, page ends) fell on a
+  // paragraph boundary, often lines off screen. The glyphs of one text node
+  // run monotonically in reading order, so a binary search over its
+  // characters (whitespace skipped) finds an edge with about a dozen
+  // measurements and one reused Range. Null for anything but a text node
+  // with visible characters.
+  charSearch(node) {
+    if (node.nodeType !== Node.TEXT_NODE) return null;
+    let text = node.textContent;
+    let offsets = [];
+    for (let i = 0; i < text.length; i++) {
+      if (!/\s/.test(text[i])) offsets.push(i);
+    }
+    if (!offsets.length) return null;
+    let doc = node.ownerDocument;
+    let probe = doc.createRange();
+    let rangeAt = i => {
+      let range = doc.createRange();
+      range.setStart(node, offsets[i]);
+      range.setEnd(node, offsets[i] + 1);
+      return range;
+    };
+    let rectAt = i => {
+      probe.setStart(node, offsets[i]);
+      probe.setEnd(node, offsets[i] + 1);
+      return probe.getBoundingClientRect();
+    };
+    return {
+      count: offsets.length,
+      rangeAt: rangeAt,
+      rectAt: rectAt,
+      // The first character whose box passes `test` (false for every earlier
+      // character, true for every later one), or `count` if none does.
+      first: test => {
+        let lo = 0;
+        let hi = offsets.length;
+        while (lo < hi) {
+          let mid = lo + hi >> 1;
+          if (test(rectAt(mid))) hi = mid;else lo = mid + 1;
+        }
+        return lo;
+      }
+    };
   }
 
   /**
@@ -5595,21 +5720,30 @@ class Contents {
     return this.document.documentElement;
   }
 
-  // [MEKURU PATCH] Box of the single character a CFI points at, for
-  // DefaultViewManager.moveToTarget() (which says why locationOf() won't do).
-  firstCharRect(target, ignoreClass) {
+  // [MEKURU PATCH] Box of the single character a CFI points at, and the
+  // line size (line-height) around it, for DefaultViewManager.alignTarget().
+  charBox(target, ignoreClass) {
     if (!this.document || !this.epubcfi.isCfiString(target)) return null;
     let range = this.range(target, ignoreClass);
     if (!range) return null;
     let node = range.startContainer;
+    let rect;
     if (node.nodeType === Node.TEXT_NODE && node.length > 0) {
       let start = Math.min(range.startOffset, node.length - 1);
       let charRange = this.document.createRange();
       charRange.setStart(node, start);
       charRange.setEnd(node, start + 1);
-      return charRange.getBoundingClientRect();
+      rect = charRange.getBoundingClientRect();
+    } else if (node.getBoundingClientRect) {
+      rect = node.getBoundingClientRect();
+    } else {
+      return null;
     }
-    return node.getBoundingClientRect ? node.getBoundingClientRect() : null;
+    let element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    let style = this.window.getComputedStyle(element || this.content);
+    let line = parseFloat(style.lineHeight);
+    // "normal" line-height parses as NaN.
+    return { rect: rect, line: isNaN(line) ? parseFloat(style.fontSize) * 1.5 : line };
   }
 
   /**
@@ -8009,9 +8143,11 @@ class rendition_Rendition {
    */
   afterDisplayed(view) {
     view.on(constants["c" /* EVENTS */].VIEWS.MARK_CLICKED, (cfiRange, data) => this.triggerMarkEvent(cfiRange, data, view.contents));
-    this.hooks.render.trigger(view, this).then(() => {
+    // [MEKURU PATCH] Keep this promise on the view, so
+    // DefaultViewManager.display() can wait for the content hooks.
+    view.hooked = this.hooks.render.trigger(view, this).then(() => {
       if (view.contents) {
-        this.hooks.content.trigger(view.contents, this).then(() => {
+        return this.hooks.content.trigger(view.contents, this).then(() => {
           /**
            * Emit that a section has been rendered
            * @event rendered
@@ -8495,7 +8631,11 @@ class rendition_Rendition {
       });
     }
     let computed = contents.window.getComputedStyle(contents.content, null);
-    let height = (contents.content.offsetHeight - (parseFloat(computed.paddingTop) + parseFloat(computed.paddingBottom))) * .95;
+    // [MEKURU PATCH] In scrolled flow the content has no fixed height (it
+    // grows to fit), so the cap came out as 95% of the page's own height and
+    // tall images overflowed the screen. Cap them to the screen instead.
+    let available = this.manager && !this.manager.isPaginated ? this._layout.height : contents.content.offsetHeight;
+    let height = (available - (parseFloat(computed.paddingTop) + parseFloat(computed.paddingBottom))) * .95;
     let horizontalPadding = parseFloat(computed.paddingLeft) + parseFloat(computed.paddingRight);
     contents.addStylesheetRules({
       "img": {
@@ -8851,7 +8991,13 @@ class IframeView {
       this.emit(_utils_constants__WEBPACK_IMPORTED_MODULE_4__[/* EVENTS */ "c"].VIEWS.WRITING_MODE, writingMode);
 
       // apply the layout function to the contents
-      this.layout.format(this.contents, this.section, this.axis);
+      // [MEKURU PATCH] The axis lives in this.settings.axis; upstream passed
+      // this.axis, which is never set, so scrolled flow laid every section
+      // out as horizontal text (body locked to one screen wide). Vertical
+      // text then overflowed that body, measured wrong at first and only
+      // settled a resize later: going back a chapter flashed, and a
+      // display(cfi) target could not be placed.
+      this.layout.format(this.contents, this.section, this.settings.axis);
 
       // Listen for events that require an expansion of the iframe
       this.addListeners();
@@ -8948,7 +9094,10 @@ class IframeView {
     else if (this.settings.axis === "horizontal") {
       // Get the width of the text
       width = this.contents.textWidth();
-      if (width % this.layout.pageWidth > 0) {
+      // [MEKURU PATCH] Round up to whole pages except in scrolled flow. There
+      // the rounding left up to a screen of blank strip after
+      // a chapter's last line, which is where going back a chapter lands.
+      if (this.settings.flow !== "scrolled" && width % this.layout.pageWidth > 0) {
         width = Math.ceil(width / this.layout.pageWidth) * this.layout.pageWidth;
       }
       if (this.settings.forceEvenPages) {
@@ -9064,7 +9213,8 @@ class IframeView {
       if (this.displayed && this.iframe) {
         this.expand();
         if (this.contents) {
-          this.layout.format(this.contents);
+          // [MEKURU PATCH] pass the axis, see render()
+          this.layout.format(this.contents, this.section, this.settings.axis);
         }
       }
     });
@@ -9072,7 +9222,8 @@ class IframeView {
       if (this.displayed && this.iframe) {
         this.expand();
         if (this.contents) {
-          this.layout.format(this.contents);
+          // [MEKURU PATCH] pass the axis, see render()
+          this.layout.format(this.contents, this.section, this.settings.axis);
         }
       }
     });
@@ -9081,7 +9232,8 @@ class IframeView {
   setLayout(layout) {
     this.layout = layout;
     if (this.contents) {
-      this.layout.format(this.contents);
+      // [MEKURU PATCH] pass the axis, see render()
+      this.layout.format(this.contents, this.section, this.settings.axis);
       this.expand();
     }
   }
