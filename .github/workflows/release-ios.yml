@@ -194,10 +194,10 @@ jobs:
           brew install asc
           version=$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)
           build=(--app "$ASC_APP_ID" --build-number "${{ github.run_number }}" --version "$version")
-          asc builds wait "${build[@]}" --platform IOS --timeout 45m --fail-on-invalid
-          detail=$(asc builds build-beta-detail view "${build[@]}" --platform IOS | jq -r .data.id)
+          build_id=$(asc builds wait "${build[@]}" --platform IOS --timeout 45m --fail-on-invalid | jq -r .buildId)
+          detail=$(asc builds build-beta-detail view --build-id "$build_id" | jq -r .data.id)
           asc testflight distribution edit --id "$detail" --auto-notify
-          asc publish testflight "${build[@]}" --group "$TESTFLIGHT_GROUP" \
+          asc publish testflight --app "$ASC_APP_ID" --build-id "$build_id" --group "$TESTFLIGHT_GROUP" \
             --test-notes "$(cat build/ios/whats-new.txt)" --locale en-US --submit --confirm
 
       - name: Tag the TestFlight build
