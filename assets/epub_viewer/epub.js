@@ -1407,7 +1407,174 @@ class EpubCFI {
       "index": this.filteredPosition(filteredNode, ignoreClass)
     };
   }
+  // [MEKURU PATCH] Generated furigana is invisible to CFIs. reader_bridge.js
+  // wraps kanji in <ruby class="mekuru-furigana"> after a section loads, and
+  // a section loaded again comes back without it until MeCab answers.
+  // Upstream counted the wrappers, so a reading position saved while they
+  // were in place resolved nowhere after a reload ("No startContainer found")
+  // and the reader fell back to the section start (a resumed book opened at
+  // its chapter start). Here a CFI describes the section as it loaded: a
+  // generated ruby is no element, its base text joins the text around it
+  // into the one text node it replaced, and its <rt>/<rp> add nothing. Only
+  // documents holding generated ruby take this path (pathTo(), toRange()).
+  hasFurigana(doc) {
+    return !!doc && !!doc.querySelector && doc.querySelector("ruby.mekuru-furigana") != null;
+  }
+  isFurigana(node) {
+    return !!node && node.nodeType === ELEMENT_NODE && node.localName === "ruby" && node.classList.contains("mekuru-furigana");
+  }
+
+  // Characters a run member adds: all of a text node, a ruby's base only.
+  furiganaLength(node) {
+    if (node.nodeType === TEXT_NODE) return node.length;
+    let length = 0;
+    for (let child = node.firstChild; child; child = child.nextSibling) {
+      if (child.nodeType === TEXT_NODE) length += child.length;
+    }
+    return length;
+  }
+
+  // A parent's children as the section loaded them: its elements, and its
+  // runs (adjacent text nodes and generated rubies, once one text node).
+  furiganaChildren(parent) {
+    let elements = [];
+    let runs = [];
+    let run = null;
+    for (let child = parent.firstChild; child; child = child.nextSibling) {
+      if (child.nodeType === TEXT_NODE || this.isFurigana(child)) {
+        if (!run) runs.push(run = []);
+        run.push(child);
+      } else {
+        run = null;
+        if (child.nodeType === ELEMENT_NODE) elements.push(child);
+      }
+    }
+    return { elements: elements, runs: runs };
+  }
+  furiganaPathTo(node, offset) {
+    let segment = {
+      steps: [],
+      terminal: {
+        offset: null,
+        assertion: null
+      }
+    };
+    let hasOffset = offset != null && offset >= 0;
+    // A point in a ruby's reading counts as the start of its base.
+    for (let n = node; n && n.parentNode; n = n.parentNode) {
+      if (n.nodeType === ELEMENT_NODE && this.isFurigana(n.parentNode)) {
+        node = n.parentNode;
+        offset = 0;
+        break;
+      }
+    }
+    let member = null;
+    let local = offset;
+    if (this.isFurigana(node)) {
+      // A container offset: before the base, or after it.
+      member = node;
+      local = offset > 0 ? this.furiganaLength(node) : 0;
+    } else if (node.nodeType === TEXT_NODE && this.isFurigana(node.parentNode)) {
+      member = node.parentNode;
+      for (let prev = node.previousSibling; prev; prev = prev.previousSibling) {
+        if (prev.nodeType === TEXT_NODE) local += prev.length;
+      }
+    } else if (node.nodeType === TEXT_NODE) {
+      member = node;
+    }
+    let element = member ? member.parentNode : node;
+    if (member) {
+      let runs = this.furiganaChildren(element).runs;
+      for (let index = 0; index < runs.length; index++) {
+        let at = runs[index].indexOf(member);
+        if (at < 0) continue;
+        let before = 0;
+        for (let i = 0; i < at; i++) before += this.furiganaLength(runs[index][i]);
+        segment.steps.push({
+          "type": "text",
+          "index": index
+        });
+        if (hasOffset) segment.terminal.offset = before + local;
+        break;
+      }
+    }
+    for (; element && element.parentNode && element.parentNode.nodeType != DOCUMENT_NODE; element = element.parentNode) {
+      segment.steps.unshift({
+        "id": element.id,
+        "tagName": element.tagName,
+        "type": "element",
+        "index": this.furiganaChildren(element.parentNode).elements.indexOf(element)
+      });
+    }
+    if (!member && hasOffset) {
+      // As upstream: an offset always ends in a text step.
+      segment.terminal.offset = offset;
+      segment.steps.push({
+        "type": "text",
+        "index": 0
+      });
+    }
+    return segment;
+  }
+
+  // The DOM point for [steps] and a character [offset], or null.
+  furiganaPoint(steps, offset, doc) {
+    let container = doc.documentElement;
+    for (let i = 0; i < steps.length && container; i++) {
+      let step = steps[i];
+      if (step.type === "element") {
+        container = step.id ? doc.getElementById(step.id) : this.furiganaChildren(container).elements[step.index];
+        continue;
+      }
+      let run = this.furiganaChildren(container).runs[step.index];
+      if (!run) return null;
+      // At a boundary the point is the start of the next member, so the
+      // character there is the one the CFI names.
+      let rest = offset || 0;
+      for (let m = 0; m < run.length; m++) {
+        let length = this.furiganaLength(run[m]);
+        if (rest < length || m === run.length - 1) {
+          let text = run[m].nodeType === TEXT_NODE ? run[m] : run[m].firstChild;
+          if (!text || text.nodeType !== TEXT_NODE) return { container: run[m], offset: 0 };
+          return { container: text, offset: Math.min(rest, text.length) };
+        }
+        rest -= length;
+      }
+    }
+    return container ? { container: container, offset: offset || 0 } : null;
+  }
+  furiganaRange(doc) {
+    let range = doc.createRange();
+    let start, end;
+    if (this.range) {
+      start = this.furiganaPoint(this.path.steps.concat(this.start.steps), this.start.terminal.offset, doc);
+      end = this.furiganaPoint(this.path.steps.concat(this.end.steps), this.end.terminal.offset, doc);
+    } else {
+      start = this.furiganaPoint(this.path.steps, this.path.terminal.offset, doc);
+    }
+    if (!start) {
+      console.log("No startContainer found for", this.toString());
+      return null;
+    }
+    try {
+      range.setStart(start.container, start.offset);
+    } catch (e) {
+      range.setStart(start.container, 0);
+    }
+    if (end) {
+      try {
+        range.setEnd(end.container, end.offset);
+      } catch (e) {
+        range.setEnd(end.container, 0);
+      }
+    }
+    return range;
+  }
   pathTo(node, offset, ignoreClass) {
+    // [MEKURU PATCH] see hasFurigana()
+    if (!ignoreClass && node && this.hasFurigana(node.ownerDocument)) {
+      return this.furiganaPathTo(node, offset);
+    }
     var segment = {
       steps: [],
       terminal: {
@@ -1810,6 +1977,10 @@ class EpubCFI {
    */
   toRange(_doc, ignoreClass) {
     var doc = _doc || document;
+    // [MEKURU PATCH] see hasFurigana()
+    if (!ignoreClass && this.hasFurigana(doc)) {
+      return this.furiganaRange(doc);
+    }
     var range;
     var start, end, startContainer, endContainer;
     var cfi = this;

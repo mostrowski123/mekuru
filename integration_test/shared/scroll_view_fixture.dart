@@ -8,9 +8,11 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:path/path.dart' as p;
@@ -61,19 +63,8 @@ void registerScrollViewScenario({required bool vertical}) {
         return _scrollState(controller);
       }
 
-      // Moves the strip with epub.js's own scrollBy, which flips the sign
-      // for right-to-left text. Browsers clamp, so 100 screens reach an end.
       Future<void> scrollScreens(num screens) =>
-          controller.debugEvaluateJavascript(
-            '(function () {'
-            '  var m = rendition.manager, c = m.container;'
-            '  if (m.settings.axis === "vertical") {'
-            '    m.scrollBy(0, $screens * c.clientHeight);'
-            '  } else {'
-            '    m.scrollBy($screens * c.clientWidth, 0);'
-            '  }'
-            '})()',
-          );
+          _scrollScreens(controller, screens);
 
       await _recordPageChars(controller);
       final start = await _scrollState(controller);
@@ -191,6 +182,98 @@ void registerScrollViewScenario({required bool vertical}) {
   );
 }
 
+/// Registers the resume scenario: a vertical book read in scroll view with
+/// generated furigana, left mid-chapter and loaded again. A reloaded
+/// chapter comes back without the generated `<ruby>` (it arrives later from
+/// MeCab), so the saved CFI must not count those wrappers: one that did
+/// resolved nowhere, the reader fell back to the chapter start and saved
+/// that over the position. The chapter is reloaded in the same reader, the
+/// way a reopened book loads it: a second reader in one process is not
+/// reliable on Android emulators (cba64de).
+void registerScrollViewResumeScenario() {
+  late Directory tempDir;
+
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('reader_scroll_resume_');
+    await cleanupAppBooksDir();
+  });
+
+  tearDown(() async {
+    if (await tempDir.exists()) await tempDir.delete(recursive: true);
+    await cleanupAppBooksDir();
+  });
+
+  testWidgets(
+    'scroll view resumes where it was left, with generated furigana',
+    (tester) async {
+      await MecabService.instance.init();
+      final db = createTestDatabase();
+      addTearDown(db.close);
+      final repository = BookRepository(db);
+
+      final controller = await openReader(
+        tester,
+        await writeScrollViewEpub(tempDir, title: _title(true), vertical: true),
+        _title(true),
+        settings: const ReaderSettings(
+          scrollView: true,
+          furiganaMode: FuriganaMode.all,
+        ),
+        db: db,
+      );
+      final bookId = (await repository.getAllBooks()).single.id;
+
+      Future<Map<String, dynamic>> settle() async {
+        await tester.pump(const Duration(milliseconds: 1500));
+        return _scrollState(controller);
+      }
+
+      await _waitForGeneratedRuby(tester, controller);
+      await _scrollScreens(controller, 1.37);
+      final left = await settle();
+      expect(left['atStart'], isFalse, reason: '$left');
+      expect(left['reportedCfi'], left['cfi'], reason: '$left');
+      final saved = left['cfi'] as String;
+      expect((await repository.getBookById(bookId))!.lastReadCfi, saved);
+
+      // The saved CFI names the same character in the chapter as it loads,
+      // before any furigana. The reload below can hide a CFI that does not:
+      // when MeCab answers before the first location report, the scroll-view
+      // pin still lands on it.
+      final characters = await _cfiCharacters(tester, controller, saved);
+      expect(characters['shown'], isNotNull, reason: '$characters');
+      expect(characters['loaded'], characters['shown'], reason: '$characters');
+
+      // Reload the chapter as reopening the book does: a new view, and the
+      // furigana cache emptied so the ruby arrives after the restore.
+      await controller.debugEvaluateJavascript(
+        '_furiganaCache.clear();'
+        'rendition.manager.clear();'
+        'rendition.display(${jsonEncode(saved)});',
+      );
+      final restored = await settle();
+      expect(restored['index'], 0, reason: '$restored');
+      expect(restored['atStart'], isFalse, reason: 'saved $saved, $restored');
+      expect(
+        await _compareCfi(controller, restored['cfi'], saved),
+        0,
+        reason: 'saved $saved, restored $restored',
+      );
+
+      // The furigana arriving reflows the text; the position stays, and so
+      // does the saved progress.
+      await _waitForGeneratedRuby(tester, controller);
+      final furigana = await settle();
+      expect(
+        await _compareCfi(controller, furigana['cfi'], saved),
+        0,
+        reason: 'saved $saved, after furigana $furigana',
+      );
+      expect((await repository.getBookById(bookId))!.lastReadCfi, saved);
+    },
+  );
+}
+
 String _title(bool vertical) => vertical ? '縦スクロールテスト' : '横スクロールテスト';
 
 /// Writes a two-chapter EPUB, each chapter several screens long. [vertical]
@@ -298,9 +381,12 @@ Future<CustomEpubController> openReader(
   String epubPath,
   String title, {
   ReaderSettings settings = const ReaderSettings(scrollView: true),
+  AppDatabase? db,
 }) async {
-  final db = createTestDatabase();
-  addTearDown(db.close);
+  if (db == null) {
+    db = createTestDatabase();
+    addTearDown(db.close);
+  }
   await BookRepository(db).importEpub(epubPath);
 
   final storage = InMemoryReaderSettingsStorage();
@@ -325,6 +411,37 @@ Future<CustomEpubController> openReader(
   return tester
       .widget<CustomEpubViewer>(find.byType(CustomEpubViewer))
       .controller;
+}
+
+// Moves the strip with epub.js's own scrollBy, which flips the sign for
+// right-to-left text. Browsers clamp, so 100 screens reach an end.
+Future<void> _scrollScreens(CustomEpubController controller, num screens) =>
+    controller.debugEvaluateJavascript(
+      '(function () {'
+      '  var m = rendition.manager, c = m.container;'
+      '  if (m.settings.axis === "vertical") {'
+      '    m.scrollBy(0, $screens * c.clientHeight);'
+      '  } else {'
+      '    m.scrollBy($screens * c.clientWidth, 0);'
+      '  }'
+      '})()',
+    );
+
+/// Waits until MeCab's furigana is in the displayed chapter.
+Future<void> _waitForGeneratedRuby(
+  WidgetTester tester,
+  CustomEpubController controller,
+) async {
+  for (var tick = 0; tick < 80; tick++) {
+    final state = await evalJson(
+      controller,
+      'JSON.stringify({ruby: !!rendition.manager.views.last().contents'
+      '.document.querySelector("ruby.mekuru-furigana")})',
+    );
+    if (state['ruby'] == true) return;
+    await tester.pump(const Duration(milliseconds: 250));
+  }
+  throw TestFailure('No generated furigana appeared.');
 }
 
 /// The reader's scroll-view state. `pos` is the distance scrolled from the
@@ -422,6 +539,41 @@ Future<List<int>> _recordedPageChars(CustomEpubController controller) async {
     'JSON.stringify({counts: window._pageCharsLog})',
   );
   return (json['counts'] as List).cast<num>().map((c) => c.toInt()).toList();
+}
+
+/// The character [cfi] names in the displayed chapter (`shown`) and in the
+/// chapter as it loads, before any generated furigana (`loaded`).
+Future<Map<String, dynamic>> _cfiCharacters(
+  WidgetTester tester,
+  CustomEpubController controller,
+  String cfi,
+) async {
+  await controller.debugEvaluateJavascript(
+    '(function () {'
+    '  window._cfiCharacters = null;'
+    '  var cfi = new ePub.CFI(${jsonEncode(cfi)});'
+    '  function at(doc) {'
+    '    var r = cfi.toRange(doc);'
+    '    return r ? r.startContainer.textContent.charAt(r.startOffset) : null;'
+    '  }'
+    '  var shown = at(rendition.manager.views.last().contents.document);'
+    '  var section = book.spine.get(cfi.spinePos);'
+    '  section.load(book.load.bind(book)).then(function () {'
+    '    window._cfiCharacters = {shown: shown, loaded: at(section.document)};'
+    '  });'
+    '})()',
+  );
+  for (var tick = 0; tick < 40; tick++) {
+    final result = await evalJson(
+      controller,
+      'JSON.stringify({result: window._cfiCharacters})',
+    );
+    if (result['result'] != null) {
+      return (result['result'] as Map).cast<String, dynamic>();
+    }
+    await tester.pump(const Duration(milliseconds: 250));
+  }
+  throw TestFailure('The chapter did not load for $cfi.');
 }
 
 /// -1, 0 or 1 as epub.js orders two CFIs.
