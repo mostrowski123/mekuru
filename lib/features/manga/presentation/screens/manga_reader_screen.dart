@@ -714,6 +714,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       centerZoneWidthFraction: mangaCenterTapZoneWidthFromEdgeZoneWidth(
         readerSettings.mangaPageTurnEdgeZoneWidthFraction,
       ),
+      scrollView: readerSettings.mangaViewMode == MangaViewMode.scroll,
     );
 
     switch (intent) {

@@ -192,6 +192,23 @@ void main() {
       expect(rightIntent, ReaderNavigationIntent.goForward);
     });
 
+    test(
+      'edge taps toggle controls instead of turning pages in scroll view',
+      () {
+        for (final x in [0.0, 0.1, 0.9, 1.0]) {
+          for (final dir in ReaderDirection.values) {
+            final intent = resolveTapIntent(
+              normalizedX: x,
+              normalizedY: 0.5,
+              readingDirection: dir,
+              scrollView: true,
+            );
+            expect(intent, ReaderNavigationIntent.toggleControls);
+          }
+        }
+      },
+    );
+
     test('tap at x = 0.0 is left edge for rtl (goForward)', () {
       final intent = resolveTapIntent(
         normalizedX: 0.0,

@@ -30,14 +30,18 @@ bool isCenterTapZone({
 
 /// [inTopOrBottomMargin]: the tap landed in the page margin above or below
 /// the text, which toggles the controls like the center zone.
+/// [scrollView]: the book scrolls instead of turning pages, so edge taps
+/// don't turn pages and a tap anywhere toggles the controls.
 ReaderNavigationIntent resolveTapIntent({
   required double normalizedX,
   required double normalizedY,
   required ReaderDirection readingDirection,
   double centerZoneWidthFraction = kToggleZoneWidthFraction,
   bool inTopOrBottomMargin = false,
+  bool scrollView = false,
 }) {
-  if (inTopOrBottomMargin ||
+  if (scrollView ||
+      inTopOrBottomMargin ||
       isCenterTapZone(x: normalizedX, widthFraction: centerZoneWidthFraction)) {
     return ReaderNavigationIntent.toggleControls;
   }

@@ -541,6 +541,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             y,
                             inTopOrBottomMargin,
                             scrolledStrip,
+                            settings.scrollView,
                             settings.readingDirection,
                             settings.swipeSensitivity,
                           );
@@ -790,6 +791,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     double y,
     bool inTopOrBottomMargin,
     bool scrolledStrip,
+    bool scrollView,
     ReaderDirection readingDirection,
     double swipeSensitivity,
   ) {
@@ -816,6 +818,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       normalizedY: upY,
       readingDirection: readingDirection,
       inTopOrBottomMargin: inTopOrBottomMargin,
+      scrollView: scrollView,
     );
     debugPrint(
       '[READER] TAP detected: x=${upX.toStringAsFixed(3)} '
