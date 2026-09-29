@@ -191,6 +191,28 @@ void main() {
       },
     );
 
+    test('setScrollView persists globally without per-book writes', () async {
+      final fakeStorage = _FakeReaderSettingsStorage();
+      final db = AppDatabase(NativeDatabase.memory());
+      final spyRepo = _SpyBookRepository(db);
+      final harness = _createHarness(storage: fakeStorage, bookRepo: spyRepo);
+      addTearDown(() async {
+        await harness.dispose();
+        await db.close();
+      });
+
+      final notifier = harness.container.read(readerSettingsProvider.notifier);
+      notifier.applyBookDefaults(bookId: 42, language: 'ja');
+      notifier.setScrollView(true);
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(harness.container.read(readerSettingsProvider).scrollView, isTrue);
+      expect(fakeStorage.savedSettings!.scrollView, isTrue);
+      // Scroll view is one setting for all books.
+      expect(spyRepo.updateDisplayOverridesCalls, 0);
+    });
+
     test('applyBookDefaults preserves splitVerticalText', () {
       final harness = _createHarness();
       addTearDown(harness.dispose);

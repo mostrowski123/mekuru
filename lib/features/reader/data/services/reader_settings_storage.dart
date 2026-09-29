@@ -23,6 +23,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   static const _furiganaWanikaniMinStageKey =
       'reader.furigana_wanikani_min_stage';
   static const _splitVerticalTextKey = 'reader.split_vertical_text';
+  static const _scrollViewKey = 'reader.scroll_view';
   static const _brightnessKey = 'reader.brightness';
   static const _mangaViewModeKey = 'reader.manga_view_mode';
   static const _mangaReadingDirectionKey = 'reader.manga_reading_direction';
@@ -49,6 +50,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     _furiganaJlptLevelKey,
     _furiganaWanikaniMinStageKey,
     _splitVerticalTextKey,
+    _scrollViewKey,
     _brightnessKey,
     _mangaViewModeKey,
     _mangaReadingDirectionKey,
@@ -87,6 +89,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       furiganaWanikaniMinStage:
           (prefs.getInt(_furiganaWanikaniMinStageKey) ?? 9).clamp(1, 9),
       splitVerticalText: prefs.getBool(_splitVerticalTextKey) ?? false,
+      scrollView: prefs.getBool(_scrollViewKey) ?? false,
       brightness: prefs.getDouble(_brightnessKey),
       mangaViewMode: mangaViewModeFromString(
         prefs.getString(_mangaViewModeKey),
@@ -123,6 +126,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       settings.furiganaWanikaniMinStage,
     );
     await prefs.setBool(_splitVerticalTextKey, settings.splitVerticalText);
+    await prefs.setBool(_scrollViewKey, settings.scrollView);
     await prefs.setString(
       _mangaViewModeKey,
       settings.mangaViewMode.storageValue,

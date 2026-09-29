@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/reading_settings_screen.dart';
+import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/reader_settings_test_helpers.dart';
@@ -56,6 +57,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(readerSettingsProvider).fontSize, isNot(before));
+  });
+
+  testWidgets('scroll view writes through and disables split text', (
+    tester,
+  ) async {
+    final container = await _pumpScreen(tester);
+    final scrollFinder = find.widgetWithText(SettingsSwitchRow, 'Scroll View');
+    await scrollSettingsTo(tester, scrollFinder);
+    await tester.tap(
+      find.descendant(of: scrollFinder, matching: find.byType(Switch)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(container.read(readerSettingsProvider).scrollView, isTrue);
+    final splitFinder = find.widgetWithText(
+      SettingsSwitchRow,
+      'Split Vertical Text',
+    );
+    await scrollSettingsTo(tester, splitFinder);
+    expect(tester.widget<SettingsSwitchRow>(splitFinder).onChanged, isNull);
   });
 
   testWidgets('Pro manga tiles are hidden without Pro', (tester) async {

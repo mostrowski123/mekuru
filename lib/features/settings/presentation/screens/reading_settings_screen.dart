@@ -146,11 +146,21 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             ),
           ),
           SettingsSwitchRow(
+            icon: Icons.swipe_outlined,
+            title: l10n.readerScrollViewTitle,
+            subtitle: l10n.readerScrollViewSubtitle,
+            value: settings.scrollView,
+            onChanged: notifier.setScrollView,
+          ),
+          SettingsSwitchRow(
             icon: Icons.table_rows_outlined,
             title: l10n.readerSplitVerticalTextTitle,
             subtitle: l10n.readerSplitVerticalTextSubtitle,
             value: settings.splitVerticalText,
-            onChanged: notifier.setSplitVerticalText,
+            // Split text only lays out pages; scroll view has none.
+            onChanged: settings.scrollView
+                ? null
+                : notifier.setSplitVerticalText,
           ),
           SettingsSwitchRow(
             icon: Icons.link_off,

@@ -2871,5 +2871,7 @@
   "ankiMobileDeckLabel": "牌组",
   "ankiMobileFieldNamesLabel": "字段名称，用逗号分隔",
   "ankiMobileNamesRequired": "请输入笔记类型、牌组和至少一个字段名称。",
-  "ankiMobileCouldNotOpen": "无法打开 AnkiMobile。请确认本设备已安装该应用。"
+  "ankiMobileCouldNotOpen": "无法打开 AnkiMobile。请确认本设备已安装该应用。",
+  "readerScrollViewTitle": "Scroll View",
+  "readerScrollViewSubtitle": "Slide through each chapter instead of turning pages"
 }

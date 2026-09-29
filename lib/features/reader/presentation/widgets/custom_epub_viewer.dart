@@ -12,6 +12,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../data/models/epub_models.dart';
 import '../../data/models/reader_settings.dart';
 import '../../data/services/furigana_generator.dart';
+import '../reader_interaction_logic.dart';
 import 'custom_epub_controller.dart';
 
 /// Builds the set of gesture recognizers that allow the iOS UiKitView
@@ -99,6 +100,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.verticalMargin = 28,
     this.forceHorizontalAxis = false,
     this.verticalTextBlocks = 1,
+    this.scrollView = false,
     required this.furiganaMode,
     this.furiganaJlptLevel = 3,
     this.furiganaKnownKanji = const {},
@@ -133,6 +135,11 @@ class CustomEpubViewer extends StatefulWidget {
   /// horizontal pagination.
   final int verticalTextBlocks;
 
+  /// Scroll view: each chapter is one strip the reader slides through
+  /// (epub.js `scrolled` flow) instead of pages. Only read at load, so
+  /// changing it needs a new viewer.
+  final bool scrollView;
+
   /// Initial furigana mode. Passed to the JS viewer so the first rendered
   /// section applies the mode immediately.
   final FuriganaMode furiganaMode;
@@ -151,7 +158,10 @@ class CustomEpubViewer extends StatefulWidget {
   final ValueChanged<EpubSelectionData>? onSelection;
   final VoidCallback? onSelectionCleared;
   final VoidCallback? onLocationsReady;
-  final void Function(double x, double y)? onTouchDown;
+
+  /// [edges] is where the scroll-view strip stood at touch-down; null in
+  /// paginated mode.
+  final void Function(double x, double y, ScrollEdges? edges)? onTouchDown;
   final void Function(double x, double y)? onTouchUp;
   final void Function(
     String surroundingText,
@@ -180,7 +190,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
   InAppWebViewController? _webViewController;
   bool _loadBookInvoked = false;
 
-  final _settings = InAppWebViewSettings(
+  late final _settings = InAppWebViewSettings(
     isInspectable: kDebugMode,
     javaScriptEnabled: true,
     mediaPlaybackRequiresUserGesture: false,
@@ -192,7 +202,10 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     allowsLinkPreview: false,
     verticalScrollBarEnabled: false,
     horizontalScrollBarEnabled: false,
-    disableVerticalScroll: true,
+    // On Android this pins every move/up event to the touch-down Y, which
+    // would stop horizontal text from scrolling in scroll view (and turn
+    // each upward drag into a tap on its start point).
+    disableVerticalScroll: !widget.scrollView,
   );
 
   @override
@@ -411,7 +424,11 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
             '[EPUB_DART] touchDown x=${x.toStringAsFixed(3)} '
             'y=${y.toStringAsFixed(3)}',
           );
-          widget.onTouchDown?.call(x, y);
+          widget.onTouchDown?.call(
+            x,
+            y,
+            ScrollEdges.fromBridge(data.length >= 3 ? data[2] : null),
+          );
         }
       },
     );
@@ -607,7 +624,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       'loadBook('
       '$cfiParam, '
       '"${widget.direction}", '
-      '"paginated", '
+      '"${widget.scrollView ? 'scrolled' : 'paginated'}", '
       'false, '
       '"${widget.fontSize}", '
       '$fgHex, '

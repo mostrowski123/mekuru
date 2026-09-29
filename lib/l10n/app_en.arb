@@ -1844,6 +1844,14 @@
   "@readerSplitVerticalTextSubtitle": {
     "description": "Subtitle for the split vertical text setting."
   },
+  "readerScrollViewTitle": "Scroll View",
+  "@readerScrollViewTitle": {
+    "description": "Title for the EPUB setting that shows each chapter as one strip the reader slides through (sideways for vertical text, up and down for horizontal text) instead of pages."
+  },
+  "readerScrollViewSubtitle": "Slide through each chapter instead of turning pages",
+  "@readerScrollViewSubtitle": {
+    "description": "Subtitle for the scroll view setting."
+  },
   "readerThisBook": "This book",
   "@readerThisBook": {
     "description": "Label indicating a reader setting applies to the current book."

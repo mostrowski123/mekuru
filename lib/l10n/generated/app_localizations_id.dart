@@ -1431,6 +1431,13 @@ class AppLocalizationsId extends AppLocalizations {
       'Tampilkan dua blok teks bertumpuk per halaman';
 
   @override
+  String get readerScrollViewTitle => 'Scroll View';
+
+  @override
+  String get readerScrollViewSubtitle =>
+      'Slide through each chapter instead of turning pages';
+
+  @override
   String get readerThisBook => 'Buku ini';
 
   @override

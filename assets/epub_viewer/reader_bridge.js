@@ -19,6 +19,16 @@ var _furiganaProcessedDocs = new WeakSet(); // iframe documents already processe
 // size, margins, rotation → resize + re-display of the same page) never arm
 // it, so they cannot inflate the reading-stats character count.
 var _pendingNavChars = false;
+// Scroll view: each chapter is one strip scrolled natively (epub.js
+// 'scrolled' flow) instead of pages. Set by loadBook from its flow argument.
+var _scrollView = false;
+// Scroll view reading stats: the furthest end CFI already counted in the
+// current section ({ index, cfi }), so scrolling back or settling twice on
+// the same text never counts it again.
+var _scrollCountedEnd = null;
+// Scroll view: keeps a chapter that was just opened at its end pinned there
+// while its layout settles ({ view, onGrow, timer }; see pinScrollEnd).
+var _scrollEndPin = null;
 // When true, epub.js patches in epub.js will override the detected
 // writing-mode to horizontal-tb, forcing horizontal pagination.
 // Set as a window global so epub.js code can read it.
@@ -70,6 +80,7 @@ function appendEpubChunk(base64) {
 
 function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customCss, horizontalMargin, verticalMargin, forceHorizontalAxis, furiganaMode, verticalBlocks) {
   if (typeof furiganaMode === 'string') _furiganaMode = furiganaMode;
+  _scrollView = (flow === 'scrolled');
   var uint8 = _epubBuf;
   _epubBuf = null;
   book.open(uint8);
@@ -186,7 +197,9 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
         ? ((displayed.page - 1) / displayed.total)
         : null
     });
-    if (_pendingNavChars) {
+    if (_scrollView) {
+      reportNewScrollChars(location.start, endCfi);
+    } else if (_pendingNavChars) {
       _pendingNavChars = false;
       reportPageChars(location.start.cfi, endCfi);
     }
@@ -296,13 +309,16 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
     var lastTouchTs = 0;
 
     function forwardDown(clientX, clientY, source) {
+      unpinScrollEnd();
       var coords = normalizedCoords({ clientX: clientX, clientY: clientY }, contents);
       if (!coords) return;
       console.log(
         '[EPUB_BRIDGE] touchDown(' + source + ') x=' +
           coords.x.toFixed(3) + ' y=' + coords.y.toFixed(3)
       );
-      callDart('touchDown', coords.x, coords.y);
+      // In scroll view, also say where the strip stood when the finger
+      // came down: a drag only changes chapter when it started at an edge.
+      callDart('touchDown', coords.x, coords.y, _scrollView ? scrollEdges() : null);
     }
 
     function forwardUp(clientX, clientY, source) {
@@ -400,6 +416,7 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
 // ── Navigation (section-aware — bypasses epub.js broken scroll-delta logic) ──
 
 function next() {
+  unpinScrollEnd();
   if (!rendition || !rendition.location || !rendition.location.start) {
     console.log('[EPUB_BRIDGE] next() called but no location yet');
     return;
@@ -413,7 +430,11 @@ function next() {
     ' sectionIndex=' + loc.start.index + ' cfi=' + loc.start.cfi +
     ' axis=' + mgrAxis + ' dir=' + mgrDir);
 
-  if (currentPage < totalPages) {
+  var edges = _scrollView ? scrollEdges() : null;
+  if (edges && !edges.atEnd) {
+    console.log('[EPUB_BRIDGE] next() scroll view: one screen forward');
+    scrollStrip(screenLength());
+  } else if (!edges && currentPage < totalPages) {
     // More pages within this section — epub.js scroll-within-section works fine
     console.log('[EPUB_BRIDGE] next() scrolling within section');
     _pendingNavChars = true;
@@ -439,6 +460,7 @@ function next() {
 }
 
 function previous() {
+  unpinScrollEnd();
   if (!rendition || !rendition.location || !rendition.location.start) {
     console.log('[EPUB_BRIDGE] previous() called but no location yet');
     return;
@@ -452,7 +474,11 @@ function previous() {
     ' sectionIndex=' + loc.start.index + ' cfi=' + loc.start.cfi +
     ' axis=' + mgrAxis + ' dir=' + mgrDir);
 
-  if (currentPage > 1) {
+  var edges = _scrollView ? scrollEdges() : null;
+  if (edges && !edges.atStart) {
+    console.log('[EPUB_BRIDGE] previous() scroll view: one screen back');
+    scrollStrip(-screenLength());
+  } else if (!edges && currentPage > 1) {
     // More pages before this one in the section — scroll backwards within section
     console.log('[EPUB_BRIDGE] previous() scrolling within section');
     _pendingNavChars = true;
@@ -477,7 +503,11 @@ function previous() {
           // whose height isn't known until the image loads).
           requestAnimationFrame(function () {
             setTimeout(function () {
-              snapToLastPage('previous');
+              if (_scrollView) {
+                pinScrollEnd();
+              } else {
+                snapToLastPage('previous');
+              }
             }, 0);
           });
         });
@@ -491,6 +521,7 @@ function previous() {
 }
 
 function toCfi(cfi) {
+  unpinScrollEnd();
   if (!rendition) return;
   _pendingNavChars = true;
   rendition.display(cfi).then(function () {
@@ -505,6 +536,7 @@ function toCfi(cfi) {
 }
 
 function toProgress(progress) {
+  unpinScrollEnd();
   if (book && book.locations) {
     var cfi = book.locations.cfiFromPercentage(progress);
     if (rendition) {
@@ -955,6 +987,9 @@ function applyMargins() {
     '  position: absolute !important;' +
     '  top: ' + v + 'px !important;' +
     '  left: ' + h + 'px !important;' +
+    // Scroll view: no bounce or glow at the ends, so one more slide past
+    // the end reaches the reader as a drag (it changes chapter).
+    (_scrollView ? '  overscroll-behavior: none;' : '') +
     '}';
   console.log('[EPUB_BRIDGE] applyMargins container h=' + h + ' v=' + v);
 }
@@ -1129,6 +1164,97 @@ function reportPageChars(startCfi, endCfi) {
     // this runs inside the 'relocated' listener, so it must never escape.
     console.log('[EPUB_BRIDGE] pageChars failed:', e);
   }
+}
+
+// Scroll view has no page turns to arm _pendingNavChars, so every settle
+// counts the text revealed past the furthest point already counted in this
+// section. The key stays per settle, so the Dart dwell gate still drops
+// text that only flew past (and it is not counted again on the way back).
+function reportNewScrollChars(start, endCfi) {
+  var from = start.cfi;
+  if (_scrollCountedEnd && _scrollCountedEnd.index === start.index) {
+    try {
+      var cfi = new ePub.CFI();
+      if (cfi.compare(_scrollCountedEnd.cfi, from) > 0) from = _scrollCountedEnd.cfi;
+      if (cfi.compare(endCfi, from) <= 0) return;
+    } catch (e) {
+      console.log('[EPUB_BRIDGE] scroll chars: compare failed:', e);
+      return;
+    }
+  }
+  _scrollCountedEnd = { index: start.index, cfi: endCfi };
+  reportPageChars(from, endCfi);
+}
+
+// ── Scroll view ───────────────────────────────────────────────────────
+
+// Where the strip stands along its scroll axis. Right-to-left containers
+// report scrollLeft as 0 at the start going negative ("negative" scroll
+// type, current Chromium and WebKit) or as the maximum at the start
+// ("default"); both become a distance from the start.
+function scrollEdges() {
+  var manager = rendition && rendition.manager;
+  var container = manager && manager.container;
+  if (!container) return null;
+  var axis = manager.settings.axis;
+  var dir = manager.settings.direction;
+  var pos, max;
+  if (axis === 'vertical') {
+    pos = container.scrollTop;
+    max = container.scrollHeight - container.clientHeight;
+  } else {
+    pos = container.scrollLeft;
+    max = container.scrollWidth - container.clientWidth;
+    if (dir === 'rtl') {
+      pos = manager.settings.rtlScrollType === 'default' ? max - pos : -pos;
+    }
+  }
+  return { axis: axis, dir: dir, atStart: pos <= 1, atEnd: pos >= max - 1 };
+}
+
+// Opens the strip at its end (going back into the previous chapter). The
+// chapter keeps growing for a moment after display() resolves (fonts and
+// furigana settle), so the end is re-applied each time epub.js resizes the
+// view, until the reader touches the screen or navigates.
+// ponytail: fixed 2 s window, tie it to a layout-settled signal if one exists.
+function pinScrollEnd() {
+  unpinScrollEnd();
+  var toEnd = function () {
+    var container = rendition.manager.container;
+    // The strip's length along either axis is at most this.
+    scrollStrip(container.scrollWidth + container.scrollHeight);
+  };
+  toEnd();
+  var view = rendition.manager.views.last();
+  if (!view) return;
+  view.on('resized', toEnd);
+  _scrollEndPin = { view: view, onGrow: toEnd, timer: setTimeout(unpinScrollEnd, 2000) };
+}
+
+function unpinScrollEnd() {
+  if (!_scrollEndPin) return;
+  _scrollEndPin.view.off('resized', _scrollEndPin.onGrow);
+  clearTimeout(_scrollEndPin.timer);
+  _scrollEndPin = null;
+}
+
+// Moves the strip `px` forward along its scroll axis (back when negative).
+// epub.js's scrollBy flips the sign for right-to-left text, browsers clamp
+// at the ends, and the scroll event reports the new location.
+function scrollStrip(px) {
+  var manager = rendition.manager;
+  if (manager.settings.axis === 'vertical') {
+    manager.scrollBy(0, px);
+  } else {
+    manager.scrollBy(px, 0);
+  }
+}
+
+// One screen along the strip's scroll axis, for edge taps.
+function screenLength() {
+  var manager = rendition.manager;
+  var container = manager.container;
+  return manager.settings.axis === 'vertical' ? container.clientHeight : container.clientWidth;
 }
 
 // ── Link-at-point detection ───────────────────────────────────────────
@@ -1727,7 +1853,8 @@ function snapToLastPage(caller) {
  * causing a "cut in half" rendering artefact.
  */
 function snapToNearestPage() {
-  if (!rendition || !rendition.manager) return;
+  // Scroll view has no pages to snap to; display() already placed the target.
+  if (_scrollView || !rendition || !rendition.manager) return;
 
   var manager = rendition.manager;
   var container = manager.container;

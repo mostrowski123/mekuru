@@ -24,7 +24,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
-import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
 import 'package:path/path.dart' as p;
 
@@ -122,17 +121,6 @@ Future<String> _writeInDesignStyleVerticalEpub(Directory dir) async {
   return epubPath;
 }
 
-Future<Map<String, dynamic>> _evalJson(
-  CustomEpubController controller,
-  String jsExpression,
-) async {
-  final raw = await controller.debugEvaluateJavascript(jsExpression);
-  if (raw is String) {
-    return jsonDecode(raw) as Map<String, dynamic>;
-  }
-  return (raw as Map).cast<String, dynamic>();
-}
-
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -178,7 +166,7 @@ void main() {
           .widget<CustomEpubViewer>(find.byType(CustomEpubViewer))
           .controller;
 
-      final info = await _evalJson(
+      final info = await evalJson(
         controller,
         '(function () {'
         '  var view = rendition.manager.views._views[0];'
@@ -206,7 +194,7 @@ void main() {
       controller.next();
       await tester.pump(const Duration(seconds: 2));
 
-      final after = await _evalJson(
+      final after = await evalJson(
         controller,
         '(function () {'
         '  var container = document.querySelector(".epub-container");'

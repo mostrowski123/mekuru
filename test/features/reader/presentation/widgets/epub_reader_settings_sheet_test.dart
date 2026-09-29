@@ -201,6 +201,32 @@ void main() {
     expect(splitRow.onChanged, isNull);
   });
 
+  testWidgets('scroll view toggles the setting and disables split text', (
+    tester,
+  ) async {
+    final changes = <String>[];
+    final container = await _pumpSheet(
+      tester,
+      onSettingChanged: (setting, value) => changes.add(setting),
+    );
+
+    final scrollFinder = find.widgetWithText(SettingsSwitchRow, 'Scroll View');
+    await scrollSettingsTo(tester, scrollFinder);
+    await tester.tap(
+      find.descendant(of: scrollFinder, matching: find.byType(Switch)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(container.read(readerSettingsProvider).scrollView, isTrue);
+    expect(changes, contains('scroll_view'));
+    final splitFinder = find.widgetWithText(
+      SettingsSwitchRow,
+      'Split Vertical Text',
+    );
+    await scrollSettingsTo(tester, splitFinder);
+    expect(tester.widget<SettingsSwitchRow>(splitFinder).onChanged, isNull);
+  });
+
   testWidgets('changing font size reports telemetry with the setting name', (
     tester,
   ) async {

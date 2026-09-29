@@ -716,4 +716,126 @@ void main() {
       );
     });
   });
+
+  // ── Scroll view ─────────────────────────────────────────────────────
+
+  group('ScrollEdges.fromBridge', () {
+    test('parses the bridge map', () {
+      final edges = ScrollEdges.fromBridge({
+        'axis': 'horizontal',
+        'dir': 'rtl',
+        'atStart': false,
+        'atEnd': true,
+      })!;
+      expect(edges.horizontalAxis, isTrue);
+      expect(edges.rtl, isTrue);
+      expect(edges.atStart, isFalse);
+      expect(edges.atEnd, isTrue);
+    });
+
+    test('is null when paginated mode sends null', () {
+      expect(ScrollEdges.fromBridge(null), isNull);
+    });
+  });
+
+  group('resolveScrollViewSwipe', () {
+    ScrollEdges edges({
+      bool horizontalAxis = true,
+      bool rtl = true,
+      bool atStart = false,
+      bool atEnd = false,
+    }) => ScrollEdges(
+      horizontalAxis: horizontalAxis,
+      rtl: rtl,
+      atStart: atStart,
+      atEnd: atEnd,
+    );
+
+    ReaderNavigationIntent resolve(
+      GestureType gesture,
+      ScrollEdges edges, {
+      bool towardRight = false,
+    }) => resolveScrollViewSwipe(
+      gesture: gesture,
+      towardRight: towardRight,
+      edges: edges,
+    );
+
+    test('vertical text: left-to-right drag at the end goes forward', () {
+      expect(
+        resolve(
+          GestureType.horizontalSwipe,
+          edges(atEnd: true),
+          towardRight: true,
+        ),
+        ReaderNavigationIntent.goForward,
+      );
+    });
+
+    test('vertical text: forward drag mid-chapter only scrolls', () {
+      expect(
+        resolve(GestureType.horizontalSwipe, edges(), towardRight: true),
+        ReaderNavigationIntent.none,
+      );
+    });
+
+    test('vertical text: right-to-left drag at the start goes back', () {
+      expect(
+        resolve(GestureType.horizontalSwipe, edges(atStart: true)),
+        ReaderNavigationIntent.goBackward,
+      );
+    });
+
+    test('vertical text: backward drag at the end only scrolls', () {
+      expect(
+        resolve(GestureType.horizontalSwipe, edges(atEnd: true)),
+        ReaderNavigationIntent.none,
+      );
+    });
+
+    test('left-to-right horizontal axis: right-to-left drag goes forward', () {
+      expect(
+        resolve(GestureType.horizontalSwipe, edges(rtl: false, atEnd: true)),
+        ReaderNavigationIntent.goForward,
+      );
+    });
+
+    test('horizontal text: bottom-to-top drag at the end goes forward', () {
+      expect(
+        resolve(
+          GestureType.verticalSwipeUp,
+          edges(horizontalAxis: false, rtl: false, atEnd: true),
+        ),
+        ReaderNavigationIntent.goForward,
+      );
+    });
+
+    test('horizontal text: top-to-bottom drag at the start goes back', () {
+      expect(
+        resolve(
+          GestureType.verticalSwipeDown,
+          edges(horizontalAxis: false, rtl: false, atStart: true),
+        ),
+        ReaderNavigationIntent.goBackward,
+      );
+    });
+
+    test('a drag across the scroll axis does nothing', () {
+      expect(
+        resolve(
+          GestureType.verticalSwipeDown,
+          edges(atStart: true, atEnd: true),
+        ),
+        ReaderNavigationIntent.none,
+      );
+      expect(
+        resolve(
+          GestureType.horizontalSwipe,
+          edges(horizontalAxis: false, atStart: true, atEnd: true),
+          towardRight: true,
+        ),
+        ReaderNavigationIntent.none,
+      );
+    });
+  });
 }

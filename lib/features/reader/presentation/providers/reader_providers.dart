@@ -93,6 +93,10 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(splitVerticalText: enabled));
   }
 
+  void setScrollView(bool enabled) {
+    _update(state.copyWith(scrollView: enabled));
+  }
+
   void setReadingDirection(ReaderDirection direction) {
     _update(state.copyWith(readingDirection: direction));
   }

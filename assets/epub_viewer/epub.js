@@ -3974,9 +3974,8 @@ class default_DefaultViewManager {
         this.scrollTo(offset.left + width, offset.top, true);
       }
       if (target) {
-        let offset = visible.locationOf(target);
-        let width = visible.width();
-        this.moveTo(offset, width);
+        // [MEKURU PATCH] see moveToTarget()
+        this.moveToTarget(visible, target);
       }
       displaying.resolve();
       return displayed;
@@ -3991,9 +3990,8 @@ class default_DefaultViewManager {
     this.add(section, forceRight).then(function (view) {
       // Move to correct place within the section, if needed
       if (target) {
-        let offset = view.locationOf(target);
-        let width = view.width();
-        this.moveTo(offset, width);
+        // [MEKURU PATCH] see moveToTarget()
+        this.moveToTarget(view, target);
       }
     }.bind(this), err => {
       displaying.reject(err);
@@ -4042,6 +4040,31 @@ class default_DefaultViewManager {
       distX = distX - width;
     }
     this.scrollTo(distX, distY, true);
+  }
+
+  // [MEKURU PATCH] display()'s move-to-target step. Scroll view with
+  // vertical text (scrolled flow, horizontal axis) needs its own: upstream
+  // moveTo() only moves along the vertical axis when not paginated, and its
+  // rtl branch then scrolls to the far left, which is the chapter's end. It
+  // is also fed locationOf(), whose box for a collapsed CFI runs to the next
+  // space; Japanese has none, so that box spans the rest of the text node.
+  // There the target character's own column is scrolled to the start edge
+  // of the container. Raising scrollLeft moves the content left in both rtl
+  // scroll types Chromium and WebKit use ("negative" and "default"), so a
+  // relative move works in both. Every other layout keeps upstream moveTo().
+  moveToTarget(view, target) {
+    if (this.isPaginated || this.settings.axis !== "horizontal") {
+      this.moveTo(view.locationOf(target), view.width());
+      return;
+    }
+    let rect = view.contents && view.contents.firstCharRect(target, view.settings.ignoreClass);
+    if (!rect) return;
+    let iframeLeft = view.iframe.getBoundingClientRect().left;
+    let container = this.container.getBoundingClientRect();
+    let delta = this.settings.direction === "rtl"
+      ? iframeLeft + rect.right - container.right
+      : iframeLeft + rect.left - container.left;
+    this.scrollTo(this.container.scrollLeft + delta, 0, true);
   }
   add(section, forceRight) {
     var view = this.createView(section, forceRight);
@@ -4422,28 +4445,46 @@ class default_DefaultViewManager {
   }
   scrollBy(x, y, silent) {
     let dir = this.settings.direction === "rtl" ? -1 : 1;
-    if (silent) {
-      this.ignore = true;
-    }
+    let before = this.scrollPosition(); // [MEKURU PATCH] see markSilentScroll()
     if (!this.settings.fullsize) {
       if (x) this.container.scrollLeft += x * dir;
       if (y) this.container.scrollTop += y;
     } else {
       window.scrollBy(x * dir, y * dir);
     }
+    this.markSilentScroll(silent, before);
     this.scrolled = true;
   }
   scrollTo(x, y, silent) {
-    if (silent) {
-      this.ignore = true;
-    }
+    let before = this.scrollPosition(); // [MEKURU PATCH] see markSilentScroll()
     if (!this.settings.fullsize) {
       this.container.scrollLeft = x;
       this.container.scrollTop = y;
     } else {
       window.scrollTo(x, y);
     }
+    this.markSilentScroll(silent, before);
     this.scrolled = true;
+  }
+
+  // [MEKURU PATCH] A silent scroll swallows only the scroll event it causes.
+  // Upstream set `ignore` unconditionally, so a silent scroll that moved
+  // nothing (clear()'s scrollTo(0, 0) at a chapter's start) fired no event
+  // and the flag swallowed the NEXT real scroll instead: in scroll view, a
+  // one-screen step then reported no new location. Setting the flag after
+  // the write is still in time, since scroll events fire on the next frame.
+  // It is never cleared here, so the pending event of an earlier silent
+  // scroll that did move is still swallowed.
+  scrollPosition() {
+    return this.settings.fullsize
+      ? [window.scrollX, window.scrollY]
+      : [this.container.scrollLeft, this.container.scrollTop];
+  }
+  markSilentScroll(silent, before) {
+    let after = this.scrollPosition();
+    if (silent && (after[0] !== before[0] || after[1] !== before[1])) {
+      this.ignore = true;
+    }
   }
   onScroll() {
     let scrollTop;
@@ -5552,6 +5593,23 @@ class Contents {
   root() {
     if (!this.document) return null;
     return this.document.documentElement;
+  }
+
+  // [MEKURU PATCH] Box of the single character a CFI points at, for
+  // DefaultViewManager.moveToTarget() (which says why locationOf() won't do).
+  firstCharRect(target, ignoreClass) {
+    if (!this.document || !this.epubcfi.isCfiString(target)) return null;
+    let range = this.range(target, ignoreClass);
+    if (!range) return null;
+    let node = range.startContainer;
+    if (node.nodeType === Node.TEXT_NODE && node.length > 0) {
+      let start = Math.min(range.startOffset, node.length - 1);
+      let charRange = this.document.createRange();
+      charRange.setStart(node, start);
+      charRange.setEnd(node, start + 1);
+      return charRange.getBoundingClientRect();
+    }
+    return node.getBoundingClientRect ? node.getBoundingClientRect() : null;
   }
 
   /**

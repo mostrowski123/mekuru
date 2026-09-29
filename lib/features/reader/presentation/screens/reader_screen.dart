@@ -120,9 +120,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // Book language (from DB or re-parsed for legacy books).
   String? _bookLanguage;
 
-  // Touch tracking for swipe vs. tap detection.
-  double? _touchDownX;
-  double? _touchDownY;
+  /// The pending touch-down (normalized), for swipe vs. tap detection.
+  /// [ScrollEdges] is where the scroll-view strip stood then; the bridge only
+  /// sends it in scroll view, so non-null also means "a drag scrolls
+  /// natively".
+  ({double x, double y, ScrollEdges? edges})? _touchDown;
 
   @override
   void initState() {
@@ -319,15 +321,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
       if (previous.readingDirection != next.readingDirection ||
           previous.verticalText != next.verticalText ||
-          previous.splitVerticalText != next.splitVerticalText) {
+          previous.splitVerticalText != next.splitVerticalText ||
+          previous.scrollView != next.scrollView) {
         debugPrint(
           '[READER] direction/verticalText changed: '
           'dir=${next.readingDirection} '
           'vertical=${next.verticalText} '
           'split=${next.splitVerticalText} '
+          'scroll=${next.scrollView} '
           '(was dir=${previous.readingDirection} '
           'vertical=${previous.verticalText} '
-          'split=${previous.splitVerticalText})',
+          'split=${previous.splitVerticalText} '
+          'scroll=${previous.scrollView})',
         );
         if (_suppressViewerRebuilds) {
           _viewerRebuildDeferred = true;
@@ -428,6 +433,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         // the axis back to horizontal after each section loads.
                         forceHorizontalAxis: !settings.verticalText,
                         verticalTextBlocks: settings.splitVerticalText ? 2 : 1,
+                        scrollView: settings.scrollView,
                         furiganaMode: settings.furiganaMode,
                         furiganaJlptLevel: settings.furiganaJlptLevel,
                         furiganaKnownKanji: wanikaniKnownKanji,
@@ -517,9 +523,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             _selectionData = null;
                           });
                         },
-                        onTouchDown: (x, y) {
-                          _touchDownX = x.clamp(0.0, 1.0);
-                          _touchDownY = y.clamp(0.0, 1.0);
+                        onTouchDown: (x, y, edges) {
+                          _touchDown = (
+                            x: x.clamp(0.0, 1.0),
+                            y: y.clamp(0.0, 1.0),
+                            edges: edges,
+                          );
                           debugPrint(
                             '[READER] touchDown stored '
                             'x=${x.toStringAsFixed(3)} '
@@ -782,74 +791,90 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   ) {
     if (_hasActiveSelection) {
       debugPrint('[READER] touchUp ignored — active selection');
-      _touchDownX = null;
-      _touchDownY = null;
+      _touchDown = null;
       return;
     }
-
-    final upX = x.clamp(0.0, 1.0);
-    final upY = y.clamp(0.0, 1.0);
-    final downX = _touchDownX;
-    final downY = _touchDownY;
-
-    // Reset touch tracking.
-    _touchDownX = null;
-    _touchDownY = null;
-
-    if (downX == null) {
+    if (_touchDown == null) {
       debugPrint('[READER] touchUp ignored — no matching touchDown');
       return;
     }
+    if (_consumeSwipe(x, y, readingDirection, swipeSensitivity)) return;
 
-    final dx = upX - downX;
+    // This is a tap — use tap position for zone-based navigation.
+    final upX = x.clamp(0.0, 1.0);
+    final upY = y.clamp(0.0, 1.0);
+    final intent = resolveTapIntent(
+      normalizedX: upX,
+      normalizedY: upY,
+      readingDirection: readingDirection,
+    );
+    debugPrint(
+      '[READER] TAP detected: x=${upX.toStringAsFixed(3)} '
+      'intent=$intent',
+    );
+    _executeNavigationIntent(intent);
+  }
 
-    ReaderNavigationIntent intent;
-
+  /// Ends the pending touch that just lifted at ([x], [y]). If it was a
+  /// swipe, acts on it and returns true; a tap (or no touch-down) returns
+  /// false for the caller to handle.
+  bool _consumeSwipe(
+    double x,
+    double y,
+    ReaderDirection readingDirection,
+    double swipeSensitivity,
+  ) {
+    final down = _touchDown;
+    _touchDown = null;
+    if (down == null) return false;
+    final dx = x.clamp(0.0, 1.0) - down.x;
     final gesture = classifyGesture(
-      downX: downX,
-      upX: upX,
-      downY: downY,
-      upY: upY,
+      downX: down.x,
+      upX: x.clamp(0.0, 1.0),
+      downY: down.y,
+      upY: y.clamp(0.0, 1.0),
       swipeThreshold: swipeSensitivity,
     );
-    if (gesture == GestureType.verticalSwipeDown) {
-      // Swipe down — show controls.
-      debugPrint('[READER] SWIPE DOWN detected — showing controls');
-      _setControlsVisible(true);
-      return;
-    } else if (gesture == GestureType.verticalSwipeUp) {
-      // Swipe up — dismiss controls only if they are showing.
-      if (_showControls) {
-        debugPrint('[READER] SWIPE UP detected — hiding controls');
-        _setControlsVisible(false);
-      }
-      return;
-    } else if (gesture == GestureType.horizontalSwipe) {
-      // Horizontal swipe — navigate based on swipe direction.
-      final pseudoVelocityX = dx > 0 ? 500.0 : -500.0;
-      intent = resolveSwipeIntent(
-        velocityX: pseudoVelocityX,
-        readingDirection: readingDirection,
+    final edges = down.edges;
+    if (gesture != GestureType.tap && edges != null) {
+      // Scroll view: the drag already scrolled the strip natively.
+      final intent = resolveScrollViewSwipe(
+        gesture: gesture,
+        towardRight: dx > 0,
+        edges: edges,
       );
       debugPrint(
-        '[READER] SWIPE detected: dx=${dx.toStringAsFixed(3)} '
-        'direction=${dx > 0 ? "right" : "left"} '
-        'intent=$intent',
+        '[READER] scroll-view drag: $gesture atStart=${edges.atStart} '
+        'atEnd=${edges.atEnd} intent=$intent',
       );
-    } else {
-      // This is a tap — use tap position for zone-based navigation.
-      intent = resolveTapIntent(
-        normalizedX: upX,
-        normalizedY: upY,
-        readingDirection: readingDirection,
-      );
-      debugPrint(
-        '[READER] TAP detected: x=${upX.toStringAsFixed(3)} '
-        'intent=$intent',
-      );
+      _executeNavigationIntent(intent);
+      return true;
     }
-
-    _executeNavigationIntent(intent);
+    switch (gesture) {
+      case GestureType.tap:
+        return false;
+      case GestureType.verticalSwipeDown:
+        debugPrint('[READER] SWIPE DOWN detected — showing controls');
+        _setControlsVisible(true);
+      case GestureType.verticalSwipeUp:
+        // Swipe up — dismiss controls only if they are showing.
+        if (_showControls) {
+          debugPrint('[READER] SWIPE UP detected — hiding controls');
+          _setControlsVisible(false);
+        }
+      case GestureType.horizontalSwipe:
+        final intent = intentForHorizontalSwipe(
+          towardRight: dx > 0,
+          readingDirection: readingDirection,
+        );
+        debugPrint(
+          '[READER] SWIPE detected: dx=${dx.toStringAsFixed(3)} '
+          'direction=${dx > 0 ? "right" : "left"} '
+          'intent=$intent',
+        );
+        _executeNavigationIntent(intent);
+    }
+    return true;
   }
 
   Future<void> _handleWordTapped(
@@ -862,49 +887,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     ReaderDirection readingDirection,
     double swipeSensitivity,
   ) async {
-    final downX = _touchDownX;
-    final downY = _touchDownY;
-    _touchDownX = null;
-    _touchDownY = null;
-
     // Check if this was actually a swipe (finger moved far from start)
-    if (downX != null) {
-      final gesture = classifyGesture(
-        downX: downX,
-        upX: x.clamp(0.0, 1.0),
-        downY: downY,
-        upY: y.clamp(0.0, 1.0),
-        swipeThreshold: swipeSensitivity,
-      );
-      if (gesture == GestureType.verticalSwipeDown) {
-        debugPrint(
-          '[READER] wordTapped was actually a SWIPE DOWN — showing controls',
-        );
-        _setControlsVisible(true);
-        return;
-      }
-      if (gesture == GestureType.verticalSwipeUp) {
-        if (_showControls) {
-          debugPrint(
-            '[READER] wordTapped was actually a SWIPE UP — hiding controls',
-          );
-          _setControlsVisible(false);
-        }
-        return;
-      }
-      if (gesture == GestureType.horizontalSwipe) {
-        final dx = x.clamp(0.0, 1.0) - downX;
-        final pseudoVelocityX = dx > 0 ? 500.0 : -500.0;
-        final intent = resolveSwipeIntent(
-          velocityX: pseudoVelocityX,
-          readingDirection: readingDirection,
-        );
-        debugPrint(
-          '[READER] wordTapped was actually a SWIPE, navigating: $intent',
-        );
-        _executeNavigationIntent(intent);
-        return;
-      }
+    if (_consumeSwipe(x, y, readingDirection, swipeSensitivity)) {
+      debugPrint('[READER] wordTapped was actually a swipe');
+      return;
     }
 
     // It's a tap on text — identify the word via MeCab and show lookup

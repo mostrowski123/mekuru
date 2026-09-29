@@ -1,12 +1,25 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
+/// Evaluates [jsExpression], which must return a JSON string (or an object,
+/// which some WebViews hand back already parsed), in the reader's WebView.
+Future<Map<String, dynamic>> evalJson(
+  CustomEpubController controller,
+  String jsExpression,
+) async {
+  final raw = await controller.debugEvaluateJavascript(jsExpression);
+  if (raw is String) return jsonDecode(raw) as Map<String, dynamic>;
+  return (raw as Map).cast<String, dynamic>();
+}
 
 /// The localizations the app will actually resolve for the test device's
 /// locale — assert against these, not hardcoded English.

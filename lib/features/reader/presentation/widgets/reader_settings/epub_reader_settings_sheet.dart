@@ -191,11 +191,22 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
         // ── Behavior ──
         SettingsSectionHeader.sheet(title: l10n.readerSettingsSectionBehavior),
         SettingsSwitchRow(
+          icon: Icons.swipe_outlined,
+          title: l10n.readerScrollViewTitle,
+          subtitle: l10n.readerScrollViewSubtitle,
+          value: settings.scrollView,
+          onChanged: (value) {
+            notifier.setScrollView(value);
+            onSettingChanged('scroll_view', value);
+          },
+        ),
+        SettingsSwitchRow(
           icon: Icons.table_rows_outlined,
           title: l10n.readerSplitVerticalTextTitle,
           subtitle: l10n.readerSplitVerticalTextSubtitle,
           value: settings.splitVerticalText,
-          onChanged: settings.verticalText
+          // Split text only lays out pages; scroll view has none.
+          onChanged: settings.verticalText && !settings.scrollView
               ? (value) {
                   notifier.setSplitVerticalText(value);
                   onSettingChanged('split_vertical_text', value);

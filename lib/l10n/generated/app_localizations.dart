@@ -2476,6 +2476,18 @@ abstract class AppLocalizations {
   /// **'Show two stacked text blocks per page'**
   String get readerSplitVerticalTextSubtitle;
 
+  /// Title for the EPUB setting that shows each chapter as one strip the reader slides through (sideways for vertical text, up and down for horizontal text) instead of pages.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll View'**
+  String get readerScrollViewTitle;
+
+  /// Subtitle for the scroll view setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Slide through each chapter instead of turning pages'**
+  String get readerScrollViewSubtitle;
+
   /// Label indicating a reader setting applies to the current book.
   ///
   /// In en, this message translates to:

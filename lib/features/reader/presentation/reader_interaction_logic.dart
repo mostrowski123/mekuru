@@ -82,6 +82,69 @@ ReaderNavigationIntent intentForHorizontalSwipe({
       : ReaderNavigationIntent.goForward;
 }
 
+// ── Scroll view ─────────────────────────────────────────────────────
+
+/// Where the scroll-view strip stood when a touch began. The bridge sends
+/// it with every touchDown while scroll view is on, and null otherwise.
+class ScrollEdges {
+  const ScrollEdges({
+    required this.horizontalAxis,
+    required this.rtl,
+    required this.atStart,
+    required this.atEnd,
+  });
+
+  /// Parses the bridge's `{axis, dir, atStart, atEnd}` map. Anything else
+  /// (paginated mode sends null) is null.
+  static ScrollEdges? fromBridge(Object? data) {
+    if (data is! Map) return null;
+    return ScrollEdges(
+      horizontalAxis: data['axis'] == 'horizontal',
+      rtl: data['dir'] == 'rtl',
+      atStart: data['atStart'] == true,
+      atEnd: data['atEnd'] == true,
+    );
+  }
+
+  /// True when the strip scrolls sideways (vertical text).
+  final bool horizontalAxis;
+  final bool rtl;
+  final bool atStart;
+  final bool atEnd;
+}
+
+/// Resolves a drag ([gesture] from [classifyGesture]) in scroll view. The
+/// drag already scrolled the strip natively, so it only changes chapter when
+/// it started with the strip at an edge and pushes past it. A fling that
+/// merely reaches the end stays put. Drags across the scroll axis do nothing.
+ReaderNavigationIntent resolveScrollViewSwipe({
+  required GestureType gesture,
+  required bool towardRight,
+  required ScrollEdges edges,
+}) {
+  // The finger moves the way the text moves, as when turning pages sideways;
+  // horizontal text comes in from below, so bottom to top is forward.
+  final intent = edges.horizontalAxis
+      ? (gesture == GestureType.horizontalSwipe
+            ? intentForHorizontalSwipe(
+                towardRight: towardRight,
+                readingDirection: edges.rtl
+                    ? ReaderDirection.rtl
+                    : ReaderDirection.ltr,
+              )
+            : ReaderNavigationIntent.none)
+      : switch (gesture) {
+          GestureType.verticalSwipeUp => ReaderNavigationIntent.goForward,
+          GestureType.verticalSwipeDown => ReaderNavigationIntent.goBackward,
+          _ => ReaderNavigationIntent.none,
+        };
+  return switch (intent) {
+    ReaderNavigationIntent.goForward when edges.atEnd => intent,
+    ReaderNavigationIntent.goBackward when edges.atStart => intent,
+    _ => ReaderNavigationIntent.none,
+  };
+}
+
 // ── Gesture classification ──────────────────────────────────────────
 
 /// Touch gesture types.

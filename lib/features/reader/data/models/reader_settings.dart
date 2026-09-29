@@ -100,6 +100,11 @@ class ReaderSettings {
   /// Only takes effect while [verticalText] is enabled.
   final bool splitVerticalText;
 
+  /// When true, EPUB chapters are one strip the reader slides through
+  /// (sideways for vertical text, up and down for horizontal text) instead
+  /// of turning pages. Global, like [splitVerticalText].
+  final bool scrollView;
+
   final ReaderDirection readingDirection;
   final int horizontalPadding;
   final int verticalPadding;
@@ -174,6 +179,7 @@ class ReaderSettings {
     this.fontSize = 18,
     this.verticalText = true,
     this.splitVerticalText = false,
+    this.scrollView = false,
     this.readingDirection = ReaderDirection.rtl,
     this.horizontalPadding = 28,
     this.verticalPadding = 28,
@@ -199,6 +205,7 @@ class ReaderSettings {
     double? fontSize,
     bool? verticalText,
     bool? splitVerticalText,
+    bool? scrollView,
     ReaderDirection? readingDirection,
     int? horizontalPadding,
     int? verticalPadding,
@@ -223,6 +230,7 @@ class ReaderSettings {
       fontSize: fontSize ?? this.fontSize,
       verticalText: verticalText ?? this.verticalText,
       splitVerticalText: splitVerticalText ?? this.splitVerticalText,
+      scrollView: scrollView ?? this.scrollView,
       readingDirection: readingDirection ?? this.readingDirection,
       horizontalPadding: horizontalPadding ?? this.horizontalPadding,
       verticalPadding: verticalPadding ?? this.verticalPadding,

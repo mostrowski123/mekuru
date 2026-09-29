@@ -1426,6 +1426,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Show two stacked text blocks per page';
 
   @override
+  String get readerScrollViewTitle => 'Scroll View';
+
+  @override
+  String get readerScrollViewSubtitle =>
+      'Slide through each chapter instead of turning pages';
+
+  @override
   String get readerThisBook => 'This book';
 
   @override
