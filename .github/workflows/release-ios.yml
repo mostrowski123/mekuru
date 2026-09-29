@@ -1,6 +1,12 @@
 name: Release iOS to TestFlight
 
 on:
+  # Every push to main whose iOS integration tests pass goes to the external
+  # testers.
+  workflow_run:
+    workflows: [iOS Integration Tests]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,8 +18,15 @@ concurrency:
 
 jobs:
   testflight:
+    # A dispatched test run can repeat a commit that has already shipped.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push')
     runs-on: macos-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    permissions:
+      contents: write # the testflight-* tag
 
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -26,9 +39,17 @@ jobs:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      ASC_APP_ID: '6814013845'
+      # The external group "class" (an internal group has the same name).
+      TESTFLIGHT_GROUP: 6dd9114e-1016-45e8-990c-f48fbe977af7
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The commit the tests passed on, not whatever main is now. Full
+          # history and tags for the What to Test notes.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -144,6 +165,45 @@ jobs:
         run: |
           version=$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)
           SENTRY_RELEASE="moe.matthew.mekuru@${version}+${{ github.run_number }}" dart run sentry_dart_plugin
+
+      # The user-facing commits since the last TestFlight build (tagged
+      # below). The first run has no tag and takes the newest 30.
+      # ponytail: drops any subject that mentions Android, which also drops a
+      # rare "match Android on iOS" fix; edit the notes in App Store Connect
+      # then.
+      - name: Write What to Test notes
+        run: |
+          prev=$(git describe --tags --abbrev=0 --match 'testflight-*' 2>/dev/null || true)
+          git log --no-merges --format=%s ${prev:+$prev..}HEAD \
+            | grep -E '^(feat|fix|perf|l10n)(\([^)]*\))?!?: ' \
+            | grep -v -i android \
+            | sed -E 's/^[a-z0-9]+(\([^)]*\))?!?: /- /' \
+            | head -n 30 > build/ios/whats-new.txt || true
+          test -s build/ios/whats-new.txt || echo 'Bug fixes and improvements.' > build/ios/whats-new.txt
+          cat build/ios/whats-new.txt
+
+      # Beta App Review only: nothing here touches the App Store version.
+      # Notifications are switched on first because a later build of an
+      # already-reviewed version can be approved within moments; testers hear
+      # about the build when Apple approves it.
+      - name: Submit to external testers for Beta App Review
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          ASC_BYPASS_KEYCHAIN: 1
+        run: |
+          brew install asc
+          version=$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)
+          build=(--app "$ASC_APP_ID" --build-number "${{ github.run_number }}" --version "$version")
+          asc builds wait "${build[@]}" --platform IOS --timeout 45m --fail-on-invalid
+          detail=$(asc builds build-beta-detail view "${build[@]}" --platform IOS | jq -r .data.id)
+          asc testflight distribution edit --id "$detail" --auto-notify
+          asc publish testflight "${build[@]}" --group "$TESTFLIGHT_GROUP" \
+            --test-notes "$(cat build/ios/whats-new.txt)" --locale en-US --submit --confirm
+
+      - name: Tag the TestFlight build
+        run: |
+          git tag "testflight-${{ github.run_number }}"
+          git push origin "testflight-${{ github.run_number }}"
 
       - name: Remove App Store Connect API key
         if: always()
