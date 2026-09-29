@@ -12,12 +12,25 @@ on:
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.github/workflows/integration-ios.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'packages/local_manga_ocr/**'
+      - 'ios/**'
+      - 'assets/**'
+      - 'integration_test/**'
+      - 'scripts/run_ios_integration_tests.sh'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/integration-ios.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
