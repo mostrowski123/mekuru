@@ -190,8 +190,11 @@ class CustomEpubViewer extends StatefulWidget {
   /// by the JS bridge on navigation-caused `relocated` events. [pageKey] is
   /// the page's start CFI, letting the session tracker drop duplicate reports
   /// for the page already on screen; a null key disables that dedup so the
-  /// page still counts. Used for reading stats.
-  final void Function(int count, String? pageKey)? onPageCharacters;
+  /// page still counts. In scroll view [count] is the text newly brought on
+  /// screen, with a null key, and [screens] is that text as a fraction of
+  /// the screen (0 when paginated). Used for reading stats.
+  final void Function(int count, String? pageKey, double screens)?
+  onPageCharacters;
 
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
@@ -350,6 +353,7 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         widget.onPageCharacters?.call(
           (map['count'] as num?)?.toInt() ?? 0,
           map['pageKey'] as String?,
+          (map['screens'] as num?)?.toDouble() ?? 0,
         );
       },
     );

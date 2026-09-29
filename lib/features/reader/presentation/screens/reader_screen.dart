@@ -506,8 +506,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             }
                           }
                         },
-                        onPageCharacters: (count, pageKey) => _sessionTracker
-                            .recordCharactersRead(count, pageKey: pageKey),
+                        onPageCharacters: (count, pageKey, screens) {
+                          _sessionTracker
+                            ..recordCharactersRead(count, pageKey: pageKey)
+                            ..recordScreensScrolled(screens);
+                        },
                         onSelection: (selection) {
                           _hasActiveSelection = true;
                           if (selection.text.isNotEmpty &&
@@ -1065,7 +1068,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       return;
     }
     debugPrint('[READER] goForward executing');
-    _sessionTracker.recordPageTurn();
+    // Scroll view counts pages by screens scrolled (onPageCharacters).
+    if (!ref.read(readerSettingsProvider).scrollView) {
+      _sessionTracker.recordPageTurn();
+    }
     countUsage(
       'reader.page_turn',
       attrs: {'direction': 'forward', 'format': 'epub'},
@@ -1082,7 +1088,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       return;
     }
     debugPrint('[READER] goBackward executing');
-    _sessionTracker.recordPageTurn();
+    // Scroll view counts pages by screens scrolled (onPageCharacters).
+    if (!ref.read(readerSettingsProvider).scrollView) {
+      _sessionTracker.recordPageTurn();
+    }
     countUsage(
       'reader.page_turn',
       attrs: {'direction': 'backward', 'format': 'epub'},

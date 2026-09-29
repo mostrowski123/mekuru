@@ -194,6 +194,30 @@ void main() {
     expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 0);
   });
 
+  test('scroll view counts each screenful of new text as a page', () {
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordScreensScrolled(0.4);
+    tracker.recordScreensScrolled(0.7);
+    tracker.recordScreensScrolled(0.9);
+    expect(tracker.takeSummary(endReason: 'backgrounded')!['pages_turned'], 2);
+
+    // The fraction left over carries into the next session slice.
+    tracker.resume();
+    stopwatch.fakeElapsedMs = 5000;
+    tracker.recordScreensScrolled(0.3);
+    tracker.recordScreensScrolled(0.7);
+    expect(tracker.takeSummary(endReason: 'closed')!['pages_turned'], 1);
+  });
+
+  test('scroll view characters count at once, without a page dwell', () {
+    tracker.recordCharactersRead(120);
+    stopwatch.advance(500);
+    tracker.recordCharactersRead(80);
+    stopwatch.advance(500);
+
+    expect(tracker.takeSummary(endReason: 'closed')!['characters_read'], 200);
+  });
+
   test('resets characters read after a summary is taken', () {
     stopwatch.fakeElapsedMs = 5000;
     tracker.recordCharactersRead(420);

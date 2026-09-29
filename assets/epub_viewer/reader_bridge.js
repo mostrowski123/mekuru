@@ -1185,10 +1185,21 @@ function getTextFromCfi(startCfi, endCfi) {
 }
 
 // Reports the approximate visible-character count of the current page for
-// reading stats. Whitespace is stripped; failures report nothing (Dart
-// treats a missing count as 0 for the session).
+// reading stats. Failures report nothing (Dart treats a missing count as 0
+// for the session).
 function reportPageChars(startCfi, endCfi) {
-  if (!rendition) return;
+  var count = countChars(startCfi, endCfi);
+  if (count === null) return;
+  // pageKey lets the Dart session tracker drop duplicate reports for the
+  // page that is already displayed (defense in depth on top of the
+  // _pendingNavChars gate).
+  callDart('pageChars', { count: count, pageKey: startCfi });
+}
+
+// The number of characters between two CFIs of the displayed section, with
+// whitespace stripped, or null when they do not resolve.
+function countChars(startCfi, endCfi) {
+  if (!rendition) return null;
   try {
     // Resolve each page boundary as its own point CFI against the document
     // that is already rendered. Joining the two CFIs into one range CFI
@@ -1196,13 +1207,13 @@ function reportPageChars(startCfi, endCfi) {
     // leading "epubcfi(" and the trailing ")" of the whole string, so the
     // join parses into garbage and silently yields no range.
     var contents = rendition.getContents()[0];
-    if (!contents || !contents.document) return;
+    if (!contents || !contents.document) return null;
     var doc = contents.document;
     var r1 = new ePub.CFI(startCfi).toRange(doc);
     var r2 = new ePub.CFI(endCfi).toRange(doc);
     if (!r1 || !r2) {
       console.log('[EPUB_BRIDGE] pageChars: CFI did not resolve in rendered doc');
-      return;
+      return null;
     }
     var range = doc.createRange();
     range.setStart(r1.startContainer, r1.startOffset);
@@ -1217,25 +1228,22 @@ function reportPageChars(startCfi, endCfi) {
     for (var i = 0; i < ruby.length; i++) {
       ruby[i].parentNode.removeChild(ruby[i]);
     }
-    var text = frag.textContent || '';
-    // pageKey lets the Dart session tracker drop duplicate reports for the
-    // page that is already displayed (defense in depth on top of the
-    // _pendingNavChars gate).
-    callDart('pageChars', {
-      count: text.replace(/\s+/g, '').length,
-      pageKey: startCfi
-    });
+    return (frag.textContent || '').replace(/\s+/g, '').length;
   } catch (e) {
     // Malformed CFIs and out-of-order boundaries both throw synchronously;
     // this runs inside the 'relocated' listener, so it must never escape.
     console.log('[EPUB_BRIDGE] pageChars failed:', e);
+    return null;
   }
 }
 
 // Scroll view has no page turns to arm _pendingNavChars, so every settle
 // counts the text revealed past the furthest point already counted in this
-// section. The key stays per settle, so the Dart dwell gate still drops
-// text that only flew past (and it is not counted again on the way back).
+// section: text that only flew past between two settles is never counted,
+// nor is text counted again on the way back. It goes without a pageKey:
+// a reader scrolling a few lines at a time never stays on one settle for
+// the Dart page dwell, which dropped almost everything read that way.
+// screens (that text as a fraction of the screen) counts pages.
 function reportNewScrollChars(start, endCfi) {
   var from = start.cfi;
   if (_scrollCountedEnd && _scrollCountedEnd.index === start.index) {
@@ -1249,7 +1257,14 @@ function reportNewScrollChars(start, endCfi) {
     }
   }
   _scrollCountedEnd = { index: start.index, cfi: endCfi };
-  reportPageChars(from, endCfi);
+  var count = countChars(from, endCfi);
+  if (count === null) return;
+  var screen = from === start.cfi ? count : countChars(start.cfi, endCfi);
+  callDart('pageChars', {
+    count: count,
+    pageKey: null,
+    screens: screen > 0 ? Math.min(1, count / screen) : 0
+  });
 }
 
 // ── Scroll view ───────────────────────────────────────────────────────

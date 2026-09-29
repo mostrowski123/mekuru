@@ -103,6 +103,9 @@ void registerScrollViewScenario({required bool vertical}) {
       final counts = await _recordedPageChars(controller);
       expect(counts, hasLength(2), reason: '$counts');
       expect(counts.every((c) => c > 0), isTrue, reason: '$counts');
+      // A one-screen step brings a screenful of new text: one page.
+      final screens = await _recordedPageScreens(controller);
+      expect(screens.first, closeTo(1, 0.2), reason: '$screens');
       await scrollScreens(-1);
       await settle();
       expect(await _recordedPageChars(controller), counts);
@@ -517,16 +520,21 @@ Future<List<Map<String, dynamic>>> _recordedFrames(
   return (json['frames'] as List).cast<Map<String, dynamic>>();
 }
 
-/// Starts recording the counts of the bridge's `pageChars` reports (the
-/// reading-stats character counts) sent from now on.
+/// Starts recording the counts and screen fractions of the bridge's
+/// `pageChars` reports (the reading-stats characters and pages) sent from
+/// now on.
 Future<void> _recordPageChars(CustomEpubController controller) =>
     controller.debugEvaluateJavascript(
       '(function () {'
       '  window._pageCharsLog = [];'
+      '  window._pageScreensLog = [];'
       '  var bridge = window.flutter_inappwebview;'
       '  var original = bridge.callHandler;'
       '  bridge.callHandler = function (name, data) {'
-      '    if (name === "pageChars") window._pageCharsLog.push(data.count);'
+      '    if (name === "pageChars") {'
+      '      window._pageCharsLog.push(data.count);'
+      '      window._pageScreensLog.push(data.screens);'
+      '    }'
       '    return original.apply(bridge, arguments);'
       '  };'
       '})()',
@@ -574,6 +582,20 @@ Future<Map<String, dynamic>> _cfiCharacters(
     await tester.pump(const Duration(milliseconds: 250));
   }
   throw TestFailure('The chapter did not load for $cfi.');
+}
+
+/// Screen fractions of the counts recorded since [_recordPageChars].
+Future<List<double>> _recordedPageScreens(
+  CustomEpubController controller,
+) async {
+  final json = await evalJson(
+    controller,
+    'JSON.stringify({screens: window._pageScreensLog})',
+  );
+  return (json['screens'] as List)
+      .cast<num>()
+      .map((s) => s.toDouble())
+      .toList();
 }
 
 /// -1, 0 or 1 as epub.js orders two CFIs.

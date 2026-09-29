@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// Accumulates per-session reading activity for the `session.summary` usage
 /// log. Pure Dart (no Flutter imports) so it stays unit-testable.
 ///
@@ -28,6 +30,9 @@ class ReaderSessionTracker {
   // A keyed page waiting out its dwell; see [recordCharactersRead].
   ({String key, int chars, int sinceMs})? _pendingPage;
 
+  // Scroll view's fraction of a screen not yet counted as a page.
+  double _screenCarry = 0;
+
   /// Sessions shorter than this with no activity are dropped as noise (e.g.
   /// dispose firing right after a backgrounded summary was already taken).
   static const int minReportableMs = 1000;
@@ -37,6 +42,18 @@ class ReaderSessionTracker {
   static const int pageDwellMs = 3000;
 
   void recordPageTurn() => _pagesTurned++;
+
+  /// Scroll view has no page turns: each screenful of new text read counts
+  /// as one. [screens] is the new text a scroll brought on screen, as a
+  /// fraction of the screen; the fractions add up across scrolls.
+  void recordScreensScrolled(double screens) {
+    if (screens <= 0) return;
+    _screenCarry += screens;
+    // A little slack so fractions that add up to a whole screen count as one.
+    final whole = (_screenCarry + 1e-9).floor();
+    _pagesTurned += whole;
+    _screenCarry = math.max(0, _screenCarry - whole);
+  }
 
   void recordLookup({required bool hit}) {
     _lookups++;
@@ -57,9 +74,11 @@ class ReaderSessionTracker {
   /// size, margins, rotation) keep the original dwell start and never double
   /// count; a page revisited after leaving it counts again.
   ///
-  /// Pass null only when the page has no usable identity (e.g. the EPUB
-  /// bridge failed to produce a start CFI); the count is then added
-  /// immediately, with non-positive counts ignored.
+  /// Pass null when the page has no usable identity (e.g. the EPUB bridge
+  /// failed to produce a start CFI), and for scroll view, where the bridge
+  /// reports only new text that was on screen when scrolling stopped: a
+  /// reader scrolling a few lines at a time never stops for [pageDwellMs].
+  /// The count is then added immediately, with non-positive counts ignored.
   void recordCharactersRead(int count, {String? pageKey}) {
     final chars = count > 0 ? count : 0;
     if (pageKey == null) {
