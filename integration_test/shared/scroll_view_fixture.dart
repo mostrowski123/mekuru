@@ -153,6 +153,8 @@ void registerScrollViewScenario({required bool vertical}) {
 
       // At the start of a chapter, prev() loads the previous one at its end,
       // never showing its start or a wrongly measured layout on the way.
+      // Only shown frames count: the view stays hidden while it is measured
+      // (on iOS the first hidden frame is about twice the final width).
       await _recordFrames(controller);
       controller.prev();
       final back = await settle();
@@ -160,10 +162,10 @@ void registerScrollViewScenario({required bool vertical}) {
       expect(back['atEnd'], isTrue, reason: '$back');
       final frames = (await _recordedFrames(
         controller,
-      )).where((f) => f['index'] == 0).toList();
+      )).where((f) => f['index'] == 0 && f['visible'] == true).toList();
       expect(frames, isNotEmpty);
       expect(
-        frames.where((f) => f['visible'] == true && f['atStart'] == true),
+        frames.where((f) => f['atStart'] == true),
         isEmpty,
         reason: 'the chapter start flashed: $frames',
       );
