@@ -1362,11 +1362,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerSplitVerticalTextSubtitle => '每页显示上下两栏文本';
 
   @override
-  String get readerScrollViewTitle => 'Scroll View';
+  String get readerScrollViewTitle => '滚动视图';
 
   @override
-  String get readerScrollViewSubtitle =>
-      'Slide through each chapter instead of turning pages';
+  String get readerScrollViewSubtitle => '滑动浏览每一章，而不是翻页';
 
   @override
   String get readerThisBook => '本书';
@@ -4558,11 +4557,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get readerSplitVerticalTextSubtitle => '每页显示上下两栏文本';
 
   @override
-  String get readerScrollViewTitle => 'Scroll View';
+  String get readerScrollViewTitle => '滚动视图';
 
   @override
-  String get readerScrollViewSubtitle =>
-      'Slide through each chapter instead of turning pages';
+  String get readerScrollViewSubtitle => '滑动浏览每一章，而不是翻页';
 
   @override
   String get readerThisBook => '本书';

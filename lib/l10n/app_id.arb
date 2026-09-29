@@ -2872,6 +2872,6 @@
   "ankiMobileFieldNamesLabel": "Nama kolom, dipisahkan dengan koma",
   "ankiMobileNamesRequired": "Masukkan tipe catatan, dek, dan setidaknya satu nama kolom.",
   "ankiMobileCouldNotOpen": "Tidak dapat membuka AnkiMobile. Pastikan aplikasinya terpasang di perangkat ini.",
-  "readerScrollViewTitle": "Scroll View",
-  "readerScrollViewSubtitle": "Slide through each chapter instead of turning pages"
+  "readerScrollViewTitle": "Tampilan Gulir",
+  "readerScrollViewSubtitle": "Geser di sepanjang setiap bab, bukan membalik halaman"
 }

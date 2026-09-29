@@ -1444,11 +1444,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Mostrar dos bloques de texto apilados por página';
 
   @override
-  String get readerScrollViewTitle => 'Scroll View';
+  String get readerScrollViewTitle => 'Vista de desplazamiento';
 
   @override
   String get readerScrollViewSubtitle =>
-      'Slide through each chapter instead of turning pages';
+      'Desliza por cada capítulo en lugar de pasar páginas';
 
   @override
   String get readerThisBook => 'Este libro';

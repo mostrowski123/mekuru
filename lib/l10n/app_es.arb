@@ -2872,6 +2872,6 @@
   "ankiMobileFieldNamesLabel": "Nombres de los campos, separados por comas",
   "ankiMobileNamesRequired": "Introduce un tipo de nota, una baraja y al menos un nombre de campo.",
   "ankiMobileCouldNotOpen": "No se pudo abrir AnkiMobile. Comprueba que esté instalado en este dispositivo.",
-  "readerScrollViewTitle": "Scroll View",
-  "readerScrollViewSubtitle": "Slide through each chapter instead of turning pages"
+  "readerScrollViewTitle": "Vista de desplazamiento",
+  "readerScrollViewSubtitle": "Desliza por cada capítulo en lugar de pasar páginas"
 }
