@@ -26,9 +26,6 @@ var _scrollView = false;
 // current section ({ index, cfi }), so scrolling back or settling twice on
 // the same text never counts it again.
 var _scrollCountedEnd = null;
-// Scroll view: keeps a chapter that was just opened at its end pinned there
-// while its layout settles ({ view, onGrow, timer }; see pinScrollEnd).
-var _scrollEndPin = null;
 // When true, epub.js patches in epub.js will override the detected
 // writing-mode to horizontal-tb, forcing horizontal pagination.
 // Set as a window global so epub.js code can read it.
@@ -330,6 +327,14 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
       var coords = normalizedCoords({ clientX: clientX, clientY: clientY }, contents);
       if (!coords) return;
 
+      // touchUp's fourth argument: this touch scrolled the strip (no lookup,
+      // no tap-zone page turn).
+      if (touchScrolledStrip()) {
+        console.log('[EPUB_BRIDGE] touchUp(' + source + ') scrolled the strip');
+        callDart('touchUp', coords.x, coords.y, false, true);
+        return;
+      }
+
       // Check if tap landed on a hyperlink
       var linkEl = getLinkAtPoint(clientX, clientY, doc);
       if (linkEl && !_disableLinks) {
@@ -410,12 +415,30 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   });
 }
 
+// Scroll view: the strip's scroll position when the finger came down, so
+// the lift can tell a drag (the strip moved) from a tap.
+var _touchDownScroll = null;
+
 // x and y are fractions of the viewport. In scroll view, also say where the
 // strip stood when the finger came down: a drag only changes chapter when it
 // started at an edge.
 function sendTouchDown(x, y) {
-  unpinScrollEnd();
+  unpinScroll();
+  _touchDownScroll = stripScroll();
   callDart('touchDown', x, y, _scrollView ? scrollEdges() : null);
+}
+
+function stripScroll() {
+  return rendition && rendition.manager ? rendition.manager.scrollPosition() : null;
+}
+
+// True when the touch now lifting scrolled the scroll-view strip. Such a
+// drag is never a tap, however short: native scrolling starts after a few
+// pixels, well below Dart's swipe threshold.
+function touchScrolledStrip() {
+  var now = stripScroll();
+  return _scrollView && !!_touchDownScroll && !!now &&
+    (Math.abs(now[0] - _touchDownScroll[0]) > 1 || Math.abs(now[1] - _touchDownScroll[1]) > 1);
 }
 
 // ── Page margins ──────────────────────────────────────────────────────
@@ -454,7 +477,7 @@ document.addEventListener('pointerup', function (e) {
 // ── Navigation (section-aware — bypasses epub.js broken scroll-delta logic) ──
 
 function next() {
-  unpinScrollEnd();
+  unpinScroll();
   if (!rendition || !rendition.location || !rendition.location.start) {
     console.log('[EPUB_BRIDGE] next() called but no location yet');
     return;
@@ -498,7 +521,7 @@ function next() {
 }
 
 function previous() {
-  unpinScrollEnd();
+  unpinScroll();
   if (!rendition || !rendition.location || !rendition.location.start) {
     console.log('[EPUB_BRIDGE] previous() called but no location yet');
     return;
@@ -536,16 +559,18 @@ function previous() {
         // is "vertical" and pages scroll top-to-bottom.
         _pendingNavChars = true;
         rendition.display(prevItem.href).then(function () {
+          // Scroll view: display() shows the new view in the same promise
+          // chain, so it is moved to its end before anything is painted.
+          if (_scrollView) {
+            pinScrollEnd();
+            return;
+          }
           // Wait for a rAF + microtask so the browser has a chance to
           // finish layout (especially for sections containing images
           // whose height isn't known until the image loads).
           requestAnimationFrame(function () {
             setTimeout(function () {
-              if (_scrollView) {
-                pinScrollEnd();
-              } else {
-                snapToLastPage('previous');
-              }
+              snapToLastPage('previous');
             }, 0);
           });
         });
@@ -559,7 +584,7 @@ function previous() {
 }
 
 function toCfi(cfi) {
-  unpinScrollEnd();
+  unpinScroll();
   if (!rendition) return;
   _pendingNavChars = true;
   rendition.display(cfi).then(function () {
@@ -574,7 +599,7 @@ function toCfi(cfi) {
 }
 
 function toProgress(progress) {
-  unpinScrollEnd();
+  unpinScroll();
   if (book && book.locations) {
     var cfi = book.locations.cfiFromPercentage(progress);
     if (rendition) {
@@ -1016,7 +1041,8 @@ function applyMargins() {
   // reflects the reduced dimensions, so pagination is correct.
   var styleEl = document.getElementById('marginStyle');
   if (!styleEl) return;
-  var h = currentMargins.horizontal;
+  // Scroll view: no side margins, so the text runs to the screen edges.
+  var h = _scrollView ? 0 : currentMargins.horizontal;
   var v = currentMargins.vertical;
   styleEl.textContent =
     '.epub-container {' +
@@ -1250,41 +1276,37 @@ function scrollEdges() {
   return { axis: axis, dir: dir, atStart: pos <= 1, atEnd: pos >= max - 1 };
 }
 
-// Opens the strip at its end (going back into the previous chapter). The
-// chapter keeps growing for a moment after display() resolves (fonts and
-// furigana settle), so the end is re-applied each time epub.js resizes the
-// view, until the reader touches the screen or navigates.
-// ponytail: fixed 2 s window, tie it to a layout-settled signal if one exists.
+// Opens the strip at its end (going back into the previous chapter) and
+// keeps it there while the chapter settles (epub.js pinScroll()). The pin's
+// scrolls are silent, so the new place is reported directly.
 function pinScrollEnd() {
-  unpinScrollEnd();
-  var toEnd = function () {
-    var container = rendition.manager.container;
-    // The strip's length along either axis is at most this.
-    scrollStrip(container.scrollWidth + container.scrollHeight);
-  };
-  toEnd();
-  var view = rendition.manager.views.last();
+  var manager = rendition.manager;
+  var view = manager.views.last();
   if (!view) return;
-  view.on('resized', toEnd);
-  _scrollEndPin = { view: view, onGrow: toEnd, timer: setTimeout(unpinScrollEnd, 2000) };
+  manager.pinScroll(view, function () {
+    var container = manager.container;
+    // The strip's length along either axis is at most this.
+    scrollStrip(container.scrollWidth + container.scrollHeight, true);
+    rendition.reportLocation();
+  });
 }
 
-function unpinScrollEnd() {
-  if (!_scrollEndPin) return;
-  _scrollEndPin.view.off('resized', _scrollEndPin.onGrow);
-  clearTimeout(_scrollEndPin.timer);
-  _scrollEndPin = null;
+// The reader is taking over (a touch, a page turn, a jump): stop holding a
+// position in place (epub.js pinScroll()).
+function unpinScroll() {
+  if (rendition && rendition.manager) rendition.manager.unpinScroll();
 }
 
 // Moves the strip `px` forward along its scroll axis (back when negative).
 // epub.js's scrollBy flips the sign for right-to-left text, browsers clamp
-// at the ends, and the scroll event reports the new location.
-function scrollStrip(px) {
+// at the ends, and (unless [silent]) the scroll event reports the new
+// location.
+function scrollStrip(px, silent) {
   var manager = rendition.manager;
   if (manager.settings.axis === 'vertical') {
-    manager.scrollBy(0, px);
+    manager.scrollBy(0, px, silent);
   } else {
-    manager.scrollBy(px, 0);
+    manager.scrollBy(px, 0, silent);
   }
 }
 

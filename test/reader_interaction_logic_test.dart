@@ -830,7 +830,7 @@ void main() {
       );
     });
 
-    test('a drag across the scroll axis does nothing', () {
+    test('a vertical drag across a sideways strip does nothing', () {
       expect(
         resolve(
           GestureType.verticalSwipeDown,
@@ -838,10 +838,30 @@ void main() {
         ),
         ReaderNavigationIntent.none,
       );
+    });
+
+    test('an image page in a vertical book advances with a sideways swipe', () {
+      // Image pages are horizontal-tb, so their strip scrolls up and down.
+      final imagePage = edges(
+        horizontalAxis: false,
+        atStart: true,
+        atEnd: true,
+      );
+      expect(
+        resolve(GestureType.horizontalSwipe, imagePage, towardRight: true),
+        ReaderNavigationIntent.goForward,
+      );
+      expect(
+        resolve(GestureType.horizontalSwipe, imagePage),
+        ReaderNavigationIntent.goBackward,
+      );
+    });
+
+    test('a sideways swipe on an up-and-down strip keeps the edge rule', () {
       expect(
         resolve(
           GestureType.horizontalSwipe,
-          edges(horizontalAxis: false, atStart: true, atEnd: true),
+          edges(horizontalAxis: false),
           towardRight: true,
         ),
         ReaderNavigationIntent.none,

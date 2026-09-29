@@ -535,11 +535,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             'y=${y.toStringAsFixed(3)}',
                           );
                         },
-                        onTouchUp: (x, y, inTopOrBottomMargin) {
+                        onTouchUp: (x, y, inTopOrBottomMargin, scrolledStrip) {
                           _handleTouchUp(
                             x,
                             y,
                             inTopOrBottomMargin,
+                            scrolledStrip,
                             settings.readingDirection,
                             settings.swipeSensitivity,
                           );
@@ -788,6 +789,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     double x,
     double y,
     bool inTopOrBottomMargin,
+    bool scrolledStrip,
     ReaderDirection readingDirection,
     double swipeSensitivity,
   ) {
@@ -801,6 +803,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       return;
     }
     if (_consumeSwipe(x, y, readingDirection, swipeSensitivity)) return;
+    if (scrolledStrip) {
+      debugPrint('[READER] touchUp: short drag that scrolled the strip');
+      return;
+    }
 
     // This is a tap — use tap position for zone-based navigation.
     final upX = x.clamp(0.0, 1.0);

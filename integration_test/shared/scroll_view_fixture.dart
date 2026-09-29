@@ -21,9 +21,12 @@ import 'test_infrastructure.dart';
 /// Registers the scroll-view scenario. [vertical] books are vertical-rl and
 /// scroll sideways (right to left); the others are horizontal-tb and scroll
 /// up and down. The scenario covers one-screen steps, the reported location,
-/// reading-stats counts, the display(cfi) round trip (the [MEKURU PATCH] in
-/// moveToTarget(); without it a resumed vertical book opens at the end of
-/// its chapter) and chapter changes at both ends.
+/// reading-stats counts, the start position being the first visible line
+/// (the per-character Mapping [MEKURU PATCH]), the display(cfi) round trip
+/// (moveToTarget(); without it a resumed vertical book opens at the end of
+/// its chapter), chapter changes at both ends without a flash of the wrong
+/// layout (expand() sizing patch), no side margins, and an image page that
+/// fits one screen (adjustImages() patch).
 void registerScrollViewScenario({required bool vertical}) {
   late Directory tempDir;
 
@@ -59,7 +62,7 @@ void registerScrollViewScenario({required bool vertical}) {
 
       // Moves the strip with epub.js's own scrollBy, which flips the sign
       // for right-to-left text. Browsers clamp, so 100 screens reach an end.
-      Future<void> scrollScreens(int screens) =>
+      Future<void> scrollScreens(num screens) =>
           controller.debugEvaluateJavascript(
             '(function () {'
             '  var m = rendition.manager, c = m.container;'
@@ -79,6 +82,8 @@ void registerScrollViewScenario({required bool vertical}) {
       expect(start['index'], 0);
       expect(start['atStart'], isTrue, reason: '$start');
       expect(start['atEnd'], isFalse, reason: '$start');
+      // No side margins: the text runs to the screen edges.
+      expect(start['sideMargin'], 0, reason: '$start');
 
       // next() mid-chapter moves one screen, not a chapter, and reports the
       // new place even as the first scroll after the chapter opened.
@@ -110,9 +115,15 @@ void registerScrollViewScenario({required bool vertical}) {
       await settle();
       expect(await _recordedPageChars(controller), counts);
 
-      // display(cfi) returns to the same place from the chapter start: the
+      // The start position is the first line on screen, even mid-paragraph
+      // (a paragraph here spans several lines).
+      await scrollScreens(1.37);
+      final left = await settle();
+      expect(left['firstLine'], inInclusiveRange(0, 1), reason: '$left');
+
+      // display(cfi) returns to that exact line from the chapter start: the
       // saved start CFI comes back as the start CFI, so resuming never creeps.
-      final savedCfi = scrolled['cfi'] as String;
+      final savedCfi = left['cfi'] as String;
       await scrollScreens(-100);
       await settle();
       controller.display(cfi: savedCfi);
@@ -120,6 +131,11 @@ void registerScrollViewScenario({required bool vertical}) {
       expect(restored['index'], 0);
       expect(restored['atStart'], isFalse, reason: '$restored');
       expect(restored['atEnd'], isFalse, reason: '$restored');
+      expect(
+        restored['firstLine'],
+        inInclusiveRange(0, 1),
+        reason: '$restored',
+      );
       expect(
         await _compareCfi(controller, restored['cfi'], savedCfi),
         0,
@@ -135,11 +151,35 @@ void registerScrollViewScenario({required bool vertical}) {
       expect(chapter2['index'], 1, reason: '$chapter2');
       expect(chapter2['atStart'], isTrue, reason: '$chapter2');
 
-      // At the start of a chapter, prev() loads the previous one at its end.
+      // At the start of a chapter, prev() loads the previous one at its end,
+      // never showing its start or a wrongly measured layout on the way.
+      await _recordFrames(controller);
       controller.prev();
       final back = await settle();
       expect(back['index'], 0, reason: '$back');
       expect(back['atEnd'], isTrue, reason: '$back');
+      final frames = (await _recordedFrames(
+        controller,
+      )).where((f) => f['index'] == 0).toList();
+      expect(frames, isNotEmpty);
+      expect(
+        frames.where((f) => f['visible'] == true && f['atStart'] == true),
+        isEmpty,
+        reason: 'the chapter start flashed: $frames',
+      );
+      expect(
+        frames.map((f) => f['length'] as num).reduce((a, b) => a > b ? a : b),
+        lessThanOrEqualTo((back['length'] as num) + 1),
+        reason: 'a wrongly measured layout showed: $frames',
+      );
+
+      // An image page taller than the screen still fits on one screen.
+      await controller.debugEvaluateJavascript(
+        'rendition.display(book.spine.get(2).href)',
+      );
+      final image = await settle();
+      expect(image['index'], 2, reason: '$image');
+      expect(image['atStart'] && image['atEnd'], isTrue, reason: '$image');
     },
   );
 }
@@ -182,11 +222,14 @@ Future<String> writeScrollViewEpub(
         '<manifest>'
         '<item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/>'
         '<item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="c3" href="c3.xhtml" media-type="application/xhtml+xml"/>'
+        '<item id="tall" href="tall.svg" media-type="image/svg+xml"/>'
         '<item id="css" href="style.css" media-type="text/css"/>'
         '</manifest>'
         '<spine${vertical ? ' page-progression-direction="rtl"' : ''}>'
         '<itemref idref="c1"/>'
         '<itemref idref="c2"/>'
+        '<itemref idref="c3"/>'
         '</spine>'
         '</package>',
   );
@@ -217,6 +260,24 @@ Future<String> writeScrollViewEpub(
           '</html>',
     );
   }
+
+  // An image page like a converted light novel's illustrations: a
+  // horizontal-tb section holding one image taller than any screen.
+  addFile(
+    'OEBPS/tall.svg',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="4000">'
+        '<rect width="400" height="4000" fill="#88a"/></svg>',
+  );
+  addFile(
+    'OEBPS/c3.xhtml',
+    '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'
+        '<!DOCTYPE html>'
+        '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" '
+        'style="writing-mode: horizontal-tb">'
+        '<head><title>c3</title></head>'
+        '<body><p><img src="tall.svg" alt=""/></p></body>'
+        '</html>',
+  );
 
   final epubPath = p.join(dir.path, 'scroll_view_fixture.epub');
   await File(epubPath).writeAsBytes(ZipEncoder().encode(archive));
@@ -269,7 +330,17 @@ Future<Map<String, dynamic>> _scrollState(CustomEpubController controller) =>
       '  var vertical = m.settings.axis === "vertical";'
       '  var e = scrollEdges();'
       '  var loc = rendition.currentLocation();'
+      '  var v = m.views.last();'
+      '  var box = v.contents.charBox(loc.start.cfi);'
+      '  var frame = v.iframe.getBoundingClientRect();'
+      '  var edge = c.getBoundingClientRect();'
+      '  var firstLine = box && (vertical'
+      '    ? (frame.top + box.rect.top - edge.top) / box.line'
+      '    : (edge.right - frame.left - box.rect.right) / box.line);'
       '  return JSON.stringify({'
+      '    sideMargin: edge.left,'
+      '    firstLine: firstLine,'
+      '    length: vertical ? c.scrollHeight : c.scrollWidth,'
       '    flow: rendition.settings.flow,'
       '    axis: m.settings.axis,'
       '    dir: m.settings.direction,'
@@ -283,6 +354,38 @@ Future<Map<String, dynamic>> _scrollState(CustomEpubController controller) =>
       '  });'
       '})()',
     );
+
+/// Records, on every animation frame for 3 s, the displayed section, whether
+/// the strip is visible, whether it sits at its start, and its length.
+Future<void> _recordFrames(
+  CustomEpubController controller,
+) => controller.debugEvaluateJavascript(
+  '(function () {'
+  '  window._frames = [];'
+  '  var t0 = performance.now();'
+  '  (function tick() {'
+  '    var m = rendition.manager, c = m.container, v = m.views.last();'
+  '    var vertical = m.settings.axis === "vertical";'
+  '    window._frames.push({'
+  '      index: v ? v.section.index : -1,'
+  '      visible: !!v && getComputedStyle(v.element).visibility !== "hidden",'
+  '      atStart: scrollEdges().atStart,'
+  '      length: vertical ? c.scrollHeight : c.scrollWidth'
+  '    });'
+  '    if (performance.now() - t0 < 3000) requestAnimationFrame(tick);'
+  '  })();'
+  '})()',
+);
+
+Future<List<Map<String, dynamic>>> _recordedFrames(
+  CustomEpubController controller,
+) async {
+  final json = await evalJson(
+    controller,
+    'JSON.stringify({frames: window._frames})',
+  );
+  return (json['frames'] as List).cast<Map<String, dynamic>>();
+}
 
 /// Starts recording the counts of the bridge's `pageChars` reports (the
 /// reading-stats character counts) sent from now on.

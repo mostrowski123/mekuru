@@ -120,28 +120,28 @@ class ScrollEdges {
 /// Resolves a drag ([gesture] from [classifyGesture]) in scroll view. The
 /// drag already scrolled the strip natively, so it only changes chapter when
 /// it started with the strip at an edge and pushes past it. A fling that
-/// merely reaches the end stays put. Drags across the scroll axis do nothing.
+/// merely reaches the end stays put. Vertical drags across a sideways strip
+/// do nothing.
 ReaderNavigationIntent resolveScrollViewSwipe({
   required GestureType gesture,
   required bool towardRight,
   required ScrollEdges edges,
 }) {
   // The finger moves the way the text moves, as when turning pages sideways;
-  // horizontal text comes in from below, so bottom to top is forward.
-  final intent = edges.horizontalAxis
-      ? (gesture == GestureType.horizontalSwipe
-            ? intentForHorizontalSwipe(
-                towardRight: towardRight,
-                readingDirection: edges.rtl
-                    ? ReaderDirection.rtl
-                    : ReaderDirection.ltr,
-              )
-            : ReaderNavigationIntent.none)
-      : switch (gesture) {
-          GestureType.verticalSwipeUp => ReaderNavigationIntent.goForward,
-          GestureType.verticalSwipeDown => ReaderNavigationIntent.goBackward,
-          _ => ReaderNavigationIntent.none,
-        };
+  // horizontal text comes in from below, so bottom to top is forward. A
+  // sideways swipe also counts on a strip that scrolls up and down: it
+  // scrolls nothing there, and a vertical book's image pages are laid out
+  // that way (horizontal-tb), where readers keep swiping sideways.
+  final intent = switch (gesture) {
+    GestureType.horizontalSwipe => intentForHorizontalSwipe(
+      towardRight: towardRight,
+      readingDirection: edges.rtl ? ReaderDirection.rtl : ReaderDirection.ltr,
+    ),
+    _ when edges.horizontalAxis => ReaderNavigationIntent.none,
+    GestureType.verticalSwipeUp => ReaderNavigationIntent.goForward,
+    GestureType.verticalSwipeDown => ReaderNavigationIntent.goBackward,
+    _ => ReaderNavigationIntent.none,
+  };
   return switch (intent) {
     ReaderNavigationIntent.goForward when edges.atEnd => intent,
     ReaderNavigationIntent.goBackward when edges.atStart => intent,
