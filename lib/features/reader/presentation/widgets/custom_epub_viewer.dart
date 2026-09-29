@@ -202,10 +202,13 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
     allowsLinkPreview: false,
     verticalScrollBarEnabled: false,
     horizontalScrollBarEnabled: false,
-    // On Android this pins every move/up event to the touch-down Y, which
-    // would stop horizontal text from scrolling in scroll view (and turn
-    // each upward drag into a tap on its start point).
-    disableVerticalScroll: !widget.scrollView,
+    // On Android this pins every move/up event to the touch-down Y: the
+    // bridge would see each vertical swipe as a tap on its start point (no
+    // swipe down for the controls), and horizontal text could not scroll in
+    // scroll view. Paginated pages can't scroll anyway (overflow: hidden).
+    // iOS only stops the vertical bounce, so it keeps the flag when paginated.
+    disableVerticalScroll:
+        defaultTargetPlatform == TargetPlatform.iOS && !widget.scrollView,
   );
 
   @override
