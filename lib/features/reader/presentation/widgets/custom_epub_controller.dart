@@ -138,13 +138,17 @@ class CustomEpubController {
 
   // ── Annotations ─────────────────────────────────────────────────────
 
+  /// [text] is the highlight's saved text. While generated furigana is on
+  /// the page it picks between the two ways a CFI may have been saved (see
+  /// `EpubCFI.textRange()` in epub.js).
   void addHighlight({
     required String cfi,
     Color color = Colors.yellow,
     double opacity = 0.3,
+    String text = '',
   }) {
     final hex = _colorToHex(color);
-    _eval('addHighlight("$cfi", "$hex", "$opacity")');
+    _eval('addHighlight("$cfi", "$hex", "$opacity", ${jsonEncode(text)})');
   }
 
   void removeHighlight(String cfi) => _eval('removeHighlight("$cfi")');

@@ -1289,7 +1289,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     for (final h in highlights) {
       final color = HighlightColor.fromName(h.color);
-      _epubController.addHighlight(cfi: h.cfiRange, color: color.color);
+      _epubController.addHighlight(
+        cfi: h.cfiRange,
+        color: color.color,
+        text: h.selectedText,
+      );
     }
     if (highlights.isNotEmpty) {
       debugPrint('[READER] restored ${highlights.length} highlights');
@@ -1325,7 +1329,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
     if (!mounted) return;
 
-    _epubController.addHighlight(cfi: cfi, color: color.color);
+    _epubController.addHighlight(cfi: cfi, color: color.color, text: text);
     _dismissSelectionBar();
     AppHaptics.medium();
   }

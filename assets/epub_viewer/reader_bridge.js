@@ -831,8 +831,11 @@ function setFuriganaMode(mode) {
   for (var i = 0; i < docs.length; i++) {
     if (strip) {
       if (docs[i].body &&
-          docs[i].body.querySelector('ruby.mekuru-furigana')) stripped = true;
-      _removeGeneratedFurigana(docs[i]);
+          docs[i].body.querySelector('ruby.mekuru-furigana')) {
+        stripped = true;
+        _removeGeneratedFurigana(docs[i]);
+        _refreshAnnotations(docs[i]);
+      }
       _furiganaProcessedDocs.delete(docs[i]);
     }
     applyFuriganaStyleToDoc(docs[i]);
@@ -936,7 +939,10 @@ function processSectionForFurigana(doc) {
     _applyFuriganaAnnotation(doc, cachedHits[i][0], cachedHits[i][1]);
   }
 
-  if (uncachedNodes.length === 0) return;
+  if (uncachedNodes.length === 0) {
+    if (cachedHits.length > 0) _refreshAnnotations(doc);
+    return;
+  }
 
   var BATCH = 50;
   var batchPromises = [];
@@ -979,10 +985,23 @@ function processSectionForFurigana(doc) {
   // re-walk the section mid-flight — so a later pass retries instead of the
   // section staying furigana-less for the whole webview session.
   Promise.all(batchPromises).then(function () {
+    _refreshAnnotations(doc);
     if (tokenizerUnavailable) {
       _furiganaProcessedDocs.delete(doc);
       console.warn('[EPUB_BRIDGE] furigana tokenizer unavailable; section left for retry');
     }
+  });
+}
+
+// Generated furigana replaces the text nodes an annotation was drawn on,
+// which empties its range: draw the section's annotations (highlights and
+// underlines) again once the ruby has gone in or out.
+function _refreshAnnotations(doc) {
+  if (!rendition) return;
+  rendition.views().forEach(function (view) {
+    if (!view.contents || view.contents.document !== doc) return;
+    rendition.annotations.clear(view);
+    rendition.annotations.inject(view);
   });
 }
 
@@ -1106,10 +1125,12 @@ function searchInBook(query) {
 
 // ── Annotations ───────────────────────────────────────────────────────
 
-function addHighlight(cfi, color, opacity) {
+// text is the highlight's saved text, which picks the reading of its CFI
+// while generated furigana is on the page (epub.js EpubCFI.textRange()).
+function addHighlight(cfi, color, opacity, text) {
   if (!rendition) return;
   rendition.annotations.highlight(
-    cfi, {},
+    cfi, { text: text || '' },
     function () {},
     'epub-highlight',
     { 'fill': color || 'yellow', 'fill-opacity': opacity || '0.3' }

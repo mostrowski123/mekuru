@@ -1533,6 +1533,7 @@ class EpubCFI {
       let rest = offset || 0;
       for (let m = 0; m < run.length; m++) {
         let length = this.furiganaLength(run[m]);
+        if (m === run.length - 1 && rest > length) return null;
         if (rest < length || m === run.length - 1) {
           let text = run[m].nodeType === TEXT_NODE ? run[m] : run[m].firstChild;
           if (!text || text.nodeType !== TEXT_NODE) return { container: run[m], offset: 0 };
@@ -1552,10 +1553,7 @@ class EpubCFI {
     } else {
       start = this.furiganaPoint(this.path.steps, this.path.terminal.offset, doc);
     }
-    if (!start) {
-      console.log("No startContainer found for", this.toString());
-      return null;
-    }
+    if (!start || this.range && !end) return null;
     try {
       range.setStart(start.container, start.offset);
     } catch (e) {
@@ -1977,10 +1975,39 @@ class EpubCFI {
    */
   toRange(_doc, ignoreClass) {
     var doc = _doc || document;
-    // [MEKURU PATCH] see hasFurigana()
+    // [MEKURU PATCH] see hasFurigana(). A CFI saved before that patch, while
+    // generated furigana counted, resolves nowhere in the new reading and
+    // falls back to upstream's, which finds it with the ruby back in place.
     if (!ignoreClass && this.hasFurigana(doc)) {
-      return this.furiganaRange(doc);
+      let found = this.furiganaRange(doc);
+      if (found) return found;
     }
+    return this.upstreamRange(doc, ignoreClass);
+  }
+
+  // [MEKURU PATCH] A highlight names its text, so while generated furigana
+  // is on the page the reading of its CFI that finds that text wins: one
+  // saved before hasFurigana() can also resolve, wrongly, in the new one.
+  textRange(doc, text) {
+    if (!text || !this.hasFurigana(doc)) return this.toRange(doc);
+    let found = this.furiganaRange(doc);
+    if (found && this.sameText(found, text)) return found;
+    let legacy = this.upstreamRange(doc);
+    if (legacy && this.sameText(legacy, text)) return legacy;
+    return found || legacy;
+  }
+
+  // Selected text includes the readings of any ruby it crossed.
+  sameText(range, text) {
+    let squash = value => value.replace(/\s+/g, "");
+    let want = squash(text);
+    if (squash(range.toString()) === want) return true;
+    let base = range.cloneContents();
+    base.querySelectorAll("rt, rp").forEach(node => node.remove());
+    return squash(base.textContent) === want;
+  }
+  upstreamRange(_doc, ignoreClass) {
+    var doc = _doc || document;
     var range;
     var start, end, startContainer, endContainer;
     var cfi = this;
@@ -6283,8 +6310,10 @@ class Contents {
    * @param {string} [ignoreClass]
    * @returns {Range} range
    */
-  range(_cfi, ignoreClass) {
+  range(_cfi, ignoreClass, text) {
     var cfi = new _epubcfi__WEBPACK_IMPORTED_MODULE_2__[/* default */ "a"](_cfi);
+    // [MEKURU PATCH] see EpubCFI.textRange()
+    if (text && !ignoreClass) return cfi.textRange(this.document, text);
     return cfi.toRange(this.document, ignoreClass);
   }
 
@@ -9514,7 +9543,13 @@ class IframeView {
       "fill-opacity": "0.3",
       "mix-blend-mode": "multiply"
     }, styles);
-    let range = this.contents.range(cfiRange);
+    // [MEKURU PATCH] data.text picks the reading of a highlight's CFI (see
+    // EpubCFI.textRange()). A range that resolves nowhere draws nothing:
+    // upstream threw here, which also skipped the section's later marks.
+    let range = this.contents.range(cfiRange, undefined, data.text);
+    if (!range) {
+      return;
+    }
     let emitter = () => {
       this.emit(_utils_constants__WEBPACK_IMPORTED_MODULE_4__[/* EVENTS */ "c"].VIEWS.MARK_CLICKED, cfiRange, data);
     };
@@ -9547,7 +9582,13 @@ class IframeView {
       "stroke-opacity": "0.3",
       "mix-blend-mode": "multiply"
     }, styles);
-    let range = this.contents.range(cfiRange);
+    // [MEKURU PATCH] data.text picks the reading of a highlight's CFI (see
+    // EpubCFI.textRange()). A range that resolves nowhere draws nothing:
+    // upstream threw here, which also skipped the section's later marks.
+    let range = this.contents.range(cfiRange, undefined, data.text);
+    if (!range) {
+      return;
+    }
     let emitter = () => {
       this.emit(_utils_constants__WEBPACK_IMPORTED_MODULE_4__[/* EVENTS */ "c"].VIEWS.MARK_CLICKED, cfiRange, data);
     };

@@ -206,75 +206,104 @@ void registerScrollViewResumeScenario() {
     await cleanupAppBooksDir();
   });
 
-  testWidgets(
-    'scroll view resumes where it was left, with generated furigana',
-    (tester) async {
-      await MecabService.instance.init();
-      final db = createTestDatabase();
-      addTearDown(db.close);
-      final repository = BookRepository(db);
+  testWidgets('scroll view resumes where it was left, with generated furigana', (
+    tester,
+  ) async {
+    await MecabService.instance.init();
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repository = BookRepository(db);
 
-      final controller = await openReader(
-        tester,
-        await writeScrollViewEpub(tempDir, title: _title(true), vertical: true),
-        _title(true),
-        settings: const ReaderSettings(
-          scrollView: true,
-          furiganaMode: FuriganaMode.all,
-        ),
-        db: db,
-      );
-      final bookId = (await repository.getAllBooks()).single.id;
+    final controller = await openReader(
+      tester,
+      await writeScrollViewEpub(tempDir, title: _title(true), vertical: true),
+      _title(true),
+      settings: const ReaderSettings(
+        scrollView: true,
+        furiganaMode: FuriganaMode.all,
+      ),
+      db: db,
+    );
+    final bookId = (await repository.getAllBooks()).single.id;
 
-      Future<Map<String, dynamic>> settle() async {
-        await tester.pump(const Duration(milliseconds: 1500));
-        return _scrollState(controller);
-      }
+    Future<Map<String, dynamic>> settle() async {
+      await tester.pump(const Duration(milliseconds: 1500));
+      return _scrollState(controller);
+    }
 
-      await _waitForGeneratedRuby(tester, controller);
-      await _scrollScreens(controller, 1.37);
-      final left = await settle();
-      expect(left['atStart'], isFalse, reason: '$left');
-      expect(left['reportedCfi'], left['cfi'], reason: '$left');
-      final saved = left['cfi'] as String;
-      expect((await repository.getBookById(bookId))!.lastReadCfi, saved);
+    await _waitForGeneratedRuby(tester, controller);
+    await _scrollScreens(controller, 1.37);
+    final left = await settle();
+    expect(left['atStart'], isFalse, reason: '$left');
+    expect(left['reportedCfi'], left['cfi'], reason: '$left');
+    final saved = left['cfi'] as String;
+    expect((await repository.getBookById(bookId))!.lastReadCfi, saved);
 
-      // The saved CFI names the same character in the chapter as it loads,
-      // before any furigana. The reload below can hide a CFI that does not:
-      // when MeCab answers before the first location report, the scroll-view
-      // pin still lands on it.
-      final characters = await _cfiCharacters(tester, controller, saved);
-      expect(characters['shown'], isNotNull, reason: '$characters');
-      expect(characters['loaded'], characters['shown'], reason: '$characters');
+    // The saved CFI names the same character in the chapter as it loads,
+    // before any furigana. The reload below can hide a CFI that does not:
+    // when MeCab answers before the first location report, the scroll-view
+    // pin still lands on it.
+    final characters = await _cfiCharacters(tester, controller, saved);
+    expect(characters['shown'], isNotNull, reason: '$characters');
+    expect(characters['loaded'], characters['shown'], reason: '$characters');
 
-      // Reload the chapter as reopening the book does: a new view, and the
-      // furigana cache emptied so the ruby arrives after the restore.
-      await controller.debugEvaluateJavascript(
-        '_furiganaCache.clear();'
-        'rendition.manager.clear();'
-        'rendition.display(${jsonEncode(saved)});',
-      );
-      final restored = await settle();
-      expect(restored['index'], 0, reason: '$restored');
-      expect(restored['atStart'], isFalse, reason: 'saved $saved, $restored');
-      expect(
-        await _compareCfi(controller, restored['cfi'], saved),
-        0,
-        reason: 'saved $saved, restored $restored',
-      );
+    // A highlight at the saved position, drawn again by the reload below.
+    final highlight = await evalJson(
+      controller,
+      '(function () {'
+      '  var doc = rendition.manager.views.last().contents.document;'
+      '  var r = new ePub.CFI(${jsonEncode(saved)}).toRange(doc);'
+      '  var node = r.startContainer;'
+      '  r.setEnd(node, Math.min(node.length, r.startOffset + 3));'
+      '  var cfi = rendition.getContents()[0].cfiFromRange(r);'
+      '  addHighlight(cfi, "#ffff00", "0.3", r.toString());'
+      '  return JSON.stringify({cfi: cfi, text: r.toString()});'
+      '})()',
+    );
 
-      // The furigana arriving reflows the text; the position stays, and so
-      // does the saved progress.
-      await _waitForGeneratedRuby(tester, controller);
-      final furigana = await settle();
-      expect(
-        await _compareCfi(controller, furigana['cfi'], saved),
-        0,
-        reason: 'saved $saved, after furigana $furigana',
-      );
-      expect((await repository.getBookById(bookId))!.lastReadCfi, saved);
-    },
-  );
+    // Reload the chapter as reopening the book does: a new view, and the
+    // furigana cache emptied so the ruby arrives after the restore.
+    await controller.debugEvaluateJavascript(
+      '_furiganaCache.clear();'
+      'rendition.manager.clear();'
+      'rendition.display(${jsonEncode(saved)});',
+    );
+    final restored = await settle();
+    expect(restored['index'], 0, reason: '$restored');
+    expect(restored['atStart'], isFalse, reason: 'saved $saved, $restored');
+    expect(
+      await _compareCfi(controller, restored['cfi'], saved),
+      0,
+      reason: 'saved $saved, restored $restored',
+    );
+
+    // The furigana arriving reflows the text; the position stays, and so
+    // does the saved progress.
+    await _waitForGeneratedRuby(tester, controller);
+    final furigana = await settle();
+    expect(
+      await _compareCfi(controller, furigana['cfi'], saved),
+      0,
+      reason: 'saved $saved, after furigana $furigana',
+    );
+    expect((await repository.getBookById(bookId))!.lastReadCfi, saved);
+
+    // The highlight was drawn before the furigana came back, which empties
+    // its range; it is drawn again over the same text.
+    final drawn = await evalJson(
+      controller,
+      '(function () {'
+      '  var h = rendition.manager.views.last()'
+      '    .highlights[${jsonEncode(highlight['cfi'])}];'
+      '  var r = h && h.mark && h.mark.range;'
+      '  if (!r) return JSON.stringify({text: null});'
+      '  var base = r.cloneContents();'
+      '  base.querySelectorAll("rt, rp").forEach(function (n) { n.remove(); });'
+      '  return JSON.stringify({text: base.textContent});'
+      '})()',
+    );
+    expect(drawn['text'], highlight['text'], reason: '$highlight $drawn');
+  });
 }
 
 String _title(bool vertical) => vertical ? '縦スクロールテスト' : '横スクロールテスト';
