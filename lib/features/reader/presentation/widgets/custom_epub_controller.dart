@@ -153,6 +153,14 @@ class CustomEpubController {
 
   void removeHighlight(String cfi) => _eval('removeHighlight("$cfi")');
 
+  /// Each of [cfis] as the reader writes a CFI now, or null where it is not
+  /// in the displayed section (see `normalizeCfis` in reader_bridge.js).
+  Future<List<String?>> normalizeCfis(List<String> cfis) async {
+    final raw = await _evaluateJavascript('normalizeCfis(${jsonEncode(cfis)})');
+    final list = raw is String ? jsonDecode(raw) : raw;
+    return [for (final cfi in list as List) cfi as String?];
+  }
+
   void addUnderline(String cfi) => _eval('addUnderline("$cfi")');
 
   void removeUnderline(String cfi) => _eval('removeUnderline("$cfi")');

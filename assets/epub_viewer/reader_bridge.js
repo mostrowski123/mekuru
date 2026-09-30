@@ -940,7 +940,7 @@ function processSectionForFurigana(doc) {
   }
 
   if (uncachedNodes.length === 0) {
-    if (cachedHits.length > 0) _refreshAnnotations(doc);
+    if (cachedHits.length > 0) _furiganaApplied(doc);
     return;
   }
 
@@ -985,12 +985,19 @@ function processSectionForFurigana(doc) {
   // re-walk the section mid-flight — so a later pass retries instead of the
   // section staying furigana-less for the whole webview session.
   Promise.all(batchPromises).then(function () {
-    _refreshAnnotations(doc);
+    _furiganaApplied(doc);
     if (tokenizerUnavailable) {
       _furiganaProcessedDocs.delete(doc);
       console.warn('[EPUB_BRIDGE] furigana tokenizer unavailable; section left for retry');
     }
   });
+}
+
+// A section's generated furigana is in: redraw its annotations, and let
+// Dart check the bookmark icon again (see normalizeCfis()).
+function _furiganaApplied(doc) {
+  _refreshAnnotations(doc);
+  callDart('furiganaApplied');
 }
 
 // Generated furigana replaces the text nodes an annotation was drawn on,
@@ -1124,6 +1131,28 @@ function searchInBook(query) {
 }
 
 // ── Annotations ───────────────────────────────────────────────────────
+
+// Each CFI as the reader writes one now, found in the displayed section, or
+// null. A bookmark saved while generated furigana still counted in CFIs
+// (before the epub.js hasFurigana() patch) never equals the current
+// location's CFI as stored; found and written again, it does, so the
+// bookmark icon still shows it.
+function normalizeCfis(cfis) {
+  var contents = rendition ? rendition.getContents() : [];
+  return JSON.stringify(cfis.map(function (cfi) {
+    try {
+      var parsed = new ePub.CFI(cfi);
+      for (var i = 0; i < contents.length; i++) {
+        if (contents[i].sectionIndex !== parsed.spinePos) continue;
+        var range = parsed.toRange(contents[i].document);
+        return range ? contents[i].cfiFromRange(range) : null;
+      }
+    } catch (e) {
+      console.log('[EPUB_BRIDGE] normalizeCfis failed:', e);
+    }
+    return null;
+  }));
+}
 
 // text is the highlight's saved text, which picks the reading of its CFI
 // while generated furigana is on the page (epub.js EpubCFI.textRange()).

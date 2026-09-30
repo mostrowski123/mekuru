@@ -6,12 +6,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
+import 'package:mekuru/features/reader/data/repositories/bookmark_repository.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
@@ -247,6 +249,25 @@ void registerScrollViewResumeScenario() {
     expect(characters['shown'], isNotNull, reason: '$characters');
     expect(characters['loaded'], characters['shown'], reason: '$characters');
 
+    // A bookmark here from before CFIs ignored generated furigana: its CFI
+    // counts the ruby wrappers (epub.js wrote it upstream's way, which it
+    // still does when it sees no generated ruby).
+    final legacy = await controller.debugEvaluateJavascript(
+      '(function () {'
+      '  var doc = rendition.manager.views.last().contents.document;'
+      '  var r = new ePub.CFI(${jsonEncode(saved)}).toRange(doc);'
+      '  var ruby = doc.querySelectorAll("ruby.mekuru-furigana");'
+      '  ruby.forEach(function (n) { n.className = "old-furigana"; });'
+      '  var cfi = rendition.getContents()[0].cfiFromRange(r);'
+      '  ruby.forEach(function (n) { n.className = "mekuru-furigana"; });'
+      '  return cfi;'
+      '})()',
+    );
+    expect(legacy, isNot(saved), reason: 'the old form differs here');
+    expect(await controller.normalizeCfis([legacy as String]), [saved]);
+    final bookmarks = BookmarkRepository(db);
+    await bookmarks.addBookmark(bookId: bookId, cfi: legacy);
+
     // A highlight at the saved position, drawn again by the reload below.
     final highlight = await evalJson(
       controller,
@@ -303,6 +324,27 @@ void registerScrollViewResumeScenario() {
       '})()',
     );
     expect(drawn['text'], highlight['text'], reason: '$highlight $drawn');
+
+    // The old bookmark shows on its page, and tapping the icon removes it
+    // instead of adding a second one. Only Android's web view takes the tap
+    // (on the top margin) that shows the controls in a test.
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final viewer = tester.getRect(find.byType(CustomEpubViewer));
+      await tester.tapAt(
+        Offset(viewer.left + viewer.width * 0.15, viewer.top + 12),
+      );
+      final remove = find.byTooltip(
+        (await loadExpectedL10n()).readerRemoveBookmarkTooltip,
+      );
+      await pumpUntilVisible(tester, find.byIcon(Icons.bookmarks_outlined));
+      await pumpUntilVisible(tester, remove);
+      await tester.tap(remove);
+      for (var tick = 0; tick < 20; tick++) {
+        await tester.pump(const Duration(milliseconds: 250));
+        if ((await bookmarks.getBookmarksForBook(bookId)).isEmpty) break;
+      }
+      expect(await bookmarks.getBookmarksForBook(bookId), isEmpty);
+    }
   });
 }
 

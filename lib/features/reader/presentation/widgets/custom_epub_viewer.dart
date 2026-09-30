@@ -110,6 +110,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onSelection,
     this.onSelectionCleared,
     this.onLocationsReady,
+    this.onFuriganaApplied,
     this.onTouchDown,
     this.onTouchUp,
     this.onWordTapped,
@@ -158,6 +159,9 @@ class CustomEpubViewer extends StatefulWidget {
   final ValueChanged<EpubSelectionData>? onSelection;
   final VoidCallback? onSelectionCleared;
   final VoidCallback? onLocationsReady;
+
+  /// A displayed section's generated furigana has been added.
+  final VoidCallback? onFuriganaApplied;
 
   /// [edges] is where the scroll-view strip stood at touch-down; null in
   /// paginated mode.
@@ -363,6 +367,11 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
       callback: (_) {
         widget.onLocationsReady?.call();
       },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'furiganaApplied',
+      callback: (_) => widget.onFuriganaApplied?.call(),
     );
 
     controller.addJavaScriptHandler(

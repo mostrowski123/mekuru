@@ -468,6 +468,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                           _locationsReady = true;
                           _maybeApplyRemoteProgress();
                         },
+                        // An old bookmark only matches once the section's
+                        // furigana is in (see _bookmarkAtCfi).
+                        onFuriganaApplied: () {
+                          if (mounted) _checkBookmarkState();
+                        },
                         onRelocated: (location) {
                           if (!mounted) return;
 
@@ -1168,19 +1173,45 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (_currentCfi.isEmpty) return;
     final generation = ++_bookmarkCheckGeneration;
     final cfiToCheck = _currentCfi;
-    final existing = await ref
-        .read(bookmarkRepositoryProvider)
-        .getBookmarkAtCfi(widget.book.id, cfiToCheck);
+    final existing = await _bookmarkAtCfi(cfiToCheck);
     if (mounted && generation == _bookmarkCheckGeneration) {
       setState(() => _isCurrentPageBookmarked = existing != null);
     }
+  }
+
+  /// The bookmark at [cfi], the current location. A bookmark saved while
+  /// generated furigana still counted in CFIs is stored in a form the
+  /// location never equals, so the section's other bookmarks are compared
+  /// as the reader writes CFIs now: its icon shows, and tapping it removes
+  /// that bookmark instead of adding a second one.
+  Future<Bookmark?> _bookmarkAtCfi(String cfi) async {
+    final repo = ref.read(bookmarkRepositoryProvider);
+    final exact = await repo.getBookmarkAtCfi(widget.book.id, cfi);
+    if (exact != null) return exact;
+    final section = cfi.split('!').first;
+    final others = [
+      for (final bookmark in await repo.getBookmarksForBook(widget.book.id))
+        if (bookmark.cfi.split('!').first == section) bookmark,
+    ];
+    if (others.isEmpty) return null;
+    try {
+      final written = await _epubController.normalizeCfis([
+        for (final bookmark in others) bookmark.cfi,
+      ]);
+      for (var i = 0; i < others.length && i < written.length; i++) {
+        if (written[i] == cfi) return others[i];
+      }
+    } catch (_) {
+      // Best effort: the web view can be gone (closing, rebuilding).
+    }
+    return null;
   }
 
   Future<void> _toggleBookmark() async {
     if (!_isEpubLoaded || _currentCfi.isEmpty) return;
 
     final repo = ref.read(bookmarkRepositoryProvider);
-    final existing = await repo.getBookmarkAtCfi(widget.book.id, _currentCfi);
+    final existing = await _bookmarkAtCfi(_currentCfi);
     if (existing != null) {
       await repo.deleteBookmark(existing.id);
       AppHaptics.light();
