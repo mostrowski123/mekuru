@@ -499,12 +499,6 @@ abstract class AppLocalizations {
   /// **'No .mokuro or .html files found in the selected folder.'**
   String get libraryNoMangaManifestFound;
 
-  /// Native dialog title for picking a manga folder.
-  ///
-  /// In en, this message translates to:
-  /// **'Select manga folder'**
-  String get librarySelectMangaFolder;
-
   /// Fallback label for a selected folder.
   ///
   /// In en, this message translates to:

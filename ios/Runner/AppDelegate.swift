@@ -255,12 +255,14 @@ final class MangaOcrModel {
   }
 }
 
-/// `mekuru/ios_files`: the document-picker calls full backup needs, which no
-/// plugin in the app offers without pulling a multi-gigabyte file into memory.
+/// `mekuru/ios_files`: document-picker calls the plugins in the app can't make
+/// safely: full backup's multi-gigabyte files, and folder picks.
 ///  - `exportFile(path)`: lets the user choose where the file goes and MOVES
 ///    it there (no second copy on disk). True when moved, false if cancelled.
 ///  - `pickZip()`: a local copy of the zip the user picked, or nil. The caller
 ///    deletes the copy when done.
+///  - `pickFolder()`: the path of the folder the user picked, or nil. Used by
+///    the mokuro folder import.
 ///  - `freeBytes()`: space the system is willing to give the app.
 final class FilesBridge: NSObject, UIDocumentPickerDelegate {
   static let shared = FilesBridge()
@@ -280,6 +282,10 @@ final class FilesBridge: NSObject, UIDocumentPickerDelegate {
         case "pickZip":
           self.present(
             UIDocumentPickerViewController(forOpeningContentTypes: [.zip], asCopy: true),
+            exporting: false, result: result)
+        case "pickFolder":
+          self.present(
+            UIDocumentPickerViewController(forOpeningContentTypes: [.folder], asCopy: false),
             exporting: false, result: result)
         case "freeBytes":
           let values = try? URL(fileURLWithPath: NSHomeDirectory())

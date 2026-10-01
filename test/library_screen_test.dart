@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -7,21 +8,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_app.dart';
 
+Future<void> pumpEmptyLibrary(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [booksProvider.overrideWith((ref) => Stream.value(<Book>[]))],
+      child: buildLocalizedTestApp(home: const LibraryScreen()),
+    ),
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
 void main() {
   testWidgets('empty library shows quick-start actions', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          booksProvider.overrideWith((ref) => Stream.value(<Book>[])),
-        ],
-        child: buildLocalizedTestApp(home: const LibraryScreen()),
-      ),
-    );
-
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await pumpEmptyLibrary(tester);
 
     expect(find.text('Import EPUB'), findsOneWidget);
     expect(find.text('Import Manga'), findsOneWidget);
@@ -32,19 +33,7 @@ void main() {
   testWidgets('import manga opens the type picker with Mokuro guidance', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          booksProvider.overrideWith((ref) => Stream.value(<Book>[])),
-        ],
-        child: buildLocalizedTestApp(home: const LibraryScreen()),
-      ),
-    );
-
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await pumpEmptyLibrary(tester);
 
     await tester.tap(find.text('Import Manga'));
     await tester.pumpAndSettle();
@@ -58,6 +47,30 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('What is Mokuro?'), findsOneWidget);
+  });
+
+  // MEKURU-1Y: file_picker's iOS folder picker stays in folder mode after a
+  // cancel, so every later file pick in the session returns a bare path and
+  // crashes. The folder is picked through our own bridge instead.
+  testWidgets('mokuro folder import picks through mekuru/ios_files', (
+    tester,
+  ) async {
+    const iosFiles = MethodChannel('mekuru/ios_files');
+    final bridgeCalls = <String>[];
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(iosFiles, (call) async {
+      bridgeCalls.add(call.method);
+      return null; // cancelled
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(iosFiles, null));
+    await pumpEmptyLibrary(tester);
+
+    await tester.tap(find.text('Import Manga'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mokuro folder'));
+    await tester.pumpAndSettle();
+
+    expect(bridgeCalls, ['pickFolder']);
   });
 
   group('mostRecentlyReadBook', () {

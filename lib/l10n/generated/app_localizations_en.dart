@@ -234,9 +234,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'No .mokuro or .html files found in the selected folder.';
 
   @override
-  String get librarySelectMangaFolder => 'Select manga folder';
-
-  @override
   String get librarySelectedFolder => 'Selected folder';
 
   @override

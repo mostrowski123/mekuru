@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_reorderable_grid_view/entities/reorderable_animation_config.dart';
 import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
-import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter/services.dart' show MethodChannel, PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -929,10 +929,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     WidgetRef ref,
   ) async {
     final l10n = context.l10n;
-    final dirPath = await FilePicker.getDirectoryPath(
-      dialogTitle: l10n.librarySelectMangaFolder,
-    );
-    if (dirPath == null || dirPath.isEmpty) return;
+    // Not FilePicker.getDirectoryPath: on iOS a cancelled folder pick leaves
+    // file_picker in folder mode and breaks every later file pick (MEKURU-1Y).
+    final dirPath = await const MethodChannel(
+      'mekuru/ios_files',
+    ).invokeMethod<String>('pickFolder');
+    if (dirPath == null) return;
 
     final dir = Directory(dirPath);
     List<FileSystemEntity> entities;

@@ -297,10 +297,6 @@
   "@libraryNoMangaManifestFound": {
     "description": "Error shown when no supported manga manifest file is found."
   },
-  "librarySelectMangaFolder": "Select manga folder",
-  "@librarySelectMangaFolder": {
-    "description": "Native dialog title for picking a manga folder."
-  },
   "librarySelectedFolder": "Selected folder",
   "@librarySelectedFolder": {
     "description": "Fallback label for a selected folder."

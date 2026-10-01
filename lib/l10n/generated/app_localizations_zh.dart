@@ -227,9 +227,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryNoMangaManifestFound => '在选定的文件夹中未找到 .mokuro 或 .html 文件。';
 
   @override
-  String get librarySelectMangaFolder => '选择漫画文件夹';
-
-  @override
   String get librarySelectedFolder => '已选择文件夹';
 
   @override
@@ -3420,9 +3417,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryNoMangaManifestFound => '在选定的文件夹中未找到 .mokuro 或 .html 文件。';
-
-  @override
-  String get librarySelectMangaFolder => '选择漫画文件夹';
 
   @override
   String get librarySelectedFolder => '已选择文件夹';
