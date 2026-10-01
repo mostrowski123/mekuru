@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
@@ -578,17 +579,22 @@ class _DictionaryManagerScreenState
   }
 
   Future<void> _importDictionary(BuildContext context, WidgetRef ref) async {
-    final picked = await FilePicker.pickFile(
-      type: FileType.custom,
-      allowedExtensions: ['zip', 'json'],
-    );
-
-    if (picked == null) return;
-
-    final filePath = picked.path;
-    if (filePath == null) return;
-
-    ref.read(dictionaryImportProvider.notifier).importDictionary(filePath);
+    // Read before the picker opens: on Android it answers only once it has
+    // copied the file (seconds for a large zip), and the user may have left
+    // this screen by then. The import itself outlives the screen.
+    final importer = ref.read(dictionaryImportProvider.notifier);
+    try {
+      final picked = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['zip', 'json'],
+      );
+      final filePath = picked?.path;
+      if (filePath != null) importer.importDictionary(filePath);
+    } on PlatformException catch (e) {
+      // already_active: a second tap while the first pick is still copying
+      // its file. unknown_activity: the picker came back without a file.
+      if (e.code != 'already_active' && e.code != 'unknown_activity') rethrow;
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, int id, String name) async {
