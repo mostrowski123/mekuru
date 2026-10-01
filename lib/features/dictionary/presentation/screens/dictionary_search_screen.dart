@@ -188,11 +188,17 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
     setState(() => _isSearching = true);
 
     try {
+      // Read before the await: the search can wait seconds on a busy
+      // database, and the user may have left this screen by then.
       final queryService = ref.read(dictionaryQueryServiceProvider);
+      final filterRomanLetters = ref.read(filterRomanLettersProvider);
       var results = await queryService.fuzzySearchWithSource(term);
+      // Left or superseded: skip the follow-up query. A newer search owns
+      // _isSearching.
+      if (!mounted || seq != _searchSeq) return;
 
       // Apply Roman letter filter if enabled
-      if (ref.read(filterRomanLettersProvider)) {
+      if (filterRomanLetters) {
         results = results
             .where((r) => !_latinPattern.hasMatch(r.entry.expression))
             .toList();

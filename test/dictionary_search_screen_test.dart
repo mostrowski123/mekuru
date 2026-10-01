@@ -831,5 +831,23 @@ void main() {
       await search(tester);
       expect(failures, contains('dictionary.search_failed'));
     });
+
+    // MEKURU-1Z: a search can wait seconds on a database busy importing a
+    // dictionary, and the user may leave before it answers.
+    testWidgets('leaving while a search runs ends it quietly', (tester) async {
+      final service = await pumpScreen(tester);
+      final slowSearch = Completer<void>();
+      service.gates['食べる'] = slowSearch;
+      await tester.enterText(find.byType(TextField), '食べる');
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.pumpWidget(const SizedBox());
+      slowSearch.complete();
+      await tester.pumpAndSettle();
+
+      expect(failures, isEmpty);
+      // No follow-up query for a screen that is gone.
+      expect(service.pitchAccentBatchQueries, isEmpty);
+    });
   });
 }
