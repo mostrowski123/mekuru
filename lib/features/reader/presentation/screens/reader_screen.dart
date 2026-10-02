@@ -1272,7 +1272,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   Future<void> _openProUpgradeFromReader({required String feature}) async {
     logUsage('pro.gate_hit', attrs: {'feature': feature, 'source': 'reader'});
-    await openProUpgrade(context, ref, source: 'reader');
+    await openProUpgrade(context, source: 'reader');
     if (!mounted || !_isEpubLoaded) return;
 
     final isProUnlocked = await ref.read(proUnlockedProvider.future);

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/ocr_account_link_service.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
+import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -305,4 +308,66 @@ void main() {
     expect(logged, contains('info:pro.restore(result=cancelled)'));
     expect(logged, isNot(contains('info:pro.restore(result=error)')));
   });
+
+  // MEKURU-20: the library's book sheet closes itself, then opens the Pro
+  // screen from its own Consumer, which is gone by the time Pro closes.
+  testWidgets('openProUpgrade refreshes Pro after its caller unmounted', (
+    tester,
+  ) async {
+    _CountingProUnlocked.builds = 0;
+    final container = ProviderContainer(
+      overrides: [proUnlockedProvider.overrideWith(_CountingProUnlocked.new)],
+    );
+    addTearDown(container.dispose);
+    container.read(proUnlockedProvider);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: buildLocalizedTestApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                builder: (sheetContext) => Builder(
+                  builder: (context) => TextButton(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      openProUpgrade(context, source: 'test');
+                    },
+                    child: const Text('unlock'),
+                  ),
+                ),
+              ),
+              child: const Text('sheet'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('sheet'));
+    await tester.pumpAndSettle();
+    // The Pro screen's loading spinner never settles; pump past transitions.
+    await tester.tap(find.text('unlock'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(ProUpgradeScreen), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    container.read(proUnlockedProvider);
+
+    expect(_CountingProUnlocked.builds, 2);
+  });
+}
+
+class _CountingProUnlocked extends ProUnlockedNotifier {
+  static int builds = 0;
+
+  @override
+  FutureOr<bool> build() {
+    builds++;
+    return false;
+  }
 }

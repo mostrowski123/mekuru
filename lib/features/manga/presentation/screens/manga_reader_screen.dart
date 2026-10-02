@@ -730,7 +730,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   }
 
   Future<void> _openProUpgradeFromReader() async {
-    await openProUpgrade(context, ref, source: 'manga_reader');
+    await openProUpgrade(context, source: 'manga_reader');
   }
 
   void _showSettingsSheet(MokuroBook mokuroBook) {

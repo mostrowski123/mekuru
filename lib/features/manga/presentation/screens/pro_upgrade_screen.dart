@@ -586,12 +586,14 @@ Route<void> proUpgradeRoute(String source) =>
     namedRoute<void>('pro_upgrade', (_) => ProUpgradeScreen(source: source));
 
 Future<void> openProUpgrade(
-  BuildContext context,
-  WidgetRef ref, {
+  BuildContext context, {
   required String source,
 }) async {
+  // Resolved before the push: the caller (e.g. a sheet) can unmount while
+  // the Pro screen is up.
+  final container = ProviderScope.containerOf(context, listen: false);
   await Navigator.of(context).push(proUpgradeRoute(source));
-  ref.invalidate(proUnlockedProvider);
+  container.invalidate(proUnlockedProvider);
 }
 
 class _ProFeatureCard extends StatelessWidget {

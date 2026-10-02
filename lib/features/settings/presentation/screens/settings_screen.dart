@@ -33,7 +33,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _openProUpgrade() async {
-    await openProUpgrade(context, ref, source: 'settings');
+    await openProUpgrade(context, source: 'settings');
   }
 
   @override

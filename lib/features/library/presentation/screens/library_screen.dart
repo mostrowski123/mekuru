@@ -1317,7 +1317,6 @@ class _BookTileState extends ConsumerState<_BookTile>
                                 Navigator.of(sheetContext).pop();
                                 openProUpgrade(
                                   context,
-                                  ref,
                                   source: 'library_highlights',
                                 );
                               },
