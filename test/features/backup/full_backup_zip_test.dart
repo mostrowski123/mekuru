@@ -89,8 +89,9 @@ void main() {
           reason: evil,
         );
       }
+      // normalize: on a Windows test host the zip name keeps its '/'.
       expect(
-        ZipNameMapper.resolveInside(tmp.path, 'books/x/y.txt'),
+        p.normalize(ZipNameMapper.resolveInside(tmp.path, 'books/x/y.txt')),
         p.join(tmp.path, 'books', 'x', 'y.txt'),
       );
     });

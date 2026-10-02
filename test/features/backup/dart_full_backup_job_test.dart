@@ -431,8 +431,9 @@ void main() {
     final staged = {
       for (final entity in staging().listSync(recursive: true))
         if (entity is File)
-          p.relative(entity.path, from: staging().path): entity
-              .readAsBytesSync(),
+          // Zip-style '/' keys on every host, Windows included.
+          p.split(p.relative(entity.path, from: staging().path)).join('/'):
+              entity.readAsBytesSync(),
     };
     expect(staged, {
       'EXTRACTED': utf8.encode('{"format":1}'),
