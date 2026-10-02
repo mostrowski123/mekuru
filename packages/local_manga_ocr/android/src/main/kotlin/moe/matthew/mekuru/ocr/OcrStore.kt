@@ -8,7 +8,7 @@ import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-/** One lock for every Flutter engine and service in this application process.
+/** One lock for every Flutter engine and worker in this application process.
  * File locks alone are insufficient: POSIX locks are process-scoped. */
 object OcrWrites {
     val lock = ReentrantLock()
@@ -141,6 +141,7 @@ class OcrStore(private val directory: File,
             val job = read(id)
             val before = job.getString("status")
             val allowed = when (status) {
+                "queued" -> before == "preparing" || before == "running"
                 "preparing" -> before == "queued"
                 "running" -> before == "preparing" || before == "running"
                 "pausing", "cancelling" -> before in active
@@ -172,12 +173,17 @@ class OcrStore(private val directory: File,
         save(job); job
     }
 
-    fun pauseQueued(backend: String, reason: String) = OcrWrites.lock.withLock {
-        for (job in all()) {
-            if (job.optString("backend") == backend && job.getString("status") == "queued") {
-                transition(job.getString("id"), "paused", reason)
-            }
-        }
+    /** Android stopped the worker mid-job (WorkManager's execution window, quota):
+     * back to the queue with its outcomes, for the rescheduled run. False when the
+     * user's Pause or Cancel got there first; that request wins. */
+    fun requeue(id: String): Boolean = OcrWrites.lock.withLock {
+        if (read(id).getString("status") !in setOf("preparing", "running")) return@withLock false
+        transition(id, "queued"); true
+    }
+
+    /** The next on-device job waiting for the worker. */
+    fun nextQueued(): JSONObject? = all().firstOrNull {
+        it.optString("backend") == "onDevice" && it.getString("status") == "queued"
     }
     fun delete(id: String) = OcrWrites.lock.withLock {
         require(read(id).getString("status") !in active) { "job_busy" }
@@ -191,10 +197,12 @@ class OcrStore(private val directory: File,
         file(id).delete()
     }
 
-    /** Called once on native process initialization, never on each UI attach. */
-    fun recover() = OcrWrites.lock.withLock {
+    /** Called once on native process initialization, never on each UI attach.
+     * True when an on-device job is still queued for the worker. */
+    fun recover(): Boolean = OcrWrites.lock.withLock {
         val stale = System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000
         val jobs = all()
+        var waiting = false
         // Installs predating the one-entry-per-book rule carry a stack of finished
         // runs, and the sheet reveals the next one down as each is dismissed. Keep
         // the newest per book plus anything still resumable, and drop the rest.
@@ -209,6 +217,11 @@ class OcrStore(private val directory: File,
                 }
                 continue
             }
+            // Never started, or deferred by Android: WorkManager still owes it a run.
+            if (job.getString("status") == "queued") {
+                if (job.optString("backend") == "onDevice") waiting = true
+                continue
+            }
             try { reconcile(job) } catch (_: Exception) { job.put("reason","cache_invalid") }
             job.put("status", if (job.getString("status") == "cancelling") "cancelled" else "paused")
                 .put("phase", "paused").put("reason", "interrupted")
@@ -216,6 +229,7 @@ class OcrStore(private val directory: File,
                 unsavedPauses[job.getString("id")]=job.put("reason","storage_error")
             }
         }
+        waiting
     }
     fun pauseAfterFailure(id: String,reason: String) = OcrWrites.lock.withLock {
         val job=read(id)

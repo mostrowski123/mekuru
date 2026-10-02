@@ -17,6 +17,8 @@ String localOcrReason(BuildContext context, String? code) {
     'too_hot' => l.localOcrTooHot,
     'low_battery' => l.localOcrLowBattery,
     'charging_required' => l.localOcrChargingRequired,
+    // The last two come only from journals written by the old foreground service.
+    'deferred' ||
     'background_timeout' ||
     'background_start_denied' => l.localOcrBackgroundLimit,
     'runtime_error' => l.localOcrRuntimeError,

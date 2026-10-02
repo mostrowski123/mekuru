@@ -58,6 +58,30 @@ class OcrStoreTest {
             it.getJSONObject("ocr").getBoolean("completed")
         })
     }
+    @Test fun deferredRunGoesBackToTheQueueWithItsProgress() {
+        val id=create().getString("id")
+        OcrRunner(store,id).run { _,page,_,_ ->
+            if(page.getInt("pageIndex")==1) throw OcrPause("deferred")
+            OcrPageOutput(JSONArray(),"hash")
+        }
+        val job=store.read(id)
+        assertEquals("queued",job.getString("status"))
+        assertFalse(job.has("reason"))
+        assertEquals("done",job.getJSONObject("outcomes").getString("0"))
+        assertFalse(job.getJSONObject("outcomes").has("1"))
+    }
+    @Test fun requeueLeavesAUserPauseAlone() {
+        val id=start(create())
+        store.transition(id,"pausing")
+        assertFalse(store.requeue(id))
+        assertEquals("pausing",store.read(id).getString("status"))
+    }
+    @Test fun recoverKeepsQueuedJobsForTheWorker() {
+        val id=create().getString("id")
+        store=OcrStore(File(root,"jobs"))
+        assertTrue(store.recover())
+        assertEquals("queued",store.read(id).getString("status"))
+    }
     @Test fun crashBetweenPageAndJournalIsReconciled() {
         val id=start(create())
         try { store.commit(id,0,JSONArray(),"hash") { throw Error("process died") } } catch(_: Error) {}

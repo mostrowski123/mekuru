@@ -7,7 +7,7 @@ import java.util.concurrent.CancellationException
 data class OcrPageOutput(val blocks: JSONArray, val inputHash: String)
 class OcrPause(val reason: String) : CancellationException(reason)
 
-/** Platform-independent job loop. The Android service owns model/resources;
+/** Platform-independent job loop. The Android worker owns model/resources;
  * tests exercise actual journal and cache writes with deterministic page IO. */
 class OcrRunner(private val store: OcrStore,private val id: String) {
     fun run(
@@ -56,6 +56,7 @@ class OcrRunner(private val store: OcrStore,private val id: String) {
             val failed=outcomes.keys().asSequence().any { outcomes.getString(it)=="failed" }
             store.transition(id,if(failed) "completedWithErrors" else "completed")
         } catch(stop: CancellationException) {
+            if((stop as? OcrPause)?.reason=="deferred" && store.requeue(id)) return
             val job=store.read(id)
             when(job.getString("status")) {
                 "cancelling" -> store.transition(id,"cancelled")

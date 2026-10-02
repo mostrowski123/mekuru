@@ -137,10 +137,10 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
                 check(isTest || OcrRuntime.models.supported) { "unsupported_device" }
                 check(isTest || OcrRuntime.models.installed()) { "model_missing" }
                 // ponytail: a job queued before a speed test began can still race
-                // the service for a second engine; accept that narrow window.
+                // the worker for a second engine; accept that narrow window.
                 check(!OcrRuntime.benchmarking) { "model_busy" }
                 val job=store.create(args,OcrRuntime.models.version)
-                OcrRuntime.startService(); job
+                OcrRuntime.startWorker(); job
             }
             "pause" -> { OcrRuntime.requestStop(args.getString("id"),false); null }
             "cancel" -> { OcrRuntime.requestStop(args.getString("id"),true); null }
@@ -150,7 +150,7 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
                 check(job.getString("modelVersion")==OcrRuntime.models.version) { "model_version_missing" }
                 check(!OcrRuntime.benchmarking) { "model_busy" }
                 store.resume(job.getString("id"),args.optBoolean("retryFailed"))
-                OcrRuntime.startService(); null
+                OcrRuntime.startWorker(); null
             }
             "dismiss" -> { store.delete(args.getString("id")); null }
             "quiesce" -> { OcrRuntime.quiesce(); null }
@@ -208,7 +208,7 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
             }
             "test.recover" -> {
                 if(!DebugOcrHooks.enabled) NotImplemented else {
-                    check(!OcrRuntime.serviceRunning.get()) { "job_busy" }
+                    check(!OcrRuntime.workerRunning.get()) { "job_busy" }
                     store.recover(); null
                 }
             }
