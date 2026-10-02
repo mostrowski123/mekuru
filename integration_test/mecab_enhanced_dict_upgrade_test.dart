@@ -79,6 +79,12 @@ void main() {
     for (final entity in ipadicDir.listSync().whereType<File>()) {
       entity.copySync(p.join(enhancedDir, p.basename(entity.path)));
     }
+    // Mirror real unidic-lite's dicrc output-format default (MEKURU-21).
+    File(p.join(enhancedDir, 'dicrc')).writeAsStringSync(
+      '\noutput-format-type = unidic\n'
+      r'node-format-unidic = %m\t%f[7]\t%f[6]\t%f[0]\n',
+      mode: FileMode.append,
+    );
     File(p.join(enhancedDir, _installMarkerName)).writeAsStringSync('{}');
 
     // Opt in. shouldUse() reads SharedPreferences directly.
@@ -138,8 +144,13 @@ void main() {
       reason: 'the background upgrade should swap in the enhanced dictionary',
     );
 
-    // The swapped-in tagger is still functional for tokenization.
+    // The swapped-in tagger is still functional for tokenization and taps.
     expect(MecabService.instance.tokenize('日本語'), isNotEmpty);
+    expect(
+      MecabService.instance.identifyWord('日本語', 0),
+      isNotNull,
+      reason: 'word taps must still find a word after the swap',
+    );
   });
 
   test('expectedLayout predicts the enhanced dictionary and settledLayout '

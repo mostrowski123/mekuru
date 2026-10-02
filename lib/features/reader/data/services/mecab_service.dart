@@ -115,6 +115,11 @@ const _skipSymbolSubcats = {
   '括弧閉', // closing bracket
 };
 
+/// Overrides unidic-lite's dicrc `output-format-type = unidic`, whose output
+/// mecab_for_dart parses as tokens without features. Every UniDic tagger must
+/// pass this exact string: the model registry is keyed on it.
+const _unidicOptions = '--output-format-type=';
+
 /// Common invisible characters found in EPUB content that can confuse MeCab.
 final _invisibleCharsPattern = RegExp(
   '[\u200B\u200C\u200D\uFEFF\u00AD\u2060\u200E\u200F\u202A-\u202E]',
@@ -331,7 +336,10 @@ class MecabService {
       await _warmModelInBackground(dictPath);
 
       // The model is now resident in the registry; this attaches cheaply.
-      final unidicTagger = await Mecab.create(dictDir: dictPath);
+      final unidicTagger = await Mecab.create(
+        dictDir: dictPath,
+        options: _unidicOptions,
+      );
 
       // Atomic swap. Reassigning a single field is synchronous, so no
       // concurrent parse() can observe a half-initialized state. Dispose the
@@ -358,7 +366,7 @@ class MecabService {
       // Creating the tagger triggers the heavy mecab_model_new load. We do
       // NOT dispose it: keeping the registry refcount >= 1 ensures the model
       // outlives this isolate so the main isolate reuses it.
-      await Mecab.create(dictDir: dictDir);
+      await Mecab.create(dictDir: dictDir, options: _unidicOptions);
     });
   }
 
