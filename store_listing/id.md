@@ -2,51 +2,59 @@
 
 ## Title (max 30)
 
-Mekuru - Pembaca Bahasa Jepang
+Mekuru: Pembaca Manga Jepang
 
 ## Short description (max 80)
 
-Belajar bahasa Jepang lewat membaca. Manga & EPUB dengan kamus offline & Anki.
+Belajar bahasa Jepang dari manga, light novel & EPUB. Kamus offline, OCR, Anki.
 
 ## Full description (max 4000)
 
-Mekuru adalah pembaca bahasa Jepang untuk novel EPUB dan manga. Ketuk kata apa pun untuk langsung melihat arti kamusnya — sepenuhnya offline, tanpa berpindah aplikasi. Dirancang untuk belajar bahasa Jepang lewat membaca: furigana, pitch accent, info kanji, dan ekspor kartu Anki dalam satu aplikasi.
+Belajar bahasa Jepang dengan membaca manga dan novel yang kamu suka. Ketuk kata apa pun untuk melihat artinya, sepenuhnya offline. Mekuru bahkan bisa membaca teks di manga-mu langsung di ponsel (OCR di perangkat, Pro), jadi kamu bisa mengetuk kata di dalam balon dialog.
+
+◆ BACA MANGA DAN KETUK KATA APA PUN
+• OCR di perangkat menemukan dan membaca teks Jepang di balon dialog, offline (Pro). Uji kecepatan ponselmu gratis sebelum membeli.
+• Pindai halaman yang sedang kamu baca, atau satu volume penuh dari perpustakaan
+• Sudah memakai mokuro? Buka manga hasil mokuro, atau file CBZ yang membawa data mokuro, lalu langsung ketuk kata, gratis
+• Mode satu halaman, dua halaman (spread), dan gulir vertikal
+• Pemotongan margin otomatis (Pro) dan dukungan server OCR milikmu sendiri (Pro)
 
 ◆ BACA NOVEL & LIGHT NOVEL JEPANG (EPUB)
-• Teks vertikal (tategaki) atau horizontal, arah halaman kanan-ke-kiri atau kiri-ke-kanan
-• Tampilkan furigana di atas kanji
-• Penanda buku dan pemulihan progres baca otomatis
-• Pengaturan per buku: font, margin, tema sepia dan gelap
+• Teks vertikal (tategaki) atau horizontal, kanan-ke-kiri atau kiri-ke-kanan
+• Balik halaman, atau gulir sepanjang bab
+• Furigana sesukamu: mati, bawaan buku, semua kanji, hanya kanji di atas level JLPT-mu, atau hanya kanji yang belum kamu pelajari di WaniKani
+• Simpan salinan buku apa pun sebagai EPUB dengan furigana tambahan
+• Penanda buku, sorotan (Pro), dan posisi baca yang selalu dipulihkan
+• Tema sepia dan gelap, ukuran font, margin, dan sakelar animasi untuk layar e-ink
 
-◆ BACA MANGA DENGAN KAMUS KETUK (DUKUNGAN MOKURO)
-• Dukungan penuh mokuro: buka manga hasil mokuro dan ketuk kata langsung di balon dialog untuk pencarian kamus instan
-• Mendukung CBZ
-• Mode satu halaman, dua halaman (spread), dan gulir vertikal
-• Pemotongan otomatis dan server OCR kustom (Pro)
-
-◆ KAMUS JEPANG OFFLINE INSTAN
-• Deteksi kata cerdas: mengenali kata majemuk dan kata kerja berkonjugasi
-• Unduh kamus bawaan: JMdict, KANJIDIC, urutan goresan kanji (KanjiVG), dan data frekuensi JPDB
-• Impor kamus kompatibel Yomitan milikmu sendiri (ZIP)
+◆ KAMUS JEPANG OFFLINE
+• Deteksi kata cerdas: mengenali kata kerja berkonjugasi dan kata majemuk
+• Unduh JMdict, KANJIDIC, urutan goresan kanji (KanjiVG), dan data frekuensi JPDB
+• Impor kamus kompatibel Yomitan milikmu sendiri
 • Info pitch accent dan frekuensi kata sekilas pandang
-• Bekerja sepenuhnya offline — baca di mana saja
+• Cari dengan kana, kanji, atau romaji
 
-◆ KUMPULKAN KOSAKATA & BELAJAR BAHASA JEPANG
-• Simpan kata saat membaca, lengkap dengan kalimat konteksnya
-• Ekspor kartu ke Anki: kirim langsung ke AnkiDroid atau ekspor CSV
+◆ KUMPULKAN KOSAKATA DENGAN ANKI
+• Simpan kata bersama kalimat tempat kamu menemukannya
+• Kirim kartu langsung ke AnkiDroid, atau ekspor CSV
 • Sentence mining dari buku sungguhan, bukan contoh buku teks
-• Ulas kosakata tersimpan kapan saja
+
+◆ PANTAU BACAANMU
+• Waktu membaca, jumlah karakter yang dibaca, dan kata yang ditambahkan
+• Peta aktivitas membaca, tingkat pencarian kamus, dan pertumbuhan kosakata dari waktu ke waktu
+
+◆ PERPUSTAKAAN SESUAI GAYAMU
+• Unduh buku dari server Komga atau Kavita milikmu sendiri, dengan progres baca tersinkron dua arah
+• Kelompokkan buku ke dalam folder
+• Ubah EPUB berisi gambar menjadi manga, dan ekspor manga sebagai CBZ
+• Cadangkan seluruh perpustakaan ke satu file untuk pindah ke ponsel baru
 
 ◆ DIBUAT UNTUK PEMBELAJAR BAHASA JEPANG
-Mekuru dirancang untuk membaca ekstensif (tadoku) dan belajar lewat imersi. Membaca buku Jepang asli adalah salah satu cara terbaik untuk belajar kanji, tata bahasa, dan kosakata dalam konteks — dari pemula JLPT N5 dengan bacaan berjenjang hingga pembelajar mahir yang menikmati light novel tanpa kamus kertas.
-
-Sudah memakai mokuro dan Yomitan? Perpustakaan manga dan kamusmu langsung berfungsi di Mekuru.
-
-Pembaca asli bahasa Jepang pun mendapatkan pembaca EPUB teks vertikal yang bersih dan bisa dikustomisasi.
+Mekuru dirancang untuk membaca ekstensif (tadoku) dan belajar lewat imersi. Membaca bahasa Jepang asli adalah salah satu cara terbaik untuk belajar kanji, tata bahasa, dan kosakata dalam konteks, dari pemula JLPT N5 dengan bacaan berjenjang hingga pembelajar mahir yang membaca light novel tanpa kamus kertas.
 
 ◆ GRATIS & OPEN SOURCE
-Mekuru gratis dan open source (AGPL). Upgrade Pro sekali bayar (opsional) membuka sorotan buku, pemotongan otomatis manga, dan OCR server kustom.
+Mekuru gratis dan open source (AGPL). Upgrade Pro sekali bayar (opsional) membuka OCR manga di perangkat, server OCR milikmu sendiri, pemotongan otomatis manga, dan sorotan buku.
 
 Antarmuka tersedia dalam bahasa Indonesia, Inggris, Spanyol, dan Mandarin Sederhana.
 
-Mekuru (めくる) berarti "membalik halaman" — lebih sedikit membolak-balik kamus, lebih banyak membaca.
+Mekuru (めくる) berarti "membalik halaman": lebih sedikit waktu dengan kamus, lebih banyak waktu membaca bahasa Jepang.
