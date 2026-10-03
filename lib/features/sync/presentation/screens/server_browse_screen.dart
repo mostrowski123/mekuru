@@ -285,30 +285,14 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
       }
     }
 
-    try {
-      final imported = await ref
-          .read(serverDownloadProvider.notifier)
-          .download(
-            connection: widget.connection,
-            client: widget.client,
-            book: book,
-          );
-      if (mounted && imported != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              l10n.serverBrowseAddedToLibrary(title: imported.title),
-            ),
-          ),
+    // The notifier announces the result: the transfer can outlive this screen.
+    await ref
+        .read(serverDownloadProvider.notifier)
+        .download(
+          connection: widget.connection,
+          client: widget.client,
+          book: book,
         );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.serverBrowseDownloadFailed(error: '$e'))),
-        );
-      }
-    }
   }
 
   Future<void> _openLinked(RemoteBook book) async {

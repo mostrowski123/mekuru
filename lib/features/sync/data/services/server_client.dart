@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:background_downloader/background_downloader.dart';
+
 import '../models/remote_models.dart';
 
 /// Exception for any failed server interaction. [statusCode] is 0 for
@@ -17,6 +21,20 @@ class SyncException implements Exception {
   String toString() => 'SyncException($statusCode): $message';
 }
 
+/// background_downloader group of every server book download.
+const serverDownloadGroup = 'server_books';
+
+/// Application-support folder a download waits in until it is imported.
+const serverDownloadsDir = 'server_downloads';
+
+/// Cancel every server download: a full restore replaces the library they
+/// would import into.
+Future<void> cancelServerDownloads() async {
+  // Host-side tests have no background downloader.
+  if (!Platform.isAndroid && !Platform.isIOS) return;
+  await FileDownloader().cancelAll(group: serverDownloadGroup);
+}
+
 /// The full surface Mekuru needs from a Komga/Kavita server: connection
 /// test, browse, whole-file download, cover bytes, and progress get/set.
 abstract class ServerClient {
@@ -31,12 +49,11 @@ abstract class ServerClient {
 
   Future<List<RemoteBook>> listBooks(RemoteSeries series);
 
-  /// Download the book's original file to [destPath].
-  Future<void> downloadBook(
+  /// URL and headers that fetch the book's original file. The transfer
+  /// itself runs in the platform's background downloader.
+  Future<({String url, Map<String, String> headers})> downloadRequest(
     RemoteBook book,
-    String destPath, {
-    void Function(double progress)? onProgress,
-  });
+  );
 
   /// Raw cover image bytes for a series, or null when unavailable.
   Future<List<int>?> fetchSeriesCover(RemoteSeries series);

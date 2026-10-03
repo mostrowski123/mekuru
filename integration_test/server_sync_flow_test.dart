@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -15,6 +16,8 @@ import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/komga_client.dart';
 import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
+import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
+import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:path/path.dart' as p;
 
 import 'shared/test_infrastructure.dart';
@@ -141,6 +144,19 @@ class FakeKomga {
   }
 }
 
+/// The book the download notifier imported and linked to [connectionId].
+Future<Book> _linkedBook(
+  ServerConnectionRepository connections,
+  int connectionId,
+) async {
+  for (var i = 0; i < 150; i++) {
+    final linked = await connections.booksLinkedTo(connectionId);
+    if (linked.isNotEmpty) return linked.single;
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+  }
+  fail('The downloaded book was never imported');
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -187,13 +203,20 @@ void main() {
     final books = await client.listBooks(series.single);
     expect(books.single.format, RemoteBookFormat.imageArchive);
 
-    // ── Download through the real import pipeline ──
-    final tempDir = await Directory.systemTemp.createTemp('server_sync_');
-    addTearDown(() => tempDir.delete(recursive: true));
-    final cbzPath = p.join(tempDir.path, 'よつばと！ 1.cbz');
-    await client.downloadBook(books.single, cbzPath);
-    final imported = await bookRepo.importCbz(cbzPath);
-    await connections.linkBook(imported.id, connectionId, books.single.ids);
+    // ── Download through the background downloader and the real import ──
+    final container = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(container.dispose);
+    final downloads = container.read(serverDownloadProvider.notifier);
+    await downloads.resumeBackgroundDownloads();
+    await downloads.download(
+      connection: connection,
+      client: client,
+      book: books.single,
+    );
+    final imported = await _linkedBook(connections, connectionId);
+    expect(container.read(serverDownloadProvider), isEmpty);
 
     // The embedded .mokuro made it through: pages carry OCR blocks, which
     // is exactly what tap-to-lookup renders.

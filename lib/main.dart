@@ -30,6 +30,7 @@ import 'features/reader/data/services/mecab_service.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
 import 'features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'features/settings/data/services/kanjivg_download_service.dart';
+import 'features/sync/data/services/server_client.dart';
 
 /// Global navigator key used by Sentry for feedback screenshots
 /// and navigator observation.
@@ -193,6 +194,7 @@ Future<void> _runDeferredStartupWarmups() => tracedOperation(
           await excludeFromIosBackup([
             // A restored books dir also arrives without the flag.
             p.join(support.path, BookRepository.booksSegment),
+            p.join(support.path, serverDownloadsDir),
             p.join(docs.path, 'assets'),
             await EnhancedFuriganaDictDownloadService.getStorageDir(),
             await KanjiVgDownloadService.getStorageDir(),

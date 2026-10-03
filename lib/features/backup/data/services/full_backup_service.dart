@@ -20,6 +20,7 @@ import 'package:mekuru/features/backup/data/services/staged_full_restore.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
+import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:path/path.dart' as p;
 import 'package:workmanager/workmanager.dart';
 
@@ -437,6 +438,14 @@ class FullBackupService implements FullBackupApi {
       await LocalMangaOcr.quiesce();
     } catch (error) {
       debugPrint('[FULL_BACKUP] OCR quiesce failed: $error');
+    }
+    // Before cancelAll below: cancelled here, a server download's record is
+    // not requeued at the next launch, where it would import into the
+    // restored library.
+    try {
+      await cancelServerDownloads();
+    } catch (error) {
+      debugPrint('[FULL_BACKUP] cancelling server downloads failed: $error');
     }
     try {
       await Workmanager().cancelAll();

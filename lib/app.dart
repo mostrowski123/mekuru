@@ -23,6 +23,7 @@ import 'features/reader/presentation/providers/reader_providers.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
 import 'features/stats/presentation/screens/stats_screen.dart';
+import 'features/sync/presentation/providers/sync_providers.dart';
 import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
 import 'features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -93,6 +94,15 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       ref.read(autoBackupCheckerProvider);
       unawaited(_announceFullRestoreResult());
       unawaited(ref.read(bookRepositoryProvider).sweepOrphanImportDirs());
+      unawaited(
+        ref
+            .read(serverDownloadProvider.notifier)
+            .resumeBackgroundDownloads()
+            .catchError(
+              (Object e, StackTrace st) =>
+                  logFailure('sync.downloads_resumed', e, stackTrace: st),
+            ),
+      );
       unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
       // Silent WaniKani refresh; failures stay in telemetry and never
       // reach the user.

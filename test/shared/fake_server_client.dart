@@ -20,11 +20,9 @@ class StubServerClient implements ServerClient {
       throw UnimplementedError();
 
   @override
-  Future<void> downloadBook(
+  Future<({String url, Map<String, String> headers})> downloadRequest(
     RemoteBook book,
-    String destPath, {
-    void Function(double progress)? onProgress,
-  }) => throw UnimplementedError();
+  ) => throw UnimplementedError();
 
   @override
   Future<List<int>?> fetchSeriesCover(RemoteSeries series) async => null;

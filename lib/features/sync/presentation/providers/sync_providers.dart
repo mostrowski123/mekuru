@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -16,10 +18,9 @@ import 'package:mekuru/features/sync/data/services/komga_client.dart';
 import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 final serverConnectionRepositoryProvider = Provider<ServerConnectionRepository>(
   (ref) => ServerConnectionRepository(ref.watch(databaseProvider)),
@@ -120,7 +121,8 @@ final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
     db: ref.watch(databaseProvider),
     connections: ref.watch(serverConnectionRepositoryProvider),
     clientFactory: ref.watch(serverClientFactoryProvider),
-    onLinkDropped: _announceDroppedLink,
+    onLinkDropped: (book) =>
+        _announce((l10n) => l10n.serverLinkDropped(title: book.title)),
   );
   BookRepository.onProgressWritten = service.schedulePush;
   ref.onDispose(() {
@@ -130,89 +132,195 @@ final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
   return service;
 });
 
-/// Tells the user, wherever they are in the app, why a book stopped syncing.
-void _announceDroppedLink(Book book) {
-  final context = scaffoldMessengerKey.currentContext;
-  if (context == null || !context.mounted) return;
-  scaffoldMessengerKey.currentState?.showSnackBar(
-    SnackBar(content: Text(context.l10n.serverLinkDropped(title: book.title))),
-  );
-}
-
 /// Download-and-import state: progress (0..1) per in-flight book, keyed by
 /// primary remote id.
+///
+/// Transfers run in background_downloader (WorkManager on Android, a
+/// background URLSession on iOS), so they keep going after the user leaves or
+/// closes Mekuru. A finished file is imported here: right away while the app
+/// runs, otherwise at the next launch ([resumeBackgroundDownloads]).
 class ServerDownloadNotifier extends Notifier<Map<String, double>> {
-  @override
-  Map<String, double> build() => const {};
+  final _importing = <String>{};
 
-  /// Download [book] from [connection], import it through the normal
-  /// pipeline, and link the new row to the server. Returns the imported
-  /// book, or null when this book is already being downloaded.
-  Future<Book?> download({
+  @override
+  Map<String, double> build() {
+    // A restart in process (iOS full restore) builds a new notifier.
+    ref.onDispose(
+      () => FileDownloader().unregisterCallbacks(group: serverDownloadGroup),
+    );
+    return const {};
+  }
+
+  /// Startup: picks up transfers still running, imports files that finished
+  /// while the app was closed, and requeues transfers the OS killed.
+  Future<void> resumeBackgroundDownloads() async {
+    // Host-side tests have no background downloader.
+    if (!Platform.isAndroid && !Platform.isIOS) return;
+    FileDownloader().registerCallbacks(
+      group: serverDownloadGroup,
+      taskStatusCallback: _onStatus,
+      taskProgressCallback: _onProgress,
+    );
+    final running = await FileDownloader().allTasks(group: serverDownloadGroup);
+    state = {...state, for (final task in running) task.taskId: 0.0};
+    await FileDownloader().start();
+  }
+
+  /// Queue [book] for download from [connection]. No-op while it is already
+  /// queued.
+  Future<void> download({
     required ServerConnection connection,
     required ServerClient client,
     required RemoteBook book,
   }) async {
     final key = ServerConnectionRepository.primaryRemoteId(book.ids);
-    if (key == null || state.containsKey(key)) return null;
+    if (key == null || state.containsKey(key)) return;
     state = {...state, key: 0.0};
-    Directory? tempDir;
     try {
-      // The CBZ importer titles the book from the file name, so the temp
-      // file must carry the real title (in its own dir — titles collide).
-      tempDir = await Directory(
-        p.join(
-          (await getTemporaryDirectory()).path,
-          'server_dl_${DateTime.now().microsecondsSinceEpoch}',
+      final request = await client.downloadRequest(book);
+      final queued = await FileDownloader().enqueue(
+        DownloadTask(
+          taskId: key,
+          url: request.url,
+          headers: request.headers,
+          // The CBZ importer titles the book from the file name, so the file
+          // must carry the real title (in its own dir — titles collide).
+          filename: sanitizedExportBaseName(book.title) + book.fileExtension,
+          directory:
+              '$serverDownloadsDir/${DateTime.now().microsecondsSinceEpoch}',
+          baseDirectory: BaseDirectory.applicationSupport,
+          group: serverDownloadGroup,
+          updates: Updates.statusAndProgress,
+          retries: 3,
+          // Carries a transfer past WorkManager's 9-minute window on Android.
+          allowPause: true,
+          metaData: jsonEncode({
+            'connectionId': connection.id,
+            'serverType': connection.serverType,
+            'ids': book.ids,
+            'format': book.format.name,
+          }),
         ),
-      ).create(recursive: true);
-      final fileName = sanitizedExportBaseName(book.title) + book.fileExtension;
-      final destPath = p.join(tempDir.path, fileName);
-
-      await client.downloadBook(
-        book,
-        destPath,
-        onProgress: (progress) => state = {...state, key: progress},
       );
+      if (!queued) throw StateError('Download could not be queued');
+    } catch (e) {
+      state = {...state}..remove(key);
+      logFailure(
+        'sync.book_downloaded',
+        e,
+        attrs: {'server_type': connection.serverType},
+      );
+      _announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
+    }
+  }
 
-      final importNotifier = ref.read(bookImportProvider.notifier);
+  void _onProgress(TaskProgressUpdate update) {
+    // Negative values are status signals, and 1.0 can trail the completion.
+    if (update.progress < 0 || update.progress >= 1) return;
+    state = {...state, update.task.taskId: update.progress};
+  }
+
+  Future<void> _onStatus(TaskStatusUpdate update) async {
+    final task = update.task;
+    switch (update.status) {
+      case TaskStatus.complete:
+        await _import(task);
+      case TaskStatus.failed || TaskStatus.notFound:
+        final error =
+            update.exception?.description ??
+            'HTTP ${update.responseStatusCode}';
+        // Server offline or Wi-Fi gone: expected, so a warning log only and
+        // no Sentry issue.
+        logFailure(
+          'sync.book_downloaded',
+          update.exception ?? error,
+          attrs: {'server_type': _meta(task)['serverType'] as String},
+        );
+        _announce((l10n) => l10n.serverBrowseDownloadFailed(error: error));
+        await _finish(task);
+      case TaskStatus.canceled:
+        await _finish(task);
+      case TaskStatus.enqueued ||
+          TaskStatus.running ||
+          TaskStatus.waitingToRetry ||
+          TaskStatus.paused:
+        if (!state.containsKey(task.taskId)) {
+          state = {...state, task.taskId: 0.0};
+        }
+    }
+  }
+
+  /// Import the finished file through the normal pipeline and link the new
+  /// row to the server.
+  Future<void> _import(Task task) async {
+    // Startup can report one completion twice (the file found on disk, then
+    // the stored native update): the first report imports it.
+    if (!_importing.add(task.taskId)) return;
+    final meta = _meta(task);
+    final serverType = meta['serverType'] as String;
+    try {
+      final path = await task.filePath();
+      if (!await File(path).exists()) return;
       final repo = ref.read(bookRepositoryProvider);
-      final imported = book.format == RemoteBookFormat.epub
-          ? await repo.importEpub(destPath)
-          : await repo.importCbz(destPath);
+      final imported = meta['format'] == RemoteBookFormat.epub.name
+          ? await repo.importEpub(path)
+          : await repo.importCbz(path);
       // Re-applies any pending backup data (restores progress/bookmarks for
       // books re-downloaded after a restore).
-      await importNotifier.applyPendingBackupData(imported);
+      await ref
+          .read(bookImportProvider.notifier)
+          .applyPendingBackupData(imported);
       await ref
           .read(serverConnectionRepositoryProvider)
-          .linkBook(imported.id, connection.id, book.ids);
+          .linkBook(
+            imported.id,
+            meta['connectionId'] as int,
+            (meta['ids'] as Map<String, dynamic>).cast<String, String>(),
+          );
       logUsage(
         'sync.book_downloaded',
-        attrs: {
-          'server_type': connection.serverType,
-          'format': book.format.name,
-        },
+        attrs: {'server_type': serverType, 'format': meta['format'] as String},
       );
-      return imported;
+      _announce(
+        (l10n) => l10n.serverBrowseAddedToLibrary(title: imported.title),
+      );
     } catch (e, st) {
       logFailure(
         'sync.book_downloaded',
         e,
         stackTrace: st,
-        attrs: {'server_type': connection.serverType},
+        attrs: {'server_type': serverType},
       );
-      rethrow;
+      _announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
     } finally {
-      state = {...state}..remove(key);
-      if (tempDir != null) {
-        try {
-          await tempDir.delete(recursive: true);
-        } catch (_) {
-          // Best-effort temp cleanup only.
-        }
-      }
+      await _finish(task);
+      _importing.remove(task.taskId);
     }
   }
+
+  Future<void> _finish(Task task) async {
+    state = {...state}..remove(task.taskId);
+    await FileDownloader().database.deleteRecordWithId(task.taskId);
+    try {
+      await File(await task.filePath()).parent.delete(recursive: true);
+    } catch (_) {
+      // Best effort.
+    }
+  }
+
+  static Map<String, dynamic> _meta(Task task) =>
+      jsonDecode(task.metaData) as Map<String, dynamic>;
+}
+
+/// Snack bar on whatever screen is showing (downloads and sync outlive the
+/// screen that started them). Replaces the current one, so a batch of
+/// downloads finishing together doesn't queue minutes of messages.
+void _announce(String Function(AppLocalizations l10n) message) {
+  final context = scaffoldMessengerKey.currentContext;
+  if (context == null || !context.mounted) return;
+  scaffoldMessengerKey.currentState
+    ?..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message(context.l10n))));
 }
 
 final serverDownloadProvider =

@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:mekuru/core/services/download_to_file.dart';
 
 import '../models/remote_models.dart';
 import 'http_server_client.dart';
@@ -127,18 +126,12 @@ class KomgaClient extends HttpServerClient {
   }
 
   @override
-  Future<void> downloadBook(
+  Future<({String url, Map<String, String> headers})> downloadRequest(
     RemoteBook book,
-    String destPath, {
-    void Function(double progress)? onProgress,
-  }) {
-    return downloadToFile(
-      '$baseUrl/api/v1/books/${book.ids['bookId']}/file',
-      destPath,
-      headers: _authHeaders,
-      onProgress: onProgress,
-    );
-  }
+  ) async => (
+    url: '$baseUrl/api/v1/books/${book.ids['bookId']}/file',
+    headers: _authHeaders,
+  );
 
   @override
   Future<List<int>?> fetchSeriesCover(RemoteSeries series) async {
