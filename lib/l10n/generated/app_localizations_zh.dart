@@ -2389,6 +2389,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get serverDialogAllowSelfSignedSubtitle =>
+      '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitleIos =>
       '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。从该服务器下载会在应用内进行，请保持 Mekuru 打开直到下载完成。';
 
   @override
@@ -5598,6 +5602,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get serverDialogAllowSelfSignedSubtitle =>
+      '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitleIos =>
       '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。从该服务器下载会在应用内进行，请保持 Mekuru 打开直到下载完成。';
 
   @override

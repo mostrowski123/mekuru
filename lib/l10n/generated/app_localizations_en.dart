@@ -2494,6 +2494,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get serverDialogAllowSelfSignedSubtitle =>
+      'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents.';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitleIos =>
       'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents. Downloads from it run inside the app, so keep Mekuru open until they finish.';
 
   @override

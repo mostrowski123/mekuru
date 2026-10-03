@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -443,7 +444,13 @@ class _ServerConnectionDialogState
               key: const ValueKey('server_dialog_allow_self_signed'),
               contentPadding: EdgeInsets.zero,
               title: Text(l10n.serverDialogAllowSelfSigned),
-              subtitle: Text(l10n.serverDialogAllowSelfSignedSubtitle),
+              // iOS downloads from such a server in the app, Android in the
+              // background (see serverDownloadRoute).
+              subtitle: Text(
+                defaultTargetPlatform == TargetPlatform.iOS
+                    ? l10n.serverDialogAllowSelfSignedSubtitleIos
+                    : l10n.serverDialogAllowSelfSignedSubtitle,
+              ),
               isThreeLine: true,
               value: _allowSelfSigned,
               onChanged: (value) => setState(() => _allowSelfSigned = value),

@@ -2506,6 +2506,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get serverDialogAllowSelfSignedSubtitle =>
+      'Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini.';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitleIos =>
       'Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini. Unduhan dari server ini berjalan di dalam aplikasi, jadi biarkan Mekuru tetap terbuka sampai selesai.';
 
   @override

@@ -2526,6 +2526,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get serverDialogAllowSelfSignedSubtitle =>
+      'Para un servidor https:// con su propio certificado. Mekuru aceptará cualquier certificado que presente este servidor.';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitleIos =>
       'Para un servidor https:// con su propio certificado. Mekuru aceptará cualquier certificado que presente este servidor. Las descargas desde él se hacen dentro de la app: mantén Mekuru abierto hasta que terminen.';
 
   @override

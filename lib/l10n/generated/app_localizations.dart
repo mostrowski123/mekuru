@@ -4252,11 +4252,17 @@ abstract class AppLocalizations {
   /// **'Accept self-signed certificate'**
   String get serverDialogAllowSelfSigned;
 
-  /// Explanation under the self-signed certificate switch in the server connection dialog: what it allows, and that downloads from such a server run inside the app.
+  /// Explanation under the self-signed certificate switch in the server connection dialog (Android: downloads from such a server still run in the background).
+  ///
+  /// In en, this message translates to:
+  /// **'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents.'**
+  String get serverDialogAllowSelfSignedSubtitle;
+
+  /// iOS variant of serverDialogAllowSelfSignedSubtitle: on iOS, downloads from such a server run inside the app, so the app must stay open.
   ///
   /// In en, this message translates to:
   /// **'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents. Downloads from it run inside the app, so keep Mekuru open until they finish.'**
-  String get serverDialogAllowSelfSignedSubtitle;
+  String get serverDialogAllowSelfSignedSubtitleIos;
 
   /// Result shown in the server connection dialog after a successful connection test.
   ///
