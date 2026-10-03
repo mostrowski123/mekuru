@@ -22,12 +22,14 @@ import 'package:mekuru/features/sync/data/services/komga_client.dart';
 import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/data/services/server_download_route.dart';
+import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:workmanager/workmanager.dart' hide TaskStatus;
 
 final serverConnectionRepositoryProvider = Provider<ServerConnectionRepository>(
   (ref) => ServerConnectionRepository(ref.watch(databaseProvider)),
@@ -155,11 +157,18 @@ final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
 /// closes Mekuru. A finished file is imported here: right away while the app
 /// runs, otherwise at the next launch ([resumeBackgroundDownloads]).
 ///
-/// Servers the platform downloaders can't reach (see [serverDownloadRoute]:
-/// an accepted self-signed certificate, or plain http to a domain name on
-/// iOS) download with dart:io in the app instead, and only while it runs.
+/// Servers background_downloader can't reach (see [serverDownloadRoute])
+/// download with Dart instead: an accepted self-signed certificate in a
+/// WorkManager job on Android, which the app watches through the job's
+/// status file; on iOS that, and plain http to a domain name, in the app and
+/// only while it runs.
 class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   final _importing = <String>{};
+
+  /// Worker downloads being watched, by download key.
+  final _workerDirs = <String, ServerDownloadWorkDir>{};
+  Timer? _workerPoll;
+  bool _polling = false;
 
   /// Folder-name prefix of in-app downloads under [serverDownloadsDir];
   /// background tasks use bare timestamps.
@@ -168,9 +177,10 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   @override
   Map<String, double> build() {
     // A restart in process (iOS full restore) builds a new notifier.
-    ref.onDispose(
-      () => FileDownloader().unregisterCallbacks(group: serverDownloadGroup),
-    );
+    ref.onDispose(() {
+      FileDownloader().unregisterCallbacks(group: serverDownloadGroup);
+      _workerPoll?.cancel();
+    });
     return const {};
   }
 
@@ -188,6 +198,44 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     state = {...state, for (final task in running) task.taskId: 0.0};
     await FileDownloader().start();
     await _sweepInAppLeftovers();
+    if (Platform.isAndroid) await _resumeWorkerDownloads();
+  }
+
+  /// Watch worker downloads from earlier sessions: import those that
+  /// finished while the app was closed, report failed ones, and keep
+  /// following the rest. One whose WorkManager job is gone (cancelled, or
+  /// failed outside the download code) is reported as failed.
+  Future<void> _resumeWorkerDownloads() async {
+    final support = await getApplicationSupportDirectory();
+    final root = Directory(p.join(support.path, serverDownloadsDir));
+    if (!await root.exists()) return;
+    await for (final entity in root.list()) {
+      if (entity is! Directory ||
+          !p.basename(entity.path).startsWith(serverDownloadWorkDirPrefix)) {
+        continue;
+      }
+      final dir = ServerDownloadWorkDir(entity.path);
+      final job = await dir.readJob();
+      final status = await dir.readStatus();
+      if (job == null || status == null || _workerDirs.containsKey(job.key)) {
+        await entity.delete(recursive: true);
+        continue;
+      }
+      if (status.state == ServerDownloadWorkState.running &&
+          !await Workmanager().isScheduledByUniqueName(
+            serverDownloadWorkName(job.key),
+          )) {
+        await dir.writeStatus(
+          ServerDownloadWorkStatus(
+            state: ServerDownloadWorkState.failed,
+            error: 'Download was interrupted',
+            received: status.received,
+            total: status.total,
+          ),
+        );
+      }
+      _watchWorker(job.key, dir);
+    }
   }
 
   /// In-app downloads die with the process, so at launch any folder one left
@@ -236,6 +284,10 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         unawaited(_downloadInApp(key, connection, book, request, meta));
         return;
       }
+      if (route == ServerDownloadRoute.worker) {
+        await _enqueueWorker(key, connection, book, request, meta);
+        return;
+      }
       final queued = await FileDownloader().enqueue(
         DownloadTask(
           taskId: key,
@@ -265,6 +317,129 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
       );
       _announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
     }
+  }
+
+  /// Queue a Dart download as an Android WorkManager job and watch it.
+  Future<void> _enqueueWorker(
+    String key,
+    ServerConnection connection,
+    RemoteBook book,
+    ({String url, Map<String, String> headers}) request,
+    Map<String, dynamic> meta,
+  ) async {
+    final support = await getApplicationSupportDirectory();
+    final dir = ServerDownloadWorkDir(
+      p.join(
+        support.path,
+        serverDownloadsDir,
+        '$serverDownloadWorkDirPrefix${DateTime.now().microsecondsSinceEpoch}',
+      ),
+    );
+    await Directory(dir.path).create(recursive: true);
+    // The CBZ importer titles the book from the file name.
+    final fileName = sanitizedExportBaseName(book.title) + book.fileExtension;
+    try {
+      await dir.writeJob(key: key, fileName: fileName, meta: meta);
+      await dir.writeStatus(
+        const ServerDownloadWorkStatus(state: ServerDownloadWorkState.running),
+      );
+      await Workmanager().registerOneOffTask(
+        serverDownloadWorkName(key),
+        serverDownloadTaskName,
+        inputData: serverDownloadWorkInput(
+          dir: dir.path,
+          fileName: fileName,
+          url: request.url,
+          headers: request.headers,
+          baseUrl: connection.baseUrl,
+          allowSelfSigned: connection.allowSelfSignedCert,
+        ),
+        tag: serverDownloadWorkTag,
+        constraints: Constraints(networkType: NetworkType.connected),
+        backoffPolicy: BackoffPolicy.exponential,
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+      );
+    } catch (_) {
+      await Directory(dir.path).delete(recursive: true);
+      rethrow;
+    }
+    _watchWorker(key, dir);
+  }
+
+  void _watchWorker(String key, ServerDownloadWorkDir dir) {
+    _workerDirs[key] = dir;
+    if (!state.containsKey(key)) state = {...state, key: 0.0};
+    _workerPoll ??= Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => unawaited(_pollWorkers()),
+    );
+    unawaited(_pollWorkers());
+  }
+
+  /// Follow each watched worker download through its status file.
+  Future<void> _pollWorkers() async {
+    if (_polling) return;
+    _polling = true;
+    try {
+      for (final entry in [..._workerDirs.entries]) {
+        final key = entry.key;
+        final dir = entry.value;
+        if (!ref.mounted) return;
+        // A full restore deleted it to cancel.
+        if (!await Directory(dir.path).exists()) {
+          _stopWatching(key);
+          continue;
+        }
+        final status = await dir.readStatus();
+        if (!ref.mounted) return;
+        switch (status?.state) {
+          case ServerDownloadWorkState.done:
+            final job = await dir.readJob();
+            if (job != null && ref.mounted) {
+              await _importFile(dir.filePath(job.fileName), job.meta);
+            }
+            await _endWorker(key, dir);
+          case ServerDownloadWorkState.failed:
+            final job = await dir.readJob();
+            final error = status!.error ?? 'HTTP error';
+            logFailure(
+              'sync.book_downloaded',
+              error,
+              attrs: {
+                'server_type': job?.meta['serverType'] as String? ?? '',
+                'route': 'worker',
+              },
+            );
+            _announce((l10n) => l10n.serverBrowseDownloadFailed(error: error));
+            await _endWorker(key, dir);
+          case ServerDownloadWorkState.running || null:
+            final progress = status?.progress;
+            if (progress != null && progress < 1) {
+              state = {...state, key: progress};
+            }
+        }
+      }
+    } finally {
+      _polling = false;
+      if (_workerDirs.isEmpty) {
+        _workerPoll?.cancel();
+        _workerPoll = null;
+      }
+    }
+  }
+
+  Future<void> _endWorker(String key, ServerDownloadWorkDir dir) async {
+    _stopWatching(key);
+    try {
+      await Directory(dir.path).delete(recursive: true);
+    } catch (_) {
+      // Best effort; launch removes what is left.
+    }
+  }
+
+  void _stopWatching(String key) {
+    _workerDirs.remove(key);
+    if (ref.mounted) state = {...state}..remove(key);
   }
 
   /// A download the platform downloader can't make, run with dart:io in this

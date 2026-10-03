@@ -12,6 +12,7 @@ import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/komga_client.dart';
@@ -19,6 +20,7 @@ import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:path/path.dart' as p;
+import 'package:workmanager/workmanager.dart';
 
 import 'shared/self_signed_cert.dart';
 import 'shared/test_infrastructure.dart';
@@ -163,7 +165,9 @@ Future<Book> _linkedBook(
   ServerConnectionRepository connections,
   int connectionId,
 ) async {
-  for (var i = 0; i < 150; i++) {
+  // Up to a minute: on Android a self-signed download first starts a
+  // WorkManager job with its own Flutter engine.
+  for (var i = 0; i < 300; i++) {
     final linked = await connections.booksLinkedTo(connectionId);
     if (linked.isNotEmpty) return linked.single;
     await Future<void>.delayed(const Duration(milliseconds: 200));
@@ -372,8 +376,12 @@ void main() {
       final series = await client.listSeries(libraries.single.id);
       final books = await client.listBooks(series.single);
 
-      // The background downloaders can't accept the certificate, so this
-      // downloads in the app, then imports like any other download.
+      // background_downloader can't accept the certificate, so this
+      // downloads with Dart (a WorkManager job on Android, in the app on
+      // iOS), then imports like any other download.
+      if (Platform.isAndroid) {
+        await Workmanager().initialize(ocrWorkerCallbackDispatcher);
+      }
       final container = ProviderContainer(
         overrides: [databaseProvider.overrideWithValue(db)],
       );
@@ -385,10 +393,24 @@ void main() {
         client: client,
         book: books.single,
       );
+      var watching = container;
+      if (Platform.isAndroid) {
+        // Close the app's side right away, as if Mekuru were swiped away:
+        // the WorkManager job carries on, and the next launch imports what
+        // it downloaded.
+        container.dispose();
+        watching = ProviderContainer(
+          overrides: [databaseProvider.overrideWithValue(db)],
+        );
+        addTearDown(watching.dispose);
+        await watching
+            .read(serverDownloadProvider.notifier)
+            .resumeBackgroundDownloads();
+      }
       final imported = await _linkedBook(connections, connectionId);
       expect(imported.title, 'よつばと！ 1');
       expect(komga.lastApiKey, 'integration-key');
-      expect(container.read(serverDownloadProvider), isEmpty);
+      expect(watching.read(serverDownloadProvider), isEmpty);
     },
   );
 }

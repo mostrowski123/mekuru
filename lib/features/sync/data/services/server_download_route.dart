@@ -8,21 +8,28 @@ enum ServerDownloadRoute {
 
   /// dart:io inside the app: works only while Mekuru is open.
   inApp,
+
+  /// Dart in an Android WorkManager job (`server_download_work.dart`):
+  /// survives leaving and closing the app, like [background].
+  worker,
 }
 
-/// Which downloader can fetch [url]. The platform downloaders can't accept a
-/// self-signed certificate for one server only (background_downloader has no
-/// such option on iOS, and on Android only a process-wide one it refuses in
-/// release builds), so a server whose certificate the user accepted
-/// downloads in the app. On iOS, App Transport Security also blocks plain
-/// http to a domain name outside the local network; dart:io is not subject
-/// to it.
+/// Which downloader can fetch [url]. background_downloader can't accept a
+/// self-signed certificate for one server only (no such option on iOS; on
+/// Android only a process-wide one it refuses in release builds), so a
+/// server whose certificate the user accepted downloads with Dart: in a
+/// WorkManager job on Android, in the app on iOS, where nothing comparable
+/// starts a background task on demand. On iOS, App Transport Security also
+/// blocks plain http to a domain name outside the local network; dart:io is
+/// not subject to it.
 ServerDownloadRoute serverDownloadRoute({
   required String url,
   required bool allowSelfSigned,
   required bool isIos,
 }) {
-  if (allowSelfSigned) return ServerDownloadRoute.inApp;
+  if (allowSelfSigned) {
+    return isIos ? ServerDownloadRoute.inApp : ServerDownloadRoute.worker;
+  }
   final uri = Uri.tryParse(url);
   if (isIos &&
       uri != null &&

@@ -18,6 +18,7 @@ import '../../../../core/services/server_http_client.dart';
 import '../../../../core/services/sentry_setup.dart';
 import '../../../../core/services/usage_telemetry.dart';
 import '../../../../core/utils/atomic_file.dart';
+import '../../../sync/data/services/server_download_work.dart';
 import '../../data/models/mokuro_models.dart';
 import '../../../settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
@@ -150,11 +151,30 @@ class OcrProgress {
   }
 }
 
-/// Top-level callback dispatcher for WorkManager.
-/// Must be a top-level function (not a method or closure).
+/// Top-level callback dispatcher for WorkManager: remote OCR scans and, on
+/// Android, server book downloads that background_downloader can't make
+/// (see `server_download_work.dart`). Must be a top-level function (not a
+/// method or closure); its name is what queued jobs look up, so keep it.
 @pragma('vm:entry-point')
 void ocrWorkerCallbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
+    if (taskName == serverDownloadTaskName && inputData != null) {
+      await initSentryForBackgroundIsolate();
+      try {
+        return await runServerDownloadWork(inputData);
+      } catch (e, st) {
+        // runServerDownloadWork records its own failures; this is a bug.
+        // Give up rather than retry it forever; the app reports the job as
+        // interrupted.
+        logFailure(
+          'sync.book_downloaded',
+          e,
+          stackTrace: st,
+          attrs: {'route': 'worker'},
+        );
+        return true;
+      }
+    }
     if (taskName != ocrTaskName || inputData == null) return true;
 
     // Own isolate, own Sentry hub; see sentry_setup.dart.

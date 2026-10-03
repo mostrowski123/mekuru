@@ -15,13 +15,15 @@ void main() {
       isIos: isIos,
     );
 
-    test('an accepted self-signed certificate downloads in the app', () {
-      for (final isIos in [true, false]) {
-        expect(
-          route('https://192.168.1.5/f', allowSelfSigned: true, isIos: isIos),
-          ServerDownloadRoute.inApp,
-        );
-      }
+    test('an accepted self-signed certificate downloads with Dart', () {
+      expect(
+        route('https://192.168.1.5/f', allowSelfSigned: true),
+        ServerDownloadRoute.inApp,
+      );
+      expect(
+        route('https://192.168.1.5/f', allowSelfSigned: true, isIos: false),
+        ServerDownloadRoute.worker,
+      );
     });
 
     test('iOS downloads plain http to a domain name in the app', () {

@@ -1,9 +1,13 @@
 import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:workmanager/workmanager.dart';
 
 import '../models/remote_models.dart';
 import 'server_download_route.dart';
+import 'server_download_work.dart';
 
 /// Exception for any failed server interaction. [statusCode] is 0 for
 /// network-level failures (timeout, refused connection).
@@ -35,6 +39,13 @@ Future<void> cancelServerDownloads() async {
   // Host-side tests have no background downloader.
   if (!Platform.isAndroid && !Platform.isIOS) return;
   await FileDownloader().cancelAll(group: serverDownloadGroup);
+  if (Platform.isAndroid) {
+    await Workmanager().cancelByTag(serverDownloadWorkTag);
+    final support = await getApplicationSupportDirectory();
+    await deleteServerDownloadWorkDirs(
+      p.join(support.path, serverDownloadsDir),
+    );
+  }
 }
 
 /// The full surface Mekuru needs from a Komga/Kavita server: connection
