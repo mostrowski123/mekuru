@@ -60,6 +60,38 @@ void main() {
     );
   }
 
+  group('a manga without pages is refused, not imported empty', () {
+    // An empty book used to reach the library (MEKURU-1R, 2026-10-01).
+    final noPages = throwsA(
+      isA<Exception>().having((e) => '$e', 'message', contains('No pages')),
+    );
+
+    test('a CBZ without images', () async {
+      final cbzPath = await createCbz('no_images', {
+        'notes.txt': utf8.encode('not a page'),
+      });
+
+      await expectLater(repo.importCbz(cbzPath), noPages);
+      expect(await db.select(db.books).get(), isEmpty);
+    });
+
+    test('a .mokuro file without usable pages', () async {
+      final mokuroPath = p.join(tempDir.path, 'Volume.mokuro');
+      await File(mokuroPath).writeAsString(
+        jsonEncode({
+          'title': 'Volume',
+          'volume': 'Volume',
+          'pages': [
+            {'img_width': 1000, 'img_height': 1500, 'blocks': []},
+          ],
+        }),
+      );
+
+      await expectLater(repo.importMangaFromFile(mokuroPath), noPages);
+      expect(await db.select(db.books).get(), isEmpty);
+    });
+  });
+
   group('BookRepository.importCbz', () {
     test('each page keeps its own dimensions after the natural sort', () async {
       // The archive order, the natural-sorted order, and the sizes are all
