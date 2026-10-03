@@ -1,18 +1,27 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
 
-Future<void> pumpEmptyLibrary(WidgetTester tester) async {
+Future<void> pumpEmptyLibrary(
+  WidgetTester tester, {
+  List<Override> overrides = const [],
+}) async {
   SharedPreferences.setMockInitialValues({});
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [booksProvider.overrideWith((ref) => Stream.value(<Book>[]))],
+      overrides: [
+        booksProvider.overrideWith((ref) => Stream.value(<Book>[])),
+        ...overrides,
+      ],
       child: buildLocalizedTestApp(home: const LibraryScreen()),
     ),
   );
@@ -28,6 +37,22 @@ void main() {
     expect(find.text('Import Manga'), findsOneWidget);
     expect(find.text('Get Dictionaries'), findsOneWidget);
     expect(find.text('Restore Backup'), findsOneWidget);
+  });
+
+  testWidgets('Get Dictionaries starts the starter pack and opens Downloads', (
+    tester,
+  ) async {
+    final started = <String>[];
+    await pumpEmptyLibrary(
+      tester,
+      overrides: fakeDownloadNotifierOverrides(started),
+    );
+
+    await tester.tap(find.text('Get Dictionaries'));
+    await tester.pumpAndSettle();
+
+    expect(started, unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']));
+    expect(find.byType(DownloadsScreen), findsOneWidget);
   });
 
   testWidgets('import manga opens the type picker with Mokuro guidance', (

@@ -1,10 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
@@ -14,10 +11,10 @@ import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_provid
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
-import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen listing all downloadable assets (dictionaries, kanji data, etc.).
@@ -53,100 +50,15 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     final kanjidicState = ref.watch(kanjidicProvider);
     final enhancedFuriganaState = ref.watch(enhancedFuriganaDictProvider);
     final theme = Theme.of(context);
-    final starterPackReady = jmdictState.isImported && jpdbFreqState.isImported;
-    final starterPackBusy =
-        jmdictState.isDownloading || jpdbFreqState.isDownloading;
-    final hasDictionarySuccess =
-        jmdictState.successMessage != null ||
-        kanjidicState.successMessage != null;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.downloadsTitle)),
       body: ListView(
         children: [
           // ── Dictionaries ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.downloadsRecommendedStarterPackTitle,
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.downloadsRecommendedStarterPackSubtitle,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _StarterPackStatusRow(
-                    label: l10n.downloadsStarterPackJmdict,
-                    isReady: jmdictState.isImported,
-                  ),
-                  const SizedBox(height: 8),
-                  _StarterPackStatusRow(
-                    label: l10n.downloadsStarterPackWordFrequency,
-                    isReady: jpdbFreqState.isImported,
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: starterPackBusy
-                            ? null
-                            : () {
-                                AppHaptics.light();
-                                if (starterPackReady) {
-                                  Navigator.of(context).push(
-                                    namedRoute(
-                                      'dictionary_search',
-                                      (_) => const DictionarySearchScreen(),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                _installStarterPack();
-                              },
-                        icon: Icon(
-                          starterPackReady
-                              ? Icons.search
-                              : Icons.download_outlined,
-                        ),
-                        label: Text(
-                          starterPackReady
-                              ? l10n.commonOpenDictionary
-                              : l10n.downloadsInstallStarterPack,
-                        ),
-                      ),
-                      if (hasDictionarySuccess && !starterPackReady)
-                        OutlinedButton(
-                          onPressed: () {
-                            AppHaptics.light();
-                            Navigator.of(context).push(
-                              namedRoute(
-                                'dictionary_search',
-                                (_) => const DictionarySearchScreen(),
-                              ),
-                            );
-                          },
-                          child: Text(l10n.commonOpenDictionary),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: StarterPackCard(showProgress: false),
           ),
           SettingsSectionHeader(title: l10n.downloadsSectionDictionaries),
 
@@ -332,21 +244,6 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
       ),
     );
   }
-
-  void _installStarterPack() {
-    // Start both imports right away so they can continue even if the user
-    // leaves this screen before the downloads finish.
-    if (!ref.read(jmdictProvider).isImported) {
-      unawaited(
-        ref
-            .read(jmdictProvider.notifier)
-            .download(YomitanDictType.jmdictEnglish),
-      );
-    }
-    if (!ref.read(jpdbFreqProvider).isImported) {
-      unawaited(ref.read(jpdbFreqProvider.notifier).download());
-    }
-  }
 }
 
 // ── Shared helper widgets ──
@@ -462,31 +359,6 @@ class _AttributionText extends StatelessWidget {
           TextSpan(text: suffix),
         ],
       ),
-    );
-  }
-}
-
-class _StarterPackStatusRow extends StatelessWidget {
-  const _StarterPackStatusRow({required this.label, required this.isReady});
-
-  final String label;
-  final bool isReady;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Icon(
-          isReady ? Icons.check_circle : Icons.radio_button_unchecked,
-          size: 18,
-          color: isReady
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 8),
-        Text(label, style: theme.textTheme.bodyMedium),
-      ],
     );
   }
 }

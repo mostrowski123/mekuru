@@ -11,10 +11,12 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_query_servic
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
 
 DictionaryEntry _buildEntry({
@@ -156,6 +158,33 @@ void main() {
     expect(find.text('Enable dictionaries'), findsOneWidget);
     expect(find.text('Starter pack'), findsOneWidget);
   });
+
+  testWidgets(
+    'the starter pack button installs in one tap and opens Downloads',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final started = <String>[];
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            dictionariesProvider.overrideWith((ref) => Stream.value(const [])),
+            ...fakeDownloadNotifierOverrides(started),
+          ],
+          child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Recommended starter pack'));
+      await tester.pumpAndSettle();
+
+      expect(
+        started,
+        unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']),
+      );
+      expect(find.byType(DownloadsScreen), findsOneWidget);
+    },
+  );
 
   testWidgets('renders part-of-speech labels in dictionary search results', (
     tester,

@@ -11,6 +11,7 @@ import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manag
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_stroke_order.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
@@ -459,7 +460,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
               runSpacing: 12,
               children: [
                 FilledButton.icon(
-                  onPressed: _openDownloads,
+                  onPressed: _installStarterPack,
                   icon: const Icon(Icons.download_outlined),
                   label: Text(l10n.dictionaryRecommendedStarterPack),
                 ),
@@ -516,7 +517,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
                   label: Text(l10n.dictionaryEnableDictionaries),
                 ),
                 OutlinedButton.icon(
-                  onPressed: _openDownloads,
+                  onPressed: _installStarterPack,
                   icon: const Icon(Icons.download_outlined),
                   label: Text(l10n.dictionaryStarterPack),
                 ),
@@ -730,6 +731,12 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
     Navigator.of(context).push(
       namedRoute('dictionary_manager', (_) => const DictionaryManagerScreen()),
     );
+  }
+
+  /// One tap starts the starter pack; Downloads shows its progress.
+  void _installStarterPack() {
+    unawaited(installStarterPack(context));
+    _openDownloads();
   }
 
   void _openDownloads() {

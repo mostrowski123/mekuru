@@ -28,6 +28,8 @@ class JpdbFreqDownloadService {
   }
 
   /// Download the JPDB frequency dictionary and import it into the database.
+  /// Does nothing when it is already imported, so a tap that beats a
+  /// screen's status check can't add a second copy.
   ///
   /// [onProgress] is called with a value between 0.0 and 1.0.
   /// - 0.0–0.7: download phase
@@ -38,6 +40,7 @@ class JpdbFreqDownloadService {
     required DictionaryImporter importer,
     void Function(double progress)? onProgress,
   }) async {
+    if (await isImported(repository)) return;
     final stopwatch = Stopwatch()..start();
     try {
       await _downloadAndImport(

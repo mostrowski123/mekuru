@@ -36,6 +36,7 @@ import 'package:mekuru/features/reader/presentation/widgets/highlights_sheet.dar
 import 'package:mekuru/features/manga/presentation/widgets/ocr_progress_overlay.dart';
 import 'package:mekuru/features/backup/presentation/screens/backup_settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -402,9 +403,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     icon: const Icon(Icons.photo_library),
                     label: Text(l10n.libraryImportManga),
                   ),
+                  // One tap installs the starter pack; Downloads shows the
+                  // progress.
                   OutlinedButton.icon(
                     onPressed: () {
                       AppHaptics.light();
+                      unawaited(installStarterPack(context));
                       Navigator.of(context).push(
                         namedRoute('downloads', (_) => const DownloadsScreen()),
                       );

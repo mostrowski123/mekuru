@@ -13,13 +13,11 @@ import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.da
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../shared/fake_download_notifiers.dart';
 
 class _FreeClient implements LocalOcrClient {
   final List<OcrJobSpec> started = [];
@@ -41,28 +39,6 @@ class _FreeClient implements LocalOcrClient {
       'pages': spec.pages,
     });
   }
-}
-
-// DownloadsScreen.initState calls checkStatus() on the asset notifiers, which
-// touches the file system; the fakes keep it idle when startOcr pushes it.
-class _FakeJmdictNotifier extends JmdictNotifier {
-  @override
-  Future<void> checkStatus() async {}
-}
-
-class _FakeJpdbFreqNotifier extends JpdbFreqNotifier {
-  @override
-  Future<void> checkStatus() async {}
-}
-
-class _FakeKanjidicNotifier extends KanjidicNotifier {
-  @override
-  Future<void> checkStatus() async {}
-}
-
-class _FakeKanjiVgNotifier extends KanjiVgNotifier {
-  @override
-  Future<void> checkStatus() async {}
 }
 
 void main() {
@@ -147,10 +123,10 @@ void main() {
             ),
           ),
           localOcrJobsProvider.overrideWith((ref) => Stream.value(const [])),
-          jmdictProvider.overrideWith(_FakeJmdictNotifier.new),
-          jpdbFreqProvider.overrideWith(_FakeJpdbFreqNotifier.new),
-          kanjidicProvider.overrideWith(_FakeKanjidicNotifier.new),
-          kanjiVgProvider.overrideWith(_FakeKanjiVgNotifier.new),
+          // DownloadsScreen.initState calls checkStatus() on the asset
+          // notifiers, which touches the file system; the fakes keep it idle
+          // when startOcr pushes it.
+          ...fakeDownloadNotifierOverrides(<String>[]),
           ocrProgressProvider(1).overrideWith((ref) => Stream.value(progress)),
         ],
         child: MaterialApp(

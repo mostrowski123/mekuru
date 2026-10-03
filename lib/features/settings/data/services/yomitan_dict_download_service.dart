@@ -76,7 +76,9 @@ class YomitanDictDownloadService {
     return null;
   }
 
-  /// Fetch the latest release, download the ZIP, and import it.
+  /// Fetch the latest release, download the ZIP, and import it. Does
+  /// nothing when this type is already imported, so a tap that beats a
+  /// screen's status check can't add a second copy.
   ///
   /// [onProgress] is called with a value between 0.0 and 1.0:
   /// - 0.0–0.70: downloading ZIP
@@ -88,6 +90,7 @@ class YomitanDictDownloadService {
     required DictionaryImporter importer,
     void Function(double progress)? onProgress,
   }) async {
+    if (await isImported(type, repository)) return;
     final stopwatch = Stopwatch()..start();
     try {
       await _downloadAndImport(
