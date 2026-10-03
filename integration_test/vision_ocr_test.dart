@@ -31,10 +31,12 @@ void main() {
     ],
   );
 
-  /// Pumps a white page with two vertical columns and returns it as a PNG.
+  /// Pumps a white page with vertical [columns] (two by default) and
+  /// returns it as a PNG.
   Future<({List<int> png, int width, int height})> drawPage(
-    WidgetTester tester,
-  ) async {
+    WidgetTester tester, {
+    List<String> columns = const ['今日は天気がいい', '散歩に行きましょう'],
+  }) async {
     final key = GlobalKey();
     await tester.pumpWidget(
       MaterialApp(
@@ -52,9 +54,10 @@ void main() {
                   textDirection: TextDirection.rtl,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    column('今日は天気がいい'),
-                    const SizedBox(width: 14),
-                    column('散歩に行きましょう'),
+                    for (final (i, text) in columns.indexed) ...[
+                      if (i > 0) const SizedBox(width: 14),
+                      column(text),
+                    ],
                   ],
                 ),
               ),
@@ -242,6 +245,62 @@ void main() {
       // Not null: the model ran, this is not the Vision fallback.
       expect(readings.direct, isNotNull);
       expect(readings.page, ['今日は天気がいい', '散歩に行きましょう']);
+    },
+  );
+
+  testWidgets(
+    'two manga-ocr reads at once each get their own page',
+    skip: !Platform.isIOS,
+    timeout: const Timeout(Duration(minutes: 20)),
+    (tester) async {
+      // Two books scanned at the same time read blocks concurrently, and the
+      // model keeps one encoder output: each read must see its own.
+      final first = await drawPage(tester, columns: ['今日は天気がいい']);
+      final second = await drawPage(tester, columns: ['散歩に行きましょう']);
+      List<VisionBlock> whole(({List<int> png, int width, int height}) d) => [
+        VisionBlock(
+          vertical: true,
+          lines: [
+            VisionLine(
+              left: 0,
+              top: 0,
+              right: d.width.toDouble(),
+              bottom: d.height.toDouble(),
+              text: 'x',
+            ),
+          ],
+        ),
+      ];
+      final readings = await tester.runAsync(() async {
+        if (!await MangaOcrIos.instance.installed) {
+          await MangaOcrIos.instance.download();
+        }
+        return Future.wait([
+          for (var i = 0; i < 3; i++) ...[
+            MangaOcrIos.instance.readBlocks(
+              Uint8List.fromList(first.png),
+              whole(first),
+            ),
+            MangaOcrIos.instance.readBlocks(
+              Uint8List.fromList(second.png),
+              whole(second),
+            ),
+          ],
+        ]);
+      });
+
+      // ignore: avoid_print
+      print('concurrent manga-ocr reads: $readings');
+      for (var i = 0; i < readings!.length; i++) {
+        final text = readings[i]!.expand((lines) => lines).join();
+        if (i.isEven) {
+          expect(text, contains('天気'), reason: 'read $i');
+          expect(text, isNot(contains('散歩')), reason: 'read $i');
+        } else {
+          expect(text, contains('散歩'), reason: 'read $i');
+          expect(text, isNot(contains('天気')), reason: 'read $i');
+        }
+      }
     },
   );
 

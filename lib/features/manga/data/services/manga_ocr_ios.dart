@@ -98,7 +98,8 @@ class MangaOcrIos {
   }
 
   Future<void> remove() async {
-    await _channel.invokeMethod('mangaOcrUnload');
+    // Not while a block is being read.
+    await _oneAtATime(() => _channel.invokeMethod<void>('mangaOcrUnload'));
     _vocab = null;
     final dir = await _dir();
     if (await dir.exists()) await dir.delete(recursive: true);
@@ -125,10 +126,10 @@ class MangaOcrIos {
       final vocab = _vocab ??= await File(
         p.join(dir, 'vocab.txt'),
       ).readAsLines();
-      await _channel.invokeMethod('mangaOcrLoad', {
+      final models = {
         'encoder': p.join(dir, 'encoder_model_fp16.onnx'),
         'decoder': p.join(dir, 'decoder_model_int8.onnx'),
-      });
+      };
 
       // Decoded by ImageIO on the CPU, not dart:ui, which may need the GPU:
       // iOS refuses that while a scan runs in the background.
@@ -144,6 +145,7 @@ class MangaOcrIos {
       final out = <List<String>>[];
       for (final block in blocks) {
         final whole = await _read(
+          models,
           OcrPixels.modelInput(
             rgba,
             width,
@@ -168,18 +170,38 @@ class MangaOcrIos {
     }
   }
 
-  Future<String> _read(Float32List pixels, List<String> vocab) async {
-    await _channel.invokeMethod('mangaOcrEncode', pixels);
-    final ids = [MangaOcrDecode.bos];
-    while (ids.length < MangaOcrDecode.maxTokens) {
-      final logits = await _channel.invokeMethod<Float32List>(
-        'mangaOcrStep',
-        ids,
-      );
-      final next = MangaOcrDecode.next(logits!, ids);
-      if (next == MangaOcrDecode.eos) break;
-      ids.add(next);
-    }
+  /// The native model keeps one encoder output, which every decode step
+  /// reads. Two scans (two books) read blocks at the same time, so each
+  /// block's load, encode and decode steps take one turn here, and another
+  /// read's encode can't land in the middle of them.
+  Future<void> _turn = Future.value();
+
+  Future<T> _oneAtATime<T>(Future<T> Function() action) {
+    final result = _turn.then((_) => action());
+    _turn = result.then<void>((_) {}, onError: (_) {});
+    return result;
+  }
+
+  Future<String> _read(
+    Map<String, String> models,
+    Float32List pixels,
+    List<String> vocab,
+  ) async {
+    final ids = await _oneAtATime(() async {
+      await _channel.invokeMethod('mangaOcrLoad', models);
+      await _channel.invokeMethod('mangaOcrEncode', pixels);
+      final ids = [MangaOcrDecode.bos];
+      while (ids.length < MangaOcrDecode.maxTokens) {
+        final logits = await _channel.invokeMethod<Float32List>(
+          'mangaOcrStep',
+          ids,
+        );
+        final next = MangaOcrDecode.next(logits!, ids);
+        if (next == MangaOcrDecode.eos) break;
+        ids.add(next);
+      }
+      return ids;
+    });
     final text = StringBuffer();
     for (final id in ids) {
       if (id < _specialTokens || id >= vocab.length) continue;
