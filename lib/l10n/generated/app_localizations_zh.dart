@@ -119,6 +119,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryEmptySubtitle => '导入一些可阅读的内容，安装词典，几分钟内就可以开始保存单词。';
 
   @override
+  String get libraryFreeBooksTip =>
+      '提示：在青空文库可以找到免费的日语书籍。下载 EPUB 格式后，点击“导入EPUB”即可。';
+
+  @override
+  String get libraryFreeBooksLink => '浏览免费书籍';
+
+  @override
   String get libraryImportEpub => '导入EPUB';
 
   @override
@@ -3355,6 +3362,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryEmptySubtitle => '导入一些可阅读的内容，安装词典，几分钟内就可以开始保存单词。';
+
+  @override
+  String get libraryFreeBooksTip =>
+      '提示：在青空文库可以找到免费的日语书籍。下载 EPUB 格式后，点击“导入EPUB”即可。';
+
+  @override
+  String get libraryFreeBooksLink => '浏览免费书籍';
 
   @override
   String get libraryImportEpub => '导入EPUB';

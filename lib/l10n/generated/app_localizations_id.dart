@@ -120,6 +120,13 @@ class AppLocalizationsId extends AppLocalizations {
       'Impor sesuatu untuk dibaca, pasang kamus, dan Anda akan siap menyimpan kata dalam beberapa menit.';
 
   @override
+  String get libraryFreeBooksTip =>
+      'Tips: temukan buku Jepang gratis di Aozora Bunko. Unduh satu dalam format EPUB, lalu ketuk \"Impor EPUB\".';
+
+  @override
+  String get libraryFreeBooksLink => 'Jelajahi buku gratis';
+
+  @override
   String get libraryImportEpub => 'Impor EPUB';
 
   @override

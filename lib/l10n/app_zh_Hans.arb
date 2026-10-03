@@ -151,6 +151,14 @@
   "@libraryEmptySubtitle": {
     "description": "Description shown when the library has no books."
   },
+  "libraryFreeBooksTip": "提示：在青空文库可以找到免费的日语书籍。下载 EPUB 格式后，点击“导入EPUB”即可。",
+  "@libraryFreeBooksTip": {
+    "description": "Tip under the empty library's buttons pointing to free public-domain Japanese EPUBs (Aozora Bunko works). Quotes the Import EPUB button label."
+  },
+  "libraryFreeBooksLink": "浏览免费书籍",
+  "@libraryFreeBooksLink": {
+    "description": "Link button under the free-books tip that opens a website of free Japanese EPUBs."
+  },
   "libraryImportEpub": "导入EPUB",
   "@libraryImportEpub": {
     "description": "Button label to import an EPUB file."

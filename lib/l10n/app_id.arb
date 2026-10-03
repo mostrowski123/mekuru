@@ -151,6 +151,14 @@
   "@libraryEmptySubtitle": {
     "description": "Description shown when the library has no books."
   },
+  "libraryFreeBooksTip": "Tips: temukan buku Jepang gratis di Aozora Bunko. Unduh satu dalam format EPUB, lalu ketuk \"Impor EPUB\".",
+  "@libraryFreeBooksTip": {
+    "description": "Tip under the empty library's buttons pointing to free public-domain Japanese EPUBs (Aozora Bunko works). Quotes the Import EPUB button label."
+  },
+  "libraryFreeBooksLink": "Jelajahi buku gratis",
+  "@libraryFreeBooksLink": {
+    "description": "Link button under the free-books tip that opens a website of free Japanese EPUBs."
+  },
   "libraryImportEpub": "Impor EPUB",
   "@libraryImportEpub": {
     "description": "Button label to import an EPUB file."

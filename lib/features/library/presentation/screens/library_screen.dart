@@ -11,6 +11,7 @@ import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
 import 'package:flutter/services.dart' show MethodChannel, PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
+import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -430,6 +431,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     label: Text(l10n.libraryRestoreBackup),
                   ),
                 ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                l10n.libraryFreeBooksTip,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  logUsage('library.free_books_opened');
+                  launchUrl(
+                    AppLinks.freeJapaneseBooks,
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+                icon: const Icon(Icons.open_in_new),
+                label: Text(l10n.libraryFreeBooksLink),
               ),
             ],
           ),

@@ -37,6 +37,7 @@ void main() {
     expect(find.text('Import Manga'), findsOneWidget);
     expect(find.text('Get Dictionaries'), findsOneWidget);
     expect(find.text('Restore Backup'), findsOneWidget);
+    expect(find.text('Browse free books'), findsOneWidget);
   });
 
   testWidgets('Get Dictionaries starts the starter pack and opens Downloads', (

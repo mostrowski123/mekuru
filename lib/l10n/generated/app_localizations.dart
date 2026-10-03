@@ -301,6 +301,18 @@ abstract class AppLocalizations {
   /// **'Import something to read, install a dictionary, and you will be ready to save words in a few minutes.'**
   String get libraryEmptySubtitle;
 
+  /// Tip under the empty library's buttons pointing to free public-domain Japanese EPUBs (Aozora Bunko works). Quotes the Import EPUB button label.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Find free Japanese books on Aozora Bunko. Download one as EPUB, then tap \"Import EPUB\".'**
+  String get libraryFreeBooksTip;
+
+  /// Link button under the free-books tip that opens a website of free Japanese EPUBs.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse free books'**
+  String get libraryFreeBooksLink;
+
   /// Button label to import an EPUB file.
   ///
   /// In en, this message translates to:

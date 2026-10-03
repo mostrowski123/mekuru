@@ -121,6 +121,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Importa algo para leer, instala un diccionario y podrás guardar palabras en unos minutos.';
 
   @override
+  String get libraryFreeBooksTip =>
+      'Consejo: encuentra libros japoneses gratis en Aozora Bunko. Descarga uno en EPUB y luego toca \"Importar EPUB\".';
+
+  @override
+  String get libraryFreeBooksLink => 'Ver libros gratis';
+
+  @override
   String get libraryImportEpub => 'Importar EPUB';
 
   @override
