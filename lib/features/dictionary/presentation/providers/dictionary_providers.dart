@@ -38,6 +38,13 @@ final dictionariesProvider = StreamProvider<List<DictionaryMeta>>((ref) {
   return ref.watch(dictionaryRepositoryProvider).watchVisibleDictionaries();
 });
 
+/// True once the visible dictionary list has loaded and is empty, which is
+/// when the app offers the starter pack. The hidden JPDB frequency data
+/// doesn't count; false while the list loads.
+final noDictionariesProvider = Provider<bool>(
+  (ref) => ref.watch(dictionariesProvider).value?.isEmpty ?? false,
+);
+
 // ──────────────── Import State ────────────────
 
 /// State for dictionary import progress.

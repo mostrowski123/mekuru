@@ -34,6 +34,15 @@ DictionaryEntry _buildEntry({
   );
 }
 
+final _jmdict = DictionaryMeta(
+  id: 1,
+  name: 'JMdict',
+  isEnabled: true,
+  dateImported: DateTime(2026, 10, 3),
+  sortOrder: 0,
+  isHidden: false,
+);
+
 class _FakeDictionaryQueryService extends DictionaryQueryService {
   _FakeDictionaryQueryService(super.db, {required this.lookupResultsByTerm});
 
@@ -85,6 +94,7 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           dictionaryQueryServiceProvider.overrideWithValue(service),
+          dictionariesProvider.overrideWith((ref) => Stream.value([_jmdict])),
         ],
         child: buildLocalizedTestApp(
           home: const Scaffold(
@@ -143,6 +153,7 @@ void main() {
           overrides: [
             databaseProvider.overrideWithValue(db),
             dictionaryQueryServiceProvider.overrideWithValue(service),
+            dictionariesProvider.overrideWith((ref) => Stream.value([_jmdict])),
           ],
           child: buildLocalizedTestApp(
             home: Scaffold(
@@ -167,5 +178,54 @@ void main() {
     expect(find.text('to eat'), findsNothing);
     expect(find.text('to run'), findsOneWidget);
     expect(service.pitchAccentQueries, ['食べる', '走る']);
+  });
+
+  group('when the lookup finds nothing', () {
+    Future<void> pumpEmptyLookup(
+      WidgetTester tester, {
+      required List<DictionaryMeta> dictionaries,
+    }) async {
+      SharedPreferences.setMockInitialValues({});
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(
+              _FakeDictionaryQueryService(db, lookupResultsByTerm: const {}),
+            ),
+            dictionariesProvider.overrideWith(
+              (ref) => Stream.value(dictionaries),
+            ),
+          ],
+          child: buildLocalizedTestApp(
+            home: const Scaffold(
+              body: SizedBox.expand(child: LookupSheet(selectedText: '猫')),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('offers the starter pack when no dictionary is installed', (
+      tester,
+    ) async {
+      await pumpEmptyLookup(tester, dictionaries: const []);
+
+      expect(find.text('No dictionaries imported'), findsOneWidget);
+      expect(find.text('Install Starter Pack'), findsOneWidget);
+    });
+
+    testWidgets('says so plainly when dictionaries are installed', (
+      tester,
+    ) async {
+      await pumpEmptyLookup(tester, dictionaries: [_jmdict]);
+
+      expect(find.text('No results found.'), findsOneWidget);
+      expect(find.text('Install Starter Pack'), findsNothing);
+    });
   });
 }

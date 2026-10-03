@@ -8,6 +8,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
@@ -90,7 +91,9 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     return trimmed;
   }
 
-  void _refreshLookupFutures(String primarySearchTerm) {
+  /// Looks up the user's edit if there is one, else the tapped text.
+  void _refreshLookupFutures() {
+    final primarySearchTerm = _editedText ?? widget.selectedText;
     _searchResultsFuture = _search(primarySearchTerm, widget.surfaceForm);
     _pitchAccentsFuture = _searchPitchAccents(
       primarySearchTerm,
@@ -103,8 +106,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     super.initState();
     _editController = TextEditingController();
     _editedText = _normalizeEditedText(widget.initialEditedText);
-    final primarySearchTerm = _editedText ?? widget.selectedText;
-    _refreshLookupFutures(primarySearchTerm);
+    _refreshLookupFutures();
 
     final onLookupResolved = widget.onLookupResolved;
     if (onLookupResolved != null) {
@@ -129,8 +131,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
 
     _isEditing = false;
     _editedText = _normalizeEditedText(widget.initialEditedText);
-    final primarySearchTerm = _editedText ?? widget.selectedText;
-    _refreshLookupFutures(primarySearchTerm);
+    _refreshLookupFutures();
   }
 
   @override
@@ -193,7 +194,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     setState(() {
       _isEditing = false;
       _editedText = trimmedValue;
-      _refreshLookupFutures(trimmedValue);
+      _refreshLookupFutures();
     });
     widget.onTermSubmitted?.call(trimmedValue);
     widget.onEditingEnded?.call();
@@ -201,6 +202,11 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Look the word up again when the first dictionary lands, so installing
+    // the starter pack from this sheet resolves the word in place.
+    ref.listen(noDictionariesProvider, (wasEmpty, isEmpty) {
+      if (wasEmpty == true && !isEmpty) setState(_refreshLookupFutures);
+    });
     if (widget.showAtTop) {
       return _buildTopSheet(context);
     }
@@ -376,6 +382,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     ScrollController? scrollController,
   ) {
     final fontSize = ref.watch(lookupFontSizeProvider);
+    final noDictionaries = ref.watch(noDictionariesProvider);
 
     return FutureBuilder<List<DictionaryEntryWithSource>>(
       future: _searchResultsFuture,
@@ -391,6 +398,23 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
           );
         }
         final results = snapshot.data ?? [];
+        if (results.isEmpty && noDictionaries) {
+          return SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.dictionaryNoDictionariesTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                const StarterPackCard(),
+              ],
+            ),
+          );
+        }
         if (results.isEmpty) {
           return Center(child: Text(context.l10n.dictionaryNoResultsFound));
         }
