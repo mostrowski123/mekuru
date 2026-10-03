@@ -25,6 +25,32 @@ import onnxruntime_objc
     BackgroundWorkBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
 
+  /// `decodeRgba`: a page as 8-bit RGBA (`{width, height, rgba}`), decoded on
+  /// the CPU with ImageIO like `recognizeLines` does, for manga-ocr's crops.
+  /// dart:ui's decoder may need the GPU, which iOS refuses while a scan runs
+  /// in the background.
+  nonisolated static func decodeRgba(_ data: Data) -> Any? {
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+      let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+      let space = CGColorSpace(name: CGColorSpace.sRGB)
+    else { return nil }
+    let width = image.width
+    let height = image.height
+    var pixels = Data(count: width * height * 4)
+    let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+      guard
+        let context = CGContext(
+          data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+          bytesPerRow: width * 4, space: space,
+          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+      else { return false }
+      context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+      return true
+    }
+    guard drawn else { return nil }
+    return ["width": width, "height": height, "rgba": FlutterStandardTypedData(bytes: pixels)]
+  }
+
   /// `mekuru/vision_ocr`: the text lines Apple Vision finds and reads on one
   /// manga page, as `{width, height, lines: [{box: [x0, y0, x1, y1], text}]}`
   /// in page pixels from the top-left. Dart groups the lines into blocks
@@ -36,6 +62,15 @@ import onnxruntime_objc
       .setMethodCallHandler { call, result in
         if call.method.hasPrefix("mangaOcr") {
           MangaOcrModel.shared.handle(call, result: result)
+          return
+        }
+        if call.method == "decodeRgba",
+          let bytes = (call.arguments as? FlutterStandardTypedData)?.data
+        {
+          Task.detached(priority: .userInitiated) {
+            let reply = AppDelegate.decodeRgba(bytes)
+            DispatchQueue.main.async { result(reply) }
+          }
           return
         }
         guard call.method == "recognizeLines",

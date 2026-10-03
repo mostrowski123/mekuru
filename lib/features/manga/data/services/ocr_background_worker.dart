@@ -9,10 +9,10 @@ import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:path/path.dart' as p;
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../../../core/platform/android_saf_service.dart';
+import '../../../../core/services/background_work.dart';
 import '../../../../core/services/firebase_runtime.dart';
 import '../../../../core/services/server_http_client.dart';
 import '../../../../core/services/sentry_setup.dart';
@@ -151,9 +151,8 @@ class OcrProgress {
   }
 }
 
-/// Top-level callback dispatcher for WorkManager: remote OCR scans and, on
-/// Android, server book downloads that background_downloader can't make
-/// (see `server_download_work.dart`). Must be a top-level function (not a
+/// Top-level callback dispatcher for WorkManager: remote OCR scans and
+/// server book downloads (see `server_download_work.dart`). Must be a top-level function (not a
 /// method or closure); its name is what queued jobs look up, so keep it.
 @pragma('vm:entry-point')
 void ocrWorkerCallbackDispatcher() {
@@ -603,6 +602,12 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
           avgSecondsPerPage: avgSeconds,
         ),
       );
+      if (total > 0) {
+        BackgroundWork.instance.progress(
+          'ocr:$bookId',
+          (startingCompleted + completed) / total,
+        );
+      }
     }
 
     Future<bool> failWithError(String errorMessage, Object error) async {
@@ -640,8 +645,6 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
         return true;
       }
 
-      // A reader closed mid-scan turns the wakelock off; take it back.
-      if (inputData['keepAwake'] == true) await WakelockPlus.enable();
       final page = mokuroBook.pages[pageIndex];
       final imageBytes = await _readOcrPageImageBytes(
         mokuroBook: mokuroBook,
@@ -804,6 +807,11 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
 
 /// Build a user-friendly error description from an OCR processing error.
 String _describeOcrError(Object error) {
+  if ('$error'.contains('CERTIFICATE_VERIFY_FAILED')) {
+    return "The OCR server's certificate isn't trusted. If it uses its own "
+        '(self-signed) certificate, turn on "Accept self-signed certificate" '
+        'in the custom OCR server settings.';
+  }
   if (error is OcrServerException) {
     final msg = error.message.toLowerCase();
     if (error.statusCode == 401) {
@@ -1231,11 +1239,17 @@ Future<void> scheduleOcrTask({
         await _clearActiveOcrJob(bookId);
       }
 
-      // A sleeping iPhone suspends the app and the scan with it.
-      final keepAwake = defaultTargetPlatform == TargetPlatform.iOS;
+      // On iOS a continued-processing task keeps the scan going after the
+      // user leaves Mekuru; if iOS or the user ends it, the scan pauses and
+      // can be resumed from the sheet like any paused scan.
+      final workId = 'ocr:$bookId';
+      BackgroundWork.instance.start(
+        workId,
+        BackgroundJobKind.scan,
+        onStopped: () => unawaited(cancelOcrTask(bookId)),
+      );
       unawaited(() async {
         try {
-          if (keepAwake) await WakelockPlus.enable();
           await _processOcrTask({
             'bookId': bookId,
             'cacheFilePath': cacheFilePath,
@@ -1244,7 +1258,6 @@ Future<void> scheduleOcrTask({
             'selectedPages': ?selectedPages,
             'replace': replace,
             'onDevice': onDevice,
-            'keepAwake': keepAwake,
             ...?jobId == null ? null : {'jobId': jobId},
             ...?reservedPages == null ? null : {'reservedPages': reservedPages},
           });
@@ -1258,11 +1271,26 @@ Future<void> scheduleOcrTask({
               context: ErrorDescription('while running in-process OCR'),
             ),
           );
+          // Don't leave the badge on "running" (the WorkManager path saves
+          // this in its dispatcher).
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            final last = OcrProgress.load(prefs, bookId);
+            await OcrProgress.save(
+              prefs,
+              bookId,
+              OcrProgress(
+                completed: last?.completed ?? 0,
+                total: last?.total ?? 0,
+                status: OcrStatus.failed,
+                errorMessage: _describeOcrError(error),
+              ),
+            );
+          } catch (_) {
+            // Best effort; launch resets a scan left running.
+          }
         } finally {
-          // ponytail: not reference-counted, so a reader opened during the
-          // scan loses its keep-awake when the scan ends; it takes it back the
-          // next time it opens.
-          if (keepAwake) await WakelockPlus.disable();
+          BackgroundWork.instance.finish(workId);
         }
       }());
       return;

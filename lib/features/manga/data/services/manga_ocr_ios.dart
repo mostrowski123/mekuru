@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -131,17 +130,24 @@ class MangaOcrIos {
         'decoder': p.join(dir, 'decoder_model_int8.onnx'),
       });
 
-      final codec = await ui.instantiateImageCodec(imageBytes);
-      final image = (await codec.getNextFrame()).image;
-      final rgba = (await image.toByteData())!.buffer.asUint8List();
+      // Decoded by ImageIO on the CPU, not dart:ui, which may need the GPU:
+      // iOS refuses that while a scan runs in the background.
+      final page = await _channel.invokeMapMethod<String, Object?>(
+        'decodeRgba',
+        imageBytes,
+      );
+      if (page == null) return null;
+      final width = page['width'] as int;
+      final height = page['height'] as int;
+      final rgba = page['rgba'] as Uint8List;
 
       final out = <List<String>>[];
       for (final block in blocks) {
         final whole = await _read(
           OcrPixels.modelInput(
             rgba,
-            image.width,
-            image.height,
+            width,
+            height,
             left: block.left.floor(),
             top: block.top.floor(),
             right: block.right.ceil(),
@@ -155,7 +161,6 @@ class MangaOcrIos {
           whole.isEmpty ? visionLines : splitAcrossLines(whole, visionLines),
         );
       }
-      image.dispose();
       return out;
     } catch (e) {
       debugPrint('[MangaOcrIos] falling back to Vision text: $e');
