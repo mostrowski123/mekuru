@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -106,8 +105,6 @@ void main() {
     );
     expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
     expect(find.text('Accept self-signed certificate'), findsOneWidget);
-    // Android downloads from such a server in the background.
-    expect(find.textContaining('keep Mekuru open'), findsNothing);
 
     await tester.tap(toggle);
     await tester.pump();
@@ -128,9 +125,9 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('on iOS the switch says to keep Mekuru open', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+  testWidgets('the self-signed switch shows only for an https URL', (
+    tester,
+  ) async {
     final db = createTestDatabase();
     addTearDown(db.close);
 
@@ -145,10 +142,22 @@ void main() {
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    expect(find.textContaining('keep Mekuru open'), findsOneWidget);
+    final toggle = find.byKey(
+      const ValueKey('server_dialog_allow_self_signed'),
+    );
+    final url = find.widgetWithText(TextField, 'Server URL');
+    expect(toggle, findsNothing);
+
+    await tester.enterText(url, 'http://nas.lan:25600');
+    await tester.pump();
+    expect(toggle, findsNothing);
+
+    await tester.enterText(url, 'https://nas.lan:25600');
+    await tester.pump();
+    expect(toggle, findsOneWidget);
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
-    debugDefaultTargetPlatformOverride = null;
   });
 }

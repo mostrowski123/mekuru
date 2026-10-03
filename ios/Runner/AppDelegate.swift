@@ -1,3 +1,4 @@
+import BackgroundTasks
 import Flutter
 import ImageIO
 import StoreKit
@@ -21,6 +22,7 @@ import onnxruntime_objc
     registerVisionOcrChannel(messenger: engineBridge.applicationRegistrar.messenger())
     registerSandboxRefundChannel(messenger: engineBridge.applicationRegistrar.messenger())
     FilesBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
+    BackgroundWorkBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
 
   /// `mekuru/vision_ocr`: the text lines Apple Vision finds and reads on one
@@ -319,5 +321,121 @@ final class FilesBridge: NSObject, UIDocumentPickerDelegate {
   func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
     pending?(exporting ? false : nil)
     pending = nil
+  }
+}
+
+/// `mekuru/background_work`: keeps Mekuru running after the user leaves it
+/// while work they started is in progress (server book downloads, OCR scans),
+/// as one iOS 26 `BGContinuedProcessingTask` at a time. The system shows its
+/// title, subtitle and progress in a Live Activity the user can cancel.
+///  - `begin({title, subtitle})`: submit a task; false if the system refused.
+///  - `update({completed, total, title, subtitle})`: report progress. The
+///    system ends tasks that report none first.
+///  - `end(success)`: complete the task.
+/// Calls Dart's `expired` when the system or the user ends the task early;
+/// the work must then stop. Swiping the app away ends it without a call.
+final class BackgroundWorkBridge {
+  static let shared = BackgroundWorkBridge()
+  private var channel: FlutterMethodChannel?
+  /// Identifier of the submitted task, until it ends.
+  private var identifier: String?
+  private var task: BGContinuedProcessingTask?
+  private var latest: (completed: Int64, total: Int64, title: String, subtitle: String)?
+
+  func register(messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "mekuru/background_work", binaryMessenger: messenger)
+    self.channel = channel
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self else { return result(nil) }
+      let args = call.arguments as? [String: Any] ?? [:]
+      switch call.method {
+      case "begin":
+        result(
+          self.begin(
+            title: args["title"] as? String ?? "",
+            subtitle: args["subtitle"] as? String ?? ""))
+      case "update":
+        self.latest = (
+          completed: (args["completed"] as? NSNumber)?.int64Value ?? 0,
+          total: max((args["total"] as? NSNumber)?.int64Value ?? 1, 1),
+          title: args["title"] as? String ?? "",
+          subtitle: args["subtitle"] as? String ?? ""
+        )
+        self.apply()
+        result(nil)
+      case "end":
+        self.end(success: call.arguments as? Bool ?? true)
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
+
+  private func begin(title: String, subtitle: String) -> Bool {
+    if identifier != nil { return true }
+    // Unique per task: one identifier can't get a second launch handler. The
+    // prefix is allowed by BGTaskSchedulerPermittedIdentifiers in Info.plist.
+    let bundle = Bundle.main.bundleIdentifier ?? "moe.matthew.mekuru"
+    let id = "\(bundle).work.\(UUID().uuidString)"
+    let registered = BGTaskScheduler.shared.register(forTaskWithIdentifier: id, using: .main) {
+      [weak self] task in
+      guard let task = task as? BGContinuedProcessingTask else { return }
+      self?.launched(task, id: id)
+    }
+    guard registered else { return false }
+    let request = BGContinuedProcessingTaskRequest(identifier: id, title: title, subtitle: subtitle)
+    // Start now or not at all (Apple's advice for this task type): the work
+    // itself has already started and carries on in the foreground anyway.
+    request.strategy = .fail
+    do {
+      try BGTaskScheduler.shared.submit(request)
+    } catch {
+      NSLog("[BackgroundWork] submit failed: \(error)")
+      return false
+    }
+    identifier = id
+    latest = (completed: 0, total: 1, title: title, subtitle: subtitle)
+    return true
+  }
+
+  private func launched(_ task: BGContinuedProcessingTask, id: String) {
+    // The work ended before the system started the task.
+    guard id == identifier else {
+      task.setTaskCompleted(success: true)
+      return
+    }
+    NSLog("[BackgroundWork] task started")
+    self.task = task
+    task.expirationHandler = { [weak self] in
+      DispatchQueue.main.async { self?.expired(task) }
+    }
+    apply()
+  }
+
+  private func apply() {
+    guard let task, let latest else { return }
+    task.progress.totalUnitCount = latest.total
+    task.progress.completedUnitCount = min(latest.completed, latest.total)
+    if task.title != latest.title || task.subtitle != latest.subtitle {
+      task.updateTitle(latest.title, subtitle: latest.subtitle)
+    }
+  }
+
+  private func expired(_ task: BGContinuedProcessingTask) {
+    guard task === self.task else { return }
+    NSLog("[BackgroundWork] task expired")
+    self.task = nil
+    identifier = nil
+    latest = nil
+    task.setTaskCompleted(success: false)
+    channel?.invokeMethod("expired", arguments: nil)
+  }
+
+  private func end(success: Bool) {
+    task?.setTaskCompleted(success: success)
+    task = nil
+    identifier = nil
+    latest = nil
   }
 }

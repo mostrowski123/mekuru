@@ -178,6 +178,14 @@ Future<Book> _linkedBook(
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  // Android runs every server download as a WorkManager job through the
+  // app's dispatcher; main() isn't run here, so set it up.
+  setUpAll(() async {
+    if (Platform.isAndroid) {
+      await Workmanager().initialize(ocrWorkerCallbackDispatcher);
+    }
+  });
+
   testWidgets('browse, download, and progress sync against a fake Komga', (
     tester,
   ) async {
@@ -221,7 +229,7 @@ void main() {
     final books = await client.listBooks(series.single);
     expect(books.single.format, RemoteBookFormat.imageArchive);
 
-    // ── Download through the background downloader and the real import ──
+    // ── Download (WorkManager on Android, in the app on iOS) and import ──
     final container = ProviderContainer(
       overrides: [databaseProvider.overrideWithValue(db)],
     );
@@ -376,12 +384,7 @@ void main() {
       final series = await client.listSeries(libraries.single.id);
       final books = await client.listBooks(series.single);
 
-      // background_downloader can't accept the certificate, so this
-      // downloads with Dart (a WorkManager job on Android, in the app on
-      // iOS), then imports like any other download.
-      if (Platform.isAndroid) {
-        await Workmanager().initialize(ocrWorkerCallbackDispatcher);
-      }
+      // The download trusts the server's certificate too.
       final container = ProviderContainer(
         overrides: [databaseProvider.overrideWithValue(db)],
       );

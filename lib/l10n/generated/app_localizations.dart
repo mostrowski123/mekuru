@@ -4258,12 +4258,6 @@ abstract class AppLocalizations {
   /// **'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents.'**
   String get serverDialogAllowSelfSignedSubtitle;
 
-  /// iOS variant of serverDialogAllowSelfSignedSubtitle: on iOS, downloads from such a server run inside the app, so the app must stay open.
-  ///
-  /// In en, this message translates to:
-  /// **'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents. Downloads from it run inside the app, so keep Mekuru open until they finish.'**
-  String get serverDialogAllowSelfSignedSubtitleIos;
-
   /// Result shown in the server connection dialog after a successful connection test.
   ///
   /// In en, this message translates to:
@@ -4360,11 +4354,35 @@ abstract class AppLocalizations {
   /// **'Download failed: {error}'**
   String serverBrowseDownloadFailed({required String error});
 
-  /// Snack bar shown when a server book download runs inside the app (not as a background download), so the user keeps the app open.
+  /// Snack bar after a server book download was stopped, by the user (e.g. from the system Live Activity) or by iOS.
   ///
   /// In en, this message translates to:
-  /// **'Downloading inside the app: keep Mekuru open until it finishes.'**
-  String get serverBrowseDownloadInApp;
+  /// **'Download stopped'**
+  String get serverBrowseDownloadStopped;
+
+  /// Error shown when a server's TLS certificate is rejected (e.g. self-signed with the switch off); names the switch that accepts it.
+  ///
+  /// In en, this message translates to:
+  /// **'The server\'s certificate isn\'t trusted. If it uses its own (self-signed) certificate, turn on \"Accept self-signed certificate\".'**
+  String get serverCertificateUntrusted;
+
+  /// iOS Live Activity text while server book downloads run in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Downloading 1 book} other{Downloading {count} books}}'**
+  String backgroundWorkDownloading({required int count});
+
+  /// iOS Live Activity text while OCR scans run in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Recognizing text in 1 book} other{Recognizing text in {count} books}}'**
+  String backgroundWorkScanning({required int count});
+
+  /// iOS Live Activity subtitle: how far the background work is.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% done'**
+  String backgroundWorkPercent({required int percent});
 
   /// Snackbar shown when tapping a server book marked as downloaded whose local copy has since been deleted.
   ///

@@ -31,3 +31,9 @@ http.Client serverHttpClient(String baseUrl, {required bool allowSelfSigned}) =>
     allowSelfSigned
     ? IOClient(serverIoClient(baseUrl, allowSelfSigned: true))
     : http.Client();
+
+/// Whether [error] is a TLS handshake that failed because the server's
+/// certificate isn't trusted (e.g. self-signed, with the switch off).
+bool isUntrustedCertificateError(Object error) =>
+    error is HandshakeException &&
+    '$error'.contains('CERTIFICATE_VERIFY_FAILED');

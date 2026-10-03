@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
@@ -236,6 +236,12 @@ class _ServerConnectionDialogState
 
   bool get _isNew => widget.existing == null;
 
+  /// The self-signed switch only matters (and only shows) for https.
+  bool get _isHttps =>
+      _urlController.text.trim().toLowerCase().startsWith('https://');
+
+  bool get _effectiveAllowSelfSigned => _isHttps && _allowSelfSigned;
+
   @override
   void initState() {
     super.initState();
@@ -286,7 +292,7 @@ class _ServerConnectionDialogState
       type: _type,
       baseUrl: url,
       getSecret: () => secret,
-      allowSelfSigned: _allowSelfSigned,
+      allowSelfSigned: _effectiveAllowSelfSigned,
     );
     try {
       await client.testConnection();
@@ -309,7 +315,9 @@ class _ServerConnectionDialogState
       if (mounted) {
         setState(() {
           _testOk = false;
-          _testResult = l10n.serverDialogConnectionFailed(error: '$e');
+          _testResult = isUntrustedCertificateError(e)
+              ? l10n.serverCertificateUntrusted
+              : l10n.serverDialogConnectionFailed(error: '$e');
         });
       }
     } finally {
@@ -337,7 +345,7 @@ class _ServerConnectionDialogState
           serverType: _type.storageValue,
           name: name,
           baseUrl: url,
-          allowSelfSignedCert: _allowSelfSigned,
+          allowSelfSignedCert: _effectiveAllowSelfSigned,
         );
         if (secret.isNotEmpty) await secrets.save(id, secret);
       } else {
@@ -346,7 +354,7 @@ class _ServerConnectionDialogState
           name: name,
           baseUrl: url,
           enabled: _enabled,
-          allowSelfSignedCert: _allowSelfSigned,
+          allowSelfSignedCert: _effectiveAllowSelfSigned,
         );
         // Blank secret keeps the stored one.
         if (secret.isNotEmpty) {
@@ -422,6 +430,8 @@ class _ServerConnectionDialogState
             TextField(
               controller: _urlController,
               keyboardType: TextInputType.url,
+              // Shows or hides the self-signed switch.
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 labelText: l10n.serverDialogUrlLabel,
                 hintText: l10n.serverDialogUrlHint,
@@ -439,22 +449,18 @@ class _ServerConnectionDialogState
                 hintText: _isNew ? null : l10n.serverDialogSecretKeepHint,
               ),
             ),
-            const SizedBox(height: 4),
-            SwitchListTile(
-              key: const ValueKey('server_dialog_allow_self_signed'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.serverDialogAllowSelfSigned),
-              // iOS downloads from such a server in the app, Android in the
-              // background (see serverDownloadRoute).
-              subtitle: Text(
-                defaultTargetPlatform == TargetPlatform.iOS
-                    ? l10n.serverDialogAllowSelfSignedSubtitleIos
-                    : l10n.serverDialogAllowSelfSignedSubtitle,
+            if (_isHttps) ...[
+              const SizedBox(height: 4),
+              SwitchListTile(
+                key: const ValueKey('server_dialog_allow_self_signed'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.serverDialogAllowSelfSigned),
+                subtitle: Text(l10n.serverDialogAllowSelfSignedSubtitle),
+                isThreeLine: true,
+                value: _allowSelfSigned,
+                onChanged: (value) => setState(() => _allowSelfSigned = value),
               ),
-              isThreeLine: true,
-              value: _allowSelfSigned,
-              onChanged: (value) => setState(() => _allowSelfSigned = value),
-            ),
+            ],
             if (!_isNew) ...[
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

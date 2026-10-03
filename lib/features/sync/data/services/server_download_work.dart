@@ -1,3 +1,10 @@
+/// Server book downloads, the same Dart code on both platforms: an Android
+/// WorkManager job runs [runServerDownloadWork], and iOS runs it in the app
+/// (kept going in the background by `BackgroundWork`). It speaks http and
+/// https, trusts a self-signed certificate the user accepted for that one
+/// server, and continues a partial file after an interruption.
+library;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,24 +12,30 @@ import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:path/path.dart' as p;
 
-/// WorkManager task name of a server book download that runs Dart in the
-/// background on Android (see `ServerDownloadRoute.worker`).
+/// WorkManager task name of a server book download (Android).
 const serverDownloadTaskName = 'mekuru.server_download';
 
 /// Tag on every such task, so a full restore can cancel them all.
 const serverDownloadWorkTag = 'server_download';
 
-/// Folder-name prefix of worker downloads under `server_downloads/`.
-const serverDownloadWorkDirPrefix = 'worker_';
+/// Folder-name prefix of download folders under `server_downloads/`.
+const serverDownloadJobDirPrefix = 'job_';
 
-/// Delete every worker download folder under [downloadsRoot]. A running
-/// worker notices its folder is gone and ends.
-Future<void> deleteServerDownloadWorkDirs(String downloadsRoot) async {
+/// [ServerDownloadWorkStatus.error] of a download the user (or iOS) stopped.
+const serverDownloadStoppedError = 'stopped';
+
+/// [ServerDownloadWorkStatus.error] of a download whose server certificate
+/// was rejected: a self-signed one, with the switch off.
+const serverDownloadUntrustedCertificateError = 'untrusted_certificate';
+
+/// Delete every download folder under [downloadsRoot]. A running download
+/// notices its folder is gone and ends.
+Future<void> deleteServerDownloadJobDirs(String downloadsRoot) async {
   final root = Directory(downloadsRoot);
   if (!await root.exists()) return;
   await for (final entity in root.list()) {
     if (entity is Directory &&
-        p.basename(entity.path).startsWith(serverDownloadWorkDirPrefix)) {
+        p.basename(entity.path).startsWith(serverDownloadJobDirPrefix)) {
       try {
         await entity.delete(recursive: true);
       } catch (_) {
@@ -62,6 +75,15 @@ class ServerDownloadWorkStatus {
   });
 
   double? get progress => total > 0 ? received / total : null;
+
+  /// This status, ended with [error].
+  ServerDownloadWorkStatus failedWith(String error) => ServerDownloadWorkStatus(
+    state: ServerDownloadWorkState.failed,
+    received: received,
+    total: total,
+    failedAttempts: failedAttempts,
+    error: error,
+  );
 
   Map<String, dynamic> toJson() => {
     'state': state.name,
@@ -157,11 +179,14 @@ Map<String, dynamic> serverDownloadWorkInput({
   'allowSelfSigned': allowSelfSigned,
 };
 
-/// The worker side: download, resuming any partial file, and record the
-/// outcome in the folder's status. Returns true when WorkManager is done
-/// with the task (finished, failed for good, or cancelled), false to have it
-/// retried with backoff.
-Future<bool> runServerDownloadWork(Map<String, dynamic> input) async {
+/// Download, resuming any partial file, and record the outcome in the
+/// folder's status. Returns true when the download is over (finished, failed
+/// for good, or cancelled), false when it should be retried with backoff.
+/// [client] is the caller's, so it can cancel by closing it.
+Future<bool> runServerDownloadWork(
+  Map<String, dynamic> input, {
+  HttpClient? client,
+}) async {
   final dir = ServerDownloadWorkDir(input['dir'] as String);
   // A full restore deletes the folder to cancel.
   if (!Directory(dir.path).existsSync()) return true;
@@ -170,7 +195,7 @@ Future<bool> runServerDownloadWork(Map<String, dynamic> input) async {
   if (previous?.state == ServerDownloadWorkState.done) return true;
   final headers = (jsonDecode(input['headers'] as String) as Map)
       .cast<String, String>();
-  final client = serverIoClient(
+  client ??= serverIoClient(
     input['baseUrl'] as String,
     allowSelfSigned: input['allowSelfSigned'] as bool? ?? false,
   );
@@ -219,7 +244,9 @@ Future<bool> runServerDownloadWork(Map<String, dynamic> input) async {
     if (!Directory(dir.path).existsSync()) return true;
     final gained = received > startBytes;
     final failedAttempts = gained ? 1 : (previous?.failedAttempts ?? 0) + 1;
-    final permanent = e is ServerDownloadHttpException && e.isPermanent;
+    final untrusted = isUntrustedCertificateError(e);
+    final permanent =
+        untrusted || (e is ServerDownloadHttpException && e.isPermanent);
     final giveUp =
         permanent || failedAttempts >= serverDownloadMaxFailedAttempts;
     await dir.writeStatus(
@@ -230,7 +257,7 @@ Future<bool> runServerDownloadWork(Map<String, dynamic> input) async {
         received: received,
         total: total,
         failedAttempts: failedAttempts,
-        error: '$e',
+        error: untrusted ? serverDownloadUntrustedCertificateError : '$e',
       ),
     );
     return giveUp;
@@ -331,4 +358,35 @@ Future<void> downloadResumable(
   if (total >= 0 && received != total) {
     throw HttpException('Connection closed at $received of $total bytes');
   }
+}
+
+/// iOS downloads running in the app, by download key, so they can be
+/// stopped: by the user or iOS ending the background task, or by a full
+/// restore (`cancelServerDownloads`).
+class InAppServerDownloads {
+  InAppServerDownloads._();
+
+  static final _clients = <String, HttpClient>{};
+  static final _cancelled = <String>{};
+
+  static void start(String key, HttpClient client) {
+    _cancelled.remove(key);
+    _clients[key] = client;
+  }
+
+  static void finish(String key) => _clients.remove(key);
+
+  /// Whether [key] ended because it was cancelled.
+  static bool wasCancelled(String key) => _cancelled.contains(key);
+
+  /// Abort the download [key], if it is running.
+  static void cancel(String key) {
+    final client = _clients.remove(key);
+    if (client == null) return;
+    _cancelled.add(key);
+    client.close(force: true);
+  }
+
+  /// Abort every running in-app download.
+  static void cancelAll() => [..._clients.keys].forEach(cancel);
 }

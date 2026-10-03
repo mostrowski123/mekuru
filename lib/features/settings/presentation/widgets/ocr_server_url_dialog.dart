@@ -26,6 +26,12 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
   late final TextEditingController _urlController;
   late final TextEditingController _keyController;
   late bool _allowSelfSigned;
+
+  /// The self-signed switch only matters (and only shows) for https.
+  bool get _isHttps =>
+      _urlController.text.trim().toLowerCase().startsWith('https://');
+
+  bool get _effectiveAllowSelfSigned => _isHttps && _allowSelfSigned;
   bool _obscureKey = true;
   bool _isTestingConnection = false;
   bool? _testSucceeded;
@@ -73,9 +79,11 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
       return;
     }
 
-    Navigator.of(
-      context,
-    ).pop((url: url, bearerKey: customKey, allowSelfSigned: _allowSelfSigned));
+    Navigator.of(context).pop((
+      url: url,
+      bearerKey: customKey,
+      allowSelfSigned: _effectiveAllowSelfSigned,
+    ));
   }
 
   Future<void> _onTestConnection() async {
@@ -100,7 +108,10 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
     });
 
     final healthClient = OcrServerHealthClient(
-      httpClient: serverHttpClient(url, allowSelfSigned: _allowSelfSigned),
+      httpClient: serverHttpClient(
+        url,
+        allowSelfSigned: _effectiveAllowSelfSigned,
+      ),
     );
     try {
       final result = await healthClient.checkHealth(url);
@@ -114,7 +125,11 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
       });
     } catch (e) {
       if (!mounted) return;
-      final message = e is OcrServerHealthException ? e.message : '$e';
+      final message = isUntrustedCertificateError(e)
+          ? l10n.serverCertificateUntrusted
+          : e is OcrServerHealthException
+          ? e.message
+          : '$e';
       setState(() {
         _isTestingConnection = false;
         _testSucceeded = false;
@@ -220,21 +235,22 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
                   ],
                 ),
               ],
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.settingsCustomOcrServerAllowSelfSigned),
-                subtitle: Text(
-                  l10n.settingsCustomOcrServerAllowSelfSignedSubtitle,
+              if (_isHttps)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.settingsCustomOcrServerAllowSelfSigned),
+                  subtitle: Text(
+                    l10n.settingsCustomOcrServerAllowSelfSignedSubtitle,
+                  ),
+                  value: _allowSelfSigned,
+                  onChanged: _isTestingConnection
+                      ? null
+                      : (value) => setState(() {
+                          _allowSelfSigned = value;
+                          _testSucceeded = null;
+                          _testMessage = null;
+                        }),
                 ),
-                value: _allowSelfSigned,
-                onChanged: _isTestingConnection
-                    ? null
-                    : (value) => setState(() {
-                        _allowSelfSigned = value;
-                        _testSucceeded = null;
-                        _testMessage = null;
-                      }),
-              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _keyController,

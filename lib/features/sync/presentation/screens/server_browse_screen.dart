@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
@@ -403,7 +404,12 @@ class _ErrorRetry extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$error', textAlign: TextAlign.center),
+            Text(
+              isUntrustedCertificateError(error)
+                  ? context.l10n.serverCertificateUntrusted
+                  : '$error',
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: onRetry,

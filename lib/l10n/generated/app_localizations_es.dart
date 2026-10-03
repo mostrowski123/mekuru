@@ -2529,10 +2529,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Para un servidor https:// con su propio certificado. Mekuru aceptará cualquier certificado que presente este servidor.';
 
   @override
-  String get serverDialogAllowSelfSignedSubtitleIos =>
-      'Para un servidor https:// con su propio certificado. Mekuru aceptará cualquier certificado que presente este servidor. Las descargas desde él se hacen dentro de la app: mantén Mekuru abierto hasta que terminen.';
-
-  @override
   String get serverDialogConnectionOk => 'Conexión correcta';
 
   @override
@@ -2601,8 +2597,38 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get serverBrowseDownloadInApp =>
-      'Descargando dentro de la app: mantén Mekuru abierto hasta que termine.';
+  String get serverBrowseDownloadStopped => 'Descarga detenida';
+
+  @override
+  String get serverCertificateUntrusted =>
+      'El certificado del servidor no es de confianza. Si usa su propio certificado (autofirmado), activa «Aceptar certificado autofirmado».';
+
+  @override
+  String backgroundWorkDownloading({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Descargando $count libros',
+      one: 'Descargando 1 libro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkScanning({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Reconociendo texto en $count libros',
+      one: 'Reconociendo texto en 1 libro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkPercent({required int percent}) {
+    return '$percent % completado';
+  }
 
   @override
   String get serverBrowseBookGone => 'El libro ya no está en este dispositivo';

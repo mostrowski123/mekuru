@@ -2392,10 +2392,6 @@ class AppLocalizationsZh extends AppLocalizations {
       '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。';
 
   @override
-  String get serverDialogAllowSelfSignedSubtitleIos =>
-      '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。从该服务器下载会在应用内进行，请保持 Mekuru 打开直到下载完成。';
-
-  @override
   String get serverDialogConnectionOk => '连接正常';
 
   @override
@@ -2462,7 +2458,36 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get serverBrowseDownloadInApp => '正在应用内下载：请保持 Mekuru 打开直到下载完成。';
+  String get serverBrowseDownloadStopped => '下载已停止';
+
+  @override
+  String get serverCertificateUntrusted =>
+      '服务器证书不受信任。如果它使用自有（自签名）证书，请打开“接受自签名证书”。';
+
+  @override
+  String backgroundWorkDownloading({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在下载 $count 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkScanning({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在识别 $count 本书的文字',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkPercent({required int percent}) {
+    return '已完成 $percent%';
+  }
 
   @override
   String get serverBrowseBookGone => '这本书已不在此设备上';
@@ -5605,10 +5630,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。';
 
   @override
-  String get serverDialogAllowSelfSignedSubtitleIos =>
-      '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。从该服务器下载会在应用内进行，请保持 Mekuru 打开直到下载完成。';
-
-  @override
   String get serverDialogConnectionOk => '连接正常';
 
   @override
@@ -5675,7 +5696,36 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get serverBrowseDownloadInApp => '正在应用内下载：请保持 Mekuru 打开直到下载完成。';
+  String get serverBrowseDownloadStopped => '下载已停止';
+
+  @override
+  String get serverCertificateUntrusted =>
+      '服务器证书不受信任。如果它使用自有（自签名）证书，请打开“接受自签名证书”。';
+
+  @override
+  String backgroundWorkDownloading({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在下载 $count 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkScanning({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在识别 $count 本书的文字',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkPercent({required int percent}) {
+    return '已完成 $percent%';
+  }
 
   @override
   String get serverBrowseBookGone => '这本书已不在此设备上';

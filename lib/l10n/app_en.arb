@@ -3227,10 +3227,6 @@
   "@serverDialogAllowSelfSignedSubtitle": {
     "description": "Explanation under the self-signed certificate switch in the server connection dialog (Android: downloads from such a server still run in the background)."
   },
-  "serverDialogAllowSelfSignedSubtitleIos": "For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents. Downloads from it run inside the app, so keep Mekuru open until they finish.",
-  "@serverDialogAllowSelfSignedSubtitleIos": {
-    "description": "iOS variant of serverDialogAllowSelfSignedSubtitle: on iOS, downloads from such a server run inside the app, so the app must stay open."
-  },
   "serverDialogConnectionOk": "Connection OK",
   "@serverDialogConnectionOk": {
     "description": "Result shown in the server connection dialog after a successful connection test."
@@ -3325,9 +3321,40 @@
       }
     }
   },
-  "serverBrowseDownloadInApp": "Downloading inside the app: keep Mekuru open until it finishes.",
-  "@serverBrowseDownloadInApp": {
-    "description": "Snack bar shown when a server book download runs inside the app (not as a background download), so the user keeps the app open."
+  "serverBrowseDownloadStopped": "Download stopped",
+  "@serverBrowseDownloadStopped": {
+    "description": "Snack bar after a server book download was stopped, by the user (e.g. from the system Live Activity) or by iOS."
+  },
+  "serverCertificateUntrusted": "The server's certificate isn't trusted. If it uses its own (self-signed) certificate, turn on \"Accept self-signed certificate\".",
+  "@serverCertificateUntrusted": {
+    "description": "Error shown when a server's TLS certificate is rejected (e.g. self-signed with the switch off); names the switch that accepts it."
+  },
+  "backgroundWorkDownloading": "{count, plural, =1{Downloading 1 book} other{Downloading {count} books}}",
+  "@backgroundWorkDownloading": {
+    "description": "iOS Live Activity text while server book downloads run in the background.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backgroundWorkScanning": "{count, plural, =1{Recognizing text in 1 book} other{Recognizing text in {count} books}}",
+  "@backgroundWorkScanning": {
+    "description": "iOS Live Activity text while OCR scans run in the background.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backgroundWorkPercent": "{percent}% done",
+  "@backgroundWorkPercent": {
+    "description": "iOS Live Activity subtitle: how far the background work is.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
   },
   "serverBrowseBookGone": "Book is no longer on this device",
   "@serverBrowseBookGone": {

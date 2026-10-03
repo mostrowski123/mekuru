@@ -34,11 +34,6 @@ jobs:
       # ad-ID support: the app shows no ATT prompt, so it must not carry
       # GoogleAppMeasurementIdentitySupport or GoogleAdsOnDeviceConversion.
       FIREBASE_ANALYTICS_WITHOUT_ADID: true
-      # background_downloader's Package.swift reads these and compiles out its
-      # photo-library code, which would otherwise need Info.plist purpose
-      # strings for a feature Mekuru never uses.
-      BYPASS_PERMISSION_IOSADDTOPHOTOLIBRARY: 1
-      BYPASS_PERMISSION_IOSCHANGEPHOTOLIBRARY: 1
       # Job-level so the symbol-upload step's `if:` can test it (steps cannot
       # read the secrets context directly).
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

@@ -1,12 +1,10 @@
 import 'dart:io';
 
-import 'package:background_downloader/background_downloader.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../models/remote_models.dart';
-import 'server_download_route.dart';
 import 'server_download_work.dart';
 
 /// Exception for any failed server interaction. [statusCode] is 0 for
@@ -26,26 +24,21 @@ class SyncException implements Exception {
   String toString() => 'SyncException($statusCode): $message';
 }
 
-/// background_downloader group of every server book download.
-const serverDownloadGroup = 'server_books';
-
-/// Application-support folder a download waits in until it is imported.
+/// Application-support folder holding each server download until it is
+/// imported (see server_download_work.dart).
 const serverDownloadsDir = 'server_downloads';
 
 /// Cancel every server download: a full restore replaces the library they
 /// would import into.
 Future<void> cancelServerDownloads() async {
   InAppServerDownloads.cancelAll();
-  // Host-side tests have no background downloader.
+  // Host-side tests have no WorkManager or app support directory.
   if (!Platform.isAndroid && !Platform.isIOS) return;
-  await FileDownloader().cancelAll(group: serverDownloadGroup);
   if (Platform.isAndroid) {
     await Workmanager().cancelByTag(serverDownloadWorkTag);
-    final support = await getApplicationSupportDirectory();
-    await deleteServerDownloadWorkDirs(
-      p.join(support.path, serverDownloadsDir),
-    );
   }
+  final support = await getApplicationSupportDirectory();
+  await deleteServerDownloadJobDirs(p.join(support.path, serverDownloadsDir));
 }
 
 /// The full surface Mekuru needs from a Komga/Kavita server: connection

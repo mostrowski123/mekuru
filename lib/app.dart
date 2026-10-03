@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'core/services/analytics_service.dart';
+import 'core/services/background_work.dart';
 import 'core/services/usage_telemetry.dart';
 import 'features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'features/backup/data/services/staged_full_restore.dart';
@@ -46,7 +47,28 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    BackgroundWork.instance.text = _backgroundWorkText;
     _bootstrapAppState();
+  }
+
+  /// iOS Live Activity text for downloads and scans running in the
+  /// background, in the app's language.
+  static ({String title, String subtitle}) _backgroundWorkText({
+    required int downloads,
+    required int scans,
+    required int percent,
+  }) {
+    final context = scaffoldMessengerKey.currentContext;
+    final l10n = context != null && context.mounted
+        ? context.l10n
+        : lookupAppLocalizations(const Locale('en'));
+    return (
+      title: [
+        if (downloads > 0) l10n.backgroundWorkDownloading(count: downloads),
+        if (scans > 0) l10n.backgroundWorkScanning(count: scans),
+      ].join(' · '),
+      subtitle: l10n.backgroundWorkPercent(percent: percent),
+    );
   }
 
   @override

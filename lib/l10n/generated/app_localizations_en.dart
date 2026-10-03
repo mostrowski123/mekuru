@@ -2497,10 +2497,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents.';
 
   @override
-  String get serverDialogAllowSelfSignedSubtitleIos =>
-      'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents. Downloads from it run inside the app, so keep Mekuru open until they finish.';
-
-  @override
   String get serverDialogConnectionOk => 'Connection OK';
 
   @override
@@ -2569,8 +2565,38 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get serverBrowseDownloadInApp =>
-      'Downloading inside the app: keep Mekuru open until it finishes.';
+  String get serverBrowseDownloadStopped => 'Download stopped';
+
+  @override
+  String get serverCertificateUntrusted =>
+      'The server\'s certificate isn\'t trusted. If it uses its own (self-signed) certificate, turn on \"Accept self-signed certificate\".';
+
+  @override
+  String backgroundWorkDownloading({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Downloading $count books',
+      one: 'Downloading 1 book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkScanning({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Recognizing text in $count books',
+      one: 'Recognizing text in 1 book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkPercent({required int percent}) {
+    return '$percent% done';
+  }
 
   @override
   String get serverBrowseBookGone => 'Book is no longer on this device';

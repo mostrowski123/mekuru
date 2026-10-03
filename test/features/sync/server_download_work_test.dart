@@ -145,7 +145,7 @@ void main() {
         );
 
     setUp(() async {
-      dir = ServerDownloadWorkDir(p.join(tempDir.path, 'worker_1'));
+      dir = ServerDownloadWorkDir(p.join(tempDir.path, 'job_1'));
       await Directory(dir.path).create();
       await dir.writeJob(key: 'b1', fileName: 'book.cbz', meta: {'x': 1});
     });
@@ -210,14 +210,61 @@ void main() {
     });
   });
 
-  test('deleteServerDownloadWorkDirs removes only worker folders', () async {
-    Directory(p.join(tempDir.path, 'worker_1')).createSync();
-    Directory(p.join(tempDir.path, 'in_app_2')).createSync();
-    Directory(p.join(tempDir.path, '1791012234800173')).createSync();
-    await deleteServerDownloadWorkDirs(tempDir.path);
+  test('deleteServerDownloadJobDirs removes only download folders', () async {
+    Directory(p.join(tempDir.path, 'job_1')).createSync();
+    Directory(p.join(tempDir.path, 'other')).createSync();
+    await deleteServerDownloadJobDirs(tempDir.path);
     expect(tempDir.listSync().map((e) => p.basename(e.path)).toSet(), {
-      'in_app_2',
-      '1791012234800173',
+      'other',
     });
+  });
+
+  test('a rejected certificate fails at once, flagged for the hint', () async {
+    final secure = await HttpServer.bindSecure(
+      InternetAddress.loopbackIPv4,
+      0,
+      SecurityContext()
+        ..useCertificateChainBytes(utf8.encode(selfSignedCertPem))
+        ..usePrivateKeyBytes(utf8.encode(selfSignedKeyPem)),
+    );
+    addTearDown(() => secure.close(force: true));
+    secure.listen(handle);
+    final base = 'https://127.0.0.1:${secure.port}';
+    final dir = ServerDownloadWorkDir(p.join(tempDir.path, 'job_9'));
+    await Directory(dir.path).create();
+
+    final over = await runServerDownloadWork(
+      serverDownloadWorkInput(
+        dir: dir.path,
+        fileName: 'book.cbz',
+        url: '$base/file',
+        headers: const {},
+        baseUrl: base,
+        allowSelfSigned: false,
+      ),
+    );
+
+    expect(over, isTrue);
+    final status = await dir.readStatus();
+    expect(status!.state, ServerDownloadWorkState.failed);
+    expect(status.error, serverDownloadUntrustedCertificateError);
+  });
+
+  test('InAppServerDownloads.cancel stops one download and marks it', () {
+    final client = HttpClient();
+    InAppServerDownloads.start('b1', client);
+    InAppServerDownloads.cancel('b1');
+    expect(InAppServerDownloads.wasCancelled('b1'), isTrue);
+    // A closed client refuses new requests.
+    expect(
+      () => client.getUrl(Uri.parse('http://127.0.0.1/')),
+      throwsStateError,
+    );
+    // Starting the key again clears the mark; cancelling nothing is a no-op.
+    InAppServerDownloads.start('b1', HttpClient());
+    expect(InAppServerDownloads.wasCancelled('b1'), isFalse);
+    InAppServerDownloads.finish('b1');
+    InAppServerDownloads.cancel('b1');
+    expect(InAppServerDownloads.wasCancelled('b1'), isFalse);
   });
 }

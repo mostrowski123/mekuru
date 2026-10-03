@@ -2509,10 +2509,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini.';
 
   @override
-  String get serverDialogAllowSelfSignedSubtitleIos =>
-      'Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini. Unduhan dari server ini berjalan di dalam aplikasi, jadi biarkan Mekuru tetap terbuka sampai selesai.';
-
-  @override
   String get serverDialogConnectionOk => 'Koneksi berhasil';
 
   @override
@@ -2581,8 +2577,36 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get serverBrowseDownloadInApp =>
-      'Mengunduh di dalam aplikasi: biarkan Mekuru tetap terbuka sampai selesai.';
+  String get serverBrowseDownloadStopped => 'Unduhan dihentikan';
+
+  @override
+  String get serverCertificateUntrusted =>
+      'Sertifikat server tidak dipercaya. Jika server memakai sertifikatnya sendiri (ditandatangani sendiri), aktifkan \"Terima sertifikat yang ditandatangani sendiri\".';
+
+  @override
+  String backgroundWorkDownloading({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mengunduh $count buku',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkScanning({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Mengenali teks di $count buku',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String backgroundWorkPercent({required int percent}) {
+    return '$percent% selesai';
+  }
 
   @override
   String get serverBrowseBookGone =>

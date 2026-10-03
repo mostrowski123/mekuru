@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/services/http_transport.dart';
 
 import 'ocr_server_config.dart' as ocr_server_config;
@@ -91,6 +93,10 @@ class OcrServerHealthClient {
       );
     } on OcrServerHealthException {
       rethrow;
+    } on HandshakeException catch (e) {
+      // The dialog explains a rejected certificate itself.
+      if (isUntrustedCertificateError(e)) rethrow;
+      throw OcrServerHealthException(0, 'Could not connect to OCR server: $e');
     } on Exception catch (e) {
       throw OcrServerHealthException(0, 'Could not connect to OCR server: $e');
     }
