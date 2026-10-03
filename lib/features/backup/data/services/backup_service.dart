@@ -178,6 +178,7 @@ class BackupService {
               serverType: c.serverType,
               name: c.name,
               baseUrl: c.baseUrl,
+              allowSelfSignedCert: c.allowSelfSignedCert,
             ),
           )
           .toList(),

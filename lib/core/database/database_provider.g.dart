@@ -6215,6 +6215,20 @@ class $ServerConnectionsTable extends ServerConnections
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _allowSelfSignedCertMeta =
+      const VerificationMeta('allowSelfSignedCert');
+  @override
+  late final GeneratedColumn<bool> allowSelfSignedCert = GeneratedColumn<bool>(
+    'allow_self_signed_cert',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("allow_self_signed_cert" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -6234,6 +6248,7 @@ class $ServerConnectionsTable extends ServerConnections
     name,
     baseUrl,
     enabled,
+    allowSelfSignedCert,
     createdAt,
   ];
   @override
@@ -6281,6 +6296,15 @@ class $ServerConnectionsTable extends ServerConnections
         enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
       );
     }
+    if (data.containsKey('allow_self_signed_cert')) {
+      context.handle(
+        _allowSelfSignedCertMeta,
+        allowSelfSignedCert.isAcceptableOrUnknown(
+          data['allow_self_signed_cert']!,
+          _allowSelfSignedCertMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -6316,6 +6340,10 @@ class $ServerConnectionsTable extends ServerConnections
         DriftSqlType.bool,
         data['${effectivePrefix}enabled'],
       )!,
+      allowSelfSignedCert: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}allow_self_signed_cert'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -6341,6 +6369,11 @@ class ServerConnection extends DataClass
   /// Disabled connections (e.g. restored from backup before credentials are
   /// re-entered) are skipped by sync and browse.
   final bool enabled;
+
+  /// Accept a certificate from this server that fails validation (a
+  /// self-signed one). Its book downloads then run in the app, not in the
+  /// background downloader, which can't make that exception per server.
+  final bool allowSelfSignedCert;
   final DateTime createdAt;
   const ServerConnection({
     required this.id,
@@ -6348,6 +6381,7 @@ class ServerConnection extends DataClass
     required this.name,
     required this.baseUrl,
     required this.enabled,
+    required this.allowSelfSignedCert,
     required this.createdAt,
   });
   @override
@@ -6358,6 +6392,7 @@ class ServerConnection extends DataClass
     map['name'] = Variable<String>(name);
     map['base_url'] = Variable<String>(baseUrl);
     map['enabled'] = Variable<bool>(enabled);
+    map['allow_self_signed_cert'] = Variable<bool>(allowSelfSignedCert);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -6369,6 +6404,7 @@ class ServerConnection extends DataClass
       name: Value(name),
       baseUrl: Value(baseUrl),
       enabled: Value(enabled),
+      allowSelfSignedCert: Value(allowSelfSignedCert),
       createdAt: Value(createdAt),
     );
   }
@@ -6384,6 +6420,9 @@ class ServerConnection extends DataClass
       name: serializer.fromJson<String>(json['name']),
       baseUrl: serializer.fromJson<String>(json['baseUrl']),
       enabled: serializer.fromJson<bool>(json['enabled']),
+      allowSelfSignedCert: serializer.fromJson<bool>(
+        json['allowSelfSignedCert'],
+      ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -6396,6 +6435,7 @@ class ServerConnection extends DataClass
       'name': serializer.toJson<String>(name),
       'baseUrl': serializer.toJson<String>(baseUrl),
       'enabled': serializer.toJson<bool>(enabled),
+      'allowSelfSignedCert': serializer.toJson<bool>(allowSelfSignedCert),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -6406,6 +6446,7 @@ class ServerConnection extends DataClass
     String? name,
     String? baseUrl,
     bool? enabled,
+    bool? allowSelfSignedCert,
     DateTime? createdAt,
   }) => ServerConnection(
     id: id ?? this.id,
@@ -6413,6 +6454,7 @@ class ServerConnection extends DataClass
     name: name ?? this.name,
     baseUrl: baseUrl ?? this.baseUrl,
     enabled: enabled ?? this.enabled,
+    allowSelfSignedCert: allowSelfSignedCert ?? this.allowSelfSignedCert,
     createdAt: createdAt ?? this.createdAt,
   );
   ServerConnection copyWithCompanion(ServerConnectionsCompanion data) {
@@ -6424,6 +6466,9 @@ class ServerConnection extends DataClass
       name: data.name.present ? data.name.value : this.name,
       baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      allowSelfSignedCert: data.allowSelfSignedCert.present
+          ? data.allowSelfSignedCert.value
+          : this.allowSelfSignedCert,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -6436,14 +6481,22 @@ class ServerConnection extends DataClass
           ..write('name: $name, ')
           ..write('baseUrl: $baseUrl, ')
           ..write('enabled: $enabled, ')
+          ..write('allowSelfSignedCert: $allowSelfSignedCert, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, serverType, name, baseUrl, enabled, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    serverType,
+    name,
+    baseUrl,
+    enabled,
+    allowSelfSignedCert,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -6453,6 +6506,7 @@ class ServerConnection extends DataClass
           other.name == this.name &&
           other.baseUrl == this.baseUrl &&
           other.enabled == this.enabled &&
+          other.allowSelfSignedCert == this.allowSelfSignedCert &&
           other.createdAt == this.createdAt);
 }
 
@@ -6462,6 +6516,7 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
   final Value<String> name;
   final Value<String> baseUrl;
   final Value<bool> enabled;
+  final Value<bool> allowSelfSignedCert;
   final Value<DateTime> createdAt;
   const ServerConnectionsCompanion({
     this.id = const Value.absent(),
@@ -6469,6 +6524,7 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
     this.name = const Value.absent(),
     this.baseUrl = const Value.absent(),
     this.enabled = const Value.absent(),
+    this.allowSelfSignedCert = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   ServerConnectionsCompanion.insert({
@@ -6477,6 +6533,7 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
     required String name,
     required String baseUrl,
     this.enabled = const Value.absent(),
+    this.allowSelfSignedCert = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : serverType = Value(serverType),
        name = Value(name),
@@ -6487,6 +6544,7 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
     Expression<String>? name,
     Expression<String>? baseUrl,
     Expression<bool>? enabled,
+    Expression<bool>? allowSelfSignedCert,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -6495,6 +6553,8 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
       if (name != null) 'name': name,
       if (baseUrl != null) 'base_url': baseUrl,
       if (enabled != null) 'enabled': enabled,
+      if (allowSelfSignedCert != null)
+        'allow_self_signed_cert': allowSelfSignedCert,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -6505,6 +6565,7 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
     Value<String>? name,
     Value<String>? baseUrl,
     Value<bool>? enabled,
+    Value<bool>? allowSelfSignedCert,
     Value<DateTime>? createdAt,
   }) {
     return ServerConnectionsCompanion(
@@ -6513,6 +6574,7 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
       name: name ?? this.name,
       baseUrl: baseUrl ?? this.baseUrl,
       enabled: enabled ?? this.enabled,
+      allowSelfSignedCert: allowSelfSignedCert ?? this.allowSelfSignedCert,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -6535,6 +6597,9 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
     if (enabled.present) {
       map['enabled'] = Variable<bool>(enabled.value);
     }
+    if (allowSelfSignedCert.present) {
+      map['allow_self_signed_cert'] = Variable<bool>(allowSelfSignedCert.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -6549,6 +6614,7 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
           ..write('name: $name, ')
           ..write('baseUrl: $baseUrl, ')
           ..write('enabled: $enabled, ')
+          ..write('allowSelfSignedCert: $allowSelfSignedCert, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -10660,6 +10726,7 @@ typedef $$ServerConnectionsTableCreateCompanionBuilder =
       required String name,
       required String baseUrl,
       Value<bool> enabled,
+      Value<bool> allowSelfSignedCert,
       Value<DateTime> createdAt,
     });
 typedef $$ServerConnectionsTableUpdateCompanionBuilder =
@@ -10669,6 +10736,7 @@ typedef $$ServerConnectionsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> baseUrl,
       Value<bool> enabled,
+      Value<bool> allowSelfSignedCert,
       Value<DateTime> createdAt,
     });
 
@@ -10703,6 +10771,11 @@ class $$ServerConnectionsTableFilterComposer
 
   ColumnFilters<bool> get enabled => $composableBuilder(
     column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get allowSelfSignedCert => $composableBuilder(
+    column: $table.allowSelfSignedCert,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10746,6 +10819,11 @@ class $$ServerConnectionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get allowSelfSignedCert => $composableBuilder(
+    column: $table.allowSelfSignedCert,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -10777,6 +10855,11 @@ class $$ServerConnectionsTableAnnotationComposer
 
   GeneratedColumn<bool> get enabled =>
       $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<bool> get allowSelfSignedCert => $composableBuilder(
+    column: $table.allowSelfSignedCert,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -10827,6 +10910,7 @@ class $$ServerConnectionsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> baseUrl = const Value.absent(),
                 Value<bool> enabled = const Value.absent(),
+                Value<bool> allowSelfSignedCert = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => ServerConnectionsCompanion(
                 id: id,
@@ -10834,6 +10918,7 @@ class $$ServerConnectionsTableTableManager
                 name: name,
                 baseUrl: baseUrl,
                 enabled: enabled,
+                allowSelfSignedCert: allowSelfSignedCert,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -10843,6 +10928,7 @@ class $$ServerConnectionsTableTableManager
                 required String name,
                 required String baseUrl,
                 Value<bool> enabled = const Value.absent(),
+                Value<bool> allowSelfSignedCert = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => ServerConnectionsCompanion.insert(
                 id: id,
@@ -10850,6 +10936,7 @@ class $$ServerConnectionsTableTableManager
                 name: name,
                 baseUrl: baseUrl,
                 enabled: enabled,
+                allowSelfSignedCert: allowSelfSignedCert,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

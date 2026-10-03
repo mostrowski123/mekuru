@@ -20,6 +20,7 @@ import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart'
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:path/path.dart' as p;
 
+import 'shared/self_signed_cert.dart';
 import 'shared/test_infrastructure.dart';
 
 /// Minimal JPEG-looking bytes; dimensions come from the mokuro manifest.
@@ -35,9 +36,13 @@ class FakeKomga {
   Map<String, dynamic>? lastProgressPatch;
   String? lastApiKey;
 
-  String get baseUrl => 'http://127.0.0.1:${_server.port}';
+  bool _secure = false;
 
-  Future<void> start() async {
+  String get baseUrl =>
+      '${_secure ? 'https' : 'http'}://127.0.0.1:${_server.port}';
+
+  /// With [selfSigned], serve HTTPS with a certificate no device trusts.
+  Future<void> start({bool selfSigned = false}) async {
     final archive = Archive();
     for (final name in ['0001.jpg', '0002.jpg', '0003.jpg']) {
       archive.addFile(ArchiveFile(name, _fakeJpeg.length, _fakeJpeg));
@@ -76,7 +81,16 @@ class FakeKomga {
     archive.addFile(ArchiveFile('よつばと！ 1.mokuro', mokuro.length, mokuro));
     cbzBytes = ZipEncoder().encode(archive);
 
-    _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    _secure = selfSigned;
+    _server = selfSigned
+        ? await HttpServer.bindSecure(
+            InternetAddress.loopbackIPv4,
+            0,
+            SecurityContext()
+              ..useCertificateChainBytes(utf8.encode(selfSignedCertPem))
+              ..usePrivateKeyBytes(utf8.encode(selfSignedKeyPem)),
+          )
+        : await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     _server.listen(_handle);
   }
 
@@ -316,4 +330,65 @@ void main() {
     final entry = BackupSerializer.decodeBookEntry(pendingRows.single.dataJson);
     expect(entry.serverLink!.connectionId, restoredConnections.single.id);
   });
+
+  testWidgets(
+    'browse and download from a Komga with a self-signed certificate',
+    (tester) async {
+      final komga = FakeKomga();
+      await komga.start(selfSigned: true);
+      final db = createTestDatabase();
+      final connections = ServerConnectionRepository(db);
+      addTearDown(() async {
+        await db.close();
+        await komga.stop();
+      });
+
+      // Without the switch the certificate is refused.
+      final strict = buildServerClient(
+        type: ServerType.komga,
+        baseUrl: komga.baseUrl,
+        getSecret: () => 'integration-key',
+      );
+      addTearDown(strict.dispose);
+      await expectLater(strict.testConnection(), throwsA(isA<Exception>()));
+
+      final connectionId = await connections.create(
+        serverType: 'komga',
+        name: 'Self-signed',
+        baseUrl: komga.baseUrl,
+        allowSelfSignedCert: true,
+      );
+      final connection = (await connections.getById(connectionId))!;
+      final client = buildServerClient(
+        type: ServerType.komga,
+        baseUrl: komga.baseUrl,
+        getSecret: () => 'integration-key',
+        allowSelfSigned: connection.allowSelfSignedCert,
+      );
+      addTearDown(client.dispose);
+
+      await client.testConnection();
+      final libraries = await client.listLibraries();
+      final series = await client.listSeries(libraries.single.id);
+      final books = await client.listBooks(series.single);
+
+      // The background downloaders can't accept the certificate, so this
+      // downloads in the app, then imports like any other download.
+      final container = ProviderContainer(
+        overrides: [databaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+      final downloads = container.read(serverDownloadProvider.notifier);
+      await downloads.resumeBackgroundDownloads();
+      await downloads.download(
+        connection: connection,
+        client: client,
+        book: books.single,
+      );
+      final imported = await _linkedBook(connections, connectionId);
+      expect(imported.title, 'よつばと！ 1');
+      expect(komga.lastApiKey, 'integration-key');
+      expect(container.read(serverDownloadProvider), isEmpty);
+    },
+  );
 }

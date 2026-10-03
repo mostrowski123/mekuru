@@ -1,11 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/services/download_to_file.dart';
+import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
@@ -17,10 +21,13 @@ import 'package:mekuru/features/sync/data/services/book_link_service.dart';
 import 'package:mekuru/features/sync/data/services/komga_client.dart';
 import 'package:mekuru/features/sync/data/services/progress_sync_service.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
+import 'package:mekuru/features/sync/data/services/server_download_route.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 final serverConnectionRepositoryProvider = Provider<ServerConnectionRepository>(
   (ref) => ServerConnectionRepository(ref.watch(databaseProvider)),
@@ -55,24 +62,31 @@ final linkedRemoteIdsProvider = StreamProvider.autoDispose
       });
     });
 
-/// Construct the right client for a connection. [httpClient] is for tests.
+/// Construct the right client for a connection. [allowSelfSigned] accepts a
+/// self-signed certificate from that server; [httpClient] is for tests.
 ServerClient buildServerClient({
   required ServerType type,
   required String baseUrl,
   required String Function() getSecret,
+  bool allowSelfSigned = false,
   http.Client? httpClient,
-}) => switch (type) {
-  ServerType.komga => KomgaClient(
-    baseUrl: baseUrl,
-    getSecret: getSecret,
-    httpClient: httpClient,
-  ),
-  ServerType.kavita => KavitaClient(
-    baseUrl: baseUrl,
-    getSecret: getSecret,
-    httpClient: httpClient,
-  ),
-};
+}) {
+  httpClient ??= allowSelfSigned
+      ? serverHttpClient(baseUrl, allowSelfSigned: true)
+      : null;
+  return switch (type) {
+    ServerType.komga => KomgaClient(
+      baseUrl: baseUrl,
+      getSecret: getSecret,
+      httpClient: httpClient,
+    ),
+    ServerType.kavita => KavitaClient(
+      baseUrl: baseUrl,
+      getSecret: getSecret,
+      httpClient: httpClient,
+    ),
+  };
+}
 
 /// Authenticated client for [connection], secret loaded from secure storage.
 Future<ServerClient> _clientFor(Ref ref, ServerConnection connection) async {
@@ -82,6 +96,7 @@ Future<ServerClient> _clientFor(Ref ref, ServerConnection connection) async {
     type: ServerType.fromStorage(connection.serverType),
     baseUrl: connection.baseUrl,
     getSecret: () => secret,
+    allowSelfSigned: connection.allowSelfSignedCert,
   );
 }
 
@@ -139,8 +154,16 @@ final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
 /// background URLSession on iOS), so they keep going after the user leaves or
 /// closes Mekuru. A finished file is imported here: right away while the app
 /// runs, otherwise at the next launch ([resumeBackgroundDownloads]).
+///
+/// Servers the platform downloaders can't reach (see [serverDownloadRoute]:
+/// an accepted self-signed certificate, or plain http to a domain name on
+/// iOS) download with dart:io in the app instead, and only while it runs.
 class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   final _importing = <String>{};
+
+  /// Folder-name prefix of in-app downloads under [serverDownloadsDir];
+  /// background tasks use bare timestamps.
+  static const _inAppDirPrefix = 'in_app_';
 
   @override
   Map<String, double> build() {
@@ -164,6 +187,26 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     final running = await FileDownloader().allTasks(group: serverDownloadGroup);
     state = {...state, for (final task in running) task.taskId: 0.0};
     await FileDownloader().start();
+    await _sweepInAppLeftovers();
+  }
+
+  /// In-app downloads die with the process, so at launch any folder one left
+  /// behind is garbage.
+  Future<void> _sweepInAppLeftovers() async {
+    if (!InAppServerDownloads.isIdle) return;
+    try {
+      final support = await getApplicationSupportDirectory();
+      final root = Directory(p.join(support.path, serverDownloadsDir));
+      if (!await root.exists()) return;
+      await for (final entity in root.list()) {
+        if (entity is Directory &&
+            p.basename(entity.path).startsWith(_inAppDirPrefix)) {
+          await entity.delete(recursive: true);
+        }
+      }
+    } catch (_) {
+      // Best effort; the next launch tries again.
+    }
   }
 
   /// Queue [book] for download from [connection]. No-op while it is already
@@ -178,6 +221,21 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     state = {...state, key: 0.0};
     try {
       final request = await client.downloadRequest(book);
+      final meta = {
+        'connectionId': connection.id,
+        'serverType': connection.serverType,
+        'ids': book.ids,
+        'format': book.format.name,
+      };
+      final route = serverDownloadRoute(
+        url: request.url,
+        allowSelfSigned: connection.allowSelfSignedCert,
+        isIos: defaultTargetPlatform == TargetPlatform.iOS,
+      );
+      if (route == ServerDownloadRoute.inApp) {
+        unawaited(_downloadInApp(key, connection, book, request, meta));
+        return;
+      }
       final queued = await FileDownloader().enqueue(
         DownloadTask(
           taskId: key,
@@ -194,12 +252,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
           retries: 3,
           // Carries a transfer past WorkManager's 9-minute window on Android.
           allowPause: true,
-          metaData: jsonEncode({
-            'connectionId': connection.id,
-            'serverType': connection.serverType,
-            'ids': book.ids,
-            'format': book.format.name,
-          }),
+          metaData: jsonEncode(meta),
         ),
       );
       if (!queued) throw StateError('Download could not be queued');
@@ -211,6 +264,70 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         attrs: {'server_type': connection.serverType},
       );
       _announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
+    }
+  }
+
+  /// A download the platform downloader can't make, run with dart:io in this
+  /// process: it stops if the app is suspended or closed.
+  Future<void> _downloadInApp(
+    String key,
+    ServerConnection connection,
+    RemoteBook book,
+    ({String url, Map<String, String> headers}) request,
+    Map<String, dynamic> meta,
+  ) async {
+    final httpClient = serverIoClient(
+      connection.baseUrl,
+      allowSelfSigned: connection.allowSelfSignedCert,
+    );
+    InAppServerDownloads.start(key, httpClient);
+    _announce((l10n) => l10n.serverBrowseDownloadInApp);
+    Directory? dir;
+    try {
+      final support = await getApplicationSupportDirectory();
+      dir = Directory(
+        p.join(
+          support.path,
+          serverDownloadsDir,
+          '$_inAppDirPrefix${DateTime.now().microsecondsSinceEpoch}',
+        ),
+      );
+      await dir.create(recursive: true);
+      // The CBZ importer titles the book from the file name.
+      final path = p.join(
+        dir.path,
+        sanitizedExportBaseName(book.title) + book.fileExtension,
+      );
+      await downloadToFile(
+        request.url,
+        path,
+        headers: request.headers,
+        client: httpClient,
+        onProgress: (progress) {
+          if (ref.mounted && progress < 1 && state.containsKey(key)) {
+            state = {...state, key: progress};
+          }
+        },
+      );
+      if (ref.mounted) await _importFile(path, meta);
+    } catch (e) {
+      // A full restore cancels on purpose; that is not a failure.
+      if (!InAppServerDownloads.wasCancelled(key)) {
+        logFailure(
+          'sync.book_downloaded',
+          e,
+          attrs: {'server_type': connection.serverType, 'route': 'in_app'},
+        );
+        _announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
+      }
+    } finally {
+      InAppServerDownloads.finish(key);
+      if (ref.mounted) state = {...state}..remove(key);
+      try {
+        await dir?.delete(recursive: true);
+      } catch (_) {
+        // Best effort; the next launch sweeps it.
+      }
     }
   }
 
@@ -256,11 +373,20 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     // Startup can report one completion twice (the file found on disk, then
     // the stored native update): the first report imports it.
     if (!_importing.add(task.taskId)) return;
-    final meta = _meta(task);
-    final serverType = meta['serverType'] as String;
     try {
       final path = await task.filePath();
-      if (!await File(path).exists()) return;
+      if (await File(path).exists()) await _importFile(path, _meta(task));
+    } finally {
+      await _finish(task);
+      _importing.remove(task.taskId);
+    }
+  }
+
+  /// Import the downloaded file at [path] through the normal pipeline and
+  /// link the new row to the server described by [meta].
+  Future<void> _importFile(String path, Map<String, dynamic> meta) async {
+    final serverType = meta['serverType'] as String;
+    try {
       final repo = ref.read(bookRepositoryProvider);
       final imported = meta['format'] == RemoteBookFormat.epub.name
           ? await repo.importEpub(path)
@@ -292,9 +418,6 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         attrs: {'server_type': serverType},
       );
       _announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
-    } finally {
-      await _finish(task);
-      _importing.remove(task.taskId);
     }
   }
 

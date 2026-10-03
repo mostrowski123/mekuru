@@ -368,6 +368,42 @@ void main() {
       expect(decoded.books[1].serverLink, isNull);
     });
 
+    test('keeps the self-signed switch, and writes it only when on', () {
+      final manifest = BackupManifest(
+        version: 1,
+        createdAt: DateTime.utc(2026, 10, 3),
+        settings: const BackupSettings(app: {}, reader: {}),
+        savedWords: const [],
+        serverConnections: const [
+          BackupServerConnection(
+            id: 1,
+            serverType: 'kavita',
+            name: 'Home',
+            baseUrl: 'https://nas.lan:5000',
+            allowSelfSignedCert: true,
+          ),
+          BackupServerConnection(
+            id: 2,
+            serverType: 'komga',
+            name: 'Public',
+            baseUrl: 'https://komga.example.com',
+          ),
+        ],
+        books: const [],
+      );
+
+      final json = BackupSerializer.encode(manifest);
+      final connections =
+          (jsonDecode(json) as Map<String, dynamic>)['serverConnections']
+              as List;
+      expect((connections[0] as Map)['allowSelfSignedCert'], true);
+      expect((connections[1] as Map).containsKey('allowSelfSignedCert'), false);
+
+      final decoded = BackupSerializer.decode(json);
+      expect(decoded.serverConnections[0].allowSelfSignedCert, true);
+      expect(decoded.serverConnections[1].allowSelfSignedCert, false);
+    });
+
     test('pre-sync v1 backups decode with empty server fields', () {
       final manifest = buildManifest(
         books: [

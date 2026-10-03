@@ -89,6 +89,7 @@ class BackupSerializer {
               'serverType': c.serverType,
               'name': c.name,
               'baseUrl': c.baseUrl,
+              if (c.allowSelfSignedCert) 'allowSelfSignedCert': true,
             },
           )
           .toList(),
@@ -198,6 +199,7 @@ class BackupSerializer {
       serverType: item['serverType'] as String? ?? 'komga',
       name: item['name'] as String? ?? '',
       baseUrl: item['baseUrl'] as String? ?? '',
+      allowSelfSignedCert: item['allowSelfSignedCert'] as bool? ?? false,
     );
   }
 

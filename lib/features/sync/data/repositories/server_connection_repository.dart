@@ -26,6 +26,7 @@ class ServerConnectionRepository {
     required String serverType,
     required String name,
     required String baseUrl,
+    bool allowSelfSignedCert = false,
   }) => _db
       .into(_db.serverConnections)
       .insert(
@@ -33,6 +34,7 @@ class ServerConnectionRepository {
           serverType: serverType,
           name: name,
           baseUrl: baseUrl,
+          allowSelfSignedCert: Value(allowSelfSignedCert),
         ),
       );
 
@@ -41,12 +43,16 @@ class ServerConnectionRepository {
     String? name,
     String? baseUrl,
     bool? enabled,
+    bool? allowSelfSignedCert,
   }) =>
       (_db.update(_db.serverConnections)..where((t) => t.id.equals(id))).write(
         ServerConnectionsCompanion(
           name: name != null ? Value(name) : const Value.absent(),
           baseUrl: baseUrl != null ? Value(baseUrl) : const Value.absent(),
           enabled: enabled != null ? Value(enabled) : const Value.absent(),
+          allowSelfSignedCert: allowSelfSignedCert != null
+              ? Value(allowSelfSignedCert)
+              : const Value.absent(),
         ),
       );
 

@@ -320,6 +320,7 @@ class RestoreService {
               name: backup.name,
               baseUrl: backup.baseUrl,
               enabled: const Value(false),
+              allowSelfSignedCert: Value(backup.allowSelfSignedCert),
             ),
           );
     }

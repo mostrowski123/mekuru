@@ -49,11 +49,16 @@ class BackupServerConnection {
   final String name;
   final String baseUrl;
 
+  /// The "accept self-signed certificate" switch. Written only when on, so
+  /// backups of connections without it are unchanged.
+  final bool allowSelfSignedCert;
+
   const BackupServerConnection({
     required this.id,
     required this.serverType,
     required this.name,
     required this.baseUrl,
+    this.allowSelfSignedCert = false,
   });
 }
 

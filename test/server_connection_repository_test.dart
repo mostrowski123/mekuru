@@ -57,6 +57,23 @@ void main() {
     expect(connection!.name, 'NAS');
     expect(connection.baseUrl, 'http://nas:25600');
     expect(connection.enabled, isFalse);
+    expect(connection.allowSelfSignedCert, isFalse);
+  });
+
+  test('stores the self-signed certificate switch', () async {
+    final id = await repo.create(
+      serverType: 'kavita',
+      name: 'Home',
+      baseUrl: 'https://nas.lan:5000',
+      allowSelfSignedCert: true,
+    );
+    expect((await repo.getById(id))!.allowSelfSignedCert, isTrue);
+
+    await repo.updateConnection(id, name: 'NAS');
+    expect((await repo.getById(id))!.allowSelfSignedCert, isTrue);
+
+    await repo.updateConnection(id, allowSelfSignedCert: false);
+    expect((await repo.getById(id))!.allowSelfSignedCert, isFalse);
   });
 
   test('linkBook and findLinkedBook round-trip', () async {

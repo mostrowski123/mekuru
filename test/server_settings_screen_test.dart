@@ -68,4 +68,60 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 5));
   });
+
+  testWidgets('the edit dialog saves the self-signed certificate switch', (
+    tester,
+  ) async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final id = await db
+        .into(db.serverConnections)
+        .insert(
+          ServerConnectionsCompanion.insert(
+            serverType: 'komga',
+            name: 'Home',
+            baseUrl: 'https://192.168.1.5:25600',
+          ),
+        );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          serverSecretStorageProvider.overrideWithValue(_SlowFakeSecrets()),
+        ],
+        child: buildLocalizedTestApp(home: const ServerSettingsScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.edit));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final toggle = find.byKey(
+      const ValueKey('server_dialog_allow_self_signed'),
+    );
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    expect(find.text('Accept self-signed certificate'), findsOneWidget);
+
+    await tester.tap(toggle);
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    final row = await tester.runAsync(
+      () => (db.select(
+        db.serverConnections,
+      )..where((t) => t.id.equals(id))).getSingle(),
+    );
+    expect(row!.allowSelfSignedCert, isTrue);
+
+    // Unmount so drift's stream-close timer fires before the test ends.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
 }

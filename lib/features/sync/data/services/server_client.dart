@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:background_downloader/background_downloader.dart';
 
 import '../models/remote_models.dart';
+import 'server_download_route.dart';
 
 /// Exception for any failed server interaction. [statusCode] is 0 for
 /// network-level failures (timeout, refused connection).
@@ -30,6 +31,7 @@ const serverDownloadsDir = 'server_downloads';
 /// Cancel every server download: a full restore replaces the library they
 /// would import into.
 Future<void> cancelServerDownloads() async {
+  InAppServerDownloads.cancelAll();
   // Host-side tests have no background downloader.
   if (!Platform.isAndroid && !Platform.isIOS) return;
   await FileDownloader().cancelAll(group: serverDownloadGroup);

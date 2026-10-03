@@ -226,6 +226,7 @@ class _ServerConnectionDialogState
   final TextEditingController _secretController = TextEditingController();
   late ServerType _type;
   late bool _enabled;
+  late bool _allowSelfSigned;
   String? _urlError;
   String? _testResult;
   bool _testOk = false;
@@ -244,6 +245,7 @@ class _ServerConnectionDialogState
         ? ServerType.fromStorage(existing.serverType)
         : ServerType.komga;
     _enabled = existing?.enabled ?? true;
+    _allowSelfSigned = existing?.allowSelfSignedCert ?? false;
   }
 
   @override
@@ -283,6 +285,7 @@ class _ServerConnectionDialogState
       type: _type,
       baseUrl: url,
       getSecret: () => secret,
+      allowSelfSigned: _allowSelfSigned,
     );
     try {
       await client.testConnection();
@@ -333,6 +336,7 @@ class _ServerConnectionDialogState
           serverType: _type.storageValue,
           name: name,
           baseUrl: url,
+          allowSelfSignedCert: _allowSelfSigned,
         );
         if (secret.isNotEmpty) await secrets.save(id, secret);
       } else {
@@ -341,6 +345,7 @@ class _ServerConnectionDialogState
           name: name,
           baseUrl: url,
           enabled: _enabled,
+          allowSelfSignedCert: _allowSelfSigned,
         );
         // Blank secret keeps the stored one.
         if (secret.isNotEmpty) {
@@ -433,8 +438,17 @@ class _ServerConnectionDialogState
                 hintText: _isNew ? null : l10n.serverDialogSecretKeepHint,
               ),
             ),
+            const SizedBox(height: 4),
+            SwitchListTile(
+              key: const ValueKey('server_dialog_allow_self_signed'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.serverDialogAllowSelfSigned),
+              subtitle: Text(l10n.serverDialogAllowSelfSignedSubtitle),
+              isThreeLine: true,
+              value: _allowSelfSigned,
+              onChanged: (value) => setState(() => _allowSelfSigned = value),
+            ),
             if (!_isNew) ...[
-              const SizedBox(height: 4),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(l10n.serverDialogEnabled),

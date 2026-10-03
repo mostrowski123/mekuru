@@ -81,6 +81,15 @@ class AppDatabase extends _$AppDatabase {
         'ALTER TABLE books ADD COLUMN last_read_progression REAL NULL',
   };
 
+  /// Columns added to server_connections after schema 23 shipped. The table
+  /// itself is created by the repair pass (see the schema 23 note in
+  /// onUpgrade), so its later columns are repair-only too.
+  static const Map<String, String> _serverConnectionsRepairColumns = {
+    'allow_self_signed_cert':
+        'ALTER TABLE server_connections ADD COLUMN allow_self_signed_cert '
+        'INTEGER NOT NULL DEFAULT 0 CHECK (allow_self_signed_cert IN (0, 1))',
+  };
+
   /// The schema this build writes. Static so code that must not open a
   /// database (the boot-time full restore) can still compare versions.
   static const int latestSchemaVersion = 23;
@@ -210,6 +219,10 @@ class AppDatabase extends _$AppDatabase {
       await _repairMissingColumns('books', _booksRepairColumns);
       // CREATE TABLE IF NOT EXISTS — see the schema 23 note above.
       await createMigrator().createTable(serverConnections);
+      await _repairMissingColumns(
+        'server_connections',
+        _serverConnectionsRepairColumns,
+      );
       await _ensureGlossaryFtsIfNeeded();
     },
   );

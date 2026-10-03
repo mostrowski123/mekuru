@@ -596,4 +596,61 @@ void main() {
       expect(linked.lastReadProgression, 0.5);
     },
   );
+
+  test(
+    'adds allow_self_signed_cert to an existing server_connections table',
+    () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'mekuru_self_signed_',
+      );
+      addTearDown(() async {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final dbFile = File('${tempDir.path}/mekuru.sqlite');
+      final seedDb = AppDatabase(NativeDatabase(dbFile));
+      await seedDb.select(seedDb.serverConnections).get(); // creates the file
+      await seedDb.close();
+
+      // The table as schema 23 shipped it, holding one connection.
+      final legacyDb = sqlite.sqlite3.open(dbFile.path);
+      legacyDb.execute('DROP TABLE server_connections;');
+      legacyDb.execute(
+        'CREATE TABLE "server_connections" ('
+        '"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '
+        '"server_type" TEXT NOT NULL, "name" TEXT NOT NULL, '
+        '"base_url" TEXT NOT NULL, '
+        '"enabled" INTEGER NOT NULL DEFAULT 1 CHECK ("enabled" IN (0, 1)), '
+        '"created_at" INTEGER NOT NULL '
+        "DEFAULT (CAST(strftime('%s', CURRENT_TIMESTAMP) AS INTEGER)));",
+      );
+      legacyDb.execute(
+        "INSERT INTO server_connections (server_type, name, base_url) "
+        "VALUES ('kavita', 'Home', 'https://nas.lan:5000');",
+      );
+      expect(legacyDb.userVersion, 23);
+      legacyDb.close();
+
+      final healedDb = AppDatabase(NativeDatabase(dbFile));
+      addTearDown(healedDb.close);
+
+      final connection = await healedDb
+          .select(healedDb.serverConnections)
+          .getSingle();
+      expect(connection.name, 'Home');
+      expect(connection.allowSelfSignedCert, isFalse);
+
+      await healedDb
+          .update(healedDb.serverConnections)
+          .write(
+            const ServerConnectionsCompanion(allowSelfSignedCert: Value(true)),
+          );
+      final updated = await healedDb
+          .select(healedDb.serverConnections)
+          .getSingle();
+      expect(updated.allowSelfSignedCert, isTrue);
+    },
+  );
 }
