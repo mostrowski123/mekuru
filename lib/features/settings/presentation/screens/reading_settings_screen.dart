@@ -276,19 +276,27 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
     final initialUrl = isUnsetOrBuiltInOcrServerUrl(currentUrl)
         ? ''
         : currentUrl;
+    final allowSelfSigned = container.read(ocrServerAllowSelfSignedProvider);
 
     if (!mounted) return;
 
-    final result = await showDialog<({String url, String? bearerKey})>(
-      context: context,
-      builder: (_) => OcrServerUrlDialog(
-        initialUrl: initialUrl,
-        initialBearerKey: savedCustomBearerKey,
-      ),
-    );
+    final result =
+        await showDialog<
+          ({String url, String? bearerKey, bool allowSelfSigned})
+        >(
+          context: context,
+          builder: (_) => OcrServerUrlDialog(
+            initialUrl: initialUrl,
+            initialBearerKey: savedCustomBearerKey,
+            initialAllowSelfSigned: allowSelfSigned,
+          ),
+        );
 
     if (result != null) {
       await ocrCustomServerSecretStore.save(result.bearerKey!);
+      await container
+          .read(ocrServerAllowSelfSignedProvider.notifier)
+          .setAllowSelfSigned(result.allowSelfSigned);
       container.read(ocrServerUrlProvider.notifier).setUrl(result.url);
     }
   }

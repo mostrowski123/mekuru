@@ -38,6 +38,7 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   String? _colorTheme;
   int? _autoCropWhiteThreshold;
   String? _ocrServerUrl;
+  bool? _ocrServerAllowSelfSigned;
 
   @override
   Future<AppLanguage?> loadAppLanguage() async => _appLanguage;
@@ -105,6 +106,13 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   Future<String?> loadOcrServerUrl() async => _ocrServerUrl;
   @override
   Future<void> saveOcrServerUrl(String url) async => _ocrServerUrl = url;
+
+  @override
+  Future<bool?> loadOcrServerAllowSelfSigned() async =>
+      _ocrServerAllowSelfSigned;
+  @override
+  Future<void> saveOcrServerAllowSelfSigned(bool value) async =>
+      _ocrServerAllowSelfSigned = value;
 
   bool? _enhancedFuriganaDictEnabled;
   @override

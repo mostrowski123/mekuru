@@ -420,6 +420,42 @@ final ocrServerUrlProvider = NotifierProvider<OcrServerUrlNotifier, String>(
   OcrServerUrlNotifier.new,
 );
 
+/// Whether the custom OCR server's certificate may be self-signed (or
+/// otherwise untrusted). Off by default.
+class OcrServerAllowSelfSignedNotifier extends Notifier<bool> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  bool build() => false;
+
+  /// Load persisted setting from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadOcrServerAllowSelfSigned();
+    if (persisted != null) {
+      state = persisted;
+    }
+  }
+
+  /// Set the value and persist to storage.
+  Future<void> setAllowSelfSigned(bool value) async {
+    state = value;
+    await ref
+        .read(appSettingsStorageProvider)
+        .saveOcrServerAllowSelfSigned(value);
+  }
+}
+
+/// Provider for the custom OCR server's "accept self-signed certificate".
+final ocrServerAllowSelfSignedProvider =
+    NotifierProvider<OcrServerAllowSelfSignedNotifier, bool>(
+      OcrServerAllowSelfSignedNotifier.new,
+    );
+
 /// Whether the user has opted into the optional UniDic-lite furigana
 /// dictionary. Independent of whether the dict files have been downloaded
 /// — toggling this on without the files present leaves MecabService on

@@ -984,6 +984,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a full http:// or https:// server URL.';
 
   @override
+  String get settingsCustomOcrServerAllowSelfSigned =>
+      'Accept self-signed certificate';
+
+  @override
+  String get settingsCustomOcrServerAllowSelfSignedSubtitle =>
+      'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents.';
+
+  @override
   String get settingsCustomOcrServerKeyRequired =>
       'A shared key is required for custom servers.';
 
@@ -2482,6 +2490,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serverDialogEnabled => 'Enabled';
 
   @override
+  String get serverDialogAllowSelfSigned => 'Accept self-signed certificate';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitle =>
+      'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents. Downloads from it run inside the app, so keep Mekuru open until they finish.';
+
+  @override
   String get serverDialogConnectionOk => 'Connection OK';
 
   @override
@@ -2548,6 +2563,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String serverBrowseDownloadFailed({required String error}) {
     return 'Download failed: $error';
   }
+
+  @override
+  String get serverBrowseDownloadInApp =>
+      'Downloading inside the app: keep Mekuru open until it finishes.';
 
   @override
   String get serverBrowseBookGone => 'Book is no longer on this device';

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:path/path.dart' as p;
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -13,6 +14,7 @@ import 'package:workmanager/workmanager.dart';
 
 import '../../../../core/platform/android_saf_service.dart';
 import '../../../../core/services/firebase_runtime.dart';
+import '../../../../core/services/server_http_client.dart';
 import '../../../../core/services/sentry_setup.dart';
 import '../../../../core/services/usage_telemetry.dart';
 import '../../../../core/utils/atomic_file.dart';
@@ -48,6 +50,23 @@ const ocrPendingFinalizationsKey = 'ocr.pending_finalizations';
 
 /// SharedPreferences key for the OCR server URL.
 const ocrServerUrlKey = 'app.ocr_server_url';
+
+/// SharedPreferences key for the custom OCR server's "accept self-signed
+/// certificate" switch (mirrors AppSettingsStorage's key).
+const ocrServerAllowSelfSignedKey = 'app.ocr_server_allow_self_signed';
+
+/// HTTP client for the OCR server at [serverUrl]: the default client unless
+/// the user accepts a self-signed certificate from their custom server. The
+/// built-in server always gets full certificate validation.
+http.Client ocrServerHttpClientFromPrefs(
+  SharedPreferences prefs,
+  String serverUrl,
+) {
+  final allowSelfSigned =
+      !ocr_server_config.isBuiltInOcrServerUrl(serverUrl) &&
+      (prefs.getBool(ocrServerAllowSelfSignedKey) ?? false);
+  return serverHttpClient(serverUrl, allowSelfSigned: allowSelfSigned);
+}
 
 /// Default OCR server URL (Modal deployment).
 const defaultOcrServerUrl = ocr_server_config.defaultOcrServerUrl;
@@ -394,6 +413,7 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
       : MangaOcrClient(
           serverUrl: serverUrl,
           getBearerToken: () => bearerToken!,
+          httpClient: ocrServerHttpClientFromPrefs(prefs, serverUrl),
         );
   final processPage = ocrClient?.processPage ?? recognizePageWithVision;
   final billingClient = effectiveJobId == null ? null : OcrBillingClient();

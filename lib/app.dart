@@ -78,6 +78,11 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     );
     unawaited(ref.read(ocrServerUrlProvider.notifier).loadPersistedSettings());
     unawaited(
+      ref
+          .read(ocrServerAllowSelfSignedProvider.notifier)
+          .loadPersistedSettings(),
+    );
+    unawaited(
       ref.read(readerSettingsProvider.notifier).loadPersistedSettings(),
     );
     unawaited(

@@ -939,6 +939,13 @@ class AppLocalizationsZh extends AppLocalizations {
       '请输入完整的 http:// 或 https:// 服务器 URL。';
 
   @override
+  String get settingsCustomOcrServerAllowSelfSigned => '接受自签名证书';
+
+  @override
+  String get settingsCustomOcrServerAllowSelfSignedSubtitle =>
+      '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。';
+
+  @override
   String get settingsCustomOcrServerKeyRequired => '自定义服务器需要共享密钥。';
 
   @override
@@ -2378,6 +2385,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serverDialogEnabled => '已启用';
 
   @override
+  String get serverDialogAllowSelfSigned => '接受自签名证书';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitle =>
+      '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。从该服务器下载会在应用内进行，请保持 Mekuru 打开直到下载完成。';
+
+  @override
   String get serverDialogConnectionOk => '连接正常';
 
   @override
@@ -2442,6 +2456,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String serverBrowseDownloadFailed({required String error}) {
     return '下载失败：$error';
   }
+
+  @override
+  String get serverBrowseDownloadInApp => '正在应用内下载：请保持 Mekuru 打开直到下载完成。';
 
   @override
   String get serverBrowseBookGone => '这本书已不在此设备上';
@@ -4131,6 +4148,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '请输入完整的 http:// 或 https:// 服务器 URL。';
 
   @override
+  String get settingsCustomOcrServerAllowSelfSigned => '接受自签名证书';
+
+  @override
+  String get settingsCustomOcrServerAllowSelfSignedSubtitle =>
+      '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。';
+
+  @override
   String get settingsCustomOcrServerKeyRequired => '自定义服务器需要共享密钥。';
 
   @override
@@ -5570,6 +5594,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get serverDialogEnabled => '已启用';
 
   @override
+  String get serverDialogAllowSelfSigned => '接受自签名证书';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitle =>
+      '适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。从该服务器下载会在应用内进行，请保持 Mekuru 打开直到下载完成。';
+
+  @override
   String get serverDialogConnectionOk => '连接正常';
 
   @override
@@ -5634,6 +5665,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String serverBrowseDownloadFailed({required String error}) {
     return '下载失败：$error';
   }
+
+  @override
+  String get serverBrowseDownloadInApp => '正在应用内下载：请保持 Mekuru 打开直到下载完成。';
 
   @override
   String get serverBrowseBookGone => '这本书已不在此设备上';

@@ -159,6 +159,8 @@ abstract class AppSettingsStorage {
   Future<void> saveAutoCropWhiteThreshold(int value);
   Future<String?> loadOcrServerUrl();
   Future<void> saveOcrServerUrl(String url);
+  Future<bool?> loadOcrServerAllowSelfSigned();
+  Future<void> saveOcrServerAllowSelfSigned(bool value);
   Future<bool?> loadEnhancedFuriganaDictEnabled();
   Future<void> saveEnhancedFuriganaDictEnabled(bool enabled);
 }
@@ -210,6 +212,8 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _colorThemeKey = 'app.color_theme';
   static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
   static const _ocrServerUrlKey = 'app.ocr_server_url';
+  static const _ocrServerAllowSelfSignedKey =
+      'app.ocr_server_allow_self_signed';
 
   /// Every SharedPreferences key this storage reads or writes. The backup
   /// service derives its app key list from this, so a key added here is
@@ -227,6 +231,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
     _colorThemeKey,
     _autoCropWhiteThresholdKey,
     _ocrServerUrlKey,
+    _ocrServerAllowSelfSignedKey,
     EnhancedFuriganaDictDownloadService.enabledPreferenceKey,
   ];
 
@@ -387,6 +392,18 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveOcrServerUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_ocrServerUrlKey, url);
+  }
+
+  @override
+  Future<bool?> loadOcrServerAllowSelfSigned() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_ocrServerAllowSelfSignedKey);
+  }
+
+  @override
+  Future<void> saveOcrServerAllowSelfSigned(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_ocrServerAllowSelfSignedKey, value);
   }
 
   @override

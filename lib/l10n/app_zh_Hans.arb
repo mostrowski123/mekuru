@@ -1217,6 +1217,8 @@
     "description": "Validation error shown when the custom OCR server URL is empty."
   },
   "settingsCustomOcrServerUrlInvalid": "请输入完整的 http:// 或 https:// 服务器 URL。",
+  "settingsCustomOcrServerAllowSelfSigned": "接受自签名证书",
+  "settingsCustomOcrServerAllowSelfSignedSubtitle": "适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。",
   "@settingsCustomOcrServerUrlInvalid": {
     "description": "Validation error shown when the custom OCR server URL is invalid."
   },
@@ -2653,6 +2655,8 @@
   "serverDialogSecretLabelKomga": "API 密钥（或 用户名:密码）",
   "serverDialogSecretKeepHint": "留空则保留当前密钥",
   "serverDialogEnabled": "已启用",
+  "serverDialogAllowSelfSigned": "接受自签名证书",
+  "serverDialogAllowSelfSignedSubtitle": "适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。从该服务器下载会在应用内进行，请保持 Mekuru 打开直到下载完成。",
   "serverDialogConnectionOk": "连接正常",
   "serverDialogConnectionFailed": "失败：{error}",
   "serverDialogTest": "测试",
@@ -2669,6 +2673,7 @@
   "serverBrowseLinked": "已关联“{title}”",
   "serverBrowseAddedToLibrary": "“{title}”已添加到书库！",
   "serverBrowseDownloadFailed": "下载失败：{error}",
+  "serverBrowseDownloadInApp": "正在应用内下载：请保持 Mekuru 打开直到下载完成。",
   "serverBrowseBookGone": "这本书已不在此设备上",
   "serverLinkDropped": "“{title}”已不在服务器上，因此已停止同步。请在服务器的图书列表中重新关联。",
   "serverBrowseNoBooks": "此系列中没有图书",

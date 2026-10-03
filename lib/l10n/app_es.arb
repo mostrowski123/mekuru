@@ -1217,6 +1217,8 @@
     "description": "Validation error shown when the custom OCR server URL is empty."
   },
   "settingsCustomOcrServerUrlInvalid": "Introduce una URL completa del servidor http:// o https://.",
+  "settingsCustomOcrServerAllowSelfSigned": "Aceptar certificado autofirmado",
+  "settingsCustomOcrServerAllowSelfSignedSubtitle": "Para un servidor https:// con su propio certificado. Mekuru aceptará cualquier certificado que presente este servidor.",
   "@settingsCustomOcrServerUrlInvalid": {
     "description": "Validation error shown when the custom OCR server URL is invalid."
   },
@@ -2653,6 +2655,8 @@
   "serverDialogSecretLabelKomga": "Clave de API (o usuario:contraseña)",
   "serverDialogSecretKeepHint": "Déjalo en blanco para conservar la actual",
   "serverDialogEnabled": "Activado",
+  "serverDialogAllowSelfSigned": "Aceptar certificado autofirmado",
+  "serverDialogAllowSelfSignedSubtitle": "Para un servidor https:// con su propio certificado. Mekuru aceptará cualquier certificado que presente este servidor. Las descargas desde él se hacen dentro de la app: mantén Mekuru abierto hasta que terminen.",
   "serverDialogConnectionOk": "Conexión correcta",
   "serverDialogConnectionFailed": "Error: {error}",
   "serverDialogTest": "Probar",
@@ -2669,6 +2673,7 @@
   "serverBrowseLinked": "Se vinculó \"{title}\"",
   "serverBrowseAddedToLibrary": "\"{title}\" se añadió a la biblioteca",
   "serverBrowseDownloadFailed": "Error al descargar: {error}",
+  "serverBrowseDownloadInApp": "Descargando dentro de la app: mantén Mekuru abierto hasta que termine.",
   "serverBrowseBookGone": "El libro ya no está en este dispositivo",
   "serverLinkDropped": "\"{title}\" ya no está en el servidor, así que dejó de sincronizarse. Vuelve a vincularlo desde la lista de libros del servidor.",
   "serverBrowseNoBooks": "Esta serie no tiene libros",

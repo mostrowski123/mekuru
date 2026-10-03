@@ -13,15 +13,23 @@ import 'dart:io';
 /// deleted before the error propagates. Throws an [HttpException] on non-200
 /// responses; exceeding the redirect limit throws a [RedirectException],
 /// which implements [HttpException].
+///
+/// [headers] are sent with the request. [client] replaces the default
+/// [HttpClient] (e.g. one that accepts a server's self-signed certificate);
+/// it is closed when the download ends, and closing it with `force: true`
+/// meanwhile cancels the download.
 Future<void> downloadToFile(
   String url,
   String destinationPath, {
   void Function(double progress)? onProgress,
+  Map<String, String>? headers,
+  HttpClient? client,
 }) async {
-  final client = HttpClient();
+  client ??= HttpClient();
   try {
     final uri = Uri.parse(url);
     final request = await client.getUrl(uri);
+    headers?.forEach(request.headers.set);
     final response = await request.close();
 
     if (response.statusCode != HttpStatus.ok) {

@@ -1217,6 +1217,8 @@
     "description": "Validation error shown when the custom OCR server URL is empty."
   },
   "settingsCustomOcrServerUrlInvalid": "Masukkan URL server lengkap http:// atau https://.",
+  "settingsCustomOcrServerAllowSelfSigned": "Terima sertifikat yang ditandatangani sendiri",
+  "settingsCustomOcrServerAllowSelfSignedSubtitle": "Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini.",
   "@settingsCustomOcrServerUrlInvalid": {
     "description": "Validation error shown when the custom OCR server URL is invalid."
   },
@@ -2653,6 +2655,8 @@
   "serverDialogSecretLabelKomga": "Kunci API (atau pengguna:kata sandi)",
   "serverDialogSecretKeepHint": "Kosongkan untuk mempertahankan yang sekarang",
   "serverDialogEnabled": "Aktif",
+  "serverDialogAllowSelfSigned": "Terima sertifikat yang ditandatangani sendiri",
+  "serverDialogAllowSelfSignedSubtitle": "Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini. Unduhan dari server ini berjalan di dalam aplikasi, jadi biarkan Mekuru tetap terbuka sampai selesai.",
   "serverDialogConnectionOk": "Koneksi berhasil",
   "serverDialogConnectionFailed": "Gagal: {error}",
   "serverDialogTest": "Uji",
@@ -2669,6 +2673,7 @@
   "serverBrowseLinked": "\"{title}\" ditautkan",
   "serverBrowseAddedToLibrary": "\"{title}\" ditambahkan ke perpustakaan!",
   "serverBrowseDownloadFailed": "Gagal mengunduh: {error}",
+  "serverBrowseDownloadInApp": "Mengunduh di dalam aplikasi: biarkan Mekuru tetap terbuka sampai selesai.",
   "serverBrowseBookGone": "Buku ini sudah tidak ada di perangkat ini",
   "serverLinkDropped": "\"{title}\" sudah tidak ada di server, jadi tidak lagi disinkronkan. Tautkan lagi dari daftar buku server.",
   "serverBrowseNoBooks": "Tidak ada buku dalam seri ini",

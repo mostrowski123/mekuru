@@ -1762,6 +1762,18 @@ abstract class AppLocalizations {
   /// **'Enter a full http:// or https:// server URL.'**
   String get settingsCustomOcrServerUrlInvalid;
 
+  /// Label of the switch in the custom OCR server dialog that makes Mekuru accept the server's self-signed (untrusted) TLS certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept self-signed certificate'**
+  String get settingsCustomOcrServerAllowSelfSigned;
+
+  /// Explanation under the self-signed certificate switch in the custom OCR server dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents.'**
+  String get settingsCustomOcrServerAllowSelfSignedSubtitle;
+
   /// Validation error shown when the custom OCR server key is empty.
   ///
   /// In en, this message translates to:
@@ -4234,6 +4246,18 @@ abstract class AppLocalizations {
   /// **'Enabled'**
   String get serverDialogEnabled;
 
+  /// Label of the switch in the server connection dialog that makes Mekuru accept this server's self-signed (untrusted) TLS certificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept self-signed certificate'**
+  String get serverDialogAllowSelfSigned;
+
+  /// Explanation under the self-signed certificate switch in the server connection dialog: what it allows, and that downloads from such a server run inside the app.
+  ///
+  /// In en, this message translates to:
+  /// **'For an https:// server that uses its own certificate. Mekuru then accepts any certificate this server presents. Downloads from it run inside the app, so keep Mekuru open until they finish.'**
+  String get serverDialogAllowSelfSignedSubtitle;
+
   /// Result shown in the server connection dialog after a successful connection test.
   ///
   /// In en, this message translates to:
@@ -4329,6 +4353,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download failed: {error}'**
   String serverBrowseDownloadFailed({required String error});
+
+  /// Snack bar shown when a server book download runs inside the app (not as a background download), so the user keeps the app open.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading inside the app: keep Mekuru open until it finishes.'**
+  String get serverBrowseDownloadInApp;
 
   /// Snackbar shown when tapping a server book marked as downloaded whose local copy has since been deleted.
   ///

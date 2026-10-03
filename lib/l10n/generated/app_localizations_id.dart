@@ -987,6 +987,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Masukkan URL server lengkap http:// atau https://.';
 
   @override
+  String get settingsCustomOcrServerAllowSelfSigned =>
+      'Terima sertifikat yang ditandatangani sendiri';
+
+  @override
+  String get settingsCustomOcrServerAllowSelfSignedSubtitle =>
+      'Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini.';
+
+  @override
   String get settingsCustomOcrServerKeyRequired =>
       'Shared key diperlukan untuk server kustom.';
 
@@ -2493,6 +2501,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get serverDialogEnabled => 'Aktif';
 
   @override
+  String get serverDialogAllowSelfSigned =>
+      'Terima sertifikat yang ditandatangani sendiri';
+
+  @override
+  String get serverDialogAllowSelfSignedSubtitle =>
+      'Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini. Unduhan dari server ini berjalan di dalam aplikasi, jadi biarkan Mekuru tetap terbuka sampai selesai.';
+
+  @override
   String get serverDialogConnectionOk => 'Koneksi berhasil';
 
   @override
@@ -2559,6 +2575,10 @@ class AppLocalizationsId extends AppLocalizations {
   String serverBrowseDownloadFailed({required String error}) {
     return 'Gagal mengunduh: $error';
   }
+
+  @override
+  String get serverBrowseDownloadInApp =>
+      'Mengunduh di dalam aplikasi: biarkan Mekuru tetap terbuka sampai selesai.';
 
   @override
   String get serverBrowseBookGone =>

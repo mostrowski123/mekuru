@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
 import 'package:mekuru/features/settings/data/services/ocr_server_health_client.dart';
@@ -10,10 +11,12 @@ class OcrServerUrlDialog extends StatefulWidget {
     super.key,
     required this.initialUrl,
     required this.initialBearerKey,
+    this.initialAllowSelfSigned = false,
   });
 
   final String initialUrl;
   final String initialBearerKey;
+  final bool initialAllowSelfSigned;
 
   @override
   State<OcrServerUrlDialog> createState() => _OcrServerUrlDialogState();
@@ -22,7 +25,7 @@ class OcrServerUrlDialog extends StatefulWidget {
 class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
   late final TextEditingController _urlController;
   late final TextEditingController _keyController;
-  late final OcrServerHealthClient _healthClient;
+  late bool _allowSelfSigned;
   bool _obscureKey = true;
   bool _isTestingConnection = false;
   bool? _testSucceeded;
@@ -35,14 +38,13 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
     super.initState();
     _urlController = TextEditingController(text: widget.initialUrl);
     _keyController = TextEditingController(text: widget.initialBearerKey);
-    _healthClient = OcrServerHealthClient();
+    _allowSelfSigned = widget.initialAllowSelfSigned;
   }
 
   @override
   void dispose() {
     _urlController.dispose();
     _keyController.dispose();
-    _healthClient.dispose();
     super.dispose();
   }
 
@@ -71,7 +73,9 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
       return;
     }
 
-    Navigator.of(context).pop((url: url, bearerKey: customKey));
+    Navigator.of(
+      context,
+    ).pop((url: url, bearerKey: customKey, allowSelfSigned: _allowSelfSigned));
   }
 
   Future<void> _onTestConnection() async {
@@ -95,8 +99,11 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
       _testMessage = l10n.settingsCustomOcrServerTesting;
     });
 
+    final healthClient = OcrServerHealthClient(
+      httpClient: serverHttpClient(url, allowSelfSigned: _allowSelfSigned),
+    );
     try {
-      final result = await _healthClient.checkHealth(url);
+      final result = await healthClient.checkHealth(url);
       if (!mounted) return;
       setState(() {
         _isTestingConnection = false;
@@ -113,6 +120,8 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
         _testSucceeded = false;
         _testMessage = message;
       });
+    } finally {
+      healthClient.dispose();
     }
   }
 
@@ -211,6 +220,21 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
                   ],
                 ),
               ],
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.settingsCustomOcrServerAllowSelfSigned),
+                subtitle: Text(
+                  l10n.settingsCustomOcrServerAllowSelfSignedSubtitle,
+                ),
+                value: _allowSelfSigned,
+                onChanged: _isTestingConnection
+                    ? null
+                    : (value) => setState(() {
+                        _allowSelfSigned = value;
+                        _testSucceeded = null;
+                        _testMessage = null;
+                      }),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _keyController,
@@ -267,6 +291,7 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
             _urlController.clear();
             _keyController.clear();
             setState(() {
+              _allowSelfSigned = false;
               _testSucceeded = null;
               _testMessage = null;
               _urlError = null;

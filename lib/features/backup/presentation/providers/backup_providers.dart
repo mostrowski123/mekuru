@@ -438,6 +438,9 @@ class RestoreNotifier extends Notifier<RestoreState> {
         .refresh(autoCropWhiteThresholdProvider.notifier)
         .loadPersistedSettings();
     await ref.refresh(ocrServerUrlProvider.notifier).loadPersistedSettings();
+    await ref
+        .refresh(ocrServerAllowSelfSignedProvider.notifier)
+        .loadPersistedSettings();
     await ref.refresh(readerSettingsProvider.notifier).loadPersistedSettings();
     await ref.refresh(librarySortProvider.notifier).loadPersistedSort();
 

@@ -3,11 +3,14 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 // ignore: depend_on_referenced_packages
 import 'package:workmanager_platform_interface/workmanager_platform_interface.dart';
+
+import '../../../../shared/self_signed_cert.dart';
 
 class _FakeWorkmanagerPlatform extends WorkmanagerPlatform {
   final List<String> cancelledTags = <String>[];
@@ -176,6 +179,10 @@ void main() {
 
     test('ocrServerUrlKey is defined', () {
       expect(ocrServerUrlKey, isNotEmpty);
+    });
+
+    test('ocrServerAllowSelfSignedKey matches the settings key', () {
+      expect(ocrServerAllowSelfSignedKey, 'app.ocr_server_allow_self_signed');
     });
 
     test(
@@ -609,5 +616,66 @@ void main() {
         expect(progress.total, 2);
       },
     );
+  });
+
+  group('ocrServerHttpClientFromPrefs against a self-signed server', () {
+    late HttpServer server;
+    late String baseUrl;
+
+    setUp(() async {
+      final context = SecurityContext()
+        ..useCertificateChainBytes(utf8.encode(selfSignedCertPem))
+        ..usePrivateKeyBytes(utf8.encode(selfSignedKeyPem));
+      server = await HttpServer.bindSecure(
+        InternetAddress.loopbackIPv4,
+        0,
+        context,
+      );
+      server.listen((request) async {
+        request.response.write('{"status":"ok"}');
+        await request.response.close();
+      });
+      baseUrl = 'https://127.0.0.1:${server.port}';
+    });
+
+    tearDown(() async {
+      await server.close(force: true);
+    });
+
+    Future<http.Client> clientFor(Map<String, Object> values) async {
+      SharedPreferences.setMockInitialValues(values);
+      final prefs = await SharedPreferences.getInstance();
+      final client = ocrServerHttpClientFromPrefs(prefs, baseUrl);
+      addTearDown(client.close);
+      return client;
+    }
+
+    test('rejects the certificate when the switch was never set', () async {
+      final client = await clientFor({ocrServerUrlKey: baseUrl});
+      await expectLater(
+        client.get(Uri.parse('$baseUrl/health')),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('rejects the certificate when the switch is off', () async {
+      final client = await clientFor({
+        ocrServerUrlKey: baseUrl,
+        ocrServerAllowSelfSignedKey: false,
+      });
+      await expectLater(
+        client.get(Uri.parse('$baseUrl/health')),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('accepts the certificate when the switch is on', () async {
+      final client = await clientFor({
+        ocrServerUrlKey: baseUrl,
+        ocrServerAllowSelfSignedKey: true,
+      });
+      final response = await client.get(Uri.parse('$baseUrl/health'));
+      expect(response.statusCode, 200);
+    });
   });
 }
