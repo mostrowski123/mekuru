@@ -290,9 +290,12 @@ class ServerDownloadHttpException implements Exception {
 }
 
 /// Download [url] into [partPath], continuing a partial file left by an
-/// earlier attempt with a Range request. A server that ignores the range
-/// (200) or answers a different one starts the file over. [onProgress] gets
-/// the bytes on disk and the total (-1 when unknown).
+/// earlier attempt with a Range request. The resume carries `If-Range` with
+/// the validator (ETag or Last-Modified) of the response that started the
+/// file, so a server whose file changed in between (Kavita rebuilds a
+/// chapter's zip each day) sends it whole; that, or a server that ignores
+/// the range (200) or answers a different one, starts the file over.
+/// [onProgress] gets the bytes on disk and the total (-1 when unknown).
 Future<void> downloadResumable(
   String url,
   String partPath, {
@@ -301,12 +304,16 @@ Future<void> downloadResumable(
   void Function(int received, int total)? onProgress,
 }) async {
   final part = File(partPath);
+  final validatorFile = File('$partPath.validator');
   var existing = await _lengthOrZero(partPath);
   final uri = Uri.parse(url);
   final request = await client.getUrl(uri);
   headers?.forEach(request.headers.set);
   if (existing > 0) {
     request.headers.set(HttpHeaders.rangeHeader, 'bytes=$existing-');
+    if (await validatorFile.exists()) {
+      request.headers.set('if-range', await validatorFile.readAsString());
+    }
   }
   final response = await request.close();
 
@@ -325,6 +332,17 @@ Future<void> downloadResumable(
     existing = 0;
     mode = FileMode.write;
     total = response.contentLength;
+    // What a later resume must still match. A weak ETag can't be used in
+    // If-Range; without any validator a resume is a plain Range request.
+    final etag = response.headers.value(HttpHeaders.etagHeader);
+    final validator = etag != null && !etag.startsWith('W/')
+        ? etag
+        : response.headers.value(HttpHeaders.lastModifiedHeader);
+    if (validator != null) {
+      await validatorFile.writeAsString(validator);
+    } else if (await validatorFile.exists()) {
+      await validatorFile.delete();
+    }
   } else {
     await response.drain<void>();
     if (existing > 0 &&
@@ -332,6 +350,7 @@ Future<void> downloadResumable(
             response.statusCode == HttpStatus.requestedRangeNotSatisfiable)) {
       // The partial file no longer matches the server's: start over.
       await part.delete();
+      if (await validatorFile.exists()) await validatorFile.delete();
       return downloadResumable(
         url,
         partPath,
@@ -358,6 +377,7 @@ Future<void> downloadResumable(
   if (total >= 0 && received != total) {
     throw HttpException('Connection closed at $received of $total bytes');
   }
+  if (await validatorFile.exists()) await validatorFile.delete();
 }
 
 /// iOS downloads running in the app, by download key, so they can be

@@ -10,16 +10,34 @@ import '../../shared/self_signed_cert.dart';
 void main() {
   late HttpServer server;
   late Directory tempDir;
-  final payload = List<int>.generate(200 * 1024 + 3, (i) => i % 253);
+  final original = List<int>.generate(200 * 1024 + 3, (i) => i % 253);
+  // What /file serves; a test swaps it (and etag) to "replace" the file.
+  var payload = original;
   final rangesSeen = <String?>[];
+  final ifRangesSeen = <String?>[];
+  // The ETag /file and /cut serve; a test changes it to "replace" the file.
+  var etag = '"v1"';
 
   /// /file honours Range, /norange ignores it, /badrange answers a range
   /// that doesn't match the request, /missing is a 404, /busy a 503.
   Future<void> handle(HttpRequest request) async {
     final response = request.response;
-    final range = request.headers.value(HttpHeaders.rangeHeader);
+    var range = request.headers.value(HttpHeaders.rangeHeader);
+    final ifRange = request.headers.value('if-range');
     rangesSeen.add(range);
+    ifRangesSeen.add(ifRange);
+    response.headers.set(HttpHeaders.etagHeader, etag);
+    // If-Range that doesn't match the current file: send it whole.
+    if (ifRange != null && ifRange != etag) range = null;
     switch (request.uri.path) {
+      case '/cut':
+        // Headers for the whole file, half the body, then a dead socket.
+        response.contentLength = payload.length;
+        final socket = await response.detachSocket();
+        socket.add(payload.sublist(0, payload.length ~/ 2));
+        await socket.flush();
+        socket.destroy();
+        return;
       case '/file' when range != null:
         final start = int.parse(range.substring(6, range.length - 1));
         response.statusCode = HttpStatus.partialContent;
@@ -51,6 +69,9 @@ void main() {
   setUp(() async {
     tempDir = Directory.systemTemp.createTempSync('server_download_work_');
     rangesSeen.clear();
+    ifRangesSeen.clear();
+    etag = '"v1"';
+    payload = original;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen(handle);
   });
@@ -87,6 +108,49 @@ void main() {
       expect(File(partPath()).readAsBytesSync(), payload);
       expect(rangesSeen, ['bytes=5000-']);
     });
+
+    test(
+      'a cut download resumes with If-Range while the file is unchanged',
+      () async {
+        final client = HttpClient();
+        addTearDown(client.close);
+        await expectLater(
+          downloadResumable(url('/cut'), partPath(), client: client),
+          throwsA(isA<IOException>()),
+        );
+        final kept = File(partPath()).lengthSync();
+        expect(kept, greaterThan(0));
+        expect(File('${partPath()}.validator').readAsStringSync(), '"v1"');
+
+        await downloadResumable(url('/file'), partPath(), client: client);
+
+        expect(File(partPath()).readAsBytesSync(), payload);
+        expect(rangesSeen.last, 'bytes=$kept-');
+        expect(ifRangesSeen.last, '"v1"');
+        expect(File('${partPath()}.validator').existsSync(), isFalse);
+      },
+    );
+
+    test(
+      'a cut download starts over when the file changed meanwhile',
+      () async {
+        final client = HttpClient();
+        addTearDown(client.close);
+        await expectLater(
+          downloadResumable(url('/cut'), partPath(), client: client),
+          throwsA(isA<IOException>()),
+        );
+        // e.g. Kavita rebuilt the chapter's zip: other bytes, other ETag.
+        etag = '"v2"';
+        payload = original.reversed.toList();
+
+        await downloadResumable(url('/file'), partPath(), client: client);
+
+        // The whole new file, not old bytes with the new file's tail.
+        expect(File(partPath()).readAsBytesSync(), payload);
+        expect(ifRangesSeen.last, '"v1"');
+      },
+    );
 
     test('starts over when the server ignores the range', () async {
       File(partPath()).writeAsBytesSync(List.filled(5000, 7));
