@@ -483,6 +483,37 @@ void main() {
 
   group('index shape upgrade', () {
     test(
+      'rows with nothing to index are backfilled once, not every launch',
+      () async {
+        // An unreadable glossary has no search text; '' would mark the row
+        // as not done yet, so each launch would read it again.
+        await db.customInsert(
+          'INSERT INTO dictionary_entries '
+          '(expression, reading, glossaries, dictionary_id) '
+          'VALUES (?, ?, ?, ?)',
+          variables: [
+            Variable.withString('壊れ'),
+            Variable.withString('こわれ'),
+            Variable.withString('["truncated defin'),
+            Variable.withInt(dictId),
+          ],
+        );
+
+        await db.backfillGlossarySearchText();
+
+        final searchText =
+            (await db
+                    .customSelect(
+                      'SELECT search_text FROM dictionary_entries '
+                      "WHERE expression = '壊れ'",
+                    )
+                    .getSingle())
+                .data['search_text'];
+        expect(searchText, ' ');
+      },
+    );
+
+    test(
       'an index over raw glossaries JSON is rebuilt over search text',
       () async {
         // Recreate the pre-search_text world: FTS over raw glossaries and

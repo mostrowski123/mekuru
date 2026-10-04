@@ -434,10 +434,13 @@ class AppDatabase extends _$AppDatabase {
           final searchText = GlossaryParser.searchText(
             row.data['glossaries'] as String,
           );
-          if (searchText.isEmpty) continue;
           b.update(
             dictionaryEntries,
-            DictionaryEntriesCompanion(searchText: Value(searchText)),
+            // '' means "not done yet": nothing to index (unreadable JSON)
+            // gets a blank so the row is not read again every launch.
+            DictionaryEntriesCompanion(
+              searchText: Value(searchText.isEmpty ? ' ' : searchText),
+            ),
             where: (t) => t.id.equals(id),
           );
         }
