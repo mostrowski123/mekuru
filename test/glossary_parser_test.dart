@@ -76,6 +76,17 @@ void main() {
       expect(search(jitendexRedirect), ' ');
     });
 
+    test('a Jitendex redirect names the entry it points to', () {
+      expect(GlossaryParser.redirectTarget(jsonEncode([jitendexRedirect])), (
+        expression: '労働相',
+        reading: 'ろうどうしょう',
+      ));
+      // Glossaries with text of their own, or unreadable ones, point nowhere.
+      expect(GlossaryParser.redirectTarget(jsonEncode([jitendexTaberu])), null);
+      expect(GlossaryParser.redirectTarget('["to eat"]'), null);
+      expect(GlossaryParser.redirectTarget('[{"broken'), null);
+    });
+
     test('a Wiktionary entry reads as numbered glosses without examples', () {
       expect(parse(wtyEnglishTaberu), [
         '1. to eat\n2. to make a living\n3. to eat or drink',

@@ -10,6 +10,7 @@ import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_setting
 import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/data/services/part_of_speech_resolver.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_readings_block.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
@@ -202,11 +203,16 @@ class _GroupedDictionaryEntryHeaderState
     }
   }
 
+  /// What Save and Anki carry: a Jitendex redirect ("⟶ 労働相") has no
+  /// definitions of its own, so it takes those of the word it points to.
+  Future<String> _exportGlossaries() =>
+      ref.read(dictionaryRepositoryProvider).exportGlossaries(_primaryEntry);
+
   Future<void> _toggleSave() async {
     if (_isSaved) return;
     final repo = ref.read(vocabularyRepositoryProvider);
     await repo.addWord(
-      entry: _primaryEntry,
+      entry: _primaryEntry.copyWith(glossaries: await _exportGlossaries()),
       sentenceContext: widget.sentenceContext ?? '',
       source: widget.saveSource,
     );
@@ -262,11 +268,11 @@ class _GroupedDictionaryEntryHeaderState
     );
   }
 
-  AnkiNoteData _buildAnkiNoteData() {
+  AnkiNoteData _buildAnkiNoteData({String? glossaries}) {
     return AnkiNoteData(
       expression: _primaryEntry.expression,
       reading: _primaryEntry.reading,
-      glossaries: _primaryEntry.glossaries,
+      glossaries: glossaries ?? _primaryEntry.glossaries,
       dictionaryName: _primaryResult.dictionaryName,
       frequencyRank: _frequencyRank,
       sentenceContext: widget.sentenceContext,
@@ -334,7 +340,7 @@ class _GroupedDictionaryEntryHeaderState
     });
   }
 
-  void _sendToAnki() {
+  Future<void> _sendToAnki() async {
     final config = ref.read(ankidroidConfigProvider);
     final addedToAnkiMessage = context.l10n.dictionaryAddedToAnki(
       expression: _primaryEntry.expression,
@@ -346,7 +352,8 @@ class _GroupedDictionaryEntryHeaderState
       return;
     }
 
-    final noteData = _buildAnkiNoteData();
+    final noteData = _buildAnkiNoteData(glossaries: await _exportGlossaries());
+    if (!mounted) return;
     Navigator.of(context)
         .push<bool>(
           namedRoute(

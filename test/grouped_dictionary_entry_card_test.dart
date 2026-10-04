@@ -1,11 +1,13 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
+import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
@@ -420,5 +422,56 @@ void main() {
     expect(find.text('くだ'), findsOneWidget);
     expect(find.textContaining('▸', findRichText: true), findsNothing);
     expect(find.text('to eat (plain)'), findsOneWidget);
+  });
+
+  testWidgets('saving a Jitendex redirect saves the definitions it points to', (
+    tester,
+  ) async {
+    final repository = DictionaryRepository(db);
+    final dictionaryId = await repository.insertDictionary('Jitendex.org');
+    const target = '["Minister of Labour"]';
+    await repository.batchInsertEntries([
+      for (final (reading, glossaries) in [
+        ('ろうどうしょう', target),
+        // Same spelling, another reading: not the one the link names.
+        ('ろうどうそう', '["wrong reading"]'),
+      ])
+        DictionaryEntriesCompanion.insert(
+          expression: '労働相',
+          reading: Value(reading),
+          glossaries: glossaries,
+          dictionaryId: dictionaryId,
+        ),
+    ]);
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        db: db,
+        width: 400,
+        child: GroupedDictionaryEntryCard(
+          entries: [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: 10,
+                expression: '労働大臣',
+                reading: 'ろうどうだいじん',
+                glossaries: jsonEncode([jitendexRedirect]),
+                dictionaryId: dictionaryId,
+              ),
+              dictionaryName: 'Jitendex',
+            ),
+          ],
+          pitchAccents: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Save to Vocabulary'));
+    await tester.pumpAndSettle();
+
+    final saved = await db.select(db.savedWords).getSingle();
+    expect(saved.expression, '労働大臣');
+    expect(saved.glossaries, target);
   });
 }

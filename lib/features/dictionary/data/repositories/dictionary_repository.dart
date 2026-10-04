@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
@@ -166,6 +168,32 @@ class DictionaryRepository {
   )..where((t) => t.name.equals(name))).getSingleOrNull();
 
   // ──────────────── DictionaryEntry ────────────────
+
+  /// The glossaries saved and sent to Anki for [entry]: its own, or for a
+  /// Jitendex redirect ("⟶ 労働相") those of the entry it points to in the
+  /// same dictionary, preferring the link's reading.
+  Future<String> exportGlossaries(DictionaryEntry entry) async {
+    final target = GlossaryParser.redirectTarget(entry.glossaries);
+    if (target == null) return entry.glossaries;
+    final rows =
+        await (_db.select(_db.dictionaryEntries)..where(
+              (t) =>
+                  t.dictionaryId.equals(entry.dictionaryId) &
+                  t.expression.equals(target.expression),
+            ))
+            .get();
+    final withReading = rows.where((row) => row.reading == target.reading);
+    final items = <Object?>[];
+    for (final row in withReading.isEmpty ? rows : withReading) {
+      try {
+        final decoded = jsonDecode(row.glossaries);
+        if (decoded is List) items.addAll(decoded);
+      } on FormatException {
+        // An unreadable row adds nothing.
+      }
+    }
+    return items.isEmpty ? entry.glossaries : jsonEncode(items);
+  }
 
   /// Batch insert entries in chunks for performance.
   /// Returns total number of entries inserted.

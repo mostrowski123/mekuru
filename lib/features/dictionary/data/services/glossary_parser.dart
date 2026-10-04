@@ -80,6 +80,46 @@ class GlossaryParser {
     }
   }
 
+  /// The entry a glossary only points to: Jitendex lists some spellings as
+  /// just "⟶ 労働相", a `?query=…` link to the entry with the definitions.
+  /// Null when the glossary has text of its own or no such link.
+  static ({String expression, String reading})? redirectTarget(
+    String glossariesJson,
+  ) {
+    if (parse(glossariesJson).isNotEmpty) return null;
+    try {
+      for (final item in jsonDecode(glossariesJson) as List) {
+        final href = item is String ? _lookupHref(jsonDecode(item)) : null;
+        if (href == null) continue;
+        final query = Uri.parse(href).queryParameters;
+        final expression = query['query'] ?? '';
+        if (expression.isEmpty) continue;
+        return (
+          expression: expression,
+          reading: query['primary_reading'] ?? '',
+        );
+      }
+    } catch (_) {
+      // Unreadable JSON or link: nothing to follow.
+    }
+    return null;
+  }
+
+  static String? _lookupHref(dynamic content) {
+    if (content is List) {
+      for (final child in content) {
+        if (_lookupHref(child) case final href?) return href;
+      }
+    } else if (content is Map) {
+      final href = content['href'];
+      if (content['tag'] == 'a' && href is String && href.startsWith('?')) {
+        return href;
+      }
+      return _lookupHref(content['content']);
+    }
+    return null;
+  }
+
   /// Convert a single glossary item into readable text.
   static String _itemToReadableText(dynamic item) {
     if (item is String) {
