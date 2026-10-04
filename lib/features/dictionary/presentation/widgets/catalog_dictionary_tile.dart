@@ -6,10 +6,11 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/delete_dictionary_dialog.dart';
+import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
-import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// One downloadable dictionary: what it is, its sizes and license, and a
@@ -101,15 +102,26 @@ class CatalogDictionaryTile extends ConsumerWidget {
     );
   }
 
-  /// On Wi-Fi, or off it once the user accepts mobile data.
+  /// Jitendex over JMdict English (installed or on its way) asks first:
+  /// both would show most definitions twice.
   Future<void> _download(BuildContext context, WidgetRef ref) async {
-    AppHaptics.light();
-    // Read now: the tile can unmount while the dialog is up.
+    // Read now: the tile can unmount while a dialog is up.
     final notifier = ref.read(catalogDownloadProvider(entry).notifier);
-    final body = context.l10n.catalogMobileDataBody(
-      size: _megabytes(entry.downloadMb),
+    final replaceJmdict =
+        entry == CatalogDictionary.jitendex &&
+            (ref.read(jmdictProvider).isDownloading ||
+                YomitanDictDownloadService.isImportedIn(
+                  YomitanDictType.jmdictEnglish,
+                  ref.read(dictionariesProvider).value ?? const [],
+                ))
+        ? await _askReplaceJmdict(context)
+        : false;
+    if (replaceJmdict == null || !context.mounted) return;
+    await askThenDownload(
+      context,
+      _megabytes(entry.downloadMb),
+      () => notifier.download(replaceJmdict: replaceJmdict),
     );
-    if (await okToDownload(context, body)) unawaited(notifier.download());
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref, int id) async {
@@ -119,6 +131,33 @@ class CatalogDictionaryTile extends ConsumerWidget {
       unawaited(notifier.delete(id));
     }
   }
+}
+
+/// Jitendex while JMdict English is installed. Null when cancelled, else
+/// whether to delete JMdict once Jitendex is installed.
+Future<bool?> _askReplaceJmdict(BuildContext context) {
+  final l10n = context.l10n;
+  return showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.catalogJmdictInstalledTitle),
+      content: Text(l10n.catalogJmdictInstalledBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(l10n.serverBrowseDownloadAnyway),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(l10n.catalogReplaceJmdict),
+        ),
+      ],
+    ),
+  );
 }
 
 String _megabytes(double mb) =>

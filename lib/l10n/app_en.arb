@@ -4562,5 +4562,17 @@
         "type": "int"
       }
     }
+  },
+  "catalogJmdictInstalledTitle": "You already have JMdict",
+  "@catalogJmdictInstalledTitle": {
+    "description": "Title of the dialog shown when the user downloads Jitendex while JMdict English is installed."
+  },
+  "catalogJmdictInstalledBody": "Jitendex is built on JMdict, so with both installed you'll see most definitions twice. Jitendex has a clearer layout and example sentences.\n\nReplace JMdict deletes JMdict once Jitendex has finished installing. You can download JMdict again anytime from More Dictionaries.",
+  "@catalogJmdictInstalledBody": {
+    "description": "Body of the dialog shown when the user downloads Jitendex while JMdict English is installed. \"Replace JMdict\" is the button label (catalogReplaceJmdict); More Dictionaries is the catalog screen (catalogTitle)."
+  },
+  "catalogReplaceJmdict": "Replace JMdict",
+  "@catalogReplaceJmdict": {
+    "description": "Button in the Jitendex/JMdict dialog: download Jitendex, then delete JMdict once Jitendex is installed."
   }
 }

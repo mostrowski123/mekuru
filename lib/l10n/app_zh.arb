@@ -2924,5 +2924,8 @@
   "dictionaryImportedCollection": "{dictionaries, plural, =1{已导入 1 个词典（{entries} 个词条）} other{已导入 {dictionaries} 个词典（{entries} 个词条）}}",
   "dictionaryImportNoneInCollection": "词典集合中未找到词典",
   "backgroundWorkDictionaries": "{count, plural, =1{正在下载 1 个词典} other{正在下载 {count} 个词典}}",
-  "dictionaryDownloadWifiLost": "Wi-Fi 已断开，下载已停止。点按“下载”重试。"
+  "dictionaryDownloadWifiLost": "Wi-Fi 已断开，下载已停止。点按“下载”重试。",
+  "catalogJmdictInstalledTitle": "You already have JMdict",
+  "catalogJmdictInstalledBody": "Jitendex is built on JMdict, so with both installed you'll see most definitions twice. Jitendex has a clearer layout and example sentences.\n\nReplace JMdict deletes JMdict once Jitendex has finished installing. You can download JMdict again anytime from More Dictionaries.",
+  "catalogReplaceJmdict": "Replace JMdict"
 }

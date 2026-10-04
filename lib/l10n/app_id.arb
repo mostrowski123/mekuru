@@ -2924,5 +2924,8 @@
   "dictionaryImportedCollection": "{dictionaries, plural, =1{1 kamus diimpor ({entries} entri)} other{{dictionaries} kamus diimpor ({entries} entri)}}",
   "dictionaryImportNoneInCollection": "Tidak ada kamus di dalam koleksi",
   "backgroundWorkDictionaries": "{count, plural, =1{Mengunduh 1 kamus} other{Mengunduh {count} kamus}}",
-  "dictionaryDownloadWifiLost": "Unduhan berhenti karena Wi-Fi terputus. Ketuk Unduh untuk mencoba lagi."
+  "dictionaryDownloadWifiLost": "Unduhan berhenti karena Wi-Fi terputus. Ketuk Unduh untuk mencoba lagi.",
+  "catalogJmdictInstalledTitle": "You already have JMdict",
+  "catalogJmdictInstalledBody": "Jitendex is built on JMdict, so with both installed you'll see most definitions twice. Jitendex has a clearer layout and example sentences.\n\nReplace JMdict deletes JMdict once Jitendex has finished installing. You can download JMdict again anytime from More Dictionaries.",
+  "catalogReplaceJmdict": "Replace JMdict"
 }

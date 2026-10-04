@@ -126,4 +126,52 @@ void main() {
     expect(container.read(download).isDeleting, isFalse);
     expect(container.read(download).deletedId, id);
   });
+
+  group('Jitendex replacing JMdict', () {
+    final download = catalogDownloadProvider(CatalogDictionary.jitendex);
+
+    /// Downloads Jitendex, replacing JMdict, with [titles] installed; returns
+    /// the titles left and the download's state.
+    Future<(List<String>, CatalogDownloadState)> replaceOver(
+      List<String> titles,
+    ) async {
+      final db = createTestDatabase();
+      addTearDown(db.close);
+      final repo = DictionaryRepository(db);
+      for (final title in titles) {
+        await repo.insertDictionary(title);
+      }
+      final container = ProviderContainer(
+        overrides: [dictionaryRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(download.notifier).download(replaceJmdict: true);
+      final left = await repo.getAllDictionaries();
+      return ([for (final d in left) d.name], container.read(download));
+    }
+
+    test('deletes English JMdict once Jitendex is installed', () async {
+      // Jitendex is installed already, so nothing is downloaded.
+      final (left, state) = await replaceOver([
+        'JMdict (Spanish) [2026-10-03]',
+        'JMdict [2026-10-03]',
+        'Jitendex.org [2026-10-03]',
+      ]);
+
+      expect(left, [
+        'JMdict (Spanish) [2026-10-03]',
+        'Jitendex.org [2026-10-03]',
+      ]);
+      expect(state.failure, isNull);
+    });
+
+    test('keeps JMdict when the Jitendex download fails', () async {
+      // No network or platform plugins in unit tests: the download fails.
+      final (left, state) = await replaceOver(['JMdict [2026-10-03]']);
+
+      expect(state.failure, isNotNull);
+      expect(left, ['JMdict [2026-10-03]']);
+    });
+  });
 }

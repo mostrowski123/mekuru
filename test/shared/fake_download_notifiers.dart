@@ -98,22 +98,26 @@ class _FakeJpdbFreqNotifier extends JpdbFreqNotifier {
 }
 
 /// Records [download] calls instead of downloading, then shows [result];
-/// [delete] calls go to [onDelete].
+/// [delete] calls go to [onDelete], downloads replacing JMdict also to
+/// [onReplaceJmdict].
 class FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
   FakeCatalogDownloadNotifier(
     super.entry,
     this.onDownload, {
     this.result = const CatalogDownloadState(),
     this.onDelete,
+    this.onReplaceJmdict,
   });
 
   final void Function(CatalogDictionary entry) onDownload;
   final CatalogDownloadState result;
   final void Function(int dictionaryId)? onDelete;
+  final void Function(CatalogDictionary entry)? onReplaceJmdict;
 
   @override
-  Future<void> download() async {
+  Future<void> download({bool replaceJmdict = false}) async {
     onDownload(entry);
+    if (replaceJmdict) onReplaceJmdict?.call(entry);
     state = result;
   }
 

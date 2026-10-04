@@ -3559,4 +3559,14 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get catalogJmdictInstalledTitle => 'You already have JMdict';
+
+  @override
+  String get catalogJmdictInstalledBody =>
+      'Jitendex is built on JMdict, so with both installed you\'ll see most definitions twice. Jitendex has a clearer layout and example sentences.\n\nReplace JMdict deletes JMdict once Jitendex has finished installing. You can download JMdict again anytime from More Dictionaries.';
+
+  @override
+  String get catalogReplaceJmdict => 'Replace JMdict';
 }

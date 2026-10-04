@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 
 /// State of one catalog dictionary's download.
 class CatalogDownloadState {
@@ -38,8 +39,10 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
   CatalogDownloadState build() => const CatalogDownloadState();
 
   /// Downloads and imports [entry]. Does nothing while a download runs or
-  /// once the dictionary is installed.
-  Future<void> download() async {
+  /// once the dictionary is installed. [replaceJmdict] deletes JMdict
+  /// English once [entry] is installed, never before, so a failed download
+  /// leaves the user's dictionary in place.
+  Future<void> download({bool replaceJmdict = false}) async {
     if (state.isDownloading || state.isDeleting) return;
     state = const CatalogDownloadState(isDownloading: true);
     try {
@@ -57,6 +60,8 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
         );
       }
       state = const CatalogDownloadState();
+      // JMdict's own tile shows the delete and anything that stops it.
+      if (replaceJmdict) await ref.read(jmdictProvider.notifier).delete();
     } on DownloadStoppedException {
       // iOS ended the background work, or the user stopped it there.
       state = const CatalogDownloadState();

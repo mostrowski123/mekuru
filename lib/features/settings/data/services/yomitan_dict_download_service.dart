@@ -56,10 +56,13 @@ class YomitanDictDownloadService {
   static Future<bool> isImported(
     YomitanDictType type,
     DictionaryRepository repository,
-  ) async {
-    final all = await repository.getAllDictionaries();
-    return all.any((d) => matches(type, d.name));
-  }
+  ) async => isImportedIn(type, await repository.getAllDictionaries());
+
+  /// [isImported] for a list of dictionaries already at hand.
+  static bool isImportedIn(
+    YomitanDictType type,
+    Iterable<DictionaryMeta> dictionaries,
+  ) => dictionaries.any((d) => matches(type, d.name));
 
   /// Find the first imported dictionary matching this type's name prefix.
   static Future<DictionaryMeta?> _findImported(

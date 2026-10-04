@@ -17,26 +17,31 @@ import 'test_app.dart';
 
 void main() {
   late List<CatalogDictionary> started;
+  late List<CatalogDictionary> replacingJmdict;
   late List<YomitanDictType> jmdictStarted;
   late List<int> deleted;
 
   setUp(() {
     started = [];
+    replacingJmdict = [];
     jmdictStarted = [];
     deleted = [];
   });
 
-  /// Installed dictionaries get ids 1, 2, … in [installed] order.
+  /// Installed dictionaries get ids 1, 2, … in [installed] order, then
+  /// [otherTitles] (dictionaries outside the catalog, e.g. JMdict).
   Future<void> pumpCatalog(
     WidgetTester tester, {
     List<CatalogDictionary> installed = const [],
+    List<String> otherTitles = const [],
     CatalogDownloadState afterDownload = const CatalogDownloadState(),
   }) async {
+    final titles = [for (final entry in installed) entry.title, ...otherTitles];
     final metas = [
-      for (final (i, entry) in installed.indexed)
+      for (final (i, title) in titles.indexed)
         DictionaryMeta(
           id: i + 1,
-          name: '${entry.title} [2026-09-01]',
+          name: '$title [2026-09-01]',
           isEnabled: true,
           dateImported: DateTime(2026, 9, 1),
           sortOrder: i,
@@ -54,6 +59,7 @@ void main() {
                 started.add,
                 result: afterDownload,
                 onDelete: deleted.add,
+                onReplaceJmdict: replacingJmdict.add,
               ),
             ),
           jmdictProvider.overrideWith(
@@ -139,6 +145,52 @@ void main() {
     // Gone before the list stream drops it: Drift refetches the list only
     // after every delete queued behind this one.
     expect(downloadButtonOf('Wiktionary (English)'), findsOneWidget);
+  });
+
+  testWidgets('Jitendex over JMdict asks first: cancel, download anyway or '
+      'replace JMdict', (tester) async {
+    mockWifiConnected(true);
+    await pumpCatalog(
+      tester,
+      // Another language's JMdict is not the English one Jitendex repeats.
+      otherTitles: ['JMdict (Spanish)', 'JMdict'],
+    );
+    Future<void> chooseOnJitendex(String button) async {
+      await tester.tap(downloadButtonOf('Jitendex'));
+      await tester.pumpAndSettle();
+      expect(find.text('You already have JMdict'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text(button),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await chooseOnJitendex('Cancel');
+    expect(started, isEmpty);
+
+    await chooseOnJitendex('Download anyway');
+    expect(started, [CatalogDictionary.jitendex]);
+    expect(replacingJmdict, isEmpty);
+
+    await chooseOnJitendex('Replace JMdict');
+    expect(replacingJmdict, [CatalogDictionary.jitendex]);
+    expect(deleted, isEmpty, reason: 'JMdict goes only once Jitendex is in');
+  });
+
+  testWidgets('Jitendex without English JMdict downloads without asking', (
+    tester,
+  ) async {
+    mockWifiConnected(true);
+    await pumpCatalog(tester, otherTitles: ['JMdict (Spanish)']);
+
+    await tester.tap(downloadButtonOf('Jitendex'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('You already have JMdict'), findsNothing);
+    expect(started, [CatalogDictionary.jitendex]);
   });
 
   testWidgets('a download stopped by Wi-Fi going says so', (tester) async {

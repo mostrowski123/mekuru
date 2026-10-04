@@ -2924,5 +2924,8 @@
   "dictionaryImportedCollection": "{dictionaries, plural, =1{Se importó 1 diccionario ({entries} entradas)} other{Se importaron {dictionaries} diccionarios ({entries} entradas)}}",
   "dictionaryImportNoneInCollection": "No se encontraron diccionarios en la colección",
   "backgroundWorkDictionaries": "{count, plural, =1{Descargando 1 diccionario} other{Descargando {count} diccionarios}}",
-  "dictionaryDownloadWifiLost": "La descarga se detuvo porque se desconectó el Wi-Fi. Toca Descargar para intentarlo de nuevo."
+  "dictionaryDownloadWifiLost": "La descarga se detuvo porque se desconectó el Wi-Fi. Toca Descargar para intentarlo de nuevo.",
+  "catalogJmdictInstalledTitle": "You already have JMdict",
+  "catalogJmdictInstalledBody": "Jitendex is built on JMdict, so with both installed you'll see most definitions twice. Jitendex has a clearer layout and example sentences.\n\nReplace JMdict deletes JMdict once Jitendex has finished installing. You can download JMdict again anytime from More Dictionaries.",
+  "catalogReplaceJmdict": "Replace JMdict"
 }

@@ -5795,6 +5795,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{Downloading 1 dictionary} other{Downloading {count} dictionaries}}'**
   String backgroundWorkDictionaries({required int count});
+
+  /// Title of the dialog shown when the user downloads Jitendex while JMdict English is installed.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have JMdict'**
+  String get catalogJmdictInstalledTitle;
+
+  /// Body of the dialog shown when the user downloads Jitendex while JMdict English is installed. "Replace JMdict" is the button label (catalogReplaceJmdict); More Dictionaries is the catalog screen (catalogTitle).
+  ///
+  /// In en, this message translates to:
+  /// **'Jitendex is built on JMdict, so with both installed you\'ll see most definitions twice. Jitendex has a clearer layout and example sentences.\n\nReplace JMdict deletes JMdict once Jitendex has finished installing. You can download JMdict again anytime from More Dictionaries.'**
+  String get catalogJmdictInstalledBody;
+
+  /// Button in the Jitendex/JMdict dialog: download Jitendex, then delete JMdict once Jitendex is installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace JMdict'**
+  String get catalogReplaceJmdict;
 }
 
 class _AppLocalizationsDelegate

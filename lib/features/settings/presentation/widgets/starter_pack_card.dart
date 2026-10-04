@@ -27,11 +27,9 @@ const _jpdbMb = 6;
   Iterable<DictionaryMeta> installed,
 ) => (
   jitendex: CatalogDictionary.jitendex.isInstalledIn(installed),
-  jmdict: installed.any(
-    (d) => YomitanDictDownloadService.matches(
-      YomitanDictType.jmdictEnglish,
-      d.name,
-    ),
+  jmdict: YomitanDictDownloadService.isImportedIn(
+    YomitanDictType.jmdictEnglish,
+    installed,
   ),
 );
 
