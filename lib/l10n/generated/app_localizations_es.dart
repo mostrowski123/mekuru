@@ -575,9 +575,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get downloadsSectionAssets => 'Recursos';
 
   @override
-  String get downloadsFetchingLatestRelease => 'Buscando la última versión...';
-
-  @override
   String downloadsDownloadingPercent({required int percent}) {
     return 'Descargando... $percent%';
   }
@@ -3451,4 +3448,84 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get ankiMobileCouldNotOpen =>
       'No se pudo abrir AnkiMobile. Comprueba que esté instalado en este dispositivo.';
+
+  @override
+  String get catalogTitle => 'More Dictionaries';
+
+  @override
+  String get catalogEntrySubtitle =>
+      'Names, Japanese–Japanese, other languages and more';
+
+  @override
+  String get catalogSectionJapaneseEnglish => 'Japanese–English';
+
+  @override
+  String get catalogSectionJapaneseJapanese => 'Japanese–Japanese';
+
+  @override
+  String get catalogSectionNames => 'Names';
+
+  @override
+  String get catalogSectionOtherLanguages => 'Other Languages';
+
+  @override
+  String get catalogJitendexDescription =>
+      'Modern Japanese–English dictionary built on JMdict, with example sentences and a clearer layout.';
+
+  @override
+  String get catalogWiktionaryEnglishDescription =>
+      'Japanese words from the English Wiktionary, with etymology, grammar notes and examples.';
+
+  @override
+  String get catalogWiktionaryJapaneseDescription =>
+      'Japanese–Japanese dictionary from the Japanese Wiktionary. Definitions are in Japanese.';
+
+  @override
+  String get catalogWiktionaryChineseDescription =>
+      'Japanese words from the Chinese Wiktionary, with definitions in Chinese.';
+
+  @override
+  String get catalogJmnedictDescription =>
+      'Readings of Japanese names: people, places, companies and more.';
+
+  @override
+  String get catalogJmdictLanguageDescription =>
+      'JMdict with definitions in this language.';
+
+  @override
+  String get catalogKanjidicLanguageDescription =>
+      'Kanji meanings in this language, with on and kun readings.';
+
+  @override
+  String catalogSizes({required String download, required String installed}) {
+    return '$download download · about $installed on device';
+  }
+
+  @override
+  String get catalogInstalled => 'Installed';
+
+  @override
+  String catalogMobileDataBody({required String size}) {
+    return 'Wi-Fi is not connected. This dictionary is about $size. Continue using mobile data?';
+  }
+
+  @override
+  String get catalogFindMoreTitle => 'Find More Dictionaries';
+
+  @override
+  String get catalogFindMoreBody =>
+      'These sites list many more Yomitan dictionaries, including ones Mekuru can\'t download for you. Download a dictionary\'s .zip file, then import it in the Dictionary Manager with the + button.';
+
+  @override
+  String get dictionaryManagerMoreDictionariesTooltip => 'More dictionaries';
+
+  @override
+  String get aboutCatalogDictionariesTitle => 'Jitendex & Wiktionary';
+
+  @override
+  String get aboutCatalogDictionariesDescription =>
+      'Jitendex, by Stephen Kraus, is built on JMdict and on example sentences from the Tatoeba project (CC BY 2.0 FR). The Wiktionary dictionaries are built from Wiktionary by the wiktextract, Kaikki.org and Wiktionary to Yomitan projects.';
+
+  @override
+  String get aboutJmnedictLabel => 'JMnedict: ';
 }

@@ -1036,12 +1036,6 @@ abstract class AppLocalizations {
   /// **'Assets'**
   String get downloadsSectionAssets;
 
-  /// Progress message shown while fetching the latest downloadable release.
-  ///
-  /// In en, this message translates to:
-  /// **'Fetching latest release...'**
-  String get downloadsFetchingLatestRelease;
-
   /// Progress message shown while downloading data.
   ///
   /// In en, this message translates to:
@@ -3763,7 +3757,7 @@ abstract class AppLocalizations {
   /// Title for the JMdict and KANJIDIC attribution card.
   ///
   /// In en, this message translates to:
-  /// **'JMdict & KANJIDIC'**
+  /// **'JMdict, JMnedict & KANJIDIC'**
   String get aboutJmdictKanjidicTitle;
 
   /// Prefix text before the linked EDRDG name in the JMdict and KANJIDIC attribution card.
@@ -5599,6 +5593,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open AnkiMobile. Make sure it is installed on this device.'**
   String get ankiMobileCouldNotOpen;
+
+  /// App bar title of the dictionary catalog screen, and the title of the tile that opens it on the Downloads screen.
+  ///
+  /// In en, this message translates to:
+  /// **'More Dictionaries'**
+  String get catalogTitle;
+
+  /// Subtitle of the Downloads screen tile that opens the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Names, Japanese–Japanese, other languages and more'**
+  String get catalogEntrySubtitle;
+
+  /// Dictionary catalog section header: dictionaries with English definitions.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese–English'**
+  String get catalogSectionJapaneseEnglish;
+
+  /// Dictionary catalog section header: monolingual dictionaries with Japanese definitions.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese–Japanese'**
+  String get catalogSectionJapaneseJapanese;
+
+  /// Dictionary catalog section header: dictionaries of Japanese names.
+  ///
+  /// In en, this message translates to:
+  /// **'Names'**
+  String get catalogSectionNames;
+
+  /// Dictionary catalog section header: dictionaries with definitions in languages other than English and Japanese.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Languages'**
+  String get catalogSectionOtherLanguages;
+
+  /// Description of the Jitendex dictionary in the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Modern Japanese–English dictionary built on JMdict, with example sentences and a clearer layout.'**
+  String get catalogJitendexDescription;
+
+  /// Description of the English Wiktionary dictionary in the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese words from the English Wiktionary, with etymology, grammar notes and examples.'**
+  String get catalogWiktionaryEnglishDescription;
+
+  /// Description of the Japanese Wiktionary dictionary in the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese–Japanese dictionary from the Japanese Wiktionary. Definitions are in Japanese.'**
+  String get catalogWiktionaryJapaneseDescription;
+
+  /// Description of the Chinese Wiktionary dictionary in the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese words from the Chinese Wiktionary, with definitions in Chinese.'**
+  String get catalogWiktionaryChineseDescription;
+
+  /// Description of the JMnedict names dictionary in the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Readings of Japanese names: people, places, companies and more.'**
+  String get catalogJmnedictDescription;
+
+  /// Description of a JMdict edition in another language (its name shows the language, e.g. JMdict (Español)).
+  ///
+  /// In en, this message translates to:
+  /// **'JMdict with definitions in this language.'**
+  String get catalogJmdictLanguageDescription;
+
+  /// Description of a KANJIDIC edition in another language (its name shows the language, e.g. KANJIDIC (Français)).
+  ///
+  /// In en, this message translates to:
+  /// **'Kanji meanings in this language, with on and kun readings.'**
+  String get catalogKanjidicLanguageDescription;
+
+  /// Size line of a dictionary in the catalog: download size, then the storage it takes once installed. Values look like '39 MB'.
+  ///
+  /// In en, this message translates to:
+  /// **'{download} download · about {installed} on device'**
+  String catalogSizes({required String download, required String installed});
+
+  /// Accessibility label of the check mark on an installed catalog dictionary.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get catalogInstalled;
+
+  /// Body of the dialog asking before a catalog dictionary downloads over mobile data. size looks like '39 MB'.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi is not connected. This dictionary is about {size}. Continue using mobile data?'**
+  String catalogMobileDataBody({required String size});
+
+  /// Dictionary catalog section header above links to community guides that list more dictionaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Find More Dictionaries'**
+  String get catalogFindMoreTitle;
+
+  /// Explanation above the links to community dictionary guides in the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'These sites list many more Yomitan dictionaries, including ones Mekuru can\'t download for you. Download a dictionary\'s .zip file, then import it in the Dictionary Manager with the + button.'**
+  String get catalogFindMoreBody;
+
+  /// Tooltip of the Dictionary Manager app bar button that opens the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'More dictionaries'**
+  String get dictionaryManagerMoreDictionariesTooltip;
+
+  /// Title of the attribution card for dictionaries downloaded from the dictionary catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Jitendex & Wiktionary'**
+  String get aboutCatalogDictionariesTitle;
+
+  /// Description in the attribution card for Jitendex and the Wiktionary dictionaries.
+  ///
+  /// In en, this message translates to:
+  /// **'Jitendex, by Stephen Kraus, is built on JMdict and on example sentences from the Tatoeba project (CC BY 2.0 FR). The Wiktionary dictionaries are built from Wiktionary by the wiktextract, Kaikki.org and Wiktionary to Yomitan projects.'**
+  String get aboutCatalogDictionariesDescription;
+
+  /// Label before a linked JMnedict project URL in attribution text.
+  ///
+  /// In en, this message translates to:
+  /// **'JMnedict: '**
+  String get aboutJmnedictLabel;
 }
 
 class _AppLocalizationsDelegate

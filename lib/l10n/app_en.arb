@@ -740,10 +740,6 @@
   "@downloadsSectionAssets": {
     "description": "Section header for downloadable assets."
   },
-  "downloadsFetchingLatestRelease": "Fetching latest release...",
-  "@downloadsFetchingLatestRelease": {
-    "description": "Progress message shown while fetching the latest downloadable release."
-  },
   "downloadsDownloadingPercent": "Downloading... {percent}%",
   "@downloadsDownloadingPercent": {
     "description": "Progress message shown while downloading data.",
@@ -2851,7 +2847,7 @@
   "@aboutDictionaryLabel": {
     "description": "Label before a linked dictionary URL in attribution text."
   },
-  "aboutJmdictKanjidicTitle": "JMdict & KANJIDIC",
+  "aboutJmdictKanjidicTitle": "JMdict, JMnedict & KANJIDIC",
   "@aboutJmdictKanjidicTitle": {
     "description": "Title for the JMdict and KANJIDIC attribution card."
   },
@@ -4376,5 +4372,106 @@
   "ankiMobileCouldNotOpen": "Could not open AnkiMobile. Make sure it is installed on this device.",
   "@ankiMobileCouldNotOpen": {
     "description": "Error shown in Anki settings on iOS when AnkiMobile is not installed."
+  },
+  "catalogTitle": "More Dictionaries",
+  "@catalogTitle": {
+    "description": "App bar title of the dictionary catalog screen, and the title of the tile that opens it on the Downloads screen."
+  },
+  "catalogEntrySubtitle": "Names, Japanese–Japanese, other languages and more",
+  "@catalogEntrySubtitle": {
+    "description": "Subtitle of the Downloads screen tile that opens the dictionary catalog."
+  },
+  "catalogSectionJapaneseEnglish": "Japanese–English",
+  "@catalogSectionJapaneseEnglish": {
+    "description": "Dictionary catalog section header: dictionaries with English definitions."
+  },
+  "catalogSectionJapaneseJapanese": "Japanese–Japanese",
+  "@catalogSectionJapaneseJapanese": {
+    "description": "Dictionary catalog section header: monolingual dictionaries with Japanese definitions."
+  },
+  "catalogSectionNames": "Names",
+  "@catalogSectionNames": {
+    "description": "Dictionary catalog section header: dictionaries of Japanese names."
+  },
+  "catalogSectionOtherLanguages": "Other Languages",
+  "@catalogSectionOtherLanguages": {
+    "description": "Dictionary catalog section header: dictionaries with definitions in languages other than English and Japanese."
+  },
+  "catalogJitendexDescription": "Modern Japanese–English dictionary built on JMdict, with example sentences and a clearer layout.",
+  "@catalogJitendexDescription": {
+    "description": "Description of the Jitendex dictionary in the dictionary catalog."
+  },
+  "catalogWiktionaryEnglishDescription": "Japanese words from the English Wiktionary, with etymology, grammar notes and examples.",
+  "@catalogWiktionaryEnglishDescription": {
+    "description": "Description of the English Wiktionary dictionary in the dictionary catalog."
+  },
+  "catalogWiktionaryJapaneseDescription": "Japanese–Japanese dictionary from the Japanese Wiktionary. Definitions are in Japanese.",
+  "@catalogWiktionaryJapaneseDescription": {
+    "description": "Description of the Japanese Wiktionary dictionary in the dictionary catalog."
+  },
+  "catalogWiktionaryChineseDescription": "Japanese words from the Chinese Wiktionary, with definitions in Chinese.",
+  "@catalogWiktionaryChineseDescription": {
+    "description": "Description of the Chinese Wiktionary dictionary in the dictionary catalog."
+  },
+  "catalogJmnedictDescription": "Readings of Japanese names: people, places, companies and more.",
+  "@catalogJmnedictDescription": {
+    "description": "Description of the JMnedict names dictionary in the dictionary catalog."
+  },
+  "catalogJmdictLanguageDescription": "JMdict with definitions in this language.",
+  "@catalogJmdictLanguageDescription": {
+    "description": "Description of a JMdict edition in another language (its name shows the language, e.g. JMdict (Español))."
+  },
+  "catalogKanjidicLanguageDescription": "Kanji meanings in this language, with on and kun readings.",
+  "@catalogKanjidicLanguageDescription": {
+    "description": "Description of a KANJIDIC edition in another language (its name shows the language, e.g. KANJIDIC (Français))."
+  },
+  "catalogSizes": "{download} download · about {installed} on device",
+  "@catalogSizes": {
+    "description": "Size line of a dictionary in the catalog: download size, then the storage it takes once installed. Values look like '39 MB'.",
+    "placeholders": {
+      "download": {
+        "type": "String"
+      },
+      "installed": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogInstalled": "Installed",
+  "@catalogInstalled": {
+    "description": "Accessibility label of the check mark on an installed catalog dictionary."
+  },
+  "catalogMobileDataBody": "Wi-Fi is not connected. This dictionary is about {size}. Continue using mobile data?",
+  "@catalogMobileDataBody": {
+    "description": "Body of the dialog asking before a catalog dictionary downloads over mobile data. size looks like '39 MB'.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogFindMoreTitle": "Find More Dictionaries",
+  "@catalogFindMoreTitle": {
+    "description": "Dictionary catalog section header above links to community guides that list more dictionaries."
+  },
+  "catalogFindMoreBody": "These sites list many more Yomitan dictionaries, including ones Mekuru can't download for you. Download a dictionary's .zip file, then import it in the Dictionary Manager with the + button.",
+  "@catalogFindMoreBody": {
+    "description": "Explanation above the links to community dictionary guides in the dictionary catalog."
+  },
+  "dictionaryManagerMoreDictionariesTooltip": "More dictionaries",
+  "@dictionaryManagerMoreDictionariesTooltip": {
+    "description": "Tooltip of the Dictionary Manager app bar button that opens the dictionary catalog."
+  },
+  "aboutCatalogDictionariesTitle": "Jitendex & Wiktionary",
+  "@aboutCatalogDictionariesTitle": {
+    "description": "Title of the attribution card for dictionaries downloaded from the dictionary catalog."
+  },
+  "aboutCatalogDictionariesDescription": "Jitendex, by Stephen Kraus, is built on JMdict and on example sentences from the Tatoeba project (CC BY 2.0 FR). The Wiktionary dictionaries are built from Wiktionary by the wiktextract, Kaikki.org and Wiktionary to Yomitan projects.",
+  "@aboutCatalogDictionariesDescription": {
+    "description": "Description in the attribution card for Jitendex and the Wiktionary dictionaries."
+  },
+  "aboutJmnedictLabel": "JMnedict: ",
+  "@aboutJmnedictLabel": {
+    "description": "Label before a linked JMnedict project URL in attribution text."
   }
 }

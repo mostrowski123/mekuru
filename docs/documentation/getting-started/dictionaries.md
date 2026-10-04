@@ -8,7 +8,7 @@ You can add dictionaries in three ways:
 
 - **Yomitan `.zip`** - the standard format used by Yomitan and older Yomichan dictionary packs
 - **Yomitan collection `.json`** - a backup export that can contain multiple dictionaries
-- **Built-in downloads** - free packs from **Settings > Downloads**, including JMdict and KANJIDIC
+- **Built-in downloads** - free packs from **Settings > Downloads**, including JMdict, Jitendex and KANJIDIC, plus more under **More Dictionaries**
 
 ## Importing a Dictionary File
 
@@ -24,7 +24,7 @@ You can add dictionaries in three ways:
 
 ## Using Built-in Downloads
 
-If you do not want to find dictionary files manually, open **Settings > Downloads** and install the built-in packs there. Those downloads are imported for you automatically.
+If you do not want to find dictionary files manually, open **Settings > Downloads** and install the built-in packs there. Those downloads are imported for you automatically. **More Dictionaries** on the same screen lists names, Japanese-Japanese and other-language dictionaries; see [Downloads](downloadable-data.md#more-dictionaries).
 
 ## After Import
 

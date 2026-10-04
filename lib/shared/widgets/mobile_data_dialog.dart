@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
 /// Asks "Download over mobile data?" before a large download starts off
@@ -23,4 +24,12 @@ Future<bool> confirmMobileData(BuildContext context, String body) async {
     ),
   );
   return confirmed == true;
+}
+
+/// Whether a large download may start now: on Wi-Fi, or off it once the
+/// user agrees to use mobile data. [body] names the size.
+Future<bool> okToDownload(BuildContext context, String body) async {
+  if (await isOnWifi()) return true;
+  if (!context.mounted) return false;
+  return confirmMobileData(context, body);
 }

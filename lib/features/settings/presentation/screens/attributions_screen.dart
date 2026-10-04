@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -310,6 +311,64 @@ class AttributionsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  DownloadAttributionText(
+                    prefix: l10n.aboutJmnedictLabel,
+                    linkText: 'edrdg.org - JMnedict',
+                    url: 'https://www.edrdg.org/enamdict/enamdict_doc.html',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.library_books_outlined,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l10n.aboutCatalogDictionariesTitle,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.aboutCatalogDictionariesDescription,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  DownloadAttributionText(
+                    prefix: l10n.aboutLicensedUnderPrefix,
+                    linkText: 'Creative Commons Attribution-Share Alike 4.0',
+                    url: 'https://creativecommons.org/licenses/by-sa/4.0/',
+                    suffix: l10n.aboutLicenseSuffix,
+                  ),
+                  const SizedBox(height: 8),
+                  for (final (label, url) in const [
+                    ('Jitendex', 'https://jitendex.org'),
+                    ('Tatoeba', 'https://tatoeba.org'),
+                    ('Wiktionary', 'https://www.wiktionary.org'),
+                    ('Kaikki.org', 'https://kaikki.org'),
+                    (
+                      'Wiktionary to Yomitan',
+                      'https://github.com/yomidevs/wiktionary-to-yomitan',
+                    ),
+                  ])
+                    DownloadAttributionText(linkText: label, url: url),
                 ],
               ),
             ),

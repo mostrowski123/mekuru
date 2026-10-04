@@ -5,6 +5,7 @@ You can open the **Dictionary Manager** from the top-right button on the **Dicti
 ## What You Can Do
 
 - **Import** - tap **+** to import a Yomitan `.zip` file or a Yomitan collection `.json` backup
+- **Download more** - tap the **More dictionaries** button to pick from dictionaries Mekuru can download for you (see [Downloads](../getting-started/downloadable-data.md#more-dictionaries))
 - **Reorder** - drag the handle on the left to change priority
 - **Enable or disable** - use the switch on each row
 - **Delete** - use the delete action for a permanent removal

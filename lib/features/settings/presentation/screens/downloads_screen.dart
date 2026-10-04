@@ -1,7 +1,9 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
@@ -11,11 +13,12 @@ import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_provid
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Screen listing all downloadable assets (dictionaries, kanji data, etc.).
 class DownloadsScreen extends ConsumerStatefulWidget {
@@ -65,33 +68,22 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // JMdict English
           _JmdictTile(state: jmdictState, theme: theme),
           if (jmdictState.isDownloading)
-            _DownloadProgress(
+            DownloadProgress(
               progress: jmdictState.progress,
-              label: jmdictState.progress < 0.05
-                  ? l10n.downloadsFetchingLatestRelease
-                  : jmdictState.progress < 0.7
-                  ? l10n.downloadsDownloadingPercent(
-                      percent: ((jmdictState.progress - 0.05) / 0.65 * 100)
-                          .toInt(),
-                    )
-                  : l10n.downloadsImporting,
-              theme: theme,
+              label: dictionaryDownloadLabel(l10n, jmdictState.progress),
             ),
           if (jmdictState.error != null)
-            _ErrorText(text: jmdictState.error!, theme: theme),
+            DownloadErrorText(text: jmdictState.error!),
           if (jmdictState.successMessage != null)
             _SuccessText(text: jmdictState.successMessage!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: _AttributionText(
-              prefix: '',
+            child: DownloadAttributionText(
               linkText: 'JMdict',
-              url:
-                  'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
+              url: edrdgJmdictUrl,
               suffix:
                   ' by the Electronic Dictionary Research and '
                   'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
-              theme: theme,
             ),
           ),
           const SizedBox(height: 8),
@@ -99,29 +91,40 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // KANJIDIC
           _KanjidicTile(state: kanjidicState, theme: theme),
           if (kanjidicState.isDownloading)
-            _DownloadProgress(
+            DownloadProgress(
               progress: kanjidicState.progress,
-              label: kanjidicState.progress < 0.05
-                  ? 'Fetching latest release...'
-                  : kanjidicState.progress < 0.7
-                  ? 'Downloading... ${((kanjidicState.progress - 0.05) / 0.65 * 100).toInt()}%'
-                  : 'Importing...',
-              theme: theme,
+              label: dictionaryDownloadLabel(l10n, kanjidicState.progress),
             ),
           if (kanjidicState.error != null)
-            _ErrorText(text: kanjidicState.error!, theme: theme),
+            DownloadErrorText(text: kanjidicState.error!),
           if (kanjidicState.successMessage != null)
             _SuccessText(text: kanjidicState.successMessage!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: _AttributionText(
-              prefix: '',
+            child: DownloadAttributionText(
               linkText: 'KANJIDIC',
-              url: 'https://www.edrdg.org/wiki/index.php/KANJIDIC_Project',
+              url: edrdgKanjidicUrl,
               suffix:
                   ' by the Electronic Dictionary Research and '
                   'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
-              theme: theme,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          const CatalogDictionaryTile(entry: CatalogDictionary.jitendex),
+          ListTile(
+            leading: Icon(
+              Icons.library_add_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.catalogTitle),
+            subtitle: Text(l10n.catalogEntrySubtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              namedRoute(
+                'dictionary_catalog',
+                (_) => const DictionaryCatalogScreen(),
+              ),
             ),
           ),
           const Divider(),
@@ -132,27 +135,25 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // KanjiVG
           _KanjiVgTile(state: kanjiVgState, theme: theme),
           if (kanjiVgState.isDownloading)
-            _DownloadProgress(
+            DownloadProgress(
               progress: kanjiVgState.progress,
               label: kanjiVgState.progress < 0.9
                   ? l10n.downloadsDownloadingPercent(
                       percent: (kanjiVgState.progress * 100).toInt(),
                     )
                   : l10n.downloadsExtractingFiles,
-              theme: theme,
             ),
           if (kanjiVgState.error != null)
-            _ErrorText(text: kanjiVgState.error!, theme: theme),
+            DownloadErrorText(text: kanjiVgState.error!),
           if (kanjiVgState.successMessage != null)
             _SuccessText(text: kanjiVgState.successMessage!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: _AttributionText(
+            child: DownloadAttributionText(
               prefix: 'Kanji stroke order data by ',
               linkText: 'KanjiVG',
               url: 'https://kanjivg.tagaini.net/',
               suffix: ' (Ulrich Apel), licensed under CC BY-SA 3.0.',
-              theme: theme,
             ),
           ),
           const SizedBox(height: 8),
@@ -160,17 +161,12 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // JPDB Frequency
           _JpdbFreqTile(state: jpdbFreqState, theme: theme),
           if (jpdbFreqState.isDownloading)
-            _DownloadProgress(
+            DownloadProgress(
               progress: jpdbFreqState.progress,
-              label: jpdbFreqState.progress < 0.7
-                  ? l10n.downloadsDownloadingPercent(
-                      percent: (jpdbFreqState.progress / 0.7 * 100).toInt(),
-                    )
-                  : l10n.downloadsImporting,
-              theme: theme,
+              label: dictionaryDownloadLabel(l10n, jpdbFreqState.progress),
             ),
           if (jpdbFreqState.error != null)
-            _ErrorText(text: jpdbFreqState.error!, theme: theme),
+            DownloadErrorText(text: jpdbFreqState.error!),
           if (jpdbFreqState.successMessage != null)
             _SuccessText(text: jpdbFreqState.successMessage!),
           Padding(
@@ -206,7 +202,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               },
             ),
           if (enhancedFuriganaState.isDownloading)
-            _DownloadProgress(
+            DownloadProgress(
               progress: enhancedFuriganaState.progress,
               label: enhancedFuriganaState.progress < 0.85
                   ? l10n.downloadsEnhancedFuriganaDownloadingPercent(
@@ -214,22 +210,20 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                           .toInt(),
                     )
                   : l10n.downloadsEnhancedFuriganaExtracting,
-              theme: theme,
             ),
           if (enhancedFuriganaState.error != null)
-            _ErrorText(text: enhancedFuriganaState.error!, theme: theme),
+            DownloadErrorText(text: enhancedFuriganaState.error!),
           if (enhancedFuriganaState.successMessage != null)
             _SuccessText(text: enhancedFuriganaState.successMessage!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: _AttributionText(
+            child: DownloadAttributionText(
               prefix: 'Powered by ',
               linkText: 'UniDic',
               url: 'https://clrd.ninjal.ac.jp/unidic/',
               suffix:
                   ' (NINJAL), distributed under the BSD/GPL/LGPL triple '
                   'license.',
-              theme: theme,
             ),
           ),
           const SizedBox(height: 8),
@@ -248,57 +242,6 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 
 // ── Shared helper widgets ──
 
-class _DownloadProgress extends StatelessWidget {
-  const _DownloadProgress({
-    required this.progress,
-    required this.label,
-    required this.theme,
-  });
-
-  final double progress;
-  final String label;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          LinearProgressIndicator(value: progress),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorText extends StatelessWidget {
-  const _ErrorText({required this.text, required this.theme});
-
-  final String text;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Text(
-        text,
-        style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-      ),
-    );
-  }
-}
-
 class _SuccessText extends StatelessWidget {
   const _SuccessText({required this.text});
 
@@ -311,53 +254,6 @@ class _SuccessText extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(color: Colors.green, fontSize: 13),
-      ),
-    );
-  }
-}
-
-class _AttributionText extends StatelessWidget {
-  const _AttributionText({
-    required this.prefix,
-    required this.linkText,
-    required this.url,
-    required this.suffix,
-    required this.theme,
-  });
-
-  final String prefix;
-  final String linkText;
-  final String url;
-  final String suffix;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final baseStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-    final linkStyle = baseStyle?.copyWith(
-      color: theme.colorScheme.primary,
-      decoration: TextDecoration.underline,
-      decorationColor: theme.colorScheme.primary,
-    );
-
-    return RichText(
-      text: TextSpan(
-        style: baseStyle,
-        children: [
-          if (prefix.isNotEmpty) TextSpan(text: prefix),
-          TextSpan(
-            text: linkText,
-            style: linkStyle,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => launchUrl(
-                Uri.parse(url),
-                mode: LaunchMode.externalApplication,
-              ),
-          ),
-          TextSpan(text: suffix),
-        ],
       ),
     );
   }

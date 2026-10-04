@@ -16,6 +16,7 @@ import 'package:mekuru/features/settings/presentation/screens/downloads_screen.d
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -63,6 +64,16 @@ class _DictionaryManagerScreenState
               tooltip: 'A/B benchmark lookup (debug)',
               onPressed: () => _runLookupBenchmark(context, ref),
             ),
+          IconButton(
+            icon: const Icon(Icons.library_add_outlined),
+            tooltip: l10n.dictionaryManagerMoreDictionariesTooltip,
+            onPressed: () => Navigator.of(context).push(
+              namedRoute(
+                'dictionary_catalog',
+                (_) => const DictionaryCatalogScreen(),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.help_outline),
             tooltip: l10n.commonHelp,

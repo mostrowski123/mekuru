@@ -1,10 +1,10 @@
 import 'package:mekuru/core/database/database_provider.dart';
-import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart'
+    show jmdictYomitanReleases;
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 /// Dictionary types available for one-tap download from GitHub releases.
 enum YomitanDictType {
@@ -26,8 +26,7 @@ class YomitanDictDownloadService {
   /// unauthenticated requests per hour per IP, which users on shared (CGNAT)
   /// IPs exhaust, while this form has no API rate limit.
   static String assetUrl(YomitanDictType type) =>
-      'https://github.com/yomidevs/jmdict-yomitan/releases/latest/download/'
-      '${_assetFilename(type)}';
+      '$jmdictYomitanReleases/${_assetFilename(type)}';
 
   /// Name prefixes used to detect whether a dictionary type is already
   /// imported. The actual title comes from the ZIP's index.json and may vary
@@ -100,52 +99,12 @@ class YomitanDictDownloadService {
     void Function(double progress)? onProgress,
   }) async {
     if (await isImported(type, repository)) return;
-    final stopwatch = Stopwatch()..start();
-    try {
-      await _downloadAndImport(
-        type: type,
-        importer: importer,
-        onProgress: onProgress,
-      );
-      logUsage(
-        'download.completed',
-        attrs: {
-          'asset': 'yomitan_collection',
-          'duration_ms': stopwatch.elapsedMilliseconds,
-        },
-      );
-    } catch (error) {
-      logFailure(
-        'download.failed',
-        error,
-        attrs: {'asset': 'yomitan_collection'},
-      );
-      rethrow;
-    }
-  }
-
-  static Future<void> _downloadAndImport({
-    required YomitanDictType type,
-    required DictionaryImporter importer,
-    void Function(double progress)? onProgress,
-  }) async {
-    onProgress?.call(0.0);
-
-    // Download the ZIP straight to disk to avoid buffering large
-    // dictionaries in memory.
-    final tempDir = await getTemporaryDirectory();
-    await withDownloadedFile(
-      assetUrl(type),
-      p.join(tempDir.path, '${type.name}_download.zip'),
-      onProgress: (p) => onProgress?.call(p * 0.7),
-      use: (path) async {
-        onProgress?.call(0.75);
-        await importer.importFromFile(path);
-        onProgress?.call(0.95);
-      },
+    await DictionaryDownloadService.downloadAndImportUrl(
+      url: assetUrl(type),
+      asset: 'yomitan_collection',
+      importer: importer,
+      onProgress: onProgress,
     );
-
-    onProgress?.call(1.0);
   }
 
   /// Delete a dictionary by its name prefix.

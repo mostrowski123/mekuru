@@ -9,8 +9,24 @@ Mekuru includes a built-in **Downloads** screen under **Settings > Downloads**. 
 | **JMdict English** | Standard Japanese-English dictionary |
 | **JMdict English with Examples** | JMdict plus example sentences |
 | **KANJIDIC** | Kanji dictionary data |
+| **Jitendex** | Modern Japanese-English dictionary built on JMdict, with example sentences and a clearer layout |
 
 These downloads are imported automatically and appear in the Dictionary Manager like any other installed dictionary.
+
+## More Dictionaries
+
+Tap **More Dictionaries** on the Downloads screen, or the **More dictionaries** button in the Dictionary Manager, for a list of openly licensed dictionaries Mekuru can download for you. Each one shows a short description, its download size and about how much storage it takes once installed.
+
+| Section | Dictionaries |
+|-|-|
+| **Japanese-English** | Jitendex, Wiktionary (English) |
+| **Japanese-Japanese** | Wiktionary (Japanese) |
+| **Names** | JMnedict, readings of Japanese names |
+| **Other Languages** | JMdict in Spanish, German, French, Russian, Dutch, Hungarian, Swedish and Slovenian; KANJIDIC in Spanish, French and Portuguese; Wiktionary (Chinese) |
+
+A check mark shows dictionaries that are already installed, including ones you imported yourself. To remove one, delete it in the Dictionary Manager.
+
+**Find More Dictionaries** at the bottom links to community guides that list many more Yomitan dictionaries, including ones Mekuru cannot download for you. Download a dictionary's `.zip` file there, then import it in the Dictionary Manager with the **+** button.
 
 ## Lookup Enhancements
 
@@ -37,7 +53,9 @@ See [On-device OCR](../manga/on-device-ocr.md).
 
 ## Sources
 
-- **JMdict / KANJIDIC** - from the EDRDG projects, distributed through Yomitan releases
+- **JMdict / JMnedict / KANJIDIC** - from the EDRDG projects, distributed through Yomitan releases
+- **Jitendex** - by Stephen Kraus, built on JMdict and Tatoeba example sentences ([jitendex.org](https://jitendex.org))
+- **Wiktionary** - built from Wiktionary by the Kaikki.org and Wiktionary to Yomitan projects
 - **KanjiVG** - from the [KanjiVG project](https://kanjivg.tagaini.net/)
 - **JPDB Frequency** - based on JPDB data distributed through yomitan-dictionaries
 

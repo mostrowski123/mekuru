@@ -1,9 +1,7 @@
-import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 /// Service for downloading and managing the JPDB frequency dictionary.
 ///
@@ -31,64 +29,25 @@ class JpdbFreqDownloadService {
   /// Does nothing when it is already imported, so a tap that beats a
   /// screen's status check can't add a second copy.
   ///
-  /// [onProgress] is called with a value between 0.0 and 1.0.
-  /// - 0.0–0.7: download phase
-  /// - 0.7–0.95: import phase
-  /// - 0.95–1.0: finalising
+  /// [onProgress] reports [DictionaryDownloadService] progress.
   static Future<void> downloadAndImport({
     required DictionaryRepository repository,
     required DictionaryImporter importer,
     void Function(double progress)? onProgress,
   }) async {
     if (await isImported(repository)) return;
-    final stopwatch = Stopwatch()..start();
-    try {
-      await _downloadAndImport(
-        repository: repository,
-        importer: importer,
-        onProgress: onProgress,
-      );
-      logUsage(
-        'download.completed',
-        attrs: {
-          'asset': 'jpdb_freq',
-          'duration_ms': stopwatch.elapsedMilliseconds,
-        },
-      );
-    } catch (error) {
-      logFailure('download.failed', error, attrs: {'asset': 'jpdb_freq'});
-      rethrow;
-    }
-  }
-
-  static Future<void> _downloadAndImport({
-    required DictionaryRepository repository,
-    required DictionaryImporter importer,
-    void Function(double progress)? onProgress,
-  }) async {
-    onProgress?.call(0.0);
-
-    final tempDir = await getTemporaryDirectory();
-    await withDownloadedFile(
-      downloadUrl,
-      p.join(tempDir.path, 'jpdb_freq_download.zip'),
-      onProgress: (p) => onProgress?.call(p * 0.7),
-      use: (path) async {
-        // Import via standard importer
-        onProgress?.call(0.8);
-        await importer.importFromFile(path);
-
-        // Mark as hidden and disabled
-        onProgress?.call(0.95);
-        final meta = await repository.getDictionaryByName(dictionaryName);
-        if (meta != null) {
-          await repository.toggleDictionary(meta.id, isEnabled: false);
-          await repository.setHidden(meta.id, isHidden: true);
-        }
-      },
+    await DictionaryDownloadService.downloadAndImportUrl(
+      url: downloadUrl,
+      asset: 'jpdb_freq',
+      importer: importer,
+      onProgress: onProgress,
     );
-
-    onProgress?.call(1.0);
+    // Ranking data, not a dictionary to look words up in.
+    final meta = await repository.getDictionaryByName(dictionaryName);
+    if (meta != null) {
+      await repository.toggleDictionary(meta.id, isEnabled: false);
+      await repository.setHidden(meta.id, isHidden: true);
+    }
   }
 
   /// Delete the JPDB frequency dictionary and all its data from the database.

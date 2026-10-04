@@ -702,10 +702,6 @@
   "@downloadsSectionAssets": {
     "description": "Section header for downloadable assets."
   },
-  "downloadsFetchingLatestRelease": "Buscando la última versión...",
-  "@downloadsFetchingLatestRelease": {
-    "description": "Progress message shown while fetching the latest downloadable release."
-  },
   "downloadsDownloadingPercent": "Descargando... {percent}%",
   "@downloadsDownloadingPercent": {
     "description": "Progress message shown while downloading data.",
