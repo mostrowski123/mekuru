@@ -62,7 +62,7 @@ class DictionaryParseException implements Exception {
 //   ['batch', List<Map<String, dynamic>>]       — a batch of parsed entries
 //   ['pitch_batch', List<Map<String, dynamic>>]  — a batch of parsed pitch accents
 //   ['freq_batch', List<Map<String, dynamic>>]   — a batch of parsed frequencies
-//   ['media', String path, Uint8List bytes]     — one image file (zip only)
+//   ['media', List<String> paths, List<Uint8List> bytes] — image files (zip only)
 //   ['done']                                    — parsing complete
 //   ['error', String message, String causeType] — parsing failed
 //
@@ -203,9 +203,16 @@ class DictionaryImporter {
               ));
 
           if (type == 'media') {
-            await _repository.insertMedia(id, [
-              await _storableImage(msg[1] as String, msg[2] as Uint8List),
-            ]);
+            final paths = (msg[1] as List).cast<String>();
+            final images = (msg[2] as List).cast<Uint8List>();
+            // A group at a time, its iOS conversions side by side.
+            await _repository.insertMedia(
+              id,
+              await Future.wait([
+                for (var i = 0; i < paths.length; i++)
+                  _storableImage(paths[i], images[i]),
+              ]),
+            );
           } else if (type == 'batch') {
             final rawEntries = (msg[1] as List)
                 .cast<Map>()
@@ -1163,11 +1170,29 @@ class DictionaryImporter {
         stored.sendPort,
       ]);
 
+      // Images in small groups: each message is stored (and on iOS
+      // converted) at once, and holds little.
+      final paths = <String>[];
+      final images = <Uint8List>[];
+      var groupBytes = 0;
+      Future<void> sendImages() {
+        final sent = sendStored(['media', paths, images]);
+        paths.clear();
+        images.clear();
+        groupBytes = 0;
+        return sent;
+      }
+
       for (final file in archive.files) {
         if (!file.isFile || !_isZipImagePath(file.name)) continue;
         final bytes = _zipEntryBytes(file);
-        if (bytes != null) await sendStored(['media', file.name, bytes]);
+        if (bytes == null) continue;
+        paths.add(file.name);
+        images.add(bytes);
+        groupBytes += bytes.length;
+        if (paths.length >= 16 || groupBytes >= 1 << 20) await sendImages();
       }
+      if (paths.isNotEmpty) await sendImages();
 
       const batchSize = 5000;
       final entryBatch = <Map<String, dynamic>>[];

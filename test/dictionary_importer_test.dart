@@ -819,6 +819,21 @@ void main() {
       expect(meta.revision, 'JMnedict.2026-10-03');
     });
 
+    test('stores every image of a dictionary with many', () async {
+      // Several groups of images: the parser waits for each to be stored.
+      final zipPath = await createTestYomitanZip(
+        extraFiles: {
+          for (var i = 0; i < 40; i++)
+            'img/$i.png': [0x89, 0x50, 0x4E, 0x47, i],
+        },
+      );
+      trackTempFile(zipPath);
+
+      await importer.importFromFile(zipPath);
+
+      expect(await db.select(db.dictionaryMedia).get(), hasLength(40));
+    });
+
     test('stores the zip images, with backslash paths normalized', () async {
       final png = [0x89, 0x50, 0x4E, 0x47, 1, 2, 3];
       final svg = utf8.encode('<svg xmlns="http://www.w3.org/2000/svg"/>');
@@ -973,10 +988,12 @@ void main() {
       },
     );
 
-    test('images wait for the database like batches do', () async {
+    test('images go in small groups that wait for the database', () async {
+      // Groups of up to 16 store (and on iOS convert) together.
       final zipPath = await createTestYomitanZip(
         extraFiles: {
-          for (var i = 0; i < 3; i++) 'img/$i.png': [0x89, 0x50, 0x4E, 0x47, i],
+          for (var i = 0; i < 40; i++)
+            'img/$i.png': [0x89, 0x50, 0x4E, 0x47, i],
         },
       );
       trackTempFile(zipPath);
@@ -989,12 +1006,39 @@ void main() {
       parser.stored();
       await parser.settle(4);
       expect(parser.kinds, ['meta', 'media', 'media', 'media']);
+      expect(
+        [for (final m in parser.received.skip(1)) (m[1] as List).length],
+        [16, 16, 8],
+      );
 
       // Let it finish, so the zip is closed before the test cleans up.
       parser
         ..stored()
         ..stored();
       await parser.settle(6);
+      expect(parser.kinds.last, 'done');
+    });
+
+    test('a group of images stays under a megabyte or so', () async {
+      final big = List<int>.filled(600 << 10, 7);
+      final zipPath = await createTestYomitanZip(
+        extraFiles: {for (var i = 0; i < 3; i++) 'img/$i.png': big},
+      );
+      trackTempFile(zipPath);
+      final parser = await _ParserRun.start(zipPath);
+      addTearDown(parser.dispose);
+
+      await parser.settle(3);
+      expect(
+        [for (final m in parser.received.skip(1)) (m[1] as List).length],
+        [2, 1],
+      );
+
+      // Let it finish, so the zip is closed before the test cleans up.
+      parser
+        ..stored()
+        ..stored();
+      await parser.settle(5);
       expect(parser.kinds.last, 'done');
     });
   });
