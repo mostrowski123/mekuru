@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:mekuru/features/dictionary/data/services/structured_content.dart';
+
 /// Utility for parsing glossary entries stored as JSON strings.
 ///
 /// Glossary items can be either plain strings or JSON-encoded structured-content
@@ -19,7 +21,10 @@ class GlossaryParser {
   static List<String> parse(String glossariesJson) {
     try {
       final List<dynamic> jsonList = jsonDecode(glossariesJson);
-      return jsonList.map((item) => _itemToReadableText(item)).toList();
+      return jsonList
+          .map((item) => _itemToReadableText(item))
+          .where((text) => text.isNotEmpty)
+          .toList();
     } catch (_) {
       // Corrupt JSON would render as JSON soup — show a placeholder instead.
       // Plain non-JSON strings pass through unchanged.
@@ -50,6 +55,9 @@ class GlossaryParser {
         }
       }
     }
+    // Rows with glossaries but nothing to index (Jitendex redirects) get a
+    // blank, not '': the launch-time backfill re-reads every '' row.
+    if (lines.isEmpty) return items.isEmpty ? '' : ' ';
     return lines.join('\n');
   }
 
@@ -93,10 +101,18 @@ class GlossaryParser {
 
     try {
       final parsed = jsonDecode(value);
-      if (parsed is Map<String, dynamic> &&
-          parsed['type'] == 'structured-content') {
-        final text = _extractText(parsed['content'], decorate: decorate);
-        return text.isNotEmpty ? text : value;
+      if (parsed is Map<String, dynamic>) {
+        switch (parsed['type']) {
+          case 'structured-content':
+            final content = parsed['content'];
+            return content == null
+                ? value
+                : _extractText(content, decorate: decorate);
+          case 'text':
+            return parsed['text']?.toString() ?? '';
+          case 'image':
+            return '';
+        }
       }
       // JSON object but not structured-content — return as-is
       return value;
@@ -129,13 +145,28 @@ class GlossaryParser {
     }
 
     if (content is Map<String, dynamic>) {
+      if (_isNotDefinitionText(content)) return '';
       final tag = content['tag'];
+      final key = _dataContent(content);
       final innerContent = content['content'];
 
+      if (decorate && tag == 'ol' && key == 'glosses') {
+        return _numberedGlosses(innerContent);
+      }
       if (innerContent != null) {
         final text = _extractText(innerContent, decorate: decorate);
         // Add appropriate formatting based on tag type
-        if (decorate && tag == 'li') {
+        if (decorate && key == 'sense') {
+          final style = content['style'];
+          final marker = quotedListMarker(
+            style is Map ? style['listStyleType'] : null,
+          );
+          final glosses = oneLine(text);
+          return (marker == null || marker.isEmpty)
+              ? glosses
+              : '$marker $glosses';
+        }
+        if (decorate && tag == 'li' && key != 'sense-group') {
           return '  ▸ $text'; // small triangle bullet
         }
         return text;
@@ -143,5 +174,73 @@ class GlossaryParser {
     }
 
     return '';
+  }
+
+  /// `data.content` values of Jitendex and Wiktionary (wty) nodes that are not
+  /// the definition: badges, examples, cross-references, notes, forms,
+  /// credits. Kept out of plain text (Anki, saved words) and the search
+  /// index. None is a JMdict key (glossary, refGlosses, references,
+  /// formsTable, notes, sourceLanguages, infoGlossary, antonyms), so JMdict
+  /// text stays exactly as it was.
+  static const _nonDefinitionKeys = {
+    'extra-info',
+    'part-of-speech-info',
+    'misc-info',
+    'field-info',
+    'dialect-info',
+    'forms',
+    'antonym',
+    'reference-label',
+    'redirect-glossary',
+    'backlink',
+    'preamble',
+    'summary-entry',
+    'tags',
+    'related-words',
+  };
+
+  static const _nonDefinitionPrefixes = [
+    'example-sentence',
+    'attribution',
+    'xref',
+    'sense-note',
+    'lang-source',
+    'info-gloss',
+    'graphic',
+    'details-entry-',
+  ];
+
+  static bool _isNotDefinitionText(Map<String, dynamic> node) {
+    final tag = node['tag'];
+    if (tag == 'rt' || tag == 'rp' || tag == 'img') return true;
+    final key = _dataContent(node);
+    return key != null &&
+        (_nonDefinitionKeys.contains(key) ||
+            _nonDefinitionPrefixes.any(key.startsWith));
+  }
+
+  static String? _dataContent(Map<String, dynamic> node) {
+    final data = node['data'];
+    return data is Map ? data['content']?.toString() : null;
+  }
+
+  /// One gloss line out of several: bullets dropped, joined with "; ".
+  static String oneLine(String text) => text
+      .split('\n')
+      .map((line) => line.replaceFirst(_bullet, '').trim())
+      .where((line) => line.isNotEmpty)
+      .join('; ');
+
+  static final _bullet = RegExp(r'^\s*▸\s*');
+
+  /// Wiktionary's `ol[data-content=glosses]`: "1. gloss", "2. gloss", …
+  static String _numberedGlosses(dynamic items) {
+    final lines = <String>[];
+    for (final item in items is List ? items : [items]) {
+      final inner = item is Map<String, dynamic> ? item['content'] : item;
+      final text = oneLine(_extractText(inner, decorate: true));
+      if (text.isNotEmpty) lines.add('${lines.length + 1}. $text');
+    }
+    return lines.join('\n');
   }
 }

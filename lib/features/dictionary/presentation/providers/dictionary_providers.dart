@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
@@ -13,6 +15,14 @@ import 'package:mekuru/main.dart';
 final dictionaryRepositoryProvider = Provider<DictionaryRepository>((ref) {
   return DictionaryRepository(ref.watch(databaseProvider));
 });
+
+/// An image from a dictionary zip, keyed by (dictionary id, zip path); null
+/// when the dictionary has no image there.
+final dictionaryMediaProvider = FutureProvider.autoDispose
+    .family<Uint8List?, (int, String)>(
+      (ref, key) =>
+          ref.watch(dictionaryRepositoryProvider).getMedia(key.$1, key.$2),
+    );
 
 /// Provider for the dictionary query service.
 /// Watches the reactive dictionary stream to invalidate the metadata cache

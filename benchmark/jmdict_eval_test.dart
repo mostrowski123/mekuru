@@ -29,7 +29,8 @@ import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 /// Env knobs: MEKURU_EVAL_LABEL (default "head"), MEKURU_EVAL_JMDICT_TAG
 /// (pin a release, skips the GitHub API), MEKURU_EVAL_OFFLINE=1 (never
 /// download), MEKURU_EVAL_REPS / MEKURU_EVAL_WARMUPS, MEKURU_EVAL_TOP,
-/// MEKURU_EVAL_REBUILD_DB=1.
+/// MEKURU_EVAL_REBUILD_DB=1, MEKURU_EVAL_DICT=jitendex (evaluate the latest
+/// Jitendex instead of JMdict English; its own master DB).
 ///
 /// IMPORTANT: this file is copied verbatim into a worktree at the commit
 /// UNDER COMPARISON when A/B testing — it must only use API that exists on
@@ -63,7 +64,8 @@ class _Config {
       rebuildDb = env['MEKURU_EVAL_REBUILD_DB'] == '1',
       reps = int.tryParse(env['MEKURU_EVAL_REPS'] ?? '') ?? 5,
       warmups = int.tryParse(env['MEKURU_EVAL_WARMUPS'] ?? '') ?? 1,
-      topN = int.tryParse(env['MEKURU_EVAL_TOP'] ?? '') ?? 10;
+      topN = int.tryParse(env['MEKURU_EVAL_TOP'] ?? '') ?? 10,
+      jitendex = env['MEKURU_EVAL_DICT'] == 'jitendex';
 
   final Directory home;
   final String label;
@@ -73,13 +75,20 @@ class _Config {
   final int reps;
   final int warmups;
   final int topN;
+  final bool jitendex;
+
+  /// Title prefix of the evaluated dictionary.
+  String get dictPrefix => jitendex ? 'Jitendex' : 'JMdict';
 
   Directory get cacheDir => Directory('${home.path}/cache');
   Directory get dbDir => Directory('${home.path}/db');
   Directory get runsDir => Directory('${home.path}/runs');
-  File get masterDb => File('${dbDir.path}/eval_jmdict.sqlite');
-  File get buildingDb => File('${dbDir.path}/eval_jmdict.building.sqlite');
-  File get jmdictZip => File('${cacheDir.path}/JMdict_english.zip');
+  String get _dbName => jitendex ? 'eval_jitendex' : 'eval_jmdict';
+  File get masterDb => File('${dbDir.path}/$_dbName.sqlite');
+  File get buildingDb => File('${dbDir.path}/$_dbName.building.sqlite');
+  File get dictZip => File(
+    '${cacheDir.path}/${jitendex ? 'jitendex-yomitan.zip' : 'JMdict_english.zip'}',
+  );
   File get jmdictTagFile => File('${cacheDir.path}/JMdict_english.tag');
   File get jpdbZip =>
       File('${cacheDir.path}/JPDB_v2.2_Frequency_Kana_2024-10-13.zip');
@@ -89,6 +98,9 @@ const _jpdbUrl =
     'https://github.com/Kuuuube/yomitan-dictionaries/raw/main/'
     'dictionaries/JPDB_v2.2_Frequency_Kana_2024-10-13.zip';
 const _jpdbDictName = 'JPDBv2㋕';
+const _jitendexUrl =
+    'https://github.com/stephenmk/stephenmk.github.io/releases/latest/'
+    'download/jitendex-yomitan.zip';
 
 // ---------------------------------------------------------------------------
 // Query battery
@@ -665,15 +677,16 @@ Future<String> _resolveJmdictTag(_Config cfg) async {
 
 Future<void> _ensureZips(_Config cfg) async {
   cfg.cacheDir.createSync(recursive: true);
-  if (!cfg.jmdictZip.existsSync()) {
+  if (!cfg.dictZip.existsSync()) {
     if (cfg.offline) {
-      _missing(cfg, cfg.jmdictZip.path, 'Download JMdict_english.zip.');
+      _missing(cfg, cfg.dictZip.path, 'Download the dictionary zip.');
     }
-    final tag = await _resolveJmdictTag(cfg);
     await _download(
-      'https://github.com/yomidevs/jmdict-yomitan/releases/download/'
-      '$tag/JMdict_english.zip',
-      cfg.jmdictZip,
+      cfg.jitendex
+          ? _jitendexUrl
+          : 'https://github.com/yomidevs/jmdict-yomitan/releases/download/'
+                '${await _resolveJmdictTag(cfg)}/JMdict_english.zip',
+      cfg.dictZip,
     );
   }
   if (!cfg.jpdbZip.existsSync()) {
@@ -688,13 +701,13 @@ Future<void> _ensureZips(_Config cfg) async {
 // Master DB
 // ---------------------------------------------------------------------------
 
-Future<bool> _dbLooksReady(File dbFile) async {
+Future<bool> _dbLooksReady(File dbFile, String dictPrefix) async {
   if (!dbFile.existsSync()) return false;
   final db = AppDatabase(NativeDatabase(dbFile));
   try {
     final repo = DictionaryRepository(db);
     final dicts = await repo.getAllDictionaries();
-    final hasJmdict = dicts.any((d) => d.name.startsWith('JMdict'));
+    final hasJmdict = dicts.any((d) => d.name.startsWith(dictPrefix));
     final hasJpdb = dicts.any((d) => d.name == _jpdbDictName);
     final count = await repo.getTotalEntryCount();
     return hasJmdict && hasJpdb && count > 100000;
@@ -710,7 +723,7 @@ Future<void> _ensureMasterDb(_Config cfg) async {
   if (cfg.rebuildDb && cfg.masterDb.existsSync()) {
     cfg.masterDb.deleteSync();
   }
-  if (await _dbLooksReady(cfg.masterDb)) {
+  if (await _dbLooksReady(cfg.masterDb, cfg.dictPrefix)) {
     _log('[eval] reusing master DB ${cfg.masterDb.path}');
     return;
   }
@@ -725,22 +738,22 @@ Future<void> _ensureMasterDb(_Config cfg) async {
     final importer = DictionaryImporter(repo);
 
     var lastDecile = -1;
-    _log('[eval] importing JMdict...');
+    _log('[eval] importing ${cfg.dictPrefix}...');
     final jmdictCount = await importer.importFromFile(
-      cfg.jmdictZip.path,
+      cfg.dictZip.path,
       onProgress: (processed, total) {
         if (total <= 0) return;
         final decile = (processed * 10) ~/ total;
         if (decile > lastDecile) {
           lastDecile = decile;
           _log(
-            '[eval]   JMdict ${decile * 10}% '
+            '[eval]   ${cfg.dictPrefix} ${decile * 10}% '
             '(${sw.elapsed.inSeconds}s elapsed)',
           );
         }
       },
     );
-    _log('[eval] JMdict imported: $jmdictCount entries');
+    _log('[eval] ${cfg.dictPrefix} imported: $jmdictCount entries');
 
     _log('[eval] importing JPDB frequency dictionary...');
     final jpdbCount = await importer.importFromFile(cfg.jpdbZip.path);
@@ -755,11 +768,13 @@ Future<void> _ensureMasterDb(_Config cfg) async {
     await repo.setHidden(jpdbMeta.id, isHidden: true);
 
     final dicts = await repo.getAllDictionaries();
-    final jmdictMeta = dicts.firstWhere((d) => d.name.startsWith('JMdict'));
+    final jmdictMeta = dicts.firstWhere(
+      (d) => d.name.startsWith(cfg.dictPrefix),
+    );
     final total = await repo.getTotalEntryCount();
     _log(
       '[eval] master DB ready in ${sw.elapsed.inMinutes}m'
-      '${sw.elapsed.inSeconds % 60}s: JMdict title="${jmdictMeta.name}" '
+      '${sw.elapsed.inSeconds % 60}s: ${cfg.dictPrefix} title="${jmdictMeta.name}" '
       '(enabled=${jmdictMeta.isEnabled}), $total total entries',
     );
     if (total <= 100000) {
@@ -953,11 +968,14 @@ void main() {
 
     final dicts = await repo.getAllDictionaries();
     final entryCount = await repo.getTotalEntryCount();
-    final jmdictMeta = dicts.firstWhere((d) => d.name.startsWith('JMdict'));
-    final tag = await _resolveJmdictTag(cfg);
+    final jmdictMeta = dicts.firstWhere(
+      (d) => d.name.startsWith(cfg.dictPrefix),
+    );
+    // Jitendex's title carries its revision.
+    final tag = cfg.jitendex ? jmdictMeta.name : await _resolveJmdictTag(cfg);
     _log(
       '[eval] db: ${dicts.length} dictionaries, $entryCount entries, '
-      'JMdict="${jmdictMeta.name}" tag=$tag',
+      '${cfg.dictPrefix}="${jmdictMeta.name}" tag=$tag',
     );
 
     // Sanity gates — must hold at every commit (never assert new-feature

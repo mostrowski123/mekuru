@@ -9,17 +9,16 @@ import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creatio
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/data/services/kanji_reading_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
-import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/part_of_speech_resolver.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_readings_block.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
-import 'package:mekuru/features/dictionary/presentation/widgets/tappable_definition_text.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart' show scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
+import 'package:mekuru/shared/widgets/structured_glossary_view.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// A card that displays all dictionary definitions for a single
@@ -713,27 +712,30 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   List<Widget> _buildGroupedDefinitions(
     double fs,
     TextStyle definitionStyle,
-    List<_DefinitionSectionData> definitionSections,
+    Map<String, List<DictionaryEntry>> definitionSections,
   ) {
     final widgets = <Widget>[];
-    for (
-      var dictIndex = 0;
-      dictIndex < definitionSections.length;
-      dictIndex++
-    ) {
-      final section = definitionSections[dictIndex];
-      for (final line in section.lines) {
+    for (final (dictIndex, MapEntry(key: dictionaryName, value: rows))
+        in definitionSections.entries.indexed) {
+      final numbered = rows.length > 1;
+      for (final (i, entry) in rows.indexed) {
         widgets.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: _buildDefinition(line, definitionStyle),
+            child: StructuredGlossaryView(
+              glossaries: entry.glossaries,
+              dictionaryId: entry.dictionaryId,
+              style: definitionStyle,
+              number: numbered ? i + 1 : null,
+              onWordTap: onWordTap,
+            ),
           ),
         );
       }
 
       widgets.add(
         SourceSectionLabel(
-          label: section.dictionaryName,
+          label: dictionaryName,
           topPadding: 2,
           bottomPadding: dictIndex < definitionSections.length - 1 ? 10 : 0,
           fontSize: fs * 0.64,
@@ -742,18 +744,6 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
     }
 
     return widgets;
-  }
-
-  /// Build a definition line — tappable or plain.
-  Widget _buildDefinition(String text, TextStyle style) {
-    if (onWordTap != null) {
-      return TappableDefinitionText(
-        text: text,
-        style: style,
-        onWordTap: onWordTap!,
-      );
-    }
-    return Text(text, style: style);
   }
 
   /// Build pitch accent diagrams grouped by source dictionary.
@@ -815,52 +805,15 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   }
 }
 
-List<_DefinitionSectionData> _buildDefinitionSections(
+/// Rows by dictionary name, dictionaries in result order.
+Map<String, List<DictionaryEntry>> _buildDefinitionSections(
   List<DictionaryEntryWithSource> entries,
 ) {
-  final byDict = <String, List<DictionaryEntryWithSource>>{};
-  final dictOrder = <String>[];
+  final byDict = <String, List<DictionaryEntry>>{};
   for (final result in entries) {
-    if (!byDict.containsKey(result.dictionaryName)) {
-      dictOrder.add(result.dictionaryName);
-      byDict[result.dictionaryName] = [];
-    }
-    byDict[result.dictionaryName]!.add(result);
+    byDict.putIfAbsent(result.dictionaryName, () => []).add(result.entry);
   }
-
-  return [
-    for (final dictName in dictOrder)
-      _DefinitionSectionData(
-        dictionaryName: dictName,
-        lines: _buildDefinitionLines(byDict[dictName]!),
-      ),
-  ];
-}
-
-List<String> _buildDefinitionLines(List<DictionaryEntryWithSource> entries) {
-  final showNumbers = entries.length > 1;
-  return [
-    for (var i = 0; i < entries.length; i++)
-      _formatDefinitionLine(
-        entries[i].entry.glossaries,
-        index: i,
-        showNumbers: showNumbers,
-      ),
-  ];
-}
-
-String _formatDefinitionLine(
-  String glossaries, {
-  required int index,
-  required bool showNumbers,
-}) {
-  final definitions = GlossaryParser.parse(glossaries);
-  final fragments = definitions
-      .expand((definition) => definition.split('\n'))
-      .map((line) => line.replaceFirst(RegExp(r'^\s*\u25b8\s*'), '').trim())
-      .where((line) => line.isNotEmpty);
-  final joined = fragments.join('; ');
-  return showNumbers ? '${index + 1}. $joined' : joined;
+  return byDict;
 }
 
 /// A small colored tag showing word frequency level.
@@ -903,14 +856,4 @@ class _FrequencyTag extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DefinitionSectionData {
-  const _DefinitionSectionData({
-    required this.dictionaryName,
-    required this.lines,
-  });
-
-  final String dictionaryName;
-  final List<String> lines;
 }

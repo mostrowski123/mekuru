@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +13,7 @@ import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 
+import 'shared/yomitan_glossary_fixtures.dart';
 import 'test_app.dart';
 
 DictionaryEntry _buildEntry({
@@ -328,4 +331,45 @@ void main() {
       expect(find.text('JMdict'), findsOneWidget);
     },
   );
+
+  testWidgets('a structured-content row is laid out, not flattened', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildTestApp(
+        db: db,
+        width: 400,
+        child: GroupedDictionaryEntryCard(
+          entries: [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: 1,
+                expression: '食べる',
+                reading: 'たべる',
+                glossaries: jsonEncode([jitendexTaberu]),
+              ),
+              dictionaryName: 'Jitendex.org [2026-10-03]',
+            ),
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: 2,
+                expression: '食べる',
+                reading: 'たべる',
+                glossaries: '["to eat (plain)"]',
+              ),
+              dictionaryName: 'Plain Dict',
+            ),
+          ],
+          pitchAccents: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1-dan'), findsOneWidget);
+    expect(find.text('①'), findsOneWidget);
+    expect(find.text('くだ'), findsOneWidget);
+    expect(find.textContaining('▸', findRichText: true), findsNothing);
+    expect(find.text('to eat (plain)'), findsOneWidget);
+  });
 }

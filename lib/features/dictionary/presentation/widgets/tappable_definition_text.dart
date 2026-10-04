@@ -29,7 +29,7 @@ class TappableDefinitionText extends StatefulWidget {
 }
 
 class _TappableDefinitionTextState extends State<TappableDefinitionText> {
-  List<_DefinitionTextSegment> _segments = const [];
+  List<TapSegment> _segments = const [];
 
   @override
   void initState() {
@@ -52,47 +52,7 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
   }
 
   void _rebuildSegments() {
-    final segments = <_DefinitionTextSegment>[];
-    final matches = japaneseRunPattern.allMatches(widget.text);
-    var lastEnd = 0;
-
-    final mecab = MecabService.instance;
-
-    for (final match in matches) {
-      if (match.start > lastEnd) {
-        segments.add(
-          _DefinitionTextSegment(widget.text.substring(lastEnd, match.start)),
-        );
-      }
-
-      final japaneseText = match.group(0)!;
-
-      if (mecab.isInitialized) {
-        final tokens = mecab.tokenize(japaneseText);
-        final reconstructed = tokens.join();
-        if (reconstructed == japaneseText) {
-          for (final token in tokens) {
-            segments.add(_DefinitionTextSegment(token, tapValue: token));
-          }
-        } else {
-          segments.add(
-            _DefinitionTextSegment(japaneseText, tapValue: japaneseText),
-          );
-        }
-      } else {
-        segments.add(
-          _DefinitionTextSegment(japaneseText, tapValue: japaneseText),
-        );
-      }
-
-      lastEnd = match.end;
-    }
-
-    if (lastEnd < widget.text.length) {
-      segments.add(_DefinitionTextSegment(widget.text.substring(lastEnd)));
-    }
-
-    _segments = segments;
+    _segments = tapSegments(widget.text);
   }
 
   @override
@@ -149,9 +109,43 @@ class _TappableDefinitionTextState extends State<TappableDefinitionText> {
   }
 }
 
-class _DefinitionTextSegment {
-  const _DefinitionTextSegment(this.text, {this.tapValue});
+/// A piece of definition text; [tapValue] is set for a tappable Japanese word.
+class TapSegment {
+  const TapSegment(this.text, {this.tapValue});
 
   final String text;
   final String? tapValue;
+}
+
+/// Splits [text] into tappable Japanese words (MeCab tokens, or whole
+/// Japanese runs when MeCab is not initialized) and the text between them.
+List<TapSegment> tapSegments(String text) {
+  final segments = <TapSegment>[];
+  final mecab = MecabService.instance;
+  var lastEnd = 0;
+
+  for (final match in japaneseRunPattern.allMatches(text)) {
+    if (match.start > lastEnd) {
+      segments.add(TapSegment(text.substring(lastEnd, match.start)));
+    }
+
+    final japaneseText = match.group(0)!;
+    final tokens = mecab.isInitialized
+        ? mecab.tokenize(japaneseText)
+        : const <String>[];
+    if (tokens.join() == japaneseText) {
+      for (final token in tokens) {
+        segments.add(TapSegment(token, tapValue: token));
+      }
+    } else {
+      segments.add(TapSegment(japaneseText, tapValue: japaneseText));
+    }
+
+    lastEnd = match.end;
+  }
+
+  if (lastEnd < text.length) {
+    segments.add(TapSegment(text.substring(lastEnd)));
+  }
+  return segments;
 }
