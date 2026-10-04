@@ -120,6 +120,32 @@ void main() {
     expect(taps, ['丸']);
   });
 
+  testWidgets('attributes of the wrong type do not break the definition', (
+    tester,
+  ) async {
+    // Hand-imported dictionaries are not checked against Yomitan's schema.
+    await pump(
+      tester,
+      jsonEncode({
+        'type': 'structured-content',
+        'content': [
+          {'tag': 'a', 'href': 3, 'title': 7, 'content': 'to drink'},
+          {
+            'tag': 'img',
+            'path': 'x.png',
+            'width': '12',
+            'height': true,
+            'alt': 5,
+            'title': ['t'],
+          },
+        ],
+      }),
+    );
+
+    expect(text('to drink'), findsOneWidget);
+    expect(text('structured-content'), findsNothing);
+  });
+
   testWidgets('plain glosses beside structured content stay apart', (
     tester,
   ) async {

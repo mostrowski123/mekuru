@@ -58,11 +58,11 @@ class ScImage extends ScNode {
 
   factory ScImage.fromJson(Map<String, dynamic> json) => ScImage(
     path: json['path'] as String,
-    width: (json['width'] as num?)?.toDouble(),
-    height: (json['height'] as num?)?.toDouble(),
+    width: _number(json['width']),
+    height: _number(json['height']),
     inEm: json['sizeUnits'] == 'em',
-    alt: json['alt'] as String?,
-    title: (json['title'] ?? json['description']) as String?,
+    alt: _string(json['alt']),
+    title: _string(json['title']) ?? _string(json['description']),
     monochrome: json['appearance'] == 'monochrome',
     background: json['background'] == true,
     collapsed: json['collapsed'] == true,
@@ -121,6 +121,12 @@ String? quotedListMarker(Object? listStyleType) => listStyleType is String
 
 final _quotedMarker = RegExp(r'''^\s*(["'])(.*)\1\s*$''');
 
+// Attribute values, read without casts: a hand-imported dictionary is not
+// checked against Yomitan's schema, and a wrong type must not break the row.
+String? _string(Object? value) => value is String ? value : null;
+
+double? _number(Object? value) => value is num ? value.toDouble() : null;
+
 /// A structured-content, text or image object; null for a plain string or
 /// an object of another kind.
 ScNode? _parseItem(String item) {
@@ -165,8 +171,8 @@ List<ScNode> _parseContent(Object? content) {
           ? {for (final e in data.entries) e.key.toString(): e.value.toString()}
           : const {},
       style: style is Map<String, dynamic> ? style : const {},
-      href: content['href'] as String?,
-      title: content['title'] as String?,
+      href: _string(content['href']),
+      title: _string(content['title']),
       open: content['open'] == true,
       children: _parseContent(content['content']),
     ),
