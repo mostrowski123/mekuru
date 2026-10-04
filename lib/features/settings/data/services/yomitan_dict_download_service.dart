@@ -76,8 +76,9 @@ class YomitanDictDownloadService {
   /// A parenthesized language other than English marks another edition
   /// ("JMdict (Spanish) [..]", "KANJIDIC (French) [..]"), which is a separate
   /// download and must not count as, or be deleted as, the English one.
+  /// "JMdict (Legacy)" is jmdict-yomitan's older English layout.
   static final _otherLanguageEdition = RegExp(
-    r'^(JMdict|KANJIDIC) \((?!English)',
+    r'^(JMdict|KANJIDIC) \((?!English|Legacy)',
   );
 
   static bool matches(YomitanDictType type, String name) =>

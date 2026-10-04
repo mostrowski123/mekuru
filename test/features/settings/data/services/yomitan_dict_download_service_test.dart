@@ -55,6 +55,8 @@ void main() {
       const cases = {
         'JMdict [2026-10-03]': YomitanDictType.jmdictEnglish,
         'JMdict (English)': YomitanDictType.jmdictEnglish,
+        // Hand-imported JMdict_english_legacy.zip.
+        'JMdict (Legacy) [2026-10-03]': YomitanDictType.jmdictEnglish,
         'KANJIDIC [2026-276]': YomitanDictType.kanjidicEnglish,
         'KANJIDIC (English)': YomitanDictType.kanjidicEnglish,
       };
