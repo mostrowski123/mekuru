@@ -4565,5 +4565,14 @@
   "dictionaryImportNoneInCollection": "No dictionaries found in collection",
   "@dictionaryImportNoneInCollection": {
     "description": "Dictionary Manager message when a collection backup held no dictionaries."
+  },
+  "backgroundWorkDictionaries": "{count, plural, =1{Downloading 1 dictionary} other{Downloading {count} dictionaries}}",
+  "@backgroundWorkDictionaries": {
+    "description": "iOS Live Activity title while dictionary downloads keep going after the user leaves the app.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

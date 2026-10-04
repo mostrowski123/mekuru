@@ -3575,4 +3575,15 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get dictionaryImportNoneInCollection =>
       'No dictionaries found in collection';
+
+  @override
+  String backgroundWorkDictionaries({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Downloading $count dictionaries',
+      one: 'Downloading 1 dictionary',
+    );
+    return '$_temp0';
+  }
 }

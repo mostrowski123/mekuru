@@ -5807,6 +5807,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No dictionaries found in collection'**
   String get dictionaryImportNoneInCollection;
+
+  /// iOS Live Activity title while dictionary downloads keep going after the user leaves the app.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Downloading 1 dictionary} other{Downloading {count} dictionaries}}'**
+  String backgroundWorkDictionaries({required int count});
 }
 
 class _AppLocalizationsDelegate

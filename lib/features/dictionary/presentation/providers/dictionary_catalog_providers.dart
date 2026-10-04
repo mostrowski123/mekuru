@@ -46,6 +46,9 @@ abstract class _DownloadNotifier extends Notifier<CatalogDownloadState> {
         ),
       );
       state = const CatalogDownloadState();
+    } on DownloadStoppedException {
+      // iOS ended the background work, or the user stopped it there.
+      state = const CatalogDownloadState();
     } on InsufficientSpaceException catch (e) {
       state = CatalogDownloadState(neededBytes: e.neededBytes);
     } catch (e) {

@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-enum BackgroundJobKind { download, scan }
+/// [download] is a server book, [dictionary] a dictionary download.
+enum BackgroundJobKind { download, scan, dictionary }
 
 /// Live Activity text for the running work: what is being done and how far
 /// along it is (0-100).
@@ -11,11 +12,12 @@ typedef BackgroundWorkText =
     ({String title, String subtitle}) Function({
       required int downloads,
       required int scans,
+      required int dictionaries,
       required int percent,
     });
 
 /// Keeps Mekuru running after the user leaves it while work they started is
-/// in progress: server book downloads and OCR scans. On iOS one
+/// in progress: server book and dictionary downloads and OCR scans. On iOS one
 /// BGContinuedProcessingTask (`BackgroundWorkBridge` in AppDelegate.swift)
 /// covers all of it, and the system shows the combined progress in a Live
 /// Activity the user can cancel. When the system or the user ends that task,
@@ -143,11 +145,14 @@ class BackgroundWork {
   }
 
   ({String title, String subtitle}) _text({int percent = 0}) {
-    final downloads = _jobs.values
-        .where((j) => j.kind == BackgroundJobKind.download)
-        .length;
-    final scans = _jobs.length - downloads;
-    return text?.call(downloads: downloads, scans: scans, percent: percent) ??
+    int count(BackgroundJobKind kind) =>
+        _jobs.values.where((j) => j.kind == kind).length;
+    return text?.call(
+          downloads: count(BackgroundJobKind.download),
+          scans: count(BackgroundJobKind.scan),
+          dictionaries: count(BackgroundJobKind.dictionary),
+          percent: percent,
+        ) ??
         (title: 'Mekuru', subtitle: '$percent%');
   }
 }

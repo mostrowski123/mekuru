@@ -54,6 +54,25 @@ void main() {
     },
   );
 
+  test('dictionary downloads have their own words in the text', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    work.text =
+        ({
+          required int downloads,
+          required int scans,
+          required int dictionaries,
+          required int percent,
+        }) => (title: '$downloads/$scans/$dictionaries', subtitle: '');
+    work.start('dictionary:a', BackgroundJobKind.dictionary, onStopped: () {});
+    work.start('download:b', BackgroundJobKind.download, onStopped: () {});
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+
+    expect(
+      calls.lastWhere((c) => c.method == 'update').arguments['title'],
+      '1/0/1',
+    );
+  });
+
   test('when iOS ends the task, every job is stopped', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     final stopped = <String>[];

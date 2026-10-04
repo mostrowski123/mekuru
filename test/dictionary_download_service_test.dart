@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
@@ -152,4 +153,91 @@ void main() {
     expect(requests, 0);
     expect(await repo.getAllDictionaries(), isEmpty);
   });
+
+  test('on iOS a download is background work, and stops when iOS ends '
+      'it', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = DictionaryRepository(db);
+    const channel = MethodChannel('mekuru/background_work');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <String>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call.method);
+      return call.method == 'begin' ? true : null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    final download = DictionaryDownloadService.downloadAndImportUrl(
+      url: urlFor('/JMnedict.zip'),
+      asset: 'jmnedict',
+      importer: DictionaryImporter(repo),
+    );
+    // iOS ends the background task before the download gets going.
+    await messenger.handlePlatformMessage(
+      channel.name,
+      channel.codec.encodeMethodCall(const MethodCall('expired')),
+      (_) {},
+    );
+
+    await expectLater(download, throwsA(isA<DownloadStoppedException>()));
+    expect(calls.first, 'begin');
+    expect(await repo.getAllDictionaries(), isEmpty);
+  });
+
+  test('a stop that comes once the import is saved does not undo it', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = DictionaryRepository(db);
+    const channel = MethodChannel('mekuru/background_work');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      channel,
+      (call) async => call.method == 'begin' ? true : null,
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    await DictionaryDownloadService.downloadAndImportUrl(
+      url: urlFor('/JMnedict.zip'),
+      asset: 'jmnedict',
+      importer: _StopAfterImport(
+        repo,
+        () => messenger.handlePlatformMessage(
+          channel.name,
+          channel.codec.encodeMethodCall(const MethodCall('expired')),
+          (_) {},
+        ),
+      ),
+    );
+
+    expect(await repo.getAllDictionaries(), hasLength(1));
+  });
+}
+
+/// Lets iOS end the background task right after the import commits.
+class _StopAfterImport extends DictionaryImporter {
+  _StopAfterImport(super.repository, this.afterImport);
+
+  final Future<void> Function() afterImport;
+
+  @override
+  Future<int> importFromFile(
+    String filePath, {
+    void Function(int processed, int total)? onProgress,
+    void Function(int dictionaryId)? onDictionaryCreated,
+  }) async {
+    final count = await super.importFromFile(
+      filePath,
+      onProgress: onProgress,
+      onDictionaryCreated: onDictionaryCreated,
+    );
+    await afterImport();
+    return count;
+  }
 }

@@ -57,6 +57,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
   static ({String title, String subtitle}) _backgroundWorkText({
     required int downloads,
     required int scans,
+    required int dictionaries,
     required int percent,
   }) {
     final l10n = appL10n();
@@ -64,6 +65,8 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
       title: [
         if (downloads > 0) l10n.backgroundWorkDownloading(count: downloads),
         if (scans > 0) l10n.backgroundWorkScanning(count: scans),
+        if (dictionaries > 0)
+          l10n.backgroundWorkDictionaries(count: dictionaries),
       ].join(' · '),
       subtitle: l10n.backgroundWorkPercent(percent: percent),
     );
