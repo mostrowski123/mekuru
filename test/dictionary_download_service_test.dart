@@ -154,6 +154,25 @@ void main() {
     expect(await repo.getAllDictionaries(), isEmpty);
   });
 
+  test('a download a closed app left behind is deleted by the next', () async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final left = File('${tempDir.path}/download_1_jitendex-yomitan.zip')
+      ..writeAsBytesSync([0])
+      ..setLastModifiedSync(DateTime.now().subtract(const Duration(days: 2)));
+    final running = File('${tempDir.path}/download_2_JMdict_spanish.zip')
+      ..writeAsBytesSync([0]);
+
+    await DictionaryDownloadService.downloadAndImportUrl(
+      url: urlFor('/JMnedict.zip'),
+      asset: 'jmnedict',
+      importer: DictionaryImporter(DictionaryRepository(db)),
+    );
+
+    expect(left.existsSync(), isFalse);
+    expect(running.existsSync(), isTrue);
+  });
+
   test('on iOS a download is background work, and stops when iOS ends '
       'it', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;

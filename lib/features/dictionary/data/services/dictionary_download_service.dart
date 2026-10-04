@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/services/background_work.dart';
@@ -69,6 +71,7 @@ class DictionaryDownloadService {
       );
       report(0.0);
       final tempDir = await getTemporaryDirectory();
+      await _deleteLeftovers(tempDir);
       // Unique, so two downloads at once never share a file.
       final fileName =
           'download_${DateTime.now().microsecondsSinceEpoch}_'
@@ -106,6 +109,26 @@ class DictionaryDownloadService {
       rethrow;
     } finally {
       BackgroundWork.instance.finish(workId);
+    }
+  }
+
+  static final _downloadName = RegExp(r'^download_\d+_');
+
+  /// A download whose app was closed midway leaves its file behind, and
+  /// with unique names no later download replaces it. No running download
+  /// is a day old.
+  static Future<void> _deleteLeftovers(Directory dir) async {
+    final cutoff = DateTime.now().subtract(const Duration(days: 1));
+    try {
+      await for (final entity in dir.list(followLinks: false)) {
+        if (entity is File &&
+            _downloadName.hasMatch(p.basename(entity.path)) &&
+            (await entity.lastModified()).isBefore(cutoff)) {
+          await entity.delete();
+        }
+      }
+    } on FileSystemException {
+      // Best effort: the system clears this directory as well.
     }
   }
 
