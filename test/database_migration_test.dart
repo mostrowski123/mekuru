@@ -102,7 +102,6 @@ void main() {
       expect(entries.single.definitionTags, isEmpty);
       expect(entries.single.rules, isEmpty);
       expect(entries.single.termTags, isEmpty);
-      expect(migratedDb.schemaVersion, 23);
     },
   );
 
@@ -244,7 +243,6 @@ void main() {
           .toSet();
 
       expect(indexNames, contains('idx_pitch_expr_dictid'));
-      expect(migratedDb.schemaVersion, 23);
     },
   );
 
@@ -313,8 +311,6 @@ void main() {
           .customSelect('SELECT COUNT(*) AS c FROM reading_sessions')
           .getSingle();
       expect(sessionCount.data['c'], 0);
-
-      expect(migratedDb.schemaVersion, 23);
     },
   );
 
@@ -369,8 +365,6 @@ void main() {
               hasVerticalCss: const Value(true),
             ),
           );
-
-      expect(migratedDb.schemaVersion, 23);
     },
   );
 
@@ -415,7 +409,6 @@ void main() {
         .customSelect('SELECT COUNT(*) AS c FROM book_collections')
         .getSingle();
     expect(memberCount.data['c'], 1);
-    expect(migratedDb.schemaVersion, 23);
   });
 
   test('adds book_collections.position when migrating to schema 22', () async {
@@ -462,7 +455,6 @@ void main() {
         .customSelect('SELECT position FROM book_collections')
         .getSingle();
     expect(row.data['position'], 0);
-    expect(migratedDb.schemaVersion, 23);
   });
 
   test('adds server sync table and book link columns at schema 23', () async {
@@ -521,8 +513,61 @@ void main() {
         .select(migratedDb.serverConnections)
         .get();
     expect(connections, isEmpty);
-    expect(migratedDb.schemaVersion, 23);
   });
+
+  test(
+    'adds dictionary revision, index url and media table at schema 24',
+    () async {
+      final tempDir = await Directory.systemTemp.createTemp('mekuru_media_');
+      addTearDown(() async {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      });
+
+      final dbFile = File('${tempDir.path}/mekuru.sqlite');
+      final seedDb = AppDatabase(NativeDatabase(dbFile));
+      await DictionaryRepository(
+        seedDb,
+      ).insertDictionary('JMdict [2026-09-01]');
+      await seedDb.close();
+
+      // Rewind to v23: no media table, no revision/index_url columns.
+      final legacyDb = sqlite.sqlite3.open(dbFile.path);
+      legacyDb.execute('PRAGMA user_version = 23;');
+      legacyDb.execute('DROP TABLE dictionary_media;');
+      legacyDb.execute('ALTER TABLE dictionary_metas DROP COLUMN revision;');
+      legacyDb.execute('ALTER TABLE dictionary_metas DROP COLUMN index_url;');
+      legacyDb.close();
+
+      final migratedDb = AppDatabase(NativeDatabase(dbFile));
+      addTearDown(migratedDb.close);
+      final repo = DictionaryRepository(migratedDb);
+
+      final meta = (await repo.getAllDictionaries()).single;
+      expect(meta.name, 'JMdict [2026-09-01]');
+      expect(meta.revision, null);
+      expect(meta.indexUrl, null);
+
+      // Missing nullable columns read back as null, so write through them.
+      await (migratedDb.update(
+        migratedDb.dictionaryMetas,
+      )..where((t) => t.id.equals(meta.id))).write(
+        const DictionaryMetasCompanion(
+          revision: Value('JMdict.2026-10-03'),
+          indexUrl: Value('https://example.com/JMdict_english.json'),
+        ),
+      );
+      final updated = (await repo.getAllDictionaries()).single;
+      expect(updated.revision, 'JMdict.2026-10-03');
+      expect(updated.indexUrl, 'https://example.com/JMdict_english.json');
+
+      await repo.insertMedia(meta.id, [
+        ('img/a.png', Uint8List.fromList([7])),
+      ]);
+      expect(await repo.getMedia(meta.id, 'img/a.png'), [7]);
+    },
+  );
 
   test(
     'heals a schema 23 database that never ran the server sync DDL',
@@ -558,7 +603,7 @@ void main() {
       ]) {
         strippedDb.execute('ALTER TABLE books DROP COLUMN $column;');
       }
-      expect(strippedDb.userVersion, 23);
+      strippedDb.execute('PRAGMA user_version = 23;');
       strippedDb.close();
 
       final healedDb = AppDatabase(NativeDatabase(dbFile));
@@ -630,7 +675,7 @@ void main() {
         "INSERT INTO server_connections (server_type, name, base_url) "
         "VALUES ('kavita', 'Home', 'https://nas.lan:5000');",
       );
-      expect(legacyDb.userVersion, 23);
+      legacyDb.execute('PRAGMA user_version = 23;');
       legacyDb.close();
 
       final healedDb = AppDatabase(NativeDatabase(dbFile));

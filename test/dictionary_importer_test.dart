@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
@@ -37,6 +39,8 @@ Future<String> createTestYomitanZip({
   List<List<dynamic>>? entries,
   List<List<dynamic>>? kanjiEntries,
   List<List<dynamic>>? termMetaEntries,
+  Map<String, Object?> index = const {},
+  Map<String, List<int>> extraFiles = const {},
 }) async {
   entries ??= [
     [
@@ -75,9 +79,18 @@ Future<String> createTestYomitanZip({
 
   // index.json
   final indexContent = utf8.encode(
-    jsonEncode({'title': dictionaryName, 'format': 3, 'revision': '1.0'}),
+    jsonEncode({
+      'title': dictionaryName,
+      'format': 3,
+      'revision': '1.0',
+      ...index,
+    }),
   );
   archive.addFile(ArchiveFile('index.json', indexContent.length, indexContent));
+
+  for (final MapEntry(key: name, value: bytes) in extraFiles.entries) {
+    archive.addFile(ArchiveFile(name, bytes.length, bytes));
+  }
 
   // term_bank_1.json
   final termBankContent = utf8.encode(jsonEncode(entries));
@@ -779,6 +792,123 @@ void main() {
       expect(glossaries, hasLength(1));
       expect(glossaries.single, contains('redirect-glossary'));
       expect(redirect.glossaries, isNot(contains('redirected from')));
+    });
+  });
+
+  group('DictionaryImporter — index metadata and media', () {
+    const imageChannel = MethodChannel('mekuru/image_convert');
+
+    setUpAll(TestWidgetsFlutterBinding.ensureInitialized);
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(imageChannel, null);
+    });
+
+    test(
+      'keeps the revision and update URL of an updatable dictionary',
+      () async {
+        final zipPath = await createTestYomitanZip(
+          dictionaryName: 'JMnedict [2026-10-03]',
+          index: {
+            'revision': 'JMnedict.2026-10-03',
+            'isUpdatable': true,
+            'indexUrl': 'https://example.com/JMnedict.json',
+            'downloadUrl': 'https://example.com/JMnedict.zip',
+          },
+        );
+        trackTempFile(zipPath);
+
+        await importer.importFromFile(zipPath);
+
+        final meta = (await repo.getAllDictionaries()).single;
+        expect(meta.revision, 'JMnedict.2026-10-03');
+        expect(meta.indexUrl, 'https://example.com/JMnedict.json');
+      },
+    );
+
+    test('drops the update URL when the dictionary is not updatable', () async {
+      final zipPath = await createTestYomitanZip(
+        index: {'revision': 'r7', 'indexUrl': 'https://example.com/index.json'},
+      );
+      trackTempFile(zipPath);
+
+      await importer.importFromFile(zipPath);
+
+      final meta = (await repo.getAllDictionaries()).single;
+      expect(meta.revision, 'r7');
+      expect(meta.indexUrl, isNull);
+    });
+
+    test('stores the zip images, with backslash paths normalized', () async {
+      final png = [0x89, 0x50, 0x4E, 0x47, 1, 2, 3];
+      final svg = utf8.encode('<svg xmlns="http://www.w3.org/2000/svg"/>');
+      final zipPath = await createTestYomitanZip(
+        extraFiles: {
+          'img/a.png': png,
+          r'assets\icon.svg': svg,
+          'notes.txt': utf8.encode('not an image'),
+        },
+      );
+      trackTempFile(zipPath);
+
+      await importer.importFromFile(zipPath);
+
+      final id = (await repo.getAllDictionaries()).single.id;
+      expect(await repo.getMedia(id, 'img/a.png'), png);
+      expect(await repo.getMedia(id, 'assets/icon.svg'), svg);
+      expect(await repo.getMedia(id, 'notes.txt'), isNull);
+    });
+
+    const avif = [0, 0, 0, 0x1C, 0x66, 0x74, 0x79, 0x70];
+
+    Future<(List<String>, List<int>?)> importAvif({Object? reply}) async {
+      final calls = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(imageChannel, (call) async {
+            calls.add(call.method);
+            expect(call.arguments, avif);
+            return reply;
+          });
+      final zipPath = await createTestYomitanZip(
+        extraFiles: {'graphics/pattern.avif': avif},
+      );
+      trackTempFile(zipPath);
+
+      await importer.importFromFile(zipPath);
+
+      final id = (await repo.getAllDictionaries()).single.id;
+      return (calls, await repo.getMedia(id, 'graphics/pattern.avif'));
+    }
+
+    test('on iOS, converts AVIF images to PNG through the platform', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final png = Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 9]);
+
+      final (calls, stored) = await importAvif(reply: png);
+
+      expect(calls, ['toPng']);
+      expect(stored, png);
+    });
+
+    test(
+      'on iOS, keeps the AVIF bytes when they cannot be converted',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+        final (_, stored) = await importAvif();
+
+        expect(stored, avif);
+      },
+    );
+
+    test('on Android, stores AVIF as-is for the platform decoder', () async {
+      final (calls, stored) = await importAvif();
+
+      expect(calls, isEmpty);
+      expect(stored, avif);
     });
   });
 

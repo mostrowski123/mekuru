@@ -1831,6 +1831,28 @@ class $DictionaryMetasTable extends DictionaryMetas
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<String> revision = GeneratedColumn<String>(
+    'revision',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _indexUrlMeta = const VerificationMeta(
+    'indexUrl',
+  );
+  @override
+  late final GeneratedColumn<String> indexUrl = GeneratedColumn<String>(
+    'index_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1839,6 +1861,8 @@ class $DictionaryMetasTable extends DictionaryMetas
     dateImported,
     sortOrder,
     isHidden,
+    revision,
+    indexUrl,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1890,6 +1914,18 @@ class $DictionaryMetasTable extends DictionaryMetas
         isHidden.isAcceptableOrUnknown(data['is_hidden']!, _isHiddenMeta),
       );
     }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    }
+    if (data.containsKey('index_url')) {
+      context.handle(
+        _indexUrlMeta,
+        indexUrl.isAcceptableOrUnknown(data['index_url']!, _indexUrlMeta),
+      );
+    }
     return context;
   }
 
@@ -1923,6 +1959,14 @@ class $DictionaryMetasTable extends DictionaryMetas
         DriftSqlType.bool,
         data['${effectivePrefix}is_hidden'],
       )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}revision'],
+      ),
+      indexUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}index_url'],
+      ),
     );
   }
 
@@ -1939,6 +1983,14 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
   final DateTime dateImported;
   final int sortOrder;
   final bool isHidden;
+
+  /// index.json `revision`; compared with the published index to offer
+  /// updates. Null for dictionaries imported before schema 24.
+  final String? revision;
+
+  /// index.json `indexUrl`, kept only when the dictionary says it
+  /// `isUpdatable`.
+  final String? indexUrl;
   const DictionaryMeta({
     required this.id,
     required this.name,
@@ -1946,6 +1998,8 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     required this.dateImported,
     required this.sortOrder,
     required this.isHidden,
+    this.revision,
+    this.indexUrl,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1956,6 +2010,12 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     map['date_imported'] = Variable<DateTime>(dateImported);
     map['sort_order'] = Variable<int>(sortOrder);
     map['is_hidden'] = Variable<bool>(isHidden);
+    if (!nullToAbsent || revision != null) {
+      map['revision'] = Variable<String>(revision);
+    }
+    if (!nullToAbsent || indexUrl != null) {
+      map['index_url'] = Variable<String>(indexUrl);
+    }
     return map;
   }
 
@@ -1967,6 +2027,12 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       dateImported: Value(dateImported),
       sortOrder: Value(sortOrder),
       isHidden: Value(isHidden),
+      revision: revision == null && nullToAbsent
+          ? const Value.absent()
+          : Value(revision),
+      indexUrl: indexUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(indexUrl),
     );
   }
 
@@ -1982,6 +2048,8 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       dateImported: serializer.fromJson<DateTime>(json['dateImported']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       isHidden: serializer.fromJson<bool>(json['isHidden']),
+      revision: serializer.fromJson<String?>(json['revision']),
+      indexUrl: serializer.fromJson<String?>(json['indexUrl']),
     );
   }
   @override
@@ -1994,6 +2062,8 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       'dateImported': serializer.toJson<DateTime>(dateImported),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'isHidden': serializer.toJson<bool>(isHidden),
+      'revision': serializer.toJson<String?>(revision),
+      'indexUrl': serializer.toJson<String?>(indexUrl),
     };
   }
 
@@ -2004,6 +2074,8 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     DateTime? dateImported,
     int? sortOrder,
     bool? isHidden,
+    Value<String?> revision = const Value.absent(),
+    Value<String?> indexUrl = const Value.absent(),
   }) => DictionaryMeta(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -2011,6 +2083,8 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     dateImported: dateImported ?? this.dateImported,
     sortOrder: sortOrder ?? this.sortOrder,
     isHidden: isHidden ?? this.isHidden,
+    revision: revision.present ? revision.value : this.revision,
+    indexUrl: indexUrl.present ? indexUrl.value : this.indexUrl,
   );
   DictionaryMeta copyWithCompanion(DictionaryMetasCompanion data) {
     return DictionaryMeta(
@@ -2022,6 +2096,8 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
           : this.dateImported,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       isHidden: data.isHidden.present ? data.isHidden.value : this.isHidden,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      indexUrl: data.indexUrl.present ? data.indexUrl.value : this.indexUrl,
     );
   }
 
@@ -2033,14 +2109,24 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
           ..write('isEnabled: $isEnabled, ')
           ..write('dateImported: $dateImported, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('isHidden: $isHidden')
+          ..write('isHidden: $isHidden, ')
+          ..write('revision: $revision, ')
+          ..write('indexUrl: $indexUrl')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, isEnabled, dateImported, sortOrder, isHidden);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    isEnabled,
+    dateImported,
+    sortOrder,
+    isHidden,
+    revision,
+    indexUrl,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2050,7 +2136,9 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
           other.isEnabled == this.isEnabled &&
           other.dateImported == this.dateImported &&
           other.sortOrder == this.sortOrder &&
-          other.isHidden == this.isHidden);
+          other.isHidden == this.isHidden &&
+          other.revision == this.revision &&
+          other.indexUrl == this.indexUrl);
 }
 
 class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
@@ -2060,6 +2148,8 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
   final Value<DateTime> dateImported;
   final Value<int> sortOrder;
   final Value<bool> isHidden;
+  final Value<String?> revision;
+  final Value<String?> indexUrl;
   const DictionaryMetasCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -2067,6 +2157,8 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     this.dateImported = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.isHidden = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.indexUrl = const Value.absent(),
   });
   DictionaryMetasCompanion.insert({
     this.id = const Value.absent(),
@@ -2075,6 +2167,8 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     this.dateImported = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.isHidden = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.indexUrl = const Value.absent(),
   }) : name = Value(name);
   static Insertable<DictionaryMeta> custom({
     Expression<int>? id,
@@ -2083,6 +2177,8 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     Expression<DateTime>? dateImported,
     Expression<int>? sortOrder,
     Expression<bool>? isHidden,
+    Expression<String>? revision,
+    Expression<String>? indexUrl,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2091,6 +2187,8 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
       if (dateImported != null) 'date_imported': dateImported,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (isHidden != null) 'is_hidden': isHidden,
+      if (revision != null) 'revision': revision,
+      if (indexUrl != null) 'index_url': indexUrl,
     });
   }
 
@@ -2101,6 +2199,8 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     Value<DateTime>? dateImported,
     Value<int>? sortOrder,
     Value<bool>? isHidden,
+    Value<String?>? revision,
+    Value<String?>? indexUrl,
   }) {
     return DictionaryMetasCompanion(
       id: id ?? this.id,
@@ -2109,6 +2209,8 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
       dateImported: dateImported ?? this.dateImported,
       sortOrder: sortOrder ?? this.sortOrder,
       isHidden: isHidden ?? this.isHidden,
+      revision: revision ?? this.revision,
+      indexUrl: indexUrl ?? this.indexUrl,
     );
   }
 
@@ -2133,6 +2235,12 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     if (isHidden.present) {
       map['is_hidden'] = Variable<bool>(isHidden.value);
     }
+    if (revision.present) {
+      map['revision'] = Variable<String>(revision.value);
+    }
+    if (indexUrl.present) {
+      map['index_url'] = Variable<String>(indexUrl.value);
+    }
     return map;
   }
 
@@ -2144,7 +2252,9 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
           ..write('isEnabled: $isEnabled, ')
           ..write('dateImported: $dateImported, ')
           ..write('sortOrder: $sortOrder, ')
-          ..write('isHidden: $isHidden')
+          ..write('isHidden: $isHidden, ')
+          ..write('revision: $revision, ')
+          ..write('indexUrl: $indexUrl')
           ..write(')'))
         .toString();
   }
@@ -6621,6 +6731,280 @@ class ServerConnectionsCompanion extends UpdateCompanion<ServerConnection> {
   }
 }
 
+class $DictionaryMediaTable extends DictionaryMedia
+    with TableInfo<$DictionaryMediaTable, DictionaryMediaFile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DictionaryMediaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dictionaryIdMeta = const VerificationMeta(
+    'dictionaryId',
+  );
+  @override
+  late final GeneratedColumn<int> dictionaryId = GeneratedColumn<int>(
+    'dictionary_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pathMeta = const VerificationMeta('path');
+  @override
+  late final GeneratedColumn<String> path = GeneratedColumn<String>(
+    'path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bytesMeta = const VerificationMeta('bytes');
+  @override
+  late final GeneratedColumn<Uint8List> bytes = GeneratedColumn<Uint8List>(
+    'bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [dictionaryId, path, bytes];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'dictionary_media';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DictionaryMediaFile> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('dictionary_id')) {
+      context.handle(
+        _dictionaryIdMeta,
+        dictionaryId.isAcceptableOrUnknown(
+          data['dictionary_id']!,
+          _dictionaryIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dictionaryIdMeta);
+    }
+    if (data.containsKey('path')) {
+      context.handle(
+        _pathMeta,
+        path.isAcceptableOrUnknown(data['path']!, _pathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pathMeta);
+    }
+    if (data.containsKey('bytes')) {
+      context.handle(
+        _bytesMeta,
+        bytes.isAcceptableOrUnknown(data['bytes']!, _bytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bytesMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {dictionaryId, path};
+  @override
+  DictionaryMediaFile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DictionaryMediaFile(
+      dictionaryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dictionary_id'],
+      )!,
+      path: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}path'],
+      )!,
+      bytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}bytes'],
+      )!,
+    );
+  }
+
+  @override
+  $DictionaryMediaTable createAlias(String alias) {
+    return $DictionaryMediaTable(attachedDatabase, alias);
+  }
+}
+
+class DictionaryMediaFile extends DataClass
+    implements Insertable<DictionaryMediaFile> {
+  final int dictionaryId;
+
+  /// Path inside the zip, with `\` normalized to `/` by the repository.
+  final String path;
+  final Uint8List bytes;
+  const DictionaryMediaFile({
+    required this.dictionaryId,
+    required this.path,
+    required this.bytes,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['dictionary_id'] = Variable<int>(dictionaryId);
+    map['path'] = Variable<String>(path);
+    map['bytes'] = Variable<Uint8List>(bytes);
+    return map;
+  }
+
+  DictionaryMediaCompanion toCompanion(bool nullToAbsent) {
+    return DictionaryMediaCompanion(
+      dictionaryId: Value(dictionaryId),
+      path: Value(path),
+      bytes: Value(bytes),
+    );
+  }
+
+  factory DictionaryMediaFile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DictionaryMediaFile(
+      dictionaryId: serializer.fromJson<int>(json['dictionaryId']),
+      path: serializer.fromJson<String>(json['path']),
+      bytes: serializer.fromJson<Uint8List>(json['bytes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'dictionaryId': serializer.toJson<int>(dictionaryId),
+      'path': serializer.toJson<String>(path),
+      'bytes': serializer.toJson<Uint8List>(bytes),
+    };
+  }
+
+  DictionaryMediaFile copyWith({
+    int? dictionaryId,
+    String? path,
+    Uint8List? bytes,
+  }) => DictionaryMediaFile(
+    dictionaryId: dictionaryId ?? this.dictionaryId,
+    path: path ?? this.path,
+    bytes: bytes ?? this.bytes,
+  );
+  DictionaryMediaFile copyWithCompanion(DictionaryMediaCompanion data) {
+    return DictionaryMediaFile(
+      dictionaryId: data.dictionaryId.present
+          ? data.dictionaryId.value
+          : this.dictionaryId,
+      path: data.path.present ? data.path.value : this.path,
+      bytes: data.bytes.present ? data.bytes.value : this.bytes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DictionaryMediaFile(')
+          ..write('dictionaryId: $dictionaryId, ')
+          ..write('path: $path, ')
+          ..write('bytes: $bytes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(dictionaryId, path, $driftBlobEquality.hash(bytes));
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DictionaryMediaFile &&
+          other.dictionaryId == this.dictionaryId &&
+          other.path == this.path &&
+          $driftBlobEquality.equals(other.bytes, this.bytes));
+}
+
+class DictionaryMediaCompanion extends UpdateCompanion<DictionaryMediaFile> {
+  final Value<int> dictionaryId;
+  final Value<String> path;
+  final Value<Uint8List> bytes;
+  final Value<int> rowid;
+  const DictionaryMediaCompanion({
+    this.dictionaryId = const Value.absent(),
+    this.path = const Value.absent(),
+    this.bytes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DictionaryMediaCompanion.insert({
+    required int dictionaryId,
+    required String path,
+    required Uint8List bytes,
+    this.rowid = const Value.absent(),
+  }) : dictionaryId = Value(dictionaryId),
+       path = Value(path),
+       bytes = Value(bytes);
+  static Insertable<DictionaryMediaFile> custom({
+    Expression<int>? dictionaryId,
+    Expression<String>? path,
+    Expression<Uint8List>? bytes,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (dictionaryId != null) 'dictionary_id': dictionaryId,
+      if (path != null) 'path': path,
+      if (bytes != null) 'bytes': bytes,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DictionaryMediaCompanion copyWith({
+    Value<int>? dictionaryId,
+    Value<String>? path,
+    Value<Uint8List>? bytes,
+    Value<int>? rowid,
+  }) {
+    return DictionaryMediaCompanion(
+      dictionaryId: dictionaryId ?? this.dictionaryId,
+      path: path ?? this.path,
+      bytes: bytes ?? this.bytes,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (dictionaryId.present) {
+      map['dictionary_id'] = Variable<int>(dictionaryId.value);
+    }
+    if (path.present) {
+      map['path'] = Variable<String>(path.value);
+    }
+    if (bytes.present) {
+      map['bytes'] = Variable<Uint8List>(bytes.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DictionaryMediaCompanion(')
+          ..write('dictionaryId: $dictionaryId, ')
+          ..write('path: $path, ')
+          ..write('bytes: $bytes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6648,6 +7032,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ServerConnectionsTable serverConnections =
       $ServerConnectionsTable(this);
+  late final $DictionaryMediaTable dictionaryMedia = $DictionaryMediaTable(
+    this,
+  );
   late final Index idxExpression = Index(
     'idx_expression',
     'CREATE INDEX idx_expression ON dictionary_entries (expression)',
@@ -6707,6 +7094,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     collections,
     bookCollections,
     serverConnections,
+    dictionaryMedia,
     idxExpression,
     idxReading,
     idxExprDictid,
@@ -7780,6 +8168,8 @@ typedef $$DictionaryMetasTableCreateCompanionBuilder =
       Value<DateTime> dateImported,
       Value<int> sortOrder,
       Value<bool> isHidden,
+      Value<String?> revision,
+      Value<String?> indexUrl,
     });
 typedef $$DictionaryMetasTableUpdateCompanionBuilder =
     DictionaryMetasCompanion Function({
@@ -7789,6 +8179,8 @@ typedef $$DictionaryMetasTableUpdateCompanionBuilder =
       Value<DateTime> dateImported,
       Value<int> sortOrder,
       Value<bool> isHidden,
+      Value<String?> revision,
+      Value<String?> indexUrl,
     });
 
 class $$DictionaryMetasTableFilterComposer
@@ -7827,6 +8219,16 @@ class $$DictionaryMetasTableFilterComposer
 
   ColumnFilters<bool> get isHidden => $composableBuilder(
     column: $table.isHidden,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get indexUrl => $composableBuilder(
+    column: $table.indexUrl,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -7869,6 +8271,16 @@ class $$DictionaryMetasTableOrderingComposer
     column: $table.isHidden,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get indexUrl => $composableBuilder(
+    column: $table.indexUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DictionaryMetasTableAnnotationComposer
@@ -7899,6 +8311,12 @@ class $$DictionaryMetasTableAnnotationComposer
 
   GeneratedColumn<bool> get isHidden =>
       $composableBuilder(column: $table.isHidden, builder: (column) => column);
+
+  GeneratedColumn<String> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get indexUrl =>
+      $composableBuilder(column: $table.indexUrl, builder: (column) => column);
 }
 
 class $$DictionaryMetasTableTableManager
@@ -7944,6 +8362,8 @@ class $$DictionaryMetasTableTableManager
                 Value<DateTime> dateImported = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> isHidden = const Value.absent(),
+                Value<String?> revision = const Value.absent(),
+                Value<String?> indexUrl = const Value.absent(),
               }) => DictionaryMetasCompanion(
                 id: id,
                 name: name,
@@ -7951,6 +8371,8 @@ class $$DictionaryMetasTableTableManager
                 dateImported: dateImported,
                 sortOrder: sortOrder,
                 isHidden: isHidden,
+                revision: revision,
+                indexUrl: indexUrl,
               ),
           createCompanionCallback:
               ({
@@ -7960,6 +8382,8 @@ class $$DictionaryMetasTableTableManager
                 Value<DateTime> dateImported = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> isHidden = const Value.absent(),
+                Value<String?> revision = const Value.absent(),
+                Value<String?> indexUrl = const Value.absent(),
               }) => DictionaryMetasCompanion.insert(
                 id: id,
                 name: name,
@@ -7967,6 +8391,8 @@ class $$DictionaryMetasTableTableManager
                 dateImported: dateImported,
                 sortOrder: sortOrder,
                 isHidden: isHidden,
+                revision: revision,
+                indexUrl: indexUrl,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -10968,6 +11394,180 @@ typedef $$ServerConnectionsTableProcessedTableManager =
       ServerConnection,
       PrefetchHooks Function()
     >;
+typedef $$DictionaryMediaTableCreateCompanionBuilder =
+    DictionaryMediaCompanion Function({
+      required int dictionaryId,
+      required String path,
+      required Uint8List bytes,
+      Value<int> rowid,
+    });
+typedef $$DictionaryMediaTableUpdateCompanionBuilder =
+    DictionaryMediaCompanion Function({
+      Value<int> dictionaryId,
+      Value<String> path,
+      Value<Uint8List> bytes,
+      Value<int> rowid,
+    });
+
+class $$DictionaryMediaTableFilterComposer
+    extends Composer<_$AppDatabase, $DictionaryMediaTable> {
+  $$DictionaryMediaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DictionaryMediaTableOrderingComposer
+    extends Composer<_$AppDatabase, $DictionaryMediaTable> {
+  $$DictionaryMediaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DictionaryMediaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DictionaryMediaTable> {
+  $$DictionaryMediaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get dictionaryId => $composableBuilder(
+    column: $table.dictionaryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get path =>
+      $composableBuilder(column: $table.path, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => column);
+}
+
+class $$DictionaryMediaTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DictionaryMediaTable,
+          DictionaryMediaFile,
+          $$DictionaryMediaTableFilterComposer,
+          $$DictionaryMediaTableOrderingComposer,
+          $$DictionaryMediaTableAnnotationComposer,
+          $$DictionaryMediaTableCreateCompanionBuilder,
+          $$DictionaryMediaTableUpdateCompanionBuilder,
+          (
+            DictionaryMediaFile,
+            BaseReferences<
+              _$AppDatabase,
+              $DictionaryMediaTable,
+              DictionaryMediaFile
+            >,
+          ),
+          DictionaryMediaFile,
+          PrefetchHooks Function()
+        > {
+  $$DictionaryMediaTableTableManager(
+    _$AppDatabase db,
+    $DictionaryMediaTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DictionaryMediaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DictionaryMediaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DictionaryMediaTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> dictionaryId = const Value.absent(),
+                Value<String> path = const Value.absent(),
+                Value<Uint8List> bytes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DictionaryMediaCompanion(
+                dictionaryId: dictionaryId,
+                path: path,
+                bytes: bytes,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int dictionaryId,
+                required String path,
+                required Uint8List bytes,
+                Value<int> rowid = const Value.absent(),
+              }) => DictionaryMediaCompanion.insert(
+                dictionaryId: dictionaryId,
+                path: path,
+                bytes: bytes,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DictionaryMediaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DictionaryMediaTable,
+      DictionaryMediaFile,
+      $$DictionaryMediaTableFilterComposer,
+      $$DictionaryMediaTableOrderingComposer,
+      $$DictionaryMediaTableAnnotationComposer,
+      $$DictionaryMediaTableCreateCompanionBuilder,
+      $$DictionaryMediaTableUpdateCompanionBuilder,
+      (
+        DictionaryMediaFile,
+        BaseReferences<
+          _$AppDatabase,
+          $DictionaryMediaTable,
+          DictionaryMediaFile
+        >,
+      ),
+      DictionaryMediaFile,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11000,4 +11600,6 @@ class $AppDatabaseManager {
       $$BookCollectionsTableTableManager(_db, _db.bookCollections);
   $$ServerConnectionsTableTableManager get serverConnections =>
       $$ServerConnectionsTableTableManager(_db, _db.serverConnections);
+  $$DictionaryMediaTableTableManager get dictionaryMedia =>
+      $$DictionaryMediaTableTableManager(_db, _db.dictionaryMedia);
 }

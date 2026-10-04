@@ -23,6 +23,7 @@ import onnxruntime_objc
     registerVisionOcrChannel(messenger: engineBridge.applicationRegistrar.messenger())
     registerSandboxRefundChannel(messenger: engineBridge.applicationRegistrar.messenger())
     registerNetworkChannel(messenger: engineBridge.applicationRegistrar.messenger())
+    registerImageConvertChannel(messenger: engineBridge.applicationRegistrar.messenger())
     FilesBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
     BackgroundWorkBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
@@ -164,6 +165,25 @@ import onnxruntime_objc
           result(path.status == .satisfied && !path.isExpensive && !path.isConstrained)
         }
         monitor.start(queue: .main)
+      }
+  }
+
+  /// `mekuru/image_convert`: `toPng` re-encodes a dictionary image Flutter
+  /// cannot decode on iOS (AVIF, Jitendex's graphics) as PNG; UIImage reads
+  /// AVIF since iOS 16. Replies null when it cannot read the image.
+  private func registerImageConvertChannel(messenger: FlutterBinaryMessenger) {
+    FlutterMethodChannel(name: "mekuru/image_convert", binaryMessenger: messenger)
+      .setMethodCallHandler { call, result in
+        guard call.method == "toPng",
+          let bytes = (call.arguments as? FlutterStandardTypedData)?.data
+        else {
+          result(FlutterMethodNotImplemented)
+          return
+        }
+        Task.detached(priority: .userInitiated) {
+          let png = UIImage(data: bytes)?.pngData()
+          DispatchQueue.main.async { result(png.map { FlutterStandardTypedData(bytes: $0) }) }
+        }
       }
   }
 

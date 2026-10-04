@@ -4,8 +4,11 @@ import 'dart:isolate';
 
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:json_events/json_events.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
@@ -58,6 +61,7 @@ class DictionaryParseException implements Exception {
 //   ['batch', List<Map<String, dynamic>>]       — a batch of parsed entries
 //   ['pitch_batch', List<Map<String, dynamic>>]  — a batch of parsed pitch accents
 //   ['freq_batch', List<Map<String, dynamic>>]   — a batch of parsed frequencies
+//   ['media', String path, Uint8List bytes]     — one image file (zip only)
 //   ['done']                                    — parsing complete
 //   ['error', String message, String causeType] — parsing failed
 
@@ -155,28 +159,45 @@ class DictionaryImporter {
         int? dictionaryId;
         int totalEntries = 0;
         int insertedEntries = 0;
+        final media = <Future<(String, Uint8List)>>[];
 
         await for (final message in receivePort) {
           final msg = message as List;
           final type = msg[0] as String;
+
+          if (type == 'done') {
+            break;
+          }
+
+          if (type == 'error') {
+            throw DictionaryParseException.fromIsolateMessage(msg);
+          }
 
           if (type == 'meta') {
             final meta = Map<String, Object?>.from(msg[1] as Map);
             final dictionaryName =
                 meta['dictionaryName'] as String? ?? 'Unknown Dictionary';
             totalEntries = meta['totalEntries'] as int? ?? 0;
-            dictionaryId = await _repository.insertDictionary(dictionaryName);
+            dictionaryId = await _repository.insertDictionary(
+              dictionaryName,
+              revision: meta['revision'] as String?,
+              indexUrl: meta['indexUrl'] as String?,
+            );
+            continue;
+          }
+
+          final id =
+              dictionaryId ??
+              (throw const FormatException(
+                'ZIP import stream did not provide dictionary metadata',
+              ));
+
+          if (type == 'media') {
+            media.add(_storableImage(msg[1] as String, msg[2] as Uint8List));
             continue;
           }
 
           if (type == 'batch') {
-            if (dictionaryId == null) {
-              throw const FormatException(
-                'ZIP import stream did not provide dictionary metadata',
-              );
-            }
-            final resolvedDictionaryId = dictionaryId;
-
             final rawEntries = (msg[1] as List)
                 .cast<Map>()
                 .map((entry) => Map<String, dynamic>.from(entry))
@@ -201,7 +222,7 @@ class DictionaryImporter {
                     searchText: raw['searchText'] is String
                         ? Value(raw['searchText'] as String)
                         : const Value.absent(),
-                    dictionaryId: resolvedDictionaryId,
+                    dictionaryId: id,
                   );
                 })
                 .toList(growable: false);
@@ -216,13 +237,6 @@ class DictionaryImporter {
           }
 
           if (type == 'pitch_batch') {
-            if (dictionaryId == null) {
-              throw const FormatException(
-                'ZIP import stream did not provide dictionary metadata',
-              );
-            }
-            final resolvedDictionaryId = dictionaryId;
-
             final rawPitchEntries = (msg[1] as List)
                 .cast<Map>()
                 .map((entry) => Map<String, dynamic>.from(entry))
@@ -233,7 +247,7 @@ class DictionaryImporter {
                     expression: raw['expression'] as String,
                     reading: Value(raw['reading'] as String? ?? ''),
                     downstepPosition: raw['position'] as int,
-                    dictionaryId: resolvedDictionaryId,
+                    dictionaryId: id,
                   );
                 })
                 .toList(growable: false);
@@ -246,13 +260,6 @@ class DictionaryImporter {
           }
 
           if (type == 'freq_batch') {
-            if (dictionaryId == null) {
-              throw const FormatException(
-                'ZIP import stream did not provide dictionary metadata',
-              );
-            }
-            final resolvedDictionaryId = dictionaryId;
-
             final rawFrequencyEntries = (msg[1] as List)
                 .cast<Map>()
                 .map((entry) => Map<String, dynamic>.from(entry))
@@ -263,7 +270,7 @@ class DictionaryImporter {
                     expression: raw['expression'] as String,
                     reading: Value(raw['reading'] as String? ?? ''),
                     frequencyRank: raw['rank'] as int,
-                    dictionaryId: resolvedDictionaryId,
+                    dictionaryId: id,
                   );
                 })
                 .toList(growable: false);
@@ -274,18 +281,13 @@ class DictionaryImporter {
             );
             continue;
           }
-
-          if (type == 'done') {
-            break;
-          }
-
-          if (type == 'error') {
-            throw DictionaryParseException.fromIsolateMessage(msg);
-          }
         }
 
         if (dictionaryId == null) {
           throw const FormatException('ZIP import stream produced no metadata');
+        }
+        if (media.isNotEmpty) {
+          await _repository.insertMedia(dictionaryId, await Future.wait(media));
         }
         await _repository.finishGlossaryFtsBulkLoad(dictionaryId);
 
@@ -295,6 +297,20 @@ class DictionaryImporter {
       receivePort.close();
       isolate.kill(priority: Isolate.immediate);
     }
+  }
+
+  /// Flutter cannot decode AVIF (Jitendex's graphics) on iOS, so it is
+  /// converted to PNG once, here. Android needs nothing: Flutter hands formats
+  /// it lacks to the platform ImageDecoder, which reads AVIF from Android 12.
+  static Future<(String, Uint8List)> _storableImage(
+    String path,
+    Uint8List bytes,
+  ) async {
+    if (defaultTargetPlatform == TargetPlatform.iOS &&
+        path.toLowerCase().endsWith('.avif')) {
+      bytes = await convertImageToPng(bytes) ?? bytes;
+    }
+    return (path, bytes);
   }
 
   /// Import a Yomitan dictionary collection from a Dexie JSON export.
@@ -1094,7 +1110,7 @@ class DictionaryImporter {
       input = InputFileStream(filePath);
       final archive = ZipDecoder().decodeStream(input);
 
-      final dictionaryName = _readZipDictionaryName(archive);
+      final index = _readZipIndex(archive);
       final termBankFiles = archive.files
           .where(
             (file) =>
@@ -1122,8 +1138,14 @@ class DictionaryImporter {
           _countImportableZipRows(kanjiBankFiles, _isImportableKanjiRow);
       sendPort.send([
         'meta',
-        {'dictionaryName': dictionaryName, 'totalEntries': totalEntries},
+        {...index, 'totalEntries': totalEntries},
       ]);
+
+      for (final file in archive.files) {
+        if (!file.isFile || !_isZipImagePath(file.name)) continue;
+        final bytes = _zipEntryBytes(file);
+        if (bytes != null) sendPort.send(['media', file.name, bytes]);
+      }
 
       const batchSize = 5000;
       final entryBatch = <Map<String, dynamic>>[];
@@ -1223,14 +1245,37 @@ class DictionaryImporter {
     }
   }
 
-  static String _readZipDictionaryName(Archive archive) {
+  static Map<String, String?> _readZipIndex(Archive archive) {
     final indexFile = archive.findFile('index.json');
-    if (indexFile == null) return 'Unknown Dictionary';
+    final indexJson = indexFile == null
+        ? null
+        : _decodeZipEntryJson(indexFile) as Map<String, dynamic>?;
+    final revision = indexJson?['revision'];
+    final indexUrl = indexJson?['indexUrl'];
+    return {
+      'dictionaryName':
+          (indexJson?['title'] as String?) ?? 'Unknown Dictionary',
+      'revision': revision is String ? revision : null,
+      'indexUrl': indexJson?['isUpdatable'] == true && indexUrl is String
+          ? indexUrl
+          : null,
+    };
+  }
 
-    final indexJson = _decodeZipEntryJson(indexFile) as Map<String, dynamic>?;
-    if (indexJson == null) return 'Unknown Dictionary';
+  static const _zipImageExtensions = {
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.webp',
+    '.bmp',
+    '.svg',
+    '.avif',
+  };
 
-    return (indexJson['title'] as String?) ?? 'Unknown Dictionary';
+  static bool _isZipImagePath(String path) {
+    final lower = path.toLowerCase();
+    return _zipImageExtensions.any(lower.endsWith);
   }
 
   /// Counts importable rows for the progress total without paying for a
@@ -1254,24 +1299,25 @@ class DictionaryImporter {
     return count;
   }
 
-  /// Decodes the JSON held by [file] without letting package:archive retain
-  /// the entry's decompressed bytes.
+  /// Reads [file]'s bytes without letting package:archive retain the entry's
+  /// decompressed bytes.
   ///
   /// `ArchiveFile.readBytes()` caches what it inflates on the entry and never
   /// frees it, so walking every bank left the whole decompressed dictionary
   /// resident in this isolate — hundreds of MB for a JMdict-class zip. Reading
-  /// the raw, still file-backed content instead keeps only the bank currently
-  /// being decoded in memory.
+  /// the raw, still file-backed content instead keeps only the entry currently
+  /// being read in memory.
   ///
   /// `ArchiveFile.clear()` is not an alternative here: it nulls the raw
   /// content as well as the cache, so the emit pass would see empty files.
   /// `ZipFile.getStream()` restores the read position and caches nothing,
   /// which is what makes both passes safe over the same entry.
-  static Object? _decodeZipEntryJson(ArchiveFile file) {
-    final rawContent = file.rawContent;
-    if (rawContent == null) return null;
+  static Uint8List? _zipEntryBytes(ArchiveFile file) =>
+      file.rawContent?.getStream().toUint8List();
 
-    return jsonDecode(utf8.decode(rawContent.getStream().toUint8List()));
+  static Object? _decodeZipEntryJson(ArchiveFile file) {
+    final bytes = _zipEntryBytes(file);
+    return bytes == null ? null : jsonDecode(utf8.decode(bytes));
   }
 
   static List<dynamic> _decodeZipListFile(ArchiveFile file) {

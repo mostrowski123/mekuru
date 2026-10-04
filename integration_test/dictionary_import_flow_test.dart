@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
@@ -45,7 +47,20 @@ const _entries = <List<Object>>[
   ],
 ];
 
-Future<String> _writeFixtureZip(Directory dir, {required String title}) async {
+/// A 16x16 AVIF, left half blue and right half red, made with Pillow.
+const _avifBase64 =
+    'AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADrbWV0YQAAAAAAAAAhaGRscgAAAAAA'
+    'AAAAcGljdAAAAAAAAAAAAAAAAAAAAAAOcGl0bQAAAAAAAQAAAB5pbG9jAAAAAEQAAAEAAQAAAAEA'
+    'AAETAAAAHwAAAChpaW5mAAAAAAABAAAAGmluZmUCAAAAAAEAAGF2MDFDb2xvcgAAAABqaXBycAAA'
+    'AEtpcGNvAAAAFGlzcGUAAAAAAAAAEAAAABAAAAAQcGl4aQAAAAADCAgIAAAADGF2MUOBAAwAAAAA'
+    'E2NvbHJuY2x4AAEADQAGgAAAABdpcG1hAAAAAAAAAAEAAQQBAoMEAAAAJ21kYXQSAAoGGAz/2BCA'
+    'MhNFkAGGGGFAf7loqvNgQFtBgr7e';
+
+Future<String> _writeFixtureZip(
+  Directory dir, {
+  required String title,
+  Map<String, List<int>> extraFiles = const {},
+}) async {
   final archive = Archive();
 
   final indexBytes = utf8.encode(
@@ -57,6 +72,10 @@ Future<String> _writeFixtureZip(Directory dir, {required String title}) async {
   archive.addFile(
     ArchiveFile('term_bank_1.json', termBankBytes.length, termBankBytes),
   );
+
+  for (final MapEntry(key: name, value: bytes) in extraFiles.entries) {
+    archive.addFile(ArchiveFile(name, bytes.length, bytes));
+  }
 
   final zipPath = '${dir.path}/test_dict.zip';
   final bytes = ZipEncoder().encode(archive);
@@ -137,4 +156,37 @@ void main() {
       expect(await query.hasMatch('飲む'), isTrue);
     },
   );
+
+  test('an imported AVIF image is stored so Flutter can draw it', () async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = DictionaryRepository(db);
+
+    final zipPath = await _writeFixtureZip(
+      tempDir,
+      title: 'Graphics',
+      extraFiles: {'graphics/pattern.avif': base64Decode(_avifBase64)},
+    );
+    await DictionaryImporter(repo).importFromFile(zipPath);
+
+    final id = (await repo.getAllDictionaries()).single.id;
+    final stored = (await repo.getMedia(id, 'graphics/pattern.avif'))!;
+    // Flutter cannot decode AVIF on iOS, so the import converts it to PNG
+    // there; on Android the platform decoder reads the AVIF itself.
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      expect(stored.sublist(0, 4), [0x89, 0x50, 0x4E, 0x47]);
+    }
+
+    final codec = await ui.instantiateImageCodec(stored);
+    final image = (await codec.getNextFrame()).image;
+    expect((image.width, image.height), (16, 16));
+    final pixels = (await image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    ))!;
+    int channel(int x, int y, int offset) =>
+        pixels.getUint8((y * 16 + x) * 4 + offset);
+    // Lossy, so compare channels rather than exact values.
+    expect(channel(3, 8, 2), greaterThan(channel(3, 8, 0))); // blue left
+    expect(channel(12, 8, 0), greaterThan(channel(12, 8, 2))); // red right
+  });
 }

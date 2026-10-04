@@ -9,6 +9,7 @@ import '../../features/library/data/models/collection.dart';
 import '../../features/vocabulary/data/models/saved_word.dart';
 import '../../features/dictionary/data/models/dictionary_meta.dart';
 import '../../features/dictionary/data/models/dictionary_entry.dart';
+import '../../features/dictionary/data/models/dictionary_media.dart';
 import '../../features/dictionary/data/services/glossary_parser.dart';
 import '../../features/dictionary/data/models/pitch_accent.dart';
 import '../../features/dictionary/data/models/frequency.dart';
@@ -36,6 +37,7 @@ part 'database_provider.g.dart';
     Collections,
     BookCollections,
     ServerConnections,
+    DictionaryMedia,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -90,9 +92,15 @@ class AppDatabase extends _$AppDatabase {
         'INTEGER NOT NULL DEFAULT 0 CHECK (allow_self_signed_cert IN (0, 1))',
   };
 
+  /// Dictionary update info (schema 24), repair-only like v18/v20/v23.
+  static const Map<String, String> _dictionaryMetasRepairColumns = {
+    'revision': 'ALTER TABLE dictionary_metas ADD COLUMN revision TEXT NULL',
+    'index_url': 'ALTER TABLE dictionary_metas ADD COLUMN index_url TEXT NULL',
+  };
+
   /// The schema this build writes. Static so code that must not open a
   /// database (the boot-time full restore) can still compare versions.
-  static const int latestSchemaVersion = 23;
+  static const int latestSchemaVersion = 24;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -206,10 +214,11 @@ class AppDatabase extends _$AppDatabase {
         // position.
         await migrator.addColumn(bookCollections, bookCollections.position);
       }
-      // v18 (search_text), v20 (has_vertical_css) and v23 (server sync)
-      // have no migration blocks: the repair pass in beforeOpen adds the
-      // columns via the repair-column maps and creates server_connections,
-      // which also covers databases that missed migrations entirely.
+      // v18 (search_text), v20 (has_vertical_css), v23 (server sync) and
+      // v24 (dictionary revision/index_url, dictionary_media) have no
+      // migration blocks: the repair pass in beforeOpen adds the columns via
+      // the repair-column maps and creates the tables, which also covers
+      // databases that missed migrations entirely.
     },
     beforeOpen: (details) async {
       await _repairMissingColumns(
@@ -223,6 +232,11 @@ class AppDatabase extends _$AppDatabase {
         'server_connections',
         _serverConnectionsRepairColumns,
       );
+      await _repairMissingColumns(
+        'dictionary_metas',
+        _dictionaryMetasRepairColumns,
+      );
+      await createMigrator().createTable(dictionaryMedia);
       await _ensureGlossaryFtsIfNeeded();
     },
   );

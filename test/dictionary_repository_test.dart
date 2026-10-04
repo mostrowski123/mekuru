@@ -450,6 +450,33 @@ void main() {
   });
 
   group('DictionaryRepository — deleteDictionary cascades', () {
+    test('deleting a dictionary also removes its media', () async {
+      final keep = await repo.insertDictionary('Keep');
+      final drop = await repo.insertDictionary('Drop');
+      await repo.insertMedia(keep, [
+        ('img/a.png', Uint8List.fromList([1])),
+      ]);
+      await repo.insertMedia(drop, [
+        ('img/a.png', Uint8List.fromList([2])),
+      ]);
+
+      await repo.deleteDictionary(drop);
+
+      expect(await repo.getMedia(drop, 'img/a.png'), null);
+      expect(await repo.getMedia(keep, 'img/a.png'), [1]);
+    });
+
+    test('media paths match whichever slash the dictionary used', () async {
+      final id = await repo.insertDictionary('Windows-built');
+      await repo.insertMedia(id, [
+        (r'assets\icon.png', Uint8List.fromList([1])),
+        ('img/a.png', Uint8List.fromList([2])),
+      ]);
+
+      expect(await repo.getMedia(id, 'assets/icon.png'), [1]);
+      expect(await repo.getMedia(id, r'img\a.png'), [2]);
+    });
+
     test('deleting a dictionary also removes its pitch accents', () async {
       final dictId = await repo.insertDictionary('PitchDict');
 

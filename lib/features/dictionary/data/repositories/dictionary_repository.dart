@@ -29,7 +29,12 @@ class DictionaryRepository {
 
   /// Insert a new dictionary and return its auto-generated id.
   /// Automatically assigns the next sort order (appends to end).
-  Future<int> insertDictionary(String name, {int? sortOrder}) async {
+  Future<int> insertDictionary(
+    String name, {
+    int? sortOrder,
+    String? revision,
+    String? indexUrl,
+  }) async {
     final nextOrder = sortOrder ?? await getNextSortOrder();
     return _db
         .into(_db.dictionaryMetas)
@@ -37,9 +42,43 @@ class DictionaryRepository {
           DictionaryMetasCompanion.insert(
             name: name,
             sortOrder: Value(nextOrder),
+            revision: Value(revision),
+            indexUrl: Value(indexUrl),
           ),
         );
   }
+
+  // ──────────────── Media ────────────────
+
+  /// Store a dictionary's images, keyed by their path inside the zip.
+  Future<void> insertMedia(
+    int dictionaryId,
+    Iterable<(String path, Uint8List bytes)> files,
+  ) => _db.batch((batch) {
+    batch.insertAll(_db.dictionaryMedia, [
+      for (final (path, bytes) in files)
+        DictionaryMediaCompanion.insert(
+          dictionaryId: dictionaryId,
+          path: _mediaKey(path),
+          bytes: bytes,
+        ),
+    ], mode: InsertMode.insertOrReplace);
+  });
+
+  /// The bytes of a dictionary image, or null when the zip had none there.
+  Future<Uint8List?> getMedia(int dictionaryId, String path) async {
+    final key = _mediaKey(path);
+    final row =
+        await (_db.select(_db.dictionaryMedia)..where(
+              (t) => t.dictionaryId.equals(dictionaryId) & t.path.equals(key),
+            ))
+            .getSingleOrNull();
+    return row?.bytes;
+  }
+
+  /// Dictionaries built on Windows may write zip entries and glossary
+  /// image paths with `\`.
+  static String _mediaKey(String path) => path.replaceAll(r'\', '/');
 
   Future<T> runInTransaction<T>(Future<T> Function() action) {
     return _db.transaction(action);
@@ -113,6 +152,9 @@ class DictionaryRepository {
       )..where((t) => t.dictionaryId.equals(dictionaryId))).go();
       await (_db.delete(
         _db.frequencies,
+      )..where((t) => t.dictionaryId.equals(dictionaryId))).go();
+      await (_db.delete(
+        _db.dictionaryMedia,
       )..where((t) => t.dictionaryId.equals(dictionaryId))).go();
       await (_db.delete(
         _db.dictionaryMetas,
