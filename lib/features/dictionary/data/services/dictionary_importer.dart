@@ -148,13 +148,16 @@ class DictionaryImporter {
       throw FileSystemException('Dictionary file not found', filePath);
     }
     final receivePort = ReceivePort();
-    final isolate = await Isolate.spawn(_streamParseZip, [
-      receivePort.sendPort,
-      filePath,
-    ]);
+    Isolate? isolate;
 
     try {
       return await _repository.runInTransaction(() async {
+        // Parse only once this import holds the database: an import queued
+        // behind another one would otherwise buffer its whole dictionary.
+        isolate = await Isolate.spawn(_streamParseZip, [
+          receivePort.sendPort,
+          filePath,
+        ]);
         await _repository.beginGlossaryFtsBulkLoad();
         int? dictionaryId;
         int totalEntries = 0;
@@ -295,7 +298,7 @@ class DictionaryImporter {
       });
     } finally {
       receivePort.close();
-      isolate.kill(priority: Isolate.immediate);
+      isolate?.kill(priority: Isolate.immediate);
     }
   }
 
