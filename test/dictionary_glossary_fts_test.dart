@@ -482,6 +482,22 @@ void main() {
   });
 
   group('index shape upgrade', () {
+    test('a backfill with nothing left to fill reads no glossaries', () async {
+      // search_text is stored behind the glossaries, so finding the rows
+      // still waiting ('') by scanning reads every glossary: seconds at each
+      // launch on a phone with a large dictionary, stalling the first search.
+      await db.backfillGlossarySearchText();
+
+      final plan = await db
+          .customSelect(
+            'EXPLAIN QUERY PLAN SELECT id, glossaries FROM dictionary_entries '
+            "WHERE search_text = '' AND id > 0 ORDER BY id LIMIT 500",
+          )
+          .get();
+
+      expect(plan.single.data['detail'], contains('USING INDEX'));
+    });
+
     test(
       'rows with nothing to index are backfilled once, not every launch',
       () async {

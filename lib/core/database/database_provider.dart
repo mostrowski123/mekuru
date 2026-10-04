@@ -392,20 +392,15 @@ class AppDatabase extends _$AppDatabase {
     await createGlossaryFtsSyncTriggers();
   }
 
-  /// Recreates the sync triggers if any went missing while the index
-  /// table itself is current — the safety net against an interrupted or
-  /// buggy bulk load committing a trigger-less schema. Restores syncing
-  /// of future writes only; deliberately no index rebuild here, which
-  /// would stall every open on a large dictionary set.
   /// Fill empty search_text from glossaries for rows that predate the
   /// column (installs upgrading past schema v18). Runs the JSON parsing in
   /// a short-lived background isolate so the UI isolate never blocks.
   ///
   /// Called unawaited from app startup. Safe to call on every launch: it
   /// resumes where it left off if the app was killed mid-backfill, and
-  /// once every row is filled it costs a single scan that finds nothing.
-  /// The FTS sync trigger indexes each backfilled row, so no index rebuild
-  /// is needed afterwards.
+  /// once every row is filled it finds nothing in an index of the rows
+  /// still waiting. The FTS sync trigger indexes each backfilled row, so no
+  /// index rebuild is needed afterwards.
   Future<void> backfillGlossarySearchText() {
     return computeWithDatabase(
       connect: AppDatabase.new,
@@ -414,6 +409,14 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _backfillSearchText() async {
+    // search_text is stored behind the glossaries, so a scan for rows still
+    // waiting ('') reads every glossary: seconds at each launch on a phone
+    // with a large dictionary, holding up the first search. Built once (one
+    // such scan), this index holds only the rows still waiting.
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_dictionary_entries_pending_search_text '
+      "ON dictionary_entries (id) WHERE search_text = ''",
+    );
     // Small pages: each page's UPDATE batch is one write transaction on
     // the shared connection, so its size bounds how long a concurrent
     // search query can stall behind it while the backfill runs.
