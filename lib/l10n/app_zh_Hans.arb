@@ -2923,5 +2923,6 @@
   "dictionaryImportedEntries": "{count, plural, =1{成功导入 1 个词条！} other{成功导入 {count} 个词条！}}",
   "dictionaryImportedCollection": "{dictionaries, plural, =1{已导入 1 个词典（{entries} 个词条）} other{已导入 {dictionaries} 个词典（{entries} 个词条）}}",
   "dictionaryImportNoneInCollection": "词典集合中未找到词典",
-  "backgroundWorkDictionaries": "{count, plural, =1{正在下载 1 个词典} other{正在下载 {count} 个词典}}"
+  "backgroundWorkDictionaries": "{count, plural, =1{正在下载 1 个词典} other{正在下载 {count} 个词典}}",
+  "dictionaryDownloadWifiLost": "Wi-Fi 已断开，下载已停止。点按“下载”重试。"
 }

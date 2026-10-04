@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:mekuru/core/platform/network_status.dart';
+
 /// Download [url] to [destinationPath], streaming the response body straight
 /// to disk so large assets are never buffered in memory.
 ///
@@ -79,15 +81,26 @@ Future<void> downloadToFile(
 /// Download [url] to [destinationPath], hand the path to [use], and delete
 /// the file afterwards — also when the download or [use] throws.
 ///
+/// With [wifiOnly], the download stops with [WifiLostException] once the
+/// network is no longer Wi-Fi ([whileOnWifi]); [use] is not watched.
+///
 /// Returns whatever [use] returns.
 Future<T> withDownloadedFile<T>(
   String url,
   String destinationPath, {
   void Function(double progress)? onProgress,
+  bool wifiOnly = false,
   required Future<T> Function(String path) use,
 }) async {
   try {
-    await downloadToFile(url, destinationPath, onProgress: onProgress);
+    final client = HttpClient();
+    Future<void> download() => downloadToFile(
+      url,
+      destinationPath,
+      onProgress: onProgress,
+      client: client,
+    );
+    await (wifiOnly ? whileOnWifi(client, download) : download());
     return await use(destinationPath);
   } finally {
     try {

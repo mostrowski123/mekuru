@@ -3479,6 +3479,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get dictionaryDownloadWifiLost =>
+      'Unduhan berhenti karena Wi-Fi terputus. Ketuk Unduh untuk mencoba lagi.';
+
+  @override
   String get catalogFindMoreTitle => 'Cari Kamus Lainnya';
 
   @override

@@ -132,6 +132,7 @@ String? dictionaryDownloadError(
   if (state.neededBytes case final bytes?) {
     return l10n.backupFullNotEnoughSpace(size: formatBytes(bytes));
   }
+  if (state.wifiLost) return l10n.dictionaryDownloadWifiLost;
   if (state.error case final error?) {
     return l10n.commonErrorWithDetails(details: error);
   }

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/background_work.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -34,7 +35,8 @@ class DictionaryDownloadService {
   ///
   /// On iOS it keeps running after the user leaves the app, as background
   /// work; when iOS ends that, it stops with [DownloadStoppedException] and
-  /// imports nothing.
+  /// imports nothing. A download that starts on Wi-Fi (no mobile-data
+  /// question asked) stops with [WifiLostException] if Wi-Fi goes.
   static Future<void> downloadAndImportUrl({
     required String url,
     required String asset,
@@ -67,6 +69,7 @@ class DictionaryDownloadService {
         onStopped: () => stopped = true,
       );
       report(0.0);
+      final wifiOnly = await isOnWifi();
       final tempDir = await getTemporaryDirectory();
       await _deleteLeftovers(tempDir);
       // Unique, so two downloads at once never share a file.
@@ -76,6 +79,7 @@ class DictionaryDownloadService {
       await withDownloadedFile(
         url,
         p.join(tempDir.path, fileName),
+        wifiOnly: wifiOnly,
         onProgress: (fraction) => report(fraction * downloadShare),
         use: (path) async {
           report(downloadShare);
@@ -98,6 +102,9 @@ class DictionaryDownloadService {
       );
     } on DownloadStoppedException {
       logUsage('download.stopped', attrs: {'asset': asset});
+      rethrow;
+    } on WifiLostException {
+      logUsage('download.wifi_lost', attrs: {'asset': asset});
       rethrow;
     } catch (error) {
       logFailure('download.failed', error, attrs: {'asset': asset});

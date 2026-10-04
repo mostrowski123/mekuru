@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
@@ -13,6 +14,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dar
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
+import 'shared/fake_download_notifiers.dart' show mockWifiConnected;
 import 'shared/fake_path_provider.dart';
 import 'shared/test_database.dart';
 
@@ -68,6 +70,13 @@ void main() {
       if (request.uri.path == '/JMnedict.zip') {
         response.contentLength = zip.length;
         response.add(zip);
+      } else if (request.uri.path == '/slow.zip') {
+        // Half the zip, a pause, then the rest.
+        response.contentLength = zip.length;
+        response.add(zip.sublist(0, zip.length ~/ 2));
+        await response.flush();
+        await Future<void>.delayed(const Duration(seconds: 4));
+        response.add(zip.sublist(zip.length ~/ 2));
       } else {
         response.statusCode = HttpStatus.notFound;
       }
@@ -169,6 +178,39 @@ void main() {
 
     expect(left.existsSync(), isFalse);
     expect(running.existsSync(), isTrue);
+  });
+
+  test('a download started on Wi-Fi stops when Wi-Fi goes', () async {
+    mockWifiConnected(true);
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = DictionaryRepository(db);
+
+    final download = DictionaryDownloadService.downloadAndImportUrl(
+      url: urlFor('/slow.zip'),
+      asset: 'jmnedict',
+      importer: DictionaryImporter(repo),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    mockWifiConnected(false);
+
+    await expectLater(download, throwsA(isA<WifiLostException>()));
+    expect(await repo.getAllDictionaries(), isEmpty);
+  });
+
+  test('a download agreed to on mobile data is not stopped', () async {
+    mockWifiConnected(false);
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = DictionaryRepository(db);
+
+    await DictionaryDownloadService.downloadAndImportUrl(
+      url: urlFor('/slow.zip'),
+      asset: 'jmnedict',
+      importer: DictionaryImporter(repo),
+    );
+
+    expect(await repo.getAllDictionaries(), hasLength(1));
   });
 
   test('on iOS a download is background work, and stops when iOS ends '

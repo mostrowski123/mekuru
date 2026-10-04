@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/jpdb_freq_download_service.dart';
+import 'package:mekuru/main.dart' show appL10n;
+import 'package:mekuru/shared/widgets/download_status.dart';
 
 /// State for JPDB frequency dictionary management.
 class JpdbFreqState {
@@ -83,7 +85,7 @@ class JpdbFreqNotifier extends Notifier<JpdbFreqState> {
     } catch (e) {
       state = JpdbFreqState(
         isImported: state.isImported,
-        error: 'Download failed: $e',
+        error: dictionaryDownloadFailure(appL10n(), e),
       );
     }
   }

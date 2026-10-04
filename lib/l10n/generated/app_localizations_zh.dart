@@ -3306,6 +3306,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get dictionaryDownloadWifiLost => 'Wi-Fi 已断开，下载已停止。点按“下载”重试。';
+
+  @override
   String get catalogFindMoreTitle => '查找更多词典';
 
   @override
@@ -6701,6 +6704,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String catalogMobileDataBody({required String size}) {
     return '未连接 Wi-Fi。该词典大小约为 $size。是否继续使用移动数据？';
   }
+
+  @override
+  String get dictionaryDownloadWifiLost => 'Wi-Fi 已断开，下载已停止。点按“下载”重试。';
 
   @override
   String get catalogFindMoreTitle => '查找更多词典';

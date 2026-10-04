@@ -5684,6 +5684,12 @@ abstract class AppLocalizations {
   /// **'Wi-Fi is not connected. This dictionary is about {size}. Continue using mobile data?'**
   String catalogMobileDataBody({required String size});
 
+  /// Shown under a dictionary download that started on Wi-Fi and stopped because the phone left Wi-Fi (mobile data, a hotspot or Low Data Mode). Download is the button label (commonDownload).
+  ///
+  /// In en, this message translates to:
+  /// **'The download stopped because Wi-Fi disconnected. Tap Download to try again.'**
+  String get dictionaryDownloadWifiLost;
+
   /// Dictionary catalog section header above links to community guides that list more dictionaries.
   ///
   /// In en, this message translates to:

@@ -2923,5 +2923,6 @@
   "dictionaryImportedEntries": "{count, plural, =1{¡Se importó 1 entrada correctamente!} other{¡Se importaron {count} entradas correctamente!}}",
   "dictionaryImportedCollection": "{dictionaries, plural, =1{Se importó 1 diccionario ({entries} entradas)} other{Se importaron {dictionaries} diccionarios ({entries} entradas)}}",
   "dictionaryImportNoneInCollection": "No se encontraron diccionarios en la colección",
-  "backgroundWorkDictionaries": "{count, plural, =1{Descargando 1 diccionario} other{Descargando {count} diccionarios}}"
+  "backgroundWorkDictionaries": "{count, plural, =1{Descargando 1 diccionario} other{Descargando {count} diccionarios}}",
+  "dictionaryDownloadWifiLost": "La descarga se detuvo porque se desconectó el Wi-Fi. Toca Descargar para intentarlo de nuevo."
 }

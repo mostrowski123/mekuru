@@ -3507,6 +3507,10 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get dictionaryDownloadWifiLost =>
+      'La descarga se detuvo porque se desconectó el Wi-Fi. Toca Descargar para intentarlo de nuevo.';
+
+  @override
   String get catalogFindMoreTitle => 'Encontrar más diccionarios';
 
   @override

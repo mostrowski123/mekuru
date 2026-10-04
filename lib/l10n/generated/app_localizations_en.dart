@@ -3461,6 +3461,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dictionaryDownloadWifiLost =>
+      'The download stopped because Wi-Fi disconnected. Tap Download to try again.';
+
+  @override
   String get catalogFindMoreTitle => 'Find More Dictionaries';
 
   @override

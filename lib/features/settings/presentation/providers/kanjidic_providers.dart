@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/main.dart' show appL10n;
+import 'package:mekuru/shared/widgets/download_status.dart';
 
 /// State for KANJIDIC dictionary management.
 class KanjidicState {
@@ -87,7 +89,7 @@ class KanjidicNotifier extends Notifier<KanjidicState> {
     } catch (e) {
       state = KanjidicState(
         isImported: state.isImported,
-        error: 'Download failed: $e',
+        error: dictionaryDownloadFailure(appL10n(), e),
       );
     }
   }

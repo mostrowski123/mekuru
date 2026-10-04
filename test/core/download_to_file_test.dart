@@ -1,15 +1,25 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:path/path.dart' as p;
+
+import '../shared/fake_download_notifiers.dart' show mockWifiConnected;
 
 /// Tests [downloadToFile] and [withDownloadedFile] against a loopback HTTP
 /// server so the redirect, progress, and error paths run through the real
 /// dart:io HttpClient.
 void main() {
+  // The Wi-Fi check goes through a platform channel, which needs a binding;
+  // the loopback server needs real sockets, which the binding would mock.
+  TestWidgetsFlutterBinding.ensureInitialized();
+  HttpOverrides.global = null;
+
   late Directory tempDir;
   late HttpServer server;
+  late Completer<void> unstall;
 
   // Large enough to arrive in more than one socket chunk.
   final payload = List<int>.generate(64 * 1024 + 17, (i) => i % 251);
@@ -18,6 +28,7 @@ void main() {
 
   setUp(() async {
     tempDir = Directory.systemTemp.createTempSync('download_to_file_test_');
+    unstall = Completer<void>();
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
       final path = request.uri.path;
@@ -46,6 +57,13 @@ void main() {
           return;
         case '/chunked':
           response.add(payload);
+        case '/stall':
+          // Half the body, then nothing until the test ends.
+          response.contentLength = payload.length * 2;
+          response.add(payload);
+          await response.flush();
+          await unstall.future;
+          return;
         case '/broken':
           // Promise more bytes than are sent: closing below contentLength
           // aborts the connection, so the client fails mid-body.
@@ -65,6 +83,7 @@ void main() {
   });
 
   tearDown(() async {
+    unstall.complete();
     await server.close(force: true);
     if (tempDir.existsSync()) {
       tempDir.deleteSync(recursive: true);
@@ -175,6 +194,25 @@ void main() {
         expect(File(destination).existsSync(), isFalse);
       },
     );
+
+    test('a Wi-Fi-only download stops when Wi-Fi goes', () async {
+      mockWifiConnected(true);
+      final destination = p.join(tempDir.path, 'asset.zip');
+      var used = false;
+
+      final download = withDownloadedFile<void>(
+        urlFor('/stall'),
+        destination,
+        wifiOnly: true,
+        use: (_) async => used = true,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      mockWifiConnected(false);
+
+      await expectLater(download, throwsA(isA<WifiLostException>()));
+      expect(used, isFalse);
+      expect(File(destination).existsSync(), isFalse);
+    });
 
     test('deletes the file when use throws', () async {
       final destination = p.join(tempDir.path, 'asset.zip');

@@ -133,6 +133,25 @@ void main() {
     expect(deleted, [2]);
   });
 
+  testWidgets('a download stopped by Wi-Fi going says so', (tester) async {
+    mockWifiConnected(true);
+    await pumpCatalog(
+      tester,
+      afterDownload: const CatalogDownloadState(wifiLost: true),
+    );
+
+    await tester.tap(downloadButtonOf('Jitendex'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'The download stopped because Wi-Fi disconnected. '
+        'Tap Download to try again.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('an install without enough free space says how much more '
       'is needed', (tester) async {
     mockWifiConnected(true);

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/main.dart' show appL10n;
+import 'package:mekuru/shared/widgets/download_status.dart';
 
 /// State for JMdict dictionary management.
 class JmdictState {
@@ -87,7 +89,7 @@ class JmdictNotifier extends Notifier<JmdictState> {
     } catch (e) {
       state = JmdictState(
         isImported: state.isImported,
-        error: 'Download failed: $e',
+        error: dictionaryDownloadFailure(appL10n(), e),
       );
     }
   }

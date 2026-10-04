@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -117,3 +118,9 @@ class DownloadAttributionText extends StatelessWidget {
     );
   }
 }
+
+/// What a failed dictionary download shows: that Wi-Fi went, or the error.
+String dictionaryDownloadFailure(AppLocalizations l10n, Object error) =>
+    error is WifiLostException
+    ? l10n.dictionaryDownloadWifiLost
+    : 'Download failed: $error';
