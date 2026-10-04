@@ -8,13 +8,13 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
-import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 // Download size for the mobile-data prompt, rounded up: the JPDB v2.2 zip
@@ -128,7 +128,7 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
       if (jpdb.isDownloading) jpdb.progress,
     ];
     final error = widget.showProgress
-        ? dictionaryDownloadError(l10n, jitendex) ?? jpdb.error
+        ? dictionaryDownloadError(l10n, jitendex.failure) ?? jpdb.error
         : null;
 
     return Container(

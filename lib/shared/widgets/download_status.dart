@@ -1,8 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // Rows shown under a download tile: progress, an error, an attribution.
@@ -119,8 +122,13 @@ class DownloadAttributionText extends StatelessWidget {
   }
 }
 
-/// What a failed dictionary download shows: that Wi-Fi went, or the error.
-String dictionaryDownloadFailure(AppLocalizations l10n, Object error) =>
-    error is WifiLostException
-    ? l10n.dictionaryDownloadWifiLost
-    : 'Download failed: $error';
+/// Why a dictionary download failed, worded for the user; null when it
+/// did not.
+String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
+    switch (failure) {
+      null => null,
+      InsufficientSpaceException(:final neededBytes) =>
+        l10n.backupFullNotEnoughSpace(size: formatBytes(neededBytes)),
+      WifiLostException() => l10n.dictionaryDownloadWifiLost,
+      _ => l10n.serverBrowseDownloadFailed(error: '$failure'),
+    };

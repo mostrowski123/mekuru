@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
@@ -137,7 +140,7 @@ void main() {
     mockWifiConnected(true);
     await pumpCatalog(
       tester,
-      afterDownload: const CatalogDownloadState(wifiLost: true),
+      afterDownload: const CatalogDownloadState(failure: WifiLostException()),
     );
 
     await tester.tap(downloadButtonOf('Jitendex'));
@@ -157,7 +160,9 @@ void main() {
     mockWifiConnected(true);
     await pumpCatalog(
       tester,
-      afterDownload: const CatalogDownloadState(neededBytes: 500 << 20),
+      afterDownload: const CatalogDownloadState(
+        failure: InsufficientSpaceException(neededBytes: 500 << 20),
+      ),
     );
 
     await tester.tap(downloadButtonOf('Jitendex'));

@@ -1,7 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mekuru/core/platform/network_status.dart';
-import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
-    show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
@@ -12,9 +9,7 @@ class CatalogDownloadState {
     this.isDownloading = false,
     this.isDeleting = false,
     this.progress = 0,
-    this.error,
-    this.neededBytes,
-    this.wifiLost = false,
+    this.failure,
   });
 
   final bool isDownloading;
@@ -23,15 +18,9 @@ class CatalogDownloadState {
   /// [DictionaryDownloadService] progress: downloading, then importing.
   final double progress;
 
-  /// Why the last attempt failed, shown under the tile.
-  final String? error;
-
-  /// The last attempt stopped before downloading: this many more bytes
-  /// must be free.
-  final int? neededBytes;
-
-  /// The last attempt started on Wi-Fi and stopped when Wi-Fi went.
-  final bool wifiLost;
+  /// What stopped the last attempt, shown under the tile
+  /// (`dictionaryDownloadError`).
+  final Object? failure;
 }
 
 /// Downloads one catalog dictionary at a time and reports how it goes.
@@ -66,12 +55,8 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
     } on DownloadStoppedException {
       // iOS ended the background work, or the user stopped it there.
       state = const CatalogDownloadState();
-    } on InsufficientSpaceException catch (e) {
-      state = CatalogDownloadState(neededBytes: e.neededBytes);
-    } on WifiLostException {
-      state = const CatalogDownloadState(wifiLost: true);
     } catch (e) {
-      state = CatalogDownloadState(error: '$e');
+      state = CatalogDownloadState(failure: e);
     }
   }
 

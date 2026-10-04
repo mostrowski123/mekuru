@@ -732,13 +732,12 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   List<Widget> _buildGroupedDefinitions(
     double fs,
     TextStyle definitionStyle,
-    List<(String, List<DictionaryEntry>)> definitionSections,
+    List<List<DictionaryEntryWithSource>> definitionSections,
   ) {
     final widgets = <Widget>[];
-    for (final (dictIndex, (dictionaryName, rows))
-        in definitionSections.indexed) {
+    for (final (dictIndex, rows) in definitionSections.indexed) {
       final numbered = rows.length > 1;
-      for (final (i, entry) in rows.indexed) {
+      for (final (i, DictionaryEntryWithSource(:entry)) in rows.indexed) {
         widgets.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
@@ -755,7 +754,7 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
 
       widgets.add(
         SourceSectionLabel(
-          label: dictionaryName,
+          label: rows.first.dictionaryName,
           topPadding: 2,
           bottomPadding: dictIndex < definitionSections.length - 1 ? 10 : 0,
           fontSize: fs * 0.64,
@@ -826,20 +825,14 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   }
 }
 
-/// Each dictionary's name and rows, dictionaries in result order. Grouped by
-/// id: shown names drop the version, so two dictionaries can share one.
-List<(String, List<DictionaryEntry>)> _buildDefinitionSections(
+/// Results by dictionary, dictionaries in result order. By id: shown names
+/// drop the version, so two dictionaries can share one.
+List<List<DictionaryEntryWithSource>> _buildDefinitionSections(
   List<DictionaryEntryWithSource> entries,
 ) {
-  final byDict = <int, (String, List<DictionaryEntry>)>{};
+  final byDict = <int, List<DictionaryEntryWithSource>>{};
   for (final result in entries) {
-    byDict
-        .putIfAbsent(
-          result.entry.dictionaryId,
-          () => (result.dictionaryName, []),
-        )
-        .$2
-        .add(result.entry);
+    byDict.putIfAbsent(result.entry.dictionaryId, () => []).add(result);
   }
   return byDict.values.toList();
 }

@@ -89,7 +89,7 @@ class KanjidicNotifier extends Notifier<KanjidicState> {
     } catch (e) {
       state = KanjidicState(
         isImported: state.isImported,
-        error: dictionaryDownloadFailure(appL10n(), e),
+        error: dictionaryDownloadError(appL10n(), e),
       );
     }
   }

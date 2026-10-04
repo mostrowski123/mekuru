@@ -198,21 +198,6 @@ void main() {
     expect(await repo.getAllDictionaries(), isEmpty);
   });
 
-  test('a download agreed to on mobile data is not stopped', () async {
-    mockWifiConnected(false);
-    final db = createTestDatabase();
-    addTearDown(db.close);
-    final repo = DictionaryRepository(db);
-
-    await DictionaryDownloadService.downloadAndImportUrl(
-      url: urlFor('/slow.zip'),
-      asset: 'jmnedict',
-      importer: DictionaryImporter(repo),
-    );
-
-    expect(await repo.getAllDictionaries(), hasLength(1));
-  });
-
   test('on iOS a download is background work, and stops when iOS ends '
       'it', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;

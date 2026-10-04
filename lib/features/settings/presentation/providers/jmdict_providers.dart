@@ -89,7 +89,7 @@ class JmdictNotifier extends Notifier<JmdictState> {
     } catch (e) {
       state = JmdictState(
         isImported: state.isImported,
-        error: dictionaryDownloadFailure(appL10n(), e),
+        error: dictionaryDownloadError(appL10n(), e),
       );
     }
   }

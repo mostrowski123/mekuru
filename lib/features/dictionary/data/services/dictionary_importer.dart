@@ -63,12 +63,12 @@ class DictionaryParseException implements Exception {
 //   ['pitch_batch', List<Map<String, dynamic>>]  — a batch of parsed pitch accents
 //   ['freq_batch', List<Map<String, dynamic>>]   — a batch of parsed frequencies
 //   ['media', String path, Uint8List bytes]     — one image file (zip only)
+//   ['done']                                    — parsing complete
+//   ['error', String message, String causeType] — parsing failed
 //
 // A zip import answers every media and batch message once it is stored,
 // on the SendPort the 'meta' message carries; the parser keeps at most two
 // waiting for that.
-//   ['done']                                    — parsing complete
-//   ['error', String message, String causeType] — parsing failed
 
 /// Service responsible for importing Yomitan dictionary files.
 class DictionaryImporter {
@@ -167,8 +167,8 @@ class DictionaryImporter {
         int? dictionaryId;
         int totalEntries = 0;
         int insertedEntries = 0;
-        // Told after each stored batch, so the parser stays a batch or two
-        // ahead instead of piling the whole dictionary up in memory.
+        // Told after each stored image and batch, so the parser stays one
+        // or two ahead instead of piling the whole dictionary up in memory.
         late final SendPort stored;
 
         await for (final message in receivePort) {

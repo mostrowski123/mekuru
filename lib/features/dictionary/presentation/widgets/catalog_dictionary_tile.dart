@@ -9,7 +9,6 @@ import 'package:mekuru/features/dictionary/presentation/widgets/delete_dictionar
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
-import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
@@ -53,7 +52,13 @@ class CatalogDictionaryTile extends ConsumerWidget {
             installedId: installedId,
           ),
         ),
-        DictionaryDownloadStatus(state: state),
+        if (state.isDownloading)
+          DownloadProgress(
+            progress: state.progress,
+            label: dictionaryDownloadLabel(l10n, state.progress),
+          ),
+        if (dictionaryDownloadError(l10n, state.failure) case final error?)
+          DownloadErrorText(text: error),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: DownloadAttributionText(
@@ -89,13 +94,20 @@ class CatalogDictionaryTile extends ConsumerWidget {
       );
     }
     return FilledButton.tonal(
-      onPressed: () => startDictionaryDownload(
-        context,
-        entry,
-        ref.read(catalogDownloadProvider(entry).notifier).download,
-      ),
+      onPressed: () => _download(context, ref),
       child: Text(context.l10n.commonDownload),
     );
+  }
+
+  /// On Wi-Fi, or off it once the user accepts mobile data.
+  Future<void> _download(BuildContext context, WidgetRef ref) async {
+    AppHaptics.light();
+    // Read now: the tile can unmount while the dialog is up.
+    final notifier = ref.read(catalogDownloadProvider(entry).notifier);
+    final body = context.l10n.catalogMobileDataBody(
+      size: _megabytes(entry.downloadMb),
+    );
+    if (await okToDownload(context, body)) unawaited(notifier.download());
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref, int id) async {
@@ -104,63 +116,6 @@ class CatalogDictionaryTile extends ConsumerWidget {
     if (await confirmDeleteDictionary(context, entry.displayName)) {
       unawaited(notifier.delete(id));
     }
-  }
-}
-
-/// Starts [download] of [entry] on Wi-Fi, or off it once the user accepts
-/// mobile data. Pass the notifier's method itself: the caller can unmount
-/// while the dialog is up.
-Future<void> startDictionaryDownload(
-  BuildContext context,
-  CatalogDictionary entry,
-  Future<void> Function() download,
-) async {
-  AppHaptics.light();
-  final body = context.l10n.catalogMobileDataBody(
-    size: _megabytes(entry.downloadMb),
-  );
-  if (!await okToDownload(context, body)) return;
-  unawaited(download());
-}
-
-/// Why the last attempt in [state] failed, worded for the user; null when
-/// it did not fail.
-String? dictionaryDownloadError(
-  AppLocalizations l10n,
-  CatalogDownloadState state,
-) {
-  if (state.neededBytes case final bytes?) {
-    return l10n.backupFullNotEnoughSpace(size: formatBytes(bytes));
-  }
-  if (state.wifiLost) return l10n.dictionaryDownloadWifiLost;
-  if (state.error case final error?) {
-    return l10n.commonErrorWithDetails(details: error);
-  }
-  return null;
-}
-
-/// Progress and errors of a dictionary download, shown under its tile.
-class DictionaryDownloadStatus extends StatelessWidget {
-  const DictionaryDownloadStatus({super.key, required this.state});
-
-  final CatalogDownloadState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final error = dictionaryDownloadError(l10n, state);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (state.isDownloading)
-          DownloadProgress(
-            progress: state.progress,
-            label: dictionaryDownloadLabel(l10n, state.progress),
-          ),
-        if (error != null) DownloadErrorText(text: error),
-      ],
-    );
   }
 }
 
