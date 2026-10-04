@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,11 @@ void main() {
   setUp(() {
     db = createTestDatabase();
     repo = DictionaryRepository(db);
+    // Each test's database starts its ids at 1 again, and images are cached
+    // by dictionary id and path.
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
   });
 
   tearDown(() => db.close());
@@ -162,6 +168,40 @@ void main() {
     expect(taps, ['1:労働相']);
   });
 
+  testWidgets('an opened section stays open when its row scrolls away and '
+      'back', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dictionaryRepositoryProvider.overrideWithValue(repo)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              children: [
+                StructuredGlossaryView(
+                  glossaries: jsonEncode([wtyEnglishTaberu]),
+                  dictionaryId: 1,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                for (var i = 0; i < 30; i++)
+                  SizedBox(height: 200, child: Text('filler $i')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Grammar'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView), const Offset(0, -4000));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, 4000));
+    await tester.pumpAndSettle();
+
+    expect(text('transitive ichidan'), findsOneWidget);
+  });
+
   testWidgets('Wiktionary sections start collapsed and open on tap', (
     tester,
   ) async {
@@ -221,12 +261,59 @@ void main() {
       },
     );
 
-    testWidgets('a missing image renders nothing', (tester) async {
-      await pump(tester, jitendexGraphic);
-      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-      await tester.pumpAndSettle();
+    testWidgets('an image shown again is read and decoded once', (
+      tester,
+    ) async {
+      final reads = _CountingRepository(db);
+      final id = await tester.runAsync(() async {
+        final id = await reads.insertDictionary('Jitendex.org [2026-10-03]');
+        await reads.insertMedia(id, [(path, _png)]);
+        return id;
+      });
+      Future<void> show() async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [dictionaryRepositoryProvider.overrideWithValue(reads)],
+            child: MaterialApp(
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  child: StructuredGlossaryView(
+                    glossaries: jsonEncode([jitendexGraphic]),
+                    dictionaryId: id!,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        for (var i = 0; i < 3; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+          await tester.pump();
+        }
+      }
 
-      expect(find.byType(Image), findsNothing);
+      await show();
+      // The definition leaves the screen, then comes back.
+      await tester.pumpWidget(const SizedBox());
+      await show();
+
+      expect(reads.mediaReads, 1);
+    });
+
+    testWidgets('a missing image takes no space', (tester) async {
+      await pump(tester, jitendexGraphic);
+      // The image cache loads outside the test's fake clock.
+      for (var i = 0; i < 3; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+
+      expect(tester.getSize(find.byType(Image)), Size.zero);
       expect(text('Japanese andromeda'), findsOneWidget);
     });
 
@@ -255,4 +342,16 @@ void main() {
       expect(taps, ['見る']);
     });
   });
+}
+
+class _CountingRepository extends DictionaryRepository {
+  _CountingRepository(super.db);
+
+  int mediaReads = 0;
+
+  @override
+  Future<Uint8List?> getMedia(int dictionaryId, String path) {
+    mediaReads++;
+    return super.getMedia(dictionaryId, path);
+  }
 }

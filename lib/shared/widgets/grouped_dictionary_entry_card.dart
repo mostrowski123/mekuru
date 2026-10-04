@@ -666,6 +666,7 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
     this.fontSize = 16.0,
     this.onWordTap,
     this.padding = const EdgeInsets.fromLTRB(16, 2, 16, 16),
+    this.sliver = false,
   });
 
   final List<DictionaryEntryWithSource> entries;
@@ -673,6 +674,10 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   final double fontSize;
   final void Function(String word)? onWordTap;
   final EdgeInsetsGeometry padding;
+
+  /// Built as a sliver whose rows are made only near the viewport, so a
+  /// long result list does not lay out every definition at once.
+  final bool sliver;
 
   @override
   Widget build(BuildContext context) {
@@ -684,24 +689,39 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
     final definitionSections = _buildDefinitionSections(entries);
     final hasPitchAccents = pitchAccents.isNotEmpty;
 
+    final rows = [
+      if (hasPitchAccents) ...[
+        const SizedBox(height: 6),
+        _buildPitchAccents(theme, fontSize),
+      ],
+      if (definitionSections.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        ..._buildGroupedDefinitions(
+          fontSize,
+          definitionStyle,
+          definitionSections,
+        ),
+      ],
+    ];
+    if (sliver) {
+      // A list always builds its first row, even far off screen: here that
+      // is a spacer, so an unseen result costs next to nothing.
+      return SliverPadding(
+        padding: padding,
+        sliver: SliverList.list(
+          addSemanticIndexes: false,
+          children: [
+            for (final row in rows)
+              Align(alignment: AlignmentDirectional.topStart, child: row),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: padding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (hasPitchAccents) ...[
-            const SizedBox(height: 6),
-            _buildPitchAccents(theme, fontSize),
-          ],
-          if (definitionSections.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            ..._buildGroupedDefinitions(
-              fontSize,
-              definitionStyle,
-              definitionSections,
-            ),
-          ],
-        ],
+        children: rows,
       ),
     );
   }

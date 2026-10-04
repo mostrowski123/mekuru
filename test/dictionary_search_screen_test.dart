@@ -14,6 +14,7 @@ import 'package:mekuru/features/settings/presentation/providers/app_settings_pro
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
+import 'package:mekuru/shared/widgets/structured_glossary_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart';
@@ -126,6 +127,41 @@ Future<void> _pumpSearchScreen(
 }
 
 void main() {
+  testWidgets('definitions far below the screen are built only once scrolled '
+      'near', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final service = _FakeDictionaryQueryService(
+      db,
+      resultsByTerm: {
+        'many': [
+          for (var i = 0; i < 40; i++)
+            DictionaryEntryWithSource(
+              entry: _buildEntry(
+                id: i + 1,
+                expression: '語$i',
+                reading: 'ご$i',
+                glossaries: '["word $i"]',
+              ),
+              dictionaryName: 'JMdict',
+            ),
+        ],
+      },
+    );
+
+    await _pumpSearchScreen(tester, db, service, initialQuery: 'many');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    final built = find
+        .byType(StructuredGlossaryView, skipOffstage: false)
+        .evaluate()
+        .length;
+    expect(built, greaterThan(0));
+    expect(built, lessThan(40));
+  });
+
   testWidgets('shows guidance when all imported dictionaries are disabled', (
     tester,
   ) async {

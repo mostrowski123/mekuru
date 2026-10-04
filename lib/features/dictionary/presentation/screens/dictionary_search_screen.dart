@@ -603,13 +603,12 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child: GroupedDictionaryEntryBody(
-                entries: groupedResults[index].entries,
-                pitchAccents: groupedResults[index].pitchAccents,
-                fontSize: fontSize,
-                onWordTap: _navigateToWord,
-              ),
+            GroupedDictionaryEntryBody(
+              entries: groupedResults[index].entries,
+              pitchAccents: groupedResults[index].pitchAccents,
+              fontSize: fontSize,
+              onWordTap: _navigateToWord,
+              sliver: true,
             ),
           ],
         ),

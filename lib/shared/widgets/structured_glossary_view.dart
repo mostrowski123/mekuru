@@ -1,8 +1,10 @@
-import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/structured_content.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
@@ -732,11 +734,17 @@ class _Details extends StatefulWidget {
   State<_Details> createState() => _DetailsState();
 }
 
-class _DetailsState extends State<_Details> {
+class _DetailsState extends State<_Details> with AutomaticKeepAliveClientMixin {
   late bool _open = widget.initiallyOpen;
+
+  /// A section the user opened or closed keeps that state when a lazy list
+  /// scrolls its row away.
+  @override
+  bool get wantKeepAlive => _open != widget.initiallyOpen;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final body = _open ? widget.buildBody() : const <Widget>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -745,7 +753,10 @@ class _DetailsState extends State<_Details> {
           button: true,
           expanded: _open,
           child: InkWell(
-            onTap: () => setState(() => _open = !_open),
+            onTap: () {
+              setState(() => _open = !_open);
+              updateKeepAlive();
+            },
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -786,15 +797,25 @@ class _ScImageView extends ConsumerStatefulWidget {
   ConsumerState<_ScImageView> createState() => _ScImageViewState();
 }
 
-class _ScImageViewState extends ConsumerState<_ScImageView> {
+class _ScImageViewState extends ConsumerState<_ScImageView>
+    with AutomaticKeepAliveClientMixin {
   late bool _shown = !widget.image.collapsed;
+
+  /// An image the user revealed stays revealed when a lazy list scrolls
+  /// its row away.
+  @override
+  bool get wantKeepAlive => _shown == widget.image.collapsed;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final image = widget.image;
     if (!_shown) {
       return InkWell(
-        onTap: () => setState(() => _shown = true),
+        onTap: () {
+          setState(() => _shown = true);
+          updateKeepAlive();
+        },
         child: Icon(
           Icons.image_outlined,
           size: widget.fontSize * 1.2,
@@ -805,25 +826,28 @@ class _ScImageViewState extends ConsumerState<_ScImageView> {
     final scale = image.inEm ? widget.fontSize : 1.0;
     final width = image.width == null ? null : image.width! * scale;
     final height = image.height == null ? null : image.height! * scale;
-    final media = ref.watch(
-      dictionaryMediaProvider((widget.dictionaryId, image.path)),
-    );
-    final bytes = media.value;
-    if (bytes == null) {
-      // Hold the image's place while it loads, so the text does not jump.
-      return media.isLoading
-          ? SizedBox(width: width, height: height)
-          : const SizedBox.shrink();
+    Uint8List? svg;
+    if (image.path.toLowerCase().endsWith('.svg')) {
+      final media = ref.watch(
+        dictionaryMediaProvider((widget.dictionaryId, image.path)),
+      );
+      svg = media.value;
+      if (svg == null) {
+        // Hold the image's place while it loads, so the text does not jump.
+        return media.isLoading
+            ? SizedBox(width: width, height: height)
+            : const SizedBox.shrink();
+      }
     }
 
     Widget child = _picture(
-      bytes,
+      svg,
       width: width,
       height: height,
       color: widget.color,
     );
     child = GestureDetector(
-      onTap: () => _openFullScreen(context, bytes),
+      onTap: () => _openFullScreen(context, svg),
       child: child,
     );
     final title = image.title;
@@ -831,24 +855,29 @@ class _ScImageViewState extends ConsumerState<_ScImageView> {
     return Semantics(image: true, label: image.alt ?? title, child: child);
   }
 
+  /// [svg] holds an SVG's bytes; other images load through [_MediaImage].
   Widget _picture(
-    Uint8List bytes, {
+    Uint8List? svg, {
     double? width,
     double? height,
     required Color color,
   }) {
     final monochrome = widget.image.monochrome;
-    final Widget picture = widget.image.path.toLowerCase().endsWith('.svg')
+    final Widget picture = svg != null
         ? SvgPicture.memory(
-            bytes,
+            svg,
             width: width,
             height: height,
             colorFilter: monochrome
                 ? ColorFilter.mode(color, BlendMode.srcIn)
                 : null,
           )
-        : Image.memory(
-            bytes,
+        : Image(
+            image: _MediaImage(
+              ref.read(dictionaryRepositoryProvider),
+              widget.dictionaryId,
+              widget.image.path,
+            ),
             width: width,
             height: height,
             fit: BoxFit.contain,
@@ -862,12 +891,12 @@ class _ScImageViewState extends ConsumerState<_ScImageView> {
         : picture;
   }
 
-  void _openFullScreen(BuildContext context, Uint8List bytes) {
+  void _openFullScreen(BuildContext context, Uint8List? svg) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
         final picture = SizedBox.expand(
-          child: _picture(bytes, color: Colors.white),
+          child: _picture(svg, color: Colors.white),
         );
         return Dialog.fullscreen(
           backgroundColor: Colors.black,
@@ -894,4 +923,52 @@ class _ScImageViewState extends ConsumerState<_ScImageView> {
       },
     );
   }
+}
+
+/// A dictionary image, kept in Flutter's image cache under its dictionary
+/// and path: a definition scrolled back into view reads and decodes it
+/// only once.
+@immutable
+class _MediaImage extends ImageProvider<_MediaImage> {
+  const _MediaImage(this.repository, this.dictionaryId, this.path);
+
+  final DictionaryRepository repository;
+  final int dictionaryId;
+  final String path;
+
+  @override
+  Future<_MediaImage> obtainKey(ImageConfiguration configuration) =>
+      SynchronousFuture(this);
+
+  @override
+  ImageStreamCompleter loadImage(
+    _MediaImage key,
+    ImageDecoderCallback decode,
+  ) => MultiFrameImageStreamCompleter(
+    codec: _load(decode),
+    scale: 1,
+    debugLabel: path,
+  );
+
+  Future<ui.Codec> _load(ImageDecoderCallback decode) async {
+    final Uint8List? bytes;
+    try {
+      bytes = await repository.getMedia(dictionaryId, path);
+    } catch (_) {
+      // Unlike a missing image, a failed read may work next time.
+      PaintingBinding.instance.imageCache.evict(this);
+      rethrow;
+    }
+    if (bytes == null) throw StateError('No image at $path');
+    return decode(await ui.ImmutableBuffer.fromUint8List(bytes));
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _MediaImage &&
+      other.dictionaryId == dictionaryId &&
+      other.path == path;
+
+  @override
+  int get hashCode => Object.hash(dictionaryId, path);
 }
