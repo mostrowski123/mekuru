@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
-import 'package:mekuru/features/dictionary/data/services/dictionary_update_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
@@ -13,18 +12,13 @@ import 'test_app.dart';
 
 void main() {
   late List<CatalogDictionary> started;
-  late List<int> updated;
 
-  setUp(() {
-    started = [];
-    updated = [];
-  });
+  setUp(() => started = []);
 
   /// Installed dictionaries get ids 1, 2, … in [installed] order.
   Future<void> pumpCatalog(
     WidgetTester tester, {
     List<CatalogDictionary> installed = const [],
-    Set<CatalogDictionary> withUpdates = const {},
     CatalogDownloadState afterDownload = const CatalogDownloadState(),
   }) async {
     final metas = [
@@ -42,20 +36,6 @@ void main() {
       ProviderScope(
         overrides: [
           dictionariesProvider.overrideWith((ref) => Stream.value(metas)),
-          dictionaryUpdatesProvider.overrideWith(
-            (ref) async => {
-              for (final (i, entry) in installed.indexed)
-                if (withUpdates.contains(entry))
-                  i + 1: const DictionaryUpdate(
-                    downloadUrl: 'https://example.com/update.zip',
-                    indexUrl: 'https://example.com/index.json',
-                  ),
-            },
-          ),
-          for (final meta in metas)
-            dictionaryUpdateProvider(
-              meta.id,
-            ).overrideWith(() => FakeUpdateNotifier(meta.id, updated.add)),
           for (final entry in CatalogDictionary.values)
             catalogDownloadProvider(entry).overrideWith(
               () => FakeCatalogDownloadNotifier(
@@ -112,33 +92,6 @@ void main() {
     await tester.tap(downloadButtonOf('Jitendex'));
     await tester.pumpAndSettle();
     expect(started, [CatalogDictionary.jitendex]);
-  });
-
-  testWidgets('an installed dictionary with a newer version offers Update', (
-    tester,
-  ) async {
-    mockWifiConnected(true);
-    await pumpCatalog(
-      tester,
-      installed: [
-        CatalogDictionary.wiktionaryEnglish,
-        CatalogDictionary.jitendex,
-      ],
-      withUpdates: {CatalogDictionary.jitendex},
-    );
-
-    expect(
-      find.descendant(
-        of: tileOf('Wiktionary (English)'),
-        matching: find.byIcon(Icons.check_circle),
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(
-      find.descendant(of: tileOf('Jitendex'), matching: find.text('Update')),
-    );
-    await tester.pumpAndSettle();
-    expect(updated, [2]);
   });
 
   testWidgets('an install without enough free space says how much more '

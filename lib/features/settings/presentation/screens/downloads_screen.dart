@@ -111,10 +111,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           ),
           const SizedBox(height: 8),
 
-          const CatalogDictionaryTile(
-            entry: CatalogDictionary.jitendex,
-            offerUpdates: false,
-          ),
+          const CatalogDictionaryTile(entry: CatalogDictionary.jitendex),
           ListTile(
             leading: Icon(
               Icons.library_add_outlined,

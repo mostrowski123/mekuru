@@ -121,13 +121,3 @@ class _FakeKanjiVgNotifier extends KanjiVgNotifier {
   @override
   Future<void> checkStatus() async {}
 }
-
-/// Records [update] calls instead of downloading.
-class FakeUpdateNotifier extends DictionaryUpdateNotifier {
-  FakeUpdateNotifier(super.dictionaryId, this.onUpdate);
-
-  final void Function(int dictionaryId) onUpdate;
-
-  @override
-  Future<void> update() async => onUpdate(dictionaryId);
-}

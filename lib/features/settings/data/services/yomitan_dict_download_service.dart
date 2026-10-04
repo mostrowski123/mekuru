@@ -28,10 +28,6 @@ class YomitanDictDownloadService {
   static String assetUrl(YomitanDictType type) =>
       '$jmdictYomitanReleases/${_assetFilename(type)}';
 
-  /// The release's index.json for [type], which names its latest revision.
-  static String indexUrl(YomitanDictType type) =>
-      assetUrl(type).replaceFirst(RegExp(r'\.zip$'), '.json');
-
   /// Name prefixes used to detect whether a dictionary type is already
   /// imported. The actual title comes from the ZIP's index.json and may vary
   /// between releases, so we match by prefix for robustness.

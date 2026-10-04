@@ -1842,17 +1842,6 @@ class $DictionaryMetasTable extends DictionaryMetas
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _indexUrlMeta = const VerificationMeta(
-    'indexUrl',
-  );
-  @override
-  late final GeneratedColumn<String> indexUrl = GeneratedColumn<String>(
-    'index_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1862,7 +1851,6 @@ class $DictionaryMetasTable extends DictionaryMetas
     sortOrder,
     isHidden,
     revision,
-    indexUrl,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1920,12 +1908,6 @@ class $DictionaryMetasTable extends DictionaryMetas
         revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
       );
     }
-    if (data.containsKey('index_url')) {
-      context.handle(
-        _indexUrlMeta,
-        indexUrl.isAcceptableOrUnknown(data['index_url']!, _indexUrlMeta),
-      );
-    }
     return context;
   }
 
@@ -1963,10 +1945,6 @@ class $DictionaryMetasTable extends DictionaryMetas
         DriftSqlType.string,
         data['${effectivePrefix}revision'],
       ),
-      indexUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}index_url'],
-      ),
     );
   }
 
@@ -1984,13 +1962,9 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
   final int sortOrder;
   final bool isHidden;
 
-  /// index.json `revision`; compared with the published index to offer
-  /// updates. Null for dictionaries imported before schema 24.
+  /// index.json `revision`, shown as the dictionary's version. Null for
+  /// dictionaries imported before schema 24.
   final String? revision;
-
-  /// index.json `indexUrl`, kept only when the dictionary says it
-  /// `isUpdatable`.
-  final String? indexUrl;
   const DictionaryMeta({
     required this.id,
     required this.name,
@@ -1999,7 +1973,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     required this.sortOrder,
     required this.isHidden,
     this.revision,
-    this.indexUrl,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2012,9 +1985,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     map['is_hidden'] = Variable<bool>(isHidden);
     if (!nullToAbsent || revision != null) {
       map['revision'] = Variable<String>(revision);
-    }
-    if (!nullToAbsent || indexUrl != null) {
-      map['index_url'] = Variable<String>(indexUrl);
     }
     return map;
   }
@@ -2030,9 +2000,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       revision: revision == null && nullToAbsent
           ? const Value.absent()
           : Value(revision),
-      indexUrl: indexUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(indexUrl),
     );
   }
 
@@ -2049,7 +2016,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       isHidden: serializer.fromJson<bool>(json['isHidden']),
       revision: serializer.fromJson<String?>(json['revision']),
-      indexUrl: serializer.fromJson<String?>(json['indexUrl']),
     );
   }
   @override
@@ -2063,7 +2029,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       'sortOrder': serializer.toJson<int>(sortOrder),
       'isHidden': serializer.toJson<bool>(isHidden),
       'revision': serializer.toJson<String?>(revision),
-      'indexUrl': serializer.toJson<String?>(indexUrl),
     };
   }
 
@@ -2075,7 +2040,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     int? sortOrder,
     bool? isHidden,
     Value<String?> revision = const Value.absent(),
-    Value<String?> indexUrl = const Value.absent(),
   }) => DictionaryMeta(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -2084,7 +2048,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     sortOrder: sortOrder ?? this.sortOrder,
     isHidden: isHidden ?? this.isHidden,
     revision: revision.present ? revision.value : this.revision,
-    indexUrl: indexUrl.present ? indexUrl.value : this.indexUrl,
   );
   DictionaryMeta copyWithCompanion(DictionaryMetasCompanion data) {
     return DictionaryMeta(
@@ -2097,7 +2060,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       isHidden: data.isHidden.present ? data.isHidden.value : this.isHidden,
       revision: data.revision.present ? data.revision.value : this.revision,
-      indexUrl: data.indexUrl.present ? data.indexUrl.value : this.indexUrl,
     );
   }
 
@@ -2110,8 +2072,7 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
           ..write('dateImported: $dateImported, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('isHidden: $isHidden, ')
-          ..write('revision: $revision, ')
-          ..write('indexUrl: $indexUrl')
+          ..write('revision: $revision')
           ..write(')'))
         .toString();
   }
@@ -2125,7 +2086,6 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
     sortOrder,
     isHidden,
     revision,
-    indexUrl,
   );
   @override
   bool operator ==(Object other) =>
@@ -2137,8 +2097,7 @@ class DictionaryMeta extends DataClass implements Insertable<DictionaryMeta> {
           other.dateImported == this.dateImported &&
           other.sortOrder == this.sortOrder &&
           other.isHidden == this.isHidden &&
-          other.revision == this.revision &&
-          other.indexUrl == this.indexUrl);
+          other.revision == this.revision);
 }
 
 class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
@@ -2149,7 +2108,6 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
   final Value<int> sortOrder;
   final Value<bool> isHidden;
   final Value<String?> revision;
-  final Value<String?> indexUrl;
   const DictionaryMetasCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -2158,7 +2116,6 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     this.sortOrder = const Value.absent(),
     this.isHidden = const Value.absent(),
     this.revision = const Value.absent(),
-    this.indexUrl = const Value.absent(),
   });
   DictionaryMetasCompanion.insert({
     this.id = const Value.absent(),
@@ -2168,7 +2125,6 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     this.sortOrder = const Value.absent(),
     this.isHidden = const Value.absent(),
     this.revision = const Value.absent(),
-    this.indexUrl = const Value.absent(),
   }) : name = Value(name);
   static Insertable<DictionaryMeta> custom({
     Expression<int>? id,
@@ -2178,7 +2134,6 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     Expression<int>? sortOrder,
     Expression<bool>? isHidden,
     Expression<String>? revision,
-    Expression<String>? indexUrl,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2188,7 +2143,6 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
       if (sortOrder != null) 'sort_order': sortOrder,
       if (isHidden != null) 'is_hidden': isHidden,
       if (revision != null) 'revision': revision,
-      if (indexUrl != null) 'index_url': indexUrl,
     });
   }
 
@@ -2200,7 +2154,6 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     Value<int>? sortOrder,
     Value<bool>? isHidden,
     Value<String?>? revision,
-    Value<String?>? indexUrl,
   }) {
     return DictionaryMetasCompanion(
       id: id ?? this.id,
@@ -2210,7 +2163,6 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
       sortOrder: sortOrder ?? this.sortOrder,
       isHidden: isHidden ?? this.isHidden,
       revision: revision ?? this.revision,
-      indexUrl: indexUrl ?? this.indexUrl,
     );
   }
 
@@ -2238,9 +2190,6 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
     if (revision.present) {
       map['revision'] = Variable<String>(revision.value);
     }
-    if (indexUrl.present) {
-      map['index_url'] = Variable<String>(indexUrl.value);
-    }
     return map;
   }
 
@@ -2253,8 +2202,7 @@ class DictionaryMetasCompanion extends UpdateCompanion<DictionaryMeta> {
           ..write('dateImported: $dateImported, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('isHidden: $isHidden, ')
-          ..write('revision: $revision, ')
-          ..write('indexUrl: $indexUrl')
+          ..write('revision: $revision')
           ..write(')'))
         .toString();
   }
@@ -8169,7 +8117,6 @@ typedef $$DictionaryMetasTableCreateCompanionBuilder =
       Value<int> sortOrder,
       Value<bool> isHidden,
       Value<String?> revision,
-      Value<String?> indexUrl,
     });
 typedef $$DictionaryMetasTableUpdateCompanionBuilder =
     DictionaryMetasCompanion Function({
@@ -8180,7 +8127,6 @@ typedef $$DictionaryMetasTableUpdateCompanionBuilder =
       Value<int> sortOrder,
       Value<bool> isHidden,
       Value<String?> revision,
-      Value<String?> indexUrl,
     });
 
 class $$DictionaryMetasTableFilterComposer
@@ -8224,11 +8170,6 @@ class $$DictionaryMetasTableFilterComposer
 
   ColumnFilters<String> get revision => $composableBuilder(
     column: $table.revision,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get indexUrl => $composableBuilder(
-    column: $table.indexUrl,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -8276,11 +8217,6 @@ class $$DictionaryMetasTableOrderingComposer
     column: $table.revision,
     builder: (column) => ColumnOrderings(column),
   );
-
-  ColumnOrderings<String> get indexUrl => $composableBuilder(
-    column: $table.indexUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
 }
 
 class $$DictionaryMetasTableAnnotationComposer
@@ -8314,9 +8250,6 @@ class $$DictionaryMetasTableAnnotationComposer
 
   GeneratedColumn<String> get revision =>
       $composableBuilder(column: $table.revision, builder: (column) => column);
-
-  GeneratedColumn<String> get indexUrl =>
-      $composableBuilder(column: $table.indexUrl, builder: (column) => column);
 }
 
 class $$DictionaryMetasTableTableManager
@@ -8363,7 +8296,6 @@ class $$DictionaryMetasTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> isHidden = const Value.absent(),
                 Value<String?> revision = const Value.absent(),
-                Value<String?> indexUrl = const Value.absent(),
               }) => DictionaryMetasCompanion(
                 id: id,
                 name: name,
@@ -8372,7 +8304,6 @@ class $$DictionaryMetasTableTableManager
                 sortOrder: sortOrder,
                 isHidden: isHidden,
                 revision: revision,
-                indexUrl: indexUrl,
               ),
           createCompanionCallback:
               ({
@@ -8383,7 +8314,6 @@ class $$DictionaryMetasTableTableManager
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> isHidden = const Value.absent(),
                 Value<String?> revision = const Value.absent(),
-                Value<String?> indexUrl = const Value.absent(),
               }) => DictionaryMetasCompanion.insert(
                 id: id,
                 name: name,
@@ -8392,7 +8322,6 @@ class $$DictionaryMetasTableTableManager
                 sortOrder: sortOrder,
                 isHidden: isHidden,
                 revision: revision,
-                indexUrl: indexUrl,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -3492,16 +3492,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get dictionaryUpdateAvailable => 'Update available';
-
-  @override
-  String get dictionaryUpdateButton => 'Update';
-
-  @override
-  String get dictionaryUpdateMobileDataBody =>
-      'Wi-Fi is not connected. Download this update over mobile data?';
-
-  @override
   String get dictionaryImportParsingCollection => 'Parsing collection…';
 
   @override

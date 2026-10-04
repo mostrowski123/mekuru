@@ -10,11 +10,7 @@ class DictionaryMetas extends Table {
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   BoolColumn get isHidden => boolean().withDefault(const Constant(false))();
 
-  /// index.json `revision`; compared with the published index to offer
-  /// updates. Null for dictionaries imported before schema 24.
+  /// index.json `revision`, shown as the dictionary's version. Null for
+  /// dictionaries imported before schema 24.
   TextColumn get revision => text().nullable()();
-
-  /// index.json `indexUrl`, kept only when the dictionary says it
-  /// `isUpdatable`.
-  TextColumn get indexUrl => text().nullable()();
 }

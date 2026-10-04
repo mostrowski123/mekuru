@@ -3538,16 +3538,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get dictionaryUpdateAvailable => 'Actualización disponible';
-
-  @override
-  String get dictionaryUpdateButton => 'Actualizar';
-
-  @override
-  String get dictionaryUpdateMobileDataBody =>
-      'No hay conexión Wi-Fi. ¿Descargar esta actualización con datos móviles?';
-
-  @override
   String get dictionaryImportParsingCollection => 'Leyendo la colección…';
 
   @override

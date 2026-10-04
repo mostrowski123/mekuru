@@ -140,12 +140,9 @@ class DictionaryImporter {
   ///
   /// Returns the total number of entries imported.
   /// [onProgress] is called with (processedEntries, totalEntries) during batch insert.
-  /// [onDictionaryCreated] gets the new dictionary's id; the row only lasts
-  /// if the import completes.
   Future<int> importFromFile(
     String filePath, {
     void Function(int processed, int total)? onProgress,
-    void Function(int dictionaryId)? onDictionaryCreated,
   }) async {
     final file = File(filePath);
     if (!await file.exists()) {
@@ -192,9 +189,7 @@ class DictionaryImporter {
             dictionaryId = await _repository.insertDictionary(
               dictionaryName,
               revision: meta['revision'] as String?,
-              indexUrl: meta['indexUrl'] as String?,
             );
-            onDictionaryCreated?.call(dictionaryId);
             continue;
           }
 
@@ -1255,14 +1250,10 @@ class DictionaryImporter {
         ? null
         : _decodeZipEntryJson(indexFile) as Map<String, dynamic>?;
     final revision = indexJson?['revision'];
-    final indexUrl = indexJson?['indexUrl'];
     return {
       'dictionaryName':
           (indexJson?['title'] as String?) ?? 'Unknown Dictionary',
       'revision': revision is String ? revision : null,
-      'indexUrl': indexJson?['isUpdatable'] == true && indexUrl is String
-          ? indexUrl
-          : null,
     };
   }
 

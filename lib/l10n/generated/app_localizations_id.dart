@@ -3510,16 +3510,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get dictionaryUpdateAvailable => 'Pembaruan tersedia';
-
-  @override
-  String get dictionaryUpdateButton => 'Perbarui';
-
-  @override
-  String get dictionaryUpdateMobileDataBody =>
-      'Wi-Fi tidak terhubung. Unduh pembaruan ini dengan data seluler?';
-
-  @override
   String get dictionaryImportParsingCollection => 'Membaca koleksi…';
 
   @override

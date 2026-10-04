@@ -10,7 +10,6 @@ void main() {
   test('every entry downloads over https and has a distinct title', () {
     for (final entry in CatalogDictionary.values) {
       expect(entry.url, startsWith('https://'), reason: entry.displayName);
-      expect(entry.indexUrl, startsWith('https://'), reason: entry.displayName);
       expect(
         entry.sourceUrl,
         startsWith('https://'),

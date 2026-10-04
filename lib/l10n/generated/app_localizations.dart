@@ -5735,24 +5735,6 @@ abstract class AppLocalizations {
     required String version,
   });
 
-  /// Line under an installed dictionary whose publisher has a newer version.
-  ///
-  /// In en, this message translates to:
-  /// **'Update available'**
-  String get dictionaryUpdateAvailable;
-
-  /// Button (and its tooltip) that downloads and installs a newer version of a dictionary.
-  ///
-  /// In en, this message translates to:
-  /// **'Update'**
-  String get dictionaryUpdateButton;
-
-  /// Body of the dialog asking before a dictionary update downloads over mobile data, when its size is unknown.
-  ///
-  /// In en, this message translates to:
-  /// **'Wi-Fi is not connected. Download this update over mobile data?'**
-  String get dictionaryUpdateMobileDataBody;
-
   /// Dictionary Manager banner while a Yomitan collection backup file is read, before its dictionaries import.
   ///
   /// In en, this message translates to:

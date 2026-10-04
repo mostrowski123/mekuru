@@ -38,8 +38,6 @@ void main() {
         'title': 'JMnedict [2026-10-03]',
         'format': 3,
         'revision': 'JMnedict.2026-10-03',
-        'isUpdatable': true,
-        'indexUrl': 'https://example.com/JMnedict.json',
       }),
     );
     final bank = utf8.encode(
@@ -97,7 +95,7 @@ void main() {
 
     final meta = (await repo.getAllDictionaries()).single;
     expect(meta.name, 'JMnedict [2026-10-03]');
-    expect(meta.indexUrl, 'https://example.com/JMnedict.json');
+    expect(meta.revision, 'JMnedict.2026-10-03');
     expect(progress.last, 1.0);
     expect(progress, orderedEquals([...progress]..sort()));
     expect(progress.any((p) => p > 0.7 && p < 1.0), isTrue);
@@ -249,13 +247,8 @@ class _StopAfterImport extends DictionaryImporter {
   Future<int> importFromFile(
     String filePath, {
     void Function(int processed, int total)? onProgress,
-    void Function(int dictionaryId)? onDictionaryCreated,
   }) async {
-    final count = await super.importFromFile(
-      filePath,
-      onProgress: onProgress,
-      onDictionaryCreated: onDictionaryCreated,
-    );
+    final count = await super.importFromFile(filePath, onProgress: onProgress);
     await afterImport();
     return count;
   }

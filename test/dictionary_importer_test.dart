@@ -806,39 +806,17 @@ void main() {
           .setMockMethodCallHandler(imageChannel, null);
     });
 
-    test(
-      'keeps the revision and update URL of an updatable dictionary',
-      () async {
-        final zipPath = await createTestYomitanZip(
-          dictionaryName: 'JMnedict [2026-10-03]',
-          index: {
-            'revision': 'JMnedict.2026-10-03',
-            'isUpdatable': true,
-            'indexUrl': 'https://example.com/JMnedict.json',
-            'downloadUrl': 'https://example.com/JMnedict.zip',
-          },
-        );
-        trackTempFile(zipPath);
-
-        await importer.importFromFile(zipPath);
-
-        final meta = (await repo.getAllDictionaries()).single;
-        expect(meta.revision, 'JMnedict.2026-10-03');
-        expect(meta.indexUrl, 'https://example.com/JMnedict.json');
-      },
-    );
-
-    test('drops the update URL when the dictionary is not updatable', () async {
+    test('keeps the revision the dictionary names in index.json', () async {
       final zipPath = await createTestYomitanZip(
-        index: {'revision': 'r7', 'indexUrl': 'https://example.com/index.json'},
+        dictionaryName: 'JMnedict [2026-10-03]',
+        index: {'revision': 'JMnedict.2026-10-03'},
       );
       trackTempFile(zipPath);
 
       await importer.importFromFile(zipPath);
 
       final meta = (await repo.getAllDictionaries()).single;
-      expect(meta.revision, 'r7');
-      expect(meta.indexUrl, isNull);
+      expect(meta.revision, 'JMnedict.2026-10-03');
     });
 
     test('stores the zip images, with backslash paths normalized', () async {

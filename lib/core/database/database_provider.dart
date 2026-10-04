@@ -92,10 +92,9 @@ class AppDatabase extends _$AppDatabase {
         'INTEGER NOT NULL DEFAULT 0 CHECK (allow_self_signed_cert IN (0, 1))',
   };
 
-  /// Dictionary update info (schema 24), repair-only like v18/v20/v23.
+  /// Dictionary version (schema 24), repair-only like v18/v20/v23.
   static const Map<String, String> _dictionaryMetasRepairColumns = {
     'revision': 'ALTER TABLE dictionary_metas ADD COLUMN revision TEXT NULL',
-    'index_url': 'ALTER TABLE dictionary_metas ADD COLUMN index_url TEXT NULL',
   };
 
   /// The schema this build writes. Static so code that must not open a
@@ -215,7 +214,7 @@ class AppDatabase extends _$AppDatabase {
         await migrator.addColumn(bookCollections, bookCollections.position);
       }
       // v18 (search_text), v20 (has_vertical_css), v23 (server sync) and
-      // v24 (dictionary revision/index_url, dictionary_media) have no
+      // v24 (dictionary revision, dictionary_media) have no
       // migration blocks: the repair pass in beforeOpen adds the columns via
       // the repair-column maps and creates the tables, which also covers
       // databases that missed migrations entirely.

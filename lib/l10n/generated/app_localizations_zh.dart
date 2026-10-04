@@ -3337,15 +3337,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dictionaryUpdateAvailable => '有可用更新';
-
-  @override
-  String get dictionaryUpdateButton => '更新';
-
-  @override
-  String get dictionaryUpdateMobileDataBody => '未连接 Wi-Fi。是否使用移动数据下载此更新？';
-
-  @override
   String get dictionaryImportParsingCollection => '正在解析词典集合…';
 
   @override
@@ -6744,15 +6735,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }) {
     return '已导入 $date · 版本 $version';
   }
-
-  @override
-  String get dictionaryUpdateAvailable => '有可用更新';
-
-  @override
-  String get dictionaryUpdateButton => '更新';
-
-  @override
-  String get dictionaryUpdateMobileDataBody => '未连接 Wi-Fi。是否使用移动数据下载此更新？';
 
   @override
   String get dictionaryImportParsingCollection => '正在解析词典集合…';

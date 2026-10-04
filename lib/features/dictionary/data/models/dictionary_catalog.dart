@@ -26,7 +26,6 @@ enum CatalogDictionary {
     section: CatalogSection.japaneseEnglish,
     url:
         'https://github.com/stephenmk/stephenmk.github.io/releases/latest/download/jitendex-yomitan.zip',
-    indexUrl: 'https://jitendex.org/static/yomitan.json',
     title: 'Jitendex.org',
     downloadMb: 39,
     installedMb: 774,
@@ -50,7 +49,6 @@ enum CatalogDictionary {
     displayName: 'JMnedict',
     section: CatalogSection.names,
     url: '$jmdictYomitanReleases/JMnedict.zip',
-    indexUrl: '$jmdictYomitanReleases/JMnedict.json',
     title: 'JMnedict',
     downloadMb: 11,
     installedMb: 117,
@@ -85,7 +83,6 @@ enum CatalogDictionary {
     required this.displayName,
     required this.section,
     required this.url,
-    required this.indexUrl,
     required this.title,
     required this.downloadMb,
     required this.installedMb,
@@ -103,7 +100,6 @@ enum CatalogDictionary {
         displayName: 'JMdict ($native)',
         section: CatalogSection.otherLanguages,
         url: '$jmdictYomitanReleases/JMdict_$file.zip',
-        indexUrl: '$jmdictYomitanReleases/JMdict_$file.json',
         title: 'JMdict ($english)',
         downloadMb: downloadMb,
         installedMb: installedMb,
@@ -121,7 +117,6 @@ enum CatalogDictionary {
         displayName: 'KANJIDIC ($native)',
         section: CatalogSection.otherLanguages,
         url: '$jmdictYomitanReleases/KANJIDIC_$file.zip',
-        indexUrl: '$jmdictYomitanReleases/KANJIDIC_$file.json',
         title: 'KANJIDIC ($english)',
         downloadMb: downloadMb,
         installedMb: installedMb,
@@ -140,7 +135,6 @@ enum CatalogDictionary {
         displayName: displayName,
         section: section,
         url: '$_wiktionaryReleases/dict/ja/$language/wty-ja-$language.zip',
-        indexUrl: '$_wiktionaryReleases/index/wty-ja-$language-index.json',
         title: 'wty-ja-$language',
         downloadMb: downloadMb,
         installedMb: installedMb,
@@ -152,8 +146,6 @@ enum CatalogDictionary {
   final CatalogSection section;
   final String url;
 
-  /// The published index.json, checked for updates.
-  final String indexUrl;
   final String title;
   final double downloadMb;
   final double installedMb;

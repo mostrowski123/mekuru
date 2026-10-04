@@ -532,12 +532,11 @@ void main() {
       ).insertDictionary('JMdict [2026-09-01]');
       await seedDb.close();
 
-      // Rewind to v23: no media table, no revision/index_url columns.
+      // Rewind to v23: no media table, no revision column.
       final legacyDb = sqlite.sqlite3.open(dbFile.path);
       legacyDb.execute('PRAGMA user_version = 23;');
       legacyDb.execute('DROP TABLE dictionary_media;');
       legacyDb.execute('ALTER TABLE dictionary_metas DROP COLUMN revision;');
-      legacyDb.execute('ALTER TABLE dictionary_metas DROP COLUMN index_url;');
       legacyDb.close();
 
       final migratedDb = AppDatabase(NativeDatabase(dbFile));
@@ -547,20 +546,15 @@ void main() {
       final meta = (await repo.getAllDictionaries()).single;
       expect(meta.name, 'JMdict [2026-09-01]');
       expect(meta.revision, null);
-      expect(meta.indexUrl, null);
 
       // Missing nullable columns read back as null, so write through them.
       await (migratedDb.update(
         migratedDb.dictionaryMetas,
       )..where((t) => t.id.equals(meta.id))).write(
-        const DictionaryMetasCompanion(
-          revision: Value('JMdict.2026-10-03'),
-          indexUrl: Value('https://example.com/JMdict_english.json'),
-        ),
+        const DictionaryMetasCompanion(revision: Value('JMdict.2026-10-03')),
       );
       final updated = (await repo.getAllDictionaries()).single;
       expect(updated.revision, 'JMdict.2026-10-03');
-      expect(updated.indexUrl, 'https://example.com/JMdict_english.json');
 
       await repo.insertMedia(meta.id, [
         ('img/a.png', Uint8List.fromList([7])),

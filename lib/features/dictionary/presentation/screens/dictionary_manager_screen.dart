@@ -13,10 +13,8 @@ import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.da
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/lookup_benchmark.dart';
-import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
-import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
@@ -479,99 +477,57 @@ class _DictionaryManagerScreenState
     final name = dictionaryDisplayName(dict.name);
     final date = _formatDate(dict.dateImported);
     final version = dictionaryVersion(dict);
-    final imported = version == null
-        ? l10n.dictionaryManagerImportedOn(date: date)
-        : l10n.dictionaryManagerImportedOnVersion(date: date, version: version);
     final isDeleting = _deleting.contains(dict.id);
 
-    // Its own Consumer: an update's progress rebuilds this tile, not the
-    // whole screen.
-    return Consumer(
+    return Card(
       key: ValueKey(dict.id),
-      builder: (context, ref, _) {
-        final hasUpdate = ref.watch(
-          dictionaryUpdatesProvider.select(
-            (updates) => updates.value?.containsKey(dict.id) ?? false,
-          ),
-        );
-        final updateState = hasUpdate
-            ? ref.watch(dictionaryUpdateProvider(dict.id))
-            : const CatalogDownloadState();
-        final updating = updateState.isDownloading;
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: ReorderableDragStartListener(
-                  index: index,
-                  child: const Icon(Icons.drag_handle),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ListTile(
+        leading: ReorderableDragStartListener(
+          index: index,
+          child: const Icon(Icons.drag_handle),
+        ),
+        title: Text(name),
+        subtitle: Text(
+          version == null
+              ? l10n.dictionaryManagerImportedOn(date: date)
+              : l10n.dictionaryManagerImportedOnVersion(
+                  date: date,
+                  version: version,
                 ),
-                title: Text(name),
-                subtitle: Text(
-                  hasUpdate && !updating
-                      ? '$imported\n${l10n.dictionaryUpdateAvailable}'
-                      : imported,
-                  style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Switch(
+              value: dict.isEnabled,
+              onChanged: isDeleting
+                  ? null
+                  : (value) {
+                      ref
+                          .read(dictionaryRepositoryProvider)
+                          .toggleDictionary(dict.id, isEnabled: value);
+                      logUsage('dictionary.toggled', attrs: {'enabled': value});
+                    },
+            ),
+            if (isDeleting)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (hasUpdate)
-                      IconButton(
-                        icon: updating
-                            ? _smallSpinner
-                            : const Icon(Icons.system_update_alt),
-                        tooltip: l10n.dictionaryUpdateButton,
-                        onPressed: updating || isDeleting
-                            ? null
-                            : () => startDictionaryDownload(
-                                context,
-                                CatalogDictionary.forTitle(dict.name),
-                                ref
-                                    .read(
-                                      dictionaryUpdateProvider(
-                                        dict.id,
-                                      ).notifier,
-                                    )
-                                    .update,
-                              ),
-                      ),
-                    Switch(
-                      value: dict.isEnabled,
-                      onChanged: isDeleting
-                          ? null
-                          : (value) {
-                              ref
-                                  .read(dictionaryRepositoryProvider)
-                                  .toggleDictionary(dict.id, isEnabled: value);
-                              logUsage(
-                                'dictionary.toggled',
-                                attrs: {'enabled': value},
-                              );
-                            },
-                    ),
-                    if (isDeleting)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: _smallSpinner,
-                      )
-                    else
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: updating
-                            ? null
-                            : () => _confirmDelete(context, dict.id, name),
-                      ),
-                  ],
-                ),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _confirmDelete(context, dict.id, name),
               ),
-              DictionaryDownloadStatus(state: updateState),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
@@ -743,9 +699,3 @@ class _DictionaryManagerScreenState
     }
   }
 }
-
-const _smallSpinner = SizedBox(
-  width: 20,
-  height: 20,
-  child: CircularProgressIndicator(strokeWidth: 2),
-);
