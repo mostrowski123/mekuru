@@ -238,6 +238,20 @@ void main() {
       },
     );
 
+    test('a hidden dictionary stays hidden', () async {
+      final old = await install('JMnedict [2026-09-01]');
+      final fresh = await install('JMnedict [2026-10-03]');
+      await (db.update(db.dictionaryMetas)..where((t) => t.id.equals(old.id)))
+          .write(const DictionaryMetasCompanion(isHidden: Value(true)));
+
+      await repo.replaceDictionary(old.id, fresh.id);
+
+      final left = await (db.select(
+        db.dictionaryMetas,
+      )..where((t) => t.id.equals(fresh.id))).getSingle();
+      expect(left.isHidden, isTrue);
+    });
+
     test(
       'when the old one was deleted meanwhile, the new one goes too',
       () async {

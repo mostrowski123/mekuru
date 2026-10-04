@@ -162,8 +162,9 @@ class DictionaryRepository {
     });
   }
 
-  /// Gives [replacementId] the place and enabled state [oldId] has now, then
-  /// deletes [oldId]: an update taking over from the revision before it.
+  /// Gives [replacementId] the place, enabled state and visibility [oldId]
+  /// has now, then deletes [oldId]: an update taking over from the revision
+  /// before it.
   /// When [oldId] is gone (deleted during the update), the replacement goes
   /// too.
   Future<void> replaceDictionary(int oldId, int replacementId) =>
@@ -181,6 +182,7 @@ class DictionaryRepository {
           DictionaryMetasCompanion(
             sortOrder: Value(old.sortOrder),
             isEnabled: Value(old.isEnabled),
+            isHidden: Value(old.isHidden),
           ),
         );
         await deleteDictionary(oldId);
