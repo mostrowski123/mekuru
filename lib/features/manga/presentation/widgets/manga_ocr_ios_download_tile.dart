@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
+
+final _packBytes = mangaOcrIosModelFiles.fold<int>(0, (a, f) => a + f.bytes);
+final _packSize = '${(_packBytes / 1000000).toStringAsFixed(1)} MB';
 
 /// Downloads screen tile for the optional manga-ocr model pack on iOS. The
 /// Android tile talks to the native job service; this one only needs
@@ -35,10 +40,24 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
   }
 
   Future<void> _download() async {
+    // Busy before the Wi-Fi check, so a second tap can't start a second
+    // download.
     setState(() {
       _progress = 0;
       _error = null;
     });
+    if (!await isOnWifi()) {
+      if (!mounted) return;
+      final confirmed = await confirmMobileData(
+        context,
+        context.l10n.localOcrMobileDownloadBodyIos(size: _packSize),
+      );
+      if (!mounted) return;
+      if (!confirmed) {
+        setState(() => _progress = null);
+        return;
+      }
+    }
     try {
       await MangaOcrIos.instance.download(
         onProgress: (f) {
@@ -61,8 +80,6 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final theme = Theme.of(context);
-    final megabytes =
-        mangaOcrIosModelFiles.fold<int>(0, (a, f) => a + f.bytes) / 1000000;
     final busy = _progress != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,8 +95,7 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
                 ? l.localOcrError(details: _error!)
                 : _installed == true
                 ? l.localOcrModelReady
-                : '${l.localOcrModelDescriptionIos} '
-                      '(${megabytes.toStringAsFixed(1)} MB)',
+                : '${l.localOcrModelDescriptionIos} ($_packSize)',
           ),
           trailing: _installed == null || busy
               ? const SizedBox(

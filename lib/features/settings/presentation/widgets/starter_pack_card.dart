@@ -11,6 +11,7 @@ import 'package:mekuru/features/settings/presentation/providers/kanjidic_provide
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 // Download sizes for the mobile-data prompt, rounded up: the JMdict English
 // release zip was 15.6 MB and the JPDB v2.2 zip 6.0 MB in October 2026.
@@ -34,27 +35,11 @@ Future<void> installStarterPack(BuildContext context) async {
   if (!await isOnWifi()) {
     if (!context.mounted) return;
     final size = (needJmdict ? _jmdictMb : 0) + (needJpdb ? _jpdbMb : 0);
-    final l10n = context.l10n;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.localOcrMobileDownloadTitle),
-        content: Text(
-          l10n.downloadsStarterPackMobileDataBody(size: '$size MB'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.commonDownload),
-          ),
-        ],
-      ),
+    final confirmed = await confirmMobileData(
+      context,
+      context.l10n.downloadsStarterPackMobileDataBody(size: '$size MB'),
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
   }
 
   if (needJmdict) unawaited(jmdict.download(YomitanDictType.jmdictEnglish));

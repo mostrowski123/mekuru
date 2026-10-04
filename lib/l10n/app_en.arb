@@ -4249,6 +4249,15 @@
       }
     }
   },
+  "localOcrMobileDownloadBodyIos": "Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data?",
+  "@localOcrMobileDownloadBodyIos": {
+    "description": "iOS version of localOcrMobileDownloadBody: there an interrupted download keeps only the files it finished, so it does not promise to reuse saved progress.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "localOcrWaitingWifi": "Waiting for Wi-Fi. Cancel and resume to use mobile data.",
   "localOcrDownloadQueued": "Waiting to download…",
   "@localOcrMobileDownloadTitle": {

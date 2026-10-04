@@ -3330,6 +3330,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String localOcrMobileDownloadBodyIos({required String size}) {
+    return 'Wi-Fi tidak terhubung. Ukuran unduhan model OCR adalah $size. Lanjutkan dengan data seluler?';
+  }
+
+  @override
   String get localOcrWaitingWifi =>
       'Menunggu Wi-Fi. Batalkan lalu lanjutkan untuk menggunakan data seluler.';
 

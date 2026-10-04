@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/local_ocr_providers.dart';
 
@@ -377,27 +378,11 @@ class _LocalOcrDownloadTileState extends ConsumerState<LocalOcrDownloadTile> {
     final wifi = await LocalMangaOcr.isWifiConnected();
     if (!mounted) return;
     if (!wifi) {
-      final l = context.l10n;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l.localOcrMobileDownloadTitle),
-          content: Text(
-            l.localOcrMobileDownloadBody(size: _bytes(model.totalBytes)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.commonCancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.commonDownload),
-            ),
-          ],
-        ),
+      final confirmed = await confirmMobileData(
+        context,
+        context.l10n.localOcrMobileDownloadBody(size: _bytes(model.totalBytes)),
       );
-      if (confirmed != true || !mounted) return;
+      if (!confirmed || !mounted) return;
     }
     await LocalMangaOcr.download(allowMetered: !wifi);
   });

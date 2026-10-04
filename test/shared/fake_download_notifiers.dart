@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
@@ -22,18 +22,24 @@ List<Override> fakeDownloadNotifierOverrides(List<String> started) => [
   kanjiVgProvider.overrideWith(_FakeKanjiVgNotifier.new),
 ];
 
-/// Answers the Android Wi-Fi check that `isOnWifi()` makes (tests run as
-/// Android) for the rest of the test.
+/// Answers the Wi-Fi check that `isOnWifi()` makes, on Android and on iOS,
+/// for the rest of the test.
 void mockWifiConnected(bool connected) {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  const iosNetwork = MethodChannel('mekuru/network');
   messenger.setMockMethodCallHandler(
     LocalMangaOcr.channel,
     (call) async => call.method == 'isWifiConnected' ? connected : null,
   );
-  addTearDown(
-    () => messenger.setMockMethodCallHandler(LocalMangaOcr.channel, null),
+  messenger.setMockMethodCallHandler(
+    iosNetwork,
+    (call) async => call.method == 'isUnmetered' ? connected : null,
   );
+  addTearDown(() {
+    messenger.setMockMethodCallHandler(LocalMangaOcr.channel, null);
+    messenger.setMockMethodCallHandler(iosNetwork, null);
+  });
 }
 
 class _FakeJmdictNotifier extends JmdictNotifier {
