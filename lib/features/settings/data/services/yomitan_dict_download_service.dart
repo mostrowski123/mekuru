@@ -58,9 +58,8 @@ class YomitanDictDownloadService {
     YomitanDictType type,
     DictionaryRepository repository,
   ) async {
-    final prefix = _namePrefix(type);
     final all = await repository.getAllDictionaries();
-    return all.any((d) => d.name.startsWith(prefix));
+    return all.any((d) => _matches(type, d.name));
   }
 
   /// Find the first imported dictionary matching this type's name prefix.
@@ -68,13 +67,23 @@ class YomitanDictDownloadService {
     YomitanDictType type,
     DictionaryRepository repository,
   ) async {
-    final prefix = _namePrefix(type);
     final all = await repository.getAllDictionaries();
     for (final d in all) {
-      if (d.name.startsWith(prefix)) return d;
+      if (_matches(type, d.name)) return d;
     }
     return null;
   }
+
+  /// A parenthesized language other than English marks another edition
+  /// ("JMdict (Spanish) [..]", "KANJIDIC (French) [..]"), which is a separate
+  /// download and must not count as, or be deleted as, the English one.
+  static final _otherLanguageEdition = RegExp(
+    r'^(JMdict|KANJIDIC) \((?!English)',
+  );
+
+  static bool _matches(YomitanDictType type, String name) =>
+      name.startsWith(_namePrefix(type)) &&
+      !_otherLanguageEdition.hasMatch(name);
 
   /// Fetch the latest release, download the ZIP, and import it. Does
   /// nothing when this type is already imported, so a tap that beats a
