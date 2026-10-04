@@ -173,7 +173,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await pumpUntilVisible(
       tester,
-      find.byType(ListView),
+      find.byType(CustomScrollView),
       timeout: const Duration(seconds: 30),
     );
     await tester.pumpAndSettle();
