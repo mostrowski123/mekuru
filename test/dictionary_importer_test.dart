@@ -954,41 +954,49 @@ void main() {
           ],
         );
         trackTempFile(zipPath);
-        final port = ReceivePort();
-        addTearDown(port.close);
-        final received = <List<Object?>>[];
-        port.listen((message) => received.add(message as List<Object?>));
-        final isolate = await Isolate.spawn(DictionaryImporter.streamParseZip, [
-          port.sendPort,
-          zipPath,
-        ]);
-        addTearDown(() => isolate.kill(priority: Isolate.immediate));
+        final parser = await _ParserRun.start(zipPath);
+        addTearDown(parser.dispose);
 
-        List<Object?> kinds() => [for (final m in received) m[0]];
-        Future<void> receive(int count) async {
-          while (received.length < count) {
-            await Future<void>.delayed(const Duration(milliseconds: 10));
-          }
-        }
-
-        await receive(3).timeout(const Duration(seconds: 30));
         // A slow database: nothing stored yet, so the parser must wait.
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-        expect(kinds(), ['meta', 'batch', 'batch']);
+        await parser.settle(3);
+        expect(parser.kinds, ['meta', 'batch', 'batch']);
 
-        final stored = received.first[2] as SendPort;
-        stored.send(null);
-        await receive(4).timeout(const Duration(seconds: 30));
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-        expect(kinds(), ['meta', 'batch', 'batch', 'batch']);
+        parser.stored();
+        await parser.settle(4);
+        expect(parser.kinds, ['meta', 'batch', 'batch', 'batch']);
 
-        stored
-          ..send(null)
-          ..send(null);
-        await receive(5).timeout(const Duration(seconds: 30));
-        expect(kinds().last, 'done');
+        parser
+          ..stored()
+          ..stored();
+        await parser.settle(5);
+        expect(parser.kinds.last, 'done');
       },
     );
+
+    test('images wait for the database like batches do', () async {
+      final zipPath = await createTestYomitanZip(
+        extraFiles: {
+          for (var i = 0; i < 3; i++) 'img/$i.png': [0x89, 0x50, 0x4E, 0x47, i],
+        },
+      );
+      trackTempFile(zipPath);
+      final parser = await _ParserRun.start(zipPath);
+      addTearDown(parser.dispose);
+
+      await parser.settle(3);
+      expect(parser.kinds, ['meta', 'media', 'media']);
+
+      parser.stored();
+      await parser.settle(4);
+      expect(parser.kinds, ['meta', 'media', 'media', 'media']);
+
+      // Let it finish, so the zip is closed before the test cleans up.
+      parser
+        ..stored()
+        ..stored();
+      await parser.settle(6);
+      expect(parser.kinds.last, 'done');
+    });
   });
 
   group('DictionaryImporter — missing index.json', () {
@@ -1806,4 +1814,46 @@ void main() {
       },
     );
   });
+}
+
+/// The zip parser on its own isolate, as an import runs it, with what it has
+/// sent so far.
+class _ParserRun {
+  _ParserRun._(this._port, this._isolate);
+
+  final ReceivePort _port;
+  final Isolate _isolate;
+  final received = <List<Object?>>[];
+
+  static Future<_ParserRun> start(String zipPath) async {
+    final port = ReceivePort();
+    final isolate = await Isolate.spawn(DictionaryImporter.streamParseZip, [
+      port.sendPort,
+      zipPath,
+    ]);
+    final run = _ParserRun._(port, isolate);
+    port.listen((message) => run.received.add(message as List<Object?>));
+    return run;
+  }
+
+  List<Object?> get kinds => [for (final m in received) m[0]];
+
+  /// Waits for [count] messages, then a moment more for any it should not
+  /// have sent.
+  Future<void> settle(int count) async {
+    final deadline = DateTime.now().add(const Duration(seconds: 30));
+    while (received.length < count && DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+  }
+
+  /// Tells the parser, as the importer does, that one more message is
+  /// stored.
+  void stored() => (received.first[2] as SendPort).send(null);
+
+  void dispose() {
+    _isolate.kill(priority: Isolate.immediate);
+    _port.close();
+  }
 }

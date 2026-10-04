@@ -63,6 +63,10 @@ class DictionaryParseException implements Exception {
 //   ['pitch_batch', List<Map<String, dynamic>>]  — a batch of parsed pitch accents
 //   ['freq_batch', List<Map<String, dynamic>>]   — a batch of parsed frequencies
 //   ['media', String path, Uint8List bytes]     — one image file (zip only)
+//
+// A zip import answers every media and batch message once it is stored,
+// on the SendPort the 'meta' message carries; the parser keeps at most two
+// waiting for that.
 //   ['done']                                    — parsing complete
 //   ['error', String message, String causeType] — parsing failed
 
@@ -163,7 +167,6 @@ class DictionaryImporter {
         int? dictionaryId;
         int totalEntries = 0;
         int insertedEntries = 0;
-        final media = <Future<(String, Uint8List)>>[];
         // Told after each stored batch, so the parser stays a batch or two
         // ahead instead of piling the whole dictionary up in memory.
         late final SendPort stored;
@@ -200,11 +203,10 @@ class DictionaryImporter {
               ));
 
           if (type == 'media') {
-            media.add(_storableImage(msg[1] as String, msg[2] as Uint8List));
-            continue;
-          }
-
-          if (type == 'batch') {
+            await _repository.insertMedia(id, [
+              await _storableImage(msg[1] as String, msg[2] as Uint8List),
+            ]);
+          } else if (type == 'batch') {
             final rawEntries = (msg[1] as List)
                 .cast<Map>()
                 .map((entry) => Map<String, dynamic>.from(entry))
@@ -286,9 +288,6 @@ class DictionaryImporter {
 
         if (dictionaryId == null) {
           throw const FormatException('ZIP import stream produced no metadata');
-        }
-        if (media.isNotEmpty) {
-          await _repository.insertMedia(dictionaryId, await Future.wait(media));
         }
         await _repository.finishGlossaryFtsBulkLoad(dictionaryId);
 
@@ -1107,19 +1106,25 @@ class DictionaryImporter {
     final sendPort = args[0] as SendPort;
     final filePath = args[1] as String;
     InputFileStream? input;
-    // The importer answers each batch once it is stored; at most two wait
-    // for that, so a slow database bounds memory instead of filling it.
+    // The importer answers each image and batch once it is stored; at most
+    // two wait for that, so a slow database bounds memory instead of
+    // filling it.
     final stored = ReceivePort();
-    final storedBatches = StreamIterator<Object?>(stored);
+    final storedMessages = StreamIterator<Object?>(stored);
     var waiting = 0;
-    Future<void> sendBatch(String type, List<Map<String, dynamic>> rows) async {
-      // send copies the rows, so the list can be reused at once.
-      sendPort.send([type, rows]);
-      rows.clear();
+    Future<void> sendStored(List<Object?> message) async {
+      sendPort.send(message);
       if (++waiting >= 2) {
-        await storedBatches.moveNext();
+        await storedMessages.moveNext();
         waiting--;
       }
+    }
+
+    Future<void> sendBatch(String type, List<Map<String, dynamic>> rows) {
+      final sent = sendStored([type, rows]);
+      // send copied the rows, so the list can be reused at once.
+      rows.clear();
+      return sent;
     }
 
     try {
@@ -1161,7 +1166,7 @@ class DictionaryImporter {
       for (final file in archive.files) {
         if (!file.isFile || !_isZipImagePath(file.name)) continue;
         final bytes = _zipEntryBytes(file);
-        if (bytes != null) sendPort.send(['media', file.name, bytes]);
+        if (bytes != null) await sendStored(['media', file.name, bytes]);
       }
 
       const batchSize = 5000;
