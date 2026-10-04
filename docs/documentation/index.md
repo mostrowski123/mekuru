@@ -50,7 +50,7 @@ The **You** tab shows your reading time, an activity heatmap, lookup rate, and v
 | EPUB Reader | Vertical and horizontal reading, RTL or LTR page flow, and automatic progress restore |
 | Manga Reader | Mokuro and CBZ support with single-page, spread, and scroll modes; CBZ archives with embedded `.mokuro` data get lookups on import |
 | Offline Dictionaries | Import Yomitan `.zip` files, collection `.json` backups, or built-in download packs |
-| Built-in Downloads | JMdict, JMdict with examples, KANJIDIC, KanjiVG, JPDB frequency data, and the Enhanced Furigana Dictionary |
+| Built-in Downloads | Jitendex, JMdict, JMdict with examples, KANJIDIC, KanjiVG, JPDB frequency data, and the Enhanced Furigana Dictionary, plus more dictionaries to download in the app: Wiktionary, JMnedict, and JMdict and KANJIDIC in other languages |
 | Collections | Organize books into iOS-style folder tiles with drag-to-reorder and multi-select batch actions |
 | Furigana Display | Per-book furigana modes: off, book default, all kanji, only kanji above a chosen JLPT level, or only kanji not yet learned on WaniKani |
 | WaniKani Integration | Link your WaniKani account and hide furigana for kanji at or above the SRS stage you choose |
