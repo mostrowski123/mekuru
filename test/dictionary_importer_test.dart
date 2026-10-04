@@ -335,11 +335,13 @@ void main() {
       trackTempFile(zipPath);
 
       final progressUpdates = <(int, int)>[];
+      final finishingAt = <int>[];
       await importer.importFromFile(
         zipPath,
         onProgress: (processed, total) {
           progressUpdates.add((processed, total));
         },
+        onFinishing: () => finishingAt.add(progressUpdates.length),
       );
 
       // Should have at least 1 progress update
@@ -347,6 +349,8 @@ void main() {
       // Final update should show all entries processed
       expect(progressUpdates.last.$1, 25);
       expect(progressUpdates.last.$2, 25);
+      // The finish is announced once, after the last progress update.
+      expect(finishingAt, [progressUpdates.length]);
     });
 
     test('throws FileSystemException for non-existent file', () async {

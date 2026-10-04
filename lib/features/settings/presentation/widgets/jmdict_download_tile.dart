@@ -49,10 +49,7 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
           trailing: _buildTrailing(context, state),
         ),
         if (state.isDownloading)
-          DownloadProgress(
-            progress: state.progress,
-            label: dictionaryDownloadLabel(l10n, state.progress),
-          ),
+          DictionaryDownloadProgress(progress: state.progress),
         if (state.error != null) DownloadErrorText(text: state.error!),
         if (state.successMessage != null)
           DownloadSuccessText(text: state.successMessage!),

@@ -3368,6 +3368,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get dictionaryImportFinishing => '即将完成…可能需要一分钟';
+
+  @override
   String dictionaryImportEntriesProgress({
     required int processed,
     required int total,
@@ -6787,6 +6790,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }) {
     return '正在导入… $processed/$total';
   }
+
+  @override
+  String get dictionaryImportFinishing => '即将完成…可能需要一分钟';
 
   @override
   String dictionaryImportEntriesProgress({

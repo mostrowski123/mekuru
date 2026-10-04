@@ -144,6 +144,9 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
               totalEntries: total,
             );
           },
+          onFinishing: () => state = state.copyWith(
+            currentDictionary: appL10n().dictionaryImportFinishing,
+          ),
         ),
       );
       logUsage('dictionary.imported', attrs: {'entry_count': count});

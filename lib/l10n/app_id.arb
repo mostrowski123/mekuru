@@ -2937,6 +2937,7 @@
   "dictionaryImportParsingCollection": "Membaca koleksi…",
   "dictionaryImportImportingCollection": "Mengimpor {name}… ({current}/{total} kamus)",
   "dictionaryImportImportingEntries": "Mengimpor… {processed}/{total}",
+  "dictionaryImportFinishing": "Menyelesaikan… mungkin perlu waktu sebentar",
   "dictionaryImportEntriesProgress": "{processed}/{total} entri",
   "dictionaryImportedEntries": "{count, plural, =1{Berhasil mengimpor 1 entri!} other{Berhasil mengimpor {count} entri!}}",
   "dictionaryImportedCollection": "{dictionaries, plural, =1{1 kamus diimpor ({entries} entri)} other{{dictionaries} kamus diimpor ({entries} entri)}}",

@@ -66,10 +66,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // KANJIDIC
           _KanjidicTile(state: kanjidicState, theme: theme),
           if (kanjidicState.isDownloading)
-            DownloadProgress(
-              progress: kanjidicState.progress,
-              label: dictionaryDownloadLabel(l10n, kanjidicState.progress),
-            ),
+            DictionaryDownloadProgress(progress: kanjidicState.progress),
           if (kanjidicState.error != null)
             DownloadErrorText(text: kanjidicState.error!),
           if (kanjidicState.successMessage != null)
@@ -134,10 +131,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // JPDB Frequency
           _JpdbFreqTile(state: jpdbFreqState, theme: theme),
           if (jpdbFreqState.isDownloading)
-            DownloadProgress(
-              progress: jpdbFreqState.progress,
-              label: dictionaryDownloadLabel(l10n, jpdbFreqState.progress),
-            ),
+            DictionaryDownloadProgress(progress: jpdbFreqState.progress),
           if (jpdbFreqState.error != null)
             DownloadErrorText(text: jpdbFreqState.error!),
           if (jpdbFreqState.successMessage != null)

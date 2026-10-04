@@ -4535,6 +4535,10 @@
       }
     }
   },
+  "dictionaryImportFinishing": "Finishing up… this may take a minute",
+  "@dictionaryImportFinishing": {
+    "description": "Shown under a dictionary's progress bar once its entries are stored, while the import finishes; a big dictionary stays here a while without progress."
+  },
   "dictionaryImportEntriesProgress": "{processed}/{total} entries",
   "@dictionaryImportEntriesProgress": {
     "description": "Small line under the Dictionary Manager import progress bar.",

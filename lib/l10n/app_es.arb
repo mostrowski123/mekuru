@@ -2937,6 +2937,7 @@
   "dictionaryImportParsingCollection": "Leyendo la colección…",
   "dictionaryImportImportingCollection": "Importando {name}… ({current}/{total} diccionarios)",
   "dictionaryImportImportingEntries": "Importando… {processed}/{total}",
+  "dictionaryImportFinishing": "Terminando… puede tardar un minuto",
   "dictionaryImportEntriesProgress": "{processed}/{total} entradas",
   "dictionaryImportedEntries": "{count, plural, =1{¡Se importó 1 entrada correctamente!} other{¡Se importaron {count} entradas correctamente!}}",
   "dictionaryImportedCollection": "{dictionaries, plural, =1{Se importó 1 diccionario ({entries} entradas)} other{Se importaron {dictionaries} diccionarios ({entries} entradas)}}",

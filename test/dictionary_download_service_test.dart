@@ -274,8 +274,13 @@ class _StopAfterImport extends DictionaryImporter {
   Future<int> importFromFile(
     String filePath, {
     void Function(int processed, int total)? onProgress,
+    void Function()? onFinishing,
   }) async {
-    final count = await super.importFromFile(filePath, onProgress: onProgress);
+    final count = await super.importFromFile(
+      filePath,
+      onProgress: onProgress,
+      onFinishing: onFinishing,
+    );
     await afterImport();
     return count;
   }

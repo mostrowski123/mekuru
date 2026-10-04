@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
+import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
@@ -125,6 +126,10 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
       if (jitendex.isDownloading) jitendex.progress,
       if (jpdb.isDownloading) jpdb.progress,
     ];
+    // The import's finish reports nothing, so the bar moves on its own.
+    final finishing = inFlight.every(
+      (p) => p >= DictionaryDownloadService.finishingProgress,
+    );
     final error = widget.showProgress
         ? dictionaryDownloadError(l10n, jitendex.failure) ?? jpdb.error
         : null;
@@ -164,8 +169,19 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
           if (widget.showProgress && inFlight.isNotEmpty) ...[
             const SizedBox(height: 12),
             LinearProgressIndicator(
-              value: inFlight.reduce((a, b) => a + b) / inFlight.length,
+              value: finishing
+                  ? null
+                  : inFlight.reduce((a, b) => a + b) / inFlight.length,
             ),
+            if (finishing) ...[
+              const SizedBox(height: 4),
+              Text(
+                l10n.dictionaryImportFinishing,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
           if (error != null) ...[
             const SizedBox(height: 8),

@@ -26,10 +26,15 @@ class DictionaryDownloadService {
   /// The part of the progress spent downloading; importing takes the rest.
   static const downloadShare = 0.7;
 
+  /// Where the progress waits while the import finishes, which for a big
+  /// dictionary takes a while without reports.
+  static const finishingProgress = 0.95;
+
   /// Downloads [url] to a temporary file and imports it.
   ///
-  /// [onProgress] gets 0–[downloadShare] while downloading, then up to 0.95
-  /// while importing and 1.0 when done. [asset] names the download in
+  /// [onProgress] gets 0–[downloadShare] while downloading, then up to
+  /// [finishingProgress] while importing, stays there while the import
+  /// finishes, and gets 1.0 when done. [asset] names the download in
   /// telemetry. With [requiredBytes], throws [InsufficientSpaceException]
   /// before downloading when less is free.
   ///
@@ -87,12 +92,14 @@ class DictionaryDownloadService {
             path,
             onProgress: (done, total) {
               if (total > 0) {
-                report(downloadShare + (0.95 - downloadShare) * done / total);
+                report(
+                  downloadShare +
+                      (finishingProgress - downloadShare) * done / total,
+                );
               }
             },
+            onFinishing: () => report(finishingProgress),
           );
-          // Saved: a stop now would only misreport a finished install.
-          onProgress?.call(0.95);
         },
       );
       onProgress?.call(1.0);

@@ -144,9 +144,13 @@ class DictionaryImporter {
   ///
   /// Returns the total number of entries imported.
   /// [onProgress] is called with (processedEntries, totalEntries) during batch insert.
+  /// [onFinishing] is called once every entry is stored, before the search
+  /// index is built and the import saved: a big dictionary spends a while
+  /// there without progress.
   Future<int> importFromFile(
     String filePath, {
     void Function(int processed, int total)? onProgress,
+    void Function()? onFinishing,
   }) async {
     final file = File(filePath);
     if (!await file.exists()) {
@@ -296,6 +300,7 @@ class DictionaryImporter {
         if (dictionaryId == null) {
           throw const FormatException('ZIP import stream produced no metadata');
         }
+        onFinishing?.call();
         await _repository.finishGlossaryFtsBulkLoad(dictionaryId);
 
         return insertedEntries;

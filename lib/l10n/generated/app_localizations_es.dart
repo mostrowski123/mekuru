@@ -3569,6 +3569,9 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get dictionaryImportFinishing => 'Terminando… puede tardar un minuto';
+
+  @override
   String dictionaryImportEntriesProgress({
     required int processed,
     required int total,

@@ -56,10 +56,7 @@ class CatalogDictionaryTile extends ConsumerWidget {
           ),
         ),
         if (state.isDownloading)
-          DownloadProgress(
-            progress: state.progress,
-            label: dictionaryDownloadLabel(l10n, state.progress),
-          ),
+          DictionaryDownloadProgress(progress: state.progress),
         if (dictionaryDownloadError(l10n, state.failure) case final error?)
           DownloadErrorText(text: error),
         Padding(

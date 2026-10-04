@@ -5772,6 +5772,12 @@ abstract class AppLocalizations {
     required int total,
   });
 
+  /// Shown under a dictionary's progress bar once its entries are stored, while the import finishes; a big dictionary stays here a while without progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Finishing up… this may take a minute'**
+  String get dictionaryImportFinishing;
+
   /// Small line under the Dictionary Manager import progress bar.
   ///
   /// In en, this message translates to:

@@ -3541,6 +3541,10 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get dictionaryImportFinishing =>
+      'Menyelesaikan… mungkin perlu waktu sebentar';
+
+  @override
   String dictionaryImportEntriesProgress({
     required int processed,
     required int total,

@@ -5,20 +5,36 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // Rows shown under a download tile: progress, an error, an attribution.
 
-/// The label for [DictionaryDownloadService] progress: how much of the zip
-/// has arrived, then the import.
-String dictionaryDownloadLabel(AppLocalizations l10n, double progress) {
-  const share = DictionaryDownloadService.downloadShare;
-  return progress < share
-      ? l10n.downloadsDownloadingPercent(
+/// [DictionaryDownloadService] progress: how much of the zip has arrived,
+/// then the import. Its silent finish gets a moving bar, so it does not
+/// look stuck.
+class DictionaryDownloadProgress extends StatelessWidget {
+  const DictionaryDownloadProgress({super.key, required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    const share = DictionaryDownloadService.downloadShare;
+    final finishing = progress >= DictionaryDownloadService.finishingProgress;
+    return DownloadProgress(
+      progress: finishing ? null : progress,
+      label: switch (progress) {
+        < share => l10n.downloadsDownloadingPercent(
           percent: (progress / share * 100).toInt(),
-        )
-      : l10n.downloadsImporting;
+        ),
+        _ when finishing => l10n.dictionaryImportFinishing,
+        _ => l10n.downloadsImporting,
+      },
+    );
+  }
 }
 
 class DownloadProgress extends StatelessWidget {
@@ -28,7 +44,8 @@ class DownloadProgress extends StatelessWidget {
     required this.label,
   });
 
-  final double progress;
+  /// Null while there is no telling how far along it is.
+  final double? progress;
   final String label;
 
   @override

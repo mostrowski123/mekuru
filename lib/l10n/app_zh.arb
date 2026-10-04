@@ -2937,6 +2937,7 @@
   "dictionaryImportParsingCollection": "正在解析词典集合…",
   "dictionaryImportImportingCollection": "正在导入 {name}…（{current}/{total} 个词典）",
   "dictionaryImportImportingEntries": "正在导入… {processed}/{total}",
+  "dictionaryImportFinishing": "即将完成…可能需要一分钟",
   "dictionaryImportEntriesProgress": "{processed}/{total} 个词条",
   "dictionaryImportedEntries": "{count, plural, =1{成功导入 1 个词条！} other{成功导入 {count} 个词条！}}",
   "dictionaryImportedCollection": "{dictionaries, plural, =1{已导入 1 个词典（{entries} 个词条）} other{已导入 {dictionaries} 个词典（{entries} 个词条）}}",
