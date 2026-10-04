@@ -94,22 +94,28 @@ class _FakeJpdbFreqNotifier extends JpdbFreqNotifier {
   }
 }
 
-/// Records [download] calls instead of downloading, then shows [result].
+/// Records [download] calls instead of downloading, then shows [result];
+/// [delete] calls go to [onDelete].
 class FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
   FakeCatalogDownloadNotifier(
     super.entry,
-    this.onDownload, [
+    this.onDownload, {
     this.result = const CatalogDownloadState(),
-  ]);
+    this.onDelete,
+  });
 
   final void Function(CatalogDictionary entry) onDownload;
   final CatalogDownloadState result;
+  final void Function(int dictionaryId)? onDelete;
 
   @override
   Future<void> download() async {
     onDownload(entry);
     state = result;
   }
+
+  @override
+  Future<void> delete(int dictionaryId) async => onDelete?.call(dictionaryId);
 }
 
 class _FakeKanjidicNotifier extends KanjidicNotifier {

@@ -2908,7 +2908,6 @@
   "catalogJmdictLanguageDescription": "JMdict dengan definisi dalam bahasa ini.",
   "catalogKanjidicLanguageDescription": "Arti kanji dalam bahasa ini, dengan cara baca on dan kun.",
   "catalogSizes": "Unduhan {download} · sekitar {installed} di perangkat",
-  "catalogInstalled": "Terpasang",
   "catalogMobileDataBody": "Wi-Fi tidak terhubung. Ukuran kamus ini sekitar {size}. Lanjutkan dengan data seluler?",
   "catalogFindMoreTitle": "Cari Kamus Lainnya",
   "catalogFindMoreBody": "Situs-situs ini mencantumkan lebih banyak kamus Yomitan, termasuk yang tidak dapat diunduh Mekuru untuk Anda. Unduh file .zip kamus, lalu impor di Pengelola Kamus dengan tombol +.",

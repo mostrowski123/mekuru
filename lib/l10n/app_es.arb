@@ -2908,7 +2908,6 @@
   "catalogJmdictLanguageDescription": "JMdict con definiciones en este idioma.",
   "catalogKanjidicLanguageDescription": "Significados de kanji en este idioma, con lecturas on y kun.",
   "catalogSizes": "Descarga de {download} · unos {installed} en el dispositivo",
-  "catalogInstalled": "Instalado",
   "catalogMobileDataBody": "No hay conexión Wi-Fi. Este diccionario ocupa unos {size}. ¿Continuar con datos móviles?",
   "catalogFindMoreTitle": "Encontrar más diccionarios",
   "catalogFindMoreBody": "Estos sitios enumeran muchos más diccionarios Yomitan, incluidos algunos que Mekuru no puede descargar por ti. Descarga el archivo .zip de un diccionario y luego impórtalo en el Gestor de diccionarios con el botón +.",

@@ -5678,12 +5678,6 @@ abstract class AppLocalizations {
   /// **'{download} download · about {installed} on device'**
   String catalogSizes({required String download, required String installed});
 
-  /// Accessibility label of the check mark on an installed catalog dictionary.
-  ///
-  /// In en, this message translates to:
-  /// **'Installed'**
-  String get catalogInstalled;
-
   /// Body of the dialog asking before a catalog dictionary downloads over mobile data. size looks like '39 MB'.
   ///
   /// In en, this message translates to:

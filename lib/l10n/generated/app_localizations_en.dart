@@ -3456,9 +3456,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get catalogInstalled => 'Installed';
-
-  @override
   String catalogMobileDataBody({required String size}) {
     return 'Wi-Fi is not connected. This dictionary is about $size. Continue using mobile data?';
   }

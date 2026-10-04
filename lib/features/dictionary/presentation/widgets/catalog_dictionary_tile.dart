@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/delete_dictionary_dialog.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -13,7 +14,8 @@ import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// One downloadable dictionary: what it is, its sizes and license, and a
-/// download button that turns into progress, then a check once installed.
+/// download button that turns into progress, then into Delete once
+/// installed (a newer version comes from deleting and downloading again).
 class CatalogDictionaryTile extends ConsumerWidget {
   const CatalogDictionaryTile({super.key, required this.entry});
 
@@ -47,8 +49,8 @@ class CatalogDictionaryTile extends ConsumerWidget {
           trailing: _trailing(
             context,
             ref,
-            busy: state.isDownloading,
-            installed: installedId != null,
+            busy: state.isDownloading || state.isDeleting,
+            installedId: installedId,
           ),
         ),
         DictionaryDownloadStatus(state: state),
@@ -67,7 +69,7 @@ class CatalogDictionaryTile extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref, {
     required bool busy,
-    required bool installed,
+    required int? installedId,
   }) {
     if (busy) {
       return const SizedBox(
@@ -76,11 +78,14 @@ class CatalogDictionaryTile extends ConsumerWidget {
         child: CircularProgressIndicator(strokeWidth: 2),
       );
     }
-    if (installed) {
-      return Icon(
-        Icons.check_circle,
-        color: Theme.of(context).colorScheme.primary,
-        semanticLabel: context.l10n.catalogInstalled,
+    if (installedId != null) {
+      return IconButton(
+        icon: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        tooltip: context.l10n.dictionaryManagerDeleteTitle,
+        onPressed: () => _delete(context, ref, installedId),
       );
     }
     return FilledButton.tonal(
@@ -91,6 +96,14 @@ class CatalogDictionaryTile extends ConsumerWidget {
       ),
       child: Text(context.l10n.commonDownload),
     );
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref, int id) async {
+    // Read now: the tile can unmount while the dialog is up.
+    final notifier = ref.read(catalogDownloadProvider(entry).notifier);
+    if (await confirmDeleteDictionary(context, entry.displayName)) {
+      unawaited(notifier.delete(id));
+    }
   }
 }
 

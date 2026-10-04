@@ -15,6 +15,7 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/lookup_benchmark.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/delete_dictionary_dialog.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
@@ -627,32 +628,10 @@ class _DictionaryManagerScreenState
   }
 
   Future<void> _confirmDelete(BuildContext context, int id, String name) async {
-    final l10n = context.l10n;
     // Resolved before the dialog opens: the screen can unmount while it's up.
     final container = ProviderScope.containerOf(context, listen: false);
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.dictionaryManagerDeleteTitle),
-        content: Text(l10n.dictionaryManagerDeleteBody(name: name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            child: Text(l10n.commonDelete),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
+    if (await confirmDeleteDictionary(context, name)) {
       if (mounted) setState(() => _deleting.add(id));
       try {
         await container.read(dictionaryRepositoryProvider).deleteDictionary(id);

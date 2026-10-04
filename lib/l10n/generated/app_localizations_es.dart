@@ -3502,9 +3502,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get catalogInstalled => 'Instalado';
-
-  @override
   String catalogMobileDataBody({required String size}) {
     return 'No hay conexión Wi-Fi. Este diccionario ocupa unos $size. ¿Continuar con datos móviles?';
   }

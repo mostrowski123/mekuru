@@ -4437,10 +4437,6 @@
       }
     }
   },
-  "catalogInstalled": "Installed",
-  "@catalogInstalled": {
-    "description": "Accessibility label of the check mark on an installed catalog dictionary."
-  },
   "catalogMobileDataBody": "Wi-Fi is not connected. This dictionary is about {size}. Continue using mobile data?",
   "@catalogMobileDataBody": {
     "description": "Body of the dialog asking before a catalog dictionary downloads over mobile data. size looks like '39 MB'.",

@@ -3474,9 +3474,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get catalogInstalled => 'Terpasang';
-
-  @override
   String catalogMobileDataBody({required String size}) {
     return 'Wi-Fi tidak terhubung. Ukuran kamus ini sekitar $size. Lanjutkan dengan data seluler?';
   }

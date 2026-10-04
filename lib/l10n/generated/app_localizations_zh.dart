@@ -3301,9 +3301,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get catalogInstalled => '已安装';
-
-  @override
   String catalogMobileDataBody({required String size}) {
     return '未连接 Wi-Fi。该词典大小约为 $size。是否继续使用移动数据？';
   }
@@ -6699,9 +6696,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String catalogSizes({required String download, required String installed}) {
     return '下载 $download · 设备上约占 $installed';
   }
-
-  @override
-  String get catalogInstalled => '已安装';
 
   @override
   String catalogMobileDataBody({required String size}) {

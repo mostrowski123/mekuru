@@ -9,12 +9,14 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 class CatalogDownloadState {
   const CatalogDownloadState({
     this.isDownloading = false,
+    this.isDeleting = false,
     this.progress = 0,
     this.error,
     this.neededBytes,
   });
 
   final bool isDownloading;
+  final bool isDeleting;
 
   /// [DictionaryDownloadService] progress: downloading, then importing.
   final double progress;
@@ -39,7 +41,7 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
   /// Downloads and imports [entry]. Does nothing while a download runs or
   /// once the dictionary is installed.
   Future<void> download() async {
-    if (state.isDownloading) return;
+    if (state.isDownloading || state.isDeleting) return;
     state = const CatalogDownloadState(isDownloading: true);
     try {
       final repository = ref.read(dictionaryRepositoryProvider);
@@ -63,6 +65,20 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
       state = CatalogDownloadState(neededBytes: e.neededBytes);
     } catch (e) {
       state = CatalogDownloadState(error: '$e');
+    }
+  }
+
+  /// Deletes [entry], installed as [dictionaryId]. A big dictionary takes a
+  /// while, so the tile shows it until done, also after its screen closes.
+  Future<void> delete(int dictionaryId) async {
+    if (state.isDownloading || state.isDeleting) return;
+    state = const CatalogDownloadState(isDeleting: true);
+    try {
+      await ref
+          .read(dictionaryRepositoryProvider)
+          .deleteDictionary(dictionaryId);
+    } finally {
+      state = const CatalogDownloadState();
     }
   }
 }

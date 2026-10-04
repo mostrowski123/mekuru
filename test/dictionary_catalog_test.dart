@@ -1,7 +1,10 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 
 import 'shared/test_database.dart';
@@ -104,5 +107,22 @@ void main() {
       '2026.10.02',
     );
     expect(dictionaryVersion(meta('My dictionary')), isNull);
+  });
+
+  test('deleting a catalog dictionary removes it', () async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final repo = DictionaryRepository(db);
+    final id = await repo.insertDictionary('Jitendex.org [2026-10-03]');
+    final container = ProviderContainer(
+      overrides: [dictionaryRepositoryProvider.overrideWithValue(repo)],
+    );
+    addTearDown(container.dispose);
+    final download = catalogDownloadProvider(CatalogDictionary.jitendex);
+
+    await container.read(download.notifier).delete(id);
+
+    expect(await repo.getAllDictionaries(), isEmpty);
+    expect(container.read(download).isDeleting, isFalse);
   });
 }

@@ -12,8 +12,12 @@ import 'test_app.dart';
 
 void main() {
   late List<CatalogDictionary> started;
+  late List<int> deleted;
 
-  setUp(() => started = []);
+  setUp(() {
+    started = [];
+    deleted = [];
+  });
 
   /// Installed dictionaries get ids 1, 2, … in [installed] order.
   Future<void> pumpCatalog(
@@ -41,7 +45,8 @@ void main() {
               () => FakeCatalogDownloadNotifier(
                 entry,
                 started.add,
-                afterDownload,
+                result: afterDownload,
+                onDelete: deleted.add,
               ),
             ),
         ],
@@ -74,7 +79,7 @@ void main() {
     }
   });
 
-  testWidgets('Download starts that dictionary; installed ones show a check', (
+  testWidgets('Download starts that dictionary; installed ones offer Delete', (
     tester,
   ) async {
     mockWifiConnected(true);
@@ -83,7 +88,7 @@ void main() {
     expect(
       find.descendant(
         of: tileOf('Wiktionary (English)'),
-        matching: find.byIcon(Icons.check_circle),
+        matching: find.byTooltip('Delete Dictionary'),
       ),
       findsOneWidget,
     );
@@ -92,6 +97,40 @@ void main() {
     await tester.tap(downloadButtonOf('Jitendex'));
     await tester.pumpAndSettle();
     expect(started, [CatalogDictionary.jitendex]);
+  });
+
+  testWidgets('Delete asks first, then deletes that dictionary', (
+    tester,
+  ) async {
+    // A newer version is installed by deleting the dictionary and
+    // downloading it again.
+    await pumpCatalog(
+      tester,
+      installed: [
+        CatalogDictionary.jitendex,
+        CatalogDictionary.wiktionaryEnglish,
+      ],
+    );
+    Finder deleteOf(String name) => find.descendant(
+      of: tileOf(name),
+      matching: find.byTooltip('Delete Dictionary'),
+    );
+
+    await tester.tap(deleteOf('Wiktionary (English)'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Delete "Wiktionary (English)"'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(deleted, isEmpty);
+
+    await tester.tap(deleteOf('Wiktionary (English)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(deleted, [2]);
   });
 
   testWidgets('an install without enough free space says how much more '

@@ -2908,7 +2908,6 @@
   "catalogJmdictLanguageDescription": "释义为该语言的 JMdict。",
   "catalogKanjidicLanguageDescription": "该语言的汉字释义，附音读和训读。",
   "catalogSizes": "下载 {download} · 设备上约占 {installed}",
-  "catalogInstalled": "已安装",
   "catalogMobileDataBody": "未连接 Wi-Fi。该词典大小约为 {size}。是否继续使用移动数据？",
   "catalogFindMoreTitle": "查找更多词典",
   "catalogFindMoreBody": "这些网站列出了更多 Yomitan 词典，包括 Mekuru 无法为你下载的词典。下载词典的 .zip 文件，然后在词典管理中点击 + 按钮导入。",
