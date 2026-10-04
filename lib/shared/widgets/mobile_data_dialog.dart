@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/haptics.dart';
 
 /// Asks "Download over mobile data?" before a large download starts off
 /// Wi-Fi. [body] names the size. True only when the user picks Download.
@@ -32,4 +35,19 @@ Future<bool> okToDownload(BuildContext context, String body) async {
   if (await isOnWifi()) return true;
   if (!context.mounted) return false;
   return confirmMobileData(context, body);
+}
+
+/// Starts [download] of a dictionary of [size] on Wi-Fi, or off it once the
+/// user accepts mobile data. A dictionary download that started on Wi-Fi
+/// stops if Wi-Fi goes, and tapping Download again must not then go on over
+/// mobile data unasked. Pass the notifier's method itself: the tile can
+/// unmount while the dialog is up.
+Future<void> askThenDownload(
+  BuildContext context,
+  String size,
+  Future<void> Function() download,
+) async {
+  AppHaptics.light();
+  final body = context.l10n.catalogMobileDataBody(size: size);
+  if (await okToDownload(context, body)) unawaited(download());
 }

@@ -31,7 +31,7 @@ List<Override> fakeDownloadNotifierOverrides(
       ),
     ),
   jmdictProvider.overrideWith(
-    () => _FakeJmdictNotifier(
+    () => FakeJmdictNotifier(
       (v) => started.add('jmdict:${v.name}'),
       JmdictState(isDownloading: jmdictDownloading),
     ),
@@ -65,8 +65,8 @@ void mockWifiConnected(bool connected) {
   });
 }
 
-class _FakeJmdictNotifier extends JmdictNotifier {
-  _FakeJmdictNotifier(this.onDownload, this.initial);
+class FakeJmdictNotifier extends JmdictNotifier {
+  FakeJmdictNotifier(this.onDownload, this.initial);
 
   final void Function(YomitanDictType variant) onDownload;
   final JmdictState initial;

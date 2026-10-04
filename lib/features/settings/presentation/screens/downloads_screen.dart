@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +6,7 @@ import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catal
 import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
-import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
@@ -38,7 +34,6 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(kanjiVgProvider.notifier).checkStatus();
       ref.read(jpdbFreqProvider.notifier).checkStatus();
-      ref.read(jmdictProvider.notifier).checkStatus();
       ref.read(kanjidicProvider.notifier).checkStatus();
       ref.read(enhancedFuriganaDictProvider.notifier).checkStatus();
       ref
@@ -52,7 +47,6 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     final l10n = context.l10n;
     final kanjiVgState = ref.watch(kanjiVgProvider);
     final jpdbFreqState = ref.watch(jpdbFreqProvider);
-    final jmdictState = ref.watch(jmdictProvider);
     final kanjidicState = ref.watch(kanjidicProvider);
     final enhancedFuriganaState = ref.watch(enhancedFuriganaDictProvider);
     final theme = Theme.of(context);
@@ -67,29 +61,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             child: StarterPackCard(showProgress: false),
           ),
           SettingsSectionHeader(title: l10n.downloadsSectionDictionaries),
-
-          // JMdict English
-          _JmdictTile(state: jmdictState, theme: theme),
-          if (jmdictState.isDownloading)
-            DownloadProgress(
-              progress: jmdictState.progress,
-              label: dictionaryDownloadLabel(l10n, jmdictState.progress),
-            ),
-          if (jmdictState.error != null)
-            DownloadErrorText(text: jmdictState.error!),
-          if (jmdictState.successMessage != null)
-            _SuccessText(text: jmdictState.successMessage!),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: DownloadAttributionText(
-              linkText: 'JMdict',
-              url: edrdgJmdictUrl,
-              suffix:
-                  ' by the Electronic Dictionary Research and '
-                  'Development Group (EDRDG), licensed under CC BY-SA 4.0.',
-            ),
-          ),
-          const SizedBox(height: 8),
+          const CatalogDictionaryTile(entry: CatalogDictionary.jitendex),
 
           // KANJIDIC
           _KanjidicTile(state: kanjidicState, theme: theme),
@@ -101,7 +73,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           if (kanjidicState.error != null)
             DownloadErrorText(text: kanjidicState.error!),
           if (kanjidicState.successMessage != null)
-            _SuccessText(text: kanjidicState.successMessage!),
+            DownloadSuccessText(text: kanjidicState.successMessage!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
@@ -113,8 +85,6 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             ),
           ),
           const SizedBox(height: 8),
-
-          const CatalogDictionaryTile(entry: CatalogDictionary.jitendex),
           ListTile(
             leading: Icon(
               Icons.library_add_outlined,
@@ -149,7 +119,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           if (kanjiVgState.error != null)
             DownloadErrorText(text: kanjiVgState.error!),
           if (kanjiVgState.successMessage != null)
-            _SuccessText(text: kanjiVgState.successMessage!),
+            DownloadSuccessText(text: kanjiVgState.successMessage!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
@@ -171,7 +141,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           if (jpdbFreqState.error != null)
             DownloadErrorText(text: jpdbFreqState.error!),
           if (jpdbFreqState.successMessage != null)
-            _SuccessText(text: jpdbFreqState.successMessage!),
+            DownloadSuccessText(text: jpdbFreqState.successMessage!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
@@ -217,7 +187,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           if (enhancedFuriganaState.error != null)
             DownloadErrorText(text: enhancedFuriganaState.error!),
           if (enhancedFuriganaState.successMessage != null)
-            _SuccessText(text: enhancedFuriganaState.successMessage!),
+            DownloadSuccessText(text: enhancedFuriganaState.successMessage!),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: DownloadAttributionText(
@@ -243,49 +213,12 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
   }
 }
 
-// ── Shared helper widgets ──
-
-class _SuccessText extends StatelessWidget {
-  const _SuccessText({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.green, fontSize: 13),
-      ),
-    );
-  }
-}
-
 // ── Download tile widgets ──
 
-// Zip sizes for the mobile-data question, rounded: the JMdict English
-// releases were 15.6 and 18.1 MB and KANJIDIC English 0.7 MB in October
-// 2026, the JPDB v2.2 zip 6.0 MB.
-const _jmdictSize = '16 MB';
-const _jmdictExamplesSize = '18 MB';
+// Zip sizes for the mobile-data question, rounded: KANJIDIC English was
+// 0.7 MB in October 2026, the JPDB v2.2 zip 6.0 MB.
 const _kanjidicSize = '0.7 MB';
 const _jpdbSize = '6 MB';
-
-/// Starts [download] of a dictionary of [size] on Wi-Fi, or off it once the
-/// user accepts mobile data. A dictionary download that started on Wi-Fi
-/// stops if Wi-Fi goes, and tapping Download again must not then go on over
-/// mobile data unasked. Pass the notifier's method itself: the tile can
-/// unmount while the dialog is up.
-Future<void> _askThenDownload(
-  BuildContext context,
-  String size,
-  Future<void> Function() download,
-) async {
-  AppHaptics.light();
-  final body = context.l10n.catalogMobileDataBody(size: size);
-  if (await okToDownload(context, body)) unawaited(download());
-}
 
 class _KanjiVgTile extends ConsumerWidget {
   const _KanjiVgTile({required this.state, required this.theme});
@@ -408,7 +341,7 @@ class _JpdbFreqTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () => _askThenDownload(
+      onPressed: () => askThenDownload(
         context,
         _jpdbSize,
         ref.read(jpdbFreqProvider.notifier).download,
@@ -434,138 +367,6 @@ class _JpdbFreqTile extends ConsumerWidget {
             onPressed: () {
               Navigator.of(ctx).pop();
               container.read(jpdbFreqProvider.notifier).delete();
-            },
-            child: Text(
-              ctx.l10n.commonDelete,
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _JmdictTile extends ConsumerWidget {
-  const _JmdictTile({required this.state, required this.theme});
-
-  final JmdictState state;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final subtitle = state.isImported
-        ? l10n.downloadsJmdictDownloaded
-        : l10n.downloadsJmdictDescription;
-
-    return ListTile(
-      leading: Icon(Icons.translate, color: theme.colorScheme.primary),
-      title: Text(l10n.downloadsStarterPackJmdict),
-      subtitle: Text(subtitle),
-      trailing: _buildTrailing(context, ref),
-    );
-  }
-
-  Widget _buildTrailing(BuildContext context, WidgetRef ref) {
-    if (state.isDownloading || state.isDeleting) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    if (state.isImported) {
-      return IconButton(
-        icon: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        tooltip: context.l10n.downloadsDeleteJmdictTooltip,
-        onPressed: () => _confirmDelete(context),
-      );
-    }
-
-    return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        _showVariantPicker(context);
-      },
-      child: Text(context.l10n.commonDownload),
-    );
-  }
-
-  void _showVariantPicker(BuildContext context) {
-    // Resolved before the sheet opens: the tile can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                ctx.l10n.downloadsChooseJmdictVariant,
-                style: Theme.of(ctx).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: Text(ctx.l10n.downloadsStarterPackJmdict),
-              subtitle: Text(ctx.l10n.downloadsJmdictStandardSubtitle),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                _askThenDownload(
-                  context,
-                  _jmdictSize,
-                  () => container
-                      .read(jmdictProvider.notifier)
-                      .download(YomitanDictType.jmdictEnglish),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: Text(ctx.l10n.downloadsJmdictExamplesTitle),
-              subtitle: Text(ctx.l10n.downloadsJmdictExamplesSubtitle),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                _askThenDownload(
-                  context,
-                  _jmdictExamplesSize,
-                  () => container
-                      .read(jmdictProvider.notifier)
-                      .download(YomitanDictType.jmdictEnglishWithExamples),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    // Resolved before the dialog opens: the tile can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.downloadsDeleteJmdictTitle),
-        content: Text(ctx.l10n.downloadsDeleteJmdictBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              container.read(jmdictProvider.notifier).delete();
             },
             child: Text(
               ctx.l10n.commonDelete,
@@ -623,7 +424,7 @@ class _KanjidicTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () => _askThenDownload(
+      onPressed: () => askThenDownload(
         context,
         _kanjidicSize,
         ref.read(kanjidicProvider.notifier).download,

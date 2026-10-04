@@ -74,6 +74,23 @@ class DownloadErrorText extends StatelessWidget {
   }
 }
 
+class DownloadSuccessText extends StatelessWidget {
+  const DownloadSuccessText({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.green, fontSize: 13),
+      ),
+    );
+  }
+}
+
 class DownloadAttributionText extends StatelessWidget {
   const DownloadAttributionText({
     super.key,

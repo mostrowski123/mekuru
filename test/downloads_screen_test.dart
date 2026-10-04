@@ -94,10 +94,8 @@ void main() {
     );
     await tester.pump();
 
-    // The JMdict tile's progress never settles: pump a fixed time instead.
     await tester.tap(find.text('Install Starter Pack'));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
 
     expect(started, ['jpdb']);
   });
@@ -143,8 +141,8 @@ void main() {
     });
   }
 
-  testWidgets('off Wi-Fi, the JMdict, KANJIDIC and word frequency downloads '
-      'ask before using mobile data', (tester) async {
+  testWidgets('off Wi-Fi, the KANJIDIC and word frequency downloads ask '
+      'before using mobile data', (tester) async {
     // Each stops if Wi-Fi goes, and its tile then says to tap Download
     // again: that must not go on over mobile data unasked.
     SharedPreferences.setMockInitialValues({});
@@ -173,16 +171,6 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    await tester.tap(downloadOf('JMdict English'));
-    await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(
-        of: find.byType(BottomSheet),
-        matching: find.text('JMdict English'),
-      ),
-    );
-    await agreeTo('16 MB');
-
     await tester.tap(downloadOf('KANJIDIC'));
     await agreeTo('0.7 MB');
 
@@ -190,6 +178,6 @@ void main() {
     await tester.tap(downloadOf('Word Frequency'));
     await agreeTo('6 MB');
 
-    expect(started, ['jmdict:jmdictEnglish', 'kanjidic', 'jpdb']);
+    expect(started, ['kanjidic', 'jpdb']);
   });
 }

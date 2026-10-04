@@ -9,16 +9,20 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
+import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 
 import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
 
 void main() {
   late List<CatalogDictionary> started;
+  late List<YomitanDictType> jmdictStarted;
   late List<int> deleted;
 
   setUp(() {
     started = [];
+    jmdictStarted = [];
     deleted = [];
   });
 
@@ -52,6 +56,9 @@ void main() {
                 onDelete: deleted.add,
               ),
             ),
+          jmdictProvider.overrideWith(
+            () => FakeJmdictNotifier(jmdictStarted.add, const JmdictState()),
+          ),
         ],
         child: buildLocalizedTestApp(home: const DictionaryCatalogScreen()),
       ),
@@ -70,6 +77,7 @@ void main() {
     for (final text in [
       'Japanese–English',
       'Jitendex',
+      'JMdict English',
       'Japanese–Japanese',
       'Names',
       'JMnedict',
@@ -200,5 +208,31 @@ void main() {
     await tester.tap(inDialog('Download'));
     await tester.pumpAndSettle();
     expect(started, [CatalogDictionary.jitendex]);
+  });
+
+  testWidgets('off Wi-Fi the JMdict English download asks before using '
+      'mobile data', (tester) async {
+    mockWifiConnected(false);
+    await pumpCatalog(tester);
+
+    await tester.tap(downloadButtonOf('JMdict English'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('JMdict English'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('about 16 MB'), findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Download'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(jmdictStarted, [YomitanDictType.jmdictEnglish]);
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
+import 'package:mekuru/features/settings/presentation/widgets/jmdict_download_tile.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
@@ -25,6 +26,8 @@ class DictionaryCatalogScreen extends StatelessWidget {
             SettingsSectionHeader(title: _sectionTitle(l10n, section)),
             for (final entry in CatalogDictionary.values)
               if (entry.section == section) CatalogDictionaryTile(entry: entry),
+            if (section == CatalogSection.japaneseEnglish)
+              const JmdictDownloadTile(),
             const Divider(),
           ],
           SettingsSectionHeader(title: l10n.catalogFindMoreTitle),
