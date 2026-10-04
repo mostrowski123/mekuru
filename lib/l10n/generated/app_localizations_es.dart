@@ -561,6 +561,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get downloadsStarterPackWordFrequency => 'Frecuencia de palabras';
 
   @override
+  String downloadsStarterPackMobileDataBody({required String size}) {
+    return 'No hay conexión Wi-Fi. Los diccionarios ocupan unos $size. ¿Continuar con datos móviles?';
+  }
+
+  @override
   String get downloadsInstallStarterPack => 'Instalar paquete inicial';
 
   @override

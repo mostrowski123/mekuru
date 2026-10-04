@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
@@ -11,21 +12,53 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 
+// Download sizes for the mobile-data prompt, rounded up: the JMdict English
+// release zip was 15.6 MB and the JPDB v2.2 zip 6.0 MB in October 2026.
+const _jmdictMb = 16;
+const _jpdbMb = 6;
+
 /// Starts whichever recommended dictionaries (JMdict English, JPDB word
-/// frequency) aren't installed yet. The downloads live in app-wide
-/// notifiers, so they keep going when the calling screen goes away.
+/// frequency) aren't installed yet, asking first when Wi-Fi isn't
+/// connected. The downloads live in app-wide notifiers, so they keep going
+/// when the calling screen goes away.
 Future<void> installStarterPack(BuildContext context) async {
   final container = ProviderScope.containerOf(context, listen: false);
   final jmdict = container.read(jmdictProvider.notifier);
   final jpdb = container.read(jpdbFreqProvider.notifier);
   // Fresh status first, so nothing installed is downloaded again.
   await Future.wait([jmdict.checkStatus(), jpdb.checkStatus()]);
-  if (!container.read(jmdictProvider).isImported) {
-    unawaited(jmdict.download(YomitanDictType.jmdictEnglish));
+  final needJmdict = !container.read(jmdictProvider).isImported;
+  final needJpdb = !container.read(jpdbFreqProvider).isImported;
+  if (!needJmdict && !needJpdb) return;
+
+  if (!await isOnWifi()) {
+    if (!context.mounted) return;
+    final size = (needJmdict ? _jmdictMb : 0) + (needJpdb ? _jpdbMb : 0);
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.localOcrMobileDownloadTitle),
+        content: Text(
+          l10n.downloadsStarterPackMobileDataBody(size: '$size MB'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.commonDownload),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
   }
-  if (!container.read(jpdbFreqProvider).isImported) {
-    unawaited(jpdb.download());
-  }
+
+  if (needJmdict) unawaited(jmdict.download(YomitanDictType.jmdictEnglish));
+  if (needJpdb) unawaited(jpdb.download());
 }
 
 /// One-tap install of the recommended dictionaries: JMdict English plus JPDB

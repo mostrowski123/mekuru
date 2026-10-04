@@ -680,6 +680,16 @@
   "@downloadsStarterPackWordFrequency": {
     "description": "Starter pack row label for word frequency data."
   },
+  "downloadsStarterPackMobileDataBody": "Wi-Fi tidak terhubung. Ukuran kamus sekitar {size}. Lanjutkan dengan data seluler?",
+  "@downloadsStarterPackMobileDataBody": {
+    "description": "Body of the mobile-data prompt before the dictionary starter pack downloads.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "22 MB"
+      }
+    }
+  },
   "downloadsInstallStarterPack": "Instal Paket Awal",
   "@downloadsInstallStarterPack": {
     "description": "Button label to install the starter pack."

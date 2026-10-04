@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
@@ -19,6 +21,20 @@ List<Override> fakeDownloadNotifierOverrides(List<String> started) => [
   kanjidicProvider.overrideWith(_FakeKanjidicNotifier.new),
   kanjiVgProvider.overrideWith(_FakeKanjiVgNotifier.new),
 ];
+
+/// Answers the Android Wi-Fi check that `isOnWifi()` makes (tests run as
+/// Android) for the rest of the test.
+void mockWifiConnected(bool connected) {
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(
+    LocalMangaOcr.channel,
+    (call) async => call.method == 'isWifiConnected' ? connected : null,
+  );
+  addTearDown(
+    () => messenger.setMockMethodCallHandler(LocalMangaOcr.channel, null),
+  );
+}
 
 class _FakeJmdictNotifier extends JmdictNotifier {
   _FakeJmdictNotifier(this.onDownload);

@@ -553,6 +553,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get downloadsStarterPackWordFrequency => 'Word Frequency';
 
   @override
+  String downloadsStarterPackMobileDataBody({required String size}) {
+    return 'Wi-Fi is not connected. The dictionaries are about $size. Continue using mobile data?';
+  }
+
+  @override
   String get downloadsInstallStarterPack => 'Install Starter Pack';
 
   @override

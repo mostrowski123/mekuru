@@ -163,6 +163,7 @@ void main() {
     'the starter pack button installs in one tap and opens Downloads',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
+      mockWifiConnected(true);
       final started = <String>[];
       await tester.pumpWidget(
         ProviderScope(

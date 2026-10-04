@@ -718,6 +718,16 @@
   "@downloadsStarterPackWordFrequency": {
     "description": "Starter pack row label for word frequency data."
   },
+  "downloadsStarterPackMobileDataBody": "Wi-Fi is not connected. The dictionaries are about {size}. Continue using mobile data?",
+  "@downloadsStarterPackMobileDataBody": {
+    "description": "Body of the mobile-data prompt before the dictionary starter pack downloads.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "22 MB"
+      }
+    }
+  },
   "downloadsInstallStarterPack": "Install Starter Pack",
   "@downloadsInstallStarterPack": {
     "description": "Button label to install the starter pack."

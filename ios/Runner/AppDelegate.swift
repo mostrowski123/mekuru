@@ -1,6 +1,7 @@
 import BackgroundTasks
 import Flutter
 import ImageIO
+import Network
 import StoreKit
 import UIKit
 import UniformTypeIdentifiers
@@ -21,6 +22,7 @@ import onnxruntime_objc
     registerStorageChannel(messenger: engineBridge.applicationRegistrar.messenger())
     registerVisionOcrChannel(messenger: engineBridge.applicationRegistrar.messenger())
     registerSandboxRefundChannel(messenger: engineBridge.applicationRegistrar.messenger())
+    registerNetworkChannel(messenger: engineBridge.applicationRegistrar.messenger())
     FilesBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
     BackgroundWorkBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
@@ -140,6 +142,28 @@ import onnxruntime_objc
         } catch {
           result(FlutterError(code: "exclude_failed", message: error.localizedDescription, details: nil))
         }
+      }
+  }
+
+  /// `mekuru/network`: `isUnmetered` is true when the current network is
+  /// neither expensive (cellular, personal hotspot) nor constrained (Low Data
+  /// Mode), so a large download can start without asking about mobile data.
+  private func registerNetworkChannel(messenger: FlutterBinaryMessenger) {
+    FlutterMethodChannel(name: "mekuru/network", binaryMessenger: messenger)
+      .setMethodCallHandler { call, result in
+        guard call.method == "isUnmetered" else {
+          result(FlutterMethodNotImplemented)
+          return
+        }
+        // The first update describes the current path; stop after it. Main
+        // is serial, so nothing more arrives once the monitor is cancelled.
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { path in
+          monitor.cancel()
+          monitor.pathUpdateHandler = nil
+          result(path.status == .satisfied && !path.isExpensive && !path.isConstrained)
+        }
+        monitor.start(queue: .main)
       }
   }
 

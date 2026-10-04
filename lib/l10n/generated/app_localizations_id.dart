@@ -554,6 +554,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get downloadsStarterPackWordFrequency => 'Frekuensi Kata';
 
   @override
+  String downloadsStarterPackMobileDataBody({required String size}) {
+    return 'Wi-Fi tidak terhubung. Ukuran kamus sekitar $size. Lanjutkan dengan data seluler?';
+  }
+
+  @override
   String get downloadsInstallStarterPack => 'Instal Paket Awal';
 
   @override

@@ -43,6 +43,7 @@ void main() {
   testWidgets('Get Dictionaries starts the starter pack and opens Downloads', (
     tester,
   ) async {
+    mockWifiConnected(true);
     final started = <String>[];
     await pumpEmptyLibrary(
       tester,

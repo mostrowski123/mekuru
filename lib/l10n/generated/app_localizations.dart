@@ -1012,6 +1012,12 @@ abstract class AppLocalizations {
   /// **'Word Frequency'**
   String get downloadsStarterPackWordFrequency;
 
+  /// Body of the mobile-data prompt before the dictionary starter pack downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi is not connected. The dictionaries are about {size}. Continue using mobile data?'**
+  String downloadsStarterPackMobileDataBody({required String size});
+
   /// Button label to install the starter pack.
   ///
   /// In en, this message translates to:

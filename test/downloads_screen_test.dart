@@ -11,6 +11,7 @@ import 'test_app.dart';
 void main() {
   testWidgets('starter pack starts both downloads together', (tester) async {
     SharedPreferences.setMockInitialValues({});
+    mockWifiConnected(true);
     final started = <String>[];
 
     await tester.pumpWidget(
@@ -24,7 +25,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     await tester.tap(find.text('Install Starter Pack'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(started, unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']));
     final list = tester.widget<ListView>(find.byType(ListView));
@@ -32,5 +33,39 @@ void main() {
         (list.childrenDelegate as SliverChildListDelegate).children;
     expect(children.first, isNot(isA<LocalOcrDownloadTile>()));
     expect(children[children.length - 2], isA<LocalOcrDownloadTile>());
+  });
+
+  testWidgets('off Wi-Fi the starter pack asks before using mobile data', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    mockWifiConnected(false);
+    final started = <String>[];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fakeDownloadNotifierOverrides(started),
+        child: buildLocalizedTestApp(home: const DownloadsScreen()),
+      ),
+    );
+    await tester.pump();
+    Finder inDialog(String text) => find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text(text),
+    );
+
+    await tester.tap(find.text('Install Starter Pack'));
+    await tester.pumpAndSettle();
+    expect(find.text('Download over mobile data?'), findsOneWidget);
+    expect(find.textContaining('about 22 MB'), findsOneWidget);
+
+    await tester.tap(inDialog('Cancel'));
+    await tester.pumpAndSettle();
+    expect(started, isEmpty);
+
+    await tester.tap(find.text('Install Starter Pack'));
+    await tester.pumpAndSettle();
+    await tester.tap(inDialog('Download'));
+    await tester.pumpAndSettle();
+    expect(started, unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']));
   });
 }

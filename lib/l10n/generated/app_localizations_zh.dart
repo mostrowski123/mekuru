@@ -534,6 +534,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadsStarterPackWordFrequency => '词频';
 
   @override
+  String downloadsStarterPackMobileDataBody({required String size}) {
+    return '未连接 Wi-Fi。词典大小约为 $size。是否继续使用移动数据？';
+  }
+
+  @override
   String get downloadsInstallStarterPack => '安装入门包';
 
   @override
@@ -3777,6 +3782,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadsStarterPackWordFrequency => '词频';
+
+  @override
+  String downloadsStarterPackMobileDataBody({required String size}) {
+    return '未连接 Wi-Fi。词典大小约为 $size。是否继续使用移动数据？';
+  }
 
   @override
   String get downloadsInstallStarterPack => '安装入门包';
