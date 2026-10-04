@@ -62,11 +62,13 @@ class PitchAccentResult {
   final String reading;
   final int downstepPosition;
   final String dictionaryName;
+  final int dictionaryId;
 
   const PitchAccentResult({
     required this.reading,
     required this.downstepPosition,
     required this.dictionaryName,
+    required this.dictionaryId,
   });
 }
 
@@ -1375,6 +1377,7 @@ class DictionaryQueryService {
           reading: pitch.reading,
           downstepPosition: pitch.downstepPosition,
           dictionaryName: cache.names[pitch.dictionaryId] ?? '',
+          dictionaryId: pitch.dictionaryId,
         ),
       );
     }

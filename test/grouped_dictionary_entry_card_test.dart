@@ -27,6 +27,7 @@ DictionaryEntry _buildEntry({
   String rules = '',
   String termTags = '',
   String glossaries = '["definition"]',
+  int? dictionaryId,
 }) {
   return DictionaryEntry(
     id: id,
@@ -40,7 +41,7 @@ DictionaryEntry _buildEntry({
     termTags: termTags,
     glossaries: glossaries,
     searchText: '',
-    dictionaryId: id,
+    dictionaryId: dictionaryId ?? id,
   );
 }
 
@@ -232,6 +233,7 @@ void main() {
                   kanjiOnyomi: '["ニチ","ジツ"]',
                   kanjiKunyomi: '["ひ","か"]',
                   glossaries: '["sun a second"]',
+                  dictionaryId: 2,
                 ),
                 dictionaryName: 'Dict A',
               ),
@@ -306,11 +308,13 @@ void main() {
                 reading: 'はしる',
                 downstepPosition: 2,
                 dictionaryName: 'NHK',
+                dictionaryId: 2,
               ),
               PitchAccentResult(
                 reading: 'はしる',
                 downstepPosition: 0,
                 dictionaryName: 'OJAD',
+                dictionaryId: 3,
               ),
             ],
           ),
@@ -331,6 +335,51 @@ void main() {
       expect(find.text('JMdict'), findsOneWidget);
     },
   );
+
+  testWidgets('two dictionaries with the same name keep their own sections', (
+    tester,
+  ) async {
+    // Shown names drop the version, so two revisions of a dictionary
+    // installed side by side share one.
+    await tester.pumpWidget(
+      _buildTestApp(
+        db: db,
+        child: GroupedDictionaryEntryCard(
+          entries: [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(id: 1, expression: '走る', reading: 'はしる'),
+              dictionaryName: 'JMdict',
+            ),
+            DictionaryEntryWithSource(
+              entry: _buildEntry(id: 2, expression: '走る', reading: 'はしる'),
+              dictionaryName: 'JMdict',
+            ),
+          ],
+          pitchAccents: const [
+            PitchAccentResult(
+              reading: 'はしる',
+              downstepPosition: 2,
+              dictionaryName: 'NHK',
+              dictionaryId: 3,
+            ),
+            PitchAccentResult(
+              reading: 'はしる',
+              downstepPosition: 2,
+              dictionaryName: 'NHK',
+              dictionaryId: 4,
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final sourceLabels = tester
+        .widgetList<SourceSectionLabel>(find.byType(SourceSectionLabel))
+        .map((widget) => widget.label)
+        .toList();
+    expect(sourceLabels, ['NHK', 'NHK', 'JMdict', 'JMdict']);
+  });
 
   testWidgets('a structured-content row is laid out, not flattened', (
     tester,

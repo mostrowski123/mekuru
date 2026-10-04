@@ -732,11 +732,11 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   List<Widget> _buildGroupedDefinitions(
     double fs,
     TextStyle definitionStyle,
-    Map<String, List<DictionaryEntry>> definitionSections,
+    List<(String, List<DictionaryEntry>)> definitionSections,
   ) {
     final widgets = <Widget>[];
-    for (final (dictIndex, MapEntry(key: dictionaryName, value: rows))
-        in definitionSections.entries.indexed) {
+    for (final (dictIndex, (dictionaryName, rows))
+        in definitionSections.indexed) {
       final numbered = rows.length > 1;
       for (final (i, entry) in rows.indexed) {
         widgets.add(
@@ -768,19 +768,20 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
 
   /// Build pitch accent diagrams grouped by source dictionary.
   Widget _buildPitchAccents(ThemeData theme, double fontSize) {
-    final bySource = <String, List<PitchAccentResult>>{};
+    // By id: shown names drop the version, so two dictionaries can share one.
+    final bySource = <int, List<PitchAccentResult>>{};
     for (final p in pitchAccents) {
-      bySource.putIfAbsent(p.dictionaryName, () => []).add(p);
+      bySource.putIfAbsent(p.dictionaryId, () => []).add(p);
     }
 
-    final sourceEntries = bySource.entries.toList(growable: false);
+    final sources = bySource.values.toList(growable: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < sourceEntries.length; i++)
+        for (final (i, pitches) in sources.indexed)
           _buildPitchAccentSourceGroup(
-            sourceEntries[i].key,
-            sourceEntries[i].value,
+            pitches.first.dictionaryName,
+            pitches,
             theme,
             fontSize,
             showDivider: i > 0,
@@ -825,15 +826,22 @@ class GroupedDictionaryEntryBody extends StatelessWidget {
   }
 }
 
-/// Rows by dictionary name, dictionaries in result order.
-Map<String, List<DictionaryEntry>> _buildDefinitionSections(
+/// Each dictionary's name and rows, dictionaries in result order. Grouped by
+/// id: shown names drop the version, so two dictionaries can share one.
+List<(String, List<DictionaryEntry>)> _buildDefinitionSections(
   List<DictionaryEntryWithSource> entries,
 ) {
-  final byDict = <String, List<DictionaryEntry>>{};
+  final byDict = <int, (String, List<DictionaryEntry>)>{};
   for (final result in entries) {
-    byDict.putIfAbsent(result.dictionaryName, () => []).add(result.entry);
+    byDict
+        .putIfAbsent(
+          result.entry.dictionaryId,
+          () => (result.dictionaryName, []),
+        )
+        .$2
+        .add(result.entry);
   }
-  return byDict;
+  return byDict.values.toList();
 }
 
 /// A small colored tag showing word frequency level.
