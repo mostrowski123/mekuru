@@ -422,32 +422,72 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
         // Group results by (expression, reading).
         final groups = _groupResults(results);
 
+        // A pinned header covers the definitions scrolling under it, so it
+        // is painted opaque in the colour of the sheet behind it.
+        final theme = Theme.of(context);
+        final sheetTheme = theme.bottomSheetTheme;
+        final headerColor = widget.showAtTop || widget.transparent
+            ? theme.colorScheme.surface
+            : sheetTheme.modalBackgroundColor ??
+                  sheetTheme.backgroundColor ??
+                  theme.colorScheme.surfaceContainerLow;
+
         return FutureBuilder<List<PitchAccentResult>>(
           future: _pitchAccentsFuture,
           builder: (context, pitchSnapshot) {
             final allPitchAccents = pitchSnapshot.data ?? [];
+            final groupPitchAccents = [
+              for (final group in groups)
+                _filterPitchAccents(allPitchAccents, group.first.entry),
+            ];
 
-            return ListView.separated(
+            return CustomScrollView(
               controller: scrollController,
               shrinkWrap: widget.showAtTop,
-              itemCount: groups.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final group = groups[index];
-                final groupPitchAccents = _filterPitchAccents(
-                  allPitchAccents,
-                  group.first.entry,
-                );
-                return GroupedDictionaryEntryCard(
-                  entries: group,
-                  sentenceContext: widget.sentenceContext,
-                  saveSource: widget.saveSource,
-                  pitchAccents: groupPitchAccents,
-                  fontSize: fontSize,
-                  onWordTap: _navigateToWord,
-                  onWordSaved: widget.onWordSaved,
-                );
-              },
+              slivers: [
+                for (var index = 0; index < groups.length; index++) ...[
+                  SliverMainAxisGroup(
+                    key: ValueKey((
+                      groups[index].first.entry.expression,
+                      groups[index].first.entry.reading,
+                    )),
+                    slivers: [
+                      PinnedHeaderSliver(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: headerColor,
+                            border: Border(
+                              bottom: BorderSide(
+                                color: theme.colorScheme.outlineVariant
+                                    .withValues(alpha: 0.5),
+                                width: 0.5,
+                              ),
+                            ),
+                          ),
+                          child: GroupedDictionaryEntryHeader(
+                            entries: groups[index],
+                            pitchAccents: groupPitchAccents[index],
+                            fontSize: fontSize,
+                            sentenceContext: widget.sentenceContext,
+                            saveSource: widget.saveSource,
+                            onWordTap: _navigateToWord,
+                            onWordSaved: widget.onWordSaved,
+                          ),
+                        ),
+                      ),
+                      GroupedDictionaryEntryBody(
+                        entries: groups[index],
+                        pitchAccents: groupPitchAccents[index],
+                        fontSize: fontSize,
+                        onWordTap: _navigateToWord,
+                        sliver: true,
+                      ),
+                    ],
+                  ),
+                  if (index < groups.length - 1)
+                    const SliverToBoxAdapter(child: Divider(height: 1)),
+                ],
+              ],
             );
           },
         );

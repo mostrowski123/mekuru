@@ -8,6 +8,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_query_servic
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
+import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_app.dart';
@@ -179,6 +180,77 @@ void main() {
     expect(find.text('to run'), findsOneWidget);
     expect(service.pitchAccentQueries, ['食べる', '走る']);
   });
+
+  for (final showAtTop in [false, true]) {
+    testWidgets('keeps the word header pinned while its definitions scroll '
+        '(showAtTop: $showAtTop)', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+
+      // Enough senses that the definitions scroll in either sheet.
+      final service = _FakeDictionaryQueryService(
+        db,
+        lookupResultsByTerm: {
+          '食べる': [
+            for (var i = 1; i <= 30; i++)
+              DictionaryEntryWithSource(
+                entry: _buildEntry(
+                  id: i,
+                  expression: '食べる',
+                  reading: 'たべる',
+                  glossaries: '["sense $i"]',
+                ),
+                dictionaryName: 'JMdict',
+              ),
+          ],
+        },
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(service),
+            dictionariesProvider.overrideWith((ref) => Stream.value([_jmdict])),
+          ],
+          child: buildLocalizedTestApp(
+            home: Scaffold(
+              body: SizedBox.expand(
+                child: LookupSheet(selectedText: '食べる', showAtTop: showAtTop),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final header = find.byType(GroupedDictionaryEntryHeader);
+      final scrollable = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      );
+      double headerOffset() =>
+          tester.getTopLeft(header).dy - tester.getTopLeft(scrollable).dy;
+      expect(headerOffset(), 0);
+
+      // The first drag grows the bottom sheet to full height; the second
+      // scrolls it.
+      for (var i = 0; i < 2; i++) {
+        await tester.drag(scrollable, const Offset(0, -300));
+        await tester.pumpAndSettle();
+      }
+
+      expect(
+        tester.state<ScrollableState>(scrollable).position.pixels,
+        greaterThan(100),
+      );
+      expect(find.text('sense 1'), findsNothing);
+      expect(headerOffset(), 0);
+    });
+  }
 
   group('when the lookup finds nothing', () {
     Future<void> pumpEmptyLookup(
