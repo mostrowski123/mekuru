@@ -21,7 +21,7 @@ class MangaOcrIosDownloadTile extends StatefulWidget {
 class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
   bool? _installed;
   double? _progress;
-  String? _error;
+  Object? _error;
 
   @override
   void initState() {
@@ -46,11 +46,12 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
       _progress = 0;
       _error = null;
     });
-    if (!await isOnWifi()) {
+    final wifi = await isOnWifi();
+    if (!wifi) {
       if (!mounted) return;
       final confirmed = await confirmMobileData(
         context,
-        context.l10n.localOcrMobileDownloadBodyIos(size: _packSize),
+        context.l10n.localOcrMobileDownloadBody(size: _packSize),
       );
       if (!mounted) return;
       if (!confirmed) {
@@ -59,13 +60,16 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
       }
     }
     try {
+      // Started on Wi-Fi without asking, so it must not go on over mobile
+      // data.
       await MangaOcrIos.instance.download(
+        wifiOnly: wifi,
         onProgress: (f) {
           if (mounted) setState(() => _progress = f);
         },
       );
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e);
     }
     if (mounted) setState(() => _progress = null);
     await _refresh();
@@ -91,8 +95,10 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
           ),
           title: Text(l.localOcrModelTitle),
           subtitle: Text(
-            _error != null
-                ? l.localOcrError(details: _error!)
+            _error is WifiLostException
+                ? l.localOcrWifiLostIos
+                : _error != null
+                ? l.localOcrError(details: '$_error')
                 : _installed == true
                 ? l.localOcrModelReady
                 : '${l.localOcrModelDescriptionIos} ($_packSize)',

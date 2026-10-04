@@ -2872,7 +2872,7 @@
   "localOcrModelCorrupt": "Berkas model gagal diverifikasi. Keluarkan model OCR lalu unduh lagi.",
   "localOcrMobileDownloadTitle": "Unduh melalui data seluler?",
   "localOcrMobileDownloadBody": "Wi-Fi tidak terhubung. Ukuran unduhan model OCR adalah {size}. Lanjutkan dengan data seluler? Progres unduhan yang tersimpan akan digunakan kembali.",
-  "localOcrMobileDownloadBodyIos": "Wi-Fi tidak terhubung. Ukuran unduhan model OCR adalah {size}. Lanjutkan dengan data seluler?",
+  "localOcrWifiLostIos": "Unduhan berhenti karena Wi-Fi terputus. File yang sudah selesai tetap disimpan. Ketuk Unduh untuk melanjutkan.",
   "localOcrWaitingWifi": "Menunggu Wi-Fi. Batalkan lalu lanjutkan untuk menggunakan data seluler.",
   "localOcrDownloadQueued": "Menunggu untuk mengunduh…",
   "localOcrEstimating": "Memperkirakan sisa waktu…",

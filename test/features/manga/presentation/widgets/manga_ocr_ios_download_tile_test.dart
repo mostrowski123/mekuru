@@ -50,8 +50,6 @@ void main() {
       await pumpDialog(tester);
       expect(find.text('Download over mobile data?'), findsOneWidget);
       expect(inDialog(find.textContaining('201.5 MB')), findsOneWidget);
-      // An interrupted iOS download keeps only finished files.
-      expect(find.textContaining('progress will be reused'), findsNothing);
       // Busy while asking: no second tap can start a second download.
       expect(
         find.descendant(

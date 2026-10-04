@@ -2872,7 +2872,7 @@
   "localOcrModelCorrupt": "Los archivos del modelo no superaron la verificación. Quita los modelos de OCR y descárgalos de nuevo.",
   "localOcrMobileDownloadTitle": "¿Descargar con datos móviles?",
   "localOcrMobileDownloadBody": "No hay conexión Wi-Fi. La descarga del modelo de OCR ocupa {size}. ¿Continuar con datos móviles? Se reutilizará el progreso de descarga guardado.",
-  "localOcrMobileDownloadBodyIos": "No hay conexión Wi-Fi. La descarga del modelo de OCR ocupa {size}. ¿Continuar con datos móviles?",
+  "localOcrWifiLostIos": "La descarga se detuvo porque se desconectó el Wi-Fi. Los archivos terminados se conservan. Toca Descargar para continuar.",
   "localOcrWaitingWifi": "Esperando Wi-Fi. Cancela y reanuda para usar datos móviles.",
   "localOcrDownloadQueued": "Esperando para descargar…",
   "localOcrEstimating": "Calculando el tiempo restante…",

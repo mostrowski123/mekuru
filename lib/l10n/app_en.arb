@@ -4249,14 +4249,9 @@
       }
     }
   },
-  "localOcrMobileDownloadBodyIos": "Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data?",
-  "@localOcrMobileDownloadBodyIos": {
-    "description": "iOS version of localOcrMobileDownloadBody: there an interrupted download keeps only the files it finished, so it does not promise to reuse saved progress.",
-    "placeholders": {
-      "size": {
-        "type": "String"
-      }
-    }
+  "localOcrWifiLostIos": "The download stopped because Wi-Fi disconnected. Finished files are kept. Tap Download to continue.",
+  "@localOcrWifiLostIos": {
+    "description": "iOS: shown on the OCR model tile when a download that started on Wi-Fi stops because the phone left Wi-Fi (cellular, hotspot or Low Data Mode). Download is the button label (commonDownload)."
   },
   "localOcrWaitingWifi": "Waiting for Wi-Fi. Cancel and resume to use mobile data.",
   "localOcrDownloadQueued": "Waiting to download…",

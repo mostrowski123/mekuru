@@ -5441,11 +5441,11 @@ abstract class AppLocalizations {
   /// **'Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data? Any saved download progress will be reused.'**
   String localOcrMobileDownloadBody({required String size});
 
-  /// iOS version of localOcrMobileDownloadBody: there an interrupted download keeps only the files it finished, so it does not promise to reuse saved progress.
+  /// iOS: shown on the OCR model tile when a download that started on Wi-Fi stops because the phone left Wi-Fi (cellular, hotspot or Low Data Mode). Download is the button label (commonDownload).
   ///
   /// In en, this message translates to:
-  /// **'Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data?'**
-  String localOcrMobileDownloadBodyIos({required String size});
+  /// **'The download stopped because Wi-Fi disconnected. Finished files are kept. Tap Download to continue.'**
+  String get localOcrWifiLostIos;
 
   /// On-device OCR model download network confirmation and status.
   ///

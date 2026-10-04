@@ -3167,9 +3167,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String localOcrMobileDownloadBodyIos({required String size}) {
-    return '未连接 Wi-Fi。OCR 模型下载大小为 $size。是否继续使用移动数据？';
-  }
+  String get localOcrWifiLostIos => 'Wi-Fi 已断开，下载已停止。已完成的文件会保留。点按“下载”继续。';
 
   @override
   String get localOcrWaitingWifi => '正在等待 Wi-Fi。取消后再继续即可使用移动数据。';
@@ -6422,9 +6420,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String localOcrMobileDownloadBodyIos({required String size}) {
-    return '未连接 Wi-Fi。OCR 模型下载大小为 $size。是否继续使用移动数据？';
-  }
+  String get localOcrWifiLostIos => 'Wi-Fi 已断开，下载已停止。已完成的文件会保留。点按“下载”继续。';
 
   @override
   String get localOcrWaitingWifi => '正在等待 Wi-Fi。取消后再继续即可使用移动数据。';

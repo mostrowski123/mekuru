@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:mekuru/core/services/download_to_file.dart';
+import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/features/sync/data/services/server_download_work.dart'
+    show downloadResumable;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -69,8 +71,14 @@ class MangaOcrIos {
       File(p.join((await _dir()).path, _marker)).exists();
 
   /// Downloads and verifies every file, then marks the pack installed.
-  /// [onProgress] is the fraction of all bytes.
-  Future<void> download({void Function(double)? onProgress}) async {
+  /// [onProgress] is the fraction of all bytes. An interrupted download keeps
+  /// its partial file, and the next one resumes it. With [wifiOnly] the
+  /// download stops with [WifiLostException] when the network stops being
+  /// Wi-Fi.
+  Future<void> download({
+    void Function(double)? onProgress,
+    bool wifiOnly = false,
+  }) async {
     final dir = await (await _dir()).create(recursive: true);
     // Re-downloadable, so kept out of iCloud and device backups.
     await _storage.invokeMethod('excludeFromBackup', [dir.path]);
@@ -80,11 +88,19 @@ class MangaOcrIos {
       final target = File(p.join(dir.path, file.name));
       if (!await _matches(target, file)) {
         final partial = '${target.path}.part';
-        await downloadToFile(
+        final client = HttpClient();
+        Future<void> fetch() => downloadResumable(
           file.url,
           partial,
-          onProgress: (f) => onProgress?.call((done + f * file.bytes) / total),
+          client: client,
+          onProgress: (received, _) =>
+              onProgress?.call((done + received) / total),
         );
+        try {
+          await (wifiOnly ? whileOnWifi(client, fetch) : fetch());
+        } finally {
+          client.close(force: true);
+        }
         if (!await _matches(File(partial), file)) {
           await File(partial).delete();
           throw const FileSystemException('Model file failed verification');

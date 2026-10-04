@@ -3312,9 +3312,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String localOcrMobileDownloadBodyIos({required String size}) {
-    return 'Wi-Fi is not connected. The OCR model download is $size. Continue using mobile data?';
-  }
+  String get localOcrWifiLostIos =>
+      'The download stopped because Wi-Fi disconnected. Finished files are kept. Tap Download to continue.';
 
   @override
   String get localOcrWaitingWifi =>
