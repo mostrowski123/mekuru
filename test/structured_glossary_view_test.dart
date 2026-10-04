@@ -313,6 +313,33 @@ void main() {
       },
     );
 
+    testWidgets('the full-screen image outlives the definition behind it', (
+      tester,
+    ) async {
+      final id = await tester.runAsync(() async {
+        final id = await repo.insertDictionary('Jitendex.org [2026-10-03]');
+        await repo.insertMedia(id, [(path, _png)]);
+        return id;
+      });
+      await pump(tester, jitendexGraphic, dictionaryId: id!);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Image));
+      await tester.pumpAndSettle();
+
+      // The results behind the viewer change (an import finished), so the
+      // definition goes while the viewer stays and is built again.
+      Widget app() => ProviderScope(
+        overrides: [dictionaryRepositoryProvider.overrideWithValue(repo)],
+        child: const MaterialApp(home: Scaffold(body: SizedBox())),
+      );
+      await tester.pumpWidget(app());
+      await tester.pumpWidget(app());
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+    });
+
     testWidgets('an image shown again is read and decoded once', (
       tester,
     ) async {

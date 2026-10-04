@@ -900,12 +900,12 @@ class _ScImageViewState extends ConsumerState<_ScImageView>
   }
 
   void _openFullScreen(BuildContext context, Uint8List? svg) {
+    // Built now, while this row is on screen: the results behind the viewer
+    // can change and take the row away while the viewer is still open.
+    final picture = SizedBox.expand(child: _picture(svg, color: Colors.white));
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        final picture = SizedBox.expand(
-          child: _picture(svg, color: Colors.white),
-        );
         return Dialog.fullscreen(
           backgroundColor: Colors.black,
           child: Stack(
