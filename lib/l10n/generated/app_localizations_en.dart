@@ -3500,4 +3500,61 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dictionaryUpdateMobileDataBody =>
       'Wi-Fi is not connected. Download this update over mobile data?';
+
+  @override
+  String get dictionaryImportParsingCollection => 'Parsing collection…';
+
+  @override
+  String dictionaryImportImportingCollection({
+    required String name,
+    required int current,
+    required int total,
+  }) {
+    return 'Importing $name… ($current/$total dictionaries)';
+  }
+
+  @override
+  String dictionaryImportImportingEntries({
+    required int processed,
+    required int total,
+  }) {
+    return 'Importing… $processed/$total';
+  }
+
+  @override
+  String dictionaryImportEntriesProgress({
+    required int processed,
+    required int total,
+  }) {
+    return '$processed/$total entries';
+  }
+
+  @override
+  String dictionaryImportedEntries({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Imported $count entries successfully!',
+      one: 'Imported 1 entry successfully!',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dictionaryImportedCollection({
+    required int dictionaries,
+    required int entries,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      dictionaries,
+      locale: localeName,
+      other: 'Imported $dictionaries dictionaries ($entries entries)',
+      one: 'Imported 1 dictionary ($entries entries)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dictionaryImportNoneInCollection =>
+      'No dictionaries found in collection';
 }

@@ -149,7 +149,7 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
       logUsage('dictionary.imported', attrs: {'entry_count': count});
       countUsage('dictionary.imported');
       state = DictionaryImportState(
-        successMessage: 'Imported $count entries successfully!',
+        successMessage: appL10n().dictionaryImportedEntries(count: count),
       );
     } catch (e) {
       state = DictionaryImportState(error: e.toString());
@@ -166,7 +166,9 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         action: () => importer.importCollectionFromFile(
           filePath,
           onParsing: () {
-            state = state.copyWith(currentDictionary: 'Parsing collection...');
+            state = state.copyWith(
+              currentDictionary: appL10n().dictionaryImportParsingCollection,
+            );
           },
           onDictionaryStart: (name, entryCount, dictIndex, dictTotal) {
             state = state.copyWith(
@@ -186,10 +188,13 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
         ),
       );
 
+      final l10n = appL10n();
       final message = result.importedDictionaries.isNotEmpty
-          ? 'Imported ${result.importedDictionaries.length} '
-                'dictionaries (${result.totalEntriesImported} entries)'
-          : 'No dictionaries found in collection';
+          ? l10n.dictionaryImportedCollection(
+              dictionaries: result.importedDictionaries.length,
+              entries: result.totalEntriesImported,
+            )
+          : l10n.dictionaryImportNoneInCollection;
 
       logUsage(
         'dictionary.collection_imported',

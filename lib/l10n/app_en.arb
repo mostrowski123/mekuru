@@ -4497,5 +4497,73 @@
   "dictionaryUpdateMobileDataBody": "Wi-Fi is not connected. Download this update over mobile data?",
   "@dictionaryUpdateMobileDataBody": {
     "description": "Body of the dialog asking before a dictionary update downloads over mobile data, when its size is unknown."
+  },
+  "dictionaryImportParsingCollection": "Parsing collection…",
+  "@dictionaryImportParsingCollection": {
+    "description": "Dictionary Manager banner while a Yomitan collection backup file is read, before its dictionaries import."
+  },
+  "dictionaryImportImportingCollection": "Importing {name}… ({current}/{total} dictionaries)",
+  "@dictionaryImportImportingCollection": {
+    "description": "Dictionary Manager banner while a collection imports: the dictionary being imported, then how far through the collection.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionaryImportImportingEntries": "Importing… {processed}/{total}",
+  "@dictionaryImportImportingEntries": {
+    "description": "Dictionary Manager banner while a dictionary file imports: entries done out of all entries.",
+    "placeholders": {
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionaryImportEntriesProgress": "{processed}/{total} entries",
+  "@dictionaryImportEntriesProgress": {
+    "description": "Small line under the Dictionary Manager import progress bar.",
+    "placeholders": {
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionaryImportedEntries": "{count, plural, =1{Imported 1 entry successfully!} other{Imported {count} entries successfully!}}",
+  "@dictionaryImportedEntries": {
+    "description": "Dictionary Manager message after a dictionary file imported.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionaryImportedCollection": "{dictionaries, plural, =1{Imported 1 dictionary ({entries} entries)} other{Imported {dictionaries} dictionaries ({entries} entries)}}",
+  "@dictionaryImportedCollection": {
+    "description": "Dictionary Manager message after a collection backup imported.",
+    "placeholders": {
+      "dictionaries": {
+        "type": "int"
+      },
+      "entries": {
+        "type": "int"
+      }
+    }
+  },
+  "dictionaryImportNoneInCollection": "No dictionaries found in collection",
+  "@dictionaryImportNoneInCollection": {
+    "description": "Dictionary Manager message when a collection backup held no dictionaries."
   }
 }

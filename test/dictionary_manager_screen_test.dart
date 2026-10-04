@@ -30,6 +30,7 @@ void main() {
     List<DictionaryMeta> dictionaries, {
     Map<int, DictionaryUpdate> updates = const {},
     List<Override> overrides = const [],
+    bool settle = true,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -47,7 +48,12 @@ void main() {
         child: buildLocalizedTestApp(home: const DictionaryManagerScreen()),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump();
+    }
   }
 
   DictionaryMeta meta(int id, String name, {String? revision}) =>
@@ -88,6 +94,21 @@ void main() {
     expect(find.textContaining('Delete "Jitendex"'), findsOneWidget);
   });
 
+  testWidgets('a collection being read shows its banner text once', (
+    tester,
+  ) async {
+    await pumpManager(
+      tester,
+      [meta(1, 'JMdict [2026-09-01]')],
+      overrides: [
+        dictionaryImportProvider.overrideWith(_ParsingImportNotifier.new),
+      ],
+      settle: false,
+    );
+
+    expect(find.text('Parsing collection…'), findsOneWidget);
+  });
+
   testWidgets('a dictionary with a newer version offers an update', (
     tester,
   ) async {
@@ -116,4 +137,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(updated, [1]);
   });
+}
+
+class _ParsingImportNotifier extends DictionaryImportNotifier {
+  @override
+  DictionaryImportState build() => const DictionaryImportState(
+    isImporting: true,
+    currentDictionary: 'Parsing collection…',
+  );
 }

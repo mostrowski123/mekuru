@@ -29,7 +29,8 @@ import 'features/vocabulary/presentation/screens/vocabulary_screen.dart';
 import 'features/wanikani/presentation/providers/wanikani_providers.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/l10n.dart';
-import 'main.dart' show navigatorKey, scaffoldMessengerKey, databaseProvider;
+import 'main.dart'
+    show appL10n, navigatorKey, scaffoldMessengerKey, databaseProvider;
 import 'shared/theme/app_theme.dart';
 import 'shared/utils/app_routes.dart';
 
@@ -58,10 +59,7 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
     required int scans,
     required int percent,
   }) {
-    final context = scaffoldMessengerKey.currentContext;
-    final l10n = context != null && context.mounted
-        ? context.l10n
-        : lookupAppLocalizations(const Locale('en'));
+    final l10n = appL10n();
     return (
       title: [
         if (downloads > 0) l10n.backgroundWorkDownloading(count: downloads),

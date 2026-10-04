@@ -31,6 +31,8 @@ import 'features/settings/data/services/app_settings_storage.dart';
 import 'features/settings/data/services/enhanced_furigana_dict_download_service.dart';
 import 'features/settings/data/services/kanjivg_download_service.dart';
 import 'features/sync/data/services/server_client.dart';
+import 'l10n/generated/app_localizations.dart';
+import 'l10n/l10n.dart';
 
 /// Global navigator key used by Sentry for feedback screenshots
 /// and navigator observation.
@@ -39,6 +41,16 @@ final navigatorKey = GlobalKey<NavigatorState>();
 /// Global scaffold messenger key so snackbars can be shown on top of
 /// modal bottom sheets and other overlays.
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+/// The app's strings in its current language, for text made away from a
+/// widget (work that outlives its screen, the iOS Live Activity). English
+/// before the first frame.
+AppLocalizations appL10n() {
+  final context = scaffoldMessengerKey.currentContext;
+  return context != null && context.mounted
+      ? context.l10n
+      : lookupAppLocalizations(const Locale('en'));
+}
 
 /// Global Riverpod provider for the Drift database instance.
 /// Created once at app startup and disposed when the app is torn down.

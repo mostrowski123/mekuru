@@ -5752,6 +5752,61 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wi-Fi is not connected. Download this update over mobile data?'**
   String get dictionaryUpdateMobileDataBody;
+
+  /// Dictionary Manager banner while a Yomitan collection backup file is read, before its dictionaries import.
+  ///
+  /// In en, this message translates to:
+  /// **'Parsing collection…'**
+  String get dictionaryImportParsingCollection;
+
+  /// Dictionary Manager banner while a collection imports: the dictionary being imported, then how far through the collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing {name}… ({current}/{total} dictionaries)'**
+  String dictionaryImportImportingCollection({
+    required String name,
+    required int current,
+    required int total,
+  });
+
+  /// Dictionary Manager banner while a dictionary file imports: entries done out of all entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing… {processed}/{total}'**
+  String dictionaryImportImportingEntries({
+    required int processed,
+    required int total,
+  });
+
+  /// Small line under the Dictionary Manager import progress bar.
+  ///
+  /// In en, this message translates to:
+  /// **'{processed}/{total} entries'**
+  String dictionaryImportEntriesProgress({
+    required int processed,
+    required int total,
+  });
+
+  /// Dictionary Manager message after a dictionary file imported.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Imported 1 entry successfully!} other{Imported {count} entries successfully!}}'**
+  String dictionaryImportedEntries({required int count});
+
+  /// Dictionary Manager message after a collection backup imported.
+  ///
+  /// In en, this message translates to:
+  /// **'{dictionaries, plural, =1{Imported 1 dictionary ({entries} entries)} other{Imported {dictionaries} dictionaries ({entries} entries)}}'**
+  String dictionaryImportedCollection({
+    required int dictionaries,
+    required int entries,
+  });
+
+  /// Dictionary Manager message when a collection backup held no dictionaries.
+  ///
+  /// In en, this message translates to:
+  /// **'No dictionaries found in collection'**
+  String get dictionaryImportNoneInCollection;
 }
 
 class _AppLocalizationsDelegate

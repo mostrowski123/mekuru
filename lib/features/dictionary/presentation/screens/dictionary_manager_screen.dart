@@ -153,13 +153,18 @@ class _DictionaryManagerScreenState
   }
 
   Widget _buildProgressBanner(DictionaryImportState state) {
-    final hasCollectionProgress = state.dictionariesTotal > 0;
-    final label = hasCollectionProgress
-        ? 'Importing ${state.currentDictionary ?? ""}... '
-              '(${state.dictionariesProcessed + 1}/${state.dictionariesTotal} dictionaries)'
-        : state.currentDictionary != null
-        ? '${state.currentDictionary}...'
-        : 'Importing... ${state.processedEntries}/${state.totalEntries}';
+    final l10n = context.l10n;
+    final label = state.dictionariesTotal > 0
+        ? l10n.dictionaryImportImportingCollection(
+            name: state.currentDictionary ?? '',
+            current: state.dictionariesProcessed + 1,
+            total: state.dictionariesTotal,
+          )
+        : state.currentDictionary ??
+              l10n.dictionaryImportImportingEntries(
+                processed: state.processedEntries,
+                total: state.totalEntries,
+              );
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -190,7 +195,10 @@ class _DictionaryManagerScreenState
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                '${state.processedEntries}/${state.totalEntries} entries',
+                l10n.dictionaryImportEntriesProgress(
+                  processed: state.processedEntries,
+                  total: state.totalEntries,
+                ),
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ),
