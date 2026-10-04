@@ -1283,7 +1283,19 @@ class DictionaryImporter {
   /// in sync: [_countImportableZipRows] uses this predicate to compute the
   /// exact progress total without parsing every row twice.
   static bool _isImportableTermRow(dynamic row) =>
-      row is List && row.length >= 6 && (row[0]?.toString() ?? '').isNotEmpty;
+      row is List &&
+      row.length >= 6 &&
+      (row[0]?.toString() ?? '').isNotEmpty &&
+      !_isOnlyInflectionRedirects(row[5]);
+
+  /// Yomitan v3 `[lemma, [rules]]` glossary items only point an inflected
+  /// form at its lemma. Mekuru deinflects on its own, so a row holding
+  /// nothing else carries no definition and is not imported (Wiktionary
+  /// dictionaries ship hundreds of thousands of them).
+  static bool _isOnlyInflectionRedirects(dynamic glossary) =>
+      glossary is List &&
+      glossary.isNotEmpty &&
+      glossary.every((item) => item is List);
 
   /// Kanji-bank analogue of [_isImportableTermRow], for [_parseZipKanjiRow].
   static bool _isImportableKanjiRow(dynamic row) =>
@@ -1307,7 +1319,9 @@ class DictionaryImporter {
           glossaryList.add(item);
         } else if (item is Map) {
           glossaryList.add(jsonEncode(item));
-        } else {
+        } else if (item is! List) {
+          // Lists are [lemma, [rules]] redirects; see
+          // _isOnlyInflectionRedirects.
           glossaryList.add(item.toString());
         }
       }

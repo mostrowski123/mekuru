@@ -701,6 +701,85 @@ void main() {
       expect(count, 2);
       expect(progressUpdates.last, (2, 2));
     });
+
+    test('drops Yomitan inflection-redirect glossary items', () async {
+      final zipPath = await createTestYomitanZip(
+        entries: [
+          [
+            '行く',
+            'いく',
+            '',
+            'v5',
+            0,
+            ['to go'],
+            1,
+            '',
+          ],
+          // Wiktionary-style inflected form: its only glossary item is a
+          // [lemma, [rules]] redirect, so the row carries no definition.
+          [
+            '行ける',
+            'いける',
+            '',
+            '',
+            0,
+            [
+              [
+                '行く',
+                ['potential'],
+              ],
+            ],
+            0,
+            '',
+          ],
+          // Jitendex-style redirect: a visible structured link plus the
+          // machine-readable redirect item.
+          [
+            '勞働相',
+            '',
+            'old kanji form',
+            '',
+            -101,
+            [
+              {
+                'type': 'structured-content',
+                'content': {
+                  'tag': 'div',
+                  'data': {'content': 'redirect-glossary'},
+                  'content': ['⟶', '労働相'],
+                },
+              },
+              [
+                '労働相',
+                ['redirected from 勞働相'],
+              ],
+            ],
+            0,
+            '',
+          ],
+        ],
+      );
+      trackTempFile(zipPath);
+
+      final progressUpdates = <(int, int)>[];
+      final count = await importer.importFromFile(
+        zipPath,
+        onProgress: (processed, total) {
+          progressUpdates.add((processed, total));
+        },
+      );
+
+      expect(count, 2);
+      expect(progressUpdates.last, (2, 2));
+
+      final rows = await db.select(db.dictionaryEntries).get();
+      expect(rows.map((r) => r.expression), unorderedEquals(['行く', '勞働相']));
+      final redirect = rows.singleWhere((r) => r.expression == '勞働相');
+      final glossaries = jsonDecode(redirect.glossaries) as List;
+      expect(glossaries, hasLength(1));
+      expect(glossaries.single, contains('redirect-glossary'));
+      expect(redirect.glossaries, isNot(contains('redirected from')));
+    });
   });
 
   group('DictionaryImporter — missing index.json', () {
