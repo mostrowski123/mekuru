@@ -3340,6 +3340,16 @@ class AppLocalizationsZh extends AppLocalizations {
   }) {
     return 'Imported $date · version $version';
   }
+
+  @override
+  String get dictionaryUpdateAvailable => 'Update available';
+
+  @override
+  String get dictionaryUpdateButton => 'Update';
+
+  @override
+  String get dictionaryUpdateMobileDataBody =>
+      'Wi-Fi is not connected. Download this update over mobile data?';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

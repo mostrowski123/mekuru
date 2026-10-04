@@ -162,6 +162,58 @@ class DictionaryRepository {
     });
   }
 
+  /// Gives [replacementId] the place and enabled state [oldId] has now, then
+  /// deletes [oldId]: an update taking over from the revision before it.
+  /// When [oldId] is gone (deleted during the update), the replacement goes
+  /// too.
+  Future<void> replaceDictionary(int oldId, int replacementId) =>
+      _db.transaction(() async {
+        final old = await (_db.select(
+          _db.dictionaryMetas,
+        )..where((t) => t.id.equals(oldId))).getSingleOrNull();
+        if (old == null) {
+          await deleteDictionary(replacementId);
+          return;
+        }
+        await (_db.update(
+          _db.dictionaryMetas,
+        )..where((t) => t.id.equals(replacementId))).write(
+          DictionaryMetasCompanion(
+            sortOrder: Value(old.sortOrder),
+            isEnabled: Value(old.isEnabled),
+          ),
+        );
+        await deleteDictionary(oldId);
+      });
+
+  /// Records where [dictionaryId]'s publisher keeps its index.json.
+  Future<void> setIndexUrl(int dictionaryId, String indexUrl) =>
+      (_db.update(_db.dictionaryMetas)..where((t) => t.id.equals(dictionaryId)))
+          .write(DictionaryMetasCompanion(indexUrl: Value(indexUrl)));
+
+  /// Whether [text] occurs in the stored glossaries of any of the first
+  /// [sample] entries of [dictionaryId]; a bounded look at what a
+  /// dictionary contains.
+  Future<bool> sampleGlossariesContain(
+    int dictionaryId,
+    String text, {
+    int sample = 2000,
+  }) async {
+    final row = await _db
+        .customSelect(
+          'SELECT 1 FROM (SELECT glossaries FROM dictionary_entries '
+          'WHERE dictionary_id = ? ORDER BY id LIMIT ?) '
+          'WHERE instr(glossaries, ?) > 0 LIMIT 1',
+          variables: [
+            Variable.withInt(dictionaryId),
+            Variable.withInt(sample),
+            Variable.withString(text),
+          ],
+        )
+        .getSingleOrNull();
+    return row != null;
+  }
+
   /// Find a dictionary by its exact name, or null if not found.
   Future<DictionaryMeta?> getDictionaryByName(String name) => (_db.select(
     _db.dictionaryMetas,

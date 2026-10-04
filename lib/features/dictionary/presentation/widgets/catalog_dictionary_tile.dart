@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -12,20 +13,45 @@ import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// One downloadable dictionary: what it is, its sizes and license, and a
-/// download button that turns into progress, then a check once installed.
+/// download button that turns into progress, then a check once installed
+/// (or an update button when a newer version is out).
 class CatalogDictionaryTile extends ConsumerWidget {
-  const CatalogDictionaryTile({super.key, required this.entry});
+  const CatalogDictionaryTile({
+    super.key,
+    required this.entry,
+    this.offerUpdates = true,
+  });
 
   final CatalogDictionary entry;
+
+  /// Off where looking for updates would be a surprise: showing the tile
+  /// then checks every installed dictionary over the network.
+  final bool offerUpdates;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final state = ref.watch(catalogDownloadProvider(entry));
-    final installed = ref.watch(
-      installedCatalogDictionariesProvider.select((s) => s.contains(entry)),
+    // Installed at any revision, also by hand. Catalog dictionaries are
+    // never hidden, so the visible list has them all.
+    final installedId = ref.watch(
+      dictionariesProvider.select(
+        (list) => list.value
+            ?.where((d) => entry.matchesTitle(d.name))
+            .firstOrNull
+            ?.id,
+      ),
     );
-    final neededBytes = state.neededBytes;
+    final hasUpdate =
+        offerUpdates &&
+        ref.watch(
+          dictionaryUpdatesProvider.select(
+            (updates) => updates.value?.containsKey(installedId) ?? false,
+          ),
+        );
+    final updateState = hasUpdate
+        ? ref.watch(dictionaryUpdateProvider(installedId!))
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,21 +63,16 @@ class CatalogDictionaryTile extends ConsumerWidget {
             '${l10n.catalogSizes(download: _megabytes(entry.downloadMb), installed: _megabytes(entry.installedMb))}',
           ),
           isThreeLine: true,
-          trailing: _trailing(context, ref, state, installed),
+          trailing: _trailing(
+            context,
+            ref,
+            busy: state.isDownloading || (updateState?.isDownloading ?? false),
+            installedId: installedId,
+            hasUpdate: hasUpdate,
+          ),
         ),
-        if (state.isDownloading)
-          DownloadProgress(
-            progress: state.progress,
-            label: dictionaryDownloadLabel(l10n, state.progress),
-          ),
-        if (neededBytes != null)
-          DownloadErrorText(
-            text: l10n.backupFullNotEnoughSpace(size: formatBytes(neededBytes)),
-          ),
-        if (state.error != null)
-          DownloadErrorText(
-            text: l10n.commonErrorWithDetails(details: state.error!),
-          ),
+        DictionaryDownloadStatus(state: state),
+        if (updateState != null) DictionaryDownloadStatus(state: updateState),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: DownloadAttributionText(
@@ -65,18 +86,29 @@ class CatalogDictionaryTile extends ConsumerWidget {
 
   Widget _trailing(
     BuildContext context,
-    WidgetRef ref,
-    CatalogDownloadState state,
-    bool installed,
-  ) {
-    if (state.isDownloading) {
+    WidgetRef ref, {
+    required bool busy,
+    required int? installedId,
+    required bool hasUpdate,
+  }) {
+    if (busy) {
       return const SizedBox(
         width: 24,
         height: 24,
         child: CircularProgressIndicator(strokeWidth: 2),
       );
     }
-    if (installed) {
+    if (installedId != null && hasUpdate) {
+      return FilledButton.tonal(
+        onPressed: () => startDictionaryDownload(
+          context,
+          entry,
+          ref.read(dictionaryUpdateProvider(installedId).notifier).update,
+        ),
+        child: Text(context.l10n.dictionaryUpdateButton),
+      );
+    }
+    if (installedId != null) {
       return Icon(
         Icons.check_circle,
         color: Theme.of(context).colorScheme.primary,
@@ -84,20 +116,63 @@ class CatalogDictionaryTile extends ConsumerWidget {
       );
     }
     return FilledButton.tonal(
-      onPressed: () => _download(context, ref),
+      onPressed: () => startDictionaryDownload(
+        context,
+        entry,
+        ref.read(catalogDownloadProvider(entry).notifier).download,
+      ),
       child: Text(context.l10n.commonDownload),
     );
   }
+}
 
-  Future<void> _download(BuildContext context, WidgetRef ref) async {
-    AppHaptics.light();
-    // Read before any await: the tile can unmount while a dialog is up.
-    final notifier = ref.read(catalogDownloadProvider(entry).notifier);
-    final body = context.l10n.catalogMobileDataBody(
-      size: _megabytes(entry.downloadMb),
+/// Starts [download] (a dictionary download or update) on Wi-Fi, or off it
+/// once the user accepts mobile data; [entry] gives the size when known.
+/// Pass the notifier's method itself: the caller can unmount while the
+/// dialog is up.
+Future<void> startDictionaryDownload(
+  BuildContext context,
+  CatalogDictionary? entry,
+  Future<void> Function() download,
+) async {
+  AppHaptics.light();
+  final l10n = context.l10n;
+  final body = entry == null
+      ? l10n.dictionaryUpdateMobileDataBody
+      : l10n.catalogMobileDataBody(size: _megabytes(entry.downloadMb));
+  if (!await okToDownload(context, body)) return;
+  unawaited(download());
+}
+
+/// Progress and errors of a dictionary download or update, shown under its
+/// tile.
+class DictionaryDownloadStatus extends StatelessWidget {
+  const DictionaryDownloadStatus({super.key, required this.state});
+
+  final CatalogDownloadState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final neededBytes = state.neededBytes;
+    final error = state.error;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (state.isDownloading)
+          DownloadProgress(
+            progress: state.progress,
+            label: dictionaryDownloadLabel(l10n, state.progress),
+          ),
+        if (neededBytes != null)
+          DownloadErrorText(
+            text: l10n.backupFullNotEnoughSpace(size: formatBytes(neededBytes)),
+          ),
+        if (error != null)
+          DownloadErrorText(text: l10n.commonErrorWithDetails(details: error)),
+      ],
     );
-    if (!await okToDownload(context, body)) return;
-    unawaited(notifier.download());
   }
 }
 

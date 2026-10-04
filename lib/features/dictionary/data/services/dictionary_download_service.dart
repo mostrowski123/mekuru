@@ -26,6 +26,7 @@ class DictionaryDownloadService {
     required DictionaryImporter importer,
     int? requiredBytes,
     void Function(double progress)? onProgress,
+    void Function(int dictionaryId)? onDictionaryCreated,
   }) async {
     final stopwatch = Stopwatch()..start();
     try {
@@ -37,8 +38,10 @@ class DictionaryDownloadService {
       }
       onProgress?.call(0.0);
       final tempDir = await getTemporaryDirectory();
-      // Named after the URL, so two downloads at once never share a file.
-      final fileName = 'download_${p.basename(Uri.parse(url).path)}';
+      // Unique, so two downloads at once never share a file.
+      final fileName =
+          'download_${DateTime.now().microsecondsSinceEpoch}_'
+          '${p.basename(Uri.parse(url).path)}';
       await withDownloadedFile(
         url,
         p.join(tempDir.path, fileName),
@@ -47,6 +50,7 @@ class DictionaryDownloadService {
           onProgress?.call(downloadShare);
           await importer.importFromFile(
             path,
+            onDictionaryCreated: onDictionaryCreated,
             onProgress: (done, total) {
               if (total > 0) {
                 onProgress?.call(

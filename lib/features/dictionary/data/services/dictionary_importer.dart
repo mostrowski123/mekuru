@@ -139,9 +139,12 @@ class DictionaryImporter {
   ///
   /// Returns the total number of entries imported.
   /// [onProgress] is called with (processedEntries, totalEntries) during batch insert.
+  /// [onDictionaryCreated] gets the new dictionary's id; the row only lasts
+  /// if the import completes.
   Future<int> importFromFile(
     String filePath, {
     void Function(int processed, int total)? onProgress,
+    void Function(int dictionaryId)? onDictionaryCreated,
   }) async {
     final file = File(filePath);
     if (!await file.exists()) {
@@ -186,6 +189,7 @@ class DictionaryImporter {
               revision: meta['revision'] as String?,
               indexUrl: meta['indexUrl'] as String?,
             );
+            onDictionaryCreated?.call(dictionaryId);
             continue;
           }
 

@@ -3508,4 +3508,14 @@ class AppLocalizationsId extends AppLocalizations {
   }) {
     return 'Imported $date · version $version';
   }
+
+  @override
+  String get dictionaryUpdateAvailable => 'Update available';
+
+  @override
+  String get dictionaryUpdateButton => 'Update';
+
+  @override
+  String get dictionaryUpdateMobileDataBody =>
+      'Wi-Fi is not connected. Download this update over mobile data?';
 }

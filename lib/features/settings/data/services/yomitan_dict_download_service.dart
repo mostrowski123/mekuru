@@ -28,6 +28,10 @@ class YomitanDictDownloadService {
   static String assetUrl(YomitanDictType type) =>
       '$jmdictYomitanReleases/${_assetFilename(type)}';
 
+  /// The release's index.json for [type], which names its latest revision.
+  static String indexUrl(YomitanDictType type) =>
+      assetUrl(type).replaceFirst(RegExp(r'\.zip$'), '.json');
+
   /// Name prefixes used to detect whether a dictionary type is already
   /// imported. The actual title comes from the ZIP's index.json and may vary
   /// between releases, so we match by prefix for robustness.
@@ -58,7 +62,7 @@ class YomitanDictDownloadService {
     DictionaryRepository repository,
   ) async {
     final all = await repository.getAllDictionaries();
-    return all.any((d) => _matches(type, d.name));
+    return all.any((d) => matches(type, d.name));
   }
 
   /// Find the first imported dictionary matching this type's name prefix.
@@ -68,7 +72,7 @@ class YomitanDictDownloadService {
   ) async {
     final all = await repository.getAllDictionaries();
     for (final d in all) {
-      if (_matches(type, d.name)) return d;
+      if (matches(type, d.name)) return d;
     }
     return null;
   }
@@ -80,7 +84,7 @@ class YomitanDictDownloadService {
     r'^(JMdict|KANJIDIC) \((?!English)',
   );
 
-  static bool _matches(YomitanDictType type, String name) =>
+  static bool matches(YomitanDictType type, String name) =>
       name.startsWith(_namePrefix(type)) &&
       !_otherLanguageEdition.hasMatch(name);
 

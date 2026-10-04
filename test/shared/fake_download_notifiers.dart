@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
@@ -78,4 +79,14 @@ class _FakeKanjidicNotifier extends KanjidicNotifier {
 class _FakeKanjiVgNotifier extends KanjiVgNotifier {
   @override
   Future<void> checkStatus() async {}
+}
+
+/// Records [update] calls instead of downloading.
+class FakeUpdateNotifier extends DictionaryUpdateNotifier {
+  FakeUpdateNotifier(super.dictionaryId, this.onUpdate);
+
+  final void Function(int dictionaryId) onUpdate;
+
+  @override
+  Future<void> update() async => onUpdate(dictionaryId);
 }

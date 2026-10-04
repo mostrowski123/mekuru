@@ -3,9 +3,10 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
+import 'package:mekuru/features/dictionary/data/services/dictionary_update_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 
-/// Download state of one catalog dictionary.
+/// State of one dictionary download or update.
 class CatalogDownloadState {
   const CatalogDownloadState({
     this.isDownloading = false,
@@ -27,31 +28,19 @@ class CatalogDownloadState {
   final int? neededBytes;
 }
 
-class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
-  CatalogDownloadNotifier(this.entry);
-
-  final CatalogDictionary entry;
-
+/// Runs one dictionary download at a time and reports it.
+abstract class _DownloadNotifier extends Notifier<CatalogDownloadState> {
   @override
   CatalogDownloadState build() => const CatalogDownloadState();
 
-  /// Downloads and imports [entry]. Does nothing while a download runs or
-  /// once the dictionary is installed.
-  Future<void> download() async {
+  Future<void> run(
+    Future<void> Function(void Function(double progress) onProgress) work,
+  ) async {
     if (state.isDownloading) return;
     state = const CatalogDownloadState(isDownloading: true);
     try {
-      final repository = ref.read(dictionaryRepositoryProvider);
-      if (entry.isInstalledIn(await repository.getAllDictionaries())) {
-        state = const CatalogDownloadState();
-        return;
-      }
-      await DictionaryDownloadService.downloadAndImportUrl(
-        url: entry.url,
-        asset: entry.name,
-        importer: ref.read(dictionaryImporterProvider),
-        requiredBytes: (entry.requiredMb * 1e6).round(),
-        onProgress: (progress) => state = CatalogDownloadState(
+      await work(
+        (progress) => state = CatalogDownloadState(
           isDownloading: true,
           progress: progress,
         ),
@@ -65,6 +54,26 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
   }
 }
 
+class CatalogDownloadNotifier extends _DownloadNotifier {
+  CatalogDownloadNotifier(this.entry);
+
+  final CatalogDictionary entry;
+
+  /// Downloads and imports [entry]. Does nothing while a download runs or
+  /// once the dictionary is installed.
+  Future<void> download() => run((onProgress) async {
+    final repository = ref.read(dictionaryRepositoryProvider);
+    if (entry.isInstalledIn(await repository.getAllDictionaries())) return;
+    await DictionaryDownloadService.downloadAndImportUrl(
+      url: entry.url,
+      asset: entry.name,
+      importer: ref.read(dictionaryImporterProvider),
+      requiredBytes: (entry.requiredMb * 1e6).round(),
+      onProgress: onProgress,
+    );
+  });
+}
+
 /// Not auto-disposed: a download keeps going after its screen closes.
 final catalogDownloadProvider =
     NotifierProvider.family<
@@ -73,15 +82,54 @@ final catalogDownloadProvider =
       CatalogDictionary
     >(CatalogDownloadNotifier.new);
 
-/// Catalog dictionaries that are installed at any revision, including ones
-/// the user imported by hand. Catalog dictionaries are never hidden, so the
-/// visible list has them all.
-final installedCatalogDictionariesProvider = Provider<Set<CatalogDictionary>>((
+final dictionaryUpdateServiceProvider = Provider<DictionaryUpdateService>(
+  (ref) => DictionaryUpdateService(ref.watch(dictionaryRepositoryProvider)),
+);
+
+/// Updates for the installed dictionaries, by dictionary id. Checked once
+/// per app session, when a screen that offers updates first shows: a few
+/// small index files, not a check on every change to the list.
+final dictionaryUpdatesProvider = FutureProvider<Map<int, DictionaryUpdate>>((
   ref,
-) {
-  final dictionaries = ref.watch(dictionariesProvider).value ?? const [];
-  return {
-    for (final entry in CatalogDictionary.values)
-      if (entry.isInstalledIn(dictionaries)) entry,
-  };
+) async {
+  final service = ref.watch(dictionaryUpdateServiceProvider);
+  final dictionaries = await ref.read(dictionariesProvider.future);
+  final checks = await Future.wait([
+    for (final d in dictionaries)
+      service.checkForUpdate(d).then((u) => (d.id, u)),
+  ]);
+  return {for (final (id, update) in checks) id: ?update};
 });
+
+class DictionaryUpdateNotifier extends _DownloadNotifier {
+  DictionaryUpdateNotifier(this.dictionaryId);
+
+  final int dictionaryId;
+
+  /// Replaces the dictionary with the update [dictionaryUpdatesProvider]
+  /// found for it.
+  Future<void> update() => run((onProgress) async {
+    final update = ref.read(dictionaryUpdatesProvider).value?[dictionaryId];
+    final dictionaries = await ref
+        .read(dictionaryRepositoryProvider)
+        .getAllDictionaries();
+    final old = dictionaries.where((d) => d.id == dictionaryId).firstOrNull;
+    if (update == null || old == null) return;
+    await ref
+        .read(dictionaryUpdateServiceProvider)
+        .apply(
+          old,
+          update,
+          importer: ref.read(dictionaryImporterProvider),
+          onProgress: onProgress,
+        );
+  });
+}
+
+/// Not auto-disposed: an update keeps going after its screen closes.
+final dictionaryUpdateProvider =
+    NotifierProvider.family<
+      DictionaryUpdateNotifier,
+      CatalogDownloadState,
+      int
+    >(DictionaryUpdateNotifier.new);

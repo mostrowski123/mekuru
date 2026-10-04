@@ -4485,5 +4485,17 @@
         "type": "String"
       }
     }
+  },
+  "dictionaryUpdateAvailable": "Update available",
+  "@dictionaryUpdateAvailable": {
+    "description": "Line under an installed dictionary whose publisher has a newer version."
+  },
+  "dictionaryUpdateButton": "Update",
+  "@dictionaryUpdateButton": {
+    "description": "Button (and its tooltip) that downloads and installs a newer version of a dictionary."
+  },
+  "dictionaryUpdateMobileDataBody": "Wi-Fi is not connected. Download this update over mobile data?",
+  "@dictionaryUpdateMobileDataBody": {
+    "description": "Body of the dialog asking before a dictionary update downloads over mobile data, when its size is unknown."
   }
 }
