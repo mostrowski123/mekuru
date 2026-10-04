@@ -150,25 +150,30 @@ class DictionaryUpdateService {
     final asset = entry?.name ?? 'dictionary';
     // An earlier attempt may have imported this revision and stopped before
     // the swap (the app was closed): finish that one.
-    var newId = (await _repository.getAllDictionaries())
+    final imported = (await _repository.getAllDictionaries())
         .where((d) => d.id != old.id && _isRevision(d, old, update))
         .firstOrNull
         ?.id;
-    if (newId == null) {
+    if (imported != null) {
+      await _repository.replaceDictionary(old.id, imported);
+    } else {
+      int? newId;
       await DictionaryDownloadService.downloadAndImportUrl(
         url: update.downloadUrl,
         asset: asset,
         importer: importer,
         requiredBytes: entry == null ? null : (entry.requiredMb * 1e6).round(),
-        // Not done until the swap below is.
+        // Not done until the swap is.
         onProgress: (progress) => onProgress?.call(math.min(progress, 0.95)),
         onDictionaryCreated: (id) => newId = id,
+        // Inside the download's background work: on iOS, leaving the app
+        // during the swap must not suspend it halfway.
+        afterImport: () => _repository.replaceDictionary(
+          old.id,
+          newId ?? (throw StateError('The update imported no dictionary')),
+        ),
       );
     }
-    await _repository.replaceDictionary(
-      old.id,
-      newId ?? (throw StateError('The update imported no dictionary')),
-    );
     onProgress?.call(1.0);
     logUsage('dictionary.updated', attrs: {'asset': asset});
   }

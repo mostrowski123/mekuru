@@ -32,7 +32,8 @@ class DictionaryDownloadService {
   ///
   /// On iOS it keeps running after the user leaves the app, as background
   /// work; when iOS ends that, it stops with [DownloadStoppedException] and
-  /// imports nothing.
+  /// imports nothing. [afterImport] (an update's swap) runs as part of that
+  /// work, once the import is saved.
   static Future<void> downloadAndImportUrl({
     required String url,
     required String asset,
@@ -40,6 +41,7 @@ class DictionaryDownloadService {
     int? requiredBytes,
     void Function(double progress)? onProgress,
     void Function(int dictionaryId)? onDictionaryCreated,
+    Future<void> Function()? afterImport,
   }) async {
     final stopwatch = Stopwatch()..start();
     final workId = 'dictionary:$asset:${DateTime.now().microsecondsSinceEpoch}';
@@ -90,6 +92,7 @@ class DictionaryDownloadService {
           onProgress?.call(0.95);
         },
       );
+      await afterImport?.call();
       onProgress?.call(1.0);
       logUsage(
         'download.completed',

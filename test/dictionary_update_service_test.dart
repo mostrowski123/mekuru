@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -18,6 +20,11 @@ import 'shared/fake_path_provider.dart';
 import 'shared/test_database.dart';
 
 void main() {
+  // The background-work channel needs a binding; the loopback server needs
+  // real sockets, which the test binding replaces with a mock.
+  TestWidgetsFlutterBinding.ensureInitialized();
+  HttpOverrides.global = null;
+
   late AppDatabase db;
   late DictionaryRepository repo;
 
@@ -349,5 +356,46 @@ void main() {
         expect(await repo.getTotalEntryCount(), 2);
       },
     );
+
+    test('on iOS the swap still runs as background work', () async {
+      // Leaving the app during a long swap must not suspend it halfway.
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      const channel = MethodChannel('mekuru/background_work');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      final events = <String>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method != 'update') events.add(call.method);
+        return call.method == 'begin' ? true : null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final swapping = _SwapRecordingRepository(db, events);
+      final old = await install('JMnedict [2026-09-01]');
+
+      await DictionaryUpdateService(swapping).apply(
+        old,
+        DictionaryUpdate(
+          downloadUrl: 'http://127.0.0.1:${server.port}/JMnedict.zip',
+          indexUrl: '$jmdictYomitanReleases/JMnedict.json',
+          revision: 'JMnedict.2026-10-03',
+        ),
+        importer: DictionaryImporter(swapping),
+      );
+
+      expect(events, ['begin', 'swap', 'end']);
+    });
   });
+}
+
+class _SwapRecordingRepository extends DictionaryRepository {
+  _SwapRecordingRepository(super.db, this.events);
+
+  final List<String> events;
+
+  @override
+  Future<void> replaceDictionary(int oldId, int replacementId) {
+    events.add('swap');
+    return super.replaceDictionary(oldId, replacementId);
+  }
 }
