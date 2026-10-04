@@ -25,7 +25,7 @@ Mekuru is a Japanese-first EPUB and manga reader for Android and iOS, built with
   <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="200">
 </a>
 
-Signed APKs are also available on [GitHub Releases](https://github.com/mostrowski123/japanese-e-reader/releases).
+Signed APKs are also available on [GitHub Releases](https://github.com/mostrowski123/mekuru/releases).
 
 ### iOS (beta)
 
@@ -43,7 +43,7 @@ To get early access to updates before they reach the public listing:
 
 Every GitHub release also includes a second installable APK, `app-parallel-release.apk`, which uses the package id `moe.matthew.mekuru.parallel` and is labelled "Mekuru Parallel" in the launcher. It installs alongside the Play Store build without touching its data, so you can try a release candidate without risking your stable library.
 
-- **Install**: download `app-parallel-release.apk` from the latest [GitHub release](https://github.com/mostrowski123/japanese-e-reader/releases) and open it on your device. You may need to allow installs from unknown sources. A separate "Mekuru Parallel" icon will appear in the launcher.
+- **Install**: download `app-parallel-release.apk` from the latest [GitHub release](https://github.com/mostrowski123/mekuru/releases) and open it on your device. You may need to allow installs from unknown sources. A separate "Mekuru Parallel" icon will appear in the launcher.
 - **Data isolation**: the parallel build has its own library, dictionaries, bookmarks, and settings — independent of the Play Store install. Use the in-app backup/restore feature to move data between them.
 - **Limitation**: Pro and OCR features that round-trip the server may fail in the parallel build because Play Integrity attestation only succeeds for Play Store installs. The same constraint applies to the regular sideloaded GitHub APK.
 
@@ -104,8 +104,8 @@ Android is the main platform; iOS is in beta. Platform integrations differ: Andr
 ### Installation
 
 ```bash
-git clone https://github.com/mostrowski123/japanese-e-reader.git
-cd japanese-e-reader
+git clone https://github.com/mostrowski123/mekuru.git
+cd mekuru
 
 flutter pub get
 

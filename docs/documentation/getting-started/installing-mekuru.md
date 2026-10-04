@@ -14,5 +14,5 @@ To get early access to updates before they reach the public listing:
 
 ## Other Options
 
-- Download a signed APK from [GitHub Releases](https://github.com/mostrowski123/japanese-e-reader/releases).
-- Build the APK yourself from source by following the setup steps in the [repository README](https://github.com/mostrowski123/japanese-e-reader#install).
+- Download a signed APK from [GitHub Releases](https://github.com/mostrowski123/mekuru/releases).
+- Build the APK yourself from source by following the setup steps in the [repository README](https://github.com/mostrowski123/mekuru#install).
