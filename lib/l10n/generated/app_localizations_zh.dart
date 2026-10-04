@@ -525,7 +525,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get downloadsRecommendedStarterPackSubtitle =>
-      '一起安装 JMdict 英文词典和词频数据，实现最快速设置。';
+      '一起安装 Jitendex 和词频数据，实现最快速设置。';
 
   @override
   String get downloadsStarterPackJmdict => 'JMdict 英文版';
@@ -2094,7 +2094,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutDictionaryLabel => '词典：';
 
   @override
-  String get aboutJmdictKanjidicTitle => 'JMdict & KANJIDIC';
+  String get aboutJmdictKanjidicTitle => 'JMdict, JMnedict & KANJIDIC';
 
   @override
   String get aboutJmdictKanjidicDescriptionPrefix =>
@@ -3254,105 +3254,99 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ankiMobileCouldNotOpen => '无法打开 AnkiMobile。请确认本设备已安装该应用。';
 
   @override
-  String get catalogTitle => 'More Dictionaries';
+  String get catalogTitle => '更多词典';
 
   @override
-  String get catalogEntrySubtitle =>
-      'Names, Japanese–Japanese, other languages and more';
+  String get catalogEntrySubtitle => '专有名词、日日词典、其他语言等';
 
   @override
-  String get catalogSectionJapaneseEnglish => 'Japanese–English';
+  String get catalogSectionJapaneseEnglish => '日英词典';
 
   @override
-  String get catalogSectionJapaneseJapanese => 'Japanese–Japanese';
+  String get catalogSectionJapaneseJapanese => '日日词典';
 
   @override
-  String get catalogSectionNames => 'Names';
+  String get catalogSectionNames => '专有名词';
 
   @override
-  String get catalogSectionOtherLanguages => 'Other Languages';
+  String get catalogSectionOtherLanguages => '其他语言';
 
   @override
-  String get catalogJitendexDescription =>
-      'Modern Japanese–English dictionary built on JMdict, with example sentences and a clearer layout.';
+  String get catalogJitendexDescription => '基于 JMdict 的现代日英词典，附有例句，排版更清晰。';
 
   @override
   String get catalogWiktionaryEnglishDescription =>
-      'Japanese words from the English Wiktionary, with etymology, grammar notes and examples.';
+      '来自英文 Wiktionary 的日语词汇，附有词源、语法说明和例句。';
 
   @override
   String get catalogWiktionaryJapaneseDescription =>
-      'Japanese–Japanese dictionary from the Japanese Wiktionary. Definitions are in Japanese.';
+      '来自日文 Wiktionary 的日日词典。释义为日语。';
 
   @override
   String get catalogWiktionaryChineseDescription =>
-      'Japanese words from the Chinese Wiktionary, with definitions in Chinese.';
+      '来自中文 Wiktionary 的日语词汇，释义为中文。';
 
   @override
-  String get catalogJmnedictDescription =>
-      'Readings of Japanese names: people, places, companies and more.';
+  String get catalogJmnedictDescription => '日语专有名词的读音：人名、地名、公司名等。';
 
   @override
-  String get catalogJmdictLanguageDescription =>
-      'JMdict with definitions in this language.';
+  String get catalogJmdictLanguageDescription => '释义为该语言的 JMdict。';
 
   @override
-  String get catalogKanjidicLanguageDescription =>
-      'Kanji meanings in this language, with on and kun readings.';
+  String get catalogKanjidicLanguageDescription => '该语言的汉字释义，附音读和训读。';
 
   @override
   String catalogSizes({required String download, required String installed}) {
-    return '$download download · about $installed on device';
+    return '下载 $download · 设备上约占 $installed';
   }
 
   @override
-  String get catalogInstalled => 'Installed';
+  String get catalogInstalled => '已安装';
 
   @override
   String catalogMobileDataBody({required String size}) {
-    return 'Wi-Fi is not connected. This dictionary is about $size. Continue using mobile data?';
+    return '未连接 Wi-Fi。该词典大小约为 $size。是否继续使用移动数据？';
   }
 
   @override
-  String get catalogFindMoreTitle => 'Find More Dictionaries';
+  String get catalogFindMoreTitle => '查找更多词典';
 
   @override
   String get catalogFindMoreBody =>
-      'These sites list many more Yomitan dictionaries, including ones Mekuru can\'t download for you. Download a dictionary\'s .zip file, then import it in the Dictionary Manager with the + button.';
+      '这些网站列出了更多 Yomitan 词典，包括 Mekuru 无法为你下载的词典。下载词典的 .zip 文件，然后在词典管理中点击 + 按钮导入。';
 
   @override
-  String get dictionaryManagerMoreDictionariesTooltip => 'More dictionaries';
+  String get dictionaryManagerMoreDictionariesTooltip => '更多词典';
 
   @override
   String get aboutCatalogDictionariesTitle => 'Jitendex & Wiktionary';
 
   @override
   String get aboutCatalogDictionariesDescription =>
-      'Jitendex, by Stephen Kraus, is built on JMdict and on example sentences from the Tatoeba project (CC BY 2.0 FR). The Wiktionary dictionaries are built from Wiktionary by the wiktextract, Kaikki.org and Wiktionary to Yomitan projects.';
+      'Jitendex 由 Stephen Kraus 制作，基于 JMdict 以及 Tatoeba 项目的例句（CC BY 2.0 FR）。Wiktionary 词典由 wiktextract、Kaikki.org 和 Wiktionary to Yomitan 项目根据 Wiktionary 构建。';
 
   @override
-  String get aboutJmnedictLabel => 'JMnedict: ';
+  String get aboutJmnedictLabel => 'JMnedict：';
 
   @override
   String dictionaryManagerImportedOnVersion({
     required String date,
     required String version,
   }) {
-    return 'Imported $date · version $version';
+    return '已导入 $date · 版本 $version';
   }
 
   @override
-  String get dictionaryUpdateAvailable => 'Update available';
+  String get dictionaryUpdateAvailable => '有可用更新';
 
   @override
-  String get dictionaryUpdateButton => 'Update';
+  String get dictionaryUpdateButton => '更新';
 
   @override
-  String get dictionaryUpdateMobileDataBody =>
-      'Wi-Fi is not connected. Download this update over mobile data?';
+  String get dictionaryUpdateMobileDataBody => '未连接 Wi-Fi。是否使用移动数据下载此更新？';
 
   @override
-  String get dictionaryImportParsingCollection => 'Parsing collection…';
+  String get dictionaryImportParsingCollection => '正在解析词典集合…';
 
   @override
   String dictionaryImportImportingCollection({
@@ -3360,7 +3354,7 @@ class AppLocalizationsZh extends AppLocalizations {
     required int current,
     required int total,
   }) {
-    return 'Importing $name… ($current/$total dictionaries)';
+    return '正在导入 $name…（$current/$total 个词典）';
   }
 
   @override
@@ -3368,7 +3362,7 @@ class AppLocalizationsZh extends AppLocalizations {
     required int processed,
     required int total,
   }) {
-    return 'Importing… $processed/$total';
+    return '正在导入… $processed/$total';
   }
 
   @override
@@ -3376,7 +3370,7 @@ class AppLocalizationsZh extends AppLocalizations {
     required int processed,
     required int total,
   }) {
-    return '$processed/$total entries';
+    return '$processed/$total 个词条';
   }
 
   @override
@@ -3384,8 +3378,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Imported $count entries successfully!',
-      one: 'Imported 1 entry successfully!',
+      other: '成功导入 $count 个词条！',
+      one: '成功导入 1 个词条！',
     );
     return '$_temp0';
   }
@@ -3398,23 +3392,22 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       dictionaries,
       locale: localeName,
-      other: 'Imported $dictionaries dictionaries ($entries entries)',
-      one: 'Imported 1 dictionary ($entries entries)',
+      other: '已导入 $dictionaries 个词典（$entries 个词条）',
+      one: '已导入 1 个词典（$entries 个词条）',
     );
     return '$_temp0';
   }
 
   @override
-  String get dictionaryImportNoneInCollection =>
-      'No dictionaries found in collection';
+  String get dictionaryImportNoneInCollection => '词典集合中未找到词典';
 
   @override
   String backgroundWorkDictionaries({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Downloading $count dictionaries',
-      one: 'Downloading 1 dictionary',
+      other: '正在下载 $count 个词典',
+      one: '正在下载 1 个词典',
     );
     return '$_temp0';
   }
@@ -3941,7 +3934,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadsRecommendedStarterPackSubtitle =>
-      '一起安装 JMdict 英文词典和词频数据，实现最快速设置。';
+      '一起安装 Jitendex 和词频数据，实现最快速设置。';
 
   @override
   String get downloadsStarterPackJmdict => 'JMdict 英文版';
@@ -5510,7 +5503,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get aboutDictionaryLabel => '词典：';
 
   @override
-  String get aboutJmdictKanjidicTitle => 'JMdict & KANJIDIC';
+  String get aboutJmdictKanjidicTitle => 'JMdict, JMnedict & KANJIDIC';
 
   @override
   String get aboutJmdictKanjidicDescriptionPrefix =>
@@ -6668,4 +6661,163 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ankiMobileCouldNotOpen => '无法打开 AnkiMobile。请确认本设备已安装该应用。';
+
+  @override
+  String get catalogTitle => '更多词典';
+
+  @override
+  String get catalogEntrySubtitle => '专有名词、日日词典、其他语言等';
+
+  @override
+  String get catalogSectionJapaneseEnglish => '日英词典';
+
+  @override
+  String get catalogSectionJapaneseJapanese => '日日词典';
+
+  @override
+  String get catalogSectionNames => '专有名词';
+
+  @override
+  String get catalogSectionOtherLanguages => '其他语言';
+
+  @override
+  String get catalogJitendexDescription => '基于 JMdict 的现代日英词典，附有例句，排版更清晰。';
+
+  @override
+  String get catalogWiktionaryEnglishDescription =>
+      '来自英文 Wiktionary 的日语词汇，附有词源、语法说明和例句。';
+
+  @override
+  String get catalogWiktionaryJapaneseDescription =>
+      '来自日文 Wiktionary 的日日词典。释义为日语。';
+
+  @override
+  String get catalogWiktionaryChineseDescription =>
+      '来自中文 Wiktionary 的日语词汇，释义为中文。';
+
+  @override
+  String get catalogJmnedictDescription => '日语专有名词的读音：人名、地名、公司名等。';
+
+  @override
+  String get catalogJmdictLanguageDescription => '释义为该语言的 JMdict。';
+
+  @override
+  String get catalogKanjidicLanguageDescription => '该语言的汉字释义，附音读和训读。';
+
+  @override
+  String catalogSizes({required String download, required String installed}) {
+    return '下载 $download · 设备上约占 $installed';
+  }
+
+  @override
+  String get catalogInstalled => '已安装';
+
+  @override
+  String catalogMobileDataBody({required String size}) {
+    return '未连接 Wi-Fi。该词典大小约为 $size。是否继续使用移动数据？';
+  }
+
+  @override
+  String get catalogFindMoreTitle => '查找更多词典';
+
+  @override
+  String get catalogFindMoreBody =>
+      '这些网站列出了更多 Yomitan 词典，包括 Mekuru 无法为你下载的词典。下载词典的 .zip 文件，然后在词典管理中点击 + 按钮导入。';
+
+  @override
+  String get dictionaryManagerMoreDictionariesTooltip => '更多词典';
+
+  @override
+  String get aboutCatalogDictionariesTitle => 'Jitendex & Wiktionary';
+
+  @override
+  String get aboutCatalogDictionariesDescription =>
+      'Jitendex 由 Stephen Kraus 制作，基于 JMdict 以及 Tatoeba 项目的例句（CC BY 2.0 FR）。Wiktionary 词典由 wiktextract、Kaikki.org 和 Wiktionary to Yomitan 项目根据 Wiktionary 构建。';
+
+  @override
+  String get aboutJmnedictLabel => 'JMnedict：';
+
+  @override
+  String dictionaryManagerImportedOnVersion({
+    required String date,
+    required String version,
+  }) {
+    return '已导入 $date · 版本 $version';
+  }
+
+  @override
+  String get dictionaryUpdateAvailable => '有可用更新';
+
+  @override
+  String get dictionaryUpdateButton => '更新';
+
+  @override
+  String get dictionaryUpdateMobileDataBody => '未连接 Wi-Fi。是否使用移动数据下载此更新？';
+
+  @override
+  String get dictionaryImportParsingCollection => '正在解析词典集合…';
+
+  @override
+  String dictionaryImportImportingCollection({
+    required String name,
+    required int current,
+    required int total,
+  }) {
+    return '正在导入 $name…（$current/$total 个词典）';
+  }
+
+  @override
+  String dictionaryImportImportingEntries({
+    required int processed,
+    required int total,
+  }) {
+    return '正在导入… $processed/$total';
+  }
+
+  @override
+  String dictionaryImportEntriesProgress({
+    required int processed,
+    required int total,
+  }) {
+    return '$processed/$total 个词条';
+  }
+
+  @override
+  String dictionaryImportedEntries({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '成功导入 $count 个词条！',
+      one: '成功导入 1 个词条！',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dictionaryImportedCollection({
+    required int dictionaries,
+    required int entries,
+  }) {
+    String _temp0 = intl.Intl.pluralLogic(
+      dictionaries,
+      locale: localeName,
+      other: '已导入 $dictionaries 个词典（$entries 个词条）',
+      one: '已导入 1 个词典（$entries 个词条）',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dictionaryImportNoneInCollection => '词典集合中未找到词典';
+
+  @override
+  String backgroundWorkDictionaries({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '正在下载 $count 个词典',
+      one: '正在下载 1 个词典',
+    );
+    return '$_temp0';
+  }
 }

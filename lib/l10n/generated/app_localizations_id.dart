@@ -545,7 +545,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get downloadsRecommendedStarterPackSubtitle =>
-      'Instal JMdict English dan data frekuensi kata secara bersamaan untuk penyiapan tercepat.';
+      'Instal Jitendex dan data frekuensi kata secara bersamaan untuk penyiapan tercepat.';
 
   @override
   String get downloadsStarterPackJmdict => 'JMdict English';
@@ -2207,7 +2207,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get aboutDictionaryLabel => 'Kamus: ';
 
   @override
-  String get aboutJmdictKanjidicTitle => 'JMdict & KANJIDIC';
+  String get aboutJmdictKanjidicTitle => 'JMdict, JMnedict & KANJIDIC';
 
   @override
   String get aboutJmdictKanjidicDescriptionPrefix =>
@@ -3422,81 +3422,81 @@ class AppLocalizationsId extends AppLocalizations {
       'Tidak dapat membuka AnkiMobile. Pastikan aplikasinya terpasang di perangkat ini.';
 
   @override
-  String get catalogTitle => 'More Dictionaries';
+  String get catalogTitle => 'Kamus Lainnya';
 
   @override
   String get catalogEntrySubtitle =>
-      'Names, Japanese–Japanese, other languages and more';
+      'Nama, Jepang–Jepang, bahasa lain, dan lainnya';
 
   @override
-  String get catalogSectionJapaneseEnglish => 'Japanese–English';
+  String get catalogSectionJapaneseEnglish => 'Jepang–Inggris';
 
   @override
-  String get catalogSectionJapaneseJapanese => 'Japanese–Japanese';
+  String get catalogSectionJapaneseJapanese => 'Jepang–Jepang';
 
   @override
-  String get catalogSectionNames => 'Names';
+  String get catalogSectionNames => 'Nama';
 
   @override
-  String get catalogSectionOtherLanguages => 'Other Languages';
+  String get catalogSectionOtherLanguages => 'Bahasa Lain';
 
   @override
   String get catalogJitendexDescription =>
-      'Modern Japanese–English dictionary built on JMdict, with example sentences and a clearer layout.';
+      'Kamus Jepang–Inggris modern berbasis JMdict, dengan contoh kalimat dan tata letak yang lebih jelas.';
 
   @override
   String get catalogWiktionaryEnglishDescription =>
-      'Japanese words from the English Wiktionary, with etymology, grammar notes and examples.';
+      'Kata bahasa Jepang dari Wiktionary bahasa Inggris, dengan etimologi, catatan tata bahasa, dan contoh.';
 
   @override
   String get catalogWiktionaryJapaneseDescription =>
-      'Japanese–Japanese dictionary from the Japanese Wiktionary. Definitions are in Japanese.';
+      'Kamus Jepang–Jepang dari Wiktionary bahasa Jepang. Definisinya dalam bahasa Jepang.';
 
   @override
   String get catalogWiktionaryChineseDescription =>
-      'Japanese words from the Chinese Wiktionary, with definitions in Chinese.';
+      'Kata bahasa Jepang dari Wiktionary bahasa Mandarin, dengan definisi dalam bahasa Mandarin.';
 
   @override
   String get catalogJmnedictDescription =>
-      'Readings of Japanese names: people, places, companies and more.';
+      'Cara baca nama Jepang: orang, tempat, perusahaan, dan lainnya.';
 
   @override
   String get catalogJmdictLanguageDescription =>
-      'JMdict with definitions in this language.';
+      'JMdict dengan definisi dalam bahasa ini.';
 
   @override
   String get catalogKanjidicLanguageDescription =>
-      'Kanji meanings in this language, with on and kun readings.';
+      'Arti kanji dalam bahasa ini, dengan cara baca on dan kun.';
 
   @override
   String catalogSizes({required String download, required String installed}) {
-    return '$download download · about $installed on device';
+    return 'Unduhan $download · sekitar $installed di perangkat';
   }
 
   @override
-  String get catalogInstalled => 'Installed';
+  String get catalogInstalled => 'Terpasang';
 
   @override
   String catalogMobileDataBody({required String size}) {
-    return 'Wi-Fi is not connected. This dictionary is about $size. Continue using mobile data?';
+    return 'Wi-Fi tidak terhubung. Ukuran kamus ini sekitar $size. Lanjutkan dengan data seluler?';
   }
 
   @override
-  String get catalogFindMoreTitle => 'Find More Dictionaries';
+  String get catalogFindMoreTitle => 'Cari Kamus Lainnya';
 
   @override
   String get catalogFindMoreBody =>
-      'These sites list many more Yomitan dictionaries, including ones Mekuru can\'t download for you. Download a dictionary\'s .zip file, then import it in the Dictionary Manager with the + button.';
+      'Situs-situs ini mencantumkan lebih banyak kamus Yomitan, termasuk yang tidak dapat diunduh Mekuru untuk Anda. Unduh file .zip kamus, lalu impor di Pengelola Kamus dengan tombol +.';
 
   @override
-  String get dictionaryManagerMoreDictionariesTooltip => 'More dictionaries';
+  String get dictionaryManagerMoreDictionariesTooltip => 'Kamus lainnya';
 
   @override
   String get aboutCatalogDictionariesTitle => 'Jitendex & Wiktionary';
 
   @override
   String get aboutCatalogDictionariesDescription =>
-      'Jitendex, by Stephen Kraus, is built on JMdict and on example sentences from the Tatoeba project (CC BY 2.0 FR). The Wiktionary dictionaries are built from Wiktionary by the wiktextract, Kaikki.org and Wiktionary to Yomitan projects.';
+      'Jitendex, karya Stephen Kraus, dibangun dari JMdict dan contoh kalimat dari proyek Tatoeba (CC BY 2.0 FR). Kamus Wiktionary dibangun dari Wiktionary oleh proyek wiktextract, Kaikki.org, dan Wiktionary to Yomitan.';
 
   @override
   String get aboutJmnedictLabel => 'JMnedict: ';
@@ -3506,21 +3506,21 @@ class AppLocalizationsId extends AppLocalizations {
     required String date,
     required String version,
   }) {
-    return 'Imported $date · version $version';
+    return 'Diimpor pada $date · versi $version';
   }
 
   @override
-  String get dictionaryUpdateAvailable => 'Update available';
+  String get dictionaryUpdateAvailable => 'Pembaruan tersedia';
 
   @override
-  String get dictionaryUpdateButton => 'Update';
+  String get dictionaryUpdateButton => 'Perbarui';
 
   @override
   String get dictionaryUpdateMobileDataBody =>
-      'Wi-Fi is not connected. Download this update over mobile data?';
+      'Wi-Fi tidak terhubung. Unduh pembaruan ini dengan data seluler?';
 
   @override
-  String get dictionaryImportParsingCollection => 'Parsing collection…';
+  String get dictionaryImportParsingCollection => 'Membaca koleksi…';
 
   @override
   String dictionaryImportImportingCollection({
@@ -3528,7 +3528,7 @@ class AppLocalizationsId extends AppLocalizations {
     required int current,
     required int total,
   }) {
-    return 'Importing $name… ($current/$total dictionaries)';
+    return 'Mengimpor $name… ($current/$total kamus)';
   }
 
   @override
@@ -3536,7 +3536,7 @@ class AppLocalizationsId extends AppLocalizations {
     required int processed,
     required int total,
   }) {
-    return 'Importing… $processed/$total';
+    return 'Mengimpor… $processed/$total';
   }
 
   @override
@@ -3544,7 +3544,7 @@ class AppLocalizationsId extends AppLocalizations {
     required int processed,
     required int total,
   }) {
-    return '$processed/$total entries';
+    return '$processed/$total entri';
   }
 
   @override
@@ -3552,8 +3552,8 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Imported $count entries successfully!',
-      one: 'Imported 1 entry successfully!',
+      other: 'Berhasil mengimpor $count entri!',
+      one: 'Berhasil mengimpor 1 entri!',
     );
     return '$_temp0';
   }
@@ -3566,23 +3566,23 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       dictionaries,
       locale: localeName,
-      other: 'Imported $dictionaries dictionaries ($entries entries)',
-      one: 'Imported 1 dictionary ($entries entries)',
+      other: '$dictionaries kamus diimpor ($entries entri)',
+      one: '1 kamus diimpor ($entries entri)',
     );
     return '$_temp0';
   }
 
   @override
   String get dictionaryImportNoneInCollection =>
-      'No dictionaries found in collection';
+      'Tidak ada kamus di dalam koleksi';
 
   @override
   String backgroundWorkDictionaries({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Downloading $count dictionaries',
-      one: 'Downloading 1 dictionary',
+      other: 'Mengunduh $count kamus',
+      one: 'Mengunduh 1 kamus',
     );
     return '$_temp0';
   }

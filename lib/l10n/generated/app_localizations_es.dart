@@ -552,7 +552,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get downloadsRecommendedStarterPackSubtitle =>
-      'Instala JMdict English y datos de frecuencia de palabras juntos para una configuración más rápida.';
+      'Instala Jitendex y datos de frecuencia de palabras juntos para una configuración más rápida.';
 
   @override
   String get downloadsStarterPackJmdict => 'JMdict English';
@@ -2226,7 +2226,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get aboutDictionaryLabel => 'Diccionario: ';
 
   @override
-  String get aboutJmdictKanjidicTitle => 'JMdict & KANJIDIC';
+  String get aboutJmdictKanjidicTitle => 'JMdict, JMnedict & KANJIDIC';
 
   @override
   String get aboutJmdictKanjidicDescriptionPrefix =>
@@ -3450,81 +3450,81 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo abrir AnkiMobile. Comprueba que esté instalado en este dispositivo.';
 
   @override
-  String get catalogTitle => 'More Dictionaries';
+  String get catalogTitle => 'Más diccionarios';
 
   @override
   String get catalogEntrySubtitle =>
-      'Names, Japanese–Japanese, other languages and more';
+      'Nombres, japonés–japonés, otros idiomas y más';
 
   @override
-  String get catalogSectionJapaneseEnglish => 'Japanese–English';
+  String get catalogSectionJapaneseEnglish => 'Japonés–inglés';
 
   @override
-  String get catalogSectionJapaneseJapanese => 'Japanese–Japanese';
+  String get catalogSectionJapaneseJapanese => 'Japonés–japonés';
 
   @override
-  String get catalogSectionNames => 'Names';
+  String get catalogSectionNames => 'Nombres';
 
   @override
-  String get catalogSectionOtherLanguages => 'Other Languages';
+  String get catalogSectionOtherLanguages => 'Otros idiomas';
 
   @override
   String get catalogJitendexDescription =>
-      'Modern Japanese–English dictionary built on JMdict, with example sentences and a clearer layout.';
+      'Diccionario japonés–inglés moderno basado en JMdict, con oraciones de ejemplo y una presentación más clara.';
 
   @override
   String get catalogWiktionaryEnglishDescription =>
-      'Japanese words from the English Wiktionary, with etymology, grammar notes and examples.';
+      'Palabras japonesas del Wiktionary en inglés, con etimología, notas gramaticales y ejemplos.';
 
   @override
   String get catalogWiktionaryJapaneseDescription =>
-      'Japanese–Japanese dictionary from the Japanese Wiktionary. Definitions are in Japanese.';
+      'Diccionario japonés–japonés del Wiktionary en japonés. Las definiciones están en japonés.';
 
   @override
   String get catalogWiktionaryChineseDescription =>
-      'Japanese words from the Chinese Wiktionary, with definitions in Chinese.';
+      'Palabras japonesas del Wiktionary en chino, con definiciones en chino.';
 
   @override
   String get catalogJmnedictDescription =>
-      'Readings of Japanese names: people, places, companies and more.';
+      'Lecturas de nombres japoneses: personas, lugares, empresas y más.';
 
   @override
   String get catalogJmdictLanguageDescription =>
-      'JMdict with definitions in this language.';
+      'JMdict con definiciones en este idioma.';
 
   @override
   String get catalogKanjidicLanguageDescription =>
-      'Kanji meanings in this language, with on and kun readings.';
+      'Significados de kanji en este idioma, con lecturas on y kun.';
 
   @override
   String catalogSizes({required String download, required String installed}) {
-    return '$download download · about $installed on device';
+    return 'Descarga de $download · unos $installed en el dispositivo';
   }
 
   @override
-  String get catalogInstalled => 'Installed';
+  String get catalogInstalled => 'Instalado';
 
   @override
   String catalogMobileDataBody({required String size}) {
-    return 'Wi-Fi is not connected. This dictionary is about $size. Continue using mobile data?';
+    return 'No hay conexión Wi-Fi. Este diccionario ocupa unos $size. ¿Continuar con datos móviles?';
   }
 
   @override
-  String get catalogFindMoreTitle => 'Find More Dictionaries';
+  String get catalogFindMoreTitle => 'Encontrar más diccionarios';
 
   @override
   String get catalogFindMoreBody =>
-      'These sites list many more Yomitan dictionaries, including ones Mekuru can\'t download for you. Download a dictionary\'s .zip file, then import it in the Dictionary Manager with the + button.';
+      'Estos sitios enumeran muchos más diccionarios Yomitan, incluidos algunos que Mekuru no puede descargar por ti. Descarga el archivo .zip de un diccionario y luego impórtalo en el Gestor de diccionarios con el botón +.';
 
   @override
-  String get dictionaryManagerMoreDictionariesTooltip => 'More dictionaries';
+  String get dictionaryManagerMoreDictionariesTooltip => 'Más diccionarios';
 
   @override
   String get aboutCatalogDictionariesTitle => 'Jitendex & Wiktionary';
 
   @override
   String get aboutCatalogDictionariesDescription =>
-      'Jitendex, by Stephen Kraus, is built on JMdict and on example sentences from the Tatoeba project (CC BY 2.0 FR). The Wiktionary dictionaries are built from Wiktionary by the wiktextract, Kaikki.org and Wiktionary to Yomitan projects.';
+      'Jitendex, de Stephen Kraus, se basa en JMdict y en oraciones de ejemplo del proyecto Tatoeba (CC BY 2.0 FR). Los diccionarios de Wiktionary se crean a partir de Wiktionary con los proyectos wiktextract, Kaikki.org y Wiktionary to Yomitan.';
 
   @override
   String get aboutJmnedictLabel => 'JMnedict: ';
@@ -3534,21 +3534,21 @@ class AppLocalizationsEs extends AppLocalizations {
     required String date,
     required String version,
   }) {
-    return 'Imported $date · version $version';
+    return 'Importado el $date · versión $version';
   }
 
   @override
-  String get dictionaryUpdateAvailable => 'Update available';
+  String get dictionaryUpdateAvailable => 'Actualización disponible';
 
   @override
-  String get dictionaryUpdateButton => 'Update';
+  String get dictionaryUpdateButton => 'Actualizar';
 
   @override
   String get dictionaryUpdateMobileDataBody =>
-      'Wi-Fi is not connected. Download this update over mobile data?';
+      'No hay conexión Wi-Fi. ¿Descargar esta actualización con datos móviles?';
 
   @override
-  String get dictionaryImportParsingCollection => 'Parsing collection…';
+  String get dictionaryImportParsingCollection => 'Leyendo la colección…';
 
   @override
   String dictionaryImportImportingCollection({
@@ -3556,7 +3556,7 @@ class AppLocalizationsEs extends AppLocalizations {
     required int current,
     required int total,
   }) {
-    return 'Importing $name… ($current/$total dictionaries)';
+    return 'Importando $name… ($current/$total diccionarios)';
   }
 
   @override
@@ -3564,7 +3564,7 @@ class AppLocalizationsEs extends AppLocalizations {
     required int processed,
     required int total,
   }) {
-    return 'Importing… $processed/$total';
+    return 'Importando… $processed/$total';
   }
 
   @override
@@ -3572,7 +3572,7 @@ class AppLocalizationsEs extends AppLocalizations {
     required int processed,
     required int total,
   }) {
-    return '$processed/$total entries';
+    return '$processed/$total entradas';
   }
 
   @override
@@ -3580,8 +3580,8 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Imported $count entries successfully!',
-      one: 'Imported 1 entry successfully!',
+      other: '¡Se importaron $count entradas correctamente!',
+      one: '¡Se importó 1 entrada correctamente!',
     );
     return '$_temp0';
   }
@@ -3594,23 +3594,23 @@ class AppLocalizationsEs extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       dictionaries,
       locale: localeName,
-      other: 'Imported $dictionaries dictionaries ($entries entries)',
-      one: 'Imported 1 dictionary ($entries entries)',
+      other: 'Se importaron $dictionaries diccionarios ($entries entradas)',
+      one: 'Se importó 1 diccionario ($entries entradas)',
     );
     return '$_temp0';
   }
 
   @override
   String get dictionaryImportNoneInCollection =>
-      'No dictionaries found in collection';
+      'No se encontraron diccionarios en la colección';
 
   @override
   String backgroundWorkDictionaries({required int count}) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Downloading $count dictionaries',
-      one: 'Downloading 1 dictionary',
+      other: 'Descargando $count diccionarios',
+      one: 'Descargando 1 diccionario',
     );
     return '$_temp0';
   }

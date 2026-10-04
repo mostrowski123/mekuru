@@ -668,7 +668,7 @@
   "@downloadsRecommendedStarterPackTitle": {
     "description": "Heading for the recommended dictionary starter pack."
   },
-  "downloadsRecommendedStarterPackSubtitle": "一起安装 JMdict 英文词典和词频数据，实现最快速设置。",
+  "downloadsRecommendedStarterPackSubtitle": "一起安装 Jitendex 和词频数据，实现最快速设置。",
   "@downloadsRecommendedStarterPackSubtitle": {
     "description": "Description for the recommended starter pack."
   },
@@ -2548,7 +2548,7 @@
   "@aboutDictionaryLabel": {
     "description": "Label before a linked dictionary URL in attribution text."
   },
-  "aboutJmdictKanjidicTitle": "JMdict & KANJIDIC",
+  "aboutJmdictKanjidicTitle": "JMdict, JMnedict & KANJIDIC",
   "@aboutJmdictKanjidicTitle": {
     "description": "Title for the JMdict and KANJIDIC attribution card."
   },
@@ -2893,5 +2893,39 @@
   "ankiMobileNamesRequired": "请输入笔记类型、牌组和至少一个字段名称。",
   "ankiMobileCouldNotOpen": "无法打开 AnkiMobile。请确认本设备已安装该应用。",
   "readerScrollViewTitle": "滚动视图",
-  "readerScrollViewSubtitle": "滑动浏览每一章，而不是翻页"
+  "readerScrollViewSubtitle": "滑动浏览每一章，而不是翻页",
+  "catalogTitle": "更多词典",
+  "catalogEntrySubtitle": "专有名词、日日词典、其他语言等",
+  "catalogSectionJapaneseEnglish": "日英词典",
+  "catalogSectionJapaneseJapanese": "日日词典",
+  "catalogSectionNames": "专有名词",
+  "catalogSectionOtherLanguages": "其他语言",
+  "catalogJitendexDescription": "基于 JMdict 的现代日英词典，附有例句，排版更清晰。",
+  "catalogWiktionaryEnglishDescription": "来自英文 Wiktionary 的日语词汇，附有词源、语法说明和例句。",
+  "catalogWiktionaryJapaneseDescription": "来自日文 Wiktionary 的日日词典。释义为日语。",
+  "catalogWiktionaryChineseDescription": "来自中文 Wiktionary 的日语词汇，释义为中文。",
+  "catalogJmnedictDescription": "日语专有名词的读音：人名、地名、公司名等。",
+  "catalogJmdictLanguageDescription": "释义为该语言的 JMdict。",
+  "catalogKanjidicLanguageDescription": "该语言的汉字释义，附音读和训读。",
+  "catalogSizes": "下载 {download} · 设备上约占 {installed}",
+  "catalogInstalled": "已安装",
+  "catalogMobileDataBody": "未连接 Wi-Fi。该词典大小约为 {size}。是否继续使用移动数据？",
+  "catalogFindMoreTitle": "查找更多词典",
+  "catalogFindMoreBody": "这些网站列出了更多 Yomitan 词典，包括 Mekuru 无法为你下载的词典。下载词典的 .zip 文件，然后在词典管理中点击 + 按钮导入。",
+  "dictionaryManagerMoreDictionariesTooltip": "更多词典",
+  "aboutCatalogDictionariesTitle": "Jitendex & Wiktionary",
+  "aboutCatalogDictionariesDescription": "Jitendex 由 Stephen Kraus 制作，基于 JMdict 以及 Tatoeba 项目的例句（CC BY 2.0 FR）。Wiktionary 词典由 wiktextract、Kaikki.org 和 Wiktionary to Yomitan 项目根据 Wiktionary 构建。",
+  "aboutJmnedictLabel": "JMnedict：",
+  "dictionaryManagerImportedOnVersion": "已导入 {date} · 版本 {version}",
+  "dictionaryUpdateAvailable": "有可用更新",
+  "dictionaryUpdateButton": "更新",
+  "dictionaryUpdateMobileDataBody": "未连接 Wi-Fi。是否使用移动数据下载此更新？",
+  "dictionaryImportParsingCollection": "正在解析词典集合…",
+  "dictionaryImportImportingCollection": "正在导入 {name}…（{current}/{total} 个词典）",
+  "dictionaryImportImportingEntries": "正在导入… {processed}/{total}",
+  "dictionaryImportEntriesProgress": "{processed}/{total} 个词条",
+  "dictionaryImportedEntries": "{count, plural, =1{成功导入 1 个词条！} other{成功导入 {count} 个词条！}}",
+  "dictionaryImportedCollection": "{dictionaries, plural, =1{已导入 1 个词典（{entries} 个词条）} other{已导入 {dictionaries} 个词典（{entries} 个词条）}}",
+  "dictionaryImportNoneInCollection": "词典集合中未找到词典",
+  "backgroundWorkDictionaries": "{count, plural, =1{正在下载 1 个词典} other{正在下载 {count} 个词典}}"
 }

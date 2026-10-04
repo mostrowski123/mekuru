@@ -668,7 +668,7 @@
   "@downloadsRecommendedStarterPackTitle": {
     "description": "Heading for the recommended dictionary starter pack."
   },
-  "downloadsRecommendedStarterPackSubtitle": "Instal JMdict English dan data frekuensi kata secara bersamaan untuk penyiapan tercepat.",
+  "downloadsRecommendedStarterPackSubtitle": "Instal Jitendex dan data frekuensi kata secara bersamaan untuk penyiapan tercepat.",
   "@downloadsRecommendedStarterPackSubtitle": {
     "description": "Description for the recommended starter pack."
   },
@@ -2548,7 +2548,7 @@
   "@aboutDictionaryLabel": {
     "description": "Label before a linked dictionary URL in attribution text."
   },
-  "aboutJmdictKanjidicTitle": "JMdict & KANJIDIC",
+  "aboutJmdictKanjidicTitle": "JMdict, JMnedict & KANJIDIC",
   "@aboutJmdictKanjidicTitle": {
     "description": "Title for the JMdict and KANJIDIC attribution card."
   },
@@ -2893,5 +2893,39 @@
   "ankiMobileNamesRequired": "Masukkan tipe catatan, dek, dan setidaknya satu nama kolom.",
   "ankiMobileCouldNotOpen": "Tidak dapat membuka AnkiMobile. Pastikan aplikasinya terpasang di perangkat ini.",
   "readerScrollViewTitle": "Tampilan Gulir",
-  "readerScrollViewSubtitle": "Geser di sepanjang setiap bab, bukan membalik halaman"
+  "readerScrollViewSubtitle": "Geser di sepanjang setiap bab, bukan membalik halaman",
+  "catalogTitle": "Kamus Lainnya",
+  "catalogEntrySubtitle": "Nama, Jepang–Jepang, bahasa lain, dan lainnya",
+  "catalogSectionJapaneseEnglish": "Jepang–Inggris",
+  "catalogSectionJapaneseJapanese": "Jepang–Jepang",
+  "catalogSectionNames": "Nama",
+  "catalogSectionOtherLanguages": "Bahasa Lain",
+  "catalogJitendexDescription": "Kamus Jepang–Inggris modern berbasis JMdict, dengan contoh kalimat dan tata letak yang lebih jelas.",
+  "catalogWiktionaryEnglishDescription": "Kata bahasa Jepang dari Wiktionary bahasa Inggris, dengan etimologi, catatan tata bahasa, dan contoh.",
+  "catalogWiktionaryJapaneseDescription": "Kamus Jepang–Jepang dari Wiktionary bahasa Jepang. Definisinya dalam bahasa Jepang.",
+  "catalogWiktionaryChineseDescription": "Kata bahasa Jepang dari Wiktionary bahasa Mandarin, dengan definisi dalam bahasa Mandarin.",
+  "catalogJmnedictDescription": "Cara baca nama Jepang: orang, tempat, perusahaan, dan lainnya.",
+  "catalogJmdictLanguageDescription": "JMdict dengan definisi dalam bahasa ini.",
+  "catalogKanjidicLanguageDescription": "Arti kanji dalam bahasa ini, dengan cara baca on dan kun.",
+  "catalogSizes": "Unduhan {download} · sekitar {installed} di perangkat",
+  "catalogInstalled": "Terpasang",
+  "catalogMobileDataBody": "Wi-Fi tidak terhubung. Ukuran kamus ini sekitar {size}. Lanjutkan dengan data seluler?",
+  "catalogFindMoreTitle": "Cari Kamus Lainnya",
+  "catalogFindMoreBody": "Situs-situs ini mencantumkan lebih banyak kamus Yomitan, termasuk yang tidak dapat diunduh Mekuru untuk Anda. Unduh file .zip kamus, lalu impor di Pengelola Kamus dengan tombol +.",
+  "dictionaryManagerMoreDictionariesTooltip": "Kamus lainnya",
+  "aboutCatalogDictionariesTitle": "Jitendex & Wiktionary",
+  "aboutCatalogDictionariesDescription": "Jitendex, karya Stephen Kraus, dibangun dari JMdict dan contoh kalimat dari proyek Tatoeba (CC BY 2.0 FR). Kamus Wiktionary dibangun dari Wiktionary oleh proyek wiktextract, Kaikki.org, dan Wiktionary to Yomitan.",
+  "aboutJmnedictLabel": "JMnedict: ",
+  "dictionaryManagerImportedOnVersion": "Diimpor pada {date} · versi {version}",
+  "dictionaryUpdateAvailable": "Pembaruan tersedia",
+  "dictionaryUpdateButton": "Perbarui",
+  "dictionaryUpdateMobileDataBody": "Wi-Fi tidak terhubung. Unduh pembaruan ini dengan data seluler?",
+  "dictionaryImportParsingCollection": "Membaca koleksi…",
+  "dictionaryImportImportingCollection": "Mengimpor {name}… ({current}/{total} kamus)",
+  "dictionaryImportImportingEntries": "Mengimpor… {processed}/{total}",
+  "dictionaryImportEntriesProgress": "{processed}/{total} entri",
+  "dictionaryImportedEntries": "{count, plural, =1{Berhasil mengimpor 1 entri!} other{Berhasil mengimpor {count} entri!}}",
+  "dictionaryImportedCollection": "{dictionaries, plural, =1{1 kamus diimpor ({entries} entri)} other{{dictionaries} kamus diimpor ({entries} entri)}}",
+  "dictionaryImportNoneInCollection": "Tidak ada kamus di dalam koleksi",
+  "backgroundWorkDictionaries": "{count, plural, =1{Mengunduh 1 kamus} other{Mengunduh {count} kamus}}"
 }

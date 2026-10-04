@@ -668,7 +668,7 @@
   "@downloadsRecommendedStarterPackTitle": {
     "description": "Heading for the recommended dictionary starter pack."
   },
-  "downloadsRecommendedStarterPackSubtitle": "Instala JMdict English y datos de frecuencia de palabras juntos para una configuración más rápida.",
+  "downloadsRecommendedStarterPackSubtitle": "Instala Jitendex y datos de frecuencia de palabras juntos para una configuración más rápida.",
   "@downloadsRecommendedStarterPackSubtitle": {
     "description": "Description for the recommended starter pack."
   },
@@ -2548,7 +2548,7 @@
   "@aboutDictionaryLabel": {
     "description": "Label before a linked dictionary URL in attribution text."
   },
-  "aboutJmdictKanjidicTitle": "JMdict & KANJIDIC",
+  "aboutJmdictKanjidicTitle": "JMdict, JMnedict & KANJIDIC",
   "@aboutJmdictKanjidicTitle": {
     "description": "Title for the JMdict and KANJIDIC attribution card."
   },
@@ -2893,5 +2893,39 @@
   "ankiMobileNamesRequired": "Introduce un tipo de nota, una baraja y al menos un nombre de campo.",
   "ankiMobileCouldNotOpen": "No se pudo abrir AnkiMobile. Comprueba que esté instalado en este dispositivo.",
   "readerScrollViewTitle": "Vista de desplazamiento",
-  "readerScrollViewSubtitle": "Desliza por cada capítulo en lugar de pasar páginas"
+  "readerScrollViewSubtitle": "Desliza por cada capítulo en lugar de pasar páginas",
+  "catalogTitle": "Más diccionarios",
+  "catalogEntrySubtitle": "Nombres, japonés–japonés, otros idiomas y más",
+  "catalogSectionJapaneseEnglish": "Japonés–inglés",
+  "catalogSectionJapaneseJapanese": "Japonés–japonés",
+  "catalogSectionNames": "Nombres",
+  "catalogSectionOtherLanguages": "Otros idiomas",
+  "catalogJitendexDescription": "Diccionario japonés–inglés moderno basado en JMdict, con oraciones de ejemplo y una presentación más clara.",
+  "catalogWiktionaryEnglishDescription": "Palabras japonesas del Wiktionary en inglés, con etimología, notas gramaticales y ejemplos.",
+  "catalogWiktionaryJapaneseDescription": "Diccionario japonés–japonés del Wiktionary en japonés. Las definiciones están en japonés.",
+  "catalogWiktionaryChineseDescription": "Palabras japonesas del Wiktionary en chino, con definiciones en chino.",
+  "catalogJmnedictDescription": "Lecturas de nombres japoneses: personas, lugares, empresas y más.",
+  "catalogJmdictLanguageDescription": "JMdict con definiciones en este idioma.",
+  "catalogKanjidicLanguageDescription": "Significados de kanji en este idioma, con lecturas on y kun.",
+  "catalogSizes": "Descarga de {download} · unos {installed} en el dispositivo",
+  "catalogInstalled": "Instalado",
+  "catalogMobileDataBody": "No hay conexión Wi-Fi. Este diccionario ocupa unos {size}. ¿Continuar con datos móviles?",
+  "catalogFindMoreTitle": "Encontrar más diccionarios",
+  "catalogFindMoreBody": "Estos sitios enumeran muchos más diccionarios Yomitan, incluidos algunos que Mekuru no puede descargar por ti. Descarga el archivo .zip de un diccionario y luego impórtalo en el Gestor de diccionarios con el botón +.",
+  "dictionaryManagerMoreDictionariesTooltip": "Más diccionarios",
+  "aboutCatalogDictionariesTitle": "Jitendex & Wiktionary",
+  "aboutCatalogDictionariesDescription": "Jitendex, de Stephen Kraus, se basa en JMdict y en oraciones de ejemplo del proyecto Tatoeba (CC BY 2.0 FR). Los diccionarios de Wiktionary se crean a partir de Wiktionary con los proyectos wiktextract, Kaikki.org y Wiktionary to Yomitan.",
+  "aboutJmnedictLabel": "JMnedict: ",
+  "dictionaryManagerImportedOnVersion": "Importado el {date} · versión {version}",
+  "dictionaryUpdateAvailable": "Actualización disponible",
+  "dictionaryUpdateButton": "Actualizar",
+  "dictionaryUpdateMobileDataBody": "No hay conexión Wi-Fi. ¿Descargar esta actualización con datos móviles?",
+  "dictionaryImportParsingCollection": "Leyendo la colección…",
+  "dictionaryImportImportingCollection": "Importando {name}… ({current}/{total} diccionarios)",
+  "dictionaryImportImportingEntries": "Importando… {processed}/{total}",
+  "dictionaryImportEntriesProgress": "{processed}/{total} entradas",
+  "dictionaryImportedEntries": "{count, plural, =1{¡Se importó 1 entrada correctamente!} other{¡Se importaron {count} entradas correctamente!}}",
+  "dictionaryImportedCollection": "{dictionaries, plural, =1{Se importó 1 diccionario ({entries} entradas)} other{Se importaron {dictionaries} diccionarios ({entries} entradas)}}",
+  "dictionaryImportNoneInCollection": "No se encontraron diccionarios en la colección",
+  "backgroundWorkDictionaries": "{count, plural, =1{Descargando 1 diccionario} other{Descargando {count} diccionarios}}"
 }
