@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_importer.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
@@ -169,7 +170,7 @@ class DictionaryImportNotifier extends Notifier<DictionaryImportState> {
           },
           onDictionaryStart: (name, entryCount, dictIndex, dictTotal) {
             state = state.copyWith(
-              currentDictionary: name,
+              currentDictionary: dictionaryDisplayName(name),
               processedEntries: 0,
               totalEntries: entryCount,
               dictionariesProcessed: dictIndex,

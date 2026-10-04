@@ -182,6 +182,21 @@ enum CatalogDictionary {
   double get requiredMb => downloadMb + 2 * installedMb;
 }
 
+/// The name the app shows for a dictionary: the catalog's name for a
+/// catalog dictionary ("Jitendex.org [2026-10-03]" → "Jitendex"), otherwise
+/// its title without a trailing revision ("JMdict [2026-10-03]" → "JMdict").
+/// Stored titles stay as imported: matching depends on them.
+String dictionaryDisplayName(String storedTitle) =>
+    CatalogDictionary.forTitle(storedTitle)?.displayName ??
+    storedTitle.replaceFirst(_trailingRevision, '');
+
+/// The version [dictionaryDisplayName] leaves out: the title's trailing
+/// revision, else the one index.json gave; null when neither is known.
+String? dictionaryVersion(DictionaryMeta meta) =>
+    _trailingRevision.firstMatch(meta.name)?.group(1) ?? meta.revision;
+
+final _trailingRevision = RegExp(r'\s\[(\d{4}[\d.\-]*)\]$');
+
 /// Community guides that list many more Yomitan dictionaries, including
 /// ones Mekuru does not download itself.
 const List<({String name, String url})> dictionaryGuides = [

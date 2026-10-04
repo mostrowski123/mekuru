@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:fuzzy_bolt/fuzzy_bolt.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/utils/japanese_text.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/prefix_query_bounds.dart';
 import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
@@ -109,7 +110,9 @@ class DictionaryQueryService {
 
     for (final row in rows) {
       enabledIds.add(row.id);
-      names[row.id] = row.name;
+      // Shown on results and sent to Anki; KANJIDIC detection relies only
+      // on the name's start, which display names keep.
+      names[row.id] = dictionaryDisplayName(row.name);
       sortOrders[row.id] = row.sortOrder;
     }
 

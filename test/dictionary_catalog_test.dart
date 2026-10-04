@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
@@ -57,5 +58,52 @@ void main() {
         reason: type.name,
       );
     }
+  });
+
+  test('KANJIDIC editions keep the name start kanji parsing looks for', () {
+    for (final entry in CatalogDictionary.values) {
+      if (entry.title.startsWith('KANJIDIC')) {
+        expect(entry.displayName, startsWith('KANJIDIC'));
+      }
+    }
+  });
+
+  test('display names use catalog names and drop revisions', () {
+    const shown = {
+      'Jitendex.org [2026-10-03]': 'Jitendex',
+      'wty-ja-en': 'Wiktionary (English)',
+      'JMdict (Spanish) [2026-10-03]': 'JMdict (Español)',
+      'JMdict [2026-10-03]': 'JMdict',
+      'KANJIDIC [2026-276]': 'KANJIDIC',
+      'Old Dict [2024.01.02]': 'Old Dict',
+      'JPDBv2㋕': 'JPDBv2㋕',
+      'My notes [draft]': 'My notes [draft]',
+    };
+    shown.forEach(
+      (stored, name) =>
+          expect(dictionaryDisplayName(stored), name, reason: stored),
+    );
+  });
+
+  test('the version a display name leaves out', () {
+    DictionaryMeta meta(String name, {String? revision}) => DictionaryMeta(
+      id: 1,
+      name: name,
+      isEnabled: true,
+      dateImported: DateTime(2026, 10, 4),
+      sortOrder: 0,
+      isHidden: false,
+      revision: revision,
+    );
+
+    expect(
+      dictionaryVersion(meta('JMdict [2026-10-03]', revision: 'JMdict.2026')),
+      '2026-10-03',
+    );
+    expect(
+      dictionaryVersion(meta('wty-ja-en', revision: '2026.10.02')),
+      '2026.10.02',
+    );
+    expect(dictionaryVersion(meta('My dictionary')), isNull);
   });
 }

@@ -5725,6 +5725,15 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'JMnedict: '**
   String get aboutJmnedictLabel;
+
+  /// Subtitle of a dictionary in the Dictionary Manager: when it was imported and which version it is. version looks like 2026-10-03.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {date} · version {version}'**
+  String dictionaryManagerImportedOnVersion({
+    required String date,
+    required String version,
+  });
 }
 
 class _AppLocalizationsDelegate

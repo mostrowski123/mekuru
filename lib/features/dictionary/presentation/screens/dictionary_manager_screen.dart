@@ -4,20 +4,23 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/database/database_provider.dart'
+    show DictionaryMeta;
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/services/lookup_benchmark.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
-import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
-import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen for managing imported Yomitan dictionaries.
@@ -457,10 +460,13 @@ class _DictionaryManagerScreenState
   Widget _buildDictionaryTile(
     BuildContext context,
     WidgetRef ref,
-    dynamic dict, {
+    DictionaryMeta dict, {
     required int index,
   }) {
     final l10n = context.l10n;
+    final name = dictionaryDisplayName(dict.name);
+    final date = _formatDate(dict.dateImported);
+    final version = dictionaryVersion(dict);
 
     final isDeleting = _deleting.contains(dict.id);
 
@@ -472,11 +478,14 @@ class _DictionaryManagerScreenState
           index: index,
           child: const Icon(Icons.drag_handle),
         ),
-        title: Text(dict.name),
+        title: Text(name),
         subtitle: Text(
-          l10n.dictionaryManagerImportedOn(
-            date: _formatDate(dict.dateImported),
-          ),
+          version == null
+              ? l10n.dictionaryManagerImportedOn(date: date)
+              : l10n.dictionaryManagerImportedOnVersion(
+                  date: date,
+                  version: version,
+                ),
           style: Theme.of(context).textTheme.bodySmall,
         ),
         trailing: Row(
@@ -505,7 +514,7 @@ class _DictionaryManagerScreenState
             else
               IconButton(
                 icon: const Icon(Icons.delete_outline),
-                onPressed: () => _confirmDelete(context, dict.id, dict.name),
+                onPressed: () => _confirmDelete(context, dict.id, name),
               ),
           ],
         ),

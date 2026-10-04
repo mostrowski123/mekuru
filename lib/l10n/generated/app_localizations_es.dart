@@ -3528,4 +3528,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get aboutJmnedictLabel => 'JMnedict: ';
+
+  @override
+  String dictionaryManagerImportedOnVersion({
+    required String date,
+    required String version,
+  }) {
+    return 'Imported $date · version $version';
+  }
 }

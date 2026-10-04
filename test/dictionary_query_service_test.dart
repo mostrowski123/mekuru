@@ -317,6 +317,22 @@ void main() {
       expect(results.first.dictionaryName, 'EnabledDict');
     });
 
+    test('results name their dictionary as the app shows it', () async {
+      final id = await repo.insertDictionary('Jitendex.org [2026-10-03]');
+      await repo.batchInsertEntries([
+        DictionaryEntriesCompanion.insert(
+          expression: '泳ぐ',
+          reading: const Value('およぐ'),
+          glossaries: jsonEncode(['to swim']),
+          dictionaryId: id,
+        ),
+      ]);
+
+      final results = await queryService.searchWithSource('泳ぐ');
+
+      expect(results.single.dictionaryName, 'Jitendex');
+    });
+
     test('results are ordered by dictionary id', () async {
       final results = await queryService.searchWithSource('食べる');
       expect(results, hasLength(2));

@@ -4473,5 +4473,17 @@
   "aboutJmnedictLabel": "JMnedict: ",
   "@aboutJmnedictLabel": {
     "description": "Label before a linked JMnedict project URL in attribution text."
+  },
+  "dictionaryManagerImportedOnVersion": "Imported {date} · version {version}",
+  "@dictionaryManagerImportedOnVersion": {
+    "description": "Subtitle of a dictionary in the Dictionary Manager: when it was imported and which version it is. version looks like 2026-10-03.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      }
+    }
   }
 }

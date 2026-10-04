@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/backup/data/models/backup_manifest.dart';
 import 'package:mekuru/features/backup/data/models/pending_dictionary_restore.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -84,19 +85,14 @@ class PendingDictionaryRestoreService {
     final snapshot = await loadPendingRestore();
     if (snapshot == null) return null;
 
-    final visibleDictionaries = await _getVisibleDictionaries(repository);
-    final matchingNames = visibleDictionaries
-        .where(
-          (dictionary) => snapshot.preferences.any(
-            (preference) => preference.name == dictionary.name,
-          ),
-        )
-        .length;
-
+    final matches = _preferenceById(
+      snapshot.preferences,
+      await _getVisibleDictionaries(repository),
+    );
     return PendingDictionaryRestorePreview(
       totalCount: snapshot.preferences.length,
-      matchingCount: matchingNames,
-      missingCount: snapshot.preferences.length - matchingNames,
+      matchingCount: matches.length,
+      missingCount: _missingCount(snapshot.preferences, matches),
     );
   }
 
@@ -112,38 +108,30 @@ class PendingDictionaryRestoreService {
     }
 
     final visibleDictionaries = await _getVisibleDictionaries(repository);
-    final preferenceByName = {
-      for (final preference in snapshot.preferences)
-        preference.name: preference,
-    };
-    final matched = visibleDictionaries
-        .where((dictionary) => preferenceByName.containsKey(dictionary.name))
-        .toList(growable: false);
-
-    if (matched.isEmpty) {
+    final matches = _preferenceById(snapshot.preferences, visibleDictionaries);
+    if (matches.isEmpty) {
       return ApplyPendingDictionaryRestoreResult(
         appliedCount: 0,
         missingCount: snapshot.preferences.length,
       );
     }
 
-    final sortedMatched = [...matched]
-      ..sort(
-        (a, b) => preferenceByName[a.name]!.sortOrder.compareTo(
-          preferenceByName[b.name]!.sortOrder,
-        ),
-      );
-    final unmatched = visibleDictionaries
-        .where((dictionary) => !preferenceByName.containsKey(dictionary.name))
-        .toList(growable: false);
-
+    final sortedMatched =
+        [
+          for (final dictionary in visibleDictionaries)
+            if (matches.containsKey(dictionary.id)) dictionary,
+        ]..sort(
+          (a, b) =>
+              matches[a.id]!.sortOrder.compareTo(matches[b.id]!.sortOrder),
+        );
     await repository.reorderDictionaries([
       ...sortedMatched.map((dictionary) => dictionary.id),
-      ...unmatched.map((dictionary) => dictionary.id),
+      for (final dictionary in visibleDictionaries)
+        if (!matches.containsKey(dictionary.id)) dictionary.id,
     ]);
 
     for (final dictionary in sortedMatched) {
-      final preference = preferenceByName[dictionary.name]!;
+      final preference = matches[dictionary.id]!;
       if (dictionary.isEnabled != preference.isEnabled) {
         await repository.toggleDictionary(
           dictionary.id,
@@ -155,9 +143,34 @@ class PendingDictionaryRestoreService {
     await clearPendingRestore();
     return ApplyPendingDictionaryRestoreResult(
       appliedCount: sortedMatched.length,
-      missingCount: snapshot.preferences.length - sortedMatched.length,
+      missingCount: _missingCount(snapshot.preferences, matches),
     );
   }
+
+  /// The backed-up preference for each installed dictionary: the one with
+  /// its exact title, else one with its display name, so a preference
+  /// still applies after an update changed the date in a title.
+  static Map<int, BackupDictionaryPreference> _preferenceById(
+    List<BackupDictionaryPreference> preferences,
+    List<DictionaryMeta> dictionaries,
+  ) {
+    final byTitle = {for (final p in preferences) p.name: p};
+    final byName = {
+      for (final p in preferences) dictionaryDisplayName(p.name): p,
+    };
+    return {
+      for (final dictionary in dictionaries)
+        dictionary.id:
+            ?(byTitle[dictionary.name] ??
+            byName[dictionaryDisplayName(dictionary.name)]),
+    };
+  }
+
+  /// Preferences no installed dictionary took.
+  static int _missingCount(
+    List<BackupDictionaryPreference> preferences,
+    Map<int, BackupDictionaryPreference> matches,
+  ) => preferences.length - matches.values.toSet().length;
 
   Future<List<DictionaryMeta>> _getVisibleDictionaries(
     DictionaryRepository repository,

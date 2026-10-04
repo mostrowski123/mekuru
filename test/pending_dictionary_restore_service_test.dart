@@ -162,4 +162,76 @@ void main() {
       expect(await service.loadPendingRestore(), isNotNull);
     },
   );
+
+  test(
+    'preferences apply to the same dictionary at a newer revision',
+    () async {
+      await repository.insertDictionary('JMdict [2026-10-03]');
+
+      final result = await service.queueFromBackup(
+        preferences: const [
+          BackupDictionaryPreference(
+            name: 'JMdict [2026-09-01]',
+            sortOrder: 0,
+            isEnabled: false,
+          ),
+        ],
+        shouldQueue: true,
+        repository: repository,
+      );
+      final applied = await service.applyPendingRestore(repository);
+
+      expect(result.matchingCount, 1);
+      expect(applied.appliedCount, 1);
+      expect((await repository.getAllDictionaries()).single.isEnabled, isFalse);
+    },
+  );
+
+  test(
+    'an exact title wins over a preference that only shares the name',
+    () async {
+      await repository.insertDictionary('JMdict [2026-10-03]');
+
+      await service.queueFromBackup(
+        preferences: const [
+          BackupDictionaryPreference(
+            name: 'JMdict [2026-10-03]',
+            sortOrder: 0,
+            isEnabled: false,
+          ),
+          BackupDictionaryPreference(
+            name: 'JMdict [2026-09-01]',
+            sortOrder: 1,
+            isEnabled: true,
+          ),
+        ],
+        shouldQueue: true,
+        repository: repository,
+      );
+      await service.applyPendingRestore(repository);
+
+      expect((await repository.getAllDictionaries()).single.isEnabled, isFalse);
+    },
+  );
+
+  test('a preference matching two revisions leaves nothing missing', () async {
+    await repository.insertDictionary('JMdict [2026-09-01]');
+    await repository.insertDictionary('JMdict [2026-10-03]');
+
+    final result = await service.queueFromBackup(
+      preferences: const [
+        BackupDictionaryPreference(
+          name: 'JMdict [2026-09-01]',
+          sortOrder: 0,
+          isEnabled: true,
+        ),
+      ],
+      shouldQueue: true,
+      repository: repository,
+    );
+    final applied = await service.applyPendingRestore(repository);
+
+    expect(result.missingCount, 0);
+    expect(applied.missingCount, 0);
+  });
 }
