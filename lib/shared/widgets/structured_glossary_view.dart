@@ -136,6 +136,8 @@ class _Renderer {
     required this.onWordTap,
   }) : theme = Theme.of(context);
 
+  _Renderer._(this.dictionaryId, this.onWordTap, this.theme);
+
   final int dictionaryId;
   final ValueChanged<String>? onWordTap;
   final ThemeData theme;
@@ -361,7 +363,13 @@ class _Renderer {
       initiallyOpen: el.open,
       summary: summary == null
           ? [Text('…', style: summaryStyle)]
-          : blocks(summary.children, summaryStyle),
+          // No lookups: a tap on the summary opens the section, also when
+          // it is Japanese (Japanese Wiktionary's section names).
+          : _Renderer._(
+              dictionaryId,
+              null,
+              theme,
+            ).blocks(summary.children, summaryStyle),
       // Built on opening: Wiktionary keeps most of an entry collapsed.
       buildBody: () => blocks(rest, style),
       iconColor: theme.colorScheme.onSurfaceVariant,

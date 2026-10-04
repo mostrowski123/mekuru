@@ -242,6 +242,32 @@ void main() {
     expect(text('to make a living'), findsOneWidget);
   });
 
+  testWidgets('a section titled in Japanese opens on tap, not a lookup', (
+    tester,
+  ) async {
+    // Japanese Wiktionary names its sections in Japanese.
+    final taps = await pump(
+      tester,
+      jsonEncode({
+        'type': 'structured-content',
+        'content': {
+          'tag': 'details',
+          'content': [
+            {'tag': 'summary', 'content': '語源'},
+            {'tag': 'div', 'content': 'from Old Japanese'},
+          ],
+        },
+      }),
+    );
+    expect(text('from Old Japanese'), findsNothing);
+
+    await tester.tap(text('語源'));
+    await tester.pumpAndSettle();
+
+    expect(text('from Old Japanese'), findsOneWidget);
+    expect(taps, isEmpty);
+  });
+
   testWidgets('JMdict keeps its compact gloss line and its note markers', (
     tester,
   ) async {
