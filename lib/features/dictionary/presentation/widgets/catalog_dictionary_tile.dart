@@ -29,7 +29,9 @@ class CatalogDictionaryTile extends ConsumerWidget {
     final installedId = ref.watch(
       dictionariesProvider.select(
         (list) => list.value
-            ?.where((d) => entry.matchesTitle(d.name))
+            ?.where(
+              (d) => d.id != state.deletedId && entry.matchesTitle(d.name),
+            )
             .firstOrNull
             ?.id,
       ),

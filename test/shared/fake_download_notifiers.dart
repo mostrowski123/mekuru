@@ -118,7 +118,10 @@ class FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
   }
 
   @override
-  Future<void> delete(int dictionaryId) async => onDelete?.call(dictionaryId);
+  Future<void> delete(int dictionaryId) async {
+    onDelete?.call(dictionaryId);
+    state = CatalogDownloadState(deletedId: dictionaryId);
+  }
 }
 
 class _FakeKanjidicNotifier extends KanjidicNotifier {

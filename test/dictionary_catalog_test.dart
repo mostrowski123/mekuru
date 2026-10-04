@@ -124,5 +124,6 @@ void main() {
 
     expect(await repo.getAllDictionaries(), isEmpty);
     expect(container.read(download).isDeleting, isFalse);
+    expect(container.read(download).deletedId, id);
   });
 }

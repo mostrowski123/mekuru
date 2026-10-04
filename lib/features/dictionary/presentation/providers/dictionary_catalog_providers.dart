@@ -10,6 +10,7 @@ class CatalogDownloadState {
     this.isDeleting = false,
     this.progress = 0,
     this.failure,
+    this.deletedId,
   });
 
   final bool isDownloading;
@@ -21,6 +22,10 @@ class CatalogDownloadState {
   /// What stopped the last attempt, shown under the tile
   /// (`dictionaryDownloadError`).
   final Object? failure;
+
+  /// The dictionary this tile deleted. The list stream can still show it:
+  /// Drift refetches the list only after every delete queued behind this one.
+  final int? deletedId;
 }
 
 /// Downloads one catalog dictionary at a time and reports how it goes.
@@ -65,12 +70,14 @@ class CatalogDownloadNotifier extends Notifier<CatalogDownloadState> {
   Future<void> delete(int dictionaryId) async {
     if (state.isDownloading || state.isDeleting) return;
     state = const CatalogDownloadState(isDeleting: true);
+    int? deletedId;
     try {
       await ref
           .read(dictionaryRepositoryProvider)
           .deleteDictionary(dictionaryId);
+      deletedId = dictionaryId;
     } finally {
-      state = const CatalogDownloadState();
+      state = CatalogDownloadState(deletedId: deletedId);
     }
   }
 }

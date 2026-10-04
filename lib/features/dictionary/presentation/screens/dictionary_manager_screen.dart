@@ -46,6 +46,11 @@ class _DictionaryManagerScreenState
   /// trash icon for a progress indicator and disable row controls.
   final Set<int> _deleting = <int>{};
 
+  /// Deleted dictionaries the list stream still shows. Drift refetches it
+  /// only after every delete queued behind this one, so without hiding them
+  /// each finished row would reappear until the last delete is done.
+  final Set<int> _deleted = <int>{};
+
   @override
   void dispose() {
     super.dispose();
@@ -108,7 +113,12 @@ class _DictionaryManagerScreenState
               error: (err, _) => Center(
                 child: Text(l10n.commonErrorWithDetails(details: '$err')),
               ),
-              data: (dictionaries) {
+              data: (streamed) {
+                _deleted.retainWhere((id) => streamed.any((d) => d.id == id));
+                final dictionaries = [
+                  for (final d in streamed)
+                    if (!_deleted.contains(d.id)) d,
+                ];
                 if (dictionaries.isEmpty) {
                   _localOrder = null;
                   return _buildEmptyState();
@@ -635,6 +645,7 @@ class _DictionaryManagerScreenState
       if (mounted) setState(() => _deleting.add(id));
       try {
         await container.read(dictionaryRepositoryProvider).deleteDictionary(id);
+        _deleted.add(id);
         // Refresh download status so the downloads page reflects the deletion.
         container.read(jmdictProvider.notifier).checkStatus();
         container.read(kanjidicProvider.notifier).checkStatus();

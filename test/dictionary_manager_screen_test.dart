@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -26,6 +28,7 @@ void main() {
     WidgetTester tester,
     List<DictionaryMeta> dictionaries, {
     List<Override> overrides = const [],
+    DictionaryRepository? repository,
     bool settle = true,
   }) async {
     await tester.pumpWidget(
@@ -33,7 +36,7 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           dictionaryRepositoryProvider.overrideWithValue(
-            DictionaryRepository(db),
+            repository ?? DictionaryRepository(db),
           ),
           dictionariesProvider.overrideWith(
             (ref) => Stream.value(dictionaries),
@@ -89,6 +92,34 @@ void main() {
     expect(find.textContaining('Delete "Jitendex"'), findsOneWidget);
   });
 
+  testWidgets('a deleted dictionary leaves while later deletes still run', (
+    tester,
+  ) async {
+    // The list stream stays stale, as Drift's does while deletes queue.
+    final repo = _GatedDeleteRepository(db);
+    await pumpManager(tester, [
+      meta(1, 'First'),
+      meta(2, 'Second'),
+    ], repository: repo);
+
+    for (var i = 0; i < 2; i++) {
+      // The first row's delete button is a spinner now, so .last is next.
+      await tester.tap(find.byIcon(Icons.delete_outline).last);
+      // Spinners never settle; give the dialog time to open and close.
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.text('Delete'));
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+    expect(find.byType(CircularProgressIndicator), findsNWidgets(2));
+
+    repo.gates[2]!.complete();
+    await tester.pump();
+
+    expect(find.text('Second'), findsNothing);
+    expect(find.text('First'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
   testWidgets('a collection being read shows its banner text once', (
     tester,
   ) async {
@@ -103,6 +134,16 @@ void main() {
 
     expect(find.text('Parsing collection…'), findsOneWidget);
   });
+}
+
+class _GatedDeleteRepository extends DictionaryRepository {
+  _GatedDeleteRepository(super.db);
+
+  final gates = <int, Completer<void>>{};
+
+  @override
+  Future<void> deleteDictionary(int dictionaryId) =>
+      (gates[dictionaryId] = Completer<void>()).future;
 }
 
 class _ParsingImportNotifier extends DictionaryImportNotifier {

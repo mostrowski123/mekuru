@@ -70,6 +70,10 @@ void main() {
       find.ancestor(of: find.text(name), matching: find.byType(ListTile));
   Finder downloadButtonOf(String name) =>
       find.descendant(of: tileOf(name), matching: find.text('Download'));
+  Finder deleteOf(String name) => find.descendant(
+    of: tileOf(name),
+    matching: find.byTooltip('Delete Dictionary'),
+  );
 
   testWidgets('lists every section, then the guide links', (tester) async {
     await pumpCatalog(tester);
@@ -96,13 +100,7 @@ void main() {
     mockWifiConnected(true);
     await pumpCatalog(tester, installed: [CatalogDictionary.wiktionaryEnglish]);
 
-    expect(
-      find.descendant(
-        of: tileOf('Wiktionary (English)'),
-        matching: find.byTooltip('Delete Dictionary'),
-      ),
-      findsOneWidget,
-    );
+    expect(deleteOf('Wiktionary (English)'), findsOneWidget);
     expect(downloadButtonOf('Wiktionary (English)'), findsNothing);
 
     await tester.tap(downloadButtonOf('Jitendex'));
@@ -122,10 +120,6 @@ void main() {
         CatalogDictionary.wiktionaryEnglish,
       ],
     );
-    Finder deleteOf(String name) => find.descendant(
-      of: tileOf(name),
-      matching: find.byTooltip('Delete Dictionary'),
-    );
 
     await tester.tap(deleteOf('Wiktionary (English)'));
     await tester.pumpAndSettle();
@@ -142,6 +136,9 @@ void main() {
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
     expect(deleted, [2]);
+    // Gone before the list stream drops it: Drift refetches the list only
+    // after every delete queued behind this one.
+    expect(downloadButtonOf('Wiktionary (English)'), findsOneWidget);
   });
 
   testWidgets('a download stopped by Wi-Fi going says so', (tester) async {
