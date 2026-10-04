@@ -997,10 +997,10 @@ abstract class AppLocalizations {
   /// Description for the recommended starter pack.
   ///
   /// In en, this message translates to:
-  /// **'Install JMdict English and word frequency data together for the fastest setup.'**
+  /// **'Install Jitendex and word frequency data together for the fastest setup.'**
   String get downloadsRecommendedStarterPackSubtitle;
 
-  /// Starter pack row label for JMdict English.
+  /// Starter pack row label for JMdict English, shown instead of Jitendex when JMdict English is the installed dictionary.
   ///
   /// In en, this message translates to:
   /// **'JMdict English'**

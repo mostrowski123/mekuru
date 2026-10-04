@@ -58,7 +58,7 @@ void main() {
             ).overrideWith(() => FakeUpdateNotifier(meta.id, updated.add)),
           for (final entry in CatalogDictionary.values)
             catalogDownloadProvider(entry).overrideWith(
-              () => _FakeCatalogDownloadNotifier(
+              () => FakeCatalogDownloadNotifier(
                 entry,
                 started.add,
                 afterDownload,
@@ -185,17 +185,4 @@ void main() {
     await tester.pumpAndSettle();
     expect(started, [CatalogDictionary.jitendex]);
   });
-}
-
-class _FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
-  _FakeCatalogDownloadNotifier(super.entry, this.onDownload, this.result);
-
-  final void Function(CatalogDictionary entry) onDownload;
-  final CatalogDownloadState result;
-
-  @override
-  Future<void> download() async {
-    onDownload(entry);
-    state = result;
-  }
 }

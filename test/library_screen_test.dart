@@ -53,7 +53,7 @@ void main() {
     await tester.tap(find.text('Get Dictionaries'));
     await tester.pumpAndSettle();
 
-    expect(started, unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']));
+    expect(started, unorderedEquals(<String>['catalog:jitendex', 'jpdb']));
     expect(find.byType(DownloadsScreen), findsOneWidget);
   });
 

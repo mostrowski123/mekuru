@@ -203,10 +203,7 @@ void main() {
       final started = <String>[];
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            dictionariesProvider.overrideWith((ref) => Stream.value(const [])),
-            ...fakeDownloadNotifierOverrides(started),
-          ],
+          overrides: fakeDownloadNotifierOverrides(started),
           child: buildLocalizedTestApp(home: const DictionarySearchScreen()),
         ),
       );
@@ -215,10 +212,7 @@ void main() {
       await tester.tap(find.text('Recommended starter pack'));
       await tester.pumpAndSettle();
 
-      expect(
-        started,
-        unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']),
-      );
+      expect(started, unorderedEquals(<String>['catalog:jitendex', 'jpdb']));
       expect(find.byType(DownloadsScreen), findsOneWidget);
     },
   );

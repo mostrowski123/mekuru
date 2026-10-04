@@ -706,13 +706,13 @@
   "@downloadsRecommendedStarterPackTitle": {
     "description": "Heading for the recommended dictionary starter pack."
   },
-  "downloadsRecommendedStarterPackSubtitle": "Install JMdict English and word frequency data together for the fastest setup.",
+  "downloadsRecommendedStarterPackSubtitle": "Install Jitendex and word frequency data together for the fastest setup.",
   "@downloadsRecommendedStarterPackSubtitle": {
     "description": "Description for the recommended starter pack."
   },
   "downloadsStarterPackJmdict": "JMdict English",
   "@downloadsStarterPackJmdict": {
-    "description": "Starter pack row label for JMdict English."
+    "description": "Starter pack row label for JMdict English, shown instead of Jitendex when JMdict English is the installed dictionary."
   },
   "downloadsStarterPackWordFrequency": "Word Frequency",
   "@downloadsStarterPackWordFrequency": {

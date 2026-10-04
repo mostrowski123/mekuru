@@ -2,39 +2,66 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
+import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
-import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
-// Download sizes for the mobile-data prompt, rounded up: the JMdict English
-// release zip was 15.6 MB and the JPDB v2.2 zip 6.0 MB in October 2026.
-const _jmdictMb = 16;
+// Download size for the mobile-data prompt, rounded up: the JPDB v2.2 zip
+// was 6.0 MB in October 2026.
 const _jpdbMb = 6;
 
-/// Starts whichever recommended dictionaries (JMdict English, JPDB word
+/// The installed dictionaries that stand for the starter pack's: Jitendex,
+/// and JMdict English, which the pack installed before it offered Jitendex.
+({bool jitendex, bool jmdict}) _starterDictionaries(
+  Iterable<DictionaryMeta> installed,
+) => (
+  jitendex: CatalogDictionary.jitendex.isInstalledIn(installed),
+  jmdict: installed.any(
+    (d) => YomitanDictDownloadService.matches(
+      YomitanDictType.jmdictEnglish,
+      d.name,
+    ),
+  ),
+);
+
+/// Starts whichever recommended dictionaries (Jitendex, JPDB word
 /// frequency) aren't installed yet, asking first when Wi-Fi isn't
-/// connected. The downloads live in app-wide notifiers, so they keep going
+/// connected. JMdict English, installed or on its way, stands in for
+/// Jitendex. The downloads live in app-wide notifiers, so they keep going
 /// when the calling screen goes away.
 Future<void> installStarterPack(BuildContext context) async {
   final container = ProviderScope.containerOf(context, listen: false);
-  final jmdict = container.read(jmdictProvider.notifier);
   final jpdb = container.read(jpdbFreqProvider.notifier);
   // Fresh status first, so nothing installed is downloaded again.
-  await Future.wait([jmdict.checkStatus(), jpdb.checkStatus()]);
-  final needJmdict = !container.read(jmdictProvider).isImported;
+  final (_, dictionaries) = await (
+    jpdb.checkStatus(),
+    container.read(dictionariesProvider.future),
+  ).wait;
+  final installed = _starterDictionaries(dictionaries);
+  final needDictionary =
+      !installed.jitendex &&
+      !installed.jmdict &&
+      !container.read(jmdictProvider).isDownloading;
   final needJpdb = !container.read(jpdbFreqProvider).isImported;
-  if (!needJmdict && !needJpdb) return;
+  if (!needDictionary && !needJpdb) return;
 
+  // Only the mobile-data question needs the caller still on screen.
   if (!await isOnWifi()) {
     if (!context.mounted) return;
-    final size = (needJmdict ? _jmdictMb : 0) + (needJpdb ? _jpdbMb : 0);
+    final size =
+        (needDictionary ? CatalogDictionary.jitendex.downloadMb.ceil() : 0) +
+        (needJpdb ? _jpdbMb : 0);
     final confirmed = await confirmMobileData(
       context,
       context.l10n.downloadsStarterPackMobileDataBody(size: '$size MB'),
@@ -42,12 +69,18 @@ Future<void> installStarterPack(BuildContext context) async {
     if (!confirmed) return;
   }
 
-  if (needJmdict) unawaited(jmdict.download(YomitanDictType.jmdictEnglish));
+  if (needDictionary) {
+    unawaited(
+      container
+          .read(catalogDownloadProvider(CatalogDictionary.jitendex).notifier)
+          .download(),
+    );
+  }
   if (needJpdb) unawaited(jpdb.download());
 }
 
-/// One-tap install of the recommended dictionaries: JMdict English plus JPDB
-/// word frequency.
+/// One-tap install of the recommended dictionaries: Jitendex plus JPDB word
+/// frequency.
 class StarterPackCard extends ConsumerStatefulWidget {
   const StarterPackCard({super.key, this.showProgress = true});
 
@@ -64,7 +97,6 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(jmdictProvider.notifier).checkStatus();
       ref.read(jpdbFreqProvider.notifier).checkStatus();
     });
   }
@@ -79,18 +111,25 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final jmdict = ref.watch(jmdictProvider);
+    final installed = ref.watch(
+      dictionariesProvider.select(
+        (dictionaries) => _starterDictionaries(dictionaries.value ?? const []),
+      ),
+    );
+    final jitendex = ref.watch(
+      catalogDownloadProvider(CatalogDictionary.jitendex),
+    );
     final jpdb = ref.watch(jpdbFreqProvider);
-    final ready = jmdict.isImported && jpdb.isImported;
-    final busy = jmdict.isDownloading || jpdb.isDownloading;
-    final hasDictionarySuccess =
-        jmdict.successMessage != null ||
-        ref.watch(kanjidicProvider.select((s) => s.successMessage != null));
+    final hasDictionary = installed.jitendex || installed.jmdict;
+    final ready = hasDictionary && jpdb.isImported;
+    final busy = jitendex.isDownloading || jpdb.isDownloading;
     final inFlight = [
-      if (widget.showProgress && jmdict.isDownloading) jmdict.progress,
-      if (widget.showProgress && jpdb.isDownloading) jpdb.progress,
+      if (jitendex.isDownloading) jitendex.progress,
+      if (jpdb.isDownloading) jpdb.progress,
     ];
-    final error = widget.showProgress ? jmdict.error ?? jpdb.error : null;
+    final error = widget.showProgress
+        ? dictionaryDownloadError(l10n, jitendex) ?? jpdb.error
+        : null;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -114,15 +153,17 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
           ),
           const SizedBox(height: 12),
           _StatusRow(
-            label: l10n.downloadsStarterPackJmdict,
-            isReady: jmdict.isImported,
+            label: installed.jmdict && !installed.jitendex
+                ? l10n.downloadsStarterPackJmdict
+                : CatalogDictionary.jitendex.displayName,
+            isReady: hasDictionary,
           ),
           const SizedBox(height: 8),
           _StatusRow(
             label: l10n.downloadsStarterPackWordFrequency,
             isReady: jpdb.isImported,
           ),
-          if (inFlight.isNotEmpty) ...[
+          if (widget.showProgress && inFlight.isNotEmpty) ...[
             const SizedBox(height: 12),
             LinearProgressIndicator(
               value: inFlight.reduce((a, b) => a + b) / inFlight.length,
@@ -158,7 +199,7 @@ class _StarterPackCardState extends ConsumerState<StarterPackCard> {
                       : l10n.downloadsInstallStarterPack,
                 ),
               ),
-              if (hasDictionarySuccess && !ready)
+              if (hasDictionary && !ready)
                 OutlinedButton(
                   onPressed: () {
                     AppHaptics.light();

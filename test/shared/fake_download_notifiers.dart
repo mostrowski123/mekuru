@@ -2,19 +2,38 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
+import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 
-/// Overrides for the Downloads screen's notifiers: nothing installed, no
-/// database, and every download start recorded in [started] instead of
-/// running (`jmdict:<variant>`, `jpdb`).
-List<Override> fakeDownloadNotifierOverrides(List<String> started) => [
+/// Overrides for the Downloads screen's notifiers: only the [installed]
+/// dictionaries, no database, and every download start recorded in [started]
+/// instead of running (`jmdict:<variant>`, `jpdb`, `catalog:<entry>`).
+/// [jmdictDownloading] shows a JMdict download already running.
+List<Override> fakeDownloadNotifierOverrides(
+  List<String> started, {
+  List<DictionaryMeta> installed = const [],
+  bool jmdictDownloading = false,
+}) => [
+  dictionariesProvider.overrideWith((ref) => Stream.value(installed)),
+  for (final entry in CatalogDictionary.values)
+    catalogDownloadProvider(entry).overrideWith(
+      () => FakeCatalogDownloadNotifier(
+        entry,
+        (entry) => started.add('catalog:${entry.name}'),
+      ),
+    ),
   jmdictProvider.overrideWith(
-    () => _FakeJmdictNotifier((v) => started.add('jmdict:${v.name}')),
+    () => _FakeJmdictNotifier(
+      (v) => started.add('jmdict:${v.name}'),
+      JmdictState(isDownloading: jmdictDownloading),
+    ),
   ),
   jpdbFreqProvider.overrideWith(
     () => _FakeJpdbFreqNotifier(() => started.add('jpdb')),
@@ -44,9 +63,13 @@ void mockWifiConnected(bool connected) {
 }
 
 class _FakeJmdictNotifier extends JmdictNotifier {
-  _FakeJmdictNotifier(this.onDownload);
+  _FakeJmdictNotifier(this.onDownload, this.initial);
 
   final void Function(YomitanDictType variant) onDownload;
+  final JmdictState initial;
+
+  @override
+  JmdictState build() => initial;
 
   @override
   Future<void> checkStatus() async {}
@@ -68,6 +91,24 @@ class _FakeJpdbFreqNotifier extends JpdbFreqNotifier {
   @override
   Future<void> download() async {
     onDownload();
+  }
+}
+
+/// Records [download] calls instead of downloading, then shows [result].
+class FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
+  FakeCatalogDownloadNotifier(
+    super.entry,
+    this.onDownload, [
+    this.result = const CatalogDownloadState(),
+  ]);
+
+  final void Function(CatalogDictionary entry) onDownload;
+  final CatalogDownloadState result;
+
+  @override
+  Future<void> download() async {
+    onDownload(entry);
+    state = result;
   }
 }
 

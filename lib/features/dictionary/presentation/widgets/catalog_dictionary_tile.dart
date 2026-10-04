@@ -144,6 +144,21 @@ Future<void> startDictionaryDownload(
   unawaited(download());
 }
 
+/// Why the last attempt in [state] failed, worded for the user; null when
+/// it did not fail.
+String? dictionaryDownloadError(
+  AppLocalizations l10n,
+  CatalogDownloadState state,
+) {
+  if (state.neededBytes case final bytes?) {
+    return l10n.backupFullNotEnoughSpace(size: formatBytes(bytes));
+  }
+  if (state.error case final error?) {
+    return l10n.commonErrorWithDetails(details: error);
+  }
+  return null;
+}
+
 /// Progress and errors of a dictionary download or update, shown under its
 /// tile.
 class DictionaryDownloadStatus extends StatelessWidget {
@@ -154,8 +169,7 @@ class DictionaryDownloadStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final neededBytes = state.neededBytes;
-    final error = state.error;
+    final error = dictionaryDownloadError(l10n, state);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -165,12 +179,7 @@ class DictionaryDownloadStatus extends StatelessWidget {
             progress: state.progress,
             label: dictionaryDownloadLabel(l10n, state.progress),
           ),
-        if (neededBytes != null)
-          DownloadErrorText(
-            text: l10n.backupFullNotEnoughSpace(size: formatBytes(neededBytes)),
-          ),
-        if (error != null)
-          DownloadErrorText(text: l10n.commonErrorWithDetails(details: error)),
+        if (error != null) DownloadErrorText(text: error),
       ],
     );
   }

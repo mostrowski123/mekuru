@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 
@@ -24,10 +26,17 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
+    expect(
+      find.descendant(
+        of: find.byType(StarterPackCard),
+        matching: find.text('Jitendex'),
+      ),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Install Starter Pack'));
     await tester.pumpAndSettle();
 
-    expect(started, unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']));
+    expect(started, unorderedEquals(<String>['catalog:jitendex', 'jpdb']));
     final list = tester.widget<ListView>(find.byType(ListView));
     final children =
         (list.childrenDelegate as SliverChildListDelegate).children;
@@ -56,7 +65,7 @@ void main() {
     await tester.tap(find.text('Install Starter Pack'));
     await tester.pumpAndSettle();
     expect(find.text('Download over mobile data?'), findsOneWidget);
-    expect(find.textContaining('about 22 MB'), findsOneWidget);
+    expect(find.textContaining('about 45 MB'), findsOneWidget);
 
     await tester.tap(inDialog('Cancel'));
     await tester.pumpAndSettle();
@@ -66,6 +75,71 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(inDialog('Download'));
     await tester.pumpAndSettle();
-    expect(started, unorderedEquals(<String>['jmdict:jmdictEnglish', 'jpdb']));
+    expect(started, unorderedEquals(<String>['catalog:jitendex', 'jpdb']));
   });
+
+  testWidgets('while JMdict English downloads the starter pack adds only '
+      'frequency', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    mockWifiConnected(true);
+    final started = <String>[];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fakeDownloadNotifierOverrides(
+          started,
+          jmdictDownloading: true,
+        ),
+        child: buildLocalizedTestApp(home: const DownloadsScreen()),
+      ),
+    );
+    await tester.pump();
+
+    // The JMdict tile's progress never settles: pump a fixed time instead.
+    await tester.tap(find.text('Install Starter Pack'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(started, ['jpdb']);
+  });
+
+  for (final (row, title) in [
+    ('JMdict English', 'JMdict [2026-10-03]'),
+    ('Jitendex', 'Jitendex.org [2026-10-03]'),
+  ]) {
+    testWidgets('with $row installed the starter pack adds only frequency', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      mockWifiConnected(true);
+      final started = <String>[];
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: fakeDownloadNotifierOverrides(
+            started,
+            installed: [
+              DictionaryMeta(
+                id: 1,
+                name: title,
+                isEnabled: true,
+                dateImported: DateTime(2026, 10, 3),
+                sortOrder: 0,
+                isHidden: false,
+              ),
+            ],
+          ),
+          child: buildLocalizedTestApp(home: const DownloadsScreen()),
+        ),
+      );
+      await tester.pump();
+      Finder inCard(Finder finder) =>
+          find.descendant(of: find.byType(StarterPackCard), matching: finder);
+      expect(inCard(find.text(row)), findsOneWidget);
+      expect(inCard(find.byIcon(Icons.check_circle)), findsOneWidget);
+
+      await tester.tap(find.text('Install Starter Pack'));
+      await tester.pumpAndSettle();
+
+      expect(started, ['jpdb']);
+    });
+  }
 }

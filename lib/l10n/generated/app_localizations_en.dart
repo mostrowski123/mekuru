@@ -544,7 +544,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadsRecommendedStarterPackSubtitle =>
-      'Install JMdict English and word frequency data together for the fastest setup.';
+      'Install Jitendex and word frequency data together for the fastest setup.';
 
   @override
   String get downloadsStarterPackJmdict => 'JMdict English';
