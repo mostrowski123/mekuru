@@ -164,6 +164,15 @@ class EpubReaderSettingsSheet extends ConsumerWidget {
           // onChangeEnd so a drag logs once, not per tick.
           onChangeEnd: (value) => onSettingChanged('font_size', value.round()),
         ),
+        const SizedBox(height: 8),
+        SettingsSegmentedRow<ReaderFontFamily>(
+          segments: readerFontFamilySegments(l10n),
+          selected: settings.fontFamily,
+          onSelected: (family) {
+            notifier.setFontFamily(family);
+            onSettingChanged('font_family', family.name);
+          },
+        ),
         ReaderBrightnessRow(onSettingChanged: onSettingChanged),
         const SizedBox(height: 8),
         SettingsSegmentedRow<ColorMode>(

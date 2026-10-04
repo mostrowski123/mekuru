@@ -699,6 +699,15 @@ function updateTheme(foregroundColor, customCss) {
     rules['body']['color'] = foregroundColor + ' !important';
   }
   console.log('[EPUB_BRIDGE] updateTheme rules: ' + JSON.stringify(rules));
+  // epub.js appends theme rules to the chapter's existing theme stylesheet,
+  // so a rule the new theme drops (the font override, when going back to the
+  // book's own font) would stay in force. Start loaded chapters from an empty
+  // one; register() then injects the full new theme into a fresh sheet.
+  rendition.getContents().forEach(function (contents) {
+    var sheet = contents.document &&
+        contents.document.getElementById('epubjs-inserted-css-default');
+    if (sheet) sheet.remove();
+  });
   rendition.themes.register('default', rules);
   rendition.themes.select('default');
 }

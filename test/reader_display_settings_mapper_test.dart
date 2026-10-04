@@ -139,5 +139,43 @@ void main() {
       expect(htmlCss['background'], contains('!important'));
       expect(htmlCss['color'], contains('!important'));
     });
+
+    test('book default leaves the EPUB fonts alone', () {
+      final theme = buildReaderTheme(settings: const ReaderSettings());
+      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+
+      expect(bodyCss.containsKey('font-family'), isFalse);
+      expect(theme.customCss!.containsKey('body *'), isFalse);
+    });
+
+    test('a chosen font overrides body and every descendant', () {
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(fontFamily: ReaderFontFamily.mincho),
+      );
+      final bodyCss = theme.customCss!['body'] as Map<String, dynamic>;
+      final descendantCss = theme.customCss!['body *'] as Map<String, dynamic>;
+
+      expect(
+        bodyCss['font-family'],
+        '"Hiragino Mincho ProN", serif !important',
+      );
+      expect(descendantCss['font-family'], bodyCss['font-family']);
+    });
+
+    test('font and horizontal-text overrides share the descendant rule', () {
+      final theme = buildReaderTheme(
+        settings: const ReaderSettings(
+          verticalText: false,
+          fontFamily: ReaderFontFamily.gothic,
+        ),
+      );
+      final descendantCss = theme.customCss!['body *'] as Map<String, dynamic>;
+
+      expect(descendantCss['writing-mode'], 'horizontal-tb !important');
+      expect(
+        descendantCss['font-family'],
+        '"Hiragino Sans", sans-serif !important',
+      );
+    });
   });
 }

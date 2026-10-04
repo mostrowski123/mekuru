@@ -827,6 +827,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsColorModeDark => '深色';
 
   @override
+  String get settingsFontFamilyTitle => '字体';
+
+  @override
+  String get settingsFontFamilyBook => '书籍默认';
+
+  @override
+  String get settingsFontFamilyMincho => '明朝体';
+
+  @override
+  String get settingsFontFamilyGothic => '黑体';
+
+  @override
   String get settingsSepiaIntensityTitle => '仿古色强度';
 
   @override
@@ -4249,6 +4261,18 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settingsColorModeDark => '深色';
+
+  @override
+  String get settingsFontFamilyTitle => '字体';
+
+  @override
+  String get settingsFontFamilyBook => '书籍默认';
+
+  @override
+  String get settingsFontFamilyMincho => '明朝体';
+
+  @override
+  String get settingsFontFamilyGothic => '黑体';
 
   @override
   String get settingsSepiaIntensityTitle => '仿古色强度';

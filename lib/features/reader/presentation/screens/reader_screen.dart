@@ -373,13 +373,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           previous.colorMode != next.colorMode ||
           (next.colorMode == ColorMode.sepia &&
               previous.sepiaIntensity != next.sepiaIntensity);
-      if (colorChanged && _isEpubLoaded) {
+      final fontFamilyChanged = previous.fontFamily != next.fontFamily;
+      if ((colorChanged || fontFamilyChanged) && _isEpubLoaded) {
         final newTheme = buildReaderTheme(settings: next);
         _epubController.updateTheme(
           foregroundColor: newTheme.foregroundColor,
           customCss: newTheme.customCss,
         );
         _epubController.setBodyBackground(newTheme.backgroundColor);
+      }
+      if (fontFamilyChanged && _isEpubLoaded) {
+        // Same size, but it re-lays out the reflowed text at the current
+        // position, so highlights follow the new glyph metrics.
+        _epubController.setFontSize(next.fontSize);
       }
     });
 

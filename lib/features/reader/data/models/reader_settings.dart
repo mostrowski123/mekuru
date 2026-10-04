@@ -26,6 +26,21 @@ extension ColorModeStorage on ColorMode {
   String get storageValue => name;
 }
 
+/// Typeface for EPUB text. [book] keeps the fonts the EPUB's own CSS asks for.
+enum ReaderFontFamily { book, mincho, gothic }
+
+ReaderFontFamily readerFontFamilyFromString(String? value) {
+  return switch (value) {
+    'mincho' => ReaderFontFamily.mincho,
+    'gothic' => ReaderFontFamily.gothic,
+    _ => ReaderFontFamily.book,
+  };
+}
+
+extension ReaderFontFamilyStorage on ReaderFontFamily {
+  String get storageValue => name;
+}
+
 enum FuriganaMode { hide, book, all, aboveLevel, wanikani }
 
 FuriganaMode furiganaModeFromString(String? value) {
@@ -93,6 +108,7 @@ double mangaCenterTapZoneWidthFromEdgeZoneWidth(double edgeZoneWidthFraction) {
 /// Reader display and interaction preferences.
 class ReaderSettings {
   final double fontSize;
+  final ReaderFontFamily fontFamily;
   final bool verticalText;
 
   /// When true, vertical text is laid out in two stacked blocks per page
@@ -177,6 +193,7 @@ class ReaderSettings {
 
   const ReaderSettings({
     this.fontSize = 18,
+    this.fontFamily = ReaderFontFamily.book,
     this.verticalText = true,
     this.splitVerticalText = false,
     this.scrollView = false,
@@ -203,6 +220,7 @@ class ReaderSettings {
 
   ReaderSettings copyWith({
     double? fontSize,
+    ReaderFontFamily? fontFamily,
     bool? verticalText,
     bool? splitVerticalText,
     bool? scrollView,
@@ -228,6 +246,7 @@ class ReaderSettings {
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
+      fontFamily: fontFamily ?? this.fontFamily,
       verticalText: verticalText ?? this.verticalText,
       splitVerticalText: splitVerticalText ?? this.splitVerticalText,
       scrollView: scrollView ?? this.scrollView,

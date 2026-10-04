@@ -142,6 +142,10 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(readerAnimations: enabled));
   }
 
+  void setFontFamily(ReaderFontFamily family) {
+    _update(state.copyWith(fontFamily: family));
+  }
+
   void setColorMode(ColorMode mode) {
     _update(state.copyWith(colorMode: mode));
   }

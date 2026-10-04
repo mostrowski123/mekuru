@@ -86,12 +86,21 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
   // The override must also cover descendants: InDesign-exported EPUBs
   // (e.g. JGR Sakura) declare `-epub-writing-mode: vertical-rl` directly on
   // inner divs, which a body-level rule cannot override.
+  final Map<String, dynamic> descendantCss = {};
   if (!settings.verticalText) {
     htmlCss['writing-mode'] = 'horizontal-tb !important';
     bodyCss['writing-mode'] = 'horizontal-tb !important';
     htmlCss['direction'] = 'ltr !important';
     bodyCss['direction'] = 'ltr !important';
     bodyCss['text-align'] = 'start !important';
+    descendantCss['writing-mode'] = 'horizontal-tb !important';
+  }
+
+  // Descendants too: Japanese EPUBs often set fonts on their own classes.
+  final fontFamily = _fontFamilyCss(settings.fontFamily);
+  if (fontFamily != null) {
+    bodyCss['font-family'] = '$fontFamily !important';
+    descendantCss['font-family'] = '$fontFamily !important';
   }
 
   return ReaderTheme(
@@ -100,8 +109,7 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
     customCss: {
       'html': htmlCss,
       'body': bodyCss,
-      if (!settings.verticalText)
-        'body *': {'writing-mode': 'horizontal-tb !important'},
+      if (descendantCss.isNotEmpty) 'body *': descendantCss,
       'p': {'color': '$fgHex !important'},
       'span': {'color': '$fgHex !important'},
       'a': {
@@ -111,3 +119,12 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
     },
   );
 }
+
+/// iOS has the Hiragino faces. Android has no font by those names, so the
+/// generic family decides: Chromium falls back to Noto Serif CJK or Noto
+/// Sans CJK for Japanese text (sans where the device has no serif CJK font).
+String? _fontFamilyCss(ReaderFontFamily family) => switch (family) {
+  ReaderFontFamily.book => null,
+  ReaderFontFamily.mincho => '"Hiragino Mincho ProN", serif',
+  ReaderFontFamily.gothic => '"Hiragino Sans", sans-serif',
+};

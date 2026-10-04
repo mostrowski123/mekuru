@@ -1059,6 +1059,22 @@
   "@settingsColorModeDark": {
     "description": "Label for the dark reader color mode."
   },
+  "settingsFontFamilyTitle": "Fuente",
+  "@settingsFontFamilyTitle": {
+    "description": "Title for the EPUB reader font (typeface) setting."
+  },
+  "settingsFontFamilyBook": "Del libro",
+  "@settingsFontFamilyBook": {
+    "description": "Font option: keep the fonts the EPUB itself specifies."
+  },
+  "settingsFontFamilyMincho": "Mincho",
+  "@settingsFontFamilyMincho": {
+    "description": "Font option: Japanese Mincho (serif) typeface."
+  },
+  "settingsFontFamilyGothic": "Gótica",
+  "@settingsFontFamilyGothic": {
+    "description": "Font option: Japanese Gothic (sans-serif) typeface."
+  },
   "settingsSepiaIntensityTitle": "Intensidad de sepia",
   "@settingsSepiaIntensityTitle": {
     "description": "Label for the sepia intensity slider."

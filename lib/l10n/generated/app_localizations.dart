@@ -1564,6 +1564,30 @@ abstract class AppLocalizations {
   /// **'Dark'**
   String get settingsColorModeDark;
 
+  /// Title for the EPUB reader font (typeface) setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get settingsFontFamilyTitle;
+
+  /// Font option: keep the fonts the EPUB itself specifies.
+  ///
+  /// In en, this message translates to:
+  /// **'Book default'**
+  String get settingsFontFamilyBook;
+
+  /// Font option: Japanese Mincho (serif) typeface.
+  ///
+  /// In en, this message translates to:
+  /// **'Mincho'**
+  String get settingsFontFamilyMincho;
+
+  /// Font option: Japanese Gothic (sans-serif) typeface.
+  ///
+  /// In en, this message translates to:
+  /// **'Gothic'**
+  String get settingsFontFamilyGothic;
+
   /// Label for the sepia intensity slider.
   ///
   /// In en, this message translates to:

@@ -78,6 +78,19 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
           ),
           ListTile(
             leading: Icon(
+              Icons.font_download_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.settingsFontFamilyTitle),
+            subtitle: Text(readerFontFamilyLabel(l10n, settings.fontFamily)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              _showFontFamilyPicker(settings.fontFamily);
+            },
+          ),
+          ListTile(
+            leading: Icon(
               Icons.color_lens_outlined,
               color: theme.colorScheme.primary,
             ),
@@ -250,6 +263,20 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
           const SizedBox(height: 16),
         ],
       ),
+    );
+  }
+
+  void _showFontFamilyPicker(ReaderFontFamily current) {
+    final l10n = context.l10n;
+
+    showSettingsOptionPickerSheet(
+      context: context,
+      title: l10n.settingsFontFamilyTitle,
+      values: ReaderFontFamily.values,
+      selected: current,
+      labelOf: (family) => readerFontFamilyLabel(l10n, family),
+      onSelected: (family) =>
+          ref.read(readerSettingsProvider.notifier).setFontFamily(family),
     );
   }
 

@@ -864,6 +864,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsColorModeDark => 'Gelap';
 
   @override
+  String get settingsFontFamilyTitle => 'Font';
+
+  @override
+  String get settingsFontFamilyBook => 'Bawaan buku';
+
+  @override
+  String get settingsFontFamilyMincho => 'Mincho';
+
+  @override
+  String get settingsFontFamilyGothic => 'Gothic';
+
+  @override
   String get settingsSepiaIntensityTitle => 'Intensitas Sepia';
 
   @override

@@ -92,3 +92,22 @@ List<ButtonSegment<ColorMode>> colorModeSegments(AppLocalizations l10n) {
       ),
   ];
 }
+
+String readerFontFamilyLabel(AppLocalizations l10n, ReaderFontFamily family) =>
+    switch (family) {
+      ReaderFontFamily.book => l10n.settingsFontFamilyBook,
+      ReaderFontFamily.mincho => l10n.settingsFontFamilyMincho,
+      ReaderFontFamily.gothic => l10n.settingsFontFamilyGothic,
+    };
+
+List<ButtonSegment<ReaderFontFamily>> readerFontFamilySegments(
+  AppLocalizations l10n,
+) {
+  return [
+    for (final family in ReaderFontFamily.values)
+      ButtonSegment(
+        value: family,
+        label: Text(readerFontFamilyLabel(l10n, family)),
+      ),
+  ];
+}

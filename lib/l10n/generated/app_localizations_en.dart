@@ -860,6 +860,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsColorModeDark => 'Dark';
 
   @override
+  String get settingsFontFamilyTitle => 'Font';
+
+  @override
+  String get settingsFontFamilyBook => 'Book default';
+
+  @override
+  String get settingsFontFamilyMincho => 'Mincho';
+
+  @override
+  String get settingsFontFamilyGothic => 'Gothic';
+
+  @override
   String get settingsSepiaIntensityTitle => 'Sepia Intensity';
 
   @override
