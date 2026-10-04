@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
@@ -910,6 +911,106 @@ void main() {
       expect(calls, isEmpty);
       expect(stored, avif);
     });
+  });
+
+  group('DictionaryImporter — parser flow control', () {
+    test('an import of many batches of every kind completes', () async {
+      // Three batches each of entries, pitch accents and frequencies: the
+      // parser stops after two unstored ones until the importer answers.
+      final zipPath = await createTestYomitanZip(
+        entries: [
+          for (var i = 0; i < 12000; i++)
+            [
+              '語$i',
+              'ご',
+              '',
+              '',
+              0,
+              ['word $i'],
+              i,
+              '',
+            ],
+        ],
+        termMetaEntries: [
+          for (var i = 0; i < 12000; i++) ...[
+            ['語$i', 'freq', i + 1],
+            [
+              '語$i',
+              'pitch',
+              {
+                'reading': 'ご',
+                'pitches': [
+                  {'position': 0},
+                ],
+              },
+            ],
+          ],
+        ],
+      );
+      trackTempFile(zipPath);
+
+      final count = await importer.importFromFile(zipPath);
+
+      expect(count, 12000);
+      expect(await db.select(db.pitchAccents).get(), hasLength(12000));
+      expect(await db.select(db.frequencies).get(), hasLength(12000));
+    });
+
+    test(
+      'the parser stays at most two batches ahead of the database',
+      () async {
+        // Three batches: 5000, 5000 and 2000 rows.
+        final zipPath = await createTestYomitanZip(
+          entries: [
+            for (var i = 0; i < 12000; i++)
+              [
+                '語$i',
+                'ご',
+                '',
+                '',
+                0,
+                ['word $i'],
+                i,
+                '',
+              ],
+          ],
+        );
+        trackTempFile(zipPath);
+        final port = ReceivePort();
+        addTearDown(port.close);
+        final received = <List<Object?>>[];
+        port.listen((message) => received.add(message as List<Object?>));
+        final isolate = await Isolate.spawn(DictionaryImporter.streamParseZip, [
+          port.sendPort,
+          zipPath,
+        ]);
+        addTearDown(() => isolate.kill(priority: Isolate.immediate));
+
+        List<Object?> kinds() => [for (final m in received) m[0]];
+        Future<void> receive(int count) async {
+          while (received.length < count) {
+            await Future<void>.delayed(const Duration(milliseconds: 10));
+          }
+        }
+
+        await receive(3).timeout(const Duration(seconds: 30));
+        // A slow database: nothing stored yet, so the parser must wait.
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        expect(kinds(), ['meta', 'batch', 'batch']);
+
+        final stored = received.first[2] as SendPort;
+        stored.send(null);
+        await receive(4).timeout(const Duration(seconds: 30));
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        expect(kinds(), ['meta', 'batch', 'batch', 'batch']);
+
+        stored
+          ..send(null)
+          ..send(null);
+        await receive(5).timeout(const Duration(seconds: 30));
+        expect(kinds().last, 'done');
+      },
+    );
   });
 
   group('DictionaryImporter — missing index.json', () {

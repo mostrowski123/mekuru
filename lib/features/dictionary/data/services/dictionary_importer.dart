@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -5,7 +6,7 @@ import 'dart:isolate';
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform;
+    show TargetPlatform, defaultTargetPlatform, visibleForTesting;
 import 'package:json_events/json_events.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/image_convert.dart';
@@ -157,7 +158,7 @@ class DictionaryImporter {
       return await _repository.runInTransaction(() async {
         // Parse only once this import holds the database: an import queued
         // behind another one would otherwise buffer its whole dictionary.
-        isolate = await Isolate.spawn(_streamParseZip, [
+        isolate = await Isolate.spawn(streamParseZip, [
           receivePort.sendPort,
           filePath,
         ]);
@@ -166,6 +167,9 @@ class DictionaryImporter {
         int totalEntries = 0;
         int insertedEntries = 0;
         final media = <Future<(String, Uint8List)>>[];
+        // Told after each stored batch, so the parser stays a batch or two
+        // ahead instead of piling the whole dictionary up in memory.
+        late final SendPort stored;
 
         await for (final message in receivePort) {
           final msg = message as List;
@@ -180,6 +184,7 @@ class DictionaryImporter {
           }
 
           if (type == 'meta') {
+            stored = msg[2] as SendPort;
             final meta = Map<String, Object?>.from(msg[1] as Map);
             final dictionaryName =
                 meta['dictionaryName'] as String? ?? 'Unknown Dictionary';
@@ -240,10 +245,7 @@ class DictionaryImporter {
             );
             insertedEntries += batch.length;
             onProgress?.call(insertedEntries, totalEntries);
-            continue;
-          }
-
-          if (type == 'pitch_batch') {
+          } else if (type == 'pitch_batch') {
             final rawPitchEntries = (msg[1] as List)
                 .cast<Map>()
                 .map((entry) => Map<String, dynamic>.from(entry))
@@ -263,10 +265,7 @@ class DictionaryImporter {
               batch,
               batchSize: batch.length,
             );
-            continue;
-          }
-
-          if (type == 'freq_batch') {
+          } else if (type == 'freq_batch') {
             final rawFrequencyEntries = (msg[1] as List)
                 .cast<Map>()
                 .map((entry) => Map<String, dynamic>.from(entry))
@@ -286,8 +285,8 @@ class DictionaryImporter {
               batch,
               batchSize: batch.length,
             );
-            continue;
           }
+          stored.send(null);
         }
 
         if (dictionaryId == null) {
@@ -1108,10 +1107,25 @@ class DictionaryImporter {
 
   /// Parse a Yomitan zip file on a worker isolate and stream simple batches
   /// back to the main isolate to keep peak memory bounded.
-  static Future<void> _streamParseZip(List args) async {
+  @visibleForTesting
+  static Future<void> streamParseZip(List args) async {
     final sendPort = args[0] as SendPort;
     final filePath = args[1] as String;
     InputFileStream? input;
+    // The importer answers each batch once it is stored; at most two wait
+    // for that, so a slow database bounds memory instead of filling it.
+    final stored = ReceivePort();
+    final storedBatches = StreamIterator<Object?>(stored);
+    var waiting = 0;
+    Future<void> sendBatch(String type, List<Map<String, dynamic>> rows) async {
+      // send copies the rows, so the list can be reused at once.
+      sendPort.send([type, rows]);
+      rows.clear();
+      if (++waiting >= 2) {
+        await storedBatches.moveNext();
+        waiting--;
+      }
+    }
 
     try {
       input = InputFileStream(filePath);
@@ -1146,6 +1160,7 @@ class DictionaryImporter {
       sendPort.send([
         'meta',
         {...index, 'totalEntries': totalEntries},
+        stored.sendPort,
       ]);
 
       for (final file in archive.files) {
@@ -1162,8 +1177,7 @@ class DictionaryImporter {
           if (parsed == null) continue;
           entryBatch.add(parsed);
           if (entryBatch.length >= batchSize) {
-            sendPort.send(['batch', List<Map<String, dynamic>>.of(entryBatch)]);
-            entryBatch.clear();
+            await sendBatch('batch', entryBatch);
           }
         }
       }
@@ -1174,14 +1188,11 @@ class DictionaryImporter {
           if (parsed == null) continue;
           entryBatch.add(parsed);
           if (entryBatch.length >= batchSize) {
-            sendPort.send(['batch', List<Map<String, dynamic>>.of(entryBatch)]);
-            entryBatch.clear();
+            await sendBatch('batch', entryBatch);
           }
         }
       }
-      if (entryBatch.isNotEmpty) {
-        sendPort.send(['batch', List<Map<String, dynamic>>.of(entryBatch)]);
-      }
+      if (entryBatch.isNotEmpty) await sendBatch('batch', entryBatch);
 
       final pitchBatch = <Map<String, dynamic>>[];
       final freqBatch = <Map<String, dynamic>>[];
@@ -1208,11 +1219,7 @@ class DictionaryImporter {
                 'position': pitch['position'] as int,
               });
               if (pitchBatch.length >= batchSize) {
-                sendPort.send([
-                  'pitch_batch',
-                  List<Map<String, dynamic>>.of(pitchBatch),
-                ]);
-                pitchBatch.clear();
+                await sendBatch('pitch_batch', pitchBatch);
               }
             }
           } else if (mode == 'freq') {
@@ -1224,30 +1231,20 @@ class DictionaryImporter {
               'rank': parsed.rank,
             });
             if (freqBatch.length >= batchSize) {
-              sendPort.send([
-                'freq_batch',
-                List<Map<String, dynamic>>.of(freqBatch),
-              ]);
-              freqBatch.clear();
+              await sendBatch('freq_batch', freqBatch);
             }
           }
         }
       }
 
-      if (pitchBatch.isNotEmpty) {
-        sendPort.send([
-          'pitch_batch',
-          List<Map<String, dynamic>>.of(pitchBatch),
-        ]);
-      }
-      if (freqBatch.isNotEmpty) {
-        sendPort.send(['freq_batch', List<Map<String, dynamic>>.of(freqBatch)]);
-      }
+      if (pitchBatch.isNotEmpty) await sendBatch('pitch_batch', pitchBatch);
+      if (freqBatch.isNotEmpty) await sendBatch('freq_batch', freqBatch);
 
       sendPort.send(['done']);
     } catch (e) {
       sendPort.send(['error', e.toString(), e.runtimeType.toString()]);
     } finally {
+      stored.close();
       await input?.close();
     }
   }
