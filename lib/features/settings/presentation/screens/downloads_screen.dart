@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +16,7 @@ import 'package:mekuru/features/settings/presentation/providers/enhanced_furigan
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjivg_providers.dart';
 import 'package:mekuru/shared/widgets/download_status.dart';
+import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
@@ -261,6 +264,29 @@ class _SuccessText extends StatelessWidget {
 
 // ── Download tile widgets ──
 
+// Zip sizes for the mobile-data question, rounded: the JMdict English
+// releases were 15.6 and 18.1 MB and KANJIDIC English 0.7 MB in October
+// 2026, the JPDB v2.2 zip 6.0 MB.
+const _jmdictSize = '16 MB';
+const _jmdictExamplesSize = '18 MB';
+const _kanjidicSize = '0.7 MB';
+const _jpdbSize = '6 MB';
+
+/// Starts [download] of a dictionary of [size] on Wi-Fi, or off it once the
+/// user accepts mobile data. A dictionary download that started on Wi-Fi
+/// stops if Wi-Fi goes, and tapping Download again must not then go on over
+/// mobile data unasked. Pass the notifier's method itself: the tile can
+/// unmount while the dialog is up.
+Future<void> _askThenDownload(
+  BuildContext context,
+  String size,
+  Future<void> Function() download,
+) async {
+  AppHaptics.light();
+  final body = context.l10n.catalogMobileDataBody(size: size);
+  if (await okToDownload(context, body)) unawaited(download());
+}
+
 class _KanjiVgTile extends ConsumerWidget {
   const _KanjiVgTile({required this.state, required this.theme});
 
@@ -382,10 +408,11 @@ class _JpdbFreqTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        ref.read(jpdbFreqProvider.notifier).download();
-      },
+      onPressed: () => _askThenDownload(
+        context,
+        _jpdbSize,
+        ref.read(jpdbFreqProvider.notifier).download,
+      ),
       child: Text(context.l10n.commonDownload),
     );
   }
@@ -492,10 +519,13 @@ class _JmdictTile extends ConsumerWidget {
               subtitle: Text(ctx.l10n.downloadsJmdictStandardSubtitle),
               onTap: () {
                 Navigator.of(ctx).pop();
-                AppHaptics.light();
-                container
-                    .read(jmdictProvider.notifier)
-                    .download(YomitanDictType.jmdictEnglish);
+                _askThenDownload(
+                  context,
+                  _jmdictSize,
+                  () => container
+                      .read(jmdictProvider.notifier)
+                      .download(YomitanDictType.jmdictEnglish),
+                );
               },
             ),
             ListTile(
@@ -504,10 +534,13 @@ class _JmdictTile extends ConsumerWidget {
               subtitle: Text(ctx.l10n.downloadsJmdictExamplesSubtitle),
               onTap: () {
                 Navigator.of(ctx).pop();
-                AppHaptics.light();
-                container
-                    .read(jmdictProvider.notifier)
-                    .download(YomitanDictType.jmdictEnglishWithExamples);
+                _askThenDownload(
+                  context,
+                  _jmdictExamplesSize,
+                  () => container
+                      .read(jmdictProvider.notifier)
+                      .download(YomitanDictType.jmdictEnglishWithExamples),
+                );
               },
             ),
           ],
@@ -590,10 +623,11 @@ class _KanjidicTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        ref.read(kanjidicProvider.notifier).download();
-      },
+      onPressed: () => _askThenDownload(
+        context,
+        _kanjidicSize,
+        ref.read(kanjidicProvider.notifier).download,
+      ),
       child: Text(context.l10n.commonDownload),
     );
   }

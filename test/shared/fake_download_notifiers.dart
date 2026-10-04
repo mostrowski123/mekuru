@@ -14,7 +14,8 @@ import 'package:mekuru/features/settings/presentation/providers/kanjivg_provider
 
 /// Overrides for the Downloads screen's notifiers: only the [installed]
 /// dictionaries, no database, and every download start recorded in [started]
-/// instead of running (`jmdict:<variant>`, `jpdb`, `catalog:<entry>`).
+/// instead of running (`jmdict:<variant>`, `kanjidic`, `jpdb`,
+/// `catalog:<entry>`).
 /// [jmdictDownloading] shows a JMdict download already running.
 List<Override> fakeDownloadNotifierOverrides(
   List<String> started, {
@@ -38,7 +39,9 @@ List<Override> fakeDownloadNotifierOverrides(
   jpdbFreqProvider.overrideWith(
     () => _FakeJpdbFreqNotifier(() => started.add('jpdb')),
   ),
-  kanjidicProvider.overrideWith(_FakeKanjidicNotifier.new),
+  kanjidicProvider.overrideWith(
+    () => _FakeKanjidicNotifier(() => started.add('kanjidic')),
+  ),
   kanjiVgProvider.overrideWith(_FakeKanjiVgNotifier.new),
 ];
 
@@ -119,8 +122,15 @@ class FakeCatalogDownloadNotifier extends CatalogDownloadNotifier {
 }
 
 class _FakeKanjidicNotifier extends KanjidicNotifier {
+  _FakeKanjidicNotifier(this.onDownload);
+
+  final VoidCallback onDownload;
+
   @override
   Future<void> checkStatus() async {}
+
+  @override
+  Future<void> download() async => onDownload();
 }
 
 class _FakeKanjiVgNotifier extends KanjiVgNotifier {

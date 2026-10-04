@@ -142,4 +142,54 @@ void main() {
       expect(started, ['jpdb']);
     });
   }
+
+  testWidgets('off Wi-Fi, the JMdict, KANJIDIC and word frequency downloads '
+      'ask before using mobile data', (tester) async {
+    // Each stops if Wi-Fi goes, and its tile then says to tap Download
+    // again: that must not go on over mobile data unasked.
+    SharedPreferences.setMockInitialValues({});
+    mockWifiConnected(false);
+    final started = <String>[];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fakeDownloadNotifierOverrides(started),
+        child: buildLocalizedTestApp(home: const DownloadsScreen()),
+      ),
+    );
+    await tester.pump();
+    Finder downloadOf(String title) => find.descendant(
+      of: find.ancestor(of: find.text(title), matching: find.byType(ListTile)),
+      matching: find.text('Download'),
+    );
+    Future<void> agreeTo(String size) async {
+      await tester.pumpAndSettle();
+      expect(find.textContaining('about $size'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Download'),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await tester.tap(downloadOf('JMdict English'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('JMdict English'),
+      ),
+    );
+    await agreeTo('16 MB');
+
+    await tester.tap(downloadOf('KANJIDIC'));
+    await agreeTo('0.7 MB');
+
+    await tester.scrollUntilVisible(downloadOf('Word Frequency'), 200);
+    await tester.tap(downloadOf('Word Frequency'));
+    await agreeTo('6 MB');
+
+    expect(started, ['jmdict:jmdictEnglish', 'kanjidic', 'jpdb']);
+  });
 }
