@@ -87,35 +87,18 @@ class GlossaryParser {
     String glossariesJson,
   ) {
     if (parse(glossariesJson).isNotEmpty) return null;
-    try {
-      for (final item in jsonDecode(glossariesJson) as List) {
-        final href = item is String ? _lookupHref(jsonDecode(item)) : null;
-        if (href == null) continue;
-        final query = Uri.parse(href).queryParameters;
-        final expression = query['query'] ?? '';
-        if (expression.isEmpty) continue;
-        return (
-          expression: expression,
-          reading: query['primary_reading'] ?? '',
-        );
-      }
-    } catch (_) {
-      // Unreadable JSON or link: nothing to follow.
-    }
-    return null;
+    final link = _firstLookupLink(parseRichGlossaries(glossariesJson) ?? []);
+    if (link == null) return null;
+    return (expression: link['query']!, reading: link['primary_reading'] ?? '');
   }
 
-  static String? _lookupHref(dynamic content) {
-    if (content is List) {
-      for (final child in content) {
-        if (_lookupHref(child) case final href?) return href;
+  static Map<String, String>? _firstLookupLink(List<ScNode> nodes) {
+    for (final node in nodes) {
+      if (node is! ScElement) continue;
+      final link = node.tag == 'a' ? lookupLink(node.href) : null;
+      if (link ?? _firstLookupLink(node.children) case final found?) {
+        return found;
       }
-    } else if (content is Map) {
-      final href = content['href'];
-      if (content['tag'] == 'a' && href is String && href.startsWith('?')) {
-        return href;
-      }
-      return _lookupHref(content['content']);
     }
     return null;
   }

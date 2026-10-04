@@ -542,16 +542,7 @@ class _Renderer {
   );
 
   /// The word a `?query=…` link looks up; null for other links.
-  String? lookupQuery(String? href) {
-    if (href == null || !href.startsWith('?')) return null;
-    try {
-      // Uri.parse percent-encodes raw text first; JMdict's queries are raw.
-      final query = Uri.parse(href).queryParameters['query'];
-      return (query == null || query.isEmpty) ? null : query;
-    } on FormatException {
-      return null;
-    }
-  }
+  String? lookupQuery(String? href) => lookupLink(href)?['query'];
 }
 
 /// The text of [nodes] without ruby readings.

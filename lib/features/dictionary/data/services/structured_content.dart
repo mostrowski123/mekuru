@@ -113,6 +113,19 @@ List<ScNode>? parseRichGlossaries(String glossaries) {
   ];
 }
 
+/// The parameters of a `?query=…` lookup link: `query`, and Jitendex's
+/// `primary_reading`. Null for other links and for an empty query.
+Map<String, String>? lookupLink(String? href) {
+  if (href == null || !href.startsWith('?')) return null;
+  try {
+    // Uri.parse percent-encodes raw text first; JMdict's queries are raw.
+    final params = Uri.parse(href).queryParameters;
+    return (params['query'] ?? '').isEmpty ? null : params;
+  } on FormatException {
+    return null;
+  }
+}
+
 /// The text of a quoted CSS `listStyleType` such as Jitendex's `"①"` or
 /// JMdict's `'📝 '` ('' when quoted but empty); null when not quoted.
 String? quotedListMarker(Object? listStyleType) => listStyleType is String
