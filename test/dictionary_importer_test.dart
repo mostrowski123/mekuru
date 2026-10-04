@@ -1813,6 +1813,60 @@ void main() {
       expect(glossary[2], 'another plain');
     });
 
+    test('drops inflection redirects, as a zip import does', () async {
+      final jsonStr = jsonEncode({
+        'formatName': 'dexie',
+        'formatVersion': 1,
+        'data': {
+          'databaseName': 'dict',
+          'tables': [
+            {'name': 'terms', 'schema': '++id', 'rowCount': 2},
+          ],
+          'data': [
+            {
+              'tableName': 'terms',
+              'inbound': true,
+              'rows': [
+                {
+                  'expression': '食べる',
+                  'reading': 'たべる',
+                  'glossary': [
+                    'to eat',
+                    [
+                      '食う',
+                      ['v5'],
+                    ],
+                    'to live on',
+                  ],
+                  'dictionary': 'RedirectDict',
+                  'id': 1,
+                },
+                {
+                  'expression': '食べた',
+                  'reading': 'たべた',
+                  'glossary': [
+                    [
+                      '食べる',
+                      ['past'],
+                    ],
+                  ],
+                  'dictionary': 'RedirectDict',
+                  'id': 2,
+                },
+              ],
+            },
+          ],
+        },
+      });
+      final filePath = await writeCollectionFile(jsonStr);
+
+      await importer.importCollectionFromFile(filePath);
+
+      final entries = await db.select(db.dictionaryEntries).get();
+      expect(entries.map((e) => e.expression), ['食べる']);
+      expect(jsonDecode(entries.single.glossaries), ['to eat', 'to live on']);
+    });
+
     test(
       'handles glossary with boolean and numeric values in objects',
       () async {

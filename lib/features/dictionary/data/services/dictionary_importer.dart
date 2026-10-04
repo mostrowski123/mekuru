@@ -756,7 +756,9 @@ class DictionaryImporter {
               }
             } else if (inTermObject && depth == termObjectDepth) {
               // Finished a term object — emit it
-              if (termExpression != null && termExpression.isNotEmpty) {
+              if (termExpression != null &&
+                  termExpression.isNotEmpty &&
+                  !_isOnlyInflectionRedirects(termGlossary)) {
                 final glossaryList = _glossaryItems(termGlossary ?? const []);
 
                 batch.add({
@@ -805,6 +807,14 @@ class DictionaryImporter {
               }
               capBuf?.write('[');
               capNesting++;
+              capNeedsComma.add(false);
+              capClosedStructure = false;
+            } else if (inGlossaryArray && capNesting == 0) {
+              // Top-level array in glossary array (a [lemma, [rules]]
+              // redirect) — start capturing, like an object
+              capBuf = StringBuffer('[');
+              capNesting = 1;
+              capNeedsComma.clear();
               capNeedsComma.add(false);
               capClosedStructure = false;
             } else if (inTermObject && currentKey == 'glossary') {
@@ -858,8 +868,9 @@ class DictionaryImporter {
               capNesting--;
               if (capNeedsComma.isNotEmpty) capNeedsComma.removeLast();
               if (capNesting == 0) {
-                // Finished capturing a top-level glossary array
-                termGlossary?.add(capBuf.toString());
+                // Finished capturing a top-level glossary array; kept as a
+                // list so the row is filtered like a zip import's
+                termGlossary?.add(jsonDecode(capBuf.toString()));
                 capBuf = null;
                 capNeedsComma.clear();
               } else {
