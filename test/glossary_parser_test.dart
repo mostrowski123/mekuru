@@ -230,16 +230,15 @@ void main() {
       expect(result[0], contains('span text'));
     });
 
-    test('handles null content in structured objects', () {
+    test('structured content with nothing in it is left out', () {
       final structured = jsonEncode({
         'type': 'structured-content',
         'content': null,
       });
-      final glossaries = jsonEncode([structured]);
+      final glossaries = jsonEncode([structured, 'to run']);
       final result = GlossaryParser.parse(glossaries);
-      // Falls back to raw JSON since extracted text is empty
-      expect(result, hasLength(1));
-      expect(result[0], contains('structured-content'));
+      // As on screen: nothing, rather than raw JSON in an Anki card.
+      expect(result, ['to run']);
     });
   });
 }

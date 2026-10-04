@@ -104,10 +104,8 @@ class GlossaryParser {
       if (parsed is Map<String, dynamic>) {
         switch (parsed['type']) {
           case 'structured-content':
-            final content = parsed['content'];
-            return content == null
-                ? value
-                : _extractText(content, decorate: decorate);
+            // Empty content shows nothing, as on screen.
+            return _extractText(parsed['content'], decorate: decorate);
           case 'text':
             return parsed['text']?.toString() ?? '';
           case 'image':
