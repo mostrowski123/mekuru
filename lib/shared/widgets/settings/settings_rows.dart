@@ -236,10 +236,11 @@ class SettingsSwitchRow extends StatelessWidget {
 Future<void> showSettingsOptionPickerSheet<T>({
   required BuildContext context,
   required String title,
+  String? subtitle,
   required List<T> values,
   T? selected,
   required String Function(T value) labelOf,
-  String Function(T value)? subtitleOf,
+  String? Function(T value)? subtitleOf,
   IconData Function(T value)? iconOf,
   required ValueChanged<T> onSelected,
 }) {
@@ -253,7 +254,22 @@ Future<void> showSettingsOptionPickerSheet<T>({
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(title, style: theme.textTheme.titleMedium),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
             const Divider(height: 1),
             Flexible(
@@ -264,9 +280,14 @@ Future<void> showSettingsOptionPickerSheet<T>({
                     ListTile(
                       leading: iconOf != null ? Icon(iconOf(value)) : null,
                       title: Text(labelOf(value)),
-                      subtitle: subtitleOf != null
-                          ? Text(subtitleOf(value))
-                          : null,
+                      subtitle: switch (subtitleOf?.call(value)) {
+                        final String text => Text(
+                          text,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        null => null,
+                      },
                       trailing: value == selected
                           ? Icon(Icons.check, color: theme.colorScheme.primary)
                           : null,

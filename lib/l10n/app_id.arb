@@ -2067,7 +2067,7 @@
   "@ankidroidSettingsFieldMappingSection": {
     "description": "Section heading for Anki field mapping."
   },
-  "ankidroidSettingsFieldMappingHelp": "Petakan setiap kolom Anki ke sumber data dari aplikasi.",
+  "ankidroidSettingsFieldMappingHelp": "Ini adalah kolom-kolom tipe catatan Anki Anda. Ketuk salah satu untuk memilih apa yang diisikan Mekuru ke dalamnya.",
   "@ankidroidSettingsFieldMappingHelp": {
     "description": "Help text describing how Anki field mapping works."
   },
@@ -2096,6 +2096,24 @@
     "description": "Title for the field mapping picker sheet.",
     "placeholders": {
       "ankiFieldName": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidSettingsMapPreviewLookedUp": "Pratinjau menggunakan \"{word}\", kata yang Anda cari.",
+  "@ankidroidSettingsMapPreviewLookedUp": {
+    "description": "Caption under the field mapping sheet title when the previews show the word the user came from.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidSettingsMapPreviewExample": "Pratinjau menggunakan kata contoh \"{word}\".",
+  "@ankidroidSettingsMapPreviewExample": {
+    "description": "Caption under the field mapping sheet title when the previews show an example word.",
+    "placeholders": {
+      "word": {
         "type": "String"
       }
     }

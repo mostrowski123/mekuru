@@ -2067,7 +2067,7 @@
   "@ankidroidSettingsFieldMappingSection": {
     "description": "Section heading for Anki field mapping."
   },
-  "ankidroidSettingsFieldMappingHelp": "将每个 Anki 字段映射到应用的数据来源。",
+  "ankidroidSettingsFieldMappingHelp": "这些是你的 Anki 笔记类型中的字段。点按一个字段，选择 Mekuru 要填入的内容。",
   "@ankidroidSettingsFieldMappingHelp": {
     "description": "Help text describing how Anki field mapping works."
   },
@@ -2096,6 +2096,24 @@
     "description": "Title for the field mapping picker sheet.",
     "placeholders": {
       "ankiFieldName": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidSettingsMapPreviewLookedUp": "预览使用你查询的词“{word}”。",
+  "@ankidroidSettingsMapPreviewLookedUp": {
+    "description": "Caption under the field mapping sheet title when the previews show the word the user came from.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidSettingsMapPreviewExample": "预览使用示例词“{word}”。",
+  "@ankidroidSettingsMapPreviewExample": {
+    "description": "Caption under the field mapping sheet title when the previews show an example word.",
+    "placeholders": {
+      "word": {
         "type": "String"
       }
     }

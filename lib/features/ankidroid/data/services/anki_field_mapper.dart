@@ -34,6 +34,26 @@ enum AppDataSource {
     };
   }
 
+  /// What a field mapped to this source is filled with for [note].
+  String valueFor(AnkiNoteData note) {
+    return switch (this) {
+      AppDataSource.expression => note.expression,
+      AppDataSource.reading => note.reading,
+      AppDataSource.furigana => formatAnkiFurigana(
+        note.expression,
+        note.reading,
+      ),
+      AppDataSource.glossary => GlossaryParser.parse(
+        note.glossaries,
+      ).join('\n'),
+      AppDataSource.sentenceContext => note.sentenceContext ?? '',
+      AppDataSource.frequency => note.frequencyRank?.toString() ?? '',
+      AppDataSource.dictionaryName => note.dictionaryName,
+      AppDataSource.pitchAccent => AnkiFieldMapper._formatPitchAccents(note),
+      AppDataSource.empty => '',
+    };
+  }
+
   static AppDataSource fromKey(String key) {
     return AppDataSource.values.firstWhere(
       (e) => e.key == key,
@@ -52,8 +72,9 @@ class AnkiFieldMapper {
     required AnkiNoteData noteData,
   }) {
     return ankiFieldNames.map((fieldName) {
-      final sourceKey = fieldMapping[fieldName] ?? 'empty';
-      return _resolveValue(sourceKey, noteData);
+      return AppDataSource.fromKey(
+        fieldMapping[fieldName] ?? 'empty',
+      ).valueFor(noteData);
     }).toList();
   }
 
@@ -73,30 +94,11 @@ class AnkiFieldMapper {
     ];
   }
 
-  static String _resolveValue(String sourceKey, AnkiNoteData noteData) {
-    return switch (sourceKey) {
-      'expression' => noteData.expression,
-      'reading' => noteData.reading,
-      'furigana' => _formatFurigana(noteData),
-      'glossary' => GlossaryParser.parse(noteData.glossaries).join('\n'),
-      'sentence_context' => noteData.sentenceContext ?? '',
-      'frequency' => noteData.frequencyRank?.toString() ?? '',
-      'dictionary_name' => noteData.dictionaryName,
-      'pitch_accent' => _formatPitchAccents(noteData),
-      _ => '',
-    };
-  }
-
   static String _formatPitchAccents(AnkiNoteData noteData) {
     if (noteData.pitchAccents.isEmpty) return '';
     return noteData.pitchAccents
         .map((p) => '${p.reading} [${p.downstepPosition}]')
         .join(', ');
-  }
-
-  /// Format expression + reading into Anki Japanese addon furigana notation.
-  static String _formatFurigana(AnkiNoteData noteData) {
-    return formatAnkiFurigana(noteData.expression, noteData.reading);
   }
 }
 
@@ -115,10 +117,9 @@ String? resolveAnkiFirstFieldValue({
   final firstFieldName = config.ankiFieldNames.isNotEmpty
       ? config.ankiFieldNames.first
       : config.fieldMapping.keys.first;
-  final firstFieldValue = AnkiFieldMapper._resolveValue(
+  final firstFieldValue = AppDataSource.fromKey(
     config.fieldMapping[firstFieldName] ?? 'empty',
-    noteData,
-  ).trim();
+  ).valueFor(noteData).trim();
   return firstFieldValue.isEmpty ? null : firstFieldValue;
 }
 

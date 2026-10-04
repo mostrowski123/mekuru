@@ -1858,7 +1858,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ankidroidSettingsFieldMappingHelp =>
-      'Asigna cada campo de Anki a una fuente de datos de la app.';
+      'Estos son los campos de tu tipo de nota de Anki. Toca uno para elegir con qué lo rellena Mekuru.';
 
   @override
   String get ankidroidSettingsDefaultTagsSection => 'Etiquetas predeterminadas';
@@ -1879,6 +1879,16 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String ankidroidSettingsMapFieldTo({required String ankiFieldName}) {
     return 'Asignar \"$ankiFieldName\" a:';
+  }
+
+  @override
+  String ankidroidSettingsMapPreviewLookedUp({required String word}) {
+    return 'Las vistas previas usan \"$word\", la palabra que buscaste.';
+  }
+
+  @override
+  String ankidroidSettingsMapPreviewExample({required String word}) {
+    return 'Las vistas previas usan la palabra de ejemplo \"$word\".';
   }
 
   @override

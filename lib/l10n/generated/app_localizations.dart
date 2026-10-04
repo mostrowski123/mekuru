@@ -3154,7 +3154,7 @@ abstract class AppLocalizations {
   /// Help text describing how Anki field mapping works.
   ///
   /// In en, this message translates to:
-  /// **'Map each Anki field to a data source from the app.'**
+  /// **'These are the fields of your Anki note type. Tap one to choose what Mekuru fills it with.'**
   String get ankidroidSettingsFieldMappingHelp;
 
   /// Section heading for default Anki tags.
@@ -3192,6 +3192,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Map \"{ankiFieldName}\" to:'**
   String ankidroidSettingsMapFieldTo({required String ankiFieldName});
+
+  /// Caption under the field mapping sheet title when the previews show the word the user came from.
+  ///
+  /// In en, this message translates to:
+  /// **'Previews use \"{word}\", the word you looked up.'**
+  String ankidroidSettingsMapPreviewLookedUp({required String word});
+
+  /// Caption under the field mapping sheet title when the previews show an example word.
+  ///
+  /// In en, this message translates to:
+  /// **'Previews use the example word \"{word}\".'**
+  String ankidroidSettingsMapPreviewExample({required String word});
 
   /// Tooltip for opening AnkiDroid settings from the create-card flow.
   ///

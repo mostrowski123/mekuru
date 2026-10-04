@@ -345,15 +345,18 @@ class _GroupedDictionaryEntryHeaderState
     final addedToAnkiMessage = context.l10n.dictionaryAddedToAnki(
       expression: _primaryEntry.expression,
     );
+    final noteData = _buildAnkiNoteData(glossaries: await _exportGlossaries());
+    if (!mounted) return;
     if (!config.isConfigured) {
       Navigator.of(context).push(
-        namedRoute('anki_settings', (_) => const AnkidroidSettingsScreen()),
+        namedRoute(
+          'anki_settings',
+          (_) => AnkidroidSettingsScreen(previewNote: noteData),
+        ),
       );
       return;
     }
 
-    final noteData = _buildAnkiNoteData(glossaries: await _exportGlossaries());
-    if (!mounted) return;
     Navigator.of(context)
         .push<bool>(
           namedRoute(

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
@@ -24,6 +25,7 @@ void main() {
     WidgetTester tester, {
     required AnkidroidConfig config,
     void Function(FakeAnkidroidService service)? setUpService,
+    AnkiNoteData? previewNote,
   }) async {
     fakeService = FakeAnkidroidService()
       // The configured note type kept "Word" but lost "Front".
@@ -38,7 +40,9 @@ void main() {
             () => TestAnkidroidConfigNotifier(config),
           ),
         ],
-        child: buildLocalizedTestApp(home: const AnkidroidSettingsScreen()),
+        child: buildLocalizedTestApp(
+          home: AnkidroidSettingsScreen(previewNote: previewNote),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -130,6 +134,59 @@ void main() {
       'Word': 'reading',
       'Meaning': 'expression',
     });
+  });
+
+  /// Opens the mapping sheet for "Word", tall enough to show every option.
+  Future<void> openWordSheet(
+    WidgetTester tester, {
+    AnkiNoteData? previewNote,
+  }) async {
+    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpScreen(
+      tester,
+      config: configWithStaleField,
+      previewNote: previewNote,
+    );
+    await tester.tap(find.text('Word'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('the mapping sheet previews each source with an example word', (
+    tester,
+  ) async {
+    await openWordSheet(tester);
+
+    expect(find.textContaining('example word "食べる"'), findsOneWidget);
+    expect(find.text('食べる'), findsOneWidget);
+    expect(find.text('食[た]べる'), findsOneWidget);
+    expect(find.text('to eat'), findsOneWidget);
+  });
+
+  testWidgets('the mapping sheet previews the word the user came from', (
+    tester,
+  ) async {
+    await openWordSheet(
+      tester,
+      previewNote: const AnkiNoteData(
+        expression: '猫',
+        reading: 'ねこ',
+        glossaries: '["cat"]',
+        dictionaryName: 'JMdict',
+      ),
+    );
+
+    expect(find.textContaining('"猫", the word you looked up'), findsOneWidget);
+    expect(find.text('cat'), findsOneWidget);
+    expect(find.text('食べる'), findsNothing);
+    // A source this word has no value for previews as empty.
+    expect(
+      find.descendant(
+        of: find.widgetWithText(ListTile, 'Sentence Context'),
+        matching: find.text('(Empty)'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a failed field query while picking a note type keeps the '

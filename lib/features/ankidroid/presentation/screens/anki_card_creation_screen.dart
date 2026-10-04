@@ -299,9 +299,12 @@ class _AnkiCardCreationScreenState
   }
 
   Future<void> _openSettings() async {
-    await Navigator.of(
-      context,
-    ).push(namedRoute('anki_settings', (_) => const AnkidroidSettingsScreen()));
+    await Navigator.of(context).push(
+      namedRoute(
+        'anki_settings',
+        (_) => AnkidroidSettingsScreen(previewNote: widget.noteData),
+      ),
+    );
     if (mounted) _reloadFields();
   }
 

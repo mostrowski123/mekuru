@@ -2067,7 +2067,7 @@
   "@ankidroidSettingsFieldMappingSection": {
     "description": "Section heading for Anki field mapping."
   },
-  "ankidroidSettingsFieldMappingHelp": "Asigna cada campo de Anki a una fuente de datos de la app.",
+  "ankidroidSettingsFieldMappingHelp": "Estos son los campos de tu tipo de nota de Anki. Toca uno para elegir con qué lo rellena Mekuru.",
   "@ankidroidSettingsFieldMappingHelp": {
     "description": "Help text describing how Anki field mapping works."
   },
@@ -2096,6 +2096,24 @@
     "description": "Title for the field mapping picker sheet.",
     "placeholders": {
       "ankiFieldName": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidSettingsMapPreviewLookedUp": "Las vistas previas usan \"{word}\", la palabra que buscaste.",
+  "@ankidroidSettingsMapPreviewLookedUp": {
+    "description": "Caption under the field mapping sheet title when the previews show the word the user came from.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "ankidroidSettingsMapPreviewExample": "Las vistas previas usan la palabra de ejemplo \"{word}\".",
+  "@ankidroidSettingsMapPreviewExample": {
+    "description": "Caption under the field mapping sheet title when the previews show an example word.",
+    "placeholders": {
+      "word": {
         "type": "String"
       }
     }

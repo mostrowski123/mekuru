@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_connect_service.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
@@ -15,7 +16,11 @@ import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 /// Lets users select a note type, deck, default tags, and map Anki fields
 /// to app data sources.
 class AnkidroidSettingsScreen extends ConsumerStatefulWidget {
-  const AnkidroidSettingsScreen({super.key});
+  const AnkidroidSettingsScreen({super.key, this.previewNote});
+
+  /// The word the user came from, if any. The field mapping sheet previews
+  /// what each data source fills in for it, or for an example word.
+  final AnkiNoteData? previewNote;
 
   @override
   ConsumerState<AnkidroidSettingsScreen> createState() =>
@@ -650,48 +655,25 @@ class _AnkidroidSettingsScreenState
     String ankiFieldName,
     String currentKey,
   ) {
-    showModalBottomSheet(
+    final l10n = context.l10n;
+    final note = widget.previewNote ?? exampleAnkiNoteData;
+    showSettingsOptionPickerSheet<AppDataSource>(
       context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                sheetContext.l10n.ankidroidSettingsMapFieldTo(
-                  ankiFieldName: ankiFieldName,
-                ),
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-            ),
-            const Divider(height: 1),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: AppDataSource.values.map((source) {
-                  return ListTile(
-                    title: Text(source.localizedLabel(sheetContext.l10n)),
-                    trailing: currentKey == source.key
-                        ? Icon(
-                            Icons.check,
-                            color: Theme.of(context).colorScheme.primary,
-                          )
-                        : null,
-                    onTap: () {
-                      AppHaptics.medium();
-                      ref
-                          .read(ankidroidConfigProvider.notifier)
-                          .setFieldMapping(ankiFieldName, source.key);
-                      Navigator.pop(sheetContext);
-                    },
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
+      title: l10n.ankidroidSettingsMapFieldTo(ankiFieldName: ankiFieldName),
+      subtitle: (widget.previewNote == null
+          ? l10n.ankidroidSettingsMapPreviewExample
+          : l10n.ankidroidSettingsMapPreviewLookedUp)(word: note.expression),
+      values: AppDataSource.values,
+      selected: AppDataSource.fromKey(currentKey),
+      labelOf: (source) => source.localizedLabel(l10n),
+      subtitleOf: (source) {
+        if (source == AppDataSource.empty) return null;
+        final preview = source.valueFor(note).trim();
+        return preview.isEmpty ? l10n.ankidroidDataSourceEmpty : preview;
+      },
+      onSelected: (source) => ref
+          .read(ankidroidConfigProvider.notifier)
+          .setFieldMapping(ankiFieldName, source.key),
     );
   }
 }

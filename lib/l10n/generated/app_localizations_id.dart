@@ -1844,7 +1844,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get ankidroidSettingsFieldMappingHelp =>
-      'Petakan setiap kolom Anki ke sumber data dari aplikasi.';
+      'Ini adalah kolom-kolom tipe catatan Anki Anda. Ketuk salah satu untuk memilih apa yang diisikan Mekuru ke dalamnya.';
 
   @override
   String get ankidroidSettingsDefaultTagsSection => 'Tag Default';
@@ -1865,6 +1865,16 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String ankidroidSettingsMapFieldTo({required String ankiFieldName}) {
     return 'Petakan \"$ankiFieldName\" ke:';
+  }
+
+  @override
+  String ankidroidSettingsMapPreviewLookedUp({required String word}) {
+    return 'Pratinjau menggunakan \"$word\", kata yang Anda cari.';
+  }
+
+  @override
+  String ankidroidSettingsMapPreviewExample({required String word}) {
+    return 'Pratinjau menggunakan kata contoh \"$word\".';
   }
 
   @override

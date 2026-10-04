@@ -1755,7 +1755,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ankidroidSettingsFieldMappingSection => '字段映射';
 
   @override
-  String get ankidroidSettingsFieldMappingHelp => '将每个 Anki 字段映射到应用的数据来源。';
+  String get ankidroidSettingsFieldMappingHelp =>
+      '这些是你的 Anki 笔记类型中的字段。点按一个字段，选择 Mekuru 要填入的内容。';
 
   @override
   String get ankidroidSettingsDefaultTagsSection => '默认标签';
@@ -1775,6 +1776,16 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String ankidroidSettingsMapFieldTo({required String ankiFieldName}) {
     return '将“$ankiFieldName”映射为：';
+  }
+
+  @override
+  String ankidroidSettingsMapPreviewLookedUp({required String word}) {
+    return '预览使用你查询的词“$word”。';
+  }
+
+  @override
+  String ankidroidSettingsMapPreviewExample({required String word}) {
+    return '预览使用示例词“$word”。';
   }
 
   @override
@@ -5165,7 +5176,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get ankidroidSettingsFieldMappingSection => '字段映射';
 
   @override
-  String get ankidroidSettingsFieldMappingHelp => '将每个 Anki 字段映射到应用的数据来源。';
+  String get ankidroidSettingsFieldMappingHelp =>
+      '这些是你的 Anki 笔记类型中的字段。点按一个字段，选择 Mekuru 要填入的内容。';
 
   @override
   String get ankidroidSettingsDefaultTagsSection => '默认标签';
@@ -5185,6 +5197,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String ankidroidSettingsMapFieldTo({required String ankiFieldName}) {
     return '将“$ankiFieldName”映射为：';
+  }
+
+  @override
+  String ankidroidSettingsMapPreviewLookedUp({required String word}) {
+    return '预览使用你查询的词“$word”。';
+  }
+
+  @override
+  String ankidroidSettingsMapPreviewExample({required String word}) {
+    return '预览使用示例词“$word”。';
   }
 
   @override

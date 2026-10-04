@@ -20,3 +20,22 @@ class AnkiNoteData {
     this.pitchAccents = const [],
   });
 }
+
+/// Stands in for a looked-up word when previewing field mappings, so every
+/// data source shows a value.
+const exampleAnkiNoteData = AnkiNoteData(
+  expression: '食べる',
+  reading: 'たべる',
+  glossaries: '["to eat"]',
+  dictionaryName: 'Jitendex',
+  frequencyRank: 120,
+  sentenceContext: '毎朝パンを食べる。',
+  pitchAccents: [
+    PitchAccentResult(
+      reading: 'たべる',
+      downstepPosition: 2,
+      dictionaryName: 'Example',
+      dictionaryId: 0,
+    ),
+  ],
+);
