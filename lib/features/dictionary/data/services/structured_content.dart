@@ -86,7 +86,7 @@ class ScImage extends ScNode {
 }
 
 /// Parses a stored glossaries column (a JSON list of plain strings and
-/// JSON-encoded objects) into display nodes, one entry per item.
+/// objects) into display nodes, one entry per item.
 ///
 /// Returns null when there is nothing structured to lay out — every item
 /// plain or text, or the JSON unreadable — so callers keep the plain-text
@@ -98,19 +98,26 @@ List<ScNode>? parseRichGlossaries(String glossaries) {
   } catch (_) {
     return null;
   }
-  final nodes = [
-    for (final item in items) item is String ? _parseItem(item) : null,
-  ];
-  if (nodes.every((node) => node == null || node is ScText)) return null;
+  final nodes = [for (final item in items) _parseItem(item)];
+  if (nodes.every((node) => node is ScText)) return null;
   // Each item its own block, as Yomitan lists them: plain glosses beside
   // structured content would otherwise run together.
   return [
-    for (final (i, node) in nodes.indexed)
-      if (node == null || node is ScText)
-        ScElement(tag: 'div', children: [node ?? ScText('${items[i]}')])
-      else
-        node,
+    for (final node in nodes)
+      if (node is ScText) ScElement(tag: 'div', children: [node]) else node,
   ];
+}
+
+/// A stored glossary item with a pre-1.47 row's JSON-string object decoded:
+/// rows imported before 1.47 hold each object as a JSON string, newer rows
+/// the object itself. Anything else comes back unchanged.
+Object? decodeGlossaryItem(Object? item) {
+  if (item is! String || !item.startsWith('{')) return item;
+  try {
+    return jsonDecode(item);
+  } on FormatException {
+    return item;
+  }
 }
 
 /// The parameters of a `?query=…` lookup link: `query`, and Jitendex's
@@ -140,17 +147,11 @@ String? _string(Object? value) => value is String ? value : null;
 
 double? _number(Object? value) => value is num ? value.toDouble() : null;
 
-/// A structured-content, text or image object; null for a plain string or
-/// an object of another kind.
-ScNode? _parseItem(String item) {
-  if (!item.startsWith('{')) return null;
-  final Object? json;
-  try {
-    json = jsonDecode(item);
-  } catch (_) {
-    return null;
-  }
-  if (json is! Map<String, dynamic>) return null;
+/// A structured-content, text or image object as a node; a plain string or
+/// an object of another kind as its text.
+ScNode _parseItem(Object? item) {
+  final json = decodeGlossaryItem(item);
+  if (json is! Map<String, dynamic>) return _rawText(item);
   return switch (json['type']) {
     'structured-content' => ScElement(
       tag: 'div',
@@ -159,9 +160,12 @@ ScNode? _parseItem(String item) {
     'text' => ScText(json['text']?.toString() ?? ''),
     'image' when json['path'] is String => ScImage.fromJson(json),
     'image' => const ScText(''),
-    _ => null,
+    _ => _rawText(item),
   };
 }
+
+ScText _rawText(Object? item) =>
+    ScText(item is String ? item : jsonEncode(item));
 
 List<ScNode> _parseContent(Object? content) {
   if (content == null) return const [];

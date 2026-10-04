@@ -28,7 +28,7 @@ enum CatalogDictionary {
         'https://github.com/stephenmk/stephenmk.github.io/releases/latest/download/jitendex-yomitan.zip',
     title: 'Jitendex.org',
     downloadMb: 39,
-    installedMb: 774,
+    installedMb: 664,
     sourceUrl: 'https://jitendex.org',
   ),
   wiktionaryEnglish.wiktionary(
@@ -36,14 +36,14 @@ enum CatalogDictionary {
     'Wiktionary (English)',
     CatalogSection.japaneseEnglish,
     16,
-    194,
+    169,
   ),
   wiktionaryJapanese.wiktionary(
     'ja',
     'Wiktionary (日本語)',
     CatalogSection.japaneseJapanese,
     14,
-    202,
+    182,
   ),
   jmnedict(
     displayName: 'JMnedict',
@@ -76,7 +76,7 @@ enum CatalogDictionary {
     'Wiktionary (中文)',
     CatalogSection.otherLanguages,
     6.9,
-    116,
+    104,
   );
 
   const CatalogDictionary({

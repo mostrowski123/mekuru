@@ -35,12 +35,19 @@ void main() {
 
   tearDown(() => db.close());
 
-  /// Renders one glossary item, or a whole row when [glossary] is a list.
+  /// Renders one glossary item, or a whole row when [glossary] is a list,
+  /// stored as an import stores it: objects as themselves ([legacy]: as
+  /// JSON strings, like rows imported before 1.47).
   Future<List<String>> pump(
     WidgetTester tester,
     Object glossary, {
     int dictionaryId = 1,
+    bool legacy = false,
   }) async {
+    final items = [
+      for (final item in glossary is List ? glossary : [glossary])
+        !legacy && item is String ? stored(item) : item,
+    ];
     final taps = <String>[];
     await tester.pumpWidget(
       ProviderScope(
@@ -49,9 +56,7 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: StructuredGlossaryView(
-                glossaries: jsonEncode(
-                  glossary is List ? glossary : [glossary],
-                ),
+                glossaries: jsonEncode(items),
                 dictionaryId: dictionaryId,
                 style: const TextStyle(fontSize: 16),
                 onWordTap: taps.add,
@@ -82,6 +87,15 @@ void main() {
     expect(find.text('くだ'), findsOneWidget);
     expect(text('You should eat more fruit.'), findsOneWidget);
     expect(text('structured-content'), findsNothing);
+    expect(text('"tag"'), findsNothing);
+  });
+
+  testWidgets('a definition imported before 1.47 still shows', (tester) async {
+    await pump(tester, jitendexTaberu, legacy: true);
+
+    expect(find.text('1-dan'), findsOneWidget);
+    expect(find.text('②'), findsOneWidget);
+    expect(text('to live on (e.g. a salary); to live off'), findsOneWidget);
     expect(text('"tag"'), findsNothing);
   });
 

@@ -300,8 +300,11 @@ void main() {
       final glossaries = jsonDecode(allEntries.first.glossaries) as List;
       expect(glossaries, hasLength(2));
       expect(glossaries[0], 'example');
-      // Complex object should be JSON-encoded
-      expect(glossaries[1], contains('structured'));
+      // Objects are stored as themselves, not as JSON strings.
+      expect(glossaries[1], {
+        'type': 'structured',
+        'content': 'detailed meaning',
+      });
     });
 
     test('extracts dictionary name from index.json', () async {
@@ -795,7 +798,7 @@ void main() {
       final redirect = rows.singleWhere((r) => r.expression == '勞働相');
       final glossaries = jsonDecode(redirect.glossaries) as List;
       expect(glossaries, hasLength(1));
-      expect(glossaries.single, contains('redirect-glossary'));
+      expect(jsonEncode(glossaries.single), contains('redirect-glossary'));
       expect(redirect.glossaries, isNot(contains('redirected from')));
     });
   });
@@ -1585,7 +1588,7 @@ void main() {
       final glossary = jsonDecode(entries.first.glossaries) as List;
       expect(glossary, hasLength(2));
       expect(glossary[0], 'to eat');
-      expect(glossary[1], contains('structured-content'));
+      expect((glossary[1] as Map)['type'], 'structured-content');
     });
 
     test('collection skips entries with empty expression', () async {
@@ -1682,8 +1685,8 @@ void main() {
       final glossary = jsonDecode(entries.first.glossaries) as List;
       expect(glossary, hasLength(1));
 
-      // The glossary item should be valid JSON that can be re-parsed
-      final parsed = jsonDecode(glossary[0] as String) as Map<String, dynamic>;
+      // The glossary item is stored as the object itself
+      final parsed = glossary[0] as Map<String, dynamic>;
       expect(parsed['type'], 'structured-content');
       expect(parsed['content'], isList);
       final content = parsed['content'] as List;
@@ -1750,8 +1753,7 @@ void main() {
         )..where((t) => t.dictionaryId.equals(dict.id))).get();
 
         final glossary = jsonDecode(entries.first.glossaries) as List;
-        final parsed =
-            jsonDecode(glossary[0] as String) as Map<String, dynamic>;
+        final parsed = glossary[0] as Map<String, dynamic>;
         expect(parsed['type'], 'structured-content');
         expect(parsed['style'], {'fontSize': '14px', 'color': 'red'});
         final content = parsed['content'] as List;
@@ -1804,8 +1806,8 @@ void main() {
       final glossary = jsonDecode(entries.first.glossaries) as List;
       expect(glossary, hasLength(3));
       expect(glossary[0], 'plain meaning');
-      // Structured item should be valid JSON
-      final parsed = jsonDecode(glossary[1] as String) as Map<String, dynamic>;
+      // Structured item is stored as the object itself
+      final parsed = glossary[1] as Map<String, dynamic>;
       expect(parsed['type'], 'structured-content');
       expect(parsed['content'], 'rich meaning');
       expect(glossary[2], 'another plain');
@@ -1852,8 +1854,7 @@ void main() {
         )..where((t) => t.dictionaryId.equals(dict.id))).get();
 
         final glossary = jsonDecode(entries.first.glossaries) as List;
-        final parsed =
-            jsonDecode(glossary[0] as String) as Map<String, dynamic>;
+        final parsed = glossary[0] as Map<String, dynamic>;
         expect(parsed['type'], 'structured-content');
         final data = parsed['data'] as Map<String, dynamic>;
         expect(data['count'], 5);

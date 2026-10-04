@@ -455,7 +455,7 @@ void main() {
                 id: 10,
                 expression: '労働大臣',
                 reading: 'ろうどうだいじん',
-                glossaries: jsonEncode([jitendexRedirect]),
+                glossaries: jsonEncode([stored(jitendexRedirect)]),
                 dictionaryId: dictionaryId,
               ),
               dictionaryName: 'Jitendex',

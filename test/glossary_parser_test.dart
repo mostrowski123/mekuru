@@ -7,8 +7,20 @@ import 'shared/yomitan_glossary_fixtures.dart';
 
 void main() {
   group('GlossaryParser — Yomitan dictionaries', () {
-    List<String> parse(String item) => GlossaryParser.parse(jsonEncode([item]));
-    String search(String item) => GlossaryParser.searchTextFromItems([item]);
+    // Every check reads the stored item and a pre-1.47 row's JSON text and
+    // expects one answer.
+    List<String> parse(String item) {
+      final legacy = GlossaryParser.parse(jsonEncode([item]));
+      expect(GlossaryParser.parse(jsonEncode([stored(item)])), legacy);
+      return legacy;
+    }
+
+    String search(String item) {
+      final legacy = GlossaryParser.searchTextFromItems([item]);
+      expect(GlossaryParser.searchTextFromItems([stored(item)]), legacy);
+      expect(GlossaryParser.searchText(jsonEncode([stored(item)])), legacy);
+      return legacy;
+    }
 
     test('JMdict plain and search text stay exactly as before', () {
       // Search ranking (whole-gloss lines, headline gloss) is tuned on this
@@ -77,10 +89,12 @@ void main() {
     });
 
     test('a Jitendex redirect names the entry it points to', () {
-      expect(GlossaryParser.redirectTarget(jsonEncode([jitendexRedirect])), (
-        expression: '労働相',
-        reading: 'ろうどうしょう',
-      ));
+      for (final item in [jitendexRedirect, stored(jitendexRedirect)]) {
+        expect(GlossaryParser.redirectTarget(jsonEncode([item])), (
+          expression: '労働相',
+          reading: 'ろうどうしょう',
+        ));
+      }
       // Glossaries with text of their own, or unreadable ones, point nowhere.
       expect(GlossaryParser.redirectTarget(jsonEncode([jitendexTaberu])), null);
       expect(GlossaryParser.redirectTarget('["to eat"]'), null);
@@ -102,6 +116,8 @@ void main() {
       final image = jsonEncode({'type': 'image', 'path': 'img/a.png'});
 
       expect(GlossaryParser.parse(jsonEncode([text, image])), ['a meaning']);
+      expect(parse(text), ['a meaning']);
+      expect(parse(image), isEmpty);
       expect(search(image), ' ');
       expect(GlossaryParser.searchTextFromItems([]), '');
     });
@@ -168,6 +184,9 @@ void main() {
       expect(result, hasLength(1));
       // Non-structured-content JSON should be returned as-is
       expect(result[0], jsonObj);
+      expect(GlossaryParser.parse(jsonEncode([jsonDecode(jsonObj)])), [
+        jsonObj,
+      ]);
     });
 
     test('handles empty glossary list', () {

@@ -11,7 +11,8 @@ abstract final class DictionaryEntryKinds {
 ///   [expression, reading, definition_tags, rules, score, glossary, sequence, term_tags]
 ///
 /// We index `expression` and `reading` for fast lookups.
-/// `glossaries` is stored as JSON-encoded text (`List<String>`).
+/// `glossaries` is stored as a JSON list of plain strings and Yomitan
+/// objects (before 1.47: the objects as JSON strings).
 @TableIndex(name: 'idx_expression', columns: {#expression})
 @TableIndex(name: 'idx_reading', columns: {#reading})
 @TableIndex(name: 'idx_expr_dictid', columns: {#expression, #dictionaryId})
@@ -27,7 +28,7 @@ class DictionaryEntries extends Table {
   TextColumn get definitionTags => text().withDefault(const Constant(''))();
   TextColumn get rules => text().withDefault(const Constant(''))();
   TextColumn get termTags => text().withDefault(const Constant(''))();
-  TextColumn get glossaries => text()(); // JSON-encoded List<String>
+  TextColumn get glossaries => text()(); // JSON list; see the class doc
 
   /// Lowercased plain-text rendering of [glossaries] (one gloss per line),
   /// extracted at insert time. This is what the English-search FTS index

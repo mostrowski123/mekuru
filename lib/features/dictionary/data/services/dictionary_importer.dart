@@ -744,8 +744,9 @@ class DictionaryImporter {
               capNesting--;
               if (capNeedsComma.isNotEmpty) capNeedsComma.removeLast();
               if (capNesting == 0) {
-                // Finished capturing a top-level glossary object
-                termGlossary?.add(capBuf.toString());
+                // Finished capturing a top-level glossary object; it is
+                // stored as itself, not as a JSON string.
+                termGlossary?.add(jsonDecode(capBuf.toString()));
                 capBuf = null;
                 capNeedsComma.clear();
               } else {
@@ -756,16 +757,7 @@ class DictionaryImporter {
             } else if (inTermObject && depth == termObjectDepth) {
               // Finished a term object — emit it
               if (termExpression != null && termExpression.isNotEmpty) {
-                final glossaryList = <String>[];
-                if (termGlossary != null) {
-                  for (final item in termGlossary) {
-                    if (item is String) {
-                      glossaryList.add(item);
-                    } else {
-                      glossaryList.add(item.toString());
-                    }
-                  }
-                }
+                final glossaryList = _glossaryItems(termGlossary ?? const []);
 
                 batch.add({
                   'expression': termExpression,
@@ -1373,6 +1365,18 @@ class DictionaryImporter {
       glossary.isNotEmpty &&
       glossary.every((item) => item is List);
 
+  /// A term's glossary items as stored: strings and objects as themselves
+  /// (as JSON strings inside the list, every quote in them would be stored
+  /// escaped), other values as text.
+  static List<Object> _glossaryItems(List<dynamic> raw) => [
+    for (final item in raw)
+      if (item is String || item is Map)
+        item
+      // Lists are [lemma, [rules]] redirects; see _isOnlyInflectionRedirects.
+      else if (item is! List)
+        item.toString(),
+  ];
+
   /// Kanji-bank analogue of [_isImportableTermRow], for [_parseZipKanjiRow].
   static bool _isImportableKanjiRow(dynamic row) =>
       row is List && row.length >= 5 && (row[0]?.toString() ?? '').isNotEmpty;
@@ -1388,20 +1392,9 @@ class DictionaryImporter {
     final termTags = _stringifyTagValue(list.length > 7 ? list[7] : null);
 
     final rawGlossary = list[5];
-    final glossaryList = <String>[];
-    if (rawGlossary is List) {
-      for (final item in rawGlossary) {
-        if (item is String) {
-          glossaryList.add(item);
-        } else if (item is Map) {
-          glossaryList.add(jsonEncode(item));
-        } else if (item is! List) {
-          // Lists are [lemma, [rules]] redirects; see
-          // _isOnlyInflectionRedirects.
-          glossaryList.add(item.toString());
-        }
-      }
-    }
+    final glossaryList = rawGlossary is List
+        ? _glossaryItems(rawGlossary)
+        : const <Object>[];
 
     return {
       'expression': expression,

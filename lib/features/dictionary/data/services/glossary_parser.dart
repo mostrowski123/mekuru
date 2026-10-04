@@ -4,9 +4,10 @@ import 'package:mekuru/features/dictionary/data/services/structured_content.dart
 
 /// Utility for parsing glossary entries stored as JSON strings.
 ///
-/// Glossary items can be either plain strings or JSON-encoded structured-content
-/// objects (e.g. from Yomitan dictionaries like NEW斎藤和英大辞典).
-/// This parser extracts human-readable text from both formats.
+/// Glossary items can be either plain strings or structured-content objects
+/// (e.g. from Yomitan dictionaries like NEW斎藤和英大辞典), stored as
+/// themselves or, in rows imported before 1.47, as JSON strings.
+/// This parser extracts human-readable text from all of them.
 class GlossaryParser {
   /// Shown instead of raw JSON when a stored glossary cannot be decoded
   /// (e.g. truncated by a partial write). Glossary content itself is not
@@ -17,12 +18,12 @@ class GlossaryParser {
   ///
   /// The [glossariesJson] is a JSON-encoded list where each element is either:
   /// - A plain string definition (returned as-is)
-  /// - A JSON-encoded structured-content object (text is extracted recursively)
+  /// - A structured-content object (text is extracted recursively)
   static List<String> parse(String glossariesJson) {
     try {
       final List<dynamic> jsonList = jsonDecode(glossariesJson);
       return jsonList
-          .map((item) => _itemToReadableText(item))
+          .map((item) => _itemText(item, decorate: true))
           .where((text) => text.isNotEmpty)
           .toList();
     } catch (_) {
@@ -37,17 +38,17 @@ class GlossaryParser {
   }
 
   /// Lowercase plain-text rendering of decoded glossary [items] (each a
-  /// plain string or a JSON-encoded structured-content object), one gloss
-  /// per line, without display decorations.
+  /// plain string or a structured-content object), one gloss per line,
+  /// without display decorations.
   ///
   /// Stored in dictionary_entries.search_text and tokenized by the
   /// English-search FTS index. The line structure matters — the query side
   /// detects "the query is exactly one of this entry's glosses" via
   /// newline-bounded matching.
-  static String searchTextFromItems(List<String> items) {
+  static String searchTextFromItems(List<Object?> items) {
     final lines = <String>[];
     for (final item in items) {
-      final text = _tryParseStructuredContent(item, decorate: false);
+      final text = _itemText(item, decorate: false);
       for (var line in text.split('\n')) {
         line = line.trim();
         if (line.isNotEmpty) {
@@ -68,9 +69,7 @@ class GlossaryParser {
   static String searchText(String glossariesJson) {
     try {
       final List<dynamic> jsonList = jsonDecode(glossariesJson);
-      return searchTextFromItems([
-        for (final item in jsonList) item is String ? item : item.toString(),
-      ]);
+      return searchTextFromItems(jsonList);
     } catch (_) {
       final trimmed = glossariesJson.trim();
       if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
@@ -103,43 +102,23 @@ class GlossaryParser {
     return null;
   }
 
-  /// Convert a single glossary item into readable text.
-  static String _itemToReadableText(dynamic item) {
-    if (item is String) {
-      // Could be a plain string OR a JSON-encoded structured-content object.
-      return _tryParseStructuredContent(item, decorate: true);
-    }
-    // Shouldn't happen for DB-stored values, but handle gracefully.
-    return item.toString();
-  }
-
-  /// Try to parse a string as a structured-content JSON object.
-  /// If it's a structured-content object, extract readable text.
-  /// Otherwise return the string as-is.
-  static String _tryParseStructuredContent(
-    String value, {
-    required bool decorate,
-  }) {
-    if (!value.startsWith('{')) return value;
-
-    try {
-      final parsed = jsonDecode(value);
-      if (parsed is Map<String, dynamic>) {
-        switch (parsed['type']) {
-          case 'structured-content':
-            // Empty content shows nothing, as on screen.
-            return _extractText(parsed['content'], decorate: decorate);
-          case 'text':
-            return parsed['text']?.toString() ?? '';
-          case 'image':
-            return '';
-        }
+  /// The readable text of one glossary item: a plain string as-is, the
+  /// text of a structured-content, text or image object, and any other
+  /// object as its JSON.
+  static String _itemText(Object? item, {required bool decorate}) {
+    final json = decodeGlossaryItem(item);
+    if (json is Map<String, dynamic>) {
+      switch (json['type']) {
+        case 'structured-content':
+          // Empty content shows nothing, as on screen.
+          return _extractText(json['content'], decorate: decorate);
+        case 'text':
+          return json['text']?.toString() ?? '';
+        case 'image':
+          return '';
       }
-      // JSON object but not structured-content — return as-is
-      return value;
-    } catch (_) {
-      return value;
     }
+    return item is String ? item : jsonEncode(item);
   }
 
   /// Recursively extract text content from a structured-content value.
