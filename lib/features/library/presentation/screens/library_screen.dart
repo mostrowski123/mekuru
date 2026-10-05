@@ -1086,15 +1086,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 }
 
-/// What the options sheet needs to know about a manga's OCR state: whether
-/// it offers Delete OCR, whether that restores the text the book came with
-/// (Mokuro's, a PDF's own) rather than clearing all text, and whether the
-/// book is a PDF.
-typedef _MangaOcrCacheSummary = ({
-  bool canDelete,
-  bool restoresOriginal,
-  bool pdf,
-});
+/// What Delete OCR does for a manga, when the options sheet offers it.
+enum _DeleteOcr {
+  /// Clears all text: there is no original to go back to.
+  clear,
+
+  /// Restores the text a Mokuro import came with.
+  restoreMokuro,
+
+  /// Restores a PDF's own text; never clears it.
+  restorePdf,
+}
 
 /// Individual book tile for the grid.
 class _BookTile extends ConsumerStatefulWidget {
@@ -1317,9 +1319,7 @@ class _BookTileState extends ConsumerState<_BookTile>
   void _showBookOptions(BuildContext context, WidgetRef ref) {
     // Resolved before the sheet opens: the tile can unmount while it's up.
     final container = ProviderScope.containerOf(context, listen: false);
-    final ocrSummaryFuture = book.bookType == 'manga'
-        ? _loadMangaOcrSummary()
-        : null;
+    final deleteOcrFuture = book.bookType == 'manga' ? _loadDeleteOcr() : null;
     showModalBottomSheet(
       context: context,
       // The sheet can exceed the default max height on small screens
@@ -1406,12 +1406,10 @@ class _BookTileState extends ConsumerState<_BookTile>
               ],
               // Manga-only features
               if (book.bookType == 'manga') ...[
-                FutureBuilder<_MangaOcrCacheSummary>(
-                  future: ocrSummaryFuture,
+                FutureBuilder<_DeleteOcr?>(
+                  future: deleteOcrFuture,
                   builder: (ctx, snapshot) {
-                    final summary =
-                        snapshot.data ??
-                        (canDelete: false, restoresOriginal: false, pdf: false);
+                    final deleteOcr = snapshot.data;
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1428,27 +1426,21 @@ class _BookTileState extends ConsumerState<_BookTile>
                             showOcrActionSheet(context, book);
                           },
                         ),
-                        if (summary.canDelete)
+                        if (deleteOcr != null)
                           ListTile(
                             leading: const Icon(Icons.delete_sweep_outlined),
                             title: Text(context.l10n.ocrRemoveActionTitle),
-                            subtitle: Text(
-                              summary.pdf
-                                  ? context.l10n.ocrRemovePdfSubtitle
-                                  : summary.restoresOriginal
-                                  ? context
-                                        .l10n
-                                        .ocrRestoreOriginalMokuroSubtitle
-                                  : context.l10n.ocrRemoveSubtitle,
-                            ),
+                            subtitle: Text(switch (deleteOcr) {
+                              _DeleteOcr.clear =>
+                                context.l10n.ocrRemoveSubtitle,
+                              _DeleteOcr.restoreMokuro =>
+                                context.l10n.ocrRestoreOriginalMokuroSubtitle,
+                              _DeleteOcr.restorePdf =>
+                                context.l10n.ocrRemovePdfSubtitle,
+                            }),
                             onTap: () {
                               Navigator.of(sheetContext).pop();
-                              _removeOcr(
-                                context,
-                                container,
-                                restoreOriginal: summary.restoresOriginal,
-                                pdf: summary.pdf,
-                              );
+                              _removeOcr(context, container, deleteOcr);
                             },
                           ),
                       ],
@@ -1615,22 +1607,20 @@ class _BookTileState extends ConsumerState<_BookTile>
 
   void _removeOcr(
     BuildContext context,
-    ProviderContainer container, {
-    bool restoreOriginal = false,
-    bool pdf = false,
-  }) async {
+    ProviderContainer container,
+    _DeleteOcr deleteOcr,
+  ) async {
     if (!context.mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(dialogContext.l10n.ocrRemoveActionTitle),
-        content: Text(
-          pdf
-              ? dialogContext.l10n.ocrRemovePdfBody
-              : restoreOriginal
-              ? dialogContext.l10n.ocrRestoreOriginalMokuroBody
-              : dialogContext.l10n.ocrRemoveBody,
-        ),
+        content: Text(switch (deleteOcr) {
+          _DeleteOcr.clear => dialogContext.l10n.ocrRemoveBody,
+          _DeleteOcr.restoreMokuro =>
+            dialogContext.l10n.ocrRestoreOriginalMokuroBody,
+          _DeleteOcr.restorePdf => dialogContext.l10n.ocrRemovePdfBody,
+        }),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1648,11 +1638,11 @@ class _BookTileState extends ConsumerState<_BookTile>
     try {
       await clearOcrTaskState(book.id);
       final repo = container.read(bookRepositoryProvider);
-      final restored = restoreOriginal
-          ? await repo.restoreOriginalMokuroOcr(book)
-          : false;
+      final restored =
+          deleteOcr != _DeleteOcr.clear &&
+          await repo.restoreOriginalMokuroOcr(book);
       // A PDF's own text is never cleared, only restored.
-      if (!restored && !pdf) {
+      if (!restored && deleteOcr != _DeleteOcr.restorePdf) {
         await repo.clearMangaOcr(book);
       }
       container.invalidate(mangaPagesProvider(book.id));
@@ -1662,7 +1652,7 @@ class _BookTileState extends ConsumerState<_BookTile>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              restored && !pdf
+              restored && deleteOcr == _DeleteOcr.restoreMokuro
                   ? context.l10n.ocrOriginalMokuroRestored
                   : context.l10n.ocrRemovedFromBook,
             ),
@@ -1678,28 +1668,31 @@ class _BookTileState extends ConsumerState<_BookTile>
     }
   }
 
-  Future<_MangaOcrCacheSummary> _loadMangaOcrSummary() async {
+  /// What Delete OCR would do for this manga; null when there is nothing
+  /// to delete.
+  Future<_DeleteOcr?> _loadDeleteOcr() async {
     final hasOriginal = await File(
       p.join(book.filePath, BookRepository.originalMokuroOcrBackupFileName),
     ).exists();
-    MokuroBook manga;
+    final MokuroBook manga;
     try {
       manga = await MangaCacheStore.read(
         p.join(book.filePath, mangaPagesCacheFileName),
       );
     } catch (_) {
-      // No readable cache: nothing to delete.
-      return (canDelete: false, restoresOriginal: false, pdf: false);
+      return null; // No readable cache: nothing to delete.
     }
-    return (
-      // A PDF's own text is not OCR: Delete OCR only takes back what an OCR
-      // run changed, by restoring the PDF's text.
-      canDelete: manga.fromPdf
-          ? hasOriginal && manga.ocrSource != 'pdf'
-          : hasOriginal || manga.pages.any((page) => page.blocks.isNotEmpty),
-      restoresOriginal: hasOriginal,
-      pdf: manga.fromPdf,
-    );
+    if (manga.fromPdf) {
+      // A PDF's own text is not OCR: only what an OCR run changed is taken
+      // back, by restoring the PDF's text.
+      return hasOriginal && !BookRepository.isOriginalText(manga.ocrSource)
+          ? _DeleteOcr.restorePdf
+          : null;
+    }
+    if (hasOriginal) return _DeleteOcr.restoreMokuro;
+    return manga.pages.any((page) => page.blocks.isNotEmpty)
+        ? _DeleteOcr.clear
+        : null;
   }
 
   void _confirmDelete(BuildContext context) {
