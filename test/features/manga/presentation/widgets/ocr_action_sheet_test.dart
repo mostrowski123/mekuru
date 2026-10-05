@@ -15,9 +15,12 @@ import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provid
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/fake_download_notifiers.dart';
+import '../../../../shared/test_database.dart';
 
 class _FreeClient implements LocalOcrClient {
   final List<OcrJobSpec> started = [];
@@ -44,6 +47,8 @@ class _FreeClient implements LocalOcrClient {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory root;
+  late AppDatabase db;
+  late _RecordingRepository repository;
   late Book manga;
   late _FreeClient client;
   late OcrPurchaseFlow originalFlow;
@@ -61,6 +66,8 @@ void main() {
       },
     );
     root = await Directory.systemTemp.createTemp('ocr-sheet-test');
+    db = createTestDatabase();
+    repository = _RecordingRepository(db);
     manga = Book(
       id: 1,
       title: 'Test manga',
@@ -91,6 +98,7 @@ void main() {
     client = _FreeClient();
   });
   tearDown(() async {
+    await db.close();
     OcrPurchaseFlow.instance = originalFlow;
     await root.delete(recursive: true);
   });
@@ -102,6 +110,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          // Every run first backs up the text the book came with.
+          bookRepositoryProvider.overrideWithValue(repository),
           localOcrClientProvider.overrideWithValue(client),
           ocrBookLoaderProvider.overrideWithValue(
             (_) async => MokuroBook(
@@ -178,6 +188,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(client.started.single.pages, [1, 2]);
       expect(client.started.single.policy, OcrExistingPolicy.missingOnly);
+      // Even a run that only fills missing pages backs up the book's own
+      // text first, so Delete OCR can restore it.
+      expect(repository.backedUp, [manga.id]);
       expect(
         (await SharedPreferences.getInstance()).getString(
           'ocr.preferred_backend',
@@ -337,4 +350,15 @@ void main() {
       expect(await rememberedOcrBackend(), OcrBackend.onDevice);
     });
   });
+}
+
+/// Records which books were backed up instead of touching their files.
+class _RecordingRepository extends BookRepository {
+  _RecordingRepository(super.db);
+
+  final backedUp = <int>[];
+
+  @override
+  Future<void> backupOriginalMokuroOcrIfNeeded(Book book) async =>
+      backedUp.add(book.id);
 }

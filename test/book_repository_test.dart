@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:path/path.dart' as p;
 
@@ -601,9 +602,7 @@ void main() {
       await repo.clearMangaOcr(book);
       expect(await repo.restoreOriginalMokuroOcr(book), isTrue);
 
-      final restored = MokuroBook.fromJson(
-        jsonDecode(await cacheFile.readAsString()) as Map<String, dynamic>,
-      );
+      final restored = await MangaCacheStore.read(cacheFile.path);
       expect(restored.ocrSource, 'pdf');
       expect(restored.fromPdf, isTrue);
       expect(restored.pages.single.blocks.single.lines, ['ねこ']);

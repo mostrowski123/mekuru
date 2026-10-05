@@ -398,7 +398,6 @@ class BookRepository {
       try {
         final pages = <MokuroPage>[];
         final writes = <Future<void>>[];
-        final pagesWithText = <bool>[];
         var verticalPages = 0;
         for (var i = 0; i < pdf.pageCount; i++) {
           final fileName = CbzParser.pageFileName(i + 1, 'page.jpg');
@@ -413,7 +412,6 @@ class BookRepository {
           writes.add(page.written..ignore());
           if (writes.length >= 3) await writes.removeAt(0);
           final blocks = pdfPageBlocks(page.glyphs);
-          pagesWithText.add(blocks.isNotEmpty);
           if (blocks.isNotEmpty && blocks.first.vertical) verticalPages++;
           pages.add(
             MokuroPage(
@@ -428,6 +426,9 @@ class BookRepository {
         }
         await Future.wait(writes);
         _requirePages(pages.length);
+        final pagesWithText = [
+          for (final page in pages) page.blocks.isNotEmpty,
+        ];
         final textPages = pagesWithText.where((text) => text).length;
         final book = await _saveMangaBook(
           dir,
@@ -460,9 +461,11 @@ class BookRepository {
   static const _pdfPageWidthPx = 1240;
 
   /// Writes a manga-type book's `pages_cache.json` into [dir] and inserts
-  /// its Books row. Pages with text are word-segmented first; text a book
-  /// came with (Mokuro's, a PDF's own) also gets the backup that Delete OCR
-  /// restores after an OCR run changed it.
+  /// its Books row. Pages with text are word-segmented first; Mokuro text
+  /// also gets the backup that Delete OCR restores after an OCR run replaced
+  /// it. (A PDF's own text is backed up only when OCR first runs, by
+  /// [backupOriginalMokuroOcrIfNeeded]: most text PDFs never see OCR, and
+  /// the copy would double their cache.)
   Future<Book> _saveMangaBook(
     Directory dir,
     MokuroBook mokuroBook, {
@@ -486,7 +489,7 @@ class BookRepository {
       File(p.join(dir.path, mangaPagesCacheFileName)),
       cacheBytes,
     );
-    if (_isOriginalText(book.ocrSource)) {
+    if (book.ocrSource == 'mokuro') {
       await writeBytesAtomic(
         File(p.join(dir.path, originalMokuroOcrBackupFileName)),
         cacheBytes,
@@ -859,8 +862,7 @@ class BookRepository {
     }
 
     final content = await cacheFile.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-    final mokuroBook = MokuroBook.fromJson(json);
+    final mokuroBook = await decodeMangaCache(content);
 
     // Re-run segmentation; the worker isolate also encodes the updated
     // cache JSON. Existing contentBounds (if any) are preserved by
@@ -888,11 +890,11 @@ class BookRepository {
   /// Whether text from [ocrSource] came with the book (Mokuro's OCR, a
   /// PDF's own text layer) rather than from an OCR run in the app. Only
   /// that text is backed up, for Delete OCR to restore.
-  static bool _isOriginalText(String? ocrSource) =>
+  static bool isOriginalText(String? ocrSource) =>
       ocrSource == 'mokuro' || ocrSource == 'pdf';
 
-  /// Backs up the text [book] came with (see [_isOriginalText]) before an
-  /// OCR run replaces it, unless a backup exists already.
+  /// Backs up the text [book] came with (see [isOriginalText]) before an
+  /// OCR run changes it, unless a backup exists already.
   Future<void> backupOriginalMokuroOcrIfNeeded(Book book) async {
     if (book.bookType != 'manga') return;
 
@@ -909,9 +911,8 @@ class BookRepository {
     }
 
     final content = await cacheFile.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-    final mokuroBook = MokuroBook.fromJson(json);
-    if (!_isOriginalText(mokuroBook.ocrSource)) {
+    final mokuroBook = await decodeMangaCache(content);
+    if (!isOriginalText(mokuroBook.ocrSource)) {
       return;
     }
 
@@ -935,8 +936,7 @@ class BookRepository {
     }
 
     final content = await backupFile.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-    MokuroBook.fromJson(json); // Validate the backup before restoring it.
+    await decodeMangaCache(content); // Validate the backup first.
 
     await MangaCacheStore.reset(cacheFile, book.id, content);
     debugPrint('[MangaOCR] Restored original Mokuro OCR for "${book.title}"');
@@ -956,8 +956,7 @@ class BookRepository {
     }
 
     final content = await cacheFile.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-    final mokuroBook = MokuroBook.fromJson(json);
+    final mokuroBook = await decodeMangaCache(content);
 
     final clearedPages = mokuroBook.pages
         .map(
@@ -997,8 +996,7 @@ class BookRepository {
     }
 
     final content = await cacheFile.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-    final mokuroBook = MokuroBook.fromJson(json);
+    final mokuroBook = await decodeMangaCache(content);
 
     if (!force &&
         mokuroBook.autoCropVersion >= MokuroBook.currentAutoCropVersion) {

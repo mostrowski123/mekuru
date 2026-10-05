@@ -81,11 +81,11 @@ Future<bool> startOcr(
 
   /// The Dart page loop: a server per page, or Apple Vision when [onDevice].
   Future<bool> runPageLoop({bool onDevice = false}) async {
-    if (replace) {
-      await ref
-          .read(bookRepositoryProvider)
-          .backupOriginalMokuroOcrIfNeeded(book);
-    }
+    // Before any run, not only a replacing one: Delete OCR restores the text
+    // the book came with, also around what a run adds to a PDF's pages.
+    await ref
+        .read(bookRepositoryProvider)
+        .backupOriginalMokuroOcrIfNeeded(book);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(ocrPreferredBackendKey, backend.name);
     await scheduleOcrTask(
@@ -152,15 +152,13 @@ Future<bool> startOcr(
     policy: policy,
     onlyWhileCharging: onlyWhileCharging,
   );
-  final repository = replace ? ref.read(bookRepositoryProvider) : null;
+  final repository = ref.read(bookRepositoryProvider);
   // Publish preparation before the caller leaves its route. All asynchronous
   // work is owned by the provider, so a popped sheet cannot drop a job or use
   // a disposed WidgetRef. Cancel also works before native Start returns.
   unawaited(
     ref.read(localOcrLaunchesProvider.notifier).start(spec, () async {
-      if (repository != null) {
-        await repository.backupOriginalMokuroOcrIfNeeded(book);
-      }
+      await repository.backupOriginalMokuroOcrIfNeeded(book);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(ocrPreferredBackendKey, OcrBackend.onDevice.name);
       await client.requestNotifications();

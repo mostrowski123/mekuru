@@ -216,8 +216,13 @@ void main() {
     final db = createTestDatabase();
     addTearDown(db.close);
     final path = await writeFixture('graded_reader.pdf', textPdfBase64);
-    final book = (await BookRepository(db).importPdf(path)).book;
+    final repo = BookRepository(db);
+    final book = (await repo.importPdf(path)).book;
     final imported = await pagesOf(book);
+    final backup = File(
+      p.join(book.filePath, BookRepository.originalMokuroOcrBackupFileName),
+    );
+    expect(backup.existsSync(), isFalse, reason: 'no second copy at import');
 
     await tester.pumpWidget(
       buildIntegrationTestApp(db: db, home: const LibraryScreen()),
@@ -233,7 +238,10 @@ void main() {
     await tester.tapAt(const Offset(20, 20));
     await tester.pump(const Duration(milliseconds: 400));
 
-    // An OCR run replaces the text.
+    // An OCR run backs the PDF's text up (as the OCR sheet does before any
+    // run), then replaces it.
+    await repo.backupOriginalMokuroOcrIfNeeded(book);
+    expect(backup.existsSync(), isTrue);
     await MangaCacheStore.reset(
       File(p.join(book.filePath, mangaPagesCacheFileName)),
       book.id,
