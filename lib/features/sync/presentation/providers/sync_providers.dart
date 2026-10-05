@@ -171,6 +171,18 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
 
   static bool get _onAndroid => defaultTargetPlatform == TargetPlatform.android;
 
+  /// On iOS a download and its import are one job, in the in-app ring and
+  /// the Live Activity: the download fills this share and the import the
+  /// rest, so the Live Activity keeps the app running until the book is in
+  /// the library. Android's ring shows the download alone.
+  static const _downloadShare = 0.7;
+
+  void _report(String key, double progress) {
+    if (!ref.mounted) return;
+    state = {...state, key: progress};
+    BackgroundWork.instance.progress('download:$key', progress);
+  }
+
   @override
   Map<String, double> build() {
     // A restart in process (iOS full restore) builds a new notifier.
@@ -304,6 +316,9 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
       onStopped: () => InAppServerDownloads.cancel(key),
     );
     unawaited(() async {
+      // A finished download keeps its job through the import, which ends it
+      // (_stopFollowing).
+      var done = false;
       try {
         for (var attempt = 0; ; attempt++) {
           final client = serverIoClient(
@@ -323,7 +338,11 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
             }
             return;
           }
-          if (over) return;
+          if (over) {
+            done =
+                (await dir.readStatus())?.state == ServerDownloadWorkState.done;
+            return;
+          }
           await Future<void>.delayed(
             Duration(seconds: 2 << attempt.clamp(0, 5)),
           );
@@ -331,7 +350,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
       } catch (_) {
         // The folder went away (full restore); nothing left to record.
       } finally {
-        BackgroundWork.instance.finish(workId);
+        if (!done) BackgroundWork.instance.finish(workId);
       }
     }());
   }
@@ -419,8 +438,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
           case ServerDownloadWorkState.running || null:
             final progress = status?.progress;
             if (progress != null && progress < 1) {
-              state = {...state, key: progress};
-              BackgroundWork.instance.progress('download:$key', progress);
+              _report(key, _onAndroid ? progress : progress * _downloadShare);
             }
         }
       }
@@ -434,10 +452,31 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   }
 
   Future<void> _importAndEnd(String key, ServerDownloadWorkDir dir) async {
+    final workId = 'download:$key';
+    // On iOS, a download that finished in an earlier session gets a job for
+    // its import, so a long one can finish in the background. An import
+    // can't stop halfway: if iOS ends the job, it finishes when the app
+    // next runs.
+    if (!BackgroundWork.instance.isRunning(workId)) {
+      BackgroundWork.instance.start(
+        workId,
+        BackgroundJobKind.download,
+        onStopped: () {},
+      );
+    }
     try {
       final job = await dir.readJob();
       if (job != null && ref.mounted) {
-        await _importFile(dir.filePath(job.fileName), job.meta);
+        await _importFile(
+          dir.filePath(job.fileName),
+          job.meta,
+          onProgress: _onAndroid
+              ? null
+              : (progress) => _report(
+                  key,
+                  _downloadShare + (1 - _downloadShare) * progress,
+                ),
+        );
       }
     } catch (e, st) {
       // Caught here, so a failure can't stop the imports queued after it.
@@ -476,6 +515,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
 
   void _stopFollowing(String key) {
     _followed.remove(key);
+    BackgroundWork.instance.finish('download:$key');
     if (ref.mounted) state = {...state}..remove(key);
   }
 
@@ -488,8 +528,14 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   }
 
   /// Import the downloaded file at [path] through the normal pipeline and
-  /// link the new row to the server described by [meta].
-  Future<void> _importFile(String path, Map<String, dynamic> meta) async {
+  /// link the new row to the server described by [meta]. [onProgress] gets
+  /// the import's progress where the importer reports it (CBZ, PDF), and
+  /// 1.0 once the book is in the library.
+  Future<void> _importFile(
+    String path,
+    Map<String, dynamic> meta, {
+    void Function(double progress)? onProgress,
+  }) async {
     final serverType = meta['serverType'] as String;
     try {
       final repo = ref.read(bookRepositoryProvider);
@@ -497,8 +543,12 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         meta['format'] as String,
       )) {
         RemoteBookFormat.epub => repo.importEpub(path),
-        RemoteBookFormat.imageArchive => repo.importCbz(path),
-        RemoteBookFormat.pdf => repo.importPdf(path).then(explainIfScanned),
+        RemoteBookFormat.imageArchive => repo.importCbz(
+          path,
+          onProgress: onProgress,
+        ),
+        RemoteBookFormat.pdf =>
+          repo.importPdf(path, onProgress: onProgress).then(explainIfScanned),
       };
       // Re-applies any pending backup data (restores progress/bookmarks for
       // books re-downloaded after a restore).
@@ -512,6 +562,8 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
             meta['connectionId'] as int,
             (meta['ids'] as Map<String, dynamic>).cast<String, String>(),
           );
+      // Done, also for the EPUB importer, which reports no progress.
+      onProgress?.call(1.0);
       logUsage(
         'sync.book_downloaded',
         attrs: {'server_type': serverType, 'format': meta['format'] as String},
