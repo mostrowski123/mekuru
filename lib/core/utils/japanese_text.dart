@@ -31,6 +31,16 @@ bool isKanjiForFurigana(int rune) =>
 bool isKana(int rune) =>
     (rune >= 0x3040 && rune <= 0x309F) || (rune >= 0x30A0 && rune <= 0x30FF);
 
+/// What Japanese running text is made of, to tell real text from junk (a
+/// PDF font mapped to the wrong characters): CJK punctuation and kana
+/// (U+3000–U+30FF), kanji (U+4E00–U+9FFF) and full-width forms
+/// (U+FF00–U+FFEF). Extension A kanji are left out: rare in real text, they
+/// are what wrong mappings tend to produce.
+bool isJapaneseTextChar(int rune) =>
+    (rune >= 0x3000 && rune <= 0x30FF) ||
+    (rune >= 0x4E00 && rune <= 0x9FFF) ||
+    (rune >= 0xFF00 && rune <= 0xFFEF);
+
 /// Katakana (U+30A0–U+30FF, which includes the prolonged sound mark ー).
 bool isKatakana(int rune) => rune >= 0x30A0 && rune <= 0x30FF;
 

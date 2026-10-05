@@ -102,6 +102,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   _WordHighlight? _highlight;
   int _lookupRequestId = 0;
 
+  /// A PDF book's own page direction: detected from its text at import, or
+  /// picked in the settings sheet; null follows the global setting. Other
+  /// manga always follow the global setting (an EPUB converted to manga
+  /// keeps its EPUB direction fields, which never applied here).
+  late final _pdfDirection = ValueNotifier<ReaderDirection?>(
+    ReaderDirection.values.asNameMap()[widget.book.overrideReadingDirection ??
+        widget.book.pageProgressionDirection],
+  );
+
   @override
   void initState() {
     super.initState();
@@ -115,6 +124,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _statsRepository = ref.read(statsRepositoryProvider);
     // Captured here because dispose() calls it after `ref` is unusable.
     _brightnessNotifier = ref.read(readerBrightnessProvider.notifier);
+    _pdfDirection.addListener(_onPdfDirectionPicked);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
@@ -141,6 +151,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     _emitSessionSummary(endReason: 'closed');
     _seekPrecacheHoldTimer?.cancel();
     _pageController.dispose();
+    _pdfDirection.dispose();
     unawaited(_brightnessNotifier.resetBrightness());
     WakelockPlus.disable();
     unawaited(setReaderSystemBarsVisible(true));
@@ -689,9 +700,22 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     );
   }
 
+  void _onPdfDirectionPicked() {
+    setState(() {});
+    unawaited(
+      ref
+          .read(bookRepositoryProvider)
+          .updateReadingDirectionOverride(
+            widget.book.id,
+            _pdfDirection.value?.storageValue,
+          ),
+    );
+  }
+
   void _handleTap(
     TapUpDetails details,
-    int totalPages, [
+    int totalPages,
+    ReaderDirection direction, [
     List<PageSpread> spreads = const [],
   ]) {
     if (_isZoomed) return; // Don't navigate when zoomed
@@ -705,12 +729,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         .toDouble();
 
     final readerSettings = ref.read(readerSettingsProvider);
-    final readerDir = readerSettings.mangaReadingDirection;
-
     final intent = resolveTapIntent(
       normalizedX: normalizedX,
       normalizedY: normalizedY,
-      readingDirection: readerDir,
+      readingDirection: direction,
       centerZoneWidthFraction: mangaCenterTapZoneWidthFromEdgeZoneWidth(
         readerSettings.mangaPageTurnEdgeZoneWidthFraction,
       ),
@@ -751,6 +773,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           Navigator.of(sheetContext).pop();
           unawaited(_openAllSettingsFromReader());
         },
+        bookDirection: mokuroBook.fromPdf ? _pdfDirection : null,
       ),
     );
   }
@@ -1056,17 +1079,21 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     final pagesAsync = ref.watch(mangaPagesProvider(widget.book.id));
     // Select a record so unrelated settings churn (brightness, font size)
     // can't rebuild the whole reader behind an open settings sheet.
-    final (viewMode, direction, mangaAutoCropEnabled, animatePageTurns) = ref
-        .watch(
-          readerSettingsProvider.select(
-            (s) => (
-              s.mangaViewMode,
-              s.mangaReadingDirection,
-              s.mangaAutoCrop,
-              s.readerAnimations,
-            ),
-          ),
-        );
+    final (
+      viewMode,
+      globalDirection,
+      mangaAutoCropEnabled,
+      animatePageTurns,
+    ) = ref.watch(
+      readerSettingsProvider.select(
+        (s) => (
+          s.mangaViewMode,
+          s.mangaReadingDirection,
+          s.mangaAutoCrop,
+          s.readerAnimations,
+        ),
+      ),
+    );
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final autoCrop = isProUnlocked && mangaAutoCropEnabled;
     ref.listen(
@@ -1147,6 +1174,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               if (mounted) _precacheAdjacentPages();
             });
 
+            // PDF books turn their own way; see _pdfDirection.
+            final direction =
+                (mokuroBook.fromPdf ? _pdfDirection.value : null) ??
+                globalDirection;
             final isRtl = direction == ReaderDirection.rtl;
             final spreads = viewMode == MangaViewMode.twoPageSpread
                 ? computeSpreads(totalPages, isRtl: isRtl)
@@ -1189,7 +1220,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                         ),
                   child: GestureDetector(
                     onTapUp: (details) =>
-                        _handleTap(details, totalPages, spreads),
+                        _handleTap(details, totalPages, direction, spreads),
                     child: _buildViewContent(
                       mokuroBook,
                       viewMode,

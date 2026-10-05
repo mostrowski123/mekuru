@@ -41,6 +41,10 @@ class MokuroBook {
   final String? ocrGeneration;
   final List<MokuroPage> pages;
 
+  /// Imported from a PDF. Unlike [ocrSource], which OCR and Delete OCR
+  /// rewrite, this stays: it gives the book its own page direction.
+  final bool fromPdf;
+
   const MokuroBook({
     required this.title,
     required this.imageDirPath,
@@ -51,6 +55,7 @@ class MokuroBook {
     this.ocrCompleted = false,
     this.ocrGeneration,
     required this.pages,
+    this.fromPdf = false,
   });
 
   static const Object _unset = Object();
@@ -82,6 +87,7 @@ class MokuroBook {
     ocrCompleted: ocrCompleted ?? this.ocrCompleted,
     ocrGeneration: ocrGeneration,
     pages: pages ?? this.pages,
+    fromPdf: fromPdf,
   );
 
   Map<String, dynamic> toJson() => {
@@ -94,6 +100,7 @@ class MokuroBook {
     if (ocrSource != null) 'ocrSource': ocrSource,
     'ocrCompleted': ocrCompleted,
     if (ocrGeneration != null) 'ocrGeneration': ocrGeneration,
+    if (fromPdf) 'fromPdf': true,
     'pages': pages.map((p) => p.toJson()).toList(),
   };
 
@@ -114,6 +121,7 @@ class MokuroBook {
       pages: (json['pages'] as List)
           .map((p) => MokuroPage.fromJson(p as Map<String, dynamic>))
           .toList(),
+      fromPdf: json['fromPdf'] == true,
     );
   }
 }

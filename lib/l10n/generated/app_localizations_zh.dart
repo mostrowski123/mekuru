@@ -193,6 +193,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';
 
   @override
+  String get libraryImportPdf => 'Import PDF';
+
+  @override
+  String get libraryImportPdfSubtitle => 'Import a PDF file';
+
+  @override
+  String get pdfScannedTitle => 'This PDF looks like a scan';
+
+  @override
+  String pdfScannedBody({required String title}) {
+    return 'Mekuru can\'t find text to read in \"$title\": its pages are pictures, as in a scan, so its words can\'t be tapped yet. You can still read it page by page.\n\nPDFs made from text, like most ebooks, work right away. For scans, OCR (a Pro feature) can recognize the text and make words tappable.';
+  }
+
+  @override
   String libraryImportFromServer({required String serverName}) {
     return '从 $serverName 下载';
   }

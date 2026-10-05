@@ -51,3 +51,7 @@ python tools/build_aozora_catalog.py --report
 Downloads are cached under `build/free_books/` (gitignored): Aozora's catalog CSV, the ~240 MB `globis-university/aozorabunko-clean` text dataset (used for lengths and level estimates), the XHTML of works newer than that dataset (fetched slowly from aozora.gr.jp), and Aozora's 2009–2022 access rankings (popularity). Per-work text statistics are cached in `build/free_books/stats-v1.json`, so re-runs and calibration take seconds; delete it after changing `text_stats`. `--refresh` re-downloads the catalog and rankings.
 
 The level is an estimate shown with that caveat in the app: the easiest JLPT level whose kanji make up 80% of a work's kanji, one step harder past 45 characters per sentence (two past 75). `--report` prints the per-level counts with popular examples; the defaults were calibrated against well-known works in October 2026. `python -m unittest test_build_aozora_catalog` (from `tools/`) checks the mappings.
+
+## `make_pdf_fixtures.py`
+
+Writes `integration_test/shared/pdf_fixtures.dart`: a two-page text PDF (horizontal and vertical Japanese with furigana, glyphs placed one by one like Tadoku's books) and a scanned, image-only PDF, as base64 constants for the PDF import tests. Needs PyMuPDF (as above); re-run after changing the script.

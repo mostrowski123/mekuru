@@ -19,6 +19,8 @@ import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:mekuru/features/manga/data/services/manga_cbz_export.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_parser.dart';
 import 'package:mekuru/features/manga/data/services/mokuro_word_segmenter.dart';
+import 'package:mekuru/features/manga/data/services/pdf_pages.dart';
+import 'package:mekuru/features/manga/data/services/pdf_text_blocks.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -360,60 +362,153 @@ class BookRepository {
           ];
       _requirePages(pages.length, cbzMeta.title);
 
-      // Build and save pages_cache.json
-      var mokuroBook = MokuroBook(
-        title: cbzMeta.title,
-        imageDirPath: cbzMeta.imageDirPath,
-        ocrSource: ocrPages != null ? 'mokuro' : null,
-        ocrCompleted:
-            ocrPages != null &&
-            ocrPages.every((page) => page.ocr?['completed'] != false),
-        pages: pages,
+      return _saveMangaBook(
+        cacheDir,
+        MokuroBook(
+          title: cbzMeta.title,
+          imageDirPath: cbzMeta.imageDirPath,
+          ocrSource: ocrPages != null ? 'mokuro' : null,
+          ocrCompleted:
+              ocrPages != null &&
+              ocrPages.every((page) => page.ocr?['completed'] != false),
+          pages: pages,
+        ),
+        coverImagePath: cbzMeta.coverImagePath,
       );
-      String? cacheJson;
-      if (ocrPages != null) {
-        // Segment words with MeCab off the UI isolate, exactly as the
-        // mokuro folder import does.
-        final segmented = await MokuroWordSegmenter.segmentBookInBackground(
-          mokuroBook,
-        );
-        mokuroBook = segmented.book;
-        cacheJson = segmented.cacheJson;
-      }
-      cacheJson ??= jsonEncode(mokuroBook.toJson());
+    });
+  }
 
-      final cacheBytes = utf8.encode(cacheJson);
-      final cacheFile = File(p.join(cacheDir.path, mangaPagesCacheFileName));
-      await writeBytesAtomic(cacheFile, cacheBytes);
-      if (ocrPages != null) {
-        // Keep the original-OCR backup, matching the mokuro import path.
-        await writeBytesAtomic(
-          File(p.join(cacheDir.path, originalMokuroOcrBackupFileName)),
-          cacheBytes,
-        );
-      }
-
-      debugPrint(
-        '[CbzImport] Cached ${pages.length} pages for "${cbzMeta.title}"',
-      );
-
-      // Insert into database
-      final bookId = await _db
-          .into(_db.books)
-          .insert(
-            BooksCompanion.insert(
-              title: cbzMeta.title,
-              filePath: cacheDir.path,
-              bookType: const Value('manga'),
-              coverImagePath: cbzMeta.coverImagePath != null
-                  ? Value(cbzMeta.coverImagePath)
-                  : const Value.absent(),
-              totalPages: Value(pages.length),
+  /// Imports a PDF as a manga-type book: one JPEG per page, with the PDF's
+  /// own text laid out as tappable blocks, so text PDFs need no OCR. Pages
+  /// without text (scanned) stay open to OCR. [title] defaults to the file
+  /// name, like CBZ (servers name downloads after their title, which their
+  /// re-linking matches). The caller keeps [sourcePath]; only page images
+  /// are stored. [scanned] is true when most pages had no text: the user
+  /// is told why its words can't be tapped.
+  Future<({Book book, bool scanned})> importPdf(
+    String sourcePath, {
+    String? title,
+    void Function(double progress)? onProgress,
+  }) async {
+    final name = title ?? p.basenameWithoutExtension(sourcePath);
+    return _inNewImportDir('manga', (dir) async {
+      final imagesDir = await Directory(p.join(dir.path, 'images')).create();
+      final pdf = await PdfPages.open(sourcePath);
+      try {
+        final pages = <MokuroPage>[];
+        final writes = <Future<void>>[];
+        var textPages = 0;
+        var verticalPages = 0;
+        for (var i = 0; i < pdf.pageCount; i++) {
+          final fileName = CbzParser.pageFileName(i + 1, 'page.jpg');
+          final page = await pdf.render(
+            i,
+            widthPx: _pdfPageWidthPx,
+            outPath: p.join(imagesDir.path, fileName),
+          );
+          // Pages encode while the next renders, a few at a time (each one
+          // waiting holds its pixels). ignore(): a failure surfaces when it
+          // is awaited, not as an unhandled error before that.
+          writes.add(page.written..ignore());
+          if (writes.length >= 3) await writes.removeAt(0);
+          final blocks = pdfPageBlocks(page.glyphs);
+          if (blocks.isNotEmpty) {
+            textPages++;
+            if (blocks.first.vertical) verticalPages++;
+          }
+          pages.add(
+            MokuroPage(
+              pageIndex: i,
+              imageFileName: fileName,
+              imgWidth: page.width,
+              imgHeight: page.height,
+              blocks: blocks,
             ),
           );
-
-      return (await getBookById(bookId))!;
+          onProgress?.call((i + 1) / pdf.pageCount);
+        }
+        await Future.wait(writes);
+        _requirePages(pages.length, name);
+        final book = await _saveMangaBook(
+          dir,
+          MokuroBook(
+            title: name,
+            imageDirPath: imagesDir.path,
+            ocrSource: 'pdf',
+            ocrCompleted: textPages == pages.length,
+            pages: pages,
+            fromPdf: true,
+          ),
+          coverImagePath: p.join(imagesDir.path, pages.first.imageFileName),
+          // Vertical books turn right to left. A scanned PDF has no text to
+          // tell, so it follows the reader's manga setting.
+          pageProgressionDirection: textPages == 0
+              ? null
+              : verticalPages * 2 >= textPages
+              ? 'rtl'
+              : 'ltr',
+        );
+        return (book: book, scanned: textPages * 2 < pages.length);
+      } finally {
+        await pdf.close();
+      }
     });
+  }
+
+  /// Page images for imported PDFs: about 210 dpi on an A5 page, sharp on
+  /// phones and tablets.
+  static const _pdfPageWidthPx = 1240;
+
+  /// Writes a manga-type book's `pages_cache.json` into [dir] and inserts
+  /// its Books row. Pages with text are word-segmented first; Mokuro text
+  /// also gets the backup that Delete OCR restores after an OCR run
+  /// replaced it.
+  Future<Book> _saveMangaBook(
+    Directory dir,
+    MokuroBook mokuroBook, {
+    String? coverImagePath,
+    String? pageProgressionDirection,
+  }) async {
+    var book = mokuroBook;
+    String? cacheJson;
+    if (book.pages.any((page) => page.blocks.isNotEmpty)) {
+      // Segment words with MeCab off the UI isolate, exactly as the
+      // mokuro folder import does. Without MeCab it returns no cache, and
+      // the pages are segmented when the book opens.
+      final segmented = await MokuroWordSegmenter.segmentBookInBackground(book);
+      book = segmented.book;
+      cacheJson = segmented.cacheJson;
+    }
+    cacheJson ??= jsonEncode(book.toJson());
+
+    final cacheBytes = utf8.encode(cacheJson);
+    await writeBytesAtomic(
+      File(p.join(dir.path, mangaPagesCacheFileName)),
+      cacheBytes,
+    );
+    if (book.ocrSource == 'mokuro') {
+      await writeBytesAtomic(
+        File(p.join(dir.path, originalMokuroOcrBackupFileName)),
+        cacheBytes,
+      );
+    }
+    debugPrint('[MangaImport] Cached ${book.pages.length} pages');
+
+    final bookId = await _db
+        .into(_db.books)
+        .insert(
+          BooksCompanion.insert(
+            title: book.title,
+            filePath: dir.path,
+            bookType: const Value('manga'),
+            coverImagePath: Value.absentIfNull(coverImagePath),
+            totalPages: Value(book.pages.length),
+            pageProgressionDirection: Value.absentIfNull(
+              pageProgressionDirection,
+            ),
+          ),
+        );
+    return (await getBookById(bookId))!;
   }
 
   /// Build OCR-backed pages from an embedded `.mokuro` manifest, pairing
@@ -578,7 +673,7 @@ class BookRepository {
     return pagesDir.path;
   }
 
-  /// Shared import logic: segment words, save cache, insert into DB.
+  /// Shared mokuro import: pages copied in on iOS, cover found, then saved.
   Future<Book> _importManifestWithPages(
     MokuroBookManifest manifest,
     List<MokuroPage> rawPages,
@@ -591,44 +686,6 @@ class BookRepository {
       final imageDirPath = Platform.isIOS && manifest.safTreeUri == null
           ? await copyPagesInto(cacheDir, manifest)
           : manifest.imageDirPath;
-
-      // Segment words using MeCab, off the UI isolate — imports can be large.
-      // The worker also encodes the pages_cache.json content, keeping that
-      // multi-MB string build off the UI isolate too.
-      // Auto-crop bounds are computed lazily the first time the user enables
-      // auto-crop for this manga. Import stores segmented OCR only.
-      final segmented = await MokuroWordSegmenter.segmentBookInBackground(
-        MokuroBook(
-          title: manifest.title,
-          imageDirPath: imageDirPath,
-          safTreeUri: manifest.safTreeUri,
-          safImageDirRelativePath: manifest.safImageDirRelativePath,
-          ocrSource: 'mokuro',
-          ocrCompleted: rawPages.every(
-            (page) => page.ocr?['completed'] != false,
-          ),
-          pages: rawPages,
-        ),
-      );
-      final mokuroBook = segmented.book;
-      // A null cacheJson means MeCab was unavailable and nothing was
-      // segmented; the import must still write a cache, so encode here.
-      final cacheJson = segmented.cacheJson ?? jsonEncode(mokuroBook.toJson());
-
-      // Save pages_cache.json and its original-OCR backup. Encode the
-      // multi-MB string once and share the bytes between both writes.
-      final cacheBytes = utf8.encode(cacheJson);
-      final cacheFile = File(p.join(cacheDir.path, mangaPagesCacheFileName));
-      await writeBytesAtomic(cacheFile, cacheBytes);
-      final originalBackupFile = File(
-        p.join(cacheDir.path, originalMokuroOcrBackupFileName),
-      );
-      await writeBytesAtomic(originalBackupFile, cacheBytes);
-
-      debugPrint(
-        '[MangaImport] Cached ${mokuroBook.pages.length} pages '
-        'for "${manifest.title}"',
-      );
 
       // Cover = the first existing name in CbzParser.coverCandidates order;
       // the full restore applies the same rule to pages it adopts.
@@ -667,22 +724,21 @@ class BookRepository {
         }
       }
 
-      // Insert into database
-      final bookId = await _db
-          .into(_db.books)
-          .insert(
-            BooksCompanion.insert(
-              title: manifest.title,
-              filePath: cacheDir.path,
-              bookType: const Value('manga'),
-              coverImagePath: coverImagePath != null
-                  ? Value(coverImagePath)
-                  : const Value.absent(),
-              totalPages: Value(mokuroBook.pages.length),
-            ),
-          );
-
-      return (await getBookById(bookId))!;
+      return _saveMangaBook(
+        cacheDir,
+        MokuroBook(
+          title: manifest.title,
+          imageDirPath: imageDirPath,
+          safTreeUri: manifest.safTreeUri,
+          safImageDirRelativePath: manifest.safImageDirRelativePath,
+          ocrSource: 'mokuro',
+          ocrCompleted: rawPages.every(
+            (page) => page.ocr?['completed'] != false,
+          ),
+          pages: rawPages,
+        ),
+        coverImagePath: coverImagePath,
+      );
     });
   }
 
@@ -746,9 +802,12 @@ class BookRepository {
     ),
   );
 
-  /// Save per-book display overrides (verticalText and readingDirection).
-  ///
-  /// Pass `null` to clear an override and revert to the book's default.
+  /// Saves a book's own page direction (`null` returns it to the default).
+  Future<void> updateReadingDirectionOverride(int bookId, String? direction) =>
+      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+        BooksCompanion(overrideReadingDirection: Value(direction)),
+      );
+
   /// Save per-book display overrides (verticalText, readingDirection,
   /// and furiganaMode).
   ///

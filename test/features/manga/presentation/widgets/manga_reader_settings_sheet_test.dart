@@ -17,6 +17,7 @@ Future<ProviderContainer> _pumpSheet(
   bool proUnlocked = true,
   void Function(String, Object)? onSettingChanged,
   ValueChanged<bool>? onAutoCropToggled,
+  ValueNotifier<ReaderDirection?>? bookDirection,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -39,6 +40,7 @@ Future<ProviderContainer> _pumpSheet(
             onAutoCropRerun: () {},
             onUnlockPro: () {},
             onSettingChanged: onSettingChanged ?? (_, _) {},
+            bookDirection: bookDirection,
           ),
         ),
       ),
@@ -67,6 +69,40 @@ void main() {
       container.read(readerSettingsProvider).mangaReadingDirection,
       ReaderDirection.ltr,
     );
+  });
+
+  testWidgets('a PDF book picks its own direction, not the global one', (
+    tester,
+  ) async {
+    // Null: the book follows the global setting (right to left) for now.
+    final bookDirection = ValueNotifier<ReaderDirection?>(null);
+    addTearDown(bookDirection.dispose);
+    final changes = <String>[];
+    final container = await _pumpSheet(
+      tester,
+      bookDirection: bookDirection,
+      onSettingChanged: (setting, value) => changes.add(setting),
+    );
+    await scrollSettingsTo(
+      tester,
+      find.byType(SegmentedButton<ReaderDirection>),
+    );
+    final selected = tester
+        .widget<SegmentedButton<ReaderDirection>>(
+          find.byType(SegmentedButton<ReaderDirection>),
+        )
+        .selected;
+    expect(selected, {ReaderDirection.rtl});
+
+    await tester.tap(find.text('Left to Right'));
+    await tester.pumpAndSettle();
+
+    expect(bookDirection.value, ReaderDirection.ltr);
+    expect(
+      container.read(readerSettingsProvider).mangaReadingDirection,
+      ReaderDirection.rtl,
+    );
+    expect(changes, ['book_direction']);
   });
 
   testWidgets('toggling the debug overlay does not close the sheet', (

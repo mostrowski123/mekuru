@@ -7,6 +7,7 @@ import 'package:mekuru/features/backup/data/services/backup_serializer.dart';
 import 'package:mekuru/features/backup/presentation/providers/backup_providers.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/repositories/collection_repository.dart';
+import 'package:mekuru/features/manga/presentation/widgets/scanned_pdf_notice.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/core/services/sentry_helpers.dart';
@@ -145,7 +146,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
     _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
   }
 
-  /// Import one or more EPUB ('epub') or CBZ ('cbz') files.
+  /// Import one or more EPUB ('epub'), CBZ ('cbz') or PDF ('pdf') files.
   ///
   /// Individual failures don't abort the batch: remaining files still
   /// import, and a summary error names the files that failed. Returns the
@@ -172,7 +173,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
         );
       }
 
-      updateProgress(format == 'cbz' ? 0.0 : null);
+      updateProgress(format == 'epub' ? null : 0.0);
       try {
         lastImported = await _importOne(
           filePaths[i],
@@ -213,9 +214,14 @@ class BookImportNotifier extends Notifier<BookImportState> {
     final repo = ref.read(bookRepositoryProvider);
     final book = await tracedOperation(
       'book.import_duration_ms',
-      action: () => format == 'cbz'
-          ? repo.importCbz(filePath, onProgress: onProgress)
-          : repo.importEpub(filePath),
+      action: () => switch (format) {
+        'cbz' => repo.importCbz(filePath, onProgress: onProgress),
+        'pdf' =>
+          repo
+              .importPdf(filePath, onProgress: onProgress)
+              .then(explainIfScanned),
+        _ => repo.importEpub(filePath),
+      },
       attributes: {'format': format},
     );
     await applyPendingBackupData(book);

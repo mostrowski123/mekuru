@@ -1,0 +1,2 @@
+# tools/build_tadoku_catalog.py (build_aozora_catalog.py needs only the standard library)
+pymupdf>=1.26

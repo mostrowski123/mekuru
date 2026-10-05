@@ -439,6 +439,30 @@ abstract class AppLocalizations {
   /// **'Choose a CBZ archive or Mokuro folder'**
   String get libraryImportMangaSubtitle;
 
+  /// Import menu row that imports PDF files.
+  ///
+  /// In en, this message translates to:
+  /// **'Import PDF'**
+  String get libraryImportPdf;
+
+  /// Subtitle of the PDF import row.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a PDF file'**
+  String get libraryImportPdfSubtitle;
+
+  /// Title of the dialog shown after importing a PDF with no readable Japanese text on most pages (pictures of pages, or a broken text layer).
+  ///
+  /// In en, this message translates to:
+  /// **'This PDF looks like a scan'**
+  String get pdfScannedTitle;
+
+  /// Body of the scanned-PDF dialog. Explains the difference between text PDFs and scanned PDFs to users who may not know it. Buttons: OK and Run OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Mekuru can\'t find text to read in \"{title}\": its pages are pictures, as in a scan, so its words can\'t be tapped yet. You can still read it page by page.\n\nPDFs made from text, like most ebooks, work right away. For scans, OCR (a Pro feature) can recognize the text and make words tappable.'**
+  String pdfScannedBody({required String title});
+
   /// Import sheet row that opens a configured Komga/Kavita server for browsing and downloading.
   ///
   /// In en, this message translates to:

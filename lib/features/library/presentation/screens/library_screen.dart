@@ -631,74 +631,88 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
     showModalBottomSheet(
       context: context,
+      // Scrolls on short screens: three rows plus one per server.
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.libraryImportTitle,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n.libraryImportTitle,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
               ),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.book),
-              title: Text(l10n.libraryImportEpub),
-              subtitle: Text(l10n.libraryImportEpubSubtitle),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _importEpub(context, ref);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: Text(l10n.libraryImportManga),
-              subtitle: Text(l10n.libraryImportMangaSubtitle),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (context.mounted) {
-                    _showMangaImportTypeChoice(context, ref);
-                  }
-                });
-              },
-            ),
-            // One row per enabled Komga/Kavita server. Servers are a source
-            // of books, so they live under "+" rather than as library chrome.
-            Consumer(
-              builder: (_, sheetRef, _) {
-                final servers =
-                    sheetRef
-                        .watch(serverConnectionsProvider)
-                        .value
-                        ?.where((c) => c.enabled) ??
-                    const <ServerConnection>[];
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (final server in servers)
-                      ListTile(
-                        leading: const Icon(Icons.dns_outlined),
-                        title: Text(
-                          l10n.libraryImportFromServer(serverName: server.name),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.book),
+                title: Text(l10n.libraryImportEpub),
+                subtitle: Text(l10n.libraryImportEpubSubtitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _importEpub(context, ref);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: Text(l10n.libraryImportManga),
+                subtitle: Text(l10n.libraryImportMangaSubtitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (context.mounted) {
+                      _showMangaImportTypeChoice(context, ref);
+                    }
+                  });
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.picture_as_pdf_outlined),
+                title: Text(l10n.libraryImportPdf),
+                subtitle: Text(l10n.libraryImportPdfSubtitle),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _importPdf(ref);
+                },
+              ),
+              // One row per enabled Komga/Kavita server. Servers are a source
+              // of books, so they live under "+" rather than as library chrome.
+              Consumer(
+                builder: (_, sheetRef, _) {
+                  final servers =
+                      sheetRef
+                          .watch(serverConnectionsProvider)
+                          .value
+                          ?.where((c) => c.enabled) ??
+                      const <ServerConnection>[];
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final server in servers)
+                        ListTile(
+                          leading: const Icon(Icons.dns_outlined),
+                          title: Text(
+                            l10n.libraryImportFromServer(
+                              serverName: server.name,
+                            ),
+                          ),
+                          subtitle: Text(
+                            server.baseUrl,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () {
+                            Navigator.of(sheetContext).pop();
+                            _openServer(context, server);
+                          },
                         ),
-                        subtitle: Text(
-                          server.baseUrl,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onTap: () {
-                          Navigator.of(sheetContext).pop();
-                          _openServer(context, server);
-                        },
-                      ),
-                  ],
-                );
-              },
-            ),
-          ],
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -862,6 +876,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     } catch (_) {
       return false; // no device info → don't nag
     }
+  }
+
+  /// Scanned PDFs explain themselves after import (showScannedPdfNotice).
+  Future<void> _importPdf(WidgetRef ref) async {
+    final filePaths = await _pickFilePaths(const ['pdf']);
+    if (filePaths.isEmpty) return;
+    await ref
+        .read(bookImportProvider.notifier)
+        .importFiles(filePaths, format: 'pdf');
   }
 
   Future<void> _importCbz(BuildContext context, WidgetRef ref) async {

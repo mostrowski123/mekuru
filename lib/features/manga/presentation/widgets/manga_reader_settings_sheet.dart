@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/manga/presentation/providers/manga_reader_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_settings_rows.dart';
+import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_brightness_row.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
@@ -22,6 +23,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
     required this.onUnlockPro,
     required this.onSettingChanged,
     this.onOpenAllSettings,
+    this.bookDirection,
   });
 
   /// Whether this book already has computed crop bounds (enables re-run).
@@ -40,6 +42,9 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
   final void Function(String setting, Object value) onSettingChanged;
 
   final VoidCallback? onOpenAllSettings;
+
+  /// A PDF book's own page direction; see [MangaReadingDirectionRow].
+  final ValueNotifier<ReaderDirection?>? bookDirection;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,7 +67,10 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
 
         // ── Reading ──
         SettingsSectionHeader.sheet(title: l10n.mangaSettingsSectionReading),
-        MangaReadingDirectionRow(onSettingChanged: onSettingChanged),
+        MangaReadingDirectionRow(
+          onSettingChanged: onSettingChanged,
+          bookDirection: bookDirection,
+        ),
         const SizedBox(height: 16),
         MangaEdgeZoneRow(onSettingChanged: onSettingChanged),
 

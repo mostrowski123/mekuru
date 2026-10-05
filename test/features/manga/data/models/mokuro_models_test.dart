@@ -2,6 +2,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 
 void main() {
+  test('fromPdf survives the cache round trip and copyWith', () {
+    const book = MokuroBook(
+      title: 'Graded reader',
+      imageDirPath: '/images',
+      ocrSource: 'pdf',
+      pages: [],
+      fromPdf: true,
+    );
+
+    final restored = MokuroBook.fromJson(book.toJson());
+    // OCR and Delete OCR rewrite ocrSource; the PDF marker must stay.
+    final afterOcr = restored.copyWith(ocrSource: 'on_device');
+
+    expect(restored.fromPdf, isTrue);
+    expect(afterOcr.fromPdf, isTrue);
+    expect(afterOcr.copyWith(ocrSource: null).fromPdf, isTrue);
+    expect(
+      MokuroBook.fromJson(const {
+        'imageDirPath': '/images',
+        'pages': [],
+      }).fromPdf,
+      isFalse,
+    );
+  });
+
   group('MokuroBook ocrCompleted', () {
     test('toJson writes explicit ocrCompleted flag', () {
       const book = MokuroBook(

@@ -35,26 +35,49 @@ class MangaViewModeRow extends ConsumerWidget {
 }
 
 class MangaReadingDirectionRow extends ConsumerWidget {
-  const MangaReadingDirectionRow({super.key, this.onSettingChanged});
+  const MangaReadingDirectionRow({
+    super.key,
+    this.onSettingChanged,
+    this.bookDirection,
+  });
 
   final void Function(String setting, Object value)? onSettingChanged;
+
+  /// Set for a book with its own direction (PDF books): the row shows and
+  /// changes it instead of the global manga setting. Null inside means the
+  /// book follows the global setting until one is picked.
+  final ValueNotifier<ReaderDirection?>? bookDirection;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final direction = ref.watch(
+    final global = ref.watch(
       readerSettingsProvider.select((s) => s.mangaReadingDirection),
     );
-    return SettingsSegmentedRow<ReaderDirection>(
-      label: l10n.readerReadingDirectionTitle,
-      segments: readerDirectionSegments(l10n),
-      selected: direction,
-      onSelected: (direction) {
-        ref
-            .read(readerSettingsProvider.notifier)
-            .setMangaReadingDirection(direction);
-        onSettingChanged?.call('direction', direction.name);
-      },
+    Widget row(ReaderDirection selected, ValueChanged<ReaderDirection> pick) =>
+        SettingsSegmentedRow<ReaderDirection>(
+          label: l10n.readerReadingDirectionTitle,
+          segments: readerDirectionSegments(l10n),
+          selected: selected,
+          onSelected: (direction) {
+            pick(direction);
+            onSettingChanged?.call(
+              bookDirection == null ? 'direction' : 'book_direction',
+              direction.name,
+            );
+          },
+        );
+    final own = bookDirection;
+    if (own == null) {
+      return row(
+        global,
+        ref.read(readerSettingsProvider.notifier).setMangaReadingDirection,
+      );
+    }
+    return ValueListenableBuilder(
+      valueListenable: own,
+      builder: (_, direction, _) =>
+          row(direction ?? global, (picked) => own.value = picked),
     );
   }
 }

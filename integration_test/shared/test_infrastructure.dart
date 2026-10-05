@@ -271,13 +271,16 @@ Future<void> seedBooks(AppDatabase db, {int count = 3}) async {
 ///
 /// The [home] widget is wrapped in a localized MaterialApp with ProviderScope.
 /// Pass [appSettingsStorage] / [readerSettingsStorage] to inspect or reuse a
-/// specific storage instance across rebuilds (useful for persistence tests).
+/// specific storage instance across rebuilds (useful for persistence tests),
+/// and the app's global `navigatorKey` for code that shows dialogs through
+/// it.
 Widget buildIntegrationTestApp({
   required AppDatabase db,
   required Widget home,
   InMemoryAppSettingsStorage? appSettingsStorage,
   InMemoryReaderSettingsStorage? readerSettingsStorage,
   List<Override> extraOverrides = const [],
+  GlobalKey<NavigatorState>? navigatorKey,
 }) {
   return ProviderScope(
     overrides: [
@@ -292,7 +295,7 @@ Widget buildIntegrationTestApp({
       autoBackupCheckerProvider.overrideWith((ref) async {}),
       ...extraOverrides,
     ],
-    child: buildLocalizedTestApp(home: home),
+    child: buildLocalizedTestApp(home: home, navigatorKey: navigatorKey),
   );
 }
 

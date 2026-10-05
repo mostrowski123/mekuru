@@ -252,6 +252,27 @@
   "@libraryImportMangaSubtitle": {
     "description": "Subtitle describing manga import."
   },
+  "libraryImportPdf": "Import PDF",
+  "@libraryImportPdf": {
+    "description": "Import menu row that imports PDF files."
+  },
+  "libraryImportPdfSubtitle": "Import a PDF file",
+  "@libraryImportPdfSubtitle": {
+    "description": "Subtitle of the PDF import row."
+  },
+  "pdfScannedTitle": "This PDF looks like a scan",
+  "@pdfScannedTitle": {
+    "description": "Title of the dialog shown after importing a PDF with no readable Japanese text on most pages (pictures of pages, or a broken text layer)."
+  },
+  "pdfScannedBody": "Mekuru can't find text to read in \"{title}\": its pages are pictures, as in a scan, so its words can't be tapped yet. You can still read it page by page.\n\nPDFs made from text, like most ebooks, work right away. For scans, OCR (a Pro feature) can recognize the text and make words tappable.",
+  "@pdfScannedBody": {
+    "description": "Body of the scanned-PDF dialog. Explains the difference between text PDFs and scanned PDFs to users who may not know it. Buttons: OK and Run OCR.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "libraryImportFromServer": "Download from {serverName}",
   "@libraryImportFromServer": {
     "description": "Import sheet row that opens a configured Komga/Kavita server for browsing and downloading.",
