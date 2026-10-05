@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
+import 'package:mekuru/features/library/presentation/widgets/book_cover_image.dart';
 import 'package:path/path.dart' as p;
 
 import 'shared/test_infrastructure.dart';
@@ -205,9 +207,13 @@ void main() {
           p.join(ocrDir.path, '${p.basenameWithoutExtension(name)}.json'),
         ).writeAsStringSync('{"img_width": 4, "img_height": 6, "blocks": []}');
       }
-      final png = img.encodePng(img.Image(width: 4, height: 6));
-      File(p.join(imageDir.path, '00_cover.jpg')).writeAsBytesSync(png);
-      File(p.join(imageDir.path, '15_002.jpg')).writeAsBytesSync(png);
+      // A real JPEG with a visible colour, so a working cover is not
+      // mistaken for a blank tile when watching the run.
+      final page = img.Image(width: 60, height: 90);
+      img.fill(page, color: img.ColorRgb8(200, 40, 60));
+      final jpg = img.encodeJpg(page);
+      File(p.join(imageDir.path, '00_cover.jpg')).writeAsBytesSync(jpg);
+      File(p.join(imageDir.path, '15_002.jpg')).writeAsBytesSync(jpg);
       File(
         p.join(imageDir.path, '15_007.jpg.sydownload'),
       ).writeAsBytesSync(const []);
@@ -260,7 +266,21 @@ void main() {
       expect(File(p.join(pagesDir, '15_002.jpg')).existsSync(), isTrue);
       expect(File(p.join(pagesDir, '15_007.jpg')).existsSync(), isFalse);
 
-      await pumpUntilVisible(tester, find.text(stem));
+      // The tile draws the copied cover: decoded, not the placeholder.
+      final tileCover = find.byType(BookCoverImage);
+      await pumpUntilVisible(
+        tester,
+        find.descendant(
+          of: tileCover,
+          matching: find.byWidgetPredicate(
+            (w) => w is RawImage && w.image != null,
+          ),
+        ),
+      );
+      expect(
+        find.descendant(of: tileCover, matching: find.byIcon(Icons.menu_book)),
+        findsNothing,
+      );
     },
     skip: !Platform.isIOS,
   );
