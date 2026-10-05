@@ -5,7 +5,7 @@ import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
 
 /// Reading pace for time estimates: a typical learner's, in characters per
 /// minute.
-const double learnerPaceCharsPerMinute = 250;
+const double _learnerPaceCharsPerMinute = 250;
 
 /// Parses the bundled `assets/free_books/aozora.json`.
 List<AozoraWork> parseAozoraCatalog(String json) {
@@ -100,7 +100,7 @@ class AozoraQuery {
 
 /// Minutes [work] takes at a typical learner's pace.
 double readingMinutes(AozoraWork work) =>
-    work.charCount / learnerPaceCharsPerMinute;
+    work.charCount / _learnerPaceCharsPerMinute;
 
 /// The works [query] selects, in its sort order. [isInLibrary] answers the
 /// hide-in-library filter.

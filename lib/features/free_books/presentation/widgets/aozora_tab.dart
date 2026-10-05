@@ -287,15 +287,12 @@ class _WorkTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final key = aozoraDownloadKey(work);
     final downloading = ref.watch(
-      freeBookDownloadProvider.select(
-        (map) => map.containsKey(aozoraDownloadKey(work)),
-      ),
+      freeBookDownloadProvider.select((map) => map.containsKey(key)),
     );
     final inLibrary = ref.watch(
-      freeBooksInLibraryProvider.select(
-        (books) => books.containsKey(aozoraDownloadKey(work)),
-      ),
+      freeBooksInLibraryProvider.select((books) => books.containsKey(key)),
     );
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
@@ -365,13 +362,12 @@ class _WorkSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final key = aozoraDownloadKey(work);
     final progress = ref.watch(
-      freeBookDownloadProvider.select((map) => map[aozoraDownloadKey(work)]),
+      freeBookDownloadProvider.select((map) => map[key]),
     );
     final copy = ref.watch(
-      freeBooksInLibraryProvider.select(
-        (books) => books[aozoraDownloadKey(work)],
-      ),
+      freeBooksInLibraryProvider.select((books) => books[key]),
     );
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,

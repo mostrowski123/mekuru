@@ -25,8 +25,9 @@ Future<Uint8List> fetchAozoraEpub(
 }) async {
   final page = Uri.parse(base).resolve(work.xhtmlPath);
   final (xhtml, sources) = await _decode((await _get(client, page))!);
+  final requests = 1 + sources.length;
   var done = 1;
-  onProgress?.call(done / (1 + sources.length));
+  onProgress?.call(done / requests);
   final images = <String, Uint8List>{};
   // A few at a time: each gaiji is tiny, but a work can show hundreds.
   for (var i = 0; i < sources.length; i += 4) {
@@ -34,7 +35,7 @@ Future<Uint8List> fetchAozoraEpub(
       for (final src in sources.skip(i).take(4))
         _get(client, page.resolve(src), allowMissing: true).then((bytes) {
           if (bytes != null) images[src] = bytes;
-          onProgress?.call(++done / (1 + sources.length));
+          onProgress?.call(++done / requests);
         }),
     ]);
   }

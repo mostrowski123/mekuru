@@ -240,13 +240,12 @@ class _ReaderSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final key = tadokuDownloadKey(book);
     final progress = ref.watch(
-      freeBookDownloadProvider.select((map) => map[tadokuDownloadKey(book)]),
+      freeBookDownloadProvider.select((map) => map[key]),
     );
     final copy = ref.watch(
-      freeBooksInLibraryProvider.select(
-        (books) => books[tadokuDownloadKey(book)],
-      ),
+      freeBooksInLibraryProvider.select((books) => books[key]),
     );
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,

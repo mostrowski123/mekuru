@@ -99,17 +99,11 @@ void main() {
   /// An app showing announcements, around [container]'s providers.
   Future<ProviderContainer> pumpApp(
     WidgetTester tester, {
-    String? aozoraBase,
     List<Override> overrides = const [],
   }) async {
     final db = createTestDatabase();
     final container = ProviderContainer(
-      overrides: [
-        databaseProvider.overrideWithValue(db),
-        if (aozoraBase != null)
-          aozoraBaseUrlProvider.overrideWithValue(aozoraBase),
-        ...overrides,
-      ],
+      overrides: [databaseProvider.overrideWithValue(db), ...overrides],
     );
     addTearDown(() async {
       container.dispose();
@@ -155,7 +149,10 @@ void main() {
     // https to a plain-HTTP server: the handshake fails, as it does behind
     // a captive portal.
     final base = 'https://127.0.0.1:${server.port}';
-    final container = await pumpApp(tester, aozoraBase: '$base/cards/');
+    final container = await pumpApp(
+      tester,
+      overrides: [aozoraBaseUrlProvider.overrideWithValue('$base/cards/')],
+    );
     final downloads = container.read(freeBookDownloadProvider.notifier);
 
     await tester.runAsync(
