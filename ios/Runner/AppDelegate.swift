@@ -349,6 +349,8 @@ final class FilesBridge: NSObject, UIDocumentPickerDelegate {
   static let shared = FilesBridge()
   private var pending: FlutterResult?
   private var exporting = false
+  /// The last folder `pickFolder` returned, while its security scope is open.
+  private var openFolder: URL?
 
   func register(messenger: FlutterBinaryMessenger) {
     FlutterMethodChannel(name: "mekuru/ios_files", binaryMessenger: messenger)
@@ -393,6 +395,13 @@ final class FilesBridge: NSObject, UIDocumentPickerDelegate {
   }
 
   func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+    // A picked folder is outside the sandbox: reading it needs its security
+    // scope open. It stays open until the next folder pick, because the import
+    // reads the folder after this call returns.
+    if let url = urls.first, url.hasDirectoryPath {
+      openFolder?.stopAccessingSecurityScopedResource()
+      openFolder = url.startAccessingSecurityScopedResource() ? url : nil
+    }
     pending?(exporting ? true : urls.first?.path)
     pending = nil
   }
