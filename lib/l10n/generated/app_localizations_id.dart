@@ -2116,6 +2116,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Hapus OCR saat ini dan pulihkan OCR asli Mokuro/HTML';
 
   @override
+  String get ocrRemovePdfSubtitle =>
+      'Hapus teks OCR yang ditambahkan ke PDF ini; teks bawaannya tetap ada';
+
+  @override
+  String get ocrRemovePdfBody =>
+      'Hapus teks OCR yang ditambahkan ke PDF ini? Teks bawaan PDF tetap ada.';
+
+  @override
   String get ocrOriginalMokuroRestored => 'OCR asli Mokuro/HTML dipulihkan';
 
   @override

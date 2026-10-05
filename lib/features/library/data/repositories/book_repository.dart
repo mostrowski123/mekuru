@@ -460,9 +460,9 @@ class BookRepository {
   static const _pdfPageWidthPx = 1240;
 
   /// Writes a manga-type book's `pages_cache.json` into [dir] and inserts
-  /// its Books row. Pages with text are word-segmented first; Mokuro text
-  /// also gets the backup that Delete OCR restores after an OCR run
-  /// replaced it.
+  /// its Books row. Pages with text are word-segmented first; text a book
+  /// came with (Mokuro's, a PDF's own) also gets the backup that Delete OCR
+  /// restores after an OCR run changed it.
   Future<Book> _saveMangaBook(
     Directory dir,
     MokuroBook mokuroBook, {
@@ -486,7 +486,7 @@ class BookRepository {
       File(p.join(dir.path, mangaPagesCacheFileName)),
       cacheBytes,
     );
-    if (book.ocrSource == 'mokuro') {
+    if (_isOriginalText(book.ocrSource)) {
       await writeBytesAtomic(
         File(p.join(dir.path, originalMokuroOcrBackupFileName)),
         cacheBytes,
@@ -885,6 +885,14 @@ class BookRepository {
     );
   }
 
+  /// Whether text from [ocrSource] came with the book (Mokuro's OCR, a
+  /// PDF's own text layer) rather than from an OCR run in the app. Only
+  /// that text is backed up, for Delete OCR to restore.
+  static bool _isOriginalText(String? ocrSource) =>
+      ocrSource == 'mokuro' || ocrSource == 'pdf';
+
+  /// Backs up the text [book] came with (see [_isOriginalText]) before an
+  /// OCR run replaces it, unless a backup exists already.
   Future<void> backupOriginalMokuroOcrIfNeeded(Book book) async {
     if (book.bookType != 'manga') return;
 
@@ -903,12 +911,12 @@ class BookRepository {
     final content = await cacheFile.readAsString();
     final json = jsonDecode(content) as Map<String, dynamic>;
     final mokuroBook = MokuroBook.fromJson(json);
-    if (mokuroBook.ocrSource != 'mokuro') {
+    if (!_isOriginalText(mokuroBook.ocrSource)) {
       return;
     }
 
     await writeStringAtomic(backupFile, content);
-    debugPrint('[MangaOCR] Backed up original Mokuro OCR for "${book.title}"');
+    debugPrint('[MangaOCR] Backed up the original text of book ${book.id}');
   }
 
   Future<bool> restoreOriginalMokuroOcr(Book book) async {

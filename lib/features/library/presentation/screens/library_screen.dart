@@ -1086,8 +1086,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 }
 
-/// What the options sheet needs to know about a manga's OCR state.
-typedef _MangaOcrCacheSummary = ({bool hasOcr, bool hasOriginalMokuroBackup});
+/// What the options sheet needs to know about a manga's OCR state: whether
+/// it offers Delete OCR, whether that restores the text the book came with
+/// (Mokuro's, a PDF's own) rather than clearing all text, and whether the
+/// book is a PDF.
+typedef _MangaOcrCacheSummary = ({
+  bool canDelete,
+  bool restoresOriginal,
+  bool pdf,
+});
 
 /// Individual book tile for the grid.
 class _BookTile extends ConsumerStatefulWidget {
@@ -1404,7 +1411,7 @@ class _BookTileState extends ConsumerState<_BookTile>
                   builder: (ctx, snapshot) {
                     final summary =
                         snapshot.data ??
-                        (hasOcr: false, hasOriginalMokuroBackup: false);
+                        (canDelete: false, restoresOriginal: false, pdf: false);
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1421,12 +1428,14 @@ class _BookTileState extends ConsumerState<_BookTile>
                             showOcrActionSheet(context, book);
                           },
                         ),
-                        if (summary.hasOcr || summary.hasOriginalMokuroBackup)
+                        if (summary.canDelete)
                           ListTile(
                             leading: const Icon(Icons.delete_sweep_outlined),
                             title: Text(context.l10n.ocrRemoveActionTitle),
                             subtitle: Text(
-                              summary.hasOriginalMokuroBackup
+                              summary.pdf
+                                  ? context.l10n.ocrRemovePdfSubtitle
+                                  : summary.restoresOriginal
                                   ? context
                                         .l10n
                                         .ocrRestoreOriginalMokuroSubtitle
@@ -1437,8 +1446,8 @@ class _BookTileState extends ConsumerState<_BookTile>
                               _removeOcr(
                                 context,
                                 container,
-                                restoreOriginalMokuro:
-                                    summary.hasOriginalMokuroBackup,
+                                restoreOriginal: summary.restoresOriginal,
+                                pdf: summary.pdf,
                               );
                             },
                           ),
@@ -1607,7 +1616,8 @@ class _BookTileState extends ConsumerState<_BookTile>
   void _removeOcr(
     BuildContext context,
     ProviderContainer container, {
-    bool restoreOriginalMokuro = false,
+    bool restoreOriginal = false,
+    bool pdf = false,
   }) async {
     if (!context.mounted) return;
     final confirmed = await showDialog<bool>(
@@ -1615,7 +1625,9 @@ class _BookTileState extends ConsumerState<_BookTile>
       builder: (dialogContext) => AlertDialog(
         title: Text(dialogContext.l10n.ocrRemoveActionTitle),
         content: Text(
-          restoreOriginalMokuro
+          pdf
+              ? dialogContext.l10n.ocrRemovePdfBody
+              : restoreOriginal
               ? dialogContext.l10n.ocrRestoreOriginalMokuroBody
               : dialogContext.l10n.ocrRemoveBody,
         ),
@@ -1636,10 +1648,11 @@ class _BookTileState extends ConsumerState<_BookTile>
     try {
       await clearOcrTaskState(book.id);
       final repo = container.read(bookRepositoryProvider);
-      final restored = restoreOriginalMokuro
+      final restored = restoreOriginal
           ? await repo.restoreOriginalMokuroOcr(book)
           : false;
-      if (!restored) {
+      // A PDF's own text is never cleared, only restored.
+      if (!restored && !pdf) {
         await repo.clearMangaOcr(book);
       }
       container.invalidate(mangaPagesProvider(book.id));
@@ -1649,7 +1662,7 @@ class _BookTileState extends ConsumerState<_BookTile>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              restored
+              restored && !pdf
                   ? context.l10n.ocrOriginalMokuroRestored
                   : context.l10n.ocrRemovedFromBook,
             ),
@@ -1666,19 +1679,27 @@ class _BookTileState extends ConsumerState<_BookTile>
   }
 
   Future<_MangaOcrCacheSummary> _loadMangaOcrSummary() async {
-    final hasOriginalMokuroBackup = await File(
+    final hasOriginal = await File(
       p.join(book.filePath, BookRepository.originalMokuroOcrBackupFileName),
     ).exists();
-    var hasOcr = false;
+    MokuroBook manga;
     try {
-      final manga = await MangaCacheStore.read(
+      manga = await MangaCacheStore.read(
         p.join(book.filePath, mangaPagesCacheFileName),
       );
-      hasOcr = manga.pages.any((page) => page.blocks.isNotEmpty);
     } catch (_) {
       // No readable cache: nothing to delete.
+      return (canDelete: false, restoresOriginal: false, pdf: false);
     }
-    return (hasOcr: hasOcr, hasOriginalMokuroBackup: hasOriginalMokuroBackup);
+    return (
+      // A PDF's own text is not OCR: Delete OCR only takes back what an OCR
+      // run changed, by restoring the PDF's text.
+      canDelete: manga.fromPdf
+          ? hasOriginal && manga.ocrSource != 'pdf'
+          : hasOriginal || manga.pages.any((page) => page.blocks.isNotEmpty),
+      restoresOriginal: hasOriginal,
+      pdf: manga.fromPdf,
+    );
   }
 
   void _confirmDelete(BuildContext context) {

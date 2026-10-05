@@ -547,5 +547,79 @@ void main() {
         );
       },
     );
+
+    /// A manga book whose cache holds one page of text from [ocrSource].
+    Future<(Book, File)> mangaWithText(String ocrSource) async {
+      final cacheDir = Directory(p.join(tempDir.path, ocrSource))
+        ..createSync(recursive: true);
+      final cacheFile = File(p.join(cacheDir.path, 'pages_cache.json'));
+      await cacheFile.writeAsString(
+        jsonEncode(
+          MokuroBook(
+            title: 'Reader',
+            imageDirPath: p.join(cacheDir.path, 'images'),
+            ocrSource: ocrSource,
+            ocrCompleted: true,
+            fromPdf: ocrSource == 'pdf',
+            pages: const [
+              MokuroPage(
+                pageIndex: 0,
+                imageFileName: 'page1.jpg',
+                imgWidth: 100,
+                imgHeight: 100,
+                blocks: [
+                  MokuroTextBlock(
+                    box: [0, 0, 10, 10],
+                    vertical: true,
+                    fontSize: 12,
+                    linesCoords: [],
+                    lines: ['ねこ'],
+                  ),
+                ],
+              ),
+            ],
+          ).toJson(),
+        ),
+      );
+      final id = await db
+          .into(db.books)
+          .insert(
+            BooksCompanion.insert(
+              title: 'Reader',
+              filePath: cacheDir.path,
+              bookType: const Value('manga'),
+            ),
+          );
+      return ((await repo.getBookById(id))!, cacheFile);
+    }
+
+    test('backs up a PDF\'s own text before OCR replaces it', () async {
+      final (book, cacheFile) = await mangaWithText('pdf');
+
+      await repo.backupOriginalMokuroOcrIfNeeded(book);
+      // An OCR run replaces the text.
+      await repo.clearMangaOcr(book);
+      expect(await repo.restoreOriginalMokuroOcr(book), isTrue);
+
+      final restored = MokuroBook.fromJson(
+        jsonDecode(await cacheFile.readAsString()) as Map<String, dynamic>,
+      );
+      expect(restored.ocrSource, 'pdf');
+      expect(restored.fromPdf, isTrue);
+      expect(restored.pages.single.blocks.single.lines, ['ねこ']);
+    });
+
+    test('keeps no backup of text that OCR made', () async {
+      final (book, _) = await mangaWithText('local');
+
+      await repo.backupOriginalMokuroOcrIfNeeded(book);
+
+      expect(
+        File(
+          p.join(book.filePath, BookRepository.originalMokuroOcrBackupFileName),
+        ).existsSync(),
+        isFalse,
+      );
+    });
   });
 }

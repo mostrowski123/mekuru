@@ -3595,6 +3595,18 @@ abstract class AppLocalizations {
   /// **'Delete the current OCR and restore the original Mokuro/HTML OCR'**
   String get ocrRestoreOriginalMokuroSubtitle;
 
+  /// Subtitle of Delete OCR for a PDF book after an OCR run: deleting restores the text the PDF came with.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the OCR text added to this PDF; its own text stays'**
+  String get ocrRemovePdfSubtitle;
+
+  /// Confirmation dialog body for deleting OCR from a PDF book; the text the PDF came with is restored.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the OCR text added to this PDF? Text that came with the PDF stays.'**
+  String get ocrRemovePdfBody;
+
   /// Snackbar shown after the original Mokuro or HTML OCR has been restored.
   ///
   /// In en, this message translates to:

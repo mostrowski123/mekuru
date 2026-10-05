@@ -2417,6 +2417,14 @@
   "@ocrRestoreOriginalMokuroSubtitle": {
     "description": "Subtitle shown when deleting OCR will restore the original Mokuro or HTML OCR."
   },
+  "ocrRemovePdfSubtitle": "Eliminar el texto OCR añadido a este PDF; su propio texto se conserva",
+  "@ocrRemovePdfSubtitle": {
+    "description": "Subtitle of Delete OCR for a PDF book after an OCR run: deleting restores the text the PDF came with."
+  },
+  "ocrRemovePdfBody": "¿Eliminar el texto OCR añadido a este PDF? El texto que trae el PDF se conserva.",
+  "@ocrRemovePdfBody": {
+    "description": "Confirmation dialog body for deleting OCR from a PDF book; the text the PDF came with is restored."
+  },
   "ocrOriginalMokuroRestored": "Se restauró el OCR original de Mokuro/HTML",
   "@ocrOriginalMokuroRestored": {
     "description": "Snackbar shown after the original Mokuro or HTML OCR has been restored."

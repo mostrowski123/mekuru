@@ -156,6 +156,62 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('Delete OCR on a PDF brings its own text back', (tester) async {
+    final l10n = await loadExpectedL10n();
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final path = await writeFixture('graded_reader.pdf', textPdfBase64);
+    final book = (await BookRepository(db).importPdf(path)).book;
+    final imported = await pagesOf(book);
+
+    await tester.pumpWidget(
+      buildIntegrationTestApp(db: db, home: const LibraryScreen()),
+    );
+    final tile = find.byKey(ValueKey('book-tile-${book.id}'));
+    await pumpUntilVisible(tester, tile);
+
+    // The PDF's own text is no OCR: there is nothing to delete.
+    await longPressTile(tester, tile);
+    expect(find.text(l10n.localOcrRecognize), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1)); // the sheet's file check
+    expect(find.text(l10n.ocrRemoveActionTitle), findsNothing);
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // An OCR run replaces the text.
+    await MangaCacheStore.reset(
+      File(p.join(book.filePath, mangaPagesCacheFileName)),
+      book.id,
+      jsonEncode(
+        imported
+            .copyWith(
+              ocrSource: 'local',
+              pages: [
+                for (final page in imported.pages)
+                  page.copyWith(blocks: const []),
+              ],
+            )
+            .toJson(),
+      ),
+    );
+
+    await longPressTile(tester, tile);
+    await pumpUntilVisible(tester, find.text(l10n.ocrRemovePdfSubtitle));
+    await tapSheetItem(tester, l10n.ocrRemoveActionTitle);
+    expect(find.text(l10n.ocrRemovePdfBody), findsOneWidget);
+    await tester.tap(
+      find.widgetWithText(TextButton, l10n.ocrRemoveActionTitle),
+    );
+    await pumpUntilVisible(tester, find.text(l10n.ocrRemovedFromBook));
+
+    final restored = await pagesOf(book);
+    expect(restored.ocrSource, 'pdf');
+    expect(restored.fromPdf, isTrue);
+    for (final page in restored.pages) {
+      expect(textOf(page), contains('今日は学校で日本語を勉強します。'));
+    }
+  });
+
   testWidgets('a PDF book turns its own way and remembers a new pick', (
     tester,
   ) async {

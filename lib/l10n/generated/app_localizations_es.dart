@@ -2133,6 +2133,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Eliminar el OCR actual y restaurar el OCR original de Mokuro/HTML';
 
   @override
+  String get ocrRemovePdfSubtitle =>
+      'Eliminar el texto OCR añadido a este PDF; su propio texto se conserva';
+
+  @override
+  String get ocrRemovePdfBody =>
+      '¿Eliminar el texto OCR añadido a este PDF? El texto que trae el PDF se conserva.';
+
+  @override
   String get ocrOriginalMokuroRestored =>
       'Se restauró el OCR original de Mokuro/HTML';
 

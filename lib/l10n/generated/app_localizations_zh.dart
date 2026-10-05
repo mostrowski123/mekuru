@@ -2011,6 +2011,12 @@ class AppLocalizationsZh extends AppLocalizations {
       '删除当前 OCR 并恢复原始 Mokuro/HTML OCR';
 
   @override
+  String get ocrRemovePdfSubtitle => '删除添加到这个 PDF 的 OCR 文本；PDF 自带的文本会保留';
+
+  @override
+  String get ocrRemovePdfBody => '要删除添加到这个 PDF 的 OCR 文本吗？PDF 自带的文本会保留。';
+
+  @override
   String get ocrOriginalMokuroRestored => '已恢复原始 Mokuro/HTML OCR';
 
   @override
@@ -5717,6 +5723,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get ocrRestoreOriginalMokuroSubtitle =>
       '删除当前 OCR 并恢复原始 Mokuro/HTML OCR';
+
+  @override
+  String get ocrRemovePdfSubtitle => '删除添加到这个 PDF 的 OCR 文本；PDF 自带的文本会保留';
+
+  @override
+  String get ocrRemovePdfBody => '要删除添加到这个 PDF 的 OCR 文本吗？PDF 自带的文本会保留。';
 
   @override
   String get ocrOriginalMokuroRestored => '已恢复原始 Mokuro/HTML OCR';
