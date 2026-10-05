@@ -56,7 +56,7 @@ class RemoteSeries {
 }
 
 /// Book format as far as Mekuru cares: what importer handles the download.
-enum RemoteBookFormat { epub, imageArchive }
+enum RemoteBookFormat { epub, imageArchive, pdf }
 
 class RemoteBook {
   /// Opaque per-server id bundle; persisted verbatim in `Books.remoteIds`.
@@ -75,8 +75,11 @@ class RemoteBook {
   });
 
   /// Extension the downloaded file should get so the right importer runs.
-  String get fileExtension =>
-      format == RemoteBookFormat.epub ? '.epub' : '.cbz';
+  String get fileExtension => switch (format) {
+    RemoteBookFormat.epub => '.epub',
+    RemoteBookFormat.imageArchive => '.cbz',
+    RemoteBookFormat.pdf => '.pdf',
+  };
 }
 
 /// Reading progress as reported by (or pushed to) a server.

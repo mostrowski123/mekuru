@@ -100,8 +100,6 @@ class KomgaClient extends HttpServerClient {
       for (final book in content.whereType<Map<String, dynamic>>()) {
         final media = book['media'] as Map<String, dynamic>?;
         final profile = media?['mediaProfile'] as String?;
-        // Mekuru has no PDF reader; don't offer what can't be imported.
-        if (profile == 'PDF') continue;
         final metadata = book['metadata'] as Map<String, dynamic>?;
         final isEpub = profile == 'EPUB';
         result.add(
@@ -113,9 +111,11 @@ class KomgaClient extends HttpServerClient {
             },
             title: (metadata?['title'] as String?) ?? book['name'] as String,
             seriesTitle: series.title,
-            format: isEpub
-                ? RemoteBookFormat.epub
-                : RemoteBookFormat.imageArchive,
+            format: switch (profile) {
+              'EPUB' => RemoteBookFormat.epub,
+              'PDF' => RemoteBookFormat.pdf,
+              _ => RemoteBookFormat.imageArchive,
+            },
             pageCount: (media?['pagesCount'] as num?)?.toInt() ?? 0,
           ),
         );

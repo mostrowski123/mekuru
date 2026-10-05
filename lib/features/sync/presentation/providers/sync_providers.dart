@@ -10,6 +10,7 @@ import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/widgets/furigana_export_action.dart';
+import 'package:mekuru/features/manga/presentation/widgets/scanned_pdf_notice.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
 import 'package:mekuru/features/sync/data/services/kavita_client.dart';
@@ -473,9 +474,13 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     final serverType = meta['serverType'] as String;
     try {
       final repo = ref.read(bookRepositoryProvider);
-      final imported = meta['format'] == RemoteBookFormat.epub.name
-          ? await repo.importEpub(path)
-          : await repo.importCbz(path);
+      final imported = await switch (RemoteBookFormat.values.byName(
+        meta['format'] as String,
+      )) {
+        RemoteBookFormat.epub => repo.importEpub(path),
+        RemoteBookFormat.imageArchive => repo.importCbz(path),
+        RemoteBookFormat.pdf => repo.importPdf(path).then(explainIfScanned),
+      };
       // Re-applies any pending backup data (restores progress/bookmarks for
       // books re-downloaded after a restore).
       await ref

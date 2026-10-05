@@ -98,7 +98,7 @@ void main() {
     expect(requests, hasLength(2));
   });
 
-  test('listBooks skips PDFs and flags EPUBs', () async {
+  test('listBooks maps archives, EPUBs and PDFs', () async {
     final client = clientWith((request) async {
       return ok({
         'content': [
@@ -124,7 +124,7 @@ void main() {
 
     final books = await client.listBooks(series);
 
-    expect(books, hasLength(2));
+    expect(books, hasLength(3));
     expect(books[0].ids, {'bookId': 'b1', 'seriesId': 's1'});
     expect(books[0].format, RemoteBookFormat.imageArchive);
     expect(books[0].fileExtension, '.cbz');
@@ -132,6 +132,10 @@ void main() {
     expect(books[1].ids['epub'], 'true');
     expect(books[1].format, RemoteBookFormat.epub);
     expect(books[1].fileExtension, '.epub');
+    expect(books[2].ids, {'bookId': 'b3', 'seriesId': 's1'});
+    expect(books[2].format, RemoteBookFormat.pdf);
+    expect(books[2].fileExtension, '.pdf');
+    expect(books[2].pageCount, 10);
   });
 
   test('pullProgress converts 1-based pages and merges R2 locator', () async {

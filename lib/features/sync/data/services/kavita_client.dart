@@ -170,8 +170,6 @@ class KavitaClient extends HttpServerClient {
       final chapters = volume['chapters'] as List? ?? const [];
       for (final chapter in chapters.whereType<Map<String, dynamic>>()) {
         final format = (chapter['format'] as num?)?.toInt();
-        // Mekuru has no PDF reader; don't offer what can't be imported.
-        if (format == _formatPdf) continue;
         final pages = (chapter['pages'] as num?)?.toInt() ?? 0;
         final chapterTitle = chapter['titleName'] as String?;
         final volumeName = volume['name'] as String?;
@@ -191,9 +189,11 @@ class KavitaClient extends HttpServerClient {
                 ? chapterTitle
                 : (volumeName ?? series.title),
             seriesTitle: series.title,
-            format: format == _formatEpub
-                ? RemoteBookFormat.epub
-                : RemoteBookFormat.imageArchive,
+            format: switch (format) {
+              _formatEpub => RemoteBookFormat.epub,
+              _formatPdf => RemoteBookFormat.pdf,
+              _ => RemoteBookFormat.imageArchive,
+            },
             pageCount: pages,
           ),
         );

@@ -364,11 +364,11 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
               }
 
               return ListTile(
-                leading: Icon(
-                  book.format == RemoteBookFormat.epub
-                      ? Icons.menu_book
-                      : Icons.photo_library_outlined,
-                ),
+                leading: Icon(switch (book.format) {
+                  RemoteBookFormat.epub => Icons.menu_book,
+                  RemoteBookFormat.imageArchive => Icons.photo_library_outlined,
+                  RemoteBookFormat.pdf => Icons.picture_as_pdf_outlined,
+                }),
                 title: Text(book.title),
                 subtitle: Text(
                   book.format == RemoteBookFormat.epub

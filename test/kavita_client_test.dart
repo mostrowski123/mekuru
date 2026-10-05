@@ -129,7 +129,7 @@ void main() {
     expect(result.single.title, '銀河英雄伝説');
   });
 
-  test('listBooks flattens volumes, skips PDFs, carries pages', () async {
+  test('listBooks flattens volumes, maps formats, carries pages', () async {
     final client = clientWith((request) async {
       if (request.url.path == '/api/Plugin/authenticate') {
         return authOk();
@@ -155,7 +155,7 @@ void main() {
 
     final books = await client.listBooks(series);
 
-    expect(books, hasLength(2));
+    expect(books, hasLength(3));
     expect(books[0].ids, {
       'chapterId': '101',
       'volumeId': '11',
@@ -166,9 +166,13 @@ void main() {
     });
     expect(books[0].format, RemoteBookFormat.epub);
     expect(books[0].title, 'Volume 1');
-    expect(books[1].ids['chapterId'], '103');
-    expect(books[1].title, 'Omake');
-    expect(books[1].format, RemoteBookFormat.imageArchive);
+    expect(books[1].ids['chapterId'], '102');
+    expect(books[1].title, 'PDF Extra');
+    expect(books[1].format, RemoteBookFormat.pdf);
+    expect(books[1].pageCount, 5);
+    expect(books[2].ids['chapterId'], '103');
+    expect(books[2].title, 'Omake');
+    expect(books[2].format, RemoteBookFormat.imageArchive);
   });
 
   test('pullProgress maps pageNum and completion', () async {
