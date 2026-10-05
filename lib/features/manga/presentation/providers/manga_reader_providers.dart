@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
@@ -32,8 +33,11 @@ final mangaPagesProvider = FutureProvider.autoDispose.family<MokuroBook, int>((
     throw Exception('Pages cache not found. Try re-importing this manga.');
   }
   final content = await cacheFile.readAsString();
-  final json = jsonDecode(content) as Map<String, dynamic>;
-  final mokuroBook = MokuroBook.fromJson(json);
+  // Decoded in a worker: a text PDF's cache runs to megabytes, enough to
+  // stall the reader's opening on the UI isolate.
+  final mokuroBook = await Isolate.run(
+    () => MokuroBook.fromJson(jsonDecode(content) as Map<String, dynamic>),
+  );
 
   // Self-heal caches with missing word boxes (legacy/partial OCR), broken
   // ones (segmented while MeCab was still initializing), or ones segmented
