@@ -102,6 +102,7 @@ class DictionaryDownloadService {
           );
         },
       );
+      BackgroundWork.instance.progress(workId, 1.0);
       onProgress?.call(1.0);
       logUsage(
         'download.completed',

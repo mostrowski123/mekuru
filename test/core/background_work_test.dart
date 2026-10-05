@@ -54,6 +54,24 @@ void main() {
     },
   );
 
+  test('the last progress reaches iOS before the task ends', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    work.start('dictionary:a', BackgroundJobKind.dictionary, onStopped: () {});
+    work.progress('dictionary:a', 0.95);
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+
+    // Inside the throttle window: only finish() can send it.
+    work.progress('dictionary:a', 1.0);
+    work.finish('dictionary:a');
+
+    expect(calls.map((c) => c.method).toList().sublist(calls.length - 2), [
+      'update',
+      'end',
+    ]);
+    final update = calls[calls.length - 2];
+    expect(update.arguments['completed'], update.arguments['total']);
+  });
+
   test('dictionary downloads have their own words in the text', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     work.text =

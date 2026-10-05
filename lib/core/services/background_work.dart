@@ -86,13 +86,18 @@ class BackgroundWork {
 
   /// [id] ended (done, failed or cancelled).
   void finish(String id) {
-    if (_jobs.remove(id) == null) return;
-    if (_jobs.isNotEmpty) {
+    if (!_jobs.containsKey(id)) return;
+    if (_jobs.length > 1) {
+      _jobs.remove(id);
       _scheduleUpdate();
       return;
     }
     _pendingUpdate?.cancel();
     _pendingUpdate = null;
+    // The last progress the throttle may still be holding, so the Live
+    // Activity ends where the work did (100% when it succeeded).
+    _sendUpdate();
+    _jobs.remove(id);
     if (_open) {
       _open = false;
       unawaited(
@@ -123,25 +128,29 @@ class BackgroundWork {
         DateTime.now().difference(_lastUpdate);
     _pendingUpdate = Timer(wait.isNegative ? Duration.zero : wait, () {
       _pendingUpdate = null;
-      if (!_open || _jobs.isEmpty) return;
-      _lastUpdate = DateTime.now();
-      final total = _jobs.length * 1000;
-      final completed = _jobs.values.fold<int>(
-        0,
-        (sum, job) => sum + (job.fraction * 1000).round(),
-      );
-      final text = _text(percent: completed * 100 ~/ total);
-      unawaited(
-        _channel
-            .invokeMethod<void>('update', {
-              'completed': completed,
-              'total': total,
-              'title': text.title,
-              'subtitle': text.subtitle,
-            })
-            .catchError((Object _) {}),
-      );
+      _sendUpdate();
     });
+  }
+
+  void _sendUpdate() {
+    if (!_open || _jobs.isEmpty) return;
+    _lastUpdate = DateTime.now();
+    final total = _jobs.length * 1000;
+    final completed = _jobs.values.fold<int>(
+      0,
+      (sum, job) => sum + (job.fraction * 1000).round(),
+    );
+    final text = _text(percent: completed * 100 ~/ total);
+    unawaited(
+      _channel
+          .invokeMethod<void>('update', {
+            'completed': completed,
+            'total': total,
+            'title': text.title,
+            'subtitle': text.subtitle,
+          })
+          .catchError((Object _) {}),
+    );
   }
 
   ({String title, String subtitle}) _text({int percent = 0}) {
