@@ -2,8 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
 
-/// Horizontal movement past a page's edge, in logical pixels, before a
-/// one-finger drag becomes a page swipe.
+/// Horizontal movement past a zoomed page's edge, in logical pixels, before
+/// a one-finger drag becomes a page swipe.
 const double _swipeSlop = 8;
 
 /// Pinch-zoom for one item of a manga [PageView] whose own drag is off.
@@ -142,9 +142,10 @@ class _MangaZoomViewerState extends State<MangaZoomViewer> {
 
     _overflowX += dx - panned;
     _dy += details.focalPointDelta.dy;
-    if (_overflowX.abs() <= _swipeSlop || _overflowX.abs() <= _dy.abs()) {
-      return;
-    }
+    // At 1x there is nothing to pan, so only the direction counts; zoomed,
+    // the slop keeps a vertical pan's jitter at an edge from turning.
+    final slop = _isZoomed ? _swipeSlop : 0.0;
+    if (_overflowX.abs() <= slop || _overflowX.abs() <= _dy.abs()) return;
 
     // The rest of the gesture belongs to the page: freeze the image.
     setState(() => _swiping = true);
@@ -171,19 +172,27 @@ class _MangaZoomViewerState extends State<MangaZoomViewer> {
     if (!_swiping) return;
     if (widget.animatePageTurns) {
       // A second finger landing ends the swipe: settle, don't fling.
-      final velocity = _multiTouch ? 0.0 : details.velocity.pixelsPerSecond.dx;
-      _drag?.end(
-        DragEndDetails(
-          velocity: Velocity(pixelsPerSecond: Offset(velocity, 0)),
-          primaryVelocity: velocity,
-        ),
-      );
-      _drag = null;
+      _settle(_multiTouch ? 0.0 : details.velocity.pixelsPerSecond.dx);
     } else if (!_multiTouch &&
         _overflowX.abs() > context.size!.width * kSwipeDistanceThreshold) {
       _jumpOnePage(widget.pageController!);
     }
     setState(() => _swiping = false);
+  }
+
+  /// Lets the PageView settle on a page, given the finger's [velocity].
+  ///
+  /// Not `Drag.end`: that settle inherits the drag's ignore-pointer flag,
+  /// and with the PageView's own drag off nothing would take the next swipe
+  /// until the page came fully to rest, most of a second later.
+  void _settle(double velocity) {
+    if (_drag == null) return;
+    final position =
+        widget.pageController!.position as ScrollPositionWithSingleContext;
+    position.hold(() {}); // ends the drag; a hold doesn't ignore pointers
+    // Finger velocity to scroll velocity, as ScrollDragController.end does.
+    final reversed = axisDirectionIsReversed(position.axisDirection);
+    position.goBallistic(reversed ? velocity : -velocity);
   }
 
   void _jumpOnePage(PageController controller) {

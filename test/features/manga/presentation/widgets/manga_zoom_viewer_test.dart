@@ -2,29 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_zoom_viewer.dart';
 
-// The default test surface is 800x600; pages start on index 1 of 3.
+// The default test surface is 800x600; pages start on index 1 of 5.
 const _center = Offset(400, 300);
 
 Future<PageController> _pumpPages(
   WidgetTester tester, {
   bool animatePageTurns = true,
+  bool reverse = false,
 }) async {
   final controller = PageController(initialPage: 1);
   addTearDown(controller.dispose);
   await tester.pumpWidget(
     MaterialApp(
-      home: PageView.builder(
-        controller: controller,
-        allowImplicitScrolling: true,
-        physics: const NeverScrollableScrollPhysics(
-          parent: ClampingScrollPhysics(),
-        ),
-        itemCount: 3,
-        itemBuilder: (_, index) => MangaZoomViewer(
-          pageIndex: index,
-          pageController: controller,
-          animatePageTurns: animatePageTurns,
-          child: const ColoredBox(color: Colors.white),
+      // Stands in for the reader's tap zones, which hold the gesture arena
+      // until a touch moves past the touch slop.
+      home: GestureDetector(
+        onTapUp: (_) {},
+        child: PageView.builder(
+          controller: controller,
+          reverse: reverse,
+          allowImplicitScrolling: true,
+          physics: const NeverScrollableScrollPhysics(
+            parent: ClampingScrollPhysics(),
+          ),
+          itemCount: 5,
+          itemBuilder: (_, index) => MangaZoomViewer(
+            pageIndex: index,
+            pageController: controller,
+            animatePageTurns: animatePageTurns,
+            child: const ColoredBox(color: Colors.white),
+          ),
         ),
       ),
     ),
@@ -65,8 +72,8 @@ Future<void> _move(
   }
 }
 
-/// Symmetric pinch about the centre to 3x, leaving the page centred: 800px
-/// of pan room on either side.
+/// Symmetric pinch about the centre (to about 2.3x), leaving the page
+/// centred with roughly 500px of pan room on either side.
 Future<void> _zoomIn(WidgetTester tester) async {
   final a = await tester.startGesture(_center - const Offset(50, 0));
   final b = await tester.startGesture(_center + const Offset(50, 0));
@@ -114,17 +121,56 @@ void main() {
     expect(controller.page, 2);
   });
 
+  testWidgets('a short flick turns the page', (tester) async {
+    final controller = await _pumpPages(tester);
+
+    // The tap zones hold the gesture until the 18px touch slop, so the
+    // viewer hears about only the last few pixels of this flick.
+    await tester.flingFrom(_center, const Offset(-24, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(controller.page, 2);
+  });
+
+  testWidgets('right-to-left: a flick to the right turns forward', (
+    tester,
+  ) async {
+    final controller = await _pumpPages(tester, reverse: true);
+
+    await tester.flingFrom(_center, const Offset(60, 0), 1000);
+    await tester.pumpAndSettle();
+
+    expect(controller.page, 2);
+  });
+
+  testWidgets('a second swipe while the page still settles turns again', (
+    tester,
+  ) async {
+    final controller = await _pumpPages(tester);
+
+    await _drag(tester, const Offset(-25, 0), 20);
+    // Mid-settle: the first pump only starts the settle animation.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(controller.page, isNot(2));
+    await _drag(tester, const Offset(-25, 0), 36);
+    await tester.pumpAndSettle();
+
+    expect(controller.page, 3);
+  });
+
   testWidgets('a zoomed pan away from the edge pans, not turns', (
     tester,
   ) async {
     final controller = await _pumpPages(tester);
     await _zoomIn(tester);
 
-    await _drag(tester, const Offset(25, 0), 20);
+    final scale = _scaleOf(tester, 1);
+    await _drag(tester, const Offset(25, 0), 10);
     await tester.pumpAndSettle();
 
     expect(controller.page, 1);
-    expect(_scaleOf(tester, 1), closeTo(3, 0.01));
+    expect(_scaleOf(tester, 1), scale);
   });
 
   testWidgets('dragging past a zoomed page\'s edge turns it, then resets it', (
