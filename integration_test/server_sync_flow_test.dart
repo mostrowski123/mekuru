@@ -12,6 +12,8 @@ import 'package:mekuru/features/backup/data/services/backup_service.dart';
 import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:mekuru/features/backup/data/services/restore_service.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
+import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/data/repositories/server_connection_repository.dart';
@@ -22,6 +24,7 @@ import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:path/path.dart' as p;
 import 'package:workmanager/workmanager.dart';
 
+import 'shared/pdf_fixtures.dart';
 import 'shared/self_signed_cert.dart';
 import 'shared/test_infrastructure.dart';
 
@@ -29,8 +32,12 @@ import 'shared/test_infrastructure.dart';
 final _fakeJpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0];
 
 /// In-process fake Komga server: one library, one series, one CBZ book
-/// (images + embedded .mokuro), with mutable read progress.
+/// (images + embedded .mokuro), with mutable read progress. With [pdf], the
+/// book is a PDF with a text layer instead.
 class FakeKomga {
+  FakeKomga({this.pdf = false});
+
+  final bool pdf;
   late final HttpServer _server;
   late final List<int> cbzBytes;
 
@@ -132,7 +139,10 @@ class FakeKomga {
           {
             'id': 'b1',
             'name': 'よつばと！ 1',
-            'media': {'mediaProfile': 'DIVINA', 'pagesCount': 3},
+            'media': {
+              'mediaProfile': pdf ? 'PDF' : 'DIVINA',
+              'pagesCount': pdf ? 2 : 3,
+            },
             'metadata': {'title': 'よつばと！ 1'},
           },
         ],
@@ -141,7 +151,7 @@ class FakeKomga {
     }
     if (path == '/api/v1/books/b1/file') {
       request.response.headers.contentType = ContentType.binary;
-      request.response.add(cbzBytes);
+      request.response.add(pdf ? base64Decode(textPdfBase64) : cbzBytes);
       await request.response.close();
       return;
     }
@@ -299,6 +309,58 @@ void main() {
       isTrue,
     );
     expect(connection.id, connectionId);
+  });
+
+  testWidgets('a PDF downloads from Komga and imports with its text', (
+    tester,
+  ) async {
+    final komga = FakeKomga(pdf: true);
+    await komga.start();
+    final db = createTestDatabase();
+    final connections = ServerConnectionRepository(db);
+    final client = KomgaClient(
+      baseUrl: komga.baseUrl,
+      getSecret: () => 'integration-key',
+    );
+    addTearDown(() async {
+      client.dispose();
+      await db.close();
+      await komga.stop();
+    });
+    final connectionId = await connections.create(
+      serverType: 'komga',
+      name: 'Fake',
+      baseUrl: komga.baseUrl,
+    );
+    final connection = (await connections.getById(connectionId))!;
+    final series = await client.listSeries(
+      (await client.listLibraries()).single.id,
+    );
+    final book = (await client.listBooks(series.single)).single;
+    expect(book.format, RemoteBookFormat.pdf);
+
+    final container = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
+    addTearDown(container.dispose);
+    final downloads = container.read(serverDownloadProvider.notifier);
+    await downloads.resumeBackgroundDownloads();
+    await downloads.download(
+      connection: connection,
+      client: client,
+      book: book,
+    );
+    final imported = await _linkedBook(connections, connectionId);
+
+    expect(imported.bookType, 'manga');
+    expect(imported.title, 'よつばと！ 1', reason: 'named after the download');
+    final manga = await MangaCacheStore.read(
+      p.join(imported.filePath, mangaPagesCacheFileName),
+    );
+    expect(manga.fromPdf, isTrue);
+    expect(manga.pages, hasLength(2));
+    expect(manga.pages.expand((page) => page.blocks), isNotEmpty);
+    expect(container.read(serverDownloadProvider), isEmpty);
   });
 
   testWidgets('backup carries server links and restores them disabled', (

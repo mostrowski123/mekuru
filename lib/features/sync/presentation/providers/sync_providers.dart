@@ -163,6 +163,12 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   Timer? _poll;
   bool _checking = false;
 
+  /// Finished downloads being imported, one after another but apart from
+  /// the status check: a long PDF converts for minutes, and the other
+  /// downloads' progress and imports must not wait for it.
+  final _importing = <String>{};
+  Future<void> _imports = Future.value();
+
   static bool get _onAndroid => defaultTargetPlatform == TargetPlatform.android;
 
   @override
@@ -395,6 +401,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
     try {
       for (final MapEntry(:key, value: dir) in [..._followed.entries]) {
         if (!ref.mounted) return;
+        if (_importing.contains(key)) continue;
         // A full restore deleted it to cancel.
         if (!await Directory(dir.path).exists()) {
           _stopFollowing(key);
@@ -404,11 +411,8 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         if (!ref.mounted) return;
         switch (status?.state) {
           case ServerDownloadWorkState.done:
-            final job = await dir.readJob();
-            if (job != null && ref.mounted) {
-              await _importFile(dir.filePath(job.fileName), job.meta);
-            }
-            await _end(key, dir);
+            _importing.add(key);
+            _imports = _imports.then((_) => _importAndEnd(key, dir));
           case ServerDownloadWorkState.failed:
             _reportFailure(status!, await dir.readJob());
             await _end(key, dir);
@@ -426,6 +430,18 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         _poll?.cancel();
         _poll = null;
       }
+    }
+  }
+
+  Future<void> _importAndEnd(String key, ServerDownloadWorkDir dir) async {
+    try {
+      final job = await dir.readJob();
+      if (job != null && ref.mounted) {
+        await _importFile(dir.filePath(job.fileName), job.meta);
+      }
+      await _end(key, dir);
+    } finally {
+      _importing.remove(key);
     }
   }
 
