@@ -439,9 +439,12 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
       if (job != null && ref.mounted) {
         await _importFile(dir.filePath(job.fileName), job.meta);
       }
-      await _end(key, dir);
+    } catch (e, st) {
+      // Caught here, so a failure can't stop the imports queued after it.
+      logFailure('sync.book_downloaded', e, stackTrace: st);
     } finally {
       _importing.remove(key);
+      await _end(key, dir);
     }
   }
 
