@@ -1,0 +1,59 @@
+import 'dart:io';
+import 'dart:isolate';
+import 'dart:typed_data';
+
+import 'package:http/http.dart' as http;
+import 'package:mekuru/core/services/http_transport.dart';
+import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
+import 'package:mekuru/features/free_books/data/services/aozora_epub_builder.dart';
+
+const _timeout = Duration(seconds: 30);
+
+/// Fetches [work]'s XHTML from Aozora Bunko plus the images it shows, and
+/// builds the EPUB off the calling isolate. [base] is where Aozora's card
+/// folders live (tests point it at a local server).
+///
+/// Throws [NetworkException] when the connection fails and [HttpException]
+/// when the page itself is missing; a missing image only falls back to its
+/// alt text.
+Future<Uint8List> fetchAozoraEpub(
+  AozoraWork work,
+  http.Client client, {
+  String base = aozoraCardsBase,
+}) async {
+  final page = Uri.parse(base).resolve(work.xhtmlPath);
+  final bytes = (await _get(client, page))!;
+  // Shift_JIS decoding of a big novel takes tens of milliseconds.
+  final (xhtml, sources) = await Isolate.run(() {
+    final xhtml = decodeAozoraXhtml(bytes);
+    return (xhtml, aozoraImageSources(xhtml));
+  });
+  final images = <String, Uint8List>{};
+  // A few at a time: each gaiji is tiny, but a work can show hundreds.
+  for (var i = 0; i < sources.length; i += 4) {
+    await Future.wait([
+      for (final src in sources.skip(i).take(4))
+        _get(client, page.resolve(src), allowMissing: true).then((bytes) {
+          if (bytes != null) images[src] = bytes;
+        }),
+    ]);
+  }
+  return Isolate.run(
+    () => buildAozoraEpub(xhtml: xhtml, work: work, images: images),
+  );
+}
+
+Future<Uint8List?> _get(
+  http.Client client,
+  Uri uri, {
+  bool allowMissing = false,
+}) async {
+  final response = await sendWithTimeout(
+    client,
+    http.Request('GET', uri),
+    timeout: _timeout,
+  );
+  if (response.statusCode == HttpStatus.ok) return response.bodyBytes;
+  if (allowMissing && response.statusCode == HttpStatus.notFound) return null;
+  throw HttpException('HTTP ${response.statusCode}', uri: uri);
+}
