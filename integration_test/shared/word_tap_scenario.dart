@@ -42,6 +42,7 @@ import 'test_infrastructure.dart';
 Future<String> _writeFixtureEpub(
   Directory dir, {
   bool verticalWithRuby = false,
+  bool anchoredRbRuby = false,
 }) async {
   final archive = Archive();
 
@@ -94,9 +95,21 @@ Future<String> _writeFixtureEpub(
   final sentence = verticalWithRuby
       ? '今日は<ruby>学校<rt>がっこう</rt></ruby>で'
             '<ruby>日本語<rt>にほんご</rt></ruby>を勉強します。'
+      : anchoredRbRuby
+      // Ruby as many publishers write it: bases in <rb>, readings in
+      // bracket fallbacks (<rp>) that lookups must never see.
+      ? '今日は<ruby><rb>学校</rb><rp>（</rp><rt>がっこう</rt><rp>）</rp></ruby>で'
+            '<ruby><rb>日本語</rb><rp>（</rp><rt>にほんご</rt><rp>）</rp></ruby>'
+            'を勉強します。'
       : '今日は学校で日本語を勉強します。';
   for (var i = 0; i < 20; i++) {
-    body.write('<p>${sentence * 10}</p>');
+    // Page anchors (<a id>, no href) wrap the text, as in many converted
+    // books: they are not links, so taps inside must still look words up.
+    body.write(
+      anchoredRbRuby
+          ? '<p><a id="p$i">${sentence * 10}</a></p>'
+          : '<p>${sentence * 10}</p>',
+    );
   }
   final style = verticalWithRuby
       ? '<style>html, body { writing-mode: vertical-rl; }</style>'
@@ -175,6 +188,9 @@ void registerWordTapScenario(
   // Seeds a synced WaniKani snapshot (rune → SRS stage) so the wanikani
   // mode has a known set without any network or secure-storage access.
   Map<int, int>? wanikaniStages,
+  // Text inside href-less page anchors, with <rb>/<rp> ruby; the tapped
+  // paragraph's text must come without the readings or their brackets.
+  bool anchoredRbRuby = false,
 }) {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -212,6 +228,7 @@ void registerWordTapScenario(
     final fixturePath = await _writeFixtureEpub(
       tempDir,
       verticalWithRuby: verticalWithRuby,
+      anchoredRbRuby: anchoredRbRuby,
     );
     await BookRepository(db).importEpub(fixturePath);
 
@@ -282,6 +299,15 @@ void registerWordTapScenario(
           '(furiganaMode=$furiganaMode). '
           'Diagnostic logs above show where the tap died.',
     );
+
+    if (anchoredRbRuby) {
+      // Ten 16-character sentences: no rt readings, no rp brackets.
+      final tapped = capturedLogs
+          .map(RegExp(r'wordTapped\(\w+\) .* textLen=(\d+)').firstMatch)
+          .whereType<RegExpMatch>()
+          .first;
+      expect(int.parse(tapped.group(1)!), 160);
+    }
 
     if (expectAuthoredRubyClassification) {
       // The classification call is async (bridge round-trip), so poll for

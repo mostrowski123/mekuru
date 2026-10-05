@@ -1415,7 +1415,7 @@ function getLinkAtPoint(clientX, clientY, doc) {
   try {
     var el = doc.elementFromPoint(clientX, clientY);
     while (el) {
-      if (el.tagName === 'A') return el;
+      if (el.tagName === 'A' && el.hasAttribute('href')) return el;
       el = el.parentElement;
     }
     return null;
@@ -1459,30 +1459,15 @@ function getTextAtPoint(clientX, clientY, doc) {
       // getBoundingClientRect can fail in edge cases; proceed normally
     }
 
-    // If inside <rt> (furigana annotation), use the base text from <ruby>
-    var parent = node.parentElement;
-    while (parent) {
-      if (parent.tagName === 'RT') {
-        var ruby = parent.closest('ruby');
-        if (ruby) {
-          // Find the first direct text node child of <ruby> (the base text)
-          var baseNode = null;
-          for (var i = 0; i < ruby.childNodes.length; i++) {
-            var child = ruby.childNodes[i];
-            if (child.nodeType === 3 && child.textContent.trim().length > 0) {
-              baseNode = child;
-              break;
-            }
-          }
-          if (baseNode) {
-            node = baseNode;
-            offset = Math.min(offset, node.textContent.length - 1);
-            if (offset < 0) offset = 0;
-          }
-        }
-        break;
+    // In the furigana (or its brackets): use the ruby's base text.
+    if (isInRubyAnnotation(node, null)) {
+      var ruby = node.parentElement.closest('ruby');
+      var baseNode = ruby ? rubyBaseNode(ruby) : null;
+      if (baseNode) {
+        node = baseNode;
+        offset = Math.min(offset, node.textContent.length - 1);
+        if (offset < 0) offset = 0;
       }
-      parent = parent.parentElement;
     }
 
     // Find the nearest block-level ancestor
@@ -1503,13 +1488,7 @@ function getTextAtPoint(clientX, clientY, doc) {
 
     while ((current = walker.nextNode())) {
       // Skip text nodes inside <rt> elements (furigana)
-      var isRt = false;
-      var p = current.parentElement;
-      while (p && p !== block) {
-        if (p.tagName === 'RT') { isRt = true; break; }
-        p = p.parentElement;
-      }
-      if (isRt) continue;
+      if (isInRubyAnnotation(current, block)) continue;
 
       if (current === node) {
         charOffset += offset;
@@ -1584,17 +1563,37 @@ function getBlockTextWithoutRt(block) {
   );
   var current;
   while ((current = walker.nextNode())) {
-    var isRt = false;
-    var p = current.parentElement;
-    while (p && p !== block) {
-      if (p.tagName === 'RT') { isRt = true; break; }
-      p = p.parentElement;
-    }
-    if (!isRt) {
-      text += current.textContent;
-    }
+    if (!isInRubyAnnotation(current, block)) text += current.textContent;
   }
   return text;
+}
+
+// Whether [node] sits in a ruby annotation below [root] (null: anywhere):
+// the furigana in <rt>, or the <rp> brackets shown where ruby isn't
+// supported. Text lookups skip both, so brackets never reach MeCab.
+function isInRubyAnnotation(node, root) {
+  var p = node.parentElement;
+  while (p && p !== root) {
+    if (p.tagName === 'RT' || p.tagName === 'RP') return true;
+    p = p.parentElement;
+  }
+  return false;
+}
+
+// The base text of [ruby]: its first text outside the annotation, written
+// directly in <ruby> or inside <rb>.
+function rubyBaseNode(ruby) {
+  var walker = ruby.ownerDocument.createTreeWalker(
+    ruby, NodeFilter.SHOW_TEXT, null, false
+  );
+  var current;
+  while ((current = walker.nextNode())) {
+    if (current.textContent.trim().length > 0 &&
+        !isInRubyAnnotation(current, ruby)) {
+      return current;
+    }
+  }
+  return null;
 }
 
 // ── Word highlighting ─────────────────────────────────────────────────
@@ -1623,13 +1622,7 @@ function highlightWordInBlock(blockCharStart, wordLength) {
 
     while ((current = walker.nextNode())) {
       // Skip <rt> text nodes
-      var isRt = false;
-      var p = current.parentElement;
-      while (p && p !== block) {
-        if (p.tagName === 'RT') { isRt = true; break; }
-        p = p.parentElement;
-      }
-      if (isRt) continue;
+      if (isInRubyAnnotation(current, block)) continue;
 
       var nodeLen = current.textContent.length;
       var nodeEnd = runningOffset + nodeLen;
@@ -1702,25 +1695,15 @@ function expandSelectionToSentence(doc, contents) {
 
     if (!node || node.nodeType !== 3) return;
 
-    // If inside <rt> (furigana), redirect to base text
-    var parent = node.parentElement;
-    while (parent) {
-      if (parent.tagName === 'RT') {
-        var ruby = parent.closest('ruby');
-        if (ruby) {
-          for (var i = 0; i < ruby.childNodes.length; i++) {
-            var child = ruby.childNodes[i];
-            if (child.nodeType === 3 && child.textContent.trim().length > 0) {
-              node = child;
-              offset = Math.min(offset, node.textContent.length - 1);
-              if (offset < 0) offset = 0;
-              break;
-            }
-          }
-        }
-        break;
+    // In the furigana (or its brackets): use the ruby's base text.
+    if (isInRubyAnnotation(node, null)) {
+      var ruby = node.parentElement.closest('ruby');
+      var baseNode = ruby ? rubyBaseNode(ruby) : null;
+      if (baseNode) {
+        node = baseNode;
+        offset = Math.min(offset, node.textContent.length - 1);
+        if (offset < 0) offset = 0;
       }
-      parent = parent.parentElement;
     }
 
     // Find block-level ancestor
@@ -1739,13 +1722,7 @@ function expandSelectionToSentence(doc, contents) {
     var foundTarget = false;
     var current;
     while ((current = walker.nextNode())) {
-      var isRt = false;
-      var p = current.parentElement;
-      while (p && p !== block) {
-        if (p.tagName === 'RT') { isRt = true; break; }
-        p = p.parentElement;
-      }
-      if (isRt) continue;
+      if (isInRubyAnnotation(current, block)) continue;
       if (current === node) {
         charOffset += offset;
         foundTarget = true;
@@ -1782,13 +1759,7 @@ function expandSelectionToSentence(doc, contents) {
     var endNode = null, endOff = 0;
 
     while ((current = walker.nextNode())) {
-      var isRt = false;
-      var p = current.parentElement;
-      while (p && p !== block) {
-        if (p.tagName === 'RT') { isRt = true; break; }
-        p = p.parentElement;
-      }
-      if (isRt) continue;
+      if (isInRubyAnnotation(current, block)) continue;
 
       var nodeLen = current.textContent.length;
       var nodeEnd = runningOffset + nodeLen;
