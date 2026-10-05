@@ -152,36 +152,24 @@ void main() {
       );
     });
 
-    test('gives up on a server that never answers', () async {
-      final destination = p.join(tempDir.path, 'asset.zip');
-
-      await expectLater(
-        downloadToFile(
-          urlFor('/silent'),
-          destination,
-          stallTimeout: const Duration(milliseconds: 200),
-        ),
-        throwsA(isA<TimeoutException>()),
-      );
-      expect(File(destination).existsSync(), isFalse);
-    });
-
-    test(
-      'gives up on a body that stalls and deletes the partial file',
-      () async {
+    for (final (path, stall) in [
+      ('/silent', 'a server that never answers'),
+      ('/stalls', 'a body that stalls'),
+    ]) {
+      test('gives up on $stall and leaves no file', () async {
         final destination = p.join(tempDir.path, 'asset.zip');
 
         await expectLater(
           downloadToFile(
-            urlFor('/stalls'),
+            urlFor(path),
             destination,
             stallTimeout: const Duration(milliseconds: 200),
           ),
           throwsA(isA<TimeoutException>()),
         );
         expect(File(destination).existsSync(), isFalse);
-      },
-    );
+      });
+    }
 
     test(
       'deletes the partial file when the connection drops mid-body',

@@ -19,8 +19,8 @@ scanned PDF is two pages that are only images, with no text layer.
 from __future__ import annotations
 
 import base64
-import re
 import io
+import re
 from pathlib import Path
 
 import pymupdf

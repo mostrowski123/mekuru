@@ -246,63 +246,56 @@ void main() {
         throwsStateError,
       );
     });
-    test('merge writes and returns the merged cache', () async {
+
+    /// A pages_cache.json path in a folder of its own, not yet written.
+    Future<File> cacheFile() async {
       final root = await Directory.systemTemp.createTemp('ocr-cache-test');
-      try {
-        final file = File.fromUri(root.uri.resolve('pages_cache.json'));
-        await file.writeAsString(jsonEncode(before));
-        final after = copy(before);
-        after['autoCropVersion'] = 7;
+      addTearDown(() => root.delete(recursive: true));
+      return File.fromUri(root.uri.resolve('pages_cache.json'));
+    }
 
-        final merged = await MangaCacheStore.merge(
-          file,
-          before: jsonEncode(before),
-          after: jsonEncode(after),
-        );
+    test('merge writes and returns the merged cache', () async {
+      final file = await cacheFile();
+      await file.writeAsString(jsonEncode(before));
+      final after = copy(before);
+      after['autoCropVersion'] = 7;
 
-        expect(jsonDecode(merged)['autoCropVersion'], 7);
-        expect(await file.readAsString(), merged);
-      } finally {
-        await root.delete(recursive: true);
-      }
+      final merged = await MangaCacheStore.merge(
+        file,
+        before: jsonEncode(before),
+        after: jsonEncode(after),
+      );
+
+      expect(jsonDecode(merged)['autoCropVersion'], 7);
+      expect(await file.readAsString(), merged);
     });
     test('merge still refuses a book that changed meanwhile', () async {
-      final root = await Directory.systemTemp.createTemp('ocr-cache-test');
-      try {
-        final file = File.fromUri(root.uri.resolve('pages_cache.json'));
-        final current = copy(before);
-        current['pages'][0]['imageFileName'] = 'different.png';
-        await file.writeAsString(jsonEncode(current));
+      final file = await cacheFile();
+      final current = copy(before);
+      current['pages'][0]['imageFileName'] = 'different.png';
+      await file.writeAsString(jsonEncode(current));
 
-        await expectLater(
-          MangaCacheStore.merge(
-            file,
-            before: jsonEncode(before),
-            after: jsonEncode(before),
-          ),
-          throwsStateError,
-        );
-        expect(jsonDecode(await file.readAsString()), current);
-      } finally {
-        await root.delete(recursive: true);
-      }
+      await expectLater(
+        MangaCacheStore.merge(
+          file,
+          before: jsonEncode(before),
+          after: jsonEncode(before),
+        ),
+        throwsStateError,
+      );
+      expect(jsonDecode(await file.readAsString()), current);
     });
     test('deleted cache is not recreated', () async {
-      final root = await Directory.systemTemp.createTemp('ocr-cache-test');
-      try {
-        final file = File.fromUri(root.uri.resolve('pages_cache.json'));
-        await expectLater(
-          () => MangaCacheStore.merge(
-            file,
-            before: jsonEncode(before),
-            after: jsonEncode(before),
-          ),
-          throwsA(isA<FileSystemException>()),
-        );
-        expect(await file.exists(), false);
-      } finally {
-        await root.delete(recursive: true);
-      }
+      final file = await cacheFile();
+      await expectLater(
+        () => MangaCacheStore.merge(
+          file,
+          before: jsonEncode(before),
+          after: jsonEncode(before),
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
+      expect(await file.exists(), false);
     });
   });
 
