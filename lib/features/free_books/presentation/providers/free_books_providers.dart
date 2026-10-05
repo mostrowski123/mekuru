@@ -183,11 +183,12 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
     source: 'aozora',
     fileName: 'aozora_${work.id}.epub',
     format: 'epub',
-    fetch: (client, path, _) async {
+    fetch: (client, path, onProgress) async {
       final bytes = await fetchAozoraEpub(
         work,
         IOClient(client),
         base: ref.read(aozoraBaseUrlProvider),
+        onProgress: onProgress,
       );
       await File(path).writeAsBytes(bytes, flush: true);
     },
@@ -207,6 +208,11 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
       onProgress: onProgress,
     ),
   );
+
+  /// Share of the progress the download fills; the import fills the rest
+  /// (as for dictionary downloads), so the iOS Live Activity keeps moving
+  /// through a long PDF import and reaches 100% only when the book is in.
+  static const _downloadShare = 0.7;
 
   /// One download: [fetch] writes the book to a temp file named [fileName]
   /// (by id: titles must stay out of paths, which reach error text), which
@@ -230,26 +236,48 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
     final workId = 'download:$key';
     final client = HttpClient();
     InAppServerDownloads.start(key, client);
+    // iOS or the user ended the background task, which the user is told;
+    // a full restore also cancels, silently, as the app then restarts.
+    var stoppedByUser = false;
     BackgroundWork.instance.start(
       workId,
       BackgroundJobKind.download,
-      onStopped: () => InAppServerDownloads.cancel(key),
+      onStopped: () {
+        stoppedByUser = true;
+        InAppServerDownloads.cancel(key);
+      },
     );
+    bool cancelled() {
+      if (!InAppServerDownloads.wasCancelled(key)) return false;
+      if (stoppedByUser) announce((l10n) => l10n.serverBrowseDownloadStopped);
+      return true;
+    }
+
+    void report(double progress) {
+      BackgroundWork.instance.progress(workId, progress);
+      if (ref.mounted) state = {...state, key: progress};
+    }
+
     File? temp;
-    bool stopped() => !ref.mounted || InAppServerDownloads.wasCancelled(key);
     try {
       temp = File(p.join((await getTemporaryDirectory()).path, fileName));
-      await fetch(client, temp.path, (progress) {
-        BackgroundWork.instance.progress(workId, progress);
-        if (ref.mounted) state = {...state, key: progress};
-      });
-      if (stopped()) return;
+      await fetch(
+        client,
+        temp.path,
+        (progress) => report(progress * _downloadShare),
+      );
+      if (!ref.mounted || cancelled()) return;
       final book = await ref
           .read(bookImportProvider.notifier)
-          .importOne(temp.path, format: format, title: title);
+          .importOne(
+            temp.path,
+            format: format,
+            title: title,
+            onProgress: (progress) =>
+                report(_downloadShare + (1 - _downloadShare) * progress),
+          );
       await ref.read(bookRepositoryProvider).updateSourceId(book.id, key);
-      // The iOS Live Activity ends at 100%, as dictionary downloads do.
-      BackgroundWork.instance.progress(workId, 1.0);
+      report(1.0);
       if (!ref.mounted) return;
       logUsage(
         'free_books.download',
@@ -264,7 +292,7 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
         ),
       );
     } catch (error, stackTrace) {
-      if (InAppServerDownloads.wasCancelled(key)) return;
+      if (cancelled()) return;
       // TLS fails behind a captive portal or with a wrong clock, and a
       // stalled connection times out.
       final network =

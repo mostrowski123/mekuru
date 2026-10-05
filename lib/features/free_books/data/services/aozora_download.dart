@@ -15,19 +15,18 @@ const _timeout = Duration(seconds: 30);
 ///
 /// Throws [NetworkException] when the connection fails and [HttpException]
 /// when the page itself is missing; a missing image only falls back to its
-/// alt text.
+/// alt text. [onProgress] gets the share of requests done (the page, then
+/// each image), ending at 1.0 before the EPUB is built.
 Future<Uint8List> fetchAozoraEpub(
   AozoraWork work,
   http.Client client, {
   String base = aozoraCardsBase,
+  void Function(double progress)? onProgress,
 }) async {
   final page = Uri.parse(base).resolve(work.xhtmlPath);
-  final bytes = (await _get(client, page))!;
-  // Shift_JIS decoding of a big novel takes tens of milliseconds.
-  final (xhtml, sources) = await Isolate.run(() {
-    final xhtml = decodeAozoraXhtml(bytes);
-    return (xhtml, aozoraImageSources(xhtml));
-  });
+  final (xhtml, sources) = await _decode((await _get(client, page))!);
+  var done = 1;
+  onProgress?.call(done / (1 + sources.length));
   final images = <String, Uint8List>{};
   // A few at a time: each gaiji is tiny, but a work can show hundreds.
   for (var i = 0; i < sources.length; i += 4) {
@@ -35,13 +34,30 @@ Future<Uint8List> fetchAozoraEpub(
       for (final src in sources.skip(i).take(4))
         _get(client, page.resolve(src), allowMissing: true).then((bytes) {
           if (bytes != null) images[src] = bytes;
+          onProgress?.call(++done / (1 + sources.length));
         }),
     ]);
   }
-  return Isolate.run(
-    () => buildAozoraEpub(xhtml: xhtml, work: work, images: images),
-  );
+  return _build(xhtml, work, images);
 }
+
+// The isolate jobs live in functions of their own: a closure sent to an
+// isolate takes along everything its function's closures capture, and
+// [fetchAozoraEpub]'s capture onProgress, which holds the app's state.
+
+/// Shift_JIS decoding of a big novel takes tens of milliseconds.
+Future<(String, List<String>)> _decode(Uint8List bytes) => Isolate.run(() {
+  final xhtml = decodeAozoraXhtml(bytes);
+  return (xhtml, aozoraImageSources(xhtml));
+});
+
+Future<Uint8List> _build(
+  String xhtml,
+  AozoraWork work,
+  Map<String, Uint8List> images,
+) => Isolate.run(
+  () => buildAozoraEpub(xhtml: xhtml, work: work, images: images),
+);
 
 Future<Uint8List?> _get(
   http.Client client,
