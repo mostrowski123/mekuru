@@ -190,6 +190,24 @@ void main() {
       }
     });
 
+    test('lists the title once for a work without headings', () {
+      final archive = ZipDecoder().decodeBytes(
+        buildAozoraEpub(
+          xhtml:
+              '<html xmlns="http://www.w3.org/1999/xhtml"><body>'
+              '<div class="metadata"><h1 class="title">走れメロス</h1></div>'
+              '<div class="main_text">メロスは激怒した。<br/></div>'
+              '</body></html>',
+          work: _work(),
+        ),
+      );
+      final nav = _text(archive, 'OEBPS/nav.xhtml');
+
+      expect('>走れメロス</a>'.allMatches(nav), hasLength(1));
+      expect(nav, contains('href="text/title.xhtml"'));
+      expect(nav, isNot(contains('href="text/c0001.xhtml"')));
+    });
+
     test('rejects XHTML without a main text', () {
       expect(
         () => buildAozoraEpub(xhtml: '<html><body/></html>', work: _work()),

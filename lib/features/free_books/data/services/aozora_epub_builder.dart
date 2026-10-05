@@ -102,7 +102,9 @@ Uint8List buildAozoraEpub({
     ).indexed)
       (
         id: 'c${(i + 1).toString().padLeft(4, '0')}',
-        label: chapter.label ?? (i == 0 ? title : ''),
+        // Text before the first heading has no entry of its own: the title
+        // page's, just before it, already takes the reader there.
+        label: chapter.label ?? '',
         body: chapter.body,
       ),
     (id: 'colophon', label: '奥付', body: colophon),
