@@ -1870,6 +1870,18 @@ abstract class AppLocalizations {
   /// **'Failed to send feedback. Please try again.'**
   String get settingsFeedbackFailed;
 
+  /// Title for the settings entry that opens the app store listing to rate Mekuru.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate Mekuru'**
+  String get settingsRateMekuruTitle;
+
+  /// Subtitle for the rate Mekuru settings entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Enjoying Mekuru? Leave a review'**
+  String get settingsRateMekuruSubtitle;
+
   /// Title for the documentation settings entry.
   ///
   /// In en, this message translates to:

@@ -1276,6 +1276,14 @@
   "@settingsFeedbackFailed": {
     "description": "Snackbar shown when feedback submission fails."
   },
+  "settingsRateMekuruTitle": "为 Mekuru 评分",
+  "@settingsRateMekuruTitle": {
+    "description": "Title for the settings entry that opens the app store listing to rate Mekuru."
+  },
+  "settingsRateMekuruSubtitle": "喜欢 Mekuru？写条评价吧",
+  "@settingsRateMekuruSubtitle": {
+    "description": "Subtitle for the rate Mekuru settings entry."
+  },
   "settingsDocumentationTitle": "文档",
   "@settingsDocumentationTitle": {
     "description": "Title for the documentation settings entry."

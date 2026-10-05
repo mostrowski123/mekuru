@@ -1063,6 +1063,12 @@ class AppLocalizationsEs extends AppLocalizations {
       'Error al enviar el comentario. Por favor, inténtalo de nuevo.';
 
   @override
+  String get settingsRateMekuruTitle => 'Valorar Mekuru';
+
+  @override
+  String get settingsRateMekuruSubtitle => '¿Te gusta Mekuru? Deja una reseña';
+
+  @override
   String get settingsDocumentationTitle => 'Documentación';
 
   @override

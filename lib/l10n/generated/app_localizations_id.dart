@@ -1050,6 +1050,12 @@ class AppLocalizationsId extends AppLocalizations {
       'Gagal mengirim masukan. Silakan coba lagi.';
 
   @override
+  String get settingsRateMekuruTitle => 'Beri nilai Mekuru';
+
+  @override
+  String get settingsRateMekuruSubtitle => 'Suka Mekuru? Tulis ulasan';
+
+  @override
   String get settingsDocumentationTitle => 'Dokumentasi';
 
   @override

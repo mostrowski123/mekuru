@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
@@ -359,6 +360,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 );
               }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.star_outline, color: theme.colorScheme.primary),
+            title: Text(l10n.settingsRateMekuruTitle),
+            subtitle: Text(l10n.settingsRateMekuruSubtitle),
+            trailing: const Icon(Icons.open_in_new, size: 20),
+            onTap: () {
+              AppHaptics.light();
+              InAppReview.instance.openStoreListing(
+                appStoreId: AppLinks.appStoreId,
+              );
             },
           ),
           ListTile(

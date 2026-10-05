@@ -1047,6 +1047,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Failed to send feedback. Please try again.';
 
   @override
+  String get settingsRateMekuruTitle => 'Rate Mekuru';
+
+  @override
+  String get settingsRateMekuruSubtitle => 'Enjoying Mekuru? Leave a review';
+
+  @override
   String get settingsDocumentationTitle => 'Documentation';
 
   @override

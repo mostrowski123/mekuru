@@ -1276,6 +1276,14 @@
   "@settingsFeedbackFailed": {
     "description": "Snackbar shown when feedback submission fails."
   },
+  "settingsRateMekuruTitle": "Valorar Mekuru",
+  "@settingsRateMekuruTitle": {
+    "description": "Title for the settings entry that opens the app store listing to rate Mekuru."
+  },
+  "settingsRateMekuruSubtitle": "¿Te gusta Mekuru? Deja una reseña",
+  "@settingsRateMekuruSubtitle": {
+    "description": "Subtitle for the rate Mekuru settings entry."
+  },
   "settingsDocumentationTitle": "Documentación",
   "@settingsDocumentationTitle": {
     "description": "Title for the documentation settings entry."

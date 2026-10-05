@@ -998,6 +998,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsFeedbackFailed => '反馈发送失败，请重试。';
 
   @override
+  String get settingsRateMekuruTitle => '为 Mekuru 评分';
+
+  @override
+  String get settingsRateMekuruSubtitle => '喜欢 Mekuru？写条评价吧';
+
+  @override
   String get settingsDocumentationTitle => '文档';
 
   @override
@@ -4710,6 +4716,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get settingsFeedbackFailed => '反馈发送失败，请重试。';
+
+  @override
+  String get settingsRateMekuruTitle => '为 Mekuru 评分';
+
+  @override
+  String get settingsRateMekuruSubtitle => '喜欢 Mekuru？写条评价吧';
 
   @override
   String get settingsDocumentationTitle => '文档';
