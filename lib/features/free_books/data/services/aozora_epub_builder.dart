@@ -6,6 +6,7 @@ import 'package:archive/archive.dart';
 import 'package:charset/charset.dart';
 import 'package:mekuru/core/utils/xhtml.dart';
 import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
+import 'package:mekuru/features/free_books/data/services/cp932_extensions.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:xml/xml.dart';
@@ -16,7 +17,45 @@ String decodeAozoraXhtml(List<int> bytes) {
   final head = String.fromCharCodes(bytes.take(200)).toLowerCase();
   return head.contains('utf-8')
       ? utf8.decode(bytes, allowMalformed: true)
-      : const ShiftJISDecoder(allowMalformed: true).convert(bytes);
+      : decodeCp932(bytes);
+}
+
+/// Decodes Shift_JIS as Windows writes it (CP932). package:charset decodes
+/// JIS X 0208 and the NEC rows but not the IBM extensions, where it also
+/// leaves the second byte to be read as a character of its own, and it
+/// throws on a lead byte cut off at the end. Those come from
+/// [cp932Extension] here, and a cut-off lead byte becomes U+FFFD.
+String decodeCp932(List<int> bytes) {
+  final out = StringBuffer();
+  var plain = 0; // Start of the bytes package:charset can take as they are.
+  void flush(int end) {
+    if (end > plain) {
+      out.write(
+        const ShiftJISDecoder(
+          allowMalformed: true,
+        ).convert(bytes.sublist(plain, end)),
+      );
+    }
+  }
+
+  for (var i = 0; i < bytes.length; i++) {
+    final lead = bytes[i];
+    if (!(lead >= 0x81 && lead <= 0x9F || lead >= 0xE0 && lead <= 0xFC)) {
+      continue; // One byte.
+    }
+    if (i + 1 == bytes.length) {
+      flush(i);
+      out.writeCharCode(0xFFFD);
+      plain = bytes.length;
+    } else if (lead == 0xED || lead == 0xEE || lead >= 0xF0) {
+      flush(i);
+      out.write(cp932Extension(lead, bytes[i + 1]));
+      plain = i + 2;
+    }
+    i++; // The trail byte.
+  }
+  flush(bytes.length);
+  return out.toString();
 }
 
 final _imageSrc = RegExp(r'<img\b[^>]*?\bsrc="([^"]+)"');

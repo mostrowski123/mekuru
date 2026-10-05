@@ -62,6 +62,31 @@ void main() {
     });
   });
 
+  group('decodeCp932', () {
+    test('decodes the IBM extensions, two bytes each', () {
+      // 髙 (IBM, FB FC), 纊 and ⅰ (NEC-selected IBM, ED 40 and EE EF),
+      // ⅰ again (IBM, FA 40), each followed by a plain あ.
+      expect(
+        decodeCp932([
+          0xFB, 0xFC, 0x82, 0xA0, //
+          0xED, 0x40, 0x82, 0xA0,
+          0xEE, 0xEF, 0x82, 0xA0,
+          0xFA, 0x40, 0x82, 0xA0,
+        ]),
+        '髙あ纊あⅰあⅰあ',
+      );
+    });
+
+    test('reads a user-defined character as one unknown character', () {
+      expect(decodeCp932([0xF0, 0x40, 0x41]), '\u{FFFD}A');
+    });
+
+    test('a lead byte cut off at the end is unknown, not an error', () {
+      expect(decodeCp932([0x82, 0xA0, 0x88]), 'あ\u{FFFD}');
+      expect(decodeCp932([0xFA]), '\u{FFFD}');
+    });
+  });
+
   test('aozoraImageSources lists each image once, as written', () {
     final xhtml = decodeAozoraXhtml(_fixtureBytes);
     expect(aozoraImageSources(xhtml), [_gaiji, _missingGaiji]);
