@@ -258,6 +258,17 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         type: DriftSqlType.double,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -282,6 +293,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     lastSyncedAt,
     lastReadHref,
     lastReadProgression,
+    sourceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -470,6 +482,12 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    }
     return context;
   }
 
@@ -567,6 +585,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.double,
         data['${effectivePrefix}last_read_progression'],
       ),
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      ),
     );
   }
 
@@ -632,6 +654,11 @@ class Book extends DataClass implements Insertable<Book> {
   /// href+progression rather than CFI.
   final String? lastReadHref;
   final double? lastReadProgression;
+
+  /// Where a free book was downloaded from: `aozora:<work id>` or
+  /// `tadoku:<book id>`; null for every other book. Free books find their
+  /// library copy by it, never by title: hundreds of Aozora works share one.
+  final String? sourceId;
   const Book({
     required this.id,
     required this.title,
@@ -655,6 +682,7 @@ class Book extends DataClass implements Insertable<Book> {
     this.lastSyncedAt,
     this.lastReadHref,
     this.lastReadProgression,
+    this.sourceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -715,6 +743,9 @@ class Book extends DataClass implements Insertable<Book> {
     if (!nullToAbsent || lastReadProgression != null) {
       map['last_read_progression'] = Variable<double>(lastReadProgression);
     }
+    if (!nullToAbsent || sourceId != null) {
+      map['source_id'] = Variable<String>(sourceId);
+    }
     return map;
   }
 
@@ -772,6 +803,9 @@ class Book extends DataClass implements Insertable<Book> {
       lastReadProgression: lastReadProgression == null && nullToAbsent
           ? const Value.absent()
           : Value(lastReadProgression),
+      sourceId: sourceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceId),
     );
   }
 
@@ -813,6 +847,7 @@ class Book extends DataClass implements Insertable<Book> {
       lastReadProgression: serializer.fromJson<double?>(
         json['lastReadProgression'],
       ),
+      sourceId: serializer.fromJson<String?>(json['sourceId']),
     );
   }
   @override
@@ -845,6 +880,7 @@ class Book extends DataClass implements Insertable<Book> {
       'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
       'lastReadHref': serializer.toJson<String?>(lastReadHref),
       'lastReadProgression': serializer.toJson<double?>(lastReadProgression),
+      'sourceId': serializer.toJson<String?>(sourceId),
     };
   }
 
@@ -871,6 +907,7 @@ class Book extends DataClass implements Insertable<Book> {
     Value<DateTime?> lastSyncedAt = const Value.absent(),
     Value<String?> lastReadHref = const Value.absent(),
     Value<double?> lastReadProgression = const Value.absent(),
+    Value<String?> sourceId = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -910,6 +947,7 @@ class Book extends DataClass implements Insertable<Book> {
     lastReadProgression: lastReadProgression.present
         ? lastReadProgression.value
         : this.lastReadProgression,
+    sourceId: sourceId.present ? sourceId.value : this.sourceId,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -965,6 +1003,7 @@ class Book extends DataClass implements Insertable<Book> {
       lastReadProgression: data.lastReadProgression.present
           ? data.lastReadProgression.value
           : this.lastReadProgression,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
     );
   }
 
@@ -992,7 +1031,8 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('remoteIds: $remoteIds, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('lastReadHref: $lastReadHref, ')
-          ..write('lastReadProgression: $lastReadProgression')
+          ..write('lastReadProgression: $lastReadProgression, ')
+          ..write('sourceId: $sourceId')
           ..write(')'))
         .toString();
   }
@@ -1021,6 +1061,7 @@ class Book extends DataClass implements Insertable<Book> {
     lastSyncedAt,
     lastReadHref,
     lastReadProgression,
+    sourceId,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1047,7 +1088,8 @@ class Book extends DataClass implements Insertable<Book> {
           other.remoteIds == this.remoteIds &&
           other.lastSyncedAt == this.lastSyncedAt &&
           other.lastReadHref == this.lastReadHref &&
-          other.lastReadProgression == this.lastReadProgression);
+          other.lastReadProgression == this.lastReadProgression &&
+          other.sourceId == this.sourceId);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -1073,6 +1115,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<DateTime?> lastSyncedAt;
   final Value<String?> lastReadHref;
   final Value<double?> lastReadProgression;
+  final Value<String?> sourceId;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
@@ -1096,6 +1139,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.lastSyncedAt = const Value.absent(),
     this.lastReadHref = const Value.absent(),
     this.lastReadProgression = const Value.absent(),
+    this.sourceId = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -1120,6 +1164,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.lastSyncedAt = const Value.absent(),
     this.lastReadHref = const Value.absent(),
     this.lastReadProgression = const Value.absent(),
+    this.sourceId = const Value.absent(),
   }) : title = Value(title),
        filePath = Value(filePath);
   static Insertable<Book> custom({
@@ -1145,6 +1190,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<DateTime>? lastSyncedAt,
     Expression<String>? lastReadHref,
     Expression<double>? lastReadProgression,
+    Expression<String>? sourceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1175,6 +1221,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (lastReadHref != null) 'last_read_href': lastReadHref,
       if (lastReadProgression != null)
         'last_read_progression': lastReadProgression,
+      if (sourceId != null) 'source_id': sourceId,
     });
   }
 
@@ -1201,6 +1248,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<DateTime?>? lastSyncedAt,
     Value<String?>? lastReadHref,
     Value<double?>? lastReadProgression,
+    Value<String?>? sourceId,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -1227,6 +1275,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       lastReadHref: lastReadHref ?? this.lastReadHref,
       lastReadProgression: lastReadProgression ?? this.lastReadProgression,
+      sourceId: sourceId ?? this.sourceId,
     );
   }
 
@@ -1307,6 +1356,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
         lastReadProgression.value,
       );
     }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
     return map;
   }
 
@@ -1334,7 +1386,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('remoteIds: $remoteIds, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('lastReadHref: $lastReadHref, ')
-          ..write('lastReadProgression: $lastReadProgression')
+          ..write('lastReadProgression: $lastReadProgression, ')
+          ..write('sourceId: $sourceId')
           ..write(')'))
         .toString();
   }
@@ -7080,6 +7133,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<DateTime?> lastSyncedAt,
       Value<String?> lastReadHref,
       Value<double?> lastReadProgression,
+      Value<String?> sourceId,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -7105,6 +7159,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<DateTime?> lastSyncedAt,
       Value<String?> lastReadHref,
       Value<double?> lastReadProgression,
+      Value<String?> sourceId,
     });
 
 final class $$BooksTableReferences
@@ -7283,6 +7338,11 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<double> get lastReadProgression => $composableBuilder(
     column: $table.lastReadProgression,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7480,6 +7540,11 @@ class $$BooksTableOrderingComposer
     column: $table.lastReadProgression,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -7586,6 +7651,9 @@ class $$BooksTableAnnotationComposer
     column: $table.lastReadProgression,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
 
   Expression<T> bookmarksRefs<T extends Object>(
     Expression<T> Function($$BookmarksTableAnnotationComposer a) f,
@@ -7717,6 +7785,7 @@ class $$BooksTableTableManager
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<String?> lastReadHref = const Value.absent(),
                 Value<double?> lastReadProgression = const Value.absent(),
+                Value<String?> sourceId = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 title: title,
@@ -7740,6 +7809,7 @@ class $$BooksTableTableManager
                 lastSyncedAt: lastSyncedAt,
                 lastReadHref: lastReadHref,
                 lastReadProgression: lastReadProgression,
+                sourceId: sourceId,
               ),
           createCompanionCallback:
               ({
@@ -7765,6 +7835,7 @@ class $$BooksTableTableManager
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<String?> lastReadHref = const Value.absent(),
                 Value<double?> lastReadProgression = const Value.absent(),
+                Value<String?> sourceId = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 title: title,
@@ -7788,6 +7859,7 @@ class $$BooksTableTableManager
                 lastSyncedAt: lastSyncedAt,
                 lastReadHref: lastReadHref,
                 lastReadProgression: lastReadProgression,
+                sourceId: sourceId,
               ),
           withReferenceMapper: (p0) => p0
               .map(

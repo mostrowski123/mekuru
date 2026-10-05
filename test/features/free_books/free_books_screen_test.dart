@@ -96,19 +96,23 @@ class _RecordingDownloads extends FreeBookDownloadNotifier {
   Future<void> downloadTadoku(TadokuBook book) async => requested.add(book.id);
 }
 
-Book _book(String title, {String type = 'epub'}) => Book(
-  id: 7,
-  title: title,
-  filePath: '/books/7',
-  bookType: type,
-  totalPages: 0,
-  readProgress: 0,
-  dateAdded: DateTime(2026),
-);
+/// A library book; [source] is set when it was downloaded from Free books.
+Book _book(String title, {String type = 'epub', String? source, int id = 7}) =>
+    Book(
+      id: id,
+      title: title,
+      filePath: '/books/$id',
+      bookType: type,
+      totalPages: 0,
+      readProgress: 0,
+      dateAdded: DateTime(2026),
+      sourceId: source,
+    );
 
 /// Pumps the Free books screen; Aozora tests open its second tab.
 Future<_RecordingDownloads> _pump(
   WidgetTester tester, {
+  List<AozoraWork>? works,
   List<Book> books = const [],
   bool aozora = true,
 }) async {
@@ -116,7 +120,7 @@ Future<_RecordingDownloads> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        aozoraCatalogProvider.overrideWith((ref) async => _works),
+        aozoraCatalogProvider.overrideWith((ref) async => works ?? _works),
         tadokuCatalogProvider.overrideWith((ref) async => _readers),
         sessionsProvider.overrideWith((ref) => Stream.value(const [])),
         booksProvider.overrideWith((ref) => Stream.value(books)),
@@ -172,7 +176,11 @@ void main() {
   });
 
   testWidgets('a graded reader in the library offers Read', (tester) async {
-    await _pump(tester, aozora: false, books: [_book('日下川の猿猴', type: 'manga')]);
+    await _pump(
+      tester,
+      aozora: false,
+      books: [_book('日下川の猿猴', type: 'manga', source: 'tadoku:13')],
+    );
 
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
     await tester.ensureVisible(find.text('日下川の猿猴'));
@@ -250,7 +258,7 @@ void main() {
   testWidgets('a book already in the library offers Read instead', (
     tester,
   ) async {
-    await _pump(tester, books: [_book('手袋を買いに')]);
+    await _pump(tester, books: [_book('手袋を買いに', source: 'aozora:1')]);
 
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
     await tester.tap(find.text('手袋を買いに'));
@@ -258,6 +266,39 @@ void main() {
 
     expect(find.text('Read'), findsOneWidget);
     expect(find.text('Download'), findsNothing);
+  });
+
+  testWidgets('only the downloaded work counts, not one with its title', (
+    tester,
+  ) async {
+    // Two works share a title. The library holds the second one, plus a
+    // book of the same title the user imported, which is neither.
+    await _pump(
+      tester,
+      works: [
+        _work(1, '夢', author: '夏目 漱石', level: 4),
+        _work(2, '夢', author: '芥川 竜之介', level: 4),
+      ],
+      books: [
+        _book('夢', source: 'aozora:2'),
+        _book('夢', id: 8),
+      ],
+    );
+
+    Finder checkOn(String author) => find.descendant(
+      of: find.ancestor(
+        of: find.textContaining(author),
+        matching: find.byType(ListTile),
+      ),
+      matching: find.byIcon(Icons.check_circle),
+    );
+    expect(checkOn('芥川'), findsOneWidget);
+    expect(checkOn('夏目'), findsNothing);
+
+    await tester.tap(find.textContaining('夏目'));
+    await tester.pumpAndSettle();
+    expect(find.text('Download'), findsOneWidget);
+    expect(find.text('Read'), findsNothing);
   });
 
   testWidgets('the level sheet changes the filter live', (tester) async {

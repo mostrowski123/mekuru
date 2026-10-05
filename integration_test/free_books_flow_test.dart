@@ -152,6 +152,7 @@ void main() {
     expect(requested, ['/cards/$_xhtmlPath', '/gaiji/1-84/1-84-77.png']);
     final book = (await db.select(db.books).get()).single;
     expect(book.title, _title);
+    expect(book.sourceId, 'aozora:1');
     expect(book.bookType, 'epub');
     expect(book.primaryWritingMode, 'vertical-rl');
     expect(book.hasVerticalCss, isTrue);
@@ -207,6 +208,7 @@ void main() {
     expect(requested, contains('/tadoku/reader.pdf'));
     final book = (await db.select(db.books).get()).single;
     expect(book.title, 'がっこう', reason: "the catalog's title, not the file's");
+    expect(book.sourceId, 'tadoku:9');
     expect(book.bookType, 'manga');
     final manga = await MangaCacheStore.read(
       p.join(book.filePath, mangaPagesCacheFileName),

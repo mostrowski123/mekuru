@@ -108,9 +108,7 @@ class _ReaderTile extends ConsumerWidget {
       freeBookDownloadProvider.select((map) => map.containsKey(key)),
     );
     final inLibrary = ref.watch(
-      libraryBooksByKeyProvider.select(
-        (byKey) => libraryCopy(byKey, book.title, 'manga') != null,
-      ),
+      freeBooksInLibraryProvider.select((books) => books.containsKey(key)),
     );
     return InkWell(
       borderRadius: BorderRadius.circular(8),
@@ -246,8 +244,8 @@ class _ReaderSheet extends ConsumerWidget {
       freeBookDownloadProvider.select((map) => map[tadokuDownloadKey(book)]),
     );
     final copy = ref.watch(
-      libraryBooksByKeyProvider.select(
-        (byKey) => libraryCopy(byKey, book.title, 'manga'),
+      freeBooksInLibraryProvider.select(
+        (books) => books[tadokuDownloadKey(book)],
       ),
     );
     final muted = theme.textTheme.bodySmall?.copyWith(

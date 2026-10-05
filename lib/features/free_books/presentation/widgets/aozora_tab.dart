@@ -296,8 +296,8 @@ class _WorkTile extends ConsumerWidget {
       ),
     );
     final inLibrary = ref.watch(
-      libraryBooksByKeyProvider.select(
-        (byKey) => libraryCopy(byKey, work.displayTitle, 'epub') != null,
+      freeBooksInLibraryProvider.select(
+        (books) => books.containsKey(aozoraDownloadKey(work)),
       ),
     );
     final muted = theme.textTheme.bodySmall?.copyWith(
@@ -373,8 +373,8 @@ class _WorkSheet extends ConsumerWidget {
       freeBookDownloadProvider.select((map) => map[aozoraDownloadKey(work)]),
     );
     final copy = ref.watch(
-      libraryBooksByKeyProvider.select(
-        (byKey) => libraryCopy(byKey, work.displayTitle, 'epub'),
+      freeBooksInLibraryProvider.select(
+        (books) => books[aozoraDownloadKey(work)],
       ),
     );
     final muted = theme.textTheme.bodySmall?.copyWith(

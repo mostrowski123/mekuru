@@ -58,4 +58,9 @@ class Books extends Table {
   /// href+progression rather than CFI.
   TextColumn get lastReadHref => text().nullable()();
   RealColumn get lastReadProgression => real().nullable()();
+
+  /// Where a free book was downloaded from: `aozora:<work id>` or
+  /// `tadoku:<book id>`; null for every other book. Free books find their
+  /// library copy by it, never by title: hundreds of Aozora works share one.
+  TextColumn get sourceId => text().nullable()();
 }

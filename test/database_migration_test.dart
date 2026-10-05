@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
@@ -562,6 +563,37 @@ void main() {
       expect(await repo.getMedia(meta.id, 'img/a.png'), [7]);
     },
   );
+
+  test('adds books.source_id at schema 25', () async {
+    final tempDir = await Directory.systemTemp.createTemp('mekuru_source_');
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final dbFile = File('${tempDir.path}/mekuru.sqlite');
+    final seedDb = AppDatabase(NativeDatabase(dbFile));
+    final bookId = await seedDb
+        .into(seedDb.books)
+        .insert(BooksCompanion.insert(title: '夢', filePath: '/books/1'));
+    await seedDb.close();
+
+    // Rewind to v24: no source_id column.
+    final legacyDb = sqlite.sqlite3.open(dbFile.path);
+    legacyDb.execute('PRAGMA user_version = 24;');
+    legacyDb.execute('ALTER TABLE books DROP COLUMN source_id;');
+    legacyDb.close();
+
+    final migratedDb = AppDatabase(NativeDatabase(dbFile));
+    addTearDown(migratedDb.close);
+    final repo = BookRepository(migratedDb);
+    expect((await repo.getBookById(bookId))!.sourceId, null);
+
+    // Missing nullable columns read back as null, so write through them.
+    await repo.updateSourceId(bookId, 'aozora:1567');
+    expect((await repo.getBookById(bookId))!.sourceId, 'aozora:1567');
+  });
 
   test(
     'heals a schema 23 database that never ran the server sync DDL',

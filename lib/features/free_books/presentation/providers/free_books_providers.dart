@@ -14,7 +14,6 @@ import 'package:mekuru/core/services/background_work.dart';
 import 'package:mekuru/core/services/download_to_file.dart';
 import 'package:mekuru/core/services/http_transport.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
-import 'package:mekuru/features/backup/data/services/book_match_service.dart';
 import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
 import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/data/services/aozora_catalog.dart';
@@ -108,23 +107,15 @@ final readingPaceProvider =
           : (charsPerMinute: pace, personal: true);
     });
 
-final _bookKeys = BookMatchService();
-
-/// Library books by the app's book identity
-/// ([BookMatchService.generateKey]), for "in your library".
-final libraryBooksByKeyProvider = Provider.autoDispose<Map<String, Book>>((
+/// Free books in the library by where they were downloaded from
+/// ([Book.sourceId]: an [aozoraDownloadKey] or [tadokuDownloadKey]), for
+/// "in your library". Never by title: hundreds of Aozora works share one.
+final freeBooksInLibraryProvider = Provider.autoDispose<Map<String, Book>>((
   ref,
 ) {
   final books = ref.watch(booksProvider).value ?? const <Book>[];
-  return {
-    for (final book in books)
-      _bookKeys.generateKey(book.title, book.bookType): book,
-  };
+  return {for (final book in books) ?book.sourceId: book};
 });
-
-/// The library's copy of the [bookType] book titled [title], if any.
-Book? libraryCopy(Map<String, Book> byKey, String title, String bookType) =>
-    byKey[_bookKeys.generateKey(title, bookType)];
 
 /// The Aozora tab's list: the catalog through the current query. Pace and
 /// library are watched only when the query uses them, so library writes
@@ -135,8 +126,8 @@ final aozoraResultsProvider =
       final pace = query.lengths.isEmpty
           ? defaultReadingPaceCharsPerMinute
           : ref.watch(readingPaceProvider).charsPerMinute;
-      final byKey = query.hideInLibrary
-          ? ref.watch(libraryBooksByKeyProvider)
+      final inLibrary = query.hideInLibrary
+          ? ref.watch(freeBooksInLibraryProvider)
           : const <String, Book>{};
       return ref
           .watch(aozoraCatalogProvider)
@@ -146,7 +137,7 @@ final aozoraResultsProvider =
               query,
               charsPerMinute: pace,
               isInLibrary: (work) =>
-                  libraryCopy(byKey, work.displayTitle, 'epub') != null,
+                  inLibrary.containsKey(aozoraDownloadKey(work)),
             ),
           );
     });
@@ -155,8 +146,8 @@ final aozoraResultsProvider =
 final tadokuResultsProvider =
     Provider.autoDispose<AsyncValue<List<TadokuBook>>>((ref) {
       final query = ref.watch(tadokuQueryProvider);
-      final byKey = query.hideInLibrary
-          ? ref.watch(libraryBooksByKeyProvider)
+      final inLibrary = query.hideInLibrary
+          ? ref.watch(freeBooksInLibraryProvider)
           : const <String, Book>{};
       return ref
           .watch(tadokuCatalogProvider)
@@ -165,7 +156,7 @@ final tadokuResultsProvider =
               books,
               query,
               isInLibrary: (book) =>
-                  libraryCopy(byKey, book.title, 'manga') != null,
+                  inLibrary.containsKey(tadokuDownloadKey(book)),
             ),
           );
     });
@@ -256,6 +247,7 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
       final book = await ref
           .read(bookImportProvider.notifier)
           .importOne(temp.path, format: format, title: title);
+      await ref.read(bookRepositoryProvider).updateSourceId(book.id, key);
       // The iOS Live Activity ends at 100%, as dictionary downloads do.
       BackgroundWork.instance.progress(workId, 1.0);
       if (!ref.mounted) return;

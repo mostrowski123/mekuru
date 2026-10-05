@@ -813,6 +813,12 @@ class BookRepository {
         BooksCompanion(overrideReadingDirection: Value(direction)),
       );
 
+  /// Records where a downloaded free book came from ([Books.sourceId]).
+  Future<void> updateSourceId(int bookId, String sourceId) =>
+      (_db.update(_db.books)..where((t) => t.id.equals(bookId))).write(
+        BooksCompanion(sourceId: Value(sourceId)),
+      );
+
   /// Save per-book display overrides (verticalText, readingDirection,
   /// and furiganaMode).
   ///

@@ -52,7 +52,7 @@ Run codegen after editing any `@riverpod`, `@DriftDatabase`, or `environment_con
 
 ## Database — Drift, append-only migrations
 
-Schema version lives in `lib/core/database/database_provider.dart` (`schemaVersion`, currently 24) with the tables defined inline. Migrations live in the `MigrationStrategy.onUpgrade` block as cumulative `if (from < N) { … }` conditions; additionally, a `beforeOpen` repair pass (`_repairMissingColumns`) re-adds a few columns (the v18/v20/v23/v24 ones, and `server_connections` columns added since) for installs that predate them; the v23 server-sync table and columns and the v24 `dictionary_media` table and `dictionary_metas.revision` column are repair-only.
+Schema version lives in `lib/core/database/database_provider.dart` (`schemaVersion`, currently 25) with the tables defined inline. Migrations live in the `MigrationStrategy.onUpgrade` block as cumulative `if (from < N) { … }` conditions; additionally, a `beforeOpen` repair pass (`_repairMissingColumns`) re-adds a few columns (the v18/v20/v23/v24/v25 ones, and `server_connections` columns added since) for installs that predate them; the v23 server-sync table and columns, the v24 `dictionary_media` table and `dictionary_metas.revision` column, and the v25 `books.source_id` column are repair-only.
 
 **YOU MUST** make schema changes append-only: add columns/tables, never drop or rename them on an existing version. Bump `schemaVersion` and add a new `if (from < N)` block. Reckless edits break installed users' data — there is no rollback.
 
