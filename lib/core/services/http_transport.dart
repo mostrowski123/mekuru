@@ -6,6 +6,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -35,11 +36,8 @@ Future<http.Response> sendWithTimeout(
 }) async {
   try {
     final streamed = await client.send(request).timeout(timeout);
-    final body = await http.ByteStream(
-      streamed.stream.timeout(timeout),
-    ).toBytes();
     return http.Response.bytes(
-      body,
+      await _readBody(streamed.stream, timeout),
       streamed.statusCode,
       request: streamed.request,
       headers: streamed.headers,
@@ -58,6 +56,42 @@ Future<http.Response> sendWithTimeout(
     // typed with `<` `>`) before opening a socket.
     throw NetworkException(e.message);
   }
+}
+
+/// All of [body], failing with a [TimeoutException] when no chunk arrives
+/// for [idle]. By hand, not with Stream.timeout: under flutter_test's fake
+/// clock that holds a response back until the real event loop runs, which
+/// widget tests that only pump never let happen.
+Future<Uint8List> _readBody(Stream<List<int>> body, Duration idle) {
+  final completer = Completer<Uint8List>();
+  final bytes = BytesBuilder(copy: false);
+  Timer? timer;
+  late final StreamSubscription<List<int>> subscription;
+  void waitForMore() {
+    timer?.cancel();
+    timer = Timer(idle, () {
+      subscription.cancel();
+      completer.completeError(TimeoutException('No data', idle));
+    });
+  }
+
+  subscription = body.listen(
+    (chunk) {
+      bytes.add(chunk);
+      waitForMore();
+    },
+    onError: (Object error, StackTrace stack) {
+      timer?.cancel();
+      completer.completeError(error, stack);
+    },
+    onDone: () {
+      timer?.cancel();
+      completer.complete(bytes.takeBytes());
+    },
+    cancelOnError: true,
+  );
+  waitForMore();
+  return completer.future;
 }
 
 /// JSON is UTF-8 by spec; decoding [http.Response.bodyBytes] directly
