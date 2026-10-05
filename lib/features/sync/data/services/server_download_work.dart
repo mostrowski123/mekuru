@@ -296,17 +296,23 @@ class ServerDownloadHttpException implements Exception {
 /// chapter's zip each day) sends it whole; that, or a server that ignores
 /// the range (200) or answers a different one, starts the file over.
 /// [onProgress] gets the bytes on disk and the total (-1 when unknown).
+/// Nothing arriving for [stallTimeout] (tests shorten it) while connecting,
+/// waiting for the answer or mid-body throws a [TimeoutException], so a
+/// stalled connection is retried, from the partial file, instead of hanging
+/// the download for good.
 Future<void> downloadResumable(
   String url,
   String partPath, {
   required HttpClient client,
   Map<String, String>? headers,
   void Function(int received, int total)? onProgress,
+  Duration stallTimeout = const Duration(seconds: 30),
 }) async {
   final part = File(partPath);
   final validatorFile = File('$partPath.validator');
   var existing = await _lengthOrZero(partPath);
   final uri = Uri.parse(url);
+  client.connectionTimeout ??= stallTimeout;
   final request = await client.getUrl(uri);
   headers?.forEach(request.headers.set);
   if (existing > 0) {
@@ -315,7 +321,7 @@ Future<void> downloadResumable(
       request.headers.set('if-range', await validatorFile.readAsString());
     }
   }
-  final response = await request.close();
+  final response = await request.close().timeout(stallTimeout);
 
   final int total;
   final FileMode mode;
@@ -357,6 +363,7 @@ Future<void> downloadResumable(
         client: client,
         headers: headers,
         onProgress: onProgress,
+        stallTimeout: stallTimeout,
       );
     }
     throw ServerDownloadHttpException(response.statusCode);
@@ -366,7 +373,7 @@ Future<void> downloadResumable(
   var received = existing;
   try {
     // Awaiting each write applies backpressure to the socket.
-    await for (final chunk in response) {
+    await for (final chunk in response.timeout(stallTimeout)) {
       await raf.writeFrom(chunk);
       received += chunk.length;
       onProgress?.call(received, total);

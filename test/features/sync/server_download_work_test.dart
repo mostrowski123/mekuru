@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -58,6 +59,12 @@ void main() {
       case '/file' || '/norange' || '/badrange':
         response.contentLength = payload.length;
         response.add(payload);
+      case '/stalls':
+        // Headers and half the body, then nothing more.
+        response.contentLength = payload.length;
+        response.add(payload.sublist(0, payload.length ~/ 2));
+        await response.flush();
+        return;
       case '/busy':
         response.statusCode = HttpStatus.serviceUnavailable;
       default:
@@ -98,6 +105,23 @@ void main() {
       expect(File(partPath()).readAsBytesSync(), payload);
       expect(lastTotal, payload.length);
       expect(rangesSeen, [null]);
+    });
+
+    test('gives up on a stalled body, keeping what arrived', () async {
+      final client = HttpClient();
+      addTearDown(() => client.close(force: true));
+
+      await expectLater(
+        downloadResumable(
+          url('/stalls'),
+          partPath(),
+          client: client,
+          stallTimeout: const Duration(milliseconds: 200),
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+      // The next attempt resumes from here.
+      expect(File(partPath()).lengthSync(), payload.length ~/ 2);
     });
 
     test('continues a partial file with a Range request', () async {
