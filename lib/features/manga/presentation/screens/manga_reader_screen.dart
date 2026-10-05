@@ -454,7 +454,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     }
     _pageController.animateToPage(
       clamped,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 150),
       curve: Curves.easeInOut,
     );
   }
