@@ -154,6 +154,14 @@ void main() {
       expect(search('ハシレ'), [1567]);
     });
 
+    test('never matches across two fields', () {
+      // The end of the title's reading, then the start of the author.
+      expect(search('メロス太宰'), isEmpty);
+      // Title and subtitle stay one field, as the library shows them.
+      expect(search('源氏物語 桐壺'), [5016]);
+      expect(search('源氏物語桐壺'), [5016]);
+    });
+
     test('an empty query matches everything', () {
       expect(search(''), hasLength(4));
     });

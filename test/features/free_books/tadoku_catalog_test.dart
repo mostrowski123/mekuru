@@ -52,6 +52,11 @@ void main() {
     expect(ids(const TadokuQuery(text: 'kusaka')), [2]);
   });
 
+  test('never matches across the title and its reading', () {
+    // The end of the title, then the start of its reading.
+    expect(ids(const TadokuQuery(text: '星空みちこ')), isEmpty);
+  });
+
   test('hides books already in the library', () {
     expect(ids(const TadokuQuery(hideInLibrary: true), inLibrary: {1}), [2, 3]);
     expect(ids(const TadokuQuery(), inLibrary: {1}), [1, 2, 3]);

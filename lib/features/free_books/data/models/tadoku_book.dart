@@ -18,7 +18,7 @@ class TadokuBook {
     required this.charCount,
     required this.hasAudio,
     required this.hasText,
-  }) : searchText = searchKey('$title$titleReading');
+  }) : searchText = searchFields([title, titleReading]);
 
   /// One entry of `assets/free_books/tadoku.json`, written by
   /// tools/build_tadoku_catalog.py.

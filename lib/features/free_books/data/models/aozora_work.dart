@@ -62,9 +62,13 @@ class AozoraWork {
     required this.charCount,
     required this.jlptEstimate,
     required this.popularity,
-  }) : searchText = searchKey(
-         '$title ${subtitle ?? ''} $titleReading $author $authorReading',
-       ),
+  }) : searchText = searchFields([
+         // Title and subtitle as one field: the library shows them together.
+         '$title${subtitle ?? ''}',
+         titleReading,
+         author,
+         authorReading,
+       ]),
        titleSortKey = searchKey(titleReading),
        authorSortKey = searchKey(authorReading);
 
