@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import android.provider.OpenableColumns
+import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -25,6 +26,7 @@ class MainActivity : FlutterActivity() {
         private const val SAF_CHANNEL_NAME = "mekuru/android_saf"
         private const val ANKI_CHANNEL_NAME = "mekuru/ankidroid_native"
         private const val SYSTEM_UI_CHANNEL_NAME = "mekuru/android_system_ui"
+        private const val TEST_LAB_CHANNEL_NAME = "mekuru/test_lab"
         private const val REQUEST_OPEN_DOCUMENT_TREE = 7312
         private const val REQUEST_OPEN_DOCUMENT = 7313
 
@@ -105,6 +107,13 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Exception) {
                     result.error("system_ui_error", e.message, null)
                 }
+            }
+
+        // Firebase Test Lab (which runs Play's pre-launch report) sets this on
+        // every device, including the ones that pass as retail phones.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TEST_LAB_CHANNEL_NAME)
+            .setMethodCallHandler { _, result ->
+                result.success(Settings.System.getString(contentResolver, "firebase.test.lab") == "true")
             }
     }
 

@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -70,13 +71,22 @@ Future<bool> _detectSyntheticClient() async {
     }
     if (!Platform.isAndroid) return false;
     final info = await DeviceInfoPlugin().androidInfo;
-    return isSyntheticAndroidClient(
+    if (isSyntheticAndroidClient(
       isPhysicalDevice: info.isPhysicalDevice,
       fingerprint: info.fingerprint,
       hardware: info.hardware,
       product: info.product,
       model: info.model,
-    );
+    )) {
+      return true;
+    }
+    // Play's pre-launch report devices pass as retail phones (a
+    // "OnePlus8Pro"); only Test Lab's own flag gives them away. Background
+    // isolates have no MainActivity channel: that throws, and fails open.
+    return await const MethodChannel(
+          'mekuru/test_lab',
+        ).invokeMethod<bool>('isFirebaseTestLab') ??
+        false;
   } catch (_) {
     return false;
   }
@@ -85,17 +95,14 @@ Future<bool> _detectSyntheticClient() async {
 /// Options every isolate's hub must agree on — above all the PII scrub
 /// hooks, which are the privacy guarantee this app documents.
 void applySharedSentryOptions(SentryOptions options, SentryAudience audience) {
-  options.dsn = EnvironmentConfig.sentryDsn;
+  // An empty DSN disables the Dart and the native SDK alike. Sample rates
+  // can't silence synthetic clients: `sampleRate` never reaches the Android
+  // SDK, which went on reporting their NDK crashes (MEKURU-26).
+  options.dsn = audience.isSynthetic ? '' : EnvironmentConfig.sentryDsn;
   options.environment = audience.environment;
-  // Silencing synthetic clients through the sample rates and signal
-  // switches drops their payloads before Sentry assembles contexts,
-  // breadcrumbs, and stack traces, and cannot miss a signal type the way
-  // enumerating each `beforeSendX` hook would.
-  final report = !audience.isSynthetic;
-  options.enableLogs = report;
-  options.enableMetrics = report;
-  options.sampleRate = report ? 1.0 : 0.0;
-  options.tracesSampleRate = report ? 0.1 : 0.0;
+  options.enableLogs = true;
+  options.enableMetrics = true;
+  options.tracesSampleRate = 0.1;
   // Strip device file paths (which can embed book file names) from
   // everything that leaves the device.
   options.beforeSend = scrubEvent;
