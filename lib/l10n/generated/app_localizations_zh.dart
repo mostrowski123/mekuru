@@ -193,17 +193,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';
 
   @override
-  String get libraryImportPdf => 'Import PDF';
+  String get libraryImportPdf => '导入 PDF';
 
   @override
-  String get libraryImportPdfSubtitle => 'Import a PDF file';
+  String get libraryImportPdfSubtitle => '导入 PDF 文件';
 
   @override
-  String get pdfScannedTitle => 'This PDF looks like a scan';
+  String get pdfScannedTitle => '这个 PDF 看起来是扫描件';
 
   @override
   String pdfScannedBody({required String title}) {
-    return 'Mekuru can\'t find text to read in \"$title\": its pages are pictures, as in a scan, so its words can\'t be tapped yet. You can still read it page by page.\n\nPDFs made from text, like most ebooks, work right away. For scans, OCR (a Pro feature) can recognize the text and make words tappable.';
+    return 'Mekuru 在“$title”中找不到可读取的文字：它的页面是图片，就像扫描件一样，所以暂时无法点击其中的词语。你仍然可以逐页阅读。\n\n用文字制作的 PDF（例如大多数电子书）可以直接使用。对于扫描件，OCR（Pro 功能）可以识别其中的文字，让词语可以点击。';
   }
 
   @override
@@ -3455,59 +3455,58 @@ class AppLocalizationsZh extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String classicsString = classicsNumberFormat.format(classics);
 
-    return '$classicsString+ classics and $readers graded readers';
+    return '$classicsString+ 部经典名著和 $readers 本分级读物';
   }
 
   @override
   String youStatsSubtitle({required String duration}) {
-    return '$duration this week';
+    return '本周 $duration';
   }
 
   @override
-  String get youSettingsSubtitle => 'Reader, dictionaries, backup and more';
+  String get youSettingsSubtitle => '阅读器、词典、备份等';
 
   @override
-  String get statsScreenTitle => 'Reading stats';
+  String get statsScreenTitle => '阅读统计';
 
   @override
-  String get libraryFreeBooksTipInApp =>
-      'Tip: Get free Japanese books, from graded readers to classics, right here in the app.';
+  String get libraryFreeBooksTipInApp => '提示：在应用内即可获取免费日文书籍，从分级读物到经典名著应有尽有。';
 
   @override
-  String get freeBooksTitle => 'Free books';
+  String get freeBooksTitle => '免费书籍';
 
   @override
-  String get freeBooksSearchHint => 'Search titles or authors';
+  String get freeBooksSearchHint => '搜索书名或作者';
 
   @override
-  String get freeBooksNoResults => 'No books match. Try clearing some filters.';
+  String get freeBooksNoResults => '没有符合条件的书。试试清除一些筛选条件。';
 
   @override
-  String get freeBooksCatalogFailed => 'Couldn\'t load the book list.';
+  String get freeBooksCatalogFailed => '无法加载书单。';
 
   @override
-  String get freeBooksSortPopular => 'Most popular';
+  String get freeBooksSortPopular => '最受欢迎';
 
   @override
-  String get freeBooksSortEasiest => 'Easiest first';
+  String get freeBooksSortEasiest => '最简单的在前';
 
   @override
-  String get freeBooksSortHardest => 'Hardest first';
+  String get freeBooksSortHardest => '最难的在前';
 
   @override
-  String get freeBooksSortShortest => 'Shortest first';
+  String get freeBooksSortShortest => '最短的在前';
 
   @override
-  String get freeBooksSortLongest => 'Longest first';
+  String get freeBooksSortLongest => '最长的在前';
 
   @override
-  String get freeBooksSortByTitle => 'Title (kana order)';
+  String get freeBooksSortByTitle => '书名（假名顺序）';
 
   @override
-  String get freeBooksSortByAuthor => 'Author (kana order)';
+  String get freeBooksSortByAuthor => '作者（假名顺序）';
 
   @override
-  String get freeBooksLevel => 'Level';
+  String get freeBooksLevel => '等级';
 
   @override
   String freeBooksLevelEstimate({required int level}) {
@@ -3515,40 +3514,37 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get freeBooksLevelBeyondN1 => 'Beyond N1';
+  String get freeBooksLevelBeyondN1 => '高于 N1';
 
   @override
-  String get freeBooksLevelEstimateNote =>
-      'Levels are estimates based on each book\'s kanji and sentence length, not official JLPT ratings.';
+  String get freeBooksLevelEstimateNote => '等级是根据每本书的汉字和句子长度估算的，并非 JLPT 官方评级。';
 
   @override
-  String get freeBooksEstimatedLevel => 'Estimated level';
+  String get freeBooksEstimatedLevel => '估计等级';
 
   @override
-  String get freeBooksLength => 'Length';
+  String get freeBooksLength => '篇幅';
 
   @override
-  String get freeBooksLengthNotePersonal =>
-      'Reading times use your own reading speed from your stats.';
+  String get freeBooksLengthNotePersonal => '阅读时间按你在阅读统计中的阅读速度计算。';
 
   @override
-  String get freeBooksLengthNoteDefault =>
-      'Reading times use a typical learner\'s speed until your stats know yours.';
+  String get freeBooksLengthNoteDefault => '在阅读统计得出你的速度之前，阅读时间按一般学习者的速度计算。';
 
   @override
-  String get freeBooksLengthUnder10Minutes => 'Under 10 min';
+  String get freeBooksLengthUnder10Minutes => '10 分钟以内';
 
   @override
-  String get freeBooksLengthUnder30Minutes => '10–30 min';
+  String get freeBooksLengthUnder30Minutes => '10–30 分钟';
 
   @override
-  String get freeBooksLengthUnder1Hour => '30–60 min';
+  String get freeBooksLengthUnder1Hour => '30–60 分钟';
 
   @override
-  String get freeBooksLengthUnder3Hours => '1–3 hours';
+  String get freeBooksLengthUnder3Hours => '1–3 小时';
 
   @override
-  String get freeBooksLengthLonger => 'Over 3 hours';
+  String get freeBooksLengthLonger => '3 小时以上';
 
   @override
   String freeBooksLengthAtYourPace({
@@ -3559,7 +3555,7 @@ class AppLocalizationsZh extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String charactersString = charactersNumberFormat.format(characters);
 
-    return 'About $time at your pace · $charactersString characters';
+    return '按你的速度约 $time · $charactersString 字';
   }
 
   @override
@@ -3571,63 +3567,62 @@ class AppLocalizationsZh extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String charactersString = charactersNumberFormat.format(characters);
 
-    return 'About $time at a typical learner\'s pace · $charactersString characters';
+    return '按一般学习者的速度约 $time · $charactersString 字';
   }
 
   @override
-  String get freeBooksGenre => 'Genre';
+  String get freeBooksGenre => '类型';
 
   @override
-  String get freeBooksGenreFiction => 'Fiction';
+  String get freeBooksGenreFiction => '小说';
 
   @override
-  String get freeBooksGenreChildren => 'Children\'s stories';
+  String get freeBooksGenreChildren => '儿童故事';
 
   @override
-  String get freeBooksGenrePoetry => 'Poetry';
+  String get freeBooksGenrePoetry => '诗歌';
 
   @override
-  String get freeBooksGenrePlays => 'Plays';
+  String get freeBooksGenrePlays => '戏剧';
 
   @override
-  String get freeBooksGenreEssays => 'Essays';
+  String get freeBooksGenreEssays => '随笔';
 
   @override
-  String get freeBooksGenreDiaries => 'Diaries and travel';
+  String get freeBooksGenreDiaries => '日记与游记';
 
   @override
-  String get freeBooksGenreHistory => 'History and biography';
+  String get freeBooksGenreHistory => '历史与传记';
 
   @override
-  String get freeBooksGenrePhilosophy => 'Philosophy and religion';
+  String get freeBooksGenrePhilosophy => '哲学与宗教';
 
   @override
-  String get freeBooksGenreNonfiction => 'Other nonfiction';
+  String get freeBooksGenreNonfiction => '其他非虚构';
 
   @override
-  String get freeBooksGenreOther => 'Other';
+  String get freeBooksGenreOther => '其他';
 
   @override
-  String get freeBooksSpelling => 'Spelling';
+  String get freeBooksSpelling => '用字';
 
   @override
-  String get freeBooksSpellingNote =>
-      'Pre-war spelling uses old kana or old kanji forms, which is much harder for learners.';
+  String get freeBooksSpellingNote => '战前用字使用旧假名或旧字体汉字，对学习者来说难得多。';
 
   @override
-  String get freeBooksSpellingModern => 'Modern';
+  String get freeBooksSpellingModern => '现代';
 
   @override
-  String get freeBooksSpellingOldKana => 'Pre-war kana';
+  String get freeBooksSpellingOldKana => '战前假名';
 
   @override
-  String get freeBooksSpellingOldKanji => 'Pre-war kanji and kana';
+  String get freeBooksSpellingOldKanji => '战前汉字与假名';
 
   @override
-  String get freeBooksSpellingOther => 'Other';
+  String get freeBooksSpellingOther => '其他';
 
   @override
-  String get freeBooksHideInLibrary => 'Hide books in my library';
+  String get freeBooksHideInLibrary => '隐藏书库中已有的书';
 
   @override
   String freeBooksResultCount({required int count}) {
@@ -3638,69 +3633,67 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$countString books',
-      one: '$countString book',
+      other: '$countString 本书',
+      one: '$countString 本书',
     );
     return '$_temp0';
   }
 
   @override
-  String get freeBooksClearFilters => 'Clear filters';
+  String get freeBooksClearFilters => '清除筛选';
 
   @override
-  String get freeBooksEasyPicks => 'Easy picks';
+  String get freeBooksEasyPicks => '简单精选';
 
   @override
-  String get freeBooksInLibrary => 'In your library';
+  String get freeBooksInLibrary => '已在书库中';
 
   @override
-  String get freeBooksViewOnAozora => 'View on Aozora Bunko';
+  String get freeBooksViewOnAozora => '在青空文库查看';
 
   @override
-  String get freeBooksDownloading => 'Downloading…';
+  String get freeBooksDownloading => '正在下载…';
 
   @override
-  String get freeBooksRead => 'Read';
+  String get freeBooksRead => '阅读';
 
   @override
-  String get freeBooksDownloadFailed =>
-      'Couldn\'t download the book. The site may be busy or your connection dropped; try again.';
+  String get freeBooksDownloadFailed => '无法下载这本书。网站可能繁忙，或连接已中断；请重试。';
 
   @override
-  String get freeBooksImportFailed =>
-      'Mekuru couldn\'t add this book to your library.';
+  String get freeBooksImportFailed => 'Mekuru 无法将这本书添加到书库。';
 
   @override
   String get freeBooksAozoraAttribution =>
-      'From Aozora Bunko, a free library of Japanese books typed in by volunteers. Each book keeps their credits on its last page.';
+      '来自青空文库，一个由志愿者录入日文书籍的免费图书馆。每本书的最后一页都保留了他们的署名。';
 
   @override
-  String get freeBooksTabGradedReaders => 'Graded readers';
+  String get freeBooksTabGradedReaders => '分级读物';
 
   @override
-  String get freeBooksTabAozora => 'Aozora Bunko';
+  String get freeBooksTabAozora => '青空文库';
 
   @override
-  String get freeBooksTadokuSearchHint => 'Search graded readers';
+  String get freeBooksTadokuSearchHint => '搜索分级读物';
 
   @override
-  String get freeBooksTadokuLevelStart => 'Start';
+  String get freeBooksTadokuLevelStart => '起步';
 
   @override
-  String get freeBooksTadokuPagesOnly => 'Pages only';
+  String get freeBooksTadokuPagesOnly => '仅页面';
 
   @override
   String get freeBooksTadokuPagesOnlyNote =>
-      'This book\'s PDF is pictures of pages, so its words can\'t be tapped. OCR (a Pro feature) can make them tappable.';
+      '这本书的 PDF 是页面图片，所以无法点击其中的词语。使用 OCR（Pro 功能）后即可点击。';
 
   @override
-  String get freeBooksTadokuAudio => 'Its audio can be played on tadoku.org.';
+  String get freeBooksTadokuAudio => '可在 tadoku.org 播放它的音频。';
 
   @override
-  String get freeBooksViewOnTadoku => 'View on tadoku.org';
+  String get freeBooksViewOnTadoku => '在 tadoku.org 查看';
 
   @override
-  String get freeBooksTadokuLicense => 'License: CC BY-NC-ND 4.0';
+  String get freeBooksTadokuLicense => '许可：CC BY-NC-ND 4.0';
 
   @override
   String freeBooksTadokuLevel({required int level}) {
@@ -3718,20 +3711,20 @@ class AppLocalizationsZh extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String charactersString = charactersNumberFormat.format(characters);
 
-    return '$charactersString characters';
+    return '$charactersString 字';
   }
 
   @override
   String freeBooksTadokuAttribution({required String publisher}) {
-    return 'Graded reader by NPO Tadoku Supporters ($publisher), free under CC BY-NC-ND 4.0. Mekuru downloads it from tadoku.org, unchanged.';
+    return '分级读物由 NPO Tadoku Supporters（$publisher）出版，依据 CC BY-NC-ND 4.0 免费提供。Mekuru 从 tadoku.org 原样下载。';
   }
 
   @override
-  String get attributionFreeBooksTitle => 'Free books';
+  String get attributionFreeBooksTitle => '免费书籍';
 
   @override
   String get attributionFreeBooksDescription =>
-      'The classics come from Aozora Bunko, whose catalog is shared under CC BY 4.0. Their reading levels and lengths are estimated with the aozorabunko-clean dataset (CC BY 4.0). The graded readers are by NPO Tadoku Supporters, shared under CC BY-NC-ND 4.0 and downloaded unchanged from tadoku.org.';
+      '经典名著来自青空文库，其目录依据 CC BY 4.0 共享。它们的阅读等级和篇幅使用 aozorabunko-clean 数据集（CC BY 4.0）估算。分级读物由 NPO Tadoku Supporters 出版，依据 CC BY-NC-ND 4.0 共享，并从 tadoku.org 原样下载。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3921,6 +3914,20 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get libraryImportMangaSubtitle => '选择CBZ压缩包或Mokuro文件夹';
+
+  @override
+  String get libraryImportPdf => '导入 PDF';
+
+  @override
+  String get libraryImportPdfSubtitle => '导入 PDF 文件';
+
+  @override
+  String get pdfScannedTitle => '这个 PDF 看起来是扫描件';
+
+  @override
+  String pdfScannedBody({required String title}) {
+    return 'Mekuru 在“$title”中找不到可读取的文字：它的页面是图片，就像扫描件一样，所以暂时无法点击其中的词语。你仍然可以逐页阅读。\n\n用文字制作的 PDF（例如大多数电子书）可以直接使用。对于扫描件，OCR（Pro 功能）可以识别其中的文字，让词语可以点击。';
+  }
 
   @override
   String libraryImportFromServer({required String serverName}) {
@@ -7164,4 +7171,281 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get catalogReplaceJmdict => 'Replace JMdict';
+
+  @override
+  String youFreeBooksSubtitle({required int classics, required int readers}) {
+    final intl.NumberFormat classicsNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String classicsString = classicsNumberFormat.format(classics);
+
+    return '$classicsString+ 部经典名著和 $readers 本分级读物';
+  }
+
+  @override
+  String youStatsSubtitle({required String duration}) {
+    return '本周 $duration';
+  }
+
+  @override
+  String get youSettingsSubtitle => '阅读器、词典、备份等';
+
+  @override
+  String get statsScreenTitle => '阅读统计';
+
+  @override
+  String get libraryFreeBooksTipInApp => '提示：在应用内即可获取免费日文书籍，从分级读物到经典名著应有尽有。';
+
+  @override
+  String get freeBooksTitle => '免费书籍';
+
+  @override
+  String get freeBooksSearchHint => '搜索书名或作者';
+
+  @override
+  String get freeBooksNoResults => '没有符合条件的书。试试清除一些筛选条件。';
+
+  @override
+  String get freeBooksCatalogFailed => '无法加载书单。';
+
+  @override
+  String get freeBooksSortPopular => '最受欢迎';
+
+  @override
+  String get freeBooksSortEasiest => '最简单的在前';
+
+  @override
+  String get freeBooksSortHardest => '最难的在前';
+
+  @override
+  String get freeBooksSortShortest => '最短的在前';
+
+  @override
+  String get freeBooksSortLongest => '最长的在前';
+
+  @override
+  String get freeBooksSortByTitle => '书名（假名顺序）';
+
+  @override
+  String get freeBooksSortByAuthor => '作者（假名顺序）';
+
+  @override
+  String get freeBooksLevel => '等级';
+
+  @override
+  String freeBooksLevelEstimate({required int level}) {
+    return '~N$level';
+  }
+
+  @override
+  String get freeBooksLevelBeyondN1 => '高于 N1';
+
+  @override
+  String get freeBooksLevelEstimateNote => '等级是根据每本书的汉字和句子长度估算的，并非 JLPT 官方评级。';
+
+  @override
+  String get freeBooksEstimatedLevel => '估计等级';
+
+  @override
+  String get freeBooksLength => '篇幅';
+
+  @override
+  String get freeBooksLengthNotePersonal => '阅读时间按你在阅读统计中的阅读速度计算。';
+
+  @override
+  String get freeBooksLengthNoteDefault => '在阅读统计得出你的速度之前，阅读时间按一般学习者的速度计算。';
+
+  @override
+  String get freeBooksLengthUnder10Minutes => '10 分钟以内';
+
+  @override
+  String get freeBooksLengthUnder30Minutes => '10–30 分钟';
+
+  @override
+  String get freeBooksLengthUnder1Hour => '30–60 分钟';
+
+  @override
+  String get freeBooksLengthUnder3Hours => '1–3 小时';
+
+  @override
+  String get freeBooksLengthLonger => '3 小时以上';
+
+  @override
+  String freeBooksLengthAtYourPace({
+    required String time,
+    required int characters,
+  }) {
+    final intl.NumberFormat charactersNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String charactersString = charactersNumberFormat.format(characters);
+
+    return '按你的速度约 $time · $charactersString 字';
+  }
+
+  @override
+  String freeBooksLengthAtLearnerPace({
+    required String time,
+    required int characters,
+  }) {
+    final intl.NumberFormat charactersNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String charactersString = charactersNumberFormat.format(characters);
+
+    return '按一般学习者的速度约 $time · $charactersString 字';
+  }
+
+  @override
+  String get freeBooksGenre => '类型';
+
+  @override
+  String get freeBooksGenreFiction => '小说';
+
+  @override
+  String get freeBooksGenreChildren => '儿童故事';
+
+  @override
+  String get freeBooksGenrePoetry => '诗歌';
+
+  @override
+  String get freeBooksGenrePlays => '戏剧';
+
+  @override
+  String get freeBooksGenreEssays => '随笔';
+
+  @override
+  String get freeBooksGenreDiaries => '日记与游记';
+
+  @override
+  String get freeBooksGenreHistory => '历史与传记';
+
+  @override
+  String get freeBooksGenrePhilosophy => '哲学与宗教';
+
+  @override
+  String get freeBooksGenreNonfiction => '其他非虚构';
+
+  @override
+  String get freeBooksGenreOther => '其他';
+
+  @override
+  String get freeBooksSpelling => '用字';
+
+  @override
+  String get freeBooksSpellingNote => '战前用字使用旧假名或旧字体汉字，对学习者来说难得多。';
+
+  @override
+  String get freeBooksSpellingModern => '现代';
+
+  @override
+  String get freeBooksSpellingOldKana => '战前假名';
+
+  @override
+  String get freeBooksSpellingOldKanji => '战前汉字与假名';
+
+  @override
+  String get freeBooksSpellingOther => '其他';
+
+  @override
+  String get freeBooksHideInLibrary => '隐藏书库中已有的书';
+
+  @override
+  String freeBooksResultCount({required int count}) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString 本书',
+      one: '$countString 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get freeBooksClearFilters => '清除筛选';
+
+  @override
+  String get freeBooksEasyPicks => '简单精选';
+
+  @override
+  String get freeBooksInLibrary => '已在书库中';
+
+  @override
+  String get freeBooksViewOnAozora => '在青空文库查看';
+
+  @override
+  String get freeBooksDownloading => '正在下载…';
+
+  @override
+  String get freeBooksRead => '阅读';
+
+  @override
+  String get freeBooksDownloadFailed => '无法下载这本书。网站可能繁忙，或连接已中断；请重试。';
+
+  @override
+  String get freeBooksImportFailed => 'Mekuru 无法将这本书添加到书库。';
+
+  @override
+  String get freeBooksAozoraAttribution =>
+      '来自青空文库，一个由志愿者录入日文书籍的免费图书馆。每本书的最后一页都保留了他们的署名。';
+
+  @override
+  String get freeBooksTabGradedReaders => '分级读物';
+
+  @override
+  String get freeBooksTabAozora => '青空文库';
+
+  @override
+  String get freeBooksTadokuSearchHint => '搜索分级读物';
+
+  @override
+  String get freeBooksTadokuLevelStart => '起步';
+
+  @override
+  String get freeBooksTadokuPagesOnly => '仅页面';
+
+  @override
+  String get freeBooksTadokuPagesOnlyNote =>
+      '这本书的 PDF 是页面图片，所以无法点击其中的词语。使用 OCR（Pro 功能）后即可点击。';
+
+  @override
+  String get freeBooksTadokuAudio => '可在 tadoku.org 播放它的音频。';
+
+  @override
+  String get freeBooksViewOnTadoku => '在 tadoku.org 查看';
+
+  @override
+  String get freeBooksTadokuLicense => '许可：CC BY-NC-ND 4.0';
+
+  @override
+  String freeBooksTadokuLevel({required int level}) {
+    return 'L$level';
+  }
+
+  @override
+  String freeBooksTadokuLevelJlpt({required int level, required String jlpt}) {
+    return 'L$level · $jlpt';
+  }
+
+  @override
+  String freeBooksTadokuCharacters({required int characters}) {
+    final intl.NumberFormat charactersNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String charactersString = charactersNumberFormat.format(characters);
+
+    return '$charactersString 字';
+  }
+
+  @override
+  String freeBooksTadokuAttribution({required String publisher}) {
+    return '分级读物由 NPO Tadoku Supporters（$publisher）出版，依据 CC BY-NC-ND 4.0 免费提供。Mekuru 从 tadoku.org 原样下载。';
+  }
+
+  @override
+  String get attributionFreeBooksTitle => '免费书籍';
+
+  @override
+  String get attributionFreeBooksDescription =>
+      '经典名著来自青空文库，其目录依据 CC BY 4.0 共享。它们的阅读等级和篇幅使用 aozorabunko-clean 数据集（CC BY 4.0）估算。分级读物由 NPO Tadoku Supporters 出版，依据 CC BY-NC-ND 4.0 共享，并从 tadoku.org 原样下载。';
 }

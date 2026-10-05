@@ -195,17 +195,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get libraryImportMangaSubtitle => 'Pilih arsip CBZ atau folder Mokuro';
 
   @override
-  String get libraryImportPdf => 'Import PDF';
+  String get libraryImportPdf => 'Impor PDF';
 
   @override
-  String get libraryImportPdfSubtitle => 'Import a PDF file';
+  String get libraryImportPdfSubtitle => 'Impor file PDF';
 
   @override
-  String get pdfScannedTitle => 'This PDF looks like a scan';
+  String get pdfScannedTitle => 'PDF ini tampaknya hasil pindaian';
 
   @override
   String pdfScannedBody({required String title}) {
-    return 'Mekuru can\'t find text to read in \"$title\": its pages are pictures, as in a scan, so its words can\'t be tapped yet. You can still read it page by page.\n\nPDFs made from text, like most ebooks, work right away. For scans, OCR (a Pro feature) can recognize the text and make words tappable.';
+    return 'Mekuru tidak menemukan teks yang bisa dibaca di \"$title\": halamannya berupa gambar, seperti hasil pindaian, jadi kata-katanya belum bisa diketuk. Anda tetap bisa membacanya halaman demi halaman.\n\nPDF yang dibuat dari teks, seperti kebanyakan ebook, langsung bisa dipakai. Untuk hasil pindaian, OCR (fitur Pro) dapat mengenali teksnya agar kata-katanya bisa diketuk.';
   }
 
   @override
@@ -3630,56 +3630,57 @@ class AppLocalizationsId extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String classicsString = classicsNumberFormat.format(classics);
 
-    return '$classicsString+ classics and $readers graded readers';
+    return '$classicsString+ karya klasik dan $readers bacaan berjenjang';
   }
 
   @override
   String youStatsSubtitle({required String duration}) {
-    return '$duration this week';
+    return '$duration minggu ini';
   }
 
   @override
-  String get youSettingsSubtitle => 'Reader, dictionaries, backup and more';
+  String get youSettingsSubtitle => 'Pembaca, kamus, cadangan, dan lainnya';
 
   @override
-  String get statsScreenTitle => 'Reading stats';
+  String get statsScreenTitle => 'Statistik membaca';
 
   @override
   String get libraryFreeBooksTipInApp =>
-      'Tip: Get free Japanese books, from graded readers to classics, right here in the app.';
+      'Tips: Dapatkan buku Jepang gratis, dari bacaan berjenjang hingga karya klasik, langsung di aplikasi ini.';
 
   @override
-  String get freeBooksTitle => 'Free books';
+  String get freeBooksTitle => 'Buku gratis';
 
   @override
-  String get freeBooksSearchHint => 'Search titles or authors';
+  String get freeBooksSearchHint => 'Cari judul atau penulis';
 
   @override
-  String get freeBooksNoResults => 'No books match. Try clearing some filters.';
+  String get freeBooksNoResults =>
+      'Tidak ada buku yang cocok. Coba hapus beberapa filter.';
 
   @override
-  String get freeBooksCatalogFailed => 'Couldn\'t load the book list.';
+  String get freeBooksCatalogFailed => 'Tidak dapat memuat daftar buku.';
 
   @override
-  String get freeBooksSortPopular => 'Most popular';
+  String get freeBooksSortPopular => 'Paling populer';
 
   @override
-  String get freeBooksSortEasiest => 'Easiest first';
+  String get freeBooksSortEasiest => 'Termudah dulu';
 
   @override
-  String get freeBooksSortHardest => 'Hardest first';
+  String get freeBooksSortHardest => 'Tersulit dulu';
 
   @override
-  String get freeBooksSortShortest => 'Shortest first';
+  String get freeBooksSortShortest => 'Terpendek dulu';
 
   @override
-  String get freeBooksSortLongest => 'Longest first';
+  String get freeBooksSortLongest => 'Terpanjang dulu';
 
   @override
-  String get freeBooksSortByTitle => 'Title (kana order)';
+  String get freeBooksSortByTitle => 'Judul (urutan kana)';
 
   @override
-  String get freeBooksSortByAuthor => 'Author (kana order)';
+  String get freeBooksSortByAuthor => 'Penulis (urutan kana)';
 
   @override
   String get freeBooksLevel => 'Level';
@@ -3690,40 +3691,40 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get freeBooksLevelBeyondN1 => 'Beyond N1';
+  String get freeBooksLevelBeyondN1 => 'Di atas N1';
 
   @override
   String get freeBooksLevelEstimateNote =>
-      'Levels are estimates based on each book\'s kanji and sentence length, not official JLPT ratings.';
+      'Level adalah perkiraan berdasarkan kanji dan panjang kalimat setiap buku, bukan penilaian resmi JLPT.';
 
   @override
-  String get freeBooksEstimatedLevel => 'Estimated level';
+  String get freeBooksEstimatedLevel => 'Perkiraan level';
 
   @override
-  String get freeBooksLength => 'Length';
+  String get freeBooksLength => 'Panjang';
 
   @override
   String get freeBooksLengthNotePersonal =>
-      'Reading times use your own reading speed from your stats.';
+      'Waktu baca memakai kecepatan membaca Anda sendiri dari statistik Anda.';
 
   @override
   String get freeBooksLengthNoteDefault =>
-      'Reading times use a typical learner\'s speed until your stats know yours.';
+      'Waktu baca memakai kecepatan pelajar pada umumnya sampai statistik Anda mengetahui kecepatan Anda.';
 
   @override
-  String get freeBooksLengthUnder10Minutes => 'Under 10 min';
+  String get freeBooksLengthUnder10Minutes => 'Kurang dari 10 mnt';
 
   @override
-  String get freeBooksLengthUnder30Minutes => '10–30 min';
+  String get freeBooksLengthUnder30Minutes => '10–30 mnt';
 
   @override
-  String get freeBooksLengthUnder1Hour => '30–60 min';
+  String get freeBooksLengthUnder1Hour => '30–60 mnt';
 
   @override
-  String get freeBooksLengthUnder3Hours => '1–3 hours';
+  String get freeBooksLengthUnder3Hours => '1–3 jam';
 
   @override
-  String get freeBooksLengthLonger => 'Over 3 hours';
+  String get freeBooksLengthLonger => 'Lebih dari 3 jam';
 
   @override
   String freeBooksLengthAtYourPace({
@@ -3734,7 +3735,7 @@ class AppLocalizationsId extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String charactersString = charactersNumberFormat.format(characters);
 
-    return 'About $time at your pace · $charactersString characters';
+    return 'Sekitar $time dengan kecepatan Anda · $charactersString karakter';
   }
 
   @override
@@ -3746,63 +3747,63 @@ class AppLocalizationsId extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String charactersString = charactersNumberFormat.format(characters);
 
-    return 'About $time at a typical learner\'s pace · $charactersString characters';
+    return 'Sekitar $time dengan kecepatan pelajar pada umumnya · $charactersString karakter';
   }
 
   @override
   String get freeBooksGenre => 'Genre';
 
   @override
-  String get freeBooksGenreFiction => 'Fiction';
+  String get freeBooksGenreFiction => 'Fiksi';
 
   @override
-  String get freeBooksGenreChildren => 'Children\'s stories';
+  String get freeBooksGenreChildren => 'Cerita anak';
 
   @override
-  String get freeBooksGenrePoetry => 'Poetry';
+  String get freeBooksGenrePoetry => 'Puisi';
 
   @override
-  String get freeBooksGenrePlays => 'Plays';
+  String get freeBooksGenrePlays => 'Drama';
 
   @override
-  String get freeBooksGenreEssays => 'Essays';
+  String get freeBooksGenreEssays => 'Esai';
 
   @override
-  String get freeBooksGenreDiaries => 'Diaries and travel';
+  String get freeBooksGenreDiaries => 'Catatan harian dan perjalanan';
 
   @override
-  String get freeBooksGenreHistory => 'History and biography';
+  String get freeBooksGenreHistory => 'Sejarah dan biografi';
 
   @override
-  String get freeBooksGenrePhilosophy => 'Philosophy and religion';
+  String get freeBooksGenrePhilosophy => 'Filsafat dan agama';
 
   @override
-  String get freeBooksGenreNonfiction => 'Other nonfiction';
+  String get freeBooksGenreNonfiction => 'Nonfiksi lainnya';
 
   @override
-  String get freeBooksGenreOther => 'Other';
+  String get freeBooksGenreOther => 'Lainnya';
 
   @override
-  String get freeBooksSpelling => 'Spelling';
+  String get freeBooksSpelling => 'Ejaan';
 
   @override
   String get freeBooksSpellingNote =>
-      'Pre-war spelling uses old kana or old kanji forms, which is much harder for learners.';
+      'Ejaan sebelum perang memakai kana lama atau bentuk kanji lama, yang jauh lebih sulit bagi pelajar.';
 
   @override
   String get freeBooksSpellingModern => 'Modern';
 
   @override
-  String get freeBooksSpellingOldKana => 'Pre-war kana';
+  String get freeBooksSpellingOldKana => 'Kana sebelum perang';
 
   @override
-  String get freeBooksSpellingOldKanji => 'Pre-war kanji and kana';
+  String get freeBooksSpellingOldKanji => 'Kanji dan kana sebelum perang';
 
   @override
-  String get freeBooksSpellingOther => 'Other';
+  String get freeBooksSpellingOther => 'Lainnya';
 
   @override
-  String get freeBooksHideInLibrary => 'Hide books in my library';
+  String get freeBooksHideInLibrary => 'Sembunyikan buku di perpustakaan saya';
 
   @override
   String freeBooksResultCount({required int count}) {
@@ -3813,69 +3814,69 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$countString books',
-      one: '$countString book',
+      other: '$countString buku',
+      one: '$countString buku',
     );
     return '$_temp0';
   }
 
   @override
-  String get freeBooksClearFilters => 'Clear filters';
+  String get freeBooksClearFilters => 'Hapus filter';
 
   @override
-  String get freeBooksEasyPicks => 'Easy picks';
+  String get freeBooksEasyPicks => 'Pilihan mudah';
 
   @override
-  String get freeBooksInLibrary => 'In your library';
+  String get freeBooksInLibrary => 'Di perpustakaan Anda';
 
   @override
-  String get freeBooksViewOnAozora => 'View on Aozora Bunko';
+  String get freeBooksViewOnAozora => 'Lihat di Aozora Bunko';
 
   @override
-  String get freeBooksDownloading => 'Downloading…';
+  String get freeBooksDownloading => 'Mengunduh…';
 
   @override
-  String get freeBooksRead => 'Read';
+  String get freeBooksRead => 'Baca';
 
   @override
   String get freeBooksDownloadFailed =>
-      'Couldn\'t download the book. The site may be busy or your connection dropped; try again.';
+      'Tidak dapat mengunduh buku. Situs mungkin sedang sibuk atau koneksi Anda terputus; coba lagi.';
 
   @override
   String get freeBooksImportFailed =>
-      'Mekuru couldn\'t add this book to your library.';
+      'Mekuru tidak dapat menambahkan buku ini ke perpustakaan Anda.';
 
   @override
   String get freeBooksAozoraAttribution =>
-      'From Aozora Bunko, a free library of Japanese books typed in by volunteers. Each book keeps their credits on its last page.';
+      'Dari Aozora Bunko, perpustakaan gratis buku-buku Jepang yang diketik oleh relawan. Setiap buku menyimpan nama-nama mereka di halaman terakhirnya.';
 
   @override
-  String get freeBooksTabGradedReaders => 'Graded readers';
+  String get freeBooksTabGradedReaders => 'Bacaan berjenjang';
 
   @override
   String get freeBooksTabAozora => 'Aozora Bunko';
 
   @override
-  String get freeBooksTadokuSearchHint => 'Search graded readers';
+  String get freeBooksTadokuSearchHint => 'Cari bacaan berjenjang';
 
   @override
-  String get freeBooksTadokuLevelStart => 'Start';
+  String get freeBooksTadokuLevelStart => 'Awal';
 
   @override
-  String get freeBooksTadokuPagesOnly => 'Pages only';
+  String get freeBooksTadokuPagesOnly => 'Hanya halaman';
 
   @override
   String get freeBooksTadokuPagesOnlyNote =>
-      'This book\'s PDF is pictures of pages, so its words can\'t be tapped. OCR (a Pro feature) can make them tappable.';
+      'PDF buku ini berupa gambar halaman, jadi kata-katanya tidak bisa diketuk. OCR (fitur Pro) dapat membuatnya bisa diketuk.';
 
   @override
-  String get freeBooksTadokuAudio => 'Its audio can be played on tadoku.org.';
+  String get freeBooksTadokuAudio => 'Audionya dapat diputar di tadoku.org.';
 
   @override
-  String get freeBooksViewOnTadoku => 'View on tadoku.org';
+  String get freeBooksViewOnTadoku => 'Lihat di tadoku.org';
 
   @override
-  String get freeBooksTadokuLicense => 'License: CC BY-NC-ND 4.0';
+  String get freeBooksTadokuLicense => 'Lisensi: CC BY-NC-ND 4.0';
 
   @override
   String freeBooksTadokuLevel({required int level}) {
@@ -3893,18 +3894,18 @@ class AppLocalizationsId extends AppLocalizations {
         intl.NumberFormat.decimalPattern(localeName);
     final String charactersString = charactersNumberFormat.format(characters);
 
-    return '$charactersString characters';
+    return '$charactersString karakter';
   }
 
   @override
   String freeBooksTadokuAttribution({required String publisher}) {
-    return 'Graded reader by NPO Tadoku Supporters ($publisher), free under CC BY-NC-ND 4.0. Mekuru downloads it from tadoku.org, unchanged.';
+    return 'Bacaan berjenjang dari NPO Tadoku Supporters ($publisher), gratis di bawah CC BY-NC-ND 4.0. Mekuru mengunduhnya dari tadoku.org tanpa perubahan.';
   }
 
   @override
-  String get attributionFreeBooksTitle => 'Free books';
+  String get attributionFreeBooksTitle => 'Buku gratis';
 
   @override
   String get attributionFreeBooksDescription =>
-      'The classics come from Aozora Bunko, whose catalog is shared under CC BY 4.0. Their reading levels and lengths are estimated with the aozorabunko-clean dataset (CC BY 4.0). The graded readers are by NPO Tadoku Supporters, shared under CC BY-NC-ND 4.0 and downloaded unchanged from tadoku.org.';
+      'Karya klasik berasal dari Aozora Bunko, yang katalognya dibagikan di bawah CC BY 4.0. Level baca dan panjangnya diperkirakan dengan dataset aozorabunko-clean (CC BY 4.0). Bacaan berjenjang dibuat oleh NPO Tadoku Supporters, dibagikan di bawah CC BY-NC-ND 4.0, dan diunduh tanpa perubahan dari tadoku.org.';
 }
