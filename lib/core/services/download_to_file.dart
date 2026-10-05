@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:mekuru/core/platform/network_status.dart';
@@ -14,7 +15,10 @@ import 'package:mekuru/core/platform/network_status.dart';
 /// No file is left behind on failure: a partially written download is
 /// deleted before the error propagates. Throws an [HttpException] on non-200
 /// responses; exceeding the redirect limit throws a [RedirectException],
-/// which implements [HttpException].
+/// which implements [HttpException]. Throws a [TimeoutException] when
+/// nothing arrives for [stallTimeout] (tests shorten it) while connecting,
+/// waiting for the response or mid-body: a stalled connection would
+/// otherwise hang the download forever, while a slow one still finishes.
 ///
 /// [headers] are sent with the request. [client] replaces the default
 /// [HttpClient] (e.g. one that accepts a server's self-signed certificate);
@@ -26,13 +30,16 @@ Future<void> downloadToFile(
   void Function(double progress)? onProgress,
   Map<String, String>? headers,
   HttpClient? client,
+  Duration stallTimeout = const Duration(seconds: 30),
 }) async {
   client ??= HttpClient();
+  client.connectionTimeout ??= stallTimeout;
+  var completed = false;
   try {
     final uri = Uri.parse(url);
     final request = await client.getUrl(uri);
     headers?.forEach(request.headers.set);
-    final response = await request.close();
+    final response = await request.close().timeout(stallTimeout);
 
     if (response.statusCode != HttpStatus.ok) {
       await response.drain<void>();
@@ -47,11 +54,10 @@ Future<void> downloadToFile(
     var lastPercent = -1;
     final file = File(destinationPath);
     final raf = await file.open(mode: FileMode.write);
-    var completed = false;
     try {
       // Awaiting each write pauses the socket subscription (await-for
       // applies backpressure), so slow storage can't balloon memory.
-      await for (final chunk in response) {
+      await for (final chunk in response.timeout(stallTimeout)) {
         await raf.writeFrom(chunk);
         received += chunk.length;
         if (contentLength > 0) {
@@ -74,7 +80,8 @@ Future<void> downloadToFile(
       }
     }
   } finally {
-    client.close();
+    // Forced on failure: a stalled connection would otherwise linger.
+    client.close(force: !completed);
   }
 }
 

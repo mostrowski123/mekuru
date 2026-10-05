@@ -265,10 +265,14 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
       );
     } catch (error, stackTrace) {
       if (InAppServerDownloads.wasCancelled(key)) return;
+      // TLS fails behind a captive portal or with a wrong clock, and a
+      // stalled connection times out.
       final network =
           error is NetworkException ||
           error is HttpException ||
-          error is SocketException;
+          error is SocketException ||
+          error is TlsException ||
+          error is TimeoutException;
       // A site offline is expected: a warning log, not a Sentry issue.
       logFailure(
         'free_books.download',

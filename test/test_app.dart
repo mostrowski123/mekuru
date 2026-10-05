@@ -6,9 +6,11 @@ Widget buildLocalizedTestApp({
   required Widget home,
   Locale? locale,
   GlobalKey<NavigatorState>? navigatorKey,
+  GlobalKey<ScaffoldMessengerState>? scaffoldMessengerKey,
 }) {
   return MaterialApp(
     navigatorKey: navigatorKey,
+    scaffoldMessengerKey: scaffoldMessengerKey,
     locale: locale,
     localeResolutionCallback: resolveSupportedAppLocale,
     localizationsDelegates: AppLocalizations.localizationsDelegates,

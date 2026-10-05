@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -34,6 +35,48 @@ void main() {
           isA<NetworkException>().having((e) => e.timedOut, 'timedOut', true),
         ),
       );
+    });
+
+    // A body that sends [chunks] chunks [every] apart, then stays open
+    // without sending more when [stall], instead of ending.
+    Future<http.Response> sendBody({
+      required int chunks,
+      required Duration every,
+      bool stall = false,
+    }) {
+      final body = StreamController<List<int>>();
+      () async {
+        for (var i = 0; i < chunks; i++) {
+          await Future<void>.delayed(every);
+          body.add([i]);
+        }
+        if (!stall) await body.close();
+      }();
+      return sendWithTimeout(
+        MockClient.streaming(
+          (request, _) async => http.StreamedResponse(body.stream, 200),
+        ),
+        http.Request('GET', Uri.parse('https://example.test/x')),
+        timeout: const Duration(milliseconds: 100),
+      );
+    }
+
+    test('a body that stalls becomes NetworkException(timedOut)', () async {
+      await expectLater(
+        () => sendBody(chunks: 1, every: Duration.zero, stall: true),
+        throwsA(
+          isA<NetworkException>().having((e) => e.timedOut, 'timedOut', true),
+        ),
+      );
+    });
+
+    test('a slow body that keeps coming still arrives in full', () async {
+      // 400 ms in all, but never 100 ms without a chunk.
+      final response = await sendBody(
+        chunks: 8,
+        every: const Duration(milliseconds: 50),
+      );
+      expect(response.bodyBytes, [0, 1, 2, 3, 4, 5, 6, 7]);
     });
 
     test('socket and client failures keep their message', () async {

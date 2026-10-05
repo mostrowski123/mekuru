@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -46,6 +47,15 @@ void main() {
           return;
         case '/chunked':
           response.add(payload);
+        case '/silent':
+          // Never answers: no headers, no body.
+          return;
+        case '/stalls':
+          // Headers and the first bytes, then nothing more.
+          response.contentLength = payload.length;
+          response.add(payload.sublist(0, 1000));
+          await response.flush();
+          return;
         case '/broken':
           // Promise more bytes than are sent: closing below contentLength
           // aborts the connection, so the client fails mid-body.
@@ -141,6 +151,37 @@ void main() {
         throwsA(isA<HttpException>()),
       );
     });
+
+    test('gives up on a server that never answers', () async {
+      final destination = p.join(tempDir.path, 'asset.zip');
+
+      await expectLater(
+        downloadToFile(
+          urlFor('/silent'),
+          destination,
+          stallTimeout: const Duration(milliseconds: 200),
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+      expect(File(destination).existsSync(), isFalse);
+    });
+
+    test(
+      'gives up on a body that stalls and deletes the partial file',
+      () async {
+        final destination = p.join(tempDir.path, 'asset.zip');
+
+        await expectLater(
+          downloadToFile(
+            urlFor('/stalls'),
+            destination,
+            stallTimeout: const Duration(milliseconds: 200),
+          ),
+          throwsA(isA<TimeoutException>()),
+        );
+        expect(File(destination).existsSync(), isFalse);
+      },
+    );
 
     test(
       'deletes the partial file when the connection drops mid-body',

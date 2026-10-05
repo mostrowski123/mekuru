@@ -24,9 +24,10 @@ class NetworkException implements Exception {
 }
 
 /// Sends [request] on [client], waiting at most [timeout] for the response
-/// headers (bodies stream unbounded, so file downloads keep working). Every
-/// way package:http can fail before a response exists becomes a
-/// [NetworkException]; status codes are the caller's business.
+/// headers, then at most [timeout] between chunks of the body: a long body
+/// still arrives, a stalled one fails. Every way package:http can fail
+/// before a full response exists becomes a [NetworkException]; status codes
+/// are the caller's business.
 Future<http.Response> sendWithTimeout(
   http.Client client,
   http.BaseRequest request, {
@@ -34,7 +35,18 @@ Future<http.Response> sendWithTimeout(
 }) async {
   try {
     final streamed = await client.send(request).timeout(timeout);
-    return await http.Response.fromStream(streamed);
+    final body = await http.ByteStream(
+      streamed.stream.timeout(timeout),
+    ).toBytes();
+    return http.Response.bytes(
+      body,
+      streamed.statusCode,
+      request: streamed.request,
+      headers: streamed.headers,
+      isRedirect: streamed.isRedirect,
+      persistentConnection: streamed.persistentConnection,
+      reasonPhrase: streamed.reasonPhrase,
+    );
   } on TimeoutException {
     throw const NetworkException('timed out', timedOut: true);
   } on SocketException catch (e) {
