@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
@@ -146,7 +145,7 @@ void main() {
     await tester.pumpWidget(buildIntegrationTestRealApp(db: db));
     await pumpUntilVisible(
       tester,
-      find.byType(NavigationBar),
+      mainTabBar,
       timeout: const Duration(seconds: 15),
     );
 
@@ -176,7 +175,7 @@ void main() {
     await app.main();
     await pumpUntilVisible(
       tester,
-      find.byType(NavigationBar),
+      mainTabBar,
       timeout: const Duration(seconds: 30),
     );
     // Give the fire-and-forget sweep ample time to have run.

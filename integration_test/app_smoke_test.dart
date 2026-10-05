@@ -8,13 +8,6 @@ import 'package:mekuru/features/stats/presentation/widgets/reading_time_card.dar
 
 import 'test_helpers.dart';
 
-Finder _bottomNavLabel(String label) {
-  return find.descendant(
-    of: find.byType(NavigationBar),
-    matching: find.text(label),
-  );
-}
-
 Finder _appBarTitle(String title) {
   return find.descendant(of: find.byType(AppBar), matching: find.text(title));
 }
@@ -29,30 +22,30 @@ void main() {
 
     await pumpUntilVisible(
       tester,
-      find.byType(NavigationBar),
+      mainTabBar,
       timeout: const Duration(seconds: 30),
     );
     // Uses the real database/native assets, unlike repository widget tests.
     // A navigation bar alone also appears when SQLite failed to initialize.
     await pumpUntilVisible(tester, find.text(l10n.libraryEmptyTitle));
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    await pumpUntilVisible(tester, _bottomNavLabel(l10n.navDictionary));
-    await pumpUntilVisible(tester, _bottomNavLabel(l10n.navVocabulary));
-    await pumpUntilVisible(tester, _bottomNavLabel(l10n.navYou));
+    await pumpUntilVisible(tester, mainTab(l10n.navDictionary));
+    await pumpUntilVisible(tester, mainTab(l10n.navVocabulary));
+    await pumpUntilVisible(tester, mainTab(l10n.navYou));
 
-    await tester.tap(_bottomNavLabel(l10n.navDictionary));
+    await tester.tap(mainTab(l10n.navDictionary));
     await pumpUntilVisible(tester, _appBarTitle(l10n.navDictionary));
     await pumpUntilVisible(
       tester,
       find.text(l10n.dictionaryNoDictionariesTitle),
     );
 
-    await tester.tap(_bottomNavLabel(l10n.navVocabulary));
+    await tester.tap(mainTab(l10n.navVocabulary));
     await pumpUntilVisible(tester, _appBarTitle(l10n.navVocabulary));
     await pumpUntilVisible(tester, find.text(l10n.vocabularyEmptyTitle));
 
     // The You tab is a hub: Free books, Reading stats, Settings.
-    await tester.tap(_bottomNavLabel(l10n.navYou));
+    await tester.tap(mainTab(l10n.navYou));
     await pumpUntilVisible(tester, _appBarTitle(l10n.navYou));
     await tester.tap(find.text(l10n.statsScreenTitle));
     await pumpUntilVisible(tester, _appBarTitle(l10n.statsScreenTitle));

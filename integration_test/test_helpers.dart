@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart'
+    show GlassTabBar;
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_controller.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
+import 'package:mekuru/shared/widgets/glass_tab_bar.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -30,6 +33,16 @@ Future<AppLocalizations> loadExpectedL10n() {
   );
   return AppLocalizations.delegate.load(locale);
 }
+
+/// The main tab bar: Liquid Glass on iOS, the Material NavigationBar on
+/// Android.
+Finder get mainTabBar =>
+    find.byType(usesGlassTabBar ? GlassTabBar : NavigationBar);
+
+/// The main tab labelled [label]. The glass bar also draws a magnified copy
+/// of the tabs beside its indicator, over the same spot, so take the first.
+Finder mainTab(String label) =>
+    find.descendant(of: mainTabBar, matching: find.text(label)).first;
 
 Future<void> pumpUntilVisible(
   WidgetTester tester,

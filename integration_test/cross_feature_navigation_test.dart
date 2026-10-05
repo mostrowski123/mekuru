@@ -49,12 +49,12 @@ void main() {
     // Wait for the app to render.
     await pumpUntilVisible(
       tester,
-      find.byType(NavigationBar),
+      mainTabBar,
       timeout: const Duration(seconds: 15),
     );
 
     // Navigate to Dictionary tab.
-    await tester.tap(find.text(l10n.navDictionary));
+    await tester.tap(mainTab(l10n.navDictionary));
     await tester.pumpAndSettle();
 
     // Search for a word.
@@ -68,14 +68,14 @@ void main() {
     );
 
     // Switch to Vocabulary tab.
-    await tester.tap(find.text(l10n.navVocabulary));
+    await tester.tap(mainTab(l10n.navVocabulary));
     await tester.pumpAndSettle();
 
     // Verify we're on the Vocabulary tab.
     expect(find.text(l10n.vocabularyEmptyTitle), findsOneWidget);
 
     // Switch back to Dictionary tab.
-    await tester.tap(find.text(l10n.navDictionary));
+    await tester.tap(mainTab(l10n.navDictionary));
     await tester.pumpAndSettle();
 
     // Verify search results are preserved (IndexedStack keeps state alive).
@@ -109,7 +109,7 @@ void main() {
     // Wait for the app to render with Library tab.
     await pumpUntilVisible(
       tester,
-      find.byType(NavigationBar),
+      mainTabBar,
       timeout: const Duration(seconds: 15),
     );
 
@@ -122,7 +122,7 @@ void main() {
     expect(find.text('走れメロス'), findsWidgets);
 
     // Vocabulary tab: verify seeded words are displayed.
-    await tester.tap(find.text(l10n.navVocabulary));
+    await tester.tap(mainTab(l10n.navVocabulary));
     await pumpUntilVisible(
       tester,
       find.text('食べる'),
@@ -131,7 +131,7 @@ void main() {
     expect(find.text('飲む'), findsOneWidget);
 
     // You tab: the hub's Settings card opens settings.
-    await tester.tap(find.text(l10n.navYou));
+    await tester.tap(mainTab(l10n.navYou));
     await pumpUntilVisible(
       tester,
       find.text(l10n.settingsTitle),
