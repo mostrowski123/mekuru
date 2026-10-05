@@ -179,6 +179,38 @@ void main() {
     );
   });
 
+  testWidgets('opening a book whose words are missing segments them again', (
+    tester,
+  ) async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final path = await writeFixture('graded_reader.pdf', textPdfBase64);
+    final book = (await BookRepository(db).importPdf(path)).book;
+
+    // A cache saved without word boxes, as a legacy or interrupted
+    // segmentation leaves it: the reader rebuilds them as the book opens,
+    // merging the big cache and decoding it off the UI isolate.
+    final cacheFile = File(p.join(book.filePath, mangaPagesCacheFileName));
+    final json = jsonDecode(await cacheFile.readAsString()) as Map;
+    for (final page in json['pages'] as List) {
+      for (final block in (page as Map)['blocks'] as List) {
+        (block as Map).remove('words');
+      }
+    }
+    await MangaCacheStore.reset(cacheFile, book.id, jsonEncode(json));
+    expect(
+      (await pagesOf(book)).pages.expand((page) => page.blocks).first.words,
+      isEmpty,
+    );
+
+    await openReader(tester, db, book);
+
+    final healed = await pagesOf(book);
+    for (final block in healed.pages.expand((page) => page.blocks)) {
+      expect(block.words, isNotEmpty);
+    }
+  });
+
   testWidgets('Delete OCR on a PDF brings its own text back', (tester) async {
     final l10n = await loadExpectedL10n();
     final db = createTestDatabase();
