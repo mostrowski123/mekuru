@@ -989,4 +989,51 @@ void main() {
       expect(wordsAddedSince(const [], DateTime(2026, 2, 9)), 0);
     });
   });
+
+  group('readingPaceCharsPerMinute', () {
+    final day = DateTime(2026, 2, 10);
+    const minute = Duration.millisecondsPerMinute;
+
+    test('is characters per minute over EPUB sessions', () {
+      final sessions = [
+        session(startedAt: day, durationMs: 10 * minute, charactersRead: 2000),
+        session(startedAt: day, durationMs: 20 * minute, charactersRead: 4000),
+      ];
+      expect(readingPaceCharsPerMinute(sessions), 200);
+    });
+
+    test('ignores manga and sessions that counted nothing', () {
+      final sessions = [
+        session(startedAt: day, durationMs: 30 * minute, charactersRead: 6000),
+        session(
+          bookFormat: 'manga',
+          startedAt: day,
+          durationMs: 30 * minute,
+          charactersRead: 100,
+        ),
+        session(startedAt: day, durationMs: 60 * minute),
+      ];
+      expect(readingPaceCharsPerMinute(sessions), 200);
+    });
+
+    /// The pace of one EPUB session of [minutes] that counted [chars].
+    double? pace(int minutes, int chars) => readingPaceCharsPerMinute([
+      session(
+        startedAt: day,
+        durationMs: minutes * minute,
+        charactersRead: chars,
+      ),
+    ]);
+
+    test('is null until there are 20 minutes and 3,000 characters', () {
+      expect(readingPaceCharsPerMinute(const []), isNull);
+      expect(pace(19, 9000), isNull);
+      expect(pace(60, 2999), isNull);
+    });
+
+    test('clamps implausible paces', () {
+      expect(pace(20, 100000), 1500);
+      expect(pace(100, 3000), 50);
+    });
+  });
 }
