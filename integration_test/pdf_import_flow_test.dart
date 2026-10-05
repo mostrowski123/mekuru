@@ -291,8 +291,20 @@ void main() {
     await tester.tapAt(tester.getCenter(find.byType(MangaReaderScreen)));
     await pumpUntilVisible(tester, find.byIcon(Icons.settings));
     await tester.tap(find.byIcon(Icons.settings));
-    await pumpUntilVisible(tester, find.text(l10n.readerReadingDirectionLtr));
-    await tester.ensureVisible(find.text(l10n.readerReadingDirectionLtr));
+    await pumpUntilVisible(tester, find.byType(BottomSheet));
+    // The sheet's list builds the row only once it is scrolled near: CI's
+    // emulator is 320x640.
+    await tester.scrollUntilVisible(
+      find.text(l10n.readerReadingDirectionLtr),
+      100,
+      scrollable: find
+          .descendant(
+            of: find.byType(BottomSheet),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pump(const Duration(milliseconds: 500)); // lay out the scroll
     await tester.tap(find.text(l10n.readerReadingDirectionLtr));
     await tester.pump(const Duration(milliseconds: 500));
 
