@@ -61,9 +61,18 @@ void main() {
   }
 
   group('a manga without pages is refused, not imported empty', () {
-    // An empty book used to reach the library (MEKURU-1R, 2026-10-01).
+    // An empty book used to reach the library (MEKURU-1R, 2026-10-01). The
+    // message reaches Sentry, so it names no title.
     final noPages = throwsA(
-      isA<Exception>().having((e) => '$e', 'message', contains('No pages')),
+      isA<Exception>().having(
+        (e) => '$e',
+        'message',
+        allOf(
+          contains('No pages'),
+          isNot(contains('no_images')),
+          isNot(contains('Volume')),
+        ),
+      ),
     );
 
     test('a CBZ without images', () async {
@@ -107,16 +116,16 @@ void main() {
       final book = await repo.importCbz(cbzPath);
       final cache = await readPagesCache(book.filePath);
 
-      expect(
-        cache.pages.map((page) => page.imageFileName),
-        ['page_1.png', 'page_2.png', 'page_10.png'],
-        reason: 'pages must be in natural order',
-      );
-      expect(
-        cache.pages.map((page) => '${page.imgWidth}x${page.imgHeight}'),
-        ['50x60', '10x20', '30x40'],
-        reason: 'each page must carry the size of its own image',
-      );
+      expect(cache.pages.map((page) => page.imageFileName), [
+        'page_1.png',
+        'page_2.png',
+        'page_10.png',
+      ], reason: 'pages must be in natural order');
+      expect(cache.pages.map((page) => '${page.imgWidth}x${page.imgHeight}'), [
+        '50x60',
+        '10x20',
+        '30x40',
+      ], reason: 'each page must carry the size of its own image');
       expect(cache.pages.map((page) => page.pageIndex), [0, 1, 2]);
     });
 

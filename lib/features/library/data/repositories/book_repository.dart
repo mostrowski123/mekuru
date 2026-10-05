@@ -150,9 +150,10 @@ class BookRepository {
   }
 
   /// Every manga import goes through here: one without pages would become
-  /// an empty, unreadable book (MEKURU-1R).
-  static void _requirePages(int pageCount, String title) {
-    if (pageCount == 0) throw Exception('No pages found in "$title".');
+  /// an empty, unreadable book (MEKURU-1R). The message names no title: it
+  /// reaches Sentry.
+  static void _requirePages(int pageCount) {
+    if (pageCount == 0) throw Exception('No pages found.');
   }
 
   /// Import an EPUB file into the library.
@@ -360,7 +361,7 @@ class BookRepository {
                 blocks: const [],
               ),
           ];
-      _requirePages(pages.length, cbzMeta.title);
+      _requirePages(pages.length);
 
       return _saveMangaBook(
         cacheDir,
@@ -426,7 +427,7 @@ class BookRepository {
           onProgress?.call((i + 1) / pdf.pageCount);
         }
         await Future.wait(writes);
-        _requirePages(pages.length, name);
+        _requirePages(pages.length);
         final textPages = pagesWithText.where((text) => text).length;
         final book = await _saveMangaBook(
           dir,
@@ -682,7 +683,7 @@ class BookRepository {
     MokuroBookManifest manifest,
     List<MokuroPage> rawPages,
   ) async {
-    _requirePages(rawPages.length, manifest.title);
+    _requirePages(rawPages.length);
     return _inNewImportDir('manga', (cacheDir) async {
       // iOS grants a picked folder for this session only (a security-scoped
       // URL), so a manga linked in place would be unreadable after a
