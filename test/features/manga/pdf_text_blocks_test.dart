@@ -110,7 +110,10 @@ void main() {
     ]);
   });
 
-  test('phrase spaces keep a column one line (graded readers use them)', () {
+  test('a phrase space splits its line, so each box fits its glyphs', () {
+    // Graded readers space their phrases. The reader spreads a line's
+    // characters evenly over its box, so one box across the space would
+    // put がっこうで up to a character off where it is drawn.
     final blocks = pdfPageBlocks([
       ..._column(300, 100, 'きょうは'),
       // A one-em space between phrases.
@@ -118,7 +121,31 @@ void main() {
       ..._column(260, 100, 'べんきょう'),
     ]);
 
-    expect(blocks.single.lines, ['きょうはがっこうで', 'べんきょう']);
+    final block = blocks.single;
+    expect(block.lines, ['きょうは', 'がっこうで', 'べんきょう']);
+    expect(block.linesCoords[0], [
+      [300, 100],
+      [320, 100],
+      [320, 180],
+      [300, 180],
+    ]);
+    expect(block.linesCoords[1], [
+      [300, 200],
+      [320, 200],
+      [320, 300],
+      [300, 300],
+    ]);
+  });
+
+  test('evenly spaced letters stay one line, as spreading places them', () {
+    // A heading set with a space after each letter, then the text.
+    final blocks = pdfPageBlocks([
+      for (final (i, char) in '第一章'.split('').indexed)
+        PdfGlyph(char, 300, 100 + i * 2 * _size, 320, 120 + i * 2 * _size),
+      ..._column(260, 100, 'はじまり'),
+    ]);
+
+    expect(blocks.single.lines, ['第一章', 'はじまり']);
   });
 
   test('a wide gap inside a column starts a new line', () {

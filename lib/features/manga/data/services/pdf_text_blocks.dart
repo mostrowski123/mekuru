@@ -218,13 +218,16 @@ MokuroTextBlock _toMokuro(
   required bool vertical,
 }) {
   final (l, t, r, b) = _box(lines.expand((line) => line));
+  final runs = [
+    for (final line in lines) ..._runs(line, size, vertical: vertical),
+  ];
   return MokuroTextBlock(
     box: [l, t, r, b],
     vertical: vertical,
     fontSize: size,
     linesCoords: [
-      for (final line in lines)
-        if (_box(line) case (final ll, final lt, final lr, final lb))
+      for (final run in runs)
+        if (_box(run) case (final ll, final lt, final lr, final lb))
           [
             [ll, lt],
             [lr, lt],
@@ -232,6 +235,42 @@ MokuroTextBlock _toMokuro(
             [ll, lb],
           ],
     ],
-    lines: [for (final line in lines) line.map((g) => g.char).join()],
+    lines: [for (final run in runs) run.map((g) => g.char).join()],
   );
+}
+
+/// A gap this many ems wide between two glyphs of a line is a space: a
+/// glyph's ink box leaves less than that around it, even beside punctuation.
+const _spaceRatio = 0.8;
+
+/// [line] cut at its spaces into runs, each to get its own box. The reader
+/// spreads a line's characters evenly over the line's box, so a box across
+/// a graded reader's phrase spaces would put the words after them up to a
+/// character off where they are drawn. Evenly spaced letters (a heading set
+/// with a space after each) stay one line: spreading places them right,
+/// and words keep their letters together.
+List<List<PdfGlyph>> _runs(
+  List<PdfGlyph> line,
+  double size, {
+  required bool vertical,
+}) {
+  double center(PdfGlyph g) => vertical ? g.centerY : g.centerX;
+  final steps = [
+    for (var i = 1; i < line.length; i++) center(line[i]) - center(line[i - 1]),
+  ];
+  if (steps.isEmpty ||
+      steps.reduce(math.max) - steps.reduce(math.min) <= size * 0.5) {
+    return [line];
+  }
+  final runs = [
+    [line.first],
+  ];
+  for (var i = 1; i < line.length; i++) {
+    final gap = vertical
+        ? line[i].top - line[i - 1].bottom
+        : line[i].left - line[i - 1].right;
+    if (gap >= size * _spaceRatio) runs.add([]);
+    runs.last.add(line[i]);
+  }
+  return runs;
 }
