@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:mekuru/core/review/review_prompt_policy.dart';
 import 'package:mekuru/core/review/review_prompt_service.dart';
 import 'package:mekuru/core/review/review_prompt_storage.dart';
 
@@ -60,7 +61,7 @@ void main() {
 
   _MemoryStorage eligibleStorage() => _MemoryStorage()
     ..firstSeenAt = now.subtract(const Duration(days: 30))
-    ..qualifyingSessions = 4;
+    ..qualifyingSessions = ReviewPromptPolicy.minQualifyingSessions - 1;
 
   ReviewPromptService buildService(
     _MemoryStorage storage,
@@ -97,7 +98,10 @@ void main() {
       sessionStartedAt: now.subtract(const Duration(minutes: 1)),
     );
 
-    expect(storage.qualifyingSessions, 4);
+    expect(
+      storage.qualifyingSessions,
+      ReviewPromptPolicy.minQualifyingSessions - 1,
+    );
     expect(review.requestReviewCalls, 0);
   });
 
@@ -112,7 +116,10 @@ void main() {
         review,
       ).maybeRequestReview(sessionStartedAt: longSessionStart);
 
-      expect(storage.qualifyingSessions, 5);
+      expect(
+        storage.qualifyingSessions,
+        ReviewPromptPolicy.minQualifyingSessions,
+      );
       expect(review.requestReviewCalls, 1);
       expect(storage.requestCount, 1);
       expect(storage.lastRequestAt, now);
@@ -130,7 +137,10 @@ void main() {
     ).maybeRequestReview(sessionStartedAt: longSessionStart);
 
     // The session still counts, but no attempt is made or burned.
-    expect(storage.qualifyingSessions, 5);
+    expect(
+      storage.qualifyingSessions,
+      ReviewPromptPolicy.minQualifyingSessions,
+    );
     expect(review.requestReviewCalls, 0);
     expect(storage.requestCount, 0);
   });

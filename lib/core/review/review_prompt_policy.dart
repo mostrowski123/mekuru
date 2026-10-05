@@ -8,10 +8,10 @@ class ReviewPromptPolicy {
   /// Repeated substantial sessions prove the reading loop delivered value —
   /// unlike saved-word counts, this holds for users who send words straight
   /// to Anki instead of saving them.
-  static const int minQualifyingSessions = 5;
+  static const int minQualifyingSessions = 3;
 
-  /// Never prompt users who picked the app up less than a week ago.
-  static const Duration minUsageAge = Duration(days: 7);
+  /// Never prompt users who picked the app up less than three days ago.
+  static const Duration minUsageAge = Duration(days: 3);
 
   /// Only sessions this long count as qualifying — filters quick open-close.
   static const Duration minSessionDuration = Duration(minutes: 5);

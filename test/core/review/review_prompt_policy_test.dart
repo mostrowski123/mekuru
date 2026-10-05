@@ -68,11 +68,19 @@ void main() {
 
     test('blocks users newer than the minimum usage age', () {
       expect(
-        decide(firstSeenAt: now.subtract(const Duration(days: 6))),
+        decide(
+          firstSeenAt: now.subtract(
+            ReviewPromptPolicy.minUsageAge - const Duration(days: 1),
+          ),
+        ),
         isFalse,
       );
       expect(
-        decide(firstSeenAt: now.subtract(const Duration(days: 8))),
+        decide(
+          firstSeenAt: now.subtract(
+            ReviewPromptPolicy.minUsageAge + const Duration(days: 1),
+          ),
+        ),
         isTrue,
       );
     });
