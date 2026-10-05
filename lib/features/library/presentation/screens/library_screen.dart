@@ -11,10 +11,10 @@ import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
 import 'package:flutter/services.dart' show MethodChannel, PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tilt/flutter_tilt.dart';
-import 'package:mekuru/core/config/app_links.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
@@ -434,7 +434,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                l10n.libraryFreeBooksTip,
+                l10n.libraryFreeBooksTipInApp,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
@@ -443,12 +443,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               TextButton.icon(
                 onPressed: () {
                   logUsage('library.free_books_opened');
-                  launchUrl(
-                    AppLinks.freeJapaneseBooks,
-                    mode: LaunchMode.externalApplication,
+                  Navigator.of(context).push(
+                    namedRoute('free_books', (_) => const FreeBooksScreen()),
                   );
                 },
-                icon: const Icon(Icons.open_in_new),
+                icon: const Icon(Icons.local_library_outlined),
                 label: Text(l10n.libraryFreeBooksLink),
               ),
             ],

@@ -380,9 +380,10 @@ Future<void> downloadResumable(
   if (await validatorFile.exists()) await validatorFile.delete();
 }
 
-/// iOS downloads running in the app, by download key, so they can be
-/// stopped: by the user or iOS ending the background task, or by a full
-/// restore (`cancelServerDownloads`).
+/// Downloads running in the app (server books on iOS, free books on both
+/// platforms), by download key, so they can be stopped: by the user or iOS
+/// ending the background task, or by a full restore
+/// (`cancelServerDownloads`).
 class InAppServerDownloads {
   InAppServerDownloads._();
 

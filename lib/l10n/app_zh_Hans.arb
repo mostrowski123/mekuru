@@ -18,7 +18,7 @@
   },
   "navYou": "我的",
   "@navYou": {
-    "description": "Bottom navigation label and title of the You tab: the reading stats dashboard, with the entry to settings in its corner."
+    "description": "Bottom navigation label and title of the You tab: a hub with cards for Free books, Reading stats and Settings."
   },
   "commonHelp": "帮助",
   "@commonHelp": {
@@ -150,10 +150,6 @@
   "libraryEmptySubtitle": "导入一些可阅读的内容，安装词典，几分钟内就可以开始保存单词。",
   "@libraryEmptySubtitle": {
     "description": "Description shown when the library has no books."
-  },
-  "libraryFreeBooksTip": "提示：在青空文库可以找到免费的日语书籍。下载 EPUB 格式后，点击“导入EPUB”即可。",
-  "@libraryFreeBooksTip": {
-    "description": "Tip under the empty library's buttons pointing to free public-domain Japanese EPUBs (Aozora Bunko works). Quotes the Import EPUB button label."
   },
   "libraryFreeBooksLink": "浏览免费书籍",
   "@libraryFreeBooksLink": {

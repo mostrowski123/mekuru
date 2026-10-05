@@ -5,6 +5,7 @@ import 'package:mekuru/app.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
+import 'package:mekuru/features/you/presentation/screens/you_screen.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
@@ -25,7 +26,7 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
   });
 
-  testWidgets('You tab replaces Settings and holds the stats screen', (
+  testWidgets('You tab is a hub of Free books, Reading stats and Settings', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -41,17 +42,26 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
+    // Settings has no navigation-bar slot; it lives on the You hub.
     expect(find.text('Settings'), findsNothing);
 
     await tester.tap(find.text('You'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
+    expect(find.byType(YouScreen), findsOneWidget);
+    expect(find.text('Free books'), findsOneWidget);
+    expect(find.text('Reading stats'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('0m this week'), findsOneWidget);
+
+    await tester.tap(find.text('Reading stats'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(StatsScreen), findsOneWidget);
-    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
   });
 
-  testWidgets('leaving the You tab unmounts the stats screen', (
+  testWidgets('leaving the You tab unmounts the hub', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -70,9 +80,9 @@ void main() {
     await tester.tap(find.text('You'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byType(StatsScreen, skipOffstage: false), findsOneWidget);
+    expect(find.byType(YouScreen, skipOffstage: false), findsOneWidget);
 
-    // The stats screen re-aggregates on every session or word write; the
+    // The hub re-aggregates the week on every session write; the
     // IndexedStack must not keep it doing that invisibly after the user
     // switches away.
     await tester.tap(
@@ -82,7 +92,7 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.byType(StatsScreen, skipOffstage: false), findsNothing);
+    expect(find.byType(YouScreen, skipOffstage: false), findsNothing);
   });
 
   testWidgets('Spanish locale resolves localized navigation labels', (

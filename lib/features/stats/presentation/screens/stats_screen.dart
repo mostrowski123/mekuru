@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
@@ -12,7 +11,6 @@ import 'package:mekuru/features/stats/presentation/widgets/reading_time_card.dar
 import 'package:mekuru/features/stats/presentation/widgets/vocab_growth_card.dart';
 import 'package:mekuru/features/stats/presentation/widgets/volume_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
-import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// Reading statistics: headline numbers first, then the filters, then the
 /// chart cards.
@@ -126,20 +124,7 @@ class StatsScreen extends ConsumerWidget {
 
   /// The page shell, identical whether or not the data has landed.
   Widget _page(BuildContext context, List<Widget> children) => Scaffold(
-    appBar: AppBar(
-      title: Text(context.l10n.navYou),
-      actions: [
-        // Settings lost its navigation-bar slot to this tab; this gear is its
-        // app-level entry (a few flows, like OCR setup, still deep-link to it).
-        IconButton(
-          icon: const Icon(Icons.settings_outlined),
-          tooltip: context.l10n.settingsTitle,
-          onPressed: () => Navigator.of(
-            context,
-          ).push(namedRoute('settings', (_) => const SettingsScreen())),
-        ),
-      ],
-    ),
+    appBar: AppBar(title: Text(context.l10n.statsScreenTitle)),
     // Deliberately not a ListView: its sliver delegate disposes children
     // scrolled past the cache extent, and neither TweenAnimationBuilder nor
     // fl_chart keeps itself alive. Once the chart slots below are filled,

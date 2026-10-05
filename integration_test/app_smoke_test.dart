@@ -51,8 +51,11 @@ void main() {
     await pumpUntilVisible(tester, _appBarTitle(l10n.navVocabulary));
     await pumpUntilVisible(tester, find.text(l10n.vocabularyEmptyTitle));
 
+    // The You tab is a hub: Free books, Reading stats, Settings.
     await tester.tap(_bottomNavLabel(l10n.navYou));
     await pumpUntilVisible(tester, _appBarTitle(l10n.navYou));
+    await tester.tap(find.text(l10n.statsScreenTitle));
+    await pumpUntilVisible(tester, _appBarTitle(l10n.statsScreenTitle));
     await pumpUntilVisible(tester, find.byType(ActivityHeatmapCard));
     await tester.scrollUntilVisible(
       find.byType(ReadingTimeCard),
@@ -69,10 +72,11 @@ void main() {
       expect(await LocalMangaOcr.isWifiConnected(), isA<bool>());
     }
 
-    // Settings has no navigation-bar slot of its own; it opens from the gear
-    // in the You tab's app bar.
-    await pumpUntilVisible(tester, find.byIcon(Icons.settings_outlined));
-    await tester.tap(find.byIcon(Icons.settings_outlined));
+    // Settings has no navigation-bar slot of its own; it is the hub's last
+    // card.
+    await tester.pageBack();
+    await pumpUntilVisible(tester, _appBarTitle(l10n.navYou));
+    await tester.tap(find.text(l10n.settingsTitle));
     await pumpUntilVisible(tester, _appBarTitle(l10n.settingsTitle));
     await pumpUntilVisible(tester, find.text(l10n.settingsSectionGeneral));
   });

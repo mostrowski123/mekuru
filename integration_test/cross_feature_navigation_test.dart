@@ -130,20 +130,18 @@ void main() {
     );
     expect(find.text('飲む'), findsOneWidget);
 
-    // You tab: verify the stats screen renders, then reach settings through
-    // the gear in its app bar.
+    // You tab: the hub's Settings card opens settings.
     await tester.tap(find.text(l10n.navYou));
-    await pumpUntilVisible(
-      tester,
-      find.byIcon(Icons.settings_outlined),
-      timeout: const Duration(seconds: 10),
-    );
-    await tester.tap(find.byIcon(Icons.settings_outlined));
     await pumpUntilVisible(
       tester,
       find.text(l10n.settingsTitle),
       timeout: const Duration(seconds: 10),
     );
-    expect(find.text(l10n.settingsSectionGeneral), findsOneWidget);
+    await tester.tap(find.text(l10n.settingsTitle));
+    await pumpUntilVisible(
+      tester,
+      find.text(l10n.settingsSectionGeneral),
+      timeout: const Duration(seconds: 10),
+    );
   });
 }

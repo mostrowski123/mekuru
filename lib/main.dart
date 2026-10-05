@@ -52,6 +52,29 @@ AppLocalizations appL10n() {
       : lookupAppLocalizations(const Locale('en'));
 }
 
+/// Shows [message] in a snack bar over whatever screen is up, for work that
+/// outlives its screen (downloads, server sync). Replaces the current one,
+/// so a batch of downloads finishing together doesn't queue minutes of
+/// messages.
+void announce(
+  String Function(AppLocalizations l10n) message, {
+  SnackBarAction Function(AppLocalizations l10n)? action,
+}) {
+  final context = scaffoldMessengerKey.currentContext;
+  if (context == null || !context.mounted) return;
+  final l10n = context.l10n;
+  scaffoldMessengerKey.currentState
+    ?..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message(l10n)),
+        action: action?.call(l10n),
+        // A snack bar with an action is sticky by default in this Flutter.
+        persist: false,
+      ),
+    );
+}
+
 /// Global Riverpod provider for the Drift database instance.
 /// Created once at app startup and disposed when the app is torn down.
 final databaseProvider = Provider<AppDatabase>((ref) {

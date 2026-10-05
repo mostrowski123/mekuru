@@ -127,7 +127,7 @@ abstract class AppLocalizations {
   /// **'Vocabulary'**
   String get navVocabulary;
 
-  /// Bottom navigation label and title of the You tab: the reading stats dashboard, with the entry to settings in its corner.
+  /// Bottom navigation label and title of the You tab: a hub with cards for Free books, Reading stats and Settings.
   ///
   /// In en, this message translates to:
   /// **'You'**
@@ -300,12 +300,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import something to read, install a dictionary, and you will be ready to save words in a few minutes.'**
   String get libraryEmptySubtitle;
-
-  /// Tip under the empty library's buttons pointing to free public-domain Japanese EPUBs (Aozora Bunko works). Quotes the Import EPUB button label.
-  ///
-  /// In en, this message translates to:
-  /// **'Tip: Find free Japanese books on Aozora Bunko. Download one as EPUB, then tap \"Import EPUB\".'**
-  String get libraryFreeBooksTip;
 
   /// Link button under the free-books tip that opens a website of free Japanese EPUBs.
   ///
@@ -4390,7 +4384,7 @@ abstract class AppLocalizations {
   /// **'Linked \"{title}\"'**
   String serverBrowseLinked({required String title});
 
-  /// Snackbar shown after a server book was downloaded and imported; title is the book title.
+  /// Snackbar shown after a book from a server or the Free books screen was downloaded and imported; title is the book title.
   ///
   /// In en, this message translates to:
   /// **'\"{title}\" added to library!'**
@@ -5855,6 +5849,366 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replace JMdict'**
   String get catalogReplaceJmdict;
+
+  /// Subtitle of the You tab's Free books card: how many free Aozora Bunko books the browser offers, rounded down to a thousand (17,000+).
+  ///
+  /// In en, this message translates to:
+  /// **'{count}+ free classics'**
+  String youFreeBooksSubtitle({required int count});
+
+  /// Subtitle of the You tab's Reading stats card. duration is a reading time like 3h 20m (statsDurationHoursMinutes) read over the last 7 days.
+  ///
+  /// In en, this message translates to:
+  /// **'{duration} this week'**
+  String youStatsSubtitle({required String duration});
+
+  /// Subtitle of the You tab's Settings card.
+  ///
+  /// In en, this message translates to:
+  /// **'Reader, dictionaries, backup and more'**
+  String get youSettingsSubtitle;
+
+  /// Title of the reading stats screen and of its card on the You tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading stats'**
+  String get statsScreenTitle;
+
+  /// Tip under the empty library's buttons; the link under it (libraryFreeBooksLink) opens the in-app Free books screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: Get free Japanese books from Aozora Bunko, right here in the app.'**
+  String get libraryFreeBooksTipInApp;
+
+  /// Title of the Free books screen (free public-domain books to download), and of its card on the You tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Free books'**
+  String get freeBooksTitle;
+
+  /// Hint in the Free books search field. Japanese, kana readings and romaji all work.
+  ///
+  /// In en, this message translates to:
+  /// **'Search titles or authors'**
+  String get freeBooksSearchHint;
+
+  /// Shown in the Free books list when the search and filters leave nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'No books match. Try clearing some filters.'**
+  String get freeBooksNoResults;
+
+  /// Shown when the bundled book catalog fails to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the book list.'**
+  String get freeBooksCatalogFailed;
+
+  /// Sort option: most-read books on Aozora Bunko first.
+  ///
+  /// In en, this message translates to:
+  /// **'Most popular'**
+  String get freeBooksSortPopular;
+
+  /// Sort option: easiest estimated level first.
+  ///
+  /// In en, this message translates to:
+  /// **'Easiest first'**
+  String get freeBooksSortEasiest;
+
+  /// Sort option: hardest estimated level first.
+  ///
+  /// In en, this message translates to:
+  /// **'Hardest first'**
+  String get freeBooksSortHardest;
+
+  /// Sort option: shortest books first.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortest first'**
+  String get freeBooksSortShortest;
+
+  /// Sort option: longest books first.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest first'**
+  String get freeBooksSortLongest;
+
+  /// Sort option: by title, in Japanese kana order.
+  ///
+  /// In en, this message translates to:
+  /// **'Title (kana order)'**
+  String get freeBooksSortByTitle;
+
+  /// Sort option: by author, in Japanese kana order.
+  ///
+  /// In en, this message translates to:
+  /// **'Author (kana order)'**
+  String get freeBooksSortByAuthor;
+
+  /// Filter chip and sheet title: filter books by estimated JLPT level.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get freeBooksLevel;
+
+  /// An estimated JLPT level, e.g. ~N3. The tilde marks it as an estimate; keep it.
+  ///
+  /// In en, this message translates to:
+  /// **'~N{level}'**
+  String freeBooksLevelEstimate({required int level});
+
+  /// Estimated level for books harder than JLPT N1.
+  ///
+  /// In en, this message translates to:
+  /// **'Beyond N1'**
+  String get freeBooksLevelBeyondN1;
+
+  /// Explains the estimated levels, in the level filter sheet and the book details.
+  ///
+  /// In en, this message translates to:
+  /// **'Levels are estimates based on each book\'s kanji and sentence length, not official JLPT ratings.'**
+  String get freeBooksLevelEstimateNote;
+
+  /// Label in the book details sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated level'**
+  String get freeBooksEstimatedLevel;
+
+  /// Filter chip, sheet title and details label: how long a book takes to read.
+  ///
+  /// In en, this message translates to:
+  /// **'Length'**
+  String get freeBooksLength;
+
+  /// Note in the length filter sheet when the user's reading stats give a personal speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading times use your own reading speed from your stats.'**
+  String get freeBooksLengthNotePersonal;
+
+  /// Note in the length filter sheet before the user has enough reading history.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading times use a typical learner\'s speed until your stats know yours.'**
+  String get freeBooksLengthNoteDefault;
+
+  /// Length filter option.
+  ///
+  /// In en, this message translates to:
+  /// **'Under 10 min'**
+  String get freeBooksLengthUnder10Minutes;
+
+  /// Length filter option.
+  ///
+  /// In en, this message translates to:
+  /// **'10–30 min'**
+  String get freeBooksLengthUnder30Minutes;
+
+  /// Length filter option.
+  ///
+  /// In en, this message translates to:
+  /// **'30–60 min'**
+  String get freeBooksLengthUnder1Hour;
+
+  /// Length filter option.
+  ///
+  /// In en, this message translates to:
+  /// **'1–3 hours'**
+  String get freeBooksLengthUnder3Hours;
+
+  /// Length filter option.
+  ///
+  /// In en, this message translates to:
+  /// **'Over 3 hours'**
+  String get freeBooksLengthLonger;
+
+  /// Book length in the details sheet, using the reader's own speed. time is a duration like 25m or 3h 20m.
+  ///
+  /// In en, this message translates to:
+  /// **'About {time} at your pace · {characters} characters'**
+  String freeBooksLengthAtYourPace({
+    required String time,
+    required int characters,
+  });
+
+  /// Book length in the details sheet before the reader has enough stats for a personal speed.
+  ///
+  /// In en, this message translates to:
+  /// **'About {time} at a typical learner\'s pace · {characters} characters'**
+  String freeBooksLengthAtLearnerPace({
+    required String time,
+    required int characters,
+  });
+
+  /// Filter chip, sheet title and details label for the book's genre.
+  ///
+  /// In en, this message translates to:
+  /// **'Genre'**
+  String get freeBooksGenre;
+
+  /// Genre.
+  ///
+  /// In en, this message translates to:
+  /// **'Fiction'**
+  String get freeBooksGenreFiction;
+
+  /// Genre.
+  ///
+  /// In en, this message translates to:
+  /// **'Children\'s stories'**
+  String get freeBooksGenreChildren;
+
+  /// Genre.
+  ///
+  /// In en, this message translates to:
+  /// **'Poetry'**
+  String get freeBooksGenrePoetry;
+
+  /// Genre.
+  ///
+  /// In en, this message translates to:
+  /// **'Plays'**
+  String get freeBooksGenrePlays;
+
+  /// Genre.
+  ///
+  /// In en, this message translates to:
+  /// **'Essays'**
+  String get freeBooksGenreEssays;
+
+  /// Genre: diaries, letters, travel writing and reportage.
+  ///
+  /// In en, this message translates to:
+  /// **'Diaries and travel'**
+  String get freeBooksGenreDiaries;
+
+  /// Genre.
+  ///
+  /// In en, this message translates to:
+  /// **'History and biography'**
+  String get freeBooksGenreHistory;
+
+  /// Genre.
+  ///
+  /// In en, this message translates to:
+  /// **'Philosophy and religion'**
+  String get freeBooksGenrePhilosophy;
+
+  /// Genre: science, society, arts and other nonfiction.
+  ///
+  /// In en, this message translates to:
+  /// **'Other nonfiction'**
+  String get freeBooksGenreNonfiction;
+
+  /// Genre: unclassified.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get freeBooksGenreOther;
+
+  /// Filter chip, sheet title and details label: the spelling style of the edition.
+  ///
+  /// In en, this message translates to:
+  /// **'Spelling'**
+  String get freeBooksSpelling;
+
+  /// Note in the spelling filter sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-war spelling uses old kana or old kanji forms, which is much harder for learners.'**
+  String get freeBooksSpellingNote;
+
+  /// Spelling style: modern kanji and kana.
+  ///
+  /// In en, this message translates to:
+  /// **'Modern'**
+  String get freeBooksSpellingModern;
+
+  /// Spelling style: modern kanji with pre-war kana spelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-war kana'**
+  String get freeBooksSpellingOldKana;
+
+  /// Spelling style: pre-war kanji forms.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-war kanji and kana'**
+  String get freeBooksSpellingOldKanji;
+
+  /// Spelling style: anything else.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get freeBooksSpellingOther;
+
+  /// Filter chip: hide books already in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide books in my library'**
+  String get freeBooksHideInLibrary;
+
+  /// How many books the current search and filters show.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {{count} book} other {{count} books}}'**
+  String freeBooksResultCount({required int count});
+
+  /// Button that removes every filter (keeps the search).
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get freeBooksClearFilters;
+
+  /// Button that applies the easy picks filters (easiest estimated levels in modern spelling).
+  ///
+  /// In en, this message translates to:
+  /// **'Easy picks'**
+  String get freeBooksEasyPicks;
+
+  /// Accessibility label of the check shown for books already in the library.
+  ///
+  /// In en, this message translates to:
+  /// **'In your library'**
+  String get freeBooksInLibrary;
+
+  /// Button that opens the book's page on Aozora Bunko's website.
+  ///
+  /// In en, this message translates to:
+  /// **'View on Aozora Bunko'**
+  String get freeBooksViewOnAozora;
+
+  /// Disabled download button while the book downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading…'**
+  String get freeBooksDownloading;
+
+  /// Button and snack bar action that opens the book in the reader.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get freeBooksRead;
+
+  /// Snack bar when a book could not be downloaded from Aozora Bunko.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t download the book. Aozora Bunko may be busy or your connection dropped; try again.'**
+  String get freeBooksAozoraDownloadFailed;
+
+  /// Snack bar when a downloaded Aozora Bunko book could not be turned into an EPUB.
+  ///
+  /// In en, this message translates to:
+  /// **'This book couldn\'t be converted for Mekuru.'**
+  String get freeBooksConversionFailed;
+
+  /// Credit line at the bottom of an Aozora book's details sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'From Aozora Bunko, a free library of Japanese books typed in by volunteers. Each book keeps their credits on its last page.'**
+  String get freeBooksAozoraAttribution;
 }
 
 class _AppLocalizationsDelegate

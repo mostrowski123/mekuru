@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
-import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/stats/presentation/screens/stats_screen.dart';
@@ -11,7 +10,6 @@ import 'package:mekuru/features/stats/presentation/widgets/activity_heatmap_card
 import 'package:mekuru/features/stats/presentation/widgets/hero_stat_tile.dart';
 import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:mekuru/l10n/generated/app_localizations_zh.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../test_app.dart';
 import 'stats_fixtures.dart';
@@ -113,18 +111,14 @@ void main() {
       matching: find.text(text),
     );
 
-    testWidgets('titles itself You and opens settings from the gear', (
+    testWidgets('titles itself Reading stats, with no settings gear', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({});
       await pumpScreen(tester, sessions: [], events: []);
 
-      expect(find.text('You'), findsOneWidget);
-
-      await tester.tap(find.byIcon(Icons.settings_outlined));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(SettingsScreen), findsOneWidget);
+      expect(find.text('Reading stats'), findsOneWidget);
+      // Settings moved to its own card on the You hub.
+      expect(find.byIcon(Icons.settings_outlined), findsNothing);
     });
 
     testWidgets('shows the hero tiles and both selectors', (tester) async {

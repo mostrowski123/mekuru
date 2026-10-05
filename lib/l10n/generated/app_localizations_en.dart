@@ -120,10 +120,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Import something to read, install a dictionary, and you will be ready to save words in a few minutes.';
 
   @override
-  String get libraryFreeBooksTip =>
-      'Tip: Find free Japanese books on Aozora Bunko. Download one as EPUB, then tap \"Import EPUB\".';
-
-  @override
   String get libraryFreeBooksLink => 'Browse free books';
 
   @override
@@ -3595,4 +3591,229 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get catalogReplaceJmdict => 'Replace JMdict';
+
+  @override
+  String youFreeBooksSubtitle({required int count}) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString+ free classics';
+  }
+
+  @override
+  String youStatsSubtitle({required String duration}) {
+    return '$duration this week';
+  }
+
+  @override
+  String get youSettingsSubtitle => 'Reader, dictionaries, backup and more';
+
+  @override
+  String get statsScreenTitle => 'Reading stats';
+
+  @override
+  String get libraryFreeBooksTipInApp =>
+      'Tip: Get free Japanese books from Aozora Bunko, right here in the app.';
+
+  @override
+  String get freeBooksTitle => 'Free books';
+
+  @override
+  String get freeBooksSearchHint => 'Search titles or authors';
+
+  @override
+  String get freeBooksNoResults => 'No books match. Try clearing some filters.';
+
+  @override
+  String get freeBooksCatalogFailed => 'Couldn\'t load the book list.';
+
+  @override
+  String get freeBooksSortPopular => 'Most popular';
+
+  @override
+  String get freeBooksSortEasiest => 'Easiest first';
+
+  @override
+  String get freeBooksSortHardest => 'Hardest first';
+
+  @override
+  String get freeBooksSortShortest => 'Shortest first';
+
+  @override
+  String get freeBooksSortLongest => 'Longest first';
+
+  @override
+  String get freeBooksSortByTitle => 'Title (kana order)';
+
+  @override
+  String get freeBooksSortByAuthor => 'Author (kana order)';
+
+  @override
+  String get freeBooksLevel => 'Level';
+
+  @override
+  String freeBooksLevelEstimate({required int level}) {
+    return '~N$level';
+  }
+
+  @override
+  String get freeBooksLevelBeyondN1 => 'Beyond N1';
+
+  @override
+  String get freeBooksLevelEstimateNote =>
+      'Levels are estimates based on each book\'s kanji and sentence length, not official JLPT ratings.';
+
+  @override
+  String get freeBooksEstimatedLevel => 'Estimated level';
+
+  @override
+  String get freeBooksLength => 'Length';
+
+  @override
+  String get freeBooksLengthNotePersonal =>
+      'Reading times use your own reading speed from your stats.';
+
+  @override
+  String get freeBooksLengthNoteDefault =>
+      'Reading times use a typical learner\'s speed until your stats know yours.';
+
+  @override
+  String get freeBooksLengthUnder10Minutes => 'Under 10 min';
+
+  @override
+  String get freeBooksLengthUnder30Minutes => '10–30 min';
+
+  @override
+  String get freeBooksLengthUnder1Hour => '30–60 min';
+
+  @override
+  String get freeBooksLengthUnder3Hours => '1–3 hours';
+
+  @override
+  String get freeBooksLengthLonger => 'Over 3 hours';
+
+  @override
+  String freeBooksLengthAtYourPace({
+    required String time,
+    required int characters,
+  }) {
+    final intl.NumberFormat charactersNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String charactersString = charactersNumberFormat.format(characters);
+
+    return 'About $time at your pace · $charactersString characters';
+  }
+
+  @override
+  String freeBooksLengthAtLearnerPace({
+    required String time,
+    required int characters,
+  }) {
+    final intl.NumberFormat charactersNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String charactersString = charactersNumberFormat.format(characters);
+
+    return 'About $time at a typical learner\'s pace · $charactersString characters';
+  }
+
+  @override
+  String get freeBooksGenre => 'Genre';
+
+  @override
+  String get freeBooksGenreFiction => 'Fiction';
+
+  @override
+  String get freeBooksGenreChildren => 'Children\'s stories';
+
+  @override
+  String get freeBooksGenrePoetry => 'Poetry';
+
+  @override
+  String get freeBooksGenrePlays => 'Plays';
+
+  @override
+  String get freeBooksGenreEssays => 'Essays';
+
+  @override
+  String get freeBooksGenreDiaries => 'Diaries and travel';
+
+  @override
+  String get freeBooksGenreHistory => 'History and biography';
+
+  @override
+  String get freeBooksGenrePhilosophy => 'Philosophy and religion';
+
+  @override
+  String get freeBooksGenreNonfiction => 'Other nonfiction';
+
+  @override
+  String get freeBooksGenreOther => 'Other';
+
+  @override
+  String get freeBooksSpelling => 'Spelling';
+
+  @override
+  String get freeBooksSpellingNote =>
+      'Pre-war spelling uses old kana or old kanji forms, which is much harder for learners.';
+
+  @override
+  String get freeBooksSpellingModern => 'Modern';
+
+  @override
+  String get freeBooksSpellingOldKana => 'Pre-war kana';
+
+  @override
+  String get freeBooksSpellingOldKanji => 'Pre-war kanji and kana';
+
+  @override
+  String get freeBooksSpellingOther => 'Other';
+
+  @override
+  String get freeBooksHideInLibrary => 'Hide books in my library';
+
+  @override
+  String freeBooksResultCount({required int count}) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString books',
+      one: '$countString book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get freeBooksClearFilters => 'Clear filters';
+
+  @override
+  String get freeBooksEasyPicks => 'Easy picks';
+
+  @override
+  String get freeBooksInLibrary => 'In your library';
+
+  @override
+  String get freeBooksViewOnAozora => 'View on Aozora Bunko';
+
+  @override
+  String get freeBooksDownloading => 'Downloading…';
+
+  @override
+  String get freeBooksRead => 'Read';
+
+  @override
+  String get freeBooksAozoraDownloadFailed =>
+      'Couldn\'t download the book. Aozora Bunko may be busy or your connection dropped; try again.';
+
+  @override
+  String get freeBooksConversionFailed =>
+      'This book couldn\'t be converted for Mekuru.';
+
+  @override
+  String get freeBooksAozoraAttribution =>
+      'From Aozora Bunko, a free library of Japanese books typed in by volunteers. Each book keeps their credits on its last page.';
 }

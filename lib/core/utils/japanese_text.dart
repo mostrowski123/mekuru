@@ -97,9 +97,12 @@ String foldSearchInput(String text) {
       if (!_voiceLastKana(out, 2)) out.add(rune);
     } else if (rune == 0x2018 || rune == 0x2019 || rune == 0x02BC) {
       out.add(0x27);
-    } else {
+    } else if (rune >= 0xC0 && rune <= 0x17F) {
+      // Latin-1 and Extended-A: where the long vowels live.
       final doubled = _longVowelRomaji[String.fromCharCode(rune).toLowerCase()];
       out.addAll(doubled?.codeUnits ?? [rune]);
+    } else {
+      out.add(rune);
     }
   }
   return String.fromCharCodes(out);

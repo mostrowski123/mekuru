@@ -138,3 +138,4 @@ jobs:
           integration_test/server_sync_flow_test.dart
           integration_test/epub_manga_convert_flow_test.dart
           integration_test/vision_ocr_test.dart
+          integration_test/free_books_flow_test.dart

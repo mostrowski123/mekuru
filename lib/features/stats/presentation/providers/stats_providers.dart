@@ -17,8 +17,8 @@ final statsRepositoryProvider = Provider<StatsRepository>((ref) {
 ///
 /// Screen-local UI state, deliberately not persisted: the stats screen is a
 /// weekly-glance surface, so every visit should open on the trailing week.
-/// autoDispose is what makes that true — the You tab evicts the screen on
-/// leave, and dropping the last listener resets the selection.
+/// autoDispose is what makes that true — popping the stats route drops the
+/// last listener, which resets the selection.
 final selectedStatsPeriodProvider = StateProvider.autoDispose<StatsPeriod>(
   (ref) => StatsPeriod.week,
 );

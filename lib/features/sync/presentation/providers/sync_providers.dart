@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:mekuru/core/database/database_provider.dart';
@@ -22,7 +21,6 @@ import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
-import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -136,7 +134,7 @@ final progressSyncServiceProvider = Provider<ProgressSyncService>((ref) {
     connections: ref.watch(serverConnectionRepositoryProvider),
     clientFactory: ref.watch(serverClientFactoryProvider),
     onLinkDropped: (book) =>
-        _announce((l10n) => l10n.serverLinkDropped(title: book.title)),
+        announce((l10n) => l10n.serverLinkDropped(title: book.title)),
   );
   BookRepository.onProgressWritten = service.schedulePush;
   ref.onDispose(() {
@@ -281,7 +279,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         e,
         attrs: {'server_type': connection.serverType},
       );
-      _announce((l10n) => describeServerError(l10n, e));
+      announce((l10n) => describeServerError(l10n, e));
     }
   }
 
@@ -436,9 +434,9 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
   ) {
     switch (status.error) {
       case serverDownloadStoppedError:
-        _announce((l10n) => l10n.serverBrowseDownloadStopped);
+        announce((l10n) => l10n.serverBrowseDownloadStopped);
       case serverDownloadUntrustedCertificateError:
-        _announce((l10n) => l10n.serverCertificateUntrusted);
+        announce((l10n) => l10n.serverCertificateUntrusted);
       default:
         final error = status.error ?? 'Download failed';
         // Server offline or Wi-Fi gone is expected: a warning log only.
@@ -447,7 +445,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
           error,
           attrs: {'server_type': job?.meta['serverType'] as String? ?? ''},
         );
-        _announce((l10n) => l10n.serverBrowseDownloadFailed(error: error));
+        announce((l10n) => l10n.serverBrowseDownloadFailed(error: error));
     }
   }
 
@@ -494,7 +492,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         'sync.book_downloaded',
         attrs: {'server_type': serverType, 'format': meta['format'] as String},
       );
-      _announce(
+      announce(
         (l10n) => l10n.serverBrowseAddedToLibrary(title: imported.title),
       );
     } catch (e, st) {
@@ -504,7 +502,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         stackTrace: st,
         attrs: {'server_type': serverType},
       );
-      _announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
+      announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
     }
   }
 }
@@ -515,17 +513,6 @@ String describeServerError(AppLocalizations l10n, Object error) =>
     isUntrustedCertificateError(error)
     ? l10n.serverCertificateUntrusted
     : l10n.serverBrowseDownloadFailed(error: '$error');
-
-/// Snack bar on whatever screen is showing (downloads and sync outlive the
-/// screen that started them). Replaces the current one, so a batch of
-/// downloads finishing together doesn't queue minutes of messages.
-void _announce(String Function(AppLocalizations l10n) message) {
-  final context = scaffoldMessengerKey.currentContext;
-  if (context == null || !context.mounted) return;
-  scaffoldMessengerKey.currentState
-    ?..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message(context.l10n))));
-}
 
 final serverDownloadProvider =
     NotifierProvider<ServerDownloadNotifier, Map<String, double>>(

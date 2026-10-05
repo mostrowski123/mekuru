@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
+import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
+import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
+import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart';
@@ -38,6 +42,24 @@ void main() {
     expect(find.text('Get Dictionaries'), findsOneWidget);
     expect(find.text('Restore Backup'), findsOneWidget);
     expect(find.text('Browse free books'), findsOneWidget);
+  });
+
+  testWidgets('Browse free books opens the in-app Free books screen', (
+    tester,
+  ) async {
+    await pumpEmptyLibrary(
+      tester,
+      overrides: [
+        aozoraCatalogProvider.overrideWith((ref) async => <AozoraWork>[]),
+        sessionsProvider.overrideWith((ref) => Stream.value(const [])),
+      ],
+    );
+
+    await tester.ensureVisible(find.text('Browse free books'));
+    await tester.tap(find.text('Browse free books'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FreeBooksScreen), findsOneWidget);
   });
 
   testWidgets('Get Dictionaries starts the starter pack and opens Downloads', (

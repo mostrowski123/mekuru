@@ -18,7 +18,7 @@
   },
   "navYou": "Tú",
   "@navYou": {
-    "description": "Bottom navigation label and title of the You tab: the reading stats dashboard, with the entry to settings in its corner."
+    "description": "Bottom navigation label and title of the You tab: a hub with cards for Free books, Reading stats and Settings."
   },
   "commonHelp": "Ayuda",
   "@commonHelp": {
@@ -150,10 +150,6 @@
   "libraryEmptySubtitle": "Importa algo para leer, instala un diccionario y podrás guardar palabras en unos minutos.",
   "@libraryEmptySubtitle": {
     "description": "Description shown when the library has no books."
-  },
-  "libraryFreeBooksTip": "Consejo: encuentra libros japoneses gratis en Aozora Bunko. Descarga uno en EPUB y luego toca \"Importar EPUB\".",
-  "@libraryFreeBooksTip": {
-    "description": "Tip under the empty library's buttons pointing to free public-domain Japanese EPUBs (Aozora Bunko works). Quotes the Import EPUB button label."
   },
   "libraryFreeBooksLink": "Ver libros gratis",
   "@libraryFreeBooksLink": {

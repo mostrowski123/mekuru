@@ -18,7 +18,7 @@
   },
   "navYou": "Anda",
   "@navYou": {
-    "description": "Bottom navigation label and title of the You tab: the reading stats dashboard, with the entry to settings in its corner."
+    "description": "Bottom navigation label and title of the You tab: a hub with cards for Free books, Reading stats and Settings."
   },
   "commonHelp": "Bantuan",
   "@commonHelp": {
@@ -150,10 +150,6 @@
   "libraryEmptySubtitle": "Impor sesuatu untuk dibaca, pasang kamus, dan Anda akan siap menyimpan kata dalam beberapa menit.",
   "@libraryEmptySubtitle": {
     "description": "Description shown when the library has no books."
-  },
-  "libraryFreeBooksTip": "Tips: temukan buku Jepang gratis di Aozora Bunko. Unduh satu dalam format EPUB, lalu ketuk \"Impor EPUB\".",
-  "@libraryFreeBooksTip": {
-    "description": "Tip under the empty library's buttons pointing to free public-domain Japanese EPUBs (Aozora Bunko works). Quotes the Import EPUB button label."
   },
   "libraryFreeBooksLink": "Jelajahi buku gratis",
   "@libraryFreeBooksLink": {
