@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/features/manga/data/services/pdf_text_blocks.dart';
 
@@ -185,6 +188,21 @@ void main() {
 
     expect(blocks, isNotEmpty);
     expect(blocks.map((b) => b.lines.join()).join(), contains('学校（がっこう）'));
+  });
+
+  test('pdfLooksScanned agrees with the catalog builder on shared cases', () {
+    // tools/test_build_tadoku_catalog.py checks mostly_text against the
+    // same file, so "Pages only" and the scanned notice agree.
+    final cases =
+        jsonDecode(
+              File('test/shared/pdf_scanned_cases.json').readAsStringSync(),
+            )
+            as List;
+    expect(cases, isNotEmpty);
+    for (final case_ in cases.cast<Map<String, dynamic>>()) {
+      final pages = (case_['pages'] as List).cast<bool>();
+      expect(pdfLooksScanned(pages), case_['scanned'], reason: '$pages');
+    }
   });
 
   test('a page without text has no blocks', () {

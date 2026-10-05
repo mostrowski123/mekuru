@@ -397,7 +397,7 @@ class BookRepository {
       try {
         final pages = <MokuroPage>[];
         final writes = <Future<void>>[];
-        var textPages = 0;
+        final pagesWithText = <bool>[];
         var verticalPages = 0;
         for (var i = 0; i < pdf.pageCount; i++) {
           final fileName = CbzParser.pageFileName(i + 1, 'page.jpg');
@@ -412,10 +412,8 @@ class BookRepository {
           writes.add(page.written..ignore());
           if (writes.length >= 3) await writes.removeAt(0);
           final blocks = pdfPageBlocks(page.glyphs);
-          if (blocks.isNotEmpty) {
-            textPages++;
-            if (blocks.first.vertical) verticalPages++;
-          }
+          pagesWithText.add(blocks.isNotEmpty);
+          if (blocks.isNotEmpty && blocks.first.vertical) verticalPages++;
           pages.add(
             MokuroPage(
               pageIndex: i,
@@ -429,6 +427,7 @@ class BookRepository {
         }
         await Future.wait(writes);
         _requirePages(pages.length, name);
+        final textPages = pagesWithText.where((text) => text).length;
         final book = await _saveMangaBook(
           dir,
           MokuroBook(
@@ -448,7 +447,7 @@ class BookRepository {
               ? 'rtl'
               : 'ltr',
         );
-        return (book: book, scanned: textPages * 2 < pages.length);
+        return (book: book, scanned: pdfLooksScanned(pagesWithText));
       } finally {
         await pdf.close();
       }

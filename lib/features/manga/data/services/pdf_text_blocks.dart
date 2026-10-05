@@ -23,6 +23,19 @@ class PdfGlyph {
   double get size => math.max(right - left, bottom - top);
 }
 
+/// Whether a PDF reads as a scan: fewer than half of its story pages have
+/// text, given whether each page does ([pdfPageBlocks] found blocks). The
+/// cover and the last page don't count when there are more, as they rarely
+/// carry the story. tools/build_tadoku_catalog.py decides "Pages only" with
+/// the negation (mostly_text): change both together;
+/// test/shared/pdf_scanned_cases.json holds the cases both test against.
+bool pdfLooksScanned(List<bool> pagesWithText) {
+  final story = pagesWithText.length > 2
+      ? pagesWithText.sublist(1, pagesWithText.length - 1)
+      : pagesWithText;
+  return story.where((text) => text).length * 2 < story.length;
+}
+
 /// Furigana is drawn at about half the base size. Glyphs under this share
 /// of the page's median size are small; beside the lines they are readings,
 /// not text to look up. PDFium boxes glyphs by their ink, so small kana and

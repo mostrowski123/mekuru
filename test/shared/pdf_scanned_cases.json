@@ -1,0 +1,10 @@
+[
+  {"pages": [false, true, true, true, false], "scanned": false},
+  {"pages": [false, true, false, false, false], "scanned": true},
+  {"pages": [false, true, true, false, false, false], "scanned": false},
+  {"pages": [true, false, false, true], "scanned": true},
+  {"pages": [false, true], "scanned": false},
+  {"pages": [false, false], "scanned": true},
+  {"pages": [true], "scanned": false},
+  {"pages": [false], "scanned": true}
+]

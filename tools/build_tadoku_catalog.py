@@ -110,12 +110,18 @@ def page_has_text(text: str) -> bool:
     return japanese >= MIN_JAPANESE and japanese >= MIN_JAPANESE_SHARE * len(counted)
 
 
+def mostly_text(pages_with_text: list[bool]) -> bool:
+    """Whether at least half the story pages (not the cover or the last page) have text.
+    The app's pdfLooksScanned (pdf_text_blocks.dart) is its negation: change both together;
+    test/shared/pdf_scanned_cases.json holds the cases both test against."""
+    story = pages_with_text[1:-1] or pages_with_text
+    return sum(story) * 2 >= len(story)
+
+
 def has_text_layer(pdf_bytes: bytes) -> bool:
-    """Whether most story pages (not the cover or the last page) carry real Japanese text."""
+    """Whether most story pages carry real Japanese text."""
     with pymupdf.open(stream=pdf_bytes, filetype="pdf") as document:
-        pages = list(document)[1:-1] or list(document)
-        with_text = sum(1 for page in pages if page_has_text(page.get_text()))
-    return with_text * 2 >= len(pages)
+        return mostly_text([page_has_text(page.get_text()) for page in document])
 
 
 
