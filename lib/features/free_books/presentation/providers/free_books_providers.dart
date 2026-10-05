@@ -249,12 +249,15 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
     try {
       temp = File(p.join((await getTemporaryDirectory()).path, fileName));
       await fetch(client, temp.path, (progress) {
+        BackgroundWork.instance.progress(workId, progress);
         if (ref.mounted) state = {...state, key: progress};
       });
       if (stopped()) return;
       final book = await ref
           .read(bookImportProvider.notifier)
           .importOne(temp.path, format: format, title: title);
+      // The iOS Live Activity ends at 100%, as dictionary downloads do.
+      BackgroundWork.instance.progress(workId, 1.0);
       if (!ref.mounted) return;
       logUsage(
         'free_books.download',
