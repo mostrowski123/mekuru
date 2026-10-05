@@ -3471,7 +3471,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get libraryFreeBooksTipInApp =>
-      'Tip: Get free Japanese books from Aozora Bunko, right here in the app.';
+      'Tip: Get free Japanese books, from graded readers to classics, right here in the app.';
 
   @override
   String get freeBooksTitle => 'Free books';

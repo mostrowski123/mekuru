@@ -4660,13 +4660,13 @@
   "@statsScreenTitle": {
     "description": "Title of the reading stats screen and of its card on the You tab."
   },
-  "libraryFreeBooksTipInApp": "Tip: Get free Japanese books from Aozora Bunko, right here in the app.",
+  "libraryFreeBooksTipInApp": "Tip: Get free Japanese books, from graded readers to classics, right here in the app.",
   "@libraryFreeBooksTipInApp": {
     "description": "Tip under the empty library's buttons; the link under it (libraryFreeBooksLink) opens the in-app Free books screen."
   },
   "freeBooksTitle": "Free books",
   "@freeBooksTitle": {
-    "description": "Title of the Free books screen (free public-domain books to download), and of its card on the You tab."
+    "description": "Title of the Free books screen (free books to download: graded readers and Aozora Bunko classics), and of its card on the You tab."
   },
   "freeBooksSearchHint": "Search titles or authors",
   "@freeBooksSearchHint": {

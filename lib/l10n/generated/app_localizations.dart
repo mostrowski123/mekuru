@@ -5901,10 +5901,10 @@ abstract class AppLocalizations {
   /// Tip under the empty library's buttons; the link under it (libraryFreeBooksLink) opens the in-app Free books screen.
   ///
   /// In en, this message translates to:
-  /// **'Tip: Get free Japanese books from Aozora Bunko, right here in the app.'**
+  /// **'Tip: Get free Japanese books, from graded readers to classics, right here in the app.'**
   String get libraryFreeBooksTipInApp;
 
-  /// Title of the Free books screen (free public-domain books to download), and of its card on the You tab.
+  /// Title of the Free books screen (free books to download: graded readers and Aozora Bunko classics), and of its card on the You tab.
   ///
   /// In en, this message translates to:
   /// **'Free books'**
