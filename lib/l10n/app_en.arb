@@ -4630,13 +4630,16 @@
   "@catalogReplaceJmdict": {
     "description": "Button in the Jitendex/JMdict dialog: download Jitendex, then delete JMdict once Jitendex is installed."
   },
-  "youFreeBooksSubtitle": "{count}+ free classics",
+  "youFreeBooksSubtitle": "{classics}+ classics and {readers} graded readers",
   "@youFreeBooksSubtitle": {
-    "description": "Subtitle of the You tab's Free books card: how many free Aozora Bunko books the browser offers, rounded down to a thousand (17,000+).",
+    "description": "Subtitle of the You tab's Free books card: how many free Aozora Bunko classics (rounded down to a thousand: 17,000+) and Tadoku graded readers (140) the browser offers.",
     "placeholders": {
-      "count": {
+      "classics": {
         "type": "int",
         "format": "decimalPattern"
+      },
+      "readers": {
+        "type": "int"
       }
     }
   },
@@ -4894,16 +4897,100 @@
   "@freeBooksRead": {
     "description": "Button and snack bar action that opens the book in the reader."
   },
-  "freeBooksAozoraDownloadFailed": "Couldn't download the book. Aozora Bunko may be busy or your connection dropped; try again.",
-  "@freeBooksAozoraDownloadFailed": {
-    "description": "Snack bar when a book could not be downloaded from Aozora Bunko."
+  "freeBooksDownloadFailed": "Couldn't download the book. The site may be busy or your connection dropped; try again.",
+  "@freeBooksDownloadFailed": {
+    "description": "Snack bar when a free book could not be downloaded from Aozora Bunko or tadoku.org."
   },
-  "freeBooksConversionFailed": "This book couldn't be converted for Mekuru.",
-  "@freeBooksConversionFailed": {
-    "description": "Snack bar when a downloaded Aozora Bunko book could not be turned into an EPUB."
+  "freeBooksImportFailed": "Mekuru couldn't add this book to your library.",
+  "@freeBooksImportFailed": {
+    "description": "Snack bar when a downloaded free book could not be converted or imported."
   },
   "freeBooksAozoraAttribution": "From Aozora Bunko, a free library of Japanese books typed in by volunteers. Each book keeps their credits on its last page.",
   "@freeBooksAozoraAttribution": {
     "description": "Credit line at the bottom of an Aozora book's details sheet."
+  },
+  "freeBooksTabGradedReaders": "Graded readers",
+  "@freeBooksTabGradedReaders": {
+    "description": "Free books tab with NPO Tadoku Supporters' graded readers (short levelled books for learners)."
+  },
+  "freeBooksTabAozora": "Aozora Bunko",
+  "@freeBooksTabAozora": {
+    "description": "Free books tab with the Aozora Bunko classics (a proper name)."
+  },
+  "freeBooksTadokuSearchHint": "Search graded readers",
+  "@freeBooksTadokuSearchHint": {
+    "description": "Hint in the Graded readers search field. Japanese, kana readings and romaji all work."
+  },
+  "freeBooksTadokuLevelStart": "Start",
+  "@freeBooksTadokuLevelStart": {
+    "description": "Tadoku graded-reader level before level 0, for absolute beginners. Shown on a level chip and a cover badge."
+  },
+  "freeBooksTadokuPagesOnly": "Pages only",
+  "@freeBooksTadokuPagesOnly": {
+    "description": "Badge on a graded reader whose PDF is pictures of pages, without text: its words can't be tapped without OCR."
+  },
+  "freeBooksTadokuPagesOnlyNote": "This book's PDF is pictures of pages, so its words can't be tapped. OCR (a Pro feature) can make them tappable.",
+  "@freeBooksTadokuPagesOnlyNote": {
+    "description": "Details sheet note on a Pages only graded reader."
+  },
+  "freeBooksTadokuAudio": "Its audio can be played on tadoku.org.",
+  "@freeBooksTadokuAudio": {
+    "description": "Details sheet note on a graded reader that has an audio recording on its tadoku.org page."
+  },
+  "freeBooksViewOnTadoku": "View on tadoku.org",
+  "@freeBooksViewOnTadoku": {
+    "description": "Button opening a graded reader's page on tadoku.org."
+  },
+  "freeBooksTadokuLicense": "License: CC BY-NC-ND 4.0",
+  "@freeBooksTadokuLicense": {
+    "description": "Link to the Creative Commons licence the graded readers are shared under."
+  },
+  "freeBooksTadokuLevel": "L{level}",
+  "@freeBooksTadokuLevel": {
+    "description": "Tadoku graded-reader level 0 to 5, short form for chips and badges.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "freeBooksTadokuLevelJlpt": "L{level} · {jlpt}",
+  "@freeBooksTadokuLevelJlpt": {
+    "description": "Tadoku level with the JLPT level tadoku.org itself states for it (jlpt is like N4 or N3–N2). Not an estimate.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      },
+      "jlpt": {
+        "type": "String"
+      }
+    }
+  },
+  "freeBooksTadokuCharacters": "{characters} characters",
+  "@freeBooksTadokuCharacters": {
+    "description": "Length of a graded reader in characters, when tadoku.org states it; shown after its page count.",
+    "placeholders": {
+      "characters": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "freeBooksTadokuAttribution": "Graded reader by NPO Tadoku Supporters ({publisher}), free under CC BY-NC-ND 4.0. Mekuru downloads it from tadoku.org, unchanged.",
+  "@freeBooksTadokuAttribution": {
+    "description": "Credit line on a graded reader's details sheet; publisher is the organization's Japanese name.",
+    "placeholders": {
+      "publisher": {
+        "type": "String"
+      }
+    }
+  },
+  "attributionFreeBooksTitle": "Free books",
+  "@attributionFreeBooksTitle": {
+    "description": "Attributions card title for the Free books sources."
+  },
+  "attributionFreeBooksDescription": "The classics come from Aozora Bunko, whose catalog is shared under CC BY 4.0. Their reading levels and lengths are estimated with the aozorabunko-clean dataset (CC BY 4.0). The graded readers are by NPO Tadoku Supporters, shared under CC BY-NC-ND 4.0 and downloaded unchanged from tadoku.org.",
+  "@attributionFreeBooksDescription": {
+    "description": "Attributions card text crediting the Free books sources and their licences."
   }
 }

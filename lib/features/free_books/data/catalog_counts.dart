@@ -4,3 +4,7 @@
 /// Works in the bundled Aozora Bunko catalog (`assets/free_books/aozora.json`),
 /// for copy that needs the number without parsing the catalog.
 const int aozoraWorkCount = 17229;
+
+/// Books in the bundled Tadoku catalog (`assets/free_books/tadoku.json`),
+/// written by tools/build_tadoku_catalog.py.
+const int tadokuBookCount = 140;

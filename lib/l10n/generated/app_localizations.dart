@@ -5874,11 +5874,11 @@ abstract class AppLocalizations {
   /// **'Replace JMdict'**
   String get catalogReplaceJmdict;
 
-  /// Subtitle of the You tab's Free books card: how many free Aozora Bunko books the browser offers, rounded down to a thousand (17,000+).
+  /// Subtitle of the You tab's Free books card: how many free Aozora Bunko classics (rounded down to a thousand: 17,000+) and Tadoku graded readers (140) the browser offers.
   ///
   /// In en, this message translates to:
-  /// **'{count}+ free classics'**
-  String youFreeBooksSubtitle({required int count});
+  /// **'{classics}+ classics and {readers} graded readers'**
+  String youFreeBooksSubtitle({required int classics, required int readers});
 
   /// Subtitle of the You tab's Reading stats card. duration is a reading time like 3h 20m (statsDurationHoursMinutes) read over the last 7 days.
   ///
@@ -6216,23 +6216,113 @@ abstract class AppLocalizations {
   /// **'Read'**
   String get freeBooksRead;
 
-  /// Snack bar when a book could not be downloaded from Aozora Bunko.
+  /// Snack bar when a free book could not be downloaded from Aozora Bunko or tadoku.org.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t download the book. Aozora Bunko may be busy or your connection dropped; try again.'**
-  String get freeBooksAozoraDownloadFailed;
+  /// **'Couldn\'t download the book. The site may be busy or your connection dropped; try again.'**
+  String get freeBooksDownloadFailed;
 
-  /// Snack bar when a downloaded Aozora Bunko book could not be turned into an EPUB.
+  /// Snack bar when a downloaded free book could not be converted or imported.
   ///
   /// In en, this message translates to:
-  /// **'This book couldn\'t be converted for Mekuru.'**
-  String get freeBooksConversionFailed;
+  /// **'Mekuru couldn\'t add this book to your library.'**
+  String get freeBooksImportFailed;
 
   /// Credit line at the bottom of an Aozora book's details sheet.
   ///
   /// In en, this message translates to:
   /// **'From Aozora Bunko, a free library of Japanese books typed in by volunteers. Each book keeps their credits on its last page.'**
   String get freeBooksAozoraAttribution;
+
+  /// Free books tab with NPO Tadoku Supporters' graded readers (short levelled books for learners).
+  ///
+  /// In en, this message translates to:
+  /// **'Graded readers'**
+  String get freeBooksTabGradedReaders;
+
+  /// Free books tab with the Aozora Bunko classics (a proper name).
+  ///
+  /// In en, this message translates to:
+  /// **'Aozora Bunko'**
+  String get freeBooksTabAozora;
+
+  /// Hint in the Graded readers search field. Japanese, kana readings and romaji all work.
+  ///
+  /// In en, this message translates to:
+  /// **'Search graded readers'**
+  String get freeBooksTadokuSearchHint;
+
+  /// Tadoku graded-reader level before level 0, for absolute beginners. Shown on a level chip and a cover badge.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get freeBooksTadokuLevelStart;
+
+  /// Badge on a graded reader whose PDF is pictures of pages, without text: its words can't be tapped without OCR.
+  ///
+  /// In en, this message translates to:
+  /// **'Pages only'**
+  String get freeBooksTadokuPagesOnly;
+
+  /// Details sheet note on a Pages only graded reader.
+  ///
+  /// In en, this message translates to:
+  /// **'This book\'s PDF is pictures of pages, so its words can\'t be tapped. OCR (a Pro feature) can make them tappable.'**
+  String get freeBooksTadokuPagesOnlyNote;
+
+  /// Details sheet note on a graded reader that has an audio recording on its tadoku.org page.
+  ///
+  /// In en, this message translates to:
+  /// **'Its audio can be played on tadoku.org.'**
+  String get freeBooksTadokuAudio;
+
+  /// Button opening a graded reader's page on tadoku.org.
+  ///
+  /// In en, this message translates to:
+  /// **'View on tadoku.org'**
+  String get freeBooksViewOnTadoku;
+
+  /// Link to the Creative Commons licence the graded readers are shared under.
+  ///
+  /// In en, this message translates to:
+  /// **'License: CC BY-NC-ND 4.0'**
+  String get freeBooksTadokuLicense;
+
+  /// Tadoku graded-reader level 0 to 5, short form for chips and badges.
+  ///
+  /// In en, this message translates to:
+  /// **'L{level}'**
+  String freeBooksTadokuLevel({required int level});
+
+  /// Tadoku level with the JLPT level tadoku.org itself states for it (jlpt is like N4 or N3–N2). Not an estimate.
+  ///
+  /// In en, this message translates to:
+  /// **'L{level} · {jlpt}'**
+  String freeBooksTadokuLevelJlpt({required int level, required String jlpt});
+
+  /// Length of a graded reader in characters, when tadoku.org states it; shown after its page count.
+  ///
+  /// In en, this message translates to:
+  /// **'{characters} characters'**
+  String freeBooksTadokuCharacters({required int characters});
+
+  /// Credit line on a graded reader's details sheet; publisher is the organization's Japanese name.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded reader by NPO Tadoku Supporters ({publisher}), free under CC BY-NC-ND 4.0. Mekuru downloads it from tadoku.org, unchanged.'**
+  String freeBooksTadokuAttribution({required String publisher});
+
+  /// Attributions card title for the Free books sources.
+  ///
+  /// In en, this message translates to:
+  /// **'Free books'**
+  String get attributionFreeBooksTitle;
+
+  /// Attributions card text crediting the Free books sources and their licences.
+  ///
+  /// In en, this message translates to:
+  /// **'The classics come from Aozora Bunko, whose catalog is shared under CC BY 4.0. Their reading levels and lengths are estimated with the aozorabunko-clean dataset (CC BY 4.0). The graded readers are by NPO Tadoku Supporters, shared under CC BY-NC-ND 4.0 and downloaded unchanged from tadoku.org.'**
+  String get attributionFreeBooksDescription;
 }
 
 class _AppLocalizationsDelegate

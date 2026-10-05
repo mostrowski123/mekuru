@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -6,77 +5,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
 import 'package:mekuru/features/free_books/data/services/aozora_catalog.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
+import 'package:mekuru/features/free_books/presentation/widgets/free_book_actions.dart';
+import 'package:mekuru/features/free_books/presentation/widgets/free_books_search_field.dart';
 import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
-import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Aozora Bunko: search, filters and sort over the bundled catalog.
-class AozoraTab extends ConsumerStatefulWidget {
+class AozoraTab extends ConsumerWidget {
   const AozoraTab({super.key});
 
   @override
-  ConsumerState<AozoraTab> createState() => _AozoraTabState();
-}
-
-class _AozoraTabState extends ConsumerState<AozoraTab> {
-  late final _search = TextEditingController(
-    text: ref.read(aozoraQueryProvider).text,
-  );
-  Timer? _debounce;
-
-  void _onSearchChanged(String text) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () {
-      ref
-          .read(aozoraQueryProvider.notifier)
-          .update((query) => query.copyWith(text: text));
-    });
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _search.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final results = ref.watch(aozoraResultsProvider);
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          // Rebuilds only the field per keystroke, for the clear button.
-          child: ValueListenableBuilder(
-            valueListenable: _search,
-            builder: (context, value, _) => TextField(
-              controller: _search,
-              onChanged: _onSearchChanged,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: l10n.freeBooksSearchHint,
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: value.text.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        tooltip: l10n.commonClearSearch,
-                        onPressed: () {
-                          _search.clear();
-                          _onSearchChanged('');
-                        },
-                      ),
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-          ),
+        FreeBooksSearchField(
+          initialText: ref.read(aozoraQueryProvider).text,
+          hintText: l10n.freeBooksSearchHint,
+          onChanged: (text) => ref
+              .read(aozoraQueryProvider.notifier)
+              .update((query) => query.copyWith(text: text)),
         ),
         const _FilterBar(),
         Expanded(
@@ -86,15 +38,7 @@ class _AozoraTabState extends ConsumerState<AozoraTab> {
                 _CountRow(count: works.length),
                 Expanded(
                   child: works.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              l10n.freeBooksNoResults,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        )
+                      ? const FreeBooksNoResults()
                       : ListView.builder(
                           itemCount: works.length,
                           itemBuilder: (context, i) =>
@@ -352,8 +296,8 @@ class _WorkTile extends ConsumerWidget {
       ),
     );
     final inLibrary = ref.watch(
-      epubBooksByTitleProvider.select(
-        (byTitle) => libraryCopyOf(byTitle, work) != null,
+      libraryBooksByKeyProvider.select(
+        (byKey) => libraryCopy(byKey, work.displayTitle, 'epub') != null,
       ),
     );
     final muted = theme.textTheme.bodySmall?.copyWith(
@@ -425,14 +369,12 @@ class _WorkSheet extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final pace = ref.watch(readingPaceProvider);
-    final downloading = ref.watch(
-      freeBookDownloadProvider.select(
-        (map) => map.containsKey(aozoraDownloadKey(work)),
-      ),
+    final progress = ref.watch(
+      freeBookDownloadProvider.select((map) => map[aozoraDownloadKey(work)]),
     );
     final copy = ref.watch(
-      epubBooksByTitleProvider.select(
-        (byTitle) => libraryCopyOf(byTitle, work),
+      libraryBooksByKeyProvider.select(
+        (byKey) => libraryCopy(byKey, work.displayTitle, 'epub'),
       ),
     );
     final muted = theme.textTheme.bodySmall?.copyWith(
@@ -482,55 +424,14 @@ class _WorkSheet extends ConsumerWidget {
               value: _genreLabel(l10n, work.genre),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.open_in_new),
-                    label: Text(l10n.freeBooksViewOnAozora),
-                    onPressed: () => launchUrl(
-                      work.cardUrl,
-                      mode: LaunchMode.externalApplication,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: copy != null
-                      ? FilledButton.icon(
-                          icon: const Icon(Icons.menu_book),
-                          label: Text(l10n.freeBooksRead),
-                          onPressed: () {
-                            final navigator = Navigator.of(context);
-                            navigator.pop();
-                            navigator.push(bookReaderRoute(copy));
-                          },
-                        )
-                      : FilledButton.icon(
-                          icon: downloading
-                              ? const SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.download),
-                          label: Text(
-                            downloading
-                                ? l10n.freeBooksDownloading
-                                : l10n.commonDownload,
-                          ),
-                          onPressed: downloading
-                              ? null
-                              : () {
-                                  AppHaptics.medium();
-                                  ref
-                                      .read(freeBookDownloadProvider.notifier)
-                                      .downloadAozora(work);
-                                },
-                        ),
-                ),
-              ],
+            FreeBookActions(
+              viewLabel: l10n.freeBooksViewOnAozora,
+              viewUrl: work.cardUrl,
+              copy: copy,
+              progress: progress,
+              onDownload: () => ref
+                  .read(freeBookDownloadProvider.notifier)
+                  .downloadAozora(work),
             ),
             const SizedBox(height: 12),
             Text(l10n.freeBooksAozoraAttribution, style: muted),

@@ -1,5 +1,4 @@
-import 'package:mekuru/core/utils/japanese_text.dart';
-import 'package:mekuru/features/dictionary/data/services/romaji_converter.dart';
+import 'package:mekuru/features/free_books/data/catalog_search.dart';
 
 /// Where every Aozora card page and XHTML file lives; catalog paths are
 /// relative to this.
@@ -63,11 +62,11 @@ class AozoraWork {
     required this.charCount,
     required this.jlptEstimate,
     required this.popularity,
-  }) : searchText = _searchKey(
+  }) : searchText = searchKey(
          '$title ${subtitle ?? ''} $titleReading $author $authorReading',
        ),
-       titleSortKey = _searchKey(titleReading),
-       authorSortKey = _searchKey(authorReading);
+       titleSortKey = searchKey(titleReading),
+       authorSortKey = searchKey(authorReading);
 
   /// [authors] is the catalog's shared `[name, reading]` table that the
   /// entry's `a` indexes. The catalog ships with the app, so a malformed
@@ -139,20 +138,4 @@ class AozoraWork {
 
   /// Author reading folded to hiragana, for kana-order sorting.
   final String authorSortKey;
-}
-
-/// Folds text for matching: full-width to ASCII, katakana to hiragana,
-/// lower case, no spaces.
-String _searchKey(String text) =>
-    katakanaToHiragana(foldSearchInput(text).toLowerCase().replaceAll(' ', ''));
-
-/// What a search query matches: the folded query itself and, when it is
-/// romaji ("dazai"), its hiragana so it can match the catalog's readings.
-List<String> searchNeedles(String query) {
-  final folded = _searchKey(query);
-  if (folded.isEmpty) return const [];
-  return [
-    folded,
-    if (RomajiConverter.isRomaji(folded)) RomajiConverter.convert(folded),
-  ];
 }

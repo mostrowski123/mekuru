@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:mekuru/features/free_books/data/catalog_search.dart';
 import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
 
 /// Reading pace used for time estimates until the reader's own stats can

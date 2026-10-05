@@ -52,6 +52,17 @@ Downloads are cached under `build/free_books/` (gitignored): Aozora's catalog CS
 
 The level is an estimate shown with that caveat in the app: the easiest JLPT level whose kanji make up 80% of a work's kanji, one step harder past 45 characters per sentence (two past 75). `--report` prints the per-level counts with popular examples; the defaults were calibrated against well-known works in October 2026. `python -m unittest test_build_aozora_catalog` (from `tools/`) checks the mappings.
 
+## `build_tadoku_catalog.py`
+
+Builds the Graded readers catalog, `assets/free_books/tadoku.json`, and the `tadokuBookCount` line of `lib/features/free_books/data/catalog_counts.dart`, from NPO Tadoku Supporters' free books (tadoku.org). Only metadata is bundled: the books are CC BY-NC-ND 4.0, so the app downloads each PDF straight from tadoku.org when the user asks and never changes it. Needs PyMuPDF:
+
+```powershell
+pip install -r tools/requirements-free-books.txt
+python tools/build_tadoku_catalog.py
+```
+
+It reads the free-books listing, then each book's page (the PDF link, whose version suffix varies, page and character counts, the kana reading of the title), and downloads each screen PDF once to check for a Japanese text layer. Books without one (pages drawn as outlines, or fonts mapped to the wrong characters) are shown as "Pages only". Everything is cached under `build/free_books/tadoku/`, fetched a few seconds apart (the site rate-limits); `--refresh` re-downloads the listing and pages. `python -m unittest test_build_tadoku_catalog` (from `tools/`) checks the text-layer rule, which `pdf_text_blocks.dart` applies again on import.
+
 ## `make_pdf_fixtures.py`
 
 Writes `integration_test/shared/pdf_fixtures.dart`: a two-page text PDF (horizontal and vertical Japanese with furigana, glyphs placed one by one like Tadoku's books) and a scanned, image-only PDF, as base64 constants for the PDF import tests. Needs PyMuPDF (as above); re-run after changing the script.

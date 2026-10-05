@@ -3450,12 +3450,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get catalogReplaceJmdict => 'Replace JMdict';
 
   @override
-  String youFreeBooksSubtitle({required int count}) {
-    final intl.NumberFormat countNumberFormat =
+  String youFreeBooksSubtitle({required int classics, required int readers}) {
+    final intl.NumberFormat classicsNumberFormat =
         intl.NumberFormat.decimalPattern(localeName);
-    final String countString = countNumberFormat.format(count);
+    final String classicsString = classicsNumberFormat.format(classics);
 
-    return '$countString+ free classics';
+    return '$classicsString+ classics and $readers graded readers';
   }
 
   @override
@@ -3663,16 +3663,75 @@ class AppLocalizationsZh extends AppLocalizations {
   String get freeBooksRead => 'Read';
 
   @override
-  String get freeBooksAozoraDownloadFailed =>
-      'Couldn\'t download the book. Aozora Bunko may be busy or your connection dropped; try again.';
+  String get freeBooksDownloadFailed =>
+      'Couldn\'t download the book. The site may be busy or your connection dropped; try again.';
 
   @override
-  String get freeBooksConversionFailed =>
-      'This book couldn\'t be converted for Mekuru.';
+  String get freeBooksImportFailed =>
+      'Mekuru couldn\'t add this book to your library.';
 
   @override
   String get freeBooksAozoraAttribution =>
       'From Aozora Bunko, a free library of Japanese books typed in by volunteers. Each book keeps their credits on its last page.';
+
+  @override
+  String get freeBooksTabGradedReaders => 'Graded readers';
+
+  @override
+  String get freeBooksTabAozora => 'Aozora Bunko';
+
+  @override
+  String get freeBooksTadokuSearchHint => 'Search graded readers';
+
+  @override
+  String get freeBooksTadokuLevelStart => 'Start';
+
+  @override
+  String get freeBooksTadokuPagesOnly => 'Pages only';
+
+  @override
+  String get freeBooksTadokuPagesOnlyNote =>
+      'This book\'s PDF is pictures of pages, so its words can\'t be tapped. OCR (a Pro feature) can make them tappable.';
+
+  @override
+  String get freeBooksTadokuAudio => 'Its audio can be played on tadoku.org.';
+
+  @override
+  String get freeBooksViewOnTadoku => 'View on tadoku.org';
+
+  @override
+  String get freeBooksTadokuLicense => 'License: CC BY-NC-ND 4.0';
+
+  @override
+  String freeBooksTadokuLevel({required int level}) {
+    return 'L$level';
+  }
+
+  @override
+  String freeBooksTadokuLevelJlpt({required int level, required String jlpt}) {
+    return 'L$level · $jlpt';
+  }
+
+  @override
+  String freeBooksTadokuCharacters({required int characters}) {
+    final intl.NumberFormat charactersNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String charactersString = charactersNumberFormat.format(characters);
+
+    return '$charactersString characters';
+  }
+
+  @override
+  String freeBooksTadokuAttribution({required String publisher}) {
+    return 'Graded reader by NPO Tadoku Supporters ($publisher), free under CC BY-NC-ND 4.0. Mekuru downloads it from tadoku.org, unchanged.';
+  }
+
+  @override
+  String get attributionFreeBooksTitle => 'Free books';
+
+  @override
+  String get attributionFreeBooksDescription =>
+      'The classics come from Aozora Bunko, whose catalog is shared under CC BY 4.0. Their reading levels and lengths are estimated with the aozorabunko-clean dataset (CC BY 4.0). The graded readers are by NPO Tadoku Supporters, shared under CC BY-NC-ND 4.0 and downloaded unchanged from tadoku.org.';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

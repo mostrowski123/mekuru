@@ -383,6 +383,61 @@ class AttributionsScreen extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
+                        Icons.local_library_outlined,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l10n.attributionFreeBooksTitle,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.attributionFreeBooksDescription,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  for (final (label, url) in const [
+                    ('Aozora Bunko', 'https://www.aozora.gr.jp/'),
+                    (
+                      'aozorabunko-clean',
+                      'https://huggingface.co/datasets/globis-university/aozorabunko-clean',
+                    ),
+                    (
+                      'NPO Tadoku Supporters',
+                      'https://tadoku.org/japanese/en/free-books-en/',
+                    ),
+                    (
+                      'CC BY 4.0',
+                      'https://creativecommons.org/licenses/by/4.0/',
+                    ),
+                    (
+                      'CC BY-NC-ND 4.0',
+                      'https://creativecommons.org/licenses/by-nc-nd/4.0/',
+                    ),
+                  ])
+                    DownloadAttributionText(linkText: label, url: url),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
                         Icons.menu_book_outlined,
                         color: theme.colorScheme.primary,
                         size: 20,

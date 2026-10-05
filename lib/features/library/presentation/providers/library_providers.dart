@@ -175,7 +175,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
 
       updateProgress(format == 'epub' ? null : 0.0);
       try {
-        lastImported = await _importOne(
+        lastImported = await importOne(
           filePaths[i],
           format: format,
           onProgress: updateProgress,
@@ -204,11 +204,14 @@ class BookImportNotifier extends Notifier<BookImportState> {
     return succeeded;
   }
 
-  /// Shared per-file import: repository call + pending-backup application
-  /// + telemetry. Throws on failure; does not touch [state].
-  Future<Book> _importOne(
+  /// One file through the import pipeline: the repository import (a PDF
+  /// that turns out scanned explains itself), pending backup data and
+  /// telemetry. [title] names a PDF (free-book downloads); other files
+  /// carry their own. Throws on failure; does not touch [state].
+  Future<Book> importOne(
     String filePath, {
     required String format,
+    String? title,
     void Function(double progress)? onProgress,
   }) async {
     final repo = ref.read(bookRepositoryProvider);
@@ -218,7 +221,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
         'cbz' => repo.importCbz(filePath, onProgress: onProgress),
         'pdf' =>
           repo
-              .importPdf(filePath, onProgress: onProgress)
+              .importPdf(filePath, title: title, onProgress: onProgress)
               .then(explainIfScanned),
         _ => repo.importEpub(filePath),
       },

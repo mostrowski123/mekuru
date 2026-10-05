@@ -37,7 +37,8 @@ class YouScreen extends ConsumerWidget {
             icon: Icons.local_library_outlined,
             title: l10n.freeBooksTitle,
             subtitle: l10n.youFreeBooksSubtitle(
-              count: aozoraWorkCount ~/ 1000 * 1000,
+              classics: aozoraWorkCount ~/ 1000 * 1000,
+              readers: tadokuBookCount,
             ),
             onTap: () => Navigator.of(
               context,

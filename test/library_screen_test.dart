@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
+import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
@@ -51,6 +52,7 @@ void main() {
       tester,
       overrides: [
         aozoraCatalogProvider.overrideWith((ref) async => <AozoraWork>[]),
+        tadokuCatalogProvider.overrideWith((ref) async => <TadokuBook>[]),
         sessionsProvider.overrideWith((ref) => Stream.value(const [])),
       ],
     );

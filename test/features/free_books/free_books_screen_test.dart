@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
+import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
@@ -65,32 +66,58 @@ final _works = [
   ),
 ];
 
+TadokuBook _reader(int id, String title, int level, {bool hasText = true}) =>
+    TadokuBook(
+      id: id,
+      title: title,
+      titleReading: '',
+      level: level,
+      coverUrl: Uri.parse('https://tadoku.org/c$id.jpg'),
+      pdfUrl: Uri.parse('https://tadoku.org/b$id.pdf'),
+      pageCount: 12,
+      charCount: 0,
+      hasAudio: true,
+      hasText: hasText,
+    );
+
+final _readers = [
+  _reader(11, 'ちょっと来て！', -1),
+  _reader(12, 'たのしいえんそく', 0, hasText: false),
+  _reader(13, '日下川の猿猴', 2),
+];
+
 class _RecordingDownloads extends FreeBookDownloadNotifier {
   final requested = <int>[];
 
   @override
   Future<void> downloadAozora(AozoraWork work) async => requested.add(work.id);
+
+  @override
+  Future<void> downloadTadoku(TadokuBook book) async => requested.add(book.id);
 }
 
-Book _book(String title) => Book(
+Book _book(String title, {String type = 'epub'}) => Book(
   id: 7,
   title: title,
   filePath: '/books/7',
-  bookType: 'epub',
+  bookType: type,
   totalPages: 0,
   readProgress: 0,
   dateAdded: DateTime(2026),
 );
 
+/// Pumps the Free books screen; Aozora tests open its second tab.
 Future<_RecordingDownloads> _pump(
   WidgetTester tester, {
   List<Book> books = const [],
+  bool aozora = true,
 }) async {
   final downloads = _RecordingDownloads();
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         aozoraCatalogProvider.overrideWith((ref) async => _works),
+        tadokuCatalogProvider.overrideWith((ref) async => _readers),
         sessionsProvider.overrideWith((ref) => Stream.value(const [])),
         booksProvider.overrideWith((ref) => Stream.value(books)),
         freeBookDownloadProvider.overrideWith(() => downloads),
@@ -99,10 +126,64 @@ Future<_RecordingDownloads> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  if (aozora) {
+    await tester.tap(find.text('Aozora Bunko'));
+    await tester.pumpAndSettle();
+  }
   return downloads;
 }
 
 void main() {
+  testWidgets('opens on graded readers, with levels and Pages only', (
+    tester,
+  ) async {
+    await _pump(tester, aozora: false);
+
+    expect(find.text('ちょっと来て！'), findsOneWidget);
+    expect(find.text('日下川の猿猴'), findsOneWidget);
+    // Badges: Start, L0, and tadoku.org's own JLPT level for L2.
+    expect(find.text('Start'), findsNWidgets(2)); // chip and badge
+    expect(find.text('L2 · N4'), findsNWidgets(2));
+    expect(find.text('Pages only'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilterChip, 'L2 · N4'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('日下川の猿猴'), findsOneWidget);
+    expect(find.text('ちょっと来て！'), findsNothing);
+  });
+
+  testWidgets('a graded reader\'s sheet credits it and downloads it', (
+    tester,
+  ) async {
+    final downloads = await _pump(tester, aozora: false);
+
+    await tester.ensureVisible(find.text('たのしいえんそく'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('たのしいえんそく'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining("words can't be tapped"), findsOneWidget);
+    expect(find.textContaining('CC BY-NC-ND 4.0'), findsWidgets);
+    expect(find.text('12 pages'), findsOneWidget);
+    await tester.tap(find.text('Download'));
+    await tester.pump();
+    expect(downloads.requested, [12]);
+  });
+
+  testWidgets('a graded reader in the library offers Read', (tester) async {
+    await _pump(tester, aozora: false, books: [_book('日下川の猿猴', type: 'manga')]);
+
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    await tester.ensureVisible(find.text('日下川の猿猴'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('日下川の猿猴'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Read'), findsOneWidget);
+    expect(find.text('Download'), findsNothing);
+  });
+
   testWidgets('opens on easy picks: easy levels in modern spelling', (
     tester,
   ) async {
@@ -158,10 +239,7 @@ void main() {
     await tester.tap(find.text('手袋を買いに'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('not official JLPT ratings'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('not official JLPT ratings'), findsOneWidget);
     expect(find.textContaining('typical learner'), findsOneWidget);
 
     await tester.tap(find.text('Download'));

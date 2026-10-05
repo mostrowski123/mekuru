@@ -1,5 +1,6 @@
-// Free books end to end: pick a work on the Aozora tab, download it from a
-// local stand-in for aozora.gr.jp, and open the converted EPUB in the reader.
+// Free books end to end, from local stand-ins for aozora.gr.jp and
+// tadoku.org: an Aozora work downloads, converts and opens in the reader; a
+// graded reader's PDF downloads and imports with tappable text.
 import 'dart:convert';
 import 'dart:io';
 
@@ -7,10 +8,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
+import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
+import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
+import 'package:mekuru/features/manga/data/services/manga_cache_store.dart';
 import 'package:mekuru/features/reader/presentation/widgets/custom_epub_viewer.dart';
+import 'package:mekuru/main.dart' show navigatorKey;
+import 'package:path/path.dart' as p;
 
+import 'shared/pdf_fixtures.dart';
 import 'shared/test_infrastructure.dart';
 import 'test_helpers.dart';
 
@@ -82,8 +89,10 @@ void main() {
       switch (request.uri.path) {
         case '/cards/$_xhtmlPath':
           response.add(utf8.encode(_page()));
-        case '/gaiji/1-84/1-84-77.png':
+        case '/gaiji/1-84/1-84-77.png' || '/tadoku/cover.png':
           response.add(_png);
+        case '/tadoku/reader.pdf':
+          response.add(base64Decode(textPdfBase64));
         default:
           response.statusCode = HttpStatus.notFound;
       }
@@ -119,11 +128,16 @@ void main() {
             'http://127.0.0.1:${server.port}/cards/',
           ),
           aozoraCatalogProvider.overrideWith((ref) async => [_work]),
+          tadokuCatalogProvider.overrideWith((ref) async => const []),
         ],
       ),
     );
 
-    // Easy picks shows the ~N4 children's story.
+    // Easy picks, on the second tab, shows the ~N4 children's story.
+    await pumpUntilVisible(tester, find.text(l10n.freeBooksTabAozora));
+    await tester.tap(find.text(l10n.freeBooksTabAozora));
+    // Let the tab finish sliding in, or the next tap lands mid-slide.
+    await tester.pump(const Duration(seconds: 1));
     await pumpUntilVisible(tester, find.text(_title));
     await tester.tap(find.text(_title));
     await pumpUntilVisible(tester, find.text(l10n.commonDownload));
@@ -148,5 +162,58 @@ void main() {
       tester,
       find.byKey(const Key('reader-loading-overlay')),
     );
+  });
+
+  testWidgets('downloads a graded reader with tappable text', (tester) async {
+    final l10n = await loadExpectedL10n();
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final base = 'http://127.0.0.1:${server.port}/tadoku';
+    final reader = TadokuBook(
+      id: 9,
+      title: 'がっこう',
+      titleReading: 'がっこう',
+      level: 1,
+      coverUrl: Uri.parse('$base/cover.png'),
+      pdfUrl: Uri.parse('$base/reader.pdf'),
+      pageCount: 2,
+      charCount: 0,
+      hasAudio: false,
+      hasText: true,
+    );
+
+    await tester.pumpWidget(
+      buildIntegrationTestApp(
+        db: db,
+        home: const FreeBooksScreen(),
+        extraOverrides: [
+          tadokuCatalogProvider.overrideWith((ref) async => [reader]),
+        ],
+        navigatorKey: navigatorKey,
+      ),
+    );
+
+    // Graded readers is the first tab.
+    await pumpUntilVisible(tester, find.text('がっこう'));
+    await tester.tap(find.text('がっこう'));
+    await pumpUntilVisible(tester, find.text(l10n.commonDownload));
+    await tester.tap(find.text(l10n.commonDownload));
+    await pumpUntilVisible(
+      tester,
+      find.text(l10n.freeBooksRead),
+      timeout: const Duration(seconds: 60),
+    );
+
+    expect(requested, contains('/tadoku/reader.pdf'));
+    final book = (await db.select(db.books).get()).single;
+    expect(book.title, 'がっこう', reason: "the catalog's title, not the file's");
+    expect(book.bookType, 'manga');
+    final manga = await MangaCacheStore.read(
+      p.join(book.filePath, mangaPagesCacheFileName),
+    );
+    expect(manga.fromPdf, isTrue);
+    expect(manga.pages.expand((page) => page.blocks), isNotEmpty);
+    // No scanned-PDF dialog for a PDF with text.
+    expect(find.text(l10n.pdfScannedTitle), findsNothing);
   });
 }

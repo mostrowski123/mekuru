@@ -60,12 +60,12 @@ FETCH_PAUSE_SECONDS = 1.5
 SPELLING = {"新字新仮名": "m", "新字旧仮名": "k", "旧字旧仮名": "j", "旧字新仮名": "j"}
 
 
-def fetch(url: str, path: Path, refresh: bool = False, pause: bool = False) -> bytes:
-    """Download [url] to [path] once; later runs read the cached copy."""
+def fetch(url: str, path: Path, refresh: bool = False, pause: float = 0) -> bytes:
+    """Download [url] to [path] once, [pause] seconds after the last request
+    (for sites that rate-limit); later runs read the cached copy."""
     if path.exists() and not refresh:
         return path.read_bytes()
-    if pause:
-        time.sleep(FETCH_PAUSE_SECONDS)
+    time.sleep(pause)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(request, timeout=120) as response:
         data = response.read()
@@ -197,7 +197,7 @@ def collect_stats(works: dict[int, dict[str, str]], levels: dict[int, int]) -> d
     for done, work_id in enumerate(missing, 1):
         url = works[work_id]["XHTML/HTMLファイルURL"]
         try:
-            raw = fetch(url, CACHE / "xhtml" / f"{work_id}.html", pause=True)
+            raw = fetch(url, CACHE / "xhtml" / f"{work_id}.html", pause=FETCH_PAUSE_SECONDS)
         except Exception as error:  # noqa: BLE001 - a dead link drops one work, not the build
             print(f"  skip {work_id}: {error}", file=sys.stderr)
             continue
@@ -217,7 +217,7 @@ def popularity(refresh: bool) -> Counter:
                 RANKING_URL.format(year=year, kind=kind),
                 CACHE / "ranking" / f"{year}_{kind}.html",
                 refresh,
-                pause=True,
+                pause=FETCH_PAUSE_SECONDS,
             ).decode("utf-8", errors="replace")
             for work_id, count in row.findall(page):
                 counts[int(work_id)] += int(count)
