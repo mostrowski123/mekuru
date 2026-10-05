@@ -16,6 +16,7 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:mekuru/core/utils/japanese_text.dart';
+import 'package:mekuru/core/utils/xhtml.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/reader/data/models/reader_settings.dart';
 import 'package:mekuru/features/reader/data/services/furigana_generator.dart';
@@ -76,20 +77,6 @@ void spliceRuby(XmlText node, List<Map<String, Object?>> segments) {
   final index = parent.children.indexOf(node);
   parent.children.removeAt(index);
   parent.children.insertAll(index, replacements);
-}
-
-XmlDocument? parseXhtml(String xhtml) {
-  try {
-    // The html5 entity mapping is mandatory: the default XML mapping leaves
-    // named entities like &nbsp; undecoded, and re-encoding then turns them
-    // into visible "&amp;nbsp;" text.
-    return XmlDocument.parse(
-      xhtml,
-      entityMapping: const XmlDefaultEntityMapping.html5(),
-    );
-  } on XmlException {
-    return null;
-  }
 }
 
 /// [xhtml] with every `<ruby>` unwrapped to its base text (rt/rp dropped,

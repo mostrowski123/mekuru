@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:mekuru/features/library/data/services/epub_furigana_export.dart';
+import 'package:mekuru/core/utils/xhtml.dart';
 import 'package:mekuru/features/library/data/services/epub_parser.dart';
 import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/data/services/cbz_parser.dart';
