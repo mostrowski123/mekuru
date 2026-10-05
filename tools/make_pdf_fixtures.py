@@ -19,6 +19,7 @@ scanned PDF is two pages that are only images, with no text layer.
 from __future__ import annotations
 
 import base64
+import re
 import io
 from pathlib import Path
 
@@ -86,6 +87,58 @@ def text_pdf() -> bytes:
     return document.tobytes(garbage=4, deflate=True, no_new_id=True)
 
 
+def phrase_pdf() -> bytes:
+    """One row in three phrases an em apart, as graded readers set them,
+    starting with 𠮟 (U+20B9F, beyond the BMP). The bundled font has no 𠮟, so
+    叱 is drawn and its ToUnicode entry points at 𠮟, the way PDFs that use
+    it encode it: as a UTF-16 surrogate pair."""
+    document = pymupdf.open()
+    page = document.new_page(width=WIDTH, height=HEIGHT)
+    page.insert_font(fontname="cjk", fontbuffer=pymupdf.Font("cjk").buffer)
+    x = 30.0
+    for phrase in ("叱られた", "ねこが", "にげました。"):
+        for char in phrase:
+            _put(page, char, x, 60.0, SIZE)
+            x += SIZE
+        x += SIZE  # the phrase space
+    document.subset_fonts()
+    _read_as(document, "叱", "\U00020B9F")
+    data = document.tobytes(garbage=4, deflate=True, no_new_id=True)
+    text = pymupdf.open(stream=data, filetype="pdf")[0].get_text()
+    assert text.split() == ["\U00020B9Fられた", "ねこが", "にげました。"], text
+    return data
+
+
+def _read_as(document: pymupdf.Document, drawn: str, read: str) -> None:
+    """Points the ToUnicode entry of [drawn]'s glyph at [read] instead."""
+    cid = pymupdf.Font("cjk").has_glyph(ord(drawn))
+    target = read.encode("utf-16-be").hex().upper()
+    for xref in range(1, document.xref_length()):
+        if not document.xref_is_stream(xref):
+            continue
+        lines = document.xref_stream(xref).decode("latin1").split("\n")
+        if "begincmap" not in lines:
+            continue
+        for i, line in enumerate(lines):
+            entry = re.fullmatch(r"<([0-9a-f]{4})> <([0-9a-f]{4})> <([0-9a-f]{4})>", line.strip(), re.I)
+            if not entry:
+                continue
+            low, high, first = (int(part, 16) for part in entry.groups())
+            if not low < cid < high:
+                continue
+            # The range up to the glyph stays; the glyph and the rest of the
+            # range follow in blocks of their own.
+            lines[i] = f"<{low:04x}> <{cid - 1:04x}> <{first:04x}>"
+            end = lines.index("endcmap")
+            lines[end:end] = [
+                "1 beginbfchar", f"<{cid:04x}> <{target}>", "endbfchar",
+                "1 beginbfrange", f"<{cid + 1:04x}> <{high:04x}> <{first + cid + 1 - low:04x}>", "endbfrange",
+            ]
+            document.update_stream(xref, "\n".join(lines).encode("latin1"))
+            return
+    raise ValueError(f"no ToUnicode range holds {drawn}")
+
+
 def scanned_pdf() -> bytes:
     """Two pages that are only pictures, like a scanned book."""
     pixmap = pymupdf.Pixmap(pymupdf.csGRAY, pymupdf.IRect(0, 0, 210, 297), False)
@@ -116,7 +169,13 @@ def main() -> None:
             "Page 1 horizontal, page 2 vertical; glyph by glyph, half-size furigana.",
         )
         + "\n"
-        + dart_constant("scannedPdfBase64", scanned_pdf(), "Two image-only pages, no text layer."),
+        + dart_constant("scannedPdfBase64", scanned_pdf(), "Two image-only pages, no text layer.")
+        + "\n"
+        + dart_constant(
+            "phrasePdfBase64",
+            phrase_pdf(),
+            "One row in three phrases spaced an em apart; its first kanji is 𠮟, beyond the BMP.",
+        ),
         encoding="utf-8",
         newline="\n",
     )

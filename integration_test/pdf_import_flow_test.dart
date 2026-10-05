@@ -156,6 +156,29 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('a phrase-spaced line that starts beyond the BMP reads right', (
+    tester,
+  ) async {
+    final db = createTestDatabase();
+    addTearDown(db.close);
+    final path = await writeFixture('phrases.pdf', phrasePdfBase64);
+
+    final book = (await BookRepository(db).importPdf(path)).book;
+    final page = (await pagesOf(book)).pages.single;
+
+    // 𠮟 is two UTF-16 units, and PDFium reports a character box for each:
+    // the text and the boxes stay paired, so no character after it lands on
+    // its neighbour's box. And each phrase gets a box of its own, so taps
+    // after a phrase space land on what is drawn there.
+    final block = page.blocks.single;
+    expect(block.lines, ['𠮟られた', 'ねこが', 'にげました。']);
+    final points = page.imgWidth / 420; // pixels per point on the A5 page
+    expect(
+      [for (final quad in block.linesCoords) quad.first.first / points],
+      [closeTo(30, 3), closeTo(130, 3), closeTo(210, 3)],
+    );
+  });
+
   testWidgets('Delete OCR on a PDF brings its own text back', (tester) async {
     final l10n = await loadExpectedL10n();
     final db = createTestDatabase();
