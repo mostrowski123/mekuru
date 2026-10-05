@@ -15,6 +15,7 @@ import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
+import 'package:mekuru/shared/widgets/glass_tab_bar.dart';
 
 /// Dictionary search screen with live fuzzy search.
 ///
@@ -623,7 +624,9 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
             ),
           ),
       ],
-      const SliverToBoxAdapter(child: SizedBox(height: 16)),
+      SliverToBoxAdapter(
+        child: SizedBox(height: 16 + glassTabBarInset(context)),
+      ),
     ];
 
     return CustomScrollView(key: ValueKey(_resultsQuery), slivers: slivers);

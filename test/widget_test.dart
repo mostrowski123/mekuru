@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:mekuru/app.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
@@ -24,6 +26,24 @@ void main() {
     expect(find.text('Dictionary'), findsOneWidget);
     expect(find.text('Vocabulary'), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(GlassTabBar), findsNothing);
+  });
+
+  testWidgets('iOS shows the Liquid Glass tab bar instead', (
+    WidgetTester tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await tester.pumpWidget(const ProviderScope(child: MekuruApp()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(GlassTabBar), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.text('Vocabulary'), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('You tab is a hub of Free books, Reading stats and Settings', (

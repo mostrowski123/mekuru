@@ -10,6 +10,7 @@ import 'package:mekuru/features/stats/presentation/stats_formatting.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/glass_tab_bar.dart';
 
 /// The You tab: a hub of large cards for Free books, Reading stats and
 /// Settings.
@@ -31,7 +32,12 @@ class YouScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navYou)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          16 + glassTabBarInset(context),
+        ),
         children: [
           _HubCard(
             icon: Icons.local_library_outlined,

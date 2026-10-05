@@ -45,6 +45,7 @@ import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
+import 'package:mekuru/shared/widgets/glass_tab_bar.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -191,12 +192,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
       floatingActionButton: _isSelectionMode
           ? null
-          : FloatingActionButton(
-              onPressed: importState.isImporting
-                  ? null
-                  : () => _showImportChoice(context, ref),
-              tooltip: l10n.commonImport,
-              child: const Icon(Icons.add),
+          : Padding(
+              padding: EdgeInsets.only(bottom: glassTabBarInset(context)),
+              child: FloatingActionButton(
+                onPressed: importState.isImporting
+                    ? null
+                    : () => _showImportChoice(context, ref),
+                tooltip: l10n.commonImport,
+                child: const Icon(Icons.add),
+              ),
             ),
       body: Column(
         children: [
@@ -342,7 +346,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + glassTabBarInset(context)),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
@@ -479,7 +483,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           ),
         SliverPadding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + glassTabBarInset(context),
+          ),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,

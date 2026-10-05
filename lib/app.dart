@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'core/services/analytics_service.dart';
@@ -33,6 +34,7 @@ import 'main.dart'
     show appL10n, navigatorKey, scaffoldMessengerKey, databaseProvider;
 import 'shared/theme/app_theme.dart';
 import 'shared/utils/app_routes.dart';
+import 'shared/widgets/glass_tab_bar.dart';
 
 /// Root application widget.
 class MekuruApp extends ConsumerStatefulWidget {
@@ -337,34 +339,67 @@ class _MainShellState extends ConsumerState<_MainShell> {
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _indexedScreens()),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          _setCurrentIndex(index);
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.auto_stories_outlined),
-            selectedIcon: const Icon(Icons.auto_stories),
-            label: l10n.navLibrary,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.book_outlined),
-            selectedIcon: const Icon(Icons.book),
-            label: l10n.navDictionary,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.bookmark_border),
-            selectedIcon: const Icon(Icons.bookmark),
-            label: l10n.navVocabulary,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: l10n.navYou,
-          ),
-        ],
-      ),
+      // The glass bar floats over the tabs, which scroll under it.
+      extendBody: usesGlassTabBar,
+      bottomNavigationBar: usesGlassTabBar
+          ? _buildGlassTabBar(l10n)
+          : NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (index) {
+                _setCurrentIndex(index);
+              },
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.auto_stories_outlined),
+                  selectedIcon: const Icon(Icons.auto_stories),
+                  label: l10n.navLibrary,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.book_outlined),
+                  selectedIcon: const Icon(Icons.book),
+                  label: l10n.navDictionary,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.bookmark_border),
+                  selectedIcon: const Icon(Icons.bookmark),
+                  label: l10n.navVocabulary,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.person_outline),
+                  selectedIcon: const Icon(Icons.person),
+                  label: l10n.navYou,
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildGlassTabBar(AppLocalizations l10n) {
+    return GlassTabBar.bottom(
+      selectedIndex: _currentIndex,
+      onTabSelected: _setCurrentIndex,
+      tabs: [
+        GlassTab(
+          icon: const Icon(Icons.auto_stories_outlined),
+          activeIcon: const Icon(Icons.auto_stories),
+          label: l10n.navLibrary,
+        ),
+        GlassTab(
+          icon: const Icon(Icons.book_outlined),
+          activeIcon: const Icon(Icons.book),
+          label: l10n.navDictionary,
+        ),
+        GlassTab(
+          icon: const Icon(Icons.bookmark_border),
+          activeIcon: const Icon(Icons.bookmark),
+          label: l10n.navVocabulary,
+        ),
+        GlassTab(
+          icon: const Icon(Icons.person_outline),
+          activeIcon: const Icon(Icons.person),
+          label: l10n.navYou,
+        ),
+      ],
     );
   }
 

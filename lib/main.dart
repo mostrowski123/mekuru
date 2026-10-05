@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -33,6 +34,7 @@ import 'features/settings/data/services/kanjivg_download_service.dart';
 import 'features/sync/data/services/server_client.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'l10n/l10n.dart';
+import 'shared/widgets/glass_tab_bar.dart';
 
 /// Global navigator key used by Sentry for feedback screenshots
 /// and navigator observation.
@@ -134,18 +136,28 @@ Future<void> _bootApp() async {
       final fullBackupJobPending = iosFullBackupJob == null
           ? await hasPendingFullBackupJob()
           : await hasPendingFullBackupJob(jobs: iosFullBackupJob);
+      final app = ProviderScope(
+        overrides: [
+          initialFullBackupJobPendingProvider.overrideWithValue(
+            fullBackupJobPending,
+          ),
+          if (iosFullBackupJob != null)
+            fullBackupJobApiProvider.overrideWithValue(iosFullBackupJob),
+        ],
+        child: const MekuruApp(),
+      );
+      if (usesGlassTabBar) {
+        await LiquidGlassWidgets.initialize(enablePerformanceMonitor: false);
+      }
       runApp(
         SentryWidget(
-          child: ProviderScope(
-            overrides: [
-              initialFullBackupJobPendingProvider.overrideWithValue(
-                fullBackupJobPending,
-              ),
-              if (iosFullBackupJob != null)
-                fullBackupJobApiProvider.overrideWithValue(iosFullBackupJob),
-            ],
-            child: const MekuruApp(),
-          ),
+          child: usesGlassTabBar
+              ? LiquidGlassWidgets.wrap(
+                  // Follow the app's theme mode, not the OS brightness.
+                  brightnessResolver: Theme.maybeBrightnessOf,
+                  child: app,
+                )
+              : app,
         ),
       );
       _scheduleDeferredStartupWarmups();
