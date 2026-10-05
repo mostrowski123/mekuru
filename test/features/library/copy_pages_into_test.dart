@@ -19,7 +19,8 @@ void main() {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
-  test('copies pages into <cacheDir>/pages and skips escaping names', () async {
+  test('copies pages into <cacheDir>/pages, skipping escaping names and '
+      'pages the folder lacks', () async {
     final source = Directory(p.join(root.path, 'picked', 'vol1'))
       ..createSync(recursive: true);
     File(p.join(source.path, '001.jpg')).writeAsStringSync('a');
@@ -36,7 +37,12 @@ void main() {
         htmlPath: '',
         imageDirPath: source.path,
         ocrDirPath: '',
-        imageFileNames: const ['001.jpg', 'extra/002.jpg', '../secret.txt'],
+        imageFileNames: const [
+          '001.jpg',
+          'missing.jpg',
+          'extra/002.jpg',
+          '../secret.txt',
+        ],
       ),
     );
 
@@ -44,5 +50,6 @@ void main() {
     expect(File(p.join(pagesPath, '001.jpg')).readAsStringSync(), 'a');
     expect(File(p.join(pagesPath, 'extra', '002.jpg')).readAsStringSync(), 'b');
     expect(File(p.join(cacheDir.path, 'secret.txt')).existsSync(), isFalse);
+    expect(File(p.join(pagesPath, 'missing.jpg')).existsSync(), isFalse);
   });
 }

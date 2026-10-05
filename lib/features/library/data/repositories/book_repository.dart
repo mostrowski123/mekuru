@@ -654,7 +654,10 @@ class BookRepository {
 
   /// Copies the manifest's page images into `<cacheDir>/pages/`, the layout a
   /// full restore gives a linked manga it adopts, and returns that directory.
-  /// Names that would land outside it (a hostile `img_path`) are skipped.
+  /// Names that would land outside it (a hostile `img_path`) are skipped, and
+  /// so are pages the folder lacks (e.g. one a sync client never finished
+  /// downloading): the reader shows them as missing, as it does for a manga
+  /// linked in place on Android.
   @visibleForTesting
   static Future<String> copyPagesInto(
     Directory cacheDir,
@@ -667,8 +670,10 @@ class BookRepository {
     for (final name in manifest.imageFileNames) {
       final dest = File(p.join(pagesDir.path, name));
       if (!p.isWithin(pagesDir.path, dest.path)) continue;
+      final source = File(p.join(manifest.imageDirPath, name));
+      if (!await source.exists()) continue;
       await dest.parent.create(recursive: true);
-      await File(p.join(manifest.imageDirPath, name)).copy(dest.path);
+      await source.copy(dest.path);
     }
     return pagesDir.path;
   }

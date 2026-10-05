@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:integration_test/integration_test.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
@@ -176,5 +178,90 @@ void main() {
       container.read(bookImportProvider.notifier).clearState();
       await tester.pump();
     },
+  );
+
+  // The user's flow on iOS: Import Manga > Mokuro folder > pick a folder
+  // (native picker, mocked here) > tap the .html in the list. iOS copies the
+  // pages into the app, and a folder missing one page made that copy throw
+  // PathNotFoundException and fail the whole import.
+  testWidgets(
+    'iOS mokuro folder import imports the tapped .html when a page is missing',
+    (tester) async {
+      final db = createTestDatabase();
+      addTearDown(db.close);
+      final l10n = await loadExpectedL10n();
+
+      // Shaped like real mokuro output: a bracketed Japanese volume name the
+      // HTML percent-encodes, one OCR JSON per page, and a page that a sync
+      // client never finished downloading (only its partial file exists).
+      const stem = '[なもり] ゆるゆり 第15巻-2k';
+      final folder = Directory(p.join(tempDir.path, 'yuruyuri'))..createSync();
+      final imageDir = Directory(p.join(folder.path, stem))..createSync();
+      final ocrDir = Directory(p.join(folder.path, '_ocr', stem))
+        ..createSync(recursive: true);
+      const pages = ['00_cover.jpg', '15_002.jpg', '15_007.jpg'];
+      for (final name in pages) {
+        File(
+          p.join(ocrDir.path, '${p.basenameWithoutExtension(name)}.json'),
+        ).writeAsStringSync('{"img_width": 4, "img_height": 6, "blocks": []}');
+      }
+      final png = img.encodePng(img.Image(width: 4, height: 6));
+      File(p.join(imageDir.path, '00_cover.jpg')).writeAsBytesSync(png);
+      File(p.join(imageDir.path, '15_002.jpg')).writeAsBytesSync(png);
+      File(
+        p.join(imageDir.path, '15_007.jpg.sydownload'),
+      ).writeAsBytesSync(const []);
+      final encodedDir = Uri.encodeComponent(stem);
+      File(p.join(folder.path, '$stem.mobile.html')).writeAsStringSync(
+        '<html><head><title>$stem | mokuro</title></head><body>'
+        '${pages.map((name) => '<div style="background-image:url(&quot;$encodedDir/$name&quot;)"></div>').join()}'
+        '</body></html>',
+      );
+
+      const filesChannel = MethodChannel('mekuru/ios_files');
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        filesChannel,
+        (call) async => call.method == 'pickFolder' ? folder.path : null,
+      );
+      addTearDown(() => messenger.setMockMethodCallHandler(filesChannel, null));
+
+      await tester.pumpWidget(
+        buildIntegrationTestApp(db: db, home: const LibraryScreen()),
+      );
+      await pumpUntilVisible(tester, find.text(l10n.libraryImportManga));
+      await tester.tap(find.text(l10n.libraryImportManga));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tapSheetItem(tester, l10n.libraryImportMokuroFolder);
+      await pumpUntilVisible(tester, find.text('$stem.mobile.html'));
+      await tapSheetItem(tester, '$stem.mobile.html');
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(LibraryScreen)),
+      );
+      for (var i = 0; i < 80; i++) {
+        if (!container.read(bookImportProvider).isImporting) break;
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+      final importState = container.read(bookImportProvider);
+      expect(importState.error, isNull);
+      final book = importState.importedBook!;
+      // Cancel the success banner's auto-dismiss timer while the container
+      // is alive.
+      container.read(bookImportProvider.notifier).clearState();
+
+      expect(book.title, stem);
+      expect(book.totalPages, pages.length);
+      // The pages live in the app now, not in the session-scoped folder.
+      final pagesDir = p.join(book.filePath, 'pages');
+      expect(p.isWithin((await appBooksDir()).path, pagesDir), isTrue);
+      expect(book.coverImagePath, p.join(pagesDir, '00_cover.jpg'));
+      expect(File(p.join(pagesDir, '15_002.jpg')).existsSync(), isTrue);
+      expect(File(p.join(pagesDir, '15_007.jpg')).existsSync(), isFalse);
+
+      await pumpUntilVisible(tester, find.text(stem));
+    },
+    skip: !Platform.isIOS,
   );
 }
