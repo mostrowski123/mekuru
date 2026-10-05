@@ -8,22 +8,21 @@ import 'package:path/path.dart' as p;
 /// Graded-reader covers, each downloaded once into a folder and kept there,
 /// named after its URL (a new cover is a new file). tadoku.org limits
 /// request rates, and scrolling the grid asks for dozens of covers at once,
-/// so at most [maxParallel] download at a time, a cover already on its way
-/// is never asked for again, and one that failed waits [retryAfter] before
-/// another try.
+/// so at most [_maxParallel] download at a time, the latest asked for first
+/// (it is the one on screen), a cover already on its way is never asked for
+/// again, and one that failed waits [_retryAfter] before another try.
 class TadokuCovers {
   TadokuCovers(
     this._dir, {
-    this.maxParallel = 2,
-    this.retryAfter = const Duration(minutes: 1),
     Future<void> Function(Uri url, String path)? fetch,
     DateTime Function()? now,
   }) : _fetch = fetch ?? ((url, path) => downloadToFile('$url', path)),
        _now = now ?? DateTime.now;
 
+  static const _maxParallel = 2;
+  static const _retryAfter = Duration(minutes: 1);
+
   final Future<Directory> _dir;
-  final int maxParallel;
-  final Duration retryAfter;
   final Future<void> Function(Uri url, String path) _fetch;
   final DateTime Function() _now;
 
@@ -43,7 +42,7 @@ class TadokuCovers {
     final file = File(p.join((await _dir).path, url.pathSegments.last));
     if (await file.exists()) return file;
     final failed = _failedAt[url];
-    if (failed != null && _now().difference(failed) < retryAfter) {
+    if (failed != null && _now().difference(failed) < _retryAfter) {
       throw StateError('The cover failed to download moments ago');
     }
     await _takeTurn();
@@ -64,7 +63,7 @@ class TadokuCovers {
   }
 
   Future<void> _takeTurn() async {
-    if (_running < maxParallel) {
+    if (_running < _maxParallel) {
       _running++;
       return;
     }
@@ -75,7 +74,7 @@ class TadokuCovers {
 
   void _endTurn() {
     if (_queue.isNotEmpty) {
-      _queue.removeFirst().complete();
+      _queue.removeLast().complete();
     } else {
       _running--;
     }

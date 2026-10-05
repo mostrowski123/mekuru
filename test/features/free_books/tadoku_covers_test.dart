@@ -80,6 +80,49 @@ void main() {
     expect(files.map((f) => f.existsSync()), everyElement(isTrue));
   });
 
+  test('the cover asked for last downloads next: it is on screen', () async {
+    final started = <String>[];
+    final gates = <String, Completer<void>>{};
+    final covers = TadokuCovers(
+      Future.value(dir),
+      fetch: (url, path) async {
+        final name = url.pathSegments.last;
+        started.add(name);
+        await (gates[name] = Completer<void>()).future;
+        await writeCover(path);
+      },
+    );
+
+    // Covers are written to disk, so wait for the next one to start.
+    Future<void> whenStarted(int count) async {
+      for (var i = 0; i < 400 && started.length < count; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+    }
+
+    // Two downloads fill both turns; three more wait, asked for in order.
+    final first = [covers.cover(url(0)), covers.cover(url(1))];
+    await whenStarted(2);
+    final waiting = <Future<File>>[];
+    for (final i in [2, 3, 4]) {
+      waiting.add(covers.cover(url(i)));
+      // Let it check the disk and join the queue before the next one.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    expect(started, hasLength(2));
+
+    // Each download that ends hands its turn to the latest one waiting.
+    for (final (i, ended) in [started[0], started[1], 'cover4.jpg'].indexed) {
+      gates[ended]!.complete();
+      await whenStarted(3 + i);
+    }
+    expect(started.skip(2), ['cover4.jpg', 'cover3.jpg', 'cover2.jpg']);
+
+    gates['cover3.jpg']!.complete();
+    gates['cover2.jpg']!.complete();
+    await Future.wait([...first, ...waiting]);
+  });
+
   test('a failed cover waits a minute before another try', () async {
     var now = DateTime(2026, 10, 5);
     var fetches = 0;
