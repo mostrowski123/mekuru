@@ -10,7 +10,6 @@ import 'package:mekuru/features/free_books/presentation/screens/free_books_scree
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/library/presentation/screens/library_screen.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
-import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'shared/fake_download_notifiers.dart';
@@ -53,7 +52,6 @@ void main() {
       overrides: [
         aozoraCatalogProvider.overrideWith((ref) async => <AozoraWork>[]),
         tadokuCatalogProvider.overrideWith((ref) async => <TadokuBook>[]),
-        sessionsProvider.overrideWith((ref) => Stream.value(const [])),
       ],
     );
 

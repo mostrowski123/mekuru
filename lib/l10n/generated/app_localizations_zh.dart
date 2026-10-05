@@ -3526,10 +3526,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get freeBooksLength => '篇幅';
 
   @override
-  String get freeBooksLengthNotePersonal => '阅读时间按你在阅读统计中的阅读速度计算。';
-
-  @override
-  String get freeBooksLengthNoteDefault => '在阅读统计得出你的速度之前，阅读时间按一般学习者的速度计算。';
+  String get freeBooksLengthNote => '阅读时间按一般学习者的速度计算。';
 
   @override
   String get freeBooksLengthUnder10Minutes => '10 分钟以内';
@@ -3545,18 +3542,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get freeBooksLengthLonger => '3 小时以上';
-
-  @override
-  String freeBooksLengthAtYourPace({
-    required String time,
-    required int characters,
-  }) {
-    final intl.NumberFormat charactersNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
-    final String charactersString = charactersNumberFormat.format(characters);
-
-    return '按你的速度约 $time · $charactersString 字';
-  }
 
   @override
   String freeBooksLengthAtLearnerPace({
@@ -7249,10 +7234,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get freeBooksLength => '篇幅';
 
   @override
-  String get freeBooksLengthNotePersonal => '阅读时间按你在阅读统计中的阅读速度计算。';
-
-  @override
-  String get freeBooksLengthNoteDefault => '在阅读统计得出你的速度之前，阅读时间按一般学习者的速度计算。';
+  String get freeBooksLengthNote => '阅读时间按一般学习者的速度计算。';
 
   @override
   String get freeBooksLengthUnder10Minutes => '10 分钟以内';
@@ -7268,18 +7250,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get freeBooksLengthLonger => '3 小时以上';
-
-  @override
-  String freeBooksLengthAtYourPace({
-    required String time,
-    required int characters,
-  }) {
-    final intl.NumberFormat charactersNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
-    final String charactersString = charactersNumberFormat.format(characters);
-
-    return '按你的速度约 $time · $charactersString 字';
-  }
 
   @override
   String freeBooksLengthAtLearnerPace({

@@ -273,23 +273,6 @@ PeriodTotals periodTotals({
   );
 }
 
-/// The reader's EPUB pace in characters per minute, or null until there is
-/// enough history to say (20 minutes and 3,000 characters). Sessions that
-/// counted no characters are left out so idle time doesn't drag it down;
-/// the result is clamped to a plausible 50–1,500.
-double? readingPaceCharsPerMinute(List<ReadingSession> sessions) {
-  final totals = _Totals();
-  for (final session in filterSessions(sessions, StatsFormat.epub)) {
-    if (session.charactersRead > 0) totals.add(session);
-  }
-  if (totals.durationMs < 20 * Duration.millisecondsPerMinute ||
-      totals.charactersRead < 3000) {
-    return null;
-  }
-  final minutes = totals.durationMs / Duration.millisecondsPerMinute;
-  return (totals.charactersRead / minutes).clamp(50, 1500).toDouble();
-}
-
 /// The first instant [period] covers, or null when it has no lower bound.
 ///
 /// Read off the bucket grid rather than recomputed, so the tiles can never

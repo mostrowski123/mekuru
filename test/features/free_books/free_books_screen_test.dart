@@ -7,7 +7,6 @@ import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
-import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 
 import '../../test_app.dart';
 
@@ -122,7 +121,6 @@ Future<_RecordingDownloads> _pump(
       overrides: [
         aozoraCatalogProvider.overrideWith((ref) async => works ?? _works),
         tadokuCatalogProvider.overrideWith((ref) async => _readers),
-        sessionsProvider.overrideWith((ref) => Stream.value(const [])),
         booksProvider.overrideWith((ref) => Stream.value(books)),
         freeBookDownloadProvider.overrideWith(() => downloads),
       ],

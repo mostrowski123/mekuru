@@ -103,9 +103,7 @@ class _FilterBar extends ConsumerWidget {
             onTap: () => _showMultiSelectSheet<AozoraLength>(
               context: context,
               title: l10n.freeBooksLength,
-              note: ref.read(readingPaceProvider).personal
-                  ? l10n.freeBooksLengthNotePersonal
-                  : l10n.freeBooksLengthNoteDefault,
+              note: l10n.freeBooksLengthNote,
               values: AozoraLength.values,
               labelOf: (length) => _lengthLabel(l10n, length),
               selectedOf: (q) => q.lengths,
@@ -289,7 +287,6 @@ class _WorkTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final pace = ref.watch(readingPaceProvider).charsPerMinute;
     final downloading = ref.watch(
       freeBookDownloadProvider.select(
         (map) => map.containsKey(aozoraDownloadKey(work)),
@@ -326,7 +323,7 @@ class _WorkTile extends ConsumerWidget {
             [
               work.author,
               _levelLabel(l10n, work.jlptEstimate),
-              _readingTime(l10n, work, pace),
+              _readingTime(l10n, work),
             ].join(' · '),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -368,7 +365,6 @@ class _WorkSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final pace = ref.watch(readingPaceProvider);
     final progress = ref.watch(
       freeBookDownloadProvider.select((map) => map[aozoraDownloadKey(work)]),
     );
@@ -380,7 +376,7 @@ class _WorkSheet extends ConsumerWidget {
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final time = _readingTime(l10n, work, pace.charsPerMinute);
+    final time = _readingTime(l10n, work);
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -397,15 +393,10 @@ class _WorkSheet extends ConsumerWidget {
             const SizedBox(height: 16),
             _InfoRow(
               label: l10n.freeBooksLength,
-              value: pace.personal
-                  ? l10n.freeBooksLengthAtYourPace(
-                      time: time,
-                      characters: work.charCount,
-                    )
-                  : l10n.freeBooksLengthAtLearnerPace(
-                      time: time,
-                      characters: work.charCount,
-                    ),
+              value: l10n.freeBooksLengthAtLearnerPace(
+                time: time,
+                characters: work.charCount,
+              ),
             ),
             _InfoRow(
               label: l10n.freeBooksEstimatedLevel,
@@ -477,15 +468,15 @@ String _levelLabel(AppLocalizations l10n, int level) => level == 0
     ? l10n.freeBooksLevelBeyondN1
     : l10n.freeBooksLevelEstimate(level: level);
 
-/// Reading time at [pace], never under a minute ("0m" would read as empty).
-String _readingTime(AppLocalizations l10n, AozoraWork work, double pace) =>
-    formatDuration(
-      l10n,
-      math.max(
-        Duration.millisecondsPerMinute,
-        (readingMinutes(work, pace) * Duration.millisecondsPerMinute).round(),
-      ),
-    );
+/// Reading time at a typical learner's pace, never under a minute ("0m"
+/// would read as empty).
+String _readingTime(AppLocalizations l10n, AozoraWork work) => formatDuration(
+  l10n,
+  math.max(
+    Duration.millisecondsPerMinute,
+    (readingMinutes(work) * Duration.millisecondsPerMinute).round(),
+  ),
+);
 
 String _sortLabel(AppLocalizations l10n, AozoraSort sort) => switch (sort) {
   AozoraSort.popular => l10n.freeBooksSortPopular,

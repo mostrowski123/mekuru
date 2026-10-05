@@ -89,15 +89,9 @@ void main() {
   /// Ids of the works [query] selects, in order.
   List<int> run(
     AozoraQuery query, {
-    double charsPerMinute = defaultReadingPaceCharsPerMinute,
     bool Function(AozoraWork work)? isInLibrary,
   }) => [
-    for (final w in filterAndSortWorks(
-      works,
-      query,
-      charsPerMinute: charsPerMinute,
-      isInLibrary: isInLibrary,
-    ))
+    for (final w in filterAndSortWorks(works, query, isInLibrary: isInLibrary))
       w.id,
   ];
 
@@ -176,13 +170,20 @@ void main() {
       ]);
     });
 
-    test('length buckets follow the reading pace', () {
-      const quick = AozoraQuery(lengths: {AozoraLength.under10Minutes});
-      // 6,000 characters: 24 min at 250/min, under 9 min at 700/min (while
-      // the 9,913-character work still takes over 14).
-      expect(run(quick), isEmpty);
-      expect(run(quick, charsPerMinute: 700), [628]);
-    });
+    test(
+      'length buckets assume a typical learner, 250 characters a minute',
+      () {
+        List<int> lasting(AozoraLength length) =>
+            run(AozoraQuery(lengths: {length}));
+        // 6,000 characters take 24 minutes, 9,913 about 40, 30,000 two hours
+        // and 170,000 over eleven.
+        expect(lasting(AozoraLength.under10Minutes), isEmpty);
+        expect(lasting(AozoraLength.under30Minutes), [628]);
+        expect(lasting(AozoraLength.under1Hour), [1567]);
+        expect(lasting(AozoraLength.under3Hours), [5016]);
+        expect(lasting(AozoraLength.longer), [773]);
+      },
+    );
 
     test('hide in library uses the given predicate', () {
       expect(

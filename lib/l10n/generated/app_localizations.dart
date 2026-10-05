@@ -6006,17 +6006,11 @@ abstract class AppLocalizations {
   /// **'Length'**
   String get freeBooksLength;
 
-  /// Note in the length filter sheet when the user's reading stats give a personal speed.
+  /// Note in the length filter sheet: reading times assume a typical learner's speed.
   ///
   /// In en, this message translates to:
-  /// **'Reading times use your own reading speed from your stats.'**
-  String get freeBooksLengthNotePersonal;
-
-  /// Note in the length filter sheet before the user has enough reading history.
-  ///
-  /// In en, this message translates to:
-  /// **'Reading times use a typical learner\'s speed until your stats know yours.'**
-  String get freeBooksLengthNoteDefault;
+  /// **'Reading times use a typical learner\'s speed.'**
+  String get freeBooksLengthNote;
 
   /// Length filter option.
   ///
@@ -6048,16 +6042,7 @@ abstract class AppLocalizations {
   /// **'Over 3 hours'**
   String get freeBooksLengthLonger;
 
-  /// Book length in the details sheet, using the reader's own speed. time is a duration like 25m or 3h 20m.
-  ///
-  /// In en, this message translates to:
-  /// **'About {time} at your pace · {characters} characters'**
-  String freeBooksLengthAtYourPace({
-    required String time,
-    required int characters,
-  });
-
-  /// Book length in the details sheet before the reader has enough stats for a personal speed.
+  /// Book length in the details sheet, at a typical learner's speed. time is a duration like 25m or 3h 20m.
   ///
   /// In en, this message translates to:
   /// **'About {time} at a typical learner\'s pace · {characters} characters'**

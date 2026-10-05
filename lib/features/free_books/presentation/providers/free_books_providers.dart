@@ -21,8 +21,6 @@ import 'package:mekuru/features/free_books/data/services/aozora_download.dart';
 import 'package:mekuru/features/free_books/data/services/tadoku_catalog.dart';
 import 'package:mekuru/features/free_books/data/services/tadoku_covers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
-import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
-import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/main.dart' show announce, navigatorKey;
 import 'package:mekuru/shared/utils/app_routes.dart';
@@ -90,19 +88,6 @@ final tadokuQueryProvider = StateProvider<TadokuQuery>(
   (ref) => const TadokuQuery(),
 );
 
-/// The reader's own EPUB pace, or the learner default until their stats can
-/// say; `personal` tells the copy which one it is.
-final readingPaceProvider =
-    Provider.autoDispose<({double charsPerMinute, bool personal})>((ref) {
-      final sessions = ref.watch(sessionsProvider).value;
-      final pace = sessions == null
-          ? null
-          : readingPaceCharsPerMinute(sessions);
-      return pace == null
-          ? (charsPerMinute: defaultReadingPaceCharsPerMinute, personal: false)
-          : (charsPerMinute: pace, personal: true);
-    });
-
 /// Free books in the library by where they were downloaded from
 /// ([Book.sourceId]: an [aozoraDownloadKey] or [tadokuDownloadKey]), for
 /// "in your library". Never by title: hundreds of Aozora works share one.
@@ -113,15 +98,12 @@ final freeBooksInLibraryProvider = Provider.autoDispose<Map<String, Book>>((
   return {for (final book in books) ?book.sourceId: book};
 });
 
-/// The Aozora tab's list: the catalog through the current query. Pace and
-/// library are watched only when the query uses them, so library writes
+/// The Aozora tab's list: the catalog through the current query. The
+/// library is watched only when the query hides its books, so library writes
 /// (every import, progress sync) don't re-sort the catalog for nothing.
 final aozoraResultsProvider =
     Provider.autoDispose<AsyncValue<List<AozoraWork>>>((ref) {
       final query = ref.watch(aozoraQueryProvider);
-      final pace = query.lengths.isEmpty
-          ? defaultReadingPaceCharsPerMinute
-          : ref.watch(readingPaceProvider).charsPerMinute;
       final inLibrary = query.hideInLibrary
           ? ref.watch(freeBooksInLibraryProvider)
           : const <String, Book>{};
@@ -131,7 +113,6 @@ final aozoraResultsProvider =
             (works) => filterAndSortWorks(
               works,
               query,
-              charsPerMinute: pace,
               isInLibrary: (work) =>
                   inLibrary.containsKey(aozoraDownloadKey(work)),
             ),

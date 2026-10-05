@@ -3685,12 +3685,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get freeBooksLength => 'Length';
 
   @override
-  String get freeBooksLengthNotePersonal =>
-      'Reading times use your own reading speed from your stats.';
-
-  @override
-  String get freeBooksLengthNoteDefault =>
-      'Reading times use a typical learner\'s speed until your stats know yours.';
+  String get freeBooksLengthNote =>
+      'Reading times use a typical learner\'s speed.';
 
   @override
   String get freeBooksLengthUnder10Minutes => 'Under 10 min';
@@ -3706,18 +3702,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get freeBooksLengthLonger => 'Over 3 hours';
-
-  @override
-  String freeBooksLengthAtYourPace({
-    required String time,
-    required int characters,
-  }) {
-    final intl.NumberFormat charactersNumberFormat =
-        intl.NumberFormat.decimalPattern(localeName);
-    final String charactersString = charactersNumberFormat.format(characters);
-
-    return 'About $time at your pace · $charactersString characters';
-  }
 
   @override
   String freeBooksLengthAtLearnerPace({

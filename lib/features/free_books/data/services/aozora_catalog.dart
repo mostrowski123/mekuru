@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:mekuru/features/free_books/data/catalog_search.dart';
 import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
 
-/// Reading pace used for time estimates until the reader's own stats can
-/// say (characters per minute; a typical learner pace).
-const double defaultReadingPaceCharsPerMinute = 250;
+/// Reading pace for time estimates: a typical learner's, in characters per
+/// minute.
+const double learnerPaceCharsPerMinute = 250;
 
 /// Parses the bundled `assets/free_books/aozora.json`.
 List<AozoraWork> parseAozoraCatalog(String json) {
@@ -98,16 +98,15 @@ class AozoraQuery {
   AozoraQuery cleared() => AozoraQuery(text: text, sort: sort);
 }
 
-/// Minutes [work] takes at [charsPerMinute].
-double readingMinutes(AozoraWork work, double charsPerMinute) =>
-    work.charCount / charsPerMinute;
+/// Minutes [work] takes at a typical learner's pace.
+double readingMinutes(AozoraWork work) =>
+    work.charCount / learnerPaceCharsPerMinute;
 
 /// The works [query] selects, in its sort order. [isInLibrary] answers the
 /// hide-in-library filter.
 List<AozoraWork> filterAndSortWorks(
   List<AozoraWork> works,
   AozoraQuery query, {
-  double charsPerMinute = defaultReadingPaceCharsPerMinute,
   bool Function(AozoraWork work)? isInLibrary,
 }) {
   final needles = searchNeedles(query.text);
@@ -124,7 +123,7 @@ List<AozoraWork> filterAndSortWorks(
     }
     if (query.lengths.isNotEmpty &&
         !query.lengths.contains(
-          AozoraLength.forMinutes(readingMinutes(work, charsPerMinute)),
+          AozoraLength.forMinutes(readingMinutes(work)),
         )) {
       return false;
     }

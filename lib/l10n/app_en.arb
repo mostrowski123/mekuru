@@ -4737,13 +4737,9 @@
   "@freeBooksLength": {
     "description": "Filter chip, sheet title and details label: how long a book takes to read."
   },
-  "freeBooksLengthNotePersonal": "Reading times use your own reading speed from your stats.",
-  "@freeBooksLengthNotePersonal": {
-    "description": "Note in the length filter sheet when the user's reading stats give a personal speed."
-  },
-  "freeBooksLengthNoteDefault": "Reading times use a typical learner's speed until your stats know yours.",
-  "@freeBooksLengthNoteDefault": {
-    "description": "Note in the length filter sheet before the user has enough reading history."
+  "freeBooksLengthNote": "Reading times use a typical learner's speed.",
+  "@freeBooksLengthNote": {
+    "description": "Note in the length filter sheet: reading times assume a typical learner's speed."
   },
   "freeBooksLengthUnder10Minutes": "Under 10 min",
   "@freeBooksLengthUnder10Minutes": {
@@ -4765,22 +4761,9 @@
   "@freeBooksLengthLonger": {
     "description": "Length filter option."
   },
-  "freeBooksLengthAtYourPace": "About {time} at your pace · {characters} characters",
-  "@freeBooksLengthAtYourPace": {
-    "description": "Book length in the details sheet, using the reader's own speed. time is a duration like 25m or 3h 20m.",
-    "placeholders": {
-      "time": {
-        "type": "String"
-      },
-      "characters": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "freeBooksLengthAtLearnerPace": "About {time} at a typical learner's pace · {characters} characters",
   "@freeBooksLengthAtLearnerPace": {
-    "description": "Book length in the details sheet before the reader has enough stats for a personal speed.",
+    "description": "Book length in the details sheet, at a typical learner's speed. time is a duration like 25m or 3h 20m.",
     "placeholders": {
       "time": {
         "type": "String"
