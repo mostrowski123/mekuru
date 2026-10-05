@@ -6,17 +6,19 @@ import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_highlight_overlay.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_zoom_viewer.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 import 'package:path/path.dart' as p;
 
 /// Renders a single manga page image with pinch-to-zoom and word tap targets.
 ///
-/// Uses [InteractiveViewer] for zoom/pan. A [LayoutBuilder] computes the
-/// `BoxFit.contain` scale and offset so the [MangaWordOverlay] positions
-/// match the rendered image exactly.
+/// Uses [MangaZoomViewer] for zoom/pan and, given [pageController], swipe
+/// page turns. A [LayoutBuilder] computes the `BoxFit.contain` scale and
+/// offset so the [MangaWordOverlay] positions match the rendered image
+/// exactly.
 ///
-/// Reports zoom state changes via [onZoomChanged] so the parent
-/// [PageView] can disable swiping when the user is zoomed in.
+/// Reports zoom state changes via [onZoomChanged] so the reader can turn
+/// off tap navigation while the user is zoomed in.
 class MangaPageView extends StatefulWidget {
   final int pageIndex;
   final MokuroPage page;
@@ -34,6 +36,11 @@ class MangaPageView extends StatefulWidget {
   final MangaWordTapCallback? onWordTapped;
   final ValueChanged<bool>? onZoomChanged;
 
+  /// The surrounding [PageView]'s controller, for swipe page turns; null in
+  /// scroll mode.
+  final PageController? pageController;
+  final bool animatePageTurns;
+
   const MangaPageView({
     super.key,
     required this.pageIndex,
@@ -48,6 +55,8 @@ class MangaPageView extends StatefulWidget {
     this.highlightedPageIndex,
     this.onWordTapped,
     this.onZoomChanged,
+    this.pageController,
+    this.animatePageTurns = true,
   });
 
   @override
@@ -55,32 +64,6 @@ class MangaPageView extends StatefulWidget {
 }
 
 class _MangaPageViewState extends State<MangaPageView> {
-  late final TransformationController _transformController;
-  bool _isZoomed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _transformController = TransformationController();
-    _transformController.addListener(_onTransformChanged);
-  }
-
-  @override
-  void dispose() {
-    _transformController.removeListener(_onTransformChanged);
-    _transformController.dispose();
-    super.dispose();
-  }
-
-  void _onTransformChanged() {
-    final scale = _transformController.value.getMaxScaleOnAxis();
-    final zoomed = scale > 1.05; // small tolerance to avoid float jitter
-    if (zoomed != _isZoomed) {
-      _isZoomed = zoomed;
-      widget.onZoomChanged?.call(zoomed);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final imagePath = '${widget.imageDirPath}/${widget.page.imageFileName}';
@@ -92,13 +75,11 @@ class _MangaPageViewState extends State<MangaPageView> {
           )
         : null;
 
-    return InteractiveViewer(
-      transformationController: _transformController,
-      minScale: 1.0,
-      maxScale: 5.0,
-      // Allow panning only when zoomed in so single-finger
-      // gestures pass through to the PageView when at 1x.
-      panEnabled: true,
+    return MangaZoomViewer(
+      pageIndex: widget.pageIndex,
+      pageController: widget.pageController,
+      animatePageTurns: widget.animatePageTurns,
+      onZoomChanged: widget.onZoomChanged,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final containerW = constraints.maxWidth;

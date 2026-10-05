@@ -1198,10 +1198,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
 
             return Stack(
               children: [
-                // Page content with tap zones. In e-reader mode the page
-                // views' swipe physics are disabled, so swipes are detected
-                // from raw pointer events here (no gesture-arena entry that
-                // could fight pinch-zoom) and turn pages instantly.
+                // Page content with tap zones. In e-reader mode unzoomed
+                // swipes are detected from raw pointer events here (no
+                // gesture-arena entry that could fight pinch-zoom) and turn
+                // pages instantly; MangaZoomViewer handles every other swipe.
                 Listener(
                   onPointerDown: animatePageTurns
                       ? null
@@ -1370,11 +1370,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           // Keep the adjacent pages built and decoded so instant
           // (no-animation) jumps have pixels ready on the jump frame.
           allowImplicitScrolling: true,
-          // E-reader mode: no swipe-drag at all — swipes are handled from
-          // raw pointers in build() and jump instantly.
-          physics: _isZoomed || !animatePageTurns
-              ? const NeverScrollableScrollPhysics()
-              : const ClampingScrollPhysics(),
+          // Swipes come through each page's MangaZoomViewer (or, unzoomed
+          // in e-reader mode, the raw-pointer Listener in build()), so the
+          // PageView's own drag can't race pinch-zoom. The Clamping parent
+          // stops those drags at the first and last page.
+          physics: const NeverScrollableScrollPhysics(
+            parent: ClampingScrollPhysics(),
+          ),
           itemCount: totalPages,
           onPageChanged: (page) => _onPageChanged(page, totalPages, mokuroBook),
           itemBuilder: (context, index) {
@@ -1390,6 +1392,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               highlightedRects: _highlight?.rects ?? const [],
               highlightedPageIndex: _highlight?.pageIndex,
               onWordTapped: _onWordTapped,
+              pageController: _pageController,
+              animatePageTurns: animatePageTurns,
               onZoomChanged: (zoomed) {
                 if (zoomed != _isZoomed) {
                   setState(() => _isZoomed = zoomed);

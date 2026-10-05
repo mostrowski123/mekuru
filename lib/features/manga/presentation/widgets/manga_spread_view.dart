@@ -6,12 +6,13 @@ import 'package:mekuru/features/manga/data/services/page_spread_calculator.dart'
 import 'package:mekuru/features/manga/presentation/utils/crop_display_geometry.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_highlight_overlay.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
+import 'package:mekuru/features/manga/presentation/widgets/manga_zoom_viewer.dart';
 import 'package:mekuru/shared/widgets/android_saf_image.dart';
 
 /// Two-page spread view for manga reading.
 ///
 /// Renders pages in pairs using [PageSpread] data from [computeSpreads].
-/// Both pages in a spread share a single [InteractiveViewer] so they zoom
+/// Both pages in a spread share one [MangaZoomViewer] so they zoom
 /// together. Cover and trailing odd pages are displayed as single pages
 /// centered in the viewport.
 class MangaSpreadView extends StatefulWidget {
@@ -20,8 +21,8 @@ class MangaSpreadView extends StatefulWidget {
   final int initialSpreadIndex;
   final bool isRtl;
 
-  /// When false (e-reader mode) swipe paging is disabled and programmatic
-  /// turns jump instantly.
+  /// When false (e-reader mode) swipes don't drag the spreads, and
+  /// programmatic turns jump instantly.
   final bool animatePageTurns;
   final bool debugOverlay;
   final bool autoCrop;
@@ -55,22 +56,16 @@ class MangaSpreadView extends StatefulWidget {
 
 class MangaSpreadViewState extends State<MangaSpreadView> {
   late PageController _pageController;
-  late TransformationController _transformController;
-  bool _isZoomed = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: widget.initialSpreadIndex);
-    _transformController = TransformationController();
-    _transformController.addListener(_onTransformChanged);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _transformController.removeListener(_onTransformChanged);
-    _transformController.dispose();
     super.dispose();
   }
 
@@ -87,15 +82,6 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
     );
   }
 
-  void _onTransformChanged() {
-    final scale = _transformController.value.getMaxScaleOnAxis();
-    final zoomed = scale > 1.05;
-    if (zoomed != _isZoomed) {
-      _isZoomed = zoomed;
-      widget.onZoomChanged?.call(zoomed);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return PageView.builder(
@@ -104,24 +90,21 @@ class MangaSpreadViewState extends State<MangaSpreadView> {
       // Keep the adjacent spreads built and decoded so instant
       // (no-animation) jumps have pixels ready on the jump frame.
       allowImplicitScrolling: true,
-      physics: _isZoomed || !widget.animatePageTurns
-          ? const NeverScrollableScrollPhysics()
-          : const ClampingScrollPhysics(),
+      // Swipes come through each spread's MangaZoomViewer, so the
+      // PageView's own drag can't race pinch-zoom. The Clamping parent
+      // stops those drags at the first and last spread.
+      physics: const NeverScrollableScrollPhysics(
+        parent: ClampingScrollPhysics(),
+      ),
       itemCount: widget.spreads.length,
-      onPageChanged: (spreadIdx) {
-        // Reset zoom when changing spreads
-        if (_isZoomed) {
-          _transformController.value = Matrix4.identity();
-        }
-        widget.onSpreadChanged?.call(spreadIdx);
-      },
+      onPageChanged: widget.onSpreadChanged,
       itemBuilder: (context, spreadIdx) {
         final spread = widget.spreads[spreadIdx];
-        return InteractiveViewer(
-          transformationController: _transformController,
-          minScale: 1.0,
-          maxScale: 5.0,
-          panEnabled: true,
+        return MangaZoomViewer(
+          pageIndex: spreadIdx,
+          pageController: _pageController,
+          animatePageTurns: widget.animatePageTurns,
+          onZoomChanged: widget.onZoomChanged,
           child: _buildSpread(context, spread),
         );
       },
