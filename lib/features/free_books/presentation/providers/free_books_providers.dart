@@ -19,6 +19,7 @@ import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/data/services/aozora_catalog.dart';
 import 'package:mekuru/features/free_books/data/services/aozora_download.dart';
 import 'package:mekuru/features/free_books/data/services/tadoku_catalog.dart';
+import 'package:mekuru/features/free_books/data/services/tadoku_covers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/stats/data/services/stats_aggregator.dart';
 import 'package:mekuru/features/stats/presentation/providers/stats_providers.dart';
@@ -58,29 +59,24 @@ final tadokuCatalogProvider = FutureProvider.autoDispose<List<TadokuBook>>(
   ),
 );
 
-/// A graded reader's cover, downloaded once into the cache folder: the
-/// manga reader clears the image cache when it closes, and tadoku.org
-/// limits request rates. Named after its URL, so a new cover is a new file.
-final tadokuCoverProvider = FutureProvider.autoDispose.family<File, Uri>((
-  ref,
-  url,
-) async {
-  final file = File(
-    p.join(
-      (await getTemporaryDirectory()).path,
-      'tadoku_covers',
-      url.pathSegments.last,
+/// Graded-reader covers on disk, in the app's cache folder: kept between
+/// launches (unlike the temporary folder, which iOS empties), and out of
+/// iCloud backups. One for the app's life, so it remembers covers on their
+/// way and recent failures.
+final tadokuCoversProvider = Provider<TadokuCovers>(
+  (ref) => TadokuCovers(
+    getApplicationCacheDirectory().then(
+      (cache) => Directory(p.join(cache.path, 'tadoku_covers')),
     ),
-  );
-  if (!await file.exists()) {
-    await file.parent.create(recursive: true);
-    // Into place only once complete, so a half-written cover never shows.
-    final part = '${file.path}.part';
-    await downloadToFile(url.toString(), part);
-    await File(part).rename(file.path);
-  }
-  return file;
-});
+  ),
+);
+
+/// A graded reader's cover, through [tadokuCoversProvider]: the manga
+/// reader clears the image cache when it closes, and tadoku.org limits
+/// request rates.
+final tadokuCoverProvider = FutureProvider.autoDispose.family<File, Uri>(
+  (ref, url) => ref.watch(tadokuCoversProvider).cover(url),
+);
 
 /// Search, filters and sort on the Aozora tab. Kept while the app runs and
 /// reset at the next launch (Matt's call), starting on the easy picks.
