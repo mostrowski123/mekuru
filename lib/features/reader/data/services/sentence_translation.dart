@@ -3,6 +3,8 @@ import 'dart:ui' show Locale;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/mozilla_translation.dart';
 
 /// On-device Japanese translation for the lookup sheet's Sentence tab:
@@ -40,9 +42,34 @@ String translationTargetFor(Locale locale) => switch (locale.languageCode) {
   _ => 'en',
 };
 
-Future<TranslationStatus> translationStatus(String target) =>
-    _engine.status(target);
+/// Replaces Gemma in tests.
+@visibleForTesting
+TranslationEngine? debugHighQualityEngine;
 
+/// Gemma when the user chose High quality on Android, else null.
+TranslationEngine? _highQualityEngine(bool highQuality) {
+  if (!highQuality) return null;
+  if (debugHighQualityEngine case final engine?) return engine;
+  return defaultTargetPlatform == TargetPlatform.android
+      ? GemmaTranslation.instance
+      : null;
+}
+
+/// Installed when the chosen engine, or Standard as its fallback, can
+/// translate now.
+Future<TranslationStatus> translationStatus(
+  String target, {
+  bool highQuality = false,
+}) async {
+  final high = _highQualityEngine(highQuality);
+  if (high != null &&
+      await high.status(target) == TranslationStatus.installed) {
+    return TranslationStatus.installed;
+  }
+  return _engine.status(target);
+}
+
+/// The Standard engine's download (Gemma's goes through its notifier).
 Future<void> downloadTranslation(String target) => _engine.download(target);
 
 /// Android only: iOS language packs belong to the system.
@@ -52,17 +79,25 @@ Future<void> deleteTranslation() => MozillaTranslation.instance.delete();
 String translationDownloadSize(String target) =>
     MozillaTranslation.downloadSize(target);
 
+/// A translation and whether High quality (Gemma) produced it.
+typedef SentenceTranslation = ({String text, bool highQuality});
+
 // The Sentence tab, another word of the same sentence and the Anki button
 // all ask for the latest sentence, so one entry is the whole cache.
-((String, String), Future<String>)? _lastTranslation;
+((String, String, bool), Future<SentenceTranslation>)? _lastTranslation;
 
-/// Translates [text] into [target], sharing the latest result (and a
-/// request in flight). A failure is not kept, so a retry asks again.
-Future<String> translateSentence(String text, String target) {
-  final key = (text, target);
+/// Translates [text] into [target] with Gemma when [highQuality] and it is
+/// ready, else Standard. A Gemma failure falls back to Standard for this
+/// sentence. Shares the latest result; a failure is not kept.
+Future<SentenceTranslation> translateSentence(
+  String text,
+  String target, {
+  bool highQuality = false,
+}) {
+  final key = (text, target, highQuality);
   final last = _lastTranslation;
   if (last != null && last.$1 == key) return last.$2;
-  final translation = _engine.translate(text, target);
+  final translation = _translate(text, target, highQuality);
   _lastTranslation = (key, translation);
   translation.then<void>(
     (_) {},
@@ -73,17 +108,41 @@ Future<String> translateSentence(String text, String target) {
   return translation;
 }
 
-/// [sentence] in [target] when the engine is already installed, else null:
-/// for callers like the Anki button that must not stall or ask to download.
-Future<String?> translateIfInstalled(String sentence, String target) async {
+Future<SentenceTranslation> _translate(
+  String text,
+  String target,
+  bool highQuality,
+) async {
+  final high = _highQualityEngine(highQuality);
+  if (high != null &&
+      await high.status(target) == TranslationStatus.installed) {
+    try {
+      return (text: await high.translate(text, target), highQuality: true);
+    } catch (e) {
+      logFailure('translation.high_quality_failed', e);
+    }
+  }
+  return (text: await _engine.translate(text, target), highQuality: false);
+}
+
+/// [sentence] in [target] when an engine is ready, else null: for callers
+/// like the Anki button that must not stall or ask to download.
+Future<String?> translateIfInstalled(
+  String sentence,
+  String target, {
+  bool highQuality = false,
+}) async {
   try {
-    if (await translationStatus(target) != TranslationStatus.installed) {
+    if (await translationStatus(target, highQuality: highQuality) !=
+        TranslationStatus.installed) {
       return null;
     }
-    return await translateSentence(
+    final result = await translateSentence(
       sentence,
       target,
-    ).timeout(const Duration(seconds: 5));
+      highQuality: highQuality,
+    ).timeout(const Duration(seconds: 15));
+    return result.text;
   } catch (_) {
     return null;
   }

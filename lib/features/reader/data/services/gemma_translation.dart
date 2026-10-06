@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart'
     show downloadResumable;
@@ -121,10 +122,11 @@ class GemmaTranslation implements TranslationEngine {
     if (_loadedPath != modelPath) {
       // LiteRT-LM's ~750 MB weight cache lives next to the model, so
       // deleting the model deletes it; reloads drop from ~2 s to ~0.2 s.
-      await _channel.invokeMethod<void>('load', {
+      final backend = await _channel.invokeMethod<String>('load', {
         'path': modelPath,
         'cacheDir': p.dirname(modelPath),
       });
+      if (backend == 'cpu') logUsage('translation.gemma_cpu');
       _loadedPath = modelPath;
     }
     _idleTimer?.cancel();

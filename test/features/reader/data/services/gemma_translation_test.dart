@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 
@@ -48,5 +49,23 @@ void main() {
       'text': '猫です。',
       'language': 'Simplified Chinese',
     });
+  });
+
+  test('a CPU fallback on load is logged', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          channel,
+          (call) async => call.method == 'load' ? 'cpu' : 'x',
+        );
+    final events = <String>[];
+    usageLogSinkOverride = (message, _, {required isWarning}) =>
+        events.add(message);
+    addTearDown(() => usageLogSinkOverride = null);
+    await GemmaTranslation.instance.translateWith(
+      modelPath: '/models/cpu.litertlm',
+      text: '猫',
+      target: 'en',
+    );
+    expect(events, ['translation.gemma_cpu']);
   });
 }

@@ -15,6 +15,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/dictionary/presentation/widgets/kanji_readings_block.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/tappable_expression_text.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart' show scaffoldMessengerKey;
@@ -299,7 +300,12 @@ class _GroupedDictionaryEntryHeaderState
         !fieldMapping.containsValue(AppDataSource.sentenceTranslation.key)) {
       return null;
     }
-    return translateIfInstalled(sentence, target);
+    return translateIfInstalled(
+      sentence,
+      target,
+      highQuality:
+          ref.read(translationModelProvider) == TranslationModelChoice.high,
+    );
   }
 
   ({String cacheKey, int modelId, int deckId, String firstFieldValue})?

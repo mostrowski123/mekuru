@@ -20,12 +20,12 @@ void main() {
         expect(await translationStatus('en'), TranslationStatus.installed);
         expect(await translationStatus('es'), TranslationStatus.needsDownload);
 
-        expect(await translateSentence('今日はいい天気ですね。', 'en'), isNotEmpty);
-        final english = await translateSentence('猫が好きです。', 'en');
+        expect((await translateSentence('今日はいい天気ですね。', 'en')).text, isNotEmpty);
+        final english = (await translateSentence('猫が好きです。', 'en')).text;
         expect(english.toLowerCase(), contains('cat'));
 
         await downloadTranslation('es');
-        final spanish = await translateSentence('猫が好きです。', 'es');
+        final spanish = (await translateSentence('猫が好きです。', 'es')).text;
         expect(spanish.toLowerCase(), contains('gato'));
 
         await deleteTranslation();

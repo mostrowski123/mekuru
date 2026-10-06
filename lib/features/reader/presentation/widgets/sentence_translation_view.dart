@@ -93,7 +93,10 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
     try {
       final status = await translationStatus(target);
       if (status != TranslationStatus.installed) return (status, null);
-      final translation = await translateSentence(widget.sentence, target);
+      final translation = (await translateSentence(
+        widget.sentence,
+        target,
+      )).text;
       logUsage(
         'translation.shown',
         attrs: {
