@@ -177,5 +177,7 @@ String? dictionaryDownloadError(AppLocalizations l10n, Object? failure) =>
       InsufficientSpaceException(:final neededBytes) =>
         l10n.backupFullNotEnoughSpace(size: formatBytes(neededBytes)),
       WifiLostException() => l10n.dictionaryDownloadWifiLost,
+      DownloadStoppedInBackgroundException() =>
+        l10n.downloadStoppedInBackground,
       _ => l10n.serverBrowseDownloadFailed(error: '$failure'),
     };

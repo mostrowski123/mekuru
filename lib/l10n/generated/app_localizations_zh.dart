@@ -3360,6 +3360,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dictionaryDownloadWifiLost => 'Wi-Fi 已断开，下载已停止。点按“下载”重试。';
 
   @override
+  String get downloadStoppedInBackground => 'Mekuru 在后台时下载已停止。点按“下载”以继续。';
+
+  @override
   String get catalogFindMoreTitle => '查找更多词典';
 
   @override
@@ -7281,6 +7284,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get dictionaryDownloadWifiLost => 'Wi-Fi 已断开，下载已停止。点按“下载”重试。';
+
+  @override
+  String get downloadStoppedInBackground => 'Mekuru 在后台时下载已停止。点按“下载”以继续。';
 
   @override
   String get catalogFindMoreTitle => '查找更多词典';

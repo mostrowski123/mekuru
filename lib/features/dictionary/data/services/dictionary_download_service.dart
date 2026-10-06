@@ -114,6 +114,9 @@ class DictionaryDownloadService {
     } on WifiLostException {
       logUsage('download.wifi_lost', attrs: {'asset': asset});
       rethrow;
+    } on DownloadStoppedInBackgroundException {
+      logUsage('download.stopped_in_background', attrs: {'asset': asset});
+      rethrow;
     } catch (error) {
       logFailure('download.failed', error, attrs: {'asset': asset});
       rethrow;

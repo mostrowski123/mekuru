@@ -20,6 +20,14 @@ void main() {
     expect(
       dictionaryDownloadError(
         l10n,
+        const DownloadStoppedInBackgroundException(),
+      ),
+      'The download stopped because Mekuru was in the background. '
+      'Tap Download to resume.',
+    );
+    expect(
+      dictionaryDownloadError(
+        l10n,
         const InsufficientSpaceException(neededBytes: 500 << 20),
       ),
       'Not enough free space on this device. About 500 MB more is needed.',

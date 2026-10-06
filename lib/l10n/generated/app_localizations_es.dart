@@ -3563,6 +3563,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'La descarga se detuvo porque se desconectó el Wi-Fi. Toca Descargar para intentarlo de nuevo.';
 
   @override
+  String get downloadStoppedInBackground =>
+      'La descarga se detuvo porque Mekuru estaba en segundo plano. Toca Descargar para reanudarla.';
+
+  @override
   String get catalogFindMoreTitle => 'Encontrar más diccionarios';
 
   @override

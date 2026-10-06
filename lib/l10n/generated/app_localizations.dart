@@ -5780,6 +5780,12 @@ abstract class AppLocalizations {
   /// **'The download stopped because Wi-Fi disconnected. Tap Download to try again.'**
   String get dictionaryDownloadWifiLost;
 
+  /// Shown under a download (dictionary or translation model) that stopped because Android blocked Mekuru's network while it was in the background. Download is the button label (commonDownload).
+  ///
+  /// In en, this message translates to:
+  /// **'The download stopped because Mekuru was in the background. Tap Download to resume.'**
+  String get downloadStoppedInBackground;
+
   /// Dictionary catalog section header above links to community guides that list more dictionaries.
   ///
   /// In en, this message translates to:
