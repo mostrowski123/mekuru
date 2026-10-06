@@ -3925,15 +3925,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get highlightColorYellow => 'Yellow';
 
   @override
-  String get highlightColorBlue => 'Blue';
-
-  @override
-  String get highlightColorGreen => 'Green';
-
-  @override
-  String get highlightColorPink => 'Pink';
-
-  @override
   String get readerSelectSentence => 'Select sentence';
 
   @override
@@ -3955,9 +3946,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readerVolumeKeysTitle => 'Volume buttons turn pages';
-
-  @override
-  String get readerVolumeKeysOff => 'Off';
 
   @override
   String get readerVolumeKeysDownNext => 'Down: next';

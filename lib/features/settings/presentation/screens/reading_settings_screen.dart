@@ -55,7 +55,7 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             value: settings.readerAnimations,
             onChanged: notifier.setReaderAnimations,
           ),
-          // iOS doesn't let apps take over the volume buttons.
+          // Android only; see VolumeKeyPageTurn.
           if (defaultTargetPlatform == TargetPlatform.android)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),

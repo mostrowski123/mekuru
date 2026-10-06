@@ -118,7 +118,7 @@ List<ButtonSegment<VolumeKeyPageTurn>> volumeKeyPageTurnSegments(
   return [
     ButtonSegment(
       value: VolumeKeyPageTurn.off,
-      label: Text(l10n.readerVolumeKeysOff),
+      label: Text(l10n.readerFuriganaOff),
     ),
     ButtonSegment(
       value: VolumeKeyPageTurn.downNext,

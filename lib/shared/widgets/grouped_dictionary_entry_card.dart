@@ -17,6 +17,7 @@ import 'package:mekuru/features/dictionary/presentation/widgets/tappable_express
 import 'package:mekuru/features/vocabulary/presentation/providers/vocabulary_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart' show scaffoldMessengerKey;
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 import 'package:mekuru/shared/widgets/structured_glossary_view.dart';
@@ -861,17 +862,14 @@ class _FrequencyTag extends StatelessWidget {
 
     // Shades with 4.5:1 contrast for the small label on light and dark
     // cards; the plain swatches are 2 to 3:1 on light ones.
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final Color color;
-    if (resolvedRank <= 5000) {
-      color = dark ? Colors.green.shade300 : Colors.green.shade800;
-    } else if (resolvedRank <= 15000) {
-      color = dark ? Colors.blue.shade300 : Colors.blue.shade800;
-    } else if (resolvedRank <= 30000) {
-      color = dark ? Colors.orange.shade300 : Colors.deepOrange.shade900;
-    } else {
-      color = dark ? Colors.grey.shade400 : Colors.grey.shade700;
-    }
+    final scheme = Theme.of(context).colorScheme;
+    final dark = scheme.brightness == Brightness.dark;
+    final color = switch (resolvedRank) {
+      <= 5000 => scheme.success,
+      <= 15000 => dark ? Colors.blue.shade300 : Colors.blue.shade800,
+      <= 30000 => dark ? Colors.orange.shade300 : Colors.deepOrange.shade900,
+      _ => dark ? Colors.grey.shade400 : Colors.grey.shade700,
+    };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),

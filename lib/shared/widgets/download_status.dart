@@ -79,13 +79,18 @@ class DownloadErrorText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.error,
-          fontSize: 13,
+    // Live regions here and below: screen readers announce download results.
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.error,
+            fontSize: 13,
+          ),
         ),
       ),
     );
@@ -99,13 +104,17 @@ class DownloadSuccessText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.success,
-          fontSize: 13,
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.success,
+            fontSize: 13,
+          ),
         ),
       ),
     );

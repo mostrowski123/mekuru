@@ -270,14 +270,10 @@ class CollectionManageSheet extends ConsumerWidget {
             },
           ),
           ListTile(
-            leading: Icon(
-              Icons.delete_outline,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            title: Text(
-              context.l10n.commonDelete,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+            iconColor: Theme.of(context).colorScheme.error,
+            textColor: Theme.of(context).colorScheme.error,
+            leading: const Icon(Icons.delete_outline),
+            title: Text(context.l10n.commonDelete),
             onTap: () {
               AppHaptics.light();
               _confirmDelete(context);

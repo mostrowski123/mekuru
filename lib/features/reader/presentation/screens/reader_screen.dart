@@ -57,6 +57,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   final _epubController = CustomEpubController();
   final _epubFileResolver = EpubFileResolver();
 
+  /// The reader's key-handling focus (see [ReaderKeyNavigation]).
+  final _keyFocus = FocusNode(debugLabel: 'reader keys');
+
   late final ReaderBrightnessNotifier _brightnessNotifier;
   late final ReaderSettingsNotifier _readerSettingsNotifier;
   late final ReaderProgressPersistence _progressPersistence;
@@ -223,6 +226,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _readerSettingsNotifier.clearCurrentBook();
     unawaited(setReaderSystemBarsVisible(true));
     WakelockPlus.disable();
+    _keyFocus.dispose();
     super.dispose();
   }
 
@@ -404,6 +408,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         body: _errorMessage != null
             ? _buildErrorState(context)
             : ReaderKeyNavigation(
+                focusNode: _keyFocus,
                 direction: settings.readingDirection,
                 volumeKeys: settings.volumeKeyPageTurn,
                 onIntent: _executeNavigationIntent,
@@ -530,23 +535,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                 }
                               }
                             },
-                            onPageKey: (key, shift) {
-                              final logicalKey = domPageTurnKeys[key];
-                              // A sheet or dialog over the reader owns the keys.
-                              if (logicalKey == null ||
-                                  !(ModalRoute.of(context)?.isCurrent ??
-                                      false)) {
-                                return;
-                              }
-                              _executeNavigationIntent(
-                                readerKeyIntent(
-                                  logicalKey,
-                                  direction: settings.readingDirection,
-                                  volumeKeys: VolumeKeyPageTurn.off,
-                                  shift: shift,
-                                ),
-                              );
-                            },
+                            onPageKey: _onPageKey,
                             onPageCharacters: (count, pageKey, screens) {
                               _sessionTracker
                                 ..recordCharactersRead(count, pageKey: pageKey)
@@ -1105,6 +1094,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
+  /// A page-turn key the book page received itself (see
+  /// [CustomEpubViewer.onPageKey]). A sheet or dialog over the reader holds
+  /// the focus while it is open, and then owns the keys.
+  void _onPageKey(String key, bool shift) {
+    final logicalKey = domPageTurnKeys[key];
+    if (logicalKey == null || !_keyFocus.hasFocus) return;
+    _executeNavigationIntent(
+      readerKeyIntent(
+        logicalKey,
+        direction: ref.read(readerSettingsProvider).readingDirection,
+        volumeKeys: VolumeKeyPageTurn.off,
+        shift: shift,
+      ),
+    );
+  }
+
   void _goForward() {
     if (!_isEpubLoaded || _hasActiveSelection) {
       debugPrint(
@@ -1417,19 +1422,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   Widget _buildTopBar(bool isProUnlocked) {
     final l10n = context.l10n;
 
-    // Solid behind the controls and fading out below them: a white title
-    // on the faded part of the scrim read at about 2.5:1 over a white page.
-    final scrim = Colors.black.withValues(alpha: 0.7);
-    return Container(
-      padding: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: const [0, 0.8, 1],
-          colors: [scrim, scrim, Colors.transparent],
-        ),
-      ),
+    return ReaderBarScrim(
+      atTop: true,
       child: SafeArea(
         bottom: false,
         child: Row(
@@ -1713,15 +1707,19 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
                   curve: _expanded && !isLocked
                       ? Curves.easeOutBack
                       : Curves.easeIn,
-                  child: _SpeedDialButton(
-                    label: switch (colors[i]) {
+                  child: FloatingActionButton.small(
+                    heroTag: null,
+                    tooltip: switch (colors[i]) {
                       HighlightColor.yellow => l10n.highlightColorYellow,
-                      HighlightColor.blue => l10n.highlightColorBlue,
-                      HighlightColor.green => l10n.highlightColorGreen,
-                      HighlightColor.pink => l10n.highlightColorPink,
+                      // The color theme names, already translated.
+                      HighlightColor.blue => l10n.settingsColorThemeBlue,
+                      HighlightColor.green => l10n.settingsColorThemeGreen,
+                      HighlightColor.pink => l10n.settingsColorThemePink,
                     },
-                    color: colors[i].color,
-                    onTap: () => widget.onColorSelected(colors[i]),
+                    backgroundColor: colors[i].color,
+                    elevation: 4,
+                    shape: const CircleBorder(),
+                    onPressed: () => widget.onColorSelected(colors[i]),
                   ),
                 ),
 
@@ -1736,15 +1734,13 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
                 curve: _expanded && !isLocked
                     ? Curves.easeOutBack
                     : Curves.easeIn,
-                child: _SpeedDialButton(
-                  label: l10n.readerSelectSentence,
-                  color: theme.colorScheme.primaryContainer,
-                  onTap: widget.onExpandToSentence,
-                  icon: Icon(
-                    Icons.select_all,
-                    size: 18,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
+                child: FloatingActionButton.small(
+                  heroTag: null,
+                  tooltip: l10n.readerSelectSentence,
+                  elevation: 2,
+                  shape: const CircleBorder(),
+                  onPressed: widget.onExpandToSentence,
+                  child: const Icon(Icons.select_all, size: 18),
                 ),
               ),
               // Main FAB
@@ -1763,45 +1759,6 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
                 child: const Icon(Icons.highlight),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// One of the speed dial's round buttons: 40dp to look at, with a 48dp touch
-/// target and a name for screen readers.
-class _SpeedDialButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  final Widget? icon;
-
-  const _SpeedDialButton({
-    required this.label,
-    required this.color,
-    required this.onTap,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      child: Tooltip(
-        message: label,
-        child: InkResponse(
-          onTap: onTap,
-          radius: 24,
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Material(
-              elevation: 4,
-              shape: const CircleBorder(),
-              color: color,
-              child: SizedBox.square(dimension: 40, child: icon),
-            ),
           ),
         ),
       ),

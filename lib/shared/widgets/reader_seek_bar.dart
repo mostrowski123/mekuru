@@ -65,18 +65,8 @@ class _ReaderSeekBarState extends State<ReaderSeekBar> {
     final shown = (_dragValue ?? widget.value).clamp(widget.min, widget.max);
     const labelStyle = TextStyle(color: Colors.white, fontSize: 14);
 
-    return Container(
-      // Solid behind the labels, fading out above them: white page numbers
-      // on the faded part read at about 2:1 over a white page.
-      padding: const EdgeInsets.only(top: 16),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          stops: [0, 0.8, 1],
-          colors: [Colors.black87, Colors.black87, Colors.transparent],
-        ),
-      ),
+    return ReaderBarScrim(
+      atTop: false,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -126,6 +116,35 @@ class _ReaderSeekBarState extends State<ReaderSeekBar> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The dark scrim behind both readers' control bars: solid behind the
+/// controls and fading out over the page beyond them. Fading under the
+/// controls instead left their white text at about 2:1 over a white page.
+class ReaderBarScrim extends StatelessWidget {
+  const ReaderBarScrim({super.key, required this.atTop, required this.child});
+
+  /// A top bar fades out downwards, the bottom bar upwards.
+  final bool atTop;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: atTop
+          ? const EdgeInsets.only(bottom: 16)
+          : const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: atTop ? Alignment.topCenter : Alignment.bottomCenter,
+          end: atTop ? Alignment.bottomCenter : Alignment.topCenter,
+          stops: const [0, 0.8, 1],
+          colors: const [Colors.black87, Colors.black87, Colors.transparent],
+        ),
+      ),
+      child: child,
     );
   }
 }

@@ -1242,7 +1242,8 @@ class _BookTileState extends ConsumerState<_BookTile>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final percentRead = (book.readProgress.clamp(0.0, 1.0) * 100).round();
+    final progress = book.readProgress.clamp(0.0, 1.0);
+    final percentRead = (progress * 100).round();
     // The raw Listener exposes no actions, so screen readers get the tap and
     // the options sheet from here.
     return Semantics(
@@ -1312,10 +1313,7 @@ class _BookTileState extends ConsumerState<_BookTile>
                                   color: Colors.black.withValues(alpha: 0.3),
                                   child: FractionallySizedBox(
                                     alignment: Alignment.centerLeft,
-                                    widthFactor: book.readProgress.clamp(
-                                      0.0,
-                                      1.0,
-                                    ),
+                                    widthFactor: progress,
                                     child: Container(
                                       color: theme.colorScheme.primary,
                                     ),
@@ -1541,14 +1539,10 @@ class _BookTileState extends ConsumerState<_BookTile>
                 },
               ),
               ListTile(
-                leading: Icon(
-                  Icons.delete_outline,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                title: Text(
-                  context.l10n.libraryDeleteBookTitle,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
+                iconColor: Theme.of(context).colorScheme.error,
+                textColor: Theme.of(context).colorScheme.error,
+                leading: const Icon(Icons.delete_outline),
+                title: Text(context.l10n.libraryDeleteBookTitle),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   _confirmDelete(context);

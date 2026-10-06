@@ -6357,29 +6357,11 @@ abstract class AppLocalizations {
   /// **'Book options'**
   String get libraryBookOptions;
 
-  /// Name of the yellow highlight color button in the EPUB reader, read by screen readers and shown on long press.
+  /// Name of the yellow highlight color button in the EPUB reader, read by screen readers and shown on long press. The other highlight colors reuse settingsColorThemeBlue/Green/Pink.
   ///
   /// In en, this message translates to:
   /// **'Yellow'**
   String get highlightColorYellow;
-
-  /// Name of the blue highlight color button in the EPUB reader.
-  ///
-  /// In en, this message translates to:
-  /// **'Blue'**
-  String get highlightColorBlue;
-
-  /// Name of the green highlight color button in the EPUB reader.
-  ///
-  /// In en, this message translates to:
-  /// **'Green'**
-  String get highlightColorGreen;
-
-  /// Name of the pink highlight color button in the EPUB reader.
-  ///
-  /// In en, this message translates to:
-  /// **'Pink'**
-  String get highlightColorPink;
 
   /// Name of the reader button that grows the current text selection to the whole sentence.
   ///
@@ -6422,12 +6404,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Volume buttons turn pages'**
   String get readerVolumeKeysTitle;
-
-  /// Volume buttons option: they change the volume as usual.
-  ///
-  /// In en, this message translates to:
-  /// **'Off'**
-  String get readerVolumeKeysOff;
 
   /// Volume buttons option: volume down turns to the next page, volume up to the previous one. Keep short; it sits in a three-part segmented button.
   ///

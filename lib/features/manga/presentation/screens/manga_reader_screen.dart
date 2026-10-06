@@ -1094,7 +1094,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       viewMode,
       globalDirection,
       mangaAutoCropEnabled,
-      readerAnimations,
+      _, // readerAnimations, read through _animatePageTurns
       volumeKeys,
     ) = ref.watch(
       readerSettingsProvider.select(
@@ -1107,8 +1107,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         ),
       ),
     );
-    final animatePageTurns =
-        readerAnimations && !MediaQuery.disableAnimationsOf(context);
+    final animatePageTurns = _animatePageTurns;
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final autoCrop = isProUnlocked && mangaAutoCropEnabled;
     ref.listen(
@@ -1199,6 +1198,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                 : <PageSpread>[];
 
             _visiblePages = _visiblePageIndexes(viewMode, spreads);
+            void onIntent(ReaderNavigationIntent intent) =>
+                _runIntent(intent, totalPages, spreads);
 
             // Count the page(s) shown when the book first opens; every later
             // page is counted as it becomes visible. One-shot, because build
@@ -1214,7 +1215,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
             return ReaderKeyNavigation(
               direction: direction,
               volumeKeys: volumeKeys,
-              onIntent: (intent) => _runIntent(intent, totalPages, spreads),
+              onIntent: onIntent,
               child: Stack(
                 children: [
                   // Page content with tap zones. In e-reader mode unzoomed
@@ -1226,8 +1227,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                       page: _currentPage + 1,
                       total: totalPages,
                     ),
-                    onIntent: (intent) =>
-                        _runIntent(intent, totalPages, spreads),
+                    onIntent: onIntent,
                     child: Listener(
                       onPointerDown: animatePageTurns
                           ? null
@@ -1275,21 +1275,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                       top: 0,
                       left: 0,
                       right: 0,
-                      child: Container(
-                        // Solid behind the controls, fading out below them.
-                        padding: const EdgeInsets.only(bottom: 16),
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            stops: [0, 0.8, 1],
-                            colors: [
-                              Colors.black87,
-                              Colors.black87,
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
+                      child: ReaderBarScrim(
+                        atTop: true,
                         child: SafeArea(
                           bottom: false,
                           child: Row(

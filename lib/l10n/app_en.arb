@@ -5015,19 +5015,7 @@
   },
   "highlightColorYellow": "Yellow",
   "@highlightColorYellow": {
-    "description": "Name of the yellow highlight color button in the EPUB reader, read by screen readers and shown on long press."
-  },
-  "highlightColorBlue": "Blue",
-  "@highlightColorBlue": {
-    "description": "Name of the blue highlight color button in the EPUB reader."
-  },
-  "highlightColorGreen": "Green",
-  "@highlightColorGreen": {
-    "description": "Name of the green highlight color button in the EPUB reader."
-  },
-  "highlightColorPink": "Pink",
-  "@highlightColorPink": {
-    "description": "Name of the pink highlight color button in the EPUB reader."
+    "description": "Name of the yellow highlight color button in the EPUB reader, read by screen readers and shown on long press. The other highlight colors reuse settingsColorThemeBlue/Green/Pink."
   },
   "readerSelectSentence": "Select sentence",
   "@readerSelectSentence": {
@@ -5064,10 +5052,6 @@
   "readerVolumeKeysTitle": "Volume buttons turn pages",
   "@readerVolumeKeysTitle": {
     "description": "Reading settings (Android only): label above the choice of what the phone's volume buttons do in the EPUB and manga readers."
-  },
-  "readerVolumeKeysOff": "Off",
-  "@readerVolumeKeysOff": {
-    "description": "Volume buttons option: they change the volume as usual."
   },
   "readerVolumeKeysDownNext": "Down: next",
   "@readerVolumeKeysDownNext": {

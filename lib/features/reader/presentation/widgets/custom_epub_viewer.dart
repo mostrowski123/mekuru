@@ -201,9 +201,8 @@ class CustomEpubViewer extends StatefulWidget {
   final void Function(int count, String? pageKey, double screens)?
   onPageCharacters;
 
-  /// A page-turn key the page received while it had keyboard focus itself
-  /// (on iOS, after a tap into the text). [key] is the DOM key name, e.g.
-  /// `ArrowLeft`; see `domPageTurnKeys`.
+  /// A page-turn key the page itself received; [key] is its DOM name, e.g.
+  /// `ArrowLeft` (see `forwardPageTurnKey` in reader_bridge.js).
   final void Function(String key, bool shift)? onPageKey;
 
   @override

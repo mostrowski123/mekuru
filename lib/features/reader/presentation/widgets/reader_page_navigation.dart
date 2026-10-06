@@ -79,9 +79,8 @@ ReaderNavigationIntent readerKeyIntent(
   return ReaderNavigationIntent.none;
 }
 
-/// The page-turn keys under the names the EPUB page's own key events use.
-/// The page forwards them when it has keyboard focus itself, which on iOS
-/// it takes after a tap into the text.
+/// The page-turn keys under the names the EPUB page's key events use (see
+/// `forwardPageTurnKey` in reader_bridge.js).
 const domPageTurnKeys = {
   'ArrowLeft': LogicalKeyboardKey.arrowLeft,
   'ArrowRight': LogicalKeyboardKey.arrowRight,
@@ -97,12 +96,16 @@ const domPageTurnKeys = {
 class ReaderKeyNavigation extends StatelessWidget {
   const ReaderKeyNavigation({
     super.key,
+    this.focusNode,
     required this.direction,
     required this.volumeKeys,
     required this.onIntent,
     required this.child,
   });
 
+  /// Holds focus while the reader has it, i.e. no sheet or dialog is open
+  /// over it.
+  final FocusNode? focusNode;
   final ReaderDirection direction;
   final VolumeKeyPageTurn volumeKeys;
   final ValueChanged<ReaderNavigationIntent> onIntent;
@@ -110,11 +113,12 @@ class ReaderKeyNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // iOS doesn't let apps take over the volume buttons.
+    // Android only; see VolumeKeyPageTurn.
     final volume = defaultTargetPlatform == TargetPlatform.android
         ? volumeKeys
         : VolumeKeyPageTurn.off;
     return Focus(
+      focusNode: focusNode,
       autofocus: true,
       onKeyEvent: (node, event) {
         final intent = readerKeyIntent(

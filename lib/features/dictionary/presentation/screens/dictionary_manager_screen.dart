@@ -164,6 +164,9 @@ class _DictionaryManagerScreenState
 
   Widget _buildProgressBanner(DictionaryImportState state) {
     final l10n = context.l10n;
+    // Otherwise the label is the running entry count, too chatty to announce.
+    final namesDictionary =
+        state.dictionariesTotal > 0 || state.currentDictionary != null;
     final label = state.dictionariesTotal > 0
         ? l10n.dictionaryImportImportingCollection(
             name: state.currentDictionary ?? '',
@@ -191,14 +194,9 @@ class _DictionaryManagerScreenState
               ),
               const SizedBox(width: 12),
               Expanded(
-                // Screen readers announce which dictionary is importing; a
-                // label that is the running entry count would announce on
-                // every update, so that one stays quiet.
                 child: Semantics(
                   container: true,
-                  liveRegion:
-                      state.dictionariesTotal > 0 ||
-                      state.currentDictionary != null,
+                  liveRegion: namesDictionary,
                   child: Text(
                     label,
                     style: const TextStyle(fontWeight: FontWeight.w500),
