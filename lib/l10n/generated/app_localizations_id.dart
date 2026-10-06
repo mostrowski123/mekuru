@@ -4039,4 +4039,15 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get attributionFirefoxTranslationsDescription =>
       'Di Android, terjemahan kalimat menjalankan mesin dan model Firefox Translations dari Mozilla di perangkat Anda.';
+
+  @override
+  String get sentenceTranslationLowMemoryTitle =>
+      'Ponsel ini mungkin kewalahan';
+
+  @override
+  String get sentenceTranslationLowMemoryBody =>
+      'Terjemahan kalimat memerlukan sekitar 250 MB memori. Di ponsel ini, fitur ini mungkin lambat atau membuat Mekuru tertutup. Jika itu terjadi, nonaktifkan di Pengaturan › Terjemahan kalimat.';
+
+  @override
+  String get sentenceTranslationTurnOff => 'Nonaktifkan';
 }

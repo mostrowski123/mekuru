@@ -4,6 +4,7 @@ import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/device_memory.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
@@ -84,12 +85,13 @@ class _FakeTranslationEngine implements TranslationEngine {
 
   final TranslationStatus state;
   final translated = <(String, String)>[];
+  final downloaded = <String>[];
 
   @override
   Future<TranslationStatus> status(String target) async => state;
 
   @override
-  Future<void> download(String target) async {}
+  Future<void> download(String target) async => downloaded.add(target);
 
   @override
   Future<String> translate(String text, String target) async {
@@ -485,6 +487,28 @@ void main() {
       );
       expect(find.text('Download'), findsOneWidget);
       expect(engine.translated, isEmpty);
+    });
+
+    testWidgets('a phone low on memory is warned before the download', (
+      tester,
+    ) async {
+      final engine = _fakeTranslation(state: TranslationStatus.needsDownload);
+      debugDeviceLowOnMemory = true;
+      addTearDown(() => debugDeviceLowOnMemory = null);
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '鳥を食べる。'),
+      );
+      await openSentenceTab(tester);
+
+      await tester.tap(find.text('Download'));
+      await tester.pumpAndSettle();
+      expect(find.text('This phone may struggle'), findsOneWidget);
+      expect(engine.downloaded, isEmpty);
+
+      await tester.tap(find.text('Turn off'));
+      await tester.pumpAndSettle();
+      expect(engine.downloaded, isEmpty);
     });
 
     testWidgets('a new word opens on the Dictionary tab', (tester) async {

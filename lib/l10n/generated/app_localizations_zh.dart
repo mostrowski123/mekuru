@@ -3850,6 +3850,16 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get attributionFirefoxTranslationsDescription =>
       '在 Android 上，句子翻译使用 Mozilla 的 Firefox Translations 引擎和模型，在你的设备上运行。';
+
+  @override
+  String get sentenceTranslationLowMemoryTitle => '此手机可能运行吃力';
+
+  @override
+  String get sentenceTranslationLowMemoryBody =>
+      '句子翻译需要约 250 MB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 句子翻译”中将其关闭。';
+
+  @override
+  String get sentenceTranslationTurnOff => '关闭';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -7698,4 +7708,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get attributionFirefoxTranslationsDescription =>
       '在 Android 上，句子翻译使用 Mozilla 的 Firefox Translations 引擎和模型，在你的设备上运行。';
+
+  @override
+  String get sentenceTranslationLowMemoryTitle => '此手机可能运行吃力';
+
+  @override
+  String get sentenceTranslationLowMemoryBody =>
+      '句子翻译需要约 250 MB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 句子翻译”中将其关闭。';
+
+  @override
+  String get sentenceTranslationTurnOff => '关闭';
 }

@@ -3089,5 +3089,8 @@
   "downloadsSentenceTranslationSubtitle": "Terjemahkan kalimat di sekitar kata yang Anda cari, secara offline.",
   "ankidroidDataSourceSentenceTranslation": "Terjemahan Kalimat",
   "attributionFirefoxTranslationsTitle": "Firefox Translations",
-  "attributionFirefoxTranslationsDescription": "Di Android, terjemahan kalimat menjalankan mesin dan model Firefox Translations dari Mozilla di perangkat Anda."
+  "attributionFirefoxTranslationsDescription": "Di Android, terjemahan kalimat menjalankan mesin dan model Firefox Translations dari Mozilla di perangkat Anda.",
+  "sentenceTranslationLowMemoryTitle": "Ponsel ini mungkin kewalahan",
+  "sentenceTranslationLowMemoryBody": "Terjemahan kalimat memerlukan sekitar 250 MB memori. Di ponsel ini, fitur ini mungkin lambat atau membuat Mekuru tertutup. Jika itu terjadi, nonaktifkan di Pengaturan › Terjemahan kalimat.",
+  "sentenceTranslationTurnOff": "Nonaktifkan"
 }

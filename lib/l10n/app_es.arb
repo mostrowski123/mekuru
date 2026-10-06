@@ -3089,5 +3089,8 @@
   "downloadsSentenceTranslationSubtitle": "Traduce sin conexión la frase de la palabra que consultas.",
   "ankidroidDataSourceSentenceTranslation": "Traducción de la frase",
   "attributionFirefoxTranslationsTitle": "Firefox Translations",
-  "attributionFirefoxTranslationsDescription": "En Android, la traducción de frases usa el motor y los modelos Firefox Translations de Mozilla en tu dispositivo."
+  "attributionFirefoxTranslationsDescription": "En Android, la traducción de frases usa el motor y los modelos Firefox Translations de Mozilla en tu dispositivo.",
+  "sentenceTranslationLowMemoryTitle": "Puede que este teléfono no dé abasto",
+  "sentenceTranslationLowMemoryBody": "La traducción de frases necesita unos 250 MB de memoria. En este teléfono puede ir lenta o cerrar Mekuru. Si pasa, desactívala en Configuración › Traducción de frases.",
+  "sentenceTranslationTurnOff": "Desactivar"
 }

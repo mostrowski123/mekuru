@@ -5172,5 +5172,17 @@
   "attributionFirefoxTranslationsDescription": "On Android, sentence translation runs Mozilla's Firefox Translations engine and models on your device.",
   "@attributionFirefoxTranslationsDescription": {
     "description": "Attributions screen: what Mozilla's translation engine is used for in Mekuru."
+  },
+  "sentenceTranslationLowMemoryTitle": "This phone may struggle",
+  "@sentenceTranslationLowMemoryTitle": {
+    "description": "Dialog title (Android): before sentence translation is set up on a phone with little memory."
+  },
+  "sentenceTranslationLowMemoryBody": "Sentence translation needs about 250 MB of memory. On this phone it may be slow or close Mekuru. If that happens, turn it off in Settings › Sentence translation.",
+  "@sentenceTranslationLowMemoryBody": {
+    "description": "Dialog body on a phone with little memory. \"Settings › Sentence translation\" names the screen and the setting where it can be turned off; keep them matching settingsTitle and settingsSentenceTranslationTitle."
+  },
+  "sentenceTranslationTurnOff": "Turn off",
+  "@sentenceTranslationTurnOff": {
+    "description": "Dialog button: switches sentence translation off (the Sentence tab disappears)."
   }
 }

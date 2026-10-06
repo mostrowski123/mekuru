@@ -6,6 +6,7 @@ import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_provi
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
+import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_settings_screen.dart';
@@ -618,8 +619,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       values: SentenceTranslationMode.values,
       selected: current,
       labelOf: (mode) => _sentenceTranslationLabel(l10n, mode),
-      onSelected: (mode) =>
-          ref.read(sentenceTranslationModeProvider.notifier).setMode(mode),
+      onSelected: (mode) async {
+        // Turning it back on is when a struggling phone hears about it.
+        if (current == SentenceTranslationMode.off &&
+            mode != SentenceTranslationMode.off &&
+            !await confirmTranslationMemory(context)) {
+          return;
+        }
+        if (!mounted) return;
+        ref.read(sentenceTranslationModeProvider.notifier).setMode(mode);
+      },
     );
   }
 

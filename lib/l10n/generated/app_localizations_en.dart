@@ -4018,4 +4018,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get attributionFirefoxTranslationsDescription =>
       'On Android, sentence translation runs Mozilla\'s Firefox Translations engine and models on your device.';
+
+  @override
+  String get sentenceTranslationLowMemoryTitle => 'This phone may struggle';
+
+  @override
+  String get sentenceTranslationLowMemoryBody =>
+      'Sentence translation needs about 250 MB of memory. On this phone it may be slow or close Mekuru. If that happens, turn it off in Settings › Sentence translation.';
+
+  @override
+  String get sentenceTranslationTurnOff => 'Turn off';
 }

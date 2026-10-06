@@ -6566,6 +6566,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On Android, sentence translation runs Mozilla\'s Firefox Translations engine and models on your device.'**
   String get attributionFirefoxTranslationsDescription;
+
+  /// Dialog title (Android): before sentence translation is set up on a phone with little memory.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone may struggle'**
+  String get sentenceTranslationLowMemoryTitle;
+
+  /// Dialog body on a phone with little memory. "Settings › Sentence translation" names the screen and the setting where it can be turned off; keep them matching settingsTitle and settingsSentenceTranslationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence translation needs about 250 MB of memory. On this phone it may be slow or close Mekuru. If that happens, turn it off in Settings › Sentence translation.'**
+  String get sentenceTranslationLowMemoryBody;
+
+  /// Dialog button: switches sentence translation off (the Sentence tab disappears).
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get sentenceTranslationTurnOff;
 }
 
 class _AppLocalizationsDelegate

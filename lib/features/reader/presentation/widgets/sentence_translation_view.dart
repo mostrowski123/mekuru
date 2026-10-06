@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart' show scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
@@ -111,6 +112,7 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
 
   Future<void> _download() async {
     final target = _target!;
+    if (!await confirmTranslationMemory(context) || !mounted) return;
     if (!_isIos &&
         !await okToDownload(
           context,

@@ -3089,5 +3089,8 @@
   "downloadsSentenceTranslationSubtitle": "离线翻译所查词语所在的句子。",
   "ankidroidDataSourceSentenceTranslation": "句子译文",
   "attributionFirefoxTranslationsTitle": "Firefox Translations",
-  "attributionFirefoxTranslationsDescription": "在 Android 上，句子翻译使用 Mozilla 的 Firefox Translations 引擎和模型，在你的设备上运行。"
+  "attributionFirefoxTranslationsDescription": "在 Android 上，句子翻译使用 Mozilla 的 Firefox Translations 引擎和模型，在你的设备上运行。",
+  "sentenceTranslationLowMemoryTitle": "此手机可能运行吃力",
+  "sentenceTranslationLowMemoryBody": "句子翻译需要约 250 MB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 句子翻译”中将其关闭。",
+  "sentenceTranslationTurnOff": "关闭"
 }

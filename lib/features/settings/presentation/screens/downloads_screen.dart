@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
@@ -268,6 +269,7 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
   }
 
   Future<void> _download() async {
+    if (!await confirmTranslationMemory(context) || !mounted) return;
     final size = translationDownloadSize(_target!);
     if (await okToDownload(
       context,

@@ -4066,4 +4066,15 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get attributionFirefoxTranslationsDescription =>
       'En Android, la traducción de frases usa el motor y los modelos Firefox Translations de Mozilla en tu dispositivo.';
+
+  @override
+  String get sentenceTranslationLowMemoryTitle =>
+      'Puede que este teléfono no dé abasto';
+
+  @override
+  String get sentenceTranslationLowMemoryBody =>
+      'La traducción de frases necesita unos 250 MB de memoria. En este teléfono puede ir lenta o cerrar Mekuru. Si pasa, desactívala en Configuración › Traducción de frases.';
+
+  @override
+  String get sentenceTranslationTurnOff => 'Desactivar';
 }
