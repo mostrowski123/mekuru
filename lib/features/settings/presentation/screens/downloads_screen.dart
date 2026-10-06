@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
+import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_ocr_ios_download_tile.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
@@ -200,6 +201,11 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             const MangaOcrIosDownloadTile()
           else
             const LocalOcrDownloadTile(),
+          // On-device scans of scanned free books read long lines with it;
+          // on Android only devices that run on-device OCR can use it.
+          if (defaultTargetPlatform == TargetPlatform.iOS ||
+              ref.watch(localOcrModelProvider).asData?.value.supported == true)
+            const NdlTextModelDownloadTile(),
           const SizedBox(height: 16),
         ],
       ),

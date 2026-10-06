@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
 import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
 
 void main() {
@@ -42,6 +43,24 @@ void main() {
     expect(
       File('$plugin/assets/licenses/MANGA-OCR.txt').readAsStringSync(),
       contains('aa6573bd10b0d446cbf622e29c3e084914df9741'),
+    );
+    final ndl = File(
+      '$plugin/assets/licenses/NDLOCR-LITE.txt',
+    ).readAsStringSync();
+    expect(ndl, contains('National Diet Library'));
+    expect(ndl, contains('636d1cfeb1331f89f4048f416e49e23a09a714b5'));
+    expect(ndl, contains('https://creativecommons.org/licenses/by/4.0/'));
+    expect(ndl, contains('without modification'));
+    expect(ndl, contains('https://github.com/baudm/parseq'));
+    // The notice names exactly what the app downloads.
+    for (final file in ndlTextModelFiles) {
+      expect(ndl, contains(file.name));
+      expect(ndl, contains(file.sha256));
+      expect(file.url, contains('636d1cfeb1331f89f4048f416e49e23a09a714b5'));
+    }
+    expect(
+      File('$plugin/assets/licenses/CC-BY-4.0.txt').readAsStringSync(),
+      contains('Attribution 4.0 International'),
     );
   });
   test('shipped assets do not contain weights or restricted benchmark data', () {

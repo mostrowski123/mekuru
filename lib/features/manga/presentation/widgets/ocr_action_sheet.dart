@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
@@ -14,6 +15,8 @@ import 'package:mekuru/l10n/l10n.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/mokuro_models.dart';
+import '../../data/services/model_download.dart';
+import '../../data/services/ndl_text_model.dart';
 import '../../data/services/ocr_background_worker.dart';
 import '../../data/services/ocr_page_selection.dart';
 import '../providers/local_ocr_providers.dart';
@@ -64,8 +67,9 @@ Future<OcrBackend> preferredOcrBackend(MokuroBook manga) async {
 }
 
 /// Starts OCR for [pages] of [book]. Returns true once a job is launched and
-/// false when the user was sent to the Pro or Downloads screen instead; other
-/// failures throw (see [localOcrReason]).
+/// false when the user was sent to the Pro or Downloads screen instead, or
+/// dismissed the text-model question; other failures throw (see
+/// [localOcrReason]).
 Future<bool> startOcr(
   BuildContext context,
   WidgetRef ref,
@@ -88,7 +92,7 @@ Future<bool> startOcr(
         .backupOriginalMokuroOcrIfNeeded(book);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(ocrPreferredBackendKey, backend.name);
-    await scheduleOcrTask(
+    await ref.read(ocrTaskSchedulerProvider)(
       bookId: book.id,
       cacheFilePath: cachePath,
       imageDir: manga.imageDirPath,
@@ -115,7 +119,10 @@ Future<bool> startOcr(
   // iOS has no native OCR job service or model pack: Apple Vision reads each
   // page inside the page loop, while the app is open.
   if (defaultTargetPlatform == TargetPlatform.iOS) {
-    return runPageLoop(onDevice: true);
+    if (!context.mounted) return false;
+    final ndl = await _ndlModelFor(context, book);
+    if (!ndl.go) return false;
+    return runPageLoop(onDevice: true, ndlModelDir: ndl.dir);
   }
   final client = ref.read(localOcrClientProvider);
   final model = await client.modelState();
@@ -145,6 +152,8 @@ Future<bool> startOcr(
     ).push(namedRoute('downloads', (_) => const DownloadsScreen()));
     return false;
   }
+  final ndl = await _ndlModelFor(context, book);
+  if (!ndl.go) return false;
   final spec = OcrJobSpec(
     bookId: book.id,
     title: book.title,
@@ -152,6 +161,7 @@ Future<bool> startOcr(
     pages: pages,
     policy: policy,
     onlyWhileCharging: onlyWhileCharging,
+    ndlModelDir: ndl.dir,
   );
   final repository = ref.read(bookRepositoryProvider);
   // Publish preparation before the caller leaves its route. All asynchronous
@@ -166,6 +176,49 @@ Future<bool> startOcr(
     }),
   );
   return true;
+}
+
+/// The NDL text model for an on-device scan of [book]: only Tadoku's graded
+/// readers, scanned text pages whose long lines manga-ocr cannot read, use
+/// it. When it is missing the user can open Downloads instead (no scan) or
+/// scan without it; dismissing the question cancels the scan.
+Future<({bool go, String? dir})> _ndlModelFor(
+  BuildContext context,
+  Book book,
+) async {
+  if (!isTadokuDownload(book)) return (go: true, dir: null);
+  final model = NdlTextModel.instance;
+  if (await model.installed) return (go: true, dir: await model.path);
+  if (!context.mounted) return (go: false, dir: null);
+  final openDownloads = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      final l = dialogContext.l10n;
+      return AlertDialog(
+        title: Text(l.ndlTextModelPromptTitle),
+        content: Text(
+          l.ndlTextModelPromptBody(size: modelFilesSize(ndlTextModelFiles)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l.ndlTextModelPromptSkip),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l.commonOpenDownloads),
+          ),
+        ],
+      );
+    },
+  );
+  if (openDownloads == false) return (go: true, dir: null);
+  if (openDownloads == true && context.mounted) {
+    await Navigator.of(
+      context,
+    ).push(namedRoute('downloads', (_) => const DownloadsScreen()));
+  }
+  return (go: false, dir: null);
 }
 
 class OcrActionSheet extends ConsumerStatefulWidget {

@@ -11,6 +11,10 @@ typedef ModelFile = ({String name, String url, int bytes, String sha256});
 
 const _marker = 'INSTALLED';
 
+/// The download size of [files] for display, e.g. "42.6 MB".
+String modelFilesSize(List<ModelFile> files) =>
+    '${(files.fold<int>(0, (a, f) => a + f.bytes) / 1000000).toStringAsFixed(1)} MB';
+
 /// Whether [downloadModelFiles] finished in [dir].
 Future<bool> modelFilesInstalled(Directory dir) =>
     File(p.join(dir.path, _marker)).exists();

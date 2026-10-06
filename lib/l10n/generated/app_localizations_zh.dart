@@ -3768,6 +3768,28 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get readerVolumeKeysUpNext => '上键：下一页';
+
+  @override
+  String get ndlTextModelTitle => '扫描书籍识别 — NDLOCR-Lite';
+
+  @override
+  String get ndlTextModelDescription =>
+      '可选。设备端 OCR 会在识别“免费书籍”中的扫描版分级读物时使用它，能更准确地读取较长的文字行。页面图像不会离开你的设备。';
+
+  @override
+  String get ndlTextModelPromptTitle => '使用扫描书籍识别？';
+
+  @override
+  String ndlTextModelPromptBody({required String size}) {
+    return '这本免费书籍由扫描的文字页面组成。使用扫描书籍识别后，设备端 OCR 的识别效果会好得多。它是可选下载，大小为 $size，可在“下载”中获取。';
+  }
+
+  @override
+  String get ndlTextModelPromptSkip => '不使用它直接识别';
+
+  @override
+  String get localOcrLicenseNdl =>
+      'NDLOCR-Lite 文字识别模型 © 日本国立国会图书馆（国立国会図書館）。未经修改，用于读取扫描书籍。CC BY 4.0。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -7534,4 +7556,26 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerVolumeKeysUpNext => '上键：下一页';
+
+  @override
+  String get ndlTextModelTitle => '扫描书籍识别 — NDLOCR-Lite';
+
+  @override
+  String get ndlTextModelDescription =>
+      '可选。设备端 OCR 会在识别“免费书籍”中的扫描版分级读物时使用它，能更准确地读取较长的文字行。页面图像不会离开你的设备。';
+
+  @override
+  String get ndlTextModelPromptTitle => '使用扫描书籍识别？';
+
+  @override
+  String ndlTextModelPromptBody({required String size}) {
+    return '这本免费书籍由扫描的文字页面组成。使用扫描书籍识别后，设备端 OCR 的识别效果会好得多。它是可选下载，大小为 $size，可在“下载”中获取。';
+  }
+
+  @override
+  String get ndlTextModelPromptSkip => '不使用它直接识别';
+
+  @override
+  String get localOcrLicenseNdl =>
+      'NDLOCR-Lite 文字识别模型 © 日本国立国会图书馆（国立国会図書館）。未经修改，用于读取扫描书籍。CC BY 4.0。';
 }

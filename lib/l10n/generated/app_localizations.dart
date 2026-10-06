@@ -5525,7 +5525,7 @@ abstract class AppLocalizations {
   /// **'Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data? Any saved download progress will be reused.'**
   String localOcrMobileDownloadBody({required String size});
 
-  /// iOS: shown on the OCR model tile when a download that started on Wi-Fi stops because the phone left Wi-Fi (cellular, hotspot or Low Data Mode). Download is the button label (commonDownload).
+  /// Shown on a model tile the app downloads itself (the iOS manga-ocr pack; the NDL text-line model on both platforms) when a download that started on Wi-Fi stops because the phone left Wi-Fi (cellular, a hotspot or, on iOS, Low Data Mode). Download is the button label (commonDownload).
   ///
   /// In en, this message translates to:
   /// **'The download stopped because Wi-Fi disconnected. Finished files are kept. Tap Download to continue.'**
@@ -6416,6 +6416,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Up: next'**
   String get readerVolumeKeysUpNext;
+
+  /// Downloads screen: title of the optional NDL text-line OCR model tile (both platforms). A reader for scanned pages of prose text, as opposed to manga. NDLOCR-Lite is a product name; keep it.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned-book reader — NDLOCR-Lite'**
+  String get ndlTextModelTitle;
+
+  /// Downloads screen: subtitle of the NDL text-line model tile before it is installed; the download size follows in parentheses. Free books is the app's free-book section (freeBooksTitle), graded readers its tab (freeBooksTabGradedReaders).
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. On-device OCR uses it for the scanned graded readers from Free books, where it reads long lines of text much more accurately. Page images stay on your device.'**
+  String get ndlTextModelDescription;
+
+  /// Dialog title when an on-device OCR scan of a scanned free book starts and the NDL text-line model (ndlTextModelTitle) is not installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the scanned-book reader?'**
+  String get ndlTextModelPromptTitle;
+
+  /// Dialog body: why to download the NDL text-line model before scanning a free book. The buttons are Scan without it (ndlTextModelPromptSkip) and Open Downloads (commonOpenDownloads).
+  ///
+  /// In en, this message translates to:
+  /// **'This free book is scanned pages of text. On-device OCR reads them much better with the scanned-book reader, an optional {size} download in Downloads.'**
+  String ndlTextModelPromptBody({required String size});
+
+  /// Dialog button: start the OCR scan without the NDL text-line model.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan without it'**
+  String get ndlTextModelPromptSkip;
+
+  /// OCR attributions card: credit for the NDL text-line model. Keep the names, the Japanese name of the library, and the licence name as they are.
+  ///
+  /// In en, this message translates to:
+  /// **'NDLOCR-Lite text recognition model © National Diet Library, Japan (国立国会図書館). Used without modification to read scanned books. CC BY 4.0.'**
+  String get localOcrLicenseNdl;
 }
 
 class _AppLocalizationsDelegate

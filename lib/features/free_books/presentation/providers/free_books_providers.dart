@@ -145,7 +145,14 @@ final aozoraBaseUrlProvider = Provider<String>((ref) => aozoraCardsBase);
 String aozoraDownloadKey(AozoraWork work) => 'aozora:${work.id}';
 
 /// The download key of [book] in [freeBookDownloadProvider].
-String tadokuDownloadKey(TadokuBook book) => 'tadoku:${book.id}';
+String tadokuDownloadKey(TadokuBook book) => '$_tadokuKeyPrefix${book.id}';
+
+const _tadokuKeyPrefix = 'tadoku:';
+
+/// Whether [book] is a graded reader downloaded from Tadoku: a PDF of
+/// scanned text pages, which on-device OCR reads with the NDL text model.
+bool isTadokuDownload(Book book) =>
+    book.sourceId?.startsWith(_tadokuKeyPrefix) ?? false;
 
 /// Free-book downloads in progress, keyed `aozora:<id>` or `tadoku:<id>`,
 /// valued 0..1 (0 = indeterminate). Downloads run in the app; they outlive

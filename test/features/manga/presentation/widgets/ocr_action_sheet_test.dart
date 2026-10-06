@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/manga/data/services/local_ocr_client.dart';
+import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
 import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/manga/presentation/services/ocr_purchase_flow.dart';
 import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
@@ -17,9 +19,13 @@ import 'package:mekuru/features/settings/presentation/screens/downloads_screen.d
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
+import 'package:path/path.dart' as p;
+// ignore: depend_on_referenced_packages
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/fake_download_notifiers.dart';
+import '../../../../shared/fake_path_provider.dart';
 import '../../../../shared/test_database.dart';
 
 class _FreeClient implements LocalOcrClient {
@@ -52,6 +58,9 @@ void main() {
   late Book manga;
   late _FreeClient client;
   late OcrPurchaseFlow originalFlow;
+  late PathProviderPlatform originalPaths;
+  // Page-loop scans (iOS) as startOcr scheduled them.
+  late List<({bool onDevice, String? ndlModelDir})> scheduled;
   var unlocked = true;
   var proOpens = 0;
   setUp(() async {
@@ -66,6 +75,13 @@ void main() {
       },
     );
     root = await Directory.systemTemp.createTemp('ocr-sheet-test');
+    // The NDL text model lives under app support (iOS) or next to it in
+    // no_backup (Android), so both stay inside root.
+    originalPaths = PathProviderPlatform.instance;
+    PathProviderPlatform.instance = FakePathProviderPlatform(
+      p.join(root.path, 'support'),
+    );
+    scheduled = [];
     db = createTestDatabase();
     repository = _RecordingRepository(db);
     manga = Book(
@@ -100,12 +116,14 @@ void main() {
   tearDown(() async {
     await db.close();
     OcrPurchaseFlow.instance = originalFlow;
+    PathProviderPlatform.instance = originalPaths;
     await root.delete(recursive: true);
   });
   Future<void> open(
     WidgetTester tester, {
     List<int> visible = const [],
     OcrProgress? progress,
+    Book? book,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -113,6 +131,17 @@ void main() {
           // Every run first backs up the text the book came with.
           bookRepositoryProvider.overrideWithValue(repository),
           localOcrClientProvider.overrideWithValue(client),
+          ocrTaskSchedulerProvider.overrideWithValue(({
+            required bookId,
+            required cacheFilePath,
+            required imageDir,
+            selectedPages,
+            replace = false,
+            onDevice = false,
+            ndlModelDir,
+          }) async {
+            scheduled.add((onDevice: onDevice, ndlModelDir: ndlModelDir));
+          }),
           ocrBookLoaderProvider.overrideWithValue(
             (_) async => MokuroBook(
               title: 'Test manga',
@@ -145,8 +174,11 @@ void main() {
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(
-                onPressed: () =>
-                    showOcrActionSheet(context, manga, visiblePages: visible),
+                onPressed: () => showOcrActionSheet(
+                  context,
+                  book ?? manga,
+                  visiblePages: visible,
+                ),
                 child: const Text('Open OCR'),
               ),
             ),
@@ -188,6 +220,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(client.started.single.pages, [1, 2]);
       expect(client.started.single.policy, OcrExistingPolicy.missingOnly);
+      // Not a scanned free book: no text model, and no question about it.
+      expect(client.started.single.ndlModelDir, isNull);
       // Even a run that only fills missing pages backs up the book's own
       // text first, so Delete OCR can restore it.
       expect(repository.backedUp, [manga.id]);
@@ -288,6 +322,142 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(DownloadsScreen), findsOneWidget);
     expect(client.started, isEmpty);
+  });
+  group('NDL text model', () {
+    // A graded reader downloaded from Free books (a scanned PDF).
+    Book tadoku() => manga.copyWith(sourceId: const Value('tadoku:42'));
+    const prompt = 'Use the scanned-book reader?';
+
+    Future<String> installModel(WidgetTester tester) async =>
+        (await tester.runAsync(() async {
+          final dir = await NdlTextModel.instance.path;
+          // downloadModelFiles' marker of a finished download.
+          await File(p.join(dir, 'INSTALLED')).create(recursive: true);
+          return dir;
+        }))!;
+
+    // The sheet's progress bar runs while startOcr waits, so frames are
+    // pumped by hand; the model check is real file I/O.
+    Future<void> tapStart(WidgetTester tester) async {
+      await tester.tap(find.text('Recognize 2 pages'));
+      for (var i = 0; i < 3; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 100)),
+        );
+        await tester.pump();
+      }
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+
+    Finder inDialog(String text) => find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text(text),
+    );
+
+    testWidgets('missing: asks, and Scan without it starts without it', (
+      tester,
+    ) async {
+      await open(tester, book: tadoku());
+      await tapStart(tester);
+      expect(find.text(prompt), findsOneWidget);
+      expect(
+        find.text(
+          'This free book is scanned pages of text. On-device OCR reads them '
+          'much better with the scanned-book reader, an optional 42.6 MB '
+          'download in Downloads.',
+        ),
+        findsOneWidget,
+      );
+      expect(client.started, isEmpty);
+
+      await tester.tap(inDialog('Scan without it'));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pumpAndSettle();
+      expect(client.started.single.pages, [1, 2]);
+      expect(client.started.single.ndlModelDir, isNull);
+      expect(find.byType(OcrActionSheet), findsNothing);
+    });
+
+    testWidgets('missing: dismissing the question cancels the scan', (
+      tester,
+    ) async {
+      await open(tester, book: tadoku());
+      await tapStart(tester);
+      expect(find.text(prompt), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+      expect(find.text(prompt), findsNothing);
+      expect(client.started, isEmpty);
+      expect(find.byType(OcrActionSheet), findsOneWidget);
+    });
+
+    testWidgets('missing: Open Downloads goes there without scanning', (
+      tester,
+    ) async {
+      await open(tester, book: tadoku());
+      await tapStart(tester);
+      await tester.tap(inDialog('Open Downloads'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(DownloadsScreen), findsOneWidget);
+      expect(client.started, isEmpty);
+    });
+
+    testWidgets('installed: the job reads with it, without asking', (
+      tester,
+    ) async {
+      final dir = await installModel(tester);
+      await open(tester, book: tadoku());
+      await tapStart(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(prompt), findsNothing);
+      expect(client.started.single.ndlModelDir, dir);
+    });
+
+    // The platform override must be undone inside the test body.
+    void testIos(String name, Future<void> Function(WidgetTester) body) =>
+        testWidgets('on iOS, $name', (tester) async {
+          debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+          try {
+            await body(tester);
+          } finally {
+            debugDefaultTargetPlatformOverride = null;
+          }
+        });
+
+    testIos('missing: Scan without it runs Vision without it', (tester) async {
+      await open(tester, book: tadoku());
+      await tapStart(tester);
+      expect(find.text(prompt), findsOneWidget);
+      await tester.tap(inDialog('Scan without it'));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pumpAndSettle();
+      expect(scheduled, [(onDevice: true, ndlModelDir: null)]);
+    });
+
+    testIos('installed: Vision scans read with it, without asking', (
+      tester,
+    ) async {
+      final dir = await installModel(tester);
+      await open(tester, book: tadoku());
+      await tapStart(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(prompt), findsNothing);
+      expect(scheduled, [(onDevice: true, ndlModelDir: dir)]);
+    });
+
+    testIos('other books neither ask nor use it', (tester) async {
+      await installModel(tester);
+      await open(tester);
+      await tapStart(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(prompt), findsNothing);
+      expect(scheduled, [(onDevice: true, ndlModelDir: null)]);
+    });
   });
   group('preferredOcrBackend', () {
     MokuroBook manga({String? source, String? pageSource}) =>

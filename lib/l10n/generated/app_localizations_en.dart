@@ -3933,4 +3933,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readerVolumeKeysUpNext => 'Up: next';
+
+  @override
+  String get ndlTextModelTitle => 'Scanned-book reader — NDLOCR-Lite';
+
+  @override
+  String get ndlTextModelDescription =>
+      'Optional. On-device OCR uses it for the scanned graded readers from Free books, where it reads long lines of text much more accurately. Page images stay on your device.';
+
+  @override
+  String get ndlTextModelPromptTitle => 'Use the scanned-book reader?';
+
+  @override
+  String ndlTextModelPromptBody({required String size}) {
+    return 'This free book is scanned pages of text. On-device OCR reads them much better with the scanned-book reader, an optional $size download in Downloads.';
+  }
+
+  @override
+  String get ndlTextModelPromptSkip => 'Scan without it';
+
+  @override
+  String get localOcrLicenseNdl =>
+      'NDLOCR-Lite text recognition model © National Diet Library, Japan (国立国会図書館). Used without modification to read scanned books. CC BY 4.0.';
 }

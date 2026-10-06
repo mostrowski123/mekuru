@@ -1,27 +1,89 @@
 import 'package:flutter/material.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/manga_ocr_ios.dart';
+import 'package:mekuru/features/manga/data/services/model_download.dart';
+import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
-
-final _packBytes = mangaOcrIosModelFiles.fold<int>(0, (a, f) => a + f.bytes);
-final _packSize = '${(_packBytes / 1000000).toStringAsFixed(1)} MB';
 
 /// Downloads screen tile for the optional manga-ocr model pack on iOS. The
 /// Android tile talks to the native job service; this one only needs
 /// [MangaOcrIos].
-class MangaOcrIosDownloadTile extends StatefulWidget {
+class MangaOcrIosDownloadTile extends StatelessWidget {
   const MangaOcrIosDownloadTile({super.key});
 
   @override
-  State<MangaOcrIosDownloadTile> createState() =>
-      _MangaOcrIosDownloadTileState();
+  Widget build(BuildContext context) {
+    final ocr = MangaOcrIos.instance;
+    return ModelDownloadTile(
+      icon: Icons.document_scanner_outlined,
+      title: context.l10n.localOcrModelTitle,
+      description: context.l10n.localOcrModelDescriptionIos,
+      files: mangaOcrIosModelFiles,
+      installed: () => ocr.installed,
+      download: ocr.download,
+      remove: ocr.remove,
+    );
+  }
 }
 
-class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
+/// Downloads screen tile for the optional NDL text-line model, on both
+/// platforms: on-device scans of Tadoku's graded readers use it.
+class NdlTextModelDownloadTile extends StatelessWidget {
+  const NdlTextModelDownloadTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final model = NdlTextModel.instance;
+    return ModelDownloadTile(
+      icon: Icons.menu_book_outlined,
+      title: context.l10n.ndlTextModelTitle,
+      description: context.l10n.ndlTextModelDescription,
+      files: ndlTextModelFiles,
+      installed: () => model.installed,
+      download: model.download,
+      remove: model.remove,
+    );
+  }
+}
+
+/// A model of [files] that the app downloads itself (not Android's native
+/// job service): progress, the mobile-data question off Wi-Fi, a stop when
+/// Wi-Fi goes, and remove.
+class ModelDownloadTile extends StatefulWidget {
+  const ModelDownloadTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.files,
+    required this.installed,
+    required this.download,
+    required this.remove,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final List<ModelFile> files;
+  final Future<bool> Function() installed;
+  final Future<void> Function({
+    void Function(double)? onProgress,
+    bool wifiOnly,
+  })
+  download;
+  final Future<void> Function() remove;
+
+  @override
+  State<ModelDownloadTile> createState() => _ModelDownloadTileState();
+}
+
+class _ModelDownloadTileState extends State<ModelDownloadTile> {
   bool? _installed;
   double? _progress;
   Object? _error;
+
+  String get _size => modelFilesSize(widget.files);
 
   @override
   void initState() {
@@ -32,7 +94,7 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
   Future<void> _refresh() async {
     var installed = false;
     try {
-      installed = await MangaOcrIos.instance.installed;
+      installed = await widget.installed();
     } catch (_) {
       // No readable app directory: offer the download rather than spin.
     }
@@ -51,7 +113,7 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
       if (!mounted) return;
       final confirmed = await confirmMobileData(
         context,
-        context.l10n.localOcrMobileDownloadBody(size: _packSize),
+        context.l10n.localOcrMobileDownloadBody(size: _size),
       );
       if (!mounted) return;
       if (!confirmed) {
@@ -62,7 +124,7 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
     try {
       // Started on Wi-Fi without asking, so it must not go on over mobile
       // data.
-      await MangaOcrIos.instance.download(
+      await widget.download(
         wifiOnly: wifi,
         onProgress: (f) {
           if (mounted) setState(() => _progress = f);
@@ -76,7 +138,7 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
   }
 
   Future<void> _remove() async {
-    await MangaOcrIos.instance.remove();
+    await widget.remove();
     await _refresh();
   }
 
@@ -89,11 +151,8 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ListTile(
-          leading: Icon(
-            Icons.document_scanner_outlined,
-            color: theme.colorScheme.primary,
-          ),
-          title: Text(l.localOcrModelTitle),
+          leading: Icon(widget.icon, color: theme.colorScheme.primary),
+          title: Text(widget.title),
           subtitle: Text(
             _error is WifiLostException
                 ? l.localOcrWifiLostIos
@@ -101,7 +160,7 @@ class _MangaOcrIosDownloadTileState extends State<MangaOcrIosDownloadTile> {
                 ? l.localOcrError(details: '$_error')
                 : _installed == true
                 ? l.localOcrModelReady
-                : '${l.localOcrModelDescriptionIos} ($_packSize)',
+                : '${widget.description} ($_size)',
           ),
           trailing: _installed == null || busy
               ? const SizedBox(

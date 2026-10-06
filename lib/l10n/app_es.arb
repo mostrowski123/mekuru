@@ -3064,5 +3064,11 @@
   "readerSeekBarLabel": "Posición de lectura",
   "readerVolumeKeysTitle": "Pasar página con los botones de volumen",
   "readerVolumeKeysDownNext": "Bajar: siguiente",
-  "readerVolumeKeysUpNext": "Subir: siguiente"
+  "readerVolumeKeysUpNext": "Subir: siguiente",
+  "ndlTextModelTitle": "Lector de libros escaneados — NDLOCR-Lite",
+  "ndlTextModelDescription": "Opcional. El OCR en el dispositivo lo usa con las lecturas graduadas escaneadas de Libros gratuitos, donde lee las líneas largas de texto con mucha más precisión. Las imágenes no salen de tu dispositivo.",
+  "ndlTextModelPromptTitle": "¿Usar el lector de libros escaneados?",
+  "ndlTextModelPromptBody": "Este libro gratuito son páginas de texto escaneadas. El OCR en el dispositivo las lee mucho mejor con el lector de libros escaneados, una descarga opcional de {size} en Descargas.",
+  "ndlTextModelPromptSkip": "Escanear sin él",
+  "localOcrLicenseNdl": "Modelo de reconocimiento de texto NDLOCR-Lite © Biblioteca Nacional de la Dieta, Japón (国立国会図書館). Se usa sin modificaciones para leer libros escaneados. CC BY 4.0."
 }

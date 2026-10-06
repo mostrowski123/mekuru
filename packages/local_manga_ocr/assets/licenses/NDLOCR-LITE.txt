@@ -1,0 +1,39 @@
+NDLOCR-Lite
+NDLOCR-Lite text recognition model © National Diet Library, Japan
+(国立国会図書館), CC BY 4.0
+Project: https://github.com/ndl-lab/ndlocr-lite
+License: Creative Commons Attribution 4.0 International (CC BY 4.0),
+https://creativecommons.org/licenses/by/4.0/
+The complete license is included in CC-BY-4.0.txt.
+
+Revision: 636d1cfeb1331f89f4048f416e49e23a09a714b5
+Files, used without modification:
+  src/model/parseq-ndl-24x768-100-tiny-153epoch-tegaki3-r8data-202604.onnx
+    SHA-256 06462b0dbd5b0b8508545c8c3d485cf20dbf4ffa652fe145e69c9e7457080602
+  src/config/NDLmoji.yaml (the character set the model decodes with)
+    SHA-256 f6ad5a2de444b495155866af811cf1a98309dcae3225db802767ea531a2dc529
+
+The files are not shipped with Mekuru: they are downloaded from the pinned
+revision above when the user installs the optional text-book reader, and
+verified by size and SHA-256. Mekuru uses the model to read the long text
+lines of scanned books during on-device OCR. Line cropping, resizing,
+normalisation and greedy decoding were reimplemented in Dart and Kotlin to
+match NDLOCR-Lite's Python code; they are not part of the model.
+
+PARSeq
+The model's architecture is PARSeq (Scene Text Recognition with Permuted
+Autoregressive Sequence Models) by Darwin Bautista and Rowel Atienza.
+Project: https://github.com/baudm/parseq
+Copyright 2022 Darwin Bautista
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy
+of the License at https://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+The complete license is included in APACHE-2.0.txt.
+
+The corresponding Mekuru integration source accompanies the Mekuru source
+release: https://github.com/mostrowski123/mekuru

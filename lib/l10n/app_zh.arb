@@ -3064,5 +3064,11 @@
   "readerSeekBarLabel": "阅读位置",
   "readerVolumeKeysTitle": "音量键翻页",
   "readerVolumeKeysDownNext": "下键：下一页",
-  "readerVolumeKeysUpNext": "上键：下一页"
+  "readerVolumeKeysUpNext": "上键：下一页",
+  "ndlTextModelTitle": "扫描书籍识别 — NDLOCR-Lite",
+  "ndlTextModelDescription": "可选。设备端 OCR 会在识别“免费书籍”中的扫描版分级读物时使用它，能更准确地读取较长的文字行。页面图像不会离开你的设备。",
+  "ndlTextModelPromptTitle": "使用扫描书籍识别？",
+  "ndlTextModelPromptBody": "这本免费书籍由扫描的文字页面组成。使用扫描书籍识别后，设备端 OCR 的识别效果会好得多。它是可选下载，大小为 {size}，可在“下载”中获取。",
+  "ndlTextModelPromptSkip": "不使用它直接识别",
+  "localOcrLicenseNdl": "NDLOCR-Lite 文字识别模型 © 日本国立国会图书馆（国立国会図書館）。未经修改，用于读取扫描书籍。CC BY 4.0。"
 }

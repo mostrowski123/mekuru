@@ -10,9 +10,12 @@ class OcrAttributions extends StatelessWidget {
   static const mangaOcrRepoUrl = 'https://github.com/kha-white/manga-ocr';
   static const detectorRepoUrl =
       'https://github.com/dmMaze/comic-text-detector';
+  static const ndlRepoUrl = 'https://github.com/ndl-lab/ndlocr-lite';
   static const licenseFiles = [
     'MANGA-OCR.txt',
     'APACHE-2.0.txt',
+    'NDLOCR-LITE.txt',
+    'CC-BY-4.0.txt',
     'COMIC-TEXT-DETECTOR.txt',
     'GPL-3.0.txt',
     'ONNXRUNTIME.txt',
@@ -36,6 +39,8 @@ class OcrAttributions extends StatelessWidget {
             const SizedBox(height: 8),
             Text(l.localOcrLicenseRecognizer),
             const SizedBox(height: 8),
+            Text(l.localOcrLicenseNdl),
+            const SizedBox(height: 8),
             Text(l.localOcrLicenseDetector),
             const SizedBox(height: 8),
             Text(l.localOcrLicenseRuntime),
@@ -48,6 +53,13 @@ class OcrAttributions extends StatelessWidget {
                     mode: LaunchMode.externalApplication,
                   ),
                   child: const Text('manga-ocr'),
+                ),
+                TextButton(
+                  onPressed: () => launchUrl(
+                    Uri.parse(ndlRepoUrl),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: const Text('NDLOCR-Lite'),
                 ),
                 TextButton(
                   onPressed: () => launchUrl(

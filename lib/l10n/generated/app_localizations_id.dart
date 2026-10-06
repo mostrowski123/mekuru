@@ -3953,4 +3953,26 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readerVolumeKeysUpNext => 'Naik: berikutnya';
+
+  @override
+  String get ndlTextModelTitle => 'Pembaca buku pindaian — NDLOCR-Lite';
+
+  @override
+  String get ndlTextModelDescription =>
+      'Opsional. OCR di perangkat memakainya untuk bacaan berjenjang hasil pindaian dari Buku gratis, dan membaca baris teks yang panjang jauh lebih akurat. Gambar halaman tetap di perangkatmu.';
+
+  @override
+  String get ndlTextModelPromptTitle => 'Gunakan pembaca buku pindaian?';
+
+  @override
+  String ndlTextModelPromptBody({required String size}) {
+    return 'Buku gratis ini berupa halaman teks hasil pindaian. OCR di perangkat membacanya jauh lebih baik dengan pembaca buku pindaian, unduhan opsional sebesar $size di Unduhan.';
+  }
+
+  @override
+  String get ndlTextModelPromptSkip => 'Pindai tanpa itu';
+
+  @override
+  String get localOcrLicenseNdl =>
+      'Model pengenalan teks NDLOCR-Lite © Perpustakaan Diet Nasional, Jepang (国立国会図書館). Digunakan tanpa modifikasi untuk membaca buku pindaian. CC BY 4.0.';
 }

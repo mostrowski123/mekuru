@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import '../../data/services/local_ocr_client.dart';
 import '../../data/services/manga_cache_store.dart';
+import '../../data/services/ocr_background_worker.dart';
 import '../../data/models/mokuro_models.dart';
 
 final localOcrClientProvider = Provider<LocalOcrClient>(
@@ -12,6 +13,20 @@ final localOcrClientProvider = Provider<LocalOcrClient>(
 final ocrBookLoaderProvider = Provider<Future<MokuroBook> Function(String)>(
   (ref) => MangaCacheStore.read,
 );
+
+/// Starts a page-loop scan ([scheduleOcrTask]); tests record it instead.
+final ocrTaskSchedulerProvider =
+    Provider<
+      Future<void> Function({
+        required int bookId,
+        required String cacheFilePath,
+        required String imageDir,
+        List<int>? selectedPages,
+        bool replace,
+        bool onDevice,
+        String? ndlModelDir,
+      })
+    >((ref) => scheduleOcrTask);
 
 Stream<T> _poll<T>(Ref ref, Future<T> Function() read) {
   final controller = StreamController<T>();

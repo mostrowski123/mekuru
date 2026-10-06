@@ -3981,4 +3981,26 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get readerVolumeKeysUpNext => 'Subir: siguiente';
+
+  @override
+  String get ndlTextModelTitle => 'Lector de libros escaneados — NDLOCR-Lite';
+
+  @override
+  String get ndlTextModelDescription =>
+      'Opcional. El OCR en el dispositivo lo usa con las lecturas graduadas escaneadas de Libros gratuitos, donde lee las líneas largas de texto con mucha más precisión. Las imágenes no salen de tu dispositivo.';
+
+  @override
+  String get ndlTextModelPromptTitle => '¿Usar el lector de libros escaneados?';
+
+  @override
+  String ndlTextModelPromptBody({required String size}) {
+    return 'Este libro gratuito son páginas de texto escaneadas. El OCR en el dispositivo las lee mucho mejor con el lector de libros escaneados, una descarga opcional de $size en Descargas.';
+  }
+
+  @override
+  String get ndlTextModelPromptSkip => 'Escanear sin él';
+
+  @override
+  String get localOcrLicenseNdl =>
+      'Modelo de reconocimiento de texto NDLOCR-Lite © Biblioteca Nacional de la Dieta, Japón (国立国会図書館). Se usa sin modificaciones para leer libros escaneados. CC BY 4.0.';
 }
