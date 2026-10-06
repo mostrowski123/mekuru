@@ -93,6 +93,13 @@ class InMemoryAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveSentenceTranslationMode(String mode) async =>
       _sentenceTranslationMode = mode;
 
+  String? _translationModel;
+  @override
+  Future<String?> loadTranslationModel() async => _translationModel;
+  @override
+  Future<void> saveTranslationModel(String model) async =>
+      _translationModel = model;
+
   @override
   Future<bool?> loadAutoFocusSearch() async => _autoFocusSearch;
   @override

@@ -436,6 +436,9 @@ class RestoreNotifier extends Notifier<RestoreState> {
     await ref
         .refresh(sentenceTranslationModeProvider.notifier)
         .loadPersistedSettings();
+    await ref
+        .refresh(translationModelProvider.notifier)
+        .loadPersistedSettings();
     await ref.refresh(autoFocusSearchProvider.notifier).loadPersistedSettings();
     await ref
         .refresh(autoCropWhiteThresholdProvider.notifier)

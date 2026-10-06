@@ -101,6 +101,9 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
           .loadPersistedSettings(),
     );
     unawaited(
+      ref.read(translationModelProvider.notifier).loadPersistedSettings(),
+    );
+    unawaited(
       ref.read(autoFocusSearchProvider.notifier).loadPersistedSettings(),
     );
     unawaited(

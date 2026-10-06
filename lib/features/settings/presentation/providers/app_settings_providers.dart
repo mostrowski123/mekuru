@@ -294,6 +294,40 @@ final sentenceTranslationModeProvider =
       SentenceTranslationModeNotifier.new,
     );
 
+/// Which engine the Sentence tab uses on Android: Mozilla (standard) or
+/// Gemma 4 (high), once downloaded.
+enum TranslationModelChoice { standard, high }
+
+class TranslationModelNotifier extends Notifier<TranslationModelChoice> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  TranslationModelChoice build() => TranslationModelChoice.standard;
+
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadTranslationModel();
+    state =
+        TranslationModelChoice.values.asNameMap()[persisted] ??
+        TranslationModelChoice.standard;
+  }
+
+  void setChoice(TranslationModelChoice choice) {
+    state = choice;
+    unawaited(
+      ref.read(appSettingsStorageProvider).saveTranslationModel(choice.name),
+    );
+  }
+}
+
+final translationModelProvider =
+    NotifierProvider<TranslationModelNotifier, TranslationModelChoice>(
+      TranslationModelNotifier.new,
+    );
+
 /// Manages whether the dictionary search field auto-focuses on load.
 class AutoFocusSearchNotifier extends Notifier<bool> {
   bool _hasLoadedPersistedSettings = false;
