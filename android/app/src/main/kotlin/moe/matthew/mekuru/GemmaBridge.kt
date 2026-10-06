@@ -53,7 +53,10 @@ class GemmaBridge {
     }
 
     /**
-     * GPU first; some phones can't create a GPU engine, so CPU then. Loading
+     * GPU first, then CPU. Some phones can't create a GPU engine; on others
+     * (no OpenCL, so LiteRT-LM picks WebGPU) it loads but fails on every
+     * message, so a GPU engine must answer a warm-up message to be kept.
+     * Once CPU has stood in for a failed GPU, this process skips GPU. Loading
      * the model that is already live is a no-op: two sentences tapped at once
      * both ask for a load.
      */
@@ -61,17 +64,31 @@ class GemmaBridge {
         val live = backendName
         if (engine != null && loadedPath == path && live != null) return live
         close()
+        if (gpuUnusable) return start(path, cacheDir, "cpu", Backend.CPU())
         return try {
-            start(path, cacheDir, "gpu", Backend.GPU())
+            start(path, cacheDir, "gpu", Backend.GPU(), warmUp = true)
         } catch (e: Throwable) {
-            start(path, cacheDir, "cpu", Backend.CPU())
+            Log.w("GemmaBridge", "GPU engine unusable, using CPU", e)
+            // Only once CPU works: a missing model fails both, and isn't the GPU's fault.
+            start(path, cacheDir, "cpu", Backend.CPU()).also { gpuUnusable = true }
         }
     }
 
-    private fun start(path: String, cacheDir: String, name: String, backend: Backend): String {
+    private fun start(
+        path: String,
+        cacheDir: String,
+        name: String,
+        backend: Backend,
+        warmUp: Boolean = false,
+    ): String {
         val candidate = Engine(EngineConfig(modelPath = path, backend = backend, cacheDir = cacheDir))
         try {
             candidate.initialize()
+            if (warmUp) {
+                candidate.createConversation(conversationConfig(maxOutputToken = 1)).use {
+                    it.sendMessage("Hi")
+                }
+            }
         } catch (e: Throwable) {
             try {
                 candidate.close()
@@ -88,13 +105,8 @@ class GemmaBridge {
 
     private fun translate(text: String, language: String): String {
         val loaded = engine ?: error("Gemma is not loaded")
-        val config = ConversationConfig(
-            samplerConfig = SamplerConfig(topK = 1, topP = 1.0, temperature = 0.0, seed = 0),
-            maxOutputToken = 160,
-            thinkingConfig = ThinkingConfig(enableThinking = false),
-        )
         // A fresh conversation per sentence: no context leaks between taps.
-        loaded.createConversation(config).use { conversation ->
+        loaded.createConversation(conversationConfig(maxOutputToken = 160)).use { conversation ->
             val reply = conversation.sendMessage(
                 "Translate the following Japanese text into natural $language. " +
                     "Output only the translation.\n\n$text",
@@ -118,8 +130,20 @@ class GemmaBridge {
         }
     }
 
+    private fun conversationConfig(maxOutputToken: Int) = ConversationConfig(
+        samplerConfig = SamplerConfig(topK = 1, topP = 1.0, temperature = 0.0, seed = 0),
+        maxOutputToken = maxOutputToken,
+        thinkingConfig = ThinkingConfig(enableThinking = false),
+    )
+
     fun dispose() {
         worker.execute { close() }
         worker.shutdown()
+    }
+
+    private companion object {
+        /** Set once CPU has replaced a failed GPU; outlives the activity's bridge. */
+        @Volatile
+        var gpuUnusable = false
     }
 }
