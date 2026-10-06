@@ -1,0 +1,93 @@
+{
+  "about": "Shared by ndl_ocr_algorithms.dart and its Kotlin mirror. Digests come from an independent float64 numpy implementation of NdlPixels.resize.",
+  "image": "Pixel (x, y) of a width x height test image is 0xRRGGBB with r = (x*13 + y*7) % 256, g = (x*3 + y*29) % 256, b = (x*47 + y*11) % 256.",
+  "rgbSha256": "resizeLine output (768x24, rotated first when vertical) as R, G, B bytes, row by row.",
+  "tensorSha256": "normalize of that output: float32 little-endian, channel first.",
+  "resize": [
+    {
+      "width": 1000,
+      "height": 30,
+      "vertical": false,
+      "rgbSha256": "578be435bf364f76f66cac86ab267ecb183080df6d64dab569c6eabeab834828",
+      "tensorSha256": "3c76ae65e3c1ef19ff501563626cdeb67f7f35abcd47174d00f3aa56a1b5f6ab"
+    },
+    {
+      "width": 300,
+      "height": 10,
+      "vertical": false,
+      "rgbSha256": "626587c33db34b45fb4b824769109066ec2000cf2bacdf2a8d341ef6d0bc696c",
+      "tensorSha256": "9cc1b2ae78c77172036b1dbedf69d5b28c11abf6c20161f6d3bf011510f99244"
+    },
+    {
+      "width": 2000,
+      "height": 5,
+      "vertical": false,
+      "rgbSha256": "62607ed982f6209fa3f8b150f1e8b35d5802e5084ae09f2aa87c58437dd02f4b",
+      "tensorSha256": "ba5709644afba2c614895e9175f08a41dda9727d2b7ef5c5a9020f362cf6e1e2"
+    },
+    {
+      "width": 100,
+      "height": 80,
+      "vertical": false,
+      "rgbSha256": "1688c65d5044ad4fabbeaa37b49ea3f7154e6dea17676d88a6b005b4ba6a446a",
+      "tensorSha256": "18142b46a6a0f5c81ac75d828aaf8b3d38511dcf76947704083f82b6073ed8ce"
+    },
+    {
+      "width": 1536,
+      "height": 48,
+      "vertical": false,
+      "rgbSha256": "c6830c6aa1dacbee6e8c4219d921c5b250a9e8f6ee5373ec391e3584c7ba9fae",
+      "tensorSha256": "fcaf5d712f87c09fceaad74b197c16d9402c865bf60a19cd06b568934a8fab6d"
+    },
+    {
+      "width": 40,
+      "height": 1200,
+      "vertical": true,
+      "rgbSha256": "a986f24ae489063a8ce4adce841284dc8e1158b9b244546ab25ed537cdb3f328",
+      "tensorSha256": "a388a63b003da2447c109edba919270aa466233c9aa777aea2cc45fd02bf37dd"
+    },
+    {
+      "width": 9,
+      "height": 200,
+      "vertical": true,
+      "rgbSha256": "241aa8a9f7fd844a9b214fd5d19c05d019feeeaad3ae9efa88c9a0fb23647962",
+      "tensorSha256": "c091013ef14eccda806c2738e4a308f325f8dae30f4b1b681a260dc0de27d6f1"
+    },
+    {
+      "width": 100,
+      "height": 81,
+      "vertical": true,
+      "rgbSha256": "500d3e5e28c3139de1f78c1be69abec733928c0c9b5cbf96ececc83c7ca7c5a2",
+      "tensorSha256": "b8ecbc127f14680c78efa325d8d60c03d020067a6bce0d298ff18ac9ba308099"
+    },
+    {
+      "width": 1,
+      "height": 1,
+      "vertical": true,
+      "rgbSha256": "35295da1d5eca0b6db3168c0a64a2d61ed3ae8ca283dd4aa6116aa04703dcb60",
+      "tensorSha256": "33fa49380cc54ff47b4d9ec957a4d5dc449399faa871dbd390a4e8e62f9dde97"
+    }
+  ],
+  "decode": [
+    {
+      "steps": 5,
+      "classes": 5,
+      "charset": ["a", "b", "c", "𠮷"],
+      "logits": [0.1, 0.2, 0.9, 0.3, 0.0, 0.0, 0.5, 0.1, 0.2, 0.7, 0.0, 0.6, 0.0, 0.6, 0.1, 0.9, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.9],
+      "text": "b𠮷a"
+    },
+    {
+      "steps": 2,
+      "classes": 3,
+      "charset": ["x", "y"],
+      "logits": [0.0, 0.9, 0.1, 0.0, 0.2, 0.8],
+      "text": "xy"
+    }
+  ],
+  "charset": [
+    {
+      "yaml": "# @package _global_\nmodel:\n  charset_test: \"no\"\n  charset_train: \" a\\\"b\\\\c𠮷\"\n",
+      "chars": [" ", "a", "\"", "b", "\\", "c", "𠮷"]
+    }
+  ]
+}

@@ -340,19 +340,43 @@ abstract final class OcrPixels {
     required int right,
     required int bottom,
   }) {
+    final c = crop(
+      page,
+      pageWidth,
+      pageHeight,
+      left: left,
+      top: top,
+      right: right,
+      bottom: bottom,
+    );
+    return normalize(resizeRgb(grayscale(c.pixels), c.width, c.height), .5, .5);
+  }
+
+  /// [left],[top]..[right],[bottom] of tightly packed RGBA [page] pixels,
+  /// clamped to the page and at least one pixel each way, packed 0xRRGGBB.
+  static ({Int32List pixels, int width, int height}) crop(
+    Uint8List page,
+    int pageWidth,
+    int pageHeight, {
+    required int left,
+    required int top,
+    required int right,
+    required int bottom,
+  }) {
     final x0 = left.clamp(0, pageWidth - 1);
     final y0 = top.clamp(0, pageHeight - 1);
     final x1 = right.clamp(x0 + 1, pageWidth);
     final y1 = bottom.clamp(y0 + 1, pageHeight);
     final w = x1 - x0;
     final h = y1 - y0;
-    final crop = Int32List(w * h);
+    final pixels = Int32List(w * h);
     for (var y = 0; y < h; y++) {
       var at = ((y0 + y) * pageWidth + x0) * 4;
       for (var x = 0; x < w; x++, at += 4) {
-        crop[y * w + x] = (page[at] << 16) | (page[at + 1] << 8) | page[at + 2];
+        pixels[y * w + x] =
+            (page[at] << 16) | (page[at + 1] << 8) | page[at + 2];
       }
     }
-    return normalize(resizeRgb(grayscale(crop), w, h), .5, .5);
+    return (pixels: pixels, width: w, height: h);
   }
 }

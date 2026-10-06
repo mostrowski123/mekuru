@@ -1,29 +1,19 @@
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/platform/network_status.dart';
-import 'package:mekuru/features/sync/data/services/server_download_work.dart'
-    show downloadResumable;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'manga_ocr_algorithms.dart';
+import 'model_download.dart';
 import 'vision_block_grouping.dart';
-
-/// One file of the manga-ocr model pack.
-typedef MangaOcrModelFile = ({
-  String name,
-  String url,
-  int bytes,
-  String sha256,
-});
 
 /// The same manga-ocr files Android downloads (its `manifest.json`; a test
 /// keeps the two in step), without the GPL comic-text-detector: iOS finds text
 /// with Apple Vision.
-const List<MangaOcrModelFile> mangaOcrIosModelFiles = [
+const List<ModelFile> mangaOcrIosModelFiles = [
   (
     name: 'encoder_model_fp16.onnx',
     url:
@@ -57,7 +47,6 @@ class MangaOcrIos {
 
   static const _channel = MethodChannel('mekuru/vision_ocr');
   static const _storage = MethodChannel('mekuru/ios_storage');
-  static const _marker = 'INSTALLED';
   static const _maxLineChars = 14;
   // [PAD], [UNK], [CLS], [SEP], [MASK]
   static const _specialTokens = 5;
@@ -68,8 +57,7 @@ class MangaOcrIos {
     p.join((await getApplicationSupportDirectory()).path, 'manga_ocr_models'),
   );
 
-  Future<bool> get installed async =>
-      File(p.join((await _dir()).path, _marker)).exists();
+  Future<bool> get installed async => modelFilesInstalled(await _dir());
 
   /// Downloads and verifies every file, then marks the pack installed.
   /// [onProgress] is the fraction of all bytes. An interrupted download keeps
@@ -83,35 +71,12 @@ class MangaOcrIos {
     final dir = await (await _dir()).create(recursive: true);
     // Re-downloadable, so kept out of iCloud and device backups.
     await _storage.invokeMethod('excludeFromBackup', [dir.path]);
-    final total = mangaOcrIosModelFiles.fold<int>(0, (a, f) => a + f.bytes);
-    var done = 0;
-    for (final file in mangaOcrIosModelFiles) {
-      final target = File(p.join(dir.path, file.name));
-      if (!await _matches(target, file)) {
-        final partial = '${target.path}.part';
-        final client = HttpClient();
-        Future<void> fetch() => downloadResumable(
-          file.url,
-          partial,
-          client: client,
-          onProgress: (received, _) =>
-              onProgress?.call((done + received) / total),
-        );
-        try {
-          await (wifiOnly ? whileOnWifi(client, fetch) : fetch());
-        } finally {
-          client.close(force: true);
-        }
-        if (!await _matches(File(partial), file)) {
-          await File(partial).delete();
-          throw const FileSystemException('Model file failed verification');
-        }
-        await File(partial).rename(target.path);
-      }
-      done += file.bytes;
-      onProgress?.call(done / total);
-    }
-    await File(p.join(dir.path, _marker)).writeAsString('ok');
+    await downloadModelFiles(
+      dir,
+      mangaOcrIosModelFiles,
+      onProgress: onProgress,
+      wifiOnly: wifiOnly,
+    );
   }
 
   Future<void> remove() async {
@@ -120,14 +85,6 @@ class MangaOcrIos {
     _vocab = null;
     final dir = await _dir();
     if (await dir.exists()) await dir.delete(recursive: true);
-  }
-
-  static Future<bool> _matches(File file, MangaOcrModelFile expected) async {
-    if (!await file.exists() || await file.length() != expected.bytes) {
-      return false;
-    }
-    return (await sha256.bind(file.openRead()).first).toString() ==
-        expected.sha256;
   }
 
   /// manga-ocr's reading of each block, split back onto the block's lines
