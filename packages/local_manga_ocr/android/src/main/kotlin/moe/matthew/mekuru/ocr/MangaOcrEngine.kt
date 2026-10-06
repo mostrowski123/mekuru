@@ -29,8 +29,12 @@ interface PageOcrEngine : Closeable {
  * generation config (no_repeat_ngram_size 3, max 300 tokens). The decoder
  * export carries no KV cache, so each step re-runs the whole prefix.
  * ponytail: O(T^2) per crop; export decoder_with_past via optimum and host it
- * if phone latency demands, and add 4-beam search if quality demands. */
-class MangaOcrEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit = {}) : PageOcrEngine {
+ * if phone latency demands, and add 4-beam search if quality demands.
+ *
+ * With [ndlDirectory], lines too long for manga-ocr (scanned text pages) are
+ * read by NDLOCR-Lite's text-line recognizer instead ([NdlAlgorithms]). */
+class MangaOcrEngine(directory: File, threads: Int, ndlDirectory: File? = null,
+                     loadCheckpoint: () -> Unit = {}) : PageOcrEngine {
     private val env = OrtEnvironment.getEnvironment()
     private val sessions = mutableListOf<OrtSession>()
     private val options = OrtSession.RunOptions()
@@ -42,6 +46,8 @@ class MangaOcrEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit =
     private val encoderInput: String
     private val encoderInputType: OnnxJavaType
     private val hiddenType: OnnxJavaType
+    private val ndl: OrtSession?
+    private val ndlCharset: List<String>
     private var detector: ComicTextDetectorNative? = null
     var regionProgress: (Int,Int) -> Unit = { _,_ -> }
     var statistics=org.json.JSONObject()
@@ -49,7 +55,7 @@ class MangaOcrEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit =
     init {
         try {
             check(OpenCVLoader.initLocal()) { "opencv_unavailable" }
-            fun session(name: String): OrtSession = OrtSession.SessionOptions().use { so ->
+            fun session(file: File): OrtSession = OrtSession.SessionOptions().use { so ->
                 loadCheckpoint()
                 so.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.BASIC_OPT)
                 so.setIntraOpNumThreads(threads.coerceIn(1,2))
@@ -58,20 +64,23 @@ class MangaOcrEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit =
                 so.addConfigEntry("session.intra_op.allow_spinning", "0")
                 so.setMemoryPatternOptimization(false)
                 so.setCPUArenaAllocator(false)
-                env.createSession(File(directory,name).absolutePath,so).also {
+                env.createSession(file.absolutePath,so).also {
                     sessions.add(it)
                     loadCheckpoint()
                 }
             }
             detector=ComicTextDetectorNative(File(directory,"comictextdetector.onnx"),threads)
             loadCheckpoint()
-            encoder=session("encoder_model_fp16.onnx")
-            decoder=session("decoder_model_int8.onnx")
+            encoder=session(File(directory,"encoder_model_fp16.onnx"))
+            decoder=session(File(directory,"decoder_model_int8.onnx"))
             encoderInput=encoder.inputNames.first()
             encoderInputType=(encoder.inputInfo.getValue(encoderInput).info as TensorInfo).type
             hiddenType=(decoder.inputInfo.getValue("encoder_hidden_states").info as TensorInfo).type
             // BERT WordPiece vocabulary, one token per line; ids 0..4 are special.
             vocabulary = File(directory,"vocab.txt").readLines()
+            ndlCharset=ndlDirectory?.let { NdlAlgorithms.parseCharset(File(it,NdlAlgorithms.CHARSET_FILE).readText()) }
+                ?: emptyList()
+            ndl=ndlDirectory?.let { session(File(it,NdlAlgorithms.MODEL_FILE)) }
         } catch (e: Throwable) { close(); throw e }
     }
     @Synchronized override fun cancel() {
@@ -154,6 +163,30 @@ class MangaOcrEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit =
             recognizeLine(source,second,vertical,checkpoint,depth+1)
     }
 
+    /** One line by the NDL recognizer: the same crop as a manga-ocr line, turned
+     * upright and resized to [1, 3, 24, 768]. Empty when it reads nothing.
+     * ponytail: the model stops at 100 characters; split like recognizeLine
+     * if scanned pages ever have longer lines. */
+    private fun recognizeNdl(source: MangaImageSource, quad: List<P>, checkpoint: () -> Unit): String {
+        check(); checkpoint()
+        val session=checkNotNull(ndl)
+        val crop=source.crop(quad)
+        val input=try {
+            val pixels=IntArray(crop.width*crop.height)
+            crop.getPixels(pixels,0,crop.width,0,0,crop.width,crop.height)
+            NdlAlgorithms.normalize(NdlAlgorithms.resizeLine(pixels,crop.width,crop.height))
+        } finally { crop.recycle() }
+        return OnnxTensor.createTensor(env,FloatBuffer.wrap(input),longArrayOf(1,3,
+            NdlAlgorithms.INPUT_HEIGHT.toLong(),NdlAlgorithms.INPUT_WIDTH.toLong())).use { tensor ->
+            session.run(mapOf(session.inputNames.first() to tensor),options).use { out ->
+                val shape=(out[0].info as TensorInfo).shape
+                // The same text conventions as manga-ocr's lines.
+                MangaOcrDecode.postProcess(
+                    NdlAlgorithms.decode(floats(out[0]),shape[1].toInt(),shape[2].toInt(),ndlCharset))
+            }
+        }
+    }
+
     override fun process(source: MangaImageSource, checkpoint: () -> Unit,
                          phase: (String) -> Unit): JSONArray {
         phase("detecting"); check(); checkpoint()
@@ -161,21 +194,34 @@ class MangaOcrEngine(directory: File, threads: Int, loadCheckpoint: () -> Unit =
         val detectorStats=statistics.optJSONObject("detector")
         statistics=org.json.JSONObject().put("detector",detectorStats).put("detectedBlocks",blocks.size)
             .put("singleLine",0).put("wholeAligned",0).put("lineFallback",0).put("truncatedWhole",0)
+            .put("ndlBlocks",0).put("ndlLines",0).put("ndlEmpty",0)
         fun count(key: String) { statistics.put(key,statistics.getInt(key)+1) }
         val result=JSONArray()
         regionProgress(0,blocks.size)
         for ((blockIndex, block) in blocks.withIndex()) {
             phase("recognizing"); check(); checkpoint()
-            val wholeCrop=source.crop(block.box.quad())
-            val whole=try { recognize(wholeCrop,checkpoint) } finally { wholeCrop.recycle() }
-            if(whole.truncated) count("truncatedWhole")
-            val lines=if(block.lines.size==1 && !whole.truncated) {
-                count("singleLine"); listOf(whole.text)
+            val long=if(ndl==null) emptyList() else block.lines.map { NdlAlgorithms.isLongLine(it,block.vertical) }
+            // A block with a line too long for manga-ocr is read line by line,
+            // the long lines by NDL, without the whole-block read and alignment.
+            val lines=if(long.any { it }) {
+                count("ndlBlocks")
+                block.lines.mapIndexed { i,quad ->
+                    val text=if(long[i]) recognizeNdl(source,quad,checkpoint) else ""
+                    if(long[i]) count(if(text.isBlank()) "ndlEmpty" else "ndlLines")
+                    text.ifBlank { recognizeLine(source,quad,block.vertical,checkpoint) }
+                }
             } else {
-                val anchors=block.lines.map { recognizeLine(source,it,block.vertical,checkpoint) }
-                val aligned=if(whole.truncated) null else LineAlignment.align(whole.text,anchors)
-                if(aligned==null) { count("lineFallback"); anchors }
-                else { count("wholeAligned"); aligned }
+                val wholeCrop=source.crop(block.box.quad())
+                val whole=try { recognize(wholeCrop,checkpoint) } finally { wholeCrop.recycle() }
+                if(whole.truncated) count("truncatedWhole")
+                if(block.lines.size==1 && !whole.truncated) {
+                    count("singleLine"); listOf(whole.text)
+                } else {
+                    val anchors=block.lines.map { recognizeLine(source,it,block.vertical,checkpoint) }
+                    val aligned=if(whole.truncated) null else LineAlignment.align(whole.text,anchors)
+                    if(aligned==null) { count("lineFallback"); anchors }
+                    else { count("wholeAligned"); aligned }
+                }
             }
             regionProgress(blockIndex+1,blocks.size)
             if (lines.all { it.isBlank() }) continue

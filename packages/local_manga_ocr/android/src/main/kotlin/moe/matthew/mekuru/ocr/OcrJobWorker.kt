@@ -7,6 +7,7 @@ import androidx.core.app.NotificationCompat
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import org.json.JSONObject
+import java.io.File
 
 /** Runs queued on-device jobs as plain WorkManager work. Not a foreground service:
  * Play rejected the mediaProcessing one (1.43.8) because a scan can wait. When
@@ -90,7 +91,12 @@ class OcrJobWorker(context: Context,parameters: WorkerParameters) : Worker(conte
                 if(memory.availMem<1024L*1024*1024) throw OcrPause("low_memory")
                 OcrRuntime.models.verify()
                 resourceCheck(job)
-                val engine=MangaOcrEngine(OcrRuntime.models.installedDirectory,if(activity.isLowRamDevice) 1 else 2) {
+                // The NDL text-line model is optional: without its files the job runs as before.
+                val ndl=job.optString("ndlModelDir").takeIf { it.isNotEmpty() }?.let { File(it) }?.takeIf { dir ->
+                    File(dir,NdlAlgorithms.MODEL_FILE).isFile && File(dir,NdlAlgorithms.CHARSET_FILE).isFile
+                }
+                val engine=MangaOcrEngine(OcrRuntime.models.installedDirectory,
+                    if(activity.isLowRamDevice) 1 else 2,ndl) {
                     resourceCheck(job)
                     if(OcrRuntime.store.read(id).getString("status")!="preparing") throw OcrPause("stopped")
                 }

@@ -15,6 +15,10 @@ class OcrJobSpec {
   final OcrExistingPolicy policy;
   final bool onlyWhileCharging;
 
+  /// Directory of the NDL text-line model (`ndl_text_model`). When set, and
+  /// the files are there, lines too long for manga-ocr are read by it.
+  final String? ndlModelDir;
+
   const OcrJobSpec({
     required this.bookId,
     required this.title,
@@ -22,6 +26,7 @@ class OcrJobSpec {
     required this.pages,
     this.policy = OcrExistingPolicy.missingOnly,
     this.onlyWhileCharging = false,
+    this.ndlModelDir,
   });
 
   Map<String, Object?> toJson() => {
@@ -31,6 +36,7 @@ class OcrJobSpec {
     'pages': pages,
     'replace': policy == OcrExistingPolicy.replace,
     'onlyWhileCharging': onlyWhileCharging,
+    if (ndlModelDir != null) 'ndlModelDir': ndlModelDir,
   };
 }
 

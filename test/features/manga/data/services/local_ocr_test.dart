@@ -171,6 +171,15 @@ void main() {
       expect(spec.toJson()['replace'], true);
       expect(spec.toJson().keys, isNot(contains('token')));
       expect(spec.toJson().keys, isNot(contains('credits')));
+      expect(spec.toJson().keys, isNot(contains('ndlModelDir')));
+      const ndl = OcrJobSpec(
+        bookId: 1,
+        title: 'Test',
+        cachePath: '/test',
+        pages: [0],
+        ndlModelDir: '/ndl',
+      );
+      expect(ndl.toJson()['ndlModelDir'], '/ndl');
     });
   });
   group('cache concurrency', () {
