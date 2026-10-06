@@ -3901,4 +3901,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryBookOptions => 'Book options';
+
+  @override
+  String get highlightColorYellow => 'Yellow';
+
+  @override
+  String get highlightColorBlue => 'Blue';
+
+  @override
+  String get highlightColorGreen => 'Green';
+
+  @override
+  String get highlightColorPink => 'Pink';
+
+  @override
+  String get readerSelectSentence => 'Select sentence';
 }

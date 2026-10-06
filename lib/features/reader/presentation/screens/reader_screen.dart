@@ -1678,12 +1678,15 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
                   curve: _expanded && !isLocked
                       ? Curves.easeOutBack
                       : Curves.easeIn,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _SpeedDialDot(
-                      color: colors[i].color,
-                      onTap: () => widget.onColorSelected(colors[i]),
-                    ),
+                  child: _SpeedDialButton(
+                    label: switch (colors[i]) {
+                      HighlightColor.yellow => l10n.highlightColorYellow,
+                      HighlightColor.blue => l10n.highlightColorBlue,
+                      HighlightColor.green => l10n.highlightColorGreen,
+                      HighlightColor.pink => l10n.highlightColorPink,
+                    },
+                    color: colors[i].color,
+                    onTap: () => widget.onColorSelected(colors[i]),
                   ),
                 ),
 
@@ -1698,25 +1701,14 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
                 curve: _expanded && !isLocked
                     ? Curves.easeOutBack
                     : Curves.easeIn,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: Material(
-                      elevation: 2,
-                      shape: const CircleBorder(),
-                      color: theme.colorScheme.primaryContainer,
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: widget.onExpandToSentence,
-                        child: Icon(
-                          Icons.select_all,
-                          size: 18,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
+                child: _SpeedDialButton(
+                  label: l10n.readerSelectSentence,
+                  color: theme.colorScheme.primaryContainer,
+                  onTap: widget.onExpandToSentence,
+                  icon: Icon(
+                    Icons.select_all,
+                    size: 18,
+                    color: theme.colorScheme.onPrimaryContainer,
                   ),
                 ),
               ),
@@ -1743,22 +1735,40 @@ class _HighlightSpeedDialState extends State<_HighlightSpeedDial>
   }
 }
 
-class _SpeedDialDot extends StatelessWidget {
+/// One of the speed dial's round buttons: 40dp to look at, with a 48dp touch
+/// target and a name for screen readers.
+class _SpeedDialButton extends StatelessWidget {
+  final String label;
   final Color color;
   final VoidCallback onTap;
+  final Widget? icon;
 
-  const _SpeedDialDot({required this.color, required this.onTap});
+  const _SpeedDialButton({
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: Material(
-        elevation: 4,
-        shape: const CircleBorder(),
-        color: color,
-        child: InkWell(customBorder: const CircleBorder(), onTap: onTap),
+    return Semantics(
+      button: true,
+      child: Tooltip(
+        message: label,
+        child: InkResponse(
+          onTap: onTap,
+          radius: 24,
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Material(
+              elevation: 4,
+              shape: const CircleBorder(),
+              color: color,
+              child: SizedBox.square(dimension: 40, child: icon),
+            ),
+          ),
+        ),
       ),
     );
   }

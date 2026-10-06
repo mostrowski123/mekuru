@@ -5012,5 +5012,25 @@
   "libraryBookOptions": "Book options",
   "@libraryBookOptions": {
     "description": "Screen-reader action on a library book tile that opens the sheet otherwise opened by a long press (rename, delete, export)."
+  },
+  "highlightColorYellow": "Yellow",
+  "@highlightColorYellow": {
+    "description": "Name of the yellow highlight color button in the EPUB reader, read by screen readers and shown on long press."
+  },
+  "highlightColorBlue": "Blue",
+  "@highlightColorBlue": {
+    "description": "Name of the blue highlight color button in the EPUB reader."
+  },
+  "highlightColorGreen": "Green",
+  "@highlightColorGreen": {
+    "description": "Name of the green highlight color button in the EPUB reader."
+  },
+  "highlightColorPink": "Pink",
+  "@highlightColorPink": {
+    "description": "Name of the pink highlight color button in the EPUB reader."
+  },
+  "readerSelectSentence": "Select sentence",
+  "@readerSelectSentence": {
+    "description": "Name of the reader button that grows the current text selection to the whole sentence."
   }
 }
