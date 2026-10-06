@@ -42,6 +42,16 @@ void main() {
     }
   });
 
+  test('a translation keeps the engine busy until it ends', () async {
+    final engine = MozillaTranslation.instance;
+    addTearDown(engine.stop);
+    final translation = engine.translate('猫', 'en');
+    expect(engine.isBusy, isTrue);
+    // A test has no app directory, so the engine fails to start.
+    await expectLater(translation, throwsA(anything));
+    expect(engine.isBusy, isFalse);
+  });
+
   test('the download size counts every pair a target needs', () {
     expect(MozillaTranslation.downloadSize('en'), '55 MB');
     expect(MozillaTranslation.downloadSize('es'), '91 MB');

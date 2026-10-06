@@ -231,33 +231,44 @@ class MozillaTranslation implements TranslationEngine {
     if (await root.exists()) await root.delete(recursive: true);
   }
 
+  var _inFlight = 0;
+
+  /// Whether a translation is running. [stop] would hang it: disposing the
+  /// WebView drops its pending call without completing it.
+  bool get isBusy => _inFlight > 0;
+
   @override
   Future<String> translate(String text, String target) async {
-    final controller = await (_engine ??= _start());
-    _idleTimer?.cancel();
-    _idleTimer = Timer(_idleLifetime, stop);
-    final result = await controller.callAsyncJavaScript(
-      functionBody: 'return await mekuruTranslate(text, pairs);',
-      arguments: {
-        'text': text,
-        'pairs': [
-          for (final pair in mozillaPairsFor(target))
-            {
-              'name': pair,
-              'files': {
-                for (final file in mozillaTranslationModels[pair]!)
-                  file.name.split('.').first:
-                      '$_origin/models/$pair/${file.name}',
+    _inFlight++;
+    try {
+      final controller = await (_engine ??= _start());
+      _idleTimer?.cancel();
+      _idleTimer = Timer(_idleLifetime, stop);
+      final result = await controller.callAsyncJavaScript(
+        functionBody: 'return await mekuruTranslate(text, pairs);',
+        arguments: {
+          'text': text,
+          'pairs': [
+            for (final pair in mozillaPairsFor(target))
+              {
+                'name': pair,
+                'files': {
+                  for (final file in mozillaTranslationModels[pair]!)
+                    file.name.split('.').first:
+                        '$_origin/models/$pair/${file.name}',
+                },
               },
-            },
-        ],
-      },
-    );
-    final error = result?.error;
-    if (result == null || error != null) {
-      throw Exception('Translation engine: ${error ?? 'no result'}');
+          ],
+        },
+      );
+      final error = result?.error;
+      if (result == null || error != null) {
+        throw Exception('Translation engine: ${error ?? 'no result'}');
+      }
+      return result.value as String? ?? '';
+    } finally {
+      _inFlight--;
     }
-    return result.value as String? ?? '';
   }
 
   Future<InAppWebViewController> _start() async {
@@ -286,7 +297,13 @@ class MozillaTranslation implements TranslationEngine {
       await webView.run();
       return await loaded.future.timeout(const Duration(seconds: 20));
     } catch (_) {
-      await stop();
+      // A stop meanwhile may have let a newer start take over: leave its
+      // WebView and engine alone, and dispose only this one.
+      if (identical(_webView, webView)) {
+        await stop();
+      } else {
+        await webView.dispose();
+      }
       rethrow;
     }
   }
