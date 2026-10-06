@@ -3050,5 +3050,19 @@
   "freeBooksTadokuCharacters": "{characters} karakter",
   "freeBooksTadokuAttribution": "Bacaan berjenjang dari NPO Tadoku Supporters ({publisher}), gratis di bawah CC BY-NC-ND 4.0. Mekuru mengunduhnya dari tadoku.org tanpa perubahan.",
   "attributionFreeBooksTitle": "Buku gratis",
-  "attributionFreeBooksDescription": "Karya klasik berasal dari Aozora Bunko, yang katalognya dibagikan di bawah CC BY 4.0. Level baca dan panjangnya diperkirakan dengan dataset aozorabunko-clean (CC BY 4.0). Bacaan berjenjang dibuat oleh NPO Tadoku Supporters, dibagikan di bawah CC BY-NC-ND 4.0, dan diunduh tanpa perubahan dari tadoku.org."
+  "attributionFreeBooksDescription": "Karya klasik berasal dari Aozora Bunko, yang katalognya dibagikan di bawah CC BY 4.0. Level baca dan panjangnya diperkirakan dengan dataset aozorabunko-clean (CC BY 4.0). Bacaan berjenjang dibuat oleh NPO Tadoku Supporters, dibagikan di bawah CC BY-NC-ND 4.0, dan diunduh tanpa perubahan dari tadoku.org.",
+  "commonShow": "Tampilkan",
+  "commonHide": "Sembunyikan",
+  "readingProgressPercent": "{percent}% dibaca",
+  "libraryBookOptions": "Opsi buku",
+  "highlightColorYellow": "Kuning",
+  "readerSelectSentence": "Pilih kalimat",
+  "readerPageOf": "Halaman {page} dari {total}",
+  "readerNextPage": "Halaman berikutnya",
+  "readerPreviousPage": "Halaman sebelumnya",
+  "readerShowHideControls": "menampilkan atau menyembunyikan kontrol",
+  "readerSeekBarLabel": "Posisi membaca",
+  "readerVolumeKeysTitle": "Tombol volume membalik halaman",
+  "readerVolumeKeysDownNext": "Turun: berikutnya",
+  "readerVolumeKeysUpNext": "Naik: berikutnya"
 }

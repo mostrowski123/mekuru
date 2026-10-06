@@ -3050,5 +3050,19 @@
   "freeBooksTadokuCharacters": "{characters} caracteres",
   "freeBooksTadokuAttribution": "Lectura graduada de NPO Tadoku Supporters ({publisher}), gratuita bajo CC BY-NC-ND 4.0. Mekuru la descarga de tadoku.org sin cambios.",
   "attributionFreeBooksTitle": "Libros gratuitos",
-  "attributionFreeBooksDescription": "Los clásicos vienen de Aozora Bunko, cuyo catálogo se comparte bajo CC BY 4.0. Sus niveles de lectura y su duración se estiman con el conjunto de datos aozorabunko-clean (CC BY 4.0). Las lecturas graduadas son de NPO Tadoku Supporters, se comparten bajo CC BY-NC-ND 4.0 y se descargan sin cambios de tadoku.org."
+  "attributionFreeBooksDescription": "Los clásicos vienen de Aozora Bunko, cuyo catálogo se comparte bajo CC BY 4.0. Sus niveles de lectura y su duración se estiman con el conjunto de datos aozorabunko-clean (CC BY 4.0). Las lecturas graduadas son de NPO Tadoku Supporters, se comparten bajo CC BY-NC-ND 4.0 y se descargan sin cambios de tadoku.org.",
+  "commonShow": "Mostrar",
+  "commonHide": "Ocultar",
+  "readingProgressPercent": "{percent} % leído",
+  "libraryBookOptions": "Opciones del libro",
+  "highlightColorYellow": "Amarillo",
+  "readerSelectSentence": "Seleccionar oración",
+  "readerPageOf": "Página {page} de {total}",
+  "readerNextPage": "Página siguiente",
+  "readerPreviousPage": "Página anterior",
+  "readerShowHideControls": "mostrar u ocultar los controles",
+  "readerSeekBarLabel": "Posición de lectura",
+  "readerVolumeKeysTitle": "Pasar página con los botones de volumen",
+  "readerVolumeKeysDownNext": "Bajar: siguiente",
+  "readerVolumeKeysUpNext": "Subir: siguiente"
 }

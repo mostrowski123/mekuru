@@ -739,10 +739,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commonClear => 'Limpiar';
 
   @override
-  String get commonShow => 'Show';
+  String get commonShow => 'Mostrar';
 
   @override
-  String get commonHide => 'Hide';
+  String get commonHide => 'Ocultar';
 
   @override
   String get commonSubmit => 'Enviar';
@@ -3944,41 +3944,41 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String readingProgressPercent({required int percent}) {
-    return '$percent% read';
+    return '$percent % leído';
   }
 
   @override
-  String get libraryBookOptions => 'Book options';
+  String get libraryBookOptions => 'Opciones del libro';
 
   @override
-  String get highlightColorYellow => 'Yellow';
+  String get highlightColorYellow => 'Amarillo';
 
   @override
-  String get readerSelectSentence => 'Select sentence';
+  String get readerSelectSentence => 'Seleccionar oración';
 
   @override
   String readerPageOf({required int page, required int total}) {
-    return 'Page $page of $total';
+    return 'Página $page de $total';
   }
 
   @override
-  String get readerNextPage => 'Next page';
+  String get readerNextPage => 'Página siguiente';
 
   @override
-  String get readerPreviousPage => 'Previous page';
+  String get readerPreviousPage => 'Página anterior';
 
   @override
-  String get readerShowHideControls => 'show or hide controls';
+  String get readerShowHideControls => 'mostrar u ocultar los controles';
 
   @override
-  String get readerSeekBarLabel => 'Reading position';
+  String get readerSeekBarLabel => 'Posición de lectura';
 
   @override
-  String get readerVolumeKeysTitle => 'Volume buttons turn pages';
+  String get readerVolumeKeysTitle => 'Pasar página con los botones de volumen';
 
   @override
-  String get readerVolumeKeysDownNext => 'Down: next';
+  String get readerVolumeKeysDownNext => 'Bajar: siguiente';
 
   @override
-  String get readerVolumeKeysUpNext => 'Up: next';
+  String get readerVolumeKeysUpNext => 'Subir: siguiente';
 }

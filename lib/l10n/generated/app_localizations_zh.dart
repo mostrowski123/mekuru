@@ -695,10 +695,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonClear => '清除';
 
   @override
-  String get commonShow => 'Show';
+  String get commonShow => '显示';
 
   @override
-  String get commonHide => 'Hide';
+  String get commonHide => '隐藏';
 
   @override
   String get commonSubmit => '提交';
@@ -3731,43 +3731,43 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String readingProgressPercent({required int percent}) {
-    return '$percent% read';
+    return '已读 $percent%';
   }
 
   @override
-  String get libraryBookOptions => 'Book options';
+  String get libraryBookOptions => '书籍选项';
 
   @override
-  String get highlightColorYellow => 'Yellow';
+  String get highlightColorYellow => '黄色';
 
   @override
-  String get readerSelectSentence => 'Select sentence';
+  String get readerSelectSentence => '选择整句';
 
   @override
   String readerPageOf({required int page, required int total}) {
-    return 'Page $page of $total';
+    return '第 $page 页，共 $total 页';
   }
 
   @override
-  String get readerNextPage => 'Next page';
+  String get readerNextPage => '下一页';
 
   @override
-  String get readerPreviousPage => 'Previous page';
+  String get readerPreviousPage => '上一页';
 
   @override
-  String get readerShowHideControls => 'show or hide controls';
+  String get readerShowHideControls => '显示或隐藏控件';
 
   @override
-  String get readerSeekBarLabel => 'Reading position';
+  String get readerSeekBarLabel => '阅读位置';
 
   @override
-  String get readerVolumeKeysTitle => 'Volume buttons turn pages';
+  String get readerVolumeKeysTitle => '音量键翻页';
 
   @override
-  String get readerVolumeKeysDownNext => 'Down: next';
+  String get readerVolumeKeysDownNext => '下键：下一页';
 
   @override
-  String get readerVolumeKeysUpNext => 'Up: next';
+  String get readerVolumeKeysUpNext => '上键：下一页';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -4459,6 +4459,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get commonClear => '清除';
+
+  @override
+  String get commonShow => '显示';
+
+  @override
+  String get commonHide => '隐藏';
 
   @override
   String get commonSubmit => '提交';
@@ -7488,4 +7494,44 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get attributionFreeBooksDescription =>
       '经典名著来自青空文库，其目录依据 CC BY 4.0 共享。它们的阅读等级和篇幅使用 aozorabunko-clean 数据集（CC BY 4.0）估算。分级读物由 NPO Tadoku Supporters 出版，依据 CC BY-NC-ND 4.0 共享，并从 tadoku.org 原样下载。';
+
+  @override
+  String readingProgressPercent({required int percent}) {
+    return '已读 $percent%';
+  }
+
+  @override
+  String get libraryBookOptions => '书籍选项';
+
+  @override
+  String get highlightColorYellow => '黄色';
+
+  @override
+  String get readerSelectSentence => '选择整句';
+
+  @override
+  String readerPageOf({required int page, required int total}) {
+    return '第 $page 页，共 $total 页';
+  }
+
+  @override
+  String get readerNextPage => '下一页';
+
+  @override
+  String get readerPreviousPage => '上一页';
+
+  @override
+  String get readerShowHideControls => '显示或隐藏控件';
+
+  @override
+  String get readerSeekBarLabel => '阅读位置';
+
+  @override
+  String get readerVolumeKeysTitle => '音量键翻页';
+
+  @override
+  String get readerVolumeKeysDownNext => '下键：下一页';
+
+  @override
+  String get readerVolumeKeysUpNext => '上键：下一页';
 }

@@ -3050,5 +3050,19 @@
   "freeBooksTadokuCharacters": "{characters} 字",
   "freeBooksTadokuAttribution": "分级读物由 NPO Tadoku Supporters（{publisher}）出版，依据 CC BY-NC-ND 4.0 免费提供。Mekuru 从 tadoku.org 原样下载。",
   "attributionFreeBooksTitle": "免费书籍",
-  "attributionFreeBooksDescription": "经典名著来自青空文库，其目录依据 CC BY 4.0 共享。它们的阅读等级和篇幅使用 aozorabunko-clean 数据集（CC BY 4.0）估算。分级读物由 NPO Tadoku Supporters 出版，依据 CC BY-NC-ND 4.0 共享，并从 tadoku.org 原样下载。"
+  "attributionFreeBooksDescription": "经典名著来自青空文库，其目录依据 CC BY 4.0 共享。它们的阅读等级和篇幅使用 aozorabunko-clean 数据集（CC BY 4.0）估算。分级读物由 NPO Tadoku Supporters 出版，依据 CC BY-NC-ND 4.0 共享，并从 tadoku.org 原样下载。",
+  "commonShow": "显示",
+  "commonHide": "隐藏",
+  "readingProgressPercent": "已读 {percent}%",
+  "libraryBookOptions": "书籍选项",
+  "highlightColorYellow": "黄色",
+  "readerSelectSentence": "选择整句",
+  "readerPageOf": "第 {page} 页，共 {total} 页",
+  "readerNextPage": "下一页",
+  "readerPreviousPage": "上一页",
+  "readerShowHideControls": "显示或隐藏控件",
+  "readerSeekBarLabel": "阅读位置",
+  "readerVolumeKeysTitle": "音量键翻页",
+  "readerVolumeKeysDownNext": "下键：下一页",
+  "readerVolumeKeysUpNext": "上键：下一页"
 }
