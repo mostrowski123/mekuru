@@ -4,6 +4,7 @@ import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers
 import 'package:mekuru/features/manga/presentation/widgets/ocr_action_sheet.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' show max;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -80,6 +81,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
 
   late PageController _pageController;
   int _currentPage = 0;
+
+  /// Where the scroll view was left last time: its exact offset, used while
+  /// the reader is still on that page.
+  ({int page, double offset})? _scrollResume;
   bool _showControls = false;
   bool _isZoomed = false;
   bool _isComputingAutoCrop = false;
@@ -115,10 +120,19 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
   @override
   void initState() {
     super.initState();
-    // Restore last read page from book's lastReadCfi.
-    // Scroll mode stores offset as 'scroll:<offset>' — default to page 0.
+    // Restore the last read page. The scroll view saves 'scroll:<offset>',
+    // with the page it was on as the book's progress.
     final cfi = widget.book.lastReadCfi ?? '';
-    _currentPage = cfi.startsWith('scroll:') ? 0 : (int.tryParse(cfi) ?? 0);
+    if (cfi.startsWith('scroll:')) {
+      _currentPage = max(
+        0,
+        (widget.book.readProgress * (widget.book.totalPages - 1)).round(),
+      );
+      final offset = double.tryParse(cfi.substring('scroll:'.length));
+      if (offset != null) _scrollResume = (page: _currentPage, offset: offset);
+    } else {
+      _currentPage = int.tryParse(cfi) ?? 0;
+    }
     _pageController = PageController(initialPage: _currentPage);
     WidgetsBinding.instance.addObserver(this);
     logUsage('reader.book_opened', attrs: {'format': 'manga'});
@@ -1471,10 +1485,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           key: _scrollViewKey,
           mokuroBook: mokuroBook,
           bookId: widget.book.id,
-          initialScrollOffset: mangaScrollPageTops(
-            mokuroBook.pages,
-            MediaQuery.sizeOf(context).width,
-          )[_currentPage],
+          initialScrollOffset: _scrollResume?.page == _currentPage
+              ? _scrollResume!.offset
+              : mangaScrollPageTops(
+                  mokuroBook.pages,
+                  MediaQuery.sizeOf(context).width,
+                )[_currentPage],
           debugOverlay: debugOverlay,
           autoCrop: autoCrop,
           highlightedRects: _highlight?.rects ?? const [],
