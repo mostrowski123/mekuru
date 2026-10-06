@@ -692,6 +692,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           return;
         }
         if (!await confirmHighQualityMemory(context) || !mounted) return;
+        // On Standard the provider may only just be built, still saying
+        // "not installed" while its check runs.
+        await ref.read(gemmaDownloadProvider.notifier).refresh();
+        if (!mounted) return;
         final download = ref.read(gemmaDownloadProvider);
         if (download is! GemmaInstalled && download is! GemmaDownloading) {
           final ok = await okToDownload(

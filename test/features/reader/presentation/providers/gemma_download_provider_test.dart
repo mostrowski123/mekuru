@@ -92,6 +92,25 @@ void main() {
     expect(starts, 1);
   });
 
+  test('start with the model already there downloads nothing', () async {
+    var starts = 0;
+    debugGemmaModelOps = (
+      installed: () async => true,
+      download: (_) {
+        starts++;
+        return download.future;
+      },
+      delete: () async {},
+      cancel: () => false,
+    );
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    unawaited(c.read(gemmaDownloadProvider.notifier).start());
+    await Future<void>.delayed(Duration.zero);
+    expect(starts, 0);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+  });
+
   test(
     'the first install check does not overwrite a started download',
     () async {
@@ -201,8 +220,9 @@ void main() {
 
   test('a slow install check does not overwrite a newer state', () async {
     var check = Completer<bool>();
+    var slow = true;
     debugGemmaModelOps = (
-      installed: () => check.future,
+      installed: () => slow ? check.future : Future.value(false),
       download: (_) => download.future,
       delete: () async {},
       cancel: () => false,
@@ -210,7 +230,9 @@ void main() {
     final c = ProviderContainer();
     addTearDown(c.dispose);
     final notifier = c.read(gemmaDownloadProvider.notifier);
-    // build()'s check is still running when a download finishes.
+    // build()'s check is still running when a download finishes; start()'s
+    // own check answers at once.
+    slow = false;
     final done = notifier.start();
     download.complete();
     await done;
@@ -219,6 +241,7 @@ void main() {
     expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
     // A check still running when the model is deleted.
     check = Completer<bool>();
+    slow = true;
     unawaited(notifier.refresh());
     await notifier.remove();
     check.complete(true);

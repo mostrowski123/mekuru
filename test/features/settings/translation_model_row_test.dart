@@ -17,19 +17,21 @@ import '../../test_app.dart';
 final _android = TargetPlatformVariant.only(TargetPlatform.android);
 
 void main() {
+  var installed = false;
   var installedChecks = 0;
   var downloads = 0;
   var closes = 0;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    installed = false;
     installedChecks = 0;
     downloads = 0;
     closes = 0;
     debugGemmaModelOps = (
       installed: () async {
         installedChecks++;
-        return false;
+        return installed;
       },
       // Never finishes, so the row stays on "downloading".
       download: (_) {
@@ -48,9 +50,13 @@ void main() {
     GemmaTranslation.debugClose = null;
   });
 
-  Future<ProviderContainer> pumpSettings(WidgetTester tester) async {
+  Future<ProviderContainer> pumpSettings(
+    WidgetTester tester, {
+    TranslationModelChoice choice = TranslationModelChoice.standard,
+  }) async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
+    container.read(translationModelProvider.notifier).setChoice(choice);
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -124,12 +130,49 @@ void main() {
     expect(rowSubtitle('High quality: downloading 0%'), findsOneWidget);
   }, variant: _android);
 
-  testWidgets('picking Standard again closes Gemma', (tester) async {
+  testWidgets('an installed model is reused without asking', (tester) async {
+    installed = true;
+    debugDeviceLowOnMemory = false;
+    mockWifiConnected(false);
     final container = await pumpSettings(tester);
-    container
-        .read(translationModelProvider.notifier)
-        .setChoice(TranslationModelChoice.high);
+
+    await pick(tester, 'High quality (2.6 GB)');
+
+    expect(find.text('Download over mobile data?'), findsNothing);
+    expect(downloads, 0);
+    expect(
+      container.read(translationModelProvider),
+      TranslationModelChoice.high,
+    );
+    expect(rowSubtitle('High quality'), findsOneWidget);
+  }, variant: _android);
+
+  testWidgets('"Use Standard" switches an existing High choice to Standard', (
+    tester,
+  ) async {
+    debugDeviceLowOnMemory = true;
+    final container = await pumpSettings(
+      tester,
+      choice: TranslationModelChoice.high,
+    );
+
+    await pick(tester, 'High quality (2.6 GB)');
+    await tester.tap(find.text('Use Standard'));
     await tester.pumpAndSettle();
+
+    expect(
+      container.read(translationModelProvider),
+      TranslationModelChoice.standard,
+    );
+    expect(closes, 1);
+    expect(downloads, 0);
+  }, variant: _android);
+
+  testWidgets('picking Standard again closes Gemma', (tester) async {
+    final container = await pumpSettings(
+      tester,
+      choice: TranslationModelChoice.high,
+    );
     expect(
       rowSubtitle('High quality: tap to download (2.6 GB)'),
       findsOneWidget,
@@ -147,7 +190,8 @@ void main() {
   testWidgets('the row is absent on iOS and Gemma is never checked', (
     tester,
   ) async {
-    await pumpSettings(tester);
+    // On High the row would check the model if it were built.
+    await pumpSettings(tester, choice: TranslationModelChoice.high);
     expect(find.text('Translation model'), findsNothing);
     expect(installedChecks, 0);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));

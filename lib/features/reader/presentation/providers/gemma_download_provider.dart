@@ -76,11 +76,19 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
     state = installed ? const GemmaInstalled() : const GemmaNotInstalled();
   }
 
+  /// Downloads the model, or only reports it installed when its files are
+  /// still there (Standard keeps them, and build()'s check may not have
+  /// answered yet).
   Future<void> start() async {
     if (state is GemmaDownloading) return;
     _cancelling = false;
+    // Before the check, so a second start meanwhile is ignored.
     state = const GemmaDownloading(0);
     try {
+      if (await _ops.installed()) {
+        state = const GemmaInstalled();
+        return;
+      }
       await _ops.download((fraction) => state = GemmaDownloading(fraction));
       logUsage('translation.high_quality_downloaded');
       state = const GemmaInstalled();
