@@ -60,11 +60,15 @@ class _ReaderSeekBarState extends State<ReaderSeekBar> {
     const labelStyle = TextStyle(color: Colors.white, fontSize: 14);
 
     return Container(
+      // Solid behind the labels, fading out above them: white page numbers
+      // on the faded part read at about 2:1 over a white page.
+      padding: const EdgeInsets.only(top: 16),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
-          colors: [Colors.black87, Colors.transparent],
+          stops: [0, 0.8, 1],
+          colors: [Colors.black87, Colors.black87, Colors.transparent],
         ),
       ),
       child: SafeArea(

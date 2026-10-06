@@ -9,6 +9,7 @@ import 'package:mekuru/features/sync/data/models/remote_models.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// Manage Komga/Kavita server connections: add, edit, test, delete.
@@ -475,7 +476,7 @@ class _ServerConnectionDialogState
                 _testResult!,
                 style: TextStyle(
                   color: _testOk
-                      ? Colors.green
+                      ? Theme.of(context).colorScheme.success
                       : Theme.of(context).colorScheme.error,
                 ),
               ),

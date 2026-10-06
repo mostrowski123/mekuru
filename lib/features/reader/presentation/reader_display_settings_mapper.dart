@@ -47,6 +47,8 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
 
   final bgHex = colorToHex(bgColor);
   final fgHex = colorToHex(fgColor);
+  // 4.5:1 or better on each theme's page, sepia included.
+  final linkHex = settings.colorMode == ColorMode.dark ? '#64B5F6' : '#1565C0';
 
   // Disable CJK punctuation compression (full-width commas, periods, and
   // corner brackets, like classic Japanese typesetting). Chromium's default
@@ -113,7 +115,7 @@ ReaderTheme buildReaderTheme({required ReaderSettings settings}) {
       'p': {'color': '$fgHex !important'},
       'span': {'color': '$fgHex !important'},
       'a': {
-        'color': '#2196F3 !important',
+        'color': '$linkHex !important',
         'text-decoration': 'underline !important',
       },
     },

@@ -366,7 +366,7 @@ class _VocabularyItem extends ConsumerWidget {
                         l10n.vocabularyContextLabel,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Theme.of(context).colorScheme.outline,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -379,7 +379,7 @@ class _VocabularyItem extends ConsumerWidget {
                 l10n.vocabularyAddedOn(date: _formatDate(word.dateAdded)),
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.outline,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.right,
               ),

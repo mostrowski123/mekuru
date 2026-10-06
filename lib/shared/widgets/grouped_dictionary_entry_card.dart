@@ -859,15 +859,18 @@ class _FrequencyTag extends StatelessWidget {
     final label = DictionaryEntryWithSource.frequencyLabel(rank);
     final resolvedRank = DictionaryEntryWithSource.sortFrequencyRank(rank);
 
+    // Shades with 4.5:1 contrast for the small label on light and dark
+    // cards; the plain swatches are 2 to 3:1 on light ones.
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final Color color;
     if (resolvedRank <= 5000) {
-      color = Colors.green;
+      color = dark ? Colors.green.shade300 : Colors.green.shade800;
     } else if (resolvedRank <= 15000) {
-      color = Colors.blue;
+      color = dark ? Colors.blue.shade300 : Colors.blue.shade800;
     } else if (resolvedRank <= 30000) {
-      color = Colors.orange;
+      color = dark ? Colors.orange.shade300 : Colors.deepOrange.shade900;
     } else {
-      color = Colors.grey;
+      color = dark ? Colors.grey.shade400 : Colors.grey.shade700;
     }
 
     return Container(

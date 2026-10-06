@@ -22,7 +22,7 @@ class SourceSectionLabel extends StatelessWidget {
       fontWeight: FontWeight.w500,
       fontStyle: FontStyle.italic,
       letterSpacing: 0.15,
-      color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+      color: theme.colorScheme.onSurfaceVariant,
     );
 
     return Padding(

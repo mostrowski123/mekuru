@@ -1382,12 +1382,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   Widget _buildTopBar(bool isProUnlocked) {
     final l10n = context.l10n;
 
+    // Solid behind the controls and fading out below them: a white title
+    // on the faded part of the scrim read at about 2.5:1 over a white page.
+    final scrim = Colors.black.withValues(alpha: 0.7);
     return Container(
+      padding: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+          stops: const [0, 0.8, 1],
+          colors: [scrim, scrim, Colors.transparent],
         ),
       ),
       child: SafeArea(

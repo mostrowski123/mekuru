@@ -21,6 +21,7 @@ import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_provid
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
@@ -208,7 +209,10 @@ class _DictionaryManagerScreenState
                   processed: state.processedEntries,
                   total: state.totalEntries,
                 ),
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
         ],
@@ -249,7 +253,10 @@ class _DictionaryManagerScreenState
       color: Colors.green.withValues(alpha: 0.1),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_outline, color: Colors.green),
+          Icon(
+            Icons.check_circle_outline,
+            color: Theme.of(context).colorScheme.success,
+          ),
           const SizedBox(width: 8),
           Expanded(child: Text(state.successMessage!)),
         ],
@@ -357,6 +364,7 @@ class _DictionaryManagerScreenState
 
   Widget _buildEmptyState() {
     final l10n = context.l10n;
+    final hintColor = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Center(
       child: Column(
@@ -366,12 +374,12 @@ class _DictionaryManagerScreenState
           const SizedBox(height: 16),
           Text(
             l10n.dictionaryNoDictionariesTitle,
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(fontSize: 18, color: hintColor),
           ),
           const SizedBox(height: 8),
           Text(
             l10n.dictionaryManagerEmptySubtitle,
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: hintColor),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -388,7 +396,7 @@ class _DictionaryManagerScreenState
           const SizedBox(height: 4),
           Text(
             l10n.dictionaryManagerBrowseDownloadsCaption,
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+            style: TextStyle(color: hintColor, fontSize: 12),
           ),
         ],
       ),

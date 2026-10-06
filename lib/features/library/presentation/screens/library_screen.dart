@@ -42,6 +42,7 @@ import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_browse_screen.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 import 'package:mekuru/shared/utils/pending_drag_order.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
@@ -238,7 +239,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               context,
               icon: Icons.check_circle_outline,
               color: Colors.green.withValues(alpha: 0.1),
-              textColor: Colors.green,
+              textColor: Theme.of(context).colorScheme.success,
               message: importState.successMessage!,
               actionLabel: importState.importedBook != null
                   ? l10n.commonOpenNow
@@ -1329,7 +1330,14 @@ class _BookTileState extends ConsumerState<_BookTile>
                                   size: 22,
                                   color: widget.isSelected
                                       ? theme.colorScheme.primary
-                                      : Colors.white70,
+                                      : Colors.white,
+                                  // Keeps the circle visible on light covers.
+                                  shadows: const [
+                                    Shadow(
+                                      color: Colors.black54,
+                                      blurRadius: 4,
+                                    ),
+                                  ],
                                 ),
                               ),
                           ],
@@ -1527,10 +1535,13 @@ class _BookTileState extends ConsumerState<_BookTile>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                leading: Icon(
+                  Icons.delete_outline,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 title: Text(
                   context.l10n.libraryDeleteBookTitle,
-                  style: const TextStyle(color: Colors.red),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -1755,7 +1766,7 @@ class _BookTileState extends ConsumerState<_BookTile>
             },
             child: Text(
               ctx.l10n.commonDelete,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
             ),
           ),
         ],

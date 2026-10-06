@@ -137,9 +137,7 @@ class BookCoverImage extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.7,
-                        ),
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),

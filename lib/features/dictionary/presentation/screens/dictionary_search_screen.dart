@@ -451,7 +451,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
             Text(
               l10n.dictionaryNoDictionariesSubtitle,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -503,7 +503,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
             Text(
               l10n.dictionaryNoEnabledSubtitle,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -660,7 +660,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
               Text(
                 l10n.dictionarySearchForAWordSubtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),

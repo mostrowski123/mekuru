@@ -169,7 +169,7 @@ class _JmdictDownloadTileState extends ConsumerState<JmdictDownloadTile> {
             },
             child: Text(
               ctx.l10n.commonDelete,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
             ),
           ),
         ],

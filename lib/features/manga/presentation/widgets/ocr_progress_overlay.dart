@@ -244,7 +244,8 @@ class _CompletedOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: Container(
-        color: Colors.green.withValues(alpha: 0.7),
+        // Dark enough that the white label stays readable over a light cover.
+        color: Colors.green.shade900.withValues(alpha: 0.85),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -278,7 +279,7 @@ class _FailedOverlay extends StatelessWidget {
             ? () => _showErrorDialog(context, errorMessage!)
             : null,
         child: Container(
-          color: Colors.red.withValues(alpha: 0.7),
+          color: Colors.red.shade900.withValues(alpha: 0.85),
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -297,10 +298,7 @@ class _FailedOverlay extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   context.l10n.ocrTapForDetails,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 10,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 10),
                 ),
               ],
             ],

@@ -1250,11 +1250,18 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                     left: 0,
                     right: 0,
                     child: Container(
+                      // Solid behind the controls, fading out below them.
+                      padding: const EdgeInsets.only(bottom: 16),
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.black87, Colors.transparent],
+                          stops: [0, 0.8, 1],
+                          colors: [
+                            Colors.black87,
+                            Colors.black87,
+                            Colors.transparent,
+                          ],
                         ),
                       ),
                       child: SafeArea(

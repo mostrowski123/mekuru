@@ -284,7 +284,7 @@ class _KanjiVgTile extends ConsumerWidget {
             },
             child: Text(
               ctx.l10n.commonDelete,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
             ),
           ),
         ],
@@ -364,7 +364,7 @@ class _JpdbFreqTile extends ConsumerWidget {
             },
             child: Text(
               ctx.l10n.commonDelete,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
             ),
           ),
         ],
@@ -447,7 +447,7 @@ class _KanjidicTile extends ConsumerWidget {
             },
             child: Text(
               ctx.l10n.commonDelete,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
             ),
           ),
         ],
@@ -554,7 +554,7 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
             },
             child: Text(
               ctx.l10n.commonDelete,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
             ),
           ),
         ],

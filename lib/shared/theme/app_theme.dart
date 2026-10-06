@@ -97,3 +97,11 @@ class AppTheme {
     );
   }
 }
+
+extension SuccessColor on ColorScheme {
+  /// Green for success text and icons with 4.5:1 contrast on this scheme's
+  /// surfaces. Plain [Colors.green] is about 2.7:1 on a light surface.
+  Color get success => brightness == Brightness.dark
+      ? Colors.green.shade300
+      : Colors.green.shade800;
+}

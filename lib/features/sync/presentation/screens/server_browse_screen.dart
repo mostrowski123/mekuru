@@ -9,6 +9,7 @@ import 'package:mekuru/features/sync/data/repositories/server_connection_reposit
 import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 
 /// Entry point of server browsing: the connection's libraries.
@@ -359,7 +360,10 @@ class _BookListScreenState extends ConsumerState<_BookListScreen> {
                   ),
                 );
               } else if (isLinked) {
-                trailing = const Icon(Icons.check_circle, color: Colors.green);
+                trailing = Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.success,
+                );
               } else {
                 trailing = const Icon(Icons.download);
               }

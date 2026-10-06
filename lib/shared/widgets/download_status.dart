@@ -6,6 +6,7 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
 import 'package:mekuru/features/dictionary/data/services/dictionary_download_service.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/format_bytes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -102,7 +103,10 @@ class DownloadSuccessText extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Text(
         text,
-        style: const TextStyle(color: Colors.green, fontSize: 13),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.success,
+          fontSize: 13,
+        ),
       ),
     );
   }
