@@ -58,6 +58,7 @@ class MangaOcrIos {
   static const _channel = MethodChannel('mekuru/vision_ocr');
   static const _storage = MethodChannel('mekuru/ios_storage');
   static const _marker = 'INSTALLED';
+  static const _maxLineChars = 14;
   // [PAD], [UNK], [CLS], [SEP], [MASK]
   static const _specialTokens = 5;
 
@@ -129,9 +130,10 @@ class MangaOcrIos {
         expected.sha256;
   }
 
-  /// manga-ocr's reading of each block, split back onto the block's lines, or
-  /// null when the models are not installed or anything fails: the caller
-  /// then keeps Vision's own text.
+  /// manga-ocr's reading of each block, split back onto the block's lines
+  /// (Vision's own lines for a block with a line too long for it), or null
+  /// when the models are not installed or anything fails: the caller then
+  /// keeps Vision's own text.
   Future<List<List<String>>?> readBlocks(
     Uint8List imageBytes,
     List<VisionBlock> blocks,
@@ -160,6 +162,16 @@ class MangaOcrIos {
 
       final out = <List<String>>[];
       for (final block in blocks) {
+        final visionLines = [for (final l in block.lines) l.text];
+        // The crop is squashed to 224x224, so past 14 characters a line has
+        // under 16 px per character and the reading falls apart. Manga columns
+        // stay shorter (5 of 2211 Manga109-s blocks, which Vision reads a
+        // little better anyway); a text page's do not (Tadoku graded readers:
+        // 77% of characters wrong, Vision's own text 8%).
+        if (visionLines.any((l) => l.runes.length > _maxLineChars)) {
+          out.add(visionLines);
+          continue;
+        }
         final whole = await _read(
           models,
           OcrPixels.modelInput(
@@ -173,7 +185,6 @@ class MangaOcrIos {
           ),
           vocab,
         );
-        final visionLines = [for (final l in block.lines) l.text];
         // An empty reading is a failed one; Vision's text is better than none.
         out.add(
           whole.isEmpty ? visionLines : splitAcrossLines(whole, visionLines),
