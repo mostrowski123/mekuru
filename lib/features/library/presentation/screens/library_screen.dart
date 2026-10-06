@@ -6,6 +6,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_reorderable_grid_view/entities/reorderable_animation_config.dart';
 import 'package:flutter_reorderable_grid_view/widgets/widgets.dart';
 import 'package:flutter/services.dart' show MethodChannel, PlatformException;
@@ -1187,7 +1188,7 @@ class _BookTileState extends ConsumerState<_BookTile>
     _longPressTimer = Timer(const Duration(milliseconds: 500), () {
       _longPressFired = true;
       AppHaptics.heavy();
-      _showBookOptions(context, ref);
+      _openOptions();
       _onPressUp();
     });
   }
@@ -1209,6 +1210,10 @@ class _BookTileState extends ConsumerState<_BookTile>
     // pointer while a reorder drag owns it — the travel threshold is what
     // keeps a drag from counting as a tap.
     if ((e.localPosition - downPos).distance >= 20) return;
+    _activate();
+  }
+
+  void _activate() {
     if (widget.isSelectionMode) {
       AppHaptics.light();
       widget.onToggleSelection?.call();
@@ -1216,6 +1221,8 @@ class _BookTileState extends ConsumerState<_BookTile>
       Navigator.of(context).push(bookReaderRoute(book));
     }
   }
+
+  void _openOptions() => _showBookOptions(context, ref);
 
   void _handlePointerCancel(PointerCancelEvent e) {
     if (!mounted) return; // see _handlePointerUp
@@ -1227,102 +1234,124 @@ class _BookTileState extends ConsumerState<_BookTile>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Listener(
-      onPointerDown: _handlePointerDown,
-      onPointerUp: _handlePointerUp,
-      onPointerCancel: _handlePointerCancel,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: _CoverTilt(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: _maybeHero(
-                    widget.coverHeroTag,
-                    ClipRRect(
+    final l10n = context.l10n;
+    final percentRead = (book.readProgress.clamp(0.0, 1.0) * 100).round();
+    // The raw Listener exposes no actions, so screen readers get the tap and
+    // the options sheet from here.
+    return Semantics(
+      container: true,
+      button: true,
+      selected: widget.isSelectionMode ? widget.isSelected : null,
+      value: percentRead > 0
+          ? l10n.readingProgressPercent(percent: percentRead)
+          : null,
+      onTap: _activate,
+      onLongPress: widget.isSelectionMode ? null : _openOptions,
+      customSemanticsActions: widget.isSelectionMode
+          ? null
+          : {
+              CustomSemanticsAction(label: l10n.libraryBookOptions):
+                  _openOptions,
+            },
+      child: Listener(
+        onPointerDown: _handlePointerDown,
+        onPointerUp: _handlePointerUp,
+        onPointerCancel: _handlePointerCancel,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: _CoverTilt(
+                  child: Container(
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(6),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          BookCoverImage(book: book),
-                          if (book.bookType == 'manga')
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Container(
-                                padding: const EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Icon(
-                                  Icons.photo_library,
-                                  color: Colors.white,
-                                  size: 12,
-                                ),
-                              ),
-                            ),
-                          if (book.readProgress > 0)
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: Container(
-                                height: 3,
-                                color: Colors.black.withValues(alpha: 0.3),
-                                child: FractionallySizedBox(
-                                  alignment: Alignment.centerLeft,
-                                  widthFactor: book.readProgress.clamp(
-                                    0.0,
-                                    1.0,
+                    ),
+                    child: _maybeHero(
+                      widget.coverHeroTag,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // A cover without art draws the title, which the
+                            // tile already reads out.
+                            ExcludeSemantics(child: BookCoverImage(book: book)),
+                            if (book.bookType == 'manga')
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Container(
-                                    color: theme.colorScheme.primary,
+                                  child: const Icon(
+                                    Icons.photo_library,
+                                    color: Colors.white,
+                                    size: 12,
                                   ),
                                 ),
                               ),
-                            ),
-                          if (book.bookType == 'manga')
-                            OcrProgressOverlay(bookId: book.id),
-                          if (widget.isSelectionMode)
-                            Positioned(
-                              // top/right is taken by the manga badge.
-                              top: 4,
-                              left: 4,
-                              child: Icon(
-                                widget.isSelected
-                                    ? Icons.check_circle
-                                    : Icons.circle_outlined,
-                                size: 22,
-                                color: widget.isSelected
-                                    ? theme.colorScheme.primary
-                                    : Colors.white70,
+                            if (book.readProgress > 0)
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  height: 3,
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  child: FractionallySizedBox(
+                                    alignment: Alignment.centerLeft,
+                                    widthFactor: book.readProgress.clamp(
+                                      0.0,
+                                      1.0,
+                                    ),
+                                    child: Container(
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                        ],
+                            if (book.bookType == 'manga')
+                              OcrProgressOverlay(bookId: book.id),
+                            if (widget.isSelectionMode)
+                              Positioned(
+                                // top/right is taken by the manga badge.
+                                top: 4,
+                                left: 4,
+                                child: Icon(
+                                  widget.isSelected
+                                      ? Icons.check_circle
+                                      : Icons.circle_outlined,
+                                  size: 22,
+                                  color: widget.isSelected
+                                      ? theme.colorScheme.primary
+                                      : Colors.white70,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            book.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 8),
+            Text(
+              book.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

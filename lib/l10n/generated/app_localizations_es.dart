@@ -3941,4 +3941,12 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get attributionFreeBooksDescription =>
       'Los clásicos vienen de Aozora Bunko, cuyo catálogo se comparte bajo CC BY 4.0. Sus niveles de lectura y su duración se estiman con el conjunto de datos aozorabunko-clean (CC BY 4.0). Las lecturas graduadas son de NPO Tadoku Supporters, se comparten bajo CC BY-NC-ND 4.0 y se descargan sin cambios de tadoku.org.';
+
+  @override
+  String readingProgressPercent({required int percent}) {
+    return '$percent% read';
+  }
+
+  @override
+  String get libraryBookOptions => 'Book options';
 }

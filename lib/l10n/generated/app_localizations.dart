@@ -6344,6 +6344,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The classics come from Aozora Bunko, whose catalog is shared under CC BY 4.0. Their reading levels and lengths are estimated with the aozorabunko-clean dataset (CC BY 4.0). The graded readers are by NPO Tadoku Supporters, shared under CC BY-NC-ND 4.0 and downloaded unchanged from tadoku.org.'**
   String get attributionFreeBooksDescription;
+
+  /// Screen-reader value of a library book tile: how much of the book has been read.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% read'**
+  String readingProgressPercent({required int percent});
+
+  /// Screen-reader action on a library book tile that opens the sheet otherwise opened by a long press (rename, delete, export).
+  ///
+  /// In en, this message translates to:
+  /// **'Book options'**
+  String get libraryBookOptions;
 }
 
 class _AppLocalizationsDelegate

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -204,6 +206,31 @@ void main() {
       await pumpLibrary(tester, [makeBook(1, '坊っちゃん'), makeBook(2, '走れメロス')]);
 
       expect(find.text('Continue reading'), findsNothing);
+    });
+
+    testWidgets('book tiles are buttons screen readers can open and manage', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await pumpLibrary(tester, [makeBook(1, 'Botchan', readProgress: 0.42)]);
+
+      final tile = find.semantics.byLabel('Botchan');
+      final options = CustomSemanticsAction(label: 'Book options');
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Botchan')),
+        isSemantics(
+          isButton: true,
+          value: '42% read',
+          hasTapAction: true,
+          hasLongPressAction: true,
+          customActions: [options],
+        ),
+      );
+
+      tester.semantics.customAction(tile, options);
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsOneWidget);
+      semantics.dispose();
     });
   });
 }

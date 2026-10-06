@@ -3728,6 +3728,14 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get attributionFreeBooksDescription =>
       '经典名著来自青空文库，其目录依据 CC BY 4.0 共享。它们的阅读等级和篇幅使用 aozorabunko-clean 数据集（CC BY 4.0）估算。分级读物由 NPO Tadoku Supporters 出版，依据 CC BY-NC-ND 4.0 共享，并从 tadoku.org 原样下载。';
+
+  @override
+  String readingProgressPercent({required int percent}) {
+    return '$percent% read';
+  }
+
+  @override
+  String get libraryBookOptions => 'Book options';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

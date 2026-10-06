@@ -3912,4 +3912,12 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get attributionFreeBooksDescription =>
       'Karya klasik berasal dari Aozora Bunko, yang katalognya dibagikan di bawah CC BY 4.0. Level baca dan panjangnya diperkirakan dengan dataset aozorabunko-clean (CC BY 4.0). Bacaan berjenjang dibuat oleh NPO Tadoku Supporters, dibagikan di bawah CC BY-NC-ND 4.0, dan diunduh tanpa perubahan dari tadoku.org.';
+
+  @override
+  String readingProgressPercent({required int percent}) {
+    return '$percent% read';
+  }
+
+  @override
+  String get libraryBookOptions => 'Book options';
 }
