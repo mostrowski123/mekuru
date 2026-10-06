@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -450,6 +451,10 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
                   ref.watch(sentenceTranslationModeProvider) ==
                   SentenceTranslationMode.hidden,
               source: widget.saveSource,
+              highQuality:
+                  ref.watch(translationModelProvider) ==
+                      TranslationModelChoice.high &&
+                  defaultTargetPlatform == TargetPlatform.android,
               onSentenceEdited: widget.editable
                   ? (value) => setState(() => _editedSentence = value)
                   : null,

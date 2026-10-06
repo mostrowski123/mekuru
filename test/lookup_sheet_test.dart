@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -79,11 +83,20 @@ class _FixedTranslationMode extends SentenceTranslationModeNotifier {
   SentenceTranslationMode build() => mode;
 }
 
+class _HighQualityChosen extends TranslationModelNotifier {
+  @override
+  TranslationModelChoice build() => TranslationModelChoice.high;
+}
+
 /// An installed engine that prefixes "EN:", recording what it translates.
 class _FakeTranslationEngine implements TranslationEngine {
-  _FakeTranslationEngine({this.state = TranslationStatus.installed});
+  _FakeTranslationEngine({
+    this.state = TranslationStatus.installed,
+    this.prefix = 'EN:',
+  });
 
-  final TranslationStatus state;
+  TranslationStatus state;
+  final String prefix;
   final translated = <(String, String)>[];
   final downloaded = <String>[];
 
@@ -96,7 +109,7 @@ class _FakeTranslationEngine implements TranslationEngine {
   @override
   Future<String> translate(String text, String target) async {
     translated.add((text, target));
-    return 'EN:$text';
+    return '$prefix$text';
   }
 }
 
@@ -108,6 +121,47 @@ _FakeTranslationEngine _fakeTranslation({
   addTearDown(() => debugTranslationEngine = null);
   return engine;
 }
+
+/// Gemma, prefixing "HQ:"; its status also answers whether the model files
+/// are there. [download] defaults to one that never finishes.
+_FakeTranslationEngine _fakeHighQuality({
+  TranslationStatus state = TranslationStatus.installed,
+  Future<void> Function(void Function(double fraction) onProgress)? download,
+}) {
+  final engine = _FakeTranslationEngine(state: state, prefix: 'HQ:');
+  debugHighQualityEngine = engine;
+  debugGemmaModelOps = (
+    installed: () async => engine.state == TranslationStatus.installed,
+    download: download ?? (_) => Completer<void>().future,
+    delete: () async {},
+    cancel: () => true,
+  );
+  addTearDown(() {
+    debugHighQualityEngine = null;
+    debugGemmaModelOps = null;
+  });
+  return engine;
+}
+
+/// The engine of each `translation.shown` event.
+List<Object?> _shownEngines() {
+  final engines = <Object?>[];
+  usageLogSinkOverride = (message, attributes, {required isWarning}) {
+    if (message == 'translation.shown') {
+      engines.add(attributes['engine']?.value);
+    }
+  };
+  usageAnalyticsSinkOverride = (name, parameters) {};
+  addTearDown(() {
+    usageLogSinkOverride = null;
+    usageAnalyticsSinkOverride = null;
+  });
+  return engines;
+}
+
+const _notReady = "High quality isn't ready yet; using Standard.";
+
+final _android = TargetPlatformVariant.only(TargetPlatform.android);
 
 void main() {
   testWidgets('renders part-of-speech labels in lookup sheet results', (
@@ -372,6 +426,7 @@ void main() {
       WidgetTester tester,
       LookupSheet sheet, {
       SentenceTranslationMode mode = SentenceTranslationMode.shown,
+      bool highQuality = false,
     }) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -382,6 +437,8 @@ void main() {
             sentenceTranslationModeProvider.overrideWith(
               () => _FixedTranslationMode(mode),
             ),
+            if (highQuality)
+              translationModelProvider.overrideWith(_HighQualityChosen.new),
           ],
           child: buildLocalizedTestApp(
             home: Scaffold(body: SizedBox.expand(child: sheet)),
@@ -577,5 +634,100 @@ void main() {
         '卵を食べる！',
       );
     });
+
+    Future<void> startGemmaDownload(WidgetTester tester) async {
+      unawaited(
+        ProviderScope.containerOf(
+          tester.element(find.byType(LookupSheet)),
+        ).read(gemmaDownloadProvider.notifier).start(),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('translates with High quality when chosen and ready', (
+      tester,
+    ) async {
+      final engines = _shownEngines();
+      final standard = _fakeTranslation();
+      _fakeHighQuality();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: 'パンを食べる。'),
+        highQuality: true,
+      );
+      await openSentenceTab(tester);
+      // Gemma's first disk check reports it installed and reloads the tab.
+      await tester.pump();
+
+      expect(find.text('HQ:パンを食べる。'), findsOneWidget);
+      expect(find.text(_notReady), findsNothing);
+      expect(standard.translated, isEmpty);
+      expect(engines, ['gemma']);
+    }, variant: _android);
+
+    testWidgets('uses Standard, and says so, until High quality is ready', (
+      tester,
+    ) async {
+      final engines = _shownEngines();
+      _fakeTranslation();
+      _fakeHighQuality(state: TranslationStatus.needsDownload);
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '粥を食べる。'),
+        highQuality: true,
+      );
+      await openSentenceTab(tester);
+
+      expect(find.text('EN:粥を食べる。'), findsOneWidget);
+      expect(find.text(_notReady), findsOneWidget);
+      expect(engines, ['mozilla']);
+    }, variant: _android);
+
+    testWidgets('shows the High-quality download progress', (tester) async {
+      _fakeTranslation();
+      _fakeHighQuality(
+        state: TranslationStatus.needsDownload,
+        download: (onProgress) {
+          onProgress(0.3);
+          return Completer<void>().future;
+        },
+      );
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '芋を食べる。'),
+        highQuality: true,
+      );
+      await openSentenceTab(tester);
+      await startGemmaDownload(tester);
+
+      expect(find.text('EN:芋を食べる。'), findsOneWidget);
+      expect(find.text('High quality: downloading 30%'), findsOneWidget);
+      expect(find.text(_notReady), findsNothing);
+    }, variant: _android);
+
+    testWidgets('switches to High quality when its download finishes', (
+      tester,
+    ) async {
+      _fakeTranslation();
+      late final _FakeTranslationEngine high;
+      high = _fakeHighQuality(
+        state: TranslationStatus.needsDownload,
+        download: (_) async => high.state = TranslationStatus.installed,
+      );
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '餅を食べる。'),
+        highQuality: true,
+      );
+      await openSentenceTab(tester);
+      expect(find.text('EN:餅を食べる。'), findsOneWidget);
+      expect(find.text(_notReady), findsOneWidget);
+
+      await startGemmaDownload(tester);
+
+      expect(find.text('HQ:餅を食べる。'), findsOneWidget);
+      expect(find.text(_notReady), findsNothing);
+    }, variant: _android);
   });
 }

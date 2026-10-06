@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/main.dart' show scaffoldMessengerKey;
@@ -10,7 +12,7 @@ import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// The lookup sheet's Sentence tab: the sentence around the tapped word and
 /// its on-device translation into the app's language.
-class SentenceTranslationView extends StatefulWidget {
+class SentenceTranslationView extends ConsumerStatefulWidget {
   const SentenceTranslationView({
     super.key,
     required this.sentence,
@@ -18,6 +20,7 @@ class SentenceTranslationView extends StatefulWidget {
     required this.fontSize,
     required this.hidden,
     required this.source,
+    required this.highQuality,
     this.onSentenceEdited,
     this.onEditingStarted,
     this.onEditingEnded,
@@ -38,6 +41,9 @@ class SentenceTranslationView extends StatefulWidget {
   /// Where the sheet was opened from, for telemetry (`'epub'`, `'manga'`).
   final String source;
 
+  /// Translate with Gemma when it is ready (Android's High quality).
+  final bool highQuality;
+
   /// Set when the user may correct the sentence (OCR mistakes) before
   /// translating.
   final ValueChanged<String>? onSentenceEdited;
@@ -48,13 +54,17 @@ class SentenceTranslationView extends StatefulWidget {
   final bool shrinkWrap;
 
   @override
-  State<SentenceTranslationView> createState() =>
+  ConsumerState<SentenceTranslationView> createState() =>
       _SentenceTranslationViewState();
 }
 
-class _SentenceTranslationViewState extends State<SentenceTranslationView> {
+class _SentenceTranslationViewState
+    extends ConsumerState<SentenceTranslationView> {
   /// The engine's status, with the translation once it is installed.
-  Future<(TranslationStatus, String?)>? _translation;
+  Future<(TranslationStatus, SentenceTranslation?)>? _translation;
+
+  /// Counts loads so only the one on screen logs it.
+  var _loads = 0;
   String? _target;
   bool _downloading = false;
   late bool _revealed = !widget.hidden;
@@ -76,8 +86,9 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
   @override
   void didUpdateWidget(covariant SentenceTranslationView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.sentence != widget.sentence) {
-      _revealed = !widget.hidden;
+    if (oldWidget.sentence != widget.sentence) _revealed = !widget.hidden;
+    if (oldWidget.sentence != widget.sentence ||
+        oldWidget.highQuality != widget.highQuality) {
       _translation = _load();
     }
   }
@@ -88,30 +99,42 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
     super.dispose();
   }
 
-  Future<(TranslationStatus, String?)> _load() async {
+  Future<(TranslationStatus, SentenceTranslation?)> _load() async {
     final target = _target!;
+    final load = ++_loads;
     try {
-      final status = await translationStatus(target);
+      final status = await translationStatus(
+        target,
+        highQuality: widget.highQuality,
+      );
       if (status != TranslationStatus.installed) return (status, null);
-      final translation = (await translateSentence(
+      final result = await translateSentence(
         widget.sentence,
         target,
-      )).text;
-      logUsage(
-        'translation.shown',
-        attrs: {
-          'engine': _isIos ? 'apple' : 'mozilla',
-          'source': widget.source,
-        },
+        highQuality: widget.highQuality,
       );
-      return (status, translation);
+      // A newer load (Gemma just became ready) replaced this one on screen.
+      if (load == _loads) {
+        logUsage(
+          'translation.shown',
+          attrs: {
+            'engine': result.highQuality
+                ? 'gemma'
+                : (_isIos ? 'apple' : 'mozilla'),
+            'source': widget.source,
+          },
+        );
+      }
+      return (status, result);
     } catch (e) {
       logFailure('translation.failed', e);
       rethrow;
     }
   }
 
-  void _reload() => setState(() => _translation = _load());
+  void _reload() => setState(() {
+    _translation = _load();
+  });
 
   Future<void> _download() async {
     final target = _target!;
@@ -141,7 +164,8 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
       // iOS users can decline Apple's prompt: ask again what is installed.
       _translation = failure == null
           ? _load()
-          : (Future<(TranslationStatus, String?)>.error(failure)..ignore());
+          : (Future<(TranslationStatus, SentenceTranslation?)>.error(failure)
+              ..ignore());
     });
   }
 
@@ -175,6 +199,15 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
 
   @override
   Widget build(BuildContext context) {
+    // Never touched without High quality, so iOS leaves Gemma alone.
+    GemmaDownloadState? gemma;
+    if (widget.highQuality) {
+      gemma = ref.watch(gemmaDownloadProvider);
+      // The tab switches over once the model is ready.
+      ref.listen(gemmaDownloadProvider, (previous, next) {
+        if (next is GemmaInstalled && previous is! GemmaInstalled) _reload();
+      });
+    }
     return ListView(
       controller: widget.scrollController,
       // Never the route's scroll controller: offstage, this view sits next
@@ -185,9 +218,10 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
       children: [
         _editing ? _buildEditor() : _buildSentence(context),
         const SizedBox(height: 16),
-        FutureBuilder<(TranslationStatus, String?)>(
+        FutureBuilder<(TranslationStatus, SentenceTranslation?)>(
           future: _translation,
-          builder: _buildTranslation,
+          builder: (context, snapshot) =>
+              _buildTranslation(context, snapshot, gemma),
         ),
       ],
     );
@@ -253,7 +287,8 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
 
   Widget _buildTranslation(
     BuildContext context,
-    AsyncSnapshot<(TranslationStatus, String?)> snapshot,
+    AsyncSnapshot<(TranslationStatus, SentenceTranslation?)> snapshot,
+    GemmaDownloadState? gemma,
   ) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
@@ -280,7 +315,7 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
     if (data == null || snapshot.connectionState == ConnectionState.waiting) {
       return const Center(child: CircularProgressIndicator());
     }
-    final (status, translation) = data;
+    final (status, result) = data;
     switch (status) {
       case TranslationStatus.unsupported:
         return Text(l10n.sentenceTranslationUnsupported, style: muted);
@@ -335,7 +370,7 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
             ),
           );
         }
-        final text = translation ?? '';
+        final text = result?.text ?? '';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -350,6 +385,18 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
                 ),
               ),
             ),
+            if (widget.highQuality)
+              switch (gemma) {
+                GemmaDownloading(:final fraction) => _note(
+                  l10n.translationHighQualityDownloading(
+                    percent: '${(fraction * 100).floor()}',
+                  ),
+                ),
+                _ when !(result?.highQuality ?? true) => _note(
+                  l10n.translationHighQualityNotReady,
+                ),
+                _ => const SizedBox.shrink(),
+              },
             Row(
               children: [
                 Expanded(
@@ -372,5 +419,18 @@ class _SentenceTranslationViewState extends State<SentenceTranslationView> {
           ],
         );
     }
+  }
+
+  Widget _note(String text) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        text,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
   }
 }
