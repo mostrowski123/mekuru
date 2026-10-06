@@ -31,4 +31,28 @@ void main() {
       expect(loaded!.readerAnimations, isTrue);
     });
   });
+
+  group('SharedPreferencesReaderSettingsStorage - volume buttons', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    test('saves the choice and reloads it', () async {
+      final storage = SharedPreferencesReaderSettingsStorage();
+      await storage.save(
+        const ReaderSettings(volumeKeyPageTurn: VolumeKeyPageTurn.upNext),
+      );
+
+      final loaded = await storage.load();
+      expect(loaded!.volumeKeyPageTurn, VolumeKeyPageTurn.upNext);
+    });
+
+    test(
+      'volume down turns forward for installs that predate the key',
+      () async {
+        SharedPreferences.setMockInitialValues({'reader.font_size': 24.0});
+
+        final loaded = await SharedPreferencesReaderSettingsStorage().load();
+        expect(loaded!.volumeKeyPageTurn, VolumeKeyPageTurn.downNext);
+      },
+    );
+  });
 }

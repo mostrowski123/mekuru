@@ -6416,6 +6416,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reading position'**
   String get readerSeekBarLabel;
+
+  /// Reading settings (Android only): label above the choice of what the phone's volume buttons do in the EPUB and manga readers.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume buttons turn pages'**
+  String get readerVolumeKeysTitle;
+
+  /// Volume buttons option: they change the volume as usual.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get readerVolumeKeysOff;
+
+  /// Volume buttons option: volume down turns to the next page, volume up to the previous one. Keep short; it sits in a three-part segmented button.
+  ///
+  /// In en, this message translates to:
+  /// **'Down: next'**
+  String get readerVolumeKeysDownNext;
+
+  /// Volume buttons option: volume up turns to the next page, volume down to the previous one. Keep short; it sits in a three-part segmented button.
+  ///
+  /// In en, this message translates to:
+  /// **'Up: next'**
+  String get readerVolumeKeysUpNext;
 }
 
 class _AppLocalizationsDelegate

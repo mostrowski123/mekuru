@@ -117,6 +117,7 @@ class CustomEpubViewer extends StatefulWidget {
     this.onSentenceSelected,
     this.onLoadError,
     this.onPageCharacters,
+    this.onPageKey,
   });
 
   final CustomEpubController controller;
@@ -199,6 +200,11 @@ class CustomEpubViewer extends StatefulWidget {
   /// the screen (0 when paginated). Used for reading stats.
   final void Function(int count, String? pageKey, double screens)?
   onPageCharacters;
+
+  /// A page-turn key the page received while it had keyboard focus itself
+  /// (on iOS, after a tap into the text). [key] is the DOM key name, e.g.
+  /// `ArrowLeft`; see `domPageTurnKeys`.
+  final void Function(String key, bool shift)? onPageKey;
 
   @override
   State<CustomEpubViewer> createState() => _CustomEpubViewerState();
@@ -572,6 +578,17 @@ class _CustomEpubViewerState extends State<CustomEpubViewer> {
         return [
           for (final e in raw) needsFurigana?.call(e?.toString() ?? '') ?? true,
         ];
+      },
+    );
+
+    controller.addJavaScriptHandler(
+      handlerName: 'pageKey',
+      callback: (data) {
+        if (data.isEmpty) return;
+        widget.onPageKey?.call(
+          '${data[0]}',
+          data.length > 1 && data[1] == true,
+        );
       },
     );
 

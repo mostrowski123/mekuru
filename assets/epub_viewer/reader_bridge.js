@@ -44,6 +44,19 @@ function callDart(name) {
   }
 }
 
+// Page-turn keys pressed while the page itself has keyboard focus, which on
+// iOS it takes after a tap into the text (Flutter sees keys first
+// otherwise). Dart turns the page, so the WebView must not scroll instead.
+var PAGE_TURN_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', ' '];
+
+function forwardPageTurnKey(e) {
+  if (PAGE_TURN_KEYS.indexOf(e.key) === -1) return;
+  e.preventDefault();
+  callDart('pageKey', e.key, e.shiftKey);
+}
+
+document.addEventListener('keydown', forwardPageTurnKey);
+
 function callDartAsync(name) {
   var args = Array.prototype.slice.call(arguments, 1);
   try {
@@ -278,6 +291,8 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
       var metadata = book.packaging && book.packaging.metadata;
       root.setAttribute('lang', (metadata && metadata.language) || 'ja');
     }
+
+    doc.addEventListener('keydown', forwardPageTurnKey);
 
     // Furigana: inject visibility style and (lazily) generate ruby for kanji.
     applyFuriganaStyleToDoc(doc);

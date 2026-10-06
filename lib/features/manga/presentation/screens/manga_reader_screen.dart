@@ -1095,6 +1095,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       globalDirection,
       mangaAutoCropEnabled,
       readerAnimations,
+      volumeKeys,
     ) = ref.watch(
       readerSettingsProvider.select(
         (s) => (
@@ -1102,6 +1103,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           s.mangaReadingDirection,
           s.mangaAutoCrop,
           s.readerAnimations,
+          s.volumeKeyPageTurn,
         ),
       ),
     );
@@ -1209,170 +1211,176 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
               );
             }
 
-            return Stack(
-              children: [
-                // Page content with tap zones. In e-reader mode unzoomed
-                // swipes are detected from raw pointer events here (no
-                // gesture-arena entry that could fight pinch-zoom) and turn
-                // pages instantly; MangaZoomViewer handles every other swipe.
-                ReaderPageSemantics(
-                  label: context.l10n.readerPageOf(
-                    page: _currentPage + 1,
-                    total: totalPages,
+            return ReaderKeyNavigation(
+              direction: direction,
+              volumeKeys: volumeKeys,
+              onIntent: (intent) => _runIntent(intent, totalPages, spreads),
+              child: Stack(
+                children: [
+                  // Page content with tap zones. In e-reader mode unzoomed
+                  // swipes are detected from raw pointer events here (no
+                  // gesture-arena entry that could fight pinch-zoom) and turn
+                  // pages instantly; MangaZoomViewer handles every other swipe.
+                  ReaderPageSemantics(
+                    label: context.l10n.readerPageOf(
+                      page: _currentPage + 1,
+                      total: totalPages,
+                    ),
+                    onIntent: (intent) =>
+                        _runIntent(intent, totalPages, spreads),
+                    child: Listener(
+                      onPointerDown: animatePageTurns
+                          ? null
+                          : _onEreaderPointerDown,
+                      onPointerCancel: animatePageTurns
+                          ? null
+                          : _onEreaderPointerCancel,
+                      onPointerUp: animatePageTurns
+                          ? null
+                          : (event) => _onEreaderPointerUp(
+                              event,
+                              viewMode,
+                              direction,
+                              totalPages,
+                              spreads,
+                            ),
+                      child: GestureDetector(
+                        // A screen reader's tap arrives at (0,0), which reads as
+                        // an edge tap and turns the page; ReaderPageSemantics
+                        // handles those instead.
+                        excludeFromSemantics: true,
+                        onTapUp: (details) =>
+                            _handleTap(details, totalPages, direction, spreads),
+                        child: _buildViewContent(
+                          mokuroBook,
+                          viewMode,
+                          spreads,
+                          totalPages,
+                          isRtl,
+                          autoCrop,
+                          animatePageTurns,
+                        ),
+                      ),
+                    ),
                   ),
-                  onIntent: (intent) => _runIntent(intent, totalPages, spreads),
-                  child: Listener(
-                    onPointerDown: animatePageTurns
-                        ? null
-                        : _onEreaderPointerDown,
-                    onPointerCancel: animatePageTurns
-                        ? null
-                        : _onEreaderPointerCancel,
-                    onPointerUp: animatePageTurns
-                        ? null
-                        : (event) => _onEreaderPointerUp(
-                            event,
-                            viewMode,
-                            direction,
-                            totalPages,
-                            spreads,
+
+                  LocalOcrPageOverlay(
+                    bookId: widget.book.id,
+                    visiblePages: _visiblePageIndexes(viewMode, spreads),
+                  ),
+
+                  // Top controls bar
+                  if (_showControls)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        // Solid behind the controls, fading out below them.
+                        padding: const EdgeInsets.only(bottom: 16),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: [0, 0.8, 1],
+                            colors: [
+                              Colors.black87,
+                              Colors.black87,
+                              Colors.transparent,
+                            ],
                           ),
-                    child: GestureDetector(
-                      // A screen reader's tap arrives at (0,0), which reads as
-                      // an edge tap and turns the page; ReaderPageSemantics
-                      // handles those instead.
-                      excludeFromSemantics: true,
-                      onTapUp: (details) =>
-                          _handleTap(details, totalPages, direction, spreads),
-                      child: _buildViewContent(
-                        mokuroBook,
-                        viewMode,
-                        spreads,
-                        totalPages,
-                        isRtl,
-                        autoCrop,
-                        animatePageTurns,
-                      ),
-                    ),
-                  ),
-                ),
-
-                LocalOcrPageOverlay(
-                  bookId: widget.book.id,
-                  visiblePages: _visiblePageIndexes(viewMode, spreads),
-                ),
-
-                // Top controls bar
-                if (_showControls)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      // Solid behind the controls, fading out below them.
-                      padding: const EdgeInsets.only(bottom: 16),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: [0, 0.8, 1],
-                          colors: [
-                            Colors.black87,
-                            Colors.black87,
-                            Colors.transparent,
-                          ],
                         ),
-                      ),
-                      child: SafeArea(
-                        bottom: false,
-                        child: Row(
-                          children: [
-                            IconButton(
-                              tooltip: context.l10n.commonBack,
-                              icon: const Icon(
-                                Icons.arrow_back,
-                                color: Colors.white,
-                              ),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            Expanded(
-                              child: Text(
-                                widget.book.title,
-                                style: const TextStyle(
+                        child: SafeArea(
+                          bottom: false,
+                          child: Row(
+                            children: [
+                              IconButton(
+                                tooltip: context.l10n.commonBack,
+                                icon: const Icon(
+                                  Icons.arrow_back,
                                   color: Colors.white,
-                                  fontSize: 16,
                                 ),
-                                overflow: TextOverflow.ellipsis,
+                                onPressed: () => Navigator.pop(context),
                               ),
-                            ),
-                            IconButton(
-                              tooltip: context.l10n.localOcrRecognizeQuick,
-                              icon: const Icon(
-                                Icons.document_scanner,
-                                color: Colors.white,
+                              Expanded(
+                                child: Text(
+                                  widget.book.title,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              onPressed: () => _quickOcr(
-                                mokuroBook,
-                                _visiblePageIndexes(viewMode, spreads),
+                              IconButton(
+                                tooltip: context.l10n.localOcrRecognizeQuick,
+                                icon: const Icon(
+                                  Icons.document_scanner,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () => _quickOcr(
+                                  mokuroBook,
+                                  _visiblePageIndexes(viewMode, spreads),
+                                ),
+                                onLongPress: () => _showOcrOptions(
+                                  mokuroBook,
+                                  _visiblePageIndexes(viewMode, spreads),
+                                ),
                               ),
-                              onLongPress: () => _showOcrOptions(
-                                mokuroBook,
-                                _visiblePageIndexes(viewMode, spreads),
+                              IconButton(
+                                tooltip: context.l10n.settingsTitle,
+                                icon: const Icon(
+                                  Icons.settings,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () => _showSettingsSheet(mokuroBook),
                               ),
-                            ),
-                            IconButton(
-                              tooltip: context.l10n.settingsTitle,
-                              icon: const Icon(
-                                Icons.settings,
-                                color: Colors.white,
-                              ),
-                              onPressed: () => _showSettingsSheet(mokuroBook),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                // Bottom controls bar with page slider
-                if (_showControls)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: ReaderSeekBar(
-                      value: _currentPage.toDouble(),
-                      isRtl: isRtl,
-                      max: (totalPages - 1).toDouble(),
-                      divisions: totalPages > 1 ? totalPages - 1 : null,
-                      leadingLabel: (value) => '${value.round() + 1}',
-                      trailingLabel: '$totalPages',
-                      semanticValue: (value) => context.l10n.readerPageOf(
-                        page: value.round() + 1,
-                        total: totalPages,
+                  // Bottom controls bar with page slider
+                  if (_showControls)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: ReaderSeekBar(
+                        value: _currentPage.toDouble(),
+                        isRtl: isRtl,
+                        max: (totalPages - 1).toDouble(),
+                        divisions: totalPages > 1 ? totalPages - 1 : null,
+                        leadingLabel: (value) => '${value.round() + 1}',
+                        trailingLabel: '$totalPages',
+                        semanticValue: (value) => context.l10n.readerPageOf(
+                          page: value.round() + 1,
+                          total: totalPages,
+                        ),
+                        onChanged: (value) {
+                          final page = value.round();
+                          _holdPrecacheDuringSeek();
+                          switch (viewMode) {
+                            case MangaViewMode.singlePage:
+                              _goToPage(page, totalPages);
+                            case MangaViewMode.twoPageSpread:
+                              final si = spreadIndexForPage(spreads, page);
+                              _spreadViewKey.currentState?.goToSpread(
+                                si,
+                                animate: _animatePageTurns,
+                              );
+                            case MangaViewMode.scroll:
+                              _scrollViewKey.currentState?.scrollToPage(
+                                page,
+                                animate: _animatePageTurns,
+                              );
+                          }
+                        },
                       ),
-                      onChanged: (value) {
-                        final page = value.round();
-                        _holdPrecacheDuringSeek();
-                        switch (viewMode) {
-                          case MangaViewMode.singlePage:
-                            _goToPage(page, totalPages);
-                          case MangaViewMode.twoPageSpread:
-                            final si = spreadIndexForPage(spreads, page);
-                            _spreadViewKey.currentState?.goToSpread(
-                              si,
-                              animate: _animatePageTurns,
-                            );
-                          case MangaViewMode.scroll:
-                            _scrollViewKey.currentState?.scrollToPage(
-                              page,
-                              animate: _animatePageTurns,
-                            );
-                        }
-                      },
                     ),
-                  ),
-              ],
+                ],
+              ),
             );
           },
         ),

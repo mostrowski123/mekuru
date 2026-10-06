@@ -3981,4 +3981,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get readerSeekBarLabel => 'Reading position';
+
+  @override
+  String get readerVolumeKeysTitle => 'Volume buttons turn pages';
+
+  @override
+  String get readerVolumeKeysOff => 'Off';
+
+  @override
+  String get readerVolumeKeysDownNext => 'Down: next';
+
+  @override
+  String get readerVolumeKeysUpNext => 'Up: next';
 }

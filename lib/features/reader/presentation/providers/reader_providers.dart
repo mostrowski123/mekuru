@@ -142,6 +142,10 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     _update(state.copyWith(readerAnimations: enabled));
   }
 
+  void setVolumeKeyPageTurn(VolumeKeyPageTurn value) {
+    _update(state.copyWith(volumeKeyPageTurn: value));
+  }
+
   void setFontFamily(ReaderFontFamily family) {
     _update(state.copyWith(fontFamily: family));
   }

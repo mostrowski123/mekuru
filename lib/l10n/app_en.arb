@@ -5060,5 +5060,21 @@
   "readerSeekBarLabel": "Reading position",
   "@readerSeekBarLabel": {
     "description": "Screen-reader label of the slider at the bottom of the readers that jumps through the book."
+  },
+  "readerVolumeKeysTitle": "Volume buttons turn pages",
+  "@readerVolumeKeysTitle": {
+    "description": "Reading settings (Android only): label above the choice of what the phone's volume buttons do in the EPUB and manga readers."
+  },
+  "readerVolumeKeysOff": "Off",
+  "@readerVolumeKeysOff": {
+    "description": "Volume buttons option: they change the volume as usual."
+  },
+  "readerVolumeKeysDownNext": "Down: next",
+  "@readerVolumeKeysDownNext": {
+    "description": "Volume buttons option: volume down turns to the next page, volume up to the previous one. Keep short; it sits in a three-part segmented button."
+  },
+  "readerVolumeKeysUpNext": "Up: next",
+  "@readerVolumeKeysUpNext": {
+    "description": "Volume buttons option: volume up turns to the next page, volume down to the previous one. Keep short; it sits in a three-part segmented button."
   }
 }

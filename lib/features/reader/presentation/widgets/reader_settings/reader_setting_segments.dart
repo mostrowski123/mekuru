@@ -111,3 +111,22 @@ List<ButtonSegment<ReaderFontFamily>> readerFontFamilySegments(
       ),
   ];
 }
+
+List<ButtonSegment<VolumeKeyPageTurn>> volumeKeyPageTurnSegments(
+  AppLocalizations l10n,
+) {
+  return [
+    ButtonSegment(
+      value: VolumeKeyPageTurn.off,
+      label: Text(l10n.readerVolumeKeysOff),
+    ),
+    ButtonSegment(
+      value: VolumeKeyPageTurn.downNext,
+      label: Text(l10n.readerVolumeKeysDownNext),
+    ),
+    ButtonSegment(
+      value: VolumeKeyPageTurn.upNext,
+      label: Text(l10n.readerVolumeKeysUpNext),
+    ),
+  ];
+}

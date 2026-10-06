@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/features/settings/data/services/ocr_server_config.dart'
@@ -54,6 +55,17 @@ class _ReadingSettingsScreenState extends ConsumerState<ReadingSettingsScreen> {
             value: settings.readerAnimations,
             onChanged: notifier.setReaderAnimations,
           ),
+          // iOS doesn't let apps take over the volume buttons.
+          if (defaultTargetPlatform == TargetPlatform.android)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: SettingsSegmentedRow<VolumeKeyPageTurn>(
+                label: l10n.readerVolumeKeysTitle,
+                segments: volumeKeyPageTurnSegments(l10n),
+                selected: settings.volumeKeyPageTurn,
+                onSelected: notifier.setVolumeKeyPageTurn,
+              ),
+            ),
           const Divider(),
 
           // ── EPUB ──

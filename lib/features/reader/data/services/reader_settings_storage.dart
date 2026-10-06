@@ -33,6 +33,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
   // Historical key: the toggle started as manga-only. Kept so users who
   // already turned it off stay off.
   static const _readerAnimationsKey = 'reader.manga_page_turn_animation';
+  static const _volumeKeyPageTurnKey = 'reader.volume_key_page_turn';
 
   /// Every SharedPreferences key this storage reads or writes. The backup
   /// service derives its reader key list from this, so a key added here is
@@ -59,6 +60,7 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
     _mangaAutoCropKey,
     _mangaTransparentLookupKey,
     _readerAnimationsKey,
+    _volumeKeyPageTurnKey,
   ];
 
   @override
@@ -103,6 +105,9 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       mangaAutoCrop: prefs.getBool(_mangaAutoCropKey) ?? false,
       mangaTransparentLookup: prefs.getBool(_mangaTransparentLookupKey) ?? true,
       readerAnimations: prefs.getBool(_readerAnimationsKey) ?? true,
+      volumeKeyPageTurn: volumeKeyPageTurnFromString(
+        prefs.getString(_volumeKeyPageTurnKey),
+      ),
     );
   }
 
@@ -145,6 +150,10 @@ class SharedPreferencesReaderSettingsStorage implements ReaderSettingsStorage {
       settings.mangaTransparentLookup,
     );
     await prefs.setBool(_readerAnimationsKey, settings.readerAnimations);
+    await prefs.setString(
+      _volumeKeyPageTurnKey,
+      settings.volumeKeyPageTurn.storageValue,
+    );
     // An absent key means "follow the system brightness".
     final brightness = settings.brightness;
     if (brightness == null) {

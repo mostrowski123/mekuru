@@ -77,6 +77,28 @@ extension MangaViewModeStorage on MangaViewMode {
   String get storageValue => name;
 }
 
+/// What the volume buttons do while a reader is open. Android only: iOS
+/// doesn't let apps take over the volume buttons.
+enum VolumeKeyPageTurn {
+  off,
+
+  /// Volume down turns to the next page, volume up to the previous one.
+  downNext,
+  upNext,
+}
+
+VolumeKeyPageTurn volumeKeyPageTurnFromString(String? value) {
+  return switch (value) {
+    'off' => VolumeKeyPageTurn.off,
+    'upNext' => VolumeKeyPageTurn.upNext,
+    _ => VolumeKeyPageTurn.downNext,
+  };
+}
+
+extension VolumeKeyPageTurnStorage on VolumeKeyPageTurn {
+  String get storageValue => name;
+}
+
 /// Default width fraction reserved for page-turn taps on each device edge in
 /// the manga reader.
 const double kDefaultMangaPageTurnEdgeZoneWidthFraction = 0.15;
@@ -191,6 +213,9 @@ class ReaderSettings {
   /// transitions ghost.
   final bool readerAnimations;
 
+  /// Whether and which way the volume buttons turn pages in both readers.
+  final VolumeKeyPageTurn volumeKeyPageTurn;
+
   const ReaderSettings({
     this.fontSize = 18,
     this.fontFamily = ReaderFontFamily.book,
@@ -216,6 +241,7 @@ class ReaderSettings {
     this.mangaAutoCrop = false,
     this.mangaTransparentLookup = true,
     this.readerAnimations = true,
+    this.volumeKeyPageTurn = VolumeKeyPageTurn.downNext,
   });
 
   ReaderSettings copyWith({
@@ -243,6 +269,7 @@ class ReaderSettings {
     bool? mangaAutoCrop,
     bool? mangaTransparentLookup,
     bool? readerAnimations,
+    VolumeKeyPageTurn? volumeKeyPageTurn,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
@@ -273,6 +300,7 @@ class ReaderSettings {
       mangaTransparentLookup:
           mangaTransparentLookup ?? this.mangaTransparentLookup,
       readerAnimations: readerAnimations ?? this.readerAnimations,
+      volumeKeyPageTurn: volumeKeyPageTurn ?? this.volumeKeyPageTurn,
     );
   }
 }
