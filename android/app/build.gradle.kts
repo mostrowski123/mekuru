@@ -358,8 +358,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 
     defaultConfig {
@@ -410,6 +412,8 @@ android {
 
 dependencies {
     implementation("com.github.ankidroid:Anki-Android:v2.17.4")
+    // High-quality sentence translation: Gemma 4 in Google's LiteRT-LM (GemmaBridge).
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.17.1")
     testImplementation("junit:junit:4.13.2")
     // The real org.json for JVM unit tests; the android.jar stub throws.
     testImplementation("org.json:json:20250517")

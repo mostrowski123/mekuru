@@ -41,6 +41,9 @@
             android:name=".FullBackupJobService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+        <!-- LiteRT-LM's GPU backend (GemmaBridge); CPU is used where absent. -->
+        <uses-native-library android:name="libOpenCL.so" android:required="false"/>
+        <uses-native-library android:name="libvndksupport.so" android:required="false"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

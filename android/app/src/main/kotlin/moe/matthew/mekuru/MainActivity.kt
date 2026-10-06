@@ -54,6 +54,7 @@ class MainActivity : FlutterActivity() {
 
     private val fullBackupBridge = FullBackupJobBridge(this)
     private var fullBackupRecovered = false
+    private val gemmaBridge = GemmaBridge()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,6 +78,11 @@ class MainActivity : FlutterActivity() {
         super.onPause()
     }
 
+    override fun onDestroy() {
+        gemmaBridge.dispose()
+        super.onDestroy()
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         // Used by touch alone, the app never gives the FlutterView input focus,
@@ -95,6 +101,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         fullBackupBridge.attach(flutterEngine.dartExecutor.binaryMessenger)
+        gemmaBridge.attach(flutterEngine.dartExecutor.binaryMessenger)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SAF_CHANNEL_NAME)
             .setMethodCallHandler { call, result ->
