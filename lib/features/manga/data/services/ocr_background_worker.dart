@@ -434,7 +434,17 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
           getBearerToken: () => bearerToken!,
           httpClient: ocrServerHttpClientFromPrefs(prefs, serverUrl),
         );
-  final processPage = ocrClient?.processPage ?? recognizePageWithVision;
+  final ndlModelDir = inputData['ndlModelDir'] as String?;
+  final processPage =
+      ocrClient?.processPage ??
+      (Uint8List bytes, String name, {String? jobId, int? pageIndex}) =>
+          recognizePageWithVision(
+            bytes,
+            name,
+            jobId: jobId,
+            pageIndex: pageIndex,
+            ndlModelDir: ndlModelDir,
+          );
   final billingClient = effectiveJobId == null ? null : OcrBillingClient();
   var finalizationSent = false;
 
@@ -1199,7 +1209,8 @@ List<int> _runningOcrBookIds(SharedPreferences prefs) => [
           bookId,
 ];
 
-/// Schedule an OCR task for a book.
+/// Schedule an OCR task for a book. [ndlModelDir] is the NDL text-line
+/// model that reads long lines in on-device Vision scans (iOS).
 Future<void> scheduleOcrTask({
   required int bookId,
   required String cacheFilePath,
@@ -1209,6 +1220,7 @@ Future<void> scheduleOcrTask({
   List<int>? selectedPages,
   bool replace = false,
   bool onDevice = false,
+  String? ndlModelDir,
 }) async {
   if ((jobId == null) != (reservedPages == null)) {
     throw ArgumentError('jobId and reservedPages must be provided together.');
@@ -1258,6 +1270,7 @@ Future<void> scheduleOcrTask({
             'selectedPages': ?selectedPages,
             'replace': replace,
             'onDevice': onDevice,
+            'ndlModelDir': ?ndlModelDir,
             ...?jobId == null ? null : {'jobId': jobId},
             ...?reservedPages == null ? null : {'reservedPages': reservedPages},
           });

@@ -6,6 +6,7 @@ import 'package:mekuru/core/platform/network_status.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'manga_ocr_ios.dart';
 import 'model_download.dart';
 
 const _ndlBase =
@@ -72,6 +73,9 @@ class NdlTextModel {
   }
 
   Future<void> remove() async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      await MangaOcrIos.instance.unloadNdl();
+    }
     final dir = Directory(await path);
     if (await dir.exists()) await dir.delete(recursive: true);
   }

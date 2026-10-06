@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 
 import 'manga_ocr_algorithms.dart';
 import 'model_download.dart';
+import 'ndl_ocr_algorithms.dart';
+import 'ndl_text_model.dart';
 import 'vision_block_grouping.dart';
 
 /// The same manga-ocr files Android downloads (its `manifest.json`; a test
@@ -87,20 +89,28 @@ class MangaOcrIos {
     if (await dir.exists()) await dir.delete(recursive: true);
   }
 
-  /// manga-ocr's reading of each block, split back onto the block's lines
-  /// (Vision's own lines for a block with a line too long for it), or null
-  /// when the models are not installed or anything fails: the caller then
-  /// keeps Vision's own text.
+  /// manga-ocr's reading of each block, split back onto the block's lines,
+  /// or null when there is nothing to read with or anything fails: the
+  /// caller then keeps Vision's own text.
+  ///
+  /// A block with a line too long for manga-ocr keeps Vision's lines, except
+  /// that with [ndlModelDir] (the NDL text-line model, `ndl_text_model.dart`)
+  /// each long line is read by NDL. Tadoku graded readers, 20 pages: 8.3% of
+  /// characters wrong with Vision's lines, 4.2% with NDL's. NDL works without
+  /// the manga-ocr pack; the other blocks then keep Vision's text.
   Future<List<List<String>>?> readBlocks(
     Uint8List imageBytes,
-    List<VisionBlock> blocks,
-  ) async {
+    List<VisionBlock> blocks, {
+    String? ndlModelDir,
+  }) async {
     try {
-      if (blocks.isEmpty || !await installed) return null;
+      final useNdl = ndlModelDir != null && blocks.any(_hasLongLine);
+      final useMangaOcr = blocks.isNotEmpty && await installed;
+      if (!useMangaOcr && !useNdl) return null;
       final dir = (await _dir()).path;
-      final vocab = _vocab ??= await File(
-        p.join(dir, 'vocab.txt'),
-      ).readAsLines();
+      final vocab = useMangaOcr
+          ? _vocab ??= await File(p.join(dir, 'vocab.txt')).readAsLines()
+          : null;
       final models = {
         'encoder': p.join(dir, 'encoder_model_fp16.onnx'),
         'decoder': p.join(dir, 'decoder_model_int8.onnx'),
@@ -125,7 +135,22 @@ class MangaOcrIos {
         // stay shorter (5 of 2211 Manga109-s blocks, which Vision reads a
         // little better anyway); a text page's do not (Tadoku graded readers:
         // 77% of characters wrong, Vision's own text 8%).
-        if (visionLines.any((l) => l.runes.length > _maxLineChars)) {
+        if (_hasLongLine(block)) {
+          out.add([
+            for (final line in block.lines)
+              ndlModelDir != null && _isLong(line.text)
+                  ? await _readLineWithNdl(
+                      ndlModelDir,
+                      line,
+                      rgba,
+                      width,
+                      height,
+                    )
+                  : line.text,
+          ]);
+          continue;
+        }
+        if (vocab == null) {
           out.add(visionLines);
           continue;
         }
@@ -152,6 +177,69 @@ class MangaOcrIos {
       debugPrint('[MangaOcrIos] falling back to Vision text: $e');
       return null;
     }
+  }
+
+  static bool _isLong(String line) => line.runes.length > _maxLineChars;
+
+  static bool _hasLongLine(VisionBlock block) =>
+      block.lines.any((l) => _isLong(l.text));
+
+  /// NDL's reading of one line (its Vision box, no padding: padding hurt),
+  /// cleaned like manga-ocr's, or Vision's text when NDL fails or reads
+  /// nothing.
+  Future<String> _readLineWithNdl(
+    String dir,
+    VisionLine line,
+    Uint8List rgba,
+    int width,
+    int height,
+  ) async {
+    try {
+      final pixels = NdlPixels.modelInput(
+        rgba,
+        width,
+        height,
+        left: line.left.floor(),
+        top: line.top.floor(),
+        right: line.right.ceil(),
+        bottom: line.bottom.ceil(),
+      );
+      final charset = _ndlCharsets[dir] ??= parseNdlCharset(
+        await File(_ndlFile(dir, '.yaml')).readAsString(),
+      );
+      final out = await _oneAtATime(() async {
+        await _channel.invokeMethod('ndlLoad', _ndlFile(dir, '.onnx'));
+        return _channel.invokeMapMethod<String, Object?>('ndlRun', pixels);
+      });
+      // manga-ocr's text conventions (no whitespace, ASCII full width), as
+      // Android does.
+      final text = MangaOcrDecode.postProcess(
+        ndlDecode(
+          out!['logits'] as Float32List,
+          out['steps'] as int,
+          out['classes'] as int,
+          charset,
+        ),
+      );
+      if (text.isNotEmpty) return text;
+    } catch (e) {
+      debugPrint('[MangaOcrIos] NDL failed, keeping Vision text: $e');
+    }
+    return line.text;
+  }
+
+  /// Parsed once per model directory.
+  final _ndlCharsets = <String, List<String>>{};
+
+  static String _ndlFile(String dir, String extension) => p.join(
+    dir,
+    ndlTextModelFiles.firstWhere((f) => f.name.endsWith(extension)).name,
+  );
+
+  /// Frees the NDL session, before its files are removed.
+  Future<void> unloadNdl() async {
+    await _oneAtATime(() => _channel.invokeMethod<void>('ndlUnload'));
+    _ndlCharsets.clear();
   }
 
   /// The native model keeps one encoder output, which every decode step

@@ -10,12 +10,14 @@ const _channel = MethodChannel('mekuru/vision_ocr');
 /// On-device OCR for one manga page on iOS: Apple Vision finds and reads the
 /// text lines (`AppDelegate.swift`), [groupVisionLines] turns them into
 /// blocks. Same signature as [MangaOcrClient.processPage] so the page loop in
-/// `ocr_background_worker.dart` can use either.
+/// `ocr_background_worker.dart` can use either. [ndlModelDir] goes to
+/// [MangaOcrIos.readBlocks].
 Future<OcrPageResult> recognizePageWithVision(
   Uint8List imageBytes,
   String filename, {
   String? jobId,
   int? pageIndex,
+  String? ndlModelDir,
 }) async {
   final Map<String, dynamic>? page;
   try {
@@ -42,7 +44,11 @@ Future<OcrPageResult> recognizePageWithVision(
   // Vision finds the text; manga-ocr reads it better (Manga109-s: 9.5% of
   // characters wrong against Vision's 15.6% on the same blocks). Without the
   // model pack this is null and Vision's own text stays.
-  final readings = await MangaOcrIos.instance.readBlocks(imageBytes, blocks);
+  final readings = await MangaOcrIos.instance.readBlocks(
+    imageBytes,
+    blocks,
+    ndlModelDir: ndlModelDir,
+  );
   return OcrPageResult(
     imgWidth: page['width'] as int,
     imgHeight: page['height'] as int,

@@ -80,7 +80,7 @@ Future<bool> startOcr(
   final replace = policy == OcrExistingPolicy.replace;
 
   /// The Dart page loop: a server per page, or Apple Vision when [onDevice].
-  Future<bool> runPageLoop({bool onDevice = false}) async {
+  Future<bool> runPageLoop({bool onDevice = false, String? ndlModelDir}) async {
     // Before any run, not only a replacing one: Delete OCR restores the text
     // the book came with, also around what a run adds to a PDF's pages.
     await ref
@@ -95,6 +95,7 @@ Future<bool> startOcr(
       selectedPages: pages,
       replace: replace,
       onDevice: onDevice,
+      ndlModelDir: ndlModelDir,
     );
     ref.invalidate(ocrProgressProvider(book.id));
     return true;

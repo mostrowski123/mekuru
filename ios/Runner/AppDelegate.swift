@@ -67,6 +67,10 @@ import onnxruntime_objc
           MangaOcrModel.shared.handle(call, result: result)
           return
         }
+        if call.method.hasPrefix("ndl") {
+          NdlTextRecognizer.shared.handle(call, result: result)
+          return
+        }
         if call.method == "decodeRgba",
           let bytes = (call.arguments as? FlutterStandardTypedData)?.data
         {
@@ -330,6 +334,81 @@ final class MangaOcrModel {
       let vocabulary = all.count / MemoryLayout<Float>.size / ids.count
       let last = all.suffix(vocabulary * MemoryLayout<Float>.size)
       return FlutterStandardTypedData(float32: Data(last))
+    default:
+      return FlutterMethodNotImplemented
+    }
+  }
+}
+
+/// NDLOCR-Lite's text-line recognizer (PARSeq, National Diet Library, CC BY
+/// 4.0) on ONNX Runtime, as thin as `MangaOcrModel`: Dart crops, resizes and
+/// normalises the line and decodes the logits (`ndl_ocr_algorithms.dart`);
+/// this only runs the one session, on its own serial queue.
+///  - `ndlLoad(path)`: loads the .onnx, again only when the path changed.
+///  - `ndlRun(float32 [1, 3, 24, 768])`: `{logits: float32, steps, classes}`,
+///    the output `[1, steps, classes]` as it is.
+///  - `ndlUnload()`.
+final class NdlTextRecognizer {
+  static let shared = NdlTextRecognizer()
+
+  private let queue = DispatchQueue(label: "mekuru.ndl_text")
+  private var env: ORTEnv?
+  private var session: ORTSession?
+  private var modelPath: String?
+
+  func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    queue.async {
+      let reply: Any?
+      do {
+        reply = try self.run(call)
+      } catch {
+        reply = FlutterError(code: "ndl_failed", message: error.localizedDescription, details: nil)
+      }
+      DispatchQueue.main.async { result(reply) }
+    }
+  }
+
+  private func run(_ call: FlutterMethodCall) throws -> Any? {
+    switch call.method {
+    case "ndlLoad":
+      guard let path = call.arguments as? String else { return FlutterMethodNotImplemented }
+      if session == nil || path != modelPath {
+        (session, modelPath, env) = (nil, nil, nil)
+        let env = try ORTEnv(loggingLevel: .warning)
+        let options = try ORTSessionOptions()
+        session = try ORTSession(env: env, modelPath: path, sessionOptions: options)
+        self.env = env
+        modelPath = path
+      }
+      return true
+    case "ndlUnload":
+      (session, modelPath, env) = (nil, nil, nil)
+      return nil
+    case "ndlRun":
+      guard let pixels = (call.arguments as? FlutterStandardTypedData)?.data, let session else {
+        return FlutterMethodNotImplemented
+      }
+      // The export names its tensors "images" and "40489": ask, rather than
+      // hard-code a number the next export changes.
+      guard let inputName = try session.inputNames().first,
+        let outputName = try session.outputNames().first
+      else { return FlutterMethodNotImplemented }
+      let input = try ORTValue(
+        tensorData: NSMutableData(data: pixels), elementType: .float, shape: [1, 3, 24, 768])
+      guard
+        let logits = try session.run(
+          withInputs: [inputName: input], outputNames: [outputName], runOptions: nil)[outputName]
+      else { return FlutterMethodNotImplemented }
+      let shape = try logits.tensorTypeAndShapeInfo().shape
+      guard shape.count == 3 else { return FlutterMethodNotImplemented }
+      // tensorData() shares the output's memory, which goes with `logits`:
+      // copy it before the reply leaves this scope.
+      let raw = try logits.tensorData()
+      return [
+        "logits": FlutterStandardTypedData(float32: Data(bytes: raw.bytes, count: raw.length)),
+        "steps": shape[1].intValue,
+        "classes": shape[2].intValue,
+      ]
     default:
       return FlutterMethodNotImplemented
     }
