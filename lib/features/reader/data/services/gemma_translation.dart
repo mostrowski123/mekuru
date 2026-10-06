@@ -41,9 +41,9 @@ class GemmaTranslation implements TranslationEngine {
   static const _marker = 'INSTALLED';
   static const _idleLifetime = Duration(minutes: 5);
 
+  // Not under translation_models/: removing Standard deletes that folder.
   late final Future<Directory> _dir = getApplicationSupportDirectory().then(
-    (support) =>
-        Directory(p.join(support.path, 'translation_models', 'gemma-4-e2b')),
+    (support) => Directory(p.join(support.path, 'gemma-4-e2b')),
   );
   String? _loadedPath;
   Timer? _idleTimer;

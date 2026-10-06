@@ -42,12 +42,7 @@ void main() {
 
         final support = await getApplicationSupportDirectory();
         final model = File(
-          p.join(
-            support.path,
-            'translation_models',
-            'gemma-4-e2b',
-            gemmaModelFile.name,
-          ),
+          p.join(support.path, 'gemma-4-e2b', gemmaModelFile.name),
         );
         // Loading the live model again is a no-op that names its backend.
         final backend = await const MethodChannel('mekuru/gemma')
