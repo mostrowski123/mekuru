@@ -102,8 +102,13 @@ class GemmaTranslation implements TranslationEngine {
   }
 
   /// Stops a running [downloadModel], which then throws. The partial file
-  /// stays, so the next download resumes from it.
-  void cancelDownload() => _downloadClient?.close(force: true);
+  /// stays, so the next download resumes from it. False when there was no
+  /// transfer to stop (it hasn't started, or the file is being verified).
+  bool cancelDownload() {
+    final client = _downloadClient;
+    client?.close(force: true);
+    return client != null;
+  }
 
   /// Closes the engine and removes the model.
   Future<void> delete() async {

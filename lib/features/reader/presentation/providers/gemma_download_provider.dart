@@ -32,7 +32,7 @@ typedef GemmaModelOps = ({
   Future<bool> Function() installed,
   Future<void> Function(void Function(double fraction) onProgress) download,
   Future<void> Function() delete,
-  void Function() cancel,
+  bool Function() cancel,
 });
 
 /// Replaces the real model files in tests.
@@ -57,6 +57,10 @@ GemmaModelOps get _ops =>
 class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
   var _cancelling = false;
 
+  /// Bumped when [start] or [remove] finishes, so a [refresh] that was
+  /// already checking the disk doesn't overwrite their newer state.
+  var _epoch = 0;
+
   @override
   GemmaDownloadState build() {
     unawaited(refresh());
@@ -66,8 +70,9 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
   Future<void> refresh() async {
     // Checks the state only after the await: build() calls this before its
     // state exists, and a download may start while the check runs.
+    final epoch = _epoch;
     final installed = await _ops.installed();
-    if (state is GemmaDownloading) return;
+    if (epoch != _epoch || state is GemmaDownloading) return;
     state = installed ? const GemmaInstalled() : const GemmaNotInstalled();
   }
 
@@ -90,18 +95,24 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
       }
       logFailure('translation.high_quality_download_failed', e);
       state = GemmaDownloadFailed(e);
+    } finally {
+      _epoch++;
     }
   }
 
-  /// Stops the download; the next [start] resumes it.
+  /// Stops the download; the next [start] resumes it. A cancel that finds
+  /// nothing to stop (the file is being verified) lets the download finish.
   void cancel() {
     if (state is! GemmaDownloading) return;
-    _cancelling = true;
-    _ops.cancel();
+    _cancelling = _ops.cancel();
   }
 
+  /// Deletes the model. Ignored while downloading: deleting the folder
+  /// would only unlink the open partial file under the running transfer.
   Future<void> remove() async {
+    if (state is GemmaDownloading) return;
     await _ops.delete();
+    _epoch++;
     state = const GemmaNotInstalled();
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
@@ -9,10 +10,12 @@ void main() {
   late Completer<void> download;
   late void Function(double) report;
   late int cancels;
+  late int deletes;
 
   setUp(() {
     installed = false;
     cancels = 0;
+    deletes = 0;
     download = Completer<void>();
     debugGemmaModelOps = (
       installed: () async => installed,
@@ -20,11 +23,15 @@ void main() {
         report = onProgress;
         return download.future;
       },
-      delete: () async => installed = false,
+      delete: () async {
+        deletes++;
+        installed = false;
+      },
       cancel: () {
         cancels++;
         // What force-closing the HttpClient does to the running download.
         download.completeError(StateError('Client is closed'));
+        return true;
       },
     );
   });
@@ -77,7 +84,7 @@ void main() {
         return download.future;
       },
       delete: () async {},
-      cancel: () {},
+      cancel: () => false,
     );
     unawaited(c.read(gemmaDownloadProvider.notifier).start());
     unawaited(c.read(gemmaDownloadProvider.notifier).start());
@@ -93,7 +100,7 @@ void main() {
         installed: () => check.future,
         download: (_) => download.future,
         delete: () async {},
-        cancel: () {},
+        cancel: () => false,
       );
       final c = ProviderContainer();
       addTearDown(c.dispose);
@@ -138,6 +145,84 @@ void main() {
     c.read(gemmaDownloadProvider.notifier).cancel();
     await Future<void>.delayed(Duration.zero);
     expect(cancels, 0);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
+  });
+
+  test('remove during a download is ignored', () async {
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    unawaited(c.read(gemmaDownloadProvider.notifier).start());
+    await Future<void>.delayed(Duration.zero);
+    await c.read(gemmaDownloadProvider.notifier).remove();
+    expect(deletes, 0);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaDownloading>());
+  });
+
+  test('a cancel that closed nothing does not hide a failure', () async {
+    debugGemmaModelOps = (
+      installed: () async => false,
+      download: (_) => download.future,
+      delete: () async {},
+      cancel: () => false,
+    );
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    final done = c.read(gemmaDownloadProvider.notifier).start();
+    await Future<void>.delayed(Duration.zero);
+    c.read(gemmaDownloadProvider.notifier).cancel();
+    download.completeError(const FileSystemException('verification'));
+    await done;
+    expect(c.read(gemmaDownloadProvider), isA<GemmaDownloadFailed>());
+  });
+
+  test('a new download forgets an earlier cancel', () async {
+    // The cancel closed a client, yet the download still finished.
+    debugGemmaModelOps = (
+      installed: () async => false,
+      download: (_) => download.future,
+      delete: () async {},
+      cancel: () => true,
+    );
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    final first = c.read(gemmaDownloadProvider.notifier).start();
+    await Future<void>.delayed(Duration.zero);
+    c.read(gemmaDownloadProvider.notifier).cancel();
+    download.complete();
+    await first;
+    expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+    await c.read(gemmaDownloadProvider.notifier).remove();
+    download = Completer<void>();
+    final second = c.read(gemmaDownloadProvider.notifier).start();
+    download.completeError(const WifiLostException());
+    await second;
+    expect(c.read(gemmaDownloadProvider), isA<GemmaDownloadFailed>());
+  });
+
+  test('a slow install check does not overwrite a newer state', () async {
+    var check = Completer<bool>();
+    debugGemmaModelOps = (
+      installed: () => check.future,
+      download: (_) => download.future,
+      delete: () async {},
+      cancel: () => false,
+    );
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    final notifier = c.read(gemmaDownloadProvider.notifier);
+    // build()'s check is still running when a download finishes.
+    final done = notifier.start();
+    download.complete();
+    await done;
+    check.complete(false);
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+    // A check still running when the model is deleted.
+    check = Completer<bool>();
+    unawaited(notifier.refresh());
+    await notifier.remove();
+    check.complete(true);
+    await Future<void>.delayed(Duration.zero);
     expect(c.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
   });
 }
