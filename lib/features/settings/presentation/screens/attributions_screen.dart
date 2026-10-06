@@ -651,6 +651,13 @@ class AttributionsScreen extends StatelessWidget {
                     url:
                         'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm',
                   ),
+                  const SizedBox(height: 8),
+                  DownloadAttributionText(
+                    prefix: l10n.aboutSourceLabel,
+                    linkText: 'github.com/google-ai-edge/LiteRT-LM',
+                    url: 'https://github.com/google-ai-edge/LiteRT-LM',
+                    suffix: '.',
+                  ),
                 ],
               ),
             ),

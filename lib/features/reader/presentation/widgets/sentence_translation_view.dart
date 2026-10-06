@@ -142,7 +142,7 @@ class _SentenceTranslationViewState
     if (!_isIos &&
         !await okToDownload(
           context,
-          context.l10n.catalogMobileDataBody(
+          context.l10n.translationMobileDataBody(
             size: translationDownloadSize(target),
           ),
         )) {

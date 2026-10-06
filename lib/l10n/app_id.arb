@@ -3106,5 +3106,6 @@
   "downloadsHighQualityTitle": "Terjemahan kualitas tinggi (Gemma 4)",
   "downloadsHighQualitySubtitle": "Model yang lebih besar untuk terjemahan kalimat yang lebih baik, untuk ponsel dengan memori yang cukup.",
   "attributionGemmaTitle": "Gemma 4",
-  "attributionGemmaDescription": "Di Android, model terjemahan kualitas tinggi adalah Gemma 4 dari Google, yang berjalan di perangkat Anda dengan LiteRT-LM."
+  "attributionGemmaDescription": "Di Android, model terjemahan kualitas tinggi adalah Gemma 4 dari Google, yang berjalan di perangkat Anda dengan LiteRT-LM.",
+  "translationMobileDataBody": "Wi-Fi tidak terhubung. Ukuran model terjemahan sekitar {size}. Lanjutkan dengan data seluler?"
 }

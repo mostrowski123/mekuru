@@ -700,7 +700,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (download is! GemmaInstalled && download is! GemmaDownloading) {
           final ok = await okToDownload(
             context,
-            context.l10n.catalogMobileDataBody(
+            context.l10n.translationMobileDataBody(
               size: GemmaTranslation.downloadSize(),
             ),
           );

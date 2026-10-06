@@ -5260,5 +5260,14 @@
   "attributionGemmaDescription": "On Android, the high-quality translation model is Google's Gemma 4, run on your device with LiteRT-LM.",
   "@attributionGemmaDescription": {
     "description": "Attribution entry for Gemma 4 and LiteRT-LM. Gemma 4 and LiteRT-LM are product names."
+  },
+  "translationMobileDataBody": "Wi-Fi is not connected. The translation model is about {size}. Continue using mobile data?",
+  "@translationMobileDataBody": {
+    "description": "Body of the dialog asking before a sentence translation model downloads over mobile data. size looks like '55 MB' or '2.6 GB'.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
   }
 }

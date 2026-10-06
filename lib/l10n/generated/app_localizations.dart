@@ -6668,6 +6668,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On Android, the high-quality translation model is Google\'s Gemma 4, run on your device with LiteRT-LM.'**
   String get attributionGemmaDescription;
+
+  /// Body of the dialog asking before a sentence translation model downloads over mobile data. size looks like '55 MB' or '2.6 GB'.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi is not connected. The translation model is about {size}. Continue using mobile data?'**
+  String translationMobileDataBody({required String size});
 }
 
 class _AppLocalizationsDelegate

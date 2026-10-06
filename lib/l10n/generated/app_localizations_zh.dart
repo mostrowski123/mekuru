@@ -3912,6 +3912,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get attributionGemmaDescription =>
       '在 Android 上，高质量翻译模型是 Google 的 Gemma 4，通过 LiteRT-LM 在你的设备上运行。';
+
+  @override
+  String translationMobileDataBody({required String size}) {
+    return '未连接 Wi-Fi。翻译模型大小约为 $size。是否继续使用移动数据？';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -7822,4 +7827,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get attributionGemmaDescription =>
       '在 Android 上，高质量翻译模型是 Google 的 Gemma 4，通过 LiteRT-LM 在你的设备上运行。';
+
+  @override
+  String translationMobileDataBody({required String size}) {
+    return '未连接 Wi-Fi。翻译模型大小约为 $size。是否继续使用移动数据？';
+  }
 }

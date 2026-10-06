@@ -4105,4 +4105,9 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get attributionGemmaDescription =>
       'Di Android, model terjemahan kualitas tinggi adalah Gemma 4 dari Google, yang berjalan di perangkat Anda dengan LiteRT-LM.';
+
+  @override
+  String translationMobileDataBody({required String size}) {
+    return 'Wi-Fi tidak terhubung. Ukuran model terjemahan sekitar $size. Lanjutkan dengan data seluler?';
+  }
 }

@@ -191,21 +191,29 @@ void main() {
   group('high-quality translation row', () {
     const title = 'High-quality translation (Gemma 4)';
     var installed = false;
+    var deleteFails = false;
     final calls = <String>[];
+    late Completer<void> downloadDone;
+    late void Function(double fraction) report;
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
       installed = false;
+      deleteFails = false;
       calls.clear();
+      debugDeviceLowOnMemory = false;
       debugGemmaModelOps = (
         installed: () async => installed,
-        // Never finishes, so the row stays on "downloading".
-        download: (_) {
+        download: (onProgress) {
           calls.add('download');
-          return Completer<void>().future;
+          report = onProgress;
+          // Made here, in the test's zone, so completing it reaches pump().
+          downloadDone = Completer<void>();
+          return downloadDone.future;
         },
         delete: () async {
           calls.add('delete');
+          if (deleteFails) throw Exception('locked');
           installed = false;
         },
         cancel: () {
@@ -245,6 +253,9 @@ void main() {
       of: find.widgetWithText(ListTile, title),
       matching: finder,
     );
+    final progressBar = find.byWidgetPredicate(
+      (w) => w is LinearProgressIndicator && w.semanticsLabel == title,
+    );
 
     testWidgets('removes an installed model and keeps High chosen', (
       tester,
@@ -281,16 +292,32 @@ void main() {
       );
     });
 
-    testWidgets('downloads after asking about mobile data, and cancels', (
-      tester,
-    ) async {
-      debugDeviceLowOnMemory = false;
+    testWidgets('a failed removal says so and keeps the model', (tester) async {
+      installed = true;
+      deleteFails = true;
+      await pumpDownloads(tester);
+
+      await tester.tap(inRow(find.byTooltip('Remove')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Download failed: Exception: locked'), findsOneWidget);
+      expect(inRow(find.byTooltip('Remove')), findsOneWidget);
+    });
+
+    testWidgets('downloads after asking about mobile data, picks High, and '
+        'cancels until the file is being verified', (tester) async {
       mockWifiConnected(false);
       final container = await pumpDownloads(tester);
 
       await tester.tap(inRow(find.text('Download')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('about 2.6 GB'), findsOneWidget);
+      expect(
+        find.text(
+          'Wi-Fi is not connected. The translation model is about 2.6 GB. '
+          'Continue using mobile data?',
+        ),
+        findsOneWidget,
+      );
       await tester.tap(
         find.descendant(
           of: find.byType(AlertDialog),
@@ -301,13 +328,47 @@ void main() {
 
       expect(calls, ['download']);
       expect(container.read(gemmaDownloadProvider), isA<GemmaDownloading>());
+      expect(
+        container.read(translationModelProvider),
+        TranslationModelChoice.high,
+      );
       expect(inRow(find.text('High quality: downloading 0%')), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(progressBar, findsOneWidget);
       expect(inRow(find.byTooltip('Remove')), findsNothing);
 
       await tester.tap(inRow(find.byTooltip('Cancel')));
       await tester.pump();
       expect(calls, ['download', 'cancel']);
+
+      // At 100% the file is being checked and there is nothing to cancel.
+      report(1);
+      await tester.pump();
+      expect(inRow(find.byTooltip('Cancel')), findsNothing);
+      expect(progressBar, findsOneWidget);
+    });
+
+    testWidgets('a failed download shows the error and offers Download again', (
+      tester,
+    ) async {
+      mockWifiConnected(true);
+      await pumpDownloads(tester);
+
+      await tester.tap(inRow(find.text('Download')));
+      await tester.pumpAndSettle();
+      downloadDone.completeError(Exception('boom'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Download failed: Exception: boom'), findsOneWidget);
+      expect(
+        inRow(
+          find.text(
+            'A larger model for better sentence translations, for phones '
+            'with plenty of memory. (2.6 GB)',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(inRow(find.text('Download')), findsOneWidget);
     });
   });
 }

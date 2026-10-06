@@ -278,7 +278,7 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
     final size = translationDownloadSize(_target!);
     if (await okToDownload(
       context,
-      context.l10n.catalogMobileDataBody(size: size),
+      context.l10n.translationMobileDataBody(size: size),
     )) {
       await _run(() => downloadTranslation(_target!));
     }
@@ -339,27 +339,55 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
 
 /// Android's optional Gemma model for High quality sentence translation.
 /// The download outlives this screen: the provider holds it.
-class _HighQualityTranslationTile extends ConsumerWidget {
+class _HighQualityTranslationTile extends ConsumerStatefulWidget {
   const _HighQualityTranslationTile();
 
-  Future<void> _download(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<_HighQualityTranslationTile> createState() =>
+      _HighQualityTranslationTileState();
+}
+
+class _HighQualityTranslationTileState
+    extends ConsumerState<_HighQualityTranslationTile> {
+  Object? _removeError;
+
+  Future<void> _download() async {
+    setState(() => _removeError = null);
     // Read before the dialogs: the tile can unmount while one is up.
-    final notifier = ref.read(gemmaDownloadProvider.notifier);
-    if (!await confirmHighQualityMemory(context) || !context.mounted) return;
+    final download = ref.read(gemmaDownloadProvider.notifier);
+    final model = ref.read(translationModelProvider.notifier);
+    if (!await confirmHighQualityMemory(context) || !mounted) return;
     if (await okToDownload(
       context,
-      context.l10n.catalogMobileDataBody(size: GemmaTranslation.downloadSize()),
+      context.l10n.translationMobileDataBody(
+        size: GemmaTranslation.downloadSize(),
+      ),
     )) {
-      unawaited(notifier.start());
+      unawaited(download.start());
+      // The only reason to fetch it is to use it.
+      model.setChoice(TranslationModelChoice.high);
+    }
+  }
+
+  Future<void> _remove() async {
+    setState(() => _removeError = null);
+    try {
+      await ref.read(gemmaDownloadProvider.notifier).remove();
+    } catch (e) {
+      logFailure('translation.high_quality_delete_failed', e);
+      if (mounted) setState(() => _removeError = e);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = context.l10n;
     final theme = Theme.of(context);
     final state = ref.watch(gemmaDownloadProvider);
-    final notifier = ref.read(gemmaDownloadProvider.notifier);
+    final error = dictionaryDownloadError(
+      l,
+      _removeError ?? (state is GemmaDownloadFailed ? state.error : null),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -374,10 +402,6 @@ class _HighQualityTranslationTile extends ConsumerWidget {
               l.translationHighQualityDownloading(
                 percent: '${(fraction * 100).floor()}',
               ),
-            GemmaDownloadFailed(:final error) => dictionaryDownloadError(
-              l,
-              error,
-            )!,
             _ =>
               '${l.downloadsHighQualitySubtitle} '
                   '(${GemmaTranslation.downloadSize()})',
@@ -386,15 +410,21 @@ class _HighQualityTranslationTile extends ConsumerWidget {
             GemmaInstalled() => IconButton(
               tooltip: l.commonRemove,
               icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-              onPressed: notifier.remove,
+              onPressed: _remove,
             ),
-            GemmaDownloading() => IconButton(
+            GemmaDownloading(:final fraction) when fraction < 1 => IconButton(
               tooltip: l.commonCancel,
               icon: const Icon(Icons.close),
-              onPressed: notifier.cancel,
+              onPressed: ref.read(gemmaDownloadProvider.notifier).cancel,
+            ),
+            // At 100% the file is being verified: nothing left to cancel.
+            GemmaDownloading() => const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
             _ => FilledButton.tonal(
-              onPressed: () => _download(context, ref),
+              onPressed: _download,
               child: Text(l.commonDownload),
             ),
           },
@@ -407,6 +437,7 @@ class _HighQualityTranslationTile extends ConsumerWidget {
               semanticsLabel: l.downloadsHighQualityTitle,
             ),
           ),
+        if (error != null) DownloadErrorText(text: error),
       ],
     );
   }

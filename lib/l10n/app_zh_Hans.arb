@@ -3106,5 +3106,6 @@
   "downloadsHighQualityTitle": "高质量翻译（Gemma 4）",
   "downloadsHighQualitySubtitle": "更大的模型，句子翻译效果更好，适合内存充足的手机。",
   "attributionGemmaTitle": "Gemma 4",
-  "attributionGemmaDescription": "在 Android 上，高质量翻译模型是 Google 的 Gemma 4，通过 LiteRT-LM 在你的设备上运行。"
+  "attributionGemmaDescription": "在 Android 上，高质量翻译模型是 Google 的 Gemma 4，通过 LiteRT-LM 在你的设备上运行。",
+  "translationMobileDataBody": "未连接 Wi-Fi。翻译模型大小约为 {size}。是否继续使用移动数据？"
 }
