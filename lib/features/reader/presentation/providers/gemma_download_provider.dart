@@ -11,7 +11,10 @@ sealed class GemmaDownloadState {
 }
 
 class GemmaNotInstalled extends GemmaDownloadState {
-  const GemmaNotInstalled();
+  const GemmaNotInstalled({this.hasFiles = false});
+
+  /// A partial download is on disk, which Remove can take away.
+  final bool hasFiles;
 }
 
 class GemmaDownloading extends GemmaDownloadState {
@@ -32,6 +35,7 @@ typedef GemmaModelOps = ({
   Future<bool> Function() installed,
   Future<void> Function(void Function(double fraction) onProgress) download,
   Future<void> Function() delete,
+  Future<bool> Function() hasFiles,
   bool Function() cancel,
 });
 
@@ -48,6 +52,7 @@ GemmaModelOps get _ops =>
       download: (onProgress) =>
           GemmaTranslation.instance.downloadModel(onProgress: onProgress),
       delete: GemmaTranslation.instance.delete,
+      hasFiles: GemmaTranslation.instance.hasFiles,
       cancel: GemmaTranslation.instance.cancelDownload,
     );
 
@@ -72,8 +77,11 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
     // state exists, and a download may start while the check runs.
     final epoch = _epoch;
     final installed = await _ops.installed();
+    final hasFiles = !installed && await _ops.hasFiles();
     if (epoch != _epoch || state is GemmaDownloading) return;
-    state = installed ? const GemmaInstalled() : const GemmaNotInstalled();
+    state = installed
+        ? const GemmaInstalled()
+        : GemmaNotInstalled(hasFiles: hasFiles);
   }
 
   /// Downloads the model, or only reports it installed when its files are
@@ -98,7 +106,8 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
       if (_cancelling) {
         _cancelling = false;
         logUsage('translation.high_quality_download_cancelled');
-        state = const GemmaNotInstalled();
+        // Still downloading meanwhile, so nothing else can change the state.
+        state = GemmaNotInstalled(hasFiles: await _ops.hasFiles());
         return;
       }
       logFailure('translation.high_quality_download_failed', e);

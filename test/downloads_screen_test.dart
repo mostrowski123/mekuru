@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/platform/device_memory.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
@@ -192,6 +194,8 @@ void main() {
     const title = 'High-quality translation (Gemma 4)';
     var installed = false;
     var deleteFails = false;
+    var hasFiles = false;
+    var cancelStops = false;
     final calls = <String>[];
     late Completer<void> downloadDone;
     late void Function(double fraction) report;
@@ -200,6 +204,8 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       installed = false;
       deleteFails = false;
+      hasFiles = false;
+      cancelStops = false;
       calls.clear();
       debugDeviceLowOnMemory = false;
       debugGemmaModelOps = (
@@ -216,8 +222,11 @@ void main() {
           if (deleteFails) throw Exception('locked');
           installed = false;
         },
+        hasFiles: () async => hasFiles,
         cancel: () {
           calls.add('cancel');
+          // What force-closing the HttpClient does to the running download.
+          if (cancelStops) downloadDone.completeError(StateError('closed'));
           return true;
         },
       );
@@ -368,6 +377,50 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(inRow(find.text('Download')), findsOneWidget);
+      // Whatever it left behind can go.
+      expect(inRow(find.byTooltip('Remove')), findsOneWidget);
+    });
+
+    testWidgets('a download without room says how much more it needs', (
+      tester,
+    ) async {
+      mockWifiConnected(true);
+      final container = await pumpDownloads(tester);
+
+      await tester.tap(inRow(find.text('Download')));
+      await tester.pumpAndSettle();
+      downloadDone.completeError(
+        const InsufficientSpaceException(neededBytes: 1500000000),
+      );
+      await tester.pumpAndSettle();
+
+      expect(container.read(gemmaDownloadProvider), isA<GemmaDownloadFailed>());
+      expect(
+        find.textContaining('Not enough free space on this device.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a cancelled download offers to remove its partial file', (
+      tester,
+    ) async {
+      mockWifiConnected(true);
+      cancelStops = true;
+      await pumpDownloads(tester);
+
+      await tester.tap(inRow(find.text('Download')));
+      await tester.pumpAndSettle();
+      hasFiles = true;
+      await tester.tap(inRow(find.byTooltip('Cancel')));
+      await tester.pumpAndSettle();
+
+      expect(inRow(find.text('Download')), findsOneWidget);
+      await tester.tap(inRow(find.byTooltip('Remove')));
+      await tester.pumpAndSettle();
+
+      expect(calls, ['download', 'cancel', 'delete']);
+      expect(inRow(find.byTooltip('Remove')), findsNothing);
       expect(inRow(find.text('Download')), findsOneWidget);
     });
   });

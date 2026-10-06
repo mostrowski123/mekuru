@@ -689,6 +689,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (choice == TranslationModelChoice.standard) {
           ref.read(translationModelProvider.notifier).setChoice(choice);
           unawaited(GemmaTranslation.instance.close());
+          // The partial file stays, so picking High again resumes it.
+          ref.read(gemmaDownloadProvider.notifier).cancel();
           return;
         }
         if (!await confirmHighQualityMemory(context) || !mounted) return;

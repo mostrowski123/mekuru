@@ -5,8 +5,11 @@ import 'dart:isolate';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart'
     show downloadResumable;
@@ -41,6 +44,9 @@ class GemmaTranslation implements TranslationEngine {
   static const _marker = 'INSTALLED';
   static const _idleLifetime = Duration(minutes: 5);
 
+  /// Room LiteRT-LM's weight cache takes next to the model on first load.
+  static const _weightCacheBytes = 800 * 1000 * 1000;
+
   // Not under translation_models/: removing Standard deletes that folder.
   late final Future<Directory> _dir = getApplicationSupportDirectory().then(
     (support) => Directory(p.join(support.path, 'gemma-4-e2b')),
@@ -67,28 +73,43 @@ class GemmaTranslation implements TranslationEngine {
   @override
   Future<void> download(String target) => downloadModel();
 
-  /// Resumable, sha256-verified. A download that starts on Wi-Fi stops with
-  /// [WifiLostException] when Wi-Fi goes.
+  /// Resumable, sha256-verified. Without room for the rest of the model and
+  /// its weight cache it fails first with [InsufficientSpaceException]. A
+  /// download that starts on Wi-Fi stops with [WifiLostException] when Wi-Fi
+  /// goes.
   Future<void> downloadModel({
     void Function(double fraction)? onProgress,
   }) async {
     final dir = await (await _dir).create(recursive: true);
     final destination = File(p.join(dir.path, gemmaModelFile.name));
     final partial = '${destination.path}.part';
-    final wifiOnly = await isOnWifi();
-    final client = _downloadClient = HttpClient();
-    Future<void> fetch() => downloadResumable(
-      gemmaModelFile.url,
-      partial,
-      client: client,
-      onProgress: (received, _) =>
-          onProgress?.call(received / gemmaModelFile.bytes),
-    );
-    try {
-      await (wifiOnly ? whileOnWifi(client, fetch) : fetch());
-    } finally {
-      _downloadClient = null;
-      client.close(force: true);
+    final have = await File(partial).exists()
+        ? await File(partial).length()
+        : 0;
+    final needed = gemmaModelFile.bytes - have + _weightCacheBytes;
+    final free = await AndroidSafService.getFreeBytes(dir.path);
+    if (free != null && free < needed) {
+      throw InsufficientSpaceException(neededBytes: needed - free);
+    }
+    if (have == gemmaModelFile.bytes) {
+      // Complete, but the app died while checking it: check it again.
+      onProgress?.call(1);
+    } else {
+      final wifiOnly = await isOnWifi();
+      final client = _downloadClient = HttpClient();
+      Future<void> fetch() => downloadResumable(
+        gemmaModelFile.url,
+        partial,
+        client: client,
+        onProgress: (received, _) =>
+            onProgress?.call(received / gemmaModelFile.bytes),
+      );
+      try {
+        await (wifiOnly ? whileOnWifi(client, fetch) : fetch());
+      } finally {
+        _downloadClient = null;
+        client.close(force: true);
+      }
     }
     final path = partial;
     final digest = await Isolate.run(
@@ -109,6 +130,16 @@ class GemmaTranslation implements TranslationEngine {
     final client = _downloadClient;
     client?.close(force: true);
     return client != null;
+  }
+
+  /// Whether the model folder holds anything, a partial download included.
+  Future<bool> hasFiles() async {
+    try {
+      final dir = await _dir;
+      return await dir.exists() && !await dir.list().isEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Closes the engine and removes the model.

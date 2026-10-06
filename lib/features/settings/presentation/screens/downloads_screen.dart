@@ -388,6 +388,15 @@ class _HighQualityTranslationTileState
       l,
       _removeError ?? (state is GemmaDownloadFailed ? state.error : null),
     );
+    final removeButton = IconButton(
+      tooltip: l.commonRemove,
+      icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+      onPressed: _remove,
+    );
+    final downloadButton = FilledButton.tonal(
+      onPressed: _download,
+      child: Text(l.commonDownload),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -407,10 +416,11 @@ class _HighQualityTranslationTileState
                   '(${GemmaTranslation.downloadSize()})',
           }),
           trailing: switch (state) {
-            GemmaInstalled() => IconButton(
-              tooltip: l.commonRemove,
-              icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
-              onPressed: _remove,
+            GemmaInstalled() => removeButton,
+            // A partial download can take up to 2.6 GB.
+            GemmaDownloadFailed() || GemmaNotInstalled(hasFiles: true) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [removeButton, downloadButton],
             ),
             GemmaDownloading(:final fraction) when fraction < 1 => IconButton(
               tooltip: l.commonCancel,
@@ -423,10 +433,7 @@ class _HighQualityTranslationTileState
               height: 24,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            _ => FilledButton.tonal(
-              onPressed: _download,
-              child: Text(l.commonDownload),
-            ),
+            _ => downloadButton,
           },
         ),
         if (state case GemmaDownloading(:final fraction))

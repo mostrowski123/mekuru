@@ -11,9 +11,11 @@ void main() {
   late void Function(double) report;
   late int cancels;
   late int deletes;
+  late bool hasFiles;
 
   setUp(() {
     installed = false;
+    hasFiles = false;
     cancels = 0;
     deletes = 0;
     download = Completer<void>();
@@ -27,6 +29,7 @@ void main() {
         deletes++;
         installed = false;
       },
+      hasFiles: () async => hasFiles,
       cancel: () {
         cancels++;
         // What force-closing the HttpClient does to the running download.
@@ -84,6 +87,7 @@ void main() {
         return download.future;
       },
       delete: () async {},
+      hasFiles: () async => false,
       cancel: () => false,
     );
     unawaited(c.read(gemmaDownloadProvider.notifier).start());
@@ -101,6 +105,7 @@ void main() {
         return download.future;
       },
       delete: () async {},
+      hasFiles: () async => false,
       cancel: () => false,
     );
     final c = ProviderContainer();
@@ -119,6 +124,7 @@ void main() {
         installed: () => check.future,
         download: (_) => download.future,
         delete: () async {},
+        hasFiles: () async => false,
         cancel: () => false,
       );
       final c = ProviderContainer();
@@ -158,6 +164,38 @@ void main() {
     expect(c.read(gemmaDownloadProvider), isA<GemmaDownloading>());
   });
 
+  test('a cancelled download leaves its partial file to remove', () async {
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    final done = c.read(gemmaDownloadProvider.notifier).start();
+    await Future<void>.delayed(Duration.zero);
+    hasFiles = true;
+    c.read(gemmaDownloadProvider.notifier).cancel();
+    await done;
+    expect(
+      c.read(gemmaDownloadProvider),
+      isA<GemmaNotInstalled>().having((s) => s.hasFiles, 'hasFiles', isTrue),
+    );
+    await c.read(gemmaDownloadProvider.notifier).remove();
+    expect(deletes, 1);
+    expect(
+      c.read(gemmaDownloadProvider),
+      isA<GemmaNotInstalled>().having((s) => s.hasFiles, 'hasFiles', isFalse),
+    );
+  });
+
+  test('the install check finds files left by an earlier run', () async {
+    hasFiles = true;
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    c.read(gemmaDownloadProvider);
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      c.read(gemmaDownloadProvider),
+      isA<GemmaNotInstalled>().having((s) => s.hasFiles, 'hasFiles', isTrue),
+    );
+  });
+
   test('cancel when not downloading does nothing', () async {
     final c = ProviderContainer();
     addTearDown(c.dispose);
@@ -182,6 +220,7 @@ void main() {
       installed: () async => false,
       download: (_) => download.future,
       delete: () async {},
+      hasFiles: () async => false,
       cancel: () => false,
     );
     final c = ProviderContainer();
@@ -200,6 +239,7 @@ void main() {
       installed: () async => false,
       download: (_) => download.future,
       delete: () async {},
+      hasFiles: () async => false,
       cancel: () => true,
     );
     final c = ProviderContainer();
@@ -225,6 +265,7 @@ void main() {
       installed: () => slow ? check.future : Future.value(false),
       download: (_) => download.future,
       delete: () async {},
+      hasFiles: () async => false,
       cancel: () => false,
     );
     final c = ProviderContainer();

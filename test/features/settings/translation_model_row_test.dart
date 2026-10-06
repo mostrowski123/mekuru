@@ -21,6 +21,7 @@ void main() {
   var installedChecks = 0;
   var downloads = 0;
   var closes = 0;
+  var cancels = 0;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -28,6 +29,7 @@ void main() {
     installedChecks = 0;
     downloads = 0;
     closes = 0;
+    cancels = 0;
     debugGemmaModelOps = (
       installed: () async {
         installedChecks++;
@@ -39,7 +41,11 @@ void main() {
         return Completer<void>().future;
       },
       delete: () async {},
-      cancel: () => true,
+      hasFiles: () async => false,
+      cancel: () {
+        cancels++;
+        return true;
+      },
     );
     GemmaTranslation.debugClose = () async => closes++;
   });
@@ -185,6 +191,26 @@ void main() {
       TranslationModelChoice.standard,
     );
     expect(closes, 1);
+  }, variant: _android);
+
+  testWidgets('picking Standard mid-download stops the download', (
+    tester,
+  ) async {
+    final container = await pumpSettings(
+      tester,
+      choice: TranslationModelChoice.high,
+    );
+    unawaited(container.read(gemmaDownloadProvider.notifier).start());
+    await tester.pumpAndSettle();
+    expect(rowSubtitle('High quality: downloading 0%'), findsOneWidget);
+
+    await pick(tester, 'Standard (55 MB)');
+
+    expect(cancels, 1);
+    expect(
+      container.read(translationModelProvider),
+      TranslationModelChoice.standard,
+    );
   }, variant: _android);
 
   testWidgets('the row is absent on iOS and Gemma is never checked', (

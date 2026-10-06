@@ -1,6 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
+    show InsufficientSpaceException;
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/mozilla_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
@@ -45,6 +48,45 @@ void main() {
     expect(
       await GemmaTranslation.instance.status('en'),
       TranslationStatus.installed,
+    );
+  });
+
+  test('a partial Gemma download counts as files to remove', () async {
+    expect(await GemmaTranslation.instance.hasFiles(), isFalse);
+    File(
+      p.join(support.path, 'gemma-4-e2b', '${gemmaModelFile.name}.part'),
+    ).createSync(recursive: true);
+    expect(await GemmaTranslation.instance.hasFiles(), isTrue);
+
+    await GemmaTranslation.instance.delete();
+
+    expect(await GemmaTranslation.instance.hasFiles(), isFalse);
+  });
+
+  test('a Gemma download without room for the model and its cache fails '
+      'before fetching', () async {
+    const saf = MethodChannel('mekuru/android_saf');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      saf,
+      (call) async => call.method == 'getFreeBytes' ? 1000000000 : null,
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(saf, null));
+    File(p.join(support.path, 'gemma-4-e2b', '${gemmaModelFile.name}.part'))
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(List.filled(1000, 0));
+
+    await expectLater(
+      GemmaTranslation.instance.downloadModel(),
+      throwsA(
+        isA<InsufficientSpaceException>().having(
+          (e) => e.neededBytes,
+          'neededBytes',
+          // The rest of the model, plus LiteRT-LM's weight cache.
+          gemmaModelFile.bytes - 1000 + 800000000 - 1000000000,
+        ),
+      ),
     );
   });
 }

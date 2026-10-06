@@ -134,6 +134,7 @@ _FakeTranslationEngine _fakeHighQuality({
     installed: () async => engine.state == TranslationStatus.installed,
     download: download ?? (_) => Completer<void>().future,
     delete: () async {},
+    hasFiles: () async => false,
     cancel: () => true,
   );
   addTearDown(() {
