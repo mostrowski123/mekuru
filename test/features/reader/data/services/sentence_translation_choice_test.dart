@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 
 class _Engine implements TranslationEngine {
@@ -44,10 +45,28 @@ void main() {
     expect(r, (text: 'std:猫2', highQuality: false));
   });
 
+  test('a Standard fallback gives way to Gemma once it is ready', () async {
+    high.state = TranslationStatus.needsDownload;
+    expect(await translateSentence('猫6', 'en', highQuality: true), (
+      text: 'std:猫6',
+      highQuality: false,
+    ));
+    high.state = TranslationStatus.installed;
+    expect(await translateSentence('猫6', 'en', highQuality: true), (
+      text: 'gemma:猫6',
+      highQuality: true,
+    ));
+  });
+
   test('a Gemma failure falls back to Standard for that sentence', () async {
     high.fails = true;
+    final events = <String>[];
+    usageLogSinkOverride = (message, _, {required isWarning}) =>
+        events.add(message);
+    addTearDown(() => usageLogSinkOverride = null);
     final r = await translateSentence('猫3', 'en', highQuality: true);
     expect(r, (text: 'std:猫3', highQuality: false));
+    expect(events, ['translation.high_quality_failed']);
   });
 
   test('Standard choice never touches Gemma', () async {

@@ -131,11 +131,18 @@ class GemmaTranslation implements TranslationEngine {
     }
     _idleTimer?.cancel();
     _idleTimer = Timer(_idleLifetime, close);
-    final reply = await _channel.invokeMethod<String>('translate', {
-      'text': text,
-      'language': _languages[target] ?? 'English',
-    });
-    return (reply ?? '').trim();
+    try {
+      final reply = await _channel.invokeMethod<String>('translate', {
+        'text': text,
+        'language': _languages[target] ?? 'English',
+      });
+      return (reply ?? '').trim();
+    } catch (_) {
+      // Load a broken engine again on the next request.
+      _loadedPath = null;
+      _idleTimer?.cancel();
+      rethrow;
+    }
   }
 
   /// Frees the model's memory (switching back to Standard, idle, delete).

@@ -68,4 +68,30 @@ void main() {
     );
     expect(events, ['translation.gemma_cpu']);
   });
+
+  test('a failed translate loads the model again next time', () async {
+    var fail = true;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          calls.add(call);
+          if (call.method == 'translate' && fail) {
+            fail = false;
+            throw PlatformException(code: 'broken');
+          }
+          return 'x';
+        });
+    Future<String> translate() => GemmaTranslation.instance.translateWith(
+      modelPath: '/models/broken.litertlm',
+      text: '猫',
+      target: 'en',
+    );
+    await expectLater(translate(), throwsA(isA<PlatformException>()));
+    expect(await translate(), 'x');
+    expect(calls.map((c) => c.method), [
+      'load',
+      'translate',
+      'load',
+      'translate',
+    ]);
+  });
 }

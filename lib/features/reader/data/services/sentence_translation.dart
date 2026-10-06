@@ -88,19 +88,27 @@ typedef SentenceTranslation = ({String text, bool highQuality});
 
 /// Translates [text] into [target] with Gemma when [highQuality] and it is
 /// ready, else Standard. A Gemma failure falls back to Standard for this
-/// sentence. Shares the latest result; a failure is not kept.
+/// sentence. Shares the latest result; a failure is not kept, nor a
+/// Standard fallback for High quality, so Gemma takes over once ready.
 Future<SentenceTranslation> translateSentence(
   String text,
   String target, {
   bool highQuality = false,
 }) {
-  final key = (text, target, highQuality);
+  final wantsHigh = _highQualityEngine(highQuality) != null;
+  final key = (text, target, wantsHigh);
   final last = _lastTranslation;
   if (last != null && last.$1 == key) return last.$2;
   final translation = _translate(text, target, highQuality);
   _lastTranslation = (key, translation);
   translation.then<void>(
-    (_) {},
+    (r) {
+      if (wantsHigh &&
+          !r.highQuality &&
+          identical(_lastTranslation?.$2, translation)) {
+        _lastTranslation = null;
+      }
+    },
     onError: (Object _) {
       if (identical(_lastTranslation?.$2, translation)) _lastTranslation = null;
     },
