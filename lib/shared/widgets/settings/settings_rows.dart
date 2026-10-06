@@ -232,7 +232,8 @@ class SettingsSwitchRow extends StatelessWidget {
 
 /// Shows a modal bottom sheet listing one tappable row per value, with a
 /// check mark on the selected one. Tapping a row fires a medium haptic,
-/// applies [onSelected], and closes the sheet.
+/// applies [onSelected], and closes the sheet. A row [enabledOf] turns off
+/// can't be tapped.
 Future<void> showSettingsOptionPickerSheet<T>({
   required BuildContext context,
   required String title,
@@ -242,6 +243,7 @@ Future<void> showSettingsOptionPickerSheet<T>({
   required String Function(T value) labelOf,
   String? Function(T value)? subtitleOf,
   IconData Function(T value)? iconOf,
+  bool Function(T value)? enabledOf,
   required ValueChanged<T> onSelected,
 }) {
   return showModalBottomSheet(
@@ -278,6 +280,7 @@ Future<void> showSettingsOptionPickerSheet<T>({
                 children: [
                   for (final value in values)
                     ListTile(
+                      enabled: enabledOf?.call(value) ?? true,
                       leading: iconOf != null ? Icon(iconOf(value)) : null,
                       title: Text(labelOf(value)),
                       subtitle: switch (subtitleOf?.call(value)) {

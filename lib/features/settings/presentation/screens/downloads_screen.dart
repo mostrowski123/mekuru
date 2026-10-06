@@ -355,7 +355,6 @@ class _HighQualityTranslationTileState
     setState(() => _removeError = null);
     // Read before the dialogs: the tile can unmount while one is up.
     final download = ref.read(gemmaDownloadProvider.notifier);
-    final model = ref.read(translationModelProvider.notifier);
     if (!await confirmHighQualityMemory(context) || !mounted) return;
     if (await okToDownload(
       context,
@@ -363,9 +362,8 @@ class _HighQualityTranslationTileState
         size: GemmaTranslation.downloadSize(),
       ),
     )) {
+      // The provider chooses High once the download is done.
       unawaited(download.start());
-      // The only reason to fetch it is to use it.
-      model.setChoice(TranslationModelChoice.high);
     }
   }
 

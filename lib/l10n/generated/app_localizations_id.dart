@@ -4081,6 +4081,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String translationModelHighDownloadFirst({required String size}) {
+    return 'Belum diunduh. Ketuk untuk mengunduh ($size).';
+  }
+
+  @override
   String get translationHighQualityNotReady =>
       'Kualitas tinggi belum siap; menggunakan Standar.';
 

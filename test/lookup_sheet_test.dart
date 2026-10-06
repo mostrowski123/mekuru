@@ -670,7 +670,7 @@ void main() {
       expect(engines, ['gemma']);
     }, variant: _android);
 
-    testWidgets('uses Standard, and says so, until High quality is ready', (
+    testWidgets('a High choice without its model goes back to Standard', (
       tester,
     ) async {
       final engines = _shownEngines();
@@ -682,10 +682,19 @@ void main() {
         highQuality: true,
       );
       await openSentenceTab(tester);
+      // Gemma's first disk check finds no model, which drops the choice and
+      // reloads the tab.
+      await tester.pump();
 
       expect(find.text('EN:粥を食べる。'), findsOneWidget);
-      expect(find.text(_notReady), findsOneWidget);
-      expect(engines, ['mozilla']);
+      expect(find.text(_notReady), findsNothing);
+      expect(engines, everyElement('mozilla'));
+      expect(
+        ProviderScope.containerOf(
+          tester.element(find.byType(LookupSheet)),
+        ).read(translationModelProvider),
+        TranslationModelChoice.standard,
+      );
     }, variant: _android);
 
     testWidgets('says so when an installed High-quality model cannot load', (
@@ -707,28 +716,6 @@ void main() {
       expect(find.text(_notReady), findsNothing);
     }, variant: _android);
 
-    testWidgets('shows the High-quality download progress', (tester) async {
-      _fakeTranslation();
-      _fakeHighQuality(
-        state: TranslationStatus.needsDownload,
-        download: (onProgress) {
-          onProgress(0.3);
-          return Completer<void>().future;
-        },
-      );
-      await pumpSheet(
-        tester,
-        const LookupSheet(selectedText: '食べる', sentenceContext: '芋を食べる。'),
-        highQuality: true,
-      );
-      await openSentenceTab(tester);
-      await startGemmaDownload(tester);
-
-      expect(find.text('EN:芋を食べる。'), findsOneWidget);
-      expect(find.text('High quality: downloading 30%'), findsOneWidget);
-      expect(find.text(_notReady), findsNothing);
-    }, variant: _android);
-
     testWidgets('switches to High quality when its download finishes', (
       tester,
     ) async {
@@ -738,14 +725,13 @@ void main() {
         state: TranslationStatus.needsDownload,
         download: (_) async => high.state = TranslationStatus.installed,
       );
+      // Standard while the model downloads: the download chooses High.
       await pumpSheet(
         tester,
         const LookupSheet(selectedText: '食べる', sentenceContext: '餅を食べる。'),
-        highQuality: true,
       );
       await openSentenceTab(tester);
       expect(find.text('EN:餅を食べる。'), findsOneWidget);
-      expect(find.text(_notReady), findsOneWidget);
 
       await startGemmaDownload(tester);
 

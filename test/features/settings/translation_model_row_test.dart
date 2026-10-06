@@ -23,6 +23,8 @@ void main() {
   var downloads = 0;
   var closes = 0;
   var cancels = 0;
+  late Completer<void> downloadDone;
+  late void Function(double fraction) report;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -36,10 +38,12 @@ void main() {
         installedChecks++;
         return installed;
       },
-      // Never finishes, so the row stays on "downloading".
-      download: (_) {
+      download: (onProgress) {
         downloads++;
-        return Completer<void>().future;
+        report = onProgress;
+        // Made here, in the test's zone, so completing it reaches pump().
+        downloadDone = Completer<void>();
+        return downloadDone.future;
       },
       delete: () async {},
       hasFiles: () async => false,
@@ -89,6 +93,8 @@ void main() {
     matching: find.text(text),
   );
 
+  const notDownloaded = 'Not downloaded yet. Tap to download (2.6 GB).';
+
   Future<void> pick(WidgetTester tester, String option) async {
     await tester.tap(find.text('Translation model'));
     await tester.pumpAndSettle();
@@ -106,6 +112,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Standard (55 MB)'), findsOneWidget);
     expect(find.text('High quality (2.6 GB)'), findsOneWidget);
+    expect(find.text(notDownloaded), findsOneWidget);
   }, variant: _android);
 
   testWidgets('the Standard size is for the app language', (tester) async {
@@ -141,7 +148,7 @@ void main() {
     expect(rowSubtitle('Standard'), findsOneWidget);
   }, variant: _android);
 
-  testWidgets('High quality with enough memory starts the download', (
+  testWidgets('High quality downloads first and is chosen once it is done', (
     tester,
   ) async {
     debugDeviceLowOnMemory = false;
@@ -152,21 +159,59 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Download'));
     await tester.pumpAndSettle();
 
+    expect(downloads, 1);
+    expect(
+      container.read(translationModelProvider),
+      TranslationModelChoice.standard,
+    );
+    expect(rowSubtitle('Standard'), findsOneWidget);
+
+    installed = true;
+    downloadDone.complete();
+    await tester.pumpAndSettle();
+
     expect(
       container.read(translationModelProvider),
       TranslationModelChoice.high,
     );
-    expect(downloads, 1);
-    expect(rowSubtitle('High quality: downloading 0%'), findsOneWidget);
+    expect(rowSubtitle('High quality'), findsOneWidget);
   }, variant: _android);
 
-  testWidgets('an installed model is reused without asking', (tester) async {
+  testWidgets('while it downloads, High quality shows progress and is off', (
+    tester,
+  ) async {
+    final container = await pumpSettings(tester);
+    unawaited(container.read(gemmaDownloadProvider.notifier).start());
+    await tester.pump();
+    report(0.42);
+
+    await pick(tester, 'High quality (2.6 GB)');
+
+    // The sheet is still up and nothing changed.
+    expect(find.text('High quality: downloading 42%'), findsOneWidget);
+    expect(find.text('Standard (55 MB)'), findsOneWidget);
+    expect(downloads, 1);
+    expect(
+      container.read(translationModelProvider),
+      TranslationModelChoice.standard,
+    );
+  }, variant: _android);
+
+  testWidgets('an installed model is chosen without downloading', (
+    tester,
+  ) async {
     installed = true;
-    debugDeviceLowOnMemory = false;
+    debugDeviceLowOnMemory = true;
     mockWifiConnected(false);
     final container = await pumpSettings(tester);
 
-    await pick(tester, 'High quality (2.6 GB)');
+    await tester.tap(find.text('Translation model'));
+    await tester.pumpAndSettle();
+    expect(find.text(notDownloaded), findsNothing);
+    await tester.tap(find.text('High quality (2.6 GB)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Download over mobile data?'), findsNothing);
     expect(downloads, 0);
@@ -180,6 +225,7 @@ void main() {
   testWidgets('"Use Standard" switches an existing High choice to Standard', (
     tester,
   ) async {
+    installed = true;
     debugDeviceLowOnMemory = true;
     final container = await pumpSettings(
       tester,
@@ -199,14 +245,12 @@ void main() {
   }, variant: _android);
 
   testWidgets('picking Standard again closes Gemma', (tester) async {
+    installed = true;
     final container = await pumpSettings(
       tester,
       choice: TranslationModelChoice.high,
     );
-    expect(
-      rowSubtitle('High quality: tap to download (2.6 GB)'),
-      findsOneWidget,
-    );
+    expect(rowSubtitle('High quality'), findsOneWidget);
 
     await pick(tester, 'Standard (55 MB)');
 
@@ -220,13 +264,9 @@ void main() {
   testWidgets('picking Standard mid-download stops the download', (
     tester,
   ) async {
-    final container = await pumpSettings(
-      tester,
-      choice: TranslationModelChoice.high,
-    );
+    final container = await pumpSettings(tester);
     unawaited(container.read(gemmaDownloadProvider.notifier).start());
     await tester.pumpAndSettle();
-    expect(rowSubtitle('High quality: downloading 0%'), findsOneWidget);
 
     await pick(tester, 'Standard (55 MB)');
 

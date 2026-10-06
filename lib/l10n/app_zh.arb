@@ -3100,6 +3100,7 @@
   "translationModelHighOption": "高质量（{size}）",
   "translationHighQualityDownloading": "高质量：正在下载 {percent}%",
   "translationHighQualityNeedsDownload": "高质量：点按下载（{size}）",
+  "translationModelHighDownloadFirst": "尚未下载。点按下载（{size}）。",
   "translationHighQualityNotReady": "高质量模型尚未就绪，正在使用标准模型。",
   "translationHighQualityCouldNotLoad": "高质量模型无法加载，正在使用标准模型。",
   "translationHighQualityLowMemoryBody": "高质量模型需要约 2 GB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 翻译模型”中切换回标准。",

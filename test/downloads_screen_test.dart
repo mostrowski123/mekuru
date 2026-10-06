@@ -10,13 +10,11 @@ import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/downloads_screen.dart';
-import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mekuru/features/manga/presentation/widgets/local_ocr_widgets.dart';
 
 import 'shared/fake_download_notifiers.dart';
-import 'shared/reader_settings_test_helpers.dart';
 import 'test_app.dart';
 
 void main() {
@@ -266,7 +264,7 @@ void main() {
       (w) => w is LinearProgressIndicator && w.semanticsLabel == title,
     );
 
-    testWidgets('removes an installed model and keeps High chosen', (
+    testWidgets('removes an installed model and switches High to Standard', (
       tester,
     ) async {
       installed = true;
@@ -281,23 +279,9 @@ void main() {
       expect(calls, ['delete']);
       expect(container.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
       expect(inRow(find.text('Download')), findsOneWidget);
-
-      // Settings now offers the download again, still on High.
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: buildLocalizedTestApp(home: const SettingsScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await scrollSettingsTo(tester, find.text('Sentence translation'));
       expect(
         container.read(translationModelProvider),
-        TranslationModelChoice.high,
-      );
-      expect(
-        find.text('High quality: tap to download (2.6 GB)'),
-        findsOneWidget,
+        TranslationModelChoice.standard,
       );
     });
 
@@ -313,8 +297,8 @@ void main() {
       expect(inRow(find.byTooltip('Remove')), findsOneWidget);
     });
 
-    testWidgets('downloads after asking about mobile data, picks High, and '
-        'cancels until the file is being verified', (tester) async {
+    testWidgets('downloads after asking about mobile data, cancels until the '
+        'file is being verified, and picks High once done', (tester) async {
       mockWifiConnected(false);
       final container = await pumpDownloads(tester);
 
@@ -339,7 +323,7 @@ void main() {
       expect(container.read(gemmaDownloadProvider), isA<GemmaDownloading>());
       expect(
         container.read(translationModelProvider),
-        TranslationModelChoice.high,
+        TranslationModelChoice.standard,
       );
       expect(inRow(find.text('High quality: downloading 0%')), findsOneWidget);
       expect(progressBar, findsOneWidget);
@@ -354,6 +338,14 @@ void main() {
       await tester.pump();
       expect(inRow(find.byTooltip('Cancel')), findsNothing);
       expect(progressBar, findsOneWidget);
+
+      installed = true;
+      downloadDone.complete();
+      await tester.pumpAndSettle();
+      expect(
+        container.read(translationModelProvider),
+        TranslationModelChoice.high,
+      );
     });
 
     testWidgets('a failed download shows the error and offers Download again', (

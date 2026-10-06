@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late bool installed;
@@ -13,7 +15,21 @@ void main() {
   late int deletes;
   late bool hasFiles;
 
+  ProviderContainer container() {
+    final c = ProviderContainer();
+    addTearDown(c.dispose);
+    return c;
+  }
+
+  TranslationModelChoice choiceIn(ProviderContainer c) =>
+      c.read(translationModelProvider);
+
+  void chooseHigh(ProviderContainer c) => c
+      .read(translationModelProvider.notifier)
+      .setChoice(TranslationModelChoice.high);
+
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     installed = false;
     hasFiles = false;
     cancels = 0;
@@ -40,9 +56,8 @@ void main() {
   });
   tearDown(() => debugGemmaModelOps = null);
 
-  test('progress, then installed', () async {
-    final c = ProviderContainer();
-    addTearDown(c.dispose);
+  test('progress, then installed and chosen', () async {
+    final c = container();
     final done = c.read(gemmaDownloadProvider.notifier).start();
     await Future<void>.delayed(Duration.zero);
     report(0.45);
@@ -50,10 +65,59 @@ void main() {
       c.read(gemmaDownloadProvider),
       isA<GemmaDownloading>().having((s) => s.fraction, 'fraction', 0.45),
     );
+    expect(choiceIn(c), TranslationModelChoice.standard);
     installed = true;
     download.complete();
     await done;
     expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+    expect(choiceIn(c), TranslationModelChoice.high);
+  });
+
+  test('a failed or cancelled download drops a High choice', () async {
+    final c = container();
+    final notifier = c.read(gemmaDownloadProvider.notifier);
+    chooseHigh(c);
+    var done = notifier.start();
+    download.completeError(const WifiLostException());
+    await done;
+    expect(choiceIn(c), TranslationModelChoice.standard);
+
+    chooseHigh(c);
+    download = Completer<void>();
+    done = notifier.start();
+    await Future<void>.delayed(Duration.zero);
+    notifier.cancel();
+    await done;
+    expect(c.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
+    expect(choiceIn(c), TranslationModelChoice.standard);
+  });
+
+  test('a check that finds no model drops a High choice', () async {
+    final c = container();
+    chooseHigh(c);
+    c.read(gemmaDownloadProvider);
+    await Future<void>.delayed(Duration.zero);
+    expect(choiceIn(c), TranslationModelChoice.standard);
+  });
+
+  test('a High choice waits for the first check', () async {
+    final check = Completer<bool>();
+    debugGemmaModelOps = (
+      installed: () => check.future,
+      download: (_) => download.future,
+      delete: () async {},
+      hasFiles: () async => false,
+      cancel: () => false,
+    );
+    final c = container();
+    chooseHigh(c);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
+    await Future<void>.delayed(Duration.zero);
+    expect(choiceIn(c), TranslationModelChoice.high);
+    check.complete(true);
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+    expect(choiceIn(c), TranslationModelChoice.high);
   });
 
   test('losing Wi-Fi fails with the reason and can start again', () async {
@@ -108,12 +172,12 @@ void main() {
       hasFiles: () async => false,
       cancel: () => false,
     );
-    final c = ProviderContainer();
-    addTearDown(c.dispose);
+    final c = container();
     unawaited(c.read(gemmaDownloadProvider.notifier).start());
     await Future<void>.delayed(Duration.zero);
     expect(starts, 0);
     expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+    expect(choiceIn(c), TranslationModelChoice.high);
   });
 
   test(
@@ -137,16 +201,19 @@ void main() {
     },
   );
 
-  test('remove deletes the model', () async {
+  test('remove deletes the model and drops a High choice', () async {
     installed = true;
-    final c = ProviderContainer();
-    addTearDown(c.dispose);
+    final c = container();
     c.read(gemmaDownloadProvider);
     await Future<void>.delayed(Duration.zero);
     expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+    // Finding the model doesn't choose it: Standard keeps its files.
+    expect(choiceIn(c), TranslationModelChoice.standard);
+    chooseHigh(c);
     await c.read(gemmaDownloadProvider.notifier).remove();
     expect(installed, isFalse);
     expect(c.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
+    expect(choiceIn(c), TranslationModelChoice.standard);
   });
 
   test('cancel stops the download, which can start again', () async {

@@ -4108,6 +4108,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String translationModelHighDownloadFirst({required String size}) {
+    return 'Aún no se ha descargado. Toca para descargar ($size).';
+  }
+
+  @override
   String get translationHighQualityNotReady =>
       'La alta calidad aún no está lista; se usa la estándar.';
 

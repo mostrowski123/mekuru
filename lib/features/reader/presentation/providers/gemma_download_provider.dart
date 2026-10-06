@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 
 sealed class GemmaDownloadState {
   const GemmaDownloadState();
@@ -79,9 +80,26 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
     final installed = await _ops.installed();
     final hasFiles = !installed && await _ops.hasFiles();
     if (epoch != _epoch || state is GemmaDownloading) return;
-    state = installed
-        ? const GemmaInstalled()
-        : GemmaNotInstalled(hasFiles: hasFiles);
+    _settle(
+      installed
+          ? const GemmaInstalled()
+          : GemmaNotInstalled(hasFiles: hasFiles),
+    );
+  }
+
+  /// Sets a finished state and keeps High quality chosen only while its
+  /// model is installed: [select] (a finished [start]) chooses it, and a
+  /// missing model drops it to Standard. Finding the model doesn't choose
+  /// it, since Standard keeps the files.
+  void _settle(GemmaDownloadState next, {bool select = false}) {
+    state = next;
+    if (next is GemmaInstalled && !select) return;
+    final choice = next is GemmaInstalled
+        ? TranslationModelChoice.high
+        : TranslationModelChoice.standard;
+    if (ref.read(translationModelProvider) != choice) {
+      ref.read(translationModelProvider.notifier).setChoice(choice);
+    }
   }
 
   /// Downloads the model, or only reports it installed when its files are
@@ -94,12 +112,12 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
     state = const GemmaDownloading(0);
     try {
       if (await _ops.installed()) {
-        state = const GemmaInstalled();
+        _settle(const GemmaInstalled(), select: true);
         return;
       }
       await _ops.download((fraction) => state = GemmaDownloading(fraction));
       logUsage('translation.high_quality_downloaded');
-      state = const GemmaInstalled();
+      _settle(const GemmaInstalled(), select: true);
     } catch (e) {
       // Decided by the flag, not the error: a cancel surfaces as whatever the
       // closed connection threw.
@@ -107,11 +125,11 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
         _cancelling = false;
         logUsage('translation.high_quality_download_cancelled');
         // Still downloading meanwhile, so nothing else can change the state.
-        state = GemmaNotInstalled(hasFiles: await _ops.hasFiles());
+        _settle(GemmaNotInstalled(hasFiles: await _ops.hasFiles()));
         return;
       }
       logFailure('translation.high_quality_download_failed', e);
-      state = GemmaDownloadFailed(e);
+      _settle(GemmaDownloadFailed(e));
     } finally {
       _epoch++;
     }
@@ -130,7 +148,7 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
     if (state is GemmaDownloading) return;
     await _ops.delete();
     _epoch++;
-    state = const GemmaNotInstalled();
+    _settle(const GemmaNotInstalled());
   }
 }
 

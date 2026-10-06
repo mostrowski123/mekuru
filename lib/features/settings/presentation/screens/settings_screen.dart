@@ -234,11 +234,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: theme.colorScheme.primary,
               ),
               title: Text(l10n.settingsTranslationModelTitle),
-              subtitle: Text(_translationModelSubtitle(l10n)),
+              subtitle: Text(switch (ref.watch(translationModelProvider)) {
+                TranslationModelChoice.standard =>
+                  l10n.translationModelStandard,
+                TranslationModelChoice.high => l10n.translationModelHigh,
+              }),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 AppHaptics.light();
-                _showTranslationModelPicker(ref.read(translationModelProvider));
+                _showTranslationModelPicker();
               },
             ),
           SwitchListTile(
@@ -653,30 +657,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  String _translationModelSubtitle(AppLocalizations l10n) {
-    if (ref.watch(translationModelProvider) ==
-        TranslationModelChoice.standard) {
-      return l10n.translationModelStandard;
-    }
-    return switch (ref.watch(gemmaDownloadProvider)) {
-      GemmaInstalled() => l10n.translationModelHigh,
-      GemmaDownloading(:final fraction) =>
-        l10n.translationHighQualityDownloading(
-          percent: '${(fraction * 100).floor()}',
-        ),
-      _ => l10n.translationHighQualityNeedsDownload(
-        size: GemmaTranslation.downloadSize(),
-      ),
-    };
-  }
-
-  void _showTranslationModelPicker(TranslationModelChoice current) {
+  Future<void> _showTranslationModelPicker() async {
+    final gemma = ref.read(gemmaDownloadProvider.notifier);
+    // The sheet shows the model's state as it opens: on Standard the
+    // provider may only just be built, its first check still running.
+    await gemma.refresh();
+    if (!mounted) return;
     final l10n = context.l10n;
-    showSettingsOptionPickerSheet(
+    final download = ref.read(gemmaDownloadProvider);
+    await showSettingsOptionPickerSheet(
       context: context,
       title: l10n.settingsTranslationModelTitle,
       values: TranslationModelChoice.values,
-      selected: current,
+      selected: ref.read(translationModelProvider),
       labelOf: (choice) => switch (choice) {
         TranslationModelChoice.standard => l10n.translationModelStandardOption(
           size: translationDownloadSize(
@@ -687,31 +680,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           size: GemmaTranslation.downloadSize(),
         ),
       },
+      subtitleOf: (choice) => choice == TranslationModelChoice.standard
+          ? null
+          : switch (download) {
+              GemmaInstalled() => null,
+              GemmaDownloading(:final fraction) =>
+                l10n.translationHighQualityDownloading(
+                  percent: '${(fraction * 100).floor()}',
+                ),
+              _ => l10n.translationModelHighDownloadFirst(
+                size: GemmaTranslation.downloadSize(),
+              ),
+            },
+      enabledOf: (choice) =>
+          choice == TranslationModelChoice.standard ||
+          download is! GemmaDownloading,
       onSelected: (choice) async {
         if (choice == TranslationModelChoice.standard) {
           ref.read(translationModelProvider.notifier).setChoice(choice);
           unawaited(GemmaTranslation.instance.close());
           // The partial file stays, so picking High again resumes it.
-          ref.read(gemmaDownloadProvider.notifier).cancel();
+          gemma.cancel();
           return;
         }
-        if (!await confirmHighQualityMemory(context) || !mounted) return;
-        // On Standard the provider may only just be built, still saying
-        // "not installed" while its check runs.
-        await ref.read(gemmaDownloadProvider.notifier).refresh();
+        await gemma.refresh();
         if (!mounted) return;
-        final download = ref.read(gemmaDownloadProvider);
-        if (download is! GemmaInstalled && download is! GemmaDownloading) {
-          final ok = await okToDownload(
-            context,
-            context.l10n.translationMobileDataBody(
-              size: GemmaTranslation.downloadSize(),
-            ),
-          );
-          if (!ok || !mounted) return;
-          unawaited(ref.read(gemmaDownloadProvider.notifier).start());
+        final installed = ref.read(gemmaDownloadProvider) is GemmaInstalled;
+        if (!await confirmHighQualityMemory(context) || !mounted) return;
+        if (installed) {
+          ref.read(translationModelProvider.notifier).setChoice(choice);
+          return;
         }
-        ref.read(translationModelProvider.notifier).setChoice(choice);
+        final ok = await okToDownload(
+          context,
+          context.l10n.translationMobileDataBody(
+            size: GemmaTranslation.downloadSize(),
+          ),
+        );
+        // The provider chooses High once the download is done.
+        if (ok && mounted) unawaited(gemma.start());
       },
     );
   }
