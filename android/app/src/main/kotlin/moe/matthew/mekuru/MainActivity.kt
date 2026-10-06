@@ -9,6 +9,7 @@ import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
 import android.provider.OpenableColumns
 import android.provider.Settings
+import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -71,6 +72,16 @@ class MainActivity : FlutterActivity() {
     override fun onPause() {
         visible = false
         super.onPause()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Used by touch alone, the app never gives the FlutterView input focus,
+        // so hardware keys (the volume buttons and page turners the readers
+        // listen for) went to the system until a text field had focused it.
+        // hasFocus() also covers a focused child such as the EPUB WebView.
+        val flutterView = findViewById<View>(FLUTTER_VIEW_ID) ?: return
+        if (hasFocus && !flutterView.hasFocus()) flutterView.requestFocus()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
