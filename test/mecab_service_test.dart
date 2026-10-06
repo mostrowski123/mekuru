@@ -96,6 +96,51 @@ void main() {
       final result = MecabService.extractSentenceContext(text, 0);
       expect(result, 'えっ？');
     });
+
+    test('a tap after a quote keeps the quote', () {
+      const text = '「おはよう。」と彼は言った。';
+      final result = MecabService.extractSentenceContext(text, 7);
+      expect(result, '「おはよう。」と彼は言った。');
+    });
+
+    test('a tap before a quote keeps the quote', () {
+      const text = '彼は「おはよう。」と言った。次の文。';
+      final result = MecabService.extractSentenceContext(text, 0);
+      expect(result, '彼は「おはよう。」と言った。');
+    });
+
+    test('a tap inside a quote gives the quoted sentence', () {
+      const text = '「おはよう。」と彼は言った。';
+      final result = MecabService.extractSentenceContext(text, 1);
+      expect(result, 'おはよう。');
+    });
+
+    test('a tap in a later sentence of a quote stops at the quote', () {
+      const text = '「今日は。明日も来る」と言った。';
+      final result = MecabService.extractSentenceContext(text, 5);
+      expect(result, '明日も来る');
+    });
+
+    test('drops a closing bracket left from an earlier block', () {
+      const text = '」と彼は言った。';
+      final result = MecabService.extractSentenceContext(text, 2);
+      expect(result, 'と彼は言った。');
+    });
+
+    test('a newline ends the sentence even inside a quote', () {
+      const text = '「一行目\n二行目」';
+      final result = MecabService.extractSentenceContext(text, 6);
+      expect(result, '二行目');
+    });
+
+    test('an unbalanced quote does not swallow the paragraph', () {
+      final text = '${'前の文。' * 100}」と言った。';
+      final result = MecabService.extractSentenceContext(
+        text,
+        text.indexOf('言'),
+      );
+      expect(result, 'と言った。');
+    });
   });
 
   // ── WordLookupResult ────────────────────────────────────────────────

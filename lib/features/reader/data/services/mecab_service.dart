@@ -839,34 +839,103 @@ class MecabService {
   /// Extract the sentence containing [charOffset] from [text].
   ///
   /// Scans for Japanese sentence-ending punctuation (。！？) and newlines
-  /// in both directions from the offset.
+  /// in both directions from the offset. A quote is part of the sentence
+  /// around it (「…。」と言った。 stays whole), a tap inside a quote gets the
+  /// quoted sentence, and stray brackets at the edges are dropped.
   static String extractSentenceContext(String text, int charOffset) {
     if (text.isEmpty) return '';
 
     final clampedOffset = charOffset.clamp(0, text.length - 1);
+    var sentence = _sentenceAround(text, clampedOffset, bracketAware: true);
+    // ponytail: a quote opened or closed outside [text] leaves the depth
+    // unbalanced and swallows the whole block; past this length the plain
+    // scan wins. Track quotes across blocks if that ever proves too blunt.
+    if (sentence.length > _maxBracketAwareSentenceLength) {
+      sentence = _sentenceAround(text, clampedOffset, bracketAware: false);
+    }
+    return _stripUnpairedEdgeBrackets(sentence.trim());
+  }
 
-    // Sentence delimiters
-    const delimiters = {'。', '！', '？', '!', '?', '\n'};
+  static const _sentenceEnds = {'。', '！', '？', '!', '?'};
+  static const _openBrackets = '「『（【';
+  static const _closeBrackets = '」』）】';
+  static const _maxBracketAwareSentenceLength = 300;
 
-    // Scan backward for sentence start
+  /// Scans out from [offset] to the nearest sentence end on each side. When
+  /// [bracketAware], an end inside a bracket pair the scan passes over does
+  /// not count, and the bracket enclosing [offset] bounds the sentence.
+  /// A newline always ends it.
+  static String _sentenceAround(
+    String text,
+    int offset, {
+    required bool bracketAware,
+  }) {
     var start = 0;
-    for (var i = clampedOffset - 1; i >= 0; i--) {
-      if (delimiters.contains(text[i])) {
+    var depth = 0;
+    for (var i = offset - 1; i >= 0; i--) {
+      final ch = text[i];
+      if (ch == '\n') {
+        start = i + 1;
+        break;
+      }
+      if (bracketAware && _closeBrackets.contains(ch)) {
+        depth++;
+      } else if (bracketAware && _openBrackets.contains(ch)) {
+        if (depth == 0) {
+          start = i + 1;
+          break;
+        }
+        depth--;
+      } else if (depth == 0 && _sentenceEnds.contains(ch)) {
         start = i + 1;
         break;
       }
     }
 
-    // Scan forward for sentence end
     var end = text.length;
-    for (var i = clampedOffset; i < text.length; i++) {
-      if (delimiters.contains(text[i])) {
+    depth = 0;
+    for (var i = offset; i < text.length; i++) {
+      final ch = text[i];
+      if (ch == '\n') {
+        end = i;
+        break;
+      }
+      if (bracketAware && _openBrackets.contains(ch)) {
+        depth++;
+      } else if (bracketAware && _closeBrackets.contains(ch)) {
+        if (depth == 0) {
+          end = i;
+          break;
+        }
+        depth--;
+      } else if (depth == 0 && _sentenceEnds.contains(ch)) {
         end = i + 1; // Include the delimiter
         break;
       }
     }
 
-    return text.substring(start, end).trim();
+    return text.substring(start, end);
+  }
+
+  /// Drops brackets at the edges of [s] whose partner is not in [s].
+  static String _stripUnpairedEdgeBrackets(String s) {
+    var result = s;
+    while (result.isNotEmpty) {
+      final first = result[0];
+      final last = result[result.length - 1];
+      final open = _openBrackets.indexOf(first);
+      final close = _closeBrackets.indexOf(last);
+      if (_closeBrackets.contains(first) ||
+          (open >= 0 && !result.contains(_closeBrackets[open]))) {
+        result = result.substring(1).trimLeft();
+      } else if (_openBrackets.contains(last) ||
+          (close >= 0 && !result.contains(_openBrackets[close]))) {
+        result = result.substring(0, result.length - 1).trimRight();
+      } else {
+        break;
+      }
+    }
+    return result;
   }
 }
 
