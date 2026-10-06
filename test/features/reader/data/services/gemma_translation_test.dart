@@ -90,6 +90,7 @@ void main() {
     expect(calls.map((c) => c.method), [
       'load',
       'translate',
+      'close',
       'load',
       'translate',
     ]);

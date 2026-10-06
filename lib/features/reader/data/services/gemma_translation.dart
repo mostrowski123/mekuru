@@ -138,9 +138,9 @@ class GemmaTranslation implements TranslationEngine {
       });
       return (reply ?? '').trim();
     } catch (_) {
-      // Load a broken engine again on the next request.
-      _loadedPath = null;
-      _idleTimer?.cancel();
+      // Native load is a no-op for the live path, so close the broken
+      // engine; the next request then really loads it again.
+      await close();
       rethrow;
     }
   }
