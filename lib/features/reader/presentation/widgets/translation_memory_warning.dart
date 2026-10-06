@@ -36,3 +36,29 @@ Future<bool> confirmTranslationMemory(BuildContext context) async {
   }
   return proceed == true;
 }
+
+/// Before High quality is set up on a phone with under 8 GB or 3 GB free.
+/// True to go ahead; "Use Standard" or dismissing keeps Standard.
+Future<bool> confirmHighQualityMemory(BuildContext context) async {
+  if (!await deviceLowOnMemory(minTotalMb: 7168, minFreeMb: 3072)) return true;
+  if (!context.mounted) return false;
+  final l = context.l10n;
+  final proceed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l.sentenceTranslationLowMemoryTitle),
+      content: Text(l.translationHighQualityLowMemoryBody),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: Text(l.translationHighQualityUseStandard),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(l.commonContinue),
+        ),
+      ],
+    ),
+  );
+  return proceed == true;
+}

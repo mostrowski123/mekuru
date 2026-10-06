@@ -5184,5 +5184,81 @@
   "sentenceTranslationTurnOff": "Turn off",
   "@sentenceTranslationTurnOff": {
     "description": "Dialog button: switches sentence translation off (the Sentence tab disappears)."
+  },
+  "settingsTranslationModelTitle": "Translation model",
+  "@settingsTranslationModelTitle": {
+    "description": "Settings row (Android only) that picks the engine behind sentence translation: Standard or High quality."
+  },
+  "translationModelStandard": "Standard",
+  "@translationModelStandard": {
+    "description": "Translation model row subtitle: the standard (small, offline) sentence translation model is in use."
+  },
+  "translationModelHigh": "High quality",
+  "@translationModelHigh": {
+    "description": "Translation model row subtitle: the high-quality model (Gemma 4) is in use and downloaded."
+  },
+  "translationModelStandardOption": "Standard ({size})",
+  "@translationModelStandardOption": {
+    "description": "Translation model picker option. size is the standard model's download size, like '55 MB'.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "translationModelHighOption": "High quality ({size})",
+  "@translationModelHighOption": {
+    "description": "Translation model picker option. size is the high-quality model's download size, like '2.6 GB'.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "translationHighQualityDownloading": "High quality: downloading {percent}%",
+  "@translationHighQualityDownloading": {
+    "description": "Translation model row subtitle while the high-quality model downloads. percent is a whole number, like '42'.",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "translationHighQualityNeedsDownload": "High quality: tap to download ({size})",
+  "@translationHighQualityNeedsDownload": {
+    "description": "Translation model row subtitle when High quality is chosen but its model isn't downloaded. size looks like '2.6 GB'.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "translationHighQualityNotReady": "High quality isn't ready yet; using Standard.",
+  "@translationHighQualityNotReady": {
+    "description": "Note under a sentence translation when High quality is chosen but its model isn't ready, so the standard model translated it."
+  },
+  "translationHighQualityLowMemoryBody": "The high-quality model needs about 2 GB of memory. On this phone it may be slow or close Mekuru. If that happens, switch back in Settings › Translation model.",
+  "@translationHighQualityLowMemoryBody": {
+    "description": "Dialog body before High quality is set up on a phone with under 8 GB of memory or under 3 GB free. \"Settings › Translation model\" names the screen and the setting; keep them matching settingsTitle and settingsTranslationModelTitle."
+  },
+  "translationHighQualityUseStandard": "Use Standard",
+  "@translationHighQualityUseStandard": {
+    "description": "Dialog button: keeps the standard translation model instead of setting up High quality."
+  },
+  "downloadsHighQualityTitle": "High-quality translation (Gemma 4)",
+  "@downloadsHighQualityTitle": {
+    "description": "Downloads screen row (Android only) for the optional high-quality translation model. Gemma 4 is a product name."
+  },
+  "downloadsHighQualitySubtitle": "A larger model for better sentence translations, for phones with plenty of memory.",
+  "@downloadsHighQualitySubtitle": {
+    "description": "Subtitle of the Downloads row for the high-quality translation model."
+  },
+  "attributionGemmaTitle": "Gemma 4",
+  "@attributionGemmaTitle": {
+    "description": "Attribution entry title for Google's Gemma 4 model. Product name."
+  },
+  "attributionGemmaDescription": "On Android, the high-quality translation model is Google's Gemma 4, run on your device with LiteRT-LM.",
+  "@attributionGemmaDescription": {
+    "description": "Attribution entry for Gemma 4 and LiteRT-LM. Gemma 4 and LiteRT-LM are product names."
   }
 }

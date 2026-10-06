@@ -4050,4 +4050,59 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get sentenceTranslationTurnOff => 'Nonaktifkan';
+
+  @override
+  String get settingsTranslationModelTitle => 'Model terjemahan';
+
+  @override
+  String get translationModelStandard => 'Standar';
+
+  @override
+  String get translationModelHigh => 'Kualitas tinggi';
+
+  @override
+  String translationModelStandardOption({required String size}) {
+    return 'Standar ($size)';
+  }
+
+  @override
+  String translationModelHighOption({required String size}) {
+    return 'Kualitas tinggi ($size)';
+  }
+
+  @override
+  String translationHighQualityDownloading({required String percent}) {
+    return 'Kualitas tinggi: mengunduh $percent%';
+  }
+
+  @override
+  String translationHighQualityNeedsDownload({required String size}) {
+    return 'Kualitas tinggi: ketuk untuk mengunduh ($size)';
+  }
+
+  @override
+  String get translationHighQualityNotReady =>
+      'Kualitas tinggi belum siap; menggunakan Standar.';
+
+  @override
+  String get translationHighQualityLowMemoryBody =>
+      'Model kualitas tinggi memerlukan sekitar 2 GB memori. Di ponsel ini, model ini mungkin lambat atau membuat Mekuru tertutup. Jika itu terjadi, kembali ke Standar di Pengaturan › Model terjemahan.';
+
+  @override
+  String get translationHighQualityUseStandard => 'Gunakan Standar';
+
+  @override
+  String get downloadsHighQualityTitle =>
+      'Terjemahan kualitas tinggi (Gemma 4)';
+
+  @override
+  String get downloadsHighQualitySubtitle =>
+      'Model yang lebih besar untuk terjemahan kalimat yang lebih baik, untuk ponsel dengan memori yang cukup.';
+
+  @override
+  String get attributionGemmaTitle => 'Gemma 4';
+
+  @override
+  String get attributionGemmaDescription =>
+      'Di Android, model terjemahan kualitas tinggi adalah Gemma 4 dari Google, yang berjalan di perangkat Anda dengan LiteRT-LM.';
 }

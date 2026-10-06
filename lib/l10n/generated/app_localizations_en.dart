@@ -4028,4 +4028,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sentenceTranslationTurnOff => 'Turn off';
+
+  @override
+  String get settingsTranslationModelTitle => 'Translation model';
+
+  @override
+  String get translationModelStandard => 'Standard';
+
+  @override
+  String get translationModelHigh => 'High quality';
+
+  @override
+  String translationModelStandardOption({required String size}) {
+    return 'Standard ($size)';
+  }
+
+  @override
+  String translationModelHighOption({required String size}) {
+    return 'High quality ($size)';
+  }
+
+  @override
+  String translationHighQualityDownloading({required String percent}) {
+    return 'High quality: downloading $percent%';
+  }
+
+  @override
+  String translationHighQualityNeedsDownload({required String size}) {
+    return 'High quality: tap to download ($size)';
+  }
+
+  @override
+  String get translationHighQualityNotReady =>
+      'High quality isn\'t ready yet; using Standard.';
+
+  @override
+  String get translationHighQualityLowMemoryBody =>
+      'The high-quality model needs about 2 GB of memory. On this phone it may be slow or close Mekuru. If that happens, switch back in Settings › Translation model.';
+
+  @override
+  String get translationHighQualityUseStandard => 'Use Standard';
+
+  @override
+  String get downloadsHighQualityTitle => 'High-quality translation (Gemma 4)';
+
+  @override
+  String get downloadsHighQualitySubtitle =>
+      'A larger model for better sentence translations, for phones with plenty of memory.';
+
+  @override
+  String get attributionGemmaTitle => 'Gemma 4';
+
+  @override
+  String get attributionGemmaDescription =>
+      'On Android, the high-quality translation model is Google\'s Gemma 4, run on your device with LiteRT-LM.';
 }

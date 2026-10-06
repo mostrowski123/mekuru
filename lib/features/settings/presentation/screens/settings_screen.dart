@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_review/in_app_review.dart';
@@ -6,6 +9,9 @@ import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_provi
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
+import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
+import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
@@ -21,6 +27,7 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
+import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -220,6 +227,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               );
             },
           ),
+          if (defaultTargetPlatform == TargetPlatform.android)
+            ListTile(
+              leading: Icon(
+                Icons.auto_awesome_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(l10n.settingsTranslationModelTitle),
+              subtitle: Text(_translationModelSubtitle(l10n)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                AppHaptics.light();
+                _showTranslationModelPicker(ref.read(translationModelProvider));
+              },
+            ),
           SwitchListTile(
             secondary: Icon(Icons.abc, color: theme.colorScheme.primary),
             title: Text(l10n.settingsFilterRomanLetterEntriesTitle),
@@ -628,6 +649,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         }
         if (!mounted) return;
         ref.read(sentenceTranslationModeProvider.notifier).setMode(mode);
+      },
+    );
+  }
+
+  String _translationModelSubtitle(AppLocalizations l10n) {
+    if (ref.watch(translationModelProvider) ==
+        TranslationModelChoice.standard) {
+      return l10n.translationModelStandard;
+    }
+    return switch (ref.watch(gemmaDownloadProvider)) {
+      GemmaInstalled() => l10n.translationModelHigh,
+      GemmaDownloading(:final fraction) =>
+        l10n.translationHighQualityDownloading(
+          percent: '${(fraction * 100).floor()}',
+        ),
+      _ => l10n.translationHighQualityNeedsDownload(
+        size: GemmaTranslation.downloadSize(),
+      ),
+    };
+  }
+
+  void _showTranslationModelPicker(TranslationModelChoice current) {
+    final l10n = context.l10n;
+    showSettingsOptionPickerSheet(
+      context: context,
+      title: l10n.settingsTranslationModelTitle,
+      values: TranslationModelChoice.values,
+      selected: current,
+      labelOf: (choice) => switch (choice) {
+        TranslationModelChoice.standard => l10n.translationModelStandardOption(
+          size: translationDownloadSize('en'),
+        ),
+        TranslationModelChoice.high => l10n.translationModelHighOption(
+          size: GemmaTranslation.downloadSize(),
+        ),
+      },
+      onSelected: (choice) async {
+        if (choice == TranslationModelChoice.standard) {
+          ref.read(translationModelProvider.notifier).setChoice(choice);
+          unawaited(GemmaTranslation.instance.close());
+          return;
+        }
+        if (!await confirmHighQualityMemory(context) || !mounted) return;
+        final download = ref.read(gemmaDownloadProvider);
+        if (download is! GemmaInstalled && download is! GemmaDownloading) {
+          final ok = await okToDownload(
+            context,
+            context.l10n.catalogMobileDataBody(
+              size: GemmaTranslation.downloadSize(),
+            ),
+          );
+          if (!ok || !mounted) return;
+          unawaited(ref.read(gemmaDownloadProvider.notifier).start());
+        }
+        ref.read(translationModelProvider.notifier).setChoice(choice);
       },
     );
   }

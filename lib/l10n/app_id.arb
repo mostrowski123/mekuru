@@ -3092,5 +3092,19 @@
   "attributionFirefoxTranslationsDescription": "Di Android, terjemahan kalimat menjalankan mesin dan model Firefox Translations dari Mozilla di perangkat Anda.",
   "sentenceTranslationLowMemoryTitle": "Ponsel ini mungkin kewalahan",
   "sentenceTranslationLowMemoryBody": "Terjemahan kalimat memerlukan sekitar 250 MB memori. Di ponsel ini, fitur ini mungkin lambat atau membuat Mekuru tertutup. Jika itu terjadi, nonaktifkan di Pengaturan › Terjemahan kalimat.",
-  "sentenceTranslationTurnOff": "Nonaktifkan"
+  "sentenceTranslationTurnOff": "Nonaktifkan",
+  "settingsTranslationModelTitle": "Model terjemahan",
+  "translationModelStandard": "Standar",
+  "translationModelHigh": "Kualitas tinggi",
+  "translationModelStandardOption": "Standar ({size})",
+  "translationModelHighOption": "Kualitas tinggi ({size})",
+  "translationHighQualityDownloading": "Kualitas tinggi: mengunduh {percent}%",
+  "translationHighQualityNeedsDownload": "Kualitas tinggi: ketuk untuk mengunduh ({size})",
+  "translationHighQualityNotReady": "Kualitas tinggi belum siap; menggunakan Standar.",
+  "translationHighQualityLowMemoryBody": "Model kualitas tinggi memerlukan sekitar 2 GB memori. Di ponsel ini, model ini mungkin lambat atau membuat Mekuru tertutup. Jika itu terjadi, kembali ke Standar di Pengaturan › Model terjemahan.",
+  "translationHighQualityUseStandard": "Gunakan Standar",
+  "downloadsHighQualityTitle": "Terjemahan kualitas tinggi (Gemma 4)",
+  "downloadsHighQualitySubtitle": "Model yang lebih besar untuk terjemahan kalimat yang lebih baik, untuk ponsel dengan memori yang cukup.",
+  "attributionGemmaTitle": "Gemma 4",
+  "attributionGemmaDescription": "Di Android, model terjemahan kualitas tinggi adalah Gemma 4 dari Google, yang berjalan di perangkat Anda dengan LiteRT-LM."
 }

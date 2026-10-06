@@ -3092,5 +3092,19 @@
   "attributionFirefoxTranslationsDescription": "En Android, la traducción de frases usa el motor y los modelos Firefox Translations de Mozilla en tu dispositivo.",
   "sentenceTranslationLowMemoryTitle": "Puede que este teléfono no dé abasto",
   "sentenceTranslationLowMemoryBody": "La traducción de frases necesita unos 250 MB de memoria. En este teléfono puede ir lenta o cerrar Mekuru. Si pasa, desactívala en Configuración › Traducción de frases.",
-  "sentenceTranslationTurnOff": "Desactivar"
+  "sentenceTranslationTurnOff": "Desactivar",
+  "settingsTranslationModelTitle": "Modelo de traducción",
+  "translationModelStandard": "Estándar",
+  "translationModelHigh": "Alta calidad",
+  "translationModelStandardOption": "Estándar ({size})",
+  "translationModelHighOption": "Alta calidad ({size})",
+  "translationHighQualityDownloading": "Alta calidad: descargando {percent} %",
+  "translationHighQualityNeedsDownload": "Alta calidad: toca para descargar ({size})",
+  "translationHighQualityNotReady": "La alta calidad aún no está lista; se usa la estándar.",
+  "translationHighQualityLowMemoryBody": "El modelo de alta calidad necesita unos 2 GB de memoria. En este teléfono puede ir lento o cerrar Mekuru. Si pasa, vuelve al estándar en Configuración › Modelo de traducción.",
+  "translationHighQualityUseStandard": "Usar la estándar",
+  "downloadsHighQualityTitle": "Traducción de alta calidad (Gemma 4)",
+  "downloadsHighQualitySubtitle": "Un modelo más grande para traducir mejor las frases, para teléfonos con bastante memoria.",
+  "attributionGemmaTitle": "Gemma 4",
+  "attributionGemmaDescription": "En Android, el modelo de traducción de alta calidad es Gemma 4 de Google, que se ejecuta en tu dispositivo con LiteRT-LM."
 }

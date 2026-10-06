@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -156,8 +157,14 @@ class GemmaTranslation implements TranslationEngine {
     }
   }
 
+  /// Replaces [close] in tests.
+  @visibleForTesting
+  static Future<void> Function()? debugClose;
+
   /// Frees the model's memory (switching back to Standard, idle, delete).
   Future<void> close() async {
+    final override = debugClose;
+    if (override != null) return override();
     _idleTimer?.cancel();
     _idleTimer = null;
     if (_loadedPath == null) return;

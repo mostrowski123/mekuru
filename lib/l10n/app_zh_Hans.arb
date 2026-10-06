@@ -3092,5 +3092,19 @@
   "attributionFirefoxTranslationsDescription": "在 Android 上，句子翻译使用 Mozilla 的 Firefox Translations 引擎和模型，在你的设备上运行。",
   "sentenceTranslationLowMemoryTitle": "此手机可能运行吃力",
   "sentenceTranslationLowMemoryBody": "句子翻译需要约 250 MB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 句子翻译”中将其关闭。",
-  "sentenceTranslationTurnOff": "关闭"
+  "sentenceTranslationTurnOff": "关闭",
+  "settingsTranslationModelTitle": "翻译模型",
+  "translationModelStandard": "标准",
+  "translationModelHigh": "高质量",
+  "translationModelStandardOption": "标准（{size}）",
+  "translationModelHighOption": "高质量（{size}）",
+  "translationHighQualityDownloading": "高质量：正在下载 {percent}%",
+  "translationHighQualityNeedsDownload": "高质量：点按下载（{size}）",
+  "translationHighQualityNotReady": "高质量模型尚未就绪，正在使用标准模型。",
+  "translationHighQualityLowMemoryBody": "高质量模型需要约 2 GB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 翻译模型”中切换回标准。",
+  "translationHighQualityUseStandard": "使用标准",
+  "downloadsHighQualityTitle": "高质量翻译（Gemma 4）",
+  "downloadsHighQualitySubtitle": "更大的模型，句子翻译效果更好，适合内存充足的手机。",
+  "attributionGemmaTitle": "Gemma 4",
+  "attributionGemmaDescription": "在 Android 上，高质量翻译模型是 Google 的 Gemma 4，通过 LiteRT-LM 在你的设备上运行。"
 }

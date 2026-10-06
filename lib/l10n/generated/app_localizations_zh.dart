@@ -3860,6 +3860,58 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sentenceTranslationTurnOff => '关闭';
+
+  @override
+  String get settingsTranslationModelTitle => '翻译模型';
+
+  @override
+  String get translationModelStandard => '标准';
+
+  @override
+  String get translationModelHigh => '高质量';
+
+  @override
+  String translationModelStandardOption({required String size}) {
+    return '标准（$size）';
+  }
+
+  @override
+  String translationModelHighOption({required String size}) {
+    return '高质量（$size）';
+  }
+
+  @override
+  String translationHighQualityDownloading({required String percent}) {
+    return '高质量：正在下载 $percent%';
+  }
+
+  @override
+  String translationHighQualityNeedsDownload({required String size}) {
+    return '高质量：点按下载（$size）';
+  }
+
+  @override
+  String get translationHighQualityNotReady => '高质量模型尚未就绪，正在使用标准模型。';
+
+  @override
+  String get translationHighQualityLowMemoryBody =>
+      '高质量模型需要约 2 GB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 翻译模型”中切换回标准。';
+
+  @override
+  String get translationHighQualityUseStandard => '使用标准';
+
+  @override
+  String get downloadsHighQualityTitle => '高质量翻译（Gemma 4）';
+
+  @override
+  String get downloadsHighQualitySubtitle => '更大的模型，句子翻译效果更好，适合内存充足的手机。';
+
+  @override
+  String get attributionGemmaTitle => 'Gemma 4';
+
+  @override
+  String get attributionGemmaDescription =>
+      '在 Android 上，高质量翻译模型是 Google 的 Gemma 4，通过 LiteRT-LM 在你的设备上运行。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -7718,4 +7770,56 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get sentenceTranslationTurnOff => '关闭';
+
+  @override
+  String get settingsTranslationModelTitle => '翻译模型';
+
+  @override
+  String get translationModelStandard => '标准';
+
+  @override
+  String get translationModelHigh => '高质量';
+
+  @override
+  String translationModelStandardOption({required String size}) {
+    return '标准（$size）';
+  }
+
+  @override
+  String translationModelHighOption({required String size}) {
+    return '高质量（$size）';
+  }
+
+  @override
+  String translationHighQualityDownloading({required String percent}) {
+    return '高质量：正在下载 $percent%';
+  }
+
+  @override
+  String translationHighQualityNeedsDownload({required String size}) {
+    return '高质量：点按下载（$size）';
+  }
+
+  @override
+  String get translationHighQualityNotReady => '高质量模型尚未就绪，正在使用标准模型。';
+
+  @override
+  String get translationHighQualityLowMemoryBody =>
+      '高质量模型需要约 2 GB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 翻译模型”中切换回标准。';
+
+  @override
+  String get translationHighQualityUseStandard => '使用标准';
+
+  @override
+  String get downloadsHighQualityTitle => '高质量翻译（Gemma 4）';
+
+  @override
+  String get downloadsHighQualitySubtitle => '更大的模型，句子翻译效果更好，适合内存充足的手机。';
+
+  @override
+  String get attributionGemmaTitle => 'Gemma 4';
+
+  @override
+  String get attributionGemmaDescription =>
+      '在 Android 上，高质量翻译模型是 Google 的 Gemma 4，通过 LiteRT-LM 在你的设备上运行。';
 }

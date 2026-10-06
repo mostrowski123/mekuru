@@ -6584,6 +6584,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn off'**
   String get sentenceTranslationTurnOff;
+
+  /// Settings row (Android only) that picks the engine behind sentence translation: Standard or High quality.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation model'**
+  String get settingsTranslationModelTitle;
+
+  /// Translation model row subtitle: the standard (small, offline) sentence translation model is in use.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get translationModelStandard;
+
+  /// Translation model row subtitle: the high-quality model (Gemma 4) is in use and downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality'**
+  String get translationModelHigh;
+
+  /// Translation model picker option. size is the standard model's download size, like '55 MB'.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard ({size})'**
+  String translationModelStandardOption({required String size});
+
+  /// Translation model picker option. size is the high-quality model's download size, like '2.6 GB'.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality ({size})'**
+  String translationModelHighOption({required String size});
+
+  /// Translation model row subtitle while the high-quality model downloads. percent is a whole number, like '42'.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality: downloading {percent}%'**
+  String translationHighQualityDownloading({required String percent});
+
+  /// Translation model row subtitle when High quality is chosen but its model isn't downloaded. size looks like '2.6 GB'.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality: tap to download ({size})'**
+  String translationHighQualityNeedsDownload({required String size});
+
+  /// Note under a sentence translation when High quality is chosen but its model isn't ready, so the standard model translated it.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality isn\'t ready yet; using Standard.'**
+  String get translationHighQualityNotReady;
+
+  /// Dialog body before High quality is set up on a phone with under 8 GB of memory or under 3 GB free. "Settings › Translation model" names the screen and the setting; keep them matching settingsTitle and settingsTranslationModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The high-quality model needs about 2 GB of memory. On this phone it may be slow or close Mekuru. If that happens, switch back in Settings › Translation model.'**
+  String get translationHighQualityLowMemoryBody;
+
+  /// Dialog button: keeps the standard translation model instead of setting up High quality.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Standard'**
+  String get translationHighQualityUseStandard;
+
+  /// Downloads screen row (Android only) for the optional high-quality translation model. Gemma 4 is a product name.
+  ///
+  /// In en, this message translates to:
+  /// **'High-quality translation (Gemma 4)'**
+  String get downloadsHighQualityTitle;
+
+  /// Subtitle of the Downloads row for the high-quality translation model.
+  ///
+  /// In en, this message translates to:
+  /// **'A larger model for better sentence translations, for phones with plenty of memory.'**
+  String get downloadsHighQualitySubtitle;
+
+  /// Attribution entry title for Google's Gemma 4 model. Product name.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemma 4'**
+  String get attributionGemmaTitle;
+
+  /// Attribution entry for Gemma 4 and LiteRT-LM. Gemma 4 and LiteRT-LM are product names.
+  ///
+  /// In en, this message translates to:
+  /// **'On Android, the high-quality translation model is Google\'s Gemma 4, run on your device with LiteRT-LM.'**
+  String get attributionGemmaDescription;
 }
 
 class _AppLocalizationsDelegate
