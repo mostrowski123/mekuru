@@ -66,6 +66,35 @@ void main() {
       expect(splitAcrossLines('月曜日ですよ', ['火星', '大好きだ']), ['月曜', '日ですよ']);
       expect(splitAcrossLines('あああああ', ['ああ', 'ああ']).join(), 'あああああ');
     });
+    test('a garbled reading does not shift the columns it matches', () {
+      // A Tadoku page: Vision's columns, and manga-ocr's reading of the whole
+      // seven-column block, which goes wrong towards the end. In proportion,
+      // every column took the start of the next one, and taps found the word
+      // under the wrong character.
+      const lines = [
+        'ジャクレーは、知り合いの別荘を借',
+        'りました。そして、畑でカボチャや',
+        'じゃがいもなどの食べ物を作り、鶏、',
+        'や山羊も飾っていました。',
+        '農家の方にお米などを分けてもらい、3',
+        'ジャクレーがお礼に版画をあげたこ',
+        'ともあったそうです。',
+      ];
+      const whole =
+          'ジャクレーは、知り合いの別荘を借りました。そして、畑でカボチやじゃがいも'
+          'などの食べ物を作り、鶏や山手も飼っていましだ。最寄の方におかなどをください、'
+          'ヨジックレが本社に版画に版図をあげたこともあったこどうだことあってもあつた。';
+      expect(alignLines(whole, lines), isNull);
+      expect(splitAcrossLines(whole, lines), [
+        'ジャクレーは、知り合いの別荘を借',
+        'りました。そして、畑でカボチや',
+        'じゃがいもなどの食べ物を作り、鶏',
+        'や山手も飼っていましだ。',
+        '最寄の方におかなどをください、ヨ',
+        'ジックレが本社に版画に版図をあげたこ',
+        'ともあったこどうだことあってもあつた。',
+      ]);
+    });
     test('a single line takes the whole text', () {
       expect(splitAcrossLines('こんにちは', ['こんにちわ']), ['こんにちは']);
       expect(splitAcrossLines('こんにちは', []), ['こんにちは']);

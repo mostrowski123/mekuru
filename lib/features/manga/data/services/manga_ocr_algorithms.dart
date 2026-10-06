@@ -98,8 +98,33 @@ List<String>? alignLines(String whole, List<String> lines) {
     return null;
   }
   if (lines.length == 1) return [whole];
-  final source = lines.join().runes.toList();
   final target = whole.runes.toList();
+  final alignment = _alignBoundaries(target, lines);
+  if (alignment == null) return null;
+  final n = lines.fold<int>(0, (a, l) => a + l.runes.length);
+  if (alignment.cost / math.max(n, target.length) > .25) return null;
+
+  final cuts = [0];
+  for (final candidates in alignment.boundaries) {
+    if (candidates.length != 1 || candidates.single <= cuts.last) return null;
+    cuts.add(candidates.single);
+  }
+  if (cuts.last >= target.length) return null;
+  cuts.add(target.length);
+  return [
+    for (var i = 0; i + 1 < cuts.length; i++)
+      String.fromCharCodes(target.sublist(cuts[i], cuts[i + 1])),
+  ];
+}
+
+/// The cheapest edit alignment of [target] against [lines] joined: its cost,
+/// and for each boundary between two lines, every offset in [target] that
+/// some cheapest alignment puts it at. Null for inputs too large to align.
+({int cost, List<List<int>> boundaries})? _alignBoundaries(
+  List<int> target,
+  List<String> lines,
+) {
+  final source = lines.join().runes.toList();
   final n = source.length;
   final m = target.length;
   // Decoding is bounded, but also bound independently for malformed inputs.
@@ -121,7 +146,6 @@ List<String>? alignLines(String whole, List<String> lines) {
     }
   }
   final cost = forward[n][m];
-  if (cost / math.max(n, m) > .25) return null;
 
   final backward = List.generate(n + 1, (_) => Int32List(m + 1));
   for (var i = 0; i <= n; i++) {
@@ -139,36 +163,33 @@ List<String>? alignLines(String whole, List<String> lines) {
     }
   }
 
-  final cuts = [0];
+  final boundaries = <List<int>>[];
   var boundary = 0;
   for (final line in lines.take(lines.length - 1)) {
     boundary += line.runes.length;
-    final candidates = [
+    boundaries.add([
       for (var j = 0; j <= m; j++)
         if (forward[boundary][j] + backward[boundary][j] == cost) j,
-    ];
-    if (candidates.length != 1 || candidates.single <= cuts.last) return null;
-    cuts.add(candidates.single);
+    ]);
   }
-  if (cuts.last >= m) return null;
-  cuts.add(m);
-  return [
-    for (var i = 0; i + 1 < cuts.length; i++)
-      String.fromCharCodes(target.sublist(cuts[i], cuts[i + 1])),
-  ];
+  return (cost: cost, boundaries: boundaries);
 }
 
-/// [alignLines], and where that finds the boundaries ambiguous, a split in
-/// proportion to the anchor lines' lengths. Measured on Manga109-s, keeping
-/// the anchors' own text in those cases gave back most of what the better
-/// reading had gained; a boundary that is a character off only shifts a word
-/// highlight, the looked-up text stays right.
+/// [alignLines], and where that finds the boundaries ambiguous or the
+/// readings too far apart, each cut at the cheapest alignment's place
+/// nearest to a split in proportion to the anchor lines' lengths. Measured
+/// on Manga109-s, keeping the anchors' own text in those cases gave back most
+/// of what the better reading had gained. A cut in pure proportion drifts by
+/// several characters on long columns, and word taps and highlights both map
+/// characters onto a line's box, so a tap then finds a word further down the
+/// column; matching text on either side of a boundary pins it.
 List<String> splitAcrossLines(String whole, List<String> lines) {
   if (lines.length <= 1) return [whole];
   final aligned = alignLines(whole, lines);
   if (aligned != null) return aligned;
 
   final target = whole.runes.toList();
+  final boundaries = _alignBoundaries(target, lines)?.boundaries;
   final lengths = [for (final l in lines) math.max(1, l.runes.length)];
   final total = lengths.fold<int>(0, (a, b) => a + b);
   final out = <String>[];
@@ -176,9 +197,16 @@ List<String> splitAcrossLines(String whole, List<String> lines) {
   var start = 0;
   for (var i = 0; i < lines.length; i++) {
     seen += lengths[i];
-    final end = i == lines.length - 1
-        ? target.length
-        : (target.length * seen / total).round().clamp(start, target.length);
+    var end = target.length;
+    if (i < lines.length - 1) {
+      final even = (target.length * seen / total).round();
+      end = boundaries == null
+          ? even
+          : boundaries[i].reduce(
+              (a, b) => (a - even).abs() <= (b - even).abs() ? a : b,
+            );
+      end = end.clamp(start, target.length);
+    }
     out.add(String.fromCharCodes(target.sublist(start, end)));
     start = end;
   }
