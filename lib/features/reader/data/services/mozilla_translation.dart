@@ -226,7 +226,7 @@ class MozillaTranslation implements TranslationEngine {
 
   /// Removes every downloaded pair, the English pivots included.
   Future<void> delete() async {
-    await _stop();
+    await stop();
     final root = await _root;
     if (await root.exists()) await root.delete(recursive: true);
   }
@@ -235,7 +235,7 @@ class MozillaTranslation implements TranslationEngine {
   Future<String> translate(String text, String target) async {
     final controller = await (_engine ??= _start());
     _idleTimer?.cancel();
-    _idleTimer = Timer(_idleLifetime, _stop);
+    _idleTimer = Timer(_idleLifetime, stop);
     final result = await controller.callAsyncJavaScript(
       functionBody: 'return await mekuruTranslate(text, pairs);',
       arguments: {
@@ -286,12 +286,14 @@ class MozillaTranslation implements TranslationEngine {
       await webView.run();
       return await loaded.future.timeout(const Duration(seconds: 20));
     } catch (_) {
-      await _stop();
+      await stop();
       rethrow;
     }
   }
 
-  Future<void> _stop() async {
+  /// Frees the WebView's memory; the next [translate] starts it again.
+  /// Nothing happens when it isn't running.
+  Future<void> stop() async {
     _idleTimer?.cancel();
     _idleTimer = null;
     _engine = null;

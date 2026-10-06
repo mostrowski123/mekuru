@@ -124,6 +124,9 @@ Future<SentenceTranslation> _translate(
   final high = _highQualityEngine(highQuality);
   if (high != null &&
       await high.status(target) == TranslationStatus.installed) {
+    // Standard's WebView would hold its memory while Gemma loads. Only the
+    // real engine: tests' fakes have nothing to stop.
+    if (_engine case final MozillaTranslation standard) await standard.stop();
     try {
       return (text: await high.translate(text, target), highQuality: true);
     } catch (e) {

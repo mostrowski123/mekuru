@@ -6633,6 +6633,12 @@ abstract class AppLocalizations {
   /// **'High quality isn\'t ready yet; using Standard.'**
   String get translationHighQualityNotReady;
 
+  /// Note under a sentence translation when the High quality model is installed but couldn't load or translate, so the standard model translated it.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality couldn\'t load; using Standard.'**
+  String get translationHighQualityCouldNotLoad;
+
   /// Dialog body before High quality is set up on a phone with under 8 GB of memory or under 3 GB free. "Settings › Translation model" names the screen and the setting; keep them matching settingsTitle and settingsTranslationModelTitle.
   ///
   /// In en, this message translates to:

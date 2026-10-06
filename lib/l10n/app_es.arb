@@ -3101,6 +3101,7 @@
   "translationHighQualityDownloading": "Alta calidad: descargando {percent} %",
   "translationHighQualityNeedsDownload": "Alta calidad: toca para descargar ({size})",
   "translationHighQualityNotReady": "La alta calidad aún no está lista; se usa la estándar.",
+  "translationHighQualityCouldNotLoad": "La alta calidad no se pudo cargar; se usa la estándar.",
   "translationHighQualityLowMemoryBody": "El modelo de alta calidad necesita unos 2 GB de memoria. En este teléfono puede ir lento o cerrar Mekuru. Si pasa, vuelve al estándar en Configuración › Modelo de traducción.",
   "translationHighQualityUseStandard": "Usar la estándar",
   "downloadsHighQualityTitle": "Traducción de alta calidad (Gemma 4)",

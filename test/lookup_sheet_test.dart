@@ -99,6 +99,7 @@ class _FakeTranslationEngine implements TranslationEngine {
   final String prefix;
   final translated = <(String, String)>[];
   final downloaded = <String>[];
+  bool fails = false;
 
   @override
   Future<TranslationStatus> status(String target) async => state;
@@ -109,6 +110,7 @@ class _FakeTranslationEngine implements TranslationEngine {
   @override
   Future<String> translate(String text, String target) async {
     translated.add((text, target));
+    if (fails) throw StateError('$prefix failed');
     return '$prefix$text';
   }
 }
@@ -161,6 +163,7 @@ List<Object?> _shownEngines() {
 }
 
 const _notReady = "High quality isn't ready yet; using Standard.";
+const _couldNotLoad = "High quality couldn't load; using Standard.";
 
 final _android = TargetPlatformVariant.only(TargetPlatform.android);
 
@@ -683,6 +686,25 @@ void main() {
       expect(find.text('EN:粥を食べる。'), findsOneWidget);
       expect(find.text(_notReady), findsOneWidget);
       expect(engines, ['mozilla']);
+    }, variant: _android);
+
+    testWidgets('says so when an installed High-quality model cannot load', (
+      tester,
+    ) async {
+      _fakeTranslation();
+      _fakeHighQuality().fails = true;
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '鮭を食べる。'),
+        highQuality: true,
+      );
+      await openSentenceTab(tester);
+      // Gemma's first disk check reports it installed and reloads the tab.
+      await tester.pump();
+
+      expect(find.text('EN:鮭を食べる。'), findsOneWidget);
+      expect(find.text(_couldNotLoad), findsOneWidget);
+      expect(find.text(_notReady), findsNothing);
     }, variant: _android);
 
     testWidgets('shows the High-quality download progress', (tester) async {

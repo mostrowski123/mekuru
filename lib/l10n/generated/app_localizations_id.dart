@@ -4085,6 +4085,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Kualitas tinggi belum siap; menggunakan Standar.';
 
   @override
+  String get translationHighQualityCouldNotLoad =>
+      'Kualitas tinggi tidak dapat dimuat; menggunakan Standar.';
+
+  @override
   String get translationHighQualityLowMemoryBody =>
       'Model kualitas tinggi memerlukan sekitar 2 GB memori. Di ponsel ini, model ini mungkin lambat atau membuat Mekuru tertutup. Jika itu terjadi, kembali ke Standar di Pengaturan › Model terjemahan.';
 

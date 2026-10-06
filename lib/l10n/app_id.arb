@@ -3101,6 +3101,7 @@
   "translationHighQualityDownloading": "Kualitas tinggi: mengunduh {percent}%",
   "translationHighQualityNeedsDownload": "Kualitas tinggi: ketuk untuk mengunduh ({size})",
   "translationHighQualityNotReady": "Kualitas tinggi belum siap; menggunakan Standar.",
+  "translationHighQualityCouldNotLoad": "Kualitas tinggi tidak dapat dimuat; menggunakan Standar.",
   "translationHighQualityLowMemoryBody": "Model kualitas tinggi memerlukan sekitar 2 GB memori. Di ponsel ini, model ini mungkin lambat atau membuat Mekuru tertutup. Jika itu terjadi, kembali ke Standar di Pengaturan › Model terjemahan.",
   "translationHighQualityUseStandard": "Gunakan Standar",
   "downloadsHighQualityTitle": "Terjemahan kualitas tinggi (Gemma 4)",

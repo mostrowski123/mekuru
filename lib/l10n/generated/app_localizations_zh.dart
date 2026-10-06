@@ -3894,6 +3894,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get translationHighQualityNotReady => '高质量模型尚未就绪，正在使用标准模型。';
 
   @override
+  String get translationHighQualityCouldNotLoad => '高质量模型无法加载，正在使用标准模型。';
+
+  @override
   String get translationHighQualityLowMemoryBody =>
       '高质量模型需要约 2 GB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 翻译模型”中切换回标准。';
 
@@ -7807,6 +7810,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get translationHighQualityNotReady => '高质量模型尚未就绪，正在使用标准模型。';
+
+  @override
+  String get translationHighQualityCouldNotLoad => '高质量模型无法加载，正在使用标准模型。';
 
   @override
   String get translationHighQualityLowMemoryBody =>

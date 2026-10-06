@@ -392,6 +392,10 @@ class _SentenceTranslationViewState
                     percent: '${(fraction * 100).floor()}',
                   ),
                 ),
+                // Installed, so Gemma failed to load or translate.
+                GemmaInstalled() when !(result?.highQuality ?? true) => _note(
+                  l10n.translationHighQualityCouldNotLoad,
+                ),
                 _ when !(result?.highQuality ?? true) => _note(
                   l10n.translationHighQualityNotReady,
                 ),
