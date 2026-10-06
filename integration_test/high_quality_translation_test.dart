@@ -5,10 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:mekuru/features/manga/data/services/ocr_background_worker.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:workmanager/workmanager.dart';
 
 /// Android's High quality engine end to end: Gemma 4 E2B (about 2.6 GB)
 /// downloaded from Hugging Face and run in LiteRT-LM, then the fall back to
@@ -22,13 +24,15 @@ void main() {
     'downloads Gemma, translates, and falls back to Standard',
     (tester) async {
       await tester.runAsync(() async {
+        // The download runs as a WorkManager job, as in the app (main.dart).
+        await Workmanager().initialize(ocrWorkerCallbackDispatcher);
         final gemma = GemmaTranslation.instance;
         await gemma.delete();
         expect(await gemma.status('en'), TranslationStatus.needsDownload);
 
         final clock = Stopwatch()..start();
         // Like the notifier's callback, this one holds something an isolate
-        // can't take (a Future), so the sha256 step must not capture it.
+        // can't take (a Future); it must never reach one.
         final notSendable = Completer<void>();
         await gemma.downloadModel(onProgress: (_) => notSendable.isCompleted);
         debugPrint('Gemma download + verify: ${clock.elapsed}');

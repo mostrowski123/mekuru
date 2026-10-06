@@ -138,6 +138,7 @@ _FakeTranslationEngine _fakeHighQuality({
     delete: () async {},
     hasFiles: () async => false,
     cancel: () => true,
+    pending: () async => false,
   );
   addTearDown(() {
     debugHighQualityEngine = null;

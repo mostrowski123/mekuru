@@ -149,6 +149,10 @@ class ServerDownloadWorkDir {
   Future<void> writeStatus(ServerDownloadWorkStatus status) =>
       writeStringAtomic(_statusFile, jsonEncode(status.toJson()));
 
+  Future<void> deleteStatus() async {
+    if (await _statusFile.exists()) await _statusFile.delete();
+  }
+
   Future<ServerDownloadWorkStatus?> readStatus() async {
     try {
       return ServerDownloadWorkStatus.fromJson(

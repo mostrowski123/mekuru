@@ -63,15 +63,13 @@ void main() {
     expect(await GemmaTranslation.instance.hasFiles(), isFalse);
   });
 
-  test('a Gemma download cancelled before it connects stops there', () async {
+  test('a Gemma download cancelled before its job is queued stops', () async {
     final gemma = GemmaTranslation.instance;
-    expect(gemma.cancelDownload(), isFalse); // nothing running
-
     final download = gemma.downloadModel();
     expect(gemma.cancelDownload(), isTrue);
 
+    // Here a queued job would throw: there is no WorkManager.
     await expectLater(download, throwsA(isA<HttpException>()));
-    expect(gemma.cancelDownload(), isFalse);
   });
 
   test('a Gemma download without room for the model and its cache fails '

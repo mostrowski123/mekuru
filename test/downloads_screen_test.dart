@@ -227,6 +227,7 @@ void main() {
           if (cancelStops) downloadDone.completeError(StateError('closed'));
           return true;
         },
+        pending: () async => false,
       );
     });
 

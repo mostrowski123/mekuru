@@ -38,6 +38,8 @@ typedef GemmaModelOps = ({
   Future<void> Function() delete,
   Future<bool> Function() hasFiles,
   bool Function() cancel,
+  // A download job is queued or running, or one finished unseen.
+  Future<bool> Function() pending,
 });
 
 /// Replaces the real model files in tests.
@@ -55,6 +57,7 @@ GemmaModelOps get _ops =>
       delete: GemmaTranslation.instance.delete,
       hasFiles: GemmaTranslation.instance.hasFiles,
       cancel: GemmaTranslation.instance.cancelDownload,
+      pending: GemmaTranslation.instance.downloadPending,
     );
 
 /// The Gemma model's download, shared by Settings, Downloads and the
@@ -82,9 +85,16 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
     // Checks the state only after the await: build() calls this before its
     // state exists, and a download may start while the check runs.
     final epoch = _epoch;
+    final pending = await _ops.pending();
     final installed = await _ops.installed();
     final hasFiles = !installed && await _ops.hasFiles();
     if (epoch != _epoch || state is GemmaDownloading) return;
+    // The download job outlives the app: follow it, or take the model it
+    // installed while Mekuru was closed, choosing High like any download.
+    if (pending) {
+      unawaited(start());
+      return;
+    }
     _settle(
       installed
           ? const GemmaInstalled()
@@ -147,9 +157,9 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
     }
   }
 
-  /// Stops the download; the next [start] resumes it. A cancel that finds
-  /// nothing to stop (the file is being verified) lets the download finish,
-  /// installed but not chosen.
+  /// Stops the download; the next [start] resumes it. A download that
+  /// finishes anyway (a cancel that found nothing to stop, or came as the
+  /// job ended) is installed but not chosen.
   void cancel() {
     if (state is! GemmaDownloading) return;
     _cancelRequested = true;

@@ -22,6 +22,7 @@ import '../../../sync/data/services/server_download_work.dart';
 import '../../data/models/mokuro_models.dart';
 import '../../../settings/data/services/ocr_server_config.dart'
     as ocr_server_config;
+import '../../../reader/data/services/gemma_translation.dart';
 import '../../../reader/data/services/mecab_service.dart';
 import 'manga_cache_store.dart';
 import 'manga_ocr_client.dart';
@@ -151,8 +152,9 @@ class OcrProgress {
   }
 }
 
-/// Top-level callback dispatcher for WorkManager: remote OCR scans and
-/// server book downloads (see `server_download_work.dart`). Must be a top-level function (not a
+/// Top-level callback dispatcher for WorkManager: remote OCR scans, server
+/// book downloads (see `server_download_work.dart`) and the Gemma model
+/// download (`runGemmaDownloadWork`). Must be a top-level function (not a
 /// method or closure); its name is what queued jobs look up, so keep it.
 @pragma('vm:entry-point')
 void ocrWorkerCallbackDispatcher() {
@@ -167,6 +169,22 @@ void ocrWorkerCallbackDispatcher() {
         // interrupted.
         logFailure(
           'sync.book_downloaded',
+          e,
+          stackTrace: st,
+          attrs: {'route': 'worker'},
+        );
+        return true;
+      }
+    }
+    if (taskName == gemmaDownloadTaskName && inputData != null) {
+      await initSentryForBackgroundIsolate();
+      try {
+        return await runGemmaDownloadWork(inputData);
+      } catch (e, st) {
+        // runGemmaDownloadWork records its own failures; this is a bug. Give
+        // up rather than retry it forever; the app reports it interrupted.
+        logFailure(
+          'translation.high_quality_download_failed',
           e,
           stackTrace: st,
           attrs: {'route': 'worker'},

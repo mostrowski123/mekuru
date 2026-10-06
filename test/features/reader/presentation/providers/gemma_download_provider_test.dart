@@ -14,6 +14,7 @@ void main() {
   late int cancels;
   late int deletes;
   late bool hasFiles;
+  late bool pending;
 
   ProviderContainer container() {
     final c = ProviderContainer();
@@ -32,6 +33,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     installed = false;
     hasFiles = false;
+    pending = false;
     cancels = 0;
     deletes = 0;
     download = Completer<void>();
@@ -52,6 +54,7 @@ void main() {
         download.completeError(StateError('Client is closed'));
         return true;
       },
+      pending: () async => pending,
     );
   });
   tearDown(() => debugGemmaModelOps = null);
@@ -108,6 +111,7 @@ void main() {
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
+      pending: () async => false,
     );
     final c = container();
     chooseHigh(c);
@@ -153,6 +157,7 @@ void main() {
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
+      pending: () async => false,
     );
     unawaited(c.read(gemmaDownloadProvider.notifier).start());
     unawaited(c.read(gemmaDownloadProvider.notifier).start());
@@ -171,6 +176,7 @@ void main() {
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
+      pending: () async => false,
     );
     final c = container();
     unawaited(c.read(gemmaDownloadProvider.notifier).start());
@@ -190,6 +196,7 @@ void main() {
         delete: () async {},
         hasFiles: () async => false,
         cancel: () => false,
+        pending: () async => false,
       );
       final c = ProviderContainer();
       addTearDown(c.dispose);
@@ -272,6 +279,7 @@ void main() {
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false, // nothing to close yet
+      pending: () async => false,
     );
     final c = container();
     final notifier = c.read(gemmaDownloadProvider.notifier);
@@ -311,6 +319,7 @@ void main() {
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
+      pending: () async => false,
     );
     final c = ProviderContainer();
     addTearDown(c.dispose);
@@ -330,6 +339,7 @@ void main() {
       delete: () async => installed = false,
       hasFiles: () async => false,
       cancel: () => false,
+      pending: () async => false,
     );
     final c = container();
     final notifier = c.read(gemmaDownloadProvider.notifier);
@@ -361,6 +371,7 @@ void main() {
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => true,
+      pending: () async => false,
     );
     final c = ProviderContainer();
     addTearDown(c.dispose);
@@ -387,6 +398,7 @@ void main() {
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
+      pending: () async => false,
     );
     final c = ProviderContainer();
     addTearDown(c.dispose);
@@ -409,4 +421,50 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(c.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
   });
+
+  test('a download job found at build is followed to the end', () async {
+    // Started before Mekuru was closed, and still queued or running.
+    pending = true;
+    var follows = 0;
+    final ops = debugGemmaModelOps!;
+    debugGemmaModelOps = (
+      installed: ops.installed,
+      download: (onProgress) {
+        follows++;
+        return ops.download(onProgress);
+      },
+      delete: ops.delete,
+      hasFiles: ops.hasFiles,
+      cancel: ops.cancel,
+      pending: ops.pending,
+    );
+    final c = container();
+    c.read(gemmaDownloadProvider);
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaDownloading>());
+    expect(follows, 1);
+    report(0.6);
+    expect(
+      c.read(gemmaDownloadProvider),
+      isA<GemmaDownloading>().having((s) => s.fraction, 'fraction', 0.6),
+    );
+    installed = true;
+    download.complete();
+    await Future<void>.delayed(Duration.zero);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+    expect(choiceIn(c), TranslationModelChoice.high);
+  });
+
+  test(
+    'a download that finished while Mekuru was closed chooses High',
+    () async {
+      pending = true;
+      installed = true;
+      final c = container();
+      c.read(gemmaDownloadProvider);
+      await Future<void>.delayed(Duration.zero);
+      expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+      expect(choiceIn(c), TranslationModelChoice.high);
+    },
+  );
 }

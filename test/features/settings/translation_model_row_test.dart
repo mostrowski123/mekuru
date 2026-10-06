@@ -51,6 +51,7 @@ void main() {
         cancels++;
         return true;
       },
+      pending: () async => false,
     );
     GemmaTranslation.debugClose = () async => closes++;
   });
@@ -328,6 +329,7 @@ void main() {
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
+      pending: () async => false,
     );
 
     await tester.tap(find.text('Translation model'));
