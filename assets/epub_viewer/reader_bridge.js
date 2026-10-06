@@ -271,6 +271,14 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
   rendition.hooks.content.register(function (contents) {
     var doc = contents.window.document;
 
+    // Screen readers pick their voice from the page's language, and many
+    // books never declare one: fall back to the book's own, else Japanese.
+    var root = doc.documentElement;
+    if (!root.getAttribute('lang') && !root.getAttribute('xml:lang')) {
+      var metadata = book.packaging && book.packaging.metadata;
+      root.setAttribute('lang', (metadata && metadata.language) || 'ja');
+    }
+
     // Furigana: inject visibility style and (lazily) generate ruby for kanji.
     applyFuriganaStyleToDoc(doc);
     processSectionForFurigana(doc);
