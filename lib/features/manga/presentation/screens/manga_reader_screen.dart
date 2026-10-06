@@ -479,8 +479,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         }
       case MangaViewMode.scroll:
         _recordPageTurn(forward: delta > 0);
-        _scrollViewKey.currentState?.scrollToPage(
-          _currentPage + delta,
+        _scrollViewKey.currentState?.scrollByScreens(
+          delta,
           animate: _animatePageTurns,
         );
     }

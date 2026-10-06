@@ -75,8 +75,22 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
     // the baseline per-item height (since each page is full-width with
     // an AspectRatio wrapper, actual heights vary).
     final viewportHeight = _scrollController.position.viewportDimension;
-    final targetOffset = clamped * viewportHeight;
-    final clampedOffset = targetOffset.clamp(
+    _scrollTo(clamped * viewportHeight, animate: animate);
+  }
+
+  /// Scrolls [screens] screens down (negative: up), which is what the page
+  /// keys and volume buttons do here, as in the EPUB reader's scroll view.
+  void scrollByScreens(int screens, {bool animate = true}) {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    _scrollTo(
+      position.pixels + screens * position.viewportDimension,
+      animate: animate,
+    );
+  }
+
+  void _scrollTo(double offset, {required bool animate}) {
+    final clampedOffset = offset.clamp(
       0.0,
       _scrollController.position.maxScrollExtent,
     );
