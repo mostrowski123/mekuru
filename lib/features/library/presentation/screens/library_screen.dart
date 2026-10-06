@@ -115,6 +115,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     return AppBar(
       leading: IconButton(
         icon: const Icon(Icons.close),
+        tooltip: l10n.commonClose,
         onPressed: _exitSelectionMode,
       ),
       title: Text(l10n.librarySelectedCount(count: _selectedIds.length)),
@@ -333,6 +334,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           if (onDismiss != null)
             IconButton(
               icon: Icon(Icons.close, color: textColor, size: 18),
+              tooltip: context.l10n.commonClose,
               onPressed: onDismiss,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -2142,6 +2144,7 @@ class _CollectionFolderScreenState
     return AppBar(
       leading: IconButton(
         icon: const Icon(Icons.close),
+        tooltip: l10n.commonClose,
         onPressed: _exitSelectionMode,
       ),
       title: Text(l10n.librarySelectedCount(count: _selectedIds.length)),
@@ -2215,6 +2218,7 @@ class _CollectionFolderScreenState
                 ),
                 IconButton(
                   icon: const Icon(Icons.more_vert),
+                  tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
                   onPressed: () {
                     AppHaptics.light();
                     showCollectionManageSheet(context, managed);

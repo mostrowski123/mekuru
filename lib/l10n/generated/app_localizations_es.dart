@@ -739,6 +739,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get commonClear => 'Limpiar';
 
   @override
+  String get commonShow => 'Show';
+
+  @override
+  String get commonHide => 'Hide';
+
+  @override
   String get commonSubmit => 'Enviar';
 
   @override

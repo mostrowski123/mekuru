@@ -695,6 +695,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonClear => '清除';
 
   @override
+  String get commonShow => 'Show';
+
+  @override
+  String get commonHide => 'Hide';
+
+  @override
   String get commonSubmit => '提交';
 
   @override

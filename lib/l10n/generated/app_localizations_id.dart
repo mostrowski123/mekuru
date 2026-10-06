@@ -731,6 +731,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get commonClear => 'Bersihkan';
 
   @override
+  String get commonShow => 'Show';
+
+  @override
+  String get commonHide => 'Hide';
+
+  @override
   String get commonSubmit => 'Kirim';
 
   @override

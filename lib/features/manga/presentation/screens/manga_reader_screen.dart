@@ -1257,6 +1257,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                         child: Row(
                           children: [
                             IconButton(
+                              tooltip: context.l10n.commonBack,
                               icon: const Icon(
                                 Icons.arrow_back,
                                 color: Colors.white,
@@ -1289,6 +1290,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                               ),
                             ),
                             IconButton(
+                              tooltip: context.l10n.settingsTitle,
                               icon: const Icon(
                                 Icons.settings,
                                 color: Colors.white,

@@ -264,6 +264,9 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
+                        tooltip: _obscureKey
+                            ? l10n.commonShow
+                            : l10n.commonHide,
                         onPressed: () {
                           setState(() {
                             _obscureKey = !_obscureKey;
@@ -277,6 +280,7 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
                       ),
                       if (_keyController.text.trim().isNotEmpty)
                         IconButton(
+                          tooltip: l10n.commonClear,
                           onPressed: () {
                             _keyController.clear();
                             setState(() {

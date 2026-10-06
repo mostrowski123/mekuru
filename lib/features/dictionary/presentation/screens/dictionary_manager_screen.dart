@@ -534,6 +534,7 @@ class _DictionaryManagerScreenState
             else
               IconButton(
                 icon: const Icon(Icons.delete_outline),
+                tooltip: context.l10n.commonDelete,
                 onPressed: () => _confirmDelete(context, dict.id, name),
               ),
           ],

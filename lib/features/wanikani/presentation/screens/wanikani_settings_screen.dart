@@ -284,6 +284,7 @@ class _LinkSection extends StatelessWidget {
             border: const OutlineInputBorder(),
             suffixIcon: IconButton(
               icon: Icon(obscure ? Icons.visibility : Icons.visibility_off),
+              tooltip: obscure ? l10n.commonShow : l10n.commonHide,
               onPressed: onToggleObscure,
             ),
           ),

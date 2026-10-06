@@ -370,6 +370,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
+                        tooltip: context.l10n.commonClearSearch,
                         onPressed: _clearSearch,
                       )
                     : null,
@@ -703,6 +704,7 @@ class DictionarySearchScreenState extends ConsumerState<DictionarySearchScreen>
                 ),
                 title: Text(term),
                 trailing: IconButton(
+                  tooltip: context.l10n.commonRemove,
                   icon: Icon(
                     Icons.close,
                     size: 18,

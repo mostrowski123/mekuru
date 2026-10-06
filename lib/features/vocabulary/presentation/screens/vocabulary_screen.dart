@@ -117,6 +117,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                         ? null
                         : IconButton(
                             icon: const Icon(Icons.clear),
+                            tooltip: l10n.commonClearSearch,
                             onPressed: () {
                               _searchController.clear();
                               _setSearchQuery('');
@@ -278,6 +279,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     return AppBar(
       leading: IconButton(
         icon: const Icon(Icons.close),
+        tooltip: l10n.commonClose,
         onPressed: _exitSelectionMode,
       ),
       title: Text(l10n.vocabularySelectedCount(count: _selectedIds.length)),

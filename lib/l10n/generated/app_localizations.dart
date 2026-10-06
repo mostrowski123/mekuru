@@ -1306,6 +1306,18 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get commonClear;
 
+  /// Screen-reader label of the eye button that reveals a hidden API key or token.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get commonShow;
+
+  /// Screen-reader label of the eye button that hides a revealed API key or token again.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get commonHide;
+
   /// Generic submit action.
   ///
   /// In en, this message translates to:

@@ -82,6 +82,7 @@ class SelectionActionBar extends StatelessWidget {
         const SizedBox(width: 4),
         IconButton(
           icon: const Icon(Icons.close, size: 18),
+          tooltip: context.l10n.commonClose,
           onPressed: onDismiss,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

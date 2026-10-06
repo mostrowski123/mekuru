@@ -140,6 +140,7 @@ class _SeriesListScreenState extends State<_SeriesListScreen> {
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.clear),
+                  tooltip: l10n.commonClearSearch,
                   onPressed: () {
                     _searchController.clear();
                     _search('');

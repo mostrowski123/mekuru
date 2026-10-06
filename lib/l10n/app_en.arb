@@ -940,6 +940,14 @@
   "@commonClear": {
     "description": "Generic clear action."
   },
+  "commonShow": "Show",
+  "@commonShow": {
+    "description": "Screen-reader label of the eye button that reveals a hidden API key or token."
+  },
+  "commonHide": "Hide",
+  "@commonHide": {
+    "description": "Screen-reader label of the eye button that hides a revealed API key or token again."
+  },
   "commonSubmit": "Submit",
   "@commonSubmit": {
     "description": "Generic submit action."
