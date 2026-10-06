@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
@@ -206,6 +210,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             // iOS language packs belong to the system (Settings > Apps >
             // Translate); the Sentence tab asks Apple for them.
             const _SentenceTranslationTile(),
+            const _HighQualityTranslationTile(),
             const LocalOcrDownloadTile(),
           ],
           // On-device scans of scanned free books read long lines with it;
@@ -327,6 +332,81 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
             child: LinearProgressIndicator(),
           ),
         if (error != null) DownloadErrorText(text: error),
+      ],
+    );
+  }
+}
+
+/// Android's optional Gemma model for High quality sentence translation.
+/// The download outlives this screen: the provider holds it.
+class _HighQualityTranslationTile extends ConsumerWidget {
+  const _HighQualityTranslationTile();
+
+  Future<void> _download(BuildContext context, WidgetRef ref) async {
+    // Read before the dialogs: the tile can unmount while one is up.
+    final notifier = ref.read(gemmaDownloadProvider.notifier);
+    if (!await confirmHighQualityMemory(context) || !context.mounted) return;
+    if (await okToDownload(
+      context,
+      context.l10n.catalogMobileDataBody(size: GemmaTranslation.downloadSize()),
+    )) {
+      unawaited(notifier.start());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final theme = Theme.of(context);
+    final state = ref.watch(gemmaDownloadProvider);
+    final notifier = ref.read(gemmaDownloadProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: Icon(
+            Icons.auto_awesome_outlined,
+            color: theme.colorScheme.primary,
+          ),
+          title: Text(l.downloadsHighQualityTitle),
+          subtitle: Text(switch (state) {
+            GemmaDownloading(:final fraction) =>
+              l.translationHighQualityDownloading(
+                percent: '${(fraction * 100).floor()}',
+              ),
+            GemmaDownloadFailed(:final error) => dictionaryDownloadError(
+              l,
+              error,
+            )!,
+            _ =>
+              '${l.downloadsHighQualitySubtitle} '
+                  '(${GemmaTranslation.downloadSize()})',
+          }),
+          trailing: switch (state) {
+            GemmaInstalled() => IconButton(
+              tooltip: l.commonRemove,
+              icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+              onPressed: notifier.remove,
+            ),
+            GemmaDownloading() => IconButton(
+              tooltip: l.commonCancel,
+              icon: const Icon(Icons.close),
+              onPressed: notifier.cancel,
+            ),
+            _ => FilledButton.tonal(
+              onPressed: () => _download(context, ref),
+              child: Text(l.commonDownload),
+            ),
+          },
+        ),
+        if (state case GemmaDownloading(:final fraction))
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: LinearProgressIndicator(
+              value: fraction,
+              semanticsLabel: l.downloadsHighQualityTitle,
+            ),
+          ),
       ],
     );
   }

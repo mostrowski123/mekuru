@@ -608,6 +608,53 @@ class AttributionsScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.auto_awesome_outlined,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.attributionGemmaTitle,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.attributionGemmaDescription,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  DownloadAttributionText(
+                    prefix: l10n.aboutLicensedUnderPrefix,
+                    linkText: 'Apache License 2.0',
+                    url: 'https://www.apache.org/licenses/LICENSE-2.0',
+                    suffix: '.',
+                  ),
+                  const SizedBox(height: 8),
+                  DownloadAttributionText(
+                    prefix: l10n.aboutSourceLabel,
+                    linkText:
+                        'huggingface.co/litert-community/gemma-4-E2B-it-litert-lm',
+                    url:
+                        'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm',
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           FutureBuilder<PackageInfo>(
             future: _packageInfoFuture,
