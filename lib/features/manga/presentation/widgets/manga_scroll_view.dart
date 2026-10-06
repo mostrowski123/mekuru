@@ -7,12 +7,44 @@ import 'package:mekuru/features/manga/data/models/mokuro_models.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_page_view.dart';
 import 'package:mekuru/features/manga/presentation/widgets/manga_word_overlay.dart';
 
+double _aspectRatio(MokuroPage page) => page.imgWidth > 0 && page.imgHeight > 0
+    ? page.imgWidth / page.imgHeight
+    : 0.7; // fallback for corrupt dimensions
+
+/// Where each page starts in [MangaScrollView], which lays pages out at
+/// [width] and their own aspect ratio. One entry longer than [pages]: the
+/// last is where the final page ends.
+List<double> mangaScrollPageTops(List<MokuroPage> pages, double width) {
+  final tops = [0.0];
+  for (final page in pages) {
+    tops.add(tops.last + width / _aspectRatio(page));
+  }
+  return tops;
+}
+
+/// The page at the middle of the screen, or the last page once the view
+/// can't scroll further, so that the end of a book reads as its last page.
+int mangaScrollPageAt(
+  List<double> pageTops, {
+  required double offset,
+  required double viewport,
+}) {
+  final lastPage = pageTops.length - 2;
+  if (offset >= pageTops.last - viewport - 0.5) return lastPage;
+  final middle = offset + viewport / 2;
+  var page = 0;
+  while (page < lastPage && pageTops[page + 1] <= middle) {
+    page++;
+  }
+  return page;
+}
+
 /// Continuous vertical scroll view for manga pages.
 ///
 /// Each page is rendered at full width with its natural aspect ratio.
 /// A debounced timer saves reading progress as `'scroll:<offset>'` in the
-/// book's `lastReadCfi` field. The estimated current page is reported via
-/// [onPageEstimateChanged] for the parent's slider/indicator.
+/// book's `lastReadCfi` field. The current page (see [mangaScrollPageAt]) is
+/// reported via [onPageEstimateChanged] for the parent's slider/indicator.
 class MangaScrollView extends ConsumerStatefulWidget {
   final MokuroBook mokuroBook;
   final int bookId;
@@ -67,16 +99,12 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
   /// Scroll so that the given [page] is visible at the top of the viewport.
   void scrollToPage(int page, {bool animate = true}) {
     if (!_scrollController.hasClients) return;
-    final totalPages = widget.mokuroBook.pages.length;
-    final clamped = page.clamp(0, totalPages - 1);
-
-    // Estimate offset: each page occupies roughly one viewport height,
-    // adjusted by aspect ratio. For simplicity use viewport height as
-    // the baseline per-item height (since each page is full-width with
-    // an AspectRatio wrapper, actual heights vary).
-    final viewportHeight = _scrollController.position.viewportDimension;
-    _scrollTo(clamped * viewportHeight, animate: animate);
+    final clamped = page.clamp(0, widget.mokuroBook.pages.length - 1);
+    _scrollTo(_pageTops()[clamped], animate: animate);
   }
+
+  List<double> _pageTops() =>
+      mangaScrollPageTops(widget.mokuroBook.pages, context.size!.width);
 
   /// Scrolls [screens] screens down (negative: up), which is what the page
   /// keys and volume buttons do here, as in the EPUB reader's scroll view.
@@ -126,13 +154,10 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
 
   int _estimateCurrentPage() {
     if (!_scrollController.hasClients) return 0;
-    final offset = _scrollController.offset;
-    final viewportHeight = _scrollController.position.viewportDimension;
-    // Use the center of the viewport to determine "current" page
-    final centerOffset = offset + viewportHeight / 2;
-    return (centerOffset / viewportHeight).floor().clamp(
-      0,
-      widget.mokuroBook.pages.length - 1,
+    return mangaScrollPageAt(
+      _pageTops(),
+      offset: _scrollController.offset,
+      viewport: _scrollController.position.viewportDimension,
     );
   }
 
@@ -145,12 +170,8 @@ class MangaScrollViewState extends ConsumerState<MangaScrollView> {
       itemCount: pages.length,
       itemBuilder: (context, index) {
         final page = pages[index];
-        final aspectRatio = page.imgWidth > 0 && page.imgHeight > 0
-            ? page.imgWidth / page.imgHeight
-            : 0.7; // fallback for corrupt dimensions
-
         return AspectRatio(
-          aspectRatio: aspectRatio,
+          aspectRatio: _aspectRatio(page),
           child: MangaPageView(
             pageIndex: index,
             page: page,

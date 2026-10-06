@@ -1471,8 +1471,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           key: _scrollViewKey,
           mokuroBook: mokuroBook,
           bookId: widget.book.id,
-          initialScrollOffset:
-              _currentPage * MediaQuery.of(context).size.height,
+          initialScrollOffset: mangaScrollPageTops(
+            mokuroBook.pages,
+            MediaQuery.sizeOf(context).width,
+          )[_currentPage],
           debugOverlay: debugOverlay,
           autoCrop: autoCrop,
           highlightedRects: _highlight?.rects ?? const [],
