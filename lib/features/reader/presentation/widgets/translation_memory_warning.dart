@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/device_memory.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
+import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
 
@@ -42,7 +43,8 @@ Future<bool> confirmTranslationMemory(BuildContext context) async {
 
 /// Before High quality is set up on a phone with under 8 GB or 3 GB free.
 /// True to go ahead; "Use Standard" or dismissing switches the model to
-/// Standard (it may already be High) and returns false.
+/// Standard (it may already be High), cancels a running download, and
+/// returns false. Android only: it builds the Gemma download provider.
 Future<bool> confirmHighQualityMemory(BuildContext context) async {
   if (!await deviceLowOnMemory(minTotalMb: 7168, minFreeMb: 3072)) return true;
   if (!context.mounted) return false;
@@ -65,10 +67,12 @@ Future<bool> confirmHighQualityMemory(BuildContext context) async {
     ),
   );
   if (proceed != true && context.mounted) {
-    ProviderScope.containerOf(context, listen: false)
+    final container = ProviderScope.containerOf(context, listen: false);
+    container
         .read(translationModelProvider.notifier)
         .setChoice(TranslationModelChoice.standard);
     unawaited(GemmaTranslation.instance.close());
+    container.read(gemmaDownloadProvider.notifier).cancel();
   }
   return proceed == true;
 }

@@ -297,8 +297,10 @@ void main() {
       expect(inRow(find.byTooltip('Remove')), findsOneWidget);
     });
 
-    testWidgets('downloads after asking about mobile data, cancels until the '
-        'file is being verified, and picks High once done', (tester) async {
+    testWidgets('downloads after asking about mobile data, offers Cancel '
+        'until the file is being verified, and picks High once done', (
+      tester,
+    ) async {
       mockWifiConnected(false);
       final container = await pumpDownloads(tester);
 
@@ -328,10 +330,8 @@ void main() {
       expect(inRow(find.text('High quality: downloading 0%')), findsOneWidget);
       expect(progressBar, findsOneWidget);
       expect(inRow(find.byTooltip('Remove')), findsNothing);
-
-      await tester.tap(inRow(find.byTooltip('Cancel')));
-      await tester.pump();
-      expect(calls, ['download', 'cancel']);
+      // Tapping it is the partial-file test below: a cancel keeps Standard.
+      expect(inRow(find.byTooltip('Cancel')), findsOneWidget);
 
       // At 100% the file is being checked and there is nothing to cancel.
       report(1);

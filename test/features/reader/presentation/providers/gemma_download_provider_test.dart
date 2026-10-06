@@ -300,6 +300,37 @@ void main() {
     expect(c.read(gemmaDownloadProvider), isA<GemmaDownloadFailed>());
   });
 
+  test('a cancel that stopped nothing still keeps Standard chosen', () async {
+    // During verification there is no transfer to close.
+    debugGemmaModelOps = (
+      installed: () async => installed,
+      download: (_) => download.future,
+      delete: () async => installed = false,
+      hasFiles: () async => false,
+      cancel: () => false,
+    );
+    final c = container();
+    final notifier = c.read(gemmaDownloadProvider.notifier);
+    final first = notifier.start();
+    await Future<void>.delayed(Duration.zero);
+    notifier.cancel();
+    installed = true;
+    download.complete();
+    await first;
+    expect(c.read(gemmaDownloadProvider), isA<GemmaInstalled>());
+    expect(choiceIn(c), TranslationModelChoice.standard);
+
+    // The next download forgets that cancel.
+    await notifier.remove();
+    download = Completer<void>();
+    final second = notifier.start();
+    await Future<void>.delayed(Duration.zero);
+    installed = true;
+    download.complete();
+    await second;
+    expect(choiceIn(c), TranslationModelChoice.high);
+  });
+
   test('a new download forgets an earlier cancel', () async {
     // The cancel closed a client, yet the download still finished.
     debugGemmaModelOps = (

@@ -164,7 +164,10 @@ void main() {
       container.read(translationModelProvider),
       TranslationModelChoice.standard,
     );
-    expect(rowSubtitle('Standard'), findsOneWidget);
+    expect(rowSubtitle('High quality: downloading 0%'), findsOneWidget);
+    report(0.45);
+    await tester.pump();
+    expect(rowSubtitle('High quality: downloading 45%'), findsOneWidget);
 
     installed = true;
     downloadDone.complete();
@@ -188,7 +191,13 @@ void main() {
     await pick(tester, 'High quality (2.6 GB)');
 
     // The sheet is still up and nothing changed.
-    expect(find.text('High quality: downloading 42%'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('High quality: downloading 42%'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Standard (55 MB)'), findsOneWidget);
     expect(downloads, 1);
     expect(
@@ -261,20 +270,73 @@ void main() {
     expect(closes, 1);
   }, variant: _android);
 
-  testWidgets('picking Standard mid-download stops the download', (
+  testWidgets('tapping the checked Standard leaves a download running', (
+    tester,
+  ) async {
+    debugDeviceLowOnMemory = false;
+    mockWifiConnected(false);
+    final container = await pumpSettings(tester);
+    await pick(tester, 'High quality (2.6 GB)');
+    await tester.tap(find.widgetWithText(FilledButton, 'Download'));
+    await tester.pumpAndSettle();
+    expect(downloads, 1);
+
+    await pick(tester, 'Standard (55 MB)');
+
+    expect(cancels, 0);
+    expect(closes, 0);
+    expect(container.read(gemmaDownloadProvider), isA<GemmaDownloading>());
+  }, variant: _android);
+
+  testWidgets('"Use Standard" stops a running download', (tester) async {
+    debugDeviceLowOnMemory = true;
+    final container = await pumpSettings(tester);
+    await pick(tester, 'High quality (2.6 GB)');
+    // A download that started while the dialog was up.
+    unawaited(container.read(gemmaDownloadProvider.notifier).start());
+    await tester.pump();
+
+    await tester.tap(find.text('Use Standard'));
+    await tester.pumpAndSettle();
+
+    expect(cancels, 1);
+  }, variant: _android);
+
+  testWidgets("opening the picker keeps a failed download's error", (
     tester,
   ) async {
     final container = await pumpSettings(tester);
     unawaited(container.read(gemmaDownloadProvider.notifier).start());
+    await tester.pump();
+    downloadDone.completeError(Exception('offline'));
+    await tester.pump();
+    expect(container.read(gemmaDownloadProvider), isA<GemmaDownloadFailed>());
+
+    await tester.tap(find.text('Translation model'));
     await tester.pumpAndSettle();
 
-    await pick(tester, 'Standard (55 MB)');
+    expect(container.read(gemmaDownloadProvider), isA<GemmaDownloadFailed>());
+  }, variant: _android);
 
-    expect(cancels, 1);
-    expect(
-      container.read(translationModelProvider),
-      TranslationModelChoice.standard,
+  testWidgets('a double tap opens one picker', (tester) async {
+    await pumpSettings(tester);
+    // The disk check before the sheet is still running at the second tap.
+    final check = Completer<bool>();
+    debugGemmaModelOps = (
+      installed: () => check.future,
+      download: (_) async {},
+      delete: () async {},
+      hasFiles: () async => false,
+      cancel: () => false,
     );
+
+    await tester.tap(find.text('Translation model'));
+    await tester.pump();
+    await tester.tap(find.text('Translation model'));
+    check.complete(false);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BottomSheet), findsOneWidget);
   }, variant: _android);
 
   testWidgets('the row is absent on iOS and Gemma is never checked', (

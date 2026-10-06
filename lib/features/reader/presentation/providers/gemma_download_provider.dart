@@ -61,7 +61,12 @@ GemmaModelOps get _ops =>
 /// Sentence tab so leaving a screen doesn't lose it. Not autoDispose for
 /// the same reason.
 class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
+  /// [cancel] closed the transfer, so the error that follows is the cancel.
   var _cancelling = false;
+
+  /// [cancel] was called, whether or not it stopped anything: the user
+  /// switched away, so a download that still finishes doesn't choose High.
+  var _cancelRequested = false;
 
   /// Bumped when [start] or [remove] finishes, so a [refresh] that was
   /// already checking the disk doesn't overwrite their newer state.
@@ -108,16 +113,17 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
   Future<void> start() async {
     if (state is GemmaDownloading) return;
     _cancelling = false;
+    _cancelRequested = false;
     // Before the check, so a second start meanwhile is ignored.
     state = const GemmaDownloading(0);
     try {
       if (await _ops.installed()) {
-        _settle(const GemmaInstalled(), select: true);
+        _settle(const GemmaInstalled(), select: !_cancelRequested);
         return;
       }
       await _ops.download((fraction) => state = GemmaDownloading(fraction));
       logUsage('translation.high_quality_downloaded');
-      _settle(const GemmaInstalled(), select: true);
+      _settle(const GemmaInstalled(), select: !_cancelRequested);
     } catch (e) {
       // Decided by the flag, not the error: a cancel surfaces as whatever the
       // closed connection threw.
@@ -136,9 +142,11 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
   }
 
   /// Stops the download; the next [start] resumes it. A cancel that finds
-  /// nothing to stop (the file is being verified) lets the download finish.
+  /// nothing to stop (the file is being verified) lets the download finish,
+  /// installed but not chosen.
   void cancel() {
     if (state is! GemmaDownloading) return;
+    _cancelRequested = true;
     _cancelling = _ops.cancel();
   }
 

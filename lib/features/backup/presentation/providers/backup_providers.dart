@@ -25,6 +25,7 @@ import 'package:mekuru/features/dictionary/presentation/providers/dictionary_pro
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/manga/data/services/ocr_store_service.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
+import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -439,6 +440,12 @@ class RestoreNotifier extends Notifier<RestoreState> {
     await ref
         .refresh(translationModelProvider.notifier)
         .loadPersistedSettings();
+    // A restored High needs its model on this phone; the check drops it to
+    // Standard otherwise. Android only: iOS never builds Gemma.
+    if (defaultTargetPlatform == TargetPlatform.android &&
+        ref.read(translationModelProvider) == TranslationModelChoice.high) {
+      await ref.read(gemmaDownloadProvider.notifier).refresh();
+    }
     await ref.refresh(autoFocusSearchProvider.notifier).loadPersistedSettings();
     await ref
         .refresh(autoCropWhiteThresholdProvider.notifier)

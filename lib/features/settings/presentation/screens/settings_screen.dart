@@ -234,10 +234,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: theme.colorScheme.primary,
               ),
               title: Text(l10n.settingsTranslationModelTitle),
-              subtitle: Text(switch (ref.watch(translationModelProvider)) {
-                TranslationModelChoice.standard =>
-                  l10n.translationModelStandard,
-                TranslationModelChoice.high => l10n.translationModelHigh,
+              // Android only, so iOS never builds the Gemma provider.
+              subtitle: Text(switch (ref.watch(gemmaDownloadProvider)) {
+                GemmaDownloading(:final fraction) => _gemmaDownloading(
+                  l10n,
+                  fraction,
+                ),
+                _ => switch (ref.watch(translationModelProvider)) {
+                  TranslationModelChoice.standard =>
+                    l10n.translationModelStandard,
+                  TranslationModelChoice.high => l10n.translationModelHigh,
+                },
               }),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
@@ -657,11 +664,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  static String _gemmaDownloading(AppLocalizations l10n, double fraction) =>
+      l10n.translationHighQualityDownloading(
+        percent: '${(fraction * 100).floor()}',
+      );
+
+  /// Set from the tap until the sheet closes: the disk check before the
+  /// sheet leaves time for a second tap.
+  var _modelPickerOpen = false;
+
   Future<void> _showTranslationModelPicker() async {
+    if (_modelPickerOpen) return;
+    _modelPickerOpen = true;
+    try {
+      await _showTranslationModelSheet();
+    } finally {
+      _modelPickerOpen = false;
+    }
+  }
+
+  Future<void> _showTranslationModelSheet() async {
     final gemma = ref.read(gemmaDownloadProvider.notifier);
-    // The sheet shows the model's state as it opens: on Standard the
-    // provider may only just be built, its first check still running.
-    await gemma.refresh();
+    // The sheet shows the model's state as it opens: the provider's first
+    // check may still be running. Only from Not installed, so a failed
+    // download keeps its error.
+    if (ref.read(gemmaDownloadProvider) is GemmaNotInstalled) {
+      await gemma.refresh();
+    }
     if (!mounted) return;
     final l10n = context.l10n;
     final download = ref.read(gemmaDownloadProvider);
@@ -684,10 +713,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ? null
           : switch (download) {
               GemmaInstalled() => null,
-              GemmaDownloading(:final fraction) =>
-                l10n.translationHighQualityDownloading(
-                  percent: '${(fraction * 100).floor()}',
-                ),
+              GemmaDownloading(:final fraction) => _gemmaDownloading(
+                l10n,
+                fraction,
+              ),
               _ => l10n.translationModelHighDownloadFirst(
                 size: GemmaTranslation.downloadSize(),
               ),
@@ -697,6 +726,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           download is! GemmaDownloading,
       onSelected: (choice) async {
         if (choice == TranslationModelChoice.standard) {
+          // Already Standard: a download toward High goes on. The Downloads
+          // row is where it is cancelled.
+          if (ref.read(translationModelProvider) == choice) return;
           ref.read(translationModelProvider.notifier).setChoice(choice);
           unawaited(GemmaTranslation.instance.close());
           // The partial file stays, so picking High again resumes it.

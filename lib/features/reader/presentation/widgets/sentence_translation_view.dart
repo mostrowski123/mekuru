@@ -387,11 +387,6 @@ class _SentenceTranslationViewState
             ),
             if (widget.highQuality)
               switch (gemma) {
-                GemmaDownloading(:final fraction) => _note(
-                  l10n.translationHighQualityDownloading(
-                    percent: '${(fraction * 100).floor()}',
-                  ),
-                ),
                 // Installed, so Gemma failed to load or translate.
                 GemmaInstalled() when !(result?.highQuality ?? true) => _note(
                   l10n.translationHighQualityCouldNotLoad,
