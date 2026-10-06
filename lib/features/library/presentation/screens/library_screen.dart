@@ -1753,9 +1753,13 @@ class _CoverTilt extends StatelessWidget {
     // their gyroscope subscriptions (and per-event rebuilds) running for
     // as long as a folder — or a reader — is open. ModalRoute.of registers
     // a dependency, so tiles rebuild and re-enable when uncovered.
+    // Motion that follows the phone's movement is what the system's reduce
+    // motion setting exists for, so the covers stay still then.
     final routeIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
     final enableSensorTilt =
-        (Platform.isAndroid || Platform.isIOS) && routeIsCurrent;
+        (Platform.isAndroid || Platform.isIOS) &&
+        routeIsCurrent &&
+        !MediaQuery.disableAnimationsOf(context);
     return Tilt.base(
       fps: 60,
       borderRadius: borderRadius,

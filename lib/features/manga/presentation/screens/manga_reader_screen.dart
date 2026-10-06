@@ -352,9 +352,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     unawaited(setReaderSystemBarsVisible(visible));
   }
 
-  /// Whether programmatic page turns animate (off for e-reader displays).
+  /// Whether programmatic page turns animate: off for e-reader displays, and
+  /// while the system asks for reduced motion (page-turn scroll animations
+  /// don't shorten themselves the way other animations do).
   bool get _animatePageTurns =>
-      ref.read(readerSettingsProvider).readerAnimations;
+      ref.read(readerSettingsProvider).readerAnimations &&
+      !MediaQuery.disableAnimationsOf(context);
 
   // E-reader mode swipe tracking. Raw pointer events instead of a gesture
   // recognizer: the page views' physics are disabled in this mode, and a
@@ -1083,7 +1086,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       viewMode,
       globalDirection,
       mangaAutoCropEnabled,
-      animatePageTurns,
+      readerAnimations,
     ) = ref.watch(
       readerSettingsProvider.select(
         (s) => (
@@ -1094,6 +1097,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
         ),
       ),
     );
+    final animatePageTurns =
+        readerAnimations && !MediaQuery.disableAnimationsOf(context);
     final isProUnlocked = proUnlockedValue(ref.watch(proUnlockedProvider));
     final autoCrop = isProUnlocked && mangaAutoCropEnabled;
     ref.listen(
