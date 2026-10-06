@@ -41,6 +41,10 @@ Future<void> downloadModelFiles(
         file.url,
         partial,
         client: client,
+        // GitHub gzips text files: the body would then outgrow its
+        // Content-Length once unzipped, and a byte range would count
+        // compressed bytes. The pinned sizes and hashes are of the file.
+        headers: const {HttpHeaders.acceptEncodingHeader: 'identity'},
         onProgress: (received, _) =>
             onProgress?.call((done + received) / total),
       );
