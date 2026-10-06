@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/system_gesture_padding.dart';
 
 /// Bottom seek bar shared by the EPUB and manga readers: a black-to-
@@ -17,6 +18,7 @@ class ReaderSeekBar extends StatefulWidget {
     required this.isRtl,
     required this.leadingLabel,
     this.trailingLabel,
+    this.semanticValue,
     this.min = 0.0,
     this.max = 1.0,
     this.divisions,
@@ -36,6 +38,10 @@ class ReaderSeekBar extends StatefulWidget {
 
   /// Static label after the slider (e.g. the manga page total).
   final String? trailingLabel;
+
+  /// What screen readers say for a position, e.g. "Page 3 of 120". Null
+  /// reads the position as a percentage.
+  final String Function(double value)? semanticValue;
 
   final double min;
   final double max;
@@ -77,34 +83,45 @@ class _ReaderSeekBarState extends State<ReaderSeekBar> {
           padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
           child: Row(
             children: [
-              Text(widget.leadingLabel(shown), style: labelStyle),
+              // The slider's own value reads these out.
+              ExcludeSemantics(
+                child: Text(widget.leadingLabel(shown), style: labelStyle),
+              ),
               Expanded(
                 child: Directionality(
                   textDirection: widget.isRtl
                       ? TextDirection.rtl
                       : TextDirection.ltr,
-                  child: Slider(
-                    value: shown,
-                    min: widget.min,
-                    max: widget.max,
-                    divisions: widget.divisions,
-                    onChanged: enabled
-                        ? (value) {
-                            setState(() => _dragValue = value);
-                            widget.onChanged?.call(value);
-                          }
-                        : null,
-                    onChangeEnd: enabled
-                        ? (value) {
-                            setState(() => _dragValue = null);
-                            widget.onChangeEnd?.call(value);
-                          }
-                        : null,
+                  child: MergeSemantics(
+                    child: Semantics(
+                      label: context.l10n.readerSeekBarLabel,
+                      child: Slider(
+                        value: shown,
+                        min: widget.min,
+                        max: widget.max,
+                        divisions: widget.divisions,
+                        semanticFormatterCallback: widget.semanticValue,
+                        onChanged: enabled
+                            ? (value) {
+                                setState(() => _dragValue = value);
+                                widget.onChanged?.call(value);
+                              }
+                            : null,
+                        onChangeEnd: enabled
+                            ? (value) {
+                                setState(() => _dragValue = null);
+                                widget.onChangeEnd?.call(value);
+                              }
+                            : null,
+                      ),
+                    ),
                   ),
                 ),
               ),
               if (widget.trailingLabel != null)
-                Text(widget.trailingLabel!, style: labelStyle),
+                ExcludeSemantics(
+                  child: Text(widget.trailingLabel!, style: labelStyle),
+                ),
             ],
           ),
         ),

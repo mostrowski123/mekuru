@@ -3935,4 +3935,21 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get readerSelectSentence => 'Select sentence';
+
+  @override
+  String readerPageOf({required int page, required int total}) {
+    return 'Page $page of $total';
+  }
+
+  @override
+  String get readerNextPage => 'Next page';
+
+  @override
+  String get readerPreviousPage => 'Previous page';
+
+  @override
+  String get readerShowHideControls => 'show or hide controls';
+
+  @override
+  String get readerSeekBarLabel => 'Reading position';
 }

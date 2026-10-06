@@ -6386,6 +6386,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select sentence'**
   String get readerSelectSentence;
+
+  /// Screen-reader label of the manga reader's page and value of its page slider.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {total}'**
+  String readerPageOf({required int page, required int total});
+
+  /// Screen-reader action on a reader's page that turns to the next page.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get readerNextPage;
+
+  /// Screen-reader action on a reader's page that turns to the previous page.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get readerPreviousPage;
+
+  /// TalkBack completes 'Double tap to …' with this on a reader's page. Lowercase because it continues that sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'show or hide controls'**
+  String get readerShowHideControls;
+
+  /// Screen-reader label of the slider at the bottom of the readers that jumps through the book.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading position'**
+  String get readerSeekBarLabel;
 }
 
 class _AppLocalizationsDelegate

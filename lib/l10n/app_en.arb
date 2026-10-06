@@ -5032,5 +5032,33 @@
   "readerSelectSentence": "Select sentence",
   "@readerSelectSentence": {
     "description": "Name of the reader button that grows the current text selection to the whole sentence."
+  },
+  "readerPageOf": "Page {page} of {total}",
+  "@readerPageOf": {
+    "description": "Screen-reader label of the manga reader's page and value of its page slider.",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "readerNextPage": "Next page",
+  "@readerNextPage": {
+    "description": "Screen-reader action on a reader's page that turns to the next page."
+  },
+  "readerPreviousPage": "Previous page",
+  "@readerPreviousPage": {
+    "description": "Screen-reader action on a reader's page that turns to the previous page."
+  },
+  "readerShowHideControls": "show or hide controls",
+  "@readerShowHideControls": {
+    "description": "TalkBack completes 'Double tap to …' with this on a reader's page. Lowercase because it continues that sentence."
+  },
+  "readerSeekBarLabel": "Reading position",
+  "@readerSeekBarLabel": {
+    "description": "Screen-reader label of the slider at the bottom of the readers that jumps through the book."
   }
 }

@@ -30,6 +30,7 @@ import 'package:mekuru/features/reader/data/reader_session_tracker.dart';
 import 'package:mekuru/features/reader/data/services/mecab_service.dart';
 import 'package:mekuru/features/manga/presentation/providers/ocr_progress_provider.dart';
 import 'package:mekuru/features/reader/presentation/reader_interaction_logic.dart';
+import 'package:mekuru/features/reader/presentation/widgets/reader_page_navigation.dart';
 import 'package:mekuru/features/reader/presentation/providers/reader_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
 import 'package:mekuru/features/reader/presentation/widgets/reader_settings/reader_settings_sheet_scaffold.dart';
@@ -741,7 +742,14 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
       ),
       scrollView: readerSettings.mangaViewMode == MangaViewMode.scroll,
     );
+    _runIntent(intent, totalPages, spreads);
+  }
 
+  void _runIntent(
+    ReaderNavigationIntent intent,
+    int totalPages,
+    List<PageSpread> spreads,
+  ) {
     switch (intent) {
       case ReaderNavigationIntent.toggleControls:
         _toggleControls();
@@ -1207,33 +1215,44 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                 // swipes are detected from raw pointer events here (no
                 // gesture-arena entry that could fight pinch-zoom) and turn
                 // pages instantly; MangaZoomViewer handles every other swipe.
-                Listener(
-                  onPointerDown: animatePageTurns
-                      ? null
-                      : _onEreaderPointerDown,
-                  onPointerCancel: animatePageTurns
-                      ? null
-                      : _onEreaderPointerCancel,
-                  onPointerUp: animatePageTurns
-                      ? null
-                      : (event) => _onEreaderPointerUp(
-                          event,
-                          viewMode,
-                          direction,
-                          totalPages,
-                          spreads,
-                        ),
-                  child: GestureDetector(
-                    onTapUp: (details) =>
-                        _handleTap(details, totalPages, direction, spreads),
-                    child: _buildViewContent(
-                      mokuroBook,
-                      viewMode,
-                      spreads,
-                      totalPages,
-                      isRtl,
-                      autoCrop,
-                      animatePageTurns,
+                ReaderPageSemantics(
+                  label: context.l10n.readerPageOf(
+                    page: _currentPage + 1,
+                    total: totalPages,
+                  ),
+                  onIntent: (intent) => _runIntent(intent, totalPages, spreads),
+                  child: Listener(
+                    onPointerDown: animatePageTurns
+                        ? null
+                        : _onEreaderPointerDown,
+                    onPointerCancel: animatePageTurns
+                        ? null
+                        : _onEreaderPointerCancel,
+                    onPointerUp: animatePageTurns
+                        ? null
+                        : (event) => _onEreaderPointerUp(
+                            event,
+                            viewMode,
+                            direction,
+                            totalPages,
+                            spreads,
+                          ),
+                    child: GestureDetector(
+                      // A screen reader's tap arrives at (0,0), which reads as
+                      // an edge tap and turns the page; ReaderPageSemantics
+                      // handles those instead.
+                      excludeFromSemantics: true,
+                      onTapUp: (details) =>
+                          _handleTap(details, totalPages, direction, spreads),
+                      child: _buildViewContent(
+                        mokuroBook,
+                        viewMode,
+                        spreads,
+                        totalPages,
+                        isRtl,
+                        autoCrop,
+                        animatePageTurns,
+                      ),
                     ),
                   ),
                 ),
@@ -1328,6 +1347,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
                       divisions: totalPages > 1 ? totalPages - 1 : null,
                       leadingLabel: (value) => '${value.round() + 1}',
                       trailingLabel: '$totalPages',
+                      semanticValue: (value) => context.l10n.readerPageOf(
+                        page: value.round() + 1,
+                        total: totalPages,
+                      ),
                       onChanged: (value) {
                         final page = value.round();
                         _holdPrecacheDuringSeek();
