@@ -32,6 +32,7 @@ typedef GemmaModelOps = ({
   Future<bool> Function() installed,
   Future<void> Function(void Function(double fraction) onProgress) download,
   Future<void> Function() delete,
+  void Function() cancel,
 });
 
 /// Replaces the real model files in tests.
@@ -47,12 +48,15 @@ GemmaModelOps get _ops =>
       download: (onProgress) =>
           GemmaTranslation.instance.downloadModel(onProgress: onProgress),
       delete: GemmaTranslation.instance.delete,
+      cancel: GemmaTranslation.instance.cancelDownload,
     );
 
 /// The Gemma model's download, shared by Settings, Downloads and the
 /// Sentence tab so leaving a screen doesn't lose it. Not autoDispose for
 /// the same reason.
 class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
+  var _cancelling = false;
+
   @override
   GemmaDownloadState build() {
     unawaited(refresh());
@@ -69,15 +73,31 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
 
   Future<void> start() async {
     if (state is GemmaDownloading) return;
+    _cancelling = false;
     state = const GemmaDownloading(0);
     try {
       await _ops.download((fraction) => state = GemmaDownloading(fraction));
       logUsage('translation.high_quality_downloaded');
       state = const GemmaInstalled();
     } catch (e) {
+      // Decided by the flag, not the error: a cancel surfaces as whatever the
+      // closed connection threw.
+      if (_cancelling) {
+        _cancelling = false;
+        logUsage('translation.high_quality_download_cancelled');
+        state = const GemmaNotInstalled();
+        return;
+      }
       logFailure('translation.high_quality_download_failed', e);
       state = GemmaDownloadFailed(e);
     }
+  }
+
+  /// Stops the download; the next [start] resumes it.
+  void cancel() {
+    if (state is! GemmaDownloading) return;
+    _cancelling = true;
+    _ops.cancel();
   }
 
   Future<void> remove() async {

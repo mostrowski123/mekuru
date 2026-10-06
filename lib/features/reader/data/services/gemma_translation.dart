@@ -46,6 +46,7 @@ class GemmaTranslation implements TranslationEngine {
   );
   String? _loadedPath;
   Timer? _idleTimer;
+  HttpClient? _downloadClient;
 
   static String downloadSize() =>
       '${(gemmaModelFile.bytes / 1e9).toStringAsFixed(1)} GB';
@@ -74,7 +75,7 @@ class GemmaTranslation implements TranslationEngine {
     final destination = File(p.join(dir.path, gemmaModelFile.name));
     final partial = '${destination.path}.part';
     final wifiOnly = await isOnWifi();
-    final client = HttpClient();
+    final client = _downloadClient = HttpClient();
     Future<void> fetch() => downloadResumable(
       gemmaModelFile.url,
       partial,
@@ -85,6 +86,7 @@ class GemmaTranslation implements TranslationEngine {
     try {
       await (wifiOnly ? whileOnWifi(client, fetch) : fetch());
     } finally {
+      _downloadClient = null;
       client.close(force: true);
     }
     final path = partial;
@@ -98,6 +100,10 @@ class GemmaTranslation implements TranslationEngine {
     await File(partial).rename(destination.path);
     await File(p.join(dir.path, _marker)).writeAsString('ok');
   }
+
+  /// Stops a running [downloadModel], which then throws. The partial file
+  /// stays, so the next download resumes from it.
+  void cancelDownload() => _downloadClient?.close(force: true);
 
   /// Closes the engine and removes the model.
   Future<void> delete() async {
