@@ -48,9 +48,18 @@ class GemmaTranslation implements TranslationEngine {
   static const _weightCacheBytes = 800 * 1000 * 1000;
 
   // Not under translation_models/: removing Standard deletes that folder.
-  late final Future<Directory> _dir = getApplicationSupportDirectory().then(
-    (support) => Directory(p.join(support.path, 'gemma-4-e2b')),
-  );
+  late final Future<Directory> _dir = getApplicationSupportDirectory().then((
+    support,
+  ) async {
+    final dir = Directory(p.join(support.path, 'gemma-4-e2b'));
+    // ponytail: pre-release test builds kept the model under
+    // translation_models/; moving it saves testers 2.6 GB. Drop after 1.55.
+    final old = Directory(
+      p.join(support.path, 'translation_models', 'gemma-4-e2b'),
+    );
+    if (!await dir.exists() && await old.exists()) await old.rename(dir.path);
+    return dir;
+  });
   String? _loadedPath;
   Timer? _idleTimer;
   HttpClient? _downloadClient;
@@ -111,11 +120,7 @@ class GemmaTranslation implements TranslationEngine {
         client.close(force: true);
       }
     }
-    final path = partial;
-    final digest = await Isolate.run(
-      () async => (await sha256.bind(File(path).openRead()).first).toString(),
-    );
-    if (digest != gemmaModelFile.sha256) {
+    if (await _sha256Of(partial) != gemmaModelFile.sha256) {
       await File(partial).delete();
       throw const FileSystemException('Model file failed verification');
     }
@@ -208,3 +213,11 @@ class GemmaTranslation implements TranslationEngine {
     }
   }
 }
+
+// A function of its own, so the isolate takes nothing along but [path]: a
+// closure sent to an isolate carries everything its function's closures
+// capture (in downloadModel that includes onProgress and, through it, the
+// Riverpod notifier, which can't be sent).
+Future<String> _sha256Of(String path) => Isolate.run(
+  () async => (await sha256.bind(File(path).openRead()).first).toString(),
+);

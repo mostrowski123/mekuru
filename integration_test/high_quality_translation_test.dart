@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -26,7 +27,10 @@ void main() {
         expect(await gemma.status('en'), TranslationStatus.needsDownload);
 
         final clock = Stopwatch()..start();
-        await gemma.downloadModel();
+        // Like the notifier's callback, this one holds something an isolate
+        // can't take (a Future), so the sha256 step must not capture it.
+        final notSendable = Completer<void>();
+        await gemma.downloadModel(onProgress: (_) => notSendable.isCompleted);
         debugPrint('Gemma download + verify: ${clock.elapsed}');
         expect(await gemma.status('en'), TranslationStatus.installed);
 
