@@ -63,6 +63,17 @@ void main() {
     expect(await GemmaTranslation.instance.hasFiles(), isFalse);
   });
 
+  test('a Gemma download cancelled before it connects stops there', () async {
+    final gemma = GemmaTranslation.instance;
+    expect(gemma.cancelDownload(), isFalse); // nothing running
+
+    final download = gemma.downloadModel();
+    expect(gemma.cancelDownload(), isTrue);
+
+    await expectLater(download, throwsA(isA<HttpException>()));
+    expect(gemma.cancelDownload(), isFalse);
+  });
+
   test('a Gemma download without room for the model and its cache fails '
       'before fetching', () async {
     const saf = MethodChannel('mekuru/android_saf');

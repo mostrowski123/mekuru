@@ -235,12 +235,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               title: Text(l10n.settingsTranslationModelTitle),
               // Android only, so iOS never builds the Gemma provider.
-              subtitle: Text(switch (ref.watch(gemmaDownloadProvider)) {
-                GemmaDownloading(:final fraction) => _gemmaDownloading(
-                  l10n,
-                  fraction,
+              // Whole percents only: the download reports every chunk, and
+              // this rebuilds the whole screen.
+              subtitle: Text(switch (ref.watch(
+                gemmaDownloadProvider.select(
+                  (s) =>
+                      s is GemmaDownloading ? (s.fraction * 100).floor() : null,
                 ),
-                _ => switch (ref.watch(translationModelProvider)) {
+              )) {
+                final int percent => l10n.translationHighQualityDownloading(
+                  percent: '$percent',
+                ),
+                null => switch (ref.watch(translationModelProvider)) {
                   TranslationModelChoice.standard =>
                     l10n.translationModelStandard,
                   TranslationModelChoice.high => l10n.translationModelHigh,

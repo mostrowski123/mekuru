@@ -121,6 +121,12 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
         _settle(const GemmaInstalled(), select: !_cancelRequested);
         return;
       }
+      // Cancelled during the check: nothing to stop yet, so don't start.
+      if (_cancelRequested) {
+        logUsage('translation.high_quality_download_cancelled');
+        _settle(GemmaNotInstalled(hasFiles: await _ops.hasFiles()));
+        return;
+      }
       await _ops.download((fraction) => state = GemmaDownloading(fraction));
       logUsage('translation.high_quality_downloaded');
       _settle(const GemmaInstalled(), select: !_cancelRequested);

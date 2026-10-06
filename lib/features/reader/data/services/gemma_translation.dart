@@ -63,6 +63,9 @@ class GemmaTranslation implements TranslationEngine {
   String? _loadedPath;
   Timer? _idleTimer;
   HttpClient? _downloadClient;
+  // From the start of a download until its transfer ends (not verification).
+  bool _preparing = false;
+  bool _cancelBeforeFetch = false;
 
   static String downloadSize() =>
       '${(gemmaModelFile.bytes / 1e9).toStringAsFixed(1)} GB';
@@ -89,6 +92,18 @@ class GemmaTranslation implements TranslationEngine {
   Future<void> downloadModel({
     void Function(double fraction)? onProgress,
   }) async {
+    _preparing = true;
+    _cancelBeforeFetch = false;
+    try {
+      await _downloadModel(onProgress);
+    } finally {
+      _preparing = false;
+    }
+  }
+
+  Future<void> _downloadModel(
+    void Function(double fraction)? onProgress,
+  ) async {
     final dir = await (await _dir).create(recursive: true);
     final destination = File(p.join(dir.path, gemmaModelFile.name));
     final partial = '${destination.path}.part';
@@ -105,6 +120,8 @@ class GemmaTranslation implements TranslationEngine {
       onProgress?.call(1);
     } else {
       final wifiOnly = await isOnWifi();
+      // Cancelled before there was a connection to close.
+      if (_cancelBeforeFetch) throw const HttpException('Download cancelled');
       final client = _downloadClient = HttpClient();
       Future<void> fetch() => downloadResumable(
         gemmaModelFile.url,
@@ -120,6 +137,8 @@ class GemmaTranslation implements TranslationEngine {
         client.close(force: true);
       }
     }
+    _preparing = false;
+    if (_cancelBeforeFetch) throw const HttpException('Download cancelled');
     if (await _sha256Of(partial) != gemmaModelFile.sha256) {
       await File(partial).delete();
       throw const FileSystemException('Model file failed verification');
@@ -129,12 +148,17 @@ class GemmaTranslation implements TranslationEngine {
   }
 
   /// Stops a running [downloadModel], which then throws. The partial file
-  /// stays, so the next download resumes from it. False when there was no
-  /// transfer to stop (it hasn't started, or the file is being verified).
+  /// stays, so the next download resumes from it. False when there was
+  /// nothing to stop (no download, or the file is being verified).
   bool cancelDownload() {
     final client = _downloadClient;
-    client?.close(force: true);
-    return client != null;
+    if (client != null) {
+      client.close(force: true);
+      return true;
+    }
+    // Still preparing (folder, space, Wi-Fi): stop before connecting.
+    if (_preparing) _cancelBeforeFetch = true;
+    return _preparing;
   }
 
   /// Whether the model folder holds anything, a partial download included.

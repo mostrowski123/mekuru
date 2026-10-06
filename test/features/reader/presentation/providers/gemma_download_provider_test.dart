@@ -263,6 +263,28 @@ void main() {
     );
   });
 
+  test('a cancel during the install check never starts the download', () async {
+    final check = Completer<bool>();
+    var downloads = 0;
+    debugGemmaModelOps = (
+      installed: () => check.future,
+      download: (_) async => downloads++,
+      delete: () async {},
+      hasFiles: () async => false,
+      cancel: () => false, // nothing to close yet
+    );
+    final c = container();
+    final notifier = c.read(gemmaDownloadProvider.notifier);
+    final done = notifier.start();
+    await Future<void>.delayed(Duration.zero);
+    notifier.cancel();
+    check.complete(false);
+    await done;
+    expect(downloads, 0);
+    expect(c.read(gemmaDownloadProvider), isA<GemmaNotInstalled>());
+    expect(choiceIn(c), TranslationModelChoice.standard);
+  });
+
   test('cancel when not downloading does nothing', () async {
     final c = ProviderContainer();
     addTearDown(c.dispose);
