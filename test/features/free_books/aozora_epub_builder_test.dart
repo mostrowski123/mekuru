@@ -233,6 +233,26 @@ void main() {
       expect(nav, isNot(contains('href="text/c0001.xhtml"')));
     });
 
+    test('takes the title page from headings outside a metadata div', () {
+      // Some files (Little Red Riding Hood, 42311) put the title, author and
+      // translator straight in <body>.
+      final archive = ZipDecoder().decodeBytes(
+        buildAozoraEpub(
+          xhtml:
+              '<html xmlns="http://www.w3.org/1999/xhtml"><body>'
+              '<h1 class="title">走れメロス</h1>'
+              '<h2 class="author">太宰治</h2>'
+              '<div class="main_text">メロスは激怒した。<br/></div>'
+              '</body></html>',
+          work: _work(),
+        ),
+      );
+      final titlePage = _text(archive, 'OEBPS/text/title.xhtml');
+
+      expect(titlePage, contains('<h1 class="title">走れメロス</h1>'));
+      expect(titlePage, contains('<h2 class="author">太宰治</h2>'));
+    });
+
     test('rejects XHTML without a main text', () {
       expect(
         () => buildAozoraEpub(xhtml: '<html><body/></html>', work: _work()),

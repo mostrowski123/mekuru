@@ -122,9 +122,15 @@ Uint8List buildAozoraEpub({
 
   final cleaner = _Cleaner(images);
   final title = work.displayTitle;
+  // The title, author and translator: usually in div.metadata, but some
+  // files put the headings straight in <body>, ahead of the main text.
+  final metadata =
+      sections['metadata']?.childElements ??
+      body.childElements
+          .takeWhile((element) => element != mainText)
+          .where((element) => element.name.local != 'div');
   final titlePage = [
-    for (final element
-        in sections['metadata']?.childElements ?? const <XmlElement>[])
+    for (final element in metadata)
       if (element.name.local != 'br') cleaner.clean(element).toXmlString(),
   ].join('\n');
   final colophon = [
