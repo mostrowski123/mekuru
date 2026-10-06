@@ -253,6 +253,47 @@ final startupScreenProvider =
       StartupScreenNotifier.new,
     );
 
+/// What the lookup sheet's Sentence tab does.
+enum SentenceTranslationMode { shown, hidden, off }
+
+/// Manages the Sentence tab of the lookup sheet.
+class SentenceTranslationModeNotifier
+    extends Notifier<SentenceTranslationMode> {
+  bool _hasLoadedPersistedSettings = false;
+
+  @override
+  SentenceTranslationMode build() => SentenceTranslationMode.shown;
+
+  /// Load persisted mode from storage (called once).
+  Future<void> loadPersistedSettings() async {
+    if (_hasLoadedPersistedSettings) return;
+    _hasLoadedPersistedSettings = true;
+
+    final persisted = await ref
+        .read(appSettingsStorageProvider)
+        .loadSentenceTranslationMode();
+    state =
+        SentenceTranslationMode.values.asNameMap()[persisted] ??
+        SentenceTranslationMode.shown;
+  }
+
+  /// Set the mode and persist to storage.
+  void setMode(SentenceTranslationMode mode) {
+    state = mode;
+    unawaited(
+      ref
+          .read(appSettingsStorageProvider)
+          .saveSentenceTranslationMode(mode.name),
+    );
+  }
+}
+
+/// Provider for the Sentence tab setting.
+final sentenceTranslationModeProvider =
+    NotifierProvider<SentenceTranslationModeNotifier, SentenceTranslationMode>(
+      SentenceTranslationModeNotifier.new,
+    );
+
 /// Manages whether the dictionary search field auto-focuses on load.
 class AutoFocusSearchNotifier extends Notifier<bool> {
   bool _hasLoadedPersistedSettings = false;

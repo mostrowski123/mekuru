@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -7,6 +8,7 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/reader/presentation/widgets/lookup_sheet.dart';
+import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,6 +67,44 @@ class _FakeDictionaryQueryService extends DictionaryQueryService {
     pitchAccentQueries.addAll(expressions);
     return const {};
   }
+}
+
+class _FixedTranslationMode extends SentenceTranslationModeNotifier {
+  _FixedTranslationMode(this.mode);
+
+  final SentenceTranslationMode mode;
+
+  @override
+  SentenceTranslationMode build() => mode;
+}
+
+/// An installed engine that prefixes "EN:", recording what it translates.
+class _FakeTranslationEngine implements TranslationEngine {
+  _FakeTranslationEngine({this.state = TranslationStatus.installed});
+
+  final TranslationStatus state;
+  final translated = <(String, String)>[];
+
+  @override
+  Future<TranslationStatus> status(String target) async => state;
+
+  @override
+  Future<void> download(String target) async {}
+
+  @override
+  Future<String> translate(String text, String target) async {
+    translated.add((text, target));
+    return 'EN:$text';
+  }
+}
+
+_FakeTranslationEngine _fakeTranslation({
+  TranslationStatus state = TranslationStatus.installed,
+}) {
+  final engine = _FakeTranslationEngine(state: state);
+  debugTranslationEngine = engine;
+  addTearDown(() => debugTranslationEngine = null);
+  return engine;
 }
 
 void main() {
@@ -298,6 +338,220 @@ void main() {
 
       expect(find.text('No results found.'), findsOneWidget);
       expect(find.text('Install Starter Pack'), findsNothing);
+    });
+  });
+
+  group('Sentence tab', () {
+    late AppDatabase db;
+    late _FakeDictionaryQueryService service;
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      db = AppDatabase(NativeDatabase.memory());
+      final entry = _buildEntry(
+        id: 1,
+        expression: '食べる',
+        reading: 'たべる',
+        glossaries: '["to eat"]',
+      );
+      service = _FakeDictionaryQueryService(
+        db,
+        lookupResultsByTerm: {
+          for (final term in ['食べる', '飲む'])
+            term: [
+              DictionaryEntryWithSource(entry: entry, dictionaryName: 'JMdict'),
+            ],
+        },
+      );
+    });
+    tearDown(() => db.close());
+
+    Future<void> pumpSheet(
+      WidgetTester tester,
+      LookupSheet sheet, {
+      SentenceTranslationMode mode = SentenceTranslationMode.shown,
+    }) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            dictionaryQueryServiceProvider.overrideWithValue(service),
+            dictionariesProvider.overrideWith((ref) => Stream.value([_jmdict])),
+            sentenceTranslationModeProvider.overrideWith(
+              () => _FixedTranslationMode(mode),
+            ),
+          ],
+          child: buildLocalizedTestApp(
+            home: Scaffold(body: SizedBox.expand(child: sheet)),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    Future<void> openSentenceTab(WidgetTester tester) async {
+      await tester.tap(find.text('Sentence'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('has no tabs without a sentence', (tester) async {
+      _fakeTranslation();
+      await pumpSheet(tester, const LookupSheet(selectedText: '食べる'));
+
+      expect(find.text('Sentence'), findsNothing);
+      expect(find.byType(GroupedDictionaryEntryHeader), findsOneWidget);
+    });
+
+    testWidgets('has no tabs when the setting is off', (tester) async {
+      _fakeTranslation();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '朝ご飯を食べる。'),
+        mode: SentenceTranslationMode.off,
+      );
+
+      expect(find.text('Sentence'), findsNothing);
+    });
+
+    testWidgets('shows the sentence and its translation', (tester) async {
+      final engine = _fakeTranslation();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: 'パンを食べる。'),
+      );
+      expect(find.byType(GroupedDictionaryEntryHeader), findsOneWidget);
+
+      await openSentenceTab(tester);
+
+      expect(find.byType(GroupedDictionaryEntryHeader), findsNothing);
+      expect(find.text('パンを食べる。', findRichText: true), findsOneWidget);
+      expect(find.text('EN:パンを食べる。'), findsOneWidget);
+      expect(find.text('Machine translation'), findsOneWidget);
+      expect(engine.translated, [('パンを食べる。', 'en')]);
+    });
+
+    testWidgets('switching tabs keeps both instead of starting over', (
+      tester,
+    ) async {
+      final engine = _fakeTranslation();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '豆を食べる。'),
+      );
+      await openSentenceTab(tester);
+      await tester.tap(find.text('Dictionary'));
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(GroupedDictionaryEntryHeader), findsOneWidget);
+
+      await openSentenceTab(tester);
+      expect(find.text('EN:豆を食べる。'), findsOneWidget);
+      expect(engine.translated, hasLength(1));
+    });
+
+    testWidgets('hides the translation until tapped', (tester) async {
+      _fakeTranslation();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '魚を食べる。'),
+        mode: SentenceTranslationMode.hidden,
+      );
+      await openSentenceTab(tester);
+
+      expect(find.text('EN:魚を食べる。'), findsNothing);
+      await tester.tap(find.text('Tap to show translation'));
+      await tester.pump();
+      expect(find.text('EN:魚を食べる。'), findsOneWidget);
+    });
+
+    testWidgets('offers the download before the model is installed', (
+      tester,
+    ) async {
+      final engine = _fakeTranslation(state: TranslationStatus.needsDownload);
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '肉を食べる。'),
+      );
+      await openSentenceTab(tester);
+
+      expect(
+        find.text(
+          'Download Japanese translation (55 MB) to translate sentences '
+          'offline.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Download'), findsOneWidget);
+      expect(engine.translated, isEmpty);
+    });
+
+    testWidgets('a new word opens on the Dictionary tab', (tester) async {
+      _fakeTranslation();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '米を食べる。'),
+      );
+      await openSentenceTab(tester);
+      expect(find.byType(GroupedDictionaryEntryHeader), findsNothing);
+
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '飲む', sentenceContext: '水を飲む。'),
+      );
+
+      expect(find.byType(GroupedDictionaryEntryHeader), findsOneWidget);
+    });
+
+    testWidgets('only an editable sheet lets the sentence be edited', (
+      tester,
+    ) async {
+      _fakeTranslation();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '卵を食べる。'),
+      );
+      await openSentenceTab(tester);
+
+      expect(find.byTooltip('Edit sentence'), findsNothing);
+    });
+
+    testWidgets('an edited sentence is translated and saved with the word', (
+      tester,
+    ) async {
+      final engine = _fakeTranslation();
+      await pumpSheet(
+        tester,
+        const LookupSheet(
+          selectedText: '食べる',
+          sentenceContext: '卯を食べる。',
+          editable: true,
+        ),
+      );
+      await openSentenceTab(tester);
+
+      await tester.tap(find.byTooltip('Edit sentence'));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '卵を食べる！');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('EN:卵を食べる！'), findsOneWidget);
+      expect(engine.translated.map((t) => t.$1), ['卯を食べる。', '卵を食べる！']);
+
+      await tester.tap(find.text('Dictionary'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        tester
+            .widget<GroupedDictionaryEntryHeader>(
+              find.byType(GroupedDictionaryEntryHeader),
+            )
+            .sentenceContext,
+        '卵を食べる！',
+      );
     });
   });
 }

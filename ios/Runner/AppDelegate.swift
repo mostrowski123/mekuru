@@ -3,6 +3,8 @@ import Flutter
 import ImageIO
 import Network
 import StoreKit
+import SwiftUI
+import Translation
 import UIKit
 import UniformTypeIdentifiers
 import Vision
@@ -26,6 +28,7 @@ import onnxruntime_objc
     registerImageConvertChannel(messenger: engineBridge.applicationRegistrar.messenger())
     FilesBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
     BackgroundWorkBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
+    TranslationBridge.shared.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
 
   /// `decodeRgba`: a page as 8-bit RGBA (`{width, height, rgba}`), decoded on
@@ -472,13 +475,9 @@ final class FilesBridge: NSObject, UIDocumentPickerDelegate {
   }
 
   private func present(_ picker: UIDocumentPickerViewController, exporting: Bool, result: @escaping FlutterResult) {
-    guard pending == nil,
-      var top = UIApplication.shared.connectedScenes
-        .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController
-    else {
+    guard pending == nil, let top = topViewController() else {
       return result(FlutterError(code: "picker_unavailable", message: nil, details: nil))
     }
-    while let presented = top.presentedViewController { top = presented }
     pending = result
     self.exporting = exporting
     picker.delegate = self
@@ -616,5 +615,129 @@ final class BackgroundWorkBridge {
     task = nil
     identifier = nil
     latest = nil
+  }
+}
+
+/// The view controller on top of the key window, for presenting or hosting
+/// UI from a channel call.
+func topViewController() -> UIViewController? {
+  var top = UIApplication.shared.connectedScenes
+    .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController
+  while let presented = top?.presentedViewController { top = presented }
+  return top
+}
+
+/// `mekuru/translation`: Apple's on-device Translation framework for the
+/// lookup sheet's Sentence tab. Japanese is always the source; `target` is a
+/// BCP 47 tag (`en`, `es`, `id`, `zh-Hans`).
+///  - `status({target})`: `installed`, `needsDownload` or `unsupported`.
+///  - `translate({text, target})`: the translation; needs `installed`.
+///  - `download({target})`: Apple's own prompt to download the language
+///    pack. Replies once the user has answered; Dart asks `status` again.
+/// The Simulator cannot translate (Apple), so it reports `unsupported`.
+@MainActor
+final class TranslationBridge {
+  static let shared = TranslationBridge()
+  private let japanese = Locale.Language(identifier: "ja")
+  private var session: (target: String, session: TranslationSession)?
+  /// The invisible SwiftUI view whose translation task asks for a download.
+  private var host: UIViewController?
+  private var pendingDownload: CheckedContinuation<Void, Never>?
+
+  func register(messenger: FlutterBinaryMessenger) {
+    FlutterMethodChannel(name: "mekuru/translation", binaryMessenger: messenger)
+      .setMethodCallHandler { call, result in
+        let args = call.arguments as? [String: Any] ?? [:]
+        guard let tag = args["target"] as? String else { return result(FlutterMethodNotImplemented) }
+        Task { @MainActor in
+          let bridge = TranslationBridge.shared
+          switch call.method {
+          case "status":
+            result(await bridge.status(tag))
+          case "translate":
+            do {
+              result(try await bridge.translate(args["text"] as? String ?? "", to: tag))
+            } catch {
+              result(FlutterError(code: "translation_failed", message: error.localizedDescription, details: nil))
+            }
+          case "download":
+            await bridge.download(tag)
+            result(nil)
+          default:
+            result(FlutterMethodNotImplemented)
+          }
+        }
+      }
+  }
+
+  private func status(_ tag: String) async -> String {
+    #if targetEnvironment(simulator)
+      return "unsupported"
+    #else
+      switch await LanguageAvailability().status(from: japanese, to: Locale.Language(identifier: tag)) {
+      case .installed: return "installed"
+      case .supported: return "needsDownload"
+      default: return "unsupported"
+      }
+    #endif
+  }
+
+  private func translate(_ text: String, to tag: String) async throws -> String {
+    let session = sessionFor(tag)
+    do {
+      return try await session.translate(text).targetText
+    } catch {
+      // The pack may have been removed in Settings: start afresh next time.
+      self.session = nil
+      throw error
+    }
+  }
+
+  private func sessionFor(_ tag: String) -> TranslationSession {
+    if let session, session.target == tag { return session.session }
+    let target = Locale.Language(identifier: tag)
+    let created: TranslationSession
+    if #available(iOS 26.4, *) {
+      // Apple Intelligence where the device has it, the usual model elsewhere.
+      created = TranslationSession(installedSource: japanese, target: target, preferredStrategy: .highFidelity)
+    } else {
+      created = TranslationSession(installedSource: japanese, target: target)
+    }
+    session = (tag, created)
+    return created
+  }
+
+  /// A session made in code cannot download languages; only one handed to a
+  /// SwiftUI `translationTask` can, so a 1-point clear view hosts that task.
+  private func download(_ tag: String) async {
+    guard pendingDownload == nil, let top = topViewController() else { return }
+    let view = Color.clear.translationTask(source: japanese, target: Locale.Language(identifier: tag)) { session in
+      // Declining Apple's sheet throws; Dart checks the status either way.
+      try? await session.prepareTranslation()
+      await TranslationBridge.shared.finishDownload()
+    }
+    let host = UIHostingController(rootView: view)
+    host.view.frame = CGRect(x: 0, y: 0, width: 1, height: 1)
+    host.view.backgroundColor = .clear
+    host.view.isUserInteractionEnabled = false
+    top.addChild(host)
+    top.view.addSubview(host.view)
+    host.didMove(toParent: top)
+    self.host = host
+    await withCheckedContinuation { pendingDownload = $0 }
+  }
+
+  /// Runs after `prepareTranslation()` has returned: Apple forbids using the
+  /// task's session once its view is gone.
+  private func finishDownload() {
+    if let host {
+      host.willMove(toParent: nil)
+      host.view.removeFromSuperview()
+      host.removeFromParent()
+    }
+    host = nil
+    session = nil
+    pendingDownload?.resume()
+    pendingDownload = nil
   }
 }

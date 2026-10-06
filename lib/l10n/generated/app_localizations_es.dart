@@ -4003,4 +4003,67 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get localOcrLicenseNdl =>
       'Modelo de reconocimiento de texto NDLOCR-Lite © Biblioteca Nacional de la Dieta, Japón (国立国会図書館). Se usa sin modificaciones para leer libros escaneados. CC BY 4.0.';
+
+  @override
+  String get lookupTabDictionary => 'Diccionario';
+
+  @override
+  String get lookupTabSentence => 'Frase';
+
+  @override
+  String get sentenceTranslationTapToShow => 'Toca para ver la traducción';
+
+  @override
+  String sentenceTranslationDownload({required String size}) {
+    return 'Descarga la traducción del japonés ($size) para traducir frases sin conexión.';
+  }
+
+  @override
+  String get sentenceTranslationDownloadIos =>
+      'Para traducir hace falta el paquete de idioma japonés de Apple.';
+
+  @override
+  String get sentenceTranslationUnsupported =>
+      'La traducción de frases no está disponible en este dispositivo.';
+
+  @override
+  String get sentenceTranslationFailed => 'No se pudo traducir esta frase.';
+
+  @override
+  String get sentenceTranslationEngine => 'Traducción automática';
+
+  @override
+  String get sentenceTranslationEngineIos => 'Traducido por Apple';
+
+  @override
+  String get sentenceTranslationEdit => 'Editar frase';
+
+  @override
+  String get settingsSentenceTranslationTitle => 'Traducción de frases';
+
+  @override
+  String get settingsSentenceTranslationShown => 'Mostrar la traducción';
+
+  @override
+  String get settingsSentenceTranslationHidden => 'Ocultar hasta tocar';
+
+  @override
+  String get settingsSentenceTranslationOff => 'Desactivado';
+
+  @override
+  String get downloadsSentenceTranslationTitle => 'Traducción del japonés';
+
+  @override
+  String get downloadsSentenceTranslationSubtitle =>
+      'Traduce sin conexión la frase de la palabra que consultas.';
+
+  @override
+  String get ankidroidDataSourceSentenceTranslation => 'Traducción de la frase';
+
+  @override
+  String get attributionFirefoxTranslationsTitle => 'Firefox Translations';
+
+  @override
+  String get attributionFirefoxTranslationsDescription =>
+      'En Android, la traducción de frases usa el motor y los modelos Firefox Translations de Mozilla en tu dispositivo.';
 }

@@ -199,6 +199,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
           ),
+          ListTile(
+            leading: Icon(
+              Icons.g_translate_outlined,
+              color: theme.colorScheme.primary,
+            ),
+            title: Text(l10n.settingsSentenceTranslationTitle),
+            subtitle: Text(
+              _sentenceTranslationLabel(
+                l10n,
+                ref.watch(sentenceTranslationModeProvider),
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              AppHaptics.light();
+              _showSentenceTranslationPicker(
+                ref.read(sentenceTranslationModeProvider),
+              );
+            },
+          ),
           SwitchListTile(
             secondary: Icon(Icons.abc, color: theme.colorScheme.primary),
             title: Text(l10n.settingsFilterRomanLetterEntriesTitle),
@@ -577,6 +597,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       iconOf: _startupScreenIcon,
       onSelected: (option) =>
           ref.read(startupScreenProvider.notifier).setStartupScreen(option),
+    );
+  }
+
+  static String _sentenceTranslationLabel(
+    AppLocalizations l10n,
+    SentenceTranslationMode mode,
+  ) => switch (mode) {
+    SentenceTranslationMode.shown => l10n.settingsSentenceTranslationShown,
+    SentenceTranslationMode.hidden => l10n.settingsSentenceTranslationHidden,
+    SentenceTranslationMode.off => l10n.settingsSentenceTranslationOff,
+  };
+
+  void _showSentenceTranslationPicker(SentenceTranslationMode current) {
+    final l10n = context.l10n;
+
+    showSettingsOptionPickerSheet(
+      context: context,
+      title: l10n.settingsSentenceTranslationTitle,
+      values: SentenceTranslationMode.values,
+      selected: current,
+      labelOf: (mode) => _sentenceTranslationLabel(l10n, mode),
+      onSelected: (mode) =>
+          ref.read(sentenceTranslationModeProvider.notifier).setMode(mode),
     );
   }
 

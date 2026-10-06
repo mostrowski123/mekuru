@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
@@ -269,7 +270,10 @@ class _GroupedDictionaryEntryHeaderState
     );
   }
 
-  AnkiNoteData _buildAnkiNoteData({String? glossaries}) {
+  AnkiNoteData _buildAnkiNoteData({
+    String? glossaries,
+    String? sentenceTranslation,
+  }) {
     return AnkiNoteData(
       expression: _primaryEntry.expression,
       reading: _primaryEntry.reading,
@@ -277,8 +281,25 @@ class _GroupedDictionaryEntryHeaderState
       dictionaryName: _primaryResult.dictionaryName,
       frequencyRank: _frequencyRank,
       sentenceContext: widget.sentenceContext,
+      sentenceTranslation: sentenceTranslation,
       pitchAccents: widget.pitchAccents,
     );
+  }
+
+  /// The sentence's translation, fetched only when an Anki field is mapped
+  /// to it. A device that can't translate right now leaves the field empty;
+  /// the card screen lets the user fill it in.
+  Future<String?> _ankiSentenceTranslation(
+    Map<String, String> fieldMapping,
+    String target,
+  ) async {
+    final sentence = widget.sentenceContext;
+    if (sentence == null ||
+        sentence.isEmpty ||
+        !fieldMapping.containsValue(AppDataSource.sentenceTranslation.key)) {
+      return null;
+    }
+    return translateIfInstalled(sentence, target);
   }
 
   ({String cacheKey, int modelId, int deckId, String firstFieldValue})?
@@ -346,7 +367,15 @@ class _GroupedDictionaryEntryHeaderState
     final addedToAnkiMessage = context.l10n.dictionaryAddedToAnki(
       expression: _primaryEntry.expression,
     );
-    final noteData = _buildAnkiNoteData(glossaries: await _exportGlossaries());
+    final target = translationTargetFor(Localizations.localeOf(context));
+    final (glossaries, sentenceTranslation) = await (
+      _exportGlossaries(),
+      _ankiSentenceTranslation(config.fieldMapping, target),
+    ).wait;
+    final noteData = _buildAnkiNoteData(
+      glossaries: glossaries,
+      sentenceTranslation: sentenceTranslation,
+    );
     if (!mounted) return;
     if (!config.isConfigured) {
       Navigator.of(context).push(

@@ -3790,6 +3790,66 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get localOcrLicenseNdl =>
       'NDLOCR-Lite 文字识别模型 © 日本国立国会图书馆（国立国会図書館）。未经修改，用于读取扫描书籍。CC BY 4.0。';
+
+  @override
+  String get lookupTabDictionary => '词典';
+
+  @override
+  String get lookupTabSentence => '句子';
+
+  @override
+  String get sentenceTranslationTapToShow => '点按以显示译文';
+
+  @override
+  String sentenceTranslationDownload({required String size}) {
+    return '下载日语翻译（$size），即可离线翻译句子。';
+  }
+
+  @override
+  String get sentenceTranslationDownloadIos => '翻译需要 Apple 的日语语言包。';
+
+  @override
+  String get sentenceTranslationUnsupported => '此设备不支持句子翻译。';
+
+  @override
+  String get sentenceTranslationFailed => '无法翻译这个句子。';
+
+  @override
+  String get sentenceTranslationEngine => '机器翻译';
+
+  @override
+  String get sentenceTranslationEngineIos => '由 Apple 翻译';
+
+  @override
+  String get sentenceTranslationEdit => '编辑句子';
+
+  @override
+  String get settingsSentenceTranslationTitle => '句子翻译';
+
+  @override
+  String get settingsSentenceTranslationShown => '显示译文';
+
+  @override
+  String get settingsSentenceTranslationHidden => '点按后显示';
+
+  @override
+  String get settingsSentenceTranslationOff => '关闭';
+
+  @override
+  String get downloadsSentenceTranslationTitle => '日语翻译';
+
+  @override
+  String get downloadsSentenceTranslationSubtitle => '离线翻译所查词语所在的句子。';
+
+  @override
+  String get ankidroidDataSourceSentenceTranslation => '句子译文';
+
+  @override
+  String get attributionFirefoxTranslationsTitle => 'Firefox Translations';
+
+  @override
+  String get attributionFirefoxTranslationsDescription =>
+      '在 Android 上，句子翻译使用 Mozilla 的 Firefox Translations 引擎和模型，在你的设备上运行。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -7578,4 +7638,64 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get localOcrLicenseNdl =>
       'NDLOCR-Lite 文字识别模型 © 日本国立国会图书馆（国立国会図書館）。未经修改，用于读取扫描书籍。CC BY 4.0。';
+
+  @override
+  String get lookupTabDictionary => '词典';
+
+  @override
+  String get lookupTabSentence => '句子';
+
+  @override
+  String get sentenceTranslationTapToShow => '点按以显示译文';
+
+  @override
+  String sentenceTranslationDownload({required String size}) {
+    return '下载日语翻译（$size），即可离线翻译句子。';
+  }
+
+  @override
+  String get sentenceTranslationDownloadIos => '翻译需要 Apple 的日语语言包。';
+
+  @override
+  String get sentenceTranslationUnsupported => '此设备不支持句子翻译。';
+
+  @override
+  String get sentenceTranslationFailed => '无法翻译这个句子。';
+
+  @override
+  String get sentenceTranslationEngine => '机器翻译';
+
+  @override
+  String get sentenceTranslationEngineIos => '由 Apple 翻译';
+
+  @override
+  String get sentenceTranslationEdit => '编辑句子';
+
+  @override
+  String get settingsSentenceTranslationTitle => '句子翻译';
+
+  @override
+  String get settingsSentenceTranslationShown => '显示译文';
+
+  @override
+  String get settingsSentenceTranslationHidden => '点按后显示';
+
+  @override
+  String get settingsSentenceTranslationOff => '关闭';
+
+  @override
+  String get downloadsSentenceTranslationTitle => '日语翻译';
+
+  @override
+  String get downloadsSentenceTranslationSubtitle => '离线翻译所查词语所在的句子。';
+
+  @override
+  String get ankidroidDataSourceSentenceTranslation => '句子译文';
+
+  @override
+  String get attributionFirefoxTranslationsTitle => 'Firefox Translations';
+
+  @override
+  String get attributionFirefoxTranslationsDescription =>
+      '在 Android 上，句子翻译使用 Mozilla 的 Firefox Translations 引擎和模型，在你的设备上运行。';
 }

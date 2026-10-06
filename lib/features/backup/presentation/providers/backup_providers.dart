@@ -433,6 +433,9 @@ class RestoreNotifier extends Notifier<RestoreState> {
         .loadPersistedSettings();
     await ref.refresh(ankidroidConfigProvider.notifier).loadPersistedSettings();
     await ref.refresh(startupScreenProvider.notifier).loadPersistedSettings();
+    await ref
+        .refresh(sentenceTranslationModeProvider.notifier)
+        .loadPersistedSettings();
     await ref.refresh(autoFocusSearchProvider.notifier).loadPersistedSettings();
     await ref
         .refresh(autoCropWhiteThresholdProvider.notifier)

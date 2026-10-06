@@ -3955,4 +3955,67 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get localOcrLicenseNdl =>
       'NDLOCR-Lite text recognition model © National Diet Library, Japan (国立国会図書館). Used without modification to read scanned books. CC BY 4.0.';
+
+  @override
+  String get lookupTabDictionary => 'Dictionary';
+
+  @override
+  String get lookupTabSentence => 'Sentence';
+
+  @override
+  String get sentenceTranslationTapToShow => 'Tap to show translation';
+
+  @override
+  String sentenceTranslationDownload({required String size}) {
+    return 'Download Japanese translation ($size) to translate sentences offline.';
+  }
+
+  @override
+  String get sentenceTranslationDownloadIos =>
+      'Translating needs Apple\'s Japanese language pack.';
+
+  @override
+  String get sentenceTranslationUnsupported =>
+      'Sentence translation isn\'t available on this device.';
+
+  @override
+  String get sentenceTranslationFailed => 'Couldn\'t translate this sentence.';
+
+  @override
+  String get sentenceTranslationEngine => 'Machine translation';
+
+  @override
+  String get sentenceTranslationEngineIos => 'Translated by Apple';
+
+  @override
+  String get sentenceTranslationEdit => 'Edit sentence';
+
+  @override
+  String get settingsSentenceTranslationTitle => 'Sentence translation';
+
+  @override
+  String get settingsSentenceTranslationShown => 'Show translation';
+
+  @override
+  String get settingsSentenceTranslationHidden => 'Hide until tapped';
+
+  @override
+  String get settingsSentenceTranslationOff => 'Off';
+
+  @override
+  String get downloadsSentenceTranslationTitle => 'Japanese translation';
+
+  @override
+  String get downloadsSentenceTranslationSubtitle =>
+      'Translate the sentence around a looked-up word, offline.';
+
+  @override
+  String get ankidroidDataSourceSentenceTranslation => 'Sentence Translation';
+
+  @override
+  String get attributionFirefoxTranslationsTitle => 'Firefox Translations';
+
+  @override
+  String get attributionFirefoxTranslationsDescription =>
+      'On Android, sentence translation runs Mozilla\'s Firefox Translations engine and models on your device.';
 }

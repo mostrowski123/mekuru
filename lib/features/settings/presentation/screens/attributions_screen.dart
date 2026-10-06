@@ -563,6 +563,51 @@ class AttributionsScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.g_translate_outlined,
+                        color: theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.attributionFirefoxTranslationsTitle,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.attributionFirefoxTranslationsDescription,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  DownloadAttributionText(
+                    prefix: l10n.aboutLicensedUnderPrefix,
+                    linkText: 'Mozilla Public License 2.0',
+                    url: 'https://mozilla.org/MPL/2.0/',
+                    suffix: '.',
+                  ),
+                  const SizedBox(height: 8),
+                  DownloadAttributionText(
+                    prefix: l10n.aboutSourceLabel,
+                    linkText: 'github.com/mozilla/translations',
+                    url: 'https://github.com/mozilla/translations',
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           FutureBuilder<PackageInfo>(
             future: _packageInfoFuture,

@@ -5090,5 +5090,87 @@
   "localOcrLicenseNdl": "NDLOCR-Lite text recognition model © National Diet Library, Japan (国立国会図書館). Used without modification to read scanned books. CC BY 4.0.",
   "@localOcrLicenseNdl": {
     "description": "OCR attributions card: credit for the NDL text-line model. Keep the names, the Japanese name of the library, and the licence name as they are."
+  },
+  "lookupTabDictionary": "Dictionary",
+  "@lookupTabDictionary": {
+    "description": "Lookup sheet tab showing the dictionary entries for the tapped word. Keep short."
+  },
+  "lookupTabSentence": "Sentence",
+  "@lookupTabSentence": {
+    "description": "Lookup sheet tab showing the sentence around the tapped word and its translation. Keep short."
+  },
+  "sentenceTranslationTapToShow": "Tap to show translation",
+  "@sentenceTranslationTapToShow": {
+    "description": "Placeholder over a hidden sentence translation (setting: hide until tapped)."
+  },
+  "sentenceTranslationDownload": "Download Japanese translation ({size}) to translate sentences offline.",
+  "@sentenceTranslationDownload": {
+    "description": "Sentence tab (Android) before the translation model is downloaded. size is like \"30 MB\".",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "30 MB"
+      }
+    }
+  },
+  "sentenceTranslationDownloadIos": "Translating needs Apple's Japanese language pack.",
+  "@sentenceTranslationDownloadIos": {
+    "description": "Sentence tab (iOS) before Apple's Japanese translation language pack is installed. The button below opens Apple's download prompt."
+  },
+  "sentenceTranslationUnsupported": "Sentence translation isn't available on this device.",
+  "@sentenceTranslationUnsupported": {
+    "description": "Sentence tab when the device cannot translate Japanese."
+  },
+  "sentenceTranslationFailed": "Couldn't translate this sentence.",
+  "@sentenceTranslationFailed": {
+    "description": "Sentence tab when translating failed; a Retry button follows."
+  },
+  "sentenceTranslationEngine": "Machine translation",
+  "@sentenceTranslationEngine": {
+    "description": "Small label under a sentence translated on the device (Android, Mozilla's Firefox Translations engine), so readers know it is machine-made."
+  },
+  "sentenceTranslationEngineIos": "Translated by Apple",
+  "@sentenceTranslationEngineIos": {
+    "description": "Small label under a sentence translated on the device by Apple's Translation framework (iOS)."
+  },
+  "sentenceTranslationEdit": "Edit sentence",
+  "@sentenceTranslationEdit": {
+    "description": "Tooltip of the button that lets the user correct the Japanese sentence (manga OCR mistakes) before translating."
+  },
+  "settingsSentenceTranslationTitle": "Sentence translation",
+  "@settingsSentenceTranslationTitle": {
+    "description": "Settings: title of the choice for the lookup sheet Sentence tab."
+  },
+  "settingsSentenceTranslationShown": "Show translation",
+  "@settingsSentenceTranslationShown": {
+    "description": "Sentence translation setting option: the translation appears as soon as the Sentence tab opens."
+  },
+  "settingsSentenceTranslationHidden": "Hide until tapped",
+  "@settingsSentenceTranslationHidden": {
+    "description": "Sentence translation setting option: the translation stays hidden until the user taps it."
+  },
+  "settingsSentenceTranslationOff": "Off",
+  "@settingsSentenceTranslationOff": {
+    "description": "Sentence translation setting option: no Sentence tab in the lookup sheet."
+  },
+  "downloadsSentenceTranslationTitle": "Japanese translation",
+  "@downloadsSentenceTranslationTitle": {
+    "description": "Downloads screen (Android): title of the row for the offline Japanese translation model."
+  },
+  "downloadsSentenceTranslationSubtitle": "Translate the sentence around a looked-up word, offline.",
+  "@downloadsSentenceTranslationSubtitle": {
+    "description": "Downloads screen (Android): description of the offline Japanese translation model."
+  },
+  "ankidroidDataSourceSentenceTranslation": "Sentence Translation",
+  "@ankidroidDataSourceSentenceTranslation": {
+    "description": "Anki mapping source label for the machine translation of the sentence context."
+  },
+  "attributionFirefoxTranslationsTitle": "Firefox Translations",
+  "@attributionFirefoxTranslationsTitle": {
+    "description": "Attributions screen: card title for Mozilla's translation engine and models. A product name; keep as is."
+  },
+  "attributionFirefoxTranslationsDescription": "On Android, sentence translation runs Mozilla's Firefox Translations engine and models on your device.",
+  "@attributionFirefoxTranslationsDescription": {
+    "description": "Attributions screen: what Mozilla's translation engine is used for in Mekuru."
   }
 }

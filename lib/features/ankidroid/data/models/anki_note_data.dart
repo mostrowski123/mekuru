@@ -8,6 +8,9 @@ class AnkiNoteData {
   final String dictionaryName;
   final int? frequencyRank;
   final String? sentenceContext;
+
+  /// Machine translation of [sentenceContext], when a field asks for it.
+  final String? sentenceTranslation;
   final List<PitchAccentResult> pitchAccents;
 
   const AnkiNoteData({
@@ -17,6 +20,7 @@ class AnkiNoteData {
     required this.dictionaryName,
     this.frequencyRank,
     this.sentenceContext,
+    this.sentenceTranslation,
     this.pitchAccents = const [],
   });
 }
@@ -30,6 +34,7 @@ const exampleAnkiNoteData = AnkiNoteData(
   dictionaryName: 'Jitendex',
   frequencyRank: 120,
   sentenceContext: '毎朝パンを食べる。',
+  sentenceTranslation: 'I eat bread every morning.',
   pitchAccents: [
     PitchAccentResult(
       reading: 'たべる',

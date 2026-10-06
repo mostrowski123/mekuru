@@ -12,8 +12,8 @@ class AnkidroidConfig {
   /// Mapping from Anki field name → app data source key.
   ///
   /// App data source keys: 'expression', 'reading', 'glossary',
-  /// 'sentence_context', 'frequency', 'dictionary_name', 'pitch_accent',
-  /// 'empty'.
+  /// 'sentence_context', 'sentence_translation', 'frequency',
+  /// 'dictionary_name', 'pitch_accent', 'empty'.
   final Map<String, String> fieldMapping;
 
   /// The note type's field names in Anki's order, cached from the last

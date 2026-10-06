@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- Hosts the translation worker for Mekuru's Sentence tab (Android). Dart
+     calls mekuruTranslate(text, pairs) through callAsyncJavaScript. -->
+<meta charset="utf-8" />
+<script>
+  const worker = new Worker("engine-worker.js");
+  const pending = new Map();
+  let nextId = 0;
+
+  worker.onmessage = ({ data }) => {
+    const request = pending.get(data.id);
+    pending.delete(data.id);
+    if (data.error) request.reject(new Error(data.error));
+    else request.resolve(data.text);
+  };
+  // A crashed worker (out of memory, a WASM abort) fails everything queued.
+  worker.onerror = (event) => {
+    for (const request of pending.values()) {
+      request.reject(new Error(event.message || "translation worker failed"));
+    }
+    pending.clear();
+  };
+
+  window.mekuruTranslate = (text, pairs) =>
+    new Promise((resolve, reject) => {
+      const id = nextId++;
+      pending.set(id, { resolve, reject });
+      worker.postMessage({ id, text, pairs });
+    });
+</script>

@@ -7,6 +7,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_query_servic
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
+import 'package:mekuru/features/reader/presentation/widgets/sentence_translation_view.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
 import 'package:mekuru/l10n/l10n.dart';
@@ -37,6 +38,8 @@ class LookupSheet extends ConsumerStatefulWidget {
   /// The surface form as it appears in the text (fallback search term).
   final String? surfaceForm;
 
+  /// The sentence around the tapped word, shown and translated on the
+  /// Sentence tab.
   final String? sentenceContext;
 
   /// Surface this sheet was opened from, recorded on the word event when a
@@ -49,7 +52,8 @@ class LookupSheet extends ConsumerStatefulWidget {
   /// When true, render as a top-aligned card instead of a draggable bottom sheet.
   final bool showAtTop;
 
-  /// When true, the word header can be tapped to edit and re-search.
+  /// When true, the word header can be tapped to edit and re-search, and
+  /// the sentence on the Sentence tab can be corrected before translating.
   final bool editable;
 
   /// When true, use semi-transparent background with a visible border.
@@ -75,9 +79,28 @@ class LookupSheet extends ConsumerStatefulWidget {
   ConsumerState<LookupSheet> createState() => _LookupSheetState();
 }
 
-class _LookupSheetState extends ConsumerState<LookupSheet> {
+class _LookupSheetState extends ConsumerState<LookupSheet>
+    with SingleTickerProviderStateMixin {
   late Future<List<DictionaryEntryWithSource>> _searchResultsFuture;
   late Future<List<PitchAccentResult>> _pitchAccentsFuture;
+
+  /// Dictionary (0) or Sentence (1). Every new word starts on Dictionary.
+  late final TabController _tabController = TabController(
+    length: 2,
+    vsync: this,
+  );
+
+  /// The Sentence tab is built on its first visit, then kept like the
+  /// results, so switching back and forth redoes nothing.
+  bool _sentenceTabVisited = false;
+
+  /// The user's correction of [LookupSheet.sentenceContext].
+  String? _editedSentence;
+
+  String? get _sentence {
+    final sentence = (_editedSentence ?? widget.sentenceContext)?.trim();
+    return sentence == null || sentence.isEmpty ? null : sentence;
+  }
 
   bool _isEditing = false;
   late TextEditingController _editController;
@@ -123,12 +146,17 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
   void didUpdateWidget(covariant LookupSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    if (oldWidget.sentenceContext != widget.sentenceContext) {
+      _editedSentence = null;
+    }
     final lookupChanged =
         oldWidget.selectedText != widget.selectedText ||
         oldWidget.surfaceForm != widget.surfaceForm ||
         oldWidget.initialEditedText != widget.initialEditedText;
     if (!lookupChanged) return;
 
+    _tabController.index = 0;
+    _sentenceTabVisited = false;
     _isEditing = false;
     _editedText = _normalizeEditedText(widget.initialEditedText);
     _refreshLookupFutures();
@@ -136,6 +164,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _editController.dispose();
     super.dispose();
   }
@@ -224,8 +253,8 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
           children: [
             _buildDragHandle(context),
             _buildHeader(context),
-            const Divider(height: 1),
-            Expanded(child: _buildResultsList(context, scrollController)),
+            _buildTabsOrDivider(context),
+            Expanded(child: _buildBody(context, scrollController)),
           ],
         );
 
@@ -289,8 +318,8 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(context),
-            const Divider(height: 1),
-            Flexible(child: _buildResultsList(context, null)),
+            _buildTabsOrDivider(context),
+            Flexible(child: _buildBody(context, null)),
             _buildDragHandle(context),
           ],
         ),
@@ -377,10 +406,68 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
     );
   }
 
+  bool get _showSentenceTab =>
+      _sentence != null &&
+      ref.watch(sentenceTranslationModeProvider) != SentenceTranslationMode.off;
+
+  Widget _buildTabsOrDivider(BuildContext context) {
+    if (!_showSentenceTab) return const Divider(height: 1);
+    final l10n = context.l10n;
+    return TabBar.secondary(
+      controller: _tabController,
+      onTap: (index) => setState(() => _sentenceTabVisited |= index == 1),
+      tabs: [
+        Tab(text: l10n.lookupTabDictionary),
+        Tab(text: l10n.lookupTabSentence),
+      ],
+    );
+  }
+
+  /// Both tabs stay built once visited, so switching keeps the results, the
+  /// translation and an edit in progress. The bottom sheet's controller can
+  /// drive only one scrollable: the tab on screen gets it.
+  Widget _buildBody(BuildContext context, ScrollController? scrollController) {
+    final sentence = _sentence;
+    final onSentence = _showSentenceTab && _tabController.index == 1;
+    return Stack(
+      children: [
+        Offstage(
+          offstage: onSentence,
+          child: _buildResultsList(
+            context,
+            onSentence ? null : scrollController,
+            primary: onSentence ? false : null,
+          ),
+        ),
+        if (sentence != null && _showSentenceTab && _sentenceTabVisited)
+          Offstage(
+            offstage: !onSentence,
+            child: SentenceTranslationView(
+              sentence: sentence,
+              word: widget.surfaceForm ?? widget.selectedText,
+              fontSize: ref.watch(lookupFontSizeProvider),
+              hidden:
+                  ref.watch(sentenceTranslationModeProvider) ==
+                  SentenceTranslationMode.hidden,
+              source: widget.saveSource,
+              onSentenceEdited: widget.editable
+                  ? (value) => setState(() => _editedSentence = value)
+                  : null,
+              onEditingStarted: widget.onEditingStarted,
+              onEditingEnded: widget.onEditingEnded,
+              scrollController: onSentence ? scrollController : null,
+              shrinkWrap: widget.showAtTop,
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildResultsList(
     BuildContext context,
-    ScrollController? scrollController,
-  ) {
+    ScrollController? scrollController, {
+    bool? primary,
+  }) {
     final fontSize = ref.watch(lookupFontSizeProvider);
     final noDictionaries = ref.watch(noDictionariesProvider);
 
@@ -443,6 +530,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
 
             return CustomScrollView(
               controller: scrollController,
+              primary: primary,
               shrinkWrap: widget.showAtTop,
               slivers: [
                 for (var index = 0; index < groups.length; index++) ...[
@@ -468,7 +556,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet> {
                             entries: groups[index],
                             pitchAccents: groupPitchAccents[index],
                             fontSize: fontSize,
-                            sentenceContext: widget.sentenceContext,
+                            sentenceContext: _sentence,
                             saveSource: widget.saveSource,
                             onWordTap: _navigateToWord,
                             onWordSaved: widget.onWordSaved,

@@ -129,4 +129,39 @@ void main() {
       expect(firstFieldValue, isNull);
     });
   });
+
+  group('sentence translation', () {
+    const noteData = AnkiNoteData(
+      expression: '食べる',
+      reading: 'たべる',
+      glossaries: '["to eat"]',
+      dictionaryName: 'JMdict',
+      sentenceContext: 'パンを食べる。',
+      sentenceTranslation: 'I eat bread.',
+    );
+
+    test('fills a field mapped to it', () {
+      final values = AnkiFieldMapper.resolveFields(
+        ankiFieldNames: ['Sentence', 'Translation'],
+        fieldMapping: {
+          'Sentence': 'sentence_context',
+          'Translation': 'sentence_translation',
+        },
+        noteData: noteData,
+      );
+
+      expect(values, ['パンを食べる。', 'I eat bread.']);
+    });
+
+    test('is empty when nothing was translated', () {
+      const untranslated = AnkiNoteData(
+        expression: '食べる',
+        reading: 'たべる',
+        glossaries: '["to eat"]',
+        dictionaryName: 'JMdict',
+      );
+
+      expect(AppDataSource.sentenceTranslation.valueFor(untranslated), '');
+    });
+  });
 }

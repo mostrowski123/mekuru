@@ -3975,4 +3975,68 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get localOcrLicenseNdl =>
       'Model pengenalan teks NDLOCR-Lite © Perpustakaan Diet Nasional, Jepang (国立国会図書館). Digunakan tanpa modifikasi untuk membaca buku pindaian. CC BY 4.0.';
+
+  @override
+  String get lookupTabDictionary => 'Kamus';
+
+  @override
+  String get lookupTabSentence => 'Kalimat';
+
+  @override
+  String get sentenceTranslationTapToShow => 'Ketuk untuk melihat terjemahan';
+
+  @override
+  String sentenceTranslationDownload({required String size}) {
+    return 'Unduh terjemahan bahasa Jepang ($size) untuk menerjemahkan kalimat secara offline.';
+  }
+
+  @override
+  String get sentenceTranslationDownloadIos =>
+      'Penerjemahan memerlukan paket bahasa Jepang dari Apple.';
+
+  @override
+  String get sentenceTranslationUnsupported =>
+      'Terjemahan kalimat tidak tersedia di perangkat ini.';
+
+  @override
+  String get sentenceTranslationFailed =>
+      'Kalimat ini tidak dapat diterjemahkan.';
+
+  @override
+  String get sentenceTranslationEngine => 'Terjemahan mesin';
+
+  @override
+  String get sentenceTranslationEngineIos => 'Diterjemahkan oleh Apple';
+
+  @override
+  String get sentenceTranslationEdit => 'Edit kalimat';
+
+  @override
+  String get settingsSentenceTranslationTitle => 'Terjemahan kalimat';
+
+  @override
+  String get settingsSentenceTranslationShown => 'Tampilkan terjemahan';
+
+  @override
+  String get settingsSentenceTranslationHidden => 'Sembunyikan sampai diketuk';
+
+  @override
+  String get settingsSentenceTranslationOff => 'Nonaktif';
+
+  @override
+  String get downloadsSentenceTranslationTitle => 'Terjemahan bahasa Jepang';
+
+  @override
+  String get downloadsSentenceTranslationSubtitle =>
+      'Terjemahkan kalimat di sekitar kata yang Anda cari, secara offline.';
+
+  @override
+  String get ankidroidDataSourceSentenceTranslation => 'Terjemahan Kalimat';
+
+  @override
+  String get attributionFirefoxTranslationsTitle => 'Firefox Translations';
+
+  @override
+  String get attributionFirefoxTranslationsDescription =>
+      'Di Android, terjemahan kalimat menjalankan mesin dan model Firefox Translations dari Mozilla di perangkat Anda.';
 }

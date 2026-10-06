@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
@@ -199,8 +201,12 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           // files; Android's pack and its download run in the native service.
           if (defaultTargetPlatform == TargetPlatform.iOS)
             const MangaOcrIosDownloadTile()
-          else
+          else ...[
+            // iOS language packs belong to the system (Settings > Apps >
+            // Translate); the Sentence tab asks Apple for them.
+            const _SentenceTranslationTile(),
             const LocalOcrDownloadTile(),
+          ],
           // On-device scans of scanned free books read long lines with it;
           // on Android only devices that run on-device OCR can use it.
           if (defaultTargetPlatform == TargetPlatform.iOS ||
@@ -214,6 +220,115 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 }
 
 // ── Download tile widgets ──
+
+/// Android's Mozilla translation models for the lookup sheet's Sentence tab.
+/// The tab offers the download too; this row is also where they go away.
+class _SentenceTranslationTile extends StatefulWidget {
+  const _SentenceTranslationTile();
+
+  @override
+  State<_SentenceTranslationTile> createState() =>
+      _SentenceTranslationTileState();
+}
+
+class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
+  String? _target;
+  TranslationStatus? _status;
+  bool _busy = false;
+  Object? _error;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final target = translationTargetFor(Localizations.localeOf(context));
+    if (target != _target) {
+      _target = target;
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    final status = await translationStatus(_target!);
+    if (mounted) setState(() => _status = status);
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await action();
+    } catch (e) {
+      logFailure('translation.download_failed', e);
+      _error = e;
+    }
+    if (mounted) setState(() => _busy = false);
+    await _refresh();
+  }
+
+  Future<void> _download() async {
+    final size = translationDownloadSize(_target!);
+    if (await okToDownload(
+      context,
+      context.l10n.catalogMobileDataBody(size: size),
+    )) {
+      await _run(() => downloadTranslation(_target!));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _status;
+    if (status == null || status == TranslationStatus.unsupported) {
+      return const SizedBox();
+    }
+    final l = context.l10n;
+    final theme = Theme.of(context);
+    final error = dictionaryDownloadError(l, _error);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: Icon(
+            Icons.g_translate_outlined,
+            color: theme.colorScheme.primary,
+          ),
+          title: Text(l.downloadsSentenceTranslationTitle),
+          subtitle: Text(
+            '${l.downloadsSentenceTranslationSubtitle} '
+            '(${translationDownloadSize(_target!)})',
+          ),
+          trailing: _busy
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : status == TranslationStatus.installed
+              ? IconButton(
+                  tooltip: l.commonRemove,
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: theme.colorScheme.error,
+                  ),
+                  onPressed: () => _run(deleteTranslation),
+                )
+              : FilledButton.tonal(
+                  onPressed: _download,
+                  child: Text(l.commonDownload),
+                ),
+        ),
+        if (_busy)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: LinearProgressIndicator(),
+          ),
+        if (error != null) DownloadErrorText(text: error),
+      ],
+    );
+  }
+}
 
 // Zip sizes for the mobile-data question, rounded: KANJIDIC English was
 // 0.7 MB in October 2026, the JPDB v2.2 zip 6.0 MB.

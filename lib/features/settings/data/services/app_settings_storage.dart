@@ -151,6 +151,8 @@ abstract class AppSettingsStorage {
   Future<void> saveAnkidroidConfig(String configJson);
   Future<String?> loadStartupScreen();
   Future<void> saveStartupScreen(String screen);
+  Future<String?> loadSentenceTranslationMode();
+  Future<void> saveSentenceTranslationMode(String mode);
   Future<bool?> loadAutoFocusSearch();
   Future<void> saveAutoFocusSearch(bool value);
   Future<String?> loadColorTheme();
@@ -208,6 +210,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   static const _filterRomanLettersKey = 'app.filter_roman_letters';
   static const _ankidroidConfigKey = 'app.ankidroid_config';
   static const _startupScreenKey = 'app.startup_screen';
+  static const _sentenceTranslationModeKey = 'app.sentence_translation_mode';
   static const _autoFocusSearchKey = 'app.auto_focus_search';
   static const _colorThemeKey = 'app.color_theme';
   static const _autoCropWhiteThresholdKey = 'app.auto_crop_white_threshold';
@@ -227,6 +230,7 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
     _filterRomanLettersKey,
     _ankidroidConfigKey,
     _startupScreenKey,
+    _sentenceTranslationModeKey,
     _autoFocusSearchKey,
     _colorThemeKey,
     _autoCropWhiteThresholdKey,
@@ -344,6 +348,18 @@ class SharedPreferencesAppSettingsStorage implements AppSettingsStorage {
   Future<void> saveStartupScreen(String screen) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_startupScreenKey, screen);
+  }
+
+  @override
+  Future<String?> loadSentenceTranslationMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_sentenceTranslationModeKey);
+  }
+
+  @override
+  Future<void> saveSentenceTranslationMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sentenceTranslationModeKey, mode);
   }
 
   @override

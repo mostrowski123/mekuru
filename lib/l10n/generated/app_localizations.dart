@@ -6452,6 +6452,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'NDLOCR-Lite text recognition model © National Diet Library, Japan (国立国会図書館). Used without modification to read scanned books. CC BY 4.0.'**
   String get localOcrLicenseNdl;
+
+  /// Lookup sheet tab showing the dictionary entries for the tapped word. Keep short.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictionary'**
+  String get lookupTabDictionary;
+
+  /// Lookup sheet tab showing the sentence around the tapped word and its translation. Keep short.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence'**
+  String get lookupTabSentence;
+
+  /// Placeholder over a hidden sentence translation (setting: hide until tapped).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to show translation'**
+  String get sentenceTranslationTapToShow;
+
+  /// Sentence tab (Android) before the translation model is downloaded. size is like "30 MB".
+  ///
+  /// In en, this message translates to:
+  /// **'Download Japanese translation ({size}) to translate sentences offline.'**
+  String sentenceTranslationDownload({required String size});
+
+  /// Sentence tab (iOS) before Apple's Japanese translation language pack is installed. The button below opens Apple's download prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating needs Apple\'s Japanese language pack.'**
+  String get sentenceTranslationDownloadIos;
+
+  /// Sentence tab when the device cannot translate Japanese.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence translation isn\'t available on this device.'**
+  String get sentenceTranslationUnsupported;
+
+  /// Sentence tab when translating failed; a Retry button follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t translate this sentence.'**
+  String get sentenceTranslationFailed;
+
+  /// Small label under a sentence translated on the device (Android, Mozilla's Firefox Translations engine), so readers know it is machine-made.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine translation'**
+  String get sentenceTranslationEngine;
+
+  /// Small label under a sentence translated on the device by Apple's Translation framework (iOS).
+  ///
+  /// In en, this message translates to:
+  /// **'Translated by Apple'**
+  String get sentenceTranslationEngineIos;
+
+  /// Tooltip of the button that lets the user correct the Japanese sentence (manga OCR mistakes) before translating.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit sentence'**
+  String get sentenceTranslationEdit;
+
+  /// Settings: title of the choice for the lookup sheet Sentence tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence translation'**
+  String get settingsSentenceTranslationTitle;
+
+  /// Sentence translation setting option: the translation appears as soon as the Sentence tab opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Show translation'**
+  String get settingsSentenceTranslationShown;
+
+  /// Sentence translation setting option: the translation stays hidden until the user taps it.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide until tapped'**
+  String get settingsSentenceTranslationHidden;
+
+  /// Sentence translation setting option: no Sentence tab in the lookup sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get settingsSentenceTranslationOff;
+
+  /// Downloads screen (Android): title of the row for the offline Japanese translation model.
+  ///
+  /// In en, this message translates to:
+  /// **'Japanese translation'**
+  String get downloadsSentenceTranslationTitle;
+
+  /// Downloads screen (Android): description of the offline Japanese translation model.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate the sentence around a looked-up word, offline.'**
+  String get downloadsSentenceTranslationSubtitle;
+
+  /// Anki mapping source label for the machine translation of the sentence context.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence Translation'**
+  String get ankidroidDataSourceSentenceTranslation;
+
+  /// Attributions screen: card title for Mozilla's translation engine and models. A product name; keep as is.
+  ///
+  /// In en, this message translates to:
+  /// **'Firefox Translations'**
+  String get attributionFirefoxTranslationsTitle;
+
+  /// Attributions screen: what Mozilla's translation engine is used for in Mekuru.
+  ///
+  /// In en, this message translates to:
+  /// **'On Android, sentence translation runs Mozilla\'s Firefox Translations engine and models on your device.'**
+  String get attributionFirefoxTranslationsDescription;
 }
 
 class _AppLocalizationsDelegate
