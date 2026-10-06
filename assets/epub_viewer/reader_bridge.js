@@ -501,19 +501,29 @@ document.addEventListener('pointerup', function (e) {
 
 // ── Navigation (section-aware — bypasses epub.js broken scroll-delta logic) ──
 
+// Where the reader is. epub.js reports no location for an empty section,
+// which in scroll view is a strip with nothing to scroll, so fall back to
+// the section on screen: next() and previous() can still leave it.
+function currentStart() {
+  if (!rendition) return null;
+  if (rendition.location && rendition.location.start) return rendition.location.start;
+  var view = rendition.manager && rendition.manager.views.last();
+  return view ? { index: view.section.index, cfi: '', displayed: null } : null;
+}
+
 function next() {
   unpinScroll();
-  if (!rendition || !rendition.location || !rendition.location.start) {
-    console.log('[EPUB_BRIDGE] next() called but no location yet');
+  var start = currentStart();
+  if (!start) {
+    console.log('[EPUB_BRIDGE] next() called but nothing is displayed yet');
     return;
   }
-  var loc = rendition.location;
-  var currentPage = loc.start.displayed ? loc.start.displayed.page : 1;
-  var totalPages = loc.start.displayed ? loc.start.displayed.total : 1;
+  var currentPage = start.displayed ? start.displayed.page : 1;
+  var totalPages = start.displayed ? start.displayed.total : 1;
   var mgrAxis = rendition.manager ? rendition.manager.settings.axis : '?';
   var mgrDir = rendition.manager ? rendition.manager.settings.direction : '?';
   console.log('[EPUB_BRIDGE] next() page=' + currentPage + '/' + totalPages +
-    ' sectionIndex=' + loc.start.index + ' cfi=' + loc.start.cfi +
+    ' sectionIndex=' + start.index + ' cfi=' + start.cfi +
     ' axis=' + mgrAxis + ' dir=' + mgrDir);
 
   var edges = _scrollView ? scrollEdges() : null;
@@ -528,7 +538,7 @@ function next() {
   } else {
     // At last page of section — directly navigate to next spine item
     // This bypasses the broken DefaultViewManager.next() delta comparison
-    var spineItem = book.spine.get(loc.start.index);
+    var spineItem = book.spine.get(start.index);
     if (spineItem) {
       var nextItem = spineItem.next();
       if (nextItem) {
@@ -540,24 +550,24 @@ function next() {
         console.log('[EPUB_BRIDGE] next() already at last section');
       }
     } else {
-      console.log('[EPUB_BRIDGE] next() could not get spine item at index=' + loc.start.index);
+      console.log('[EPUB_BRIDGE] next() could not get spine item at index=' + start.index);
     }
   }
 }
 
 function previous() {
   unpinScroll();
-  if (!rendition || !rendition.location || !rendition.location.start) {
-    console.log('[EPUB_BRIDGE] previous() called but no location yet');
+  var start = currentStart();
+  if (!start) {
+    console.log('[EPUB_BRIDGE] previous() called but nothing is displayed yet');
     return;
   }
-  var loc = rendition.location;
-  var currentPage = loc.start.displayed ? loc.start.displayed.page : 1;
-  var totalPages = loc.start.displayed ? loc.start.displayed.total : 1;
+  var currentPage = start.displayed ? start.displayed.page : 1;
+  var totalPages = start.displayed ? start.displayed.total : 1;
   var mgrAxis = rendition.manager ? rendition.manager.settings.axis : '?';
   var mgrDir = rendition.manager ? rendition.manager.settings.direction : '?';
   console.log('[EPUB_BRIDGE] previous() page=' + currentPage + '/' + totalPages +
-    ' sectionIndex=' + loc.start.index + ' cfi=' + loc.start.cfi +
+    ' sectionIndex=' + start.index + ' cfi=' + start.cfi +
     ' axis=' + mgrAxis + ' dir=' + mgrDir);
 
   var edges = _scrollView ? scrollEdges() : null;
@@ -571,7 +581,7 @@ function previous() {
     rendition.prev();
   } else {
     // At first page of section — navigate to LAST page of previous spine item
-    var spineItem = book.spine.get(loc.start.index);
+    var spineItem = book.spine.get(start.index);
     if (spineItem) {
       var prevItem = spineItem.prev();
       if (prevItem) {
@@ -603,7 +613,7 @@ function previous() {
         console.log('[EPUB_BRIDGE] previous() already at first section');
       }
     } else {
-      console.log('[EPUB_BRIDGE] previous() could not get spine item at index=' + loc.start.index);
+      console.log('[EPUB_BRIDGE] previous() could not get spine item at index=' + start.index);
     }
   }
 }
