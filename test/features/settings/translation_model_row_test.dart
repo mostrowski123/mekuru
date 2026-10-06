@@ -8,6 +8,7 @@ import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/screens/settings_screen.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../shared/fake_download_notifiers.dart';
@@ -59,6 +60,7 @@ void main() {
   Future<ProviderContainer> pumpSettings(
     WidgetTester tester, {
     TranslationModelChoice choice = TranslationModelChoice.standard,
+    Locale locale = const Locale('en'),
   }) async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -66,11 +68,19 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: buildLocalizedTestApp(home: const SettingsScreen()),
+        child: buildLocalizedTestApp(
+          home: const SettingsScreen(),
+          locale: locale,
+        ),
       ),
     );
     await tester.pumpAndSettle();
-    await scrollSettingsTo(tester, find.text('Sentence translation'));
+    await scrollSettingsTo(
+      tester,
+      find.text(
+        lookupAppLocalizations(locale).settingsSentenceTranslationTitle,
+      ),
+    );
     return container;
   }
 
@@ -96,6 +106,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Standard (55 MB)'), findsOneWidget);
     expect(find.text('High quality (2.6 GB)'), findsOneWidget);
+  }, variant: _android);
+
+  testWidgets('the Standard size is for the app language', (tester) async {
+    final es = lookupAppLocalizations(const Locale('es'));
+    await pumpSettings(tester, locale: const Locale('es'));
+
+    await tester.tap(find.text(es.settingsTranslationModelTitle));
+    await tester.pumpAndSettle();
+
+    // Spanish pivots through English: two models.
+    expect(
+      find.text(es.translationModelStandardOption(size: '91 MB')),
+      findsOneWidget,
+    );
   }, variant: _android);
 
   testWidgets('"Use Standard" on a low-memory phone keeps Standard', (

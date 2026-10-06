@@ -656,7 +656,6 @@ class AttributionsScreen extends StatelessWidget {
                     prefix: l10n.aboutSourceLabel,
                     linkText: 'github.com/google-ai-edge/LiteRT-LM',
                     url: 'https://github.com/google-ai-edge/LiteRT-LM',
-                    suffix: '.',
                   ),
                 ],
               ),

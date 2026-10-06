@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
@@ -94,5 +96,29 @@ void main() {
       'load',
       'translate',
     ]);
+  });
+
+  test('closing during the first load still frees the engine', () async {
+    await GemmaTranslation.instance.close();
+    calls.clear();
+    final load = Completer<String?>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          calls.add(call);
+          return call.method == 'load' ? await load.future : 'x';
+        });
+    final translation = GemmaTranslation.instance.translateWith(
+      modelPath: '/models/slow.litertlm',
+      text: '猫',
+      target: 'en',
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    await GemmaTranslation.instance.close();
+    load.complete('gpu');
+    await translation;
+
+    // Natively the close runs after the load it was queued behind.
+    expect(calls.map((c) => c.method), ['load', 'close', 'translate']);
   });
 }

@@ -93,7 +93,7 @@ class GemmaBridge {
             try {
                 candidate.close()
             } catch (_: Throwable) {
-                // The initialize failure is the one worth reporting.
+                // The initialize or warm-up failure is the one worth reporting.
             }
             throw e
         }

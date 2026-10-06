@@ -679,7 +679,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       selected: current,
       labelOf: (choice) => switch (choice) {
         TranslationModelChoice.standard => l10n.translationModelStandardOption(
-          size: translationDownloadSize('en'),
+          size: translationDownloadSize(
+            translationTargetFor(Localizations.localeOf(context)),
+          ),
         ),
         TranslationModelChoice.high => l10n.translationModelHighOption(
           size: GemmaTranslation.downloadSize(),

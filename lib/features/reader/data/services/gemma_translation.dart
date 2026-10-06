@@ -198,7 +198,8 @@ class GemmaTranslation implements TranslationEngine {
     if (override != null) return override();
     _idleTimer?.cancel();
     _idleTimer = null;
-    if (_loadedPath == null) return;
+    // Even with nothing loaded yet: a first load may be under way, and
+    // natively this runs after it.
     _loadedPath = null;
     try {
       await _channel.invokeMethod<void>('close');
