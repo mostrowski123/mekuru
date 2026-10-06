@@ -307,41 +307,47 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     VoidCallback? onAction,
     VoidCallback? onDismiss,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: color,
-      child: Row(
-        children: [
-          Icon(icon, color: textColor, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(color: textColor, fontSize: 13),
-            ),
-          ),
-          if (actionLabel != null && onAction != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: TextButton(
-                onPressed: onAction,
-                style: TextButton.styleFrom(
-                  foregroundColor: textColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 36),
-                ),
-                child: Text(actionLabel),
+    // A live region, so screen readers announce the import result: it lands
+    // here rather than in a snackbar.
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        color: color,
+        child: Row(
+          children: [
+            Icon(icon, color: textColor, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: textColor, fontSize: 13),
               ),
             ),
-          if (onDismiss != null)
-            IconButton(
-              icon: Icon(Icons.close, color: textColor, size: 18),
-              tooltip: context.l10n.commonClose,
-              onPressed: onDismiss,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-        ],
+            if (actionLabel != null && onAction != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: TextButton(
+                  onPressed: onAction,
+                  style: TextButton.styleFrom(
+                    foregroundColor: textColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(0, 36),
+                  ),
+                  child: Text(actionLabel),
+                ),
+              ),
+            if (onDismiss != null)
+              IconButton(
+                icon: Icon(Icons.close, color: textColor, size: 18),
+                tooltip: context.l10n.commonClose,
+                onPressed: onDismiss,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+          ],
+        ),
       ),
     );
   }

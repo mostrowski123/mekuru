@@ -17,6 +17,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'shared/fake_download_notifiers.dart';
 import 'test_app.dart';
 
+class _ImportSucceeded extends BookImportNotifier {
+  @override
+  BookImportState build() =>
+      const BookImportState(successMessage: 'Imported Botchan');
+}
+
 Future<void> pumpEmptyLibrary(
   WidgetTester tester, {
   List<Override> overrides = const [],
@@ -152,6 +158,20 @@ void main() {
       ];
       expect(mostRecentlyReadBook(books)!.id, 2);
     });
+  });
+
+  testWidgets('screen readers announce the import result', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpEmptyLibrary(
+      tester,
+      overrides: [bookImportProvider.overrideWith(_ImportSucceeded.new)],
+    );
+
+    expect(
+      tester.getSemantics(find.text('Imported Botchan')),
+      isSemantics(label: 'Imported Botchan', isLiveRegion: true),
+    );
+    semantics.dispose();
   });
 
   group('continue-reading card', () {

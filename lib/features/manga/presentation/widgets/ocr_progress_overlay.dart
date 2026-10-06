@@ -243,23 +243,30 @@ class _CompletedOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
-      child: Container(
-        // Dark enough that the white label stays readable over a light cover.
-        color: Colors.green.shade900.withValues(alpha: 0.85),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 32),
-            const SizedBox(height: 4),
-            Text(
-              context.l10n.ocrComplete,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+      // Live regions here and on the failed overlay: OCR runs in the
+      // background, and this is the only sign that it ended.
+      child: Semantics(
+        container: true,
+        liveRegion: true,
+        child: Container(
+          // Dark enough that the white label stays readable over a light
+          // cover.
+          color: Colors.green.shade900.withValues(alpha: 0.85),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 32),
+              const SizedBox(height: 4),
+              Text(
+                context.l10n.ocrComplete,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -274,34 +281,38 @@ class _FailedOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
-      child: GestureDetector(
-        onTap: errorMessage != null
-            ? () => _showErrorDialog(context, errorMessage!)
-            : null,
-        child: Container(
-          color: Colors.red.shade900.withValues(alpha: 0.85),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white, size: 28),
-              const SizedBox(height: 4),
-              Text(
-                context.l10n.ocrFailed,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (errorMessage != null) ...[
-                const SizedBox(height: 2),
+      child: Semantics(
+        container: true,
+        liveRegion: true,
+        child: GestureDetector(
+          onTap: errorMessage != null
+              ? () => _showErrorDialog(context, errorMessage!)
+              : null,
+          child: Container(
+            color: Colors.red.shade900.withValues(alpha: 0.85),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 28),
+                const SizedBox(height: 4),
                 Text(
-                  context.l10n.ocrTapForDetails,
-                  style: const TextStyle(color: Colors.white, fontSize: 10),
+                  context.l10n.ocrFailed,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    context.l10n.ocrTapForDetails,
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

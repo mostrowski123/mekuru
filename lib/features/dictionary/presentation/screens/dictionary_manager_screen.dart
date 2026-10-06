@@ -191,10 +191,19 @@ class _DictionaryManagerScreenState
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis,
+                // Screen readers announce which dictionary is importing; a
+                // label that is the running entry count would announce on
+                // every update, so that one stays quiet.
+                child: Semantics(
+                  container: true,
+                  liveRegion:
+                      state.dictionariesTotal > 0 ||
+                      state.currentDictionary != null,
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],
@@ -232,10 +241,14 @@ class _DictionaryManagerScreenState
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              state.error!,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onErrorContainer,
+            child: Semantics(
+              container: true,
+              liveRegion: true,
+              child: Text(
+                state.error!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
               ),
             ),
           ),
@@ -258,7 +271,13 @@ class _DictionaryManagerScreenState
             color: Theme.of(context).colorScheme.success,
           ),
           const SizedBox(width: 8),
-          Expanded(child: Text(state.successMessage!)),
+          Expanded(
+            child: Semantics(
+              container: true,
+              liveRegion: true,
+              child: Text(state.successMessage!),
+            ),
+          ),
         ],
       ),
     );
