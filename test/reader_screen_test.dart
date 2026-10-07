@@ -109,6 +109,17 @@ void main() {
     WakelockPlusPlatformInterface.instance = originalWakelockPlatform;
   });
 
+  test('a bookmark opened from the library wins over the saved position', () {
+    const bookmark = 'epubcfi(/6/8!/4/2/1:0)';
+    const saved = 'epubcfi(/6/4!/4/2/1:0)';
+
+    expect(readerStartCfi(bookmark, saved), bookmark);
+    expect(readerStartCfi(null, saved), saved);
+    expect(readerStartCfi('', ' $saved '), saved);
+    expect(readerStartCfi(null, 'wadoku://reader/3'), isNull);
+    expect(readerStartCfi(null, null), isNull);
+  });
+
   testWidgets('ReaderScreen disposes without reading providers after unmount', (
     tester,
   ) async {

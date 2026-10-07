@@ -1550,34 +1550,37 @@ class _BookTileState extends ConsumerState<_BookTile>
     );
   }
 
+  // The sheets pop themselves before calling onNavigate.
   void _showBookBookmarks(BuildContext context) {
+    final navigator = Navigator.of(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => BookmarksSheet(
         bookId: book.id,
-        onNavigate: (cfi) {
-          Navigator.of(context).pop();
-          Navigator.of(
-            context,
-          ).push(namedRoute('reader', (_) => ReaderScreen(book: book)));
-        },
+        onNavigate: (cfi) => navigator.push(
+          namedRoute(
+            'reader',
+            (_) => ReaderScreen(book: book, initialCfi: cfi),
+          ),
+        ),
       ),
     );
   }
 
   void _showBookHighlights(BuildContext context) {
+    final navigator = Navigator.of(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => HighlightsSheet(
         bookId: book.id,
-        onNavigate: (cfiRange) {
-          Navigator.of(context).pop();
-          Navigator.of(
-            context,
-          ).push(namedRoute('reader', (_) => ReaderScreen(book: book)));
-        },
+        onNavigate: (cfiRange) => navigator.push(
+          namedRoute(
+            'reader',
+            (_) => ReaderScreen(book: book, initialCfi: cfiRange),
+          ),
+        ),
       ),
     );
   }

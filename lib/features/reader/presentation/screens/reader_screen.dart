@@ -46,10 +46,26 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 class ReaderScreen extends ConsumerStatefulWidget {
   final Book book;
 
-  const ReaderScreen({super.key, required this.book});
+  /// Where to open instead of the saved position: a bookmark or highlight
+  /// picked in the library.
+  final String? initialCfi;
+
+  const ReaderScreen({super.key, required this.book, this.initialCfi});
 
   @override
   ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
+}
+
+/// The CFI the reader opens at: [requested] when it is one, else the saved
+/// position [saved] (which can also be empty or a legacy non-CFI value).
+@visibleForTesting
+String? readerStartCfi(String? requested, String? saved) {
+  String? cfi(String? value) {
+    final trimmed = value?.trim() ?? '';
+    return trimmed.startsWith('epubcfi(') ? trimmed : null;
+  }
+
+  return cfi(requested) ?? cfi(saved);
 }
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen>
@@ -162,7 +178,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      unawaited(_syncRemoteProgress());
+      // An open at a picked position must stay there, so the server's
+      // progress is not pulled; the first page saved pushes the new one.
+      if (widget.initialCfi == null) unawaited(_syncRemoteProgress());
       await ref.read(readerSettingsProvider.notifier).loadPersistedSettings();
       if (!mounted) return;
 
@@ -688,7 +706,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       if (!mounted) return;
 
       final savedProgress = latestBook?.lastReadCfi ?? widget.book.lastReadCfi;
-      final initialCfi = _extractInitialCfi(savedProgress);
+      final initialCfi = readerStartCfi(widget.initialCfi, savedProgress);
 
       // Re-parse legacy books without language metadata to detect language.
       // hasVerticalCss doubles as the "parsed by this app version" marker:
@@ -1195,23 +1213,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   bool _isEpubCfi(String value) => value.startsWith('epubcfi(');
-
-  String? _extractInitialCfi(String? rawProgress) {
-    if (rawProgress == null) {
-      return null;
-    }
-
-    final value = rawProgress.trim();
-    if (value.isEmpty) {
-      return null;
-    }
-
-    if (value.startsWith('wadoku://reader')) {
-      return null;
-    }
-
-    return _isEpubCfi(value) ? value : null;
-  }
 
   // ── Bookmarks ────────────────────────────────────────────────────
 
