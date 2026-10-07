@@ -134,6 +134,15 @@
       }
     }
   },
+  "libraryImportedBooks": "{count, plural, one {Se importó {count} libro} other {Se importaron {count} libros}}",
+  "libraryImportPartial": "Se importaron {succeeded} de {total}.",
+  "libraryImportFailedFile": "No se pudo importar {file}: {reason}",
+  "libraryImportReasonPasswordProtected": "Este PDF está protegido con contraseña.",
+  "libraryImportReasonDamaged": "El archivo está dañado o no tiene el formato esperado.",
+  "libraryImportReasonNoPages": "No se encontraron páginas ni imágenes.",
+  "libraryImportReasonUnsupported": "Este tipo de archivo no es compatible.",
+  "libraryImportReasonUnreadable": "No se pudo leer el archivo.",
+  "libraryImportReasonUnknown": "Algo salió mal.",
   "librarySortTooltip": "Ordenar: {label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",

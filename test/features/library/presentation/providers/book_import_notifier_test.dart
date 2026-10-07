@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
+import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:mekuru/main.dart';
+import 'package:pdfrx/pdfrx.dart' show PdfException, PdfPasswordException;
 import 'package:sentry_flutter/sentry_flutter.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -17,6 +20,7 @@ import '../../../../shared/fake_path_provider.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  final en = AppLocalizationsEn();
   late Directory tempDir;
   late AppDatabase db;
   late ProviderContainer container;
@@ -80,7 +84,7 @@ void main() {
 
       final finalState = container.read(bookImportProvider);
       expect(finalState.isImporting, isFalse);
-      expect(finalState.successMessage, 'Imported 2 books');
+      expect(finalState.successMessage!(en), 'Imported 2 books');
 
       final batchSteps = states
           .where((s) => s.batchTotal != null)
@@ -105,8 +109,25 @@ void main() {
 
       final state = container.read(bookImportProvider);
       expect(state.isImporting, isFalse);
-      expect(state.error, contains('Imported 1 of 2'));
-      expect(state.error, contains('missing.epub'));
+      expect(
+        state.error!(en),
+        'Imported 1 of 2.\n'
+        "Couldn't import missing.epub: The file couldn't be read.",
+      );
+    });
+
+    test('a single failed file says why, without a batch summary', () async {
+      final empty = File('${tempDir.path}/empty.cbz')
+        ..writeAsBytesSync(const []);
+
+      await container.read(bookImportProvider.notifier).importFiles([
+        empty.path,
+      ], format: 'cbz');
+
+      expect(
+        container.read(bookImportProvider).error!(en),
+        "Couldn't import empty.cbz: No pages or images were found.",
+      );
     });
 
     test(
@@ -121,7 +142,7 @@ void main() {
         expect(imported, 1);
 
         final state = container.read(bookImportProvider);
-        expect(state.successMessage, '"吾輩は猫である" added to library!');
+        expect(state.successMessage!(en), '"吾輩は猫である" added to library!');
         expect(state.importedBook, isNotNull);
         expect(state.batchTotal, isNull);
       },
@@ -148,6 +169,41 @@ void main() {
       expect(imported, 0);
       expect(container.read(bookImportProvider).isImporting, isFalse);
     });
+  });
+
+  test('importFailureReason names each kind of failure', () {
+    String reason(Object error) => importFailureReason(en, error);
+
+    expect(
+      reason(const PdfPasswordException('No password supplied')),
+      en.libraryImportReasonPasswordProtected,
+    );
+    expect(
+      reason(const PdfException('Failed to load PDF document', 3)),
+      en.libraryImportReasonDamaged,
+    );
+    expect(
+      reason(const PdfException('Failed to load PDF document', 2)),
+      en.libraryImportReasonUnreadable,
+    );
+    expect(
+      reason(const FormatException('EPUB file is corrupt')),
+      en.libraryImportReasonDamaged,
+    );
+    expect(reason(const NoPagesException()), en.libraryImportReasonNoPages);
+    expect(
+      reason(UnsupportedError('Unsupported file type: .txt')),
+      en.libraryImportReasonUnsupported,
+    );
+    expect(
+      reason(const PathNotFoundException('a.epub', OSError('No such file', 2))),
+      en.libraryImportReasonUnreadable,
+    );
+    expect(
+      reason(const FileSystemException('write', 'a', OSError('Full', 28))),
+      en.localOcrStorageFull,
+    );
+    expect(reason(StateError('bug')), en.libraryImportReasonUnknown);
   });
 
   group('BookImportNotifier failure telemetry', () {

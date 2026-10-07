@@ -134,6 +134,15 @@
       }
     }
   },
+  "libraryImportedBooks": "{count, plural, one {已导入 {count} 本书} other {已导入 {count} 本书}}",
+  "libraryImportPartial": "已导入 {succeeded} 个，共 {total} 个。",
+  "libraryImportFailedFile": "无法导入 {file}：{reason}",
+  "libraryImportReasonPasswordProtected": "此 PDF 受密码保护。",
+  "libraryImportReasonDamaged": "文件已损坏或格式不正确。",
+  "libraryImportReasonNoPages": "未找到任何页面或图片。",
+  "libraryImportReasonUnsupported": "不支持此文件类型。",
+  "libraryImportReasonUnreadable": "无法读取该文件。",
+  "libraryImportReasonUnknown": "出了点问题。",
   "librarySortTooltip": "排序：{label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",

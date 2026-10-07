@@ -134,6 +134,15 @@
       }
     }
   },
+  "libraryImportedBooks": "{count, plural, one {{count} buku diimpor} other {{count} buku diimpor}}",
+  "libraryImportPartial": "{succeeded} dari {total} diimpor.",
+  "libraryImportFailedFile": "Tidak dapat mengimpor {file}: {reason}",
+  "libraryImportReasonPasswordProtected": "PDF ini dilindungi kata sandi.",
+  "libraryImportReasonDamaged": "File rusak atau formatnya tidak sesuai.",
+  "libraryImportReasonNoPages": "Tidak ada halaman atau gambar yang ditemukan.",
+  "libraryImportReasonUnsupported": "Jenis file ini tidak didukung.",
+  "libraryImportReasonUnreadable": "File tidak dapat dibaca.",
+  "libraryImportReasonUnknown": "Terjadi kesalahan.",
   "librarySortTooltip": "Urutkan: {label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",

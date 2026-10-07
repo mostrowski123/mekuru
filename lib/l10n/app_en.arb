@@ -138,6 +138,63 @@
       }
     }
   },
+  "libraryImportedBooks": "{count, plural, one {Imported {count} book} other {Imported {count} books}}",
+  "@libraryImportedBooks": {
+    "description": "Banner shown after several files were all imported at once.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryImportPartial": "Imported {succeeded} of {total}.",
+  "@libraryImportPartial": {
+    "description": "First line of the import error banner when some files of a batch failed. The failed files follow, one libraryImportFailedFile line each.",
+    "placeholders": {
+      "succeeded": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryImportFailedFile": "Couldn't import {file}: {reason}",
+  "@libraryImportFailedFile": {
+    "description": "Import error banner line for one file that failed: its file name, then why (one of the libraryImportReason strings).",
+    "placeholders": {
+      "file": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "libraryImportReasonPasswordProtected": "This PDF is password-protected.",
+  "@libraryImportReasonPasswordProtected": {
+    "description": "Why an import failed: the PDF needs a password."
+  },
+  "libraryImportReasonDamaged": "The file is damaged or not in the expected format.",
+  "@libraryImportReasonDamaged": {
+    "description": "Why an import failed: the file is broken, or is not really an EPUB, CBZ, PDF or Mokuro file."
+  },
+  "libraryImportReasonNoPages": "No pages or images were found.",
+  "@libraryImportReasonNoPages": {
+    "description": "Why an import failed: a manga file contained no page images."
+  },
+  "libraryImportReasonUnsupported": "This file type isn't supported.",
+  "@libraryImportReasonUnsupported": {
+    "description": "Why an import failed: Mekuru cannot import this type of file."
+  },
+  "libraryImportReasonUnreadable": "The file couldn't be read.",
+  "@libraryImportReasonUnreadable": {
+    "description": "Why an import failed: the file could not be opened or read."
+  },
+  "libraryImportReasonUnknown": "Something went wrong.",
+  "@libraryImportReasonUnknown": {
+    "description": "Why an import failed, when the cause is not one of the known ones."
+  },
   "librarySortTooltip": "Sort: {label}",
   "@librarySortTooltip": {
     "description": "Tooltip for the library sort button.",

@@ -33,6 +33,15 @@ Future<EpubMetadata> _parseEpubForImport((String, String) args) =>
 Future<int> _writeCbzForExport((String, String) args) =>
     writeCbz(args.$1, args.$2);
 
+/// A manga import found no page images. The message names no title: it
+/// reaches Sentry.
+class NoPagesException implements Exception {
+  const NoPagesException();
+
+  @override
+  String toString() => 'No pages found.';
+}
+
 /// Repository for book CRUD operations and EPUB import.
 class BookRepository {
   final AppDatabase _db;
@@ -150,10 +159,9 @@ class BookRepository {
   }
 
   /// Every manga import goes through here: one without pages would become
-  /// an empty, unreadable book (MEKURU-1R). The message names no title: it
-  /// reaches Sentry.
+  /// an empty, unreadable book (MEKURU-1R).
   static void _requirePages(int pageCount) {
-    if (pageCount == 0) throw Exception('No pages found.');
+    if (pageCount == 0) throw const NoPagesException();
   }
 
   /// Import an EPUB file into the library.
@@ -300,7 +308,7 @@ class BookRepository {
           safSelectedFileRelativePath: safSelectedFileRelativePath,
         );
       } else {
-        throw Exception(
+        throw UnsupportedError(
           'Unsupported file type: $ext\n'
           'Expected a .mokuro or .html file.',
         );

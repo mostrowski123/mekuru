@@ -230,7 +230,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               icon: Icons.error_outline,
               color: Theme.of(context).colorScheme.errorContainer,
               textColor: Theme.of(context).colorScheme.onErrorContainer,
-              message: importState.error!,
+              message: importState.error!(l10n),
               onDismiss: () =>
                   ref.read(bookImportProvider.notifier).clearState(),
             ),
@@ -240,7 +240,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               icon: Icons.check_circle_outline,
               color: Colors.green.withValues(alpha: 0.1),
               textColor: Theme.of(context).colorScheme.success,
-              message: importState.successMessage!,
+              message: importState.successMessage!(l10n),
               actionLabel: importState.importedBook != null
                   ? l10n.commonOpenNow
                   : null,

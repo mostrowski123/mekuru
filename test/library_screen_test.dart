@@ -20,7 +20,7 @@ import 'test_app.dart';
 class _ImportSucceeded extends BookImportNotifier {
   @override
   BookImportState build() =>
-      const BookImportState(successMessage: 'Imported Botchan');
+      BookImportState(successMessage: (_) => 'Imported Botchan');
 }
 
 Future<void> pumpEmptyLibrary(

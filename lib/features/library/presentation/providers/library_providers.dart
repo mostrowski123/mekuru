@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -14,6 +15,7 @@ import 'package:mekuru/core/services/sentry_helpers.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/main.dart';
 import 'package:path/path.dart' as p;
+import 'package:pdfrx/pdfrx.dart' show PdfException, PdfPasswordException;
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 // ──────────────── Sort ────────────────
@@ -113,8 +115,10 @@ final booksProvider = StreamProvider<List<Book>>((ref) {
 class BookImportState {
   final bool isImporting;
   final double? progress; // null = indeterminate, 0.0–1.0 = determinate
-  final String? error;
-  final String? successMessage;
+
+  /// Banner texts, built in the app's language when shown.
+  final String Function(AppLocalizations l10n)? error;
+  final String Function(AppLocalizations l10n)? successMessage;
   final Book? importedBook;
 
   /// 1-based index of the file currently importing within a batch.
@@ -133,6 +137,34 @@ class BookImportState {
   });
 }
 
+/// The import banner's line for a file that failed: its name and why, in the
+/// user's language. Sentry gets the exception itself.
+String _describeImportFailure(
+  AppLocalizations l10n,
+  String filePath,
+  Object error,
+) => l10n.libraryImportFailedFile(
+  file: p.basename(filePath),
+  reason: importFailureReason(l10n, error),
+);
+
+/// Why an import failed, as a short sentence in the user's language.
+String importFailureReason(AppLocalizations l10n, Object error) =>
+    switch (error) {
+      PdfPasswordException() => l10n.libraryImportReasonPasswordProtected,
+      // FPDF_ERR_FILE: PDFium could not open the file.
+      PdfException(errorCode: 2) => l10n.libraryImportReasonUnreadable,
+      PdfException() || FormatException() => l10n.libraryImportReasonDamaged,
+      NoPagesException() => l10n.libraryImportReasonNoPages,
+      UnsupportedError() => l10n.libraryImportReasonUnsupported,
+      // ENOSPC: the copy or the extraction filled the device.
+      FileSystemException(osError: OSError(errorCode: 28)) =>
+        l10n.localOcrStorageFull,
+      FileSystemException(osError: OSError()) =>
+        l10n.libraryImportReasonUnreadable,
+      _ => l10n.libraryImportReasonUnknown,
+    };
+
 /// Notifier for managing book import state.
 class BookImportNotifier extends Notifier<BookImportState> {
   Timer? _autoDismissTimer;
@@ -140,7 +172,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
   @override
   BookImportState build() => const BookImportState();
 
-  void _showSuccess(String message, Book book) {
+  void _showSuccess(String Function(AppLocalizations l10n) message, Book book) {
     _autoDismissTimer?.cancel();
     state = BookImportState(successMessage: message, importedBook: book);
     _autoDismissTimer = Timer(const Duration(seconds: 5), clearState);
@@ -149,8 +181,8 @@ class BookImportNotifier extends Notifier<BookImportState> {
   /// Import one or more EPUB ('epub'), CBZ ('cbz') or PDF ('pdf') files.
   ///
   /// Individual failures don't abort the batch: remaining files still
-  /// import, and a summary error names the files that failed. Returns the
-  /// number of successfully imported books.
+  /// import, and a summary error names the files that failed and why.
+  /// Returns the number of successfully imported books.
   Future<int> importFiles(
     List<String> filePaths, {
     required String format,
@@ -158,7 +190,7 @@ class BookImportNotifier extends Notifier<BookImportState> {
     if (filePaths.isEmpty) return 0;
 
     final total = filePaths.length;
-    final failures = <String>[];
+    final failures = <({String path, Object error})>[];
     Book? lastImported;
 
     for (var i = 0; i < total; i++) {
@@ -182,23 +214,27 @@ class BookImportNotifier extends Notifier<BookImportState> {
         );
       } catch (e, st) {
         Sentry.captureException(e, stackTrace: st);
-        failures.add(p.basename(filePaths[i]));
+        failures.add((path: filePaths[i], error: e));
       }
     }
 
     final succeeded = total - failures.length;
     if (failures.isEmpty) {
+      final book = lastImported!;
       _showSuccess(
-        total == 1
-            ? '"${lastImported!.title}" added to library!'
-            : 'Imported $total books',
-        lastImported!,
+        (l10n) => total == 1
+            ? l10n.serverBrowseAddedToLibrary(title: book.title)
+            : l10n.libraryImportedBooks(count: total),
+        book,
       );
     } else {
       state = BookImportState(
-        error:
-            'Imported $succeeded of $total — '
-            '${failures.length} failed: ${failures.join(', ')}',
+        error: (l10n) => [
+          if (total > 1)
+            l10n.libraryImportPartial(succeeded: succeeded, total: total),
+          for (final failure in failures)
+            _describeImportFailure(l10n, failure.path, failure.error),
+        ].join('\n'),
       );
     }
     return succeeded;
@@ -264,11 +300,16 @@ class BookImportNotifier extends Notifier<BookImportState> {
       );
       await applyPendingBackupData(book);
       _logBookImported('manga');
-      _showSuccess('"${book.title}" added to library!', book);
+      _showSuccess(
+        (l10n) => l10n.serverBrowseAddedToLibrary(title: book.title),
+        book,
+      );
       return book;
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = BookImportState(error: e.toString());
+      state = BookImportState(
+        error: (l10n) => _describeImportFailure(l10n, filePath, e),
+      );
       return null;
     }
   }
@@ -295,11 +336,16 @@ class BookImportNotifier extends Notifier<BookImportState> {
       );
       await applyPendingBackupData(book);
       _logBookImported('manga_saf');
-      _showSuccess('"${book.title}" added to library!', book);
+      _showSuccess(
+        (l10n) => l10n.serverBrowseAddedToLibrary(title: book.title),
+        book,
+      );
       return book;
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = BookImportState(error: e.toString());
+      state = BookImportState(
+        error: (l10n) => _describeImportFailure(l10n, filePath, e),
+      );
       return null;
     }
   }
@@ -353,7 +399,9 @@ class BookImportNotifier extends Notifier<BookImportState> {
       }
     } catch (e, st) {
       Sentry.captureException(e, stackTrace: st);
-      state = BookImportState(error: 'Delete failed: $e');
+      state = BookImportState(
+        error: (l10n) => l10n.commonErrorWithDetails(details: '$e'),
+      );
     }
   }
 }

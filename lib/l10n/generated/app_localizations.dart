@@ -283,6 +283,63 @@ abstract class AppLocalizations {
   /// **'Importing {current} of {total}…'**
   String libraryBatchImportProgress({required int current, required int total});
 
+  /// Banner shown after several files were all imported at once.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {Imported {count} book} other {Imported {count} books}}'**
+  String libraryImportedBooks({required int count});
+
+  /// First line of the import error banner when some files of a batch failed. The failed files follow, one libraryImportFailedFile line each.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {succeeded} of {total}.'**
+  String libraryImportPartial({required int succeeded, required int total});
+
+  /// Import error banner line for one file that failed: its file name, then why (one of the libraryImportReason strings).
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t import {file}: {reason}'**
+  String libraryImportFailedFile({
+    required String file,
+    required String reason,
+  });
+
+  /// Why an import failed: the PDF needs a password.
+  ///
+  /// In en, this message translates to:
+  /// **'This PDF is password-protected.'**
+  String get libraryImportReasonPasswordProtected;
+
+  /// Why an import failed: the file is broken, or is not really an EPUB, CBZ, PDF or Mokuro file.
+  ///
+  /// In en, this message translates to:
+  /// **'The file is damaged or not in the expected format.'**
+  String get libraryImportReasonDamaged;
+
+  /// Why an import failed: a manga file contained no page images.
+  ///
+  /// In en, this message translates to:
+  /// **'No pages or images were found.'**
+  String get libraryImportReasonNoPages;
+
+  /// Why an import failed: Mekuru cannot import this type of file.
+  ///
+  /// In en, this message translates to:
+  /// **'This file type isn\'t supported.'**
+  String get libraryImportReasonUnsupported;
+
+  /// Why an import failed: the file could not be opened or read.
+  ///
+  /// In en, this message translates to:
+  /// **'The file couldn\'t be read.'**
+  String get libraryImportReasonUnreadable;
+
+  /// Why an import failed, when the cause is not one of the known ones.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong.'**
+  String get libraryImportReasonUnknown;
+
   /// Tooltip for the library sort button.
   ///
   /// In en, this message translates to:

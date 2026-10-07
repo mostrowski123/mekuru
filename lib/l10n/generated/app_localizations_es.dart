@@ -108,6 +108,52 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String libraryImportedBooks({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Se importaron $count libros',
+      one: 'Se importó $count libro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportPartial({required int succeeded, required int total}) {
+    return 'Se importaron $succeeded de $total.';
+  }
+
+  @override
+  String libraryImportFailedFile({
+    required String file,
+    required String reason,
+  }) {
+    return 'No se pudo importar $file: $reason';
+  }
+
+  @override
+  String get libraryImportReasonPasswordProtected =>
+      'Este PDF está protegido con contraseña.';
+
+  @override
+  String get libraryImportReasonDamaged =>
+      'El archivo está dañado o no tiene el formato esperado.';
+
+  @override
+  String get libraryImportReasonNoPages =>
+      'No se encontraron páginas ni imágenes.';
+
+  @override
+  String get libraryImportReasonUnsupported =>
+      'Este tipo de archivo no es compatible.';
+
+  @override
+  String get libraryImportReasonUnreadable => 'No se pudo leer el archivo.';
+
+  @override
+  String get libraryImportReasonUnknown => 'Algo salió mal.';
+
+  @override
   String librarySortTooltip({required String label}) {
     return 'Ordenar: $label';
   }

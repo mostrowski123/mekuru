@@ -108,6 +108,48 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String libraryImportedBooks({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已导入 $count 本书',
+      one: '已导入 $count 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportPartial({required int succeeded, required int total}) {
+    return '已导入 $succeeded 个，共 $total 个。';
+  }
+
+  @override
+  String libraryImportFailedFile({
+    required String file,
+    required String reason,
+  }) {
+    return '无法导入 $file：$reason';
+  }
+
+  @override
+  String get libraryImportReasonPasswordProtected => '此 PDF 受密码保护。';
+
+  @override
+  String get libraryImportReasonDamaged => '文件已损坏或格式不正确。';
+
+  @override
+  String get libraryImportReasonNoPages => '未找到任何页面或图片。';
+
+  @override
+  String get libraryImportReasonUnsupported => '不支持此文件类型。';
+
+  @override
+  String get libraryImportReasonUnreadable => '无法读取该文件。';
+
+  @override
+  String get libraryImportReasonUnknown => '出了点问题。';
+
+  @override
   String librarySortTooltip({required String label}) {
     return '排序：$label';
   }
@@ -4072,6 +4114,48 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }) {
     return '正在导入第 $current 个，共 $total 个…';
   }
+
+  @override
+  String libraryImportedBooks({required int count}) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已导入 $count 本书',
+      one: '已导入 $count 本书',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String libraryImportPartial({required int succeeded, required int total}) {
+    return '已导入 $succeeded 个，共 $total 个。';
+  }
+
+  @override
+  String libraryImportFailedFile({
+    required String file,
+    required String reason,
+  }) {
+    return '无法导入 $file：$reason';
+  }
+
+  @override
+  String get libraryImportReasonPasswordProtected => '此 PDF 受密码保护。';
+
+  @override
+  String get libraryImportReasonDamaged => '文件已损坏或格式不正确。';
+
+  @override
+  String get libraryImportReasonNoPages => '未找到任何页面或图片。';
+
+  @override
+  String get libraryImportReasonUnsupported => '不支持此文件类型。';
+
+  @override
+  String get libraryImportReasonUnreadable => '无法读取该文件。';
+
+  @override
+  String get libraryImportReasonUnknown => '出了点问题。';
 
   @override
   String librarySortTooltip({required String label}) {
