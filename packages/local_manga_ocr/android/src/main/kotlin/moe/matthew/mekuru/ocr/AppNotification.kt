@@ -15,10 +15,10 @@ import org.json.JSONObject
  * MainActivity. Skipped while Mekuru is on screen, which shows the outcome
  * itself. Tapping it opens Mekuru. */
 object AppNotification {
-    fun post(context: Context, args: JSONObject): Boolean {
+    fun post(context: Context, args: JSONObject) {
         val process = ActivityManager.RunningAppProcessInfo()
         ActivityManager.getMyMemoryState(process)
-        if (process.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) return false
+        if (process.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) return
         val manager = context.getSystemService(NotificationManager::class.java)
         val channel = args.getString("channel")
         if (Build.VERSION.SDK_INT >= 26) {
@@ -38,6 +38,5 @@ object AppNotification {
             )
         }
         manager.notify(id, builder.build())
-        return true
     }
 }

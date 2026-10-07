@@ -123,8 +123,8 @@ class DictionaryDownloadService {
           'asset': asset,
           'user_side': true,
           if (e.cause case final cause?) ...{
-            'cause_type': cause.runtimeType.toString(),
-            'cause_message': sanitizeErrorText('$cause'),
+            'error_type': cause.runtimeType.toString(),
+            'error_message': sanitizeErrorText('$cause'),
           },
         },
       );

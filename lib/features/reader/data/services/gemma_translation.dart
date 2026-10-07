@@ -17,7 +17,6 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 /// Google's Gemma 4 E2B for LiteRT-LM (litert-community, Apache-2.0), pinned
@@ -484,10 +483,9 @@ const _worker = {'route': 'worker'};
 /// widget tree to take it from.
 Future<void> _notifyDownloadFailed() async {
   try {
-    final prefs = await SharedPreferences.getInstance();
-    final language = AppLanguage.fromStorageValue(
-      prefs.getString('app.language'),
-    );
+    final language =
+        await SharedPreferencesAppSettingsStorage().loadAppLanguage() ??
+        AppLanguage.system;
     final l10n = lookupAppLocalizations(
       resolveSupportedAppLocale(
         appLanguageLocaleOverride(language) ??

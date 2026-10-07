@@ -17,8 +17,7 @@ class ModelDownloadNetwork(context: Context, private val allowMobileData: Boolea
 
     fun isWifiConnected(): Boolean = connectivity.activeNetwork?.let(::isUnmeteredWifi) == true
 
-    /** A VPN carries the traffic. Android counts most VPNs as metered, so Wi-Fi under one
-     * still gets the mobile-data question; the app then says the VPN is why. */
+    /** A VPN carries the traffic (see isOnVpn in the app's network_status.dart). */
     fun isVpn(): Boolean = connectivity.activeNetwork
         ?.let(connectivity::getNetworkCapabilities)
         ?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true

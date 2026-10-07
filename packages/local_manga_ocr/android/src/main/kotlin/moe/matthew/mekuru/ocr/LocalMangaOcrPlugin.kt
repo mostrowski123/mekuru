@@ -112,7 +112,7 @@ class LocalMangaOcrPlugin : FlutterPlugin,MethodChannel.MethodCallHandler {
             "modelState" -> OcrRuntime.models.state()
             "isWifiConnected" -> ModelDownloadNetwork(OcrRuntime.context, false).isWifiConnected()
             "isVpnActive" -> ModelDownloadNetwork(OcrRuntime.context, false).isVpn()
-            "postNotification" -> AppNotification.post(OcrRuntime.context, args)
+            "postNotification" -> { AppNotification.post(OcrRuntime.context, args); null }
             "download" -> {
                 check(OcrRuntime.models.supported) { "unsupported_device" }
                 check(!OcrRuntime.hasModelLease()) { "model_busy" }

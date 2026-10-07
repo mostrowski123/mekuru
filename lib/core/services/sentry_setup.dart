@@ -109,9 +109,7 @@ void applySharedSentryOptions(SentryOptions options, SentryAudience audience) {
   // disk) is no issue of Mekuru's: it is logged as one instead.
   options.beforeSend = (event, hint) {
     final error = event.throwable;
-    if (error == null || !isUserSideFailure(error)) {
-      return scrubEvent(event, hint);
-    }
+    if (!isUserSideFailure(error)) return scrubEvent(event, hint);
     logFailure('app.user_side_error', error);
     return null;
   };
