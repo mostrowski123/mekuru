@@ -1,91 +1,102 @@
 # App Settings
 
-Mekuru's **Settings** screen collects app-wide preferences, reader defaults, downloads, backup, and support links. Open it from the gear icon in the top corner of the **You** tab.
+Change how Mekuru looks and works: language, theme, reader defaults, dictionaries, Anki, downloads, backups and Pro.
 
-Many reader behaviors are split between global defaults here and per-book quick settings inside the reader. See [Display Settings](../reading/display-settings.md).
+![The You tab with Free books, Reading stats and Settings](../screenshots/you-hub.jpg)
+
+## Open Settings
+
+1. Tap the **You** tab.
+2. Tap **Settings**.
+
+The **You** tab also has **Free books** and **Reading stats**. See [Free Books](../getting-started/free-books.md) and [Reading Stats](../stats/reading-stats.md).
+
+The sections below follow the order of the **Settings** screen.
 
 ## General
 
-### App Language
-
-Override the app's interface language, or follow the system language.
-
-### Startup Screen
-
-Choose which screen opens first:
-
-- **Library**
-- **Dictionary**
-- **Last Read Book**
+- **App Language**: the language of Mekuru's menus. Choose **System default**, **English**, **Español**, **Bahasa Indonesia** or **简体中文**. Sentence translations in the lookup sheet use this language too. If your phone uses another language, Mekuru uses English.
+- **Startup Screen**: what Mekuru shows when it starts: **Library**, **Dictionary** or **Last Read Book**.
 
 ## Appearance
 
-### Theme
-
-Choose **Light**, **Dark**, or **System default** for the app theme.
-
-### Color Theme
-
-Pick the app's accent color theme. This changes the Material color seed used throughout the app.
+- **Theme**: **Light**, **Dark** or **System default**.
+- **Color Theme**: the app's accent color. **Mekuru Red** is the default. Others include **Indigo**, **Teal** and **Blue**.
 
 ## Reading
 
-The **Reader Settings** entry opens a dedicated screen with the shared reader defaults — text size, colors, margins, the **Animations** switch for e-ink displays, and manga defaults — grouped into **All books**, **EPUB**, and **Manga** sections. The Manga section also holds **White Threshold** (auto-crop tuning) and the **Custom OCR Server** configuration.
-
-**WaniKani** links your WaniKani account with an API token so the reader's WaniKani furigana mode can hide readings for kanji you have learned. The row reads **Linked as _username_** once connected. See [Furigana](../reading/furigana.md#wanikani-mode).
-
-See [Display Settings](../reading/display-settings.md) for the full list of controls.
+- **Reader Settings**: the settings for every book, in three sections: **All books**, **EPUB** and **Manga**. With Pro, the **Manga** section also has **Custom OCR Server**. See [Display Settings](../reading/display-settings.md#reader-settings).
+- **WaniKani**: link your WaniKani account to hide furigana (small kana over kanji that show the reading) for kanji you have already learned. Once linked, the row shows **Linked as** and your user name. See [Furigana](../reading/furigana.md).
 
 ## Dictionary
 
-The Dictionary section includes:
+- **Manage Dictionaries**: import, reorder, turn on or off, and delete dictionaries. See [Managing Dictionaries](../dictionary/management.md).
+- **Lookup Font Size**: the text size in the lookup sheet.
+- **Sentence translation**: what the **Sentence** tab of the lookup sheet does with its translation: **Show translation**, **Hide until tapped** or **Off**.
+- **Translation model**: **Standard**, or **High quality**, a larger model (about 2.6 GB to download) that translates better on phones with plenty of memory.
+- **Filter Roman Letter Entries**: hides entries whose headword is written in English letters.
+- **Auto-Focus Search**: opens the keyboard when you switch to the **Dictionary** tab.
 
-- **Manage Dictionaries** - import, reorder, enable, disable, or delete installed dictionaries
-- **Lookup Font Size** - change the dictionary sheet text size
-- **Filter Roman Letter Entries** - hide entries whose headword uses English letters
-- **Auto-Focus Search** - open the keyboard automatically when the Dictionary tab is selected
+!!! note "Android only"
+    **Translation model** and High quality translation are not available on iPhone and iPad. There, the **Sentence** tab always uses Apple's translation.
 
 ## Vocabulary & Export
 
-On Android, **AnkiDroid Integration** opens the field-mapping setup used for direct card creation. See [Exporting to Anki](../vocabulary/anki-export.md).
+- **AnkiDroid Integration** on Android, or **Anki Integration** on iPhone and iPad: choose how the words you send to Anki become cards. See [Exporting to Anki](../vocabulary/anki-export.md).
 
-## Server Sync
+## Server sync
 
-**Book servers** manages connections to self-hosted Komga or Kavita servers: add a server, browse and download its books, link copies you already have, and keep reading progress in sync. See [Book Servers](../library/book-servers.md).
+- **Book servers**: connect to your own Komga or Kavita server, browse and download its books, and keep your reading progress in sync. See [Book Servers](../library/book-servers.md).
 
 ## Pro
 
-The **Pro** section handles Mekuru's one-time paid upgrade.
+**Pro** opens the Mekuru Pro screen. Pro is a one-time purchase. It unlocks:
 
-- The app may show **Sign In to Restore Pro** when the linked account is still anonymous.
-- Restoring or buying Pro can require linking a Google account first.
-- The Pro screen shows whether Pro is locked or unlocked.
-- Pro unlocks **Auto-Crop**, **Book Highlights**, **On-device OCR**, and **Custom OCR Server**.
-- **Test device speed** on the Pro screen runs on-device OCR on a sample page, so you can check how fast your phone is before buying.
+- **Auto-Crop**: trims empty margins from manga pages.
+- **Book Highlights**: save and review highlighted passages in EPUB books.
+- **On-device OCR**: reads the text in manga pages on your device, offline. OCR means reading the text in an image.
+- **Custom OCR Server**: remote manga OCR with your own server.
+
+To buy Pro, tap **Unlock Pro**. The button shows the price. You pay through Google Play on Android and through the App Store on iPhone and iPad. There is no Mekuru account and no sign-in.
+
+When Pro is active, the screen says **You have Mekuru Pro**.
+
+To get Pro back after you reinstall Mekuru or move to a new phone, open this screen and tap **Restore Purchase**. Mekuru asks the store for your purchase, so use the same Google or Apple account you bought it with. A purchase on Google Play does not unlock Pro on iPhone or iPad, or the other way round.
+
+The OCR settings are in three places:
+
+- the OCR models, in **Downloads**;
+- **Custom OCR Server**, in **Reader Settings** (in the **Manga** section);
+- **Test device speed**, on the Pro screen and in **Downloads** (Android only).
+
+See [On-device OCR](../manga/on-device-ocr.md) and [Remote OCR (Pro)](../manga/cloud-ocr.md).
 
 ## Downloads
 
-The **Downloads** screen installs and removes built-in resources:
+**Downloads** installs and removes extra data:
 
-- JMdict
-- JMdict with examples
-- KANJIDIC
-- KanjiVG
-- JPDB frequency data
-- Enhanced Furigana Dictionary
+- **Dictionaries**: the starter pack (Jitendex and word frequency), **KANJIDIC** and **More Dictionaries**.
+- **Assets**: **Kanji Stroke Order**, **Word Frequency** and the **Enhanced Furigana Dictionary**.
+- **Japanese translation** and **High-quality translation (Gemma 4)**, the translation models. Android only.
+- **Japanese manga OCR — manga-ocr**: the manga OCR model pack.
+- **Scanned-book reader — NDLOCR-Lite**: the NDL text model for scanned free books.
 
-See [Downloads](../getting-started/downloadable-data.md) for details.
+See [Downloads](../getting-started/downloadable-data.md).
 
 ## Backup & Restore
 
-Two kinds of backup live here: a small reading data backup (`.mekuru`) covering settings, bookmarks, highlights, vocabulary, collections, per-book reader settings, and reading history, with optional daily or weekly auto-backup; and a full backup (`.zip`) that packs your whole library — books, manga, dictionaries, and all reading data — for moving to a new phone. See [Backup & Restore](backup-restore.md).
+**Backup & Restore** makes two kinds of backup: a small reading data backup (`.mekuru`) and a full backup (`.zip`) of your whole library. See [Backup & Restore](backup-restore.md).
 
 ## About & Feedback
 
-### Send Feedback
+- **Send Feedback**: send a bug report or an idea from inside the app. Only **Message** is required. **Name** and **Email** are optional.
+- **Rate Mekuru**: opens Mekuru's page in Google Play or the App Store, where you can leave a review.
+- **Documentation**: opens this guide.
+- **About Mekuru**: the app version, the **Privacy Policy**, and **Attributions**, which lists data sources, licenses and credits.
 
-You can send bug reports or feature requests from inside the app.
+## Related pages
 
-### About Mekuru
-
-The About screen shows the app version, license details, attributions, and links such as the privacy policy.
+- [Display Settings](../reading/display-settings.md)
+- [Downloads](../getting-started/downloadable-data.md)
+- [Backup & Restore](backup-restore.md)
+- [On-device OCR](../manga/on-device-ocr.md)
