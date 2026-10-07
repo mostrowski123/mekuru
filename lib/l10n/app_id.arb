@@ -3102,7 +3102,6 @@
   "translationModelStandardOption": "Standar ({size})",
   "translationModelHighOption": "Kualitas tinggi ({size})",
   "translationHighQualityDownloading": "Kualitas tinggi: mengunduh {percent}%",
-  "translationHighQualityNeedsDownload": "Kualitas tinggi: ketuk untuk mengunduh ({size})",
   "translationModelHighDownloadFirst": "Belum diunduh. Ketuk untuk mengunduh ({size}).",
   "translationHighQualityNotReady": "Kualitas tinggi belum siap; menggunakan Standar.",
   "translationHighQualityCouldNotLoad": "Kualitas tinggi tidak dapat dimuat; menggunakan Standar.",

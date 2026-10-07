@@ -3102,7 +3102,6 @@
   "translationModelStandardOption": "标准（{size}）",
   "translationModelHighOption": "高质量（{size}）",
   "translationHighQualityDownloading": "高质量：正在下载 {percent}%",
-  "translationHighQualityNeedsDownload": "高质量：点按下载（{size}）",
   "translationModelHighDownloadFirst": "尚未下载。点按下载（{size}）。",
   "translationHighQualityNotReady": "高质量模型尚未就绪，正在使用标准模型。",
   "translationHighQualityCouldNotLoad": "高质量模型无法加载，正在使用标准模型。",

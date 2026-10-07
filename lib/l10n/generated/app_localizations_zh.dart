@@ -3897,11 +3897,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String translationHighQualityNeedsDownload({required String size}) {
-    return '高质量：点按下载（$size）';
-  }
-
-  @override
   String translationModelHighDownloadFirst({required String size}) {
     return '尚未下载。点按下载（$size）。';
   }
@@ -7843,11 +7838,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String translationHighQualityDownloading({required String percent}) {
     return '高质量：正在下载 $percent%';
-  }
-
-  @override
-  String translationHighQualityNeedsDownload({required String size}) {
-    return '高质量：点按下载（$size）';
   }
 
   @override

@@ -4088,11 +4088,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String translationHighQualityNeedsDownload({required String size}) {
-    return 'Kualitas tinggi: ketuk untuk mengunduh ($size)';
-  }
-
-  @override
   String translationModelHighDownloadFirst({required String size}) {
     return 'Belum diunduh. Ketuk untuk mengunduh ($size).';
   }

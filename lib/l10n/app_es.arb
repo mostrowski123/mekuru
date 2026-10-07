@@ -3102,7 +3102,6 @@
   "translationModelStandardOption": "Estándar ({size})",
   "translationModelHighOption": "Alta calidad ({size})",
   "translationHighQualityDownloading": "Alta calidad: descargando {percent} %",
-  "translationHighQualityNeedsDownload": "Alta calidad: toca para descargar ({size})",
   "translationModelHighDownloadFirst": "Aún no se ha descargado. Toca para descargar ({size}).",
   "translationHighQualityNotReady": "La alta calidad aún no está lista; se usa la estándar.",
   "translationHighQualityCouldNotLoad": "La alta calidad no se pudo cargar; se usa la estándar.",

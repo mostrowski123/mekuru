@@ -6639,12 +6639,6 @@ abstract class AppLocalizations {
   /// **'High quality: downloading {percent}%'**
   String translationHighQualityDownloading({required String percent});
 
-  /// Translation model row subtitle when High quality is chosen but its model isn't downloaded. size looks like '2.6 GB'.
-  ///
-  /// In en, this message translates to:
-  /// **'High quality: tap to download ({size})'**
-  String translationHighQualityNeedsDownload({required String size});
-
   /// Subtitle under the High quality option in the translation model picker when its model isn't downloaded; tapping the option downloads it, and High quality is chosen once the download is done. size looks like '2.6 GB'.
   ///
   /// In en, this message translates to:

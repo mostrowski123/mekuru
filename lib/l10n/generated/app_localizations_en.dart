@@ -4066,11 +4066,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String translationHighQualityNeedsDownload({required String size}) {
-    return 'High quality: tap to download ($size)';
-  }
-
-  @override
   String translationModelHighDownloadFirst({required String size}) {
     return 'Not downloaded yet. Tap to download ($size).';
   }
