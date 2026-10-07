@@ -126,4 +126,23 @@ void main() {
     await tester.pump();
     expect(_switchTile(tester).value, isFalse);
   });
+
+  testWidgets('Clear then Save removes the server', (tester) async {
+    final results = await _openDialog(
+      tester,
+      initialUrl: 'https://nas.local:8443',
+      initialBearerKey: 'secret',
+      initialAllowSelfSigned: true,
+    );
+
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(results.single?.url, '');
+    expect(results.single?.bearerKey, '');
+    expect(results.single?.allowSelfSigned, isFalse);
+  });
 }

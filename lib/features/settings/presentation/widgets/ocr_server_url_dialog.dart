@@ -59,14 +59,19 @@ class _OcrServerUrlDialogState extends State<OcrServerUrlDialog> {
     final url = ocr_server_config.normalizeOcrServerUrl(_urlController.text);
     final customKey = _keyController.text.trim();
 
-    if (url.isEmpty || customKey.isEmpty) {
+    // No URL means no custom server: saving it (e.g. after Clear) removes
+    // the server and its key.
+    if (url.isEmpty) {
+      Navigator.of(
+        context,
+      ).pop((url: '', bearerKey: '', allowSelfSigned: false));
+      return;
+    }
+
+    if (customKey.isEmpty) {
       setState(() {
-        _urlError = url.isEmpty
-            ? l10n.settingsCustomOcrServerUrlRequired
-            : null;
-        _keyError = customKey.isEmpty
-            ? l10n.settingsCustomOcrServerKeyRequired
-            : null;
+        _urlError = null;
+        _keyError = l10n.settingsCustomOcrServerKeyRequired;
       });
       return;
     }
