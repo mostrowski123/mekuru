@@ -2933,6 +2933,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'This keeps running if you leave Mekuru. Progress also shows in your notifications.';
 
   @override
+  String get backupFullJobBackgroundHintIos =>
+      'Keep Mekuru open on screen until this finishes. The screen stays on while it runs.';
+
+  @override
   String get backupFullJobCancelConfirmExport =>
       'Stop the backup? What has been written so far will be deleted.';
 

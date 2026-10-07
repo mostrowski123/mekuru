@@ -265,6 +265,26 @@ void main() {
     }
   });
 
+  testWidgets('on iOS the hint says to keep Mekuru open, not notifications', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      final container = await pumpGate(
+        tester,
+        status: FullBackupJobStatus.none,
+      );
+      container
+          .read(fullBackupJobProvider.notifier)
+          .markPreparing(FullBackupJobKind.export);
+      await tester.pump();
+      expect(find.text(l10n.backupFullJobBackgroundHintIos), findsOneWidget);
+      expect(find.text(l10n.backupFullJobBackgroundHint), findsNothing);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
   testWidgets('a failure names the code and Close dismisses it', (
     tester,
   ) async {

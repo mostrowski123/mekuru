@@ -157,7 +157,12 @@ class _FullBackupJobScreenState extends ConsumerState<FullBackupJobScreen> {
           style: theme.textTheme.bodySmall,
         ),
       const SizedBox(height: 24),
-      Text(l10n.backupFullJobBackgroundHint, style: theme.textTheme.bodyMedium),
+      Text(
+        defaultTargetPlatform == TargetPlatform.iOS
+            ? l10n.backupFullJobBackgroundHintIos
+            : l10n.backupFullJobBackgroundHint,
+        style: theme.textTheme.bodyMedium,
+      ),
       const SizedBox(height: 24),
       if (cancellable && _confirmingCancel)
         Column(

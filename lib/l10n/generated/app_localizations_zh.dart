@@ -2815,6 +2815,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get backupFullJobBackgroundHint => '即使离开 Mekuru，此操作也会继续运行。进度也会显示在通知中。';
 
   @override
+  String get backupFullJobBackgroundHintIos =>
+      '在此操作完成前，请保持 Mekuru 在屏幕上打开。运行期间屏幕会保持常亮。';
+
+  @override
   String get backupFullJobCancelConfirmExport => '停止备份？目前已写入的内容将被删除。';
 
   @override
@@ -6755,6 +6759,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullJobBackgroundHint => '即使离开 Mekuru，此操作也会继续运行。进度也会显示在通知中。';
+
+  @override
+  String get backupFullJobBackgroundHintIos =>
+      '在此操作完成前，请保持 Mekuru 在屏幕上打开。运行期间屏幕会保持常亮。';
 
   @override
   String get backupFullJobCancelConfirmExport => '停止备份？目前已写入的内容将被删除。';

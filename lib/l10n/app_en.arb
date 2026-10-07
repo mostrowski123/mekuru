@@ -3782,6 +3782,10 @@
   "@backupFullJobBackgroundHint": {
     "description": "Explains on the job page that the job survives leaving the app."
   },
+  "backupFullJobBackgroundHintIos": "Keep Mekuru open on screen until this finishes. The screen stays on while it runs.",
+  "@backupFullJobBackgroundHintIos": {
+    "description": "iOS: shown on the job page instead of backupFullJobBackgroundHint. The job runs inside the open app, which keeps the screen on; there is no notification."
+  },
   "backupFullJobCancelConfirmExport": "Stop the backup? What has been written so far will be deleted.",
   "@backupFullJobCancelConfirmExport": {
     "description": "Inline confirmation before cancelling a running full backup."

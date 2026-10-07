@@ -4855,6 +4855,12 @@ abstract class AppLocalizations {
   /// **'This keeps running if you leave Mekuru. Progress also shows in your notifications.'**
   String get backupFullJobBackgroundHint;
 
+  /// iOS: shown on the job page instead of backupFullJobBackgroundHint. The job runs inside the open app, which keeps the screen on; there is no notification.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Mekuru open on screen until this finishes. The screen stays on while it runs.'**
+  String get backupFullJobBackgroundHintIos;
+
   /// Inline confirmation before cancelling a running full backup.
   ///
   /// In en, this message translates to:

@@ -2798,6 +2798,7 @@
   "backupFullJobPhaseResuming": "正在继续…",
   "backupFullJobPaused": "已暂停：{details}。重新打开 Mekuru 时会再次尝试。",
   "backupFullJobBackgroundHint": "即使离开 Mekuru，此操作也会继续运行。进度也会显示在通知中。",
+  "backupFullJobBackgroundHintIos": "在此操作完成前，请保持 Mekuru 在屏幕上打开。运行期间屏幕会保持常亮。",
   "backupFullJobCancelConfirmExport": "停止备份？目前已写入的内容将被删除。",
   "backupFullJobCancelConfirmRestore": "停止恢复？Mekuru 中尚未有任何更改；已复制的文件将被删除。",
   "backupFullJobKeepGoing": "继续",

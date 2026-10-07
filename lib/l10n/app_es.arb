@@ -2798,6 +2798,7 @@
   "backupFullJobPhaseResuming": "Reanudando…",
   "backupFullJobPaused": "En pausa: {details}. Mekuru lo volverá a intentar cuando lo abras de nuevo.",
   "backupFullJobBackgroundHint": "Esto sigue en marcha aunque salgas de Mekuru. El progreso también se muestra en tus notificaciones.",
+  "backupFullJobBackgroundHintIos": "Mantén Mekuru abierto en pantalla hasta que termine. La pantalla se mantiene encendida mientras tanto.",
   "backupFullJobCancelConfirmExport": "¿Detener la copia? Se eliminará lo que se haya escrito hasta ahora.",
   "backupFullJobCancelConfirmRestore": "¿Detener la restauración? Todavía no ha cambiado nada en Mekuru; los archivos copiados se eliminarán.",
   "backupFullJobKeepGoing": "Continuar",

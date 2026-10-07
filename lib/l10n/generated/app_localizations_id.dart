@@ -2946,6 +2946,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Ini tetap berjalan jika Anda meninggalkan Mekuru. Kemajuannya juga ditampilkan di notifikasi Anda.';
 
   @override
+  String get backupFullJobBackgroundHintIos =>
+      'Biarkan Mekuru tetap terbuka di layar sampai proses ini selesai. Layar tetap menyala selama proses berjalan.';
+
+  @override
   String get backupFullJobCancelConfirmExport =>
       'Hentikan pencadangan? Apa yang sudah ditulis sejauh ini akan dihapus.';
 

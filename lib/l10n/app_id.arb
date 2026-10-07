@@ -2798,6 +2798,7 @@
   "backupFullJobPhaseResuming": "Melanjutkan…",
   "backupFullJobPaused": "Dijeda: {details}. Mekuru akan mencoba lagi saat Anda membukanya kembali.",
   "backupFullJobBackgroundHint": "Ini tetap berjalan jika Anda meninggalkan Mekuru. Kemajuannya juga ditampilkan di notifikasi Anda.",
+  "backupFullJobBackgroundHintIos": "Biarkan Mekuru tetap terbuka di layar sampai proses ini selesai. Layar tetap menyala selama proses berjalan.",
   "backupFullJobCancelConfirmExport": "Hentikan pencadangan? Apa yang sudah ditulis sejauh ini akan dihapus.",
   "backupFullJobCancelConfirmRestore": "Hentikan pemulihan? Belum ada yang berubah di Mekuru; file yang sudah disalin akan dihapus.",
   "backupFullJobKeepGoing": "Lanjutkan",
