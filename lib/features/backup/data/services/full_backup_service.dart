@@ -144,7 +144,8 @@ class FullBackupService implements FullBackupApi {
         p.join(root.path, StagedFullRestore.databaseFileName),
       );
       final liveDbBytes = liveDb.existsSync() ? liveDb.lengthSync() : 0;
-      // The snapshot is the only thing the export writes to local storage.
+      // A folder export writes only the snapshot to local storage; a file
+      // export's zip is checked below, once its size is known.
       await _requireFreeSpace(root, (liveDbBytes * 1.5).ceil());
 
       final snapshot = File(p.join(_jobDir.path, AppDatabase.databaseFileName));
@@ -200,6 +201,11 @@ class FullBackupService implements FullBackupApi {
       );
 
       final totalBytes = entries.fold(0, (sum, e) => sum + e.size);
+      // A file export's zip is written on this device too (on iOS, to the
+      // temp folder, which is on the same volume).
+      if (target is FullBackupFileTarget) {
+        await _requireFreeSpace(root, totalBytes);
+      }
       await _commit({
         'kind': 'export',
         'totalBytes': totalBytes,
@@ -405,7 +411,7 @@ class FullBackupService implements FullBackupApi {
   }
 
   Future<void> _requireFreeSpace(Directory on, int bytes) async {
-    final free = Platform.isIOS
+    final free = defaultTargetPlatform == TargetPlatform.iOS
         ? await IosFullBackup.freeBytes()
         : await AndroidSafService.getFreeBytes(on.path);
     if (free == null) return; // Unknown: let the write fail loudly instead.

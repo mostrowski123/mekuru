@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -396,6 +397,44 @@ void main() {
         File(p.join(jobDir().path, AppDatabase.databaseFileName)).existsSync(),
         isFalse,
       );
+    });
+
+    test('on iOS, refuses a zip that would not fit on the device', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      const iosFiles = MethodChannel('mekuru/ios_files');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      // Room for the database snapshot, not for 1 GiB of manga pages.
+      const free = 512 << 20;
+      messenger.setMockMethodCallHandler(iosFiles, (call) async {
+        if (call.method == 'freeBytes') return free;
+        throw PlatformException(code: 'unmocked', message: call.method);
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(iosFiles, null));
+      treePages = const [
+        SafTreeFile(
+          name: '001.jpg',
+          uri: 'content://tree/manga/document/1',
+          size: 1 << 30,
+          lastModified: 0,
+        ),
+      ];
+
+      await expectLater(
+        service.prepareExport(
+          FullBackupTarget.file(p.join(root.path, 'tmp', 'o.zip')),
+        ),
+        throwsA(
+          isA<InsufficientSpaceException>().having(
+            (e) => e.neededBytes,
+            'neededBytes',
+            greaterThan((1 << 30) - free),
+          ),
+        ),
+      );
+      expect(jobs.committed, isEmpty);
+      expect(jobDir().listSync(), isEmpty);
     });
   });
 
