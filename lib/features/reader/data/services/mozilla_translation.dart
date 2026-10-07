@@ -213,17 +213,18 @@ class MozillaTranslation implements TranslationEngine {
     try {
       // Removing the models stops the engine under a running translation,
       // whose reply then never comes: it fails instead of hanging.
-      final stopped = _stopped.future.then<String>(
+      final stopped = (_stopped ??= Completer<void>()).future.then<String>(
         (_) => throw Exception('Translation engine stopped'),
       );
       return await Future.any([_translate(text, target), stopped]);
     } finally {
-      _inFlight--;
+      // Each busy spell gets its own signal, so its listeners go with it.
+      if (--_inFlight == 0) _stopped = null;
     }
   }
 
   /// Completed by [stop], for the translations it leaves without a WebView.
-  var _stopped = Completer<void>();
+  Completer<void>? _stopped;
 
   /// Replaces the WebView's start in tests.
   @visibleForTesting
@@ -297,8 +298,8 @@ class MozillaTranslation implements TranslationEngine {
   /// Frees the WebView's memory; the next [translate] starts it again.
   /// Translations still running fail.
   Future<void> stop() async {
-    _stopped.complete();
-    _stopped = Completer<void>();
+    _stopped?.complete();
+    _stopped = null;
     _idleTimer?.cancel();
     _idleTimer = null;
     _engine = null;
