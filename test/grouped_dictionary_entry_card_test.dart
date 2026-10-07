@@ -1,20 +1,27 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
+import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
+import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
+import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/main.dart' show databaseProvider;
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
 
+import 'features/ankidroid/ankidroid_test_doubles.dart';
 import 'shared/yomitan_glossary_fixtures.dart';
 import 'test_app.dart';
 
@@ -51,9 +58,10 @@ Widget _buildTestApp({
   required AppDatabase db,
   required Widget child,
   double width = 320,
+  List<Override> overrides = const [],
 }) {
   return ProviderScope(
-    overrides: [databaseProvider.overrideWithValue(db)],
+    overrides: [databaseProvider.overrideWithValue(db), ...overrides],
     child: buildLocalizedTestApp(
       home: Scaffold(
         body: Center(
@@ -474,4 +482,77 @@ void main() {
     expect(saved.expression, '労働大臣');
     expect(saved.glossaries, target);
   });
+
+  testWidgets(
+    'the Anki button waits for the translation, then opens one card',
+    (tester) async {
+      final translation = Completer<String>();
+      debugTranslationEngine = _PendingTranslation(translation.future);
+      addTearDown(() => debugTranslationEngine = null);
+      await tester.pumpWidget(
+        _buildTestApp(
+          db: db,
+          width: 400,
+          overrides: [
+            ankidroidAvailableProvider.overrideWithValue(true),
+            ankidroidServiceProvider.overrideWithValue(FakeAnkidroidService()),
+            ankidroidConfigProvider.overrideWith(
+              () => TestAnkidroidConfigNotifier(
+                const AnkidroidConfig(
+                  modelId: 5,
+                  modelName: 'Basic',
+                  deckId: 1,
+                  deckName: 'Default',
+                  fieldMapping: {
+                    'Front': 'expression',
+                    'Back': 'sentence_translation',
+                  },
+                ),
+              ),
+            ),
+          ],
+          child: GroupedDictionaryEntryCard(
+            entries: [
+              DictionaryEntryWithSource(
+                entry: _buildEntry(id: 1, expression: '猫', reading: 'ねこ'),
+                dictionaryName: 'JMdict',
+              ),
+            ],
+            pitchAccents: const [],
+            sentenceContext: '猫が窓の外で鳴いた。',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final anki = find.byIcon(Icons.electric_bolt_outlined);
+      await tester.tap(anki);
+      await tester.pump();
+      // Busy until the translation arrives, so another tap can't open a
+      // second card screen.
+      expect(anki, findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      translation.complete('The cat meowed outside the window.');
+      await tester.pumpAndSettle();
+      expect(find.byType(AnkiCardCreationScreen), findsOneWidget);
+    },
+  );
+}
+
+/// An installed engine whose translation arrives when the test says so.
+class _PendingTranslation implements TranslationEngine {
+  _PendingTranslation(this.result);
+
+  final Future<String> result;
+
+  @override
+  Future<TranslationStatus> status(String target) async =>
+      TranslationStatus.installed;
+
+  @override
+  Future<void> download(String target) async {}
+
+  @override
+  Future<String> translate(String text, String target) => result;
 }

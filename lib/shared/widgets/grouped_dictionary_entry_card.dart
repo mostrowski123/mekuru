@@ -126,6 +126,10 @@ class _GroupedDictionaryEntryHeaderState
   bool _isSaved = false;
   bool _isInAnki = false;
   bool _isCheckingAnki = false;
+
+  /// [_sendToAnki] is gathering the note, which waits for the sentence's
+  /// translation; a second tap would open a second card screen.
+  bool _preparingAnkiNote = false;
   int _ankiLookupRequestId = 0;
   String? _lastAnkiLookupCacheKey;
   KanjiEntryDisplayData? _kanjiDisplayData;
@@ -374,10 +378,14 @@ class _GroupedDictionaryEntryHeaderState
       expression: _primaryEntry.expression,
     );
     final target = translationTargetFor(Localizations.localeOf(context));
-    final (glossaries, sentenceTranslation) = await (
-      _exportGlossaries(),
-      _ankiSentenceTranslation(config.fieldMapping, target),
-    ).wait;
+    setState(() => _preparingAnkiNote = true);
+    final (glossaries, sentenceTranslation) =
+        await (
+          _exportGlossaries(),
+          _ankiSentenceTranslation(config.fieldMapping, target),
+        ).wait.whenComplete(() {
+          if (mounted) setState(() => _preparingAnkiNote = false);
+        });
     final noteData = _buildAnkiNoteData(
       glossaries: glossaries,
       sentenceTranslation: sentenceTranslation,
@@ -488,6 +496,8 @@ class _GroupedDictionaryEntryHeaderState
 
   List<Widget> _buildActionButtons() {
     final ankidroidConfig = ref.watch(ankidroidConfigProvider);
+    final ankiBusy =
+        _preparingAnkiNote || (_isCheckingAnki && ankidroidConfig.isConfigured);
     return [
       IconButton(
         onPressed: _copyExpression,
@@ -497,13 +507,13 @@ class _GroupedDictionaryEntryHeaderState
       ),
       if (ref.watch(ankidroidAvailableProvider))
         IconButton(
-          onPressed: _isCheckingAnki && ankidroidConfig.isConfigured
+          onPressed: ankiBusy
               ? null
               : _isInAnki
               ? _showAnkiAlreadySavedToast
               : _sendToAnki,
-          onLongPress: _isInAnki ? _sendToAnki : null,
-          icon: _isCheckingAnki && ankidroidConfig.isConfigured
+          onLongPress: _isInAnki && !ankiBusy ? _sendToAnki : null,
+          icon: ankiBusy
               ? const SizedBox.square(
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
