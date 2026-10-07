@@ -676,7 +676,7 @@
   "@downloadsStarterPackWordFrequency": {
     "description": "Starter pack row label for word frequency data."
   },
-  "downloadsStarterPackMobileDataBody": "No hay conexión Wi-Fi. Los diccionarios ocupan unos {size}. ¿Continuar con datos móviles?",
+  "downloadsStarterPackMobileDataBody": "Los diccionarios ocupan unos {size}. Estás usando datos móviles o un punto de acceso, así que descargarlos puede consumir tu plan de datos.",
   "@downloadsStarterPackMobileDataBody": {
     "description": "Body of the mobile-data prompt before the dictionary starter pack downloads.",
     "placeholders": {
@@ -2913,7 +2913,7 @@
   "localOcrNotificationsOff": "El OCR puede continuar con las notificaciones desactivadas. Usa el panel de reconocimiento del manga para pausar o cancelar.",
   "localOcrModelCorrupt": "Los archivos del modelo no superaron la verificación. Quita los modelos de OCR y descárgalos de nuevo.",
   "localOcrMobileDownloadTitle": "¿Descargar con datos móviles?",
-  "localOcrMobileDownloadBody": "No hay conexión Wi-Fi. La descarga del modelo de OCR ocupa {size}. ¿Continuar con datos móviles? Se reutilizará el progreso de descarga guardado.",
+  "localOcrMobileDownloadBody": "El modelo de OCR ocupa {size}. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos. Se reutilizará el progreso de descarga guardado.",
   "localOcrWifiLostIos": "La descarga se detuvo porque se desconectó el Wi-Fi. Los archivos terminados se conservan. Toca Descargar para continuar.",
   "localOcrWaitingWifi": "Esperando Wi-Fi. Cancela y reanuda para usar datos móviles.",
   "localOcrDownloadQueued": "Esperando para descargar…",
@@ -2954,7 +2954,7 @@
   "catalogJmdictLanguageDescription": "JMdict con definiciones en este idioma.",
   "catalogKanjidicLanguageDescription": "Significados de kanji en este idioma, con lecturas on y kun.",
   "catalogSizes": "Descarga de {download} · unos {installed} en el dispositivo",
-  "catalogMobileDataBody": "No hay conexión Wi-Fi. Este diccionario ocupa unos {size}. ¿Continuar con datos móviles?",
+  "catalogMobileDataBody": "Este diccionario ocupa unos {size}. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos.",
   "catalogFindMoreTitle": "Encontrar más diccionarios",
   "catalogFindMoreBody": "Estos sitios enumeran muchos más diccionarios Yomitan, incluidos algunos que Mekuru no puede descargar por ti. Descarga el archivo .zip de un diccionario y luego impórtalo en el Gestor de diccionarios con el botón +.",
   "dictionaryManagerMoreDictionariesTooltip": "Más diccionarios",
@@ -3110,5 +3110,5 @@
   "downloadsHighQualitySubtitle": "Un modelo más grande para traducir mejor las frases, para teléfonos con bastante memoria.",
   "attributionGemmaTitle": "Gemma 4",
   "attributionGemmaDescription": "En Android, el modelo de traducción de alta calidad es Gemma 4 de Google, que se ejecuta en tu dispositivo con LiteRT-LM.",
-  "translationMobileDataBody": "No hay conexión Wi-Fi. El modelo de traducción ocupa unos {size}. ¿Continuar con datos móviles?"
+  "translationMobileDataBody": "El modelo de traducción ocupa unos {size}. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos."
 }

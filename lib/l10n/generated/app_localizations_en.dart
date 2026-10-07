@@ -564,7 +564,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String downloadsStarterPackMobileDataBody({required String size}) {
-    return 'Wi-Fi is not connected. The dictionaries are about $size. Continue using mobile data?';
+    return 'The dictionaries are about $size. You\'re on mobile data or a hotspot, so downloading them may use your data plan.';
   }
 
   @override
@@ -3357,7 +3357,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String localOcrMobileDownloadBody({required String size}) {
-    return 'Wi-Fi is not connected. The OCR model download is $size. Continue using mobile data? Any saved download progress will be reused.';
+    return 'The OCR model is $size. You\'re on mobile data or a hotspot, so downloading it may use your data plan. Any saved download progress will be reused.';
   }
 
   @override
@@ -3509,7 +3509,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String catalogMobileDataBody({required String size}) {
-    return 'Wi-Fi is not connected. This dictionary is about $size. Continue using mobile data?';
+    return 'This dictionary is about $size. You\'re on mobile data or a hotspot, so downloading it may use your data plan.';
   }
 
   @override
@@ -4098,6 +4098,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String translationMobileDataBody({required String size}) {
-    return 'Wi-Fi is not connected. The translation model is about $size. Continue using mobile data?';
+    return 'The translation model is about $size. You\'re on mobile data or a hotspot, so downloading it may use your data plan.';
   }
 }

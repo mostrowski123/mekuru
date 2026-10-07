@@ -309,8 +309,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.text(
-          'Wi-Fi is not connected. The translation model is about 2.6 GB. '
-          'Continue using mobile data?',
+          "The translation model is about 2.6 GB. You're on mobile data or a "
+          'hotspot, so downloading it may use your data plan.',
         ),
         findsOneWidget,
       );

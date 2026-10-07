@@ -565,7 +565,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String downloadsStarterPackMobileDataBody({required String size}) {
-    return 'Wi-Fi tidak terhubung. Ukuran kamus sekitar $size. Lanjutkan dengan data seluler?';
+    return 'Ukuran kamus-kamus ini sekitar $size. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.';
   }
 
   @override
@@ -3375,7 +3375,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String localOcrMobileDownloadBody({required String size}) {
-    return 'Wi-Fi tidak terhubung. Ukuran unduhan model OCR adalah $size. Lanjutkan dengan data seluler? Progres unduhan yang tersimpan akan digunakan kembali.';
+    return 'Ukuran model OCR adalah $size. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda. Progres unduhan yang tersimpan akan digunakan kembali.';
   }
 
   @override
@@ -3527,7 +3527,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String catalogMobileDataBody({required String size}) {
-    return 'Wi-Fi tidak terhubung. Ukuran kamus ini sekitar $size. Lanjutkan dengan data seluler?';
+    return 'Ukuran kamus ini sekitar $size. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.';
   }
 
   @override
@@ -4121,6 +4121,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String translationMobileDataBody({required String size}) {
-    return 'Wi-Fi tidak terhubung. Ukuran model terjemahan sekitar $size. Lanjutkan dengan data seluler?';
+    return 'Ukuran model terjemahan sekitar $size. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.';
   }
 }

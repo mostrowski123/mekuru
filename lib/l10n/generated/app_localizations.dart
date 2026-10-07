@@ -1033,7 +1033,7 @@ abstract class AppLocalizations {
   /// Body of the mobile-data prompt before the dictionary starter pack downloads.
   ///
   /// In en, this message translates to:
-  /// **'Wi-Fi is not connected. The dictionaries are about {size}. Continue using mobile data?'**
+  /// **'The dictionaries are about {size}. You\'re on mobile data or a hotspot, so downloading them may use your data plan.'**
   String downloadsStarterPackMobileDataBody({required String size});
 
   /// Button label to install the starter pack.
@@ -5522,7 +5522,7 @@ abstract class AppLocalizations {
   /// No description provided for @localOcrMobileDownloadBody.
   ///
   /// In en, this message translates to:
-  /// **'Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data? Any saved download progress will be reused.'**
+  /// **'The OCR model is {size}. You\'re on mobile data or a hotspot, so downloading it may use your data plan. Any saved download progress will be reused.'**
   String localOcrMobileDownloadBody({required String size});
 
   /// Shown on a model tile the app downloads itself (the iOS manga-ocr pack; the NDL text-line model on both platforms) when a download that started on Wi-Fi stops because the phone left Wi-Fi (cellular, a hotspot or, on iOS, Low Data Mode). Download is the button label (commonDownload).
@@ -5771,7 +5771,7 @@ abstract class AppLocalizations {
   /// Body of the dialog asking before a catalog dictionary downloads over mobile data. size looks like '39 MB'.
   ///
   /// In en, this message translates to:
-  /// **'Wi-Fi is not connected. This dictionary is about {size}. Continue using mobile data?'**
+  /// **'This dictionary is about {size}. You\'re on mobile data or a hotspot, so downloading it may use your data plan.'**
   String catalogMobileDataBody({required String size});
 
   /// Shown under a dictionary download that started on Wi-Fi and stopped because the phone left Wi-Fi (mobile data, a hotspot or Low Data Mode). Download is the button label (commonDownload).
@@ -6690,7 +6690,7 @@ abstract class AppLocalizations {
   /// Body of the dialog asking before a sentence translation model downloads over mobile data. size looks like '55 MB' or '2.6 GB'.
   ///
   /// In en, this message translates to:
-  /// **'Wi-Fi is not connected. The translation model is about {size}. Continue using mobile data?'**
+  /// **'The translation model is about {size}. You\'re on mobile data or a hotspot, so downloading it may use your data plan.'**
   String translationMobileDataBody({required String size});
 }
 

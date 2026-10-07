@@ -676,7 +676,7 @@
   "@downloadsStarterPackWordFrequency": {
     "description": "Starter pack row label for word frequency data."
   },
-  "downloadsStarterPackMobileDataBody": "未连接 Wi-Fi。词典大小约为 {size}。是否继续使用移动数据？",
+  "downloadsStarterPackMobileDataBody": "这些词典大小约为 {size}。你正在使用移动数据或热点，下载可能会消耗你的流量。",
   "@downloadsStarterPackMobileDataBody": {
     "description": "Body of the mobile-data prompt before the dictionary starter pack downloads.",
     "placeholders": {
@@ -2913,7 +2913,7 @@
   "localOcrNotificationsOff": "关闭通知后 OCR 仍可继续。可在漫画的识别面板中暂停或取消。",
   "localOcrModelCorrupt": "模型文件未通过验证。请移除并重新下载 OCR 模型。",
   "localOcrMobileDownloadTitle": "使用移动数据下载？",
-  "localOcrMobileDownloadBody": "未连接 Wi-Fi。OCR 模型下载大小为 {size}。是否继续使用移动数据？已保存的下载进度会被复用。",
+  "localOcrMobileDownloadBody": "OCR 模型大小为 {size}。你正在使用移动数据或热点，下载可能会消耗你的流量。已保存的下载进度会被复用。",
   "localOcrWifiLostIos": "Wi-Fi 已断开，下载已停止。已完成的文件会保留。点按“下载”继续。",
   "localOcrWaitingWifi": "正在等待 Wi-Fi。取消后再继续即可使用移动数据。",
   "localOcrDownloadQueued": "等待下载…",
@@ -2954,7 +2954,7 @@
   "catalogJmdictLanguageDescription": "释义为该语言的 JMdict。",
   "catalogKanjidicLanguageDescription": "该语言的汉字释义，附音读和训读。",
   "catalogSizes": "下载 {download} · 设备上约占 {installed}",
-  "catalogMobileDataBody": "未连接 Wi-Fi。该词典大小约为 {size}。是否继续使用移动数据？",
+  "catalogMobileDataBody": "该词典大小约为 {size}。你正在使用移动数据或热点，下载可能会消耗你的流量。",
   "catalogFindMoreTitle": "查找更多词典",
   "catalogFindMoreBody": "这些网站列出了更多 Yomitan 词典，包括 Mekuru 无法为你下载的词典。下载词典的 .zip 文件，然后在词典管理中点击 + 按钮导入。",
   "dictionaryManagerMoreDictionariesTooltip": "更多词典",
@@ -3110,5 +3110,5 @@
   "downloadsHighQualitySubtitle": "更大的模型，句子翻译效果更好，适合内存充足的手机。",
   "attributionGemmaTitle": "Gemma 4",
   "attributionGemmaDescription": "在 Android 上，高质量翻译模型是 Google 的 Gemma 4，通过 LiteRT-LM 在你的设备上运行。",
-  "translationMobileDataBody": "未连接 Wi-Fi。翻译模型大小约为 {size}。是否继续使用移动数据？"
+  "translationMobileDataBody": "翻译模型大小约为 {size}。你正在使用移动数据或热点，下载可能会消耗你的流量。"
 }

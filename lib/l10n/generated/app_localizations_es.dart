@@ -572,7 +572,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String downloadsStarterPackMobileDataBody({required String size}) {
-    return 'No hay conexión Wi-Fi. Los diccionarios ocupan unos $size. ¿Continuar con datos móviles?';
+    return 'Los diccionarios ocupan unos $size. Estás usando datos móviles o un punto de acceso, así que descargarlos puede consumir tu plan de datos.';
   }
 
   @override
@@ -3401,7 +3401,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String localOcrMobileDownloadBody({required String size}) {
-    return 'No hay conexión Wi-Fi. La descarga del modelo de OCR ocupa $size. ¿Continuar con datos móviles? Se reutilizará el progreso de descarga guardado.';
+    return 'El modelo de OCR ocupa $size. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos. Se reutilizará el progreso de descarga guardado.';
   }
 
   @override
@@ -3555,7 +3555,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String catalogMobileDataBody({required String size}) {
-    return 'No hay conexión Wi-Fi. Este diccionario ocupa unos $size. ¿Continuar con datos móviles?';
+    return 'Este diccionario ocupa unos $size. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos.';
   }
 
   @override
@@ -4148,6 +4148,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String translationMobileDataBody({required String size}) {
-    return 'No hay conexión Wi-Fi. El modelo de traducción ocupa unos $size. ¿Continuar con datos móviles?';
+    return 'El modelo de traducción ocupa unos $size. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos.';
   }
 }

@@ -545,7 +545,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String downloadsStarterPackMobileDataBody({required String size}) {
-    return '未连接 Wi-Fi。词典大小约为 $size。是否继续使用移动数据？';
+    return '这些词典大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
   }
 
   @override
@@ -3211,7 +3211,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String localOcrMobileDownloadBody({required String size}) {
-    return '未连接 Wi-Fi。OCR 模型下载大小为 $size。是否继续使用移动数据？已保存的下载进度会被复用。';
+    return 'OCR 模型大小为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。已保存的下载进度会被复用。';
   }
 
   @override
@@ -3353,7 +3353,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String catalogMobileDataBody({required String size}) {
-    return '未连接 Wi-Fi。该词典大小约为 $size。是否继续使用移动数据？';
+    return '该词典大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
   }
 
   @override
@@ -3926,7 +3926,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String translationMobileDataBody({required String size}) {
-    return '未连接 Wi-Fi。翻译模型大小约为 $size。是否继续使用移动数据？';
+    return '翻译模型大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
   }
 }
 
@@ -4471,7 +4471,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String downloadsStarterPackMobileDataBody({required String size}) {
-    return '未连接 Wi-Fi。词典大小约为 $size。是否继续使用移动数据？';
+    return '这些词典大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
   }
 
   @override
@@ -7137,7 +7137,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String localOcrMobileDownloadBody({required String size}) {
-    return '未连接 Wi-Fi。OCR 模型下载大小为 $size。是否继续使用移动数据？已保存的下载进度会被复用。';
+    return 'OCR 模型大小为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。已保存的下载进度会被复用。';
   }
 
   @override
@@ -7279,7 +7279,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String catalogMobileDataBody({required String size}) {
-    return '未连接 Wi-Fi。该词典大小约为 $size。是否继续使用移动数据？';
+    return '该词典大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
   }
 
   @override
@@ -7852,6 +7852,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String translationMobileDataBody({required String size}) {
-    return '未连接 Wi-Fi。翻译模型大小约为 $size。是否继续使用移动数据？';
+    return '翻译模型大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
   }
 }

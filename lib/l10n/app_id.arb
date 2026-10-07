@@ -676,7 +676,7 @@
   "@downloadsStarterPackWordFrequency": {
     "description": "Starter pack row label for word frequency data."
   },
-  "downloadsStarterPackMobileDataBody": "Wi-Fi tidak terhubung. Ukuran kamus sekitar {size}. Lanjutkan dengan data seluler?",
+  "downloadsStarterPackMobileDataBody": "Ukuran kamus-kamus ini sekitar {size}. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.",
   "@downloadsStarterPackMobileDataBody": {
     "description": "Body of the mobile-data prompt before the dictionary starter pack downloads.",
     "placeholders": {
@@ -2913,7 +2913,7 @@
   "localOcrNotificationsOff": "OCR dapat berjalan meski notifikasi dimatikan. Gunakan lembar pengenalan manga untuk menjeda atau membatalkan.",
   "localOcrModelCorrupt": "Berkas model gagal diverifikasi. Keluarkan model OCR lalu unduh lagi.",
   "localOcrMobileDownloadTitle": "Unduh melalui data seluler?",
-  "localOcrMobileDownloadBody": "Wi-Fi tidak terhubung. Ukuran unduhan model OCR adalah {size}. Lanjutkan dengan data seluler? Progres unduhan yang tersimpan akan digunakan kembali.",
+  "localOcrMobileDownloadBody": "Ukuran model OCR adalah {size}. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda. Progres unduhan yang tersimpan akan digunakan kembali.",
   "localOcrWifiLostIos": "Unduhan berhenti karena Wi-Fi terputus. File yang sudah selesai tetap disimpan. Ketuk Unduh untuk melanjutkan.",
   "localOcrWaitingWifi": "Menunggu Wi-Fi. Batalkan lalu lanjutkan untuk menggunakan data seluler.",
   "localOcrDownloadQueued": "Menunggu untuk mengunduh…",
@@ -2954,7 +2954,7 @@
   "catalogJmdictLanguageDescription": "JMdict dengan definisi dalam bahasa ini.",
   "catalogKanjidicLanguageDescription": "Arti kanji dalam bahasa ini, dengan cara baca on dan kun.",
   "catalogSizes": "Unduhan {download} · sekitar {installed} di perangkat",
-  "catalogMobileDataBody": "Wi-Fi tidak terhubung. Ukuran kamus ini sekitar {size}. Lanjutkan dengan data seluler?",
+  "catalogMobileDataBody": "Ukuran kamus ini sekitar {size}. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.",
   "catalogFindMoreTitle": "Cari Kamus Lainnya",
   "catalogFindMoreBody": "Situs-situs ini mencantumkan lebih banyak kamus Yomitan, termasuk yang tidak dapat diunduh Mekuru untuk Anda. Unduh file .zip kamus, lalu impor di Pengelola Kamus dengan tombol +.",
   "dictionaryManagerMoreDictionariesTooltip": "Kamus lainnya",
@@ -3110,5 +3110,5 @@
   "downloadsHighQualitySubtitle": "Model yang lebih besar untuk terjemahan kalimat yang lebih baik, untuk ponsel dengan memori yang cukup.",
   "attributionGemmaTitle": "Gemma 4",
   "attributionGemmaDescription": "Di Android, model terjemahan kualitas tinggi adalah Gemma 4 dari Google, yang berjalan di perangkat Anda dengan LiteRT-LM.",
-  "translationMobileDataBody": "Wi-Fi tidak terhubung. Ukuran model terjemahan sekitar {size}. Lanjutkan dengan data seluler?"
+  "translationMobileDataBody": "Ukuran model terjemahan sekitar {size}. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda."
 }

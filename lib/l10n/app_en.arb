@@ -735,7 +735,7 @@
   "@downloadsStarterPackWordFrequency": {
     "description": "Starter pack row label for word frequency data."
   },
-  "downloadsStarterPackMobileDataBody": "Wi-Fi is not connected. The dictionaries are about {size}. Continue using mobile data?",
+  "downloadsStarterPackMobileDataBody": "The dictionaries are about {size}. You're on mobile data or a hotspot, so downloading them may use your data plan.",
   "@downloadsStarterPackMobileDataBody": {
     "description": "Body of the mobile-data prompt before the dictionary starter pack downloads.",
     "placeholders": {
@@ -4312,7 +4312,7 @@
     "description": "Recovery instructions for corrupted installed OCR model files."
   },
   "localOcrMobileDownloadTitle": "Download over mobile data?",
-  "localOcrMobileDownloadBody": "Wi-Fi is not connected. The OCR model download is {size}. Continue using mobile data? Any saved download progress will be reused.",
+  "localOcrMobileDownloadBody": "The OCR model is {size}. You're on mobile data or a hotspot, so downloading it may use your data plan. Any saved download progress will be reused.",
   "@localOcrMobileDownloadBody": {
     "placeholders": {
       "size": {
@@ -4512,7 +4512,7 @@
       }
     }
   },
-  "catalogMobileDataBody": "Wi-Fi is not connected. This dictionary is about {size}. Continue using mobile data?",
+  "catalogMobileDataBody": "This dictionary is about {size}. You're on mobile data or a hotspot, so downloading it may use your data plan.",
   "@catalogMobileDataBody": {
     "description": "Body of the dialog asking before a catalog dictionary downloads over mobile data. size looks like '39 MB'.",
     "placeholders": {
@@ -5278,7 +5278,7 @@
   "@attributionGemmaDescription": {
     "description": "Attribution entry for Gemma 4 and LiteRT-LM. Gemma 4 and LiteRT-LM are product names."
   },
-  "translationMobileDataBody": "Wi-Fi is not connected. The translation model is about {size}. Continue using mobile data?",
+  "translationMobileDataBody": "The translation model is about {size}. You're on mobile data or a hotspot, so downloading it may use your data plan.",
   "@translationMobileDataBody": {
     "description": "Body of the dialog asking before a sentence translation model downloads over mobile data. size looks like '55 MB' or '2.6 GB'.",
     "placeholders": {
