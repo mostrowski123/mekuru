@@ -4552,11 +4552,17 @@ abstract class AppLocalizations {
   /// **'Everything in one large .zip file: books, manga, dictionaries, settings and reading data. Restoring it replaces everything in Mekuru on this device; other apps and files are untouched. Manual only.'**
   String get backupFullScopeBody;
 
-  /// Limitations text on the full backup card.
+  /// Limitations text on the full backup card (Android). The OCR models are the on-device manga-ocr pack and the NDL scanned-book model; the translation models are the offline translation downloads.
   ///
   /// In en, this message translates to:
-  /// **'Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.'**
+  /// **'Not included: the downloaded KanjiVG stroke order data, OCR models and translation models (download them again from Settings) and the reading data backup history.'**
   String get backupFullNotIncluded;
+
+  /// iOS: limitations text on the full backup card. Like backupFullNotIncluded without the translation models: iOS translates with Apple's language packs, which Mekuru does not download.
+  ///
+  /// In en, this message translates to:
+  /// **'Not included: the downloaded KanjiVG stroke order data and OCR models (download them again from Settings) and the reading data backup history.'**
+  String get backupFullNotIncludedIos;
 
   /// Title of the export full backup action.
   ///

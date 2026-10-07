@@ -253,7 +253,9 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
-                l10n.backupFullNotIncluded,
+                defaultTargetPlatform == TargetPlatform.iOS
+                    ? l10n.backupFullNotIncludedIos
+                    : l10n.backupFullNotIncluded,
                 style: theme.textTheme.bodySmall,
               ),
             ),

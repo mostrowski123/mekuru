@@ -2708,7 +2708,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupFullNotIncluded =>
-      'Not included: the downloaded KanjiVG stroke order data (download it again from Settings) and the reading data backup history.';
+      'Not included: the downloaded KanjiVG stroke order data, OCR models and translation models (download them again from Settings) and the reading data backup history.';
+
+  @override
+  String get backupFullNotIncludedIos =>
+      'Not included: the downloaded KanjiVG stroke order data and OCR models (download them again from Settings) and the reading data backup history.';
 
   @override
   String get backupFullExportTitle => 'Export full backup (.zip)…';

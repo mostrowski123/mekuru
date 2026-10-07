@@ -2719,7 +2719,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get backupFullNotIncluded =>
-      'Tidak disertakan: data urutan goresan KanjiVG yang diunduh (unduh lagi dari Pengaturan) dan riwayat cadangan data bacaan.';
+      'Tidak disertakan: data urutan goresan KanjiVG, model OCR, dan model terjemahan yang diunduh (unduh lagi dari Pengaturan), serta riwayat cadangan data bacaan.';
+
+  @override
+  String get backupFullNotIncludedIos =>
+      'Tidak disertakan: data urutan goresan KanjiVG dan model OCR yang diunduh (unduh lagi dari Pengaturan), serta riwayat cadangan data bacaan.';
 
   @override
   String get backupFullExportTitle => 'Ekspor cadangan lengkap (.zip)…';

@@ -2740,7 +2740,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get backupFullNotIncluded =>
-      'No incluye: los datos de orden de trazos de KanjiVG descargados (vuelve a descargarlos desde los ajustes) ni el historial de copias de datos de lectura.';
+      'No incluye: los datos de orden de trazos de KanjiVG, los modelos de OCR y de traducción descargados (vuelve a descargarlos desde los ajustes) ni el historial de copias de datos de lectura.';
+
+  @override
+  String get backupFullNotIncludedIos =>
+      'No incluye: los datos de orden de trazos de KanjiVG y los modelos de OCR descargados (vuelve a descargarlos desde los ajustes) ni el historial de copias de datos de lectura.';
 
   @override
   String get backupFullExportTitle => 'Exportar copia completa (.zip)…';

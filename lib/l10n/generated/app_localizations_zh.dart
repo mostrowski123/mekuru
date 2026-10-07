@@ -2597,7 +2597,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backupFullNotIncluded =>
-      '不包含：已下载的 KanjiVG 笔顺数据（可在设置中重新下载）和阅读数据备份历史。';
+      '不包含：已下载的 KanjiVG 笔顺数据、OCR 模型和翻译模型（可在设置中重新下载），以及阅读数据备份历史。';
+
+  @override
+  String get backupFullNotIncludedIos =>
+      '不包含：已下载的 KanjiVG 笔顺数据和 OCR 模型（可在设置中重新下载），以及阅读数据备份历史。';
 
   @override
   String get backupFullExportTitle => '导出完整备份（.zip）…';
@@ -6546,7 +6550,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get backupFullNotIncluded =>
-      '不包含：已下载的 KanjiVG 笔顺数据（可在设置中重新下载）和阅读数据备份历史。';
+      '不包含：已下载的 KanjiVG 笔顺数据、OCR 模型和翻译模型（可在设置中重新下载），以及阅读数据备份历史。';
+
+  @override
+  String get backupFullNotIncludedIos =>
+      '不包含：已下载的 KanjiVG 笔顺数据和 OCR 模型（可在设置中重新下载），以及阅读数据备份历史。';
 
   @override
   String get backupFullExportTitle => '导出完整备份（.zip）…';
