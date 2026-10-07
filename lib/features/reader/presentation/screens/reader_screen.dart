@@ -734,8 +734,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   hasVerticalCss: metadata.hasVerticalCss,
                 ),
           );
-          // Re-apply book defaults with detected language.
-          // Legacy books won't have per-book overrides yet, so pass null.
+          // Re-apply book defaults with the detected language, keeping the
+          // book's own settings as initState applied them.
           ref
               .read(readerSettingsProvider.notifier)
               .applyBookDefaults(
@@ -744,6 +744,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 pageProgressionDirection: metadata.pageProgressionDirection,
                 primaryWritingMode: metadata.primaryWritingMode,
                 hasVerticalCss: metadata.hasVerticalCss,
+                overrideVerticalText: widget.book.overrideVerticalText,
+                overrideReadingDirection: widget.book.overrideReadingDirection,
+                overrideFuriganaMode: widget.book.furiganaMode,
               );
         } catch (_) {
           // Best effort — continue with null language (assumes Japanese).

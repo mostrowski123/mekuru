@@ -44,6 +44,10 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
 
   bool? get nativeVerticalTextForCurrentBook => _nativeVerticalText;
 
+  /// The furigana mode of books without their own: the last one the user
+  /// picked. [state] holds the open book's mode, which may be its override.
+  FuriganaMode _defaultFuriganaMode = const ReaderSettings().furiganaMode;
+
   @override
   ReaderSettings build() => const ReaderSettings();
 
@@ -58,6 +62,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
         .load();
     if (persistedSettings != null) {
       state = persistedSettings;
+      _defaultFuriganaMode = persistedSettings.furiganaMode;
     }
   }
 
@@ -176,6 +181,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   }
 
   void setFuriganaMode(FuriganaMode mode) {
+    _defaultFuriganaMode = mode;
     _update(state.copyWith(furiganaMode: mode));
   }
 
@@ -226,7 +232,7 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
 
     final effectiveFuriganaMode = overrideFuriganaMode != null
         ? furiganaModeFromString(overrideFuriganaMode)
-        : state.furiganaMode;
+        : _defaultFuriganaMode;
 
     state = state.copyWith(
       verticalText: effectiveVerticalText,
@@ -244,7 +250,11 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   }
 
   void _persistSettings() {
-    unawaited(ref.read(readerSettingsStorageProvider).save(state));
+    unawaited(
+      ref
+          .read(readerSettingsStorageProvider)
+          .save(state.copyWith(furiganaMode: _defaultFuriganaMode)),
+    );
   }
 
   /// Persist the current verticalText and readingDirection as per-book

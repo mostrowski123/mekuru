@@ -639,6 +639,42 @@ void main() {
       );
     });
 
+    test("a book's furigana override does not carry over to the next book "
+        'or the global default', () async {
+      final fakeStorage = _FakeReaderSettingsStorage(
+        initialSettings: const ReaderSettings(furiganaMode: FuriganaMode.hide),
+      );
+      final db = AppDatabase(NativeDatabase.memory());
+      final spyRepo = _SpyBookRepository(db);
+      final harness = _createHarness(storage: fakeStorage, bookRepo: spyRepo);
+      addTearDown(() async {
+        await harness.dispose();
+        await db.close();
+      });
+
+      final notifier = harness.container.read(readerSettingsProvider.notifier);
+      await notifier.loadPersistedSettings();
+      notifier.applyBookDefaults(
+        bookId: 1,
+        language: 'ja',
+        overrideFuriganaMode: 'all',
+      );
+      notifier.setFontSize(20); // saves the global settings while A is open
+      notifier.clearCurrentBook();
+
+      notifier.applyBookDefaults(bookId: 2, language: 'ja');
+      expect(
+        harness.container.read(readerSettingsProvider).furiganaMode,
+        FuriganaMode.hide,
+      );
+
+      notifier.setVerticalText(false); // writes book B's overrides
+      await Future<void>.delayed(Duration.zero);
+      expect(fakeStorage.savedSettings!.furiganaMode, FuriganaMode.hide);
+      expect(spyRepo.lastBookId, 2);
+      expect(spyRepo.lastFuriganaMode.value, 'hide');
+    });
+
     test('a legacy off per-book override resolves to book', () {
       final harness = _createHarness();
       addTearDown(harness.dispose);
