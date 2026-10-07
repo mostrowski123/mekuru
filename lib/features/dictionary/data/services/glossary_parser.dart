@@ -128,14 +128,16 @@ class GlossaryParser {
   /// - A list of mixed strings and tag objects
   /// - A tag object with its own content
   ///
-  /// With [decorate], list items get a display bullet; without, the raw
-  /// gloss lines come back undecorated (the search-index shape).
+  /// With [decorate], list items get a display bullet and lists break into
+  /// lines as on screen ([_displayLines]); without, the raw gloss lines
+  /// come back undecorated, one per node (the search-index shape).
   static String _extractText(dynamic content, {required bool decorate}) {
     if (content == null) return '';
     if (content is String) return content;
     if (content is num || content is bool) return content.toString();
 
     if (content is List) {
+      if (decorate) return _displayLines(content);
       final parts = <String>[];
       for (final item in content) {
         final text = _extractText(item, decorate: decorate);
@@ -174,6 +176,45 @@ class GlossaryParser {
     }
 
     return '';
+  }
+
+  /// A structured-content list broken into lines as the popup lays it out:
+  /// inline children (text, span, a, ruby, images) run together, `br`
+  /// starts a new line, and each block child (div, ul, li, table…) is a
+  /// line of its own. So "〔", a span and "〕…" read as one line, not three.
+  ///
+  /// Display text only: the search index keeps one line per node, as its
+  /// ranking is tuned on that text and a change would need a re-index.
+  static String _displayLines(List<dynamic> content) {
+    final lines = <String>[];
+    final run = StringBuffer();
+    void endRun() {
+      if (run.isNotEmpty) lines.add(run.toString());
+      run.clear();
+    }
+
+    void add(dynamic node) {
+      if (node is List) {
+        node.forEach(add);
+        return;
+      }
+      final tag = node is Map ? node['tag'] : null;
+      if (tag == 'br') {
+        endRun();
+        return;
+      }
+      final text = _extractText(node, decorate: true);
+      if (node is! Map || tag == 'img' || inlineScTags.contains(tag)) {
+        run.write(text);
+      } else {
+        endRun();
+        if (text.isNotEmpty) lines.add(text);
+      }
+    }
+
+    content.forEach(add);
+    endRun();
+    return lines.join('\n');
   }
 
   /// `data.content` values of Jitendex and Wiktionary (wty) nodes that are not

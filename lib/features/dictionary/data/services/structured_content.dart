@@ -41,6 +41,11 @@ class ScElement extends ScNode {
   String? get content => data['content'];
 }
 
+/// Element tags laid out inline, in the paragraph around them; any other
+/// element (div, ul, li, table…) is a block of its own. Images are inline
+/// too.
+const inlineScTags = {'span', 'a', 'ruby', 'rt', 'rp', 'br'};
+
 /// An `img` node or an image glossary item. [path] points into the
 /// dictionary's media (the zip path).
 class ScImage extends ScNode {

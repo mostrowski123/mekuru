@@ -325,8 +325,10 @@ class _VocabularyItem extends ConsumerWidget {
     final l10n = context.l10n;
     final definitions = GlossaryParser.parse(word.glossaries);
 
+    // A definition can span lines (senses, a note before the glosses); the
+    // one-line preview shows them all, as "a; b; c".
     final firstDefinition = definitions.isNotEmpty
-        ? definitions.first
+        ? GlossaryParser.oneLine(definitions.first)
         : l10n.vocabularyNoDefinition;
 
     final tile = ExpansionTile(
@@ -347,8 +349,9 @@ class _VocabularyItem extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (definitions.length > 1)
-                ...definitions.skip(1).map((d) => Text('- $d')),
+              // In full: the preview is cut to one line.
+              for (final definition in definitions)
+                Text(definitions.length > 1 ? '- $definition' : definition),
               const SizedBox(height: 8),
               if (word.sentenceContext.isNotEmpty)
                 Container(

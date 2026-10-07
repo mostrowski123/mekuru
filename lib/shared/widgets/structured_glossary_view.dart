@@ -143,8 +143,6 @@ class _Renderer {
   final ValueChanged<String>? onWordTap;
   final ThemeData theme;
 
-  static const _inlineTags = {'span', 'a', 'ruby', 'rt', 'rp', 'br'};
-
   /// Jitendex marks forms-table cells with a class and draws the symbol with
   /// CSS; old and out-of-date forms use the kanji for old.
   static const _formSymbols = {
@@ -157,7 +155,7 @@ class _Renderer {
   };
 
   bool _isInline(ScNode node) =>
-      node is! ScElement || _inlineTags.contains(node.tag);
+      node is! ScElement || inlineScTags.contains(node.tag);
 
   List<Widget> blocks(
     List<ScNode> nodes,

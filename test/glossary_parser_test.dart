@@ -22,14 +22,14 @@ void main() {
       return legacy;
     }
 
-    test('JMdict plain and search text stay exactly as before', () {
+    test('JMdict search text stays as before; plain text reads in lines', () {
       // Search ranking (whole-gloss lines, headline gloss) is tuned on this
-      // output, so Jitendex/Wiktionary rules must not touch JMdict's keys.
+      // output, so Jitendex/Wiktionary rules must not touch JMdict's keys,
+      // and display-only changes (inline runs as one line) must not reach
+      // it either: a change would need every dictionary re-indexed.
       const cases = <String, (List<String>, String)>{
         jmdictReferences: (
-          [
-            '  ▸ repetition mark in katakana\n  ▸ see: \n一の字点\n kana iteration mark',
-          ],
+          ['  ▸ repetition mark in katakana\n  ▸ see: 一の字点 kana iteration mark'],
           'repetition mark in katakana\nsee:\n一の字点\nkana iteration mark',
         ),
         jmdictInfoGlossary: (
@@ -38,19 +38,17 @@ void main() {
         ),
         jmdictFormsTable: (['〃\nおなじ\n㊒\nおなじく\n㊒'], '〃\nおなじ\n㊒\nおなじく\n㊒'),
         jmdictNotes: (
-          [
-            '  ▸ circle\n  ▸ sometimes used for zero\n  ▸ see: \n丸\n（\nまる\n）\n 1. circle',
-          ],
+          ['  ▸ circle\n  ▸ sometimes used for zero\n  ▸ see: 丸（まる） 1. circle'],
           'circle\nsometimes used for zero\nsee:\n丸\n（\nまる\n）\n1. circle',
         ),
         jmdictSourceLanguages: (
           [
-            '  ▸ bitch\n  ▸ witch\n  ▸ ugly woman\n  ▸ dog\n  ▸ Portuguese: \nespada',
+            '  ▸ bitch\n  ▸ witch\n  ▸ ugly woman\n  ▸ dog\n  ▸ Portuguese: espada',
           ],
           'bitch\nwitch\nugly woman\ndog\nportuguese:\nespada',
         ),
         jmdictAntonyms: (
-          ['  ▸ urban\n  ▸ antonym: \nルーラル\n rural'],
+          ['  ▸ urban\n  ▸ antonym: ルーラル rural'],
           'urban\nantonym:\nルーラル\nrural',
         ),
       };
@@ -59,6 +57,43 @@ void main() {
         expect(parse(item), plain);
         expect(search(item), searchText);
       }
+    });
+
+    test('inline children run together; br and blocks break the line', () {
+      String structured(Object content) =>
+          jsonEncode({'type': 'structured-content', 'content': content});
+
+      // A bracketed note before the gloss (円柱) is one line, not "〔", the
+      // note and "〕…" on three; the search index keeps one line per node.
+      final bracketed = structured([
+        '〔',
+        {'tag': 'span', 'content': '数'},
+        '〕a cylinder',
+      ]);
+      expect(parse(bracketed), ['〔数〕a cylinder']);
+      expect(search(bracketed), '〔\n数\n〕a cylinder');
+
+      final mixed = structured([
+        {'tag': 'br'},
+        'see ',
+        {
+          'tag': 'a',
+          'href': '?query=丸',
+          'content': {
+            'tag': 'ruby',
+            'content': [
+              '丸',
+              {'tag': 'rt', 'content': 'まる'},
+            ],
+          },
+        },
+        {'tag': 'br'},
+        'second line',
+        {'tag': 'div', 'content': 'a block'},
+        'after the block',
+        {'tag': 'br'},
+      ]);
+      expect(parse(mixed), ['see 丸\nsecond line\na block\nafter the block']);
     });
 
     test('a Jitendex entry reads as one marked line per sense', () {
