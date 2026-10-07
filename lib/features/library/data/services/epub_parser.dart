@@ -109,9 +109,11 @@ class EpubParser {
     }
   }
 
-  /// archive throws ArgumentError/RangeError on truncated streams and
+  /// archive throws ArgumentError/RangeError on some corrupt streams and
   /// FormatException on bad signatures; surface either as a clean
   /// "corrupt EPUB" rather than a raw RangeError to the import flow.
+  /// Non-zip and truncated input does not throw: it decodes to an empty
+  /// archive, which [parseEpub] refuses.
   static Archive _decodeOrThrow(InputFileStream input, String epubPath) {
     try {
       return ZipDecoder().decodeStream(input);
@@ -128,6 +130,8 @@ class EpubParser {
   /// [epubPath] is the path to the .epub file.
   /// [extractDir] is where the EPUB contents will be unzipped.
   /// Returns [EpubMetadata] with title, author, and cover path.
+  /// Throws a [FormatException] when the archive has no container.xml or
+  /// package document.
   static Future<EpubMetadata> parseEpub(
     String epubPath,
     String extractDir,
@@ -165,12 +169,13 @@ class EpubParser {
       input.close();
     }
 
-    // 1. Parse META-INF/container.xml to find the OPF file path
+    // 1. Parse META-INF/container.xml to find the OPF file path. Without
+    // it the book would import empty and never open (epub.js starts from
+    // it); non-zip and truncated files end up here too, as empty archives.
     final opfPath = await findOpfPath(extractDir);
     if (opfPath == null) {
-      return EpubMetadata(
-        title: _fallbackTitleFor(epubPath),
-        hasVerticalCss: hasVerticalCss,
+      throw const FormatException(
+        'EPUB has no META-INF/container.xml rootfile',
       );
     }
 
@@ -299,7 +304,7 @@ class EpubParser {
   }) async {
     final opfFile = File(p.join(extractDir, opfPath));
     if (!await opfFile.exists()) {
-      return EpubMetadata(title: fallbackTitle, hasVerticalCss: hasVerticalCss);
+      throw const FormatException('EPUB package document is missing');
     }
 
     final opfXml = XmlDocument.parse(await opfFile.readAsString());

@@ -139,7 +139,7 @@ void main() {
       'full extraction also falls back to filename for missing title',
       () async {
         final epubPath = await createTestEpub(
-          includeContainerXml: false,
+          title: '',
           fileName: 'extracted-fallback.epub',
         );
         trackTempFile(epubPath);
@@ -161,7 +161,7 @@ void main() {
       );
     });
 
-    test('throws FileSystemException for truncated/corrupt archive', () async {
+    test('throws FileSystemException for a corrupt archive', () async {
       final tempDir = await Directory.systemTemp.createTemp('epub_corrupt_');
       trackTempDir(tempDir.path);
       final corruptPath = '${tempDir.path}/corrupt.epub';

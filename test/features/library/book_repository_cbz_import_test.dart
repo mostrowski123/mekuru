@@ -272,6 +272,26 @@ void main() {
       await expectNothingStranded();
     });
 
+    // archive decodes these to an empty Archive instead of throwing; they
+    // used to import as an empty book that never opened.
+    test('importEpub refuses a file that is not a zip', () async {
+      final path = p.join(tempDir.path, 'not_a_zip.epub');
+      await File(path).writeAsString('<html>not an EPUB</html>');
+
+      await expectLater(repo.importEpub(path), throwsA(isA<FormatException>()));
+      await expectNothingStranded();
+    });
+
+    test('importEpub refuses a truncated EPUB', () async {
+      final path = await createTestEpub();
+      addTearDown(() => File(path).parent.delete(recursive: true));
+      final bytes = await File(path).readAsBytes();
+      await File(path).writeAsBytes(bytes.sublist(0, bytes.length ~/ 2));
+
+      await expectLater(repo.importEpub(path), throwsA(isA<FormatException>()));
+      await expectNothingStranded();
+    });
+
     test('importCbz deletes the cache directory when import fails', () async {
       // The cache directory is created before the source is opened, so a
       // missing source file exercises the cleanup path.
