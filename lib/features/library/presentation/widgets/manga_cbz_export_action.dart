@@ -15,6 +15,7 @@ import 'package:share_plus/share_plus.dart';
 
 /// Progress dialog → off-isolate CBZ build → share sheet → SnackBar.
 /// Dismissing the share sheet is silent; failures end in a SnackBar.
+/// [context] is the book's tile, which the share sheet points at on iPad.
 Future<void> runMangaCbzExport(
   BuildContext context,
   WidgetRef ref,
@@ -62,6 +63,15 @@ Future<void> runMangaCbzExport(
     return;
   }
 
+  // On iPad the share sheet is a popover pointing at the book's tile, and
+  // share_plus refuses to share without that rect on screen. Android
+  // ignores it.
+  final tile = context.findRenderObject() as RenderBox?;
+  final origin = tile == null
+      ? null
+      : (tile.localToGlobal(Offset.zero) & tile.size).intersect(
+          Offset.zero & MediaQuery.sizeOf(context),
+        );
   final tmpFile = File(cbzPath);
   try {
     // share_plus copies the file into its own provider cache natively, so
@@ -69,6 +79,7 @@ Future<void> runMangaCbzExport(
     final result = await SharePlus.instance.share(
       ShareParams(
         files: [XFile(tmpFile.path, mimeType: 'application/vnd.comicbook+zip')],
+        sharePositionOrigin: origin,
       ),
     );
     if (result.status == ShareResultStatus.success) {
