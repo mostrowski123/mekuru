@@ -841,7 +841,8 @@ class MecabService {
   /// Scans for Japanese sentence-ending punctuation (。！？) and newlines
   /// in both directions from the offset. A quote is part of the sentence
   /// around it (「…。」と言った。 stays whole), a tap inside a quote gets the
-  /// quoted sentence, and stray brackets at the edges are dropped.
+  /// quoted sentence, a tap inside a bracketed word or title gets the
+  /// sentence around it, and stray brackets at the edges are dropped.
   static String extractSentenceContext(String text, int charOffset) {
     if (text.isEmpty) return '';
 
@@ -863,14 +864,16 @@ class MecabService {
 
   /// Scans out from [offset] to the nearest sentence end on each side. When
   /// [bracketAware], an end inside a bracket pair the scan passes over does
-  /// not count, and the bracket enclosing [offset] bounds the sentence.
-  /// A newline always ends it.
+  /// not count, and the bracket enclosing [offset] bounds the sentence when
+  /// it holds a sentence end. A newline always ends it.
   static String _sentenceAround(
     String text,
     int offset, {
     required bool bracketAware,
   }) {
     var start = 0;
+    // The open bracket the sentence starts after, if a bracket bounds it.
+    var opening = -1;
     var depth = 0;
     for (var i = offset - 1; i >= 0; i--) {
       final ch = text[i];
@@ -883,6 +886,7 @@ class MecabService {
       } else if (bracketAware && _openBrackets.contains(ch)) {
         if (depth == 0) {
           start = i + 1;
+          opening = i;
           break;
         }
         depth--;
@@ -893,6 +897,7 @@ class MecabService {
     }
 
     var end = text.length;
+    var closed = false;
     depth = 0;
     for (var i = offset; i < text.length; i++) {
       final ch = text[i];
@@ -905,6 +910,7 @@ class MecabService {
       } else if (bracketAware && _closeBrackets.contains(ch)) {
         if (depth == 0) {
           end = i;
+          closed = true;
           break;
         }
         depth--;
@@ -914,7 +920,14 @@ class MecabService {
       }
     }
 
-    return text.substring(start, end);
+    final sentence = text.substring(start, end);
+    // Brackets around a word, a title or a reading (「愛」という,
+    // 『吾輩は猫である』を, 東京（とうきょう）に) sit inside the sentence; only
+    // a quote holding a sentence of its own is one.
+    if (opening >= 0 && closed && !_sentenceEnds.any(sentence.contains)) {
+      return _sentenceAround(text, opening, bracketAware: true);
+    }
+    return sentence;
   }
 
   /// Drops brackets at the edges of [s] whose partner is not in [s].

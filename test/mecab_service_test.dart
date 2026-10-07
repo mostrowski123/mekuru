@@ -133,6 +133,27 @@ void main() {
       expect(result, '二行目');
     });
 
+    test('a bracketed word, title or reading stays in its sentence', () {
+      for (final (text, word) in [
+        ('彼は「愛」という言葉を使った。', '愛'),
+        ('昨日『吾輩は猫である』を読んだ。', '猫'),
+        ('東京（とうきょう）に住んでいる。', 'と'),
+        ('「行こう」と彼は言った。', '行'),
+      ]) {
+        expect(
+          MecabService.extractSentenceContext(text, text.indexOf(word)),
+          text,
+          reason: text,
+        );
+      }
+    });
+
+    test('a bracketed word inside a quote gets the quoted sentence', () {
+      const text = '「彼は『愛』と言った。」と書いた。';
+      final result = MecabService.extractSentenceContext(text, 4);
+      expect(result, '彼は『愛』と言った。');
+    });
+
     test('an unbalanced quote does not swallow the paragraph', () {
       final text = '${'前の文。' * 100}」と言った。';
       final result = MecabService.extractSentenceContext(
