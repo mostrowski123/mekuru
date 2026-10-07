@@ -133,7 +133,7 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
       }
       // Cancelled during the check: nothing to stop yet, so don't start.
       if (_cancelRequested) {
-        logUsage('translation.high_quality_download_cancelled');
+        logUsage('translation.high_quality_cancelled');
         _settle(GemmaNotInstalled(hasFiles: await _ops.hasFiles()));
         return;
       }
@@ -145,7 +145,7 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
       // closed connection threw.
       if (_cancelling) {
         _cancelling = false;
-        logUsage('translation.high_quality_download_cancelled');
+        logUsage('translation.high_quality_cancelled');
         // Still downloading meanwhile, so nothing else can change the state.
         _settle(GemmaNotInstalled(hasFiles: await _ops.hasFiles()));
         return;
