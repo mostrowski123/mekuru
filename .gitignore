@@ -62,3 +62,6 @@ android/local.properties
 sentry.properties
 sentry.env
 lib/config/environment_config.dart
+
+# asc CLI run reports
+.asc/
