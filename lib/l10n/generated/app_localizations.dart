@@ -6657,6 +6657,12 @@ abstract class AppLocalizations {
   /// **'High quality is taking too long; using Standard for now.'**
   String get translationHighQualityTooSlow;
 
+  /// Note under the spinner on the Sentence tab while the High quality model loads into memory (its first translation, or the first after a while).
+  ///
+  /// In en, this message translates to:
+  /// **'Starting High quality. The first translation can take a moment.'**
+  String get translationHighQualityStarting;
+
   /// Sentence tab text above the Download button when High quality couldn't translate and the standard model isn't downloaded yet.
   ///
   /// In en, this message translates to:

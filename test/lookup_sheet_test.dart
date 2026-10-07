@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -747,6 +748,35 @@ void main() {
       expect(find.text('EN:鮭を食べる。'), findsOneWidget);
       expect(find.text(_couldNotLoad), findsOneWidget);
       expect(find.text(_notReady), findsNothing);
+    }, variant: _android);
+
+    testWidgets('says High quality is starting while its model loads', (
+      tester,
+    ) async {
+      _fakeTranslation();
+      final high = _fakeHighQuality()..hold = Completer<void>();
+      final loading = GemmaTranslation.instance.loading;
+      addTearDown(() => loading.value = false);
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '鮪を食べる。'),
+        highQuality: true,
+      );
+      await openSentenceTab(tester);
+      await tester.pump();
+      const starting =
+          'Starting High quality. The first translation can take a moment.';
+      expect(find.text(starting), findsNothing);
+
+      loading.value = true;
+      await tester.pump();
+      expect(find.text(starting), findsOneWidget);
+
+      loading.value = false;
+      high.hold!.complete();
+      await tester.pump();
+      expect(find.text(starting), findsNothing);
+      expect(find.text('HQ:鮪を食べる。'), findsOneWidget);
     }, variant: _android);
 
     testWidgets('a High quality slower than 45 seconds gives way to Standard', (

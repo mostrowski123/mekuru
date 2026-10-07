@@ -5258,6 +5258,10 @@
   "@translationHighQualityTooSlow": {
     "description": "Note under a sentence translation when High quality took over 45 seconds (usually its first load), so the standard model translated this sentence. High quality keeps loading for the next one."
   },
+  "translationHighQualityStarting": "Starting High quality. The first translation can take a moment.",
+  "@translationHighQualityStarting": {
+    "description": "Note under the spinner on the Sentence tab while the High quality model loads into memory (its first translation, or the first after a while)."
+  },
   "translationHighQualityNeedsStandard": "High quality couldn't load. Download Standard to translate this sentence.",
   "@translationHighQualityNeedsStandard": {
     "description": "Sentence tab text above the Download button when High quality couldn't translate and the standard model isn't downloaded yet."

@@ -4129,6 +4129,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'La alta calidad está tardando demasiado; por ahora se usa la estándar.';
 
   @override
+  String get translationHighQualityStarting =>
+      'Iniciando la alta calidad. La primera traducción puede tardar un poco.';
+
+  @override
   String get translationHighQualityNeedsStandard =>
       'La alta calidad no se pudo cargar. Descarga la estándar para traducir esta frase.';
 

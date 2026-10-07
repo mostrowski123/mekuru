@@ -121,4 +121,26 @@ void main() {
     // Natively the close runs after the load it was queued behind.
     expect(calls.map((c) => c.method), ['load', 'close', 'translate']);
   });
+
+  test('loading is on only while the model loads', () async {
+    await GemmaTranslation.instance.close();
+    final load = Completer<String?>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          channel,
+          (call) async => call.method == 'load' ? await load.future : 'x',
+        );
+    final gemma = GemmaTranslation.instance;
+    final translation = gemma.translateWith(
+      modelPath: '/models/loading.litertlm',
+      text: '猫',
+      target: 'en',
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(gemma.loading.value, isTrue);
+
+    load.complete('gpu');
+    await translation;
+    expect(gemma.loading.value, isFalse);
+  });
 }

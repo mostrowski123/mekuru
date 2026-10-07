@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
@@ -326,7 +327,17 @@ class _SentenceTranslationViewState
     }
     final data = snapshot.data;
     if (data == null || snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: CircularProgressIndicator());
+      const spinner = Center(child: CircularProgressIndicator());
+      if (!widget.highQuality) return spinner;
+      return ValueListenableBuilder<bool>(
+        valueListenable: GemmaTranslation.instance.loading,
+        builder: (context, loading, _) => Column(
+          children: [
+            spinner,
+            if (loading) _note(l10n.translationHighQualityStarting),
+          ],
+        ),
+      );
     }
     final (status, result) = data;
     switch (status) {

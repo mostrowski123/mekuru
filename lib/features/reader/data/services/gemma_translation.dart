@@ -81,6 +81,10 @@ class GemmaTranslation implements TranslationEngine {
   String? _loadedPath;
   Timer? _idleTimer;
 
+  /// The model is loading into memory (a first translation, or the first
+  /// after an idle close), which can take a while: the Sentence tab says so.
+  final loading = ValueNotifier<bool>(false);
+
   /// Bumped by [cancelDownload], so the [downloadModel] it stops throws.
   var _cancels = 0;
 
@@ -270,14 +274,19 @@ class GemmaTranslation implements TranslationEngine {
     required String target,
   }) async {
     if (_loadedPath != modelPath) {
-      // LiteRT-LM's ~750 MB weight cache lives next to the model, so
-      // deleting the model deletes it; reloads drop from ~2 s to ~0.2 s.
-      final backend = await _channel.invokeMethod<String>('load', {
-        'path': modelPath,
-        'cacheDir': p.dirname(modelPath),
-      });
-      if (backend == 'cpu') logUsage('translation.gemma_cpu');
-      _loadedPath = modelPath;
+      loading.value = true;
+      try {
+        // LiteRT-LM's ~750 MB weight cache lives next to the model, so
+        // deleting the model deletes it; reloads drop from ~2 s to ~0.2 s.
+        final backend = await _channel.invokeMethod<String>('load', {
+          'path': modelPath,
+          'cacheDir': p.dirname(modelPath),
+        });
+        if (backend == 'cpu') logUsage('translation.gemma_cpu');
+        _loadedPath = modelPath;
+      } finally {
+        loading.value = false;
+      }
     }
     _idleTimer?.cancel();
     _idleTimer = Timer(_idleLifetime, close);

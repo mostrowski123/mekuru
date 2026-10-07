@@ -4102,6 +4102,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Kualitas tinggi terlalu lama; untuk sementara menggunakan Standar.';
 
   @override
+  String get translationHighQualityStarting =>
+      'Memulai Kualitas tinggi. Terjemahan pertama mungkin perlu sedikit waktu.';
+
+  @override
   String get translationHighQualityNeedsStandard =>
       'Kualitas tinggi tidak dapat dimuat. Unduh Standar untuk menerjemahkan kalimat ini.';
 

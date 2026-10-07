@@ -3908,6 +3908,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get translationHighQualityTooSlow => '高质量模型耗时过长，暂时使用标准模型。';
 
   @override
+  String get translationHighQualityStarting => '正在启动高质量模型，首次翻译可能需要一点时间。';
+
+  @override
   String get translationHighQualityNeedsStandard => '高质量模型无法加载。下载标准模型即可翻译这句话。';
 
   @override
@@ -7838,6 +7841,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get translationHighQualityTooSlow => '高质量模型耗时过长，暂时使用标准模型。';
+
+  @override
+  String get translationHighQualityStarting => '正在启动高质量模型，首次翻译可能需要一点时间。';
 
   @override
   String get translationHighQualityNeedsStandard => '高质量模型无法加载。下载标准模型即可翻译这句话。';

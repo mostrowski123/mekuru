@@ -3105,6 +3105,7 @@
   "translationHighQualityNotReady": "La alta calidad aún no está lista; se usa la estándar.",
   "translationHighQualityCouldNotLoad": "La alta calidad no se pudo cargar; se usa la estándar.",
   "translationHighQualityTooSlow": "La alta calidad está tardando demasiado; por ahora se usa la estándar.",
+  "translationHighQualityStarting": "Iniciando la alta calidad. La primera traducción puede tardar un poco.",
   "translationHighQualityNeedsStandard": "La alta calidad no se pudo cargar. Descarga la estándar para traducir esta frase.",
   "translationHighQualityLowMemoryBody": "El modelo de alta calidad necesita unos 2 GB de memoria. En este teléfono puede ir lento o cerrar Mekuru. Si pasa, vuelve al estándar en Configuración › Modelo de traducción.",
   "translationHighQualityUseStandard": "Usar la estándar",

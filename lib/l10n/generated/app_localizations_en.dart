@@ -4080,6 +4080,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'High quality is taking too long; using Standard for now.';
 
   @override
+  String get translationHighQualityStarting =>
+      'Starting High quality. The first translation can take a moment.';
+
+  @override
   String get translationHighQualityNeedsStandard =>
       'High quality couldn\'t load. Download Standard to translate this sentence.';
 
