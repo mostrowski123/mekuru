@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mekuru/core/platform/image_convert.dart';
 import 'package:mekuru/features/dictionary/data/repositories/dictionary_repository.dart';
 import 'package:mekuru/features/dictionary/data/services/glossary_parser.dart';
 import 'package:mekuru/features/dictionary/data/services/structured_content.dart';
@@ -958,8 +959,12 @@ class _MediaImage extends ImageProvider<_MediaImage> {
       PaintingBinding.instance.imageCache.evict(this);
       rethrow;
     }
-    if (bytes == null) throw StateError('No image at $path');
-    return decode(await ui.ImmutableBuffer.fromUint8List(bytes));
+    final image = bytes ?? (throw StateError('No image at $path'));
+    // Jitendex's AVIF pictures, which Android 7-11 can't decode itself.
+    return decodeWithAvifFallback(
+      image,
+      () async => decode(await ui.ImmutableBuffer.fromUint8List(image)),
+    );
   }
 
   @override

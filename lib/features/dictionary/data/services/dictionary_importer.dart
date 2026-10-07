@@ -313,7 +313,8 @@ class DictionaryImporter {
 
   /// Flutter cannot decode AVIF (Jitendex's graphics) on iOS, so it is
   /// converted to PNG once, here. Android needs nothing: Flutter hands formats
-  /// it lacks to the platform ImageDecoder, which reads AVIF from Android 12.
+  /// it lacks to the platform ImageDecoder, which reads AVIF from Android 12,
+  /// and the glossary view decodes it with libavif before that.
   static Future<(String, Uint8List)> _storableImage(
     String path,
     Uint8List bytes,
