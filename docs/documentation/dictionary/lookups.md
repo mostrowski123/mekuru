@@ -1,44 +1,99 @@
 # Looking Up Words
 
-Mekuru provides instant offline dictionary lookups while you read, with smart word detection and compound-word matching.
+Tap a word while you read to see what it means, or search your dictionaries in the app's **Dictionary** tab.
 
-## Tap to Look Up
+## Before you start
 
-While reading EPUB text, Mokuro word overlays, or OCR-generated manga overlays, tap a word to open the lookup sheet. It can show:
+You need at least one dictionary. The quickest start is the starter pack. Tap **Get Dictionaries** on the empty library screen, or **Recommended starter pack** in the **Dictionary** tab. See [Setting Up Dictionaries](../getting-started/dictionaries.md).
 
-- **Expression** - the matched headword
-- **Reading** - kana pronunciation
-- **Definitions** - glossary entries from your enabled dictionaries
-- **Dictionary grouping** - results grouped by source dictionary
-- **Pitch accent** - when a compatible pitch accent dictionary is installed
-- **Kanji stroke order** - when [KanjiVG is installed](../getting-started/downloadable-data.md)
-- **Frequency ranking** - when [JPDB data is installed](../getting-started/downloadable-data.md)
-- **Actions** - copy, save to vocabulary, and Android-only send to AnkiDroid
+## Look up a word while reading
 
-![Dictionary lookup sheet with grouped results](../screenshots/dictionary-lookup-grouped-results.jpg)
+1. Tap a word in the book. The lookup sheet opens, and the word is marked in the text.
+2. To close the sheet, tap outside it.
 
-## Dictionary Search
+The sheet opens at the bottom of the screen. If the word is in the lower half of the screen, the sheet opens at the top, so it does not cover the word.
 
-You can also search directly from the **Dictionary** tab.
+The same sheet opens in the manga reader. There you tap text found by mokuro (a tool that adds OCR text to manga) or by on-device OCR. See [Reading Manga](../manga/cbz-reading.md) and [On-device OCR](../manga/on-device-ocr.md).
 
-- Search accepts kanji, hiragana, katakana, and romaji.
-- Results update as you type.
-- When the search field is empty, Mekuru shows recent searches.
-- Searching a single kanji shows the stroke-order widget above the matching entries.
-- Tapping an expression or tappable definition text can trigger a follow-up search for that term.
+![Lookup sheet with results grouped by dictionary](../screenshots/dictionary-lookup-grouped-results.jpg)
 
-### Filter Roman Letter Entries
+## What the lookup sheet shows
 
-If your dictionaries contain English-letter headwords that clutter results, enable **Filter Roman Letter Entries** in settings to hide them.
+The sheet lists every word that matches. For each word you see:
 
-## How Word Detection Works
+- The word and its reading, with furigana (small kana) over the kanji.
+- A frequency badge: **Very Common** (among the 5,000 most used words), **Common** (top 15,000), **Uncommon** (top 30,000) or **Rare**. It comes from a word frequency dictionary, such as the JPDB list in the starter pack.
+- Part of speech tags, such as **Noun**, **Godan verb** or **Na-adjective**.
+- Pitch accent diagrams, if you imported a dictionary with pitch accent data. Pitch accent is the pattern of high and low pitch in a word. Mekuru does not download a pitch accent dictionary for you, so import a Yomitan one yourself. See [Import a Yomitan dictionary](../getting-started/dictionaries.md#import-a-yomitan-dictionary).
+- Definitions, grouped by dictionary. Each group is labeled with the dictionary's name. The groups follow your order in the Dictionary Manager.
 
-Japanese text has no spaces between words, so Mekuru automatically identifies word boundaries when you tap. If you tap inside an inflected form, Mekuru resolves it to the base word instead of matching a random substring.
+Yomitan dictionaries (a common dictionary format) can bring their own layout. Jitendex, for example, shows example sentences. Dictionaries that include images show them too.
 
-## Compound Word Resolution
+A kanji entry from KANJIDIC shows the kanji's Onyomi and Kunyomi readings.
 
-Mekuru checks progressively longer token sequences, up to 5 tokens, against your enabled dictionaries. It uses a greedy longest-match strategy, so longer compound entries are preferred when a full match exists.
+When a word has long definitions, its header (the word, badge and buttons) stays at the top while you scroll.
 
-## Multiple Dictionaries
+To look up something you see in the sheet, tap a kanji in the word, or a Japanese word in a definition. Mekuru opens a dictionary search for it.
 
-When multiple dictionaries are installed, results are merged and sorted by dictionary priority. You can control which dictionaries are enabled and how they are ordered in [Managing Dictionaries](management.md).
+To change the text size in the sheet, go to **You › Settings › Lookup Font Size**.
+
+## Conjugated words and compound words
+
+Japanese has no spaces between words, so Mekuru works out where the word you tapped starts and ends.
+
+- Conjugated words: tap 食べました and Mekuru looks up 食べる, the dictionary form.
+- Compound words and set phrases: Mekuru checks whether the word you tapped is part of a longer entry in your dictionaries. If it is, the longest match comes first.
+
+Only dictionaries that are turned on count.
+
+## Switch between the Dictionary and Sentence tabs
+
+When Mekuru knows the sentence around the word, the lookup sheet has two tabs:
+
+- **Dictionary** shows the definitions.
+- **Sentence** shows the whole sentence, with your word marked, and a translation. See [Sentence Translation](sentence-translation.md).
+
+If **You › Settings › Sentence translation** is **Off**, the sheet shows only the definitions.
+
+## Copy, save or send a word
+
+Each word has these buttons:
+
+- **Copy** copies the word.
+- **Send to AnkiDroid** (lightning icon) makes an Anki card. The first time, it opens the Anki settings. A check mark means the word is already in your default deck. Press and hold the check mark to add the word again. See [Exporting to Anki](../vocabulary/anki-export.md).
+- **Save to Vocabulary** saves the word, with the sentence you found it in, to the **Vocabulary** tab. A check mark means the word is already saved. See [Saving & Managing Words](../vocabulary/saving-words.md).
+
+!!! note "On iPhone and iPad"
+    The Anki button is called **Send to Anki**. It sends the card to AnkiMobile or, through AnkiConnect, to Anki on a computer. AnkiMobile cannot tell Mekuru which words you already have, so it shows no check mark.
+
+## Search your dictionaries
+
+1. Open the **Dictionary** tab at the bottom of the screen.
+2. Type a word in the search box. You can use kanji, hiragana, katakana, romaji (like taberu) or English (like eat).
+
+The results update as you type. Exact matches come first, and common words come before rare ones.
+
+When the search box is empty, your recent searches show under **Recent**. Tap one to search it again, or tap its **Remove** (X) button. Tap **Clear all** to delete the whole list.
+
+If you search for a single kanji, its stroke order shows above the results. This needs **Kanji Stroke Order** from **You › Settings › Downloads**. Tap **Animate stroke order** to watch the strokes being drawn.
+
+Two settings in **You › Settings** change the search:
+
+- **Filter Roman Letter Entries** hides entries that use English letters in the headword.
+- **Auto-Focus Search** opens the keyboard when you open the **Dictionary** tab.
+
+## If something goes wrong
+
+- **"Dictionary is still loading — try again in a moment."** Mekuru is still starting its word analyzer. Wait a few seconds and tap again.
+- **"Dictionary failed to load. Restart the app to try again."** Close Mekuru completely and open it again.
+- **"No dictionaries imported"** You have no dictionaries yet. Install the starter pack.
+- **"Your dictionaries are turned off"** Turn on at least one dictionary in [Managing Dictionaries](management.md).
+- **Every word shows Rare.** You have no word frequency dictionary, or it is turned off. The starter pack includes one.
+- **Tapping picks the wrong part of a word.** Try the **Enhanced Furigana Dictionary** in **You › Settings › Downloads**. It also improves word lookups.
+
+## Related pages
+
+- [Managing Dictionaries](management.md)
+- [Sentence Translation](sentence-translation.md)
+- [Saving & Managing Words](../vocabulary/saving-words.md)
+- [Exporting to Anki](../vocabulary/anki-export.md)
