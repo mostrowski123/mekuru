@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/platform/device_memory.dart';
+import 'package:mekuru/core/platform/full_backup_job_api.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/l10n/l10n.dart';
+import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 
 /// Before sentence translation is set up on a phone low on memory, says it
 /// may be slow or close Mekuru and where to turn it off. True to go ahead;
@@ -75,4 +78,28 @@ Future<bool> confirmHighQualityMemory(BuildContext context) async {
     container.read(gemmaDownloadProvider.notifier).cancel();
   }
   return proceed == true;
+}
+
+/// Starts the High quality download on Wi-Fi, or over mobile data once the
+/// user agrees to it: only that answer lets the job use mobile data. Also
+/// asks, without waiting, to post the notification a failed download sends.
+/// Pass the notifier read before any dialog: the caller can unmount.
+Future<void> askThenStartHighQuality(
+  BuildContext context,
+  GemmaDownloadNotifier download,
+) async {
+  final onWifi = await isOnWifi();
+  if (!onWifi) {
+    if (!context.mounted) return;
+    final size = GemmaTranslation.downloadSize();
+    final ok = await confirmMobileData(
+      context,
+      size: size,
+      body: context.l10n.translationMobileDataBody(size: size),
+    );
+    if (!ok) return;
+  }
+  unawaited(const FullBackupJobChannel().requestNotificationPermission());
+  // The provider chooses High once the download is done.
+  unawaited(download.start(mobileData: !onWifi));
 }

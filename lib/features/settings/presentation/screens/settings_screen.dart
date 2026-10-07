@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:mekuru/core/config/app_links.dart';
-import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_manager_screen.dart';
@@ -27,7 +26,6 @@ import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/theme/app_theme.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
-import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:mekuru/shared/widgets/settings/settings_rows.dart';
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -749,20 +747,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ref.read(translationModelProvider.notifier).setChoice(choice);
           return;
         }
-        final size = GemmaTranslation.downloadSize();
-        final network = await askDownloadNetwork(
-          context,
-          size: size,
-          body: context.l10n.translationMobileDataBody(size: size),
-        );
-        if (network == null || !mounted) return;
-        // A download that gives up while Mekuru is closed says so in one;
-        // the download needn't wait for the answer.
-        unawaited(const FullBackupJobChannel().requestNotificationPermission());
-        // The provider chooses High once the download is done.
-        unawaited(
-          gemma.start(mobileData: network == DownloadNetwork.mobileData),
-        );
+        await askThenStartHighQuality(context, gemma);
       },
     );
   }

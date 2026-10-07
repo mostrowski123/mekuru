@@ -8,7 +8,6 @@ import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/reader/presentation/providers/gemma_download_provider.dart';
 import 'package:mekuru/features/reader/presentation/widgets/translation_memory_warning.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
-import 'package:mekuru/core/platform/full_backup_job_api.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_catalog_screen.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/catalog_dictionary_tile.dart';
@@ -358,20 +357,7 @@ class _HighQualityTranslationTileState
     // Read before the dialogs: the tile can unmount while one is up.
     final download = ref.read(gemmaDownloadProvider.notifier);
     if (!await confirmHighQualityMemory(context) || !mounted) return;
-    final size = GemmaTranslation.downloadSize();
-    final network = await askDownloadNetwork(
-      context,
-      size: size,
-      body: context.l10n.translationMobileDataBody(size: size),
-    );
-    if (network == null) return;
-    // A download that gives up while Mekuru is closed says so in one;
-    // the download needn't wait for the answer.
-    unawaited(const FullBackupJobChannel().requestNotificationPermission());
-    // The provider chooses High once the download is done.
-    unawaited(
-      download.start(mobileData: network == DownloadNetwork.mobileData),
-    );
+    await askThenStartHighQuality(context, download);
   }
 
   Future<void> _remove() async {
