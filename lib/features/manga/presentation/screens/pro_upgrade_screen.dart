@@ -518,7 +518,9 @@ class _ProUpgradeScreenState extends ConsumerState<ProUpgradeScreen> {
                                 ),
                               ],
                             ),
-                            const LocalOcrSpeedTestRow(),
+                            // The speed test needs the models: the tile
+                            // offers their download, then the test.
+                            const LocalOcrDownloadTile(),
                           ],
                         ),
                       ),

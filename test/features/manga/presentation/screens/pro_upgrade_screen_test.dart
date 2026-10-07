@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/manga/data/services/ocr_account_link_service.dart';
 import 'package:mekuru/features/manga/data/services/ocr_billing_client.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
+import 'package:mekuru/features/manga/presentation/providers/local_ocr_providers.dart';
 import 'package:mekuru/features/manga/presentation/providers/pro_access_provider.dart';
 import 'package:mekuru/features/manga/presentation/screens/pro_upgrade_screen.dart';
 import 'package:mekuru/features/settings/presentation/widgets/ocr_attributions.dart';
@@ -73,6 +76,20 @@ Future<void> tapAndSettleSnackBar(WidgetTester tester, Finder button) async {
   await tester.pump(const Duration(milliseconds: 200));
 }
 
+/// The Android model pack's state, as the Downloads tile sees it.
+Override _modelState({required bool installed}) =>
+    localOcrModelProvider.overrideWith(
+      (ref) => Stream.value(
+        OcrModelState({
+          'supported': true,
+          'installed': installed,
+          'status': installed ? 'installed' : 'missing',
+          'totalBytes': 296173655,
+          'downloadedBytes': installed ? 296173655 : 0,
+        }),
+      ),
+    );
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -82,6 +99,7 @@ void main() {
       final opened = <Uri>[];
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [_modelState(installed: true)],
           child: buildLocalizedTestApp(
             home: ProUpgradeScreen(
               source: 'test',
@@ -126,6 +144,31 @@ void main() {
       );
     },
   );
+
+  testWidgets('without the models the card offers them, not the speed test', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [_modelState(installed: false)],
+        child: buildLocalizedTestApp(
+          home: ProUpgradeScreen(
+            source: 'test',
+            loadSnapshot: () async => _lockedSnapshot,
+            openSelfHostRepo: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.textContaining('296.2 MB'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.widgetWithText(FilledButton, 'Download'), findsOneWidget);
+    expect(find.text('Test device speed'), findsNothing);
+  });
 
   testWidgets('locked state shows Pro upgrade CTA and feature list', (
     tester,
