@@ -1,23 +1,12 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mekuru/core/platform/network_status.dart';
+import 'package:mekuru/features/manga/data/services/model_download.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
-import 'package:mekuru/features/sync/data/services/server_download_work.dart'
-    show downloadResumable;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-
-/// One file of a Mozilla translation model.
-typedef MozillaModelFile = ({
-  String name,
-  String url,
-  int bytes,
-  String sha256,
-});
 
 const _cdn =
     'https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models';
@@ -26,7 +15,7 @@ const _cdn =
 /// Settings `translations-models`) of what Firefox for Android downloads.
 /// Japanese only pairs with English, so other targets pivot en→X like
 /// Firefox does. The file name's first part is its kind for the engine.
-const Map<String, List<MozillaModelFile>> mozillaTranslationModels = {
+const Map<String, List<ModelFile>> mozillaTranslationModels = {
   'ja-en': [
     (
       name: 'model.jaen.intgemm.alphas.bin',
@@ -143,7 +132,6 @@ class MozillaTranslation implements TranslationEngine {
   MozillaTranslation._();
   static final MozillaTranslation instance = MozillaTranslation._();
 
-  static const _marker = 'INSTALLED';
   static const _origin = 'https://appassets.androidplatform.net';
   static const _page =
       '$_origin/assets/flutter_assets/assets/translate/engine.html';
@@ -174,7 +162,7 @@ class MozillaTranslation implements TranslationEngine {
     try {
       final root = await _root;
       for (final pair in mozillaPairsFor(target)) {
-        if (!await File(p.join(root.path, pair, _marker)).exists()) {
+        if (!await modelFilesInstalled(Directory(p.join(root.path, pair)))) {
           return TranslationStatus.needsDownload;
         }
       }
@@ -188,39 +176,21 @@ class MozillaTranslation implements TranslationEngine {
   /// Downloads and verifies each pair [target] needs. An interrupted
   /// download keeps its partial file and the next one resumes it. One that
   /// starts on Wi-Fi stops with [WifiLostException] when Wi-Fi goes, rather
-  /// than go on over mobile data unasked.
+  /// than go on over mobile data unasked. A pair already downloading (the
+  /// Sentence tab and Downloads both offer it) is joined, not fetched twice.
   @override
   Future<void> download(String target) async {
     final wifiOnly = await isOnWifi();
     final root = await _root;
     for (final pair in mozillaPairsFor(target)) {
       final dir = Directory(p.join(root.path, pair));
-      final marker = File(p.join(dir.path, _marker));
-      if (await marker.exists()) continue;
+      if (await modelFilesInstalled(dir)) continue;
       await dir.create(recursive: true);
-      for (final file in mozillaTranslationModels[pair]!) {
-        final destination = File(p.join(dir.path, file.name));
-        // Only a verified file is ever renamed into place.
-        if (await destination.exists() &&
-            await destination.length() == file.bytes) {
-          continue;
-        }
-        final partial = '${destination.path}.part';
-        final client = HttpClient();
-        Future<void> fetch() =>
-            downloadResumable(file.url, partial, client: client);
-        try {
-          await (wifiOnly ? whileOnWifi(client, fetch) : fetch());
-        } finally {
-          client.close(force: true);
-        }
-        if (!await _matches(File(partial), file)) {
-          await File(partial).delete();
-          throw const FileSystemException('Model file failed verification');
-        }
-        await File(partial).rename(destination.path);
-      }
-      await marker.writeAsString('ok');
+      await downloadModelFiles(
+        dir,
+        mozillaTranslationModels[pair]!,
+        wifiOnly: wifiOnly,
+      );
     }
   }
 
@@ -317,18 +287,6 @@ class MozillaTranslation implements TranslationEngine {
     final webView = _webView;
     _webView = null;
     await webView?.dispose();
-  }
-
-  /// Hashed off the UI isolate: the model alone is 44 MB.
-  static Future<bool> _matches(File file, MozillaModelFile expected) async {
-    if (!await file.exists() || await file.length() != expected.bytes) {
-      return false;
-    }
-    final path = file.path;
-    final digest = await Isolate.run(
-      () async => (await sha256.bind(File(path).openRead()).first).toString(),
-    );
-    return digest == expected.sha256;
   }
 }
 
