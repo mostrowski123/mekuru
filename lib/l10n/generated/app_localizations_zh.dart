@@ -583,6 +583,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadsKanjiStrokeOrderDescription => '从 KanjiVG 下载汉字笔顺数据';
 
   @override
+  String downloadsKanjiStrokeOrderMobileDataBody({required String size}) {
+    return '笔顺数据大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
+  }
+
+  @override
   String get downloadsDeleteKanjiDataTooltip => '删除汉字数据';
 
   @override
@@ -676,13 +681,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get downloadsEnhancedFuriganaExtracting => '正在解压...';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadTitle => '下载增强词典？';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
-      '此操作将下载约 45 MB，并解压为约 250 MB 的词典数据。条件允许时请使用 Wi-Fi。您可以稍后从此页面将其移除。';
 
   @override
   String get downloadsEnhancedFuriganaConfirmRemoveTitle => '移除增强词典？';
@@ -4536,6 +4534,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get downloadsKanjiStrokeOrderDescription => '从 KanjiVG 下载汉字笔顺数据';
 
   @override
+  String downloadsKanjiStrokeOrderMobileDataBody({required String size}) {
+    return '笔顺数据大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
+  }
+
+  @override
   String get downloadsDeleteKanjiDataTooltip => '删除汉字数据';
 
   @override
@@ -4629,13 +4632,6 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get downloadsEnhancedFuriganaExtracting => '正在解压...';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadTitle => '下载增强词典？';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
-      '此操作将下载约 45 MB，并解压为约 250 MB 的词典数据。条件允许时请使用 Wi-Fi。您可以稍后从此页面将其移除。';
 
   @override
   String get downloadsEnhancedFuriganaConfirmRemoveTitle => '移除增强词典？';

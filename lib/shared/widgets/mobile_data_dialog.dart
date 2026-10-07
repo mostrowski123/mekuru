@@ -48,18 +48,20 @@ Future<bool> okToDownload(
   return confirmMobileData(context, size: size, body: body);
 }
 
-/// Starts [download] of a dictionary of [size] on Wi-Fi, or off it once the
-/// user accepts mobile data. A dictionary download that started on Wi-Fi
-/// stops if Wi-Fi goes, and tapping Download again must not then go on over
-/// mobile data unasked. Pass the notifier's method itself: the tile can
-/// unmount while the dialog is up.
+/// Starts [download] of [size] on Wi-Fi, or off it once the user accepts
+/// mobile data; [body] names what downloads, a dictionary when omitted. A
+/// dictionary download that started on Wi-Fi stops if Wi-Fi goes, and
+/// tapping Download again must not then go on over mobile data unasked.
+/// Pass the notifier's method itself: the tile can unmount while the dialog
+/// is up.
 Future<void> askThenDownload(
   BuildContext context,
   String size,
-  Future<void> Function() download,
-) async {
+  Future<void> Function() download, {
+  String? body,
+}) async {
   AppHaptics.light();
-  final body = context.l10n.catalogMobileDataBody(size: size);
+  body ??= context.l10n.catalogMobileDataBody(size: size);
   if (await okToDownload(context, size: size, body: body)) {
     unawaited(download());
   }

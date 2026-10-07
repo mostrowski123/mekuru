@@ -736,6 +736,7 @@
   "@downloadsKanjiStrokeOrderDescription": {
     "description": "Subtitle shown before KanjiVG data is downloaded."
   },
+  "downloadsKanjiStrokeOrderMobileDataBody": "笔顺数据大小约为 {size}。你正在使用移动数据或热点，下载可能会消耗你的流量。",
   "downloadsDeleteKanjiDataTooltip": "删除汉字数据",
   "@downloadsDeleteKanjiDataTooltip": {
     "description": "Tooltip for deleting KanjiVG data."
@@ -852,14 +853,6 @@
   "downloadsEnhancedFuriganaExtracting": "正在解压...",
   "@downloadsEnhancedFuriganaExtracting": {
     "description": "Progress message shown while extracting the enhanced furigana dictionary."
-  },
-  "downloadsEnhancedFuriganaConfirmDownloadTitle": "下载增强词典？",
-  "@downloadsEnhancedFuriganaConfirmDownloadTitle": {
-    "description": "Dialog title confirming download of the enhanced furigana dictionary."
-  },
-  "downloadsEnhancedFuriganaConfirmDownloadBody": "此操作将下载约 45 MB，并解压为约 250 MB 的词典数据。条件允许时请使用 Wi-Fi。您可以稍后从此页面将其移除。",
-  "@downloadsEnhancedFuriganaConfirmDownloadBody": {
-    "description": "Dialog body confirming download of the enhanced furigana dictionary."
   },
   "downloadsEnhancedFuriganaConfirmRemoveTitle": "移除增强词典？",
   "@downloadsEnhancedFuriganaConfirmRemoveTitle": {

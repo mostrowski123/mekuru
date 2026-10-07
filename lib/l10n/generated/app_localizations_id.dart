@@ -605,6 +605,11 @@ class AppLocalizationsId extends AppLocalizations {
       'Unduh data urutan guratan kanji dari KanjiVG';
 
   @override
+  String downloadsKanjiStrokeOrderMobileDataBody({required String size}) {
+    return 'Ukuran data urutan guratan sekitar $size. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.';
+  }
+
+  @override
   String get downloadsDeleteKanjiDataTooltip => 'Hapus data kanji';
 
   @override
@@ -710,14 +715,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get downloadsEnhancedFuriganaExtracting => 'Mengekstrak...';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadTitle =>
-      'Unduh kamus yang ditingkatkan?';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
-      'Ini akan mengunduh sekitar 45 MB dan diekstrak menjadi sekitar 250 MB data kamus. Gunakan Wi-Fi jika memungkinkan. Anda bisa menghapusnya nanti dari layar ini.';
 
   @override
   String get downloadsEnhancedFuriganaConfirmRemoveTitle =>

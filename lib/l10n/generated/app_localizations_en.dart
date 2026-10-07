@@ -604,6 +604,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Download kanji stroke order data from KanjiVG';
 
   @override
+  String downloadsKanjiStrokeOrderMobileDataBody({required String size}) {
+    return 'The stroke order data is about $size. You\'re on mobile data or a hotspot, so downloading it may use your data plan.';
+  }
+
+  @override
   String get downloadsDeleteKanjiDataTooltip => 'Delete kanji data';
 
   @override
@@ -706,14 +711,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get downloadsEnhancedFuriganaExtracting => 'Extracting...';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadTitle =>
-      'Download enhanced dictionary?';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
-      'This downloads ~45 MB and unpacks to ~250 MB of dictionary data. Use Wi-Fi if you can. You can remove it later from this screen.';
 
   @override
   String get downloadsEnhancedFuriganaConfirmRemoveTitle =>

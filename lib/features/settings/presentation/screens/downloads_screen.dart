@@ -442,9 +442,12 @@ class _HighQualityTranslationTileState
 }
 
 // Zip sizes for the mobile-data question, rounded: KANJIDIC English was
-// 0.7 MB in October 2026, the JPDB v2.2 zip 6.0 MB.
+// 0.7 MB in October 2026, the JPDB v2.2 zip 6.0 MB, the KanjiVG r20250816
+// zip 21.5 MB and the UniDic-lite archive 45 MB.
 const _kanjidicSize = '0.7 MB';
 const _jpdbSize = '6 MB';
+const _kanjiVgSize = '22 MB';
+const _enhancedFuriganaSize = '45 MB';
 
 class _KanjiVgTile extends ConsumerWidget {
   const _KanjiVgTile({required this.state, required this.theme});
@@ -488,10 +491,14 @@ class _KanjiVgTile extends ConsumerWidget {
     }
 
     return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        ref.read(kanjiVgProvider.notifier).download();
-      },
+      onPressed: () => askThenDownload(
+        context,
+        _kanjiVgSize,
+        ref.read(kanjiVgProvider.notifier).download,
+        body: context.l10n.downloadsKanjiStrokeOrderMobileDataBody(
+          size: _kanjiVgSize,
+        ),
+      ),
       child: Text(context.l10n.commonDownload),
     );
   }
@@ -732,37 +739,14 @@ class _EnhancedFuriganaDictTile extends ConsumerWidget {
       );
     }
 
+    // No confirmation of its own: the subtitle already gives both sizes.
     return FilledButton.tonal(
-      onPressed: () {
-        AppHaptics.light();
-        _confirmDownload(context);
-      },
-      child: Text(context.l10n.commonDownload),
-    );
-  }
-
-  void _confirmDownload(BuildContext context) {
-    // Resolved before the dialog opens: the tile can unmount while it's up.
-    final container = ProviderScope.containerOf(context, listen: false);
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.downloadsEnhancedFuriganaConfirmDownloadTitle),
-        content: Text(ctx.l10n.downloadsEnhancedFuriganaConfirmDownloadBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(ctx.l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              container.read(enhancedFuriganaDictProvider.notifier).download();
-            },
-            child: Text(ctx.l10n.commonDownload),
-          ),
-        ],
+      onPressed: () => askThenDownload(
+        context,
+        _enhancedFuriganaSize,
+        ref.read(enhancedFuriganaDictProvider.notifier).download,
       ),
+      child: Text(context.l10n.commonDownload),
     );
   }
 

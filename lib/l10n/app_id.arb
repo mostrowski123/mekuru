@@ -736,6 +736,7 @@
   "@downloadsKanjiStrokeOrderDescription": {
     "description": "Subtitle shown before KanjiVG data is downloaded."
   },
+  "downloadsKanjiStrokeOrderMobileDataBody": "Ukuran data urutan guratan sekitar {size}. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.",
   "downloadsDeleteKanjiDataTooltip": "Hapus data kanji",
   "@downloadsDeleteKanjiDataTooltip": {
     "description": "Tooltip for deleting KanjiVG data."
@@ -852,14 +853,6 @@
   "downloadsEnhancedFuriganaExtracting": "Mengekstrak...",
   "@downloadsEnhancedFuriganaExtracting": {
     "description": "Progress message shown while extracting the enhanced furigana dictionary."
-  },
-  "downloadsEnhancedFuriganaConfirmDownloadTitle": "Unduh kamus yang ditingkatkan?",
-  "@downloadsEnhancedFuriganaConfirmDownloadTitle": {
-    "description": "Dialog title confirming download of the enhanced furigana dictionary."
-  },
-  "downloadsEnhancedFuriganaConfirmDownloadBody": "Ini akan mengunduh sekitar 45 MB dan diekstrak menjadi sekitar 250 MB data kamus. Gunakan Wi-Fi jika memungkinkan. Anda bisa menghapusnya nanti dari layar ini.",
-  "@downloadsEnhancedFuriganaConfirmDownloadBody": {
-    "description": "Dialog body confirming download of the enhanced furigana dictionary."
   },
   "downloadsEnhancedFuriganaConfirmRemoveTitle": "Hapus kamus yang ditingkatkan?",
   "@downloadsEnhancedFuriganaConfirmRemoveTitle": {

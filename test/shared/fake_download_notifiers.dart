@@ -7,6 +7,7 @@ import 'package:mekuru/features/dictionary/data/models/dictionary_catalog.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_catalog_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/settings/data/services/yomitan_dict_download_service.dart';
+import 'package:mekuru/features/settings/presentation/providers/enhanced_furigana_dict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jmdict_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/jpdb_freq_providers.dart';
 import 'package:mekuru/features/settings/presentation/providers/kanjidic_providers.dart';
@@ -15,7 +16,7 @@ import 'package:mekuru/features/settings/presentation/providers/kanjivg_provider
 /// Overrides for the Downloads screen's notifiers: only the [installed]
 /// dictionaries, no database, and every download start recorded in [started]
 /// instead of running (`jmdict:<variant>`, `kanjidic`, `jpdb`,
-/// `catalog:<entry>`).
+/// `catalog:<entry>`, `kanjivg`, `enhanced_furigana`).
 /// [jmdictDownloading] shows a JMdict download already running.
 List<Override> fakeDownloadNotifierOverrides(
   List<String> started, {
@@ -42,7 +43,14 @@ List<Override> fakeDownloadNotifierOverrides(
   kanjidicProvider.overrideWith(
     () => _FakeKanjidicNotifier(() => started.add('kanjidic')),
   ),
-  kanjiVgProvider.overrideWith(_FakeKanjiVgNotifier.new),
+  kanjiVgProvider.overrideWith(
+    () => _FakeKanjiVgNotifier(() => started.add('kanjivg')),
+  ),
+  enhancedFuriganaDictProvider.overrideWith(
+    () => _FakeEnhancedFuriganaDictNotifier(
+      () => started.add('enhanced_furigana'),
+    ),
+  ),
 ];
 
 /// Answers the Wi-Fi check that `isOnWifi()` makes, on Android and on iOS,
@@ -145,6 +153,25 @@ class _FakeKanjidicNotifier extends KanjidicNotifier {
 }
 
 class _FakeKanjiVgNotifier extends KanjiVgNotifier {
+  _FakeKanjiVgNotifier(this.onDownload);
+
+  final VoidCallback onDownload;
+
   @override
   Future<void> checkStatus() async {}
+
+  @override
+  Future<void> download() async => onDownload();
+}
+
+class _FakeEnhancedFuriganaDictNotifier extends EnhancedFuriganaDictNotifier {
+  _FakeEnhancedFuriganaDictNotifier(this.onDownload);
+
+  final VoidCallback onDownload;
+
+  @override
+  Future<void> checkStatus() async {}
+
+  @override
+  Future<void> download() async => onDownload();
 }

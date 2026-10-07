@@ -612,6 +612,11 @@ class AppLocalizationsEs extends AppLocalizations {
       'Descargar datos del orden de trazos de kanji desde KanjiVG';
 
   @override
+  String downloadsKanjiStrokeOrderMobileDataBody({required String size}) {
+    return 'Los datos del orden de trazos ocupan unos $size. Estás usando datos móviles o un punto de acceso, así que descargarlos puede consumir tu plan de datos.';
+  }
+
+  @override
   String get downloadsDeleteKanjiDataTooltip => 'Eliminar datos de kanji';
 
   @override
@@ -718,14 +723,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get downloadsEnhancedFuriganaExtracting => 'Extrayendo...';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadTitle =>
-      '¿Descargar diccionario mejorado?';
-
-  @override
-  String get downloadsEnhancedFuriganaConfirmDownloadBody =>
-      'Esto descarga unos 45 MB y descomprime unos 250 MB de datos del diccionario. Usa Wi-Fi si puedes. Podrás eliminarlo más tarde desde esta pantalla.';
 
   @override
   String get downloadsEnhancedFuriganaConfirmRemoveTitle =>

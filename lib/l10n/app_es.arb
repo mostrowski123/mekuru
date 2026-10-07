@@ -736,6 +736,7 @@
   "@downloadsKanjiStrokeOrderDescription": {
     "description": "Subtitle shown before KanjiVG data is downloaded."
   },
+  "downloadsKanjiStrokeOrderMobileDataBody": "Los datos del orden de trazos ocupan unos {size}. Estás usando datos móviles o un punto de acceso, así que descargarlos puede consumir tu plan de datos.",
   "downloadsDeleteKanjiDataTooltip": "Eliminar datos de kanji",
   "@downloadsDeleteKanjiDataTooltip": {
     "description": "Tooltip for deleting KanjiVG data."
@@ -852,14 +853,6 @@
   "downloadsEnhancedFuriganaExtracting": "Extrayendo...",
   "@downloadsEnhancedFuriganaExtracting": {
     "description": "Progress message shown while extracting the enhanced furigana dictionary."
-  },
-  "downloadsEnhancedFuriganaConfirmDownloadTitle": "¿Descargar diccionario mejorado?",
-  "@downloadsEnhancedFuriganaConfirmDownloadTitle": {
-    "description": "Dialog title confirming download of the enhanced furigana dictionary."
-  },
-  "downloadsEnhancedFuriganaConfirmDownloadBody": "Esto descarga unos 45 MB y descomprime unos 250 MB de datos del diccionario. Usa Wi-Fi si puedes. Podrás eliminarlo más tarde desde esta pantalla.",
-  "@downloadsEnhancedFuriganaConfirmDownloadBody": {
-    "description": "Dialog body confirming download of the enhanced furigana dictionary."
   },
   "downloadsEnhancedFuriganaConfirmRemoveTitle": "¿Eliminar diccionario mejorado?",
   "@downloadsEnhancedFuriganaConfirmRemoveTitle": {

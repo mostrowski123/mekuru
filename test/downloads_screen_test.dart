@@ -148,10 +148,12 @@ void main() {
     });
   }
 
-  testWidgets('off Wi-Fi, the KANJIDIC and word frequency downloads ask '
-      'before using mobile data', (tester) async {
-    // Each stops if Wi-Fi goes, and its tile then says to tap Download
-    // again: that must not go on over mobile data unasked.
+  testWidgets('off Wi-Fi, the KANJIDIC, stroke order, word frequency and '
+      'enhanced furigana downloads ask before using mobile data', (
+    tester,
+  ) async {
+    // A dictionary download stops if Wi-Fi goes, and its tile then says to
+    // tap Download again: that must not go on over mobile data unasked.
     SharedPreferences.setMockInitialValues({});
     mockWifiConnected(false);
     final started = <String>[];
@@ -181,11 +183,24 @@ void main() {
     await tester.tap(downloadOf('KANJIDIC'));
     await agreeTo('0.7 MB');
 
+    await tester.scrollUntilVisible(downloadOf('Kanji Stroke Order'), 200);
+    await tester.tap(downloadOf('Kanji Stroke Order'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('stroke order data is about'), findsOneWidget);
+    await agreeTo('22 MB');
+
     await tester.scrollUntilVisible(downloadOf('Word Frequency'), 200);
     await tester.tap(downloadOf('Word Frequency'));
     await agreeTo('6 MB');
 
-    expect(started, ['kanjidic', 'jpdb']);
+    await tester.scrollUntilVisible(
+      downloadOf('Enhanced Furigana Dictionary'),
+      200,
+    );
+    await tester.tap(downloadOf('Enhanced Furigana Dictionary'));
+    await agreeTo('45 MB');
+
+    expect(started, ['kanjidic', 'kanjivg', 'jpdb', 'enhanced_furigana']);
   });
 
   group('high-quality translation row', () {

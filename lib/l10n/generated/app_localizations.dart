@@ -1096,6 +1096,12 @@ abstract class AppLocalizations {
   /// **'Download kanji stroke order data from KanjiVG'**
   String get downloadsKanjiStrokeOrderDescription;
 
+  /// Body of the dialog asking before the KanjiVG stroke order data downloads over mobile data. size looks like '22 MB'.
+  ///
+  /// In en, this message translates to:
+  /// **'The stroke order data is about {size}. You\'re on mobile data or a hotspot, so downloading it may use your data plan.'**
+  String downloadsKanjiStrokeOrderMobileDataBody({required String size});
+
   /// Tooltip for deleting KanjiVG data.
   ///
   /// In en, this message translates to:
@@ -1275,18 +1281,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Extracting...'**
   String get downloadsEnhancedFuriganaExtracting;
-
-  /// Dialog title confirming download of the enhanced furigana dictionary.
-  ///
-  /// In en, this message translates to:
-  /// **'Download enhanced dictionary?'**
-  String get downloadsEnhancedFuriganaConfirmDownloadTitle;
-
-  /// Dialog body confirming download of the enhanced furigana dictionary.
-  ///
-  /// In en, this message translates to:
-  /// **'This downloads ~45 MB and unpacks to ~250 MB of dictionary data. Use Wi-Fi if you can. You can remove it later from this screen.'**
-  String get downloadsEnhancedFuriganaConfirmDownloadBody;
 
   /// Dialog title confirming removal of the enhanced furigana dictionary.
   ///
