@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
@@ -8,6 +10,9 @@ class _Engine implements TranslationEngine {
   TranslationStatus state = TranslationStatus.installed;
   bool fails = false;
   int calls = 0;
+
+  /// Holds every translation until completed.
+  Completer<void>? hold;
   @override
   Future<TranslationStatus> status(String target) async => state;
   @override
@@ -15,6 +20,7 @@ class _Engine implements TranslationEngine {
   @override
   Future<String> translate(String text, String target) async {
     calls++;
+    await hold?.future;
     if (fails) throw StateError('$name failed');
     return '$name:$text';
   }
@@ -32,17 +38,18 @@ void main() {
   tearDown(() {
     debugTranslationEngine = null;
     debugHighQualityEngine = null;
+    highQualityTimeout = const Duration(seconds: 45);
   });
 
   test('High quality uses Gemma once installed', () async {
     final r = await translateSentence('猫1', 'en', highQuality: true);
-    expect(r, (text: 'gemma:猫1', highQuality: true));
+    expect(r, (text: 'gemma:猫1', highQuality: true, timedOut: false));
   });
 
   test('High quality not downloaded yet translates with Standard', () async {
     high.state = TranslationStatus.needsDownload;
     final r = await translateSentence('猫2', 'en', highQuality: true);
-    expect(r, (text: 'std:猫2', highQuality: false));
+    expect(r, (text: 'std:猫2', highQuality: false, timedOut: false));
   });
 
   test('a Standard fallback gives way to Gemma once it is ready', () async {
@@ -50,11 +57,13 @@ void main() {
     expect(await translateSentence('猫6', 'en', highQuality: true), (
       text: 'std:猫6',
       highQuality: false,
+      timedOut: false,
     ));
     high.state = TranslationStatus.installed;
     expect(await translateSentence('猫6', 'en', highQuality: true), (
       text: 'gemma:猫6',
       highQuality: true,
+      timedOut: false,
     ));
   });
 
@@ -65,7 +74,7 @@ void main() {
         events.add(message);
     addTearDown(() => usageLogSinkOverride = null);
     final r = await translateSentence('猫3', 'en', highQuality: true);
-    expect(r, (text: 'std:猫3', highQuality: false));
+    expect(r, (text: 'std:猫3', highQuality: false, timedOut: false));
     expect(events, ['translation.high_quality_failed']);
   });
 
@@ -87,5 +96,28 @@ void main() {
     high.fails = true;
     standard.fails = true;
     expect(translateSentence('猫5', 'en', highQuality: true), throwsStateError);
+  });
+
+  test('a slow Gemma times out to Standard for that sentence', () async {
+    highQualityTimeout = const Duration(milliseconds: 20);
+    high.hold = Completer<void>();
+    final events = <String>[];
+    usageLogSinkOverride = (message, _, {required isWarning}) =>
+        events.add(message);
+    addTearDown(() => usageLogSinkOverride = null);
+    final r = await translateSentence('猫7', 'en', highQuality: true);
+    expect(r, (text: 'std:猫7', highQuality: false, timedOut: true));
+    expect(events, ['translation.high_quality_timed_out']);
+    high.hold!.complete();
+  });
+
+  test('Gemma failing with Standard not downloaded asks for it', () async {
+    high.fails = true;
+    standard.state = TranslationStatus.needsDownload;
+    await expectLater(
+      translateSentence('猫8', 'en', highQuality: true),
+      throwsA(isA<StandardTranslationNeeded>()),
+    );
+    expect(standard.calls, 0);
   });
 }

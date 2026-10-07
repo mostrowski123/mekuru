@@ -102,6 +102,9 @@ class _FakeTranslationEngine implements TranslationEngine {
   final downloaded = <String>[];
   bool fails = false;
 
+  /// Holds every translation until completed.
+  Completer<void>? hold;
+
   @override
   Future<TranslationStatus> status(String target) async => state;
 
@@ -111,6 +114,7 @@ class _FakeTranslationEngine implements TranslationEngine {
   @override
   Future<String> translate(String text, String target) async {
     translated.add((text, target));
+    await hold?.future;
     if (fails) throw StateError('$prefix failed');
     return '$prefix$text';
   }
@@ -166,6 +170,7 @@ List<Object?> _shownEngines() {
 
 const _notReady = "High quality isn't ready yet; using Standard.";
 const _couldNotLoad = "High quality couldn't load; using Standard.";
+const _tooSlow = 'High quality is taking too long; using Standard for now.';
 
 final _android = TargetPlatformVariant.only(TargetPlatform.android);
 
@@ -742,6 +747,51 @@ void main() {
       expect(find.text('EN:鮭を食べる。'), findsOneWidget);
       expect(find.text(_couldNotLoad), findsOneWidget);
       expect(find.text(_notReady), findsNothing);
+    }, variant: _android);
+
+    testWidgets('a High quality slower than 45 seconds gives way to Standard', (
+      tester,
+    ) async {
+      _fakeTranslation();
+      final high = _fakeHighQuality()..hold = Completer<void>();
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '鯛を食べる。'),
+        highQuality: true,
+      );
+      await openSentenceTab(tester);
+      await tester.pump();
+      expect(find.text('EN:鯛を食べる。'), findsNothing);
+
+      await tester.pump(const Duration(seconds: 46));
+
+      expect(find.text('EN:鯛を食べる。'), findsOneWidget);
+      expect(find.text(_tooSlow), findsOneWidget);
+      high.hold!.complete();
+    }, variant: _android);
+
+    testWidgets('offers Standard when High quality fails and it is missing', (
+      tester,
+    ) async {
+      final standard = _fakeTranslation(state: TranslationStatus.needsDownload);
+      _fakeHighQuality().fails = true;
+      await pumpSheet(
+        tester,
+        const LookupSheet(selectedText: '食べる', sentenceContext: '鰯を食べる。'),
+        highQuality: true,
+      );
+      await openSentenceTab(tester);
+      await tester.pump();
+
+      expect(
+        find.text(
+          "High quality couldn't load. Download Standard to translate this "
+          'sentence.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Download'), findsOneWidget);
+      expect(standard.translated, isEmpty);
     }, variant: _android);
 
     testWidgets('switches to High quality when its download finishes', (

@@ -4125,6 +4125,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'La alta calidad no se pudo cargar; se usa la estándar.';
 
   @override
+  String get translationHighQualityTooSlow =>
+      'La alta calidad está tardando demasiado; por ahora se usa la estándar.';
+
+  @override
+  String get translationHighQualityNeedsStandard =>
+      'La alta calidad no se pudo cargar. Descarga la estándar para traducir esta frase.';
+
+  @override
   String get translationHighQualityLowMemoryBody =>
       'El modelo de alta calidad necesita unos 2 GB de memoria. En este teléfono puede ir lento o cerrar Mekuru. Si pasa, vuelve al estándar en Configuración › Modelo de traducción.';
 

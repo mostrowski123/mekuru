@@ -4076,6 +4076,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'High quality couldn\'t load; using Standard.';
 
   @override
+  String get translationHighQualityTooSlow =>
+      'High quality is taking too long; using Standard for now.';
+
+  @override
+  String get translationHighQualityNeedsStandard =>
+      'High quality couldn\'t load. Download Standard to translate this sentence.';
+
+  @override
   String get translationHighQualityLowMemoryBody =>
       'The high-quality model needs about 2 GB of memory. On this phone it may be slow or close Mekuru. If that happens, switch back in Settings › Translation model.';
 

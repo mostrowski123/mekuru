@@ -6651,6 +6651,18 @@ abstract class AppLocalizations {
   /// **'High quality couldn\'t load; using Standard.'**
   String get translationHighQualityCouldNotLoad;
 
+  /// Note under a sentence translation when High quality took over 45 seconds (usually its first load), so the standard model translated this sentence. High quality keeps loading for the next one.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality is taking too long; using Standard for now.'**
+  String get translationHighQualityTooSlow;
+
+  /// Sentence tab text above the Download button when High quality couldn't translate and the standard model isn't downloaded yet.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality couldn\'t load. Download Standard to translate this sentence.'**
+  String get translationHighQualityNeedsStandard;
+
   /// Dialog body before High quality is set up on a phone with under 8 GB of memory or under 3 GB free. "Settings › Translation model" names the screen and the setting; keep them matching settingsTitle and settingsTranslationModelTitle.
   ///
   /// In en, this message translates to:

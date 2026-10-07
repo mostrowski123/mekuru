@@ -5254,6 +5254,14 @@
   "@translationHighQualityCouldNotLoad": {
     "description": "Note under a sentence translation when the High quality model is installed but couldn't load or translate, so the standard model translated it."
   },
+  "translationHighQualityTooSlow": "High quality is taking too long; using Standard for now.",
+  "@translationHighQualityTooSlow": {
+    "description": "Note under a sentence translation when High quality took over 45 seconds (usually its first load), so the standard model translated this sentence. High quality keeps loading for the next one."
+  },
+  "translationHighQualityNeedsStandard": "High quality couldn't load. Download Standard to translate this sentence.",
+  "@translationHighQualityNeedsStandard": {
+    "description": "Sentence tab text above the Download button when High quality couldn't translate and the standard model isn't downloaded yet."
+  },
   "translationHighQualityLowMemoryBody": "The high-quality model needs about 2 GB of memory. On this phone it may be slow or close Mekuru. If that happens, switch back in Settings › Translation model.",
   "@translationHighQualityLowMemoryBody": {
     "description": "Dialog body before High quality is set up on a phone with under 8 GB of memory or under 3 GB free. \"Settings › Translation model\" names the screen and the setting; keep them matching settingsTitle and settingsTranslationModelTitle."

@@ -77,8 +77,21 @@ Future<void> deleteTranslation() => MozillaTranslation.instance.delete();
 String translationDownloadSize(String target) =>
     MozillaTranslation.downloadSize(target);
 
-/// A translation and whether High quality (Gemma) produced it.
-typedef SentenceTranslation = ({String text, bool highQuality});
+/// A translation, whether High quality (Gemma) produced it, and whether
+/// Standard answered because High quality took longer than
+/// [highQualityTimeout].
+typedef SentenceTranslation = ({String text, bool highQuality, bool timedOut});
+
+/// How long High quality gets for a sentence, a first load included, before
+/// Standard answers instead. Gemma goes on loading for the next sentence.
+@visibleForTesting
+Duration highQualityTimeout = const Duration(seconds: 45);
+
+/// High quality couldn't answer and Standard isn't downloaded: the Sentence
+/// tab then offers Standard's download.
+class StandardTranslationNeeded implements Exception {
+  const StandardTranslationNeeded();
+}
 
 // The Sentence tab, another word of the same sentence and the Anki button
 // all ask for the latest sentence, so one entry is the whole cache.
@@ -120,6 +133,7 @@ Future<SentenceTranslation> _translate(
   bool highQuality,
 ) async {
   final high = _highQualityEngine(highQuality);
+  var timedOut = false;
   if (high != null &&
       await high.status(target) == TranslationStatus.installed) {
     // Standard's WebView would hold its memory while Gemma loads, unless a
@@ -134,12 +148,26 @@ Future<SentenceTranslation> _translate(
       }
     }
     try {
-      return (text: await high.translate(text, target), highQuality: true);
+      return (
+        text: await high.translate(text, target).timeout(highQualityTimeout),
+        highQuality: true,
+        timedOut: false,
+      );
+    } on TimeoutException {
+      timedOut = true;
+      logUsage('translation.high_quality_timed_out');
     } catch (e) {
       logFailure('translation.high_quality_failed', e);
     }
+    if (await _engine.status(target) != TranslationStatus.installed) {
+      throw const StandardTranslationNeeded();
+    }
   }
-  return (text: await _engine.translate(text, target), highQuality: false);
+  return (
+    text: await _engine.translate(text, target),
+    highQuality: false,
+    timedOut: timedOut,
+  );
 }
 
 /// [sentence] in [target] when an engine is ready, else null: for callers

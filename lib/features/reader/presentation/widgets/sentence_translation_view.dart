@@ -65,6 +65,10 @@ class _SentenceTranslationViewState
 
   /// Counts loads so only the one on screen logs it.
   var _loads = 0;
+
+  /// The last load found High quality unable to answer and Standard not
+  /// downloaded ([StandardTranslationNeeded]).
+  bool _standardNeeded = false;
   String? _target;
   bool _downloading = false;
   late bool _revealed = !widget.hidden;
@@ -102,6 +106,7 @@ class _SentenceTranslationViewState
   Future<(TranslationStatus, SentenceTranslation?)> _load() async {
     final target = _target!;
     final load = ++_loads;
+    _standardNeeded = false;
     try {
       final status = await translationStatus(
         target,
@@ -126,6 +131,9 @@ class _SentenceTranslationViewState
         );
       }
       return (status, result);
+    } on StandardTranslationNeeded {
+      if (load == _loads) _standardNeeded = true;
+      return (TranslationStatus.needsDownload, null);
     } catch (e) {
       logFailure('translation.failed', e);
       rethrow;
@@ -329,7 +337,9 @@ class _SentenceTranslationViewState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isIos
+              _standardNeeded
+                  ? l10n.translationHighQualityNeedsStandard
+                  : _isIos
                   ? l10n.sentenceTranslationDownloadIos
                   : l10n.sentenceTranslationDownload(
                       size: translationDownloadSize(_target!),
@@ -392,6 +402,9 @@ class _SentenceTranslationViewState
             ),
             if (widget.highQuality)
               switch (gemma) {
+                _ when result?.timedOut ?? false => _note(
+                  l10n.translationHighQualityTooSlow,
+                ),
                 // Installed, so Gemma failed to load or translate.
                 GemmaInstalled() when !(result?.highQuality ?? true) => _note(
                   l10n.translationHighQualityCouldNotLoad,
