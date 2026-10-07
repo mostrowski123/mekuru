@@ -1021,6 +1021,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Masukkan URL server lengkap http:// atau https://.';
 
   @override
+  String get settingsCustomOcrServerUrlSpacesOrSymbols =>
+      'Hapus spasi dan simbol seperti < > dari alamat server.';
+
+  @override
   String get settingsCustomOcrServerAllowSelfSigned =>
       'Terima sertifikat yang ditandatangani sendiri';
 
@@ -2644,6 +2648,19 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get serverCertificateUntrusted =>
       'Sertifikat server tidak dipercaya. Jika server memakai sertifikatnya sendiri (ditandatangani sendiri), aktifkan \"Terima sertifikat yang ditandatangani sendiri\".';
+
+  @override
+  String get serverErrorSignInRejected =>
+      'Server menolak kunci API atau kata sandi.';
+
+  @override
+  String get serverErrorUnreachable =>
+      'Tidak dapat menghubungi server. Periksa URL dan koneksi Anda.';
+
+  @override
+  String serverErrorStatus({required int status}) {
+    return 'Server mengembalikan kesalahan $status.';
+  }
 
   @override
   String backgroundWorkDownloading({required int count}) {

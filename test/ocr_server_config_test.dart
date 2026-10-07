@@ -34,15 +34,12 @@ void main() {
       expect(tryParseOcrServerUrl('http://[fe80::1%25en0]:8000'), isNotNull);
     });
 
-    test('validateOcrServerUrl returns helpful errors', () {
-      expect(validateOcrServerUrl(''), 'Enter your server URL.');
-      expect(
-        validateOcrServerUrl('not-a-url'),
-        'Enter a full http:// or https:// server URL.',
-      );
+    test('validateOcrServerUrl says what is wrong', () {
+      expect(validateOcrServerUrl(''), ServerUrlProblem.missing);
+      expect(validateOcrServerUrl('not-a-url'), ServerUrlProblem.invalid);
       expect(
         validateOcrServerUrl('http://<192.168.1.5>:5000'),
-        'Remove spaces and symbols like < > from the server address.',
+        ServerUrlProblem.spacesOrSymbols,
       );
       expect(validateOcrServerUrl('https://ocr.example.com'), isNull);
       expect(validateOcrServerUrl('', allowEmpty: true), isNull);

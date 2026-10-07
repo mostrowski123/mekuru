@@ -974,6 +974,10 @@ class AppLocalizationsZh extends AppLocalizations {
       '请输入完整的 http:// 或 https:// 服务器 URL。';
 
   @override
+  String get settingsCustomOcrServerUrlSpacesOrSymbols =>
+      '请删除服务器地址中的空格和 < > 等符号。';
+
+  @override
   String get settingsCustomOcrServerAllowSelfSigned => '接受自签名证书';
 
   @override
@@ -2524,6 +2528,17 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get serverCertificateUntrusted =>
       '服务器证书不受信任。如果它使用自有（自签名）证书，请打开“接受自签名证书”。';
+
+  @override
+  String get serverErrorSignInRejected => '服务器拒绝了 API 密钥或密码。';
+
+  @override
+  String get serverErrorUnreachable => '无法连接服务器。请检查 URL 和网络连接。';
+
+  @override
+  String serverErrorStatus({required int status}) {
+    return '服务器返回错误 $status。';
+  }
 
   @override
   String backgroundWorkDownloading({required int count}) {
@@ -4925,6 +4940,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
       '请输入完整的 http:// 或 https:// 服务器 URL。';
 
   @override
+  String get settingsCustomOcrServerUrlSpacesOrSymbols =>
+      '请删除服务器地址中的空格和 < > 等符号。';
+
+  @override
   String get settingsCustomOcrServerAllowSelfSigned => '接受自签名证书';
 
   @override
@@ -6475,6 +6494,17 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get serverCertificateUntrusted =>
       '服务器证书不受信任。如果它使用自有（自签名）证书，请打开“接受自签名证书”。';
+
+  @override
+  String get serverErrorSignInRejected => '服务器拒绝了 API 密钥或密码。';
+
+  @override
+  String get serverErrorUnreachable => '无法连接服务器。请检查 URL 和网络连接。';
+
+  @override
+  String serverErrorStatus({required int status}) {
+    return '服务器返回错误 $status。';
+  }
 
   @override
   String backgroundWorkDownloading({required int count}) {

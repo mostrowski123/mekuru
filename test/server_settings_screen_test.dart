@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/features/sync/data/services/server_client.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_settings_screen.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart';
 
 import 'shared/test_database.dart';
@@ -22,6 +24,33 @@ class _SlowFakeSecrets extends ServerSecretStorage {
 }
 
 void main() {
+  test('server errors are worded in the app language', () {
+    final es = lookupAppLocalizations(const Locale('es'));
+    String reason(Object error) => serverErrorReason(es, error);
+
+    expect(
+      reason(const SyncException(401, 'Kavita rejected the API key')),
+      es.serverErrorSignInRejected,
+    );
+    expect(
+      reason(const SyncException(403, 'Komga request failed: GET /api/v1')),
+      es.serverErrorSignInRejected,
+    );
+    expect(
+      reason(const SyncException(0, 'Cannot reach Komga server: refused')),
+      es.serverErrorUnreachable,
+    );
+    expect(
+      reason(const SyncException(500, 'Kavita request failed: GET /api')),
+      'El servidor devolvió el error 500.',
+    );
+    // Anything else is shown as it is.
+    expect(
+      reason(const FormatException('bad JSON')),
+      'FormatException: bad JSON',
+    );
+  });
+
   testWidgets('link existing books survives an async secret load', (
     tester,
   ) async {

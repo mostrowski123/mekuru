@@ -1236,6 +1236,7 @@
     "description": "Validation error shown when the custom OCR server URL is empty."
   },
   "settingsCustomOcrServerUrlInvalid": "Masukkan URL server lengkap http:// atau https://.",
+  "settingsCustomOcrServerUrlSpacesOrSymbols": "Hapus spasi dan simbol seperti < > dari alamat server.",
   "settingsCustomOcrServerAllowSelfSigned": "Terima sertifikat yang ditandatangani sendiri",
   "settingsCustomOcrServerAllowSelfSignedSubtitle": "Untuk server https:// yang memakai sertifikatnya sendiri. Mekuru akan menerima sertifikat apa pun dari server ini.",
   "@settingsCustomOcrServerUrlInvalid": {
@@ -2729,6 +2730,9 @@
   "serverBrowseDownloadFailed": "Gagal mengunduh: {error}",
   "serverBrowseDownloadStopped": "Unduhan dihentikan",
   "serverCertificateUntrusted": "Sertifikat server tidak dipercaya. Jika server memakai sertifikatnya sendiri (ditandatangani sendiri), aktifkan \"Terima sertifikat yang ditandatangani sendiri\".",
+  "serverErrorSignInRejected": "Server menolak kunci API atau kata sandi.",
+  "serverErrorUnreachable": "Tidak dapat menghubungi server. Periksa URL dan koneksi Anda.",
+  "serverErrorStatus": "Server mengembalikan kesalahan {status}.",
   "backgroundWorkDownloading": "{count, plural, other{Mengunduh {count} buku}}",
   "backgroundWorkScanning": "{count, plural, other{Mengenali teks di {count} buku}}",
   "backgroundWorkPercent": "{percent}% selesai",

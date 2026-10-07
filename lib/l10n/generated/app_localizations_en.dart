@@ -1018,6 +1018,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a full http:// or https:// server URL.';
 
   @override
+  String get settingsCustomOcrServerUrlSpacesOrSymbols =>
+      'Remove spaces and symbols like < > from the server address.';
+
+  @override
   String get settingsCustomOcrServerAllowSelfSigned =>
       'Accept self-signed certificate';
 
@@ -2632,6 +2636,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get serverCertificateUntrusted =>
       'The server\'s certificate isn\'t trusted. If it uses its own (self-signed) certificate, turn on \"Accept self-signed certificate\".';
+
+  @override
+  String get serverErrorSignInRejected =>
+      'The server rejected the API key or password.';
+
+  @override
+  String get serverErrorUnreachable =>
+      'Couldn\'t reach the server. Check the URL and your connection.';
+
+  @override
+  String serverErrorStatus({required int status}) {
+    return 'The server returned error $status.';
+  }
 
   @override
   String backgroundWorkDownloading({required int count}) {

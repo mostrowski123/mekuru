@@ -1334,6 +1334,10 @@
   "@settingsCustomOcrServerUrlInvalid": {
     "description": "Validation error shown when the custom OCR server URL is invalid."
   },
+  "settingsCustomOcrServerUrlSpacesOrSymbols": "Remove spaces and symbols like < > from the server address.",
+  "@settingsCustomOcrServerUrlSpacesOrSymbols": {
+    "description": "Validation error shown when a server URL's address contains spaces or symbols such as < > that a host name cannot hold."
+  },
   "settingsCustomOcrServerAllowSelfSigned": "Accept self-signed certificate",
   "@settingsCustomOcrServerAllowSelfSigned": {
     "description": "Label of the switch in the custom OCR server dialog that makes Mekuru accept the server's self-signed (untrusted) TLS certificate."
@@ -3422,6 +3426,23 @@
   "serverCertificateUntrusted": "The server's certificate isn't trusted. If it uses its own (self-signed) certificate, turn on \"Accept self-signed certificate\".",
   "@serverCertificateUntrusted": {
     "description": "Error shown when a server's TLS certificate is rejected (e.g. self-signed with the switch off); names the switch that accepts it."
+  },
+  "serverErrorSignInRejected": "The server rejected the API key or password.",
+  "@serverErrorSignInRejected": {
+    "description": "Why a Komga or Kavita request failed when the server rejected the credentials (HTTP 401 or 403). Shown on its own or as {error} in messages like 'Failed: {error}'."
+  },
+  "serverErrorUnreachable": "Couldn't reach the server. Check the URL and your connection.",
+  "@serverErrorUnreachable": {
+    "description": "Why a Komga or Kavita request failed when it never reached the server (no connection, refused, timed out). Shown on its own or as {error} in messages like 'Failed: {error}'."
+  },
+  "serverErrorStatus": "The server returned error {status}.",
+  "@serverErrorStatus": {
+    "description": "Why a Komga or Kavita request failed when the server answered with another HTTP error status, e.g. 404 or 500. Shown on its own or as {error} in messages like 'Failed: {error}'.",
+    "placeholders": {
+      "status": {
+        "type": "int"
+      }
+    }
   },
   "backgroundWorkDownloading": "{count, plural, =1{Downloading 1 book} other{Downloading {count} books}}",
   "@backgroundWorkDownloading": {

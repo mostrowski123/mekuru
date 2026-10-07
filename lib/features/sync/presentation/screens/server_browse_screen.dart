@@ -412,7 +412,7 @@ class _ErrorRetry extends StatelessWidget {
             Text(
               isUntrustedCertificateError(error)
                   ? context.l10n.serverCertificateUntrusted
-                  : '$error',
+                  : serverErrorReason(context.l10n, error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

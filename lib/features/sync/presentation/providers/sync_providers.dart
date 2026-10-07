@@ -584,11 +584,24 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
 }
 
 /// User-facing text for a failed server request: a hint to the self-signed
-/// switch when the certificate was rejected, else the error itself.
+/// switch when the certificate was rejected, else why it failed.
 String describeServerError(AppLocalizations l10n, Object error) =>
     isUntrustedCertificateError(error)
     ? l10n.serverCertificateUntrusted
-    : l10n.serverBrowseDownloadFailed(error: '$error');
+    : l10n.serverBrowseDownloadFailed(error: serverErrorReason(l10n, error));
+
+/// Why a Komga or Kavita request failed, in the user's language: a rejected
+/// sign-in, an unreachable server or the HTTP status. Any other error is
+/// shown as it is.
+String serverErrorReason(AppLocalizations l10n, Object error) =>
+    switch (error) {
+      SyncException(isAuthFailure: true) => l10n.serverErrorSignInRejected,
+      SyncException(isUnreachable: true) => l10n.serverErrorUnreachable,
+      SyncException(:final statusCode) => l10n.serverErrorStatus(
+        status: statusCode,
+      ),
+      _ => '$error',
+    };
 
 final serverDownloadProvider =
     NotifierProvider<ServerDownloadNotifier, Map<String, double>>(

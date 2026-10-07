@@ -168,7 +168,11 @@ class ServerSettingsScreen extends ConsumerWidget {
       );
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.serverSettingsLinkFailed(error: '$e'))),
+        SnackBar(
+          content: Text(
+            l10n.serverSettingsLinkFailed(error: serverErrorReason(l10n, e)),
+          ),
+        ),
       );
     }
   }
@@ -266,10 +270,22 @@ class _ServerConnectionDialogState
 
   /// The normalized server URL, or null after surfacing its validation error.
   String? _validatedUrl() {
+    final l10n = context.l10n;
     final url = server_url.normalizeOcrServerUrl(_urlController.text);
-    final error = server_url.validateOcrServerUrl(url);
-    if (error != null) setState(() => _urlError = error);
-    return error == null ? url : null;
+    final problem = server_url.validateOcrServerUrl(url);
+    if (problem != null) {
+      setState(
+        () => _urlError = switch (problem) {
+          server_url.ServerUrlProblem.missing =>
+            l10n.settingsCustomOcrServerUrlRequired,
+          server_url.ServerUrlProblem.spacesOrSymbols =>
+            l10n.settingsCustomOcrServerUrlSpacesOrSymbols,
+          server_url.ServerUrlProblem.invalid =>
+            l10n.settingsCustomOcrServerUrlInvalid,
+        },
+      );
+    }
+    return problem == null ? url : null;
   }
 
   Future<void> _test() async {
@@ -318,7 +334,9 @@ class _ServerConnectionDialogState
           _testOk = false;
           _testResult = isUntrustedCertificateError(e)
               ? l10n.serverCertificateUntrusted
-              : l10n.serverDialogConnectionFailed(error: '$e');
+              : l10n.serverDialogConnectionFailed(
+                  error: serverErrorReason(l10n, e),
+                );
         });
       }
     } finally {

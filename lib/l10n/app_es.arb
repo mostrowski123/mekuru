@@ -1236,6 +1236,7 @@
     "description": "Validation error shown when the custom OCR server URL is empty."
   },
   "settingsCustomOcrServerUrlInvalid": "Introduce una URL completa del servidor http:// o https://.",
+  "settingsCustomOcrServerUrlSpacesOrSymbols": "Quita los espacios y símbolos como < > de la dirección del servidor.",
   "settingsCustomOcrServerAllowSelfSigned": "Aceptar certificado autofirmado",
   "settingsCustomOcrServerAllowSelfSignedSubtitle": "Para un servidor https:// con su propio certificado. Mekuru aceptará cualquier certificado que presente este servidor.",
   "@settingsCustomOcrServerUrlInvalid": {
@@ -2729,6 +2730,9 @@
   "serverBrowseDownloadFailed": "Error al descargar: {error}",
   "serverBrowseDownloadStopped": "Descarga detenida",
   "serverCertificateUntrusted": "El certificado del servidor no es de confianza. Si usa su propio certificado (autofirmado), activa «Aceptar certificado autofirmado».",
+  "serverErrorSignInRejected": "El servidor rechazó la clave de API o la contraseña.",
+  "serverErrorUnreachable": "No se pudo conectar con el servidor. Comprueba la URL y tu conexión.",
+  "serverErrorStatus": "El servidor devolvió el error {status}.",
   "backgroundWorkDownloading": "{count, plural, =1{Descargando 1 libro} other{Descargando {count} libros}}",
   "backgroundWorkScanning": "{count, plural, =1{Reconociendo texto en 1 libro} other{Reconociendo texto en {count} libros}}",
   "backgroundWorkPercent": "{percent} % completado",

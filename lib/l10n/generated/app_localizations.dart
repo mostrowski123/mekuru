@@ -1822,6 +1822,12 @@ abstract class AppLocalizations {
   /// **'Enter a full http:// or https:// server URL.'**
   String get settingsCustomOcrServerUrlInvalid;
 
+  /// Validation error shown when a server URL's address contains spaces or symbols such as < > that a host name cannot hold.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove spaces and symbols like < > from the server address.'**
+  String get settingsCustomOcrServerUrlSpacesOrSymbols;
+
   /// Label of the switch in the custom OCR server dialog that makes Mekuru accept the server's self-signed (untrusted) TLS certificate.
   ///
   /// In en, this message translates to:
@@ -4467,6 +4473,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The server\'s certificate isn\'t trusted. If it uses its own (self-signed) certificate, turn on \"Accept self-signed certificate\".'**
   String get serverCertificateUntrusted;
+
+  /// Why a Komga or Kavita request failed when the server rejected the credentials (HTTP 401 or 403). Shown on its own or as {error} in messages like 'Failed: {error}'.
+  ///
+  /// In en, this message translates to:
+  /// **'The server rejected the API key or password.'**
+  String get serverErrorSignInRejected;
+
+  /// Why a Komga or Kavita request failed when it never reached the server (no connection, refused, timed out). Shown on its own or as {error} in messages like 'Failed: {error}'.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the server. Check the URL and your connection.'**
+  String get serverErrorUnreachable;
+
+  /// Why a Komga or Kavita request failed when the server answered with another HTTP error status, e.g. 404 or 500. Shown on its own or as {error} in messages like 'Failed: {error}'.
+  ///
+  /// In en, this message translates to:
+  /// **'The server returned error {status}.'**
+  String serverErrorStatus({required int status});
 
   /// iOS Live Activity text while server book downloads run in the background.
   ///

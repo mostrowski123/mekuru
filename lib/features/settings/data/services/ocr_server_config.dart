@@ -47,10 +47,23 @@ Uri? tryParseOcrServerUrl(String url) {
 bool _hostWasEscaped(Uri uri) =>
     uri.host.contains('%') && !uri.host.contains(':');
 
-String? validateOcrServerUrl(String url, {bool allowEmpty = false}) {
+/// What is wrong with a server URL, for the UI to put in words.
+enum ServerUrlProblem {
+  /// Nothing was entered.
+  missing,
+
+  /// The address holds spaces or symbols like `< >`.
+  spacesOrSymbols,
+
+  /// Not a full http:// or https:// URL.
+  invalid,
+}
+
+/// What is wrong with [url] as a server URL, or null when it is usable.
+ServerUrlProblem? validateOcrServerUrl(String url, {bool allowEmpty = false}) {
   final normalized = normalizeOcrServerUrl(url);
   if (normalized.isEmpty) {
-    return allowEmpty ? null : 'Enter your server URL.';
+    return allowEmpty ? null : ServerUrlProblem.missing;
   }
 
   if (tryParseOcrServerUrl(normalized) != null) {
@@ -59,6 +72,6 @@ String? validateOcrServerUrl(String url, {bool allowEmpty = false}) {
 
   final parsed = Uri.tryParse(normalized);
   return parsed != null && _hostWasEscaped(parsed)
-      ? 'Remove spaces and symbols like < > from the server address.'
-      : 'Enter a full http:// or https:// server URL.';
+      ? ServerUrlProblem.spacesOrSymbols
+      : ServerUrlProblem.invalid;
 }

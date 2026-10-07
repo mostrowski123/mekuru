@@ -1236,6 +1236,7 @@
     "description": "Validation error shown when the custom OCR server URL is empty."
   },
   "settingsCustomOcrServerUrlInvalid": "请输入完整的 http:// 或 https:// 服务器 URL。",
+  "settingsCustomOcrServerUrlSpacesOrSymbols": "请删除服务器地址中的空格和 < > 等符号。",
   "settingsCustomOcrServerAllowSelfSigned": "接受自签名证书",
   "settingsCustomOcrServerAllowSelfSignedSubtitle": "适用于使用自有证书的 https:// 服务器。Mekuru 将接受该服务器出示的任何证书。",
   "@settingsCustomOcrServerUrlInvalid": {
@@ -2729,6 +2730,9 @@
   "serverBrowseDownloadFailed": "下载失败：{error}",
   "serverBrowseDownloadStopped": "下载已停止",
   "serverCertificateUntrusted": "服务器证书不受信任。如果它使用自有（自签名）证书，请打开“接受自签名证书”。",
+  "serverErrorSignInRejected": "服务器拒绝了 API 密钥或密码。",
+  "serverErrorUnreachable": "无法连接服务器。请检查 URL 和网络连接。",
+  "serverErrorStatus": "服务器返回错误 {status}。",
   "backgroundWorkDownloading": "{count, plural, other{正在下载 {count} 本书}}",
   "backgroundWorkScanning": "{count, plural, other{正在识别 {count} 本书的文字}}",
   "backgroundWorkPercent": "已完成 {percent}%",
