@@ -12,10 +12,10 @@ const thirdPartyLicenses = {
   'Firefox Translations (Bergamot)': 'assets/translate/LICENSE.txt',
   'Marian NMT': 'assets/licenses/marian.txt',
   'intgemm': 'assets/licenses/intgemm.txt',
-  'SentencePiece': 'assets/licenses/sentencepiece.txt',
+  'SentencePiece': 'assets/licenses/apache-2.0.txt',
   'Protocol Buffers': 'assets/licenses/protobuf.txt',
   'Darts-clone': 'assets/licenses/darts-clone.txt',
-  'Abseil': 'assets/licenses/abseil.txt',
+  'Abseil': 'assets/licenses/apache-2.0.txt',
   'esaxx': 'assets/licenses/esaxx.txt',
   'ONNX.js': 'assets/licenses/onnxjs.txt',
   // Eigen, which ONNX.js brings, is MPL 2.0 like the engine itself.
@@ -40,6 +40,6 @@ Stream<LicenseEntry> thirdPartyLicenseEntries() async* {
       in thirdPartyLicenses.entries) {
     yield LicenseEntryWithLineBreaks([
       package,
-    ], await rootBundle.loadString(asset));
+    ], await rootBundle.loadString(asset, cache: false));
   }
 }
