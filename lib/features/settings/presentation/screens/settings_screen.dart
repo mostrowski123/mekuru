@@ -756,8 +756,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           body: context.l10n.translationMobileDataBody(size: size),
         );
         if (network == null || !mounted) return;
-        // A download that gives up while Mekuru is closed says so in one.
-        await const FullBackupJobChannel().requestNotificationPermission();
+        // A download that gives up while Mekuru is closed says so in one;
+        // the download needn't wait for the answer.
+        unawaited(const FullBackupJobChannel().requestNotificationPermission());
         // The provider chooses High once the download is done.
         unawaited(
           gemma.start(mobileData: network == DownloadNetwork.mobileData),
