@@ -23,6 +23,7 @@ import io.flutter.plugin.common.MethodChannel
 import moe.matthew.mekuru.ocr.Avif
 import java.io.File
 import java.nio.ByteBuffer
+import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -46,6 +47,13 @@ class MainActivity : FlutterActivity() {
          * learned about the trees the reader is currently paging through.
          */
         private val resolutionCache = SafResolutionCache()
+
+        /**
+         * `decodeRgba` two at a time: each holds a full-size page several
+         * times over, and a library grid of AVIF covers asks for all of them
+         * at once.
+         */
+        private val avifDecoder = Executors.newFixedThreadPool(2)
     }
 
     private var pendingTreePickerResult: MethodChannel.Result? = null
@@ -140,7 +148,7 @@ class MainActivity : FlutterActivity() {
                     result.notImplemented()
                     return@setMethodCallHandler
                 }
-                Thread {
+                avifDecoder.execute {
                     val reply = try {
                         Avif.decode(bytes)?.let { bitmap ->
                             val rgba = ByteBuffer.allocate(bitmap.byteCount)
@@ -152,8 +160,16 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Throwable) {
                         null
                     }
-                    runOnUiThread { result.success(reply) }
-                }.start()
+                    runOnUiThread {
+                        try {
+                            result.success(reply)
+                        } catch (e: OutOfMemoryError) {
+                            // Encoding the reply copies the page once more: a
+                            // blank page, not a crash.
+                            result.success(null)
+                        }
+                    }
+                }
             }
 
         // Firebase Test Lab (which runs Play's pre-launch report) sets this on
