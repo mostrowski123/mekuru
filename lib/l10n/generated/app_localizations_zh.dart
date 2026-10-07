@@ -358,6 +358,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String dictionarySentToAnkiMobile({required String expression}) {
+    return '已将“$expression”发送到AnkiMobile';
+  }
+
+  @override
   String get dictionaryCopyTooltip => '复制';
 
   @override
@@ -4375,6 +4380,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String dictionaryAddedToAnki({required String expression}) {
     return '已将“$expression”添加到Anki';
+  }
+
+  @override
+  String dictionarySentToAnkiMobile({required String expression}) {
+    return '已将“$expression”发送到AnkiMobile';
   }
 
   @override

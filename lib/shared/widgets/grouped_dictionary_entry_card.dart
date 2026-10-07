@@ -5,6 +5,7 @@ import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
 import 'package:mekuru/features/ankidroid/data/models/anki_note_data.dart';
 import 'package:mekuru/features/ankidroid/data/services/anki_field_mapper.dart';
+import 'package:mekuru/features/ankidroid/data/services/anki_mobile_service.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/ankidroid_settings_screen.dart';
@@ -374,9 +375,8 @@ class _GroupedDictionaryEntryHeaderState
 
   Future<void> _sendToAnki() async {
     final config = ref.read(ankidroidConfigProvider);
-    final addedToAnkiMessage = context.l10n.dictionaryAddedToAnki(
-      expression: _primaryEntry.expression,
-    );
+    final l10n = context.l10n;
+    final expression = _primaryEntry.expression;
     final target = translationTargetFor(Localizations.localeOf(context));
     setState(() => _preparingAnkiNote = true);
     final (glossaries, sentenceTranslation) =
@@ -416,7 +416,13 @@ class _GroupedDictionaryEntryHeaderState
             _checkIfInAnki(force: true);
             scaffoldMessengerKey.currentState?.showSnackBar(
               SnackBar(
-                content: Text(addedToAnkiMessage),
+                // AnkiMobile only reports that it opened, not whether it
+                // took the card; the service that sent it is still current.
+                content: Text(
+                  ref.read(ankidroidServiceProvider) is AnkiMobileService
+                      ? l10n.dictionarySentToAnkiMobile(expression: expression)
+                      : l10n.dictionaryAddedToAnki(expression: expression),
+                ),
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
               ),

@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/ankidroid/data/models/ankidroid_config.dart';
+import 'package:mekuru/features/ankidroid/data/services/anki_mobile_service.dart';
+import 'package:mekuru/features/ankidroid/data/services/ankidroid_service.dart';
 import 'package:mekuru/features/ankidroid/presentation/providers/ankidroid_providers.dart';
 import 'package:mekuru/features/ankidroid/presentation/screens/anki_card_creation_screen.dart';
 import 'package:mekuru/features/dictionary/data/models/dictionary_entry.dart';
@@ -16,7 +18,7 @@ import 'package:mekuru/features/dictionary/data/repositories/dictionary_reposito
 import 'package:mekuru/features/dictionary/data/services/dictionary_query_service.dart';
 import 'package:mekuru/features/dictionary/presentation/widgets/source_section_label.dart';
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
-import 'package:mekuru/main.dart' show databaseProvider;
+import 'package:mekuru/main.dart' show databaseProvider, scaffoldMessengerKey;
 import 'package:mekuru/shared/widgets/furigana_text.dart';
 import 'package:mekuru/shared/widgets/grouped_dictionary_entry_card.dart';
 import 'package:mekuru/shared/widgets/pitch_accent_diagram.dart';
@@ -65,6 +67,8 @@ Widget _buildTestApp({
     overrides: [databaseProvider.overrideWithValue(db), ...overrides],
     child: buildLocalizedTestApp(
       locale: locale,
+      // The card shows Anki's result through the app-wide messenger.
+      scaffoldMessengerKey: scaffoldMessengerKey,
       home: Scaffold(
         body: Center(
           child: SizedBox(width: width, child: child),
@@ -578,6 +582,84 @@ void main() {
       expect(find.byType(AnkiCardCreationScreen), findsOneWidget);
     },
   );
+
+  /// Sends 猫 through the card screen with [service] and returns once the
+  /// card has popped.
+  Future<void> sendToAnki(
+    WidgetTester tester,
+    AnkidroidService service, {
+    required int modelId,
+    required int deckId,
+  }) async {
+    await tester.pumpWidget(
+      _buildTestApp(
+        db: db,
+        width: 400,
+        overrides: [
+          ankidroidAvailableProvider.overrideWithValue(true),
+          ankidroidServiceProvider.overrideWithValue(service),
+          ankidroidConfigProvider.overrideWith(
+            () => TestAnkidroidConfigNotifier(
+              AnkidroidConfig(
+                modelId: modelId,
+                modelName: 'Basic',
+                deckId: deckId,
+                deckName: 'Default',
+                fieldMapping: const {'Front': 'expression'},
+              ),
+            ),
+          ),
+        ],
+        child: GroupedDictionaryEntryCard(
+          entries: [
+            DictionaryEntryWithSource(
+              entry: _buildEntry(id: 1, expression: '猫', reading: 'ねこ'),
+              dictionaryName: 'JMdict',
+            ),
+          ],
+          pitchAccents: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.electric_bolt_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(AnkiCardCreationScreen), findsNothing);
+  }
+
+  testWidgets('a card AnkiDroid took says it was added', (tester) async {
+    await sendToAnki(tester, FakeAnkidroidService(), modelId: 5, deckId: 1);
+
+    expect(find.text('Added "猫" to Anki'), findsOneWidget);
+  });
+
+  testWidgets('a card handed to AnkiMobile says sent, not added', (
+    tester,
+  ) async {
+    final launched = <Uri>[];
+    await sendToAnki(
+      tester,
+      AnkiMobileService(
+        noteType: 'Basic',
+        deck: 'Default',
+        fieldNames: const ['Front'],
+        canLaunch: (_) async => true,
+        launch: (url) async {
+          launched.add(url);
+          return true;
+        },
+      ),
+      modelId: AnkiMobileService.syntheticId,
+      deckId: AnkiMobileService.syntheticId,
+    );
+
+    // AnkiMobile opened; whether it added the card is unknown.
+    expect(launched, hasLength(1));
+    expect(find.text('Sent "猫" to AnkiMobile'), findsOneWidget);
+    expect(find.textContaining('Added'), findsNothing);
+  });
 }
 
 /// An installed engine whose translation arrives when the test says so.

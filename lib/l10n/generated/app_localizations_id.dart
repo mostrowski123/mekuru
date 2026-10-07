@@ -371,6 +371,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String dictionarySentToAnkiMobile({required String expression}) {
+    return '\"$expression\" dikirim ke AnkiMobile';
+  }
+
+  @override
   String get dictionaryCopyTooltip => 'Salin';
 
   @override

@@ -700,6 +700,12 @@ abstract class AppLocalizations {
   /// **'Added \"{expression}\" to Anki'**
   String dictionaryAddedToAnki({required String expression});
 
+  /// Snackbar shown on iOS after a word was handed to the AnkiMobile app. AnkiMobile does not report whether it added the card (it can refuse it, e.g. a duplicate), so this says sent, not added.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent \"{expression}\" to AnkiMobile'**
+  String dictionarySentToAnkiMobile({required String expression});
+
   /// Tooltip for copying a dictionary expression.
   ///
   /// In en, this message translates to:

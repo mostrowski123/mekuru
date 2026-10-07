@@ -475,6 +475,15 @@
       }
     }
   },
+  "dictionarySentToAnkiMobile": "Sent \"{expression}\" to AnkiMobile",
+  "@dictionarySentToAnkiMobile": {
+    "description": "Snackbar shown on iOS after a word was handed to the AnkiMobile app. AnkiMobile does not report whether it added the card (it can refuse it, e.g. a duplicate), so this says sent, not added.",
+    "placeholders": {
+      "expression": {
+        "type": "String"
+      }
+    }
+  },
   "dictionaryCopyTooltip": "Copy",
   "@dictionaryCopyTooltip": {
     "description": "Tooltip for copying a dictionary expression."

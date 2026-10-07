@@ -380,6 +380,7 @@
       }
     }
   },
+  "dictionarySentToAnkiMobile": "\"{expression}\" dikirim ke AnkiMobile",
   "dictionaryCopyTooltip": "Salin",
   "@dictionaryCopyTooltip": {
     "description": "Tooltip for copying a dictionary expression."

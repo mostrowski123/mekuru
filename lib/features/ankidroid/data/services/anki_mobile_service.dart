@@ -109,7 +109,9 @@ class AnkiMobileService implements AnkidroidService {
   ///
   // ponytail: a successful launch is all the scheme reports, so a note that
   // AnkiMobile then refuses (duplicate, misspelled name) still counts as
-  // sent. Handle the mekuru://anki callback (plus x-error) if that matters.
+  // sent, and the card says "Sent to AnkiMobile", not "Added". AnkiMobile
+  // has x-success but no x-error: handle the mekuru://anki callback to
+  // confirm adds if that matters.
   @override
   Future<int?> addNote({
     required int modelId,

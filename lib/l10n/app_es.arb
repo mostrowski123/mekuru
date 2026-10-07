@@ -380,6 +380,7 @@
       }
     }
   },
+  "dictionarySentToAnkiMobile": "Enviado \"{expression}\" a AnkiMobile",
   "dictionaryCopyTooltip": "Copiar",
   "@dictionaryCopyTooltip": {
     "description": "Tooltip for copying a dictionary expression."
