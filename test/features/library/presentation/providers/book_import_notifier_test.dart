@@ -1,14 +1,20 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
+
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/library/data/repositories/book_repository.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations_en.dart';
 import 'package:mekuru/main.dart';
+import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart' show PdfException, PdfPasswordException;
 import 'package:sentry_flutter/sentry_flutter.dart';
 // ignore: depend_on_referenced_packages
@@ -16,6 +22,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 
 import '../../../../shared/epub_fixtures.dart';
 import '../../../../shared/fake_path_provider.dart';
+import '../../../../test_app.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -260,5 +267,62 @@ void main() {
       expect(logs.where((l) => l.warn), isEmpty);
       expect(counts.where((c) => c.name == 'book.import_failed'), isEmpty);
     });
+  });
+  group('the no-OCR hint after a CBZ import', () {
+    Future<String> cbz(String name, {required bool withMokuro}) async {
+      final page = img.encodePng(img.Image(width: 8, height: 8));
+      final archive = Archive()
+        ..addFile(ArchiveFile('p1.png', page.length, page));
+      if (withMokuro) {
+        // What Mekuru's own CBZ export embeds for a book with OCR.
+        final mokuro = utf8.encode(
+          jsonEncode({
+            'pages': [
+              {
+                'img_path': 'p1.png',
+                'img_width': 8,
+                'img_height': 8,
+                'blocks': const [],
+              },
+            ],
+          }),
+        );
+        archive.addFile(ArchiveFile('$name.mokuro', mokuro.length, mokuro));
+      }
+      final path = p.join(tempDir.path, '$name.cbz');
+      await File(path).writeAsBytes(ZipEncoder().encode(archive));
+      return path;
+    }
+
+    for (final withMokuro in [false, true]) {
+      testWidgets(
+        withMokuro
+            ? 'is not shown for a CBZ that brought its OCR along'
+            : 'is shown for a CBZ without OCR data',
+        (tester) async {
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: buildLocalizedTestApp(
+                scaffoldMessengerKey: scaffoldMessengerKey,
+                home: const Scaffold(),
+              ),
+            ),
+          );
+          await tester.runAsync(() async {
+            final path = await cbz('volume', withMokuro: withMokuro);
+            await container.read(bookImportProvider.notifier).importFiles([
+              path,
+            ], format: 'cbz');
+          });
+          await tester.pump();
+
+          expect(
+            find.text(en.libraryImportedWithoutOcrMessage),
+            withMokuro ? findsNothing : findsOneWidget,
+          );
+        },
+      );
+    }
   });
 }

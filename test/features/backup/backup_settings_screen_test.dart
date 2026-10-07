@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,6 +108,31 @@ void main() {
     expect(find.text(l10n.backupFullRestoreTitle), findsOneWidget);
     expect(find.text(l10n.backupFullReplacesChip), findsOneWidget);
     expect(find.text(l10n.backupScopeNoteTitle), findsOneWidget);
+  });
+
+  testWidgets('the full backup names the downloads it leaves out', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    expect(find.text(l10n.backupFullNotIncluded), findsOneWidget);
+    expect(find.text(l10n.backupFullNotIncludedIos), findsNothing);
+    await settleJob(tester);
+  });
+
+  testWidgets('on iOS it leaves the translation models out of that list', (
+    tester,
+  ) async {
+    // iOS translates with Apple's language packs, which Mekuru doesn't
+    // download, so they are no part of a backup to begin with.
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await pumpScreen(tester);
+      expect(find.text(l10n.backupFullNotIncludedIos), findsOneWidget);
+      expect(find.text(l10n.backupFullNotIncluded), findsNothing);
+      await settleJob(tester);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('export full backup asks for notifications, then hands off', (
