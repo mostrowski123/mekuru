@@ -203,12 +203,14 @@ class MangaOcrEngine(directory: File, threads: Int, ndlDirectory: File? = null,
             val long=if(ndl==null) emptyList() else block.lines.map { NdlAlgorithms.isLongLine(it,block.vertical) }
             // A block with a line too long for manga-ocr is read line by line,
             // the long lines by NDL, without the whole-block read and alignment.
+            // A long line NDL reads as empty stays empty: manga-ocr gets most of
+            // such a line wrong.
             val lines=if(long.any { it }) {
                 count("ndlBlocks")
                 block.lines.mapIndexed { i,quad ->
-                    val text=if(long[i]) recognizeNdl(source,quad,checkpoint) else ""
-                    if(long[i]) count(if(text.isBlank()) "ndlEmpty" else "ndlLines")
-                    text.ifBlank { recognizeLine(source,quad,block.vertical,checkpoint) }
+                    if(long[i]) recognizeNdl(source,quad,checkpoint)
+                        .also { count(if(it.isBlank()) "ndlEmpty" else "ndlLines") }
+                    else recognizeLine(source,quad,block.vertical,checkpoint)
                 }
             } else {
                 val wholeCrop=source.crop(block.box.quad())
