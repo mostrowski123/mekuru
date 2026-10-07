@@ -413,6 +413,9 @@
   "@dictionaryVeryCommon": {
     "description": "Badge label for very common words."
   },
+  "dictionaryCommon": "Umum",
+  "dictionaryUncommon": "Tidak Umum",
+  "dictionaryRare": "Jarang",
   "dictionaryOnyomiLabel": "Onyomi: ",
   "@dictionaryOnyomiLabel": {
     "description": "Label for onyomi readings."

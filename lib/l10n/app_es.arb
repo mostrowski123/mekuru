@@ -413,6 +413,9 @@
   "@dictionaryVeryCommon": {
     "description": "Badge label for very common words."
   },
+  "dictionaryCommon": "Común",
+  "dictionaryUncommon": "Poco común",
+  "dictionaryRare": "Infrecuente",
   "dictionaryOnyomiLabel": "Onyomi: ",
   "@dictionaryOnyomiLabel": {
     "description": "Label for onyomi readings."

@@ -742,6 +742,24 @@ abstract class AppLocalizations {
   /// **'Very Common'**
   String get dictionaryVeryCommon;
 
+  /// Badge label for common words (frequency rank 5,001 to 15,000).
+  ///
+  /// In en, this message translates to:
+  /// **'Common'**
+  String get dictionaryCommon;
+
+  /// Badge label for uncommon words (frequency rank 15,001 to 30,000).
+  ///
+  /// In en, this message translates to:
+  /// **'Uncommon'**
+  String get dictionaryUncommon;
+
+  /// Badge label for rare words (frequency rank above 30,000). Not shown for words with no frequency data.
+  ///
+  /// In en, this message translates to:
+  /// **'Rare'**
+  String get dictionaryRare;
+
   /// Label for onyomi readings.
   ///
   /// In en, this message translates to:

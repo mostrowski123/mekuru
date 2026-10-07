@@ -413,6 +413,9 @@
   "@dictionaryVeryCommon": {
     "description": "Badge label for very common words."
   },
+  "dictionaryCommon": "常见",
+  "dictionaryUncommon": "不常见",
+  "dictionaryRare": "罕见",
   "dictionaryOnyomiLabel": "音读：",
   "@dictionaryOnyomiLabel": {
     "description": "Label for onyomi readings."

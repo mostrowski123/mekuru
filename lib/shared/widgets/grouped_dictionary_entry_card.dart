@@ -547,8 +547,12 @@ class _GroupedDictionaryEntryHeaderState
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(child: _buildExpression(expressionStyle, furiganaStyle)),
-          const SizedBox(width: 8),
-          _FrequencyTag(rank: _frequencyRank, fontSize: widget.fontSize),
+          // No rank means no frequency data (no frequency dictionary covers
+          // the word), not a rare word.
+          if (_frequencyRank case final rank?) ...[
+            const SizedBox(width: 8),
+            _FrequencyTag(rank: rank, fontSize: widget.fontSize),
+          ],
         ],
       );
     }
@@ -897,23 +901,30 @@ List<List<DictionaryEntryWithSource>> _buildDefinitionSections(
 class _FrequencyTag extends StatelessWidget {
   const _FrequencyTag({required this.rank, required this.fontSize});
 
-  final int? rank;
+  final int rank;
   final double fontSize;
 
   @override
   Widget build(BuildContext context) {
-    final label = DictionaryEntryWithSource.frequencyLabel(rank);
-    final resolvedRank = DictionaryEntryWithSource.sortFrequencyRank(rank);
-
+    final l10n = context.l10n;
     // Shades with 4.5:1 contrast for the small label on light and dark
     // cards; the plain swatches are 2 to 3:1 on light ones.
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
-    final color = switch (resolvedRank) {
-      <= 5000 => scheme.success,
-      <= 15000 => dark ? Colors.blue.shade300 : Colors.blue.shade800,
-      <= 30000 => dark ? Colors.orange.shade300 : Colors.deepOrange.shade900,
-      _ => dark ? Colors.grey.shade400 : Colors.grey.shade700,
+    final (label, color) = switch (rank) {
+      <= 5000 => (l10n.dictionaryVeryCommon, scheme.success),
+      <= 15000 => (
+        l10n.dictionaryCommon,
+        dark ? Colors.blue.shade300 : Colors.blue.shade800,
+      ),
+      <= 30000 => (
+        l10n.dictionaryUncommon,
+        dark ? Colors.orange.shade300 : Colors.deepOrange.shade900,
+      ),
+      _ => (
+        l10n.dictionaryRare,
+        dark ? Colors.grey.shade400 : Colors.grey.shade700,
+      ),
     };
 
     return Container(

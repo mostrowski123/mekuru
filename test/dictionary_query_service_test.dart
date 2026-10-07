@@ -1298,34 +1298,6 @@ void main() {
     });
   });
 
-  // ── DictionaryEntryWithSource.frequencyLabel ───────────────────
-
-  group('DictionaryEntryWithSource — frequencyLabel', () {
-    test('returns "Very Common" for rank <= 5000', () {
-      expect(DictionaryEntryWithSource.frequencyLabel(1), 'Very Common');
-      expect(DictionaryEntryWithSource.frequencyLabel(5000), 'Very Common');
-    });
-
-    test('returns "Common" for rank 5001–15000', () {
-      expect(DictionaryEntryWithSource.frequencyLabel(5001), 'Common');
-      expect(DictionaryEntryWithSource.frequencyLabel(15000), 'Common');
-    });
-
-    test('returns "Uncommon" for rank 15001–30000', () {
-      expect(DictionaryEntryWithSource.frequencyLabel(15001), 'Uncommon');
-      expect(DictionaryEntryWithSource.frequencyLabel(30000), 'Uncommon');
-    });
-
-    test('returns "Rare" for rank > 30000', () {
-      expect(DictionaryEntryWithSource.frequencyLabel(30001), 'Rare');
-      expect(DictionaryEntryWithSource.frequencyLabel(100000), 'Rare');
-    });
-
-    test('treats null rank as "Rare"', () {
-      expect(DictionaryEntryWithSource.frequencyLabel(null), 'Rare');
-    });
-  });
-
   group('DictionaryQueryService - exact match prioritization', () {
     late AppDatabase priorityDb;
     late DictionaryRepository priorityRepo;

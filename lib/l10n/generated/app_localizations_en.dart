@@ -396,6 +396,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dictionaryVeryCommon => 'Very Common';
 
   @override
+  String get dictionaryCommon => 'Common';
+
+  @override
+  String get dictionaryUncommon => 'Uncommon';
+
+  @override
+  String get dictionaryRare => 'Rare';
+
+  @override
   String get dictionaryOnyomiLabel => 'Onyomi: ';
 
   @override

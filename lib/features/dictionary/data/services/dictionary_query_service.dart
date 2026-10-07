@@ -38,15 +38,6 @@ class DictionaryEntryWithSource {
     return rank ?? missingFrequencySortRank;
   }
 
-  /// Returns a qualitative label for the frequency rank.
-  static String frequencyLabel(int? rank) {
-    final resolvedRank = sortFrequencyRank(rank);
-    if (resolvedRank <= 5000) return 'Very Common';
-    if (resolvedRank <= 15000) return 'Common';
-    if (resolvedRank <= 30000) return 'Uncommon';
-    return 'Rare';
-  }
-
   /// Copy with a different frequency rank.
   DictionaryEntryWithSource withFrequencyRank(int? rank) {
     return DictionaryEntryWithSource(

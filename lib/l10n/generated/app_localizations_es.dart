@@ -401,6 +401,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dictionaryVeryCommon => 'Muy común';
 
   @override
+  String get dictionaryCommon => 'Común';
+
+  @override
+  String get dictionaryUncommon => 'Poco común';
+
+  @override
+  String get dictionaryRare => 'Infrecuente';
+
+  @override
   String get dictionaryOnyomiLabel => 'Onyomi: ';
 
   @override

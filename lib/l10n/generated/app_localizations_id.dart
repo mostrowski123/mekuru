@@ -395,6 +395,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get dictionaryVeryCommon => 'Sangat Umum';
 
   @override
+  String get dictionaryCommon => 'Umum';
+
+  @override
+  String get dictionaryUncommon => 'Tidak Umum';
+
+  @override
+  String get dictionaryRare => 'Jarang';
+
+  @override
   String get dictionaryOnyomiLabel => 'Onyomi: ';
 
   @override

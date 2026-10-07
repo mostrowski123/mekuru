@@ -59,10 +59,12 @@ Widget _buildTestApp({
   required Widget child,
   double width = 320,
   List<Override> overrides = const [],
+  Locale? locale,
 }) {
   return ProviderScope(
     overrides: [databaseProvider.overrideWithValue(db), ...overrides],
     child: buildLocalizedTestApp(
+      locale: locale,
       home: Scaffold(
         body: Center(
           child: SizedBox(width: width, child: child),
@@ -107,6 +109,44 @@ void main() {
     expect(find.textContaining('Onyomi:'), findsNothing);
     expect(find.textContaining('Kunyomi:'), findsNothing);
     expect(find.text('Very Common'), findsOneWidget);
+  });
+
+  testWidgets('frequency badge: none without data, localized with a rank', (
+    tester,
+  ) async {
+    Future<void> pumpCard(int? rank, {Locale? locale}) async {
+      await tester.pumpWidget(
+        _buildTestApp(
+          db: db,
+          width: 520,
+          locale: locale,
+          child: GroupedDictionaryEntryCard(
+            key: ValueKey(rank),
+            entries: [
+              DictionaryEntryWithSource(
+                entry: _buildEntry(id: 1, expression: '飲む', reading: 'のむ'),
+                dictionaryName: 'JMdict',
+                frequencyRank: rank,
+              ),
+            ],
+            pitchAccents: const [],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    // No frequency dictionary covers the word: no badge, not "Rare".
+    await pumpCard(null);
+    for (final label in ['Very Common', 'Common', 'Uncommon', 'Rare']) {
+      expect(find.text(label), findsNothing);
+    }
+
+    await pumpCard(40000);
+    expect(find.text('Rare'), findsOneWidget);
+
+    await pumpCard(20000, locale: const Locale('es'));
+    expect(find.text('Poco común'), findsOneWidget);
   });
 
   testWidgets('renders part-of-speech chips when tags are present', (

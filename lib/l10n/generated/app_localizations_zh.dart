@@ -381,6 +381,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get dictionaryVeryCommon => '非常常见';
 
   @override
+  String get dictionaryCommon => '常见';
+
+  @override
+  String get dictionaryUncommon => '不常见';
+
+  @override
+  String get dictionaryRare => '罕见';
+
+  @override
   String get dictionaryOnyomiLabel => '音读：';
 
   @override
@@ -4387,6 +4396,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get dictionaryVeryCommon => '非常常见';
+
+  @override
+  String get dictionaryCommon => '常见';
+
+  @override
+  String get dictionaryUncommon => '不常见';
+
+  @override
+  String get dictionaryRare => '罕见';
 
   @override
   String get dictionaryOnyomiLabel => '音读：';
