@@ -78,7 +78,7 @@ Future<void> _download(
       }
       if (!await _matches(File(partial), file)) {
         await File(partial).delete();
-        throw const FileSystemException('Model file failed verification');
+        throw const ModelVerificationException();
       }
       await File(partial).rename(target.path);
     }
@@ -86,6 +86,11 @@ Future<void> _download(
     onProgress?.call(done / total);
   }
   await File(p.join(dir.path, _marker)).writeAsString('ok');
+}
+
+/// A downloaded model file did not match its pinned size and sha256.
+class ModelVerificationException extends FileSystemException {
+  const ModelVerificationException() : super('Model file failed verification');
 }
 
 /// Hashed off the UI isolate: model files run to tens of MB.

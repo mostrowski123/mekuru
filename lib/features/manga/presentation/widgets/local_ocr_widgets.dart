@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/widgets/mobile_data_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/services/ocr_background_worker.dart';
 import '../providers/local_ocr_providers.dart';
 
 String localOcrReason(BuildContext context, String? code) {
@@ -27,12 +29,76 @@ String localOcrReason(BuildContext context, String? code) {
     'image_access_lost' ||
     'image_unreadable' ||
     'image_changed' => l.localOcrAccessLost,
-    'insufficient_storage' || 'storage_error' => l.localOcrStorageFull,
+    'insufficient_storage' ||
+    'storage_error' ||
+    'atomic_rename_failed' => l.localOcrStorageFull,
     'book_busy' => l.localOcrBusy,
+    'job_busy' || 'ocr_still_stopping' => l.localOcrStillRunning,
+    'not_resumable' || 'job_stopped' => l.localOcrJobEnded,
     'model_busy' || 'download_busy' => l.localOcrModelBusy,
     'model_missing' || 'model_version_missing' => l.localOcrDownloadRequired,
     'unsupported_device' => l.localOcrUnsupported,
+    'unsupported_image' || 'image_too_large' => l.localOcrImageUnsupported,
+    'page_failed' ||
+    'invalid_crop' ||
+    'text_too_long' ||
+    'detector_closed' => l.ocrErrorRecognitionFailed,
+    'consecutive_page_failures' => l.localOcrTooManyFailures,
+    'cache_missing' ||
+    'cache_invalid' ||
+    'book_changed' => l.localOcrBookChanged,
+    'ocr_error' || 'opencv_unavailable' || 'detached' => l.localOcrRuntimeError,
+    // Model downloads.
+    'network_unavailable' || 'network_error' => l.localOcrDownloadNetwork,
+    'download_hash_mismatch' ||
+    'download_size_mismatch' ||
+    'download_incomplete' ||
+    'download_changed' ||
+    'invalid_content_range' => l.localOcrDownloadDamaged,
+    'model_install_failed' => l.localOcrModelInstallFailed,
+    final http when http.startsWith('download_http_') => l.serverErrorStatus(
+      status: int.tryParse(http.substring('download_http_'.length)) ?? 0,
+    ),
     _ => l.localOcrError(details: code),
+  };
+}
+
+/// [errorMessage] of a failed remote or iOS OCR run in the user's language
+/// (see [OcrFailure]). Text an older version stored is shown as it is.
+String describeOcrFailure(AppLocalizations l, String errorMessage) {
+  final parsed = OcrFailure.parse(errorMessage);
+  if (parsed == null) return errorMessage;
+  final detail = parsed.detail;
+  return switch (parsed.failure) {
+    OcrFailure.certificateUntrusted => l.ocrErrorCertificateUntrusted,
+    OcrFailure.authFailed => l.ocrErrorAuthFailed,
+    OcrFailure.jobForbidden => l.ocrErrorJobForbidden,
+    OcrFailure.noCredits => l.ocrErrorNoCredits,
+    OcrFailure.jobNotFound => l.ocrErrorJobNotFound,
+    OcrFailure.jobInactive => l.ocrErrorJobInactive,
+    OcrFailure.rejected => l.ocrErrorRejected(details: detail),
+    OcrFailure.serverError => l.ocrErrorServer(
+      status: int.tryParse(detail) ?? 0,
+    ),
+    OcrFailure.connectFailed => l.ocrErrorConnectFailed,
+    OcrFailure.timedOut => l.ocrErrorTimedOut,
+    OcrFailure.hostNotFound => l.ocrErrorHostNotFound,
+    OcrFailure.network => l.ocrErrorNetwork(details: detail),
+    OcrFailure.status => l.ocrErrorStatus(
+      status: int.tryParse(detail.split(':').first) ?? 0,
+      details: detail.substring(detail.indexOf(':') + 1),
+    ),
+    OcrFailure.malformedResponse => l.ocrErrorMalformedResponse,
+    OcrFailure.unexpected => l.commonErrorWithDetails(details: detail),
+    OcrFailure.serverUrlMissing => l.ocrCustomServerRequiredBody,
+    OcrFailure.serverUrlInvalid => l.ocrErrorServerUrlInvalid,
+    OcrFailure.keyMissing => l.ocrCustomServerKeyRequiredBody,
+    OcrFailure.signInFailed => l.ocrErrorSignInFailed,
+    OcrFailure.pageImageMissing => l.ocrErrorPageImageMissing(path: detail),
+    OcrFailure.pageImageAccessLost => l.ocrErrorPageImageAccessLost(
+      path: detail,
+    ),
+    OcrFailure.recognitionFailed => l.ocrErrorRecognitionFailed,
   };
 }
 
@@ -484,7 +550,12 @@ class _LocalOcrDownloadTileState extends ConsumerState<LocalOcrDownloadTile> {
             child: Text(
               localOcrReason(
                 context,
-                state.hasError ? state.error.toString() : model!.error,
+                state.hasError
+                    ? switch (state.error) {
+                        final PlatformException e => e.code,
+                        final e => '$e',
+                      }
+                    : model!.error,
               ),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,

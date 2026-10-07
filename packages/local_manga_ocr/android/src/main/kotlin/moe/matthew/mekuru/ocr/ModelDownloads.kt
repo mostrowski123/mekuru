@@ -234,11 +234,18 @@ class ModelDownloadWorker(context: Context, parameters: WorkerParameters) : Work
                 pack.status("queued", "wifi_required"); Result.retry()
             } else if (runAttemptCount < 3 &&
                 error.message != "insufficient_storage") {
-                pack.status("queued", error.message); Result.retry()
+                pack.status("queued", reason(error)); Result.retry()
             } else {
-                pack.status("failed", error.message); Result.failure()
+                pack.status("failed", reason(error)); Result.failure()
             }
         }
+    }
+
+    /** The code the app words for [error]; a failed connection's own message is English. */
+    private fun reason(error: Exception) = when (error) {
+        is java.net.SocketException, is java.net.SocketTimeoutException,
+        is java.net.UnknownHostException, is javax.net.ssl.SSLException -> "network_error"
+        else -> error.message
     }
     companion object { private val transferLock=Any() }
 }

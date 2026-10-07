@@ -76,6 +76,14 @@ void main() {
       describe(const SyncException(401, 'Kavita rejected the API key')),
       'Error al descargar: ${es.serverErrorSignInRejected}',
     );
+    expect(
+      describeServerDownloadError(es, serverDownloadInterruptedError),
+      es.serverBrowseDownloadInterrupted,
+    );
+    expect(
+      describeServerDownloadError(es, serverDownloadConnectionGoneError),
+      'Error al descargar: ${es.serverErrorConnectionGone}',
+    );
     // Anything else is shown as it is.
     expect(
       describe(const FormatException('bad zip')),

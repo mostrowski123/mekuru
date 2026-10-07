@@ -4260,4 +4260,123 @@ class AppLocalizationsEs extends AppLocalizations {
   String translationMobileDataBody({required String size}) {
     return 'El modelo de traducción ocupa unos $size. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos.';
   }
+
+  @override
+  String get serverBrowseDownloadInterrupted =>
+      'La descarga se interrumpió. Vuelve a descargar el libro.';
+
+  @override
+  String get serverErrorConnectionGone =>
+      'Se eliminó o desactivó la conexión con el servidor.';
+
+  @override
+  String get ocrErrorCertificateUntrusted =>
+      'El certificado del servidor OCR no es de confianza. Si usa su propio certificado (autofirmado), activa «Aceptar certificado autofirmado» en la configuración del servidor OCR personalizado.';
+
+  @override
+  String get ocrErrorAuthFailed =>
+      'Error de autenticación. Comprueba la clave compartida en la configuración del servidor OCR personalizado.';
+
+  @override
+  String get ocrErrorJobForbidden =>
+      'Este trabajo de OCR pertenece a otra cuenta. Inicia un nuevo OCR.';
+
+  @override
+  String get ocrErrorNoCredits => 'No tienes suficientes créditos de OCR.';
+
+  @override
+  String get ocrErrorJobNotFound =>
+      'No se encontró el trabajo de OCR. Inicia un nuevo OCR.';
+
+  @override
+  String get ocrErrorJobInactive =>
+      'El trabajo de OCR ya no está activo. Inicia un nuevo OCR.';
+
+  @override
+  String ocrErrorRejected({required String details}) {
+    return 'El servidor OCR rechazó la solicitud: $details';
+  }
+
+  @override
+  String ocrErrorServer({required int status}) {
+    return 'Error del servidor OCR ($status). Puede que el servidor no esté funcionando o esté mal configurado.';
+  }
+
+  @override
+  String get ocrErrorConnectFailed =>
+      'No se pudo conectar con el servidor OCR. Comprueba la URL y que el servidor esté en marcha.';
+
+  @override
+  String get ocrErrorTimedOut =>
+      'El servidor OCR no responde (se agotó el tiempo de espera).';
+
+  @override
+  String get ocrErrorHostNotFound =>
+      'No se encontró la dirección del servidor OCR. Comprueba la URL.';
+
+  @override
+  String ocrErrorNetwork({required String details}) {
+    return 'Error de red: $details';
+  }
+
+  @override
+  String ocrErrorStatus({required int status, required String details}) {
+    return 'El servidor OCR devolvió el error $status: $details';
+  }
+
+  @override
+  String get ocrErrorMalformedResponse =>
+      'El servidor OCR envió una respuesta que Mekuru no puede leer. Asegúrate de que la URL apunte a un servidor OCR compatible.';
+
+  @override
+  String get ocrErrorServerUrlInvalid =>
+      'La URL del servidor OCR no es válida. Usa una URL completa que empiece por http:// o https://.';
+
+  @override
+  String get ocrErrorSignInFailed =>
+      'No se pudo iniciar sesión en el servicio de OCR.';
+
+  @override
+  String ocrErrorPageImageMissing({required String path}) {
+    return 'No se pudo leer la imagen del manga «$path». Comprueba que la carpeta de imágenes del manga siga disponible.';
+  }
+
+  @override
+  String ocrErrorPageImageAccessLost({required String path}) {
+    return 'No se pudo leer la imagen del manga «$path» desde la carpeta que elegiste. Si cambió el acceso a la carpeta, vuelve a importar el manga.';
+  }
+
+  @override
+  String get ocrErrorRecognitionFailed => 'No se pudo reconocer el texto.';
+
+  @override
+  String get localOcrImageUnsupported =>
+      'El formato o el tamaño de la imagen de la página no se puede leer para el OCR.';
+
+  @override
+  String get localOcrTooManyFailures =>
+      'Fallaron varias páginas seguidas, así que el escaneo se detuvo. El progreso está guardado.';
+
+  @override
+  String get localOcrBookChanged =>
+      'El manga cambió o faltan sus archivos. Inicia un nuevo escaneo.';
+
+  @override
+  String get localOcrStillRunning =>
+      'El OCR todavía se está ejecutando o deteniendo. Espera un momento y vuelve a intentarlo.';
+
+  @override
+  String get localOcrJobEnded => 'Este escaneo ya se detuvo o terminó.';
+
+  @override
+  String get localOcrDownloadNetwork =>
+      'La descarga no pudo conectarse. Comprueba tu conexión a internet y vuelve a intentarlo.';
+
+  @override
+  String get localOcrDownloadDamaged =>
+      'El archivo descargado estaba dañado. Vuelve a descargarlo.';
+
+  @override
+  String get localOcrModelInstallFailed =>
+      'No se pudieron instalar los modelos descargados. Vuelve a intentarlo.';
 }

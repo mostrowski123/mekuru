@@ -121,7 +121,7 @@ void main() {
     expect(calls.map((c) => c.method), ['dismiss']);
     expect(dismissed, 0);
     expect(
-      find.text(AppLocalizationsEn().localOcrError(details: 'job_busy')),
+      find.text(AppLocalizationsEn().localOcrStillRunning),
       findsOneWidget,
     );
   });

@@ -117,6 +117,30 @@ void main() {
       expect(find.text('OCR Failed'), findsOneWidget);
     });
 
+    testWidgets('a failure\'s details are worded from its code', (
+      tester,
+    ) async {
+      final progress = OcrProgress(
+        completed: 5,
+        total: 200,
+        status: OcrStatus.failed,
+        errorMessage: OcrFailure.authFailed.code(),
+      );
+
+      await tester.pumpWidget(buildTestWidget(bookId: 1, progress: progress));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OCR Failed'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Authentication failed. Check the shared key in the Custom OCR '
+          'Server settings.',
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('shows paused overlay with progress', (tester) async {
       const progress = OcrProgress(
         completed: 50,

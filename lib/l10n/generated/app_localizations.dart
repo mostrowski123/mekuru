@@ -6845,6 +6845,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The translation model is about {size}. You\'re on mobile data or a hotspot, so downloading it may use your data plan.'**
   String translationMobileDataBody({required String size});
+
+  /// Shown when a Komga or Kavita book download ended because the system dropped its background job (e.g. the app was force-stopped).
+  ///
+  /// In en, this message translates to:
+  /// **'The download was interrupted. Download the book again.'**
+  String get serverBrowseDownloadInterrupted;
+
+  /// Why a Komga or Kavita download failed when its server connection was deleted or turned off before it could continue. Shown as {error} in 'Download failed: {error}'.
+  ///
+  /// In en, this message translates to:
+  /// **'The server connection was removed or turned off.'**
+  String get serverErrorConnectionGone;
+
+  /// Remote manga OCR failed: the custom OCR server's TLS certificate was rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR server\'s certificate isn\'t trusted. If it uses its own (self-signed) certificate, turn on \"Accept self-signed certificate\" in the Custom OCR Server settings.'**
+  String get ocrErrorCertificateUntrusted;
+
+  /// Remote manga OCR failed: the OCR server rejected the shared key (HTTP 401 or 403).
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Check the shared key in the Custom OCR Server settings.'**
+  String get ocrErrorAuthFailed;
+
+  /// Remote manga OCR failed: the OCR job on the server belongs to another account.
+  ///
+  /// In en, this message translates to:
+  /// **'This OCR job belongs to a different account. Start a new OCR run.'**
+  String get ocrErrorJobForbidden;
+
+  /// Remote manga OCR failed: the account has no OCR credits left (HTTP 402).
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough OCR credits.'**
+  String get ocrErrorNoCredits;
+
+  /// Remote manga OCR failed: the server no longer knows the OCR job (HTTP 404).
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR job was not found. Start a new OCR run.'**
+  String get ocrErrorJobNotFound;
+
+  /// Remote manga OCR failed: the OCR job expired or is no longer active (HTTP 409).
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR job is no longer active. Start a new OCR run.'**
+  String get ocrErrorJobInactive;
+
+  /// Remote manga OCR failed: the server rejected the request (HTTP 422). {details} is the server's own explanation, usually in English.
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR server rejected the request: {details}'**
+  String ocrErrorRejected({required String details});
+
+  /// Remote manga OCR failed with a server error, e.g. HTTP 500 or 503.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR server error ({status}). The server may be down or misconfigured.'**
+  String ocrErrorServer({required int status});
+
+  /// Remote manga OCR failed: the connection to the OCR server was refused or reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect to the OCR server. Check the server URL and that the server is running.'**
+  String get ocrErrorConnectFailed;
+
+  /// Remote manga OCR failed: the OCR server did not answer in time.
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR server isn\'t responding (timed out).'**
+  String get ocrErrorTimedOut;
+
+  /// Remote manga OCR failed: the OCR server's host name could not be looked up.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find the OCR server\'s address. Check the server URL.'**
+  String get ocrErrorHostNotFound;
+
+  /// Remote manga OCR failed with another network error. {details} is the system's error text.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error: {details}'**
+  String ocrErrorNetwork({required String details});
+
+  /// Remote manga OCR failed with another HTTP error status. {details} is the server's own explanation, usually in English.
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR server returned error {status}: {details}'**
+  String ocrErrorStatus({required int status, required String details});
+
+  /// Remote manga OCR failed: the server's answer was not what an OCR server sends.
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR server sent an answer Mekuru can\'t read. Make sure the server URL points to a compatible OCR server.'**
+  String get ocrErrorMalformedResponse;
+
+  /// Remote manga OCR could not start: the custom OCR server URL is not a valid http or https URL.
+  ///
+  /// In en, this message translates to:
+  /// **'The OCR server URL is invalid. Use a full http:// or https:// URL.'**
+  String get ocrErrorServerUrlInvalid;
+
+  /// Cloud manga OCR could not start: signing in to Mekuru's OCR service failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t sign in to the OCR service.'**
+  String get ocrErrorSignInFailed;
+
+  /// Manga OCR stopped: a page's image file is missing. {path} is the file's path.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the manga image \"{path}\". Check that the manga\'s image folder is still there.'**
+  String ocrErrorPageImageMissing({required String path});
+
+  /// Manga OCR stopped: a page's image could not be read through the folder access the user granted (Android). {path} is the image's path inside that folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the manga image \"{path}\" from the folder you chose. If the folder\'s access changed, import the manga again.'**
+  String ocrErrorPageImageAccessLost({required String path});
+
+  /// Manga OCR could not read the text of a page. Shown on its own or after 'Page {page}: '.
+  ///
+  /// In en, this message translates to:
+  /// **'Text recognition failed.'**
+  String get ocrErrorRecognitionFailed;
+
+  /// On-device manga OCR: a page image's format or size can't be read. Shown on its own or after 'Page {page}: '.
+  ///
+  /// In en, this message translates to:
+  /// **'The page image\'s format or size can\'t be read for OCR.'**
+  String get localOcrImageUnsupported;
+
+  /// On-device manga OCR: the scan stopped because several pages in a row failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Several pages in a row failed, so the scan stopped. Progress is saved.'**
+  String get localOcrTooManyFailures;
+
+  /// On-device manga OCR: the manga was changed or its OCR data file is missing, so the scan can't continue.
+  ///
+  /// In en, this message translates to:
+  /// **'The manga changed or its files are missing. Start a new scan.'**
+  String get localOcrBookChanged;
+
+  /// On-device manga OCR: an action was refused because a scan is still running or stopping.
+  ///
+  /// In en, this message translates to:
+  /// **'OCR is still running or stopping. Wait a moment and try again.'**
+  String get localOcrStillRunning;
+
+  /// On-device manga OCR: an action was refused because the scan had already stopped or finished.
+  ///
+  /// In en, this message translates to:
+  /// **'This scan has already stopped or finished.'**
+  String get localOcrJobEnded;
+
+  /// OCR model download failed because of a network problem (no connection, server unreachable, connection dropped).
+  ///
+  /// In en, this message translates to:
+  /// **'The download couldn\'t connect. Check your internet connection and try again.'**
+  String get localOcrDownloadNetwork;
+
+  /// OCR model download failed: the downloaded file was incomplete or did not match its checksum.
+  ///
+  /// In en, this message translates to:
+  /// **'The downloaded file was damaged. Download it again.'**
+  String get localOcrDownloadDamaged;
+
+  /// OCR model download finished but the files could not be moved into place.
+  ///
+  /// In en, this message translates to:
+  /// **'The downloaded models couldn\'t be installed. Try again.'**
+  String get localOcrModelInstallFailed;
 }
 
 class _AppLocalizationsDelegate

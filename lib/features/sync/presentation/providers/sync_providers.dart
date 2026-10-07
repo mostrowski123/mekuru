@@ -221,7 +221,9 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         } else if (!await Workmanager().isScheduledByUniqueName(
           serverDownloadWorkName(job.key),
         )) {
-          await dir.writeStatus(status.failedWith('Download was interrupted'));
+          await dir.writeStatus(
+            status.failedWith(serverDownloadInterruptedError),
+          );
         }
       }
       _follow(job.key, dir);
@@ -370,7 +372,10 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
           .read(serverConnectionRepositoryProvider)
           .getById(meta['connectionId'] as int);
       if (connection == null || !connection.enabled) {
-        throw StateError('The server connection is gone or disabled');
+        await dir.writeStatus(
+          status.failedWith(serverDownloadConnectionGoneError),
+        );
+        return;
       }
       final client = await _clientFor(ref, connection);
       try {
@@ -576,7 +581,11 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         stackTrace: st,
         attrs: {'server_type': serverType},
       );
-      announce((l10n) => l10n.serverBrowseDownloadFailed(error: '$e'));
+      announce(
+        (l10n) => l10n.serverBrowseDownloadFailed(
+          error: importFailureReason(l10n, e),
+        ),
+      );
     }
   }
 }
@@ -589,9 +598,17 @@ String describeServerError(AppLocalizations l10n, Object error) =>
     : l10n.serverBrowseDownloadFailed(error: serverErrorReason(l10n, error));
 
 /// User-facing text for a server download that failed with [error], as
-/// [runServerDownloadWork] recorded it: a server status is explained in the
-/// user's language, any other error shown as it is.
+/// [runServerDownloadWork] or the app recorded it, in the user's language.
+/// An error with no code is shown as it is.
 String describeServerDownloadError(AppLocalizations l10n, String error) {
+  if (error == serverDownloadInterruptedError) {
+    return l10n.serverBrowseDownloadInterrupted;
+  }
+  if (error == serverDownloadConnectionGoneError) {
+    return l10n.serverBrowseDownloadFailed(
+      error: l10n.serverErrorConnectionGone,
+    );
+  }
   final status = error.startsWith(serverDownloadStatusErrorPrefix)
       ? int.tryParse(error.substring(serverDownloadStatusErrorPrefix.length))
       : null;

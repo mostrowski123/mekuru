@@ -1102,7 +1102,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
-              content: Text(next.value?.errorMessage ?? context.l10n.ocrFailed),
+              content: Text(switch (next.value?.errorMessage) {
+                final message? => describeOcrFailure(context.l10n, message),
+                null => context.l10n.ocrFailed,
+              }),
               action: _ocrOptionsAction(),
             ),
           );

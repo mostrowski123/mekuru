@@ -324,7 +324,7 @@ class _FailedOverlay extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.ocrFailed),
-        content: Text(message),
+        content: Text(describeOcrFailure(context.l10n, message)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

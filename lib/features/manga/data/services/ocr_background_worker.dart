@@ -94,6 +94,71 @@ abstract class OcrStopRequest {
 
 enum OcrTaskExecutionMode { workmanager, foreground }
 
+/// Why an OCR run failed, as [OcrProgress.errorMessage] keeps it: `ocr:`,
+/// the failure's name and, for some, `:` and a detail. The app words it in
+/// the user's language (`describeOcrFailure`); progress saved by an older
+/// version holds English text, shown as it is. The names are stored: never
+/// rename one.
+enum OcrFailure {
+  certificateUntrusted,
+  authFailed,
+  jobForbidden,
+  noCredits,
+  jobNotFound,
+  jobInactive,
+
+  /// Detail: the server's explanation.
+  rejected,
+
+  /// Detail: the HTTP status.
+  serverError,
+  connectFailed,
+  timedOut,
+  hostNotFound,
+
+  /// Detail: the system's error text.
+  network,
+
+  /// Detail: `<HTTP status>:<the server's explanation>`.
+  status,
+  malformedResponse,
+
+  /// Detail: the error's own text.
+  unexpected,
+  serverUrlMissing,
+  serverUrlInvalid,
+  keyMissing,
+  signInFailed,
+
+  /// Detail: the image's path.
+  pageImageMissing,
+
+  /// Detail: the image's path inside the folder the user granted access to.
+  pageImageAccessLost,
+  recognitionFailed;
+
+  static const _prefix = 'ocr:';
+
+  /// This failure as [OcrProgress.errorMessage] stores it.
+  String code([Object? detail]) =>
+      '$_prefix$name${detail == null ? '' : ':$detail'}';
+
+  /// The failure and detail stored in [errorMessage], or null for text an
+  /// older version stored.
+  static ({OcrFailure failure, String detail})? parse(String errorMessage) {
+    if (!errorMessage.startsWith(_prefix)) return null;
+    final rest = errorMessage.substring(_prefix.length);
+    final colon = rest.indexOf(':');
+    final failure = values
+        .asNameMap()[colon < 0 ? rest : rest.substring(0, colon)];
+    if (failure == null) return null;
+    return (
+      failure: failure,
+      detail: colon < 0 ? '' : rest.substring(colon + 1),
+    );
+  }
+}
+
 /// Progress data stored in SharedPreferences as JSON.
 class OcrProgress {
   final int completed;
@@ -214,7 +279,7 @@ void ocrWorkerCallbackDispatcher() {
             completed: 0,
             total: 0,
             status: OcrStatus.failed,
-            errorMessage: _describeOcrError(e),
+            errorMessage: ocrErrorCode(e),
           ),
         );
       } catch (progressError) {
@@ -377,11 +442,11 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     await OcrProgress.save(
       prefs,
       bookId,
-      const OcrProgress(
+      OcrProgress(
         completed: 0,
         total: 0,
         status: OcrStatus.failed,
-        errorMessage: 'OCR server URL is not configured.',
+        errorMessage: OcrFailure.serverUrlMissing.code(),
       ),
     );
     await _clearActiveOcrJob(bookId);
@@ -394,12 +459,11 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     await OcrProgress.save(
       prefs,
       bookId,
-      const OcrProgress(
+      OcrProgress(
         completed: 0,
         total: 0,
         status: OcrStatus.failed,
-        errorMessage:
-            'OCR server URL is invalid. Use a full http:// or https:// URL.',
+        errorMessage: OcrFailure.serverUrlInvalid.code(),
       ),
     );
     await _clearActiveOcrJob(bookId);
@@ -410,11 +474,11 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
     await OcrProgress.save(
       prefs,
       bookId,
-      const OcrProgress(
+      OcrProgress(
         completed: 0,
         total: 0,
         status: OcrStatus.failed,
-        errorMessage: 'No bearer key configured for custom OCR server.',
+        errorMessage: OcrFailure.keyMissing.code(),
       ),
     );
     await _clearActiveOcrJob(bookId);
@@ -429,11 +493,11 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
       await OcrProgress.save(
         prefs,
         bookId,
-        const OcrProgress(
+        OcrProgress(
           completed: 0,
           total: 0,
           status: OcrStatus.failed,
-          errorMessage: 'Could not authenticate with OCR service.',
+          errorMessage: OcrFailure.signInFailed.code(),
         ),
       );
       await _clearActiveOcrJob(bookId);
@@ -760,16 +824,12 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
           return true;
         }
         if (e.statusCode == 401) {
-          return await failWithError(
-            'Authentication failed. '
-            'Check your server bearer key.',
-            e,
-          );
+          return await failWithError(OcrFailure.authFailed.code(), e);
         }
         consecutiveFailures++;
         if (!anyPageSucceeded ||
             consecutiveFailures >= _maxConsecutiveFailures) {
-          return await failWithError(_describeOcrError(e), e);
+          return await failWithError(ocrErrorCode(e), e);
         }
         completed++;
         await saveRunningProgress();
@@ -783,7 +843,7 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
         consecutiveFailures++;
         if (!anyPageSucceeded ||
             consecutiveFailures >= _maxConsecutiveFailures) {
-          return await failWithError(_describeOcrError(e), e);
+          return await failWithError(ocrErrorCode(e), e);
         }
         completed++;
         await saveRunningProgress();
@@ -841,71 +901,52 @@ Future<bool> _processRemoteOcrTask(Map<String, dynamic> inputData) async {
   }
 }
 
-/// Build a user-friendly error description from an OCR processing error.
-String _describeOcrError(Object error) {
+/// [error] as an [OcrFailure] code for [OcrProgress.errorMessage].
+String ocrErrorCode(Object error) {
   if ('$error'.contains('CERTIFICATE_VERIFY_FAILED')) {
-    return "The OCR server's certificate isn't trusted. If it uses its own "
-        '(self-signed) certificate, turn on "Accept self-signed certificate" '
-        'in the custom OCR server settings.';
+    return OcrFailure.certificateUntrusted.code();
+  }
+  if (error is TextRecognitionException) {
+    return OcrFailure.recognitionFailed.code();
   }
   if (error is OcrServerException) {
     final msg = error.message.toLowerCase();
-    if (error.statusCode == 401) {
-      return 'Authentication failed. Check your server bearer key.';
-    }
-    if (error.statusCode == 403) {
+    return switch (error.statusCode) {
+      401 => OcrFailure.authFailed.code(),
       // job_forbidden: the OCR job belongs to a different account.
-      if (error.code == 'job_forbidden') {
-        return 'This OCR job belongs to a different account. '
-            'Start a new OCR run.';
-      }
-      return 'Authentication failed. Check your server bearer key.';
-    }
-    if (error.statusCode == 402) {
-      return 'Not enough OCR credits. ${error.message}';
-    }
-    if (error.statusCode == 404) {
-      return 'The OCR job was not found. Start a new OCR run.';
-    }
-    if (error.statusCode == 409) {
+      403 when error.code == 'job_forbidden' => OcrFailure.jobForbidden.code(),
+      403 => OcrFailure.authFailed.code(),
+      402 => OcrFailure.noCredits.code(),
+      404 => OcrFailure.jobNotFound.code(),
       // job_expired or job_not_active
-      return 'The OCR job is no longer active. Start a new OCR run.';
-    }
-    if (error.statusCode == 422) {
-      return 'Server rejected the request: ${error.message}';
-    }
-    if (error.statusCode >= 500) {
-      return 'OCR server error (${error.statusCode}). '
-          'The server may be down or misconfigured.';
-    }
-    if (error.statusCode == 0) {
+      409 => OcrFailure.jobInactive.code(),
+      422 => OcrFailure.rejected.code(error.message),
+      >= 500 => OcrFailure.serverError.code(error.statusCode),
       // Network-level errors from the client
-      if (msg.contains('connection refused') ||
-          msg.contains('connection reset') ||
-          msg.contains('no route to host')) {
-        return 'Could not connect to OCR server. '
-            'Check the server URL and that the server is running.';
-      }
-      if (msg.contains('timed out')) {
-        return 'OCR server is not responding (timed out).';
-      }
-      if (msg.contains('no address associated') ||
-          msg.contains('name or service not known') ||
-          msg.contains('getaddrinfo') ||
-          msg.contains('failed host lookup')) {
-        return 'Could not resolve OCR server address. '
-            'Check the server URL.';
-      }
-      return 'Network error: ${error.message}';
-    }
-    return 'OCR server returned error ${error.statusCode}: ${error.message}';
+      0
+          when msg.contains('connection refused') ||
+              msg.contains('connection reset') ||
+              msg.contains('no route to host') =>
+        OcrFailure.connectFailed.code(),
+      0 when msg.contains('timed out') => OcrFailure.timedOut.code(),
+      0
+          when msg.contains('no address associated') ||
+              msg.contains('name or service not known') ||
+              msg.contains('getaddrinfo') ||
+              msg.contains('failed host lookup') =>
+        OcrFailure.hostNotFound.code(),
+      // The client's message already says "Network error: ".
+      0 => OcrFailure.network.code(
+        error.message.replaceFirst('Network error: ', ''),
+      ),
+      _ => OcrFailure.status.code('${error.statusCode}:${error.message}'),
+    };
   }
   final desc = error.toString().toLowerCase();
   if (desc.contains('formatexception') || desc.contains('type \'')) {
-    return 'OCR server returned a malformed response. '
-        'Make sure the server URL points to a compatible OCR server.';
+    return OcrFailure.malformedResponse.code();
   }
-  return 'Unexpected error: $error';
+  return OcrFailure.unexpected.code(error);
 }
 
 bool _pageNeedsOcr(MokuroBook book, MokuroPage page) {
@@ -1161,17 +1202,11 @@ String _describeMissingPageImage({
 }) {
   if (mokuroBook.safTreeUri != null &&
       mokuroBook.safImageDirRelativePath != null) {
-    final relativePath = p.posix.join(
-      mokuroBook.safImageDirRelativePath!,
-      page.imageFileName,
+    return OcrFailure.pageImageAccessLost.code(
+      p.posix.join(mokuroBook.safImageDirRelativePath!, page.imageFileName),
     );
-    return 'Could not read manga image "$relativePath" from the selected '
-        'folder access grant. Re-import the manga if folder access changed.';
   }
-
-  final imagePath = p.join(imageDir, page.imageFileName);
-  return 'Could not read manga image "$imagePath". '
-      'Check that the manga image folder is still available.';
+  return OcrFailure.pageImageMissing.code(p.join(imageDir, page.imageFileName));
 }
 
 /// iOS scans run inside the app, so one that was `running` when the app last
@@ -1322,7 +1357,7 @@ Future<void> scheduleOcrTask({
                 completed: last?.completed ?? 0,
                 total: last?.total ?? 0,
                 status: OcrStatus.failed,
-                errorMessage: _describeOcrError(error),
+                errorMessage: ocrErrorCode(error),
               ),
             );
           } catch (_) {

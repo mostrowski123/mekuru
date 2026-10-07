@@ -4027,6 +4027,108 @@ class AppLocalizationsZh extends AppLocalizations {
   String translationMobileDataBody({required String size}) {
     return '翻译模型大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
   }
+
+  @override
+  String get serverBrowseDownloadInterrupted => '下载已中断。请重新下载这本书。';
+
+  @override
+  String get serverErrorConnectionGone => '服务器连接已被删除或停用。';
+
+  @override
+  String get ocrErrorCertificateUntrusted =>
+      'OCR 服务器的证书不受信任。如果它使用自有（自签名）证书，请在自定义 OCR 服务器设置中打开“接受自签名证书”。';
+
+  @override
+  String get ocrErrorAuthFailed => '身份验证失败。请在自定义 OCR 服务器设置中检查共享密钥。';
+
+  @override
+  String get ocrErrorJobForbidden => '此 OCR 任务属于其他账户。请重新开始 OCR。';
+
+  @override
+  String get ocrErrorNoCredits => 'OCR 点数不足。';
+
+  @override
+  String get ocrErrorJobNotFound => '找不到 OCR 任务。请重新开始 OCR。';
+
+  @override
+  String get ocrErrorJobInactive => 'OCR 任务已失效。请重新开始 OCR。';
+
+  @override
+  String ocrErrorRejected({required String details}) {
+    return 'OCR 服务器拒绝了请求：$details';
+  }
+
+  @override
+  String ocrErrorServer({required int status}) {
+    return 'OCR 服务器错误（$status）。服务器可能已停止运行或配置有误。';
+  }
+
+  @override
+  String get ocrErrorConnectFailed => '无法连接 OCR 服务器。请检查服务器 URL，并确认服务器正在运行。';
+
+  @override
+  String get ocrErrorTimedOut => 'OCR 服务器没有响应（已超时）。';
+
+  @override
+  String get ocrErrorHostNotFound => '找不到 OCR 服务器的地址。请检查服务器 URL。';
+
+  @override
+  String ocrErrorNetwork({required String details}) {
+    return '网络错误：$details';
+  }
+
+  @override
+  String ocrErrorStatus({required int status, required String details}) {
+    return 'OCR 服务器返回错误 $status：$details';
+  }
+
+  @override
+  String get ocrErrorMalformedResponse =>
+      'OCR 服务器返回了 Mekuru 无法读取的响应。请确认服务器 URL 指向兼容的 OCR 服务器。';
+
+  @override
+  String get ocrErrorServerUrlInvalid =>
+      'OCR 服务器 URL 无效。请使用以 http:// 或 https:// 开头的完整 URL。';
+
+  @override
+  String get ocrErrorSignInFailed => '无法登录 OCR 服务。';
+
+  @override
+  String ocrErrorPageImageMissing({required String path}) {
+    return '无法读取漫画图片“$path”。请确认漫画的图片文件夹仍然存在。';
+  }
+
+  @override
+  String ocrErrorPageImageAccessLost({required String path}) {
+    return '无法从你选择的文件夹读取漫画图片“$path”。如果文件夹的访问权限有变，请重新导入漫画。';
+  }
+
+  @override
+  String get ocrErrorRecognitionFailed => '文字识别失败。';
+
+  @override
+  String get localOcrImageUnsupported => '此页图片的格式或尺寸无法用于 OCR。';
+
+  @override
+  String get localOcrTooManyFailures => '连续多页识别失败，扫描已停止。进度已保存。';
+
+  @override
+  String get localOcrBookChanged => '漫画已更改或文件缺失。请重新开始扫描。';
+
+  @override
+  String get localOcrStillRunning => 'OCR 仍在运行或正在停止。请稍后再试。';
+
+  @override
+  String get localOcrJobEnded => '此扫描已停止或已完成。';
+
+  @override
+  String get localOcrDownloadNetwork => '下载无法连接。请检查网络连接后重试。';
+
+  @override
+  String get localOcrDownloadDamaged => '下载的文件已损坏。请重新下载。';
+
+  @override
+  String get localOcrModelInstallFailed => '无法安装下载的模型。请重试。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -8052,4 +8154,106 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String translationMobileDataBody({required String size}) {
     return '翻译模型大小约为 $size。你正在使用移动数据或热点，下载可能会消耗你的流量。';
   }
+
+  @override
+  String get serverBrowseDownloadInterrupted => '下载已中断。请重新下载这本书。';
+
+  @override
+  String get serverErrorConnectionGone => '服务器连接已被删除或停用。';
+
+  @override
+  String get ocrErrorCertificateUntrusted =>
+      'OCR 服务器的证书不受信任。如果它使用自有（自签名）证书，请在自定义 OCR 服务器设置中打开“接受自签名证书”。';
+
+  @override
+  String get ocrErrorAuthFailed => '身份验证失败。请在自定义 OCR 服务器设置中检查共享密钥。';
+
+  @override
+  String get ocrErrorJobForbidden => '此 OCR 任务属于其他账户。请重新开始 OCR。';
+
+  @override
+  String get ocrErrorNoCredits => 'OCR 点数不足。';
+
+  @override
+  String get ocrErrorJobNotFound => '找不到 OCR 任务。请重新开始 OCR。';
+
+  @override
+  String get ocrErrorJobInactive => 'OCR 任务已失效。请重新开始 OCR。';
+
+  @override
+  String ocrErrorRejected({required String details}) {
+    return 'OCR 服务器拒绝了请求：$details';
+  }
+
+  @override
+  String ocrErrorServer({required int status}) {
+    return 'OCR 服务器错误（$status）。服务器可能已停止运行或配置有误。';
+  }
+
+  @override
+  String get ocrErrorConnectFailed => '无法连接 OCR 服务器。请检查服务器 URL，并确认服务器正在运行。';
+
+  @override
+  String get ocrErrorTimedOut => 'OCR 服务器没有响应（已超时）。';
+
+  @override
+  String get ocrErrorHostNotFound => '找不到 OCR 服务器的地址。请检查服务器 URL。';
+
+  @override
+  String ocrErrorNetwork({required String details}) {
+    return '网络错误：$details';
+  }
+
+  @override
+  String ocrErrorStatus({required int status, required String details}) {
+    return 'OCR 服务器返回错误 $status：$details';
+  }
+
+  @override
+  String get ocrErrorMalformedResponse =>
+      'OCR 服务器返回了 Mekuru 无法读取的响应。请确认服务器 URL 指向兼容的 OCR 服务器。';
+
+  @override
+  String get ocrErrorServerUrlInvalid =>
+      'OCR 服务器 URL 无效。请使用以 http:// 或 https:// 开头的完整 URL。';
+
+  @override
+  String get ocrErrorSignInFailed => '无法登录 OCR 服务。';
+
+  @override
+  String ocrErrorPageImageMissing({required String path}) {
+    return '无法读取漫画图片“$path”。请确认漫画的图片文件夹仍然存在。';
+  }
+
+  @override
+  String ocrErrorPageImageAccessLost({required String path}) {
+    return '无法从你选择的文件夹读取漫画图片“$path”。如果文件夹的访问权限有变，请重新导入漫画。';
+  }
+
+  @override
+  String get ocrErrorRecognitionFailed => '文字识别失败。';
+
+  @override
+  String get localOcrImageUnsupported => '此页图片的格式或尺寸无法用于 OCR。';
+
+  @override
+  String get localOcrTooManyFailures => '连续多页识别失败，扫描已停止。进度已保存。';
+
+  @override
+  String get localOcrBookChanged => '漫画已更改或文件缺失。请重新开始扫描。';
+
+  @override
+  String get localOcrStillRunning => 'OCR 仍在运行或正在停止。请稍后再试。';
+
+  @override
+  String get localOcrJobEnded => '此扫描已停止或已完成。';
+
+  @override
+  String get localOcrDownloadNetwork => '下载无法连接。请检查网络连接后重试。';
+
+  @override
+  String get localOcrDownloadDamaged => '下载的文件已损坏。请重新下载。';
+
+  @override
+  String get localOcrModelInstallFailed => '无法安装下载的模型。请重试。';
 }

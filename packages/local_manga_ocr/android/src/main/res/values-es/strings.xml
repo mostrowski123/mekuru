@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ocr_notification_channel">OCR de manga en el dispositivo</string>
+    <string name="ocr_preparing">Preparando el reconocimiento de texto…</string>
+    <string name="ocr_notification_progress">En el dispositivo · %1$d / %2$d páginas procesadas</string>
+    <string name="ocr_pause">Pausar</string>
+    <string name="ocr_cancel">Cancelar</string>
+    <string name="ocr_pausing">Pausando…</string>
+    <string name="ocr_cancelling">Cancelando…</string>
+</resources>

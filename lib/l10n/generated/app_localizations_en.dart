@@ -4208,4 +4208,122 @@ class AppLocalizationsEn extends AppLocalizations {
   String translationMobileDataBody({required String size}) {
     return 'The translation model is about $size. You\'re on mobile data or a hotspot, so downloading it may use your data plan.';
   }
+
+  @override
+  String get serverBrowseDownloadInterrupted =>
+      'The download was interrupted. Download the book again.';
+
+  @override
+  String get serverErrorConnectionGone =>
+      'The server connection was removed or turned off.';
+
+  @override
+  String get ocrErrorCertificateUntrusted =>
+      'The OCR server\'s certificate isn\'t trusted. If it uses its own (self-signed) certificate, turn on \"Accept self-signed certificate\" in the Custom OCR Server settings.';
+
+  @override
+  String get ocrErrorAuthFailed =>
+      'Authentication failed. Check the shared key in the Custom OCR Server settings.';
+
+  @override
+  String get ocrErrorJobForbidden =>
+      'This OCR job belongs to a different account. Start a new OCR run.';
+
+  @override
+  String get ocrErrorNoCredits => 'Not enough OCR credits.';
+
+  @override
+  String get ocrErrorJobNotFound =>
+      'The OCR job was not found. Start a new OCR run.';
+
+  @override
+  String get ocrErrorJobInactive =>
+      'The OCR job is no longer active. Start a new OCR run.';
+
+  @override
+  String ocrErrorRejected({required String details}) {
+    return 'The OCR server rejected the request: $details';
+  }
+
+  @override
+  String ocrErrorServer({required int status}) {
+    return 'OCR server error ($status). The server may be down or misconfigured.';
+  }
+
+  @override
+  String get ocrErrorConnectFailed =>
+      'Couldn\'t connect to the OCR server. Check the server URL and that the server is running.';
+
+  @override
+  String get ocrErrorTimedOut =>
+      'The OCR server isn\'t responding (timed out).';
+
+  @override
+  String get ocrErrorHostNotFound =>
+      'Couldn\'t find the OCR server\'s address. Check the server URL.';
+
+  @override
+  String ocrErrorNetwork({required String details}) {
+    return 'Network error: $details';
+  }
+
+  @override
+  String ocrErrorStatus({required int status, required String details}) {
+    return 'The OCR server returned error $status: $details';
+  }
+
+  @override
+  String get ocrErrorMalformedResponse =>
+      'The OCR server sent an answer Mekuru can\'t read. Make sure the server URL points to a compatible OCR server.';
+
+  @override
+  String get ocrErrorServerUrlInvalid =>
+      'The OCR server URL is invalid. Use a full http:// or https:// URL.';
+
+  @override
+  String get ocrErrorSignInFailed => 'Couldn\'t sign in to the OCR service.';
+
+  @override
+  String ocrErrorPageImageMissing({required String path}) {
+    return 'Couldn\'t read the manga image \"$path\". Check that the manga\'s image folder is still there.';
+  }
+
+  @override
+  String ocrErrorPageImageAccessLost({required String path}) {
+    return 'Couldn\'t read the manga image \"$path\" from the folder you chose. If the folder\'s access changed, import the manga again.';
+  }
+
+  @override
+  String get ocrErrorRecognitionFailed => 'Text recognition failed.';
+
+  @override
+  String get localOcrImageUnsupported =>
+      'The page image\'s format or size can\'t be read for OCR.';
+
+  @override
+  String get localOcrTooManyFailures =>
+      'Several pages in a row failed, so the scan stopped. Progress is saved.';
+
+  @override
+  String get localOcrBookChanged =>
+      'The manga changed or its files are missing. Start a new scan.';
+
+  @override
+  String get localOcrStillRunning =>
+      'OCR is still running or stopping. Wait a moment and try again.';
+
+  @override
+  String get localOcrJobEnded => 'This scan has already stopped or finished.';
+
+  @override
+  String get localOcrDownloadNetwork =>
+      'The download couldn\'t connect. Check your internet connection and try again.';
+
+  @override
+  String get localOcrDownloadDamaged =>
+      'The downloaded file was damaged. Download it again.';
+
+  @override
+  String get localOcrModelInstallFailed =>
+      'The downloaded models couldn\'t be installed. Try again.';
 }

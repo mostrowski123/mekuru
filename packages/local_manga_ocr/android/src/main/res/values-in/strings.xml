@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ocr_notification_channel">OCR manga di perangkat</string>
+    <string name="ocr_preparing">Menyiapkan pengenalan teks…</string>
+    <string name="ocr_notification_progress">Di perangkat · %1$d / %2$d halaman diproses</string>
+    <string name="ocr_pause">Jeda</string>
+    <string name="ocr_cancel">Batal</string>
+    <string name="ocr_pausing">Menjeda…</string>
+    <string name="ocr_cancelling">Membatalkan…</string>
+</resources>

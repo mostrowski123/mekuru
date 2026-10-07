@@ -31,6 +31,14 @@ const serverDownloadStoppedError = 'stopped';
 /// was rejected: a self-signed one, with the switch off.
 const serverDownloadUntrustedCertificateError = 'untrusted_certificate';
 
+/// [ServerDownloadWorkStatus.error] of an Android download whose WorkManager
+/// job was dropped (the app force-stopped or updated) before it finished.
+const serverDownloadInterruptedError = 'interrupted';
+
+/// [ServerDownloadWorkStatus.error] of an iOS download that could not be
+/// restarted because its server connection was deleted or turned off.
+const serverDownloadConnectionGoneError = 'connection_gone';
+
 /// Prefix of the [ServerDownloadWorkStatus.error] of a download the server
 /// answered with an error status, e.g. `server_status:401`, or never
 /// answered (`server_status:0`). The app explains it in the user's language.

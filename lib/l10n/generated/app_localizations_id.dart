@@ -4231,4 +4231,121 @@ class AppLocalizationsId extends AppLocalizations {
   String translationMobileDataBody({required String size}) {
     return 'Ukuran model terjemahan sekitar $size. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda.';
   }
+
+  @override
+  String get serverBrowseDownloadInterrupted =>
+      'Unduhan terputus. Unduh buku lagi.';
+
+  @override
+  String get serverErrorConnectionGone =>
+      'Koneksi server telah dihapus atau dinonaktifkan.';
+
+  @override
+  String get ocrErrorCertificateUntrusted =>
+      'Sertifikat server OCR tidak dipercaya. Jika server memakai sertifikatnya sendiri (ditandatangani sendiri), aktifkan \"Terima sertifikat yang ditandatangani sendiri\" di pengaturan Server OCR Kustom.';
+
+  @override
+  String get ocrErrorAuthFailed =>
+      'Autentikasi gagal. Periksa shared key di pengaturan Server OCR Kustom.';
+
+  @override
+  String get ocrErrorJobForbidden =>
+      'Tugas OCR ini milik akun lain. Mulai OCR baru.';
+
+  @override
+  String get ocrErrorNoCredits => 'Kredit OCR tidak cukup.';
+
+  @override
+  String get ocrErrorJobNotFound =>
+      'Tugas OCR tidak ditemukan. Mulai OCR baru.';
+
+  @override
+  String get ocrErrorJobInactive =>
+      'Tugas OCR sudah tidak aktif. Mulai OCR baru.';
+
+  @override
+  String ocrErrorRejected({required String details}) {
+    return 'Server OCR menolak permintaan: $details';
+  }
+
+  @override
+  String ocrErrorServer({required int status}) {
+    return 'Kesalahan server OCR ($status). Server mungkin mati atau salah dikonfigurasi.';
+  }
+
+  @override
+  String get ocrErrorConnectFailed =>
+      'Tidak dapat terhubung ke server OCR. Periksa URL server dan pastikan server berjalan.';
+
+  @override
+  String get ocrErrorTimedOut => 'Server OCR tidak merespons (waktu habis).';
+
+  @override
+  String get ocrErrorHostNotFound =>
+      'Alamat server OCR tidak ditemukan. Periksa URL server.';
+
+  @override
+  String ocrErrorNetwork({required String details}) {
+    return 'Kesalahan jaringan: $details';
+  }
+
+  @override
+  String ocrErrorStatus({required int status, required String details}) {
+    return 'Server OCR mengembalikan kesalahan $status: $details';
+  }
+
+  @override
+  String get ocrErrorMalformedResponse =>
+      'Server OCR mengirim jawaban yang tidak dapat dibaca Mekuru. Pastikan URL server mengarah ke server OCR yang kompatibel.';
+
+  @override
+  String get ocrErrorServerUrlInvalid =>
+      'URL server OCR tidak valid. Gunakan URL lengkap dengan http:// atau https://.';
+
+  @override
+  String get ocrErrorSignInFailed => 'Tidak dapat masuk ke layanan OCR.';
+
+  @override
+  String ocrErrorPageImageMissing({required String path}) {
+    return 'Tidak dapat membaca gambar manga \"$path\". Pastikan folder gambar manga masih ada.';
+  }
+
+  @override
+  String ocrErrorPageImageAccessLost({required String path}) {
+    return 'Tidak dapat membaca gambar manga \"$path\" dari folder yang Anda pilih. Jika akses folder berubah, impor ulang manga.';
+  }
+
+  @override
+  String get ocrErrorRecognitionFailed => 'Pengenalan teks gagal.';
+
+  @override
+  String get localOcrImageUnsupported =>
+      'Format atau ukuran gambar halaman tidak dapat dibaca untuk OCR.';
+
+  @override
+  String get localOcrTooManyFailures =>
+      'Beberapa halaman berturut-turut gagal, jadi pemindaian dihentikan. Progres sudah disimpan.';
+
+  @override
+  String get localOcrBookChanged =>
+      'Manga ini berubah atau berkasnya hilang. Mulai pemindaian baru.';
+
+  @override
+  String get localOcrStillRunning =>
+      'OCR masih berjalan atau sedang berhenti. Tunggu sebentar lalu coba lagi.';
+
+  @override
+  String get localOcrJobEnded => 'Pemindaian ini sudah berhenti atau selesai.';
+
+  @override
+  String get localOcrDownloadNetwork =>
+      'Unduhan tidak dapat terhubung. Periksa koneksi internet Anda lalu coba lagi.';
+
+  @override
+  String get localOcrDownloadDamaged =>
+      'Berkas yang diunduh rusak. Unduh lagi.';
+
+  @override
+  String get localOcrModelInstallFailed =>
+      'Model yang diunduh tidak dapat dipasang. Coba lagi.';
 }

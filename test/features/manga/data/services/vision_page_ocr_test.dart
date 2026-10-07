@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mekuru/features/manga/data/services/manga_ocr_client.dart';
 import 'package:mekuru/features/manga/data/services/ndl_text_model.dart';
 import 'package:mekuru/features/manga/data/services/vision_page_ocr.dart';
 import 'package:path/path.dart' as p;
@@ -56,14 +55,14 @@ void main() {
     ]);
   });
 
-  test('a Vision failure surfaces as the error the page loop handles', () {
+  test('a Vision failure is a recognition error, not a server one', () {
     messenger.setMockMethodCallHandler(channel, (call) async {
       throw PlatformException(code: 'vision_failed', message: 'no image');
     });
 
     expect(
       recognizePageWithVision(Uint8List(0), '0001.jpg'),
-      throwsA(isA<OcrServerException>()),
+      throwsA(isA<TextRecognitionException>()),
     );
   });
 

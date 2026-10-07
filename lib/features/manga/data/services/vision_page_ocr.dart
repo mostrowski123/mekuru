@@ -7,6 +7,17 @@ import 'vision_block_grouping.dart';
 
 const _channel = MethodChannel('mekuru/vision_ocr');
 
+/// Apple Vision could not read a page. [message] is for logs; the user sees
+/// `ocrErrorRecognitionFailed`.
+class TextRecognitionException implements Exception {
+  final String message;
+
+  const TextRecognitionException(this.message);
+
+  @override
+  String toString() => 'TextRecognitionException: $message';
+}
+
 /// On-device OCR for one manga page on iOS: Apple Vision finds and reads the
 /// text lines (`AppDelegate.swift`), [groupVisionLines] turns them into
 /// blocks. Same signature as [MangaOcrClient.processPage] so the page loop in
@@ -26,10 +37,9 @@ Future<OcrPageResult> recognizePageWithVision(
       imageBytes,
     );
   } on PlatformException catch (e) {
-    // The page loop's failure handling is written for server errors.
-    throw OcrServerException(500, e.message ?? 'Text recognition failed.');
+    throw TextRecognitionException(e.message ?? e.code);
   }
-  if (page == null) throw const OcrServerException(500, 'No result.');
+  if (page == null) throw const TextRecognitionException('No result.');
 
   final blocks = groupVisionLines([
     for (final line in page['lines'] as List)
