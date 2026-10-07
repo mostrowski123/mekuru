@@ -2,6 +2,7 @@ package moe.matthew.mekuru.ocr
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -14,15 +15,21 @@ import java.net.URL
 class ModelDownloadNetwork(context: Context, private val allowMobileData: Boolean) {
     private val connectivity = context.getSystemService(ConnectivityManager::class.java)
 
-    fun isWifiConnected(): Boolean = connectivity.activeNetwork?.let {
-        connectivity.getNetworkCapabilities(it)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-    } == true
+    fun isWifiConnected(): Boolean = connectivity.activeNetwork?.let(::isUnmeteredWifi) == true
 
     fun open(url: String): HttpURLConnection {
         val network = connectivity.activeNetwork ?: throw IOException("network_unavailable")
-        val wifi = connectivity.getNetworkCapabilities(network)
-            ?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
-        if (!allowMobileData && !wifi) throw IOException("wifi_required")
+        if (!allowMobileData && !isUnmeteredWifi(network)) throw IOException("wifi_required")
         return network.openConnection(URL(url)) as HttpURLConnection
     }
+
+    /** Wi-Fi that isn't metered. A phone's hotspot, or a Wi-Fi the user marked
+     * metered, costs data like mobile does, so it gets the mobile-data question
+     * (like iOS's isUnmetered), and WorkManager's UNMETERED constraint, which
+     * Dart downloads started "on Wi-Fi" use, would never run on it. */
+    private fun isUnmeteredWifi(network: Network): Boolean =
+        connectivity.getNetworkCapabilities(network)?.let {
+            it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) &&
+                it.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+        } == true
 }

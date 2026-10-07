@@ -10,9 +10,9 @@ import 'package:mekuru/core/services/usage_telemetry.dart';
 const _iosChannel = MethodChannel('mekuru/network');
 
 /// Whether a large download can start without asking about mobile data. On
-/// Android the active network is Wi-Fi; on iOS it is neither cellular or a
-/// hotspot nor in Low Data Mode. False when the check fails, so callers ask
-/// rather than spend the user's data.
+/// Android the active network is Wi-Fi that isn't metered (not a hotspot);
+/// on iOS it is neither cellular or a hotspot nor in Low Data Mode. False
+/// when the check fails, so callers ask rather than spend the user's data.
 Future<bool> isOnWifi() async {
   try {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -44,7 +44,8 @@ class DownloadStoppedInBackgroundException implements Exception {
 /// fails for another reason while off Wi-Fi (the Wi-Fi socket died) reports
 /// the same. On Android in the background the Wi-Fi check reads false
 /// because the app's network is blocked, so it isn't watched there, and a
-/// transfer that fails then reports [DownloadStoppedInBackgroundException].
+/// transfer that can't start or fails then reports
+/// [DownloadStoppedInBackgroundException].
 /// The caller still closes [client].
 // ponytail: a connection opened on Wi-Fi stays on it, so the poll only matters
 // when the network changes under it (Low Data Mode switched on), and stops it
@@ -55,7 +56,11 @@ Future<T> whileOnWifi<T>(
   Future<T> Function() transfer, {
   Duration every = const Duration(seconds: 2),
 }) async {
-  if (!await isOnWifi()) throw const WifiLostException();
+  if (!await isOnWifi()) {
+    throw _inAndroidBackground()
+        ? const DownloadStoppedInBackgroundException()
+        : const WifiLostException();
+  }
   var lost = false;
   final watch = Timer.periodic(every, (_) async {
     if (lost || _inAndroidBackground()) return;

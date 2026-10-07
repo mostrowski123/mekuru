@@ -174,6 +174,8 @@ void ocrWorkerCallbackDispatcher() {
           attrs: {'route': 'worker'},
         );
         return true;
+      } finally {
+        await _flushSentry();
       }
     }
     if (taskName == gemmaDownloadTaskName && inputData != null) {
@@ -190,6 +192,8 @@ void ocrWorkerCallbackDispatcher() {
           attrs: {'route': 'worker'},
         );
         return true;
+      } finally {
+        await _flushSentry();
       }
     }
     if (taskName != ocrTaskName || inputData == null) return true;
@@ -221,15 +225,19 @@ void ocrWorkerCallbackDispatcher() {
       }
       return false;
     } finally {
-      // Flush batched logs before the isolate goes away, bounded so a dead
-      // network never delays the task's result.
-      try {
-        await Sentry.close().timeout(const Duration(seconds: 3));
-      } catch (_) {
-        // Best effort only; the job's outcome is already persisted.
-      }
+      await _flushSentry();
     }
   });
+}
+
+/// Flushes batched logs before the isolate goes away, bounded so a dead
+/// network never delays the task's result.
+Future<void> _flushSentry() async {
+  try {
+    await Sentry.close().timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // Best effort only; the job's outcome is already persisted.
+  }
 }
 
 /// Flush any queued OCR job finalizations that could not be sent earlier.

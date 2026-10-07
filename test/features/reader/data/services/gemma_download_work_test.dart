@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:path/path.dart' as p;
@@ -27,7 +29,11 @@ class _FakeWorkmanager extends WorkmanagerPlatform {
       >[];
   final cancelled = <String>[];
   var scheduled = false;
+  var scheduledChecks = 0;
   var enqueued = Completer<void>();
+
+  /// When set, an enqueue waits for it after it is recorded.
+  Completer<void>? holdEnqueue;
 
   @override
   Future<void> registerOneOffTask(
@@ -49,6 +55,11 @@ class _FakeWorkmanager extends WorkmanagerPlatform {
       network: constraints?.networkType,
       policy: existingWorkPolicy,
     ));
+    final hold = holdEnqueue;
+    if (hold != null) {
+      if (!enqueued.isCompleted) enqueued.complete();
+      await hold.future;
+    }
     scheduled = true;
     if (!enqueued.isCompleted) enqueued.complete();
   }
@@ -60,7 +71,10 @@ class _FakeWorkmanager extends WorkmanagerPlatform {
   }
 
   @override
-  Future<bool> isScheduledByUniqueName(String uniqueName) async => scheduled;
+  Future<bool> isScheduledByUniqueName(String uniqueName) async {
+    scheduledChecks++;
+    return scheduled;
+  }
 }
 
 /// The Gemma download as a WorkManager job: the worker against a loopback
@@ -206,6 +220,50 @@ void main() {
       expect(status?.failedAttempts, 1);
     });
 
+    test(
+      'a model renamed before its marker was written is installed',
+      () async {
+        // Stopped between the rename and the marker: the file passed its check.
+        File(p.join(dir.path, 'model.bin')).writeAsBytesSync(payload);
+        expect(await run(), isTrue);
+        expect(requests, 0);
+        expect(File(p.join(dir.path, 'INSTALLED')).existsSync(), isTrue);
+        expect(
+          (await work().readStatus())?.state,
+          ServerDownloadWorkState.done,
+        );
+      },
+    );
+
+    test('giving up is logged, without user text', () async {
+      final events = <String>[];
+      usageLogSinkOverride = (message, _, {required isWarning}) =>
+          events.add(message);
+      addTearDown(() => usageLogSinkOverride = null);
+      expect(await run(sha: 'not the hash'), isTrue);
+      // The last try of a failing transfer.
+      await work().writeStatus(
+        const ServerDownloadWorkStatus(
+          state: ServerDownloadWorkState.running,
+          failedAttempts: serverDownloadMaxFailedAttempts - 1,
+        ),
+      );
+      final failing = (
+        name: 'model.bin',
+        url: 'http://127.0.0.1:${server.port}/down',
+        bytes: payload.length,
+        sha256: 'x',
+      );
+      expect(
+        await runGemmaDownloadWork({'dir': dir.path}, file: failing),
+        isTrue,
+      );
+      expect(events, [
+        'translation.high_quality_download_failed',
+        'translation.high_quality_download_failed',
+      ]);
+    });
+
     test('a missing folder means cancelled', () async {
       dir.deleteSync(recursive: true);
       expect(await run(), isTrue);
@@ -318,7 +376,9 @@ void main() {
       await workmanager.enqueued.future;
       expect(gemma.cancelDownload(), isTrue);
       await expectLater(done, throwsA(isA<HttpException>()));
-      expect(workmanager.cancelled, [gemmaDownloadWorkName]);
+      // Cancelled twice: by cancelDownload, and again before throwing.
+      expect(workmanager.cancelled.toSet(), {gemmaDownloadWorkName});
+      expect(workmanager.scheduled, isFalse);
       final status = await work().readStatus();
       expect(status?.error, serverDownloadStoppedError);
     });
@@ -328,6 +388,62 @@ void main() {
       final done = gemma.downloadModel(every: every);
       await workmanager.enqueued.future;
       expect(workmanager.registered.single.network, NetworkType.connected);
+      gemma.cancelDownload();
+      await expectLater(done, throwsA(isA<HttpException>()));
+    });
+
+    test('a cancel while the job is being queued still cancels it', () async {
+      workmanager.holdEnqueue = Completer<void>();
+      final done = gemma.downloadModel(every: every);
+      await workmanager.enqueued.future;
+      gemma.cancelDownload();
+      workmanager.holdEnqueue!.complete();
+      await expectLater(done, throwsA(isA<HttpException>()));
+      expect(workmanager.scheduled, isFalse);
+    });
+
+    test('a job already queued is only followed', () async {
+      // Mekuru restarted mid-download: the job holds the folder.
+      workmanager.scheduled = true;
+      const saf = MethodChannel('mekuru/android_saf');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      // A space check now would fail: the running job already uses it.
+      messenger.setMockMethodCallHandler(
+        saf,
+        (call) async => call.method == 'getFreeBytes' ? 1 : null,
+      );
+      addTearDown(() => messenger.setMockMethodCallHandler(saf, null));
+      Directory(modelDir()).createSync(recursive: true);
+      final fractions = <double>[];
+      final done = gemma.downloadModel(onProgress: fractions.add, every: every);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(workmanager.registered, isEmpty);
+      expect(File(p.join(modelDir(), 'status.json')).existsSync(), isFalse);
+      await jobWrites(
+        ServerDownloadWorkStatus(
+          state: ServerDownloadWorkState.running,
+          received: gemmaModelFile.bytes ~/ 4,
+          total: gemmaModelFile.bytes,
+        ),
+      );
+      while (!fractions.contains(0.25)) {
+        await Future<void>.delayed(every);
+      }
+      File(p.join(modelDir(), 'INSTALLED')).writeAsStringSync('ok');
+      await jobWrites(
+        const ServerDownloadWorkStatus(state: ServerDownloadWorkState.done),
+      );
+      workmanager.scheduled = false;
+      await done;
+    });
+
+    test('WorkManager is asked about the job only now and then', () async {
+      final done = gemma.downloadModel(every: every);
+      await workmanager.enqueued.future;
+      // About 20 polls.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(workmanager.scheduledChecks, lessThanOrEqualTo(4));
       gemma.cancelDownload();
       await expectLater(done, throwsA(isA<HttpException>()));
     });

@@ -115,6 +115,8 @@ class GemmaTranslation implements TranslationEngine {
       if (_cancels == cancels) return;
       // Thrown once the job is cancelled, so the next start can't join it.
       await _stopping;
+      // Again: the cancel may have come while the job was being queued.
+      await _cancelDownloadJob();
       throw const HttpException('Download cancelled');
     }
 
@@ -122,43 +124,48 @@ class GemmaTranslation implements TranslationEngine {
     final work = ServerDownloadWorkDir(dir.path);
     final marker = File(p.join(dir.path, _marker));
     if (await marker.exists()) return work.deleteStatus();
-    final partial = File(p.join(dir.path, '${gemmaModelFile.name}.part'));
-    final have = await partial.exists() ? await partial.length() : 0;
-    final needed = gemmaModelFile.bytes - have + _weightCacheBytes;
-    final free = await AndroidSafService.getFreeBytes(dir.path);
-    if (free != null && free < needed) {
-      throw InsufficientSpaceException(neededBytes: needed - free);
-    }
-    final wifiOnly = await isOnWifi();
-    await stopIfCancelled();
-    await work.writeStatus(
-      ServerDownloadWorkStatus(
-        state: ServerDownloadWorkState.running,
-        received: have,
-        total: gemmaModelFile.bytes,
-      ),
-    );
-    await Workmanager().registerOneOffTask(
-      gemmaDownloadWorkName,
-      gemmaDownloadTaskName,
-      inputData: {'dir': dir.path},
-      tag: gemmaDownloadWorkName,
-      constraints: Constraints(
-        networkType: wifiOnly ? NetworkType.unmetered : NetworkType.connected,
-      ),
-      // Linear: a retry backs off from its own start, and a 2.6 GB download
-      // over a slow line may need many. Android stopping the job (its 10
-      // minutes are up) runs it again without a new backoff.
-      backoffPolicy: BackoffPolicy.linear,
-      backoffPolicyDelay: const Duration(seconds: 30),
-      existingWorkPolicy: ExistingWorkPolicy.keep,
-    );
-    while (true) {
+    // Already queued or running (Mekuru restarted mid-download): only
+    // follow it. Its partial file and status are the job's.
+    if (!await _downloadJobScheduled()) {
+      final partial = File(p.join(dir.path, '${gemmaModelFile.name}.part'));
+      final have = await partial.exists() ? await partial.length() : 0;
+      final needed = gemmaModelFile.bytes - have + _weightCacheBytes;
+      final free = await AndroidSafService.getFreeBytes(dir.path);
+      if (free != null && free < needed) {
+        throw InsufficientSpaceException(neededBytes: needed - free);
+      }
+      final wifiOnly = await isOnWifi();
       await stopIfCancelled();
-      // Asked first: once the job is over, its status and marker are final.
-      final scheduled = await Workmanager().isScheduledByUniqueName(
-        gemmaDownloadWorkName,
+      await work.writeStatus(
+        ServerDownloadWorkStatus(
+          state: ServerDownloadWorkState.running,
+          received: have,
+          total: gemmaModelFile.bytes,
+        ),
       );
+      await Workmanager().registerOneOffTask(
+        gemmaDownloadWorkName,
+        gemmaDownloadTaskName,
+        inputData: {'dir': dir.path},
+        tag: gemmaDownloadWorkName,
+        constraints: Constraints(
+          networkType: wifiOnly ? NetworkType.unmetered : NetworkType.connected,
+        ),
+        // Linear: a retry backs off from its own start, and a 2.6 GB
+        // download over a slow line may need many. Android stopping the job
+        // (its 10 minutes are up) runs it again without a new backoff.
+        backoffPolicy: BackoffPolicy.linear,
+        backoffPolicyDelay: const Duration(seconds: 30),
+        // Joins a job queued meanwhile instead of starting it over.
+        existingWorkPolicy: ExistingWorkPolicy.keep,
+      );
+    }
+    for (var poll = 0; ; poll++) {
+      await stopIfCancelled();
+      // WorkManager answers on Android's main thread, so it is asked every
+      // tenth poll; the status file is read every time. Asked first: once
+      // the job is over, its status and marker are final.
+      final scheduled = poll % 10 != 0 || await _downloadJobScheduled();
       final status = await work.readStatus();
       if (status?.state == ServerDownloadWorkState.done ||
           (!scheduled && await marker.exists())) {
@@ -210,9 +217,9 @@ class GemmaTranslation implements TranslationEngine {
         await work.deleteStatus();
         return true;
       }
-      return await Workmanager().isScheduledByUniqueName(gemmaDownloadWorkName);
+      return await _downloadJobScheduled();
     } catch (_) {
-      // No app directory or WorkManager (widget tests).
+      // No app directory (widget tests).
       return false;
     }
   }
@@ -303,6 +310,16 @@ Future<void> _cancelDownloadJob() async {
   }
 }
 
+/// Whether the download job is queued or running; false without WorkManager
+/// (tests).
+Future<bool> _downloadJobScheduled() async {
+  try {
+    return await Workmanager().isScheduledByUniqueName(gemmaDownloadWorkName);
+  } catch (_) {
+    return false;
+  }
+}
+
 /// The WorkManager job behind [GemmaTranslation.downloadModel] (Android).
 /// Downloads [file] into the input's `dir`, resuming the partial file,
 /// verifies and installs it, and records each step in the folder's status
@@ -321,6 +338,24 @@ Future<bool> runGemmaDownloadWork(
   if (!Directory(dir).existsSync() || await marker.exists()) return true;
   final previous = await work.readStatus();
   if (previous == null || previous.state != ServerDownloadWorkState.running) {
+    return true;
+  }
+  Future<void> install() async {
+    await marker.writeAsString('ok');
+    await work.writeStatus(
+      ServerDownloadWorkStatus(
+        state: ServerDownloadWorkState.done,
+        received: file.bytes,
+        total: file.bytes,
+      ),
+    );
+  }
+
+  // Stopped between the rename and the marker. Only a file that passed its
+  // check is ever renamed, so it isn't checked again (2.6 GB).
+  final model = File(p.join(dir, file.name));
+  if (await model.exists() && await model.length() == file.bytes) {
+    await install();
     return true;
   }
   final partPath = p.join(dir, '${file.name}.part');
@@ -364,17 +399,12 @@ Future<bool> runGemmaDownloadWork(
     if (await _sha256Of(partPath) != file.sha256) {
       await part.delete();
       await work.writeStatus(running().failedWith(gemmaVerificationError));
+      // Seen even when Mekuru is closed.
+      logFailure(_downloadFailedEvent, gemmaVerificationError, attrs: _worker);
       return true;
     }
-    await part.rename(p.join(dir, file.name));
-    await marker.writeAsString('ok');
-    await work.writeStatus(
-      ServerDownloadWorkStatus(
-        state: ServerDownloadWorkState.done,
-        received: file.bytes,
-        total: file.bytes,
-      ),
-    );
+    await part.rename(model.path);
+    await install();
     return true;
   } catch (e) {
     await writes;
@@ -396,16 +426,20 @@ Future<bool> runGemmaDownloadWork(
         error: '$e',
       ),
     );
+    if (giveUp) logFailure(_downloadFailedEvent, e, attrs: _worker);
     return giveUp;
   } finally {
     client.close(force: true);
   }
 }
 
+const _downloadFailedEvent = 'translation.high_quality_download_failed';
+const _worker = {'route': 'worker'};
+
 // A function of its own, so the isolate takes nothing along but [path]: a
 // closure sent to an isolate carries everything its function's closures
-// capture (in downloadModel that includes onProgress and, through it, the
-// Riverpod notifier, which can't be sent).
+// capture, and a closure in runGemmaDownloadWork could take its HttpClient
+// or progress callback along, which can't be sent.
 Future<String> _sha256Of(String path) => Isolate.run(
   () async => (await sha256.bind(File(path).openRead()).first).toString(),
 );

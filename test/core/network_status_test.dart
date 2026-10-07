@@ -120,6 +120,18 @@ void main() {
       expect(File(p.join(tempDir.path, 'file')).lengthSync(), 2000);
     });
 
+    test(
+      'starting off Wi-Fi there says it stopped in the background',
+      () async {
+        mockWifiConnected(false);
+        await expectLater(
+          download('/whole'),
+          throwsA(isA<DownloadStoppedInBackgroundException>()),
+        );
+        expect(requests, 0);
+      },
+    );
+
     test('a transfer that fails says it stopped in the background', () async {
       await expectLater(
         download('/missing'),
