@@ -337,8 +337,9 @@ class BookRepository {
   /// mokuro output), its text blocks are imported so tap-to-lookup works
   /// immediately; otherwise pages get empty blocks and OCR can be run later.
   ///
-  /// Returns the created [Book].
-  Future<Book> importCbz(
+  /// Returns the created [Book]. [hasOcr] is true when the manifest's OCR
+  /// data was imported with it.
+  Future<({Book book, bool hasOcr})> importCbz(
     String sourcePath, {
     void Function(double progress)? onProgress,
   }) async {
@@ -373,7 +374,7 @@ class BookRepository {
           ];
       _requirePages(pages.length);
 
-      return _saveMangaBook(
+      final book = await _saveMangaBook(
         cacheDir,
         MokuroBook(
           title: cbzMeta.title,
@@ -386,6 +387,7 @@ class BookRepository {
         ),
         coverImagePath: cbzMeta.coverImagePath,
       );
+      return (book: book, hasOcr: ocrPages != null);
     });
   }
 

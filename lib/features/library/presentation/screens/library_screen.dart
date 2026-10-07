@@ -790,7 +790,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     subtitle: Text(l10n.libraryImportCbzArchiveSubtitle),
                     onTap: () {
                       Navigator.of(sheetContext).pop();
-                      _importCbz(context, ref);
+                      _importCbz(ref);
                     },
                   ),
                 ],
@@ -906,18 +906,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         .importFiles(filePaths, format: 'pdf');
   }
 
-  Future<void> _importCbz(BuildContext context, WidgetRef ref) async {
+  /// A CBZ without OCR data says so after import (importOne).
+  Future<void> _importCbz(WidgetRef ref) async {
     final filePaths = await _pickFilePaths(const ['cbz']);
     if (filePaths.isEmpty) return;
-
-    final imported = await ref
+    await ref
         .read(bookImportProvider.notifier)
         .importFiles(filePaths, format: 'cbz');
-    if (imported > 0 && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.libraryImportedWithoutOcrMessage)),
-      );
-    }
   }
 
   Future<void> _importManga(BuildContext context, WidgetRef ref) async {

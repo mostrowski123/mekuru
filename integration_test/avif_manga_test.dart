@@ -43,7 +43,7 @@ void main() {
     final cbz = p.join(tempDir.path, 'avif.cbz');
     await File(cbz).writeAsBytes(ZipEncoder().encode(archive));
 
-    final book = await BookRepository(db).importCbz(cbz);
+    final book = (await BookRepository(db).importCbz(cbz)).book;
     final manga = await MangaCacheStore.read(
       p.join(book.filePath, mangaPagesCacheFileName),
     );

@@ -189,7 +189,7 @@ void main() {
           await file.writeAsString(jsonEncode(withState.toJson()));
           final output = p.join(tempDir.path, 'ocr-state.cbz');
           await writeCbz(directory, output);
-          final imported = await repo.importCbz(output);
+          final imported = (await repo.importCbz(output)).book;
           final restored = MokuroBook.fromJson(
             jsonDecode(
                   await File(
@@ -227,7 +227,7 @@ void main() {
 
         final outPath = p.join(tempDir.path, 'roundtrip.cbz');
         await writeCbz(converted.filePath, outPath);
-        final reimported = await repo.importCbz(outPath);
+        final reimported = (await repo.importCbz(outPath)).book;
 
         expect(reimported.totalPages, converted.totalPages);
         final cacheFile = File(p.join(reimported.filePath, 'pages_cache.json'));

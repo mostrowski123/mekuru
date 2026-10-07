@@ -82,7 +82,7 @@ class _Reader {
       source = "${root.path}/fixture.cbz";
       await File(source).writeAsBytes(ZipEncoder().encode(archive));
     }
-    final imported = await repository.importCbz(source);
+    final imported = (await repository.importCbz(source)).book;
     final book = imported.copyWith(lastReadCfi: const Value('7'));
     final reader = _Reader._(l, supplied.isNotEmpty, root, db)..book = book;
     await tester.pumpWidget(

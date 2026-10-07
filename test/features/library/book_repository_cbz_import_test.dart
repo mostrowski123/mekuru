@@ -113,7 +113,7 @@ void main() {
         'page_1.png': png(50, 60),
       });
 
-      final book = await repo.importCbz(cbzPath);
+      final book = (await repo.importCbz(cbzPath)).book;
       final cache = await readPagesCache(book.filePath);
 
       expect(cache.pages.map((page) => page.imageFileName), [
@@ -135,7 +135,7 @@ void main() {
         'b.png': png(8, 8),
       });
 
-      final book = await repo.importCbz(cbzPath);
+      final book = (await repo.importCbz(cbzPath)).book;
 
       expect(book.title, 'counted');
       expect(book.bookType, 'manga');
@@ -151,7 +151,7 @@ void main() {
         'bad.jpg': [0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0],
       });
 
-      final book = await repo.importCbz(cbzPath);
+      final book = (await repo.importCbz(cbzPath)).book;
       final cache = await readPagesCache(book.filePath);
 
       final bad = cache.pages.firstWhere((pg) => pg.imageFileName == 'bad.jpg');
@@ -173,7 +173,7 @@ void main() {
       });
 
       final cache = await readPagesCache(
-        (await repo.importCbz(cbzPath)).filePath,
+        (await repo.importCbz(cbzPath)).book.filePath,
       );
 
       expect(
@@ -208,12 +208,39 @@ void main() {
     test('leaves OCR unmarked so it can be run later', () async {
       final cbzPath = await createCbz('no_ocr', {'a.png': png(8, 8)});
 
-      final cache = await readPagesCache(
-        (await repo.importCbz(cbzPath)).filePath,
-      );
+      final imported = await repo.importCbz(cbzPath);
+      final cache = await readPagesCache(imported.book.filePath);
 
+      expect(imported.hasOcr, isFalse);
       expect(cache.ocrCompleted, isFalse);
       expect(cache.pages.single.blocks, isEmpty);
+    });
+
+    test('reports the OCR data of an embedded .mokuro', () async {
+      // What Mekuru's own CBZ export writes for a book with OCR.
+      final cbzPath = await createCbz('with_ocr', {
+        'p1.png': png(8, 8),
+        'with_ocr.mokuro': utf8.encode(
+          jsonEncode({
+            'pages': [
+              {
+                'img_path': 'p1.png',
+                'img_width': 8,
+                'img_height': 8,
+                'blocks': const [],
+              },
+            ],
+          }),
+        ),
+      });
+
+      final imported = await repo.importCbz(cbzPath);
+
+      expect(imported.hasOcr, isTrue);
+      expect(
+        (await readPagesCache(imported.book.filePath)).ocrSource,
+        'mokuro',
+      );
     });
   });
 

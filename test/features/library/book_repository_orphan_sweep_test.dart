@@ -377,7 +377,7 @@ void main() {
       final importing = repo.importCbz(cbzPath);
       final sweeping = repo.sweepOrphanImportDirs(minAge: Duration.zero);
 
-      final book = await importing;
+      final book = (await importing).book;
       await sweeping;
 
       expect(BookRepository.inFlightImportDirNames, isEmpty);

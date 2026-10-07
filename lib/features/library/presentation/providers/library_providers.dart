@@ -257,7 +257,13 @@ class BookImportNotifier extends Notifier<BookImportState> {
     final book = await tracedOperation(
       'book.import_duration_ms',
       action: () => switch (format) {
-        'cbz' => repo.importCbz(filePath, onProgress: onProgress),
+        'cbz' => repo.importCbz(filePath, onProgress: onProgress).then((cbz) {
+          // An archive with a .mokuro brought its text along.
+          if (!cbz.hasOcr) {
+            announce((l10n) => l10n.libraryImportedWithoutOcrMessage);
+          }
+          return cbz.book;
+        }),
         'pdf' =>
           repo
               .importPdf(

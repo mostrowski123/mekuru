@@ -326,7 +326,7 @@ void main() {
     final cbz = p.join(tempDir.path, 'converted.cbz');
     await File(cbz).writeAsBytes(ZipEncoder().encode(archive));
     final repository = BookRepository(db);
-    final imported = await repository.importCbz(cbz);
+    final imported = (await repository.importCbz(cbz)).book;
     // An EPUB converted to manga keeps its EPUB's direction on the row.
     await (db.update(db.books)..where((t) => t.id.equals(imported.id))).write(
       const BooksCompanion(pageProgressionDirection: Value('rtl')),

@@ -543,10 +543,8 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         meta['format'] as String,
       )) {
         RemoteBookFormat.epub => repo.importEpub(path),
-        RemoteBookFormat.imageArchive => repo.importCbz(
-          path,
-          onProgress: onProgress,
-        ),
+        RemoteBookFormat.imageArchive =>
+          repo.importCbz(path, onProgress: onProgress).then((cbz) => cbz.book),
         RemoteBookFormat.pdf =>
           repo.importPdf(path, onProgress: onProgress).then(explainIfScanned),
       };
