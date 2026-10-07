@@ -66,6 +66,11 @@ Future<OcrBackend> preferredOcrBackend(MokuroBook manga) async {
   return usedRemote ? OcrBackend.remote : OcrBackend.onDevice;
 }
 
+/// [chosen], except for free books (Tadoku's scanned graded readers), which
+/// are only read on this device, with the scanned-book reader.
+OcrBackend ocrBackendFor(Book book, OcrBackend chosen) =>
+    isTadokuDownload(book) ? OcrBackend.onDevice : chosen;
+
 /// Starts OCR for [pages] of [book]. Returns true once a job is launched and
 /// false when the user was sent to the Pro or Downloads screen instead, or
 /// dismissed the text-model question; other failures throw (see
@@ -82,6 +87,17 @@ Future<bool> startOcr(
 }) async {
   final cachePath = p.join(book.filePath, mangaPagesCacheFileName);
   final replace = policy == OcrExistingPolicy.replace;
+  backend = ocrBackendFor(book, backend);
+
+  /// The engine the next one-tap scan uses. A free book's scan, which had no
+  /// choice, keeps the one picked for other books.
+  Future<void> rememberBackend() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (isTadokuDownload(book) && prefs.containsKey(ocrPreferredBackendKey)) {
+      return;
+    }
+    await prefs.setString(ocrPreferredBackendKey, backend.name);
+  }
 
   /// The Dart page loop: a server per page, or Apple Vision when [onDevice].
   Future<bool> runPageLoop({bool onDevice = false, String? ndlModelDir}) async {
@@ -90,8 +106,7 @@ Future<bool> startOcr(
     await ref
         .read(bookRepositoryProvider)
         .backupOriginalMokuroOcrIfNeeded(book);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(ocrPreferredBackendKey, backend.name);
+    await rememberBackend();
     await ref.read(ocrTaskSchedulerProvider)(
       bookId: book.id,
       cacheFilePath: cachePath,
@@ -170,8 +185,7 @@ Future<bool> startOcr(
   unawaited(
     ref.read(localOcrLaunchesProvider.notifier).start(spec, () async {
       await repository.backupOriginalMokuroOcrIfNeeded(book);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(ocrPreferredBackendKey, OcrBackend.onDevice.name);
+      await rememberBackend();
       await client.requestNotifications();
     }),
   );
@@ -180,8 +194,8 @@ Future<bool> startOcr(
 
 /// The NDL text model for an on-device scan of [book]: only Tadoku's graded
 /// readers, scanned text pages whose long lines manga-ocr cannot read, use
-/// it. When it is missing the user can open Downloads instead (no scan) or
-/// scan without it; dismissing the question cancels the scan.
+/// it, and they are only scanned with it. When it is missing the user can
+/// open Downloads; there is no scan either way.
 Future<({bool go, String? dir})> _ndlModelFor(
   BuildContext context,
   Book book,
@@ -202,7 +216,7 @@ Future<({bool go, String? dir})> _ndlModelFor(
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l.ndlTextModelPromptSkip),
+            child: Text(l.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -212,7 +226,6 @@ Future<({bool go, String? dir})> _ndlModelFor(
       );
     },
   );
-  if (openDownloads == false) return (go: true, dir: null);
   if (openDownloads == true && context.mounted) {
     await Navigator.of(
       context,
@@ -259,7 +272,10 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
       final cached =
           (fromDisk ? null : widget.initialManga) ??
           await ref.read(ocrBookLoaderProvider)(_cachePath);
-      final backend = await preferredOcrBackend(cached);
+      final backend = ocrBackendFor(
+        widget.book,
+        await preferredOcrBackend(cached),
+      );
       if (!mounted) return;
       setState(() {
         _manga = cached;
@@ -388,22 +404,24 @@ class _OcrActionSheetState extends ConsumerState<OcrActionSheet> {
               ),
             ],
             if (!(job?.isActive ?? false) && !remoteRunning) ...[
-              SegmentedButton<OcrBackend>(
-                segments: [
-                  ButtonSegment(
-                    value: OcrBackend.onDevice,
-                    label: Text(l.localOcrOnDevice),
-                  ),
-                  ButtonSegment(
-                    value: OcrBackend.remote,
-                    label: Text(l.localOcrRemote),
-                  ),
-                ],
-                selected: {_backend},
-                onSelectionChanged: _busy
-                    ? null
-                    : (v) => setState(() => _backend = v.single),
-              ),
+              // Free books are read on this device only.
+              if (!isTadokuDownload(widget.book))
+                SegmentedButton<OcrBackend>(
+                  segments: [
+                    ButtonSegment(
+                      value: OcrBackend.onDevice,
+                      label: Text(l.localOcrOnDevice),
+                    ),
+                    ButtonSegment(
+                      value: OcrBackend.remote,
+                      label: Text(l.localOcrRemote),
+                    ),
+                  ],
+                  selected: {_backend},
+                  onSelectionChanged: _busy
+                      ? null
+                      : (v) => setState(() => _backend = v.single),
+                ),
               const SizedBox(height: 8),
               Text(
                 _backend == OcrBackend.remote

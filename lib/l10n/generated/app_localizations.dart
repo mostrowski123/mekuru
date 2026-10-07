@@ -6444,26 +6444,20 @@ abstract class AppLocalizations {
   /// Downloads screen: subtitle of the NDL text-line model tile before it is installed; the download size follows in parentheses. Free books is the app's free-book section (freeBooksTitle), graded readers its tab (freeBooksTabGradedReaders).
   ///
   /// In en, this message translates to:
-  /// **'Optional. On-device OCR uses it for the scanned graded readers from Free books, where it reads long lines of text much more accurately. Page images stay on your device.'**
+  /// **'On-device OCR needs it for the scanned graded readers from Free books, whose long lines of text it reads much more accurately. Page images stay on your device.'**
   String get ndlTextModelDescription;
 
   /// Dialog title when an on-device OCR scan of a scanned free book starts and the NDL text-line model (ndlTextModelTitle) is not installed.
   ///
   /// In en, this message translates to:
-  /// **'Use the scanned-book reader?'**
+  /// **'Scanned-book reader needed'**
   String get ndlTextModelPromptTitle;
 
-  /// Dialog body: why to download the NDL text-line model before scanning a free book. The buttons are Scan without it (ndlTextModelPromptSkip) and Open Downloads (commonOpenDownloads).
+  /// Dialog body: a free book is only scanned with the NDL text-line model, which isn't installed yet. The buttons are Cancel (commonCancel) and Open Downloads (commonOpenDownloads).
   ///
   /// In en, this message translates to:
-  /// **'This free book is scanned pages of text. On-device OCR reads them much better with the scanned-book reader, an optional {size} download in Downloads.'**
+  /// **'This free book is scanned pages of text. On-device OCR reads them with the scanned-book reader, a {size} download in Downloads.'**
   String ndlTextModelPromptBody({required String size});
-
-  /// Dialog button: start the OCR scan without the NDL text-line model.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan without it'**
-  String get ndlTextModelPromptSkip;
 
   /// OCR attributions card: credit for the NDL text-line model. Keep the names, the Japanese name of the library, and the licence name as they are.
   ///

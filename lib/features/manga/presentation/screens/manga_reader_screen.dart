@@ -1008,9 +1008,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen>
     // Until the user has started a scan from the sheet there is no engine to
     // tap through to: show them the choices instead of guessing one from
     // their OCR history.
-    final backend = await rememberedOcrBackend();
+    final remembered = await rememberedOcrBackend();
     if (!mounted || _ocrSheetOpen) return;
-    if (backend == null) return _showOcrOptions(manga, pages);
+    if (remembered == null) return _showOcrOptions(manga, pages);
+    final backend = ocrBackendFor(widget.book, remembered);
     final targets = quickOcrTargets(manga, pages, replace: replace);
     if (targets.isEmpty) {
       final l = context.l10n;

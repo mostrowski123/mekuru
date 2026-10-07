@@ -326,7 +326,7 @@ void main() {
   group('NDL text model', () {
     // A graded reader downloaded from Free books (a scanned PDF).
     Book tadoku() => manga.copyWith(sourceId: const Value('tadoku:42'));
-    const prompt = 'Use the scanned-book reader?';
+    const prompt = 'Scanned-book reader needed';
 
     Future<String> installModel(WidgetTester tester) async =>
         (await tester.runAsync(() async {
@@ -354,7 +354,7 @@ void main() {
       matching: find.text(text),
     );
 
-    testWidgets('missing: asks, and Scan without it starts without it', (
+    testWidgets('missing: asks for it, and there is no scan without it', (
       tester,
     ) async {
       await open(tester, book: tadoku());
@@ -363,21 +363,16 @@ void main() {
       expect(
         find.text(
           'This free book is scanned pages of text. On-device OCR reads them '
-          'much better with the scanned-book reader, an optional 42.6 MB '
-          'download in Downloads.',
+          'with the scanned-book reader, a 42.6 MB download in Downloads.',
         ),
         findsOneWidget,
       );
-      expect(client.started, isEmpty);
+      expect(inDialog('Scan without it'), findsNothing);
 
-      await tester.tap(inDialog('Scan without it'));
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 100)),
-      );
+      await tester.tap(inDialog('Cancel'));
       await tester.pumpAndSettle();
-      expect(client.started.single.pages, [1, 2]);
-      expect(client.started.single.ndlModelDir, isNull);
-      expect(find.byType(OcrActionSheet), findsNothing);
+      expect(client.started, isEmpty);
+      expect(find.byType(OcrActionSheet), findsOneWidget);
     });
 
     testWidgets('missing: dismissing the question cancels the scan', (
@@ -405,6 +400,26 @@ void main() {
       expect(client.started, isEmpty);
     });
 
+    testWidgets('a free book has no Remote choice and keeps the one picked', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({
+        ocrPreferredBackendKey: OcrBackend.remote.name,
+      });
+      final dir = await installModel(tester);
+      await open(tester, book: tadoku());
+      expect(find.byType(SegmentedButton<OcrBackend>), findsNothing);
+
+      await tapStart(tester);
+      await tester.pumpAndSettle();
+
+      // On this device, not through the server.
+      expect(client.started.single.ndlModelDir, dir);
+      expect(scheduled, isEmpty);
+      // Other books' one-tap scans still go to the server.
+      expect(await rememberedOcrBackend(), OcrBackend.remote);
+    });
+
     testWidgets('installed: the job reads with it, without asking', (
       tester,
     ) async {
@@ -427,16 +442,16 @@ void main() {
           }
         });
 
-    testIos('missing: Scan without it runs Vision without it', (tester) async {
+    testIos('missing: asks for it, and Vision does not scan without it', (
+      tester,
+    ) async {
       await open(tester, book: tadoku());
       await tapStart(tester);
       expect(find.text(prompt), findsOneWidget);
-      await tester.tap(inDialog('Scan without it'));
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 100)),
-      );
+      expect(inDialog('Scan without it'), findsNothing);
+      await tester.tap(inDialog('Cancel'));
       await tester.pumpAndSettle();
-      expect(scheduled, [(onDevice: true, ndlModelDir: null)]);
+      expect(scheduled, isEmpty);
     });
 
     testIos('installed: Vision scans read with it, without asking', (

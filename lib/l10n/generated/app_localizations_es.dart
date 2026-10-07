@@ -3999,18 +3999,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ndlTextModelDescription =>
-      'Opcional. El OCR en el dispositivo lo usa con las lecturas graduadas escaneadas de Libros gratuitos, donde lee las líneas largas de texto con mucha más precisión. Las imágenes no salen de tu dispositivo.';
+      'El OCR en el dispositivo lo necesita para las lecturas graduadas escaneadas de Libros gratuitos, cuyas líneas largas de texto lee con mucha más precisión. Las imágenes no salen de tu dispositivo.';
 
   @override
-  String get ndlTextModelPromptTitle => '¿Usar el lector de libros escaneados?';
+  String get ndlTextModelPromptTitle =>
+      'Se necesita el lector de libros escaneados';
 
   @override
   String ndlTextModelPromptBody({required String size}) {
-    return 'Este libro gratuito son páginas de texto escaneadas. El OCR en el dispositivo las lee mucho mejor con el lector de libros escaneados, una descarga opcional de $size en Descargas.';
+    return 'Este libro gratuito son páginas de texto escaneadas. El OCR en el dispositivo las lee con el lector de libros escaneados, una descarga de $size en Descargas.';
   }
-
-  @override
-  String get ndlTextModelPromptSkip => 'Escanear sin él';
 
   @override
   String get localOcrLicenseNdl =>

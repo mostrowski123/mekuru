@@ -3785,18 +3785,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get ndlTextModelDescription =>
-      '可选。设备端 OCR 会在识别“免费书籍”中的扫描版分级读物时使用它，能更准确地读取较长的文字行。页面图像不会离开你的设备。';
+      '设备端 OCR 识别“免费书籍”中的扫描版分级读物时需要它，它能更准确地读取较长的文字行。页面图像不会离开你的设备。';
 
   @override
-  String get ndlTextModelPromptTitle => '使用扫描书籍识别？';
+  String get ndlTextModelPromptTitle => '需要扫描书籍识别';
 
   @override
   String ndlTextModelPromptBody({required String size}) {
-    return '这本免费书籍由扫描的文字页面组成。使用扫描书籍识别后，设备端 OCR 的识别效果会好得多。它是可选下载，大小为 $size，可在“下载”中获取。';
+    return '这本免费书籍由扫描的文字页面组成。设备端 OCR 需要用扫描书籍识别来读取它们，大小为 $size，可在“下载”中获取。';
   }
-
-  @override
-  String get ndlTextModelPromptSkip => '不使用它直接识别';
 
   @override
   String get localOcrLicenseNdl =>
@@ -7729,18 +7726,15 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get ndlTextModelDescription =>
-      '可选。设备端 OCR 会在识别“免费书籍”中的扫描版分级读物时使用它，能更准确地读取较长的文字行。页面图像不会离开你的设备。';
+      '设备端 OCR 识别“免费书籍”中的扫描版分级读物时需要它，它能更准确地读取较长的文字行。页面图像不会离开你的设备。';
 
   @override
-  String get ndlTextModelPromptTitle => '使用扫描书籍识别？';
+  String get ndlTextModelPromptTitle => '需要扫描书籍识别';
 
   @override
   String ndlTextModelPromptBody({required String size}) {
-    return '这本免费书籍由扫描的文字页面组成。使用扫描书籍识别后，设备端 OCR 的识别效果会好得多。它是可选下载，大小为 $size，可在“下载”中获取。';
+    return '这本免费书籍由扫描的文字页面组成。设备端 OCR 需要用扫描书籍识别来读取它们，大小为 $size，可在“下载”中获取。';
   }
-
-  @override
-  String get ndlTextModelPromptSkip => '不使用它直接识别';
 
   @override
   String get localOcrLicenseNdl =>

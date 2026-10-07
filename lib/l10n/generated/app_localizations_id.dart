@@ -3971,18 +3971,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get ndlTextModelDescription =>
-      'Opsional. OCR di perangkat memakainya untuk bacaan berjenjang hasil pindaian dari Buku gratis, dan membaca baris teks yang panjang jauh lebih akurat. Gambar halaman tetap di perangkatmu.';
+      'OCR di perangkat memerlukannya untuk bacaan berjenjang hasil pindaian dari Buku gratis, karena membaca baris teks yang panjang jauh lebih akurat. Gambar halaman tetap di perangkat Anda.';
 
   @override
-  String get ndlTextModelPromptTitle => 'Gunakan pembaca buku pindaian?';
+  String get ndlTextModelPromptTitle => 'Perlu pembaca buku pindaian';
 
   @override
   String ndlTextModelPromptBody({required String size}) {
-    return 'Buku gratis ini berupa halaman teks hasil pindaian. OCR di perangkat membacanya jauh lebih baik dengan pembaca buku pindaian, unduhan opsional sebesar $size di Unduhan.';
+    return 'Buku gratis ini berupa halaman teks hasil pindaian. OCR di perangkat membacanya dengan pembaca buku pindaian, unduhan sebesar $size di Unduhan.';
   }
-
-  @override
-  String get ndlTextModelPromptSkip => 'Pindai tanpa itu';
 
   @override
   String get localOcrLicenseNdl =>
