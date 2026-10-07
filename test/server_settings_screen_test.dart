@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
 import 'package:mekuru/features/sync/data/services/server_client.dart';
+import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:mekuru/features/sync/data/services/server_secret_storage.dart';
 import 'package:mekuru/features/sync/presentation/providers/sync_providers.dart';
 import 'package:mekuru/features/sync/presentation/screens/server_settings_screen.dart';
@@ -48,6 +51,35 @@ void main() {
     expect(
       reason(const FormatException('bad JSON')),
       'FormatException: bad JSON',
+    );
+  });
+
+  test('a failed server download is worded once, in the app language', () {
+    final es = lookupAppLocalizations(const Locale('es'));
+    String describe(Object error) =>
+        describeServerDownloadError(es, serverDownloadErrorCode(error));
+
+    expect(
+      describe(const ServerDownloadHttpException(401)),
+      'Error al descargar: ${es.serverErrorSignInRejected}',
+    );
+    expect(
+      describe(const ServerDownloadHttpException(500)),
+      'Error al descargar: El servidor devolvió el error 500.',
+    );
+    expect(
+      describe(const SocketException('Connection refused')),
+      'Error al descargar: ${es.serverErrorUnreachable}',
+    );
+    // iOS rebuilding the request of a download the app was closed in.
+    expect(
+      describe(const SyncException(401, 'Kavita rejected the API key')),
+      'Error al descargar: ${es.serverErrorSignInRejected}',
+    );
+    // Anything else is shown as it is.
+    expect(
+      describe(const FormatException('bad zip')),
+      'Error al descargar: FormatException: bad zip',
     );
   });
 

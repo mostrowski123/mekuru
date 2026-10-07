@@ -399,7 +399,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
         client.dispose();
       }
     } catch (e) {
-      await dir.writeStatus(status.failedWith('$e'));
+      await dir.writeStatus(status.failedWith(serverDownloadErrorCode(e)));
     }
   }
 
@@ -504,7 +504,7 @@ class ServerDownloadNotifier extends Notifier<Map<String, double>> {
           error,
           attrs: {'server_type': job?.meta['serverType'] as String? ?? ''},
         );
-        announce((l10n) => l10n.serverBrowseDownloadFailed(error: error));
+        announce((l10n) => describeServerDownloadError(l10n, error));
     }
   }
 
@@ -587,6 +587,20 @@ String describeServerError(AppLocalizations l10n, Object error) =>
     isUntrustedCertificateError(error)
     ? l10n.serverCertificateUntrusted
     : l10n.serverBrowseDownloadFailed(error: serverErrorReason(l10n, error));
+
+/// User-facing text for a server download that failed with [error], as
+/// [runServerDownloadWork] recorded it: a server status is explained in the
+/// user's language, any other error shown as it is.
+String describeServerDownloadError(AppLocalizations l10n, String error) {
+  final status = error.startsWith(serverDownloadStatusErrorPrefix)
+      ? int.tryParse(error.substring(serverDownloadStatusErrorPrefix.length))
+      : null;
+  return l10n.serverBrowseDownloadFailed(
+    error: status == null
+        ? error
+        : serverErrorReason(l10n, SyncException(status, error)),
+  );
+}
 
 /// Why a Komga or Kavita request failed, in the user's language: a rejected
 /// sign-in, an unreachable server or the HTTP status. Any other error is

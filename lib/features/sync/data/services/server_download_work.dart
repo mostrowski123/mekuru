@@ -5,12 +5,15 @@
 /// server, and continues a partial file after an interruption.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:mekuru/core/services/server_http_client.dart';
 import 'package:mekuru/core/utils/atomic_file.dart';
 import 'package:path/path.dart' as p;
+
+import 'server_client.dart';
 
 /// WorkManager task name of a server book download (Android).
 const serverDownloadTaskName = 'mekuru.server_download';
@@ -27,6 +30,27 @@ const serverDownloadStoppedError = 'stopped';
 /// [ServerDownloadWorkStatus.error] of a download whose server certificate
 /// was rejected: a self-signed one, with the switch off.
 const serverDownloadUntrustedCertificateError = 'untrusted_certificate';
+
+/// Prefix of the [ServerDownloadWorkStatus.error] of a download the server
+/// answered with an error status, e.g. `server_status:401`, or never
+/// answered (`server_status:0`). The app explains it in the user's language.
+const serverDownloadStatusErrorPrefix = 'server_status:';
+
+/// [error] as a [ServerDownloadWorkStatus.error]: a code the app explains
+/// in the user's language, else the error's own text.
+String serverDownloadErrorCode(Object error) => switch (error) {
+  _ when isUntrustedCertificateError(error) =>
+    serverDownloadUntrustedCertificateError,
+  ServerDownloadHttpException(:final statusCode) =>
+    '$serverDownloadStatusErrorPrefix$statusCode',
+  SyncException(:final statusCode) =>
+    '$serverDownloadStatusErrorPrefix$statusCode',
+  SocketException() ||
+  HttpException() ||
+  TlsException() ||
+  TimeoutException() => '${serverDownloadStatusErrorPrefix}0',
+  _ => '$error',
+};
 
 /// Delete every download folder under [downloadsRoot]. A running download
 /// notices its folder is gone and ends.
@@ -248,9 +272,9 @@ Future<bool> runServerDownloadWork(
     if (!Directory(dir.path).existsSync()) return true;
     final gained = received > startBytes;
     final failedAttempts = gained ? 1 : (previous?.failedAttempts ?? 0) + 1;
-    final untrusted = isUntrustedCertificateError(e);
     final permanent =
-        untrusted || (e is ServerDownloadHttpException && e.isPermanent);
+        isUntrustedCertificateError(e) ||
+        (e is ServerDownloadHttpException && e.isPermanent);
     final giveUp =
         permanent || failedAttempts >= serverDownloadMaxFailedAttempts;
     await dir.writeStatus(
@@ -261,7 +285,7 @@ Future<bool> runServerDownloadWork(
         received: received,
         total: total,
         failedAttempts: failedAttempts,
-        error: untrusted ? serverDownloadUntrustedCertificateError : '$e',
+        error: serverDownloadErrorCode(e),
       ),
     );
     return giveUp;

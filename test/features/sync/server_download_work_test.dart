@@ -254,7 +254,7 @@ void main() {
       expect(await runServerDownloadWork(input(url('/missing'))), isTrue);
       final status = await dir.readStatus();
       expect(status!.state, ServerDownloadWorkState.failed);
-      expect(status.error, contains('404'));
+      expect(status.error, '${serverDownloadStatusErrorPrefix}404');
     });
 
     test('retries an unreachable server, then gives up', () async {
@@ -269,7 +269,9 @@ void main() {
         expect(status.failedAttempts, i);
       }
       expect(await runServerDownloadWork(input(deadUrl)), isTrue);
-      expect((await dir.readStatus())!.state, ServerDownloadWorkState.failed);
+      final status = await dir.readStatus();
+      expect(status!.state, ServerDownloadWorkState.failed);
+      expect(status.error, '${serverDownloadStatusErrorPrefix}0');
     });
 
     test('ends quietly when its folder was deleted (cancelled)', () async {
