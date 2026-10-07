@@ -163,7 +163,10 @@ abstract final class NdlPixels {
 
   /// Channel-first float tensor of `v / 127.5 - 1`, rounded to float32 after
   /// the division and again after the subtraction, as numpy computes NDL's
-  /// (`v / 127.5f - 1f` in float arithmetic).
+  /// (`v / 127.5f - 1f` in float arithmetic). R, G, B: the order the model
+  /// was trained in (NDL's training reads lines with PIL as RGB, and its ONNX
+  /// export adds no flip). NDL's own parseq.py reverses them, which only
+  /// matters for coloured text.
   static Float32List normalize(Int32List rgb) {
     final out = Float32List(rgb.length * 3);
     for (var i = 0; i < out.length; i++) {

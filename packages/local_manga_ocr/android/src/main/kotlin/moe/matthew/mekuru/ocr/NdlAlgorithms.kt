@@ -115,7 +115,8 @@ object NdlAlgorithms {
         else resize(pixels, width, height)
 
     /** Channel-first `v / 127.5 - 1`, rounded to float after the division and
-     * again after the subtraction, like NDL's numpy code. */
+     * again after the subtraction, like NDL's numpy code. R, G, B as the model
+     * was trained; NDL's parseq.py reverses them (see ndl_ocr_algorithms.dart). */
     fun normalize(rgb: IntArray): FloatArray = FloatArray(rgb.size*3) { i ->
         SCALED[(rgb[i%rgb.size] shr (16-i/rgb.size*8)) and 255]
     }
