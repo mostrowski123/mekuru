@@ -3108,6 +3108,8 @@
   "translationHighQualityCouldNotLoad": "高质量模型无法加载，正在使用标准模型。",
   "translationHighQualityTooSlow": "高质量模型耗时过长，暂时使用标准模型。",
   "translationHighQualityStarting": "正在启动高质量模型，首次翻译可能需要一点时间。",
+  "translationHighQualityDownloadFailedTitle": "高质量模型下载失败",
+  "translationHighQualityDownloadFailedBody": "请在 Mekuru 的“下载”中重试。",
   "translationHighQualityNeedsStandard": "高质量模型无法加载。下载标准模型即可翻译这句话。",
   "translationHighQualityLowMemoryBody": "高质量模型需要约 2 GB 内存。在此手机上可能会很慢，或导致 Mekuru 关闭。如果出现这种情况，请在“设置 › 翻译模型”中切换回标准。",
   "translationHighQualityUseStandard": "使用标准",

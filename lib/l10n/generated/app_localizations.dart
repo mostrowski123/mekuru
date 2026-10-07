@@ -6675,6 +6675,18 @@ abstract class AppLocalizations {
   /// **'Starting High quality. The first translation can take a moment.'**
   String get translationHighQualityStarting;
 
+  /// Android notification title when the High quality translation model's download gives up while Mekuru is out of sight.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality download failed'**
+  String get translationHighQualityDownloadFailedTitle;
+
+  /// Android notification text under translationHighQualityDownloadFailedTitle. "Downloads" names the screen; keep it matching downloadsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again from Downloads in Mekuru.'**
+  String get translationHighQualityDownloadFailedBody;
+
   /// Sentence tab text above the Download button when High quality couldn't translate and the standard model isn't downloaded yet.
   ///
   /// In en, this message translates to:

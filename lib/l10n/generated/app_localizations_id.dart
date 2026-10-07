@@ -4114,6 +4114,14 @@ class AppLocalizationsId extends AppLocalizations {
       'Memulai Kualitas tinggi. Terjemahan pertama mungkin perlu sedikit waktu.';
 
   @override
+  String get translationHighQualityDownloadFailedTitle =>
+      'Unduhan Kualitas tinggi gagal';
+
+  @override
+  String get translationHighQualityDownloadFailedBody =>
+      'Coba lagi dari Unduhan di Mekuru.';
+
+  @override
   String get translationHighQualityNeedsStandard =>
       'Kualitas tinggi tidak dapat dimuat. Unduh Standar untuk menerjemahkan kalimat ini.';
 

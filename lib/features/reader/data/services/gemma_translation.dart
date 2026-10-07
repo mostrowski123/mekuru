@@ -6,14 +6,18 @@ import 'dart:isolate';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
 import 'package:mekuru/features/reader/data/services/sentence_translation.dart';
+import 'package:mekuru/features/settings/data/services/app_settings_storage.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 /// Google's Gemma 4 E2B for LiteRT-LM (litert-community, Apache-2.0), pinned
@@ -427,6 +431,7 @@ Future<bool> runGemmaDownloadWork(
       await work.writeStatus(running().failedWith(gemmaVerificationError));
       // Seen even when Mekuru is closed.
       logFailure(_downloadFailedEvent, gemmaVerificationError, attrs: _worker);
+      await _notifyDownloadFailed();
       return true;
     }
     await part.rename(model.path);
@@ -452,7 +457,10 @@ Future<bool> runGemmaDownloadWork(
         error: '$e',
       ),
     );
-    if (giveUp) logFailure(_downloadFailedEvent, e, attrs: _worker);
+    if (giveUp) {
+      logFailure(_downloadFailedEvent, e, attrs: _worker);
+      await _notifyDownloadFailed();
+    }
     return giveUp;
   } finally {
     client.close(force: true);
@@ -461,6 +469,36 @@ Future<bool> runGemmaDownloadWork(
 
 const _downloadFailedEvent = 'translation.high_quality_download_failed';
 const _worker = {'route': 'worker'};
+
+/// Tells the user the download gave up, when Mekuru is out of sight (on
+/// screen, Downloads shows it), in the app's language: the worker has no
+/// widget tree to take it from.
+Future<void> _notifyDownloadFailed() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final language = AppLanguage.fromStorageValue(
+      prefs.getString('app.language'),
+    );
+    final l10n = lookupAppLocalizations(
+      resolveSupportedAppLocale(
+        appLanguageLocaleOverride(language) ??
+            PlatformDispatcher.instance.locale,
+        AppLocalizations.supportedLocales,
+      ),
+    );
+    await LocalMangaOcr.postNotification(
+      id: _downloadFailedNotification,
+      channelId: 'downloads',
+      channelName: l10n.downloadsTitle,
+      title: l10n.translationHighQualityDownloadFailedTitle,
+      text: l10n.translationHighQualityDownloadFailedBody,
+    );
+  } catch (e) {
+    logFailure('translation.high_quality_notify_failed', e, attrs: _worker);
+  }
+}
+
+const _downloadFailedNotification = 4127;
 
 // A function of its own, so the isolate takes nothing along but [path]: a
 // closure sent to an isolate carries everything its function's closures

@@ -3108,6 +3108,8 @@
   "translationHighQualityCouldNotLoad": "Kualitas tinggi tidak dapat dimuat; menggunakan Standar.",
   "translationHighQualityTooSlow": "Kualitas tinggi terlalu lama; untuk sementara menggunakan Standar.",
   "translationHighQualityStarting": "Memulai Kualitas tinggi. Terjemahan pertama mungkin perlu sedikit waktu.",
+  "translationHighQualityDownloadFailedTitle": "Unduhan Kualitas tinggi gagal",
+  "translationHighQualityDownloadFailedBody": "Coba lagi dari Unduhan di Mekuru.",
   "translationHighQualityNeedsStandard": "Kualitas tinggi tidak dapat dimuat. Unduh Standar untuk menerjemahkan kalimat ini.",
   "translationHighQualityLowMemoryBody": "Model kualitas tinggi memerlukan sekitar 2 GB memori. Di ponsel ini, model ini mungkin lambat atau membuat Mekuru tertutup. Jika itu terjadi, kembali ke Standar di Pengaturan › Model terjemahan.",
   "translationHighQualityUseStandard": "Gunakan Standar",

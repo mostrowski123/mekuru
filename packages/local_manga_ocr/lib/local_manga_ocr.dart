@@ -130,6 +130,24 @@ class LocalMangaOcr {
       await channel.invokeMethod<bool>('isWifiConnected') ?? false;
   static Future<bool> isVpnActive() async =>
       await channel.invokeMethod<bool>('isVpnActive') ?? false;
+
+  /// Posts a notification from background work (Android), unless Mekuru is
+  /// on screen. Tapping it opens Mekuru. True when it was posted.
+  static Future<bool> postNotification({
+    required int id,
+    required String channelId,
+    required String channelName,
+    required String title,
+    required String text,
+  }) async =>
+      await channel.invokeMethod<bool>('postNotification', {
+        'id': id,
+        'channel': channelId,
+        'channelName': channelName,
+        'title': title,
+        'text': text,
+      }) ??
+      false;
   static Future<void> cancelDownload() =>
       channel.invokeMethod('cancelDownload');
   static Future<void> removeModels() => channel.invokeMethod('removeModels');

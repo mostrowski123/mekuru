@@ -4141,6 +4141,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Iniciando la alta calidad. La primera traducción puede tardar un poco.';
 
   @override
+  String get translationHighQualityDownloadFailedTitle =>
+      'Falló la descarga de la alta calidad';
+
+  @override
+  String get translationHighQualityDownloadFailedBody =>
+      'Vuelve a intentarlo desde Descargas en Mekuru.';
+
+  @override
   String get translationHighQualityNeedsStandard =>
       'La alta calidad no se pudo cargar. Descarga la estándar para traducir esta frase.';
 

@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:local_manga_ocr/local_manga_ocr.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 // ignore: depend_on_referenced_packages
@@ -110,7 +112,22 @@ void main() {
     Future<bool> run({String? sha}) =>
         runGemmaDownloadWork({'dir': dir.path}, file: model(sha: sha));
 
+    // The notifications the worker posts, by their arguments.
+    final notifications = <Map<Object?, Object?>>[];
+
     setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      notifications.clear();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(LocalMangaOcr.channel, (call) async {
+            if (call.method != 'postNotification') return null;
+            notifications.add(call.arguments as Map<Object?, Object?>);
+            return true;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(LocalMangaOcr.channel, null),
+      );
       dir = Directory.systemTemp.createTempSync('gemma_work_');
       halfSent = Completer<void>();
       resume = Completer<void>();
@@ -187,6 +204,26 @@ void main() {
       final status = await work().readStatus();
       expect(status?.state, ServerDownloadWorkState.failed);
       expect(status?.error, gemmaVerificationError);
+    });
+
+    test('giving up posts a notification in the app language', () async {
+      SharedPreferences.setMockInitialValues({'app.language': 'es'});
+      expect(await run(sha: 'not the hash'), isTrue);
+      expect(notifications, hasLength(1));
+      expect(
+        notifications.single['title'],
+        'Falló la descarga de la alta calidad',
+      );
+      expect(
+        notifications.single['text'],
+        'Vuelve a intentarlo desde Descargas en Mekuru.',
+      );
+      expect(notifications.single['channelName'], 'Descargas');
+    });
+
+    test('a finished download posts nothing', () async {
+      expect(await run(), isTrue);
+      expect(notifications, isEmpty);
     });
 
     test('resumes from the partial file', () async {

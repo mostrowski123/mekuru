@@ -3919,6 +3919,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get translationHighQualityStarting => '正在启动高质量模型，首次翻译可能需要一点时间。';
 
   @override
+  String get translationHighQualityDownloadFailedTitle => '高质量模型下载失败';
+
+  @override
+  String get translationHighQualityDownloadFailedBody => '请在 Mekuru 的“下载”中重试。';
+
+  @override
   String get translationHighQualityNeedsStandard => '高质量模型无法加载。下载标准模型即可翻译这句话。';
 
   @override
@@ -7860,6 +7866,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get translationHighQualityStarting => '正在启动高质量模型，首次翻译可能需要一点时间。';
+
+  @override
+  String get translationHighQualityDownloadFailedTitle => '高质量模型下载失败';
+
+  @override
+  String get translationHighQualityDownloadFailedBody => '请在 Mekuru 的“下载”中重试。';
 
   @override
   String get translationHighQualityNeedsStandard => '高质量模型无法加载。下载标准模型即可翻译这句话。';
