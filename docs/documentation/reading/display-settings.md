@@ -1,40 +1,89 @@
 # Display Settings
 
-Mekuru splits reader customization into two places: global defaults in **Settings > Reader Settings**, and per-book quick settings inside the reader.
+Change how books look and behave in the EPUB reader: text size, font, colors, brightness, margins and more.
 
-## Global Reader Settings
+## Where the settings are
 
-Open **Settings** (gear icon on the **You** tab), then **Reader Settings**. The screen is grouped into **All books**, **EPUB**, and **Manga** sections:
+There are two places:
 
-| Setting | What it controls |
-|-|-|
-| **Font Size** | Default reader text size |
-| **Color Mode** | Normal, Sepia, or Dark, with a sepia intensity control inside the picker |
-| **Keep Screen On** | Prevent the screen from sleeping while reading |
-| **Animations** | Page-turn and lookup-sheet transitions in both readers; turn it off for e-ink displays |
-| **Horizontal Margin** | Side padding around EPUB text |
-| **Vertical Margin** | Top and bottom padding around EPUB text |
-| **Swipe Sensitivity** | How far you need to drag before a page swipe triggers |
-| **Split Vertical Text** | Show two stacked text blocks per page in vertical books |
-| **Disable Links** | Treat linked text as lookup targets instead of navigation |
-| **White Threshold** | Manga auto-crop tuning — lower values ignore more near-white artifacts |
-| **Custom OCR Server** | Remote OCR endpoint for CBZ manga; see [Custom OCR Server](../manga/custom-server.md) |
+- **Quick Settings** is a sheet inside the reader with the settings you change most often. To open it, show the controls and tap **Settings** (gear icon).
+- **Reader Settings** is the full list. To open it, tap **All settings** (sliders icon) at the top of Quick Settings, or go to **You › Settings › Reader Settings**.
 
-![Reader Settings screen with shared reading defaults](../screenshots/settings-reader-settings.jpg)
+## This book or all books
 
-## Per-Book Quick Settings
+Three settings are saved separately for each book. You find them under **This book** in Quick Settings:
 
-Inside an EPUB reader session, open the quick settings sheet for the current book to change:
+- **Vertical Text**
+- **Reading Direction**
+- **Furigana**
 
-| Setting | Notes |
-|-|-|
-| **Furigana** | Off, Book, All kanji, JLPT, or WaniKani — with a level picker for JLPT and an SRS stage picker for WaniKani; see [Furigana](furigana.md) |
-| **Vertical Text** | Only available when the book supports it |
-| **Reading Direction** | Switch between right-to-left and left-to-right for that book |
-| **Disable Links** | Treat linked text as lookup targets instead of navigation |
+All other settings apply to every book. The JLPT level (from the Japanese-Language Proficiency Test) and the WaniKani stage that go with **Furigana** also apply to every book.
 
-These changes affect the current book view rather than the global app defaults.
+When you open a book for the first time, **Vertical Text** and **Reading Direction** follow the book's own layout.
 
-## Manga Reader Settings
+## Quick Settings
 
-Image-based manga does not use the EPUB text layout controls above. Instead, the manga reader exposes its own settings such as view mode, reading direction, auto-crop, and transparent lookup. See [Reading Manga](../manga/cbz-reading.md).
+### This book
+
+- **Vertical Text** shows the book in tategaki (vertical writing: top to bottom, lines from right to left). Only Japanese, Chinese and Korean books can use it. For other books the switch is grayed out and says "Not available for this book's language".
+- **Reading Direction** is **Right to Left** or **Left to Right**. It sets which way pages turn, which screen edge goes forward, and which way the seek bar runs.
+- **Furigana** sets which kanji get small kana readings: **Off**, **Book**, **All kanji**, **JLPT** or **WaniKani**. See [Furigana](furigana.md).
+
+If you switch a book away from its original layout, a note warns that some pages may not display correctly.
+
+### Display
+
+- **Font Size** goes from 12 to 32. The default is 18.
+- The font row has **Book default**, **Mincho** and **Gothic**. **Book default** uses the book's own font. **Mincho** is a serif style, like most printed novels. **Gothic** is a sans-serif style.
+- **Brightness** sets the screen brightness while a book is open. Tap **Follow system brightness** (the icon at the right end of the slider) to use your phone's brightness again. When you leave the book, your phone's own brightness comes back.
+- The color row has **Normal**, **Sepia** and **Dark**. With **Sepia**, a slider below sets how warm the page looks.
+
+### Behavior
+
+- **Scroll View**: "Slide through each chapter instead of turning pages". See [Navigation & Gestures](navigation.md).
+- **Split Vertical Text**: "Show two stacked text blocks per page". It works only with **Vertical Text** on and **Scroll View** off.
+- **Disable Links**: "Tap linked text to look up words instead of navigating". Linked text still shows in blue.
+
+## Reader Settings
+
+![Reader Settings screen with the All books and EPUB sections](../screenshots/settings-reader-settings.jpg)
+
+The screen has three sections: **All books**, **EPUB** and **Manga**. Brightness is not on this screen. Set it inside the reader.
+
+### All books
+
+- **Keep Screen On** stops the screen from sleeping while you read. It is off by default.
+- **Animations** controls the lookup sheet sliding in, and page turns in the manga reader. Turn it off on an e-ink (e-paper) screen, where moving images leave ghost marks.
+- **Volume buttons turn pages** has **Off**, **Down: next** (the default) and **Up: next**.
+
+!!! note "Android only"
+    **Volume buttons turn pages** is not available on iPhone and iPad.
+
+### EPUB
+
+This section has the same **Display** and **Behavior** settings as Quick Settings, except brightness. It also has these:
+
+- **Sepia Intensity** shows when **Color Mode** is **Sepia**.
+- **Horizontal Margin** and **Vertical Margin** set the space around the text, from 0 to 100 px. The default is 28 px.
+- **Swipe Sensitivity** sets how far you drag before a swipe turns the page, from 1% to 20% of the screen. The default is 5%. Lower means less finger movement.
+
+### Manga
+
+This section sets the defaults for the manga reader: **View Mode**, **Reading Direction**, **Page Turn Edge Zone** and **Transparent Lookup**. With Pro you also see **White Threshold** (for Auto-Crop) and **Custom OCR Server**.
+
+**Page Turn Edge Zone** sets how much of each screen edge turns pages in the manga reader, from 5% to 25%. The default is 15%. It does not change the EPUB reader, where the outer quarter of each side turns pages.
+
+See [Reading Manga](../manga/cbz-reading.md) and [Custom OCR Server](../manga/custom-server.md).
+
+## If something goes wrong
+
+- **Vertical Text is grayed out.** The book's language is not Japanese, Chinese or Korean.
+- **Split Vertical Text is grayed out.** Turn off **Scroll View**. In Quick Settings, also turn on **Vertical Text**.
+- **"This book was not originally formatted for vertical text. Some display issues may occur."** Turn **Vertical Text** off again if the pages look wrong. The opposite note appears when you turn a vertical book horizontal.
+
+## Related pages
+
+- [Navigation & Gestures](navigation.md)
+- [Furigana](furigana.md)
+- [Reading Manga](../manga/cbz-reading.md)
+- [App Settings](../settings/app-settings.md)

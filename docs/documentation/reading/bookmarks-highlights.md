@@ -1,39 +1,75 @@
 # Bookmarks & Highlights
 
-Mekuru lets you save positions and mark text while reading EPUB books.
+Save pages to come back to, and mark passages in color while you read an EPUB book.
+
+## Before you start
+
+- Bookmarks are free.
+- Highlights need Pro. See **You › Settings › Pro**.
+- Both work in EPUB books only.
 
 ## Bookmarks
 
-Bookmarks save your current reading position so you can jump back later.
+### Bookmark a page
 
-- **Add a bookmark** - tap the bookmark icon in the reader toolbar
-- **View bookmarks** - open the bookmarks list from the reader or from the EPUB book's long-press actions in the library
-- **Jump to a bookmark** - tap a bookmark in the list
-- **Edit the bookmark note** - long-press a bookmark in the list
-- **Delete a bookmark** - swipe left on it in the list
+1. Tap an empty spot in the middle of the page to show the controls.
+2. Tap **Bookmark Page** (bookmark icon) at the top.
 
-Bookmarks are saved per book and stay available between sessions.
+The icon fills in and "Page bookmarked" appears.
+
+### Go back to a bookmark
+
+1. Show the controls.
+2. Tap **View Bookmarks** (the icon next to the bookmark icon).
+3. Tap a bookmark.
+
+Each bookmark shows how far into the book it is, as a percentage, and the date you added it.
+
+To see a book's bookmarks from the library, press and hold the book and tap **Bookmarks**.
+
+### Remove a bookmark
+
+Do one of these:
+
+- On the bookmarked page, tap the bookmark icon again (**Remove Bookmark**).
+- In the bookmarks list, swipe the bookmark to the left.
 
 ## Highlights
 
-> **Pro feature** - Book highlights require the one-time **Pro** upgrade.
+![Highlights list with passages marked in different colors](../screenshots/epub-highlights-list-colors.jpg)
 
-Select text in the reader, then use the highlight controls to save a marked passage.
+### Highlight a passage
 
-![Highlights list showing multiple highlight colors](../screenshots/epub-highlights-list-colors.jpg)
+1. Press and hold a word in the book to select it.
+2. Drag the selection handles to cover the passage.
+3. Tap the highlighter button at the bottom right (**Highlight selection**).
+4. To mark the whole sentence, tap **Select sentence**. This step is optional.
+5. Tap a color: yellow, blue, green or pink.
 
-### Creating a Highlight
+Without Pro, the highlighter button opens the Pro screen instead.
 
-1. Select text in the reader.
-2. Use the highlight controls to choose a color.
-3. Optionally expand the selection to the full sentence if you want to copy, share, or highlight the whole sentence.
-4. Add a note later if needed.
+Your highlights show in the text every time you open the book.
 
-### Managing Highlights
+### See your highlights
 
-- **View highlights** - open the highlights list from the reader or from the EPUB book's long-press actions in the library
-- **Jump to a highlight** - tap it in the list
-- **Edit the highlight note** - long-press it in the list
-- **Delete a highlight** - swipe left on it in the list
+1. Show the controls.
+2. Tap **Highlights** (highlighter icon) at the top.
 
-Highlights are restored automatically when you reopen the book.
+Each highlight shows its color, the text, the date and your note. In the list you can:
+
+- Tap a highlight to jump to it in the book.
+- Press and hold a highlight to add or change its note. Type the note in **Edit Note** and tap **Save**.
+- Swipe a highlight to the left to delete it.
+
+To see a book's highlights from the library, press and hold the book and tap **Highlights**.
+
+## If something goes wrong
+
+- **The Highlights button is dimmed.** Highlights need Pro. Tap the button to open the Pro screen.
+- **"No bookmarks yet."** You have not bookmarked a page in this book. Tap the bookmark icon while reading to add one.
+
+## Related pages
+
+- [Navigation & Gestures](navigation.md)
+- [Saving & Managing Words](../vocabulary/saving-words.md)
+- [App Settings](../settings/app-settings.md)

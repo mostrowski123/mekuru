@@ -1,39 +1,94 @@
 # Furigana
 
-Mekuru can show furigana (ruby readings) above kanji while you read an EPUB, with a per-book setting that ranges from no furigana at all to readings on every kanji — including a JLPT mode that only annotates kanji above your study level and a WaniKani mode that skips the kanji you have already learned.
+Choose which kanji show furigana (small kana above kanji that show how to read them) while you read an EPUB book.
 
-![EPUB quick settings sheet showing the furigana modes](../screenshots/reader-quick-settings-furigana.jpg)
+![Quick Settings sheet with the Furigana modes](../screenshots/reader-quick-settings-furigana.jpg)
 
-## Furigana Modes
+## Before you start
 
-Open the quick settings sheet inside the reader and pick a **Furigana** mode for the current book:
+- Furigana settings work in EPUB books. The manga reader does not add furigana.
+- For **WaniKani** mode you need a WaniKani account.
 
-| Mode | What it shows |
+## Pick a furigana mode
+
+1. While reading, tap an empty spot in the middle of the page to show the controls.
+2. Tap **Settings** (gear icon).
+3. Under **This book**, tap **Furigana**.
+4. Pick a mode.
+
+Mekuru remembers the mode for each book.
+
+| Mode | What you see |
 |-|-|
-| **Off** | No furigana, including ruby text the publisher included |
-| **Book** | Exactly the ruby text the publisher included, unchanged |
-| **All kanji** | Generated furigana on every kanji word |
-| **JLPT** | Furigana only on kanji above the JLPT level you pick |
-| **WaniKani** | Furigana only on words that contain a kanji you have not yet learned on WaniKani |
+| **Off** | No furigana at all, not even the furigana printed in the book |
+| **Book** | Only the furigana that came with the book. This is the default. |
+| **All kanji** | The book's furigana, plus furigana that Mekuru adds to every other word with kanji |
+| **JLPT** | Furigana only on words with kanji above the JLPT level you pick |
+| **WaniKani** | Furigana only on words with kanji you have not learned on WaniKani yet |
 
-When **JLPT** is selected, a **Furigana for kanji above** picker appears with levels N5 through N1. Choose N3, for example, and only kanji beyond the N3 kanji lists get readings.
+## Use JLPT mode
 
-## WaniKani Mode
+The JLPT (Japanese-Language Proficiency Test) has five levels, from N5 (easiest) to N1 (hardest).
 
-Link your WaniKani account first: open **Settings > Reading > WaniKani** (Settings is behind the gear icon on the **You** tab), tap **Get an API token** to create a read-only token on WaniKani, paste it, and tap **Link account**. Mekuru downloads the SRS stage of every kanji, refreshes the list when you open the app (at most once an hour), and **Sync now** on the same screen forces a refresh.
+1. Pick **JLPT** as the furigana mode.
+2. Under **Furigana for kanji above**, tap the level you know: **N5**, **N4**, **N3**, **N2** or **N1**. The default is **N3**.
 
-With **WaniKani** selected in the reader, a **Hide furigana at** row picks which stage counts as known: **Apprentice and up**, **Guru and up**, **Master and up**, **Enlightened and up**, or **Burned** (the default). A word keeps its furigana if any of its kanji is below that stage or missing from your WaniKani list. Until an account is linked the sheet shows a **Link your WaniKani account** button instead, and every kanji counts as unknown.
+Words made only of kanji at your level or easier show no furigana. If a word has even one harder kanji, the whole word keeps its furigana. Kanji that are not on any JLPT list always get furigana.
 
-**Unlink** forgets the token and the kanji list. A backup restores the kanji list but not the token, so after a restore the WaniKani screen asks you to link again to keep it updated.
+The level you pick applies to all books.
 
-## Publisher Ruby Follows the Same Rule
+## Use WaniKani mode
 
-In **JLPT** and **WaniKani** modes the filter also applies to furigana that was already in the book: publisher-authored ruby on kanji you know is hidden, so books with full ruby stay readable as you progress.
+### Connect your WaniKani account
 
-## Accuracy
+1. Go to **You › Settings › WaniKani**. In the reader you can also pick **WaniKani** and tap **Link your WaniKani account**.
+2. Tap **Get an API token**. The WaniKani website opens.
+3. Create a token there. A read-only token is enough.
+4. Copy the token and go back to Mekuru.
+5. Paste it into **API token**.
+6. Tap **Link account**.
 
-Generated readings come from Mekuru's built-in analyzer. Installing the optional [Enhanced Furigana Dictionary](../getting-started/downloadable-data.md#furigana-word-analysis) improves reading accuracy — it does not turn furigana on or off.
+Mekuru downloads the SRS stage of every kanji you have studied. (SRS stages are WaniKani's learning stages, from Apprentice to Burned.) The screen then shows your level, how many kanji were synced and when.
 
-## Exporting
+Mekuru updates the list when you open the app, at most once an hour. To update it now, tap **Sync now**.
 
-The same furigana engine can bake readings into a standalone EPUB file for use in other readers. See [Furigana EPUB Export](../library/furigana-export.md).
+### Choose which kanji count as known
+
+1. In the reader, pick **WaniKani** as the furigana mode.
+2. Tap **Hide furigana at**.
+3. Pick **Apprentice and up**, **Guru and up**, **Master and up**, **Enlightened and up** or **Burned**. The default is **Burned**.
+
+A word keeps its furigana if any of its kanji is below that stage or is not in your WaniKani list yet. This choice applies to all books.
+
+### Disconnect WaniKani
+
+On the **WaniKani** screen, tap **Unlink**. Mekuru forgets the token and the kanji list.
+
+## Furigana that the book already has
+
+In **JLPT** and **WaniKani** modes, the same rule applies to the furigana printed in the book. The book's furigana on words you know is hidden. Pick **Book** to see all of it again.
+
+## Get more accurate readings
+
+Mekuru works out the readings with its built-in word analyzer. For better readings, install the **Enhanced Furigana Dictionary** from **You › Settings › Downloads**. It is a 45 MB download and takes about 250 MB on your device.
+
+It also helps Mekuru find the right word when you tap. It does not turn furigana on or off. See [Install the Enhanced Furigana Dictionary](../getting-started/dictionaries.md#install-the-enhanced-furigana-dictionary-optional).
+
+## Export a book with furigana
+
+You can make a copy of a book with furigana built in, to read in other apps. See [Furigana EPUB Export](../library/furigana-export.md).
+
+## If something goes wrong
+
+- **"WaniKani rejected this token. Create a new one and try again."** Make a new token on the WaniKani website and paste it again.
+- **"Couldn't reach WaniKani. Check your connection."** Check that you are online, then tap **Sync now**.
+- **"WaniKani is rate limiting requests. Try again in a minute."** Wait a minute, then tap **Sync now**.
+- **"Kanji list restored from a backup. Link again to keep it updated."** A backup brings back the kanji list but not the token. Paste your token again.
+- **Tapping words stops working after you install the Enhanced Furigana Dictionary.** In **You › Settings › Downloads**, turn off **Use enhanced dictionary** and restart Mekuru. The download is kept, so you can turn it on again later.
+
+## Related pages
+
+- [Display Settings](display-settings.md)
+- [Furigana EPUB Export](../library/furigana-export.md)
+- [Downloads](../getting-started/downloadable-data.md)
+- [Backup & Restore](../settings/backup-restore.md)
