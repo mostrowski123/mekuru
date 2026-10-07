@@ -2913,6 +2913,8 @@
   "localOcrNotificationsOff": "OCR dapat berjalan meski notifikasi dimatikan. Gunakan lembar pengenalan manga untuk menjeda atau membatalkan.",
   "localOcrModelCorrupt": "Berkas model gagal diverifikasi. Keluarkan model OCR lalu unduh lagi.",
   "localOcrMobileDownloadTitle": "Unduh melalui data seluler?",
+  "mobileDataVpnTitle": "Unduh melalui VPN Anda?",
+  "mobileDataVpnBody": "Anda terhubung melalui VPN, jadi Mekuru tidak dapat mengetahui apakah unduhan ini ({size}) akan memakai data seluler.",
   "localOcrMobileDownloadBody": "Ukuran model OCR adalah {size}. Anda sedang memakai data seluler atau hotspot, jadi mengunduhnya mungkin memakai kuota data Anda. Progres unduhan yang tersimpan akan digunakan kembali.",
   "localOcrWifiLostIos": "Unduhan berhenti karena Wi-Fi terputus. File yang sudah selesai tetap disimpan. Ketuk Unduh untuk melanjutkan.",
   "localOcrWaitingWifi": "Menunggu Wi-Fi. Batalkan lalu lanjutkan untuk menggunakan data seluler.",

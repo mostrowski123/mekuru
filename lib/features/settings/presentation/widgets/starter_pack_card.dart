@@ -58,12 +58,14 @@ Future<void> installStarterPack(BuildContext context) async {
   // Only the mobile-data question needs the caller still on screen.
   if (!await isOnWifi()) {
     if (!context.mounted) return;
-    final size =
+    final mb =
         (needDictionary ? CatalogDictionary.jitendex.downloadMb.ceil() : 0) +
         (needJpdb ? _jpdbMb : 0);
+    final size = '$mb MB';
     final confirmed = await confirmMobileData(
       context,
-      context.l10n.downloadsStarterPackMobileDataBody(size: '$size MB'),
+      size: size,
+      body: context.l10n.downloadsStarterPackMobileDataBody(size: size),
     );
     if (!confirmed) return;
   }

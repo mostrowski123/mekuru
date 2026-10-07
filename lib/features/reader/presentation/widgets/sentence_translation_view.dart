@@ -148,12 +148,12 @@ class _SentenceTranslationViewState
   Future<void> _download() async {
     final target = _target!;
     if (!await confirmTranslationMemory(context) || !mounted) return;
+    final size = translationDownloadSize(target);
     if (!_isIos &&
         !await okToDownload(
           context,
-          context.l10n.translationMobileDataBody(
-            size: translationDownloadSize(target),
-          ),
+          size: size,
+          body: context.l10n.translationMobileDataBody(size: size),
         )) {
       return;
     }

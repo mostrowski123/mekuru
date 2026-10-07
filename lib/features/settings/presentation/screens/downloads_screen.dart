@@ -278,7 +278,8 @@ class _SentenceTranslationTileState extends State<_SentenceTranslationTile> {
     final size = translationDownloadSize(_target!);
     if (await okToDownload(
       context,
-      context.l10n.translationMobileDataBody(size: size),
+      size: size,
+      body: context.l10n.translationMobileDataBody(size: size),
     )) {
       await _run(() => downloadTranslation(_target!));
     }
@@ -356,11 +357,11 @@ class _HighQualityTranslationTileState
     // Read before the dialogs: the tile can unmount while one is up.
     final download = ref.read(gemmaDownloadProvider.notifier);
     if (!await confirmHighQualityMemory(context) || !mounted) return;
+    final size = GemmaTranslation.downloadSize();
     final network = await askDownloadNetwork(
       context,
-      context.l10n.translationMobileDataBody(
-        size: GemmaTranslation.downloadSize(),
-      ),
+      size: size,
+      body: context.l10n.translationMobileDataBody(size: size),
     );
     if (network == null) return;
     // The provider chooses High once the download is done.

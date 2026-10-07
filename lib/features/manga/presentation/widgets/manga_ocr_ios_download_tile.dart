@@ -113,7 +113,8 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
       if (!mounted) return;
       final confirmed = await confirmMobileData(
         context,
-        context.l10n.localOcrMobileDownloadBody(size: _size),
+        size: _size,
+        body: context.l10n.localOcrMobileDownloadBody(size: _size),
       );
       if (!mounted) return;
       if (!confirmed) {

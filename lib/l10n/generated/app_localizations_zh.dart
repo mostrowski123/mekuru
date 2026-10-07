@@ -3224,6 +3224,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrDownloadQueued => '等待下载…';
 
   @override
+  String get mobileDataVpnTitle => '通过 VPN 下载？';
+
+  @override
+  String mobileDataVpnBody({required String size}) {
+    return '你正通过 VPN 连接，因此 Mekuru 无法判断这次下载（$size）是否会使用移动数据。';
+  }
+
+  @override
   String get localOcrEstimating => '正在估算剩余时间…';
 
   @override
@@ -7157,6 +7165,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get localOcrDownloadQueued => '等待下载…';
+
+  @override
+  String get mobileDataVpnTitle => '通过 VPN 下载？';
+
+  @override
+  String mobileDataVpnBody({required String size}) {
+    return '你正通过 VPN 连接，因此 Mekuru 无法判断这次下载（$size）是否会使用移动数据。';
+  }
 
   @override
   String get localOcrEstimating => '正在估算剩余时间…';

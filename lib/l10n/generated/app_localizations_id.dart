@@ -3390,6 +3390,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get localOcrDownloadQueued => 'Menunggu untuk mengunduh…';
 
   @override
+  String get mobileDataVpnTitle => 'Unduh melalui VPN Anda?';
+
+  @override
+  String mobileDataVpnBody({required String size}) {
+    return 'Anda terhubung melalui VPN, jadi Mekuru tidak dapat mengetahui apakah unduhan ini ($size) akan memakai data seluler.';
+  }
+
+  @override
   String get localOcrEstimating => 'Memperkirakan sisa waktu…';
 
   @override

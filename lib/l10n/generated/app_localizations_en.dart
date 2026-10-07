@@ -3372,6 +3372,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get localOcrDownloadQueued => 'Waiting to download…';
 
   @override
+  String get mobileDataVpnTitle => 'Download through your VPN?';
+
+  @override
+  String mobileDataVpnBody({required String size}) {
+    return 'You\'re connected through a VPN, so Mekuru can\'t tell whether this download ($size) would use mobile data.';
+  }
+
+  @override
   String get localOcrEstimating => 'Estimating time remaining…';
 
   @override

@@ -47,13 +47,17 @@ List<Override> fakeDownloadNotifierOverrides(
 
 /// Answers the Wi-Fi check that `isOnWifi()` makes, on Android and on iOS,
 /// for the rest of the test.
-void mockWifiConnected(bool connected) {
+void mockWifiConnected(bool connected, {bool vpn = false}) {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   const iosNetwork = MethodChannel('mekuru/network');
   messenger.setMockMethodCallHandler(
     LocalMangaOcr.channel,
-    (call) async => call.method == 'isWifiConnected' ? connected : null,
+    (call) async => switch (call.method) {
+      'isWifiConnected' => connected,
+      'isVpnActive' => vpn,
+      _ => null,
+    },
   );
   messenger.setMockMethodCallHandler(
     iosNetwork,

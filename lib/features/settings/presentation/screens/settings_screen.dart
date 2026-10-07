@@ -748,11 +748,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ref.read(translationModelProvider.notifier).setChoice(choice);
           return;
         }
+        final size = GemmaTranslation.downloadSize();
         final network = await askDownloadNetwork(
           context,
-          context.l10n.translationMobileDataBody(
-            size: GemmaTranslation.downloadSize(),
-          ),
+          size: size,
+          body: context.l10n.translationMobileDataBody(size: size),
         );
         // The provider chooses High once the download is done.
         if (network != null && mounted) {

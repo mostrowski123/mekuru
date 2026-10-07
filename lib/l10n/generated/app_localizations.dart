@@ -5543,6 +5543,18 @@ abstract class AppLocalizations {
   /// **'Waiting to download…'**
   String get localOcrDownloadQueued;
 
+  /// Title of the question before a large download when a VPN is on (Android counts most VPNs as metered, so Mekuru asks as it does on mobile data).
+  ///
+  /// In en, this message translates to:
+  /// **'Download through your VPN?'**
+  String get mobileDataVpnTitle;
+
+  /// Body of the question before a large download when a VPN is on. {size} is the download size, e.g. 55 MB.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re connected through a VPN, so Mekuru can\'t tell whether this download ({size}) would use mobile data.'**
+  String mobileDataVpnBody({required String size});
+
   /// Progress displayed over the current manga page.
   ///
   /// In en, this message translates to:

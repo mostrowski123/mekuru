@@ -25,6 +25,19 @@ Future<bool> isOnWifi() async {
   }
 }
 
+/// Whether a VPN carries the traffic (Android): Android counts most VPNs as
+/// metered, so [isOnWifi] is false on Wi-Fi under one, and the mobile-data
+/// question says the VPN is why. False off Android or when the check fails.
+Future<bool> isOnVpn() async {
+  if (defaultTargetPlatform != TargetPlatform.android) return false;
+  try {
+    return await LocalMangaOcr.isVpnActive();
+  } catch (e, st) {
+    logFailure('network.vpn_check_failed', e, stackTrace: st);
+    return false;
+  }
+}
+
 /// A transfer stopped by [whileOnWifi] because the network stopped being
 /// Wi-Fi.
 class WifiLostException implements Exception {

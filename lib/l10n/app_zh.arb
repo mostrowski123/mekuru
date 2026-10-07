@@ -2913,6 +2913,8 @@
   "localOcrNotificationsOff": "关闭通知后 OCR 仍可继续。可在漫画的识别面板中暂停或取消。",
   "localOcrModelCorrupt": "模型文件未通过验证。请移除并重新下载 OCR 模型。",
   "localOcrMobileDownloadTitle": "使用移动数据下载？",
+  "mobileDataVpnTitle": "通过 VPN 下载？",
+  "mobileDataVpnBody": "你正通过 VPN 连接，因此 Mekuru 无法判断这次下载（{size}）是否会使用移动数据。",
   "localOcrMobileDownloadBody": "OCR 模型大小为 {size}。你正在使用移动数据或热点，下载可能会消耗你的流量。已保存的下载进度会被复用。",
   "localOcrWifiLostIos": "Wi-Fi 已断开，下载已停止。已完成的文件会保留。点按“下载”继续。",
   "localOcrWaitingWifi": "正在等待 Wi-Fi。取消后再继续即可使用移动数据。",

@@ -5,15 +5,23 @@ import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/l10n/l10n.dart';
 import 'package:mekuru/shared/utils/haptics.dart';
 
-/// Asks "Download over mobile data?" before a large download starts off
-/// Wi-Fi. [body] names the size. True only when the user picks Download.
-Future<bool> confirmMobileData(BuildContext context, String body) async {
+/// Asks "Download over mobile data?" before a large download of [size]
+/// starts off Wi-Fi; [body] names the size. Through a VPN, which Android
+/// counts as metered even on Wi-Fi, it says the VPN is why it asks. True
+/// only when the user picks Download.
+Future<bool> confirmMobileData(
+  BuildContext context, {
+  required String size,
+  required String body,
+}) async {
+  final vpn = await isOnVpn();
+  if (!context.mounted) return false;
   final l = context.l10n;
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: Text(l.localOcrMobileDownloadTitle),
-      content: Text(body),
+      title: Text(vpn ? l.mobileDataVpnTitle : l.localOcrMobileDownloadTitle),
+      content: Text(vpn ? l.mobileDataVpnBody(size: size) : body),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext, false),
@@ -33,23 +41,27 @@ Future<bool> confirmMobileData(BuildContext context, String body) async {
 enum DownloadNetwork { wifi, mobileData }
 
 /// [DownloadNetwork.wifi] on Wi-Fi; off it, [DownloadNetwork.mobileData] once
-/// the user agrees to use mobile data, or null when they don't. [body] names
-/// the size.
+/// the user agrees to use mobile data ([confirmMobileData]), or null when
+/// they don't.
 Future<DownloadNetwork?> askDownloadNetwork(
-  BuildContext context,
-  String body,
-) async {
+  BuildContext context, {
+  required String size,
+  required String body,
+}) async {
   if (await isOnWifi()) return DownloadNetwork.wifi;
   if (!context.mounted) return null;
-  return await confirmMobileData(context, body)
+  return await confirmMobileData(context, size: size, body: body)
       ? DownloadNetwork.mobileData
       : null;
 }
 
 /// Whether a large download may start now: on Wi-Fi, or off it once the
-/// user agrees to use mobile data. [body] names the size.
-Future<bool> okToDownload(BuildContext context, String body) async =>
-    await askDownloadNetwork(context, body) != null;
+/// user agrees to use mobile data ([confirmMobileData]).
+Future<bool> okToDownload(
+  BuildContext context, {
+  required String size,
+  required String body,
+}) async => await askDownloadNetwork(context, size: size, body: body) != null;
 
 /// Starts [download] of a dictionary of [size] on Wi-Fi, or off it once the
 /// user accepts mobile data. A dictionary download that started on Wi-Fi
@@ -63,5 +75,7 @@ Future<void> askThenDownload(
 ) async {
   AppHaptics.light();
   final body = context.l10n.catalogMobileDataBody(size: size);
-  if (await okToDownload(context, body)) unawaited(download());
+  if (await okToDownload(context, size: size, body: body)) {
+    unawaited(download());
+  }
 }

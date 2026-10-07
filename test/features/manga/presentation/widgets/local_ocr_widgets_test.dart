@@ -182,7 +182,7 @@ void main() {
     await tester.tap(find.text('Download'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(calls.map((c) => c.method), ['isWifiConnected']);
+    expect(calls.map((c) => c.method), ['isWifiConnected', 'isVpnActive']);
     expect(find.text('Download over mobile data?'), findsOneWidget);
     expect(
       find.descendant(
@@ -213,13 +213,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    expect(calls.map((c) => c.method), ['isWifiConnected']);
+    expect(calls.map((c) => c.method), ['isWifiConnected', 'isVpnActive']);
     // Network state is checked again for each explicit attempt.
     wifi = true;
     await tester.tap(find.text('Download'));
     await tester.pumpAndSettle();
     expect(calls.map((c) => c.method), [
       'isWifiConnected',
+      'isVpnActive',
       'isWifiConnected',
       'download',
     ]);
@@ -243,7 +244,7 @@ void main() {
       );
       Navigator.of(tester.element(find.byType(AlertDialog))).pop();
       await tester.pumpAndSettle();
-      expect(calls.map((c) => c.method), ['isWifiConnected']);
+      expect(calls.map((c) => c.method), ['isWifiConnected', 'isVpnActive']);
     },
   );
 

@@ -378,9 +378,11 @@ class _LocalOcrDownloadTileState extends ConsumerState<LocalOcrDownloadTile> {
     final wifi = await LocalMangaOcr.isWifiConnected();
     if (!mounted) return;
     if (!wifi) {
+      final size = _bytes(model.totalBytes);
       final confirmed = await confirmMobileData(
         context,
-        context.l10n.localOcrMobileDownloadBody(size: _bytes(model.totalBytes)),
+        size: size,
+        body: context.l10n.localOcrMobileDownloadBody(size: size),
       );
       if (!confirmed || !mounted) return;
     }

@@ -2913,6 +2913,8 @@
   "localOcrNotificationsOff": "El OCR puede continuar con las notificaciones desactivadas. Usa el panel de reconocimiento del manga para pausar o cancelar.",
   "localOcrModelCorrupt": "Los archivos del modelo no superaron la verificación. Quita los modelos de OCR y descárgalos de nuevo.",
   "localOcrMobileDownloadTitle": "¿Descargar con datos móviles?",
+  "mobileDataVpnTitle": "¿Descargar a través de tu VPN?",
+  "mobileDataVpnBody": "Estás conectado a través de una VPN, así que Mekuru no puede saber si esta descarga ({size}) usaría datos móviles.",
   "localOcrMobileDownloadBody": "El modelo de OCR ocupa {size}. Estás usando datos móviles o un punto de acceso, así que descargarlo puede consumir tu plan de datos. Se reutilizará el progreso de descarga guardado.",
   "localOcrWifiLostIos": "La descarga se detuvo porque se desconectó el Wi-Fi. Los archivos terminados se conservan. Toca Descargar para continuar.",
   "localOcrWaitingWifi": "Esperando Wi-Fi. Cancela y reanuda para usar datos móviles.",

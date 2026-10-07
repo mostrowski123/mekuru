@@ -4329,6 +4329,19 @@
   "@localOcrMobileDownloadTitle": {
     "description": "On-device OCR model download network confirmation and status."
   },
+  "mobileDataVpnTitle": "Download through your VPN?",
+  "@mobileDataVpnTitle": {
+    "description": "Title of the question before a large download when a VPN is on (Android counts most VPNs as metered, so Mekuru asks as it does on mobile data)."
+  },
+  "mobileDataVpnBody": "You're connected through a VPN, so Mekuru can't tell whether this download ({size}) would use mobile data.",
+  "@mobileDataVpnBody": {
+    "description": "Body of the question before a large download when a VPN is on. {size} is the download size, e.g. 55 MB.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "@localOcrWaitingWifi": {
     "description": "On-device OCR model download network confirmation and status."
   },
