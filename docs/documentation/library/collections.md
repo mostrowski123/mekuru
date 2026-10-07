@@ -1,30 +1,87 @@
 # Collections & Folders
 
-Collections group your books and manga into iOS-style folder tiles on the library grid, so a large library stays organized without moving anything out of it.
+Group books and manga into folders on your library grid, for example by series or by level.
 
-![Library grid showing collection folder tiles](../screenshots/library-collections-folder-tiles.jpg)
+## How collections work
 
-## Creating a Collection
+- Each collection is a folder on the **Library** tab. Folders come first on the grid, sorted by name. The books that are in no folder follow.
+- A book in a collection appears inside its folder, not on the main grid.
+- A book can be in more than one collection.
+- A folder shows the covers of its first four books.
+- Deleting a collection never deletes the books in it.
 
-1. Long-press a book or manga in the **Library** tab.
-2. Choose **Add to collection**.
-3. Pick an existing collection, or tap **New collection** and name it.
+## Create a collection
 
-The collection appears in the library grid as a folder tile showing miniature covers of the books inside.
+1. In the **Library** tab, press and hold a book.
+2. Tap **Add to collection**.
+3. Tap **New collection**.
+4. Type a name and tap **Save**.
 
-## Adding Several Books at Once
+Mekuru creates the folder and puts the book in it.
 
-Tap the checklist icon in the library app bar to enter selection mode, tap the books you want (or **Select all**), then use **Add to collection** to move the whole selection in one step.
+## Add books to a collection
 
-## Opening and Reordering
+To add one book:
 
-Tap a folder tile to open the collection. Each collection keeps its own book order — inside a folder, enter edit mode with the **Select** icon and drag tiles to rearrange them. The order is saved per collection and does not affect the main library sort.
+1. Press and hold the book.
+2. Tap **Add to collection**.
+3. Check each collection the book belongs in. Each change is saved right away.
 
-## Removing Books and Managing Collections
+To add several books at once:
 
-- Inside a folder, enter edit mode, select one or more books, and choose **Remove from this folder**. The books stay in your library — only the collection membership is removed.
-- Long-press a folder tile to rename or delete the collection. Deleting a collection never deletes the books in it.
+1. Tap **Select** (the checklist icon) at the top of the **Library** tab.
+2. Tap the books you want, or tap **Select all**.
+3. Tap **Add to collection** (the folder icon).
+4. Check one or more collections, or tap **New collection** to make one.
+5. Tap **Add**.
 
-## Backup
+On the main grid you can only select books that are in no folder yet. To add a book that is already in a folder to another collection, open the folder and press and hold the book.
 
-Collections — including each collection's book order — are included in [Backup & Restore](../settings/backup-restore.md).
+New books go to the end of a collection.
+
+## Open a collection
+
+Tap a folder to open it. Tap a book to read it, or press and hold it for the same options as on the main grid.
+
+## Edit a collection
+
+![A collection in edit mode, with books selected](../screenshots/collection-edit-mode.jpg)
+
+1. Open the collection.
+2. Tap **Select** (the checklist icon) at the top. The collection is now in edit mode.
+3. Do any of these:
+    - **Reorder**: press and hold a book, then drag it to a new place. The order applies to this collection only. The first four books are the covers on the folder.
+    - **Remove**: tap the books to select them, then tap **Remove from this folder**. If you selected more than one book, tap **Remove** to confirm.
+4. Tap **Close** (the X) to leave edit mode.
+
+Removed books stay in your library. A book that is in no other folder goes back to the main grid.
+
+To remove one book without edit mode, press and hold it, tap **Add to collection**, and clear its check box.
+
+### Rename or delete a collection
+
+1. Press and hold the folder on the library grid. Inside the collection, you can also tap the menu button (⋮) at the top.
+2. Tap **Rename** or **Delete**.
+3. To rename, type the new name and tap **Save**. To delete, tap **Delete** again to confirm.
+
+The books in a deleted collection stay in your library.
+
+## Sort the library
+
+1. Tap the sort button at the top of the **Library** tab.
+2. Under **Sort by**, choose one:
+    - **Date imported**: newest books first. This is the default.
+    - **Recently read**: the book you opened last comes first. Books you have never opened go last.
+    - **Alphabetical**: by title, A to Z.
+
+Mekuru remembers your choice. The sort applies to the books on the main grid. Folders stay first, sorted by name, and books inside a collection keep the order you gave them.
+
+## Continue reading
+
+After you have opened a book, a **Continue reading** card appears at the top of the **Library** tab. It shows the book you read most recently, including books inside folders, with how far you are as a bar and a percentage. Tap the card to open the book where you stopped.
+
+## Related pages
+
+- [Importing Books (EPUB and PDF)](../getting-started/importing-books.md)
+- [Importing Manga](../getting-started/importing-manga.md)
+- [Backup & Restore](../settings/backup-restore.md): backups keep your collections and the order of books in each.
