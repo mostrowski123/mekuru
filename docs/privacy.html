@@ -12,52 +12,80 @@
 <body>
   <div class="container policy">
     <h1>Privacy Policy</h1>
-    <p class="effective">Effective: September 21, 2026</p>
+    <p class="effective">Effective: October 7, 2026</p>
 
-    <h2>Data Stored on Device</h2>
+    <h2>Data Stored on Your Device</h2>
     <p>
-      All core reading data - books, dictionaries, saved words, and reading progress - is stored locally on your device.
-      Mekuru does not upload, sync, or transmit that core reading data to any server.
+      Your books, dictionaries, saved words, reading progress, and reading statistics are stored on your device.
+      Mekuru does not upload them to any server run by Mekuru.
+    </p>
+    <p>
+      Some features send data to a server only when you set them up and use them:
+    </p>
+    <ul>
+      <li><strong>Komga or Kavita:</strong> books are downloaded from, and reading progress is synced with, the server you add.</li>
+      <li><strong>Anki:</strong> flashcards go to AnkiDroid or AnkiMobile on your device, or to Anki on your computer through AnkiConnect.</li>
+      <li><strong>WaniKani:</strong> your API token is sent to WaniKani to read which kanji you have learned.</li>
+      <li><strong>Custom OCR server:</strong> manga page images are sent to the OCR server you configure (see OCR Data below).</li>
+    </ul>
+
+    <h2>Accounts</h2>
+    <p>
+      Mekuru does not require an account or sign-in. Pro purchases are handled by Google Play (Android) or the App Store (iOS).
+      If your settings still point to the remote OCR server used by older versions of Mekuru, the app creates an anonymous Firebase Authentication identity to talk to that server. It is not linked to your name or email.
     </p>
 
-    <h2>OCR Accounts and Authentication</h2>
+    <h2>Crash Reports and Feedback</h2>
     <p>
-      Mekuru does not require registration to use its core reader, dictionary, and vocabulary features.
-      When you use OCR features, the app uses Firebase Authentication to create an app-specific authenticated identity.
-      This may be an anonymous account created automatically for OCR usage, or a Google-linked account if you choose to link one to restore a Pro purchase.
+      Mekuru uses <a href="https://sentry.io">Sentry</a> for crash reports.
+      A crash report includes the error and stack trace, the device model, the operating system version, and a randomly generated installation identifier.
+      File paths are removed before a report is sent.
     </p>
-
-    <h2>Crash Reporting and Feedback</h2>
     <p>
-      Mekuru uses <a href="https://sentry.io">Sentry</a> for crash reporting and user-submitted feedback.
-      When a crash occurs or you submit feedback, diagnostic information may be sent to Sentry, including stack traces, device model, operating system version, and a randomly generated installation identifier that is not linked to your name or email.
-      This data is used only for debugging and improving the app and is not used for advertising or behavioral tracking.
+      If you send feedback from the app, your message goes to Sentry together with the name and email address you type in the form, if any.
+      They are then linked to that installation identifier, so your feedback can be matched with crash reports from your device.
     </p>
 
     <h2>Usage Statistics</h2>
     <p>
-      Mekuru collects anonymous usage statistics to understand which features are used and how well they perform - for example, how often the reader, dictionary, OCR, and Anki export features are used, how long operations take, and aggregate install statistics such as library size and number of saved words.
-      This data is sent to Sentry and Google Firebase Analytics together with general device information and a randomly generated installation identifier.
-      It never includes book titles, file names, page content, or the words you look up.
+      Mekuru collects usage statistics to understand which features are used and how well they perform.
+      For example: how often the reader, dictionary, OCR, and Anki export are used, how long operations take, rough library size, and whether Mekuru Pro is unlocked.
+      This data is sent to Sentry and to Google Firebase Analytics with general device information and a randomly generated installation identifier.
+      Firebase Analytics also estimates your approximate location (country and region) from your IP address.
+      Mekuru does not use the advertising identifier.
+      Usage statistics never include book titles, file names, page content, or the words you look up.
     </p>
 
     <h2>OCR Data</h2>
     <p>
-      When you use OCR, page images and related OCR requests are sent only to the custom OCR server you configure.
+      On-device OCR runs entirely on your device: page images are not uploaded.
+      With remote OCR, page images and OCR requests are sent only to the custom OCR server you configure.
       Mekuru does not provide or operate an OCR processing server.
-      Any OCR images or request data sent during remote OCR are handled by the server you choose, under that server operator's own policies and retention practices.
+      Any images or request data sent during remote OCR are handled by the server you choose, under that server operator's own policies and retention practices.
+    </p>
+
+    <h2>Translation</h2>
+    <p>
+      Sentence translation runs on your device: Mozilla's Firefox Translations engine or the optional Gemma model on Android, and Apple's Translation framework on iOS.
+      The sentences you translate are not sent to a server.
+    </p>
+
+    <h2>Downloads</h2>
+    <p>
+      When you download dictionaries, models, the free-book catalog, or a free book, Mekuru contacts the server that hosts it, such as GitHub, Hugging Face, Mozilla, Aozora Bunko, or Tadoku.
+      Like any web request, these servers see your IP address. Mekuru sends them no personal data.
     </p>
 
     <h2>Third-Party Services</h2>
     <p>
-      In addition to Sentry, Mekuru uses Firebase Authentication for OCR features, Firebase Analytics for usage statistics, and may contact Google Play billing services (on Android) or Apple's App Store (on iOS) for Pro purchases.
-      These services are used only to support Pro access, purchase restoration, billing state, OCR-related authentication, and the usage statistics described above.
+      Mekuru uses Sentry for crash reports, feedback, and usage statistics, and Firebase Analytics for usage statistics.
+      It contacts Google Play billing (Android) or the App Store (iOS) for Pro purchases, and Firebase App Check to protect requests to Mekuru's own services.
     </p>
 
     <h2>No Advertising or Data Sale</h2>
     <p>
-      Mekuru does not include advertising SDKs.
-      Crash reports and usage statistics are used only to improve the app - they are never used for advertising, sold, or shared with data brokers.
+      Mekuru does not include advertising SDKs and does not track you across other apps or websites.
+      Crash reports, feedback, and usage statistics are used only to improve the app. They are never used for advertising, sold, or shared with data brokers.
     </p>
 
     <h2>Changes to This Policy</h2>
