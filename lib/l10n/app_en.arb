@@ -674,7 +674,7 @@
   "@proFeatureLocalOcrDescription": {
     "description": "Description of the on-device manga OCR Pro feature; warns that recognition is CPU-heavy and points at the speed test."
   },
-  "proFeatureLocalOcrDescriptionIos": "Recognize manga text offline, on your device, with Apple's text recognition. Scanning runs while Mekuru is open.",
+  "proFeatureLocalOcrDescriptionIos": "Recognize manga text offline, on your device, with Apple's text recognition. Scans keep going after you leave Mekuru and pause if iOS stops them.",
   "@proFeatureLocalOcrDescriptionIos": {
     "description": "Pro feature card for on-device OCR on iOS (Apple Vision)"
   },
@@ -4001,7 +4001,7 @@
   "@localOcrOnDeviceSubtitle": {
     "description": "On-device manga OCR: localOcrOnDeviceSubtitle"
   },
-  "localOcrOnDeviceSubtitleIos": "Offline, with Apple's text recognition. Keep Mekuru open while it scans.",
+  "localOcrOnDeviceSubtitleIos": "Offline, with Apple's text recognition. The scan keeps going after you leave Mekuru and pauses if iOS stops it.",
   "@localOcrOnDeviceSubtitleIos": {
     "description": "On-device manga OCR on iOS (Apple Vision, no model download): subtitle"
   },

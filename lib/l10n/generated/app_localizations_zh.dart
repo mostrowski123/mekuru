@@ -499,7 +499,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get proFeatureLocalOcrDescriptionIos =>
-      '使用 Apple 文字识别在设备上离线识别漫画文字。扫描在 Mekuru 打开时进行。';
+      '使用 Apple 文字识别在设备上离线识别漫画文字。即使离开 Mekuru，扫描也会继续；如果被 iOS 停止，扫描会暂停。';
 
   @override
   String get proFeatureCustomOcrTitle => '自定义 OCR 服务器';
@@ -2985,7 +2985,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get localOcrOnDeviceSubtitle => '下载模型后可离线使用';
 
   @override
-  String get localOcrOnDeviceSubtitleIos => '离线使用 Apple 文字识别。扫描时请保持 Mekuru 打开。';
+  String get localOcrOnDeviceSubtitleIos =>
+      '离线使用 Apple 文字识别。即使离开 Mekuru，扫描也会继续；如果被 iOS 停止，扫描会暂停。';
 
   @override
   String get localOcrRemote => '远程';
@@ -4440,7 +4441,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get proFeatureLocalOcrDescriptionIos =>
-      '使用 Apple 文字识别在设备上离线识别漫画文字。扫描在 Mekuru 打开时进行。';
+      '使用 Apple 文字识别在设备上离线识别漫画文字。即使离开 Mekuru，扫描也会继续；如果被 iOS 停止，扫描会暂停。';
 
   @override
   String get proFeatureCustomOcrTitle => '自定义 OCR 服务器';
@@ -6926,7 +6927,8 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get localOcrOnDeviceSubtitle => '下载模型后可离线使用';
 
   @override
-  String get localOcrOnDeviceSubtitleIos => '离线使用 Apple 文字识别。扫描时请保持 Mekuru 打开。';
+  String get localOcrOnDeviceSubtitleIos =>
+      '离线使用 Apple 文字识别。即使离开 Mekuru，扫描也会继续；如果被 iOS 停止，扫描会暂停。';
 
   @override
   String get localOcrRemote => '远程';

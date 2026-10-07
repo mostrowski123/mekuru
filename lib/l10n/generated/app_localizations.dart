@@ -949,7 +949,7 @@ abstract class AppLocalizations {
   /// Pro feature card for on-device OCR on iOS (Apple Vision)
   ///
   /// In en, this message translates to:
-  /// **'Recognize manga text offline, on your device, with Apple\'s text recognition. Scanning runs while Mekuru is open.'**
+  /// **'Recognize manga text offline, on your device, with Apple\'s text recognition. Scans keep going after you leave Mekuru and pause if iOS stops them.'**
   String get proFeatureLocalOcrDescriptionIos;
 
   /// Title of the custom OCR server Pro feature.
@@ -5134,7 +5134,7 @@ abstract class AppLocalizations {
   /// On-device manga OCR on iOS (Apple Vision, no model download): subtitle
   ///
   /// In en, this message translates to:
-  /// **'Offline, with Apple\'s text recognition. Keep Mekuru open while it scans.'**
+  /// **'Offline, with Apple\'s text recognition. The scan keeps going after you leave Mekuru and pauses if iOS stops it.'**
   String get localOcrOnDeviceSubtitleIos;
 
   /// On-device manga OCR: localOcrRemote

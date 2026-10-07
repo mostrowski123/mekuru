@@ -516,7 +516,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get proFeatureLocalOcrDescriptionIos =>
-      'Recognize manga text offline, on your device, with Apple\'s text recognition. Scanning runs while Mekuru is open.';
+      'Recognize manga text offline, on your device, with Apple\'s text recognition. Scans keep going after you leave Mekuru and pause if iOS stops them.';
 
   @override
   String get proFeatureCustomOcrTitle => 'Custom OCR Server';
@@ -3113,7 +3113,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get localOcrOnDeviceSubtitleIos =>
-      'Offline, with Apple\'s text recognition. Keep Mekuru open while it scans.';
+      'Offline, with Apple\'s text recognition. The scan keeps going after you leave Mekuru and pauses if iOS stops it.';
 
   @override
   String get localOcrRemote => 'Remote';

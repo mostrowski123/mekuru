@@ -516,7 +516,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get proFeatureLocalOcrDescriptionIos =>
-      'Kenali teks manga secara offline di perangkatmu dengan pengenalan teks Apple. Pemindaian berjalan selama Mekuru terbuka.';
+      'Kenali teks manga secara offline di perangkat Anda dengan pengenalan teks Apple. Pemindaian tetap berjalan setelah Anda meninggalkan Mekuru, dan dijeda jika iOS menghentikannya.';
 
   @override
   String get proFeatureCustomOcrTitle => 'Server OCR Kustom';
@@ -3128,7 +3128,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get localOcrOnDeviceSubtitleIos =>
-      'Offline, dengan pengenalan teks Apple. Biarkan Mekuru terbuka selama pemindaian.';
+      'Offline, dengan pengenalan teks Apple. Pemindaian tetap berjalan setelah Anda meninggalkan Mekuru, dan dijeda jika iOS menghentikannya.';
 
   @override
   String get localOcrRemote => 'Jarak jauh';
