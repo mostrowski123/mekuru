@@ -34,7 +34,7 @@ class HighlightsSheet extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Highlights',
+              context.l10n.readerHighlightsTooltip,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
@@ -43,11 +43,11 @@ class HighlightsSheet extends ConsumerWidget {
             child: highlightsAsync.when(
               data: (highlights) {
                 if (highlights.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
-                        'No highlights yet.\nSelect text while reading to add one.',
+                        context.l10n.readerNoHighlightsYet,
                         textAlign: TextAlign.center,
                       ),
                     ),

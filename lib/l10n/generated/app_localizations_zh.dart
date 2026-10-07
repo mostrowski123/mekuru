@@ -2079,6 +2079,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerNoBookmarksYet => '还没有书签。\n阅读时点击书签图标即可添加。';
 
   @override
+  String get readerNoHighlightsYet => '还没有高亮。\n阅读时选择文字即可添加。';
+
+  @override
   String readerBookmarkProgressDate({
     required String progress,
     required String date,
@@ -6023,6 +6026,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get readerNoBookmarksYet => '还没有书签。\n阅读时点击书签图标即可添加。';
+
+  @override
+  String get readerNoHighlightsYet => '还没有高亮。\n阅读时选择文字即可添加。';
 
   @override
   String readerBookmarkProgressDate({

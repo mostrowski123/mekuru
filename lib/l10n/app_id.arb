@@ -2505,6 +2505,7 @@
   "@readerNoBookmarksYet": {
     "description": "Empty state message shown when a book has no bookmarks."
   },
+  "readerNoHighlightsYet": "Belum ada sorotan.\nPilih teks saat membaca untuk menambahkannya.",
   "readerBookmarkProgressDate": "{progress} - {date}",
   "@readerBookmarkProgressDate": {
     "description": "Title format for a bookmark row showing reading progress and added date.",

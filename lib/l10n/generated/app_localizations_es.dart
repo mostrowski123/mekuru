@@ -2208,6 +2208,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Aún no hay marcadores.\nToca el icono de marcador mientras lees para añadir uno.';
 
   @override
+  String get readerNoHighlightsYet =>
+      'Aún no hay destacados.\nSelecciona texto mientras lees para añadir uno.';
+
+  @override
   String readerBookmarkProgressDate({
     required String progress,
     required String date,

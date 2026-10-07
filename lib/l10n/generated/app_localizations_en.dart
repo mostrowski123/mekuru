@@ -2181,6 +2181,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No bookmarks yet.\nTap the bookmark icon while reading to add one.';
 
   @override
+  String get readerNoHighlightsYet =>
+      'No highlights yet.\nSelect text while reading to add one.';
+
+  @override
   String readerBookmarkProgressDate({
     required String progress,
     required String date,

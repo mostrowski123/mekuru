@@ -2190,6 +2190,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Belum ada penanda halaman.\nKetuk ikon penanda saat membaca untuk menambahkannya.';
 
   @override
+  String get readerNoHighlightsYet =>
+      'Belum ada sorotan.\nPilih teks saat membaca untuk menambahkannya.';
+
+  @override
   String readerBookmarkProgressDate({
     required String progress,
     required String date,

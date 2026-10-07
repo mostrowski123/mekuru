@@ -3727,6 +3727,12 @@ abstract class AppLocalizations {
   /// **'No bookmarks yet.\nTap the bookmark icon while reading to add one.'**
   String get readerNoBookmarksYet;
 
+  /// Empty state message shown when a book has no highlights.
+  ///
+  /// In en, this message translates to:
+  /// **'No highlights yet.\nSelect text while reading to add one.'**
+  String get readerNoHighlightsYet;
+
   /// Title format for a bookmark row showing reading progress and added date.
   ///
   /// In en, this message translates to:

@@ -2833,6 +2833,10 @@
   "@readerNoBookmarksYet": {
     "description": "Empty state message shown when a book has no bookmarks."
   },
+  "readerNoHighlightsYet": "No highlights yet.\nSelect text while reading to add one.",
+  "@readerNoHighlightsYet": {
+    "description": "Empty state message shown when a book has no highlights."
+  },
   "readerBookmarkProgressDate": "{progress} - {date}",
   "@readerBookmarkProgressDate": {
     "description": "Title format for a bookmark row showing reading progress and added date.",
