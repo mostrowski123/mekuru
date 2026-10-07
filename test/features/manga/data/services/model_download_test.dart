@@ -37,4 +37,35 @@ void main() {
     expect(await modelFilesInstalled(dir), isTrue);
     expect(await File('${dir.path}/NDLmoji.yaml').readAsBytes(), body);
   });
+
+  test('a second download of the same folder joins the first', () async {
+    final body = List<int>.generate(64 * 1024, (i) => i % 251);
+    var requests = 0;
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    server.listen((request) {
+      requests++;
+      request.response.headers.contentLength = body.length;
+      request.response.add(body);
+      request.response.close();
+    });
+    final dir = await Directory.systemTemp.createTemp('model_download_test');
+    addTearDown(() => dir.delete(recursive: true));
+    final files = <ModelFile>[
+      (
+        name: 'model.onnx',
+        url: 'http://127.0.0.1:${server.port}/model.onnx',
+        bytes: body.length,
+        sha256: sha256.convert(body).toString(),
+      ),
+    ];
+
+    await Future.wait([
+      downloadModelFiles(dir, files),
+      downloadModelFiles(dir, files),
+    ]);
+
+    expect(requests, 1);
+    expect(await File('${dir.path}/model.onnx').readAsBytes(), body);
+  });
 }
