@@ -46,13 +46,11 @@ String translationTargetFor(Locale locale) => switch (locale.languageCode) {
 @visibleForTesting
 TranslationEngine? debugHighQualityEngine;
 
-/// Gemma when the user chose High quality on Android, else null.
+/// Gemma when the user chose High quality where it runs, else null.
 TranslationEngine? _highQualityEngine(bool highQuality) {
   if (!highQuality) return null;
   if (debugHighQualityEngine case final engine?) return engine;
-  return defaultTargetPlatform == TargetPlatform.android
-      ? GemmaTranslation.instance
-      : null;
+  return GemmaTranslation.supported ? GemmaTranslation.instance : null;
 }
 
 /// Installed when the chosen engine, or Standard as its fallback, can

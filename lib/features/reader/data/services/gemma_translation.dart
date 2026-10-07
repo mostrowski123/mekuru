@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi' show Abi;
 import 'dart:io';
 import 'dart:isolate';
 
@@ -49,6 +50,13 @@ const _languages = {
 class GemmaTranslation implements TranslationEngine {
   GemmaTranslation._();
   static final GemmaTranslation instance = GemmaTranslation._();
+
+  /// Whether High quality can run here: Android, as a 64-bit app. LiteRT-LM
+  /// ships only arm64-v8a and x86_64 code, so a 32-bit app could download
+  /// the model but never load it.
+  static bool get supported =>
+      defaultTargetPlatform == TargetPlatform.android &&
+      !const {Abi.androidArm, Abi.androidIA32}.contains(Abi.current());
 
   static const _channel = MethodChannel('mekuru/gemma');
   static const _marker = 'INSTALLED';

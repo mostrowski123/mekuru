@@ -210,7 +210,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             // iOS language packs belong to the system (Settings > Apps >
             // Translate); the Sentence tab asks Apple for them.
             const _SentenceTranslationTile(),
-            const _HighQualityTranslationTile(),
+            if (GemmaTranslation.supported) const _HighQualityTranslationTile(),
             const LocalOcrDownloadTile(),
           ],
           // On-device scans of scanned free books read long lines with it;

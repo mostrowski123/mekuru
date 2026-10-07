@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_review/in_app_review.dart';
@@ -227,7 +226,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               );
             },
           ),
-          if (defaultTargetPlatform == TargetPlatform.android)
+          if (GemmaTranslation.supported)
             ListTile(
               leading: Icon(
                 Icons.auto_awesome_outlined,

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mekuru/core/database/database_provider.dart';
@@ -8,6 +7,7 @@ import 'package:mekuru/features/dictionary/data/services/dictionary_query_servic
 import 'package:mekuru/features/dictionary/presentation/providers/dictionary_providers.dart';
 import 'package:mekuru/features/dictionary/presentation/screens/dictionary_search_screen.dart';
 import 'package:mekuru/features/reader/data/services/deinflection.dart';
+import 'package:mekuru/features/reader/data/services/gemma_translation.dart';
 import 'package:mekuru/features/reader/presentation/widgets/sentence_translation_view.dart';
 import 'package:mekuru/features/settings/presentation/providers/app_settings_providers.dart';
 import 'package:mekuru/features/settings/presentation/widgets/starter_pack_card.dart';
@@ -454,7 +454,7 @@ class _LookupSheetState extends ConsumerState<LookupSheet>
               highQuality:
                   ref.watch(translationModelProvider) ==
                       TranslationModelChoice.high &&
-                  defaultTargetPlatform == TargetPlatform.android,
+                  GemmaTranslation.supported,
               onSentenceEdited: widget.editable
                   ? (value) => setState(() => _editedSentence = value)
                   : null,
