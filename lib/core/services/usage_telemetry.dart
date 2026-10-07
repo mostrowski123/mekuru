@@ -8,6 +8,7 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -31,6 +32,7 @@ typedef UsageCountSink =
     );
 typedef UsageAnalyticsSink =
     void Function(String name, Map<String, Object>? parameters);
+typedef UsageIssueSink = void Function(Object error, StackTrace stackTrace);
 
 /// Test seams — production code must never set these.
 @visibleForTesting
@@ -39,6 +41,8 @@ UsageLogSink? usageLogSinkOverride;
 UsageCountSink? usageCountSinkOverride;
 @visibleForTesting
 UsageAnalyticsSink? usageAnalyticsSinkOverride;
+@visibleForTesting
+UsageIssueSink? usageIssueSinkOverride;
 @visibleForTesting
 void resetUsageTagsForTest() {
   _usageTags.clear();
@@ -89,6 +93,8 @@ void logUsage(String event, {Map<String, Object>? attrs}) {
 /// Pass [stackTrace] when the failure is a bug rather than an expected
 /// condition: it also files a Sentry issue (stack, breadcrumbs, grouping,
 /// alerting) so call sites never pair this with their own captureException.
+/// A failure on the user's side ([isUserSideFailure]) is marked `user_side`
+/// and never files an issue.
 void logFailure(
   String event,
   Object error, {
@@ -96,16 +102,31 @@ void logFailure(
   Map<String, Object>? attrs,
 }) {
   _guarded(() {
+    final userSide = isUserSideFailure(error);
     _emitLog(event, {
       ...?attrs,
       'error_type': error.runtimeType.toString(),
       'error_message': sanitizeErrorText(error.toString()),
+      if (userSide) 'user_side': true,
     }, isWarning: true);
-    if (stackTrace != null) {
-      unawaited(Sentry.captureException(error, stackTrace: stackTrace));
+    if (stackTrace != null && !userSide) {
+      (usageIssueSinkOverride ?? _defaultIssueSink)(error, stackTrace);
     }
   });
 }
+
+/// A failure on the user's side, not Mekuru's (Android stopping a download
+/// in the background, too little room for one): logged, never an issue.
+abstract interface class UserSideFailure implements Exception {}
+
+/// Whether [error] is on the user's side: a [UserSideFailure], or a full
+/// disk.
+bool isUserSideFailure(Object? error) =>
+    error is UserSideFailure ||
+    (error is FileSystemException && error.osError?.errorCode == _noSpace);
+
+/// ENOSPC, "No space left on device", on Android and iOS.
+const _noSpace = 28;
 
 /// Formats exception text for a telemetry attribute: keeps only the first
 /// line (Dart parse errors append source snippets on later lines), redacts
@@ -228,6 +249,10 @@ void _defaultCountSink(
 
 void _defaultAnalyticsSink(String name, Map<String, Object>? parameters) {
   AnalyticsService.instance.logEvent(name, parameters);
+}
+
+void _defaultIssueSink(Object error, StackTrace stackTrace) {
+  unawaited(Sentry.captureException(error, stackTrace: stackTrace));
 }
 
 void _guarded(void Function() action) {

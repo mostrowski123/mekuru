@@ -135,7 +135,14 @@ void main() {
     test('a transfer that fails says it stopped in the background', () async {
       await expectLater(
         download('/missing'),
-        throwsA(isA<DownloadStoppedInBackgroundException>()),
+        throwsA(
+          // Its own error rides along for the log.
+          isA<DownloadStoppedInBackgroundException>().having(
+            (e) => e.cause,
+            'cause',
+            isA<HttpException>(),
+          ),
+        ),
       );
     });
 

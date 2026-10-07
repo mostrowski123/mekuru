@@ -40,7 +40,7 @@ class FullBackupIncompleteException implements Exception {
   const FullBackupIncompleteException();
 }
 
-class InsufficientSpaceException implements Exception {
+class InsufficientSpaceException implements UserSideFailure {
   /// How many more bytes must be free before the operation can run.
   final int neededBytes;
   const InsufficientSpaceException({required this.neededBytes});

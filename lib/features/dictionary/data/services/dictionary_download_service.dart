@@ -114,8 +114,20 @@ class DictionaryDownloadService {
     } on WifiLostException {
       logUsage('download.wifi_lost', attrs: {'asset': asset});
       rethrow;
-    } on DownloadStoppedInBackgroundException {
-      logUsage('download.stopped_in_background', attrs: {'asset': asset});
+    } on DownloadStoppedInBackgroundException catch (e) {
+      // What failed under the blocked network: a full disk, say. On the
+      // user's side, so a log rather than an issue.
+      logUsage(
+        'download.stopped_in_background',
+        attrs: {
+          'asset': asset,
+          'user_side': true,
+          if (e.cause case final cause?) ...{
+            'cause_type': cause.runtimeType.toString(),
+            'cause_message': sanitizeErrorText('$cause'),
+          },
+        },
+      );
       rethrow;
     } catch (error) {
       logFailure('download.failed', error, attrs: {'asset': asset});

@@ -40,14 +40,22 @@ Future<bool> isOnVpn() async {
 
 /// A transfer stopped by [whileOnWifi] because the network stopped being
 /// Wi-Fi.
-class WifiLostException implements Exception {
+class WifiLostException implements UserSideFailure {
   const WifiLostException();
 }
 
 /// A transfer that failed while Android had Mekuru in the background, where
 /// it blocks the app's network after a while.
-class DownloadStoppedInBackgroundException implements Exception {
-  const DownloadStoppedInBackgroundException();
+class DownloadStoppedInBackgroundException implements UserSideFailure {
+  const DownloadStoppedInBackgroundException([this.cause]);
+
+  /// What the transfer threw, for the log; null when it never started.
+  final Object? cause;
+
+  @override
+  String toString() => cause == null
+      ? 'DownloadStoppedInBackgroundException'
+      : 'DownloadStoppedInBackgroundException: $cause';
 }
 
 /// Runs [transfer], which downloads through [client], only on Wi-Fi
@@ -83,11 +91,9 @@ Future<T> whileOnWifi<T>(
   });
   try {
     return await transfer();
-  } catch (_) {
+  } catch (e) {
     if (lost) throw const WifiLostException();
-    if (_inAndroidBackground()) {
-      throw const DownloadStoppedInBackgroundException();
-    }
+    if (_inAndroidBackground()) throw DownloadStoppedInBackgroundException(e);
     if (!await isOnWifi()) throw const WifiLostException();
     rethrow;
   } finally {

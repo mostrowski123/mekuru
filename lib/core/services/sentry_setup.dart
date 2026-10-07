@@ -14,6 +14,7 @@ import '../../config/environment_config.dart';
 import '../config/app_flavor.dart';
 import 'pii_scrubber.dart';
 import 'synthetic_client.dart';
+import 'usage_telemetry.dart';
 
 /// Which reporting bucket this install belongs to, and whether it is a real
 /// reader at all.
@@ -104,8 +105,16 @@ void applySharedSentryOptions(SentryOptions options, SentryAudience audience) {
   options.enableMetrics = true;
   options.tracesSampleRate = 0.1;
   // Strip device file paths (which can embed book file names) from
-  // everything that leaves the device.
-  options.beforeSend = scrubEvent;
+  // everything that leaves the device. A crash on the user's side (a full
+  // disk) is no issue of Mekuru's: it is logged as one instead.
+  options.beforeSend = (event, hint) {
+    final error = event.throwable;
+    if (error == null || !isUserSideFailure(error)) {
+      return scrubEvent(event, hint);
+    }
+    logFailure('app.user_side_error', error);
+    return null;
+  };
   options.beforeSendLog = scrubLog;
 }
 

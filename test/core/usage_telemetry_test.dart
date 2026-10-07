@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mekuru/core/database/database_provider.dart';
+import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -11,6 +14,7 @@ void main() {
     usageLogSinkOverride = null;
     usageCountSinkOverride = null;
     usageAnalyticsSinkOverride = null;
+    usageIssueSinkOverride = null;
   });
 
   group('fail-safety', () {
@@ -84,6 +88,57 @@ void main() {
       // Firebase Analytics only accepts String and num values.
       expect(analyticsParams!['enabled'], 1);
       expect(analyticsParams!['ratio'], 0.5);
+    });
+  });
+
+  group('user-side failures', () {
+    late List<Object> issues;
+    Map<String, SentryAttribute>? logged;
+    setUp(() {
+      issues = [];
+      logged = null;
+      usageIssueSinkOverride = (error, _) => issues.add(error);
+      usageLogSinkOverride = (message, attributes, {required isWarning}) =>
+          logged = attributes;
+      usageAnalyticsSinkOverride = (name, parameters) {};
+    });
+
+    test('a full disk is marked user-side and files no issue', () {
+      logFailure(
+        'free_books.download',
+        const FileSystemException(
+          'Write failed',
+          'book.pdf',
+          OSError('No space left on device', 28),
+        ),
+        stackTrace: StackTrace.current,
+      );
+
+      expect(issues, isEmpty);
+      expect(logged!['user_side']?.value, isTrue);
+    });
+
+    test('a bug with its stack trace still files an issue', () {
+      logFailure(
+        'free_books.download',
+        StateError('boom'),
+        stackTrace: StackTrace.current,
+      );
+
+      expect(issues, hasLength(1));
+      expect(logged, isNot(contains('user_side')));
+    });
+
+    test('a download Android stopped in the background is user-side', () {
+      expect(
+        isUserSideFailure(
+          const DownloadStoppedInBackgroundException(
+            FileSystemException('Write failed'),
+          ),
+        ),
+        isTrue,
+      );
+      expect(isUserSideFailure(const FileSystemException('Missing')), isFalse);
     });
   });
 
