@@ -156,6 +156,8 @@ class _ModelDownloadTileState extends State<ModelDownloadTile> {
           subtitle: Text(
             _error is WifiLostException
                 ? l.localOcrWifiLostIos
+                : _error is DownloadStoppedInBackgroundException
+                ? l.downloadStoppedInBackground
                 : _error != null
                 ? l.localOcrError(details: '$_error')
                 : _installed == true

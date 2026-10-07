@@ -203,6 +203,24 @@ void main() {
       expect(find.text('Download'), findsOneWidget);
     });
 
+    testWidgets('a download Android stopped in the background says so', (
+      tester,
+    ) async {
+      mockWifiConnected(true);
+      await pumpModelTile(tester);
+      await tester.tap(find.text('Download'));
+      await tester.pump();
+      finish.completeError(const DownloadStoppedInBackgroundException());
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'The download stopped because Mekuru was in the background. Tap '
+          'Download to resume.',
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('other failures show the error', (tester) async {
       mockWifiConnected(true);
       await pumpModelTile(tester);
