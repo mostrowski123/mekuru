@@ -34,7 +34,12 @@ class GemmaDownloadFailed extends GemmaDownloadState {
 
 typedef GemmaModelOps = ({
   Future<bool> Function() installed,
-  Future<void> Function(void Function(double fraction) onProgress) download,
+  // Mobile data only when [mobileData] says the user agreed to it.
+  Future<void> Function(
+    void Function(double fraction) onProgress,
+    bool mobileData,
+  )
+  download,
   Future<void> Function() delete,
   Future<bool> Function() hasFiles,
   bool Function() cancel,
@@ -52,8 +57,8 @@ GemmaModelOps get _ops =>
       installed: () async =>
           await GemmaTranslation.instance.status('en') ==
           TranslationStatus.installed,
-      download: (onProgress) =>
-          GemmaTranslation.instance.downloadModel(onProgress: onProgress),
+      download: (onProgress, mobileData) => GemmaTranslation.instance
+          .downloadModel(onProgress: onProgress, mobileData: mobileData),
       delete: GemmaTranslation.instance.delete,
       hasFiles: GemmaTranslation.instance.hasFiles,
       cancel: GemmaTranslation.instance.cancelDownload,
@@ -119,8 +124,9 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
 
   /// Downloads the model, or only reports it installed when its files are
   /// still there (Standard keeps them, and build()'s check may not have
-  /// answered yet).
-  Future<void> start() async {
+  /// answered yet). Over mobile data only with [mobileData], which the user
+  /// agreed to: following a job after a relaunch never adds it.
+  Future<void> start({bool mobileData = false}) async {
     if (state is GemmaDownloading) return;
     _cancelling = false;
     _cancelRequested = false;
@@ -137,7 +143,10 @@ class GemmaDownloadNotifier extends Notifier<GemmaDownloadState> {
         _settle(GemmaNotInstalled(hasFiles: await _ops.hasFiles()));
         return;
       }
-      await _ops.download((fraction) => state = GemmaDownloading(fraction));
+      await _ops.download(
+        (fraction) => state = GemmaDownloading(fraction),
+        mobileData,
+      );
       logUsage('translation.high_quality_downloaded');
       _settle(const GemmaInstalled(), select: !_cancelRequested);
     } catch (e) {

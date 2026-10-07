@@ -327,7 +327,7 @@ void main() {
       expect(job.name, gemmaDownloadWorkName);
       expect(job.task, gemmaDownloadTaskName);
       expect(job.input, {'dir': modelDir()});
-      // Started on Wi-Fi: WorkManager waits for Wi-Fi if it goes.
+      // No OK for mobile data: WorkManager waits for Wi-Fi if it goes.
       expect(job.network, NetworkType.unmetered);
       // A second start joins the job instead of starting it over.
       expect(job.policy, ExistingWorkPolicy.keep);
@@ -383,11 +383,22 @@ void main() {
       expect(status?.error, serverDownloadStoppedError);
     });
 
-    test('off Wi-Fi the user chose mobile data: any network', () async {
+    test('the user chose mobile data: any network', () async {
+      mockWifiConnected(false);
+      final done = gemma.downloadModel(mobileData: true, every: every);
+      await workmanager.enqueued.future;
+      expect(workmanager.registered.single.network, NetworkType.connected);
+      gemma.cancelDownload();
+      await expectLater(done, throwsA(isA<HttpException>()));
+    });
+
+    test("off Wi-Fi without the user's OK it waits for Wi-Fi", () async {
+      // As when a relaunch follows a job that ended meanwhile: queued again
+      // without asking, so never over mobile data.
       mockWifiConnected(false);
       final done = gemma.downloadModel(every: every);
       await workmanager.enqueued.future;
-      expect(workmanager.registered.single.network, NetworkType.connected);
+      expect(workmanager.registered.single.network, NetworkType.unmetered);
       gemma.cancelDownload();
       await expectLater(done, throwsA(isA<HttpException>()));
     });

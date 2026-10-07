@@ -356,15 +356,17 @@ class _HighQualityTranslationTileState
     // Read before the dialogs: the tile can unmount while one is up.
     final download = ref.read(gemmaDownloadProvider.notifier);
     if (!await confirmHighQualityMemory(context) || !mounted) return;
-    if (await okToDownload(
+    final network = await askDownloadNetwork(
       context,
       context.l10n.translationMobileDataBody(
         size: GemmaTranslation.downloadSize(),
       ),
-    )) {
-      // The provider chooses High once the download is done.
-      unawaited(download.start());
-    }
+    );
+    if (network == null) return;
+    // The provider chooses High once the download is done.
+    unawaited(
+      download.start(mobileData: network == DownloadNetwork.mobileData),
+    );
   }
 
   Future<void> _remove() async {

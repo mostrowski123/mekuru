@@ -748,14 +748,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ref.read(translationModelProvider.notifier).setChoice(choice);
           return;
         }
-        final ok = await okToDownload(
+        final network = await askDownloadNetwork(
           context,
           context.l10n.translationMobileDataBody(
             size: GemmaTranslation.downloadSize(),
           ),
         );
         // The provider chooses High once the download is done.
-        if (ok && mounted) unawaited(gemma.start());
+        if (network != null && mounted) {
+          unawaited(
+            gemma.start(mobileData: network == DownloadNetwork.mobileData),
+          );
+        }
       },
     );
   }

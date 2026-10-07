@@ -134,13 +134,17 @@ _FakeTranslationEngine _fakeTranslation({
 /// are there. [download] defaults to one that never finishes.
 _FakeTranslationEngine _fakeHighQuality({
   TranslationStatus state = TranslationStatus.installed,
-  Future<void> Function(void Function(double fraction) onProgress)? download,
+  Future<void> Function(
+    void Function(double fraction) onProgress,
+    bool mobileData,
+  )?
+  download,
 }) {
   final engine = _FakeTranslationEngine(state: state, prefix: 'HQ:');
   debugHighQualityEngine = engine;
   debugGemmaModelOps = (
     installed: () async => engine.state == TranslationStatus.installed,
-    download: download ?? (_) => Completer<void>().future,
+    download: download ?? (_, _) => Completer<void>().future,
     delete: () async {},
     hasFiles: () async => false,
     cancel: () => true,
@@ -831,7 +835,7 @@ void main() {
       late final _FakeTranslationEngine high;
       high = _fakeHighQuality(
         state: TranslationStatus.needsDownload,
-        download: (_) async => high.state = TranslationStatus.installed,
+        download: (_, _) async => high.state = TranslationStatus.installed,
       );
       // Standard while the model downloads: the download chooses High.
       await pumpSheet(

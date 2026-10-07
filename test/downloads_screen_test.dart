@@ -208,7 +208,7 @@ void main() {
       debugDeviceLowOnMemory = false;
       debugGemmaModelOps = (
         installed: () async => installed,
-        download: (onProgress) {
+        download: (onProgress, _) {
           calls.add('download');
           report = onProgress;
           // Made here, in the test's zone, so completing it reaches pump().

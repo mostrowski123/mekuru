@@ -38,7 +38,7 @@ void main() {
         installedChecks++;
         return installed;
       },
-      download: (onProgress) {
+      download: (onProgress, _) {
         downloads++;
         report = onProgress;
         // Made here, in the test's zone, so completing it reaches pump().
@@ -325,7 +325,7 @@ void main() {
     final check = Completer<bool>();
     debugGemmaModelOps = (
       installed: () => check.future,
-      download: (_) async {},
+      download: (_, _) async {},
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,

@@ -7,7 +7,6 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mekuru/core/platform/android_saf_service.dart';
-import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/core/services/usage_telemetry.dart';
 import 'package:mekuru/features/backup/data/services/full_backup_service.dart'
     show InsufficientSpaceException;
@@ -113,10 +112,13 @@ class GemmaTranslation implements TranslationEngine {
   /// which goes on when Mekuru is left or closed, and follows it until the
   /// model is installed; joins the job when it is already queued or running.
   /// Without room for the rest of the model and its weight cache it fails
-  /// first with [InsufficientSpaceException]. A download that starts on
-  /// Wi-Fi waits while Wi-Fi is gone; off Wi-Fi the user chose mobile data.
+  /// first with [InsufficientSpaceException]. The job uses mobile data only
+  /// when [mobileData] says the user agreed to it; otherwise it waits for
+  /// unmetered Wi-Fi, also when it is queued again for a download that was
+  /// already under way.
   Future<void> downloadModel({
     void Function(double fraction)? onProgress,
+    bool mobileData = false,
     @visibleForTesting Duration every = const Duration(seconds: 1),
   }) async {
     // Before any await, so a cancel that comes while an earlier one ends
@@ -146,7 +148,6 @@ class GemmaTranslation implements TranslationEngine {
       if (free != null && free < needed) {
         throw InsufficientSpaceException(neededBytes: needed - free);
       }
-      final wifiOnly = await isOnWifi();
       await stopIfCancelled();
       await work.writeStatus(
         ServerDownloadWorkStatus(
@@ -161,7 +162,9 @@ class GemmaTranslation implements TranslationEngine {
         inputData: {'dir': dir.path},
         tag: gemmaDownloadWorkName,
         constraints: Constraints(
-          networkType: wifiOnly ? NetworkType.unmetered : NetworkType.connected,
+          networkType: mobileData
+              ? NetworkType.connected
+              : NetworkType.unmetered,
         ),
         // Linear: a retry backs off from its own start, and a 2.6 GB
         // download over a slow line may need many. Android stopping the job

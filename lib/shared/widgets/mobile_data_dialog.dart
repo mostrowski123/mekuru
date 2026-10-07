@@ -29,13 +29,27 @@ Future<bool> confirmMobileData(BuildContext context, String body) async {
   return confirmed == true;
 }
 
+/// Where a large download may go now.
+enum DownloadNetwork { wifi, mobileData }
+
+/// [DownloadNetwork.wifi] on Wi-Fi; off it, [DownloadNetwork.mobileData] once
+/// the user agrees to use mobile data, or null when they don't. [body] names
+/// the size.
+Future<DownloadNetwork?> askDownloadNetwork(
+  BuildContext context,
+  String body,
+) async {
+  if (await isOnWifi()) return DownloadNetwork.wifi;
+  if (!context.mounted) return null;
+  return await confirmMobileData(context, body)
+      ? DownloadNetwork.mobileData
+      : null;
+}
+
 /// Whether a large download may start now: on Wi-Fi, or off it once the
 /// user agrees to use mobile data. [body] names the size.
-Future<bool> okToDownload(BuildContext context, String body) async {
-  if (await isOnWifi()) return true;
-  if (!context.mounted) return false;
-  return confirmMobileData(context, body);
-}
+Future<bool> okToDownload(BuildContext context, String body) async =>
+    await askDownloadNetwork(context, body) != null;
 
 /// Starts [download] of a dictionary of [size] on Wi-Fi, or off it once the
 /// user accepts mobile data. A dictionary download that started on Wi-Fi

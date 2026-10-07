@@ -29,6 +29,9 @@ void main() {
       .read(translationModelProvider.notifier)
       .setChoice(TranslationModelChoice.high);
 
+  // The mobile-data flag of each download started.
+  final mobileDataOks = <bool>[];
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     installed = false;
@@ -36,11 +39,13 @@ void main() {
     pending = false;
     cancels = 0;
     deletes = 0;
+    mobileDataOks.clear();
     download = Completer<void>();
     debugGemmaModelOps = (
       installed: () async => installed,
-      download: (onProgress) {
+      download: (onProgress, mobileData) {
         report = onProgress;
+        mobileDataOks.add(mobileData);
         return download.future;
       },
       delete: () async {
@@ -76,6 +81,27 @@ void main() {
     expect(choiceIn(c), TranslationModelChoice.high);
   });
 
+  test(
+    "mobile data only with the user's OK, never when following a job",
+    () async {
+      final c = container();
+      final notifier = c.read(gemmaDownloadProvider.notifier);
+      await Future<void>.delayed(Duration.zero);
+      final first = notifier.start(mobileData: true);
+      await Future<void>.delayed(Duration.zero);
+      download.completeError(const WifiLostException());
+      await first;
+
+      // A relaunch finds the job queued and follows it.
+      download = Completer<void>();
+      pending = true;
+      await notifier.refresh();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(mobileDataOks, [true, false]);
+    },
+  );
+
   test('a failed or cancelled download drops a High choice', () async {
     final c = container();
     final notifier = c.read(gemmaDownloadProvider.notifier);
@@ -107,7 +133,7 @@ void main() {
     final check = Completer<bool>();
     debugGemmaModelOps = (
       installed: () => check.future,
-      download: (_) => download.future,
+      download: (_, _) => download.future,
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
@@ -150,7 +176,7 @@ void main() {
     var starts = 0;
     debugGemmaModelOps = (
       installed: () async => false,
-      download: (_) {
+      download: (_, _) {
         starts++;
         return download.future;
       },
@@ -169,7 +195,7 @@ void main() {
     var starts = 0;
     debugGemmaModelOps = (
       installed: () async => true,
-      download: (_) {
+      download: (_, _) {
         starts++;
         return download.future;
       },
@@ -192,7 +218,7 @@ void main() {
       final check = Completer<bool>();
       debugGemmaModelOps = (
         installed: () => check.future,
-        download: (_) => download.future,
+        download: (_, _) => download.future,
         delete: () async {},
         hasFiles: () async => false,
         cancel: () => false,
@@ -275,7 +301,7 @@ void main() {
     var downloads = 0;
     debugGemmaModelOps = (
       installed: () => check.future,
-      download: (_) async => downloads++,
+      download: (_, _) async => downloads++,
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false, // nothing to close yet
@@ -315,7 +341,7 @@ void main() {
   test('a cancel that closed nothing does not hide a failure', () async {
     debugGemmaModelOps = (
       installed: () async => false,
-      download: (_) => download.future,
+      download: (_, _) => download.future,
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
@@ -335,7 +361,7 @@ void main() {
     // During verification there is no transfer to close.
     debugGemmaModelOps = (
       installed: () async => installed,
-      download: (_) => download.future,
+      download: (_, _) => download.future,
       delete: () async => installed = false,
       hasFiles: () async => false,
       cancel: () => false,
@@ -367,7 +393,7 @@ void main() {
     // The cancel closed a client, yet the download still finished.
     debugGemmaModelOps = (
       installed: () async => false,
-      download: (_) => download.future,
+      download: (_, _) => download.future,
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => true,
@@ -394,7 +420,7 @@ void main() {
     var slow = true;
     debugGemmaModelOps = (
       installed: () => slow ? check.future : Future.value(false),
-      download: (_) => download.future,
+      download: (_, _) => download.future,
       delete: () async {},
       hasFiles: () async => false,
       cancel: () => false,
@@ -429,9 +455,9 @@ void main() {
     final ops = debugGemmaModelOps!;
     debugGemmaModelOps = (
       installed: ops.installed,
-      download: (onProgress) {
+      download: (onProgress, mobileData) {
         follows++;
-        return ops.download(onProgress);
+        return ops.download(onProgress, mobileData);
       },
       delete: ops.delete,
       hasFiles: ops.hasFiles,
