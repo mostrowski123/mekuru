@@ -100,7 +100,7 @@ Auto-Crop cuts the empty white margins around each page, so the art fills more o
 2. Under **Image**, turn on **Auto-Crop**.
 3. The first time, Mekuru asks to scan every page of this manga. Tap **Continue** and wait. This can take a minute.
 
-**Auto-Crop** is one switch for all your manga, but Mekuru scans each manga separately. If another manga still shows its margins, open it, then turn **Auto-Crop** off and on again to scan it.
+**Auto-Crop** is one switch for all your manga, but Mekuru scans each manga separately. When you open a manga it hasn't scanned yet, it asks to scan that one too. If you tap **Cancel**, the manga keeps its margins; it asks again the next time you open it.
 
 If Auto-Crop cuts too much or too little:
 
