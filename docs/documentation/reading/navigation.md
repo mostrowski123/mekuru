@@ -119,7 +119,7 @@ With TalkBack or VoiceOver, the page has **Next page** and **Previous page** act
 
 ## If something goes wrong
 
-- **A tap opens the lookup sheet instead of turning the page.** You tapped on or near text. Swipe instead, or tap closer to the screen edge.
+- **A tap opens the lookup sheet instead of turning the page.** You tapped on a character. Tap the empty margin at the screen edge, or swipe.
 - **The volume buttons change the volume.** Check that **Volume buttons turn pages** is not set to **Off**. The buttons do not turn pages while a sheet is open.
 - **"Reader took too long to load. Tap retry to try again."** Tap **Retry**. If the book still does not open, tap **Back** and try again later.
 

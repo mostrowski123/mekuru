@@ -25,7 +25,7 @@ The icon fills in and "Page bookmarked" appears.
 
 Each bookmark shows how far into the book it is, as a percentage, and the date you added it.
 
-To see a book's bookmarks from the library, press and hold the book and tap **Bookmarks**.
+To see a book's bookmarks from the library, press and hold the book and tap **Bookmarks**. Tap one to open the book at that page.
 
 ### Remove a bookmark
 
@@ -61,7 +61,7 @@ Each highlight shows its color, the text, the date and your note. In the list yo
 - Press and hold a highlight to add or change its note. Type the note in **Edit Note** and tap **Save**.
 - Swipe a highlight to the left to delete it.
 
-To see a book's highlights from the library, press and hold the book and tap **Highlights**.
+To see a book's highlights from the library, press and hold the book and tap **Highlights**. Tap one to open the book there.
 
 ## If something goes wrong
 
