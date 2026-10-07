@@ -53,14 +53,17 @@ Every GitHub release also includes a second installable APK, `app-parallel-relea
 - **Manga Reader**: Mokuro and CBZ support with single-page, spread, and scroll modes; CBZ archives that carry `.mokuro` data get tap-to-lookup on import
 - **Manga OCR**: On-device recognition that runs offline (Android: manga-ocr and Comic Text Detector, models downloaded separately; iOS: Apple's text recognition, plus an optional manga-ocr model pack) or a self-hosted OCR server — scan the visible page from the reader or a whole manga from the library (Pro)
 - **Manga Tools**: Convert image-only EPUBs into manga, and export any manga as a CBZ with its OCR data embedded
+- **PDF Import**: Text PDFs keep tappable text; scanned PDFs open as page images that on-device OCR can read, with the NDL text-line model for the long lines of scanned graded readers
+- **Free Books**: Browse and download over 17,000 Aozora Bunko classics and 140 Tadoku graded readers inside the app, sorted and filtered by estimated JLPT level, length and genre
 - **Offline Dictionaries**: A one-tap starter pack (Jitendex plus JPDB frequency data), built-in downloads such as JMdict, KANJIDIC, and KanjiVG, a catalog of more (Wiktionary, JMnedict names, JMdict and KANJIDIC in other languages), and import of Yomitan ZIPs or Yomitan collection JSON backups, with structured-content definitions and images
 - **Smart Japanese Lookups**: MeCab-powered tokenization, compound-word matching, pitch accents, stroke-order diagrams, and frequency data
+- **Sentence Translation**: Translate the sentence around a looked-up word on the device, into the app's language: Mozilla's Firefox Translations engine on Android (plus an optional High quality Gemma model), Apple's Translation framework on iOS
 - **Vocabulary Workflow**: Save words with sentence context, browse saved terms, export CSV for Anki, or send cards directly to AnkiDroid on Android, or to AnkiMobile or Anki on a computer (AnkiConnect) on iOS
 - **Furigana**: Per-book display modes — off, book default, all kanji, only kanji above a chosen JLPT level, or only kanji you have not yet learned on WaniKani (applies to publisher-authored ruby too) — plus EPUB export with generated furigana baked in
 - **WaniKani Integration**: Link your account with an API token and hide furigana for kanji at or above the SRS stage you choose
 - **Book Server Sync**: Browse and download books from self-hosted Komga or Kavita servers, link copies you already have, and keep reading progress in sync both ways; downloads keep running in the background, and self-signed certificates can be accepted
 - **Library Collections**: iOS-style folder tiles with drag-to-reorder, folder edit mode, and multi-select batch add
-- **Reading Stats**: A "You" tab with activity heatmap, reading time, lookup rate, and vocabulary growth
+- **Reading Stats**: A Reading stats screen in the You tab with an activity heatmap, reading time, characters read, lookup rate, and vocabulary growth
 - **Backup & Restore**: Small reading-data backups (settings, vocabulary, bookmarks, collections, per-book settings, reading history) with optional auto-backup, plus a full backup that packs the whole library into one zip for moving to a new phone
 - **Reader Customization**: Themes, color modes, margins, swipe sensitivity, an animations switch for e-ink displays, and other reader controls
 - **Optional Pro Upgrade**: A one-time purchase through Google Play or the App Store that unlocks book highlights, manga auto-crop, on-device manga OCR, and custom-server OCR support for remote manga OCR
@@ -171,6 +174,7 @@ lib/
 |   |-- ankidroid/
 |   |-- backup/
 |   |-- dictionary/
+|   |-- free_books/
 |   |-- library/
 |   |-- manga/
 |   |-- reader/
@@ -178,7 +182,8 @@ lib/
 |   |-- stats/
 |   |-- sync/
 |   |-- vocabulary/
-|   `-- wanikani/
+|   |-- wanikani/
+|   `-- you/
 `-- shared/
 
 packages/    # local_manga_ocr Android plugin (on-device OCR)
@@ -186,7 +191,7 @@ ios/         # iOS app; native code is in Runner/AppDelegate.swift
 functions/   # Optional TypeScript Firebase Functions
 docs/        # Documentation site content and landing page
 site/        # MkDocs build for the documentation site
-tools/       # OCR model manifest and benchmark scripts
+tools/       # OCR model manifest, benchmarks, free-book catalogs, store image tooling
 ```
 
 Feature modules follow a `data/` and `presentation/` split for models, repositories, services, providers, screens, and widgets.
