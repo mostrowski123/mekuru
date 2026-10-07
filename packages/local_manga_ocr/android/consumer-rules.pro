@@ -6,5 +6,3 @@
 -keep class org.opencv.** { *; }
 # JNI entry points are resolved by name from libmekuru_ocr_detector.so.
 -keep class moe.matthew.mekuru.ocr.ComicTextDetectorNative { *; }
-# libavif's JNI fills AvifDecoder.Info's fields by name.
--keep class org.aomedia.avif.android.** { *; }
