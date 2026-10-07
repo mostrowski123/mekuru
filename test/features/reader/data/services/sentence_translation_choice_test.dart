@@ -38,7 +38,7 @@ void main() {
   tearDown(() {
     debugTranslationEngine = null;
     debugHighQualityEngine = null;
-    highQualityTimeout = const Duration(seconds: 45);
+    debugHighQualityTimeout = null;
   });
 
   test('High quality uses Gemma once installed', () async {
@@ -99,7 +99,7 @@ void main() {
   });
 
   test('a slow Gemma times out to Standard for that sentence', () async {
-    highQualityTimeout = const Duration(milliseconds: 20);
+    debugHighQualityTimeout = const Duration(milliseconds: 20);
     high.hold = Completer<void>();
     final events = <String>[];
     usageLogSinkOverride = (message, _, {required isWarning}) =>

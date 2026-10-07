@@ -84,8 +84,12 @@ typedef SentenceTranslation = ({String text, bool highQuality, bool timedOut});
 
 /// How long High quality gets for a sentence, a first load included, before
 /// Standard answers instead. Gemma goes on loading for the next sentence.
+Duration get highQualityTimeout =>
+    debugHighQualityTimeout ?? const Duration(seconds: 45);
+
+/// Replaces [highQualityTimeout] in tests.
 @visibleForTesting
-Duration highQualityTimeout = const Duration(seconds: 45);
+Duration? debugHighQualityTimeout;
 
 /// High quality couldn't answer and Standard isn't downloaded: the Sentence
 /// tab then offers Standard's download.

@@ -143,4 +143,25 @@ void main() {
     await translation;
     expect(gemma.loading.value, isFalse);
   });
+
+  test(
+    'a load slower than the timeout warms up but translates nothing',
+    () async {
+      await GemmaTranslation.instance.close();
+      calls.clear();
+      debugHighQualityTimeout = Duration.zero;
+      addTearDown(() => debugHighQualityTimeout = null);
+
+      await expectLater(
+        GemmaTranslation.instance.translateWith(
+          modelPath: '/models/late.litertlm',
+          text: '猫',
+          target: 'en',
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+      // The Sentence tab moved on: only the load ran.
+      expect(calls.map((c) => c.method), ['load']);
+    },
+  );
 }

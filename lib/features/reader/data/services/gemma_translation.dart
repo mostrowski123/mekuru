@@ -280,7 +280,9 @@ class GemmaTranslation implements TranslationEngine {
     required String text,
     required String target,
   }) async {
+    var tooLate = false;
     if (_loadedPath != modelPath) {
+      final waited = Stopwatch()..start();
       loading.value = true;
       try {
         // LiteRT-LM's ~750 MB weight cache lives next to the model, so
@@ -294,9 +296,16 @@ class GemmaTranslation implements TranslationEngine {
       } finally {
         loading.value = false;
       }
+      // Slower than [highQualityTimeout]: the Sentence tab went on with
+      // Standard. The model stays loaded for the next sentence, which a
+      // translation nobody reads would only hold up.
+      tooLate = waited.elapsed >= highQualityTimeout;
     }
     _idleTimer?.cancel();
     _idleTimer = Timer(_idleLifetime, close);
+    if (tooLate) {
+      throw TimeoutException('Gemma loaded too late', highQualityTimeout);
+    }
     try {
       final reply = await _channel.invokeMethod<String>('translate', {
         'text': text,
