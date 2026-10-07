@@ -252,8 +252,10 @@ function loadBook(cfi, direction, flow, snap, fontSize, foregroundColor, customC
       var rect = null;
       var sel = contents.window.getSelection();
       if (sel && sel.rangeCount > 0) {
-        selectedText = sel.toString();
         var range = sel.getRangeAt(0);
+        // Not sel.toString(): that includes the furigana of any ruby the
+        // selection crosses, which would end up in the highlight's excerpt.
+        selectedText = textWithoutRuby(range).replace(/\s+/g, ' ').trim();
         var clientRect = range.getBoundingClientRect();
         var iframe = contents.document.defaultView.frameElement;
         var iframeRect = iframe.getBoundingClientRect();
@@ -1290,6 +1292,17 @@ function reportPageChars(startCfi, endCfi) {
 
 // The number of characters between two CFIs of the displayed section, with
 // whitespace stripped, or null when they do not resolve.
+// A range's text without ruby annotations: the <rt> readings (furigana,
+// injected or the book's own) and the <rp> fallback parentheses.
+function textWithoutRuby(range) {
+  var frag = range.cloneContents();
+  var ruby = frag.querySelectorAll('rt, rp');
+  for (var i = 0; i < ruby.length; i++) {
+    ruby[i].parentNode.removeChild(ruby[i]);
+  }
+  return frag.textContent || '';
+}
+
 function countChars(startCfi, endCfi) {
   if (!rendition) return null;
   try {
@@ -1315,12 +1328,7 @@ function countChars(startCfi, endCfi) {
     // would jump when a user toggles furigana on/off. Keeping counts
     // furigana-invariant stops the lookups-per-1,000-characters metric from
     // shifting for a reason that has nothing to do with reading behaviour.
-    var frag = range.cloneContents();
-    var ruby = frag.querySelectorAll('rt, rp');
-    for (var i = 0; i < ruby.length; i++) {
-      ruby[i].parentNode.removeChild(ruby[i]);
-    }
-    return (frag.textContent || '').replace(/\s+/g, '').length;
+    return textWithoutRuby(range).replace(/\s+/g, '').length;
   } catch (e) {
     // Malformed CFIs and out-of-order boundaries both throw synchronously;
     // this runs inside the 'relocated' listener, so it must never escape.
