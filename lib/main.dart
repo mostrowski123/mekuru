@@ -41,8 +41,9 @@ import 'shared/widgets/glass_tab_bar.dart';
 /// and navigator observation.
 final navigatorKey = GlobalKey<NavigatorState>();
 
-/// Global scaffold messenger key so snackbars can be shown on top of
-/// modal bottom sheets and other overlays.
+/// The app's scaffold messenger, for snack bars from code without a screen
+/// of its own. They show in the Scaffold of the screen underneath, so a
+/// modal bottom sheet or dialog covers them: a sheet shows its own errors.
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 /// The app's strings in its current language, for text made away from a

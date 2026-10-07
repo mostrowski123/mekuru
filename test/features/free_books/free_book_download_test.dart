@@ -17,6 +17,7 @@ import 'package:mekuru/features/free_books/data/models/aozora_work.dart';
 import 'package:mekuru/features/free_books/data/models/tadoku_book.dart';
 import 'package:mekuru/features/free_books/data/services/aozora_download.dart';
 import 'package:mekuru/features/free_books/presentation/providers/free_books_providers.dart';
+import 'package:mekuru/features/free_books/presentation/screens/free_books_screen.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart' show databaseProvider, scaffoldMessengerKey;
@@ -101,6 +102,7 @@ void main() {
   Future<ProviderContainer> pumpApp(
     WidgetTester tester, {
     List<Override> overrides = const [],
+    Widget home = const Scaffold(),
   }) async {
     final db = createTestDatabase();
     final container = ProviderContainer(
@@ -114,7 +116,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: buildLocalizedTestApp(
-          home: const Scaffold(),
+          home: home,
           scaffoldMessengerKey: scaffoldMessengerKey,
         ),
       ),
@@ -142,6 +144,46 @@ void main() {
     expect(find.text(en.freeBooksDownloadFailed), findsOneWidget);
     expect(container.read(freeBookDownloadProvider), isEmpty);
     expectNoLeftovers();
+  });
+
+  testWidgets('the book sheet says why its download failed', (tester) async {
+    final book = reader('http://127.0.0.1:${server.port}/b9.pdf');
+    final container = await pumpApp(
+      tester,
+      home: const FreeBooksScreen(),
+      overrides: [
+        tadokuCatalogProvider.overrideWith((ref) async => [book]),
+        booksProvider.overrideWith((ref) => Stream.value(const [])),
+        bookImportProvider.overrideWith(_ReportingImport.new),
+      ],
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text(book.title));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(book.title));
+    await tester.pumpAndSettle();
+    final downloads = container.read(freeBookDownloadProvider.notifier);
+
+    await tester.runAsync(() => downloads.downloadTadoku(book));
+    await tester.pumpAndSettle();
+
+    // The snack bar is under the sheet; the sheet says it too.
+    final failed = find.text(en.freeBooksDownloadFailed);
+    expect(failed, findsNWidgets(2));
+    expect(failed.hitTestable(), findsOneWidget);
+    scaffoldMessengerKey.currentState!.hideCurrentSnackBar();
+    await tester.pumpAndSettle();
+
+    // Trying again clears it as the new attempt starts.
+    await tester.runAsync(() async {
+      final retry = downloads.downloadTadoku(
+        reader('http://127.0.0.1:${server.port}/reader.pdf'),
+      );
+      expect(container.read(freeBookDownloadFailuresProvider), isEmpty);
+      await retry;
+    });
+    await tester.pumpAndSettle();
+    expect(failed.hitTestable(), findsNothing);
   });
 
   testWidgets('a TLS failure is a failed download, not a failed import', (

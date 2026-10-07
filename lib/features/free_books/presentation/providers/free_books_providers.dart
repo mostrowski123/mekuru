@@ -22,6 +22,7 @@ import 'package:mekuru/features/free_books/data/services/tadoku_catalog.dart';
 import 'package:mekuru/features/free_books/data/services/tadoku_covers.dart';
 import 'package:mekuru/features/library/presentation/providers/library_providers.dart';
 import 'package:mekuru/features/sync/data/services/server_download_work.dart';
+import 'package:mekuru/l10n/generated/app_localizations.dart';
 import 'package:mekuru/main.dart' show announce, navigatorKey;
 import 'package:mekuru/shared/utils/app_routes.dart';
 import 'package:path/path.dart' as p;
@@ -217,6 +218,9 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
   }) async {
     if (state.containsKey(key)) return;
     state = {...state, key: 0};
+    ref
+        .read(freeBookDownloadFailuresProvider.notifier)
+        .update((failures) => {...failures}..remove(key));
     final workId = 'download:$key';
     final client = HttpClient();
     InAppServerDownloads.start(key, client);
@@ -292,10 +296,14 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
         stackTrace: network ? null : stackTrace,
         attrs: {'source': source},
       );
-      announce(
-        (l10n) =>
-            network ? l10n.freeBooksDownloadFailed : l10n.freeBooksImportFailed,
-      );
+      String message(AppLocalizations l10n) =>
+          network ? l10n.freeBooksDownloadFailed : l10n.freeBooksImportFailed;
+      if (ref.mounted) {
+        ref
+            .read(freeBookDownloadFailuresProvider.notifier)
+            .update((failures) => {...failures, key: message});
+      }
+      announce(message);
     } finally {
       client.close();
       InAppServerDownloads.finish(key);
@@ -318,4 +326,13 @@ class FreeBookDownloadNotifier extends Notifier<Map<String, double>> {
 final freeBookDownloadProvider =
     NotifierProvider<FreeBookDownloadNotifier, Map<String, double>>(
       FreeBookDownloadNotifier.new,
+    );
+
+/// Why a free book's last download failed, by the keys of
+/// [freeBookDownloadProvider]. The book's sheet shows it, as the sheet
+/// covers the snack bar that announces it. Cleared when the download is
+/// tried again.
+final freeBookDownloadFailuresProvider =
+    StateProvider<Map<String, String Function(AppLocalizations l10n)>>(
+      (ref) => const {},
     );

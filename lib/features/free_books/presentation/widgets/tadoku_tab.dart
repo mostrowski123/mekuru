@@ -244,6 +244,9 @@ class _ReaderSheet extends ConsumerWidget {
     final progress = ref.watch(
       freeBookDownloadProvider.select((map) => map[key]),
     );
+    final failure = ref.watch(
+      freeBookDownloadFailuresProvider.select((failures) => failures[key]),
+    );
     final copy = ref.watch(
       freeBooksInLibraryProvider.select((books) => books[key]),
     );
@@ -311,6 +314,7 @@ class _ReaderSheet extends ConsumerWidget {
               viewUrl: book.pageUrl,
               copy: copy,
               progress: progress,
+              error: failure?.call(l10n),
               onDownload: () => ref
                   .read(freeBookDownloadProvider.notifier)
                   .downloadTadoku(book),
