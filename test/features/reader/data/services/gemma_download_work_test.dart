@@ -448,12 +448,19 @@ void main() {
       await expectLater(done, throwsA(isA<HttpException>()));
     });
 
-    test('a queued job, or one finished unseen, is pending', () async {
-      expect(await gemma.downloadPending(), isFalse);
+    test('a running job, or one finished unseen, is pending', () async {
       workmanager.scheduled = true;
+      // No download running: WorkManager, which answers on the main thread,
+      // isn't asked.
+      expect(await gemma.downloadPending(), isFalse);
+      expect(workmanager.scheduledChecks, 0);
+      Directory(modelDir()).createSync(recursive: true);
+      await work().writeStatus(
+        const ServerDownloadWorkStatus(state: ServerDownloadWorkState.running),
+      );
       expect(await gemma.downloadPending(), isTrue);
       workmanager.scheduled = false;
-      Directory(modelDir()).createSync(recursive: true);
+      expect(await gemma.downloadPending(), isFalse);
       await work().writeStatus(
         const ServerDownloadWorkStatus(state: ServerDownloadWorkState.done),
       );

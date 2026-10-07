@@ -21,6 +21,8 @@ import 'features/library/presentation/screens/library_screen.dart';
 import 'features/manga/data/services/ocr_billing_client.dart';
 import 'features/manga/data/services/ocr_store_service.dart';
 import 'features/manga/presentation/providers/pro_access_provider.dart';
+import 'features/reader/data/services/gemma_translation.dart';
+import 'features/reader/presentation/providers/gemma_download_provider.dart';
 import 'features/reader/presentation/providers/reader_providers.dart';
 import 'features/settings/data/services/app_settings_storage.dart';
 import 'features/settings/presentation/providers/app_settings_providers.dart';
@@ -142,6 +144,10 @@ class _MekuruAppState extends ConsumerState<MekuruApp>
             ),
       );
       unawaited(ref.read(proUnlockedProvider.notifier).refreshIfDue());
+      // A Gemma download job outlives the app: the notifier takes one that
+      // finished while Mekuru was closed (choosing High) and follows one
+      // still running.
+      if (GemmaTranslation.supported) ref.read(gemmaDownloadProvider);
       // Silent WaniKani refresh; failures stay in telemetry and never
       // reach the user.
       unawaited(

@@ -221,11 +221,17 @@ class GemmaTranslation implements TranslationEngine {
   Future<bool> downloadPending() async {
     try {
       final work = ServerDownloadWorkDir((await _dir).path);
-      if ((await work.readStatus())?.state == ServerDownloadWorkState.done) {
-        await work.deleteStatus();
-        return true;
+      switch ((await work.readStatus())?.state) {
+        case ServerDownloadWorkState.done:
+          await work.deleteStatus();
+          return true;
+        case ServerDownloadWorkState.running:
+          // A job is queued only once its status says it runs. Asked only
+          // then: WorkManager answers on Android's main thread.
+          return await _downloadJobScheduled();
+        default:
+          return false;
       }
-      return await _downloadJobScheduled();
     } catch (_) {
       // No app directory (widget tests).
       return false;
