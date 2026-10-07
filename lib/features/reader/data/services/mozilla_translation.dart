@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mekuru/core/platform/network_status.dart';
 import 'package:mekuru/features/manga/data/services/model_download.dart';
@@ -203,42 +204,57 @@ class MozillaTranslation implements TranslationEngine {
 
   var _inFlight = 0;
 
-  /// Whether a translation is running. [stop] would hang it: disposing the
-  /// WebView drops its pending call without completing it.
+  /// Whether a translation is running, which [stop] would cut short.
   bool get isBusy => _inFlight > 0;
 
   @override
   Future<String> translate(String text, String target) async {
     _inFlight++;
     try {
-      final controller = await (_engine ??= _start());
-      _idleTimer?.cancel();
-      _idleTimer = Timer(_idleLifetime, stop);
-      final result = await controller.callAsyncJavaScript(
-        functionBody: 'return await mekuruTranslate(text, pairs);',
-        arguments: {
-          'text': text,
-          'pairs': [
-            for (final pair in mozillaPairsFor(target))
-              {
-                'name': pair,
-                'files': {
-                  for (final file in mozillaTranslationModels[pair]!)
-                    file.name.split('.').first:
-                        '$_origin/models/$pair/${file.name}',
-                },
-              },
-          ],
-        },
+      // Removing the models stops the engine under a running translation,
+      // whose reply then never comes: it fails instead of hanging.
+      final stopped = _stopped.future.then<String>(
+        (_) => throw Exception('Translation engine stopped'),
       );
-      final error = result?.error;
-      if (result == null || error != null) {
-        throw Exception('Translation engine: ${error ?? 'no result'}');
-      }
-      return result.value as String? ?? '';
+      return await Future.any([_translate(text, target), stopped]);
     } finally {
       _inFlight--;
     }
+  }
+
+  /// Completed by [stop], for the translations it leaves without a WebView.
+  var _stopped = Completer<void>();
+
+  /// Replaces the WebView's start in tests.
+  @visibleForTesting
+  Future<InAppWebViewController> Function()? debugStart;
+
+  Future<String> _translate(String text, String target) async {
+    final controller = await (_engine ??= (debugStart ?? _start)());
+    _idleTimer?.cancel();
+    _idleTimer = Timer(_idleLifetime, stop);
+    final result = await controller.callAsyncJavaScript(
+      functionBody: 'return await mekuruTranslate(text, pairs);',
+      arguments: {
+        'text': text,
+        'pairs': [
+          for (final pair in mozillaPairsFor(target))
+            {
+              'name': pair,
+              'files': {
+                for (final file in mozillaTranslationModels[pair]!)
+                  file.name.split('.').first:
+                      '$_origin/models/$pair/${file.name}',
+              },
+            },
+        ],
+      },
+    );
+    final error = result?.error;
+    if (result == null || error != null) {
+      throw Exception('Translation engine: ${error ?? 'no result'}');
+    }
+    return result.value as String? ?? '';
   }
 
   Future<InAppWebViewController> _start() async {
@@ -279,8 +295,10 @@ class MozillaTranslation implements TranslationEngine {
   }
 
   /// Frees the WebView's memory; the next [translate] starts it again.
-  /// Nothing happens when it isn't running.
+  /// Translations still running fail.
   Future<void> stop() async {
+    _stopped.complete();
+    _stopped = Completer<void>();
     _idleTimer?.cancel();
     _idleTimer = null;
     _engine = null;
